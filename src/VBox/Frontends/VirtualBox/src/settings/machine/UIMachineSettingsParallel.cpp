@@ -205,8 +205,6 @@ UIMachineSettingsParallelPage::UIMachineSettingsParallelPage()
     }
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -241,8 +239,6 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsParallelPage::getFromCache()
 {
     /* Setup tab order: */
@@ -273,8 +269,6 @@ void UIMachineSettingsParallelPage::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsParallelPage::putToCache()
 {
     /* For each parallel port: */
@@ -288,8 +282,6 @@ void UIMachineSettingsParallelPage::putToCache()
     }
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

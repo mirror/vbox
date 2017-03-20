@@ -248,8 +248,6 @@ void UIGlobalSettingsLanguage::putToCache()
     m_cache.cacheCurrentData(newData);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to properties & settings: */

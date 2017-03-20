@@ -273,8 +273,6 @@ bool UIMachineSettingsUSB::isUSBEnabled() const
     return mGbUSB->isChecked();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings or machine: */
@@ -332,8 +330,6 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
     uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsUSB::getFromCache()
 {
     /* Clear list initially: */
@@ -369,8 +365,6 @@ void UIMachineSettingsUSB::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsUSB::putToCache()
 {
     /* Prepare USB data: */
@@ -399,8 +393,6 @@ void UIMachineSettingsUSB::putToCache()
         m_cache.child(iFilterIndex).cacheCurrentData(m_filters[iFilterIndex]);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to properties & settings or machine: */

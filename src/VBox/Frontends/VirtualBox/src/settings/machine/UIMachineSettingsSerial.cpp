@@ -244,8 +244,6 @@ UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
     }
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -282,8 +280,6 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSerialPage::getFromCache()
 {
     /* Setup tab order: */
@@ -314,8 +310,6 @@ void UIMachineSettingsSerialPage::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSerialPage::putToCache()
 {
     /* For each serial port: */
@@ -329,8 +323,6 @@ void UIMachineSettingsSerialPage::putToCache()
     }
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

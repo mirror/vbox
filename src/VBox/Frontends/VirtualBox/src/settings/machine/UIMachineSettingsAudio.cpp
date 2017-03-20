@@ -35,8 +35,6 @@ UIMachineSettingsAudio::UIMachineSettingsAudio()
     prepare();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -65,8 +63,6 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsAudio::getFromCache()
 {
     /* Get audio data from cache: */
@@ -81,8 +77,6 @@ void UIMachineSettingsAudio::getFromCache()
     polishPage();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsAudio::putToCache()
 {
     /* Prepare audio data: */
@@ -97,8 +91,6 @@ void UIMachineSettingsAudio::putToCache()
     m_cache.cacheCurrentData(audioData);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

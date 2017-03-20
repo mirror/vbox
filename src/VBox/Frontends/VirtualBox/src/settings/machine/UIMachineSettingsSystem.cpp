@@ -75,8 +75,6 @@ void UIMachineSettingsSystem::setUSBEnabled(bool fEnabled)
     revalidate();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -144,8 +142,6 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSystem::getFromCache()
 {
     /* Get system data from cache: */
@@ -196,8 +192,6 @@ void UIMachineSettingsSystem::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSystem::putToCache()
 {
     /* Prepare system data: */
@@ -237,8 +231,6 @@ void UIMachineSettingsSystem::putToCache()
     m_cache.cacheCurrentData(systemData);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

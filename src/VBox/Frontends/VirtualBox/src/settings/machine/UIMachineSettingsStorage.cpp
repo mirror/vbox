@@ -2195,8 +2195,6 @@ void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
     revalidate();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -2275,8 +2273,6 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsStorage::getFromCache()
 {
     /* Clear model initially: */
@@ -2335,8 +2331,6 @@ void UIMachineSettingsStorage::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsStorage::putToCache()
 {
     /* Prepare storage data: */
@@ -2387,8 +2381,6 @@ void UIMachineSettingsStorage::putToCache()
     m_cache.cacheCurrentData(storageData);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

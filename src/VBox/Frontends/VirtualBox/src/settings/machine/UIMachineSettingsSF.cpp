@@ -238,8 +238,6 @@ void UIMachineSettingsSF::resizeEvent (QResizeEvent *aEvent)
     adjustList();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -290,8 +288,6 @@ void UIMachineSettingsSF::loadToCacheFrom(UISharedFolderType sharedFoldersType)
     }
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSF::getFromCache()
 {
     /* Clear list initially: */
@@ -322,8 +318,6 @@ void UIMachineSettingsSF::getFromCache()
     polishPage();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSF::putToCache()
 {
     /* For each shared folder type: */
@@ -348,8 +342,6 @@ void UIMachineSettingsSF::putToCache()
     }
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

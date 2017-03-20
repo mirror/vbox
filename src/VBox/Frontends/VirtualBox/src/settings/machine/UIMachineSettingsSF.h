@@ -85,27 +85,31 @@ public:
 
 protected:
 
-    /* Load data to cache from corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
+    /** Loads data into the cache from corresponding external object(s),
+      * this task COULD be performed in other than the GUI thread. */
     void loadToCacheFrom(QVariant &data);
     void loadToCacheFrom(UISharedFolderType sharedFoldersType);
-    /* Load data to corresponding widgets from cache,
-     * this task SHOULD be performed in GUI thread only: */
+    /** Loads data into corresponding widgets from the cache,
+      * this task SHOULD be performed in the GUI thread only. */
     void getFromCache();
 
-    /* Save data from corresponding widgets to cache,
-     * this task SHOULD be performed in GUI thread only: */
+    /** Saves data from corresponding widgets to the cache,
+      * this task SHOULD be performed in the GUI thread only. */
     void putToCache();
-    /* Save data from cache to corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
+    /** Saves data from the cache to corresponding external object(s),
+      * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(QVariant &data);
+    /** Saves data of @a sharedFoldersType from the cache to corresponding external object(s),
+      * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(UISharedFolderType sharedFoldersType);
 
-    /* Page changed: */
+    /** Returns whether the page content was changed. */
     bool changed() const { return m_cache.wasChanged(); }
 
-    void setOrderAfter (QWidget *aWidget);
+    /** Defines TAB order. */
+    void setOrderAfter(QWidget *pWidget);
 
+    /** Handles translation event. */
     void retranslateUi();
 
 private slots:

@@ -94,18 +94,18 @@ signals:
 
 public:
 
-    /* Load data to cache from corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
+    /** Loads data into the cache from corresponding external object(s),
+      * this task COULD be performed in other than the GUI thread. */
     virtual void loadToCacheFrom(QVariant &data) = 0;
-    /* Load data to corresponding widgets from cache,
-     * this task SHOULD be performed in GUI thread only: */
+    /** Loads data into corresponding widgets from the cache,
+      * this task SHOULD be performed in the GUI thread only. */
     virtual void getFromCache() = 0;
 
-    /* Save data from corresponding widgets to cache,
-     * this task SHOULD be performed in GUI thread only: */
+    /** Saves data from corresponding widgets to the cache,
+      * this task SHOULD be performed in the GUI thread only. */
     virtual void putToCache() = 0;
-    /* Save data from cache to corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
+    /** Saves data from the cache to corresponding external object(s),
+      * this task COULD be performed in other than the GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) = 0;
 
     /* Validation stuff: */
@@ -129,7 +129,7 @@ public:
     bool isMachineOnline() const { return configurationAccessLevel() == ConfigurationAccessLevel_Partial_Running; }
     bool isMachineInValidMode() const { return isMachineOffline() || isMachinePoweredOff() || isMachineSaved() || isMachineOnline(); }
 
-    /* Page changed: */
+    /** Returns whether the page content was changed. */
     virtual bool changed() const = 0;
 
     /* Page 'ID' stuff: */
@@ -201,7 +201,7 @@ protected:
     /* Upload m_properties & m_settings to data: */
     void uploadData(QVariant &data) const;
 
-    /* Page changed: */
+    /** Returns whether the page content was changed. */
     bool changed() const { return false; }
 
     /* Global data source: */

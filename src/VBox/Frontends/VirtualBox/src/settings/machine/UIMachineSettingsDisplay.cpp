@@ -84,8 +84,6 @@ bool UIMachineSettingsDisplay::isAcceleration2DVideoSelected() const
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -142,8 +140,6 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsDisplay::getFromCache()
 {
     /* Get display data from cache: */
@@ -190,8 +186,6 @@ void UIMachineSettingsDisplay::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsDisplay::putToCache()
 {
     /* Prepare display data: */
@@ -233,8 +227,6 @@ void UIMachineSettingsDisplay::putToCache()
     m_cache.cacheCurrentData(displayData);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

@@ -56,8 +56,8 @@ public:
     void fetchNetworkData(const UIDataSettingsGlobalNetworkNAT &data);
     void uploadNetworkData(UIDataSettingsGlobalNetworkNAT &data);
 
-    /* API: Validation stuff: */
-    bool validate(UIValidationMessage &message);
+    /** Performs validation, updates @a messages list if something is wrong. */
+    bool validate(UIValidationMessage &messages);
 
     /* API: Update stuff: */
     void updateInfo();
@@ -89,8 +89,8 @@ public:
     void fetchNetworkData(const UIDataSettingsGlobalNetworkHost &data);
     void uploadNetworkData(UIDataSettingsGlobalNetworkHost &data);
 
-    /* API: Validation stuff: */
-    bool validate(UIValidationMessage &message);
+    /** Performs validation, updates @a messages list if something is wrong. */
+    bool validate(UIValidationMessage &messages);
 
     /* API: Update stuff: */
     void updateInfo();

@@ -40,8 +40,6 @@ UIMachineSettingsInterface::~UIMachineSettingsInterface()
     cleanup();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -85,8 +83,6 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsInterface::getFromCache()
 {
     /* Get interface data from cache: */
@@ -124,8 +120,6 @@ void UIMachineSettingsInterface::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsInterface::putToCache()
 {
     /* Prepare interface data: */
@@ -160,8 +154,6 @@ void UIMachineSettingsInterface::putToCache()
     m_cache.cacheCurrentData(interfaceData);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */

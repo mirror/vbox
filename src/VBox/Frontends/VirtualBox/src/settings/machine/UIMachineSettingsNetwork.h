@@ -110,7 +110,7 @@ public:
     void fetchAdapterCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
     void uploadAdapterCache(UISettingsCacheMachineNetworkAdapter &adapterCache);
 
-    /* API: Validation stuff: */
+    /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(QList<UIValidationMessage> &messages);
 
     /* Navigation stuff: */
@@ -136,7 +136,7 @@ signals:
 
 protected:
 
-    /* Translation stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
 private slots:
@@ -202,27 +202,27 @@ public:
 
 protected:
 
-    /* Load data to cache from corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
+    /** Loads data into the cache from corresponding external object(s),
+      * this task COULD be performed in other than the GUI thread. */
     void loadToCacheFrom(QVariant &data);
-    /* Load data to corresponding widgets from cache,
-     * this task SHOULD be performed in GUI thread only: */
+    /** Loads data into corresponding widgets from the cache,
+      * this task SHOULD be performed in the GUI thread only. */
     void getFromCache();
 
-    /* Save data from corresponding widgets to cache,
-     * this task SHOULD be performed in GUI thread only: */
+    /** Saves data from corresponding widgets to the cache,
+      * this task SHOULD be performed in the GUI thread only. */
     void putToCache();
-    /* Save data from cache to corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
+    /** Saves data from the cache to corresponding external object(s),
+      * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(QVariant &data);
 
-    /* Page changed: */
+    /** Returns whether the page content was changed. */
     bool changed() const { return m_cache.wasChanged(); }
 
-    /* API: Validation stuff: */
+    /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(QList<UIValidationMessage> &messages);
 
-    /* Translation stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
 private slots:
