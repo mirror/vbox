@@ -43,9 +43,12 @@ typedef enum BS3CG1OP
 
     BS3CG1OP_Eb,
     BS3CG1OP_Ev,
+    BS3CG1OP_Wsd,
 
     BS3CG1OP_Gb,
     BS3CG1OP_Gv,
+
+    BS3CG1OP_Vsd,
 
     BS3CG1OP_Ib,
     BS3CG1OP_Iz,
@@ -73,6 +76,7 @@ typedef enum BS3CG1ENC
 
     BS3CG1ENC_MODRM_Eb_Gb,
     BS3CG1ENC_MODRM_Ev_Gv,
+    BS3CG1ENC_MODRM_Wsd_Vsd,
 
     BS3CG1ENC_MODRM_Gb_Eb,
     BS3CG1ENC_MODRM_Gv_Ev,
@@ -99,6 +103,26 @@ typedef enum BS3CGPFXKIND
     BS3CGPFXKIND_END
 } BS3CGPFXKIND;
 
+/**
+ * CPU selection or CPU ID.
+ */
+typedef enum BS3CG1CPU
+{
+    /** Works with an CPU. */
+    BS3CG1CPU_ANY = 0,
+    BS3CG1CPU_GE_80186,
+    BS3CG1CPU_GE_80286,
+    BS3CG1CPU_GE_80386,
+    BS3CG1CPU_GE_80486,
+    BS3CG1CPU_GE_Pentium,
+
+    BS3CG1CPU_SSE,
+    BS3CG1CPU_SSE2,
+    BS3CG1CPU_SSE3,
+    BS3CG1CPU_AVX,
+    BS3CG1CPU_AVX2,
+    BS3CG1CPU_END
+} BS3CG1CPU;
 
 /**
  * Generated instruction info.
@@ -119,8 +143,10 @@ typedef struct BS3CG1INSTR
     uint32_t    enmEncoding : 10;
     /** BS3CGPFXKIND values. */
     uint32_t    enmPrefixKind : 4;
+    /** CPU test / CPU ID bit test (BS3CG1CPU). */
+    uint32_t    enmCpuTest : 6;
     /** Currently unused bits. */
-    uint32_t    uUnused : 18;
+    uint32_t    uUnused : 12;
     /** BS3CG1INSTR_F_XXX. */
     uint32_t    fFlags;
 } BS3CG1INSTR;

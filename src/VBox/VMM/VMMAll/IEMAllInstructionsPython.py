@@ -160,6 +160,7 @@ g_kdOpTypes = {
     'Eb':   ( 'IDX_UseModRM',       'rm',     '%Eb',  'Eb',      ),
     'Ew':   ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      ),
     'Ev':   ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      ),
+    'Wsd':  ( 'IDX_UseModRM',       'rm',     '%Wsd', 'Wsd',      ),
 
     # ModR/M.rm - memory only.
     'Ma':   ( 'IDX_UseModRM',        'rm',    '%Ma',  'Ma',      ), ##< Only used by BOUND.
@@ -168,6 +169,7 @@ g_kdOpTypes = {
     'Gb':   ( 'IDX_UseModRM',       'reg',    '%Gb',  'Gb',      ),
     'Gw':   ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      ),
     'Gv':   ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
+    'Vsd':  ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
 
     # Immediate values.
     'Ib':   ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.
@@ -1693,7 +1695,7 @@ class SimpleParser(object):
         else:
             if len(sPrefix) == 2:
                 sPrefix = '0x' + sPrefix;
-            if _isValidOpcodeByte(sPrefix):
+            if not _isValidOpcodeByte(sPrefix):
                 return self.errorComment(iTagLine, '%s: invalid prefix: %s' % (sTag, sPrefix,));
 
         if sPrefix is not None and sPrefix not in g_kdPrefixes:
@@ -2807,7 +2809,7 @@ def __parseAll():
     cErrors = 0;
     for sDefaultMap, sName in [
         ( 'one',    'IEMAllInstructionsOneByte.cpp.h'),
-        #( 'two0f',  'IEMAllInstructionsTwoByte0f.cpp.h'),
+        ( 'two0f',  'IEMAllInstructionsTwoByte0f.cpp.h'),
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
     cErrors += __doTestCopying();

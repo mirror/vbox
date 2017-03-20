@@ -317,6 +317,15 @@ class Bs3Cg1Instruction(object):
         else:
             self.sPfxKind       = '0';
 
+        self.sCpu = 'BS3CG1CPU_';
+        assert len(oInstr.asCpuIds) in [0, 1], str(oInstr);
+        if oInstr.asCpuIds:
+            self.sCpu += oInstr.asCpuIds[0].upper();
+        elif oInstr.sMinCpu:
+            self.sCpu += 'GE_' + oInstr.sMinCpu;
+        else:
+            self.sCpu += 'ANY';
+
 
     def getOperands(self):
         """ Returns comma separated string of operand values for g_abBs3Cg1Operands. """
@@ -331,7 +340,8 @@ class Bs3Cg1Instruction(object):
             '        /* fAdvanceMnemonic = */ %s,' % ('true' if self.fAdvanceMnemonic else 'false',),
             '        /* offTests = */         %s,' % (self.oTests.offTests,),
             '        /* enmEncoding = */      (unsigned)%s,' % (self.sEncoding,),
-            '        /* enmPfxKind = */       (unsigned)%s,' % (self.sPfxKind,),
+            '        /* enmPrefixKind = */    (unsigned)%s,' % (self.sPfxKind,),
+            '        /* enmCpuTest = */       (unsigned)%s,' % (self.sCpu,),
             '        /* uUnused = */          0,',
             '        /* fFlags = */           %s' % (' | '.join(self.asFlags) if self.asFlags else '0'),
         ];

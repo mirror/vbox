@@ -1124,10 +1124,16 @@ FNIEMOP_STUB(iemOp_vmovupd_Wpd_Vpd);
 /** Opcode 0xf3 0x0f 0x11 - vmovss Wss, Hx, Vss */
 FNIEMOP_STUB(iemOp_vmovss_Wss_Hx_Vss);
 
-/** Opcode 0xf2 0x0f 0x11 - vmovsd Wsd, Hx, Vsd */
+/**
+ * @opcode      0x11
+ * @oppfx       0xf2
+ * @opcpuid     sse2
+ * @opgroup     og_sse2_pcksclr_datamov
+ * @optestign      op1=1 op2=2 -> op1=2
+ */
 FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hx_Vsd)
 {
-    IEMOP_MNEMONIC(movsd_Wsd_Vsd, "movsd Wsd,Vsd");
+    IEMOP_MNEMONIC2(MR, MOVSD, movsd, Wsd, Vsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {

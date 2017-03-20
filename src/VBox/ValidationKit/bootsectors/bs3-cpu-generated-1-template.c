@@ -119,9 +119,8 @@ typedef struct BS3CG1STATE
     uint32_t                fFlags;
     /** The encoding. */
     BS3CG1ENC               enmEncoding;
-#if ARCH_BITS == 16
-    uint16_t                u16Padding0;
-#endif
+    /** The CPU test / CPU ID. */
+    BS3CG1CPU               enmCpuTest;
     /** Per operand flags. */
     BS3CG1OP                aenmOperands[4];
     /** Opcode bytes. */
@@ -202,6 +201,8 @@ typedef struct BS3CG1STATE
 
     /** The name corresponding to bMode. */
     const char BS3_FAR     *pszMode;
+    /** The short name corresponding to bMode. */
+    const char BS3_FAR     *pszModeShort;
 
     /** @name Expected result (modifiable by output program).
      * @{ */
@@ -1084,6 +1085,129 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 }
 
 
+static bool Bs3Cg3SetupAvx(PBS3CG1STATE pThis)
+{
+    return true;
+}
+
+
+/**
+ * Sets up SSE.
+ *
+ * @returns true (if successful, false if not and the SSE instructions ends up
+ *          being invalid).
+ * @param   pThis               The state.
+ */
+static bool Bs3Cg3SetupSse(PBS3CG1STATE pThis)
+{
+    ASMSetCR4(ASMGetCR4() | X86_CR4_OSFXSR | X86_CR4_OSXMMEEXCPT);
+    return true;
+}
+
+
+/**
+ * Check if the instruction is supported by the CPU, possibly making state
+ * adjustments to enable support for it.
+ *
+ * @returns true if supported, false if not.
+ * @param   pThis               The state.
+ */
+static bool Bs3Cg1CpuTestAndEnable(PBS3CG1STATE pThis)
+{
+    uint32_t fEax;
+    uint32_t fEbx;
+    uint32_t fEcx;
+    uint32_t fEdx;
+    ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
+
+    if (   (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)
+        && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+        return false;
+
+    switch (pThis->enmCpuTest)
+    {
+        case BS3CG1CPU_ANY:
+            return true;
+
+        case BS3CG1CPU_GE_80186:
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80186)
+                return true;
+            return false;
+
+        case BS3CG1CPU_GE_80286:
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286)
+                return true;
+            return false;
+
+        case BS3CG1CPU_GE_80386:
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+                return true;
+            return false;
+
+        case BS3CG1CPU_GE_80486:
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
+                return true;
+            return false;
+
+        case BS3CG1CPU_GE_Pentium:
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_Pentium)
+                return true;
+            return false;
+
+        case BS3CG1CPU_SSE:
+        case BS3CG1CPU_SSE2:
+        case BS3CG1CPU_SSE3:
+        case BS3CG1CPU_AVX:
+            if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+            {
+                ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
+                switch (pThis->enmCpuTest)
+                {
+                    case BS3CG1CPU_SSE:
+                        if (fEdx & X86_CPUID_FEATURE_EDX_SSE)
+                            return Bs3Cg3SetupSse(pThis);
+                        return false;
+                    case BS3CG1CPU_SSE2:
+                        if (fEdx & X86_CPUID_FEATURE_EDX_SSE2)
+                            return Bs3Cg3SetupSse(pThis);
+                        return false;
+                    case BS3CG1CPU_SSE3:
+                        if (fEcx & X86_CPUID_FEATURE_ECX_SSE3)
+                            return Bs3Cg3SetupSse(pThis);
+                        return false;
+                    case BS3CG1CPU_AVX:
+                        if (fEcx & X86_CPUID_FEATURE_ECX_AVX)
+                            return Bs3Cg3SetupAvx(pThis);
+                        return false;
+                    default: BS3_ASSERT(0); /* impossible */
+                }
+            }
+            return false;
+
+        case BS3CG1CPU_AVX2:
+            if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+            {
+                ASMCpuIdExSlow(7, 0, 0/*leaf*/, 0, &fEax, &fEbx, &fEcx, &fEdx);
+
+                switch (pThis->enmCpuTest)
+                {
+                    case BS3CG1CPU_AVX2:
+                        if (fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2)
+                            return Bs3Cg3SetupAvx(pThis);
+                        return false;
+                    default: BS3_ASSERT(0); return false; /* impossible */
+                }
+            }
+            return false;
+
+        default:
+            Bs3TestFailedF("Invalid enmCpuTest value: %d", pThis->enmCpuTest);
+            return false;
+    }
+}
+
+
+
 /**
  * Checks the preconditions for a test.
  *
@@ -1648,7 +1772,8 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 {
-    BS3CG1STATE                 This;
+    BS3CG1STATE                 ThisIsIt;
+    PBS3CG1STATE                pThis = &ThisIsIt;
     unsigned const              iFirstRing = BS3_MODE_IS_V86(bMode)       ? 3 : 0;
     uint8_t const               cRings     = BS3_MODE_IS_RM_OR_V86(bMode) ? 1 : 4;
     uint8_t                     iRing;
@@ -1664,91 +1789,101 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     /*
      * Initalize the state.
      */
-    Bs3MemSet(&This, 0, sizeof(This));
+    Bs3MemSet(pThis, 0, sizeof(*pThis));
 
-    This.bMode              = bMode;
-    This.pszMode            = Bs3GetModeName(bMode);
-    This.pchMnemonic        = g_achBs3Cg1Mnemonics;
-    This.pabOperands        = g_abBs3Cg1Operands;
-    This.pabOpcodes         = g_abBs3Cg1Opcodes;
-    This.fAdvanceMnemonic   = 1;
+    pThis->bMode              = bMode;
+    pThis->pszMode            = Bs3GetModeName(bMode);
+    pThis->pszModeShort       = Bs3GetModeNameShortLower(bMode);
+    pThis->pchMnemonic        = g_achBs3Cg1Mnemonics;
+    pThis->pabOperands        = g_abBs3Cg1Operands;
+    pThis->pabOpcodes         = g_abBs3Cg1Opcodes;
+    pThis->fAdvanceMnemonic   = 1;
 
     /* Allocate guarded exectuable and data memory. */
     if (BS3_MODE_IS_PAGED(bMode))
     {
-        This.pbCodePg = Bs3MemGuardedTestPageAlloc(enmMemKind);
-        if (!This.pbCodePg)
+        pThis->pbCodePg = Bs3MemGuardedTestPageAlloc(enmMemKind);
+        if (!pThis->pbCodePg)
             return Bs3TestFailedF("First Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
-        This.pbDataPg = Bs3MemGuardedTestPageAlloc(enmMemKind);
-        if (!This.pbDataPg)
+        pThis->pbDataPg = Bs3MemGuardedTestPageAlloc(enmMemKind);
+        if (!pThis->pbDataPg)
         {
-            Bs3MemGuardedTestPageFree(This.pbCodePg);
+            Bs3MemGuardedTestPageFree(pThis->pbCodePg);
             return Bs3TestFailedF("Second Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
         }
         if (   BS3_MODE_IS_64BIT_CODE(bMode)
-            && (uintptr_t)This.pbDataPg >= _2G)
+            && (uintptr_t)pThis->pbDataPg >= _2G)
         {
-            Bs3TestFailedF("pbDataPg=%p is above 2GB and not simple to address from 64-bit code", This.pbDataPg);
-            Bs3MemGuardedTestPageFree(This.pbDataPg);
-            Bs3MemGuardedTestPageFree(This.pbCodePg);
+            Bs3TestFailedF("pbDataPg=%p is above 2GB and not simple to address from 64-bit code", pThis->pbDataPg);
+            Bs3MemGuardedTestPageFree(pThis->pbDataPg);
+            Bs3MemGuardedTestPageFree(pThis->pbCodePg);
             return 0;
         }
     }
     else
     {
-        This.pbCodePg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
-        if (!This.pbCodePg)
+        pThis->pbCodePg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
+        if (!pThis->pbCodePg)
             return Bs3TestFailedF("First Bs3MemAlloc(%d,Pg) failed", enmMemKind);
-        This.pbDataPg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
-        if (!This.pbDataPg)
+        pThis->pbDataPg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
+        if (!pThis->pbDataPg)
         {
-            Bs3MemFree(This.pbCodePg, X86_PAGE_SIZE);
+            Bs3MemFree(pThis->pbCodePg, X86_PAGE_SIZE);
             return Bs3TestFailedF("Second Bs3MemAlloc(%d,Pg) failed", enmMemKind);
         }
     }
-    This.uCodePgFlat = Bs3SelPtrToFlat(This.pbCodePg);
-    This.uDataPgFlat = Bs3SelPtrToFlat(This.pbDataPg);
+    pThis->uCodePgFlat = Bs3SelPtrToFlat(pThis->pbCodePg);
+    pThis->uDataPgFlat = Bs3SelPtrToFlat(pThis->pbDataPg);
 #if ARCH_BITS == 16
-    This.DataPgFar.off = BS3_FP_OFF(This.pbDataPg);
-    This.DataPgFar.sel = BS3_FP_SEG(This.pbDataPg);
+    pThis->DataPgFar.off = BS3_FP_OFF(pThis->pbDataPg);
+    pThis->DataPgFar.sel = BS3_FP_SEG(pThis->pbDataPg);
 #else
     if (BS3_MODE_IS_RM_OR_V86(bMode))
-        *(uint32_t *)&This.DataPgFar = Bs3SelFlatDataToRealMode(This.uDataPgFlat);
+        *(uint32_t *)&pThis->DataPgFar = Bs3SelFlatDataToRealMode(pThis->uDataPgFlat);
     else if (!BS3_MODE_IS_64BIT_CODE(bMode))
-        *(uint32_t *)&This.DataPgFar = Bs3SelFlatDataToProtFar16(This.uDataPgFlat);
+        *(uint32_t *)&pThis->DataPgFar = Bs3SelFlatDataToProtFar16(pThis->uDataPgFlat);
     else
-        *(uint32_t *)&This.DataPgFar = 0;
+        *(uint32_t *)&pThis->DataPgFar = 0;
 #endif
 
     /* Create basic context for each target ring.  In protected 16-bit code we need
        set up code selectors that can access pbCodePg.  ASSUMES 16-bit driver code! */
-    Bs3RegCtxSaveEx(&This.aInitialCtxs[iFirstRing], bMode, 512);
-    if (BS3_MODE_IS_16BIT_CODE(bMode) && !BS3_MODE_IS_RM_OR_V86(bMode))
+    Bs3RegCtxSaveEx(&pThis->aInitialCtxs[iFirstRing], bMode, 512);
+    if (BS3_MODE_IS_RM_OR_V86(bMode))
     {
 #if ARCH_BITS == 16
-        uintptr_t const uFlatCodePg = Bs3SelPtrToFlat(BS3_FP_MAKE(BS3_FP_SEG(This.pbCodePg), 0));
+        pThis->aInitialCtxs[iFirstRing].cs = BS3_FP_SEG(pThis->pbCodePg);
 #else
-        uintptr_t const uFlatCodePg = (uintptr_t)This.pbCodePg;
+        pThis->aInitialCtxs[iFirstRing].cs = Bs3SelFlatCodeToRealMode((uintptr_t)pThis->pbCodePg) >> 16;
+#endif
+        BS3_ASSERT(iFirstRing + 1 >= cRings);
+    }
+    else if (BS3_MODE_IS_16BIT_CODE(bMode))
+    {
+#if ARCH_BITS == 16
+        uintptr_t const uFlatCodePg = Bs3SelPtrToFlat(BS3_FP_MAKE(BS3_FP_SEG(pThis->pbCodePg), 0));
+#else
+        uintptr_t const uFlatCodePg = (uintptr_t)pThis->pbCodePg;
 #endif
         BS3_ASSERT(ARCH_BITS == 16);
         for (iRing = iFirstRing + 1; iRing < cRings; iRing++)
         {
-            Bs3MemCpy(&This.aInitialCtxs[iRing], &This.aInitialCtxs[iFirstRing], sizeof(This.aInitialCtxs[iRing]));
-            Bs3RegCtxConvertToRingX(&This.aInitialCtxs[iRing], iRing);
+            Bs3MemCpy(&pThis->aInitialCtxs[iRing], &pThis->aInitialCtxs[iFirstRing], sizeof(pThis->aInitialCtxs[iRing]));
+            Bs3RegCtxConvertToRingX(&pThis->aInitialCtxs[iRing], iRing);
         }
         for (iRing = iFirstRing; iRing < cRings; iRing++)
         {
-            This.aInitialCtxs[iRing].cs = BS3_SEL_SPARE_00 + iRing * 8 + iRing;
+            pThis->aInitialCtxs[iRing].cs = BS3_SEL_SPARE_00 + iRing * 8 + iRing;
             Bs3SelSetup16BitCode(&Bs3GdteSpare00 + iRing, uFlatCodePg, iRing);
         }
     }
     else
     {
-        Bs3RegCtxSetRipCsFromCurPtr(&This.aInitialCtxs[iFirstRing], (FPFNBS3FAR)This.pbCodePg);
+        Bs3RegCtxSetRipCsFromCurPtr(&pThis->aInitialCtxs[iFirstRing], (FPFNBS3FAR)pThis->pbCodePg);
         for (iRing = iFirstRing + 1; iRing < cRings; iRing++)
         {
-            Bs3MemCpy(&This.aInitialCtxs[iRing], &This.aInitialCtxs[iFirstRing], sizeof(This.aInitialCtxs[iRing]));
-            Bs3RegCtxConvertToRingX(&This.aInitialCtxs[iRing], iRing);
+            Bs3MemCpy(&pThis->aInitialCtxs[iRing], &pThis->aInitialCtxs[iFirstRing], sizeof(pThis->aInitialCtxs[iRing]));
+            Bs3RegCtxConvertToRingX(&pThis->aInitialCtxs[iRing], iRing);
         }
     }
 
@@ -1757,9 +1892,9 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
      */
     for (iInstr = 0; iInstr < g_cBs3Cg1Instructions;
          iInstr++,
-         This.pchMnemonic += This.fAdvanceMnemonic * This.cchMnemonic,
-         This.pabOperands += This.cOperands,
-         This.pabOpcodes  += This.cbOpcodes)
+         pThis->pchMnemonic += pThis->fAdvanceMnemonic * pThis->cchMnemonic,
+         pThis->pabOperands += pThis->cOperands,
+         pThis->pabOpcodes  += pThis->cbOpcodes)
     {
         unsigned iEncoding;
         unsigned iEncodingNext;
@@ -1771,33 +1906,37 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
          * Note! 16-bit will switch to a two level test header lookup once we exceed 64KB.
          */
         PCBS3CG1INSTR pInstr = &g_aBs3Cg1Instructions[iInstr];
-        This.iInstr          = iInstr;
-        This.pTestHdr        = (PCBS3CG1TESTHDR)&g_abBs3Cg1Tests[pInstr->offTests];
-        This.fFlags          = pInstr->fFlags;
-        This.enmEncoding     = (BS3CG1ENC)pInstr->enmEncoding;
-        This.cchMnemonic     = pInstr->cchMnemonic;
-        if (This.fAdvanceMnemonic)
-            Bs3TestSubF("%.*s", This.cchMnemonic, This.pchMnemonic);
-        This.fAdvanceMnemonic = pInstr->fAdvanceMnemonic;
-        This.cOperands       = pInstr->cOperands;
-        This.cbOpcodes       = pInstr->cbOpcodes;
-        switch (This.cOperands)
+        pThis->iInstr          = iInstr;
+        pThis->pTestHdr        = (PCBS3CG1TESTHDR)&g_abBs3Cg1Tests[pInstr->offTests];
+        pThis->fFlags          = pInstr->fFlags;
+        pThis->enmEncoding     = (BS3CG1ENC)pInstr->enmEncoding;
+        pThis->enmCpuTest      = (BS3CG1CPU)pInstr->enmCpuTest;
+        pThis->cchMnemonic     = pInstr->cchMnemonic;
+        if (pThis->fAdvanceMnemonic)
+            Bs3TestSubF("%s / %.*s", pThis->pszModeShort, pThis->cchMnemonic, pThis->pchMnemonic);
+        pThis->fAdvanceMnemonic = pInstr->fAdvanceMnemonic;
+        pThis->cOperands       = pInstr->cOperands;
+        pThis->cbOpcodes       = pInstr->cbOpcodes;
+        switch (pThis->cOperands)
         {
-            case 3: This.aenmOperands[3] = (BS3CG1OP)This.pabOperands[3];
-            case 2: This.aenmOperands[2] = (BS3CG1OP)This.pabOperands[2];
-            case 1: This.aenmOperands[1] = (BS3CG1OP)This.pabOperands[1];
-            case 0: This.aenmOperands[0] = (BS3CG1OP)This.pabOperands[0];
+            case 3: pThis->aenmOperands[3] = (BS3CG1OP)pThis->pabOperands[3];
+            case 2: pThis->aenmOperands[2] = (BS3CG1OP)pThis->pabOperands[2];
+            case 1: pThis->aenmOperands[1] = (BS3CG1OP)pThis->pabOperands[1];
+            case 0: pThis->aenmOperands[0] = (BS3CG1OP)pThis->pabOperands[0];
         }
 
-        switch (This.cbOpcodes)
+        switch (pThis->cbOpcodes)
         {
-            case 3: This.abOpcodes[3] = This.pabOpcodes[3];
-            case 2: This.abOpcodes[2] = This.pabOpcodes[2];
-            case 1: This.abOpcodes[1] = This.pabOpcodes[1];
-            case 0: This.abOpcodes[0] = This.pabOpcodes[0];
+            case 3: pThis->abOpcodes[3] = pThis->pabOpcodes[3];
+            case 2: pThis->abOpcodes[2] = pThis->pabOpcodes[2];
+            case 1: pThis->abOpcodes[1] = pThis->pabOpcodes[1];
+            case 0: pThis->abOpcodes[0] = pThis->pabOpcodes[0];
         }
 
-        if ((This.fFlags & BS3CG1INSTR_F_INVALID_64BIT) && BS3_MODE_IS_64BIT_CODE(bMode))
+        /*
+         * Check if the CPU supports the instruction.
+         */
+        if (!Bs3Cg1CpuTestAndEnable(pThis))
         {
             fInvalidInstr = true;
             bTestXcptExpected = X86_XCPT_UD;
@@ -1806,7 +1945,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
         /*
          * Prep the operands and encoding handling.
          */
-        if (!Bs3Cg1EncodePrep(&This))
+        if (!Bs3Cg1EncodePrep(pThis))
             continue;
 
         /*
@@ -1817,69 +1956,71 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
             /*
              * Encode the next instruction variation.
              */
-            iEncodingNext = Bs3Cg1EncodeNext(&This, iEncoding);
+            iEncodingNext = Bs3Cg1EncodeNext(pThis, iEncoding);
             if (iEncodingNext <= iEncoding)
                 break;
-            BS3CG1_DPRINTF(("\ndbg: Encoding #%u: cbCurInst=%u: %.*Rhxs\n", iEncoding, This.cbCurInstr, This.cbCurInstr, This.abCurInstr));
+            BS3CG1_DPRINTF(("\ndbg: Encoding #%u: cbCurInst=%u: %.*Rhxs\n",
+                            iEncoding, pThis->cbCurInstr, pThis->cbCurInstr, pThis->abCurInstr));
 
             /*
              * Do the rings.
              */
-            for (iRing = iFirstRing + This.fSameRingNotOkay; iRing < cRings; iRing++)
+            for (iRing = iFirstRing + pThis->fSameRingNotOkay; iRing < cRings; iRing++)
             {
                 PCBS3CG1TESTHDR pHdr;
 
-                This.uCpl = iRing;
+                pThis->uCpl = iRing;
                 BS3CG1_DPRINTF(("dbg:  Ring %u\n", iRing));
 
                 /*
                  * Do the tests one by one.
                  */
-                pHdr = This.pTestHdr;
-                for (This.iTest = 0;; This.iTest++)
+                pHdr = pThis->pTestHdr;
+                for (pThis->iTest = 0;; pThis->iTest++)
                 {
-                    if (Bs3Cg1RunSelector(&This, pHdr))
+                    if (Bs3Cg1RunSelector(pThis, pHdr))
                     {
                         /* Okay, set up the execution context. */
                         uint8_t BS3_FAR *pbCode;
 
-                        Bs3MemCpy(&This.Ctx, &This.aInitialCtxs[iRing], sizeof(This.Ctx));
+                        Bs3MemCpy(&pThis->Ctx, &pThis->aInitialCtxs[iRing], sizeof(pThis->Ctx));
                         if (BS3_MODE_IS_PAGED(bMode))
-                            pbCode = &This.pbCodePg[X86_PAGE_SIZE - This.cbCurInstr];
+                            pbCode = &pThis->pbCodePg[X86_PAGE_SIZE - pThis->cbCurInstr];
                         else
                         {
-                            pbCode = This.pbCodePg;
-                            pbCode[This.cbCurInstr]     = 0x0f; /* UD2 */
-                            pbCode[This.cbCurInstr + 1] = 0x0b;
+                            pbCode = pThis->pbCodePg;
+                            pbCode[pThis->cbCurInstr]     = 0x0f; /* UD2 */
+                            pbCode[pThis->cbCurInstr + 1] = 0x0b;
                         }
-                        Bs3MemCpy(pbCode, This.abCurInstr, This.cbCurInstr);
-                        This.Ctx.rip.u = BS3_FP_OFF(pbCode);
+                        Bs3MemCpy(pbCode, pThis->abCurInstr, pThis->cbCurInstr);
+                        pThis->Ctx.rip.u = BS3_FP_OFF(pbCode);
 
-                        if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput, NULL, pbCode))
+                        if (Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput, NULL, pbCode))
                         {
                             /* Run the instruction. */
-                            BS3CG1_DPRINTF(("dbg:  Running test #%u\n", This.iTest));
-                            //Bs3RegCtxPrint(&This.Ctx);
-                            Bs3TrapSetJmpAndRestore(&This.Ctx, &This.TrapFrame);
-                            BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64\n", This.TrapFrame.bXcpt, This.Ctx.rip.u, This.TrapFrame.Ctx.rip.u));
+                            BS3CG1_DPRINTF(("dbg:  Running test #%u\n", pThis->iTest));
+                            //Bs3RegCtxPrint(&pThis->Ctx);
+                            Bs3TrapSetJmpAndRestore(&pThis->Ctx, &pThis->TrapFrame);
+                            BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64\n",
+                                            pThis->TrapFrame.bXcpt, pThis->Ctx.rip.u, pThis->TrapFrame.Ctx.rip.u));
 
                             /*
                              * Apply the output modification program to the context.
                              */
-                            This.Ctx.rflags.u32 &= ~X86_EFL_RF;
-                            This.Ctx.rflags.u32 |= This.TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
-                            This.bValueXcpt      = UINT8_MAX;
+                            pThis->Ctx.rflags.u32 &= ~X86_EFL_RF;
+                            pThis->Ctx.rflags.u32 |= pThis->TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
+                            pThis->bValueXcpt      = UINT8_MAX;
                             if (   fInvalidInstr
-                                || Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr,
+                                || Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr,
                                                             pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
-                                                            &This.TrapFrame.Ctx, NULL /*pbCode*/))
+                                                            &pThis->TrapFrame.Ctx, NULL /*pbCode*/))
                             {
-                                Bs3Cg1CheckResult(&This, fInvalidInstr, bTestXcptExpected, iEncoding);
+                                Bs3Cg1CheckResult(pThis, fInvalidInstr, bTestXcptExpected, iEncoding);
                             }
                         }
                     }
                     else
-                        BS3CG1_DPRINTF(("dbg:  Skipping #%u\n", This.iTest));
+                        BS3CG1_DPRINTF(("dbg:  Skipping #%u\n", pThis->iTest));
 
                     /* advance */
                     if (pHdr->fLast)
@@ -1895,7 +2036,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
         /*
          * Clean up (segment registers, etc).
          */
-        Bs3Cg1EncodeCleanup(&This);
+        Bs3Cg1EncodeCleanup(pThis);
     }
 
     /*
@@ -1903,13 +2044,13 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
      */
     if (BS3_MODE_IS_PAGED(bMode))
     {
-        Bs3MemGuardedTestPageFree(This.pbCodePg);
-        Bs3MemGuardedTestPageFree(This.pbDataPg);
+        Bs3MemGuardedTestPageFree(pThis->pbCodePg);
+        Bs3MemGuardedTestPageFree(pThis->pbDataPg);
     }
     else
     {
-        Bs3MemFree(This.pbCodePg, X86_PAGE_SIZE);
-        Bs3MemFree(This.pbDataPg, X86_PAGE_SIZE);
+        Bs3MemFree(pThis->pbCodePg, X86_PAGE_SIZE);
+        Bs3MemFree(pThis->pbDataPg, X86_PAGE_SIZE);
     }
 
     Bs3TestSubDone();
