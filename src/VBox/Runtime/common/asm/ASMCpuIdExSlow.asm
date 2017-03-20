@@ -49,11 +49,17 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
         push    xBP
         mov     xBP, xSP
         push    xBX
-%ifdef RT_ARCH_X86
+%if ARCH_BITS == 32
         push    edi
+%elif ARCH_BITS == 16
+        push    di
+        push    es
 %endif
 
 %ifdef ASM_CALL64_MSC
+ %if ARCH_BITS != 64
+  %error ARCH_BITS mismatch?
+ %endif
         mov     eax, ecx
         mov     ebx, edx
         mov     ecx, r8d
@@ -68,12 +74,17 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
         xchg    ecx, edx
         mov     r10, [rbp + 10h]
         mov     r11, [rbp + 18h]
-%elifdef RT_ARCH_X86
-        mov     eax, [ebp + 08h]
-        mov     ebx, [ebp + 0ch]
-        mov     ecx, [ebp + 10h]
-        mov     edx, [ebp + 14h]
-        mov     edi, [ebp + 18h]
+%elif ARCH_BITS == 32
+        mov     eax, [xBP + 08h]
+        mov     ebx, [xBP + 0ch]
+        mov     ecx, [xBP + 10h]
+        mov     edx, [xBP + 14h]
+        mov     edi, [xBP + 18h]
+%elif ARCH_BITS == 16
+        mov     eax, [xBP + 08h - 4]
+        mov     ebx, [xBP + 0ch - 4]
+        mov     ecx, [xBP + 10h - 4]
+        mov     edx, [xBP + 14h - 4]
 %else
  %error unsupported arch
 %endif
@@ -84,10 +95,15 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
         test    r8, r8
         jz      .store_ebx
         mov     [r8], eax
-%else
+%elif ARCH_BITS == 32
         test    edi, edi
         jz      .store_ebx
         mov     [edi], eax
+%else
+        cmp     dword [bp + 18h - 4], 0
+        je      .store_ebx
+        les     di, [bp + 18h - 4]
+        mov     [es:di], eax
 %endif
 .store_ebx:
 
@@ -95,11 +111,16 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
         test    r9, r9
         jz      .store_ecx
         mov     [r9], ebx
-%else
+%elif ARCH_BITS == 32
         mov     edi, [ebp + 1ch]
         test    edi, edi
         jz      .store_ecx
         mov     [edi], ebx
+%else
+        cmp     dword [bp + 1ch - 4], 0
+        je      .store_ecx
+        les     di, [bp + 1ch - 4]
+        mov     [es:di], ebx
 %endif
 .store_ecx:
 
@@ -107,11 +128,16 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
         test    r10, r10
         jz      .store_edx
         mov     [r10], ecx
-%else
+%elif ARCH_BITS == 32
         mov     edi, [ebp + 20h]
         test    edi, edi
         jz      .store_edx
         mov     [edi], ecx
+%else
+        cmp     dword [bp + 20h - 4], 0
+        je      .store_edx
+        les     di, [bp + 20h - 4]
+        mov     [es:di], ecx
 %endif
 .store_edx:
 
@@ -119,16 +145,24 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
         test    r11, r11
         jz      .done
         mov     [r11], edx
-%else
+%elif ARCH_BITS == 32
         mov     edi, [ebp + 24h]
         test    edi, edi
         jz      .done
         mov     [edi], edx
+%else
+        cmp     dword [bp + 24h - 4], 0
+        je      .done
+        les     di, [bp + 24h - 4]
+        mov     [es:di], edx
 %endif
 .done:
 
-%ifdef RT_ARCH_X86
+%if ARCH_BITS == 32
         pop     edi
+%elif ARCH_BITS == 16
+        pop     es
+        pop     di
 %endif
         pop     xBX
         leave

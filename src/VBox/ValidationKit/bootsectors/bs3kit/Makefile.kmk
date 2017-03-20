@@ -189,6 +189,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        ../../../Runtime/common/asm/ASMSerializeInstruction-cpuid.asm \
        ../../../Runtime/common/asm/ASMSerializeInstruction-iret.asm \
        ../../../Runtime/common/asm/ASMSerializeInstruction-rdtscp.asm \
+       ../../../Runtime/common/asm/ASMCpuIdExSlow.asm \
 
 # The 16-bit BS3Kit library.
 LIBRARIES += bs3kit-common-16
