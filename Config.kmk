@@ -2774,6 +2774,8 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
 VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
 
+# The address sanitiser library intercepts dlopen() and breaks RPATH $ORIGIN,
+# so we need to link it statically.
 VBOX_GCC_SANITIZER_FLAGS = \
   -fsanitize=undefined \
   -fsanitize=address \
@@ -2784,21 +2786,8 @@ VBOX_GCC_SANITIZER_FLAGS = \
   -fno-sanitize=vptr \
   -fno-common \
   -static-libasan
-# The dynamic sanitiser library intercepts dlopen() and breaks RPATH $ORIGIN.
-VBOX_GCC_SANITIZER_LDFLAGS = \
-  -fsanitize=undefined \
-  -fsanitize=address \
-  -fsanitize=return \
-  -fsanitize=bounds \
-  -fsanitize=object-size \
-  -fno-sanitize=alignment \
-  -fno-sanitize=vptr \
-  -fno-common \
-  -static-libasan \
-  -static-libubsan
-VBOX_GCC_SANITIZER_LIBS= # pthread m rt dl
-# When the address sanitiser is enabled, shared objects will contain references
-# to ASAN symbols.  Linking in libasan causes problems.
+
+# -libasan-static is currently not supported in combination with -no-undefined.
 VBOX_GCC_NO_UNDEFINED=$(if $(VBOX_WITH_GCC_SANITIZER),,-Wl,--no-undefined)
 VBOX_GCC_NO_UNDEFINED_R0=$(if $(VBOX_WITH_GCC_SANITIZER),,-no-undefined)
 
@@ -4605,8 +4594,7 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.sparc32     = -m32
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc64     = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
 TEMPLATE_VBOXR3EXE_LDFLAGS.solaris     = -Wl,-z,ignore # same as VBOX_LD_as_needed
-TEMPLATE_VBOXR3EXE_LDFLAGS.debug       = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LDFLAGS),)
-TEMPLATE_VBOXR3EXE_LIBS.debug          = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LIBS),)
+TEMPLATE_VBOXR3EXE_LDFLAGS.debug       = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_FLAGS),)
 
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
@@ -5407,8 +5395,7 @@ TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.amd64   = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64
 TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.kprofile= $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXMAINEXE_LDFLAGS.amd64       = -m64
-TEMPLATE_VBOXMAINEXE_LDFLAGS.debug       = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LDFLAGS),)
-TEMPLATE_VBOXMAINEXE_LIBS.debug          = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LIBS),)
+TEMPLATE_VBOXMAINEXE_LDFLAGS.debug       = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_FLAGS),)
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME) dl
 TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
@@ -5955,8 +5942,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.debug = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LDFLAGS),)
-  TEMPLATE_VBOXQTGUIEXE_LIBS.debug    = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LIBS),)
+  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.debug = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_FLAGS),)
   TEMPLATE_VBOXQTGUIEXE_LIBS = \
 	$(VBOX_LIBS_QT) \
 	$(LIB_SDL) \
