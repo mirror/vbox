@@ -31,6 +31,7 @@
 #define Bs3A20EnableViaKbd BS3_CMN_MANGLER(Bs3A20EnableViaKbd)
 #define Bs3A20EnableViaPortA BS3_CMN_MANGLER(Bs3A20EnableViaPortA)
 #define Bs3GetModeName BS3_CMN_MANGLER(Bs3GetModeName)
+#define Bs3GetModeNameShortLower BS3_CMN_MANGLER(Bs3GetModeNameShortLower)
 #define Bs3KbdRead BS3_CMN_MANGLER(Bs3KbdRead)
 #define Bs3KbdWait BS3_CMN_MANGLER(Bs3KbdWait)
 #define Bs3KbdWrite BS3_CMN_MANGLER(Bs3KbdWrite)

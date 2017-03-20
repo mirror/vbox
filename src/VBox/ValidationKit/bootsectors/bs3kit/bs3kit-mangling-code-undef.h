@@ -31,6 +31,7 @@
 #undef Bs3A20EnableViaKbd
 #undef Bs3A20EnableViaPortA
 #undef Bs3GetModeName
+#undef Bs3GetModeNameShortLower
 #undef Bs3KbdRead
 #undef Bs3KbdWait
 #undef Bs3KbdWrite

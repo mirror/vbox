@@ -55,6 +55,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-A20Disable.asm \
 	bs3-cmn-A20Enable.asm \
 	bs3-cmn-GetModeName.c \
+	bs3-cmn-GetModeNameShortLower.c \
 	bs3-cmn-KbdRead.asm \
 	bs3-cmn-KbdWait.asm \
 	bs3-cmn-KbdWrite.asm \
@@ -264,6 +265,7 @@ bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 #
 VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-Name.asm \
+	bs3-mode-NameShortLower.asm \
 	bs3-mode-SwitchToRM.asm \
 	bs3-mode-SwitchToPE16.asm \
 	bs3-mode-SwitchToPE16_32.asm \
