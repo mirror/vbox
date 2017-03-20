@@ -363,6 +363,8 @@ typedef struct VBOXDISK
     PDMMEDIAGEOMETRY        PCHSGeometry;
     /** BIOS LCHS Geometry. */
     PDMMEDIAGEOMETRY        LCHSGeometry;
+    /** Region list. */
+    PVDREGIONLIST           pRegionList;
 
     /** Cryptographic support
      * @{ */
@@ -534,6 +536,41 @@ static int drvvdSetWritable(PVBOXDISK pThis)
     return rc;
 }
 
+/**
+ * Converts from VD region data form enum to the PDM variant.
+ *
+ * @returns PDM media region data form.
+ * @param   enmDataForm         The VD region data form.
+ */
+static PDMMEDIAREGIONDATAFORM drvvdVDRegionForm2PdmDataForm(VDREGIONDATAFORM enmDataForm)
+{
+    switch (enmDataForm)
+    {
+        #define VDDATAFORM2PDM(tag) case VDREGIONDATAFORM_##tag: return PDMMEDIAREGIONDATAFORM_##tag
+
+        VDDATAFORM2PDM(INVALID);
+        VDDATAFORM2PDM(RAW);
+        VDDATAFORM2PDM(CDDA);
+        VDDATAFORM2PDM(CDDA_PAUSE);
+        VDDATAFORM2PDM(MODE1_2048);
+        VDDATAFORM2PDM(MODE1_2352);
+        VDDATAFORM2PDM(MODE1_0);
+        VDDATAFORM2PDM(XA_2336);
+        VDDATAFORM2PDM(XA_2352);
+        VDDATAFORM2PDM(XA_0);
+        VDDATAFORM2PDM(MODE2_2336);
+        VDDATAFORM2PDM(MODE2_2352);
+        VDDATAFORM2PDM(MODE2_0);
+
+        #undef VDDATAFORM2PDM
+
+        default:
+        {
+            AssertMsgFailed(("Unknown data form %d! forgot to add it to the switch?\n", enmDataForm));
+            return PDMMEDIAREGIONDATAFORM_INVALID;
+        }
+    }
+}
 
 /*********************************************************************************************************************************
 *   Error reporting callback                                                                                                     *
@@ -2450,6 +2487,7 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
     return VINF_SUCCESS;
 }
 
+/** @interface_method_impl{PDMIMEDIA,pfnDiscard} */
 static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges, unsigned cRanges)
 {
     LogFlowFunc(("\n"));
@@ -2463,6 +2501,100 @@ static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges,
         STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
     else
         STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnGetRegionCount} */
+static DECLCALLBACK(uint32_t) drvvdGetRegionCount(PPDMIMEDIA pInterface)
+{
+    LogFlowFunc(("\n"));
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+    uint32_t cRegions = 0;
+
+    if (!pThis->pRegionList)
+    {
+        int rc = VDQueryRegions(pThis->pDisk, VD_LAST_IMAGE, VD_REGION_LIST_F_LOC_SIZE_BLOCKS,
+                                &pThis->pRegionList);
+        if (RT_SUCCESS(rc))
+            cRegions = pThis->pRegionList->cRegions;
+    }
+    else
+        cRegions = pThis->pRegionList->cRegions;
+
+    LogFlowFunc(("returns %u\n", cRegions));
+    return cRegions;
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnQueryRegionProperties} */
+static DECLCALLBACK(int) drvvdQueryRegionProperties(PPDMIMEDIA pInterface, uint32_t uRegion, uint64_t *pu64LbaStart,
+                                                    uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                    PPDMMEDIAREGIONDATAFORM penmDataForm)
+{
+    LogFlowFunc(("\n"));
+    int rc = VINF_SUCCESS;
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+
+    if (   pThis->pRegionList
+        && uRegion < pThis->pRegionList->cRegions)
+    {
+        PCVDREGIONDESC pRegion = &pThis->pRegionList->aRegions[uRegion];
+
+        if (pu64LbaStart)
+            *pu64LbaStart = pRegion->offRegion;
+        if (pcBlocks)
+            *pcBlocks = pRegion->cRegionBlocksOrBytes;
+        if (pcbBlock)
+            *pcbBlock = pRegion->cbBlock;
+        if (penmDataForm)
+            *penmDataForm = drvvdVDRegionForm2PdmDataForm(pRegion->enmDataForm);
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnQueryRegionPropertiesForLba} */
+static DECLCALLBACK(int) drvvdQueryRegionPropertiesForLba(PPDMIMEDIA pInterface, uint64_t u64LbaStart,
+                                                          uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                          PPDMMEDIAREGIONDATAFORM penmDataForm)
+{
+    LogFlowFunc(("\n"));
+    int rc = VINF_SUCCESS;
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+
+    if (!pThis->pRegionList)
+        rc = VDQueryRegions(pThis->pDisk, VD_LAST_IMAGE, VD_REGION_LIST_F_LOC_SIZE_BLOCKS,
+                            &pThis->pRegionList);
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = VERR_NOT_FOUND;
+
+        for (uint32_t i = 0; i < pThis->pRegionList->cRegions; i++)
+        {
+            PCVDREGIONDESC pRegion = &pThis->pRegionList->aRegions[i];
+            if (   pRegion->offRegion <= u64LbaStart
+                && pRegion->offRegion + pRegion->cRegionBlocksOrBytes > u64LbaStart)
+            {
+                uint64_t offRegion = u64LbaStart - pRegion->offRegion;
+
+                if (pcBlocks)
+                    *pcBlocks = pRegion->cRegionBlocksOrBytes - offRegion;
+                if (pcbBlock)
+                    *pcbBlock = pRegion->cbBlock;
+                if (penmDataForm)
+                    *penmDataForm = drvvdVDRegionForm2PdmDataForm(pRegion->enmDataForm);
+
+                rc = VINF_SUCCESS;
+            }
+        }
+    }
+    else
+        rc = VERR_NOT_FOUND;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -4497,6 +4629,12 @@ static void drvvdPowerOffOrDestructOrUnmount(PPDMDRVINS pDrvIns)
         pThis->pBlkCache = NULL;
     }
 
+    if (RT_VALID_PTR(pThis->pRegionList))
+    {
+        VDRegionListFree(pThis->pRegionList);
+        pThis->pRegionList = NULL;
+    }
+
     if (RT_VALID_PTR(pThis->pDisk))
     {
         VDDestroy(pThis->pDisk);
@@ -4751,30 +4889,34 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->pIfSecKey                    = NULL;
     pThis->hIoReqCache                  = NIL_RTMEMCACHE;
     pThis->hIoBufMgr                    = NIL_IOBUFMGR;
+    pThis->pRegionList                  = NULL;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aIoReqAllocBins); i++)
         pThis->aIoReqAllocBins[i].hMtxLstIoReqAlloc = NIL_RTSEMFASTMUTEX;
 
     /* IMedia */
-    pThis->IMedia.pfnRead               = drvvdRead;
-    pThis->IMedia.pfnReadPcBios         = drvvdReadPcBios;
-    pThis->IMedia.pfnWrite              = drvvdWrite;
-    pThis->IMedia.pfnFlush              = drvvdFlush;
-    pThis->IMedia.pfnMerge              = drvvdMerge;
-    pThis->IMedia.pfnSetSecKeyIf        = drvvdSetSecKeyIf;
-    pThis->IMedia.pfnGetSize            = drvvdGetSize;
-    pThis->IMedia.pfnGetSectorSize      = drvvdGetSectorSize;
-    pThis->IMedia.pfnIsReadOnly         = drvvdIsReadOnly;
-    pThis->IMedia.pfnIsNonRotational     = drvvdIsNonRotational;
-    pThis->IMedia.pfnBiosGetPCHSGeometry = drvvdBiosGetPCHSGeometry;
-    pThis->IMedia.pfnBiosSetPCHSGeometry = drvvdBiosSetPCHSGeometry;
-    pThis->IMedia.pfnBiosGetLCHSGeometry = drvvdBiosGetLCHSGeometry;
-    pThis->IMedia.pfnBiosSetLCHSGeometry = drvvdBiosSetLCHSGeometry;
-    pThis->IMedia.pfnBiosIsVisible       = drvvdBiosIsVisible;
-    pThis->IMedia.pfnGetType             = drvvdGetType;
-    pThis->IMedia.pfnGetUuid             = drvvdGetUuid;
-    pThis->IMedia.pfnDiscard             = drvvdDiscard;
-    pThis->IMedia.pfnSendCmd             = NULL;
+    pThis->IMedia.pfnRead                        = drvvdRead;
+    pThis->IMedia.pfnReadPcBios                  = drvvdReadPcBios;
+    pThis->IMedia.pfnWrite                       = drvvdWrite;
+    pThis->IMedia.pfnFlush                       = drvvdFlush;
+    pThis->IMedia.pfnMerge                       = drvvdMerge;
+    pThis->IMedia.pfnSetSecKeyIf                 = drvvdSetSecKeyIf;
+    pThis->IMedia.pfnGetSize                     = drvvdGetSize;
+    pThis->IMedia.pfnGetSectorSize               = drvvdGetSectorSize;
+    pThis->IMedia.pfnIsReadOnly                  = drvvdIsReadOnly;
+    pThis->IMedia.pfnIsNonRotational             = drvvdIsNonRotational;
+    pThis->IMedia.pfnBiosGetPCHSGeometry         = drvvdBiosGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry         = drvvdBiosSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry         = drvvdBiosGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry         = drvvdBiosSetLCHSGeometry;
+    pThis->IMedia.pfnBiosIsVisible               = drvvdBiosIsVisible;
+    pThis->IMedia.pfnGetType                     = drvvdGetType;
+    pThis->IMedia.pfnGetUuid                     = drvvdGetUuid;
+    pThis->IMedia.pfnDiscard                     = drvvdDiscard;
+    pThis->IMedia.pfnSendCmd                     = NULL;
+    pThis->IMedia.pfnGetRegionCount              = drvvdGetRegionCount;
+    pThis->IMedia.pfnQueryRegionProperties       = drvvdQueryRegionProperties;
+    pThis->IMedia.pfnQueryRegionPropertiesForLba = drvvdQueryRegionPropertiesForLba;
 
     /* IMount */
     pThis->IMount.pfnUnmount                = drvvdUnmount;
