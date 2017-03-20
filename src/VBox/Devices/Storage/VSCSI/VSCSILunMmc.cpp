@@ -31,6 +31,10 @@
 
 #include "VSCSIInternal.h"
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+
 /**
  * Different event status types.
  */
@@ -78,6 +82,63 @@ typedef struct VSCSILUNMMC
     volatile uint32_t           u32MediaTrackType;
 } VSCSILUNMMC, *PVSCSILUNMMC;
 
+
+/**
+ * Callback to fill a feature for a GET CONFIGURATION request.
+ *
+ * @returns Number of bytes used for this feature in the buffer.
+ * @param   pbBuf           The buffer to use.
+ * @param   cbBuf           Size of the buffer.
+ */
+typedef DECLCALLBACK(size_t) FNVSCSILUNMMCFILLFEATURE(uint8_t *pbBuf, size_t cbBuf);
+/** Pointer to a fill feature callback. */
+typedef FNVSCSILUNMMCFILLFEATURE *PFNVSCSILUNMMCFILLFEATURE;
+
+/**
+ * VSCSI MMC feature descriptor.
+ */
+typedef struct VSCSILUNMMCFEATURE
+{
+    /** The feature number. */
+    uint16_t                  u16Feat;
+    /** The callback to call for this feature. */
+    PFNVSCSILUNMMCFILLFEATURE pfnFeatureFill;
+} VSCSILUNMMCFEATURE;
+/** Pointer to a VSCSI MMC feature descriptor. */
+typedef VSCSILUNMMCFEATURE *PVSCSILUNMMCFEATURE;
+/** Pointer to a const VSCSI MMC feature descriptor. */
+typedef const VSCSILUNMMCFEATURE *PCVSCSILUNMMCFEATURE;
+
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+RT_C_DECLS_BEGIN
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureListProfiles(uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureCore(uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureMorphing(uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureRemovableMedium(uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureRandomReadable(uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureCDRead(uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeaturePowerManagement(uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureTimeout(uint8_t *pbBuf, size_t cbBuf);
+RT_C_DECLS_END
+
+/**
+ * List of supported MMC features.
+ */
+static const VSCSILUNMMCFEATURE g_aVScsiMmcFeatures[] =
+{
+    { 0x0000, vscsiLunMmcGetConfigurationFillFeatureListProfiles},
+    { 0x0001, vscsiLunMmcGetConfigurationFillFeatureCore},
+    { 0x0002, vscsiLunMmcGetConfigurationFillFeatureMorphing},
+    { 0x0003, vscsiLunMmcGetConfigurationFillFeatureRemovableMedium},
+    { 0x0010, vscsiLunMmcGetConfigurationFillFeatureRandomReadable},
+    { 0x001e, vscsiLunMmcGetConfigurationFillFeatureCDRead},
+    { 0x0100, vscsiLunMmcGetConfigurationFillFeaturePowerManagement},
+    { 0x0105, vscsiLunMmcGetConfigurationFillFeatureTimeout}
+};
 
 /* Fabricate normal TOC information. */
 static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer, bool fMSF)
@@ -263,7 +324,7 @@ static int mmcReadTOCRaw(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint16_
     return vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeatureListProfiles(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureListProfiles(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 3*4)
         return 0;
@@ -281,7 +342,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeatureListProfiles(uint8_t *pbBuf,
     return 3*4; /* Header + 2 profiles entries */
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeatureCore(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureCore(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 12)
         return 0;
@@ -296,7 +357,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeatureCore(uint8_t *pbBuf, size_t 
     return 12;
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeatureMorphing(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureMorphing(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -310,7 +371,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeatureMorphing(uint8_t *pbBuf, siz
     return 8;
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeatureRemovableMedium(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureRemovableMedium(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -325,7 +386,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeatureRemovableMedium(uint8_t *pbB
     return 8;
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeatureRandomReadable(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureRandomReadable(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 12)
         return 0;
@@ -341,7 +402,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeatureRandomReadable(uint8_t *pbBu
     return 12;
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeatureCDRead(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureCDRead(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -355,7 +416,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeatureCDRead(uint8_t *pbBuf, size_
     return 8;
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeaturePowerManagement(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeaturePowerManagement(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 4)
         return 0;
@@ -367,7 +428,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeaturePowerManagement(uint8_t *pbB
     return 4;
 }
 
-static size_t vscsiLunMmcGetConfigurationFillFeatureTimeout(uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(size_t) vscsiLunMmcGetConfigurationFillFeatureTimeout(uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -394,9 +455,11 @@ static int vscsiLunMmcGetConfiguration(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT p
     uint8_t *pbBuf = &aReply[0];
     size_t cbBuf = sizeof(aReply);
     size_t cbCopied = 0;
+    uint16_t u16Sfn = scsiBE2H_U16(&pVScsiReq->pbCDB[2]);
+    uint8_t u8Rt = pVScsiReq->pbCDB[1] & 0x03;
 
-    /* Accept valid request types only, and only starting feature 0. */
-    if ((pVScsiReq->pbCDB[1] & 0x03) == 3 || scsiBE2H_U16(&pVScsiReq->pbCDB[2]) != 0)
+    /* Accept valid request types only. */
+    if (u8Rt == 3)
         return vscsiLunReqSenseErrorSet(&pVScsiLunMmc->Core, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
                                         SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
 
@@ -409,37 +472,31 @@ static int vscsiLunMmcGetConfiguration(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT p
     cbBuf    -= 8;
     pbBuf    += 8;
 
-    cbCopied = vscsiLunMmcGetConfigurationFillFeatureListProfiles(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = vscsiLunMmcGetConfigurationFillFeatureCore(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = vscsiLunMmcGetConfigurationFillFeatureMorphing(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = vscsiLunMmcGetConfigurationFillFeatureRemovableMedium(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = vscsiLunMmcGetConfigurationFillFeatureRandomReadable(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = vscsiLunMmcGetConfigurationFillFeatureCDRead(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = vscsiLunMmcGetConfigurationFillFeaturePowerManagement(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = vscsiLunMmcGetConfigurationFillFeatureTimeout(pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
+    if (u8Rt == 0x2)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_aVScsiMmcFeatures); i++)
+        {
+            if (g_aVScsiMmcFeatures[i].u16Feat == u16Sfn)
+            {
+                cbCopied = g_aVScsiMmcFeatures[i].pfnFeatureFill(pbBuf, cbBuf);
+                cbBuf -= cbCopied;
+                pbBuf += cbCopied;
+                break;
+            }
+        }
+    }
+    else
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_aVScsiMmcFeatures); i++)
+        {
+            if (g_aVScsiMmcFeatures[i].u16Feat > u16Sfn)
+            {
+                cbCopied = g_aVScsiMmcFeatures[i].pfnFeatureFill(pbBuf, cbBuf);
+                cbBuf -= cbCopied;
+                pbBuf += cbCopied;
+            }
+        }
+    }
 
     /* Set data length now. */
     scsiH2BE_U32(&aReply[0], (uint32_t)(sizeof(aReply) - cbBuf));
