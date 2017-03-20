@@ -339,6 +339,97 @@ static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 }
 
 
+/** @interface_method_impl{PDMIMEDIA,pfnGetRegionCount} */
+static DECLCALLBACK(uint32_t) drvHostBaseGetRegionCount(PPDMIMEDIA pInterface)
+{
+    RT_NOREF1(pInterface);
+
+    LogFlowFunc(("\n"));
+    uint32_t cRegions = 1;
+
+    /* For now just return one region for all devices. */
+    /** @todo: Handle CD/DVD passthrough properly. */
+
+    LogFlowFunc(("returns %u\n", cRegions));
+    return cRegions;
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnQueryRegionProperties} */
+static DECLCALLBACK(int) drvHostBaseQueryRegionProperties(PPDMIMEDIA pInterface, uint32_t uRegion, uint64_t *pu64LbaStart,
+                                                          uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                          PPDMMEDIAREGIONDATAFORM penmDataForm)
+{
+    LogFlowFunc(("\n"));
+    int rc = VINF_SUCCESS;
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
+
+    if (uRegion < 1)
+    {
+        uint64_t cbMedia;
+        rc = drvHostBaseGetMediaSizeOs(pThis, &cbMedia);
+        if (RT_SUCCESS(rc))
+        {
+            uint64_t cbBlock = 0;
+
+            if (pThis->enmType == PDMMEDIATYPE_DVD)
+                cbBlock = 2048;
+            else
+                cbBlock = 512; /* Floppy. */
+
+            if (pu64LbaStart)
+                *pu64LbaStart = 0;
+            if (pcBlocks)
+                *pcBlocks = cbMedia / cbBlock;
+            if (pcbBlock)
+                *pcbBlock = cbBlock;
+            if (penmDataForm)
+                *penmDataForm = PDMMEDIAREGIONDATAFORM_RAW;
+        }
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnQueryRegionPropertiesForLba} */
+static DECLCALLBACK(int) drvHostBaseQueryRegionPropertiesForLba(PPDMIMEDIA pInterface, uint64_t u64LbaStart,
+                                                                uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                                PPDMMEDIAREGIONDATAFORM penmDataForm)
+{
+    LogFlowFunc(("\n"));
+    int rc = VINF_SUCCESS;
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
+    uint64_t cbMedia;
+    uint64_t cbBlock = 0;
+
+    if (pThis->enmType == PDMMEDIATYPE_DVD)
+        cbBlock = 2048;
+    else
+        cbBlock = 512; /* Floppy. */
+
+    rc = drvHostBaseGetMediaSizeOs(pThis, &cbMedia);
+    if (   RT_SUCCESS(rc)
+        && u64LbaStart < cbMedia / cbBlock)
+    {
+        rc = VERR_NOT_FOUND;
+
+        if (pcBlocks)
+            *pcBlocks = cbMedia / cbBlock;
+        if (pcbBlock)
+            *pcbBlock = cbBlock;
+        if (penmDataForm)
+            *penmDataForm = PDMMEDIAREGIONDATAFORM_RAW;
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+
 
 /* -=-=-=-=- IMediaEx -=-=-=-=- */
 
@@ -1184,19 +1275,22 @@ DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *
     pDrvIns->IBase.pfnQueryInterface        = drvHostBaseQueryInterface;
 
     /* IMedia. */
-    pThis->IMedia.pfnRead                   = drvHostBaseRead;
-    pThis->IMedia.pfnWrite                  = drvHostBaseWrite;
-    pThis->IMedia.pfnFlush                  = drvHostBaseFlush;
-    pThis->IMedia.pfnIsReadOnly             = drvHostBaseIsReadOnly;
-    pThis->IMedia.pfnIsNonRotational        = drvHostBaseIsNonRotational;
-    pThis->IMedia.pfnGetSize                = drvHostBaseGetSize;
-    pThis->IMedia.pfnGetType                = drvHostBaseGetType;
-    pThis->IMedia.pfnGetUuid                = drvHostBaseGetUuid;
-    pThis->IMedia.pfnBiosGetPCHSGeometry    = drvHostBaseGetPCHSGeometry;
-    pThis->IMedia.pfnBiosSetPCHSGeometry    = drvHostBaseSetPCHSGeometry;
-    pThis->IMedia.pfnBiosGetLCHSGeometry    = drvHostBaseGetLCHSGeometry;
-    pThis->IMedia.pfnBiosSetLCHSGeometry    = drvHostBaseSetLCHSGeometry;
-    pThis->IMedia.pfnBiosIsVisible          = drvHostBaseIsVisible;
+    pThis->IMedia.pfnRead                        = drvHostBaseRead;
+    pThis->IMedia.pfnWrite                       = drvHostBaseWrite;
+    pThis->IMedia.pfnFlush                       = drvHostBaseFlush;
+    pThis->IMedia.pfnIsReadOnly                  = drvHostBaseIsReadOnly;
+    pThis->IMedia.pfnIsNonRotational             = drvHostBaseIsNonRotational;
+    pThis->IMedia.pfnGetSize                     = drvHostBaseGetSize;
+    pThis->IMedia.pfnGetType                     = drvHostBaseGetType;
+    pThis->IMedia.pfnGetUuid                     = drvHostBaseGetUuid;
+    pThis->IMedia.pfnBiosGetPCHSGeometry         = drvHostBaseGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry         = drvHostBaseSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry         = drvHostBaseGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry         = drvHostBaseSetLCHSGeometry;
+    pThis->IMedia.pfnBiosIsVisible               = drvHostBaseIsVisible;
+    pThis->IMedia.pfnGetRegionCount              = drvHostBaseGetRegionCount;
+    pThis->IMedia.pfnQueryRegionProperties       = drvHostBaseQueryRegionProperties;
+    pThis->IMedia.pfnQueryRegionPropertiesForLba = drvHostBaseQueryRegionPropertiesForLba;
 
     /* IMediaEx */
     pThis->IMediaEx.pfnQueryFeatures            = drvHostBaseQueryFeatures;
