@@ -1202,9 +1202,12 @@ RTEXITCODE handleExtPack(HandlerArg *a)
                     return RTEXITCODE_SUCCESS;
                 }
                 if (pszDigest)
+                {
                     RTPrintf("License accepted. For batch installaltion add \n"
                              "  --accept-license=%s\n"
                              "to the VBoxManage command line.\n\n", pszDigest);
+                    RTStrFree(pszDigest);
+                }
             }
         }
         ComPtr<IProgress> ptrProgress;
