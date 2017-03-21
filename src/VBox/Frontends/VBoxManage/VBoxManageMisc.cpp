@@ -37,6 +37,7 @@
 #include <iprt/env.h>
 #include <VBox/err.h>
 #include <iprt/file.h>
+#include <iprt/sha.h>
 #include <iprt/initterm.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -1126,9 +1127,11 @@ RTEXITCODE handleExtPack(HandlerArg *a)
 
         static const RTGETOPTDEF s_aInstallOptions[] =
         {
-            { "--replace",  'r', RTGETOPT_REQ_NOTHING },
+            { "--replace",        'r', RTGETOPT_REQ_NOTHING },
+            { "--accept-license", 'a', RTGETOPT_REQ_STRING },
         };
 
+        RTCList<RTCString> lstLicenseHashes;
         RTGetOptInit(&GetState, a->argc, a->argv, s_aInstallOptions, RT_ELEMENTS(s_aInstallOptions), 1, 0 /*fFlags*/);
         while ((ch = RTGetOpt(&GetState, &ValueUnion)))
         {
@@ -1136,6 +1139,10 @@ RTEXITCODE handleExtPack(HandlerArg *a)
             {
                 case 'r':
                     fReplace = true;
+                    break;
+
+                case 'a':
+                    lstLicenseHashes.append(ValueUnion.psz);
                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
@@ -1171,14 +1178,33 @@ RTEXITCODE handleExtPack(HandlerArg *a)
                                            Bstr("").raw() /* PreferredLanguage */,
                                            Bstr("txt").raw() /* Format */,
                                            bstrLicense.asOutParam()), RTEXITCODE_FAILURE);
-            RTPrintf("%ls\n", bstrLicense.raw());
-            RTPrintf("Do you agree to these license terms and conditions (y/n)? " );
-            ch = RTStrmGetCh(g_pStdIn);
-            RTPrintf("\n");
-            if (ch != 'y' && ch != 'Y')
+            Utf8Str strLicense(bstrLicense);
+            uint8_t abHash[RTSHA256_HASH_SIZE];
+            RTSha256(strLicense.c_str(), strLicense.length(), abHash);
+            char *pszDigest = NULL;
+            vrc = RTStrAllocEx(&pszDigest, RTSHA256_DIGEST_LEN + 1);
+            if (RT_SUCCESS(vrc))
+                RTSha256ToString(abHash, pszDigest, RTSHA256_DIGEST_LEN + 1);
+            if (   pszDigest
+                && lstLicenseHashes.contains(pszDigest))
+                RTPrintf("License accepted.\n");
+            else
             {
-                RTPrintf("Installation of \"%ls\" aborted.\n", bstrName.raw());
-                return RTEXITCODE_SUCCESS;
+                RTPrintf("%ls\n", bstrLicense.raw());
+                RTPrintf("Do you agree to these license terms and conditions (y/n)? " );
+                ch = RTStrmGetCh(g_pStdIn);
+                RTPrintf("\n");
+                if (ch != 'y' && ch != 'Y')
+                {
+                    RTPrintf("Installation of \"%ls\" aborted.\n", bstrName.raw());
+                    if (pszDigest)
+                        RTStrFree(pszDigest);
+                    return RTEXITCODE_SUCCESS;
+                }
+                if (pszDigest)
+                    RTPrintf("License accepted. For batch installaltion add \n"
+                             "  --accept-license=%s\n"
+                             "to the VBoxManage command line.\n\n", pszDigest);
             }
         }
         ComPtr<IProgress> ptrProgress;
