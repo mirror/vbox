@@ -39,15 +39,13 @@ BS3_BEGIN_RMTEXT16
 BS3_BEGIN_TEXT16_NEARSTUBS
 BS3_PROC_BEGIN_MODE Bs3TestDoModesByOne, BS3_PBC_NEAR
         pop     ax
- %if TMPL_MODE == BS3_MODE_RM
         push    cs
         push    ax
+ %if TMPL_MODE == BS3_MODE_RM
         extern TMPL_FAR_NM(Bs3TestDoModesByOne):wrt BS3GROUPRMTEXT16
         jmp far TMPL_FAR_NM(Bs3TestDoModesByOne)
  %else
-        push    cs
-        push    ax
-        extern TMPL_FAR_NM(Bs3TestDoModesByOne):wrt CGROUP16
+        extern TMPL_NM(Bs3TestDoModesByOne):wrt CGROUP16
         jmp     TMPL_NM(Bs3TestDoModesByOne)
  %endif
 BS3_PROC_END_MODE   Bs3TestDoModesByOne
