@@ -35,15 +35,15 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-BS3TESTMODE_PROTOTYPES_CMN(Bs3Cg1Worker);
+BS3TESTMODEBYMAX_PROTOTYPES_CMN(Bs3Cg1Worker);
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static const BS3TESTMODEENTRY g_aModeTest[] =
+static const BS3TESTMODEBYMAXENTRY g_aModeTest[] =
 {
-    BS3TESTMODEENTRY_CMN(NULL, Bs3Cg1Worker),
+    BS3TESTMODEBYMAXENTRY_CMN(NULL, Bs3Cg1Worker),
 };
 
 
@@ -52,7 +52,7 @@ BS3_DECL(void) Main_rm()
     Bs3InitAll_rm();
     Bs3TestInit("bs3-cpu-generated-1");
 
-    Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
+    Bs3TestDoModesByMax_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
 
     Bs3TestTerm();
 }
