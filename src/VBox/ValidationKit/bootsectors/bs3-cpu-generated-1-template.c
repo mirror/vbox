@@ -1770,25 +1770,39 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
 }
 
 
-BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
+/**
+ * Destroys the state, freeing all allocations and such.
+ *
+ * @param   pThis               The state.
+ */
+static void Bs3Cg1Destroy(PBS3CG1STATE pThis)
 {
-    BS3CG1STATE                 ThisIsIt;
-    PBS3CG1STATE                pThis = &ThisIsIt;
-    unsigned const              iFirstRing = BS3_MODE_IS_V86(bMode)       ? 3 : 0;
-    uint8_t const               cRings     = BS3_MODE_IS_RM_OR_V86(bMode) ? 1 : 4;
-    uint8_t                     iRing;
-    unsigned                    iInstr;
-    BS3MEMKIND const            enmMemKind = BS3_MODE_IS_RM_OR_V86(bMode) ? BS3MEMKIND_REAL
-                                           : !BS3_MODE_IS_64BIT_CODE(bMode) ? BS3MEMKIND_TILED : BS3MEMKIND_FLAT32;
+    if (BS3_MODE_IS_PAGED(pThis->bMode))
+    {
+        Bs3MemGuardedTestPageFree(pThis->pbCodePg);
+        Bs3MemGuardedTestPageFree(pThis->pbDataPg);
+    }
+    else
+    {
+        Bs3MemFree(pThis->pbCodePg, X86_PAGE_SIZE);
+        Bs3MemFree(pThis->pbDataPg, X86_PAGE_SIZE);
+    }
+}
 
-#if 0
-    if (bMode != BS3_MODE_PP16_V86)
-        return BS3TESTDOMODE_SKIPPED;
-#endif
 
-    /*
-     * Initalize the state.
-     */
+/**
+ * Initializes the state.
+ *
+ * @returns Success indicator (true/false)
+ * @param   pThis               The state.
+ * @param   bMode               The mode being tested.
+ */
+static bool Bs3Cg1Init(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, uint8_t iFirstRing)
+{
+    BS3MEMKIND const    enmMemKind = BS3_MODE_IS_RM_OR_V86(bMode) ? BS3MEMKIND_REAL
+                                   : !BS3_MODE_IS_64BIT_CODE(bMode) ? BS3MEMKIND_TILED : BS3MEMKIND_FLAT32;
+    unsigned            iRing;
+
     Bs3MemSet(pThis, 0, sizeof(*pThis));
 
     pThis->bMode              = bMode;
@@ -1886,6 +1900,30 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
             Bs3RegCtxConvertToRingX(&pThis->aInitialCtxs[iRing], iRing);
         }
     }
+
+    return true;
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
+{
+    BS3CG1STATE                 ThisIsIt;
+    PBS3CG1STATE                pThis = &ThisIsIt;
+    unsigned const              iFirstRing = BS3_MODE_IS_V86(bMode)       ? 3 : 0;
+    uint8_t const               cRings     = BS3_MODE_IS_RM_OR_V86(bMode) ? 1 : 4;
+    uint8_t                     iRing;
+    unsigned                    iInstr;
+
+#if 0
+    if (bMode != BS3_MODE_PP16_V86)
+        return BS3TESTDOMODE_SKIPPED;
+#endif
+
+    /*
+     * Initalize the state.
+     */
+    if (!Bs3Cg1Init(pThis, bMode, cRings, iFirstRing))
+        return 1;
 
     /*
      * Test the instructions.
@@ -2042,18 +2080,9 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     /*
      * Clean up.
      */
-    if (BS3_MODE_IS_PAGED(bMode))
-    {
-        Bs3MemGuardedTestPageFree(pThis->pbCodePg);
-        Bs3MemGuardedTestPageFree(pThis->pbDataPg);
-    }
-    else
-    {
-        Bs3MemFree(pThis->pbCodePg, X86_PAGE_SIZE);
-        Bs3MemFree(pThis->pbDataPg, X86_PAGE_SIZE);
-    }
-
+    Bs3Cg1Destroy(pThis);
     Bs3TestSubDone();
+
 #if 0
     if (bMode >= BS3_MODE_PE16_32)
     {
