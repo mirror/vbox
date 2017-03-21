@@ -45,7 +45,7 @@ BS3_PROC_BEGIN_MODE Bs3TestDoModes, BS3_PBC_NEAR
         extern TMPL_FAR_NM(Bs3TestDoModes):wrt BS3GROUPRMTEXT16
         jmp far TMPL_FAR_NM(Bs3TestDoModes)
  %else
-        extern TMPL_NM(Bs3TestDoModes):wrt CGROUP16
+        extern TMPL_FAR_NM(Bs3TestDoModes):wrt CGROUP16
         jmp     TMPL_NM(Bs3TestDoModes)
  %endif
 BS3_PROC_END_MODE   Bs3TestDoModes

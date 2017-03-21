@@ -45,7 +45,7 @@ BS3_PROC_BEGIN_MODE Bs3TestDoModesByMax, BS3_PBC_NEAR
         extern TMPL_FAR_NM(Bs3TestDoModesByMax):wrt BS3GROUPRMTEXT16
         jmp far TMPL_FAR_NM(Bs3TestDoModesByMax)
  %else
-        extern TMPL_NM(Bs3TestDoModesByMax):wrt CGROUP16
+        extern TMPL_FAR_NM(Bs3TestDoModesByMax):wrt CGROUP16
         jmp     TMPL_NM(Bs3TestDoModesByMax)
  %endif
 BS3_PROC_END_MODE   Bs3TestDoModesByMax
