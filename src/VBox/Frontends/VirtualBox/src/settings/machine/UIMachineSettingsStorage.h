@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsStorage_h__
-#define __UIMachineSettingsStorage_h__
+#ifndef ___UIMachineSettingsStorage_h___
+#define ___UIMachineSettingsStorage_h___
 
 /* Qt includes: */
 #ifdef VBOX_WS_MAC
@@ -587,10 +587,11 @@ private:
     bool mDisableStaticControls;
 };
 
-/* Machine settings / Storage page / Storage attachment data: */
+
+/** Machine settings: Storage Attachment data structure. */
 struct UIDataSettingsMachineStorageAttachment
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineStorageAttachment()
         : m_attachmentType(KDeviceType_Null)
         , m_iAttachmentPort(-1)
@@ -601,78 +602,107 @@ struct UIDataSettingsMachineStorageAttachment
         , m_fAttachmentNonRotational(false)
         , m_fAttachmentHotPluggable(false)
     {}
-    /* Functions: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineStorageAttachment &other) const
     {
-        return (m_attachmentType == other.m_attachmentType) &&
-               (m_iAttachmentPort == other.m_iAttachmentPort) &&
-               (m_iAttachmentDevice == other.m_iAttachmentDevice) &&
-               (m_strAttachmentMediumId == other.m_strAttachmentMediumId) &&
-               (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough) &&
-               (m_fAttachmentTempEject == other.m_fAttachmentTempEject) &&
-               (m_fAttachmentNonRotational == other.m_fAttachmentNonRotational) &&
-               (m_fAttachmentHotPluggable == other.m_fAttachmentHotPluggable);
+        return true
+               && (m_attachmentType == other.m_attachmentType)
+               && (m_iAttachmentPort == other.m_iAttachmentPort)
+               && (m_iAttachmentDevice == other.m_iAttachmentDevice)
+               && (m_strAttachmentMediumId == other.m_strAttachmentMediumId)
+               && (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough)
+               && (m_fAttachmentTempEject == other.m_fAttachmentTempEject)
+               && (m_fAttachmentNonRotational == other.m_fAttachmentNonRotational)
+               && (m_fAttachmentHotPluggable == other.m_fAttachmentHotPluggable)
+               ;
     }
-    /* Operators: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineStorageAttachment &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineStorageAttachment &other) const { return !equal(other); }
-    /* Variables: */
-    KDeviceType m_attachmentType;
-    LONG m_iAttachmentPort;
-    LONG m_iAttachmentDevice;
-    QString m_strAttachmentMediumId;
-    bool m_fAttachmentPassthrough;
-    bool m_fAttachmentTempEject;
-    bool m_fAttachmentNonRotational;
-    bool m_fAttachmentHotPluggable;
+
+    /** Holds the attachment type. */
+    KDeviceType  m_attachmentType;
+    /** Holds the attachment port. */
+    LONG         m_iAttachmentPort;
+    /** Holds the attachment device. */
+    LONG         m_iAttachmentDevice;
+    /** Holds the attachment medium ID. */
+    QString      m_strAttachmentMediumId;
+    /** Holds whether the attachment being passed through. */
+    bool         m_fAttachmentPassthrough;
+    /** Holds whether the attachment being temporarily eject. */
+    bool         m_fAttachmentTempEject;
+    /** Holds whether the attachment is solid-state. */
+    bool         m_fAttachmentNonRotational;
+    /** Holds whether the attachment is hot-pluggable. */
+    bool         m_fAttachmentHotPluggable;
 };
 typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UISettingsCacheMachineStorageAttachment;
 
-/* Machine settings / Storage page / Storage controller data: */
+
+/** Machine settings: Storage Controller data structure. */
 struct UIDataSettingsMachineStorageController
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineStorageController()
         : m_strControllerName(QString())
         , m_controllerBus(KStorageBus_Null)
         , m_controllerType(KStorageControllerType_Null)
         , m_uPortCount(0)
-        , m_fUseHostIOCache(false) {}
-    /* Functions: */
+        , m_fUseHostIOCache(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineStorageController &other) const
     {
-        return (m_strControllerName == other.m_strControllerName) &&
-               (m_controllerBus == other.m_controllerBus) &&
-               (m_controllerType == other.m_controllerType) &&
-               (m_uPortCount == other.m_uPortCount) &&
-               (m_fUseHostIOCache == other.m_fUseHostIOCache);
+        return true
+               && (m_strControllerName == other.m_strControllerName)
+               && (m_controllerBus == other.m_controllerBus)
+               && (m_controllerType == other.m_controllerType)
+               && (m_uPortCount == other.m_uPortCount)
+               && (m_fUseHostIOCache == other.m_fUseHostIOCache)
+               ;
     }
-    /* Operators: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineStorageController &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineStorageController &other) const { return !equal(other); }
-    /* Variables: */
-    QString m_strControllerName;
-    KStorageBus m_controllerBus;
-    KStorageControllerType m_controllerType;
-    uint m_uPortCount;
-    bool m_fUseHostIOCache;
+
+    /** Holds the controller name. */
+    QString                 m_strControllerName;
+    /** Holds the controller bus. */
+    KStorageBus             m_controllerBus;
+    /** Holds the controller type. */
+    KStorageControllerType  m_controllerType;
+    /** Holds the controller port count. */
+    uint                    m_uPortCount;
+    /** Holds whether the controller uses host IO cache. */
+    bool                    m_fUseHostIOCache;
 };
 typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UISettingsCacheMachineStorageAttachment> UISettingsCacheMachineStorageController;
 
-/* Machine settings / Storage page / Storage data: */
+
+/** Machine settings: Storage page data structure. */
 struct UIDataSettingsMachineStorage
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineStorage() {}
-    /* Operators: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineStorage& /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineStorage& /* other */) const { return false; }
 };
 typedef UISettingsCachePool<UIDataSettingsMachineStorage, UISettingsCacheMachineStorageController> UISettingsCacheMachineStorage;
 
-/* Machine settings / Storage page: */
+
+/** Machine settings: Storage page. */
 class UIMachineSettingsStorage : public UISettingsPageMachine,
-                         public Ui::UIMachineSettingsStorage
+                                 public Ui::UIMachineSettingsStorage
 {
     Q_OBJECT;
 
@@ -830,5 +860,5 @@ private:
     UISettingsCacheMachineStorage m_cache;
 };
 
-#endif // __UIMachineSettingsStorage_h__
+#endif /* !___UIMachineSettingsStorage_h___ */
 

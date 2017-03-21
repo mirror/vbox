@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,41 +15,52 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsAudio_h__
-#define __UIMachineSettingsAudio_h__
+#ifndef ___UIMachineSettingsAudio_h___
+#define ___UIMachineSettingsAudio_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsAudio.gen.h"
 
-/* Machine settings / Audio page / Data: */
+
+/** Machine settings: Audio page data structure. */
 struct UIDataSettingsMachineAudio
 {
-    /* Constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineAudio()
         : m_fAudioEnabled(false)
         , m_audioDriverType(KAudioDriverType_Null)
-        , m_audioControllerType(KAudioControllerType_AC97) {}
+        , m_audioControllerType(KAudioControllerType_AC97)
+    {}
 
-    /* Helpers: Compare functions/operators: */
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineAudio &other) const
     {
-        return (m_fAudioEnabled == other.m_fAudioEnabled) &&
-               (m_audioDriverType == other.m_audioDriverType) &&
-               (m_audioControllerType == other.m_audioControllerType);
+        return true
+               && (m_fAudioEnabled == other.m_fAudioEnabled)
+               && (m_audioDriverType == other.m_audioDriverType)
+               && (m_audioControllerType == other.m_audioControllerType)
+               ;
     }
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineAudio &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineAudio &other) const { return !equal(other); }
 
-    /* Variables: */
-    bool m_fAudioEnabled;
-    KAudioDriverType m_audioDriverType;
-    KAudioControllerType m_audioControllerType;
+    /** Holds whether the audio is enabled. */
+    bool                  m_fAudioEnabled;
+    /** Holds the audio driver type. */
+    KAudioDriverType      m_audioDriverType;
+    /** Holds the audio controller type. */
+    KAudioControllerType  m_audioControllerType;
 };
 typedef UISettingsCache<UIDataSettingsMachineAudio> UISettingsCacheMachineAudio;
 
-/* Machine settings / Audio page: */
-class UIMachineSettingsAudio : public UISettingsPageMachine, public Ui::UIMachineSettingsAudio
+
+/** Machine settings: Audio page. */
+class UIMachineSettingsAudio : public UISettingsPageMachine,
+                               public Ui::UIMachineSettingsAudio
 {
     Q_OBJECT;
 
@@ -96,5 +107,5 @@ private:
     UISettingsCacheMachineAudio m_cache;
 };
 
-#endif // __UIMachineSettingsAudio_h__
+#endif /* !___UIMachineSettingsAudio_h___ */
 

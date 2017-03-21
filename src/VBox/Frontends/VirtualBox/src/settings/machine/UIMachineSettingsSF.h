@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsSF_h__
-#define __UIMachineSettingsSF_h__
+#ifndef ___UIMachineSettingsSF_h___
+#define ___UIMachineSettingsSF_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
@@ -32,50 +32,67 @@ enum UISharedFolderType { MachineType, ConsoleType };
 typedef QPair <QString, UISharedFolderType> SFolderName;
 typedef QList <SFolderName> SFoldersNameList;
 
-/* Machine settings / Shared Folders page / Shared Folder data: */
+
+/** Machine settings: Shared Folder data structure. */
 struct UIDataSettingsSharedFolder
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsSharedFolder()
         : m_type(MachineType)
         , m_strName(QString())
         , m_strHostPath(QString())
         , m_fAutoMount(false)
-        , m_fWritable(false) {}
-    /* Functions: */
+        , m_fWritable(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsSharedFolder &other) const
     {
-        return (m_type == other.m_type) &&
-               (m_strName == other.m_strName) &&
-               (m_strHostPath == other.m_strHostPath) &&
-               (m_fAutoMount == other.m_fAutoMount) &&
-               (m_fWritable == other.m_fWritable);
+        return true
+               && (m_type == other.m_type)
+               && (m_strName == other.m_strName)
+               && (m_strHostPath == other.m_strHostPath)
+               && (m_fAutoMount == other.m_fAutoMount)
+               && (m_fWritable == other.m_fWritable)
+               ;
     }
-    /* Operators: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsSharedFolder &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsSharedFolder &other) const { return !equal(other); }
-    /* Variables: */
-    UISharedFolderType m_type;
-    QString m_strName;
-    QString m_strHostPath;
-    bool m_fAutoMount;
-    bool m_fWritable;
+
+    /** Holds the shared folder type. */
+    UISharedFolderType  m_type;
+    /** Holds the shared folder name. */
+    QString             m_strName;
+    /** Holds the shared folder path. */
+    QString             m_strHostPath;
+    /** Holds whether the shared folder should be auto-mounted at startup. */
+    bool                m_fAutoMount;
+    /** Holds whether the shared folder should be writeable. */
+    bool                m_fWritable;
 };
 typedef UISettingsCache<UIDataSettingsSharedFolder> UISettingsCacheSharedFolder;
 
-/* Machine settings / Shared Folders page / Shared Folders data: */
+
+/** Machine settings: Shared Folders page data structure. */
 struct UIDataSettingsSharedFolders
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsSharedFolders() {}
-    /* Operators: */
-    bool operator==(const UIDataSettingsSharedFolders& /* other */) const { return true; }
-    bool operator!=(const UIDataSettingsSharedFolders& /* other */) const { return false; }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsSharedFolders & /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsSharedFolders & /* other */) const { return false; }
 };
 typedef UISettingsCachePool<UIDataSettingsSharedFolders, UISettingsCacheSharedFolder> UISettingsCacheSharedFolders;
 
+
+/** Machine settings: Shared Folders page. */
 class UIMachineSettingsSF : public UISettingsPageMachine,
-                         public Ui::UIMachineSettingsSF
+                            public Ui::UIMachineSettingsSF
 {
     Q_OBJECT;
 
@@ -156,5 +173,5 @@ private:
     UISettingsCacheSharedFolders m_cache;
 };
 
-#endif // __UIMachineSettingsSF_h__
+#endif /* !___UIMachineSettingsSF_h___ */
 

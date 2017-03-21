@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,10 +25,11 @@
 /* Forward declarations: */
 class UIActionPool;
 
-/* Machine settings / User Interface page / Data: */
+
+/** Machine settings: User Interface page data structure. */
 struct UIDataSettingsMachineInterface
 {
-    /* Constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineInterface()
         : m_fStatusBarEnabled(false)
 #ifndef VBOX_WS_MAC
@@ -53,10 +54,11 @@ struct UIDataSettingsMachineInterface
 #endif /* !VBOX_WS_MAC */
     {}
 
-    /* Functions: */
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineInterface &other) const
     {
-        return    (m_fStatusBarEnabled == other.m_fStatusBarEnabled)
+        return true
+               && (m_fStatusBarEnabled == other.m_fStatusBarEnabled)
                && (m_statusBarRestrictions == other.m_statusBarRestrictions)
                && (m_statusBarOrder == other.m_statusBarOrder)
 #ifndef VBOX_WS_MAC
@@ -82,38 +84,56 @@ struct UIDataSettingsMachineInterface
                ;
     }
 
-    /* Operators: */
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineInterface &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineInterface &other) const { return !equal(other); }
 
-    /* Variables: */
-    bool m_fStatusBarEnabled;
-    QList<IndicatorType> m_statusBarRestrictions;
-    QList<IndicatorType> m_statusBarOrder;
+    /** Holds whether the status-bar is enabled. */
+    bool                  m_fStatusBarEnabled;
+    /** Holds the status-bar indicator restrictions. */
+    QList<IndicatorType>  m_statusBarRestrictions;
+    /** Holds the status-bar indicator order. */
+    QList<IndicatorType>  m_statusBarOrder;
+
 #ifndef VBOX_WS_MAC
-    bool m_fMenuBarEnabled;
+    /** Holds whether the menu-bar is enabled. */
+    bool                                                m_fMenuBarEnabled;
 #endif /* !VBOX_WS_MAC */
-    UIExtraDataMetaDefs::MenuType m_restrictionsOfMenuBar;
-    UIExtraDataMetaDefs::MenuApplicationActionType m_restrictionsOfMenuApplication;
-    UIExtraDataMetaDefs::RuntimeMenuMachineActionType m_restrictionsOfMenuMachine;
-    UIExtraDataMetaDefs::RuntimeMenuViewActionType m_restrictionsOfMenuView;
-    UIExtraDataMetaDefs::RuntimeMenuInputActionType m_restrictionsOfMenuInput;
-    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType m_restrictionsOfMenuDevices;
+    /** Holds the menu-bar menu restrictions. */
+    UIExtraDataMetaDefs::MenuType                       m_restrictionsOfMenuBar;
+    /** Holds the Application menu restrictions. */
+    UIExtraDataMetaDefs::MenuApplicationActionType      m_restrictionsOfMenuApplication;
+    /** Holds the Machine menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuMachineActionType   m_restrictionsOfMenuMachine;
+    /** Holds the View menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuViewActionType      m_restrictionsOfMenuView;
+    /** Holds the Input menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuInputActionType     m_restrictionsOfMenuInput;
+    /** Holds the Devices menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType   m_restrictionsOfMenuDevices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType m_restrictionsOfMenuDebug;
+    /** Holds the Debug menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType  m_restrictionsOfMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef VBOX_WS_MAC
-    UIExtraDataMetaDefs::MenuWindowActionType m_restrictionsOfMenuWindow;
+    /** Holds the Window menu restrictions. */
+    UIExtraDataMetaDefs::MenuWindowActionType           m_restrictionsOfMenuWindow;
 #endif /* VBOX_WS_MAC */
-    UIExtraDataMetaDefs::MenuHelpActionType m_restrictionsOfMenuHelp;
+    /** Holds the Help menu restrictions. */
+    UIExtraDataMetaDefs::MenuHelpActionType             m_restrictionsOfMenuHelp;
+
 #ifndef VBOX_WS_MAC
-    bool m_fShowMiniToolBar;
-    bool m_fMiniToolBarAtTop;
+    /** Holds whether the mini-toolbar is enabled. */
+    bool  m_fShowMiniToolBar;
+    /** Holds whether the mini-toolbar should be aligned at top of screen. */
+    bool  m_fMiniToolBarAtTop;
 #endif /* !VBOX_WS_MAC */
 };
 typedef UISettingsCache<UIDataSettingsMachineInterface> UISettingsCacheMachineInterface;
 
-/* Machine settings / User Interface page: */
+
+/** Machine settings: User Interface page. */
 class UIMachineSettingsInterface : public UISettingsPageMachine,
                                    public Ui::UIMachineSettingsInterface
 {
@@ -171,4 +191,5 @@ private:
     UIActionPool *m_pActionPool;
 };
 
-#endif // ___UIMachineSettingsInterface_h___
+#endif /* !___UIMachineSettingsInterface_h___ */
+

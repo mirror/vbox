@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,10 +23,11 @@
 #include "UIMachineSettingsGeneral.gen.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
 
-/** Machine settings: General page: Data structure. */
+
+/** Machine settings: General page data structure. */
 struct UIDataSettingsMachineGeneral
 {
-    /** Constructor. */
+    /** Constructs data. */
     UIDataSettingsMachineGeneral()
         : m_strName(QString())
         , m_strGuestOsTypeId(QString())
@@ -42,59 +43,62 @@ struct UIDataSettingsMachineGeneral
         , m_strEncryptionPassword(QString())
     {}
 
-    /** Returns whether passed @a other is equal to this. */
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineGeneral &other) const
     {
-        return (m_strName == other.m_strName) &&
-               (m_strGuestOsTypeId == other.m_strGuestOsTypeId) &&
-               (m_strSnapshotsFolder == other.m_strSnapshotsFolder) &&
-               (m_strSnapshotsHomeDir == other.m_strSnapshotsHomeDir) &&
-               (m_clipboardMode == other.m_clipboardMode) &&
-               (m_dndMode == other.m_dndMode) &&
-               (m_strDescription == other.m_strDescription) &&
-               (m_fEncryptionEnabled == other.m_fEncryptionEnabled) &&
-               (m_fEncryptionCipherChanged == other.m_fEncryptionCipherChanged) &&
-               (m_fEncryptionPasswordChanged == other.m_fEncryptionPasswordChanged);
+        return true
+               && (m_strName == other.m_strName)
+               && (m_strGuestOsTypeId == other.m_strGuestOsTypeId)
+               && (m_strSnapshotsFolder == other.m_strSnapshotsFolder)
+               && (m_strSnapshotsHomeDir == other.m_strSnapshotsHomeDir)
+               && (m_clipboardMode == other.m_clipboardMode)
+               && (m_dndMode == other.m_dndMode)
+               && (m_strDescription == other.m_strDescription)
+               && (m_fEncryptionEnabled == other.m_fEncryptionEnabled)
+               && (m_fEncryptionCipherChanged == other.m_fEncryptionCipherChanged)
+               && (m_fEncryptionPasswordChanged == other.m_fEncryptionPasswordChanged)
+               ;
     }
 
-    /** Operator== implementation which returns whether passed @a other is equal to this. */
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineGeneral &other) const { return equal(other); }
-    /** Operator!= implementation which returns whether passed @a other is differs from this. */
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineGeneral &other) const { return !equal(other); }
 
     /** Holds the VM name. */
-    QString m_strName;
+    QString  m_strName;
     /** Holds the VM OS type ID. */
-    QString m_strGuestOsTypeId;
+    QString  m_strGuestOsTypeId;
 
     /** Holds the VM snapshot folder. */
-    QString m_strSnapshotsFolder;
+    QString         m_strSnapshotsFolder;
     /** Holds the default VM snapshot folder. */
-    QString m_strSnapshotsHomeDir;
+    QString         m_strSnapshotsHomeDir;
     /** Holds the VM shared clipboard mode. */
-    KClipboardMode m_clipboardMode;
+    KClipboardMode  m_clipboardMode;
     /** Holds the VM drag&drop mode. */
-    KDnDMode m_dndMode;
+    KDnDMode        m_dndMode;
 
     /** Holds the VM description. */
-    QString m_strDescription;
+    QString  m_strDescription;
 
     /** Holds whether the encryption is enabled. */
-    bool m_fEncryptionEnabled;
+    bool                   m_fEncryptionEnabled;
     /** Holds whether the encryption cipher was changed. */
-    bool m_fEncryptionCipherChanged;
+    bool                   m_fEncryptionCipherChanged;
     /** Holds whether the encryption password was changed. */
-    bool m_fEncryptionPasswordChanged;
+    bool                   m_fEncryptionPasswordChanged;
     /** Holds the encryption cipher index. */
-    int m_iEncryptionCipherIndex;
+    int                    m_iEncryptionCipherIndex;
     /** Holds the encryption password. */
-    QString m_strEncryptionPassword;
+    QString                m_strEncryptionPassword;
     /** Holds the encrypted medium ids. */
-    EncryptedMediumMap m_encryptedMediums;
+    EncryptedMediumMap     m_encryptedMediums;
     /** Holds the encryption passwords. */
-    EncryptionPasswordMap m_encryptionPasswords;
+    EncryptionPasswordMap  m_encryptionPasswords;
 };
 typedef UISettingsCache<UIDataSettingsMachineGeneral> UISettingsCacheMachineGeneral;
+
 
 /** Machine settings: General page. */
 class UIMachineSettingsGeneral : public UISettingsPageMachine,
@@ -191,3 +195,4 @@ private:
 };
 
 #endif /* !___UIMachineSettingsGeneral_h___ */
+

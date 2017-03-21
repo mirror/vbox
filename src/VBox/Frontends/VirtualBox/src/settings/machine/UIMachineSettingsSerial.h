@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,21 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsSerial_h__
-#define __UIMachineSettingsSerial_h__
+#ifndef ___UIMachineSettingsSerial_h___
+#define ___UIMachineSettingsSerial_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsSerial.gen.h"
 
-/* Forward declarations */
+/* Forward declarations: */
 class UIMachineSettingsSerialPage;
 class QITabWidget;
 
-/* Machine settings / Serial page / Port data: */
+
+/** Machine settings: Serial Port tab data structure. */
 struct UIDataSettingsMachineSerialPort
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineSerialPort()
         : m_iSlot(-1)
         , m_fPortEnabled(false)
@@ -37,45 +38,63 @@ struct UIDataSettingsMachineSerialPort
         , m_uIOBase(0)
         , m_hostMode(KPortMode_Disconnected)
         , m_fServer(false)
-        , m_strPath(QString()) {}
-    /* Functions: */
+        , m_strPath(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineSerialPort &other) const
     {
-        return (m_iSlot == other.m_iSlot) &&
-               (m_fPortEnabled == other.m_fPortEnabled) &&
-               (m_uIRQ == other.m_uIRQ) &&
-               (m_uIOBase == other.m_uIOBase) &&
-               (m_hostMode == other.m_hostMode) &&
-               (m_fServer == other.m_fServer) &&
-               (m_strPath == other.m_strPath);
+        return true
+               && (m_iSlot == other.m_iSlot)
+               && (m_fPortEnabled == other.m_fPortEnabled)
+               && (m_uIRQ == other.m_uIRQ)
+               && (m_uIOBase == other.m_uIOBase)
+               && (m_hostMode == other.m_hostMode)
+               && (m_fServer == other.m_fServer)
+               && (m_strPath == other.m_strPath)
+               ;
     }
-    /* Operators: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineSerialPort &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineSerialPort &other) const { return !equal(other); }
-    /* Variables: */
-    int m_iSlot;
-    bool m_fPortEnabled;
-    ulong m_uIRQ;
-    ulong m_uIOBase;
-    KPortMode m_hostMode;
-    bool m_fServer;
-    QString m_strPath;
+
+    /** Holds the serial port slot number. */
+    int        m_iSlot;
+    /** Holds whether the serial port is enabled. */
+    bool       m_fPortEnabled;
+    /** Holds the serial port IRQ. */
+    ulong      m_uIRQ;
+    /** Holds the serial port IO base. */
+    ulong      m_uIOBase;
+    /** Holds the serial port host mode. */
+    KPortMode  m_hostMode;
+    /** Holds whether the serial port is server. */
+    bool       m_fServer;
+    /** Holds the serial port path. */
+    QString    m_strPath;
 };
 typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineSerialPort;
 
-/* Machine settings / Serial page / Ports data: */
+
+/** Machine settings: Serial page data structure. */
 struct UIDataSettingsMachineSerial
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineSerial() {}
-    /* Operators: */
-    bool operator==(const UIDataSettingsMachineSerial& /* other */) const { return true; }
-    bool operator!=(const UIDataSettingsMachineSerial& /* other */) const { return false; }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineSerial & /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineSerial & /* other */) const { return false; }
 };
 typedef UISettingsCachePool<UIDataSettingsMachineSerial, UISettingsCacheMachineSerialPort> UISettingsCacheMachineSerial;
 
+
+/** Machine settings: Serial Port tab. */
 class UIMachineSettingsSerial : public QIWithRetranslateUI<QWidget>,
-                             public Ui::UIMachineSettingsSerial
+                                public Ui::UIMachineSettingsSerial
 {
     Q_OBJECT;
 
@@ -112,7 +131,8 @@ private:
     int m_iSlot;
 };
 
-/* Machine settings / Serial page: */
+
+/** Machine settings: Serial page. */
 class UIMachineSettingsSerialPage : public UISettingsPageMachine
 {
     Q_OBJECT;
@@ -156,5 +176,5 @@ private:
     UISettingsCacheMachineSerial m_cache;
 };
 
-#endif // __UIMachineSettingsSerial_h__
+#endif /* !___UIMachineSettingsSerial_h___ */
 

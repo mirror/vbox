@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsUSB_h__
-#define __UIMachineSettingsUSB_h__
+#ifndef ___UIMachineSettingsUSB_h___
+#define ___UIMachineSettingsUSB_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
@@ -26,10 +26,11 @@
 class VBoxUSBMenu;
 class UIToolBar;
 
-/* Common settings / USB page / USB filter data: */
+
+/** Machine settings: USB filter data structure. */
 struct UIDataSettingsMachineUSBFilter
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineUSBFilter()
         : m_fActive(false)
         , m_strName(QString())
@@ -43,67 +44,96 @@ struct UIDataSettingsMachineUSBFilter
         , m_strRemote(QString())
         , m_action(KUSBDeviceFilterAction_Null)
         , m_fHostUSBDevice(false)
-        , m_hostUSBDeviceState(KUSBDeviceState_NotSupported) {}
-    /* Functions: */
+        , m_hostUSBDeviceState(KUSBDeviceState_NotSupported)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineUSBFilter &other) const
     {
-        return (m_fActive == other.m_fActive) &&
-               (m_strName == other.m_strName) &&
-               (m_strVendorId == other.m_strVendorId) &&
-               (m_strProductId == other.m_strProductId) &&
-               (m_strRevision == other.m_strRevision) &&
-               (m_strManufacturer == other.m_strManufacturer) &&
-               (m_strProduct == other.m_strProduct) &&
-               (m_strSerialNumber == other.m_strSerialNumber) &&
-               (m_strPort == other.m_strPort) &&
-               (m_strRemote == other.m_strRemote) &&
-               (m_action == other.m_action) &&
-               (m_hostUSBDeviceState == other.m_hostUSBDeviceState);
+        return true
+               && (m_fActive == other.m_fActive)
+               && (m_strName == other.m_strName)
+               && (m_strVendorId == other.m_strVendorId)
+               && (m_strProductId == other.m_strProductId)
+               && (m_strRevision == other.m_strRevision)
+               && (m_strManufacturer == other.m_strManufacturer)
+               && (m_strProduct == other.m_strProduct)
+               && (m_strSerialNumber == other.m_strSerialNumber)
+               && (m_strPort == other.m_strPort)
+               && (m_strRemote == other.m_strRemote)
+               && (m_action == other.m_action)
+               && (m_hostUSBDeviceState == other.m_hostUSBDeviceState)
+               ;
     }
-    /* Operators: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineUSBFilter &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineUSBFilter &other) const { return !equal(other); }
-    /* Common variables: */
-    bool m_fActive;
-    QString m_strName;
-    QString m_strVendorId;
-    QString m_strProductId;
-    QString m_strRevision;
-    QString m_strManufacturer;
-    QString m_strProduct;
-    QString m_strSerialNumber;
-    QString m_strPort;
-    QString m_strRemote;
-    /* Host only variables: */
-    KUSBDeviceFilterAction m_action;
-    bool m_fHostUSBDevice;
-    KUSBDeviceState m_hostUSBDeviceState;
+
+    /** Holds whether the USB filter is enabled. */
+    bool     m_fActive;
+    /** Holds the USB filter name. */
+    QString  m_strName;
+    /** Holds the USB filter vendor ID. */
+    QString  m_strVendorId;
+    /** Holds the USB filter product ID. */
+    QString  m_strProductId;
+    /** Holds the USB filter revision. */
+    QString  m_strRevision;
+    /** Holds the USB filter manufacturer. */
+    QString  m_strManufacturer;
+    /** Holds the USB filter product. */
+    QString  m_strProduct;
+    /** Holds the USB filter serial number. */
+    QString  m_strSerialNumber;
+    /** Holds the USB filter port. */
+    QString  m_strPort;
+    /** Holds the USB filter remote. */
+    QString  m_strRemote;
+
+    /** Holds the USB filter action. */
+    KUSBDeviceFilterAction  m_action;
+    /** Holds whether the USB filter is host USB device. */
+    bool                    m_fHostUSBDevice;
+    /** Holds the USB device state. */
+    KUSBDeviceState         m_hostUSBDeviceState;
 };
 typedef UISettingsCache<UIDataSettingsMachineUSBFilter> UISettingsCacheMachineUSBFilter;
 
-/* Common settings / USB page / USB data: */
+
+/** Machine settings: USB page data structure. */
 struct UIDataSettingsMachineUSB
 {
-    /* Default constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineUSB()
         : m_fUSBEnabled(false)
-        , m_USBControllerType(KUSBControllerType_Null) {}
-    /* Functions: */
+        , m_USBControllerType(KUSBControllerType_Null)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineUSB &other) const
     {
-        return (m_fUSBEnabled == other.m_fUSBEnabled) &&
-               (m_USBControllerType == other.m_USBControllerType);
+        return true
+               && (m_fUSBEnabled == other.m_fUSBEnabled)
+               && (m_USBControllerType == other.m_USBControllerType)
+               ;
     }
-    /* Operators: */
+
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineUSB &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineUSB &other) const { return !equal(other); }
-    /* Variables: */
+
+    /** Holds whether the USB is enabled. */
     bool m_fUSBEnabled;
+    /** Holds the USB controller type. */
     KUSBControllerType m_USBControllerType;
 };
 typedef UISettingsCachePool<UIDataSettingsMachineUSB, UISettingsCacheMachineUSBFilter> UISettingsCacheMachineUSB;
 
-/* Common settings / USB page: */
+
+/** Machine settings: USB page. */
 class UIMachineSettingsUSB : public UISettingsPageMachine,
                              public Ui::UIMachineSettingsUSB
 {
@@ -194,5 +224,5 @@ private:
     UISettingsCacheMachineUSB m_cache;
 };
 
-#endif // __UIMachineSettingsUSB_h__
+#endif /* !___UIMachineSettingsUSB_h___ */
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsDisplay_h__
-#define __UIMachineSettingsDisplay_h__
+#ifndef ___UIMachineSettingsDisplay_h___
+#define ___UIMachineSettingsDisplay_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
@@ -28,10 +28,11 @@
 /* Forward declarations: */
 class UIActionPool;
 
-/* Machine settings / Display page / Data: */
+
+/** Machine settings: Display page data structure. */
 struct UIDataSettingsMachineDisplay
 {
-    /* Constructor: */
+    /** Constructs data. */
     UIDataSettingsMachineDisplay()
         : m_iCurrentVRAM(0)
         , m_cGuestScreenCount(0)
@@ -58,71 +59,92 @@ struct UIDataSettingsMachineDisplay
         , m_iVideoCaptureBitRate(0)
     {}
 
-    /* Functions: */
+    /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineDisplay &other) const
     {
-        return (m_iCurrentVRAM == other.m_iCurrentVRAM) &&
-               (m_cGuestScreenCount == other.m_cGuestScreenCount) &&
-               (m_dScaleFactor == other.m_dScaleFactor) &&
+        return true
+               && (m_iCurrentVRAM == other.m_iCurrentVRAM)
+               && (m_cGuestScreenCount == other.m_cGuestScreenCount)
+               && (m_dScaleFactor == other.m_dScaleFactor)
 #ifdef VBOX_WS_MAC
-               (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput) &&
+               && (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput)
 #endif /* VBOX_WS_MAC */
-               (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled) &&
+               && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
 #ifdef VBOX_WITH_VIDEOHWACCEL
-               (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled) &&
+               && (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-               (m_fRemoteDisplayServerSupported == other.m_fRemoteDisplayServerSupported) &&
-               (m_fRemoteDisplayServerEnabled == other.m_fRemoteDisplayServerEnabled) &&
-               (m_strRemoteDisplayPort == other.m_strRemoteDisplayPort) &&
-               (m_remoteDisplayAuthType == other.m_remoteDisplayAuthType) &&
-               (m_uRemoteDisplayTimeout == other.m_uRemoteDisplayTimeout) &&
-               (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed) &&
-               (m_fVideoCaptureEnabled == other.m_fVideoCaptureEnabled) &&
-               (m_strVideoCaptureFilePath == other.m_strVideoCaptureFilePath) &&
-               (m_iVideoCaptureFrameWidth == other.m_iVideoCaptureFrameWidth) &&
-               (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight) &&
-               (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate) &&
-               (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate) &&
-               (m_screens == other.m_screens);
+               && (m_fRemoteDisplayServerSupported == other.m_fRemoteDisplayServerSupported)
+               && (m_fRemoteDisplayServerEnabled == other.m_fRemoteDisplayServerEnabled)
+               && (m_strRemoteDisplayPort == other.m_strRemoteDisplayPort)
+               && (m_remoteDisplayAuthType == other.m_remoteDisplayAuthType)
+               && (m_uRemoteDisplayTimeout == other.m_uRemoteDisplayTimeout)
+               && (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed)
+               && (m_fVideoCaptureEnabled == other.m_fVideoCaptureEnabled)
+               && (m_strVideoCaptureFilePath == other.m_strVideoCaptureFilePath)
+               && (m_iVideoCaptureFrameWidth == other.m_iVideoCaptureFrameWidth)
+               && (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight)
+               && (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate)
+               && (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate)
+               && (m_screens == other.m_screens)
+               ;
     }
 
-    /* Operators: */
+    /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineDisplay &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineDisplay &other) const { return !equal(other); }
 
-    /* Variables: Video stuff: */
-    int m_iCurrentVRAM;
-    int m_cGuestScreenCount;
-    double m_dScaleFactor;
+    /** Holds the video RAM amount. */
+    int     m_iCurrentVRAM;
+    /** Holds the guest screen count. */
+    int     m_cGuestScreenCount;
+    /** Holds the guest screen scale-factor. */
+    double  m_dScaleFactor;
 #ifdef VBOX_WS_MAC
-    bool m_fUseUnscaledHiDPIOutput;
+    /** Holds whether automatic Retina scaling is disabled. */
+    bool    m_fUseUnscaledHiDPIOutput;
 #endif /* VBOX_WS_MAC */
-    bool m_f3dAccelerationEnabled;
+    /** Holds whether the 3D acceleration is enabled. */
+    bool    m_f3dAccelerationEnabled;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    bool m_f2dAccelerationEnabled;
+    /** Holds whether the 2D video acceleration is enabled. */
+    bool    m_f2dAccelerationEnabled;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-    /* Variables: Remote Display stuff: */
-    bool m_fRemoteDisplayServerSupported;
-    bool m_fRemoteDisplayServerEnabled;
-    QString m_strRemoteDisplayPort;
-    KAuthType m_remoteDisplayAuthType;
-    ulong m_uRemoteDisplayTimeout;
-    bool m_fRemoteDisplayMultiConnAllowed;
+    /** Holds whether the remote display server is supported. */
+    bool       m_fRemoteDisplayServerSupported;
+    /** Holds whether the remote display server is enabled. */
+    bool       m_fRemoteDisplayServerEnabled;
+    /** Holds the remote display server port. */
+    QString    m_strRemoteDisplayPort;
+    /** Holds the remote display server auth type. */
+    KAuthType  m_remoteDisplayAuthType;
+    /** Holds the remote display server timeout. */
+    ulong      m_uRemoteDisplayTimeout;
+    /** Holds whether the remote display server allows multiple connections. */
+    bool       m_fRemoteDisplayMultiConnAllowed;
 
-    /* Variables: Video Capture stuff: */
+    /** Holds whether the video capture is enabled. */
     bool m_fVideoCaptureEnabled;
+    /** Holds the video capture folder. */
     QString m_strVideoCaptureFolder;
+    /** Holds the video capture file path. */
     QString m_strVideoCaptureFilePath;
+    /** Holds the video capture frame width. */
     int m_iVideoCaptureFrameWidth;
+    /** Holds the video capture frame height. */
     int m_iVideoCaptureFrameHeight;
+    /** Holds the video capture frame rate. */
     int m_iVideoCaptureFrameRate;
+    /** Holds the video capture bit rate. */
     int m_iVideoCaptureBitRate;
+    /** Holds which of the guest screens should be captured. */
     QVector<BOOL> m_screens;
 };
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UISettingsCacheMachineDisplay;
 
-/* Machine settings / Display page: */
+
+/** Machine settings: Display page. */
 class UIMachineSettingsDisplay : public UISettingsPageMachine,
                                  public Ui::UIMachineSettingsDisplay
 {
@@ -240,5 +262,5 @@ private:
     UISettingsCacheMachineDisplay m_cache;
 };
 
-#endif // __UIMachineSettingsDisplay_h__
+#endif /* !___UIMachineSettingsDisplay_h___ */
 
