@@ -148,8 +148,8 @@
 #define Bs3TrapRmV86SetGate BS3_CMN_MANGLER(Bs3TrapRmV86SetGate)
 #define Bs3TrapSetHandler BS3_CMN_MANGLER(Bs3TrapSetHandler)
 #define Bs3TrapSetHandlerEx BS3_CMN_MANGLER(Bs3TrapSetHandlerEx)
-#define Bs3TrapSetJmp BS3_CMN_MANGLER(Bs3TrapSetJmp)
 #define Bs3TrapSetJmpAndRestore BS3_CMN_MANGLER(Bs3TrapSetJmpAndRestore)
+#define Bs3TrapSetJmp BS3_CMN_MANGLER(Bs3TrapSetJmp)
 #define Bs3TrapUnsetJmp BS3_CMN_MANGLER(Bs3TrapUnsetJmp)
 #define Bs3UInt32Div BS3_CMN_MANGLER(Bs3UInt32Div)
 #define Bs3UInt64Div BS3_CMN_MANGLER(Bs3UInt64Div)
@@ -159,6 +159,7 @@
 # define Bs3CpuDetect BS3_MODE_MANGLER(Bs3CpuDetect)
 # define Bs3SwitchTo32BitAndCallC BS3_MODE_MANGLER(Bs3SwitchTo32BitAndCallC)
 # define Bs3TestDoModes BS3_MODE_MANGLER(Bs3TestDoModes)
+# define Bs3TestDoModesByMax BS3_MODE_MANGLER(Bs3TestDoModesByMax)
 # define Bs3TestDoModesByOne BS3_MODE_MANGLER(Bs3TestDoModesByOne)
 # define Bs3TrapInit BS3_MODE_MANGLER(Bs3TrapInit)
 #endif /* !BS3_CMN_ONLY */

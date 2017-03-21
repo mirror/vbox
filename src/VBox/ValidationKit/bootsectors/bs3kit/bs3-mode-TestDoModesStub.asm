@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3TestDoModesByOne near stub.
+; BS3Kit - Bs3TestDoModes near stub.
 ;
 
 ;
@@ -37,19 +37,20 @@
 BS3_BEGIN_RMTEXT16
  %endif
 BS3_BEGIN_TEXT16_NEARSTUBS
-BS3_PROC_BEGIN_MODE Bs3TestDoModesByOne, BS3_PBC_NEAR
+BS3_PROC_BEGIN_MODE Bs3TestDoModes, BS3_PBC_NEAR
         pop     ax
  %if TMPL_MODE == BS3_MODE_RM
         push    cs
         push    ax
-        extern TMPL_FAR_NM(Bs3TestDoModesByOne):wrt BS3GROUPRMTEXT16
-        jmp far TMPL_FAR_NM(Bs3TestDoModesByOne)
+        extern TMPL_FAR_NM(Bs3TestDoModes):wrt BS3GROUPRMTEXT16
+        jmp far TMPL_FAR_NM(Bs3TestDoModes)
  %else
         push    cs
         push    ax
-        extern TMPL_FAR_NM(Bs3TestDoModesByOne):wrt CGROUP16
-        jmp     TMPL_NM(Bs3TestDoModesByOne)
+        extern TMPL_FAR_NM(Bs3TestDoModes):wrt CGROUP16
+        jmp     TMPL_NM(Bs3TestDoModes)
  %endif
-BS3_PROC_END_MODE   Bs3TestDoModesByOne
+BS3_PROC_END_MODE   Bs3TestDoModes
 %endif
+
 

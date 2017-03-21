@@ -299,6 +299,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-TrapSystemCallHandler.asm \
 	bs3-mode-TestDoModes.c \
 	bs3-mode-TestDoModesByOne.c \
+	bs3-mode-TestDoModesByMax.c \
 	bs3-mode-TestDoModesHlp.asm \
 
 # The 16-bit real mode BS3Kit library.
@@ -309,7 +310,9 @@ bs3kit-rm_DEFS     = TMPL_MODE=BS3_MODE_RM
 bs3kit-rm_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-first-rm.asm \
 	bs3-mode-CpuDetect.asm \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 
 # The 16-bit BS3Kit library for 16-bit protected kernel+tss.
@@ -319,7 +322,9 @@ bs3kit-pe16_INSTTYPE = none
 bs3kit-pe16_DEFS     = TMPL_MODE=BS3_MODE_PE16
 bs3kit-pe16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-first-pe16.asm \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 #	bs3-mode-CpuDetect.asm
 
 # The 32-bit BS3Kit library for 16-bit protected kernel+tss.
@@ -328,7 +333,9 @@ bs3kit-pe16_32_TEMPLATE = VBoxBS3KitImg32
 bs3kit-pe16_32_INSTTYPE = none
 bs3kit-pe16_32_DEFS     = TMPL_MODE=BS3_MODE_PE16_32
 bs3kit-pe16_32_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The v86 BS3Kit library for 16-bit protected kernel+tss.
 LIBRARIES += bs3kit-pe16_v86
@@ -336,7 +343,9 @@ bs3kit-pe16_v86_TEMPLATE = VBoxBS3KitImg
 bs3kit-pe16_v86_INSTTYPE = none
 bs3kit-pe16_v86_DEFS     = TMPL_MODE=BS3_MODE_PE16_V86
 bs3kit-pe16_v86_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The 32-bit BS3Kit library for 32-bit protected kernel+tss.
 LIBRARIES += bs3kit-pe32
@@ -352,7 +361,9 @@ bs3kit-pe32_16_TEMPLATE = VBoxBS3KitImg
 bs3kit-pe32_16_INSTTYPE = none
 bs3kit-pe32_16_DEFS     = TMPL_MODE=BS3_MODE_PE32_16
 bs3kit-pe32_16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The v8086 BS3Kit library for 32-bit protected kernel+tss.
 LIBRARIES += bs3kit-pev86
@@ -368,7 +379,9 @@ bs3kit-pp16_INSTTYPE = none
 bs3kit-pp16_DEFS     = TMPL_MODE=BS3_MODE_PP16
 bs3kit-pp16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-CpuDetect.asm \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The 32-bit BS3Kit library for 16-bit paged protected kernel+tss.
 LIBRARIES += bs3kit-pp16_32
@@ -398,7 +411,9 @@ bs3kit-pp32_16_TEMPLATE = VBoxBS3KitImg
 bs3kit-pp32_16_INSTTYPE = none
 bs3kit-pp32_16_DEFS     = TMPL_MODE=BS3_MODE_PP32_16
 bs3kit-pp32_16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The v8086 BS3Kit library for 32-bit paged protected kernel+tss.
 LIBRARIES += bs3kit-ppv86
@@ -415,7 +430,9 @@ bs3kit-pae16_INSTTYPE = none
 bs3kit-pae16_DEFS     = TMPL_MODE=BS3_MODE_PAE16
 bs3kit-pae16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
 	bs3-mode-CpuDetect.asm \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The 16-bit BS3Kit library for 16-bit PAE paged protected kernel+tss.
 LIBRARIES += bs3kit-pae16_32
@@ -444,7 +461,9 @@ bs3kit-pae32_16_TEMPLATE = VBoxBS3KitImg
 bs3kit-pae32_16_INSTTYPE = none
 bs3kit-pae32_16_DEFS     = TMPL_MODE=BS3_MODE_PAE32_16
 bs3kit-pae32_16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The v8086 BS3Kit library for 32-bit PAE paged protected kernel+tss.
 LIBRARIES += bs3kit-paev86
@@ -460,7 +479,9 @@ bs3kit-lm16_TEMPLATE = VBoxBS3KitImg
 bs3kit-lm16_INSTTYPE = none
 bs3kit-lm16_DEFS     = TMPL_MODE=BS3_MODE_LM16
 bs3kit-lm16_SOURCES  = $(VBOX_BS3KIT_MODE_SOURCES) \
+	bs3-mode-TestDoModesStub.asm \
 	bs3-mode-TestDoModesByOneStub.asm \
+	bs3-mode-TestDoModesByMaxStub.asm \
 
 # The 32-bit long mode BS3Kit library.
 LIBRARIES += bs3kit-lm32

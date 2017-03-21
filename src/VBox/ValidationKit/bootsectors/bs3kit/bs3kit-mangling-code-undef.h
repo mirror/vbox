@@ -148,8 +148,8 @@
 #undef Bs3TrapRmV86SetGate
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
-#undef Bs3TrapSetJmp
 #undef Bs3TrapSetJmpAndRestore
+#undef Bs3TrapSetJmp
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
 #undef Bs3UInt64Div
@@ -159,6 +159,7 @@
 # undef Bs3CpuDetect
 # undef Bs3SwitchTo32BitAndCallC
 # undef Bs3TestDoModes
+# undef Bs3TestDoModesByMax
 # undef Bs3TestDoModesByOne
 # undef Bs3TrapInit
 #endif /* !BS3_CMN_ONLY */

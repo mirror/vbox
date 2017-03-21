@@ -1127,26 +1127,3 @@ BS3_PROC_BEGIN_MODE Bs3TestCallDoerInLM64, BS3_PBC_NEAR
         jmp     TMPL_NM(bs3TestCallDoerEpilogue)
 BS3_PROC_END_MODE   Bs3TestCallDoerInLM64
 
-
-;
-; Finally near stub for the API call (16-bit only).
-;
-%if TMPL_BITS == 16
-BS3_BEGIN_TEXT16_NEARSTUBS
-BS3_PROC_BEGIN_MODE Bs3TestDoModes, BS3_PBC_NEAR
-        pop     ax
- %if TMPL_MODE == BS3_MODE_RM
-        push    cs
-        push    ax
-        extern TMPL_FAR_NM(Bs3TestDoModes):wrt BS3GROUPRMTEXT16
-        jmp far TMPL_FAR_NM(Bs3TestDoModes)
- %else
-        push    cs
-        push    ax
-        extern TMPL_FAR_NM(Bs3TestDoModes):wrt CGROUP16
-        jmp     TMPL_NM(Bs3TestDoModes)
- %endif
-BS3_PROC_END_MODE   Bs3TestDoModes
-
-%endif
-

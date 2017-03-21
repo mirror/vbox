@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3TestDoModesByOne near stub.
+; BS3Kit - Bs3TestDoModesByMax near stub.
 ;
 
 ;
-; Copyright (C) 2007-2016 Oracle Corporation
+; Copyright (C) 2007-2017 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -37,19 +37,19 @@
 BS3_BEGIN_RMTEXT16
  %endif
 BS3_BEGIN_TEXT16_NEARSTUBS
-BS3_PROC_BEGIN_MODE Bs3TestDoModesByOne, BS3_PBC_NEAR
+BS3_PROC_BEGIN_MODE Bs3TestDoModesByMax, BS3_PBC_NEAR
         pop     ax
  %if TMPL_MODE == BS3_MODE_RM
         push    cs
         push    ax
-        extern TMPL_FAR_NM(Bs3TestDoModesByOne):wrt BS3GROUPRMTEXT16
-        jmp far TMPL_FAR_NM(Bs3TestDoModesByOne)
+        extern TMPL_FAR_NM(Bs3TestDoModesByMax):wrt BS3GROUPRMTEXT16
+        jmp far TMPL_FAR_NM(Bs3TestDoModesByMax)
  %else
         push    cs
         push    ax
-        extern TMPL_FAR_NM(Bs3TestDoModesByOne):wrt CGROUP16
-        jmp     TMPL_NM(Bs3TestDoModesByOne)
+        extern TMPL_FAR_NM(Bs3TestDoModesByMax):wrt CGROUP16
+        jmp     TMPL_NM(Bs3TestDoModesByMax)
  %endif
-BS3_PROC_END_MODE   Bs3TestDoModesByOne
+BS3_PROC_END_MODE   Bs3TestDoModesByMax
 %endif
 

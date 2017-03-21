@@ -3239,6 +3239,162 @@ typedef BS3TESTMODEENTRY const *PCBS3TESTMODEENTRY;
 
 
 /**
+ * Mode sub-test entry, max bit-count driven
+ *
+ * This is an alternative to BS3TESTMODEENTRY where a few workers (test drivers)
+ * does all the work, using faster 32-bit and 64-bit code where possible.  This
+ * avoids executing workers in V8086 mode.  It allows for modifying and checking
+ * 64-bit register content when testing LM16 and LM32.
+ *
+ * The 16-bit workers are only used for real mode and 16-bit protected mode.
+ * So, the 16-bit version of the code template can be stripped of anything
+ * related to paging and/or v8086, saving code space.
+ */
+typedef struct BS3TESTMODEBYMAXENTRY
+{
+    /** The sub-test name to be passed to Bs3TestSub if not NULL. */
+    const char * BS3_FAR    pszSubTest;
+
+    PFNBS3TESTDOMODE        pfnDoRM;
+    PFNBS3TESTDOMODE        pfnDoPE16;
+    PFNBS3TESTDOMODE        pfnDoPE16_32;
+    PFNBS3TESTDOMODE        pfnDoPE32;
+    PFNBS3TESTDOMODE        pfnDoPP16_32;
+    PFNBS3TESTDOMODE        pfnDoPP32;
+    PFNBS3TESTDOMODE        pfnDoPAE16_32;
+    PFNBS3TESTDOMODE        pfnDoPAE32;
+    PFNBS3TESTDOMODE        pfnDoLM64;
+
+    bool                    fDoRM : 1;
+
+    bool                    fDoPE16 : 1;
+    bool                    fDoPE16_32 : 1;
+    bool                    fDoPE16_V86 : 1;
+    bool                    fDoPE32 : 1;
+    bool                    fDoPE32_16 : 1;
+    bool                    fDoPEV86 : 1;
+
+    bool                    fDoPP16 : 1;
+    bool                    fDoPP16_32 : 1;
+    bool                    fDoPP16_V86 : 1;
+    bool                    fDoPP32 : 1;
+    bool                    fDoPP32_16 : 1;
+    bool                    fDoPPV86 : 1;
+
+    bool                    fDoPAE16 : 1;
+    bool                    fDoPAE16_32 : 1;
+    bool                    fDoPAE16_V86 : 1;
+    bool                    fDoPAE32 : 1;
+    bool                    fDoPAE32_16 : 1;
+    bool                    fDoPAEV86 : 1;
+
+    bool                    fDoLM16 : 1;
+    bool                    fDoLM32 : 1;
+    bool                    fDoLM64 : 1;
+
+} BS3TESTMODEBYMAXENTRY;
+/** Pointer to a mode-by-max sub-test entry. */
+typedef BS3TESTMODEBYMAXENTRY const *PCBS3TESTMODEBYMAXENTRY;
+
+/** @def BS3TESTMODEBYMAXENTRY_CMN
+ * Produces a BS3TESTMODEBYMAXENTRY initializer for common (c16,c32,c64) test
+ * functions. */
+#define BS3TESTMODEBYMAXENTRY_CMN(a_szTest, a_BaseNm) \
+    {   /*pszSubTest =*/    a_szTest, \
+        /*RM*/              RT_CONCAT(a_BaseNm, _c16), \
+        /*PE16*/            RT_CONCAT(a_BaseNm, _c16), \
+        /*PE16_32*/         RT_CONCAT(a_BaseNm, _c32), \
+        /*PE32*/            RT_CONCAT(a_BaseNm, _c32), \
+        /*PP16_32*/         RT_CONCAT(a_BaseNm, _c32), \
+        /*PP32*/            RT_CONCAT(a_BaseNm, _c32), \
+        /*PAE16_32*/        RT_CONCAT(a_BaseNm, _c32), \
+        /*PAE32*/           RT_CONCAT(a_BaseNm, _c32), \
+        /*LM64*/            RT_CONCAT(a_BaseNm, _c64), \
+        /*fDoRM*/           true, \
+        /*fDoPE16*/         true, \
+        /*fDoPE16_32*/      true, \
+        /*fDoPE16_V86*/     true, \
+        /*fDoPE32*/         true, \
+        /*fDoPE32_16*/      true, \
+        /*fDoPEV86*/        true, \
+        /*fDoPP16*/         true, \
+        /*fDoPP16_32*/      true, \
+        /*fDoPP16_V86*/     true, \
+        /*fDoPP32*/         true, \
+        /*fDoPP32_16*/      true, \
+        /*fDoPPV86*/        true, \
+        /*fDoPAE16*/        true, \
+        /*fDoPAE16_32*/     true, \
+        /*fDoPAE16_V86*/    true, \
+        /*fDoPAE32*/        true, \
+        /*fDoPAE32_16*/     true, \
+        /*fDoPAEV86*/       true, \
+        /*fDoLM16*/         true, \
+        /*fDoLM32*/         true, \
+        /*fDoLM64*/         true, \
+    }
+
+/** @def BS3TESTMODEBYMAX_PROTOTYPES_CMN
+ * A set of standard protypes to go with #BS3TESTMODEBYMAXENTRY_CMN. */
+#define BS3TESTMODEBYMAX_PROTOTYPES_CMN(a_BaseNm) \
+    FNBS3TESTDOMODE /*BS3_FAR_CODE*/    RT_CONCAT(a_BaseNm, _c16); \
+    FNBS3TESTDOMODE /*BS3_FAR_CODE*/    RT_CONCAT(a_BaseNm, _c32); \
+    FNBS3TESTDOMODE /*BS3_FAR_CODE*/    RT_CONCAT(a_BaseNm, _c64)
+
+
+/** @def BS3TESTMODEBYMAXENTRY_MODE
+ * Produces a BS3TESTMODEBYMAXENTRY initializer for a full set of mode test
+ * functions. */
+#define BS3TESTMODEBYMAXENTRY_MODE(a_szTest, a_BaseNm) \
+    {   /*pszSubTest =*/ a_szTest, \
+        /*RM*/              RT_CONCAT(a_BaseNm, _rm), \
+        /*PE16*/            RT_CONCAT(a_BaseNm, _pe16), \
+        /*PE16_32*/         RT_CONCAT(a_BaseNm, _pe16_32), \
+        /*PE32*/            RT_CONCAT(a_BaseNm, _pe32), \
+        /*PP16_32*/         RT_CONCAT(a_BaseNm, _pp16_32), \
+        /*PP32*/            RT_CONCAT(a_BaseNm, _pp32), \
+        /*PAE16_32*/        RT_CONCAT(a_BaseNm, _pae16_32), \
+        /*PAE32*/           RT_CONCAT(a_BaseNm, _pae32), \
+        /*LM64*/            RT_CONCAT(a_BaseNm, _lm64), \
+        /*fDoRM*/           true, \
+        /*fDoPE16*/         true, \
+        /*fDoPE16_32*/      true, \
+        /*fDoPE16_V86*/     true, \
+        /*fDoPE32*/         true, \
+        /*fDoPE32_16*/      true, \
+        /*fDoPEV86*/        true, \
+        /*fDoPP16*/         true, \
+        /*fDoPP16_32*/      true, \
+        /*fDoPP16_V86*/     true, \
+        /*fDoPP32*/         true, \
+        /*fDoPP32_16*/      true, \
+        /*fDoPPV86*/        true, \
+        /*fDoPAE16*/        true, \
+        /*fDoPAE16_32*/     true, \
+        /*fDoPAE16_V86*/    true, \
+        /*fDoPAE32*/        true, \
+        /*fDoPAE32_16*/     true, \
+        /*fDoPAEV86*/       true, \
+        /*fDoLM16*/         true, \
+        /*fDoLM32*/         true, \
+        /*fDoLM64*/         true, \
+    }
+
+/** @def BS3TESTMODEBYMAX_PROTOTYPES_MODE
+ * A set of standard protypes to go with #BS3TESTMODEBYMAXENTRY_MODE. */
+#define BS3TESTMODEBYMAX_PROTOTYPES_MODE(a_BaseNm) \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _rm); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe16); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe16_32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pe32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pp16_32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pp32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pae16_32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _pae32); \
+    FNBS3TESTDOMODE   RT_CONCAT(a_BaseNm, _lm64)
+
+
+/**
  * One worker drives all modes.
  *
  * This is an alternative to BS3TESTMODEENTRY where one worker, typically
@@ -3515,6 +3671,15 @@ BS3_MODE_PROTO_NOSB(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t c
  * @param   fFlags          Reserved for the future, MBZ.
  */
 BS3_MODE_PROTO_NOSB(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_t cEntries, uint32_t fFlags));
+
+/**
+ * Executes the array of tests in every possibly mode, using the max bit-count
+ * worker for each.
+ *
+ * @param   paEntries       The mode sub-test entries.
+ * @param   cEntries        The number of sub-test entries.
+ */
+BS3_MODE_PROTO_NOSB(void, Bs3TestDoModesByMax,(PCBS3TESTMODEBYMAXENTRY paEntries, size_t cEntries));
 
 
 /** @} */
