@@ -128,7 +128,7 @@ static void bs3TestWarnAboutSkippedModes(PCBS3TESTMODEBYMAXENTRY paEntries, unsi
     }
 }
 
-#undef Bs3TestDoModes
+#undef Bs3TestDoModesByMax
 BS3_MODE_DEF(void, Bs3TestDoModesByMax,(PCBS3TESTMODEBYMAXENTRY paEntries, size_t cEntries))
 {
     bool const      fVerbose         = true;
