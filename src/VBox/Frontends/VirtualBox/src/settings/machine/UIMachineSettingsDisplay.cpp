@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,18 +21,133 @@
 
 /* GUI includes: */
 # include "QIWidgetValidator.h"
-# include "UIMachineSettingsDisplay.h"
+# include "UIConverter.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
-# include "UIConverter.h"
+# include "UIMachineSettingsDisplay.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CVRDEServer.h"
-# include "CExtPackManager.h"
 # include "CExtPack.h"
+# include "CExtPackManager.h"
+# include "CVRDEServer.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Machine settings: Display page data structure. */
+struct UIDataSettingsMachineDisplay
+{
+    /** Constructs data. */
+    UIDataSettingsMachineDisplay()
+        : m_iCurrentVRAM(0)
+        , m_cGuestScreenCount(0)
+        , m_dScaleFactor(1.0)
+#ifdef VBOX_WS_MAC
+        , m_fUseUnscaledHiDPIOutput(false)
+#endif /* VBOX_WS_MAC */
+        , m_f3dAccelerationEnabled(false)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        , m_f2dAccelerationEnabled(false)
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+        , m_fRemoteDisplayServerSupported(false)
+        , m_fRemoteDisplayServerEnabled(false)
+        , m_strRemoteDisplayPort(QString())
+        , m_remoteDisplayAuthType(KAuthType_Null)
+        , m_uRemoteDisplayTimeout(0)
+        , m_fRemoteDisplayMultiConnAllowed(false)
+        , m_fVideoCaptureEnabled(false)
+        , m_strVideoCaptureFolder(QString())
+        , m_strVideoCaptureFilePath(QString())
+        , m_iVideoCaptureFrameWidth(0)
+        , m_iVideoCaptureFrameHeight(0)
+        , m_iVideoCaptureFrameRate(0)
+        , m_iVideoCaptureBitRate(0)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineDisplay &other) const
+    {
+        return true
+               && (m_iCurrentVRAM == other.m_iCurrentVRAM)
+               && (m_cGuestScreenCount == other.m_cGuestScreenCount)
+               && (m_dScaleFactor == other.m_dScaleFactor)
+#ifdef VBOX_WS_MAC
+               && (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput)
+#endif /* VBOX_WS_MAC */
+               && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+               && (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled)
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+               && (m_fRemoteDisplayServerSupported == other.m_fRemoteDisplayServerSupported)
+               && (m_fRemoteDisplayServerEnabled == other.m_fRemoteDisplayServerEnabled)
+               && (m_strRemoteDisplayPort == other.m_strRemoteDisplayPort)
+               && (m_remoteDisplayAuthType == other.m_remoteDisplayAuthType)
+               && (m_uRemoteDisplayTimeout == other.m_uRemoteDisplayTimeout)
+               && (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed)
+               && (m_fVideoCaptureEnabled == other.m_fVideoCaptureEnabled)
+               && (m_strVideoCaptureFilePath == other.m_strVideoCaptureFilePath)
+               && (m_iVideoCaptureFrameWidth == other.m_iVideoCaptureFrameWidth)
+               && (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight)
+               && (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate)
+               && (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate)
+               && (m_screens == other.m_screens)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineDisplay &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineDisplay &other) const { return !equal(other); }
+
+    /** Holds the video RAM amount. */
+    int     m_iCurrentVRAM;
+    /** Holds the guest screen count. */
+    int     m_cGuestScreenCount;
+    /** Holds the guest screen scale-factor. */
+    double  m_dScaleFactor;
+#ifdef VBOX_WS_MAC
+    /** Holds whether automatic Retina scaling is disabled. */
+    bool    m_fUseUnscaledHiDPIOutput;
+#endif /* VBOX_WS_MAC */
+    /** Holds whether the 3D acceleration is enabled. */
+    bool    m_f3dAccelerationEnabled;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /** Holds whether the 2D video acceleration is enabled. */
+    bool    m_f2dAccelerationEnabled;
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
+    /** Holds whether the remote display server is supported. */
+    bool       m_fRemoteDisplayServerSupported;
+    /** Holds whether the remote display server is enabled. */
+    bool       m_fRemoteDisplayServerEnabled;
+    /** Holds the remote display server port. */
+    QString    m_strRemoteDisplayPort;
+    /** Holds the remote display server auth type. */
+    KAuthType  m_remoteDisplayAuthType;
+    /** Holds the remote display server timeout. */
+    ulong      m_uRemoteDisplayTimeout;
+    /** Holds whether the remote display server allows multiple connections. */
+    bool       m_fRemoteDisplayMultiConnAllowed;
+
+    /** Holds whether the video capture is enabled. */
+    bool m_fVideoCaptureEnabled;
+    /** Holds the video capture folder. */
+    QString m_strVideoCaptureFolder;
+    /** Holds the video capture file path. */
+    QString m_strVideoCaptureFilePath;
+    /** Holds the video capture frame width. */
+    int m_iVideoCaptureFrameWidth;
+    /** Holds the video capture frame height. */
+    int m_iVideoCaptureFrameHeight;
+    /** Holds the video capture frame rate. */
+    int m_iVideoCaptureFrameRate;
+    /** Holds the video capture bit rate. */
+    int m_iVideoCaptureBitRate;
+    /** Holds which of the guest screens should be captured. */
+    QVector<BOOL> m_screens;
+};
+
 
 UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     : m_iMinVRAM(0)
@@ -45,9 +160,17 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #ifdef VBOX_WITH_CRHGSMI
     , m_fWddmModeSupported(false)
 #endif /* VBOX_WITH_CRHGSMI */
+    , m_pCache(new UISettingsCacheMachineDisplay)
 {
     /* Prepare: */
     prepare();
+}
+
+UIMachineSettingsDisplay::~UIMachineSettingsDisplay()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
@@ -84,13 +207,18 @@ bool UIMachineSettingsDisplay::isAcceleration2DVideoSelected() const
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+bool UIMachineSettingsDisplay::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare display data: */
     UIDataSettingsMachineDisplay displayData;
@@ -134,7 +262,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     m_iInitialVRAM = RT_MIN(displayData.m_iCurrentVRAM, m_iMaxVRAM);
 
     /* Cache display data: */
-    m_cache.cacheInitialData(displayData);
+    m_pCache->cacheInitialData(displayData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -143,7 +271,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsDisplay::getFromCache()
 {
     /* Get display data from cache: */
-    const UIDataSettingsMachineDisplay &displayData = m_cache.base();
+    const UIDataSettingsMachineDisplay &displayData = m_pCache->base();
 
     /* Load Screen data to page: */
     m_pEditorVideoScreenCount->setValue(displayData.m_cGuestScreenCount);
@@ -189,7 +317,7 @@ void UIMachineSettingsDisplay::getFromCache()
 void UIMachineSettingsDisplay::putToCache()
 {
     /* Prepare display data: */
-    UIDataSettingsMachineDisplay displayData = m_cache.base();
+    UIDataSettingsMachineDisplay displayData = m_pCache->base();
 
     /* Gather Screen data from page: */
     displayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
@@ -224,7 +352,7 @@ void UIMachineSettingsDisplay::putToCache()
     displayData.m_screens = m_pScrollerVideoCaptureScreens->value();
 
     /* Cache display data: */
-    m_cache.cacheCurrentData(displayData);
+    m_pCache->cacheCurrentData(displayData);
 }
 
 void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
@@ -233,10 +361,10 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Make sure machine is in valid mode & display data was changed: */
-    if (isMachineInValidMode() && m_cache.wasChanged())
+    if (isMachineInValidMode() && m_pCache->wasChanged())
     {
         /* Get display data from cache: */
-        const UIDataSettingsMachineDisplay &displayData = m_cache.data();
+        const UIDataSettingsMachineDisplay &displayData = m_pCache->data();
 
         /* Store Screen data: */
         if (isMachineOffline())
@@ -274,7 +402,7 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
         if (isMachineOnline())
         {
             /* If Video Capture is *enabled* now: */
-            if (m_cache.base().m_fVideoCaptureEnabled)
+            if (m_pCache->base().m_fVideoCaptureEnabled)
             {
                 /* We can still save the *screens* option: */
                 m_machine.SetVideoCaptureScreens(displayData.m_screens);
@@ -506,7 +634,7 @@ void UIMachineSettingsDisplay::retranslateUi()
 void UIMachineSettingsDisplay::polishPage()
 {
     /* Get system data from cache: */
-    const UIDataSettingsMachineDisplay &displayData = m_cache.base();
+    const UIDataSettingsMachineDisplay &displayData = m_pCache->base();
 
     /* Screen tab: */
     m_pLabelVideoMemorySize->setEnabled(isMachineOffline());
@@ -629,7 +757,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
      * 1. Machine is in 'offline' or 'saved' state and check-box is checked,
      * 2. Machine is in 'online' state, check-box is checked, and video recording is *disabled* currently. */
     bool fIsVideoCaptureOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
-                                         (isMachineOnline() && !m_cache.base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked());
+                                         (isMachineOnline() && !m_pCache->base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked());
 
     /* Video Capture Screens option should be enabled only if:
      * Machine is in *any* valid state and check-box is checked. */
@@ -1001,7 +1129,7 @@ void UIMachineSettingsDisplay::lookForCorrespondingSizePreset()
 void UIMachineSettingsDisplay::updateVideoCaptureScreenCount()
 {
     /* Update copy of the cached item to get the desired result: */
-    QVector<BOOL> screens = m_cache.base().m_screens;
+    QVector<BOOL> screens = m_pCache->base().m_screens;
     screens.resize(m_pEditorVideoScreenCount->value());
     m_pScrollerVideoCaptureScreens->setValue(screens);
 }

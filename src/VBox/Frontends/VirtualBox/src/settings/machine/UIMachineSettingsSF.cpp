@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,19 +19,74 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes */
-# include "UIIconPool.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
-# include "VBoxUtils.h"
-# include "UIMachineSettingsSF.h"
-# include "UIMachineSettingsSFDetails.h"
-
-/* Global includes */
+/* Qt includes: */
 # include <QHeaderView>
 # include <QTimer>
 
+/* GUI includes: */
+# include "UIIconPool.h"
+# include "UIMachineSettingsSF.h"
+# include "UIMachineSettingsSFDetails.h"
+# include "UIMessageCenter.h"
+# include "VBoxGlobal.h"
+# include "VBoxUtils.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Machine settings: Shared Folder data structure. */
+struct UIDataSettingsSharedFolder
+{
+    /** Constructs data. */
+    UIDataSettingsSharedFolder()
+        : m_type(MachineType)
+        , m_strName(QString())
+        , m_strHostPath(QString())
+        , m_fAutoMount(false)
+        , m_fWritable(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsSharedFolder &other) const
+    {
+        return true
+               && (m_type == other.m_type)
+               && (m_strName == other.m_strName)
+               && (m_strHostPath == other.m_strHostPath)
+               && (m_fAutoMount == other.m_fAutoMount)
+               && (m_fWritable == other.m_fWritable)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsSharedFolder &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsSharedFolder &other) const { return !equal(other); }
+
+    /** Holds the shared folder type. */
+    UISharedFolderType  m_type;
+    /** Holds the shared folder name. */
+    QString             m_strName;
+    /** Holds the shared folder path. */
+    QString             m_strHostPath;
+    /** Holds whether the shared folder should be auto-mounted at startup. */
+    bool                m_fAutoMount;
+    /** Holds whether the shared folder should be writeable. */
+    bool                m_fWritable;
+};
+
+
+/** Machine settings: Shared Folders page data structure. */
+struct UIDataSettingsSharedFolders
+{
+    /** Constructs data. */
+    UIDataSettingsSharedFolders() {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsSharedFolders & /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsSharedFolders & /* other */) const { return false; }
+};
 
 
 class SFTreeViewItem : public QITreeWidgetItem
@@ -182,6 +237,7 @@ private:
 
 UIMachineSettingsSF::UIMachineSettingsSF()
     : mNewAction(0), mEdtAction(0), mDelAction(0)
+    , m_pCache(new UISettingsCacheSharedFolders)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsSF::setupUi (this);
@@ -232,10 +288,22 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     retranslateUi();
 }
 
+UIMachineSettingsSF::~UIMachineSettingsSF()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
 void UIMachineSettingsSF::resizeEvent (QResizeEvent *aEvent)
 {
     NOREF(aEvent);
     adjustList();
+}
+
+bool UIMachineSettingsSF::changed() const
+{
+    return m_pCache->wasChanged();
 }
 
 void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
@@ -244,7 +312,7 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Load machine (permanent) shared folders into shared folders cache if possible: */
     if (isSharedFolderTypeSupported(MachineType))
@@ -284,7 +352,7 @@ void UIMachineSettingsSF::loadToCacheFrom(UISharedFolderType sharedFoldersType)
         }
 
         /* Cache shared folder data: */
-        m_cache.child(strSharedFolderKey).cacheInitialData(sharedFolderData);
+        m_pCache->child(strSharedFolderKey).cacheInitialData(sharedFolderData);
     }
 }
 
@@ -297,10 +365,10 @@ void UIMachineSettingsSF::getFromCache()
     updateRootItemsVisibility();
 
     /* Load shared folders data: */
-    for (int iFolderIndex = 0; iFolderIndex < m_cache.childCount(); ++iFolderIndex)
+    for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
     {
         /* Get shared folder data: */
-        const UIDataSettingsSharedFolder &sharedFolderData = m_cache.child(iFolderIndex).base();
+        const UIDataSettingsSharedFolder &sharedFolderData = m_pCache->child(iFolderIndex).base();
         /* Prepare item fields: */
         QStringList fields;
         fields << sharedFolderData.m_strName
@@ -337,7 +405,7 @@ void UIMachineSettingsSF::putToCache()
             sharedFolderData.m_strHostPath = pFolderItem->getText(1);
             sharedFolderData.m_fAutoMount = pFolderItem->getText(2) == mTrYes ? true : false;
             sharedFolderData.m_fWritable = pFolderItem->getText(3) == mTrFull ? true : false;
-            m_cache.child(sharedFolderData.m_strName).cacheCurrentData(sharedFolderData);
+            m_pCache->child(sharedFolderData.m_strName).cacheCurrentData(sharedFolderData);
         }
     }
 }
@@ -348,7 +416,7 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Check if shared folders data was changed at all: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* Save machine (permanent) shared folders if possible: */
         if (isSharedFolderTypeSupported(MachineType))
@@ -365,10 +433,10 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
 void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType sharedFoldersType)
 {
     /* For each shared folder data set: */
-    for (int iSharedFolderIndex = 0; iSharedFolderIndex < m_cache.childCount(); ++iSharedFolderIndex)
+    for (int iSharedFolderIndex = 0; iSharedFolderIndex < m_pCache->childCount(); ++iSharedFolderIndex)
     {
         /* Check if this shared folder data was actually changed: */
-        const UISettingsCacheSharedFolder &sharedFolderCache = m_cache.child(iSharedFolderIndex);
+        const UISettingsCacheSharedFolder &sharedFolderCache = m_pCache->child(iSharedFolderIndex);
         if (sharedFolderCache.wasChanged())
         {
             /* If shared folder was removed: */

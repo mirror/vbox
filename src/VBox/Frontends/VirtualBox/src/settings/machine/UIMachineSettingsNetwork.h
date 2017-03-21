@@ -24,186 +24,12 @@
 #include "UIMachineSettingsPortForwardingDlg.h"
 
 /* Forward declarations: */
-class UIMachineSettingsNetworkPage;
 class QITabWidget;
-
-
-/** Machine settings: Network Adapter data structure. */
-struct UIDataSettingsMachineNetworkAdapter
-{
-    /** Constructs data. */
-    UIDataSettingsMachineNetworkAdapter()
-        : m_iSlot(0)
-        , m_fAdapterEnabled(false)
-        , m_adapterType(KNetworkAdapterType_Null)
-        , m_attachmentType(KNetworkAttachmentType_Null)
-        , m_promiscuousMode(KNetworkAdapterPromiscModePolicy_Deny)
-        , m_strBridgedAdapterName(QString())
-        , m_strInternalNetworkName(QString())
-        , m_strHostInterfaceName(QString())
-        , m_strGenericDriverName(QString())
-        , m_strGenericProperties(QString())
-        , m_strNATNetworkName(QString())
-        , m_strMACAddress(QString())
-        , m_fCableConnected(false)
-        , m_redirects(UIPortForwardingDataList())
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsMachineNetworkAdapter &other) const
-    {
-        return true
-               && (m_iSlot == other.m_iSlot)
-               && (m_fAdapterEnabled == other.m_fAdapterEnabled)
-               && (m_adapterType == other.m_adapterType)
-               && (m_attachmentType == other.m_attachmentType)
-               && (m_promiscuousMode == other.m_promiscuousMode)
-               && (m_strBridgedAdapterName == other.m_strBridgedAdapterName)
-               && (m_strInternalNetworkName == other.m_strInternalNetworkName)
-               && (m_strHostInterfaceName == other.m_strHostInterfaceName)
-               && (m_strGenericDriverName == other.m_strGenericDriverName)
-               && (m_strGenericProperties == other.m_strGenericProperties)
-               && (m_strNATNetworkName == other.m_strNATNetworkName)
-               && (m_strMACAddress == other.m_strMACAddress)
-               && (m_fCableConnected == other.m_fCableConnected)
-               && (m_redirects == other.m_redirects)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineNetworkAdapter &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineNetworkAdapter &other) const { return !equal(other); }
-
-    /** Holds the network adapter slot number. */
-    int                               m_iSlot;
-    /** Holds whether the network adapter is enabled. */
-    bool                              m_fAdapterEnabled;
-    /** Holds the network adapter type. */
-    KNetworkAdapterType               m_adapterType;
-    /** Holds the network attachment type. */
-    KNetworkAttachmentType            m_attachmentType;
-    /** Holds the network promiscuous mode policy. */
-    KNetworkAdapterPromiscModePolicy  m_promiscuousMode;
-    /** Holds the bridged adapter name. */
-    QString                           m_strBridgedAdapterName;
-    /** Holds the internal network name. */
-    QString                           m_strInternalNetworkName;
-    /** Holds the host interface name. */
-    QString                           m_strHostInterfaceName;
-    /** Holds the generic driver name. */
-    QString                           m_strGenericDriverName;
-    /** Holds the generic driver properties. */
-    QString                           m_strGenericProperties;
-    /** Holds the NAT network name. */
-    QString                           m_strNATNetworkName;
-    /** Holds the network adapter MAC address. */
-    QString                           m_strMACAddress;
-    /** Holds whether the network adapter is connected. */
-    bool                              m_fCableConnected;
-    /** Holds the set of network redirection rules. */
-    UIPortForwardingDataList          m_redirects;
-};
+class UIMachineSettingsNetworkPage;
+struct UIDataSettingsMachineNetwork;
+struct UIDataSettingsMachineNetworkAdapter;
 typedef UISettingsCache<UIDataSettingsMachineNetworkAdapter> UISettingsCacheMachineNetworkAdapter;
-
-
-/** Machine settings: Network page data structure. */
-struct UIDataSettingsMachineNetwork
-{
-    /** Constructs data. */
-    UIDataSettingsMachineNetwork() {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineNetwork & /* other */) const { return true; }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineNetwork & /* other */) const { return false; }
-};
 typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UISettingsCacheMachineNetworkAdapter> UISettingsCacheMachineNetwork;
-
-
-/** Machine settings: Network Adapter tab. */
-class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>,
-                                 public Ui::UIMachineSettingsNetwork
-{
-    Q_OBJECT;
-
-public:
-
-    /* Constructor: */
-    UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
-
-    /* Load / Save API: */
-    void fetchAdapterCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
-    void uploadAdapterCache(UISettingsCacheMachineNetworkAdapter &adapterCache);
-
-    /** Performs validation, updates @a messages list if something is wrong. */
-    bool validate(QList<UIValidationMessage> &messages);
-
-    /* Navigation stuff: */
-    QWidget* setOrderAfter(QWidget *pAfter);
-
-    /* Other public stuff: */
-    QString tabTitle() const;
-    KNetworkAttachmentType attachmentType() const;
-    QString alternativeName(int iType = -1) const;
-    void polishTab();
-    void reloadAlternative();
-
-    /** Defines whether the advanced button is @a fExpanded. */
-    void setAdvancedButtonState(bool fExpanded);
-
-signals:
-
-    /* Signal to notify listeners about tab content changed: */
-    void sigTabUpdated();
-
-    /** Notifies about the advanced button has @a fExpanded. */
-    void sigNotifyAdvancedButtonStateChange(bool fExpanded);
-
-protected:
-
-    /** Handles translation event. */
-    void retranslateUi();
-
-private slots:
-
-    /* Different handlers: */
-    void sltHandleAdapterActivityChange();
-    void sltHandleAttachmentTypeChange();
-    void sltHandleAlternativeNameChange();
-    void sltHandleAdvancedButtonStateChange();
-    void sltGenerateMac();
-    void sltOpenPortForwardingDlg();
-
-private:
-
-    /* Helper: Prepare stuff: */
-    void prepareValidation();
-
-    /* Helping stuff: */
-    void populateComboboxes();
-    void updateAlternativeList();
-    void updateAlternativeName();
-
-    /** Handles advanced button state change. */
-    void handleAdvancedButtonStateChange();
-
-    /* Various static stuff: */
-    static int position(QComboBox *pComboBox, int iData);
-    static int position(QComboBox *pComboBox, const QString &strText);
-
-    /* Parent page: */
-    UIMachineSettingsNetworkPage *m_pParent;
-
-    /* Other variables: */
-    int m_iSlot;
-    QString m_strBridgedAdapterName;
-    QString m_strInternalNetworkName;
-    QString m_strHostInterfaceName;
-    QString m_strGenericDriverName;
-    QString m_strNATNetworkName;
-    UIPortForwardingDataList m_portForwardingRules;
-};
 
 
 /** Machine settings: Network page. */
@@ -213,8 +39,10 @@ class UIMachineSettingsNetworkPage : public UISettingsPageMachine
 
 public:
 
-    /* Constructor: */
+    /** Constructs Network settings page. */
     UIMachineSettingsNetworkPage();
+    /** Destructs Network settings page. */
+    ~UIMachineSettingsNetworkPage();
 
     /* Bridged adapter list: */
     const QStringList& bridgedAdapterList() const { return m_bridgedAdapterList; }
@@ -229,6 +57,9 @@ public:
 
 protected:
 
+    /** Returns whether the page content was changed. */
+    bool changed() const /* override */;
+
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     void loadToCacheFrom(QVariant &data);
@@ -242,9 +73,6 @@ protected:
     /** Saves data from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(QVariant &data);
-
-    /** Returns whether the page content was changed. */
-    bool changed() const { return m_cache.wasChanged(); }
 
     /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(QList<UIValidationMessage> &messages);
@@ -286,8 +114,8 @@ private:
     QStringList m_genericDriverList;
     QStringList m_natNetworkList;
 
-    /* Cache: */
-    UISettingsCacheMachineNetwork m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheMachineNetwork *m_pCache;
 };
 
 #endif /* !___UIMachineSettingsNetwork_h___ */

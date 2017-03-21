@@ -27,67 +27,13 @@
 
 /* Forward declarations: */
 class SFTreeViewItem;
-
+struct UIDataSettingsSharedFolder;
+struct UIDataSettingsSharedFolders;
 enum UISharedFolderType { MachineType, ConsoleType };
-typedef QPair <QString, UISharedFolderType> SFolderName;
-typedef QList <SFolderName> SFoldersNameList;
-
-
-/** Machine settings: Shared Folder data structure. */
-struct UIDataSettingsSharedFolder
-{
-    /** Constructs data. */
-    UIDataSettingsSharedFolder()
-        : m_type(MachineType)
-        , m_strName(QString())
-        , m_strHostPath(QString())
-        , m_fAutoMount(false)
-        , m_fWritable(false)
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsSharedFolder &other) const
-    {
-        return true
-               && (m_type == other.m_type)
-               && (m_strName == other.m_strName)
-               && (m_strHostPath == other.m_strHostPath)
-               && (m_fAutoMount == other.m_fAutoMount)
-               && (m_fWritable == other.m_fWritable)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsSharedFolder &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsSharedFolder &other) const { return !equal(other); }
-
-    /** Holds the shared folder type. */
-    UISharedFolderType  m_type;
-    /** Holds the shared folder name. */
-    QString             m_strName;
-    /** Holds the shared folder path. */
-    QString             m_strHostPath;
-    /** Holds whether the shared folder should be auto-mounted at startup. */
-    bool                m_fAutoMount;
-    /** Holds whether the shared folder should be writeable. */
-    bool                m_fWritable;
-};
 typedef UISettingsCache<UIDataSettingsSharedFolder> UISettingsCacheSharedFolder;
-
-
-/** Machine settings: Shared Folders page data structure. */
-struct UIDataSettingsSharedFolders
-{
-    /** Constructs data. */
-    UIDataSettingsSharedFolders() {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsSharedFolders & /* other */) const { return true; }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsSharedFolders & /* other */) const { return false; }
-};
 typedef UISettingsCachePool<UIDataSettingsSharedFolders, UISettingsCacheSharedFolder> UISettingsCacheSharedFolders;
+typedef QPair<QString, UISharedFolderType> SFolderName;
+typedef QList<SFolderName> SFoldersNameList;
 
 
 /** Machine settings: Shared Folders page. */
@@ -98,9 +44,15 @@ class UIMachineSettingsSF : public UISettingsPageMachine,
 
 public:
 
+    /** Constructs Shared Folders settings page. */
     UIMachineSettingsSF();
+    /** Destructs Shared Folders settings page. */
+    ~UIMachineSettingsSF();
 
 protected:
+
+    /** Returns whether the page content was changed. */
+    bool changed() const /* override */;
 
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
@@ -119,9 +71,6 @@ protected:
     /** Saves data of @a sharedFoldersType from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(UISharedFolderType sharedFoldersType);
-
-    /** Returns whether the page content was changed. */
-    bool changed() const { return m_cache.wasChanged(); }
 
     /** Defines TAB order. */
     void setOrderAfter(QWidget *pWidget);
@@ -169,8 +118,8 @@ private:
     QString   mTrReadOnly;
     QString   mTrYes;
 
-    /* Cache: */
-    UISettingsCacheSharedFolders m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheSharedFolders *m_pCache;
 };
 
 #endif /* !___UIMachineSettingsSF_h___ */

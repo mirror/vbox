@@ -37,6 +37,12 @@
 class AttachmentItem;
 class ControllerItem;
 class UIMediumIDHolder;
+struct UIDataSettingsMachineStorage;
+struct UIDataSettingsMachineStorageController;
+struct UIDataSettingsMachineStorageAttachment;
+typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UISettingsCacheMachineStorageAttachment;
+typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UISettingsCacheMachineStorageAttachment> UISettingsCacheMachineStorageController;
+typedef UISettingsCachePool<UIDataSettingsMachineStorage, UISettingsCacheMachineStorageController> UISettingsCacheMachineStorage;
 
 /* Internal Types */
 typedef QList <StorageSlot> SlotsList;
@@ -45,6 +51,7 @@ typedef QList <KStorageControllerType> ControllerTypeList;
 Q_DECLARE_METATYPE (SlotsList);
 Q_DECLARE_METATYPE (DeviceTypeList);
 Q_DECLARE_METATYPE (ControllerTypeList);
+
 
 /** Known item states. */
 enum ItemState
@@ -588,118 +595,6 @@ private:
 };
 
 
-/** Machine settings: Storage Attachment data structure. */
-struct UIDataSettingsMachineStorageAttachment
-{
-    /** Constructs data. */
-    UIDataSettingsMachineStorageAttachment()
-        : m_attachmentType(KDeviceType_Null)
-        , m_iAttachmentPort(-1)
-        , m_iAttachmentDevice(-1)
-        , m_strAttachmentMediumId(QString())
-        , m_fAttachmentPassthrough(false)
-        , m_fAttachmentTempEject(false)
-        , m_fAttachmentNonRotational(false)
-        , m_fAttachmentHotPluggable(false)
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsMachineStorageAttachment &other) const
-    {
-        return true
-               && (m_attachmentType == other.m_attachmentType)
-               && (m_iAttachmentPort == other.m_iAttachmentPort)
-               && (m_iAttachmentDevice == other.m_iAttachmentDevice)
-               && (m_strAttachmentMediumId == other.m_strAttachmentMediumId)
-               && (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough)
-               && (m_fAttachmentTempEject == other.m_fAttachmentTempEject)
-               && (m_fAttachmentNonRotational == other.m_fAttachmentNonRotational)
-               && (m_fAttachmentHotPluggable == other.m_fAttachmentHotPluggable)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineStorageAttachment &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineStorageAttachment &other) const { return !equal(other); }
-
-    /** Holds the attachment type. */
-    KDeviceType  m_attachmentType;
-    /** Holds the attachment port. */
-    LONG         m_iAttachmentPort;
-    /** Holds the attachment device. */
-    LONG         m_iAttachmentDevice;
-    /** Holds the attachment medium ID. */
-    QString      m_strAttachmentMediumId;
-    /** Holds whether the attachment being passed through. */
-    bool         m_fAttachmentPassthrough;
-    /** Holds whether the attachment being temporarily eject. */
-    bool         m_fAttachmentTempEject;
-    /** Holds whether the attachment is solid-state. */
-    bool         m_fAttachmentNonRotational;
-    /** Holds whether the attachment is hot-pluggable. */
-    bool         m_fAttachmentHotPluggable;
-};
-typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UISettingsCacheMachineStorageAttachment;
-
-
-/** Machine settings: Storage Controller data structure. */
-struct UIDataSettingsMachineStorageController
-{
-    /** Constructs data. */
-    UIDataSettingsMachineStorageController()
-        : m_strControllerName(QString())
-        , m_controllerBus(KStorageBus_Null)
-        , m_controllerType(KStorageControllerType_Null)
-        , m_uPortCount(0)
-        , m_fUseHostIOCache(false)
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsMachineStorageController &other) const
-    {
-        return true
-               && (m_strControllerName == other.m_strControllerName)
-               && (m_controllerBus == other.m_controllerBus)
-               && (m_controllerType == other.m_controllerType)
-               && (m_uPortCount == other.m_uPortCount)
-               && (m_fUseHostIOCache == other.m_fUseHostIOCache)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineStorageController &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineStorageController &other) const { return !equal(other); }
-
-    /** Holds the controller name. */
-    QString                 m_strControllerName;
-    /** Holds the controller bus. */
-    KStorageBus             m_controllerBus;
-    /** Holds the controller type. */
-    KStorageControllerType  m_controllerType;
-    /** Holds the controller port count. */
-    uint                    m_uPortCount;
-    /** Holds whether the controller uses host IO cache. */
-    bool                    m_fUseHostIOCache;
-};
-typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UISettingsCacheMachineStorageAttachment> UISettingsCacheMachineStorageController;
-
-
-/** Machine settings: Storage page data structure. */
-struct UIDataSettingsMachineStorage
-{
-    /** Constructs data. */
-    UIDataSettingsMachineStorage() {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineStorage& /* other */) const { return true; }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineStorage& /* other */) const { return false; }
-};
-typedef UISettingsCachePool<UIDataSettingsMachineStorage, UISettingsCacheMachineStorageController> UISettingsCacheMachineStorage;
-
-
 /** Machine settings: Storage page. */
 class UIMachineSettingsStorage : public UISettingsPageMachine,
                                  public Ui::UIMachineSettingsStorage
@@ -708,7 +603,9 @@ class UIMachineSettingsStorage : public UISettingsPageMachine,
 
 public:
 
+    /** Constructs Storage settings page. */
     UIMachineSettingsStorage();
+    /** Destructs Storage settings page. */
     ~UIMachineSettingsStorage();
 
     void setChipsetType(KChipsetType type);
@@ -718,6 +615,9 @@ signals:
     void storageChanged();
 
 protected:
+
+    /** Returns whether the page content was changed. */
+    bool changed() const /* override */;
 
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
@@ -732,9 +632,6 @@ protected:
     /** Saves data from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(QVariant &data);
-
-    /** Returns whether the page content was changed. */
-    bool changed() const { return m_cache.wasChanged(); }
 
     /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(QList<UIValidationMessage> &messages);
@@ -856,8 +753,8 @@ private:
     bool mIsPolished;
     bool mDisableStaticControls;
 
-    /* Cache: */
-    UISettingsCacheMachineStorage m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheMachineStorage *m_pCache;
 };
 
 #endif /* !___UIMachineSettingsStorage_h___ */

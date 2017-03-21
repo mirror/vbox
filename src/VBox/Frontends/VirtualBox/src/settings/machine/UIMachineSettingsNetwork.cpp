@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,13 +20,13 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
-# include "QIWidgetValidator.h"
 # include "QIArrowButtonSwitch.h"
-# include "UIMachineSettingsNetwork.h"
 # include "QITabWidget.h"
-# include "VBoxGlobal.h"
+# include "QIWidgetValidator.h"
 # include "UIConverter.h"
 # include "UIIconPool.h"
+# include "UIMachineSettingsNetwork.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CNetworkAdapter.h"
@@ -51,6 +51,183 @@ QString wipedOutString(const QString &strInputString)
 {
     return strInputString.isEmpty() ? QString() : strInputString;
 }
+
+
+/** Machine settings: Network Adapter data structure. */
+struct UIDataSettingsMachineNetworkAdapter
+{
+    /** Constructs data. */
+    UIDataSettingsMachineNetworkAdapter()
+        : m_iSlot(0)
+        , m_fAdapterEnabled(false)
+        , m_adapterType(KNetworkAdapterType_Null)
+        , m_attachmentType(KNetworkAttachmentType_Null)
+        , m_promiscuousMode(KNetworkAdapterPromiscModePolicy_Deny)
+        , m_strBridgedAdapterName(QString())
+        , m_strInternalNetworkName(QString())
+        , m_strHostInterfaceName(QString())
+        , m_strGenericDriverName(QString())
+        , m_strGenericProperties(QString())
+        , m_strNATNetworkName(QString())
+        , m_strMACAddress(QString())
+        , m_fCableConnected(false)
+        , m_redirects(UIPortForwardingDataList())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineNetworkAdapter &other) const
+    {
+        return true
+               && (m_iSlot == other.m_iSlot)
+               && (m_fAdapterEnabled == other.m_fAdapterEnabled)
+               && (m_adapterType == other.m_adapterType)
+               && (m_attachmentType == other.m_attachmentType)
+               && (m_promiscuousMode == other.m_promiscuousMode)
+               && (m_strBridgedAdapterName == other.m_strBridgedAdapterName)
+               && (m_strInternalNetworkName == other.m_strInternalNetworkName)
+               && (m_strHostInterfaceName == other.m_strHostInterfaceName)
+               && (m_strGenericDriverName == other.m_strGenericDriverName)
+               && (m_strGenericProperties == other.m_strGenericProperties)
+               && (m_strNATNetworkName == other.m_strNATNetworkName)
+               && (m_strMACAddress == other.m_strMACAddress)
+               && (m_fCableConnected == other.m_fCableConnected)
+               && (m_redirects == other.m_redirects)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineNetworkAdapter &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineNetworkAdapter &other) const { return !equal(other); }
+
+    /** Holds the network adapter slot number. */
+    int                               m_iSlot;
+    /** Holds whether the network adapter is enabled. */
+    bool                              m_fAdapterEnabled;
+    /** Holds the network adapter type. */
+    KNetworkAdapterType               m_adapterType;
+    /** Holds the network attachment type. */
+    KNetworkAttachmentType            m_attachmentType;
+    /** Holds the network promiscuous mode policy. */
+    KNetworkAdapterPromiscModePolicy  m_promiscuousMode;
+    /** Holds the bridged adapter name. */
+    QString                           m_strBridgedAdapterName;
+    /** Holds the internal network name. */
+    QString                           m_strInternalNetworkName;
+    /** Holds the host interface name. */
+    QString                           m_strHostInterfaceName;
+    /** Holds the generic driver name. */
+    QString                           m_strGenericDriverName;
+    /** Holds the generic driver properties. */
+    QString                           m_strGenericProperties;
+    /** Holds the NAT network name. */
+    QString                           m_strNATNetworkName;
+    /** Holds the network adapter MAC address. */
+    QString                           m_strMACAddress;
+    /** Holds whether the network adapter is connected. */
+    bool                              m_fCableConnected;
+    /** Holds the set of network redirection rules. */
+    UIPortForwardingDataList          m_redirects;
+};
+
+
+/** Machine settings: Network page data structure. */
+struct UIDataSettingsMachineNetwork
+{
+    /** Constructs data. */
+    UIDataSettingsMachineNetwork() {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineNetwork & /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineNetwork & /* other */) const { return false; }
+};
+
+
+/** Machine settings: Network Adapter tab. */
+class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>,
+                                 public Ui::UIMachineSettingsNetwork
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
+
+    /* Load / Save API: */
+    void fetchAdapterCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
+    void uploadAdapterCache(UISettingsCacheMachineNetworkAdapter &adapterCache);
+
+    /** Performs validation, updates @a messages list if something is wrong. */
+    bool validate(QList<UIValidationMessage> &messages);
+
+    /* Navigation stuff: */
+    QWidget* setOrderAfter(QWidget *pAfter);
+
+    /* Other public stuff: */
+    QString tabTitle() const;
+    KNetworkAttachmentType attachmentType() const;
+    QString alternativeName(int iType = -1) const;
+    void polishTab();
+    void reloadAlternative();
+
+    /** Defines whether the advanced button is @a fExpanded. */
+    void setAdvancedButtonState(bool fExpanded);
+
+signals:
+
+    /* Signal to notify listeners about tab content changed: */
+    void sigTabUpdated();
+
+    /** Notifies about the advanced button has @a fExpanded. */
+    void sigNotifyAdvancedButtonStateChange(bool fExpanded);
+
+protected:
+
+    /** Handles translation event. */
+    void retranslateUi();
+
+private slots:
+
+    /* Different handlers: */
+    void sltHandleAdapterActivityChange();
+    void sltHandleAttachmentTypeChange();
+    void sltHandleAlternativeNameChange();
+    void sltHandleAdvancedButtonStateChange();
+    void sltGenerateMac();
+    void sltOpenPortForwardingDlg();
+
+private:
+
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
+
+    /* Helping stuff: */
+    void populateComboboxes();
+    void updateAlternativeList();
+    void updateAlternativeName();
+
+    /** Handles advanced button state change. */
+    void handleAdvancedButtonStateChange();
+
+    /* Various static stuff: */
+    static int position(QComboBox *pComboBox, int iData);
+    static int position(QComboBox *pComboBox, const QString &strText);
+
+    /* Parent page: */
+    UIMachineSettingsNetworkPage *m_pParent;
+
+    /* Other variables: */
+    int m_iSlot;
+    QString m_strBridgedAdapterName;
+    QString m_strInternalNetworkName;
+    QString m_strHostInterfaceName;
+    QString m_strGenericDriverName;
+    QString m_strNATNetworkName;
+    UIPortForwardingDataList m_portForwardingRules;
+};
+
 
 UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent)
     : QIWithRetranslateUI<QWidget>(0)
@@ -815,6 +992,7 @@ int UIMachineSettingsNetwork::position(QComboBox *pComboBox, const QString &strT
 /* UIMachineSettingsNetworkPage Stuff: */
 UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     : m_pTwAdapters(0)
+    , m_pCache(new UISettingsCacheMachineNetwork)
 {
     /* Setup main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -841,13 +1019,25 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     }
 }
 
+UIMachineSettingsNetworkPage::~UIMachineSettingsNetworkPage()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
+bool UIMachineSettingsNetworkPage::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Cache name lists: */
     refreshBridgedAdapterList();
@@ -899,7 +1089,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
         }
 
         /* Cache adapter data: */
-        m_cache.child(iSlot).cacheInitialData(adapterData);
+        m_pCache->child(iSlot).cacheInitialData(adapterData);
     }
 
     /* Upload machine to data: */
@@ -920,7 +1110,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
 
         /* Load adapter data to page: */
-        pTab->fetchAdapterCache(m_cache.child(iSlot));
+        pTab->fetchAdapterCache(m_pCache->child(iSlot));
 
         /* Setup tab order: */
         pLastFocusWidget = pTab->setOrderAfter(pLastFocusWidget);
@@ -945,7 +1135,7 @@ void UIMachineSettingsNetworkPage::putToCache()
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
 
         /* Gather & cache adapter data: */
-        pTab->uploadAdapterCache(m_cache.child(iSlot));
+        pTab->uploadAdapterCache(m_pCache->child(iSlot));
     }
 }
 
@@ -955,13 +1145,13 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Check if network data was changed: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* For each network adapter: */
         for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
         {
             /* Check if adapter data was changed: */
-            const UISettingsCacheMachineNetworkAdapter &adapterCache = m_cache.child(iSlot);
+            const UISettingsCacheMachineNetworkAdapter &adapterCache = m_pCache->child(iSlot);
             if (adapterCache.wasChanged())
             {
                 /* Check if adapter still valid: */
@@ -1116,7 +1306,7 @@ void UIMachineSettingsNetworkPage::polishPage()
     {
         m_pTwAdapters->setTabEnabled(iSlot,
                                      isMachineOffline() ||
-                                     (isMachineInValidMode() && m_cache.child(iSlot).base().m_fAdapterEnabled));
+                                     (isMachineInValidMode() && m_pCache->child(iSlot).base().m_fAdapterEnabled));
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
         pTab->polishTab();
     }
@@ -1270,4 +1460,6 @@ void UIMachineSettingsNetworkPage::updateGenericProperties(CNetworkAdapter &adap
             adapter.SetProperty(strName, hash[strName]);
     }
 }
+
+# include "UIMachineSettingsNetwork.moc"
 

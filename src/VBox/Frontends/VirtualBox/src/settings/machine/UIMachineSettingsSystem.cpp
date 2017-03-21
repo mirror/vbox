@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,10 +24,10 @@
 
 /* GUI includes: */
 # include "QIWidgetValidator.h"
-# include "UIIconPool.h"
-# include "VBoxGlobal.h"
-# include "UIMachineSettingsSystem.h"
 # include "UIConverter.h"
+# include "UIIconPool.h"
+# include "UIMachineSettingsSystem.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CBIOSSettings.h"
@@ -38,13 +38,139 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Machine settings: System Boot data structure. */
+struct UIBootItemData
+{
+    /** Constructs data. */
+    UIBootItemData()
+        : m_type(KDeviceType_Null)
+        , m_fEnabled(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIBootItemData &other) const
+    {
+        return true
+               && (m_type == other.m_type)
+               && (m_fEnabled == other.m_fEnabled)
+               ;
+    }
+
+    /** Holds the boot device type. */
+    KDeviceType m_type;
+    /** Holds whether the boot device enabled. */
+    bool m_fEnabled;
+};
+
+
+/** Machine settings: System page data structure. */
+struct UIDataSettingsMachineSystem
+{
+    /** Constructs data. */
+    UIDataSettingsMachineSystem()
+        /* Support flags: */
+        : m_fSupportedPAE(false)
+        , m_fSupportedHwVirtEx(false)
+        /* Motherboard data: */
+        , m_iMemorySize(-1)
+        , m_bootItems(QList<UIBootItemData>())
+        , m_chipsetType(KChipsetType_Null)
+        , m_pointingHIDType(KPointingHIDType_None)
+        , m_fEnabledIoApic(false)
+        , m_fEnabledEFI(false)
+        , m_fEnabledUTC(false)
+        /* CPU data: */
+        , m_cCPUCount(-1)
+        , m_iCPUExecCap(-1)
+        , m_fEnabledPAE(false)
+        /* Acceleration data: */
+        , m_paravirtProvider(KParavirtProvider_None)
+        , m_fEnabledHwVirtEx(false)
+        , m_fEnabledNestedPaging(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineSystem &other) const
+    {
+        return true
+               /* Support flags: */
+               && (m_fSupportedPAE == other.m_fSupportedPAE)
+               && (m_fSupportedHwVirtEx == other.m_fSupportedHwVirtEx)
+               /* Motherboard data: */
+               && (m_iMemorySize == other.m_iMemorySize)
+               && (m_bootItems == other.m_bootItems)
+               && (m_chipsetType == other.m_chipsetType)
+               && (m_pointingHIDType == other.m_pointingHIDType)
+               && (m_fEnabledIoApic == other.m_fEnabledIoApic)
+               && (m_fEnabledEFI == other.m_fEnabledEFI)
+               && (m_fEnabledUTC == other.m_fEnabledUTC)
+               /* CPU data: */
+               && (m_cCPUCount == other.m_cCPUCount)
+               && (m_iCPUExecCap == other.m_iCPUExecCap)
+               && (m_fEnabledPAE == other.m_fEnabledPAE)
+               /* Acceleration data: */
+               && (m_paravirtProvider == other.m_paravirtProvider)
+               && (m_fEnabledHwVirtEx == other.m_fEnabledHwVirtEx)
+               && (m_fEnabledNestedPaging == other.m_fEnabledNestedPaging)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineSystem &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineSystem &other) const { return !equal(other); }
+
+    /** Holds whether the PAE is supported. */
+    bool  m_fSupportedPAE;
+    /** Holds whether the HW Virt Ex is supported. */
+    bool  m_fSupportedHwVirtEx;
+
+    /** Holds the RAM size. */
+    int                    m_iMemorySize;
+    /** Holds the boot items. */
+    QList<UIBootItemData>  m_bootItems;
+    /** Holds the chipset type. */
+    KChipsetType           m_chipsetType;
+    /** Holds the pointing HID type. */
+    KPointingHIDType       m_pointingHIDType;
+    /** Holds whether the IO APIC is enabled. */
+    bool                   m_fEnabledIoApic;
+    /** Holds whether the EFI is enabled. */
+    bool                   m_fEnabledEFI;
+    /** Holds whether the UTC is enabled. */
+    bool                   m_fEnabledUTC;
+
+    /** Holds the CPU count. */
+    int   m_cCPUCount;
+    /** Holds the CPU execution cap. */
+    int   m_iCPUExecCap;
+    /** Holds whether the PAE is enabled. */
+    bool  m_fEnabledPAE;
+
+    /** Holds the paravirtualization provider. */
+    KParavirtProvider  m_paravirtProvider;
+    /** Holds whether the HW Virt Ex is enabled. */
+    bool               m_fEnabledHwVirtEx;
+    /** Holds whether the Nested Paging is enabled. */
+    bool               m_fEnabledNestedPaging;
+};
+
+
 UIMachineSettingsSystem::UIMachineSettingsSystem()
     : m_uMinGuestCPU(0), m_uMaxGuestCPU(0)
     , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
     , m_fIsUSBEnabled(false)
+    , m_pCache(new UISettingsCacheMachineSystem)
 {
     /* Prepare: */
     prepare();
+}
+
+UIMachineSettingsSystem::~UIMachineSettingsSystem()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 bool UIMachineSettingsSystem::isHWVirtExEnabled() const
@@ -75,13 +201,18 @@ void UIMachineSettingsSystem::setUSBEnabled(bool fEnabled)
     revalidate();
 }
 
+bool UIMachineSettingsSystem::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare system data: */
     UIDataSettingsMachineSystem systemData;
@@ -136,7 +267,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     systemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
     /* Cache system data: */
-    m_cache.cacheInitialData(systemData);
+    m_pCache->cacheInitialData(systemData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -145,7 +276,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsSystem::getFromCache()
 {
     /* Get system data from cache: */
-    const UIDataSettingsMachineSystem &systemData = m_cache.base();
+    const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
     /* Repopulate 'pointing HID type' combo.
      * We are doing that *now* because it has dynamical content
@@ -195,7 +326,7 @@ void UIMachineSettingsSystem::getFromCache()
 void UIMachineSettingsSystem::putToCache()
 {
     /* Prepare system data: */
-    UIDataSettingsMachineSystem systemData = m_cache.base();
+    UIDataSettingsMachineSystem systemData = m_pCache->base();
 
     /* Gather motherboard data: */
     systemData.m_iMemorySize = m_pSliderMemorySize->value();
@@ -228,7 +359,7 @@ void UIMachineSettingsSystem::putToCache()
     systemData.m_fEnabledNestedPaging = m_pCheckBoxNestedPaging->isChecked();
 
     /* Cache system data: */
-    m_cache.cacheCurrentData(systemData);
+    m_pCache->cacheCurrentData(systemData);
 }
 
 void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
@@ -237,10 +368,10 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Check if system data was changed: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* Get system data from cache: */
-        const UIDataSettingsMachineSystem &systemData = m_cache.data();
+        const UIDataSettingsMachineSystem &systemData = m_pCache->data();
 
         /* Store system data: */
         if (isMachineOffline())
@@ -456,7 +587,7 @@ void UIMachineSettingsSystem::retranslateUi()
 void UIMachineSettingsSystem::polishPage()
 {
     /* Get system data from cache: */
-    const UIDataSettingsMachineSystem &systemData = m_cache.base();
+    const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
     /* Motherboard tab: */
     m_pLabelMemorySize->setEnabled(isMachineOffline());
@@ -750,7 +881,7 @@ void UIMachineSettingsSystem::repopulateComboPointingHIDType()
     m_pComboPointingHIDType->clear();
 
     /* Repopulate combo taking into account currently cached value: */
-    KPointingHIDType cachedValue = m_cache.base().m_pointingHIDType;
+    KPointingHIDType cachedValue = m_pCache->base().m_pointingHIDType;
     {
         /* "PS/2 Mouse" value is always here: */
         m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_PS2Mouse), (int)KPointingHIDType_PS2Mouse);

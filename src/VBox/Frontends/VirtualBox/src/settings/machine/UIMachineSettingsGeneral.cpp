@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,33 +18,121 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
 # include <QDir>
 # include <QLineEdit>
+
 /* GUI includes: */
 # include "QIWidgetValidator.h"
+# include "UIConverter.h"
 # include "UIMachineSettingsGeneral.h"
+# include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
 # include "UIProgressDialog.h"
-# include "UIMessageCenter.h"
-# include "UIConverter.h"
+
 /* COM includes: */
-# include "CMedium.h"
 # include "CExtPack.h"
 # include "CExtPackManager.h"
+# include "CMedium.h"
 # include "CMediumAttachment.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Machine settings: General page data structure. */
+struct UIDataSettingsMachineGeneral
+{
+    /** Constructs data. */
+    UIDataSettingsMachineGeneral()
+        : m_strName(QString())
+        , m_strGuestOsTypeId(QString())
+        , m_strSnapshotsFolder(QString())
+        , m_strSnapshotsHomeDir(QString())
+        , m_clipboardMode(KClipboardMode_Disabled)
+        , m_dndMode(KDnDMode_Disabled)
+        , m_strDescription(QString())
+        , m_fEncryptionEnabled(false)
+        , m_fEncryptionCipherChanged(false)
+        , m_fEncryptionPasswordChanged(false)
+        , m_iEncryptionCipherIndex(-1)
+        , m_strEncryptionPassword(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineGeneral &other) const
+    {
+        return true
+               && (m_strName == other.m_strName)
+               && (m_strGuestOsTypeId == other.m_strGuestOsTypeId)
+               && (m_strSnapshotsFolder == other.m_strSnapshotsFolder)
+               && (m_strSnapshotsHomeDir == other.m_strSnapshotsHomeDir)
+               && (m_clipboardMode == other.m_clipboardMode)
+               && (m_dndMode == other.m_dndMode)
+               && (m_strDescription == other.m_strDescription)
+               && (m_fEncryptionEnabled == other.m_fEncryptionEnabled)
+               && (m_fEncryptionCipherChanged == other.m_fEncryptionCipherChanged)
+               && (m_fEncryptionPasswordChanged == other.m_fEncryptionPasswordChanged)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineGeneral &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineGeneral &other) const { return !equal(other); }
+
+    /** Holds the VM name. */
+    QString  m_strName;
+    /** Holds the VM OS type ID. */
+    QString  m_strGuestOsTypeId;
+
+    /** Holds the VM snapshot folder. */
+    QString         m_strSnapshotsFolder;
+    /** Holds the default VM snapshot folder. */
+    QString         m_strSnapshotsHomeDir;
+    /** Holds the VM shared clipboard mode. */
+    KClipboardMode  m_clipboardMode;
+    /** Holds the VM drag&drop mode. */
+    KDnDMode        m_dndMode;
+
+    /** Holds the VM description. */
+    QString  m_strDescription;
+
+    /** Holds whether the encryption is enabled. */
+    bool                   m_fEncryptionEnabled;
+    /** Holds whether the encryption cipher was changed. */
+    bool                   m_fEncryptionCipherChanged;
+    /** Holds whether the encryption password was changed. */
+    bool                   m_fEncryptionPasswordChanged;
+    /** Holds the encryption cipher index. */
+    int                    m_iEncryptionCipherIndex;
+    /** Holds the encryption password. */
+    QString                m_strEncryptionPassword;
+    /** Holds the encrypted medium ids. */
+    EncryptedMediumMap     m_encryptedMediums;
+    /** Holds the encryption passwords. */
+    EncryptionPasswordMap  m_encryptionPasswords;
+};
+
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : m_fHWVirtExEnabled(false)
     , m_fEncryptionCipherChanged(false)
     , m_fEncryptionPasswordChanged(false)
+    , m_pCache(new UISettingsCacheMachineGeneral)
 {
     /* Prepare: */
     prepare();
 
     /* Translate: */
     retranslateUi();
+}
+
+UIMachineSettingsGeneral::~UIMachineSettingsGeneral()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 CGuestOSType UIMachineSettingsGeneral::guestOSType() const
@@ -80,13 +168,18 @@ void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
     revalidate();
 }
 
+bool UIMachineSettingsGeneral::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare general data: */
     UIDataSettingsMachineGeneral generalData;
@@ -142,7 +235,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     generalData.m_encryptedMediums = encryptedMediums;
 
     /* Cache general data: */
-    m_cache.cacheInitialData(generalData);
+    m_pCache->cacheInitialData(generalData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -151,7 +244,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsGeneral::getFromCache()
 {
     /* Get general data from cache: */
-    const UIDataSettingsMachineGeneral &generalData = m_cache.base();
+    const UIDataSettingsMachineGeneral &generalData = m_pCache->base();
 
     /* 'Basic' tab data: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
@@ -189,7 +282,7 @@ void UIMachineSettingsGeneral::getFromCache()
 void UIMachineSettingsGeneral::putToCache()
 {
     /* Prepare general data: */
-    UIDataSettingsMachineGeneral generalData = m_cache.base();
+    UIDataSettingsMachineGeneral generalData = m_pCache->base();
 
     /* 'Basic' tab data: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
@@ -219,12 +312,12 @@ void UIMachineSettingsGeneral::putToCache()
     generalData.m_iEncryptionCipherIndex = m_pComboCipher->currentIndex();
     generalData.m_strEncryptionPassword = m_pEditorEncryptionPassword->text();
     /* If encryption status, cipher or password is changed: */
-    if (generalData.m_fEncryptionEnabled != m_cache.base().m_fEncryptionEnabled ||
-        generalData.m_fEncryptionCipherChanged != m_cache.base().m_fEncryptionCipherChanged ||
-        generalData.m_fEncryptionPasswordChanged != m_cache.base().m_fEncryptionPasswordChanged)
+    if (generalData.m_fEncryptionEnabled != m_pCache->base().m_fEncryptionEnabled ||
+        generalData.m_fEncryptionCipherChanged != m_pCache->base().m_fEncryptionCipherChanged ||
+        generalData.m_fEncryptionPasswordChanged != m_pCache->base().m_fEncryptionPasswordChanged)
     {
         /* Ask for the disk encryption passwords if necessary: */
-        if (!m_cache.base().m_encryptedMediums.isEmpty())
+        if (!m_pCache->base().m_encryptedMediums.isEmpty())
         {
             /* Create corresponding dialog: */
             QWidget *pDlgParent = windowManager().realParentWindow(window());
@@ -242,7 +335,7 @@ void UIMachineSettingsGeneral::putToCache()
     }
 
     /* Cache general data: */
-    m_cache.cacheCurrentData(generalData);
+    m_pCache->cacheCurrentData(generalData);
 }
 
 void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
@@ -251,28 +344,28 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Check if general data was changed: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* Get general data from cache: */
-        const UIDataSettingsMachineGeneral &generalData = m_cache.data();
+        const UIDataSettingsMachineGeneral &generalData = m_pCache->data();
 
         if (isMachineInValidMode())
         {
             /* 'Advanced' tab data: */
-            if (generalData.m_clipboardMode != m_cache.base().m_clipboardMode)
+            if (generalData.m_clipboardMode != m_pCache->base().m_clipboardMode)
                 m_machine.SetClipboardMode(generalData.m_clipboardMode);
-            if (generalData.m_dndMode != m_cache.base().m_dndMode)
+            if (generalData.m_dndMode != m_pCache->base().m_dndMode)
                 m_machine.SetDnDMode(generalData.m_dndMode);
 
             /* 'Description' tab: */
-            if (generalData.m_strDescription != m_cache.base().m_strDescription)
+            if (generalData.m_strDescription != m_pCache->base().m_strDescription)
                 m_machine.SetDescription(generalData.m_strDescription);
         }
 
         if (isMachineOffline())
         {
             /* 'Basic' tab data: Must update long mode CPU feature bit when os type changes. */
-            if (generalData.m_strGuestOsTypeId != m_cache.base().m_strGuestOsTypeId)
+            if (generalData.m_strGuestOsTypeId != m_pCache->base().m_strGuestOsTypeId)
             {
                 m_machine.SetOSTypeId(generalData.m_strGuestOsTypeId);
                 CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -281,23 +374,23 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
             }
 
             /* 'Advanced' tab data: */
-            if (generalData.m_strSnapshotsFolder != m_cache.base().m_strSnapshotsFolder)
+            if (generalData.m_strSnapshotsFolder != m_pCache->base().m_strSnapshotsFolder)
                 m_machine.SetSnapshotFolder(generalData.m_strSnapshotsFolder);
 
             /* 'Basic' (again) tab data: */
             /* VM name must be last as otherwise its VM rename magic
              * can collide with other settings in the config,
              * especially with the snapshot folder: */
-            if (generalData.m_strName != m_cache.base().m_strName)
+            if (generalData.m_strName != m_pCache->base().m_strName)
                 m_machine.SetName(generalData.m_strName);
 
             /* Encryption tab data:
              * Make sure it either encryption is changed itself,
              * or the encryption was already enabled and either cipher or password is changed. */
-            if (   generalData.m_fEncryptionEnabled != m_cache.base().m_fEncryptionEnabled
-                || (   m_cache.base().m_fEncryptionEnabled
-                    && (   generalData.m_fEncryptionCipherChanged != m_cache.base().m_fEncryptionCipherChanged
-                        || generalData.m_fEncryptionPasswordChanged != m_cache.base().m_fEncryptionPasswordChanged)))
+            if (   generalData.m_fEncryptionEnabled != m_pCache->base().m_fEncryptionEnabled
+                || (   m_pCache->base().m_fEncryptionEnabled
+                    && (   generalData.m_fEncryptionCipherChanged != m_pCache->base().m_fEncryptionCipherChanged
+                        || generalData.m_fEncryptionPasswordChanged != m_pCache->base().m_fEncryptionPasswordChanged)))
             {
                 /* Cipher attribute changed? */
                 QString strNewCipher;
@@ -417,7 +510,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
 
         /* Cipher should be chosen if once changed: */
         AssertPtrReturn(m_pComboCipher, false);
-        if (!m_cache.base().m_fEncryptionEnabled ||
+        if (!m_pCache->base().m_fEncryptionEnabled ||
             m_fEncryptionCipherChanged)
         {
             if (m_pComboCipher->currentIndex() == 0)
@@ -428,7 +521,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
         /* Password should be entered and confirmed if once changed: */
         AssertPtrReturn(m_pEditorEncryptionPassword, false);
         AssertPtrReturn(m_pEditorEncryptionPasswordConfirm, false);
-        if (!m_cache.base().m_fEncryptionEnabled ||
+        if (!m_pCache->base().m_fEncryptionEnabled ||
             m_fEncryptionPasswordChanged)
         {
             if (m_pEditorEncryptionPassword->text().isEmpty())

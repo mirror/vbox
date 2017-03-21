@@ -22,39 +22,8 @@
 #include "UISettingsPage.h"
 #include "UIMachineSettingsAudio.gen.h"
 
-
-/** Machine settings: Audio page data structure. */
-struct UIDataSettingsMachineAudio
-{
-    /** Constructs data. */
-    UIDataSettingsMachineAudio()
-        : m_fAudioEnabled(false)
-        , m_audioDriverType(KAudioDriverType_Null)
-        , m_audioControllerType(KAudioControllerType_AC97)
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsMachineAudio &other) const
-    {
-        return true
-               && (m_fAudioEnabled == other.m_fAudioEnabled)
-               && (m_audioDriverType == other.m_audioDriverType)
-               && (m_audioControllerType == other.m_audioControllerType)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineAudio &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineAudio &other) const { return !equal(other); }
-
-    /** Holds whether the audio is enabled. */
-    bool                  m_fAudioEnabled;
-    /** Holds the audio driver type. */
-    KAudioDriverType      m_audioDriverType;
-    /** Holds the audio controller type. */
-    KAudioControllerType  m_audioControllerType;
-};
+/* Forward declarations: */
+struct UIDataSettingsMachineAudio;
 typedef UISettingsCache<UIDataSettingsMachineAudio> UISettingsCacheMachineAudio;
 
 
@@ -66,13 +35,15 @@ class UIMachineSettingsAudio : public UISettingsPageMachine,
 
 public:
 
-    /* Constructor: */
+    /** Constructs Audio settings page. */
     UIMachineSettingsAudio();
+    /** Destructs Audio settings page. */
+    ~UIMachineSettingsAudio();
 
 protected:
 
     /** Returns whether the page content was changed. */
-    bool changed() const { return m_cache.wasChanged(); }
+    bool changed() const /* override */;
 
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
@@ -103,8 +74,8 @@ private:
     void prepare();
     void prepareComboboxes();
 
-    /* Cache: */
-    UISettingsCacheMachineAudio m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheMachineAudio *m_pCache;
 };
 
 #endif /* !___UIMachineSettingsAudio_h___ */

@@ -55,6 +55,115 @@ QString compressText (const QString &aText)
 }
 
 
+/** Machine settings: Storage Attachment data structure. */
+struct UIDataSettingsMachineStorageAttachment
+{
+    /** Constructs data. */
+    UIDataSettingsMachineStorageAttachment()
+        : m_attachmentType(KDeviceType_Null)
+        , m_iAttachmentPort(-1)
+        , m_iAttachmentDevice(-1)
+        , m_strAttachmentMediumId(QString())
+        , m_fAttachmentPassthrough(false)
+        , m_fAttachmentTempEject(false)
+        , m_fAttachmentNonRotational(false)
+        , m_fAttachmentHotPluggable(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineStorageAttachment &other) const
+    {
+        return true
+               && (m_attachmentType == other.m_attachmentType)
+               && (m_iAttachmentPort == other.m_iAttachmentPort)
+               && (m_iAttachmentDevice == other.m_iAttachmentDevice)
+               && (m_strAttachmentMediumId == other.m_strAttachmentMediumId)
+               && (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough)
+               && (m_fAttachmentTempEject == other.m_fAttachmentTempEject)
+               && (m_fAttachmentNonRotational == other.m_fAttachmentNonRotational)
+               && (m_fAttachmentHotPluggable == other.m_fAttachmentHotPluggable)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineStorageAttachment &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineStorageAttachment &other) const { return !equal(other); }
+
+    /** Holds the attachment type. */
+    KDeviceType  m_attachmentType;
+    /** Holds the attachment port. */
+    LONG         m_iAttachmentPort;
+    /** Holds the attachment device. */
+    LONG         m_iAttachmentDevice;
+    /** Holds the attachment medium ID. */
+    QString      m_strAttachmentMediumId;
+    /** Holds whether the attachment being passed through. */
+    bool         m_fAttachmentPassthrough;
+    /** Holds whether the attachment being temporarily eject. */
+    bool         m_fAttachmentTempEject;
+    /** Holds whether the attachment is solid-state. */
+    bool         m_fAttachmentNonRotational;
+    /** Holds whether the attachment is hot-pluggable. */
+    bool         m_fAttachmentHotPluggable;
+};
+
+
+/** Machine settings: Storage Controller data structure. */
+struct UIDataSettingsMachineStorageController
+{
+    /** Constructs data. */
+    UIDataSettingsMachineStorageController()
+        : m_strControllerName(QString())
+        , m_controllerBus(KStorageBus_Null)
+        , m_controllerType(KStorageControllerType_Null)
+        , m_uPortCount(0)
+        , m_fUseHostIOCache(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineStorageController &other) const
+    {
+        return true
+               && (m_strControllerName == other.m_strControllerName)
+               && (m_controllerBus == other.m_controllerBus)
+               && (m_controllerType == other.m_controllerType)
+               && (m_uPortCount == other.m_uPortCount)
+               && (m_fUseHostIOCache == other.m_fUseHostIOCache)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineStorageController &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineStorageController &other) const { return !equal(other); }
+
+    /** Holds the controller name. */
+    QString                 m_strControllerName;
+    /** Holds the controller bus. */
+    KStorageBus             m_controllerBus;
+    /** Holds the controller type. */
+    KStorageControllerType  m_controllerType;
+    /** Holds the controller port count. */
+    uint                    m_uPortCount;
+    /** Holds whether the controller uses host IO cache. */
+    bool                    m_fUseHostIOCache;
+};
+
+
+/** Machine settings: Storage page data structure. */
+struct UIDataSettingsMachineStorage
+{
+    /** Constructs data. */
+    UIDataSettingsMachineStorage() {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineStorage& /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineStorage& /* other */) const { return false; }
+};
+
+
 /** UIIconPool interface extension used as Storage Settings page icon-pool. */
 class UIIconPoolStorageSettings : public UIIconPool
 {
@@ -2009,6 +2118,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     , mIsLoadingInProgress(0)
     , mIsPolished(false)
     , mDisableStaticControls(0)
+    , m_pCache(new UISettingsCacheMachineStorage)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsStorage::setupUi (this);
@@ -2179,6 +2289,10 @@ UIMachineSettingsStorage::~UIMachineSettingsStorage()
 {
     /* Destroy icon-pool: */
     UIIconPoolStorageSettings::destroy();
+
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
@@ -2195,13 +2309,18 @@ void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
     revalidate();
 }
 
+bool UIMachineSettingsStorage::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Gather storage data: */
     m_strMachineId = m_machine.GetId();
@@ -2261,12 +2380,12 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                 }
 
                 /* Cache storage attachment data: */
-                m_cache.child(iControllerIndex).child(iAttachmentIndex).cacheInitialData(storageAttachmentData);
+                m_pCache->child(iControllerIndex).child(iAttachmentIndex).cacheInitialData(storageAttachmentData);
             }
         }
 
         /* Cache storage controller data: */
-        m_cache.child(iControllerIndex).cacheInitialData(storageControllerData);
+        m_pCache->child(iControllerIndex).cacheInitialData(storageControllerData);
     }
 
     /* Upload machine to data: */
@@ -2282,10 +2401,10 @@ void UIMachineSettingsStorage::getFromCache()
     mStorageModel->setMachineId(m_strMachineId);
 
     /* For each storage controller: */
-    for (int iControllerIndex = 0; iControllerIndex < m_cache.childCount(); ++iControllerIndex)
+    for (int iControllerIndex = 0; iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
     {
         /* Get storage controller cache: */
-        const UISettingsCacheMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+        const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
         /* Get storage controller data from cache: */
         const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
 
@@ -2334,7 +2453,7 @@ void UIMachineSettingsStorage::getFromCache()
 void UIMachineSettingsStorage::putToCache()
 {
     /* Prepare storage data: */
-    UIDataSettingsMachineStorage storageData = m_cache.base();
+    UIDataSettingsMachineStorage storageData = m_pCache->base();
 
     /* For each storage controller: */
     QModelIndex rootIndex = mStorageModel->root();
@@ -2370,15 +2489,15 @@ void UIMachineSettingsStorage::putToCache()
             attachmentData.m_strAttachmentMediumId = mStorageModel->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
 
             /* Recache storage attachment data: */
-            m_cache.child(iControllerIndex).child(iAttachmentIndex).cacheCurrentData(attachmentData);
+            m_pCache->child(iControllerIndex).child(iAttachmentIndex).cacheCurrentData(attachmentData);
         }
 
         /* Recache storage controller data: */
-        m_cache.child(iControllerIndex).cacheCurrentData(controllerData);
+        m_pCache->child(iControllerIndex).cacheCurrentData(controllerData);
     }
 
     /* Recache storage data: */
-    m_cache.cacheCurrentData(storageData);
+    m_pCache->cacheCurrentData(storageData);
 }
 
 void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
@@ -3575,13 +3694,13 @@ bool UIMachineSettingsStorage::updateStorageData()
     if (fSuccess)
     {
         /* Check if storage data was changed: */
-        if (m_cache.wasChanged())
+        if (m_pCache->wasChanged())
         {
             /* For each controller (removing step): */
-            for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_cache.childCount(); ++iControllerIndex)
+            for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
             {
                 /* Get controller cache: */
-                const UISettingsCacheMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+                const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
 
                 /* Remove controllers marked for 'remove' and 'update' (if they can't be updated): */
                 if (controllerCache.wasRemoved() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
@@ -3606,10 +3725,10 @@ bool UIMachineSettingsStorage::updateStorageData()
             }
 
             /* For each controller (creating step): */
-            for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_cache.childCount(); ++iControllerIndex)
+            for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
             {
                 /* Get controller cache: */
-                const UISettingsCacheMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+                const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
 
                 /* Create controllers marked for 'create' or 'update' (if they can't be updated): */
                 if (controllerCache.wasCreated() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))

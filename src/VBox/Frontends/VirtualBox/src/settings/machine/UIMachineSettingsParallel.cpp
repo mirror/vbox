@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,15 +23,109 @@
 # include <QDir>
 
 /* GUI includes: */
-# include "UIMachineSettingsParallel.h"
 # include "QIWidgetValidator.h"
-# include "VBoxGlobal.h"
 # include "QITabWidget.h"
+# include "UIMachineSettingsParallel.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CParallelPort.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Machine settings: Parallel Port tab data structure. */
+struct UIDataSettingsMachineParallelPort
+{
+    /** Constructs data. */
+    UIDataSettingsMachineParallelPort()
+        : m_iSlot(-1)
+        , m_fPortEnabled(false)
+        , m_uIRQ(0)
+        , m_uIOBase(0)
+        , m_strPath(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineParallelPort &other) const
+    {
+        return true
+               && (m_iSlot == other.m_iSlot)
+               && (m_fPortEnabled == other.m_fPortEnabled)
+               && (m_uIRQ == other.m_uIRQ)
+               && (m_uIOBase == other.m_uIOBase)
+               && (m_strPath == other.m_strPath)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineParallelPort &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineParallelPort &other) const { return !equal(other); }
+
+    /** Holds the parallel port slot number. */
+    int      m_iSlot;
+    /** Holds whether the parallel port is enabled. */
+    bool     m_fPortEnabled;
+    /** Holds the parallel port IRQ. */
+    ulong    m_uIRQ;
+    /** Holds the parallel port IO base. */
+    ulong    m_uIOBase;
+    /** Holds the parallel port path. */
+    QString  m_strPath;
+};
+
+
+/** Machine settings: Parallel page data structure. */
+struct UIDataSettingsMachineParallel
+{
+    /** Constructs data. */
+    UIDataSettingsMachineParallel() {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineParallel & /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineParallel & /* other */) const { return false; }
+};
+
+
+/** Machine settings: Parallel Port tab. */
+class UIMachineSettingsParallel : public QIWithRetranslateUI<QWidget>,
+                                  public Ui::UIMachineSettingsParallel
+{
+    Q_OBJECT;
+
+public:
+
+    UIMachineSettingsParallel(UIMachineSettingsParallelPage *pParent);
+
+    void polishTab();
+
+    void fetchPortData(const UISettingsCacheMachineParallelPort &portCache);
+    void uploadPortData(UISettingsCacheMachineParallelPort &portCache);
+
+    QWidget* setOrderAfter (QWidget *aAfter);
+
+    QString pageTitle() const;
+    bool isUserDefined();
+
+protected:
+
+    void retranslateUi();
+
+private slots:
+
+    void mGbParallelToggled (bool aOn);
+    void mCbNumberActivated (const QString &aText);
+
+private:
+
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
+
+    UIMachineSettingsParallelPage *m_pParent;
+    int m_iSlot;
+};
 
 
 /* UIMachineSettingsParallel stuff */
@@ -187,6 +281,7 @@ void UIMachineSettingsParallel::prepareValidation()
 /* UIMachineSettingsParallelPage stuff */
 UIMachineSettingsParallelPage::UIMachineSettingsParallelPage()
     : mTabWidget(0)
+    , m_pCache(new UISettingsCacheMachineParallel)
 {
     /* TabWidget creation */
     mTabWidget = new QITabWidget (this);
@@ -205,13 +300,25 @@ UIMachineSettingsParallelPage::UIMachineSettingsParallelPage()
     }
 }
 
+UIMachineSettingsParallelPage::~UIMachineSettingsParallelPage()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
+bool UIMachineSettingsParallelPage::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* For each parallel port: */
     for (int iSlot = 0; iSlot < mTabWidget->count(); ++iSlot)
@@ -232,7 +339,7 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
         }
 
         /* Cache port data: */
-        m_cache.child(iSlot).cacheInitialData(portData);
+        m_pCache->child(iSlot).cacheInitialData(portData);
     }
 
     /* Upload machine to data: */
@@ -253,7 +360,7 @@ void UIMachineSettingsParallelPage::getFromCache()
         UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(mTabWidget->widget(iPort));
 
         /* Load port data to page: */
-        pPage->fetchPortData(m_cache.child(iPort));
+        pPage->fetchPortData(m_pCache->child(iPort));
 
         /* Setup tab order: */
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
@@ -278,7 +385,7 @@ void UIMachineSettingsParallelPage::putToCache()
         UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(mTabWidget->widget(iPort));
 
         /* Gather & cache port data: */
-        pPage->uploadPortData(m_cache.child(iPort));
+        pPage->uploadPortData(m_pCache->child(iPort));
     }
 }
 
@@ -288,13 +395,13 @@ void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Check if ports data was changed: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* For each parallel port: */
         for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
         {
             /* Check if port data was changed: */
-            const UISettingsCacheMachineParallelPort &portCache = m_cache.child(iPort);
+            const UISettingsCacheMachineParallelPort &portCache = m_pCache->child(iPort);
             if (portCache.wasChanged())
             {
                 /* Check if port still valid: */
@@ -404,9 +511,11 @@ void UIMachineSettingsParallelPage::polishPage()
     {
         mTabWidget->setTabEnabled(iPort,
                                   isMachineOffline() ||
-                                  (isMachineInValidMode() && m_cache.child(iPort).base().m_fPortEnabled));
+                                  (isMachineInValidMode() && m_pCache->child(iPort).base().m_fPortEnabled));
         UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(mTabWidget->widget(iPort));
         pTab->polishTab();
     }
 }
+
+# include "UIMachineSettingsParallel.moc"
 

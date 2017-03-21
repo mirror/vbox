@@ -27,120 +27,7 @@
 
 /* Forward declarations: */
 class UIActionPool;
-
-
-/** Machine settings: Display page data structure. */
-struct UIDataSettingsMachineDisplay
-{
-    /** Constructs data. */
-    UIDataSettingsMachineDisplay()
-        : m_iCurrentVRAM(0)
-        , m_cGuestScreenCount(0)
-        , m_dScaleFactor(1.0)
-#ifdef VBOX_WS_MAC
-        , m_fUseUnscaledHiDPIOutput(false)
-#endif /* VBOX_WS_MAC */
-        , m_f3dAccelerationEnabled(false)
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        , m_f2dAccelerationEnabled(false)
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-        , m_fRemoteDisplayServerSupported(false)
-        , m_fRemoteDisplayServerEnabled(false)
-        , m_strRemoteDisplayPort(QString())
-        , m_remoteDisplayAuthType(KAuthType_Null)
-        , m_uRemoteDisplayTimeout(0)
-        , m_fRemoteDisplayMultiConnAllowed(false)
-        , m_fVideoCaptureEnabled(false)
-        , m_strVideoCaptureFolder(QString())
-        , m_strVideoCaptureFilePath(QString())
-        , m_iVideoCaptureFrameWidth(0)
-        , m_iVideoCaptureFrameHeight(0)
-        , m_iVideoCaptureFrameRate(0)
-        , m_iVideoCaptureBitRate(0)
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsMachineDisplay &other) const
-    {
-        return true
-               && (m_iCurrentVRAM == other.m_iCurrentVRAM)
-               && (m_cGuestScreenCount == other.m_cGuestScreenCount)
-               && (m_dScaleFactor == other.m_dScaleFactor)
-#ifdef VBOX_WS_MAC
-               && (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput)
-#endif /* VBOX_WS_MAC */
-               && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
-#ifdef VBOX_WITH_VIDEOHWACCEL
-               && (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled)
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-               && (m_fRemoteDisplayServerSupported == other.m_fRemoteDisplayServerSupported)
-               && (m_fRemoteDisplayServerEnabled == other.m_fRemoteDisplayServerEnabled)
-               && (m_strRemoteDisplayPort == other.m_strRemoteDisplayPort)
-               && (m_remoteDisplayAuthType == other.m_remoteDisplayAuthType)
-               && (m_uRemoteDisplayTimeout == other.m_uRemoteDisplayTimeout)
-               && (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed)
-               && (m_fVideoCaptureEnabled == other.m_fVideoCaptureEnabled)
-               && (m_strVideoCaptureFilePath == other.m_strVideoCaptureFilePath)
-               && (m_iVideoCaptureFrameWidth == other.m_iVideoCaptureFrameWidth)
-               && (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight)
-               && (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate)
-               && (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate)
-               && (m_screens == other.m_screens)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineDisplay &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineDisplay &other) const { return !equal(other); }
-
-    /** Holds the video RAM amount. */
-    int     m_iCurrentVRAM;
-    /** Holds the guest screen count. */
-    int     m_cGuestScreenCount;
-    /** Holds the guest screen scale-factor. */
-    double  m_dScaleFactor;
-#ifdef VBOX_WS_MAC
-    /** Holds whether automatic Retina scaling is disabled. */
-    bool    m_fUseUnscaledHiDPIOutput;
-#endif /* VBOX_WS_MAC */
-    /** Holds whether the 3D acceleration is enabled. */
-    bool    m_f3dAccelerationEnabled;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Holds whether the 2D video acceleration is enabled. */
-    bool    m_f2dAccelerationEnabled;
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
-    /** Holds whether the remote display server is supported. */
-    bool       m_fRemoteDisplayServerSupported;
-    /** Holds whether the remote display server is enabled. */
-    bool       m_fRemoteDisplayServerEnabled;
-    /** Holds the remote display server port. */
-    QString    m_strRemoteDisplayPort;
-    /** Holds the remote display server auth type. */
-    KAuthType  m_remoteDisplayAuthType;
-    /** Holds the remote display server timeout. */
-    ulong      m_uRemoteDisplayTimeout;
-    /** Holds whether the remote display server allows multiple connections. */
-    bool       m_fRemoteDisplayMultiConnAllowed;
-
-    /** Holds whether the video capture is enabled. */
-    bool m_fVideoCaptureEnabled;
-    /** Holds the video capture folder. */
-    QString m_strVideoCaptureFolder;
-    /** Holds the video capture file path. */
-    QString m_strVideoCaptureFilePath;
-    /** Holds the video capture frame width. */
-    int m_iVideoCaptureFrameWidth;
-    /** Holds the video capture frame height. */
-    int m_iVideoCaptureFrameHeight;
-    /** Holds the video capture frame rate. */
-    int m_iVideoCaptureFrameRate;
-    /** Holds the video capture bit rate. */
-    int m_iVideoCaptureBitRate;
-    /** Holds which of the guest screens should be captured. */
-    QVector<BOOL> m_screens;
-};
+struct UIDataSettingsMachineDisplay;
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UISettingsCacheMachineDisplay;
 
 
@@ -152,8 +39,10 @@ class UIMachineSettingsDisplay : public UISettingsPageMachine,
 
 public:
 
-    /** Constructor. */
+    /** Constructs Display settings page. */
     UIMachineSettingsDisplay();
+    /** Destructs Display settings page. */
+    ~UIMachineSettingsDisplay();
 
     /* API: Correlation stuff: */
     void setGuestOSType(CGuestOSType guestOSType);
@@ -164,7 +53,7 @@ public:
 protected:
 
     /** Returns whether the page content was changed. */
-    bool changed() const { return m_cache.wasChanged(); }
+    bool changed() const /* override */;
 
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
@@ -258,8 +147,8 @@ private:
     bool m_fWddmModeSupported;
 #endif /* VBOX_WITH_CRHGSMI */
 
-    /* Cache: */
-    UISettingsCacheMachineDisplay m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheMachineDisplay *m_pCache;
 };
 
 #endif /* !___UIMachineSettingsDisplay_h___ */

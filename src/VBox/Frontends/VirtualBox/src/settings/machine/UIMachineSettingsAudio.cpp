@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,8 +20,8 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
-# include "UIMachineSettingsAudio.h"
 # include "UIConverter.h"
+# include "UIMachineSettingsAudio.h"
 
 /* COM includes: */
 # include "CAudioAdapter.h"
@@ -29,10 +29,57 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Machine settings: Audio page data structure. */
+struct UIDataSettingsMachineAudio
+{
+    /** Constructs data. */
+    UIDataSettingsMachineAudio()
+        : m_fAudioEnabled(false)
+        , m_audioDriverType(KAudioDriverType_Null)
+        , m_audioControllerType(KAudioControllerType_AC97)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineAudio &other) const
+    {
+        return true
+               && (m_fAudioEnabled == other.m_fAudioEnabled)
+               && (m_audioDriverType == other.m_audioDriverType)
+               && (m_audioControllerType == other.m_audioControllerType)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineAudio &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineAudio &other) const { return !equal(other); }
+
+    /** Holds whether the audio is enabled. */
+    bool                  m_fAudioEnabled;
+    /** Holds the audio driver type. */
+    KAudioDriverType      m_audioDriverType;
+    /** Holds the audio controller type. */
+    KAudioControllerType  m_audioControllerType;
+};
+
+
 UIMachineSettingsAudio::UIMachineSettingsAudio()
+    : m_pCache(new UISettingsCacheMachineAudio)
 {
     /* Prepare: */
     prepare();
+}
+
+UIMachineSettingsAudio::~UIMachineSettingsAudio()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
+bool UIMachineSettingsAudio::changed() const
+{
+    return m_pCache->wasChanged();
 }
 
 void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
@@ -41,7 +88,7 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare audio data: */
     UIDataSettingsMachineAudio audioData;
@@ -57,7 +104,7 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
     }
 
     /* Cache audio data: */
-    m_cache.cacheInitialData(audioData);
+    m_pCache->cacheInitialData(audioData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -66,7 +113,7 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsAudio::getFromCache()
 {
     /* Get audio data from cache: */
-    const UIDataSettingsMachineAudio &audioData = m_cache.base();
+    const UIDataSettingsMachineAudio &audioData = m_pCache->base();
 
     /* Load audio data to page: */
     m_pCheckBoxAudio->setChecked(audioData.m_fAudioEnabled);
@@ -80,7 +127,7 @@ void UIMachineSettingsAudio::getFromCache()
 void UIMachineSettingsAudio::putToCache()
 {
     /* Prepare audio data: */
-    UIDataSettingsMachineAudio audioData = m_cache.base();
+    UIDataSettingsMachineAudio audioData = m_pCache->base();
 
     /* Gather audio data: */
     audioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
@@ -88,7 +135,7 @@ void UIMachineSettingsAudio::putToCache()
     audioData.m_audioControllerType = static_cast<KAudioControllerType>(m_pComboAudioController->itemData(m_pComboAudioController->currentIndex()).toInt());
 
     /* Cache audio data: */
-    m_cache.cacheCurrentData(audioData);
+    m_pCache->cacheCurrentData(audioData);
 }
 
 void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
@@ -97,14 +144,14 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Make sure machine is in 'offline' mode & audio data was changed: */
-    if (isMachineOffline() && m_cache.wasChanged())
+    if (isMachineOffline() && m_pCache->wasChanged())
     {
         /* Check if adapter still valid: */
         CAudioAdapter audioAdapter = m_machine.GetAudioAdapter();
         if (!audioAdapter.isNull())
         {
             /* Get audio data from cache: */
-            const UIDataSettingsMachineAudio &audioData = m_cache.data();
+            const UIDataSettingsMachineAudio &audioData = m_pCache->data();
 
             /* Store audio data: */
             audioAdapter.SetEnabled(audioData.m_fAudioEnabled);

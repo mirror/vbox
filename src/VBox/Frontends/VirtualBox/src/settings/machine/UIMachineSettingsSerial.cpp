@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,16 +23,119 @@
 # include <QDir>
 
 /* GUI includes: */
-# include "UIMachineSettingsSerial.h"
-# include "QIWidgetValidator.h"
-# include "VBoxGlobal.h"
 # include "QITabWidget.h"
+# include "QIWidgetValidator.h"
 # include "UIConverter.h"
+# include "UIMachineSettingsSerial.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CSerialPort.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Machine settings: Serial Port tab data structure. */
+struct UIDataSettingsMachineSerialPort
+{
+    /** Constructs data. */
+    UIDataSettingsMachineSerialPort()
+        : m_iSlot(-1)
+        , m_fPortEnabled(false)
+        , m_uIRQ(0)
+        , m_uIOBase(0)
+        , m_hostMode(KPortMode_Disconnected)
+        , m_fServer(false)
+        , m_strPath(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineSerialPort &other) const
+    {
+        return true
+               && (m_iSlot == other.m_iSlot)
+               && (m_fPortEnabled == other.m_fPortEnabled)
+               && (m_uIRQ == other.m_uIRQ)
+               && (m_uIOBase == other.m_uIOBase)
+               && (m_hostMode == other.m_hostMode)
+               && (m_fServer == other.m_fServer)
+               && (m_strPath == other.m_strPath)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineSerialPort &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineSerialPort &other) const { return !equal(other); }
+
+    /** Holds the serial port slot number. */
+    int        m_iSlot;
+    /** Holds whether the serial port is enabled. */
+    bool       m_fPortEnabled;
+    /** Holds the serial port IRQ. */
+    ulong      m_uIRQ;
+    /** Holds the serial port IO base. */
+    ulong      m_uIOBase;
+    /** Holds the serial port host mode. */
+    KPortMode  m_hostMode;
+    /** Holds whether the serial port is server. */
+    bool       m_fServer;
+    /** Holds the serial port path. */
+    QString    m_strPath;
+};
+
+
+/** Machine settings: Serial page data structure. */
+struct UIDataSettingsMachineSerial
+{
+    /** Constructs data. */
+    UIDataSettingsMachineSerial() {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineSerial & /* other */) const { return true; }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineSerial & /* other */) const { return false; }
+};
+
+
+/** Machine settings: Serial Port tab. */
+class UIMachineSettingsSerial : public QIWithRetranslateUI<QWidget>,
+                                public Ui::UIMachineSettingsSerial
+{
+    Q_OBJECT;
+
+public:
+
+    UIMachineSettingsSerial(UIMachineSettingsSerialPage *pParent);
+
+    void polishTab();
+
+    void fetchPortData(const UISettingsCacheMachineSerialPort &data);
+    void uploadPortData(UISettingsCacheMachineSerialPort &data);
+
+    QWidget* setOrderAfter (QWidget *aAfter);
+
+    QString pageTitle() const;
+    bool isUserDefined();
+
+protected:
+
+    void retranslateUi();
+
+private slots:
+
+    void mGbSerialToggled (bool aOn);
+    void mCbNumberActivated (const QString &aText);
+    void mCbModeActivated (const QString &aText);
+
+private:
+
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
+
+    UIMachineSettingsSerialPage *m_pParent;
+    int m_iSlot;
+};
 
 
 /* UIMachineSettingsSerial stuff */
@@ -226,6 +329,7 @@ void UIMachineSettingsSerial::prepareValidation()
 /* UIMachineSettingsSerialPage stuff */
 UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
     : mTabWidget(0)
+    , m_pCache(new UISettingsCacheMachineSerial)
 {
     /* TabWidget creation */
     mTabWidget = new QITabWidget (this);
@@ -244,13 +348,25 @@ UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
     }
 }
 
+UIMachineSettingsSerialPage::~UIMachineSettingsSerialPage()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
+bool UIMachineSettingsSerialPage::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* For each serial port: */
     for (int iSlot = 0; iSlot < mTabWidget->count(); ++iSlot)
@@ -273,7 +389,7 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
         }
 
         /* Cache port data: */
-        m_cache.child(iSlot).cacheInitialData(portData);
+        m_pCache->child(iSlot).cacheInitialData(portData);
     }
 
     /* Upload machine to data: */
@@ -294,7 +410,7 @@ void UIMachineSettingsSerialPage::getFromCache()
         UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
 
         /* Load port data to page: */
-        pPage->fetchPortData(m_cache.child(iPort));
+        pPage->fetchPortData(m_pCache->child(iPort));
 
         /* Setup tab order: */
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
@@ -319,7 +435,7 @@ void UIMachineSettingsSerialPage::putToCache()
         UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
 
         /* Gather & cache port data: */
-        pPage->uploadPortData(m_cache.child(iPort));
+        pPage->uploadPortData(m_pCache->child(iPort));
     }
 }
 
@@ -329,13 +445,13 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Check if ports data was changed: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* For each serial port: */
         for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
         {
             /* Check if port data was changed: */
-            const UISettingsCacheMachineSerialPort &portCache = m_cache.child(iPort);
+            const UISettingsCacheMachineSerialPort &portCache = m_pCache->child(iPort);
             if (portCache.wasChanged())
             {
                 /* Check if port still valid: */
@@ -457,9 +573,11 @@ void UIMachineSettingsSerialPage::polishPage()
     {
         mTabWidget->setTabEnabled(iPort,
                                   isMachineOffline() ||
-                                  (isMachineInValidMode() && m_cache.child(iPort).base().m_fPortEnabled));
+                                  (isMachineInValidMode() && m_pCache->child(iPort).base().m_fPortEnabled));
         UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
         pTab->polishTab();
     }
 }
+
+# include "UIMachineSettingsSerial.moc"
 

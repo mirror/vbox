@@ -554,6 +554,9 @@ VirtualBox_QT_MOCSRCS = \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/UISnapshotPane.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/machine/UIMachineSettingsNetwork.cpp \
+	src/settings/machine/UIMachineSettingsParallel.cpp \
+	src/settings/machine/UIMachineSettingsSerial.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIHotKeyEditor.cpp \

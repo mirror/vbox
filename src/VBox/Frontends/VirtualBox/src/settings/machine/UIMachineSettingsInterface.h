@@ -24,112 +24,7 @@
 
 /* Forward declarations: */
 class UIActionPool;
-
-
-/** Machine settings: User Interface page data structure. */
-struct UIDataSettingsMachineInterface
-{
-    /** Constructs data. */
-    UIDataSettingsMachineInterface()
-        : m_fStatusBarEnabled(false)
-#ifndef VBOX_WS_MAC
-        , m_fMenuBarEnabled(false)
-#endif /* !VBOX_WS_MAC */
-        , m_restrictionsOfMenuBar(UIExtraDataMetaDefs::MenuType_Invalid)
-        , m_restrictionsOfMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Invalid)
-        , m_restrictionsOfMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid)
-        , m_restrictionsOfMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid)
-        , m_restrictionsOfMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid)
-        , m_restrictionsOfMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid)
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        , m_restrictionsOfMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid)
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef VBOX_WS_MAC
-        , m_restrictionsOfMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Invalid)
-#endif /* VBOX_WS_MAC */
-        , m_restrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Invalid)
-#ifndef VBOX_WS_MAC
-        , m_fShowMiniToolBar(false)
-        , m_fMiniToolBarAtTop(false)
-#endif /* !VBOX_WS_MAC */
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsMachineInterface &other) const
-    {
-        return true
-               && (m_fStatusBarEnabled == other.m_fStatusBarEnabled)
-               && (m_statusBarRestrictions == other.m_statusBarRestrictions)
-               && (m_statusBarOrder == other.m_statusBarOrder)
-#ifndef VBOX_WS_MAC
-               && (m_fMenuBarEnabled == other.m_fMenuBarEnabled)
-#endif /* !VBOX_WS_MAC */
-               && (m_restrictionsOfMenuBar == other.m_restrictionsOfMenuBar)
-               && (m_restrictionsOfMenuApplication == other.m_restrictionsOfMenuApplication)
-               && (m_restrictionsOfMenuMachine == other.m_restrictionsOfMenuMachine)
-               && (m_restrictionsOfMenuView == other.m_restrictionsOfMenuView)
-               && (m_restrictionsOfMenuInput == other.m_restrictionsOfMenuInput)
-               && (m_restrictionsOfMenuDevices == other.m_restrictionsOfMenuDevices)
-#ifdef VBOX_WITH_DEBUGGER_GUI
-               && (m_restrictionsOfMenuDebug == other.m_restrictionsOfMenuDebug)
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef VBOX_WS_MAC
-               && (m_restrictionsOfMenuWindow == other.m_restrictionsOfMenuWindow)
-#endif /* VBOX_WS_MAC */
-               && (m_restrictionsOfMenuHelp == other.m_restrictionsOfMenuHelp)
-#ifndef VBOX_WS_MAC
-               && (m_fShowMiniToolBar == other.m_fShowMiniToolBar)
-               && (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop)
-#endif /* !VBOX_WS_MAC */
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineInterface &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineInterface &other) const { return !equal(other); }
-
-    /** Holds whether the status-bar is enabled. */
-    bool                  m_fStatusBarEnabled;
-    /** Holds the status-bar indicator restrictions. */
-    QList<IndicatorType>  m_statusBarRestrictions;
-    /** Holds the status-bar indicator order. */
-    QList<IndicatorType>  m_statusBarOrder;
-
-#ifndef VBOX_WS_MAC
-    /** Holds whether the menu-bar is enabled. */
-    bool                                                m_fMenuBarEnabled;
-#endif /* !VBOX_WS_MAC */
-    /** Holds the menu-bar menu restrictions. */
-    UIExtraDataMetaDefs::MenuType                       m_restrictionsOfMenuBar;
-    /** Holds the Application menu restrictions. */
-    UIExtraDataMetaDefs::MenuApplicationActionType      m_restrictionsOfMenuApplication;
-    /** Holds the Machine menu restrictions. */
-    UIExtraDataMetaDefs::RuntimeMenuMachineActionType   m_restrictionsOfMenuMachine;
-    /** Holds the View menu restrictions. */
-    UIExtraDataMetaDefs::RuntimeMenuViewActionType      m_restrictionsOfMenuView;
-    /** Holds the Input menu restrictions. */
-    UIExtraDataMetaDefs::RuntimeMenuInputActionType     m_restrictionsOfMenuInput;
-    /** Holds the Devices menu restrictions. */
-    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType   m_restrictionsOfMenuDevices;
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Holds the Debug menu restrictions. */
-    UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType  m_restrictionsOfMenuDebug;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-#ifdef VBOX_WS_MAC
-    /** Holds the Window menu restrictions. */
-    UIExtraDataMetaDefs::MenuWindowActionType           m_restrictionsOfMenuWindow;
-#endif /* VBOX_WS_MAC */
-    /** Holds the Help menu restrictions. */
-    UIExtraDataMetaDefs::MenuHelpActionType             m_restrictionsOfMenuHelp;
-
-#ifndef VBOX_WS_MAC
-    /** Holds whether the mini-toolbar is enabled. */
-    bool  m_fShowMiniToolBar;
-    /** Holds whether the mini-toolbar should be aligned at top of screen. */
-    bool  m_fMiniToolBarAtTop;
-#endif /* !VBOX_WS_MAC */
-};
+struct UIDataSettingsMachineInterface;
 typedef UISettingsCache<UIDataSettingsMachineInterface> UISettingsCacheMachineInterface;
 
 
@@ -141,15 +36,15 @@ class UIMachineSettingsInterface : public UISettingsPageMachine,
 
 public:
 
-    /** Constructor, early takes @a strMachineID into account for size-hint calculation. */
+    /** Constructs User Interface settings page. */
     UIMachineSettingsInterface(const QString strMachineID);
-    /** Destructor. */
+    /** Destructs User Interface settings page. */
     ~UIMachineSettingsInterface();
 
 protected:
 
     /** Returns whether the page content was changed. */
-    bool changed() const { return m_cache.wasChanged(); }
+    bool changed() const /* override */;
 
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
@@ -182,13 +77,13 @@ private:
     /** Cleanup routine. */
     void cleanup();
 
-    /* Cache: */
-    UISettingsCacheMachineInterface m_cache;
-
     /** Holds the machine ID copy. */
     const QString m_strMachineID;
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
+
+    /** Holds the page data cache instance. */
+    UISettingsCacheMachineInterface *m_pCache;
 };
 
 #endif /* !___UIMachineSettingsInterface_h___ */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,15 +20,123 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
-# include "UIMachineSettingsInterface.h"
-# include "UIExtraDataManager.h"
 # include "UIActionPool.h"
+# include "UIExtraDataManager.h"
+# include "UIMachineSettingsInterface.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** Machine settings: User Interface page data structure. */
+struct UIDataSettingsMachineInterface
+{
+    /** Constructs data. */
+    UIDataSettingsMachineInterface()
+        : m_fStatusBarEnabled(false)
+#ifndef VBOX_WS_MAC
+        , m_fMenuBarEnabled(false)
+#endif /* !VBOX_WS_MAC */
+        , m_restrictionsOfMenuBar(UIExtraDataMetaDefs::MenuType_Invalid)
+        , m_restrictionsOfMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Invalid)
+        , m_restrictionsOfMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid)
+        , m_restrictionsOfMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid)
+        , m_restrictionsOfMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid)
+        , m_restrictionsOfMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid)
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        , m_restrictionsOfMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid)
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef VBOX_WS_MAC
+        , m_restrictionsOfMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Invalid)
+#endif /* VBOX_WS_MAC */
+        , m_restrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Invalid)
+#ifndef VBOX_WS_MAC
+        , m_fShowMiniToolBar(false)
+        , m_fMiniToolBarAtTop(false)
+#endif /* !VBOX_WS_MAC */
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsMachineInterface &other) const
+    {
+        return true
+               && (m_fStatusBarEnabled == other.m_fStatusBarEnabled)
+               && (m_statusBarRestrictions == other.m_statusBarRestrictions)
+               && (m_statusBarOrder == other.m_statusBarOrder)
+#ifndef VBOX_WS_MAC
+               && (m_fMenuBarEnabled == other.m_fMenuBarEnabled)
+#endif /* !VBOX_WS_MAC */
+               && (m_restrictionsOfMenuBar == other.m_restrictionsOfMenuBar)
+               && (m_restrictionsOfMenuApplication == other.m_restrictionsOfMenuApplication)
+               && (m_restrictionsOfMenuMachine == other.m_restrictionsOfMenuMachine)
+               && (m_restrictionsOfMenuView == other.m_restrictionsOfMenuView)
+               && (m_restrictionsOfMenuInput == other.m_restrictionsOfMenuInput)
+               && (m_restrictionsOfMenuDevices == other.m_restrictionsOfMenuDevices)
+#ifdef VBOX_WITH_DEBUGGER_GUI
+               && (m_restrictionsOfMenuDebug == other.m_restrictionsOfMenuDebug)
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef VBOX_WS_MAC
+               && (m_restrictionsOfMenuWindow == other.m_restrictionsOfMenuWindow)
+#endif /* VBOX_WS_MAC */
+               && (m_restrictionsOfMenuHelp == other.m_restrictionsOfMenuHelp)
+#ifndef VBOX_WS_MAC
+               && (m_fShowMiniToolBar == other.m_fShowMiniToolBar)
+               && (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop)
+#endif /* !VBOX_WS_MAC */
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineInterface &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsMachineInterface &other) const { return !equal(other); }
+
+    /** Holds whether the status-bar is enabled. */
+    bool                  m_fStatusBarEnabled;
+    /** Holds the status-bar indicator restrictions. */
+    QList<IndicatorType>  m_statusBarRestrictions;
+    /** Holds the status-bar indicator order. */
+    QList<IndicatorType>  m_statusBarOrder;
+
+#ifndef VBOX_WS_MAC
+    /** Holds whether the menu-bar is enabled. */
+    bool                                                m_fMenuBarEnabled;
+#endif /* !VBOX_WS_MAC */
+    /** Holds the menu-bar menu restrictions. */
+    UIExtraDataMetaDefs::MenuType                       m_restrictionsOfMenuBar;
+    /** Holds the Application menu restrictions. */
+    UIExtraDataMetaDefs::MenuApplicationActionType      m_restrictionsOfMenuApplication;
+    /** Holds the Machine menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuMachineActionType   m_restrictionsOfMenuMachine;
+    /** Holds the View menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuViewActionType      m_restrictionsOfMenuView;
+    /** Holds the Input menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuInputActionType     m_restrictionsOfMenuInput;
+    /** Holds the Devices menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType   m_restrictionsOfMenuDevices;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Holds the Debug menu restrictions. */
+    UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType  m_restrictionsOfMenuDebug;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef VBOX_WS_MAC
+    /** Holds the Window menu restrictions. */
+    UIExtraDataMetaDefs::MenuWindowActionType           m_restrictionsOfMenuWindow;
+#endif /* VBOX_WS_MAC */
+    /** Holds the Help menu restrictions. */
+    UIExtraDataMetaDefs::MenuHelpActionType             m_restrictionsOfMenuHelp;
+
+#ifndef VBOX_WS_MAC
+    /** Holds whether the mini-toolbar is enabled. */
+    bool  m_fShowMiniToolBar;
+    /** Holds whether the mini-toolbar should be aligned at top of screen. */
+    bool  m_fMiniToolBarAtTop;
+#endif /* !VBOX_WS_MAC */
+};
+
 
 UIMachineSettingsInterface::UIMachineSettingsInterface(const QString strMachineID)
     : m_strMachineID(strMachineID)
     , m_pActionPool(0)
+    , m_pCache(new UISettingsCacheMachineInterface)
 {
     /* Prepare: */
     prepare();
@@ -40,13 +148,18 @@ UIMachineSettingsInterface::~UIMachineSettingsInterface()
     cleanup();
 }
 
+bool UIMachineSettingsInterface::changed() const
+{
+    return m_pCache->wasChanged();
+}
+
 void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare interface data: */
     UIDataSettingsMachineInterface interfaceData;
@@ -77,7 +190,7 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 #endif /* !VBOX_WS_MAC */
 
     /* Cache interface data: */
-    m_cache.cacheInitialData(interfaceData);
+    m_pCache->cacheInitialData(interfaceData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -86,7 +199,7 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsInterface::getFromCache()
 {
     /* Get interface data from cache: */
-    const UIDataSettingsMachineInterface &interfaceData = m_cache.base();
+    const UIDataSettingsMachineInterface &interfaceData = m_pCache->base();
 
     /* Prepare interface data: */
     m_pStatusBarEditor->setStatusBarEnabled(interfaceData.m_fStatusBarEnabled);
@@ -123,7 +236,7 @@ void UIMachineSettingsInterface::getFromCache()
 void UIMachineSettingsInterface::putToCache()
 {
     /* Prepare interface data: */
-    UIDataSettingsMachineInterface interfaceData = m_cache.base();
+    UIDataSettingsMachineInterface interfaceData = m_pCache->base();
 
     /* Gather interface data from page: */
     interfaceData.m_fStatusBarEnabled = m_pStatusBarEditor->isStatusBarEnabled();
@@ -151,7 +264,7 @@ void UIMachineSettingsInterface::putToCache()
 #endif /* !VBOX_WS_MAC */
 
     /* Cache interface data: */
-    m_cache.cacheCurrentData(interfaceData);
+    m_pCache->cacheCurrentData(interfaceData);
 }
 
 void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
@@ -160,10 +273,10 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Make sure machine is in valid mode & interface data was changed: */
-    if (isMachineInValidMode() && m_cache.wasChanged())
+    if (isMachineInValidMode() && m_pCache->wasChanged())
     {
         /* Get interface data from cache: */
-        const UIDataSettingsMachineInterface &interfaceData = m_cache.data();
+        const UIDataSettingsMachineInterface &interfaceData = m_pCache->data();
 
         /* Store interface data: */
         if (isMachineInValidMode())
@@ -248,5 +361,9 @@ void UIMachineSettingsInterface::cleanup()
 {
     /* Destroy personal action-pool: */
     UIActionPool::destroy(m_pActionPool);
+
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
