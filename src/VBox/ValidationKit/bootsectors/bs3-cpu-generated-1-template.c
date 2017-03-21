@@ -2126,7 +2126,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     uint8_t const   cRings     = BS3_MODE_IS_RM_OR_V86(bMode) ? 1 : 4;
     uint8_t         bRet       = 1;
 #if 1
-    BS3CG1STATE     This       = {0};
+    BS3CG1STATE     This;
     if (BS3_CMN_NM(Bs3Cg1Init)(&This, bMode, cRings, iFirstRing))
     {
         bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(&This, bMode, iFirstRing, cRings);
