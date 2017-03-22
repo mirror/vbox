@@ -83,7 +83,6 @@ AssertCompile(BS3_SEL_RING_SHIFT == 8)
         cmp     ax, BS3_SEL_R0_CS16_CNF_EO & 0xff
         je      .bs3text16
 .panic:
-hlt
         extern  BS3_CMN_NM(Bs3Panic)
         call    BS3_CMN_NM(Bs3Panic)
         jmp     .return
