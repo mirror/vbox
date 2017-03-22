@@ -110,18 +110,19 @@ TONLY16 CPU 8086
         ; Reserve extra stack space.  Make sure we've got 20h here in case we
         ; are saving a 64-bit context.
         ;
-        mov     ax, [xBP + xCB + cbCurRetAddr + sCB + xCB]
+TONLY16 mov     ax, [xBP + xCB + cbCurRetAddr + sCB + xCB]
+TNOT16  movzx   eax, word [xBP + xCB + cbCurRetAddr + sCB + xCB]
 %ifdef BS3_STRICT
-        cmp     ax, 4096
+        cmp     xAX, 4096
         jb      .extra_stack_ok
         call    Bs3Panic
 .extra_stack_ok:
 %endif
-        cmp     ax, 20h
+        cmp     xAX, 20h
         jae     .at_least_20h_extra_stack
-        add     ax, 20h
+        add     xAX, 20h
 .at_least_20h_extra_stack:
-        sub     sp, ax
+        sub     xSP, xAX
 
         ;
         ; Are we just saving the mode we're already in?
