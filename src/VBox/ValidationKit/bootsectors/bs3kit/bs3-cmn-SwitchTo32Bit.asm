@@ -143,7 +143,8 @@ BS3_SET_BITS 32
  %endif
         popfd
         pop     eax
-        ret
+TONLY64 ret     4
+TNOT64  ret
 %endif
 BS3_PROC_END_CMN   Bs3SwitchTo32Bit
 
