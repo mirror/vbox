@@ -41,6 +41,43 @@ typedef enum VDTYPE
 } VDTYPE;
 /** @}*/
 
+/** @name VD medium type.
+ * @{
+ */
+typedef enum VDMEDIUMTYPE
+{
+    /** Invalid. */
+    VDMEDIUMTYPE_INVALID = 0,
+    /** HardDisk (spinning platter or SSD). */
+    VDMEDIUMTYPE_HDD,
+    /** CD-ROM */
+    VDMEDIUMTYPE_CDROM,
+    /** DVD-ROM */
+    VDMEDIUMTYPE_DVDROM,
+    /** BluRay. */
+    VDMEDIUMTYPE_BD,
+    /** 360KB 5 1/4" floppy. */
+    VDMEDIUMTYPE_FLOPPY_360,
+    /** 720KB 3 1/2" floppy. */
+    VDMEDIUMTYPE_FLOPPY_720,
+    /** 1.2MB 5 1/4" floppy. */
+    VDMEDIUMTYPE_FLOPPY_1_20,
+    /** 1.44MB 3 1/2" floppy. */
+    VDMEDIUMTYPE_FLOPPY_1_44,
+    /** 2.88MB 3 1/2" floppy. */
+    VDMEDIUMTYPE_FLOPPY_2_88,
+    /** Fake disk that can take up to 15.6 MB images.
+     * C=255, H=2, S=63.  */
+    VDMEDIUMTYPE_FLOPPY_FAKE_15_6,
+    /** Fake disk that can take up to 63.5 MB images.
+     * C=255, H=2, S=255.  */
+    VDMEDIUMTYPE_FLOPPY_FAKE_63_5
+} VDMEDIUMTYPE;
+/** @} */
+
+/** Check if the given medium type is a floppy. */
+#define VDMEDIUMTYPE_IS_FLOPPY(a_enmType) ( (a_enmType) >= VDMEDIUMTYPE_FLOPPY_360 && (a_enmType) <= VDMEDIUMTYPE_FLOPPY_2_88 )
+
 /**
  * Disk geometry.
  */
