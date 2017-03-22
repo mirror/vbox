@@ -217,6 +217,7 @@ typedef enum SCSIMAINTENANCEIN
 #define SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED                 0x53
 #define SCSI_ASC_LOGICAL_UNIT_DOES_NOT_RESPOND_TO_SELECTION 0x00
 #define SCSI_ASC_SYSTEM_RESOURCE_FAILURE                    0x55
+#define SCSI_ASC_ILLEGAL_MODE_FOR_THIS_TRACK                0x64
 
 /** Additional sense code qualifiers (ASCQ). */
 /* NB: The ASC/ASCQ combination determines the full meaning. */
