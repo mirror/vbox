@@ -26,6 +26,7 @@
 #include <VBox/log.h>
 #include <VBox/scsiinline.h>
 #include <iprt/assert.h>
+#include <iprt/asm.h>
 #include <iprt/alloc.h>
 #include <iprt/cdefs.h>
 #include <iprt/ctype.h>
@@ -71,6 +72,8 @@ typedef enum CUEKEYWORD
     CUEKEYWORD_FILE,
     /** BINARY */
     CUEKEYWORD_BINARY,
+    /** MOTOROLA */
+    CUEKEYWORD_MOTOROLA,
     /** WAVE */
     CUEKEYWORD_WAVE,
     /** MP3 */
@@ -209,6 +212,8 @@ typedef struct CUEIMAGE
     uint32_t            cTracksMax;
     /** Pointer to our internal region list. */
     PVDREGIONLIST       pRegionList;
+    /** Flag whether the backing file is little (BINARY) or big (MOTOROLA) endian. */
+    bool                fLittleEndian;
 } CUEIMAGE, *PCUEIMAGE;
 
 
@@ -1028,7 +1033,15 @@ static int cueParseFile(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer)
             if (cueTokenizerGetTokenType(pTokenizer) == CUETOKENTYPE_KEYWORD)
             {
                 if (cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_BINARY))
+                {
+                    pThis->fLittleEndian = true;
                     rc = cueParseTrackList(pThis, pTokenizer);
+                }
+                else if (cueTokenizerSkipIfIsKeywordEqual(pTokenizer, CUEKEYWORD_MOTOROLA))
+                {
+                    pThis->fLittleEndian = false;
+                    rc = cueParseTrackList(pThis, pTokenizer);
+                }
                 else
                     rc = vdIfError(pThis->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
                                    N_("CUE: Error parsing '%s', the file type is not supported (only BINARY)"), pThis->pszFilename);
@@ -1132,7 +1145,8 @@ static int cueTrackListFinalize(PCUEIMAGE pThis, uint64_t cbImage)
         if (pRegion->offRegion != UINT64_MAX)
         {
             cTracks++;
-            pRegionPrev->cRegionBlocksOrBytes = pRegionPrev->cbBlock * pRegion->offRegion;
+            uint64_t cBlocks = pRegion->offRegion - (pRegionPrev->offRegion / pRegionPrev->cbBlock);
+            pRegionPrev->cRegionBlocksOrBytes = pRegionPrev->cbBlock * cBlocks;
             offDisk += pRegionPrev->cRegionBlocksOrBytes;
 
             if (cbImage < pRegionPrev->cRegionBlocksOrBytes)
@@ -1490,10 +1504,43 @@ static DECLCALLBACK(int) cueRead(void *pBackendData, uint64_t uOffset, size_t cb
         cbToRead = RT_MIN(cbToRead, pRegion->cRegionBlocksOrBytes - offRead);
         Assert(!(cbToRead % pRegion->cbBlock));
 
-        rc = vdIfIoIntFileReadUser(pThis->pIfIo, pThis->pStorageData, uOffset,
-                                   pIoCtx, cbToRead);
-        if (RT_SUCCESS(rc))
+        /* Need to convert audio data samples to big endian. */
+        if (   pRegion->enmDataForm == VDREGIONDATAFORM_CDDA
+            && pThis->fLittleEndian)
+        {
             *pcbActuallyRead = cbToRead;
+
+            while (cbToRead)
+            {
+                RTSGSEG Segment;
+                unsigned cSegments = 1;
+                size_t cbSeg = 0;
+
+                cbSeg = vdIfIoIntIoCtxSegArrayCreate(pThis->pIfIo, pIoCtx, &Segment,
+                                                     &cSegments, cbToRead);
+
+                rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorageData, uOffset, Segment.pvSeg, cbSeg);
+                if (RT_FAILURE(rc))
+                    break;
+
+                uint16_t *pu16Buf = (uint16_t *)Segment.pvSeg;
+                for (uint32_t i = 0; i < cbSeg / sizeof(uint16_t); i++)
+                {
+                    *pu16Buf = RT_BSWAP_U16(*pu16Buf);
+                    pu16Buf++;
+                }
+
+                cbToRead -= RT_MIN(cbToRead, cbSeg);
+                uOffset += cbSeg;
+            }
+        }
+        else
+        {
+            rc = vdIfIoIntFileReadUser(pThis->pIfIo, pThis->pStorageData, uOffset,
+                                       pIoCtx, cbToRead);
+            if (RT_SUCCESS(rc))
+                *pcbActuallyRead = cbToRead;
+        }
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -1560,9 +1607,11 @@ static DECLCALLBACK(uint64_t) cueGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PCUEIMAGE pThis = (PCUEIMAGE)pBackendData;
-    uint64_t cb = 0;
 
     AssertPtrReturn(pThis, 0);
+
+    PCVDREGIONDESC pRegion = &pThis->pRegionList->aRegions[pThis->pRegionList->cRegions - 1];
+    uint64_t cb = pRegion->offRegion + pRegion->cRegionBlocksOrBytes;
 
     LogFlowFunc(("returns %llu\n", cb));
     return cb;
@@ -1579,7 +1628,7 @@ static DECLCALLBACK(uint64_t) cueGetFileSize(void *pBackendData)
     uint64_t cbFile = 0;
     if (pThis->pStorage)
     {
-        int rc = vdIfIoIntFileGetSize(pThis->pIfIo, pThis->pStorage, &cbFile);
+        int rc = vdIfIoIntFileGetSize(pThis->pIfIo, pThis->pStorageData, &cbFile);
         if (RT_FAILURE(rc))
             cbFile = 0; /* Make sure it is 0 */
     }
@@ -1940,7 +1989,7 @@ const VDIMAGEBACKEND g_CueBackend =
     /* pszBackendName */
     "CUE",
     /* uBackendCaps */
-    VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS,
+    VD_CAP_FILE | VD_CAP_VFS,
     /* paFileExtensions */
     s_aCueFileExtensions,
     /* paConfigInfo */
