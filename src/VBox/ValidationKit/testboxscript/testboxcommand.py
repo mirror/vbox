@@ -170,7 +170,7 @@ class TestBoxCommand(object):
         sOs = utils.getHostOs();
         asCmd2 = None;
         if sOs == 'win':
-            asCmd = ['shutdown', '/r', '/t', '0'];
+            asCmd = ['shutdown', '/r', '/t', '0', '/c', '"ValidationKit triggered reboot"', '/d', '4:1'];
         elif sOs == 'os2':
             asCmd = ['setboot', '/B'];
         elif sOs in ('solaris',):
