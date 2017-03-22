@@ -30,6 +30,12 @@
 #undef Bs3A20Enable
 #undef Bs3A20EnableViaKbd
 #undef Bs3A20EnableViaPortA
+#undef Bs3ExtCtxAlloc
+#undef Bs3ExtCtxFree
+#undef Bs3ExtCtxGetSize
+#undef Bs3ExtCtxInit
+#undef Bs3ExtCtxRestore
+#undef Bs3ExtCtxSave
 #undef Bs3GetModeName
 #undef Bs3GetModeNameShortLower
 #undef Bs3KbdRead
@@ -148,8 +154,8 @@
 #undef Bs3TrapRmV86SetGate
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
-#undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapSetJmp
+#undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
 #undef Bs3UInt64Div

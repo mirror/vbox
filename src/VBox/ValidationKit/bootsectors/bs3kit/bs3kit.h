@@ -2654,6 +2654,109 @@ BS3_CMN_PROTO_STUB(void, Bs3RegCtxSetRipCsFromCurPtr,(PBS3REGCTX pRegCtx, FPFNBS
 
 
 /**
+ * The method to be used to save and restore the extended context.
+ */
+typedef enum BS3EXTCTXMETHOD
+{
+    BS3EXTCTXMETHOD_INVALID = 0,
+    BS3EXTCTXMETHOD_ANCIENT,    /**< Ancient fnsave/frstor format. */
+    BS3EXTCTXMETHOD_FXSAVE,     /**< fxsave/fxrstor format. */
+    BS3EXTCTXMETHOD_XSAVE,      /**< xsave/xrstor format. */
+    BS3EXTCTXMETHOD_END,
+} BS3EXTCTXMETHOD;
+
+
+/**
+ * Extended CPU context (FPU, SSE, AVX, ++).
+ *
+ * @remarks Also in bs3kit.inc
+ */
+typedef struct BS3EXTCTX
+{
+    /** Dummy/magic value. */
+    uint16_t            u16Magic;
+    /** The size of the structure. */
+    uint16_t            cb;
+    /** The method used to save and restore the context (BS3EXTCTXMETHOD). */
+    uint8_t             enmMethod;
+
+    /** Explicit alignment padding. */
+    uint8_t             abPadding[64 - 2 - 2 - 1];
+
+    /** The context, variable size (see above).
+     * This must be aligned on a 64 byte boundrary. */
+    union
+    {
+        /** fnsave/frstor. */
+        X86FPUSTATE     Ancient;
+        /** fxsave/fxrstor   */
+        X86FXSTATE      x87;
+        /** xsave/xrstor   */
+        X86XSAVEAREA    x;
+    } Ctx;
+} BS3EXTCTX;
+AssertCompileMemberAlignment(BS3EXTCTX, Ctx, 64);
+/** Pointer to an extended CPU context. */
+typedef BS3EXTCTX BS3_FAR *PBS3EXTCTX;
+/** Pointer to a const extended CPU context. */
+typedef BS3EXTCTX const BS3_FAR *PCBS3EXTCTX;
+
+/** Magic value for BS3EXTCTX. */
+#define BS3EXTCTX_MAGIC     UINT16_C(0x1980)
+
+/**
+ * Allocates and initializes the extended CPU context structure.
+ *
+ * @returns The new extended CPU context structure.
+ * @param   fFlags          Flags, MBZ.
+ * @param   enmKind         The kind of allocation to make.
+ */
+BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxAlloc,(uint16_t fFlags, BS3MEMKIND enmKind));
+
+/**
+ * Frees an extended CPU context structure.
+ *
+ * @param   pExtCtx         The extended CPU context (returned by
+ *                          Bs3ExtCtxAlloc).
+ */
+BS3_CMN_PROTO_STUB(void,       Bs3ExtCtxFree,(PBS3EXTCTX pExtCtx));
+
+/**
+ * Get the size required for a BS3EXTCTX structure.
+ *
+ * @returns size in bytes of the whole structure.
+ * @note    Use Bs3ExtCtxAlloc when possible.
+ */
+BS3_CMN_PROTO_STUB(uint16_t,   Bs3ExtCtxGetSize,(uint16_t fFlags));
+
+/**
+ * Initializes the extended CPU context structure.
+ * @returns pExtCtx
+ * @param   pExtCtx         The extended CPU context.
+ * @param   cbExtCtx        The size of the @a pExtCtx allocation.
+ * @param   fFlags          Flags, MBZ.
+ */
+BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxInit,(PBS3EXTCTX pExtCtx, uint16_t cbExtCtx, uint16_t fFlags));
+
+/**
+ * Saves the extended CPU state to the given structure.
+ *
+ * @param   pExtCtx         The extended CPU context.
+ * @remarks All GPRs preserved.
+ */
+BS3_CMN_PROTO_STUB(void,       Bs3ExtCtxSave,(PBS3EXTCTX pExtCtx));
+
+/**
+ * Restores the extended CPU state from the given structure.
+ *
+ * @param   pExtCtx         The extended CPU context.
+ * @remarks All GPRs preserved.
+ */
+BS3_CMN_PROTO_STUB(void,       Bs3ExtCtxRestore,(PBS3EXTCTX pExtCtx));
+
+
+
+/**
  * Trap frame.
  */
 typedef struct BS3TRAPFRAME

@@ -107,6 +107,12 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegCtxSetRipCsFromCurPtr.c \
        bs3-cmn-RegCtxSetRipCsFromFlat.c \
        bs3-cmn-RegCtxSetRipCsFromLnkPtr.c \
+       bs3-cmn-ExtCtxInit.c \
+       bs3-cmn-ExtCtxSave.asm \
+       bs3-cmn-ExtCtxRestore.asm \
+       bs3-cmn-ExtCtxGetSize.c \
+       bs3-cmn-ExtCtxAlloc.c \
+       bs3-cmn-ExtCtxFree.c \
        bs3-cmn-SelFar32ToFlat32.c \
        bs3-cmn-SelFar32ToFlat32NoClobber.asm \
        bs3-cmn-SelProtFar32ToFlat32.c \
