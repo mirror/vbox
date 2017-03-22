@@ -52,6 +52,7 @@ FILES_VBOXVIDEO_DRM_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_irq.c=>vbox_irq.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_main.c=>vbox_main.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_mode.c=>vbox_mode.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_prime.c=>vbox_prime.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vbox_ttm.c=>vbox_ttm.c \
     ${PATH_ROOT}/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp=>HGSMICommon.c \
     ${PATH_ROOT}/src/VBox/GuestHost/HGSMI/HGSMIMemAlloc.cpp=>HGSMIMemAlloc.c \
