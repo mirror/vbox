@@ -374,7 +374,8 @@ OTHER_CLEAN += \
 if   defined(VBOX_WITH_TESTCASES) \
  && !defined(VBOX_ONLY_SDK) \
  && !defined(VBOX_ONLY_DOCS) \
- && !defined(VBOX_ONLY_VALIDATIONKIT)
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
+ && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
  VBOX_LNX_ADD_TEST        = $(PATH_TARGET)/tstguest_mod
  VBOX_LNX_ADD_TEST_TARGET = $(PATH_TARGET)/tstguest_mod.run
  TESTING     += $(VBOX_LNX_ADD_TEST_TARGET)

@@ -63,7 +63,8 @@ if   defined(VBOX_WITH_TESTCASES) \
  && !defined(VBOX_ONLY_SDK) \
  && !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && "$(KBUILD_TARGET)" == "linux"
+ && "$(KBUILD_TARGET)" == "linux" \
+ && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
  VBOX_LNX_MOD_TEST        = $(PATH_TARGET)/tsthost_mod
  VBOX_LNX_MOD_TEST_TARGET = $(PATH_TARGET)/tsthost_mod.run
  TESTING     += $(VBOX_LNX_MOD_TEST_TARGET)
