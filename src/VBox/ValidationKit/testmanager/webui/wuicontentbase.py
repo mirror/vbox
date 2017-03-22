@@ -188,7 +188,7 @@ class WuiBuildLogLink(WuiLinkBase):
     For linking to a build log.
     """
     def __init__(self, sUrl, sName = None, fBracketed = True):
-        assert not sUrl;
+        assert sUrl;
         if sName is None:
             sName = 'Build log';
         if not webutils.hasSchema(sUrl):
