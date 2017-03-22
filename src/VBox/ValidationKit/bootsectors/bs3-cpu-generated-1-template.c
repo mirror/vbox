@@ -138,7 +138,7 @@ typedef struct BS3CG1STATE
 
     /** Operand size in bytes (0 if not applicable). */
     uint8_t                 cbOperand;
-    /** Target ring (0..3). */
+    /** Current target ring (0..3). */
     uint8_t                 uCpl;
 
     /** The current test number. */
@@ -146,6 +146,10 @@ typedef struct BS3CG1STATE
 
     /** Target mode (g_bBs3CurrentMode).  */
     uint8_t                 bMode;
+    /** First ring being tested. */
+    uint8_t                 iFirstRing;
+    /** End of rings being tested. */
+    uint8_t                 iEndRing;
 
 
     /** @name Current encoded instruction.
@@ -157,7 +161,7 @@ typedef struct BS3CG1STATE
     /** The offset into abCurInstr of the immediate. */
     uint8_t                 offCurImm;
     /** Buffer for assembling the current instruction. */
-    uint8_t                 abCurInstr[27];
+    uint8_t                 abCurInstr[25];
 
     /** Set if the encoding can't be tested in the same ring as this test code.
      *  This is used to deal with encodings modifying SP/ESP/RSP. */
@@ -1804,7 +1808,7 @@ static void Bs3Cg1Destroy(PBS3CG1STATE pThis)
  * @param   pThis               The state.
  * @param   bMode               The mode being tested.
  */
-bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, uint8_t iFirstRing)
+bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
 {
     BS3MEMKIND const    enmMemKind = BS3_MODE_IS_RM_OR_V86(bMode) ? BS3MEMKIND_REAL
                                    : !BS3_MODE_IS_64BIT_CODE(bMode) ? BS3MEMKIND_TILED : BS3MEMKIND_FLAT32;
@@ -1812,6 +1816,8 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, u
 
     Bs3MemSet(pThis, 0, sizeof(*pThis));
 
+    pThis->iFirstRing         = BS3_MODE_IS_V86(bMode)    ? 3 : 0;
+    pThis->iEndRing           = BS3_MODE_IS_RM_SYS(bMode) ? 1 : 4;
     pThis->bMode              = bMode;
     pThis->pszMode            = Bs3GetModeName(bMode);
     pThis->pszModeShort       = Bs3GetModeNameShortLower(bMode);
@@ -1871,8 +1877,8 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, u
         *(uint32_t *)&pThis->DataPgFar = Bs3SelFlatDataToRealMode(pThis->uDataPgFlat);
         ASMCompilerBarrier();
         pThis->CodePgFar.off = 0;
-        pThis->CodePgFar.sel = pThis->uDataPgFlat >> 4;
-        pThis->CodePgRip = pThis->CodePgFar.off;
+        pThis->CodePgFar.sel = pThis->uCodePgFlat >> 4;
+        pThis->CodePgRip     = pThis->CodePgFar.off;
     }
     else if (BS3_MODE_IS_16BIT_CODE(bMode))
     {
@@ -1902,11 +1908,11 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, u
 
     /* Create basic context for each target ring.  In protected 16-bit code we need
        set up code selectors that can access pbCodePg.  ASSUMES 16-bit driver code! */
-    Bs3RegCtxSaveEx(&pThis->aInitialCtxs[iFirstRing], bMode, 512);
+    Bs3RegCtxSaveEx(&pThis->aInitialCtxs[pThis->iFirstRing], bMode, 1024 * 3);
     if (BS3_MODE_IS_RM_OR_V86(bMode))
     {
-        pThis->aInitialCtxs[iFirstRing].cs = pThis->CodePgFar.sel;
-        BS3_ASSERT(iFirstRing + 1 >= cRings);
+        pThis->aInitialCtxs[pThis->iFirstRing].cs = pThis->CodePgFar.sel;
+        BS3_ASSERT(pThis->iFirstRing + 1 == pThis->iEndRing);
     }
     else if (BS3_MODE_IS_16BIT_CODE(bMode))
     {
@@ -1915,12 +1921,12 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, u
 #else
         uintptr_t const uFlatCodePgSeg = (uintptr_t)pThis->pbCodePg;
 #endif
-        for (iRing = iFirstRing + 1; iRing < cRings; iRing++)
+        for (iRing = pThis->iFirstRing + 1; iRing < pThis->iEndRing; iRing++)
         {
-            Bs3MemCpy(&pThis->aInitialCtxs[iRing], &pThis->aInitialCtxs[iFirstRing], sizeof(pThis->aInitialCtxs[iRing]));
+            Bs3MemCpy(&pThis->aInitialCtxs[iRing], &pThis->aInitialCtxs[pThis->iFirstRing], sizeof(pThis->aInitialCtxs[iRing]));
             Bs3RegCtxConvertToRingX(&pThis->aInitialCtxs[iRing], iRing);
         }
-        for (iRing = iFirstRing; iRing < cRings; iRing++)
+        for (iRing = pThis->iFirstRing; iRing < pThis->iEndRing; iRing++)
         {
             pThis->aInitialCtxs[iRing].cs = BS3_SEL_SPARE_00 + iRing * 8 + iRing;
             Bs3SelSetup16BitCode(&Bs3GdteSpare00 + iRing, uFlatCodePgSeg, iRing);
@@ -1928,10 +1934,10 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, u
     }
     else
     {
-        Bs3RegCtxSetRipCsFromCurPtr(&pThis->aInitialCtxs[iFirstRing], (FPFNBS3FAR)pThis->pbCodePg);
-        for (iRing = iFirstRing + 1; iRing < cRings; iRing++)
+        Bs3RegCtxSetRipCsFromCurPtr(&pThis->aInitialCtxs[pThis->iFirstRing], (FPFNBS3FAR)pThis->pbCodePg);
+        for (iRing = pThis->iFirstRing + 1; iRing < pThis->iEndRing; iRing++)
         {
-            Bs3MemCpy(&pThis->aInitialCtxs[iRing], &pThis->aInitialCtxs[iFirstRing], sizeof(pThis->aInitialCtxs[iRing]));
+            Bs3MemCpy(&pThis->aInitialCtxs[iRing], &pThis->aInitialCtxs[pThis->iFirstRing], sizeof(pThis->aInitialCtxs[iRing]));
             Bs3RegCtxConvertToRingX(&pThis->aInitialCtxs[iRing], iRing);
         }
     }
@@ -1941,15 +1947,10 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t cRings, u
 }
 
 
-static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis, uint8_t bMode, uint8_t const cRings, uint8_t const iFirstRing)
+static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
 {
     uint8_t  iRing;
     unsigned iInstr;
-
-#if 0
-    if (bMode != BS3_MODE_LM16)
-        return BS3TESTDOMODE_SKIPPED;
-#endif
 
     /*
      * Test the instructions.
@@ -1963,7 +1964,7 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis, uint8_t bMode, 
         unsigned iEncoding;
         unsigned iEncodingNext;
         bool     fInvalidInstr = false;
-        uint8_t  bTestXcptExpected = BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD;
+        uint8_t  bTestXcptExpected = BS3_MODE_IS_PAGED(pThis->bMode) ? X86_XCPT_PF : X86_XCPT_UD;
 
         /*
          * Expand the instruction information into the state.
@@ -2029,7 +2030,7 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis, uint8_t bMode, 
             /*
              * Do the rings.
              */
-            for (iRing = iFirstRing + pThis->fSameRingNotOkay; iRing < cRings; iRing++)
+            for (iRing = pThis->iFirstRing + pThis->fSameRingNotOkay; iRing < pThis->iEndRing; iRing++)
             {
                 PCBS3CG1TESTHDR pHdr;
 
@@ -2049,7 +2050,7 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis, uint8_t bMode, 
                         uint8_t BS3_FAR *pbCode;
 
                         Bs3MemCpy(&pThis->Ctx, &pThis->aInitialCtxs[iRing], sizeof(pThis->Ctx));
-                        if (BS3_MODE_IS_PAGED(bMode))
+                        if (BS3_MODE_IS_PAGED(pThis->bMode))
                         {
                             offCode = X86_PAGE_SIZE - pThis->cbCurInstr;
                             pbCode = &pThis->pbCodePg[offCode];
@@ -2108,28 +2109,25 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis, uint8_t bMode, 
         Bs3Cg1EncodeCleanup(pThis);
     }
 
-#if 0
-    if (bMode >= BS3_MODE_PE16_32)
-    {
-        Bs3TestTerm();
-        Bs3Shutdown();
-    }
-#endif
-
     return 0;
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 {
-    unsigned const  iFirstRing = BS3_MODE_IS_V86(bMode)       ? 3 : 0;
-    uint8_t const   cRings     = BS3_MODE_IS_RM_OR_V86(bMode) ? 1 : 4;
-    uint8_t         bRet       = 1;
+    uint8_t         bRet = 1;
 #if 1
     BS3CG1STATE     This;
-    if (BS3_CMN_NM(Bs3Cg1Init)(&This, bMode, cRings, iFirstRing))
+
+# if 0
+    /* (for debugging) */
+    if (bMode != BS3_MODE_PPV86)
+        return BS3TESTDOMODE_SKIPPED;
+# endif
+
+    if (BS3_CMN_NM(Bs3Cg1Init)(&This, bMode))
     {
-        bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(&This, bMode, iFirstRing, cRings);
+        bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(&This);
 
         Bs3Cg1Destroy(&This);
         Bs3TestSubDone();
@@ -2139,14 +2137,23 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     if (pThis)
     {
 
-        if (BS3_CMN_NM(Bs3Cg1Init)(pThis, bMode, cRings, iFirstRing))
+        if (BS3_CMN_NM(Bs3Cg1Init)(pThis, bMode))
         {
-            bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(pThis, bMode, iFirstRing, cRings);
+            bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(pThis);
 
             Bs3Cg1Destroy(pThis);
             Bs3TestSubDone();
         }
         Bs3MemFree(pThis, sizeof(*pThis));
+    }
+#endif
+
+#if 0
+    /* (for debugging) */
+    if (bMode >= BS3_MODE_PE16_32)
+    {
+        Bs3TestTerm();
+        Bs3Shutdown();
     }
 #endif
     return bRet;
