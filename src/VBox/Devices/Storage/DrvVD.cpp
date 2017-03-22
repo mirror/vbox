@@ -536,42 +536,6 @@ static int drvvdSetWritable(PVBOXDISK pThis)
     return rc;
 }
 
-/**
- * Converts from VD region data form enum to the PDM variant.
- *
- * @returns PDM media region data form.
- * @param   enmDataForm         The VD region data form.
- */
-static PDMMEDIAREGIONDATAFORM drvvdVDRegionForm2PdmDataForm(VDREGIONDATAFORM enmDataForm)
-{
-    switch (enmDataForm)
-    {
-        #define VDDATAFORM2PDM(tag) case VDREGIONDATAFORM_##tag: return PDMMEDIAREGIONDATAFORM_##tag
-
-        VDDATAFORM2PDM(INVALID);
-        VDDATAFORM2PDM(RAW);
-        VDDATAFORM2PDM(CDDA);
-        VDDATAFORM2PDM(CDDA_PAUSE);
-        VDDATAFORM2PDM(MODE1_2048);
-        VDDATAFORM2PDM(MODE1_2352);
-        VDDATAFORM2PDM(MODE1_0);
-        VDDATAFORM2PDM(XA_2336);
-        VDDATAFORM2PDM(XA_2352);
-        VDDATAFORM2PDM(XA_0);
-        VDDATAFORM2PDM(MODE2_2336);
-        VDDATAFORM2PDM(MODE2_2352);
-        VDDATAFORM2PDM(MODE2_0);
-
-        #undef VDDATAFORM2PDM
-
-        default:
-        {
-            AssertMsgFailed(("Unknown data form %d! forgot to add it to the switch?\n", enmDataForm));
-            return PDMMEDIAREGIONDATAFORM_INVALID;
-        }
-    }
-}
-
 /*********************************************************************************************************************************
 *   Error reporting callback                                                                                                     *
 *********************************************************************************************************************************/
@@ -2530,7 +2494,7 @@ static DECLCALLBACK(uint32_t) drvvdGetRegionCount(PPDMIMEDIA pInterface)
 /** @interface_method_impl{PDMIMEDIA,pfnQueryRegionProperties} */
 static DECLCALLBACK(int) drvvdQueryRegionProperties(PPDMIMEDIA pInterface, uint32_t uRegion, uint64_t *pu64LbaStart,
                                                     uint64_t *pcBlocks, uint64_t *pcbBlock,
-                                                    PPDMMEDIAREGIONDATAFORM penmDataForm)
+                                                    PVDREGIONDATAFORM penmDataForm)
 {
     LogFlowFunc(("\n"));
     int rc = VINF_SUCCESS;
@@ -2548,7 +2512,7 @@ static DECLCALLBACK(int) drvvdQueryRegionProperties(PPDMIMEDIA pInterface, uint3
         if (pcbBlock)
             *pcbBlock = pRegion->cbBlock;
         if (penmDataForm)
-            *penmDataForm = drvvdVDRegionForm2PdmDataForm(pRegion->enmDataForm);
+            *penmDataForm = pRegion->enmDataForm;
     }
     else
         rc = VERR_NOT_FOUND;
@@ -2560,7 +2524,7 @@ static DECLCALLBACK(int) drvvdQueryRegionProperties(PPDMIMEDIA pInterface, uint3
 /** @interface_method_impl{PDMIMEDIA,pfnQueryRegionPropertiesForLba} */
 static DECLCALLBACK(int) drvvdQueryRegionPropertiesForLba(PPDMIMEDIA pInterface, uint64_t u64LbaStart,
                                                           uint64_t *pcBlocks, uint64_t *pcbBlock,
-                                                          PPDMMEDIAREGIONDATAFORM penmDataForm)
+                                                          PVDREGIONDATAFORM penmDataForm)
 {
     LogFlowFunc(("\n"));
     int rc = VINF_SUCCESS;
@@ -2587,7 +2551,7 @@ static DECLCALLBACK(int) drvvdQueryRegionPropertiesForLba(PPDMIMEDIA pInterface,
                 if (pcbBlock)
                     *pcbBlock = pRegion->cbBlock;
                 if (penmDataForm)
-                    *penmDataForm = drvvdVDRegionForm2PdmDataForm(pRegion->enmDataForm);
+                    *penmDataForm = pRegion->enmDataForm;
 
                 rc = VINF_SUCCESS;
             }

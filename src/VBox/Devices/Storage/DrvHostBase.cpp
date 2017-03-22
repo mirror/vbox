@@ -357,7 +357,7 @@ static DECLCALLBACK(uint32_t) drvHostBaseGetRegionCount(PPDMIMEDIA pInterface)
 /** @interface_method_impl{PDMIMEDIA,pfnQueryRegionProperties} */
 static DECLCALLBACK(int) drvHostBaseQueryRegionProperties(PPDMIMEDIA pInterface, uint32_t uRegion, uint64_t *pu64LbaStart,
                                                           uint64_t *pcBlocks, uint64_t *pcbBlock,
-                                                          PPDMMEDIAREGIONDATAFORM penmDataForm)
+                                                          PVDREGIONDATAFORM penmDataForm)
 {
     LogFlowFunc(("\n"));
     int rc = VINF_SUCCESS;
@@ -383,7 +383,7 @@ static DECLCALLBACK(int) drvHostBaseQueryRegionProperties(PPDMIMEDIA pInterface,
             if (pcbBlock)
                 *pcbBlock = cbBlock;
             if (penmDataForm)
-                *penmDataForm = PDMMEDIAREGIONDATAFORM_RAW;
+                *penmDataForm = VDREGIONDATAFORM_RAW;
         }
     }
     else
@@ -396,7 +396,7 @@ static DECLCALLBACK(int) drvHostBaseQueryRegionProperties(PPDMIMEDIA pInterface,
 /** @interface_method_impl{PDMIMEDIA,pfnQueryRegionPropertiesForLba} */
 static DECLCALLBACK(int) drvHostBaseQueryRegionPropertiesForLba(PPDMIMEDIA pInterface, uint64_t u64LbaStart,
                                                                 uint64_t *pcBlocks, uint64_t *pcbBlock,
-                                                                PPDMMEDIAREGIONDATAFORM penmDataForm)
+                                                                PVDREGIONDATAFORM penmDataForm)
 {
     LogFlowFunc(("\n"));
     int rc = VINF_SUCCESS;
@@ -420,7 +420,7 @@ static DECLCALLBACK(int) drvHostBaseQueryRegionPropertiesForLba(PPDMIMEDIA pInte
         if (pcbBlock)
             *pcbBlock = cbBlock;
         if (penmDataForm)
-            *penmDataForm = PDMMEDIAREGIONDATAFORM_RAW;
+            *penmDataForm = VDREGIONDATAFORM_RAW;
     }
     else
         rc = VERR_NOT_FOUND;
