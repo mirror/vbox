@@ -65,7 +65,8 @@ BS3_PROC_BEGIN_CMN Bs3SelFlatDataToProtFar16, BS3_PBC_NEAR      ; Far stub gener
         jnz     .not_stack
         mov     dx, BS3_SEL_R0_SS16
 %else
-        mov     eax, [xBP + xCB + cbCurRetAddr]
+TNOT64  mov     eax, [xBP + xCB + cbCurRetAddr]
+TONLY64 mov     eax, ecx
         test    eax, 0ffff0000h
         jnz     .not_stack
         or      eax, BS3_SEL_R0_SS16 << 16
@@ -110,11 +111,8 @@ BS3_PROC_BEGIN_CMN Bs3SelFlatDataToProtFar16, BS3_PBC_NEAR      ; Far stub gener
 
 %else
         ; Convert upper 16-bit to tiled selector.
- %if TMPL_BITS == 32
-        mov     eax, [xBP + xCB + cbCurRetAddr]
- %else
-        mov     rax, rcx
- %endif
+TNOT64  mov     eax, [xBP + xCB + cbCurRetAddr]
+TONLY64 mov     rax, rcx
  %ifdef BS3_STRICT
         cmp     xAX, BS3_SEL_TILED_AREA_SIZE
         jb      .address_ok
