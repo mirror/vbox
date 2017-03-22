@@ -395,8 +395,8 @@ static DECLCALLBACK(int) drvHostBaseQueryRegionProperties(PPDMIMEDIA pInterface,
 
 /** @interface_method_impl{PDMIMEDIA,pfnQueryRegionPropertiesForLba} */
 static DECLCALLBACK(int) drvHostBaseQueryRegionPropertiesForLba(PPDMIMEDIA pInterface, uint64_t u64LbaStart,
-                                                                uint64_t *pcBlocks, uint64_t *pcbBlock,
-                                                                PVDREGIONDATAFORM penmDataForm)
+                                                                uint32_t *puRegion, uint64_t *pcBlocks,
+                                                                uint64_t *pcbBlock, PVDREGIONDATAFORM penmDataForm)
 {
     LogFlowFunc(("\n"));
     int rc = VINF_SUCCESS;
@@ -415,6 +415,8 @@ static DECLCALLBACK(int) drvHostBaseQueryRegionPropertiesForLba(PPDMIMEDIA pInte
     {
         rc = VERR_NOT_FOUND;
 
+        if (puRegion)
+            *puRegion = 0;
         if (pcBlocks)
             *pcBlocks = cbMedia / cbBlock;
         if (pcbBlock)

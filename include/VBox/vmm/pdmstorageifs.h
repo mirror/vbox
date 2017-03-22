@@ -492,17 +492,18 @@ typedef struct PDMIMEDIA
      * @retval  VERR_NOT_FOUND if the region index is not known.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   u64LbaStart     Where to store the starting LBA for the region on success.
+     * @param   puRegion        Where to store the region number on success.
      * @param   pcBlocks        Where to store the number of blocks left in this region starting from the given LBA.
      * @param   pcbBlock        Where to store the size of one block in bytes on success.
      * @param   penmDataForm    WHere to store the data form for the region on success.
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryRegionPropertiesForLba,(PPDMIMEDIA pInterface, uint64_t u64LbaStart,
-                                                              uint64_t *pcBlocks, uint64_t *pcbBlock,
-                                                              PVDREGIONDATAFORM penmDataForm));
+                                                              uint32_t *puRegion, uint64_t *pcBlocks,
+                                                              uint64_t *pcbBlock, PVDREGIONDATAFORM penmDataForm));
 
 } PDMIMEDIA;
 /** PDMIMEDIA interface ID. */
-#define PDMIMEDIA_IID                           "c2d1d87a-e1ae-4a70-ac85-f2ffe9c5b736"
+#define PDMIMEDIA_IID                           "8ec68c48-dd20-4430-8386-f0d628a5aca6"
 
 
 /**
