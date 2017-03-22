@@ -1718,12 +1718,13 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
                 {
                     pFeatures->cbMaxExtendedState = pXStateLeaf0->uEcx;
 
+                    /* (paranoia:) */
                     PCCPUMCPUIDLEAF const pXStateLeaf1 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 13, 1);
                     if (   pXStateLeaf1
                         && pXStateLeaf1->uEbx > pFeatures->cbMaxExtendedState
                         && pXStateLeaf1->uEbx <= CPUM_MAX_XSAVE_AREA_SIZE
                         && (pXStateLeaf1->uEcx || pXStateLeaf1->uEdx) )
-                        pFeatures->cbMaxExtendedState = pXStateLeaf0->uEbx;
+                        pFeatures->cbMaxExtendedState = pXStateLeaf1->uEbx;
                 }
                 else
                     AssertLogRelMsgFailedStmt(("Unexpected max/cur XSAVE area sizes: %#x/%#x\n", pXStateLeaf0->uEcx, pXStateLeaf0->uEbx),
