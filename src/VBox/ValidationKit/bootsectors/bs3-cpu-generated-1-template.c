@@ -227,6 +227,11 @@ typedef struct BS3CG1STATE
     /** Initial contexts, one for each ring. */
     BS3REGCTX               aInitialCtxs[4];
 
+    /** The extended context. */
+    PBS3EXTCTX              pExtCtx;
+    /** The initial extended context. */
+    PBS3EXTCTX              pInitialExtCtx;
+
     /** Memory operand scratch space. */
     union
     {
@@ -379,113 +384,232 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
     /* [BS3CG1DST_OZ_R14] = */  BS3CG1DSTSIZE_OPERAND_SIZE_GRP,
     /* [BS3CG1DST_OZ_R15] = */  BS3CG1DSTSIZE_OPERAND_SIZE_GRP,
 
-    /* [BS3CG1DST_VALUE_XCPT] = */ 1,
+    /* [BS3CG1DST_FCW] = */         2,
+    /* [BS3CG1DST_FSW] = */         2,
+    /* [BS3CG1DST_FTW] = */         2,
+    /* [BS3CG1DST_FOP] = */         2,
+    /* [BS3CG1DST_FPUIP] = */       2,
+    /* [BS3CG1DST_FPUCS] = */       2,
+    /* [BS3CG1DST_FPUDP] = */       2,
+    /* [BS3CG1DST_FPUDS] = */       2,
+    /* [BS3CG1DST_MXCSR] = */       4,
+    /* [BS3CG1DST_MXCSR_MASK] = */  4,
+    /* [BS3CG1DST_ST0] = */         12,
+    /* [BS3CG1DST_ST1] = */         12,
+    /* [BS3CG1DST_ST2] = */         12,
+    /* [BS3CG1DST_ST3] = */         12,
+    /* [BS3CG1DST_ST4] = */         12,
+    /* [BS3CG1DST_ST5] = */         12,
+    /* [BS3CG1DST_ST6] = */         12,
+    /* [BS3CG1DST_ST7] = */         12,
+    /* [BS3CG1DST_MM0] = */         8,
+    /* [BS3CG1DST_MM1] = */         8,
+    /* [BS3CG1DST_MM2] = */         8,
+    /* [BS3CG1DST_MM3] = */         8,
+    /* [BS3CG1DST_MM4] = */         8,
+    /* [BS3CG1DST_MM5] = */         8,
+    /* [BS3CG1DST_MM6] = */         8,
+    /* [BS3CG1DST_MM7] = */         8,
+    /* [BS3CG1DST_XMM0] = */        16,
+    /* [BS3CG1DST_XMM1] = */        16,
+    /* [BS3CG1DST_XMM2] = */        16,
+    /* [BS3CG1DST_XMM3] = */        16,
+    /* [BS3CG1DST_XMM4] = */        16,
+    /* [BS3CG1DST_XMM5] = */        16,
+    /* [BS3CG1DST_XMM6] = */        16,
+    /* [BS3CG1DST_XMM7] = */        16,
+    /* [BS3CG1DST_XMM8] = */        16,
+    /* [BS3CG1DST_XMM9] = */        16,
+    /* [BS3CG1DST_XMM10] = */       16,
+    /* [BS3CG1DST_XMM11] = */       16,
+    /* [BS3CG1DST_XMM12] = */       16,
+    /* [BS3CG1DST_XMM13] = */       16,
+    /* [BS3CG1DST_XMM14] = */       16,
+    /* [BS3CG1DST_XMM15] = */       16,
+    /* [BS3CG1DST_YMM0] = */        32,
+    /* [BS3CG1DST_YMM1] = */        32,
+    /* [BS3CG1DST_YMM2] = */        32,
+    /* [BS3CG1DST_YMM3] = */        32,
+    /* [BS3CG1DST_YMM4] = */        32,
+    /* [BS3CG1DST_YMM5] = */        32,
+    /* [BS3CG1DST_YMM6] = */        32,
+    /* [BS3CG1DST_YMM7] = */        32,
+    /* [BS3CG1DST_YMM8] = */        32,
+    /* [BS3CG1DST_YMM9] = */        32,
+    /* [BS3CG1DST_YMM10] = */       32,
+    /* [BS3CG1DST_YMM11] = */       32,
+    /* [BS3CG1DST_YMM12] = */       32,
+    /* [BS3CG1DST_YMM13] = */       32,
+    /* [BS3CG1DST_YMM14] = */       32,
+    /* [BS3CG1DST_YMM15] = */       32,
 
+    /* [BS3CG1DST_VALUE_XCPT] = */ 1,
 };
+AssertCompile(RT_ELEMENTS(g_acbBs3Cg1DstFields) == BS3CG1DST_END);
 
 /** Destination field offset indexed by bBS3CG1DST.
  * Zero means operand size sized.  */
 static const unsigned g_aoffBs3Cg1DstFields[] =
 {
-    /* [BS3CG1DST_INVALID] = */ ~0U,
-    /* [BS3CG1DST_OP1] = */     ~0U,
-    /* [BS3CG1DST_OP2] = */     ~0U,
-    /* [BS3CG1DST_OP3] = */     ~0U,
-    /* [BS3CG1DST_OP4] = */     ~0U,
-    /* [BS3CG1DST_EFL] = */     RT_OFFSETOF(BS3REGCTX, rflags),
-    /* [BS3CG1DST_EFL_UNDEF]=*/ ~0, /* special field */
+    /* [BS3CG1DST_INVALID] = */     ~0U,
+    /* [BS3CG1DST_OP1] = */         ~0U,
+    /* [BS3CG1DST_OP2] = */         ~0U,
+    /* [BS3CG1DST_OP3] = */         ~0U,
+    /* [BS3CG1DST_OP4] = */         ~0U,
+    /* [BS3CG1DST_EFL] = */         RT_OFFSETOF(BS3REGCTX, rflags),
+    /* [BS3CG1DST_EFL_UNDEF]=*/     ~0, /* special field */
 
-    /* [BS3CG1DST_AL] = */      RT_OFFSETOF(BS3REGCTX, rax.u8),
-    /* [BS3CG1DST_CL] = */      RT_OFFSETOF(BS3REGCTX, rcx.u8),
-    /* [BS3CG1DST_DL] = */      RT_OFFSETOF(BS3REGCTX, rdx.u8),
-    /* [BS3CG1DST_BL] = */      RT_OFFSETOF(BS3REGCTX, rbx.u8),
-    /* [BS3CG1DST_AH] = */      RT_OFFSETOF(BS3REGCTX, rax.b.bHi),
-    /* [BS3CG1DST_CH] = */      RT_OFFSETOF(BS3REGCTX, rcx.b.bHi),
-    /* [BS3CG1DST_DH] = */      RT_OFFSETOF(BS3REGCTX, rdx.b.bHi),
-    /* [BS3CG1DST_BH] = */      RT_OFFSETOF(BS3REGCTX, rbx.b.bHi),
-    /* [BS3CG1DST_SPL] = */     RT_OFFSETOF(BS3REGCTX, rsp.u8),
-    /* [BS3CG1DST_BPL] = */     RT_OFFSETOF(BS3REGCTX, rbp.u8),
-    /* [BS3CG1DST_SIL] = */     RT_OFFSETOF(BS3REGCTX, rsi.u8),
-    /* [BS3CG1DST_DIL] = */     RT_OFFSETOF(BS3REGCTX, rdi.u8),
-    /* [BS3CG1DST_R8L] = */     RT_OFFSETOF(BS3REGCTX, r8.u8),
-    /* [BS3CG1DST_R9L] = */     RT_OFFSETOF(BS3REGCTX, r9.u8),
-    /* [BS3CG1DST_R10L] = */    RT_OFFSETOF(BS3REGCTX, r10.u8),
-    /* [BS3CG1DST_R11L] = */    RT_OFFSETOF(BS3REGCTX, r11.u8),
-    /* [BS3CG1DST_R12L] = */    RT_OFFSETOF(BS3REGCTX, r12.u8),
-    /* [BS3CG1DST_R13L] = */    RT_OFFSETOF(BS3REGCTX, r13.u8),
-    /* [BS3CG1DST_R14L] = */    RT_OFFSETOF(BS3REGCTX, r14.u8),
-    /* [BS3CG1DST_R15L] = */    RT_OFFSETOF(BS3REGCTX, r15.u8),
+    /* [BS3CG1DST_AL] = */          RT_OFFSETOF(BS3REGCTX, rax.u8),
+    /* [BS3CG1DST_CL] = */          RT_OFFSETOF(BS3REGCTX, rcx.u8),
+    /* [BS3CG1DST_DL] = */          RT_OFFSETOF(BS3REGCTX, rdx.u8),
+    /* [BS3CG1DST_BL] = */          RT_OFFSETOF(BS3REGCTX, rbx.u8),
+    /* [BS3CG1DST_AH] = */          RT_OFFSETOF(BS3REGCTX, rax.b.bHi),
+    /* [BS3CG1DST_CH] = */          RT_OFFSETOF(BS3REGCTX, rcx.b.bHi),
+    /* [BS3CG1DST_DH] = */          RT_OFFSETOF(BS3REGCTX, rdx.b.bHi),
+    /* [BS3CG1DST_BH] = */          RT_OFFSETOF(BS3REGCTX, rbx.b.bHi),
+    /* [BS3CG1DST_SPL] = */         RT_OFFSETOF(BS3REGCTX, rsp.u8),
+    /* [BS3CG1DST_BPL] = */         RT_OFFSETOF(BS3REGCTX, rbp.u8),
+    /* [BS3CG1DST_SIL] = */         RT_OFFSETOF(BS3REGCTX, rsi.u8),
+    /* [BS3CG1DST_DIL] = */         RT_OFFSETOF(BS3REGCTX, rdi.u8),
+    /* [BS3CG1DST_R8L] = */         RT_OFFSETOF(BS3REGCTX, r8.u8),
+    /* [BS3CG1DST_R9L] = */         RT_OFFSETOF(BS3REGCTX, r9.u8),
+    /* [BS3CG1DST_R10L] = */        RT_OFFSETOF(BS3REGCTX, r10.u8),
+    /* [BS3CG1DST_R11L] = */        RT_OFFSETOF(BS3REGCTX, r11.u8),
+    /* [BS3CG1DST_R12L] = */        RT_OFFSETOF(BS3REGCTX, r12.u8),
+    /* [BS3CG1DST_R13L] = */        RT_OFFSETOF(BS3REGCTX, r13.u8),
+    /* [BS3CG1DST_R14L] = */        RT_OFFSETOF(BS3REGCTX, r14.u8),
+    /* [BS3CG1DST_R15L] = */        RT_OFFSETOF(BS3REGCTX, r15.u8),
 
-    /* [BS3CG1DST_AX] = */      RT_OFFSETOF(BS3REGCTX, rax.u16),
-    /* [BS3CG1DST_CX] = */      RT_OFFSETOF(BS3REGCTX, rcx.u16),
-    /* [BS3CG1DST_DX] = */      RT_OFFSETOF(BS3REGCTX, rdx.u16),
-    /* [BS3CG1DST_BX] = */      RT_OFFSETOF(BS3REGCTX, rbx.u16),
-    /* [BS3CG1DST_SP] = */      RT_OFFSETOF(BS3REGCTX, rsp.u16),
-    /* [BS3CG1DST_BP] = */      RT_OFFSETOF(BS3REGCTX, rbp.u16),
-    /* [BS3CG1DST_SI] = */      RT_OFFSETOF(BS3REGCTX, rsi.u16),
-    /* [BS3CG1DST_DI] = */      RT_OFFSETOF(BS3REGCTX, rdi.u16),
-    /* [BS3CG1DST_R8W] = */     RT_OFFSETOF(BS3REGCTX, r8.u16),
-    /* [BS3CG1DST_R9W] = */     RT_OFFSETOF(BS3REGCTX, r9.u16),
-    /* [BS3CG1DST_R10W] = */    RT_OFFSETOF(BS3REGCTX, r10.u16),
-    /* [BS3CG1DST_R11W] = */    RT_OFFSETOF(BS3REGCTX, r11.u16),
-    /* [BS3CG1DST_R12W] = */    RT_OFFSETOF(BS3REGCTX, r12.u16),
-    /* [BS3CG1DST_R13W] = */    RT_OFFSETOF(BS3REGCTX, r13.u16),
-    /* [BS3CG1DST_R14W] = */    RT_OFFSETOF(BS3REGCTX, r14.u16),
-    /* [BS3CG1DST_R15W] = */    RT_OFFSETOF(BS3REGCTX, r15.u16),
+    /* [BS3CG1DST_AX] = */          RT_OFFSETOF(BS3REGCTX, rax.u16),
+    /* [BS3CG1DST_CX] = */          RT_OFFSETOF(BS3REGCTX, rcx.u16),
+    /* [BS3CG1DST_DX] = */          RT_OFFSETOF(BS3REGCTX, rdx.u16),
+    /* [BS3CG1DST_BX] = */          RT_OFFSETOF(BS3REGCTX, rbx.u16),
+    /* [BS3CG1DST_SP] = */          RT_OFFSETOF(BS3REGCTX, rsp.u16),
+    /* [BS3CG1DST_BP] = */          RT_OFFSETOF(BS3REGCTX, rbp.u16),
+    /* [BS3CG1DST_SI] = */          RT_OFFSETOF(BS3REGCTX, rsi.u16),
+    /* [BS3CG1DST_DI] = */          RT_OFFSETOF(BS3REGCTX, rdi.u16),
+    /* [BS3CG1DST_R8W] = */         RT_OFFSETOF(BS3REGCTX, r8.u16),
+    /* [BS3CG1DST_R9W] = */         RT_OFFSETOF(BS3REGCTX, r9.u16),
+    /* [BS3CG1DST_R10W] = */        RT_OFFSETOF(BS3REGCTX, r10.u16),
+    /* [BS3CG1DST_R11W] = */        RT_OFFSETOF(BS3REGCTX, r11.u16),
+    /* [BS3CG1DST_R12W] = */        RT_OFFSETOF(BS3REGCTX, r12.u16),
+    /* [BS3CG1DST_R13W] = */        RT_OFFSETOF(BS3REGCTX, r13.u16),
+    /* [BS3CG1DST_R14W] = */        RT_OFFSETOF(BS3REGCTX, r14.u16),
+    /* [BS3CG1DST_R15W] = */        RT_OFFSETOF(BS3REGCTX, r15.u16),
 
-    /* [BS3CG1DST_EAX] = */     RT_OFFSETOF(BS3REGCTX, rax.u32),
-    /* [BS3CG1DST_ECX] = */     RT_OFFSETOF(BS3REGCTX, rcx.u32),
-    /* [BS3CG1DST_EDX] = */     RT_OFFSETOF(BS3REGCTX, rdx.u32),
-    /* [BS3CG1DST_EBX] = */     RT_OFFSETOF(BS3REGCTX, rbx.u32),
-    /* [BS3CG1DST_ESP] = */     RT_OFFSETOF(BS3REGCTX, rsp.u32),
-    /* [BS3CG1DST_EBP] = */     RT_OFFSETOF(BS3REGCTX, rbp.u32),
-    /* [BS3CG1DST_ESI] = */     RT_OFFSETOF(BS3REGCTX, rsi.u32),
-    /* [BS3CG1DST_EDI] = */     RT_OFFSETOF(BS3REGCTX, rdi.u32),
-    /* [BS3CG1DST_R8D] = */     RT_OFFSETOF(BS3REGCTX, r8.u32),
-    /* [BS3CG1DST_R9D] = */     RT_OFFSETOF(BS3REGCTX, r9.u32),
-    /* [BS3CG1DST_R10D] = */    RT_OFFSETOF(BS3REGCTX, r10.u32),
-    /* [BS3CG1DST_R11D] = */    RT_OFFSETOF(BS3REGCTX, r11.u32),
-    /* [BS3CG1DST_R12D] = */    RT_OFFSETOF(BS3REGCTX, r12.u32),
-    /* [BS3CG1DST_R13D] = */    RT_OFFSETOF(BS3REGCTX, r13.u32),
-    /* [BS3CG1DST_R14D] = */    RT_OFFSETOF(BS3REGCTX, r14.u32),
-    /* [BS3CG1DST_R15D] = */    RT_OFFSETOF(BS3REGCTX, r15.u32),
+    /* [BS3CG1DST_EAX] = */         RT_OFFSETOF(BS3REGCTX, rax.u32),
+    /* [BS3CG1DST_ECX] = */         RT_OFFSETOF(BS3REGCTX, rcx.u32),
+    /* [BS3CG1DST_EDX] = */         RT_OFFSETOF(BS3REGCTX, rdx.u32),
+    /* [BS3CG1DST_EBX] = */         RT_OFFSETOF(BS3REGCTX, rbx.u32),
+    /* [BS3CG1DST_ESP] = */         RT_OFFSETOF(BS3REGCTX, rsp.u32),
+    /* [BS3CG1DST_EBP] = */         RT_OFFSETOF(BS3REGCTX, rbp.u32),
+    /* [BS3CG1DST_ESI] = */         RT_OFFSETOF(BS3REGCTX, rsi.u32),
+    /* [BS3CG1DST_EDI] = */         RT_OFFSETOF(BS3REGCTX, rdi.u32),
+    /* [BS3CG1DST_R8D] = */         RT_OFFSETOF(BS3REGCTX, r8.u32),
+    /* [BS3CG1DST_R9D] = */         RT_OFFSETOF(BS3REGCTX, r9.u32),
+    /* [BS3CG1DST_R10D] = */        RT_OFFSETOF(BS3REGCTX, r10.u32),
+    /* [BS3CG1DST_R11D] = */        RT_OFFSETOF(BS3REGCTX, r11.u32),
+    /* [BS3CG1DST_R12D] = */        RT_OFFSETOF(BS3REGCTX, r12.u32),
+    /* [BS3CG1DST_R13D] = */        RT_OFFSETOF(BS3REGCTX, r13.u32),
+    /* [BS3CG1DST_R14D] = */        RT_OFFSETOF(BS3REGCTX, r14.u32),
+    /* [BS3CG1DST_R15D] = */        RT_OFFSETOF(BS3REGCTX, r15.u32),
 
-    /* [BS3CG1DST_RAX] = */     RT_OFFSETOF(BS3REGCTX, rax.u64),
-    /* [BS3CG1DST_RCX] = */     RT_OFFSETOF(BS3REGCTX, rcx.u64),
-    /* [BS3CG1DST_RDX] = */     RT_OFFSETOF(BS3REGCTX, rdx.u64),
-    /* [BS3CG1DST_RBX] = */     RT_OFFSETOF(BS3REGCTX, rbx.u64),
-    /* [BS3CG1DST_RSP] = */     RT_OFFSETOF(BS3REGCTX, rsp.u64),
-    /* [BS3CG1DST_RBP] = */     RT_OFFSETOF(BS3REGCTX, rbp.u64),
-    /* [BS3CG1DST_RSI] = */     RT_OFFSETOF(BS3REGCTX, rsi.u64),
-    /* [BS3CG1DST_RDI] = */     RT_OFFSETOF(BS3REGCTX, rdi.u64),
-    /* [BS3CG1DST_R8] = */      RT_OFFSETOF(BS3REGCTX, r8.u64),
-    /* [BS3CG1DST_R9] = */      RT_OFFSETOF(BS3REGCTX, r9.u64),
-    /* [BS3CG1DST_R10] = */     RT_OFFSETOF(BS3REGCTX, r10.u64),
-    /* [BS3CG1DST_R11] = */     RT_OFFSETOF(BS3REGCTX, r11.u64),
-    /* [BS3CG1DST_R12] = */     RT_OFFSETOF(BS3REGCTX, r12.u64),
-    /* [BS3CG1DST_R13] = */     RT_OFFSETOF(BS3REGCTX, r13.u64),
-    /* [BS3CG1DST_R14] = */     RT_OFFSETOF(BS3REGCTX, r14.u64),
-    /* [BS3CG1DST_R15] = */     RT_OFFSETOF(BS3REGCTX, r15.u64),
+    /* [BS3CG1DST_RAX] = */         RT_OFFSETOF(BS3REGCTX, rax.u64),
+    /* [BS3CG1DST_RCX] = */         RT_OFFSETOF(BS3REGCTX, rcx.u64),
+    /* [BS3CG1DST_RDX] = */         RT_OFFSETOF(BS3REGCTX, rdx.u64),
+    /* [BS3CG1DST_RBX] = */         RT_OFFSETOF(BS3REGCTX, rbx.u64),
+    /* [BS3CG1DST_RSP] = */         RT_OFFSETOF(BS3REGCTX, rsp.u64),
+    /* [BS3CG1DST_RBP] = */         RT_OFFSETOF(BS3REGCTX, rbp.u64),
+    /* [BS3CG1DST_RSI] = */         RT_OFFSETOF(BS3REGCTX, rsi.u64),
+    /* [BS3CG1DST_RDI] = */         RT_OFFSETOF(BS3REGCTX, rdi.u64),
+    /* [BS3CG1DST_R8] = */          RT_OFFSETOF(BS3REGCTX, r8.u64),
+    /* [BS3CG1DST_R9] = */          RT_OFFSETOF(BS3REGCTX, r9.u64),
+    /* [BS3CG1DST_R10] = */         RT_OFFSETOF(BS3REGCTX, r10.u64),
+    /* [BS3CG1DST_R11] = */         RT_OFFSETOF(BS3REGCTX, r11.u64),
+    /* [BS3CG1DST_R12] = */         RT_OFFSETOF(BS3REGCTX, r12.u64),
+    /* [BS3CG1DST_R13] = */         RT_OFFSETOF(BS3REGCTX, r13.u64),
+    /* [BS3CG1DST_R14] = */         RT_OFFSETOF(BS3REGCTX, r14.u64),
+    /* [BS3CG1DST_R15] = */         RT_OFFSETOF(BS3REGCTX, r15.u64),
 
-    /* [BS3CG1DST_OZ_RAX] = */  RT_OFFSETOF(BS3REGCTX, rax),
-    /* [BS3CG1DST_OZ_RCX] = */  RT_OFFSETOF(BS3REGCTX, rcx),
-    /* [BS3CG1DST_OZ_RDX] = */  RT_OFFSETOF(BS3REGCTX, rdx),
-    /* [BS3CG1DST_OZ_RBX] = */  RT_OFFSETOF(BS3REGCTX, rbx),
-    /* [BS3CG1DST_OZ_RSP] = */  RT_OFFSETOF(BS3REGCTX, rsp),
-    /* [BS3CG1DST_OZ_RBP] = */  RT_OFFSETOF(BS3REGCTX, rbp),
-    /* [BS3CG1DST_OZ_RSI] = */  RT_OFFSETOF(BS3REGCTX, rsi),
-    /* [BS3CG1DST_OZ_RDI] = */  RT_OFFSETOF(BS3REGCTX, rdi),
-    /* [BS3CG1DST_OZ_R8] = */   RT_OFFSETOF(BS3REGCTX, r8),
-    /* [BS3CG1DST_OZ_R9] = */   RT_OFFSETOF(BS3REGCTX, r9),
-    /* [BS3CG1DST_OZ_R10] = */  RT_OFFSETOF(BS3REGCTX, r10),
-    /* [BS3CG1DST_OZ_R11] = */  RT_OFFSETOF(BS3REGCTX, r11),
-    /* [BS3CG1DST_OZ_R12] = */  RT_OFFSETOF(BS3REGCTX, r12),
-    /* [BS3CG1DST_OZ_R13] = */  RT_OFFSETOF(BS3REGCTX, r13),
-    /* [BS3CG1DST_OZ_R14] = */  RT_OFFSETOF(BS3REGCTX, r14),
-    /* [BS3CG1DST_OZ_R15] = */  RT_OFFSETOF(BS3REGCTX, r15),
+    /* [BS3CG1DST_OZ_RAX] = */      RT_OFFSETOF(BS3REGCTX, rax),
+    /* [BS3CG1DST_OZ_RCX] = */      RT_OFFSETOF(BS3REGCTX, rcx),
+    /* [BS3CG1DST_OZ_RDX] = */      RT_OFFSETOF(BS3REGCTX, rdx),
+    /* [BS3CG1DST_OZ_RBX] = */      RT_OFFSETOF(BS3REGCTX, rbx),
+    /* [BS3CG1DST_OZ_RSP] = */      RT_OFFSETOF(BS3REGCTX, rsp),
+    /* [BS3CG1DST_OZ_RBP] = */      RT_OFFSETOF(BS3REGCTX, rbp),
+    /* [BS3CG1DST_OZ_RSI] = */      RT_OFFSETOF(BS3REGCTX, rsi),
+    /* [BS3CG1DST_OZ_RDI] = */      RT_OFFSETOF(BS3REGCTX, rdi),
+    /* [BS3CG1DST_OZ_R8] = */       RT_OFFSETOF(BS3REGCTX, r8),
+    /* [BS3CG1DST_OZ_R9] = */       RT_OFFSETOF(BS3REGCTX, r9),
+    /* [BS3CG1DST_OZ_R10] = */      RT_OFFSETOF(BS3REGCTX, r10),
+    /* [BS3CG1DST_OZ_R11] = */      RT_OFFSETOF(BS3REGCTX, r11),
+    /* [BS3CG1DST_OZ_R12] = */      RT_OFFSETOF(BS3REGCTX, r12),
+    /* [BS3CG1DST_OZ_R13] = */      RT_OFFSETOF(BS3REGCTX, r13),
+    /* [BS3CG1DST_OZ_R14] = */      RT_OFFSETOF(BS3REGCTX, r14),
+    /* [BS3CG1DST_OZ_R15] = */      RT_OFFSETOF(BS3REGCTX, r15),
 
-    /* [BS3CG1DST_VALUE_XCPT] = */ ~0U,
+    /* [BS3CG1DST_FCW] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FCW),
+    /* [BS3CG1DST_FSW] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FSW),
+    /* [BS3CG1DST_FTW] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FTW),
+    /* [BS3CG1DST_FOP] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FOP),
+    /* [BS3CG1DST_FPUIP] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FPUIP),
+    /* [BS3CG1DST_FPUCS] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.CS),
+    /* [BS3CG1DST_FPUDP] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FPUDP),
+    /* [BS3CG1DST_FPUDS] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.DS),
+    /* [BS3CG1DST_MXCSR] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.MXCSR),
+    /* [BS3CG1DST_MXCSR_MASK] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.MXCSR_MASK),
+    /* [BS3CG1DST_ST0] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[0]),
+    /* [BS3CG1DST_ST1] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[1]),
+    /* [BS3CG1DST_ST2] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[2]),
+    /* [BS3CG1DST_ST3] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[3]),
+    /* [BS3CG1DST_ST4] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[4]),
+    /* [BS3CG1DST_ST5] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[5]),
+    /* [BS3CG1DST_ST6] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[6]),
+    /* [BS3CG1DST_ST7] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[7]),
+    /* [BS3CG1DST_MM0] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[0]),
+    /* [BS3CG1DST_MM1] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[1]),
+    /* [BS3CG1DST_MM2] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[2]),
+    /* [BS3CG1DST_MM3] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[3]),
+    /* [BS3CG1DST_MM4] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[4]),
+    /* [BS3CG1DST_MM5] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[5]),
+    /* [BS3CG1DST_MM6] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[6]),
+    /* [BS3CG1DST_MM7] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[7]),
+    /* [BS3CG1DST_XMM0] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[0]),
+    /* [BS3CG1DST_XMM1] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[1]),
+    /* [BS3CG1DST_XMM2] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[2]),
+    /* [BS3CG1DST_XMM3] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[3]),
+    /* [BS3CG1DST_XMM4] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[4]),
+    /* [BS3CG1DST_XMM5] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[5]),
+    /* [BS3CG1DST_XMM6] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[6]),
+    /* [BS3CG1DST_XMM7] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[7]),
+    /* [BS3CG1DST_XMM8] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[8]),
+    /* [BS3CG1DST_XMM9] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[9]),
+    /* [BS3CG1DST_XMM10] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[10]),
+    /* [BS3CG1DST_XMM11] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[11]),
+    /* [BS3CG1DST_XMM12] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[12]),
+    /* [BS3CG1DST_XMM13] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]),
+    /* [BS3CG1DST_XMM14] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]),
+    /* [BS3CG1DST_XMM15] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]),
+    /* [BS3CG1DST_YMM0] = */        ~0U,
+    /* [BS3CG1DST_YMM1] = */        ~0U,
+    /* [BS3CG1DST_YMM2] = */        ~0U,
+    /* [BS3CG1DST_YMM3] = */        ~0U,
+    /* [BS3CG1DST_YMM4] = */        ~0U,
+    /* [BS3CG1DST_YMM5] = */        ~0U,
+    /* [BS3CG1DST_YMM6] = */        ~0U,
+    /* [BS3CG1DST_YMM7] = */        ~0U,
+    /* [BS3CG1DST_YMM8] = */        ~0U,
+    /* [BS3CG1DST_YMM9] = */        ~0U,
+    /* [BS3CG1DST_YMM10] = */       ~0U,
+    /* [BS3CG1DST_YMM11] = */       ~0U,
+    /* [BS3CG1DST_YMM12] = */       ~0U,
+    /* [BS3CG1DST_YMM13] = */       ~0U,
+    /* [BS3CG1DST_YMM14] = */       ~0U,
+    /* [BS3CG1DST_YMM15] = */       ~0U,
+
+    /* [BS3CG1DST_VALUE_XCPT] = */  ~0U,
 };
+AssertCompile(RT_ELEMENTS(g_aoffBs3Cg1DstFields) == BS3CG1DST_END);
 
 #ifdef BS3CG1_DEBUG_CTX_MOD
 /** Destination field names. */
@@ -588,8 +712,68 @@ static const struct { char sz[8]; } g_aszBs3Cg1DstFields[] =
     { "OZ_R14" },
     { "OZ_R15" },
 
+    { "FCW" },
+    { "FSW" },
+    { "FTW" },
+    { "FOP" },
+    { "FPUIP" },
+    { "FPUCS" },
+    { "FPUDP" },
+    { "FPUDS" },
+    { "MXCSR" },
+    { "MXCSR_M" },
+    { "ST0" },
+    { "ST1" },
+    { "ST2" },
+    { "ST3" },
+    { "ST4" },
+    { "ST5" },
+    { "ST6" },
+    { "ST7" },
+    { "MM0" },
+    { "MM1" },
+    { "MM2" },
+    { "MM3" },
+    { "MM4" },
+    { "MM5" },
+    { "MM6" },
+    { "MM7" },
+    { "XMM0" },
+    { "XMM1" },
+    { "XMM2" },
+    { "XMM3" },
+    { "XMM4" },
+    { "XMM5" },
+    { "XMM6" },
+    { "XMM7" },
+    { "XMM8" },
+    { "XMM9" },
+    { "XMM10" },
+    { "XMM11" },
+    { "XMM12" },
+    { "XMM13" },
+    { "XMM14" },
+    { "XMM15" },
+    { "YMM0" },
+    { "YMM1" },
+    { "YMM2" },
+    { "YMM3" },
+    { "YMM4" },
+    { "YMM5" },
+    { "YMM6" },
+    { "YMM7" },
+    { "YMM8" },
+    { "YMM9" },
+    { "YMM10" },
+    { "YMM11" },
+    { "YMM12" },
+    { "YMM13" },
+    { "YMM14" },
+    { "YMM15" },
+
     { "VALXCPT" },
 };
+AssertCompile(RT_ELEMENTS(g_aszBs3Cg1DstFields) == BS3CG1DST_END);
 
 #endif
 
@@ -869,6 +1053,21 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_Wsd_Vsd:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, 0);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_XMM0;
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_XMM1;
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
+
         case BS3CG1ENC_MODRM_Gv_Ma:
             cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
             if (iEncoding == 0)
@@ -1062,6 +1261,15 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_MEM;
             pThis->aOperands[1].idxField    = BS3CG1DST_INVALID;
+            break;
+
+        case BS3CG1ENC_MODRM_Wsd_Vsd:
+            pThis->iRmOp  = 0;
+            pThis->iRegOp = 1;
+            pThis->aOperands[0].cbOp = 16;
+            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_FIXED:
@@ -1300,6 +1508,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
         unsigned        cbValue;
         unsigned        cbDst;
         BS3CG1DST       idxField;
+        BS3PTRUNION     PtrField;
 
         /* Expand the destiation field (can be escaped). */
         switch (bOpcode & BS3CG1_CTXOP_DST_MASK)
@@ -1383,7 +1592,6 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
         if (cbDst <= 8)
         {
             unsigned const offField = g_aoffBs3Cg1DstFields[idxField];
-            BS3PTRUNION    PtrField;
 
             /*
              * Deal with fields up to 8-byte wide.
@@ -1470,10 +1678,11 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                     return Bs3TestFailed("Invalid BS3CG1DST_VALUE_XCPT usage");
                 PtrField.pu8 = &pThis->bValueXcpt;
             }
-            /// @todo else if (idxField <= BS3CG1DST_OP4)
-            /// @todo {
-            /// @todo
-            /// @todo }
+            /* FPU and FXSAVE format. */
+            else if (   pThis->pExtCtx->enmMethod != BS3EXTCTXMETHOD_ANCIENT
+                     && offField - sizeof(BS3REGCTX) <= RT_UOFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]) )
+                PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
+            /** @todo other FPU fields and FPU state formats. */
             else
                 return Bs3TestFailedF("Todo implement me: cbDst=%u idxField=%d offField=%#x", cbDst, idxField, offField);
 
@@ -1573,7 +1782,56 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
          * Deal with larger field (FPU, SSE, AVX, ...).
          */
         else
-            return Bs3TestFailedF("TODO: Implement me: cbDst=%u idxField=%d", cbDst, idxField);
+        {
+            union
+            {
+                X86FPUREG   FpuReg;
+                X86XMMREG   XmmReg;
+                X86YMMREG   YmmReg;
+                X86ZMMREG   ZmmReg;
+                uint8_t     ab[sizeof(X86ZMMREG)];
+                uint32_t    au32[sizeof(X86ZMMREG) / sizeof(uint32_t)];
+            } Value;
+            unsigned const offField = g_aoffBs3Cg1DstFields[idxField];
+
+            /* Copy the value into the union, doing the zero padding / extending. */
+            Bs3MemCpy(&Value, pbCode, cbValue);
+            if (cbValue < sizeof(Value))
+            {
+                if ((bOpcode & BS3CG1_CTXOP_SIGN_EXT) && (Value.ab[cbValue - 1] & 0x80))
+                    Bs3MemSet(&Value.ab[cbValue], 0xff, sizeof(Value) - cbValue);
+                else
+                    Bs3MemSet(&Value.ab[cbValue], 0x00, sizeof(Value) - cbValue);
+            }
+
+            /* Optimized access to XMM and STx registers. */
+            if (   pThis->pExtCtx->enmMethod != BS3EXTCTXMETHOD_ANCIENT
+                && offField - sizeof(BS3REGCTX) <= RT_UOFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]) )
+            {
+                /* Modify the field. */
+                unsigned i;
+                if (cbDst & 3)
+                    return Bs3TestFailedF("Malformed context instruction: cbDst=%u, multiple of 4", cbDst);
+
+                PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
+                i = cbDst / 4;
+                while (i-- > 0)
+                {
+                    switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
+                    {
+                        case BS3CG1_CTXOP_ASSIGN:   PtrField.pu32[i]  =  Value.au32[i]; break;
+                        case BS3CG1_CTXOP_OR:       PtrField.pu32[i] |=  Value.au32[i]; break;
+                        case BS3CG1_CTXOP_AND:      PtrField.pu32[i] &=  Value.au32[i]; break;
+                        case BS3CG1_CTXOP_AND_INV:  PtrField.pu32[i] &= ~Value.au32[i]; break;
+                    }
+                }
+            }
+            /* The YMM (AVX) and the first 16 ZMM (AVX512) registers have split storage in
+               the state, so they need special handling.  */
+            else
+                return Bs3TestFailedF("TODO: implement me: cbDst=%d idxField=%d (AVX and other weird state)", cbDst, idxField);
+
+        }
 
         /*
          * Advance to the next instruction.
@@ -1810,6 +2068,8 @@ static void Bs3Cg1Destroy(PBS3CG1STATE pThis)
         Bs3MemFree(pThis->pbCodePg, X86_PAGE_SIZE);
         Bs3MemFree(pThis->pbDataPg, X86_PAGE_SIZE);
     }
+    Bs3ExtCtxFree(pThis->pExtCtx);
+    Bs3ExtCtxFree(pThis->pInitialExtCtx);
 }
 
 
@@ -1838,6 +2098,12 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     pThis->pabOpcodes         = g_abBs3Cg1Opcodes;
     pThis->fAdvanceMnemonic   = 1;
 
+    /* Allocate extended context structures. */
+    pThis->pExtCtx            = Bs3ExtCtxAlloc(0, BS3MEMKIND_TILED);
+    pThis->pInitialExtCtx     = Bs3ExtCtxAlloc(0, BS3MEMKIND_TILED);
+    if (!pThis->pExtCtx || !pThis->pInitialExtCtx)
+        return Bs3TestFailed("Bs3ExtCtxAlloc failed");
+
     /* Allocate guarded exectuable and data memory. */
     if (BS3_MODE_IS_PAGED(bMode))
     {
@@ -1847,18 +2113,10 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
             return Bs3TestFailedF("First Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
         pThis->pbDataPg = Bs3MemGuardedTestPageAlloc(enmMemKind);
         if (!pThis->pbDataPg)
-        {
-            Bs3MemGuardedTestPageFree(pThis->pbCodePg);
             return Bs3TestFailedF("Second Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
-        }
         if (   BS3_MODE_IS_64BIT_CODE(bMode)
             && (uintptr_t)pThis->pbDataPg >= _2G)
-        {
-            Bs3TestFailedF("pbDataPg=%p is above 2GB and not simple to address from 64-bit code", pThis->pbDataPg);
-            Bs3MemGuardedTestPageFree(pThis->pbDataPg);
-            Bs3MemGuardedTestPageFree(pThis->pbCodePg);
-            return 0;
-        }
+            return Bs3TestFailedF("pbDataPg=%p is above 2GB and not simple to address from 64-bit code", pThis->pbDataPg);
 #else
         return Bs3TestFailed("WTF?! #1");
 #endif
@@ -1870,10 +2128,7 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
             return Bs3TestFailedF("First Bs3MemAlloc(%d,Pg) failed", enmMemKind);
         pThis->pbDataPg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
         if (!pThis->pbDataPg)
-        {
-            Bs3MemFree(pThis->pbCodePg, X86_PAGE_SIZE);
             return Bs3TestFailedF("Second Bs3MemAlloc(%d,Pg) failed", enmMemKind);
-        }
     }
     pThis->uCodePgFlat = Bs3SelPtrToFlat(pThis->pbCodePg);
     pThis->uDataPgFlat = Bs3SelPtrToFlat(pThis->pbDataPg);
@@ -1918,8 +2173,15 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     }
 #endif
 
-    /* Create basic context for each target ring.  In protected 16-bit code we need
-       set up code selectors that can access pbCodePg.  ASSUMES 16-bit driver code! */
+    /*
+     * Create basic context for each target ring.
+     *
+     * In protected 16-bit code we need set up code selectors that can access
+     * pbCodePg.
+     *
+     * In long mode we make sure the high 32-bits of GPRs (sans RSP) have some
+     * bits set so we can check that the implicit clearing is tested.
+     */
     Bs3RegCtxSaveEx(&pThis->aInitialCtxs[pThis->iFirstRing], bMode, 1024 * 3);
 #if ARCH_BITS == 64
     pThis->aInitialCtxs[pThis->iFirstRing].rax.u |= UINT64_C(0x0101010100000000);
@@ -1938,6 +2200,7 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     pThis->aInitialCtxs[pThis->iFirstRing].r14.u |= UINT64_C(0x1414141400000000);
     pThis->aInitialCtxs[pThis->iFirstRing].r15.u |= UINT64_C(0x1515151500000000);
 #endif
+
     if (BS3_MODE_IS_RM_OR_V86(bMode))
     {
         pThis->aInitialCtxs[pThis->iFirstRing].cs = pThis->CodePgFar.sel;
@@ -2157,22 +2420,19 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     if (BS3_CMN_NM(Bs3Cg1Init)(&This, bMode))
     {
         bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(&This);
-
-        Bs3Cg1Destroy(&This);
         Bs3TestSubDone();
     }
+    Bs3Cg1Destroy(&This);
 #else
     PBS3CG1STATE pThis = (PBS3CG1STATE)Bs3MemAlloc(BS3MEMKIND_REAL, sizeof(*pThis));
     if (pThis)
     {
-
         if (BS3_CMN_NM(Bs3Cg1Init)(pThis, bMode))
         {
             bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(pThis);
-
-            Bs3Cg1Destroy(pThis);
             Bs3TestSubDone();
         }
+        Bs3Cg1Destroy(pThis);
         Bs3MemFree(pThis, sizeof(*pThis));
     }
 #endif

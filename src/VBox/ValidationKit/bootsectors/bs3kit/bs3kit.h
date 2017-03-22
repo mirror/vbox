@@ -2693,6 +2693,8 @@ typedef struct BS3EXTCTX
         X86FXSTATE      x87;
         /** xsave/xrstor   */
         X86XSAVEAREA    x;
+        /** Byte array view. */
+        uint8_t         ab[sizeof(X86XSAVEAREA)];
     } Ctx;
 } BS3EXTCTX;
 AssertCompileMemberAlignment(BS3EXTCTX, Ctx, 64);
