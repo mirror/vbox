@@ -87,8 +87,8 @@ typedef struct RAWIMAGE
 /** NULL-terminated array of supported file extensions. */
 static const VDFILEEXTENSION s_aRawFileExtensions[] =
 {
-    {"iso", VDTYPE_DVD},
-    {"cdr", VDTYPE_DVD},
+    {"iso", VDTYPE_OPTICAL_DISC},
+    {"cdr", VDTYPE_OPTICAL_DISC},
     {"img", VDTYPE_FLOPPY},
     {"ima", VDTYPE_FLOPPY},
     {"dsk", VDTYPE_FLOPPY},
@@ -331,7 +331,7 @@ static DECLCALLBACK(int) rawProbe(const char *pszFilename, PVDINTERFACE pVDIfsDi
                     rc = VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL;
                 else
                 {
-                    *penmType = VDTYPE_DVD;
+                    *penmType = VDTYPE_OPTICAL_DISC;
                     rc = VINF_SUCCESS;
                 }
             }
@@ -392,7 +392,7 @@ static DECLCALLBACK(int) rawOpen(const char *pszFilename, unsigned uOpenFlags,
         rc = rawOpenImage(pImage, uOpenFlags);
         if (RT_SUCCESS(rc))
         {
-            if (enmType == VDTYPE_DVD)
+            if (enmType == VDTYPE_OPTICAL_DISC)
                 pImage->cbSector = 2048;
             else
                 pImage->cbSector = 512;
@@ -424,7 +424,7 @@ static DECLCALLBACK(int) rawCreate(const char *pszFilename, uint64_t cbSize,
 
     /* Check the VD container type. Yes, hard disk must be allowed, otherwise
      * various tools using this backend for hard disk images will fail. */
-    if (enmType != VDTYPE_HDD && enmType != VDTYPE_DVD && enmType != VDTYPE_FLOPPY)
+    if (enmType != VDTYPE_HDD && enmType != VDTYPE_OPTICAL_DISC && enmType != VDTYPE_FLOPPY)
         return VERR_VD_INVALID_TYPE;
 
     int rc = VINF_SUCCESS;

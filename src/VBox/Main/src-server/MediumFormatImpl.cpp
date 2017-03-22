@@ -82,7 +82,7 @@ HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
                 case VDTYPE_HDD:
                     devType = DeviceType_HardDisk;
                     break;
-                case VDTYPE_DVD:
+                case VDTYPE_OPTICAL_DISC:
                     devType = DeviceType_DVD;
                     break;
                 case VDTYPE_FLOPPY:

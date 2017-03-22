@@ -423,7 +423,7 @@ typedef struct DMGINFLATESTATE
 /** NULL-terminated array of supported file extensions. */
 static const VDFILEEXTENSION s_aDmgFileExtensions[] =
 {
-    {"dmg", VDTYPE_DVD},
+    {"dmg", VDTYPE_OPTICAL_DISC},
     {NULL, VDTYPE_INVALID}
 };
 
@@ -1792,7 +1792,7 @@ static DECLCALLBACK(int) dmgProbe(const char *pszFilename, PVDINTERFACE pVDIfsDi
                 if (dmgUdifFtrIsValid(&Ftr, offFtr))
                 {
                     rc = VINF_SUCCESS;
-                    *penmType = VDTYPE_DVD;
+                    *penmType = VDTYPE_OPTICAL_DISC;
                 }
                 else
                 {

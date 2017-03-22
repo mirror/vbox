@@ -7411,7 +7411,7 @@ VDTYPE Medium::i_convertDeviceType()
             enmType = VDTYPE_HDD;
             break;
         case DeviceType_DVD:
-            enmType = VDTYPE_DVD;
+            enmType = VDTYPE_OPTICAL_DISC;
             break;
         case DeviceType_Floppy:
             enmType = VDTYPE_FLOPPY;
@@ -7435,7 +7435,7 @@ DeviceType_T Medium::i_convertToDeviceType(VDTYPE enmType)
         case VDTYPE_HDD:
             devType = DeviceType_HardDisk;
             break;
-        case VDTYPE_DVD:
+        case VDTYPE_OPTICAL_DISC:
             devType = DeviceType_DVD;
             break;
         case VDTYPE_FLOPPY:

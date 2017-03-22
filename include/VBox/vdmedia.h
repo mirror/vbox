@@ -34,8 +34,8 @@ typedef enum VDTYPE
     VDTYPE_INVALID = 0,
     /** HardDisk */
     VDTYPE_HDD,
-    /** DVD */
-    VDTYPE_DVD,
+    /** Any kind of optical disc (CD/DVD etc.). */
+    VDTYPE_OPTICAL_DISC,
     /** Floppy. */
     VDTYPE_FLOPPY
 } VDTYPE;

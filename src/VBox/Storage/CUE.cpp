@@ -224,7 +224,7 @@ typedef struct CUEIMAGE
 /** NULL-terminated array of supported file extensions. */
 static const VDFILEEXTENSION s_aCueFileExtensions[] =
 {
-    {"cue", VDTYPE_DVD},
+    {"cue", VDTYPE_OPTICAL_DISC},
     {NULL, VDTYPE_INVALID}
 };
 
@@ -1426,7 +1426,7 @@ static DECLCALLBACK(int) cueProbe(const char *pszFilename, PVDINTERFACE pVDIfsDi
         RTMemFree(pThis);
 
         if (RT_SUCCESS(rc))
-            *penmType = VDTYPE_DVD;
+            *penmType = VDTYPE_OPTICAL_DISC;
         else
             rc = VERR_VD_GEN_INVALID_HEADER;
     }
@@ -1450,7 +1450,7 @@ static DECLCALLBACK(int) cueOpen(const char *pszFilename, unsigned uOpenFlags,
     /* Check open flags. All valid flags are supported. */
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
-    AssertReturn(enmType == VDTYPE_DVD, VERR_NOT_SUPPORTED);
+    AssertReturn(enmType == VDTYPE_OPTICAL_DISC, VERR_NOT_SUPPORTED);
 
     pThis = (PCUEIMAGE)RTMemAllocZ(sizeof(CUEIMAGE));
     if (RT_LIKELY(pThis))

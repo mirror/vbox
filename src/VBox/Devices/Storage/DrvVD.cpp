@@ -4413,7 +4413,7 @@ static VDTYPE drvvdGetVDFromMediaType(PDMMEDIATYPE enmType)
     if (PDMMEDIATYPE_IS_FLOPPY(enmType))
         return VDTYPE_FLOPPY;
     else if (enmType == PDMMEDIATYPE_DVD || enmType == PDMMEDIATYPE_CDROM)
-        return VDTYPE_DVD;
+        return VDTYPE_OPTICAL_DISC;
     else if (enmType == PDMMEDIATYPE_HARD_DISK)
         return VDTYPE_HDD;
 
