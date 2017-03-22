@@ -86,8 +86,8 @@ static const char *tstVDDeviceType(VDTYPE enmType)
     {
         case VDTYPE_HDD:
             return "HardDisk";
-        case VDTYPE_DVD:
-            return "DVD";
+        case VDTYPE_OPTICAL_DISC:
+            return "OpticalDisc";
         case VDTYPE_FLOPPY:
             return "Floppy";
         default:
