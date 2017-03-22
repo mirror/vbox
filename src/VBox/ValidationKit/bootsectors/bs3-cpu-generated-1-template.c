@@ -1533,6 +1533,8 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                     break;
 
                 case 4:
+                    if (offField <= RT_OFFSETOF(BS3REGCTX, r15)) /* Clear the top dword. */
+                        PtrField.pu32[1] = 0;
                     switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
                     {
                         case BS3CG1_CTXOP_ASSIGN:   *PtrField.pu32  =  (uint32_t)uValue; break;
@@ -1624,10 +1626,16 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
     if (RT_LIKELY(   pThis->TrapFrame.bXcpt     == bExpectedXcpt
                   && pThis->TrapFrame.Ctx.rip.u == pThis->Ctx.rip.u + cbAdjustPc))
     {
+        /*
+         * Check the register content.
+         */
         if (RT_LIKELY(Bs3TestCheckRegCtxEx(&pThis->TrapFrame.Ctx, &pThis->Ctx,
                                            cbAdjustPc, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/,
                                            pThis->pszMode, iEncoding)))
         {
+            /*
+             * Check memory output operands.
+             */
             bool fOkay = true;
             iOperand = pThis->cOperands;
             while (iOperand-- > 0)
@@ -1689,7 +1697,9 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
                        iEncoding, pThis->cbCurInstr, pThis->abCurInstr);
     Bs3TestPrintf("cpl=%u cbOperands=%u\n", pThis->uCpl, pThis->cbOperand);
 
-    /* Display memory operands. */
+    /*
+     * Display memory operands.
+     */
     for (iOperand = 0; iOperand < pThis->cOperands; iOperand++)
     {
         BS3PTRUNION PtrUnion;
@@ -1769,7 +1779,9 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
         }
     }
 
-    /* Display contexts: */
+    /*
+     * Display contexts.
+     */
     Bs3TestPrintf("-- Expected context:\n");
     Bs3RegCtxPrint(&pThis->Ctx);
     Bs3TestPrintf("-- Actual context:\n");
@@ -1909,6 +1921,23 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     /* Create basic context for each target ring.  In protected 16-bit code we need
        set up code selectors that can access pbCodePg.  ASSUMES 16-bit driver code! */
     Bs3RegCtxSaveEx(&pThis->aInitialCtxs[pThis->iFirstRing], bMode, 1024 * 3);
+#if ARCH_BITS == 64
+    pThis->aInitialCtxs[pThis->iFirstRing].rax.u |= UINT64_C(0x0101010100000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].rbx.u |= UINT64_C(0x0202020200000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].rcx.u |= UINT64_C(0x0303030300000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].rdx.u |= UINT64_C(0x0404040400000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].rbp.u |= UINT64_C(0x0505050500000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].rdi.u |= UINT64_C(0x0606060600000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].rsi.u |= UINT64_C(0x0707070700000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r8.u  |= UINT64_C(0x0808080800000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r9.u  |= UINT64_C(0x0909090900000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r10.u |= UINT64_C(0x1010101000000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r11.u |= UINT64_C(0x1111111100000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r12.u |= UINT64_C(0x1212121200000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r13.u |= UINT64_C(0x1313131300000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r14.u |= UINT64_C(0x1414141400000000);
+    pThis->aInitialCtxs[pThis->iFirstRing].r15.u |= UINT64_C(0x1515151500000000);
+#endif
     if (BS3_MODE_IS_RM_OR_V86(bMode))
     {
         pThis->aInitialCtxs[pThis->iFirstRing].cs = pThis->CodePgFar.sel;
@@ -2121,7 +2150,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 # if 0
     /* (for debugging) */
-    if (bMode != BS3_MODE_PPV86)
+    if (bMode < BS3_MODE_LM16)
         return BS3TESTDOMODE_SKIPPED;
 # endif
 
