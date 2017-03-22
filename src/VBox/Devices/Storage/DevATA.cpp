@@ -2541,7 +2541,7 @@ static bool atapiR3ReadTrackInformationSS(ATADevState *s)
     return false;
 }
 
-static uint32_t atapiR3GetConfigurationFillFeatureListProfiles(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureListProfiles(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 3*4)
