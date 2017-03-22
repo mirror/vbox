@@ -10179,6 +10179,7 @@ VBOXDDU_DECL(int) VDQueryRegions(PVBOXHDD pDisk, unsigned nImage, uint32_t fFlag
                     pRegion->cRegionBlocksOrBytes = cbImage;
 
                 *ppRegionList  = pRegionList;
+                rc = VINF_SUCCESS;
             }
             else
                 rc = VERR_NO_MEMORY;
