@@ -1839,6 +1839,7 @@ static bool atapiR3ReadSS(ATADevState *s)
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc = VINF_SUCCESS;
     uint32_t cbTransfer, cSectors;
+    uint64_t cbBlockRegion = 0;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     cbTransfer = RT_MIN(s->cbTotalTransfer, s->cbIOBuffer);
@@ -1848,49 +1849,70 @@ static bool atapiR3ReadSS(ATADevState *s)
 
     ataR3LockLeave(pCtl);
 
-    STAM_PROFILE_ADV_START(&s->StatReads, r);
-    s->Led.Asserted.s.fReading = s->Led.Actual.s.fReading = 1;
-    switch (s->cbATAPISector)
+    rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, s->iATAPILBA, NULL, NULL,
+                                                      &cbBlockRegion, NULL);
+    if (RT_SUCCESS(rc))
     {
-        case 2048:
-            rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)s->iATAPILBA * s->cbATAPISector, s->CTX_SUFF(pbIOBuffer), s->cbATAPISector * cSectors);
-            break;
-        case 2352:
-        {
-            uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+        STAM_PROFILE_ADV_START(&s->StatReads, r);
+        s->Led.Asserted.s.fReading = s->Led.Actual.s.fReading = 1;
 
-            for (uint32_t i = s->iATAPILBA; i < s->iATAPILBA + cSectors; i++)
+        /* If the region block size and requested sector matches we can just pass the request through. */
+        if (cbBlockRegion == s->cbATAPISector)
+            rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)s->iATAPILBA * s->cbATAPISector,
+                                       s->CTX_SUFF(pbIOBuffer), s->cbATAPISector * cSectors);
+        else
+        {
+            if (cbBlockRegion == 2048 && s->cbATAPISector == 2352)
             {
-                /* Sync bytes, see 4.2.3.8 CD Main Channel Block Formats */
-                *pbBuf++ = 0x00;
-                memset(pbBuf, 0xff, 10);
-                pbBuf += 10;
-                *pbBuf++ = 0x00;
-                /* MSF */
-                scsiLBA2MSF(pbBuf, i);
-                pbBuf += 3;
-                *pbBuf++ = 0x01; /* mode 1 data */
-                /* data */
-                rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)i * 2048, pbBuf, 2048);
-                if (RT_FAILURE(rc))
-                    break;
-                pbBuf += 2048;
-                /**
-                 * @todo: maybe compute ECC and parity, layout is:
-                 * 2072 4   EDC
-                 * 2076 172 P parity symbols
-                 * 2248 104 Q parity symbols
-                 */
-                memset(pbBuf, 0, 280);
-                pbBuf += 280;
+                /* Generate the sync bytes. */
+                uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+
+                for (uint32_t i = s->iATAPILBA; i < s->iATAPILBA + cSectors; i++)
+                {
+                    /* Sync bytes, see 4.2.3.8 CD Main Channel Block Formats */
+                    *pbBuf++ = 0x00;
+                    memset(pbBuf, 0xff, 10);
+                    pbBuf += 10;
+                    *pbBuf++ = 0x00;
+                    /* MSF */
+                    scsiLBA2MSF(pbBuf, i);
+                    pbBuf += 3;
+                    *pbBuf++ = 0x01; /* mode 1 data */
+                    /* data */
+                    rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)i * 2048, pbBuf, 2048);
+                    if (RT_FAILURE(rc))
+                        break;
+                    pbBuf += 2048;
+                    /**
+                     * @todo: maybe compute ECC and parity, layout is:
+                     * 2072 4   EDC
+                     * 2076 172 P parity symbols
+                     * 2248 104 Q parity symbols
+                     */
+                    memset(pbBuf, 0, 280);
+                    pbBuf += 280;
+                }
             }
-            break;
+            else if (cbBlockRegion == 2352 && s->cbATAPISector == 2048)
+            {
+                /* Read only the user data portion. */
+                uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+
+                for (uint32_t i = s->iATAPILBA; i < s->iATAPILBA + cSectors; i++)
+                {
+                    uint8_t abTmp[2352];
+                    rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)i * 2352, &abTmp[0], 2352);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    memcpy(pbBuf, &abTmp[16], 2048);
+                    pbBuf += 2048;
+                }
+            }
         }
-        default:
-            break;
+        s->Led.Actual.s.fReading = 0;
+        STAM_PROFILE_ADV_STOP(&s->StatReads, r);
     }
-    s->Led.Actual.s.fReading = 0;
-    STAM_PROFILE_ADV_STOP(&s->StatReads, r);
 
     ataR3LockEnter(pCtl);
 
@@ -2180,7 +2202,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
             }
 
             if (cbTransfer)
-                Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
+                Log3(("ATAPI PT data read (%d):\n%.*Rhxd\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
         }
 
         /* The initial buffer end value has been set up based on the total
@@ -2414,14 +2436,14 @@ static bool atapiR3ReadDiscInformationSS(ATADevState *s)
     pbBuf[3] = 1; /* number of first track */
     pbBuf[4] = 1; /* number of sessions (LSB) */
     pbBuf[5] = 1; /* first track number in last session (LSB) */
-    pbBuf[6] = 1; /* last track number in last session (LSB) */
+    pbBuf[6] = (uint8_t)s->pDrvMedia->pfnGetRegionCount(s->pDrvMedia); /* last track number in last session (LSB) */
     pbBuf[7] = (0 << 7) | (0 << 6) | (1 << 5) | (0 << 2) | (0 << 0); /* disc id not valid, disc bar code not valid, unrestricted use, not dirty, not RW medium */
     pbBuf[8] = 0; /* disc type = CD-ROM */
     pbBuf[9] = 0; /* number of sessions (MSB) */
     pbBuf[10] = 0; /* number of sessions (MSB) */
     pbBuf[11] = 0; /* number of sessions (MSB) */
-    scsiH2BE_U32(pbBuf + 16, 0x00ffffff); /* last session lead-in start time is not available */
-    scsiH2BE_U32(pbBuf + 20, 0x00ffffff); /* last possible start time for lead-out is not available */
+    scsiH2BE_U32(pbBuf + 16, 0xffffffff); /* last session lead-in start time is not available */
+    scsiH2BE_U32(pbBuf + 20, 0xffffffff); /* last possible start time for lead-out is not available */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
@@ -2431,26 +2453,89 @@ static bool atapiR3ReadDiscInformationSS(ATADevState *s)
 static bool atapiR3ReadTrackInformationSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+    uint32_t u32LogAddr = scsiBE2H_U32(&s->aATAPICmd[2]);
+    uint8_t u8LogAddrType = s->aATAPICmd[1] & 0x03;
+
+    int rc = VINF_SUCCESS;
+    uint64_t u64LbaStart = 0;
+    uint32_t uRegion = 0;
+    uint64_t cBlocks = 0;
+    uint64_t cbBlock = 0;
+    uint8_t u8DataMode = 0xf; /* Unknown data mode. */
+    uint8_t u8TrackMode = 0;
+    VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 36);
-    /* Accept address/number type of 1 only, and only track 1 exists. */
-    if ((s->aATAPICmd[1] & 0x03) != 1 || scsiBE2H_U32(&s->aATAPICmd[2]) != 1)
+
+    switch (u8LogAddrType)
+    {
+        case 0x00:
+            rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, u32LogAddr, &uRegion,
+                                                              NULL, NULL, NULL);
+            if (RT_SUCCESS(rc))
+                rc = s->pDrvMedia->pfnQueryRegionProperties(s->pDrvMedia, uRegion, &u64LbaStart,
+                                                            &cBlocks, &cbBlock, &enmDataForm);
+            break;
+        case 0x01:
+        {
+            if (u32LogAddr >= 1)
+            {
+                uRegion = u32LogAddr - 1;
+                rc = s->pDrvMedia->pfnQueryRegionProperties(s->pDrvMedia, uRegion, &u64LbaStart,
+                                                            &cBlocks, &cbBlock, &enmDataForm);
+            }
+            else
+                rc = VERR_NOT_FOUND; /** @todo: Return lead-in information. */
+            break;
+        }
+        case 0x02:
+        default:
+            atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+            return false;
+    }
+
+    if (RT_FAILURE(rc))
     {
         atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
         return false;
     }
+
+    switch (enmDataForm)
+    {
+        case VDREGIONDATAFORM_MODE1_2048:
+        case VDREGIONDATAFORM_MODE1_2352:
+        case VDREGIONDATAFORM_MODE1_0:
+            u8DataMode = 1;
+            break;
+        case VDREGIONDATAFORM_XA_2336:
+        case VDREGIONDATAFORM_XA_2352:
+        case VDREGIONDATAFORM_XA_0:
+        case VDREGIONDATAFORM_MODE2_2336:
+        case VDREGIONDATAFORM_MODE2_2352:
+        case VDREGIONDATAFORM_MODE2_0:
+            u8DataMode = 2;
+            break;
+        default:
+            u8DataMode = 0xf;
+    }
+
+    if (enmDataForm == VDREGIONDATAFORM_CDDA)
+        u8TrackMode = 0x0;
+    else
+        u8TrackMode = 0x4;
+
     memset(pbBuf, '\0', 36);
     scsiH2BE_U16(pbBuf, 34);
-    pbBuf[2] = 1; /* track number (LSB) */
-    pbBuf[3] = 1; /* session number (LSB) */
-    pbBuf[5] = (0 << 5) | (0 << 4) | (4 << 0); /* not damaged, primary copy, data track */
-    pbBuf[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | (1 << 0); /* not reserved track, not blank, not packet writing, not fixed packet, data mode 1 */
-    pbBuf[7] = (0 << 1) | (0 << 0); /* last recorded address not valid, next recordable address not valid */
-    scsiH2BE_U32(pbBuf + 8, 0); /* track start address is 0 */
-    scsiH2BE_U32(pbBuf + 24, s->cTotalSectors); /* track size */
-    pbBuf[32] = 0; /* track number (MSB) */
-    pbBuf[33] = 0; /* session number (MSB) */
+    pbBuf[2] = uRegion + 1;                                            /* track number (LSB) */
+    pbBuf[3] = 1;                                                      /* session number (LSB) */
+    pbBuf[5] = (0 << 5) | (0 << 4) | u8TrackMode;                      /* not damaged, primary copy, data track */
+    pbBuf[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | u8DataMode; /* not reserved track, not blank, not packet writing, not fixed packet */
+    pbBuf[7] = (0 << 1) | (0 << 0);                                    /* last recorded address not valid, next recordable address not valid */
+    scsiH2BE_U32(pbBuf + 8, (uint32_t)u64LbaStart);                    /* track start address is 0 */
+    scsiH2BE_U32(pbBuf + 24, (uint32_t)cBlocks);                       /* track size */
+    pbBuf[32] = 0;                                                     /* track number (MSB) */
+    pbBuf[33] = 0;                                                     /* session number (MSB) */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
@@ -2475,7 +2560,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureListProfiles(ATADevState *s, u
     return 3*4; /* Header + 2 profiles entries */
 }
 
-static uint32_t atapiR3GetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 12)
@@ -2491,7 +2576,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureCore(ATADevState *s, uint8_t *
     return 12;
 }
 
-static uint32_t atapiR3GetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 8)
@@ -2506,7 +2591,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureMorphing(ATADevState *s, uint8
     return 8;
 }
 
-static uint32_t atapiR3GetConfigurationFillFeatureRemovableMedium(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRemovableMedium(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 8)
@@ -2522,7 +2607,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureRemovableMedium(ATADevState *s
     return 8;
 }
 
-static uint32_t atapiR3GetConfigurationFillFeatureRandomReadable (ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureRandomReadable (ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 12)
@@ -2539,7 +2624,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureRandomReadable (ATADevState *s
     return 12;
 }
 
-static uint32_t atapiR3GetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 8)
@@ -2554,7 +2639,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t
     return 8;
 }
 
-static uint32_t atapiR3GetConfigurationFillFeaturePowerManagement(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeaturePowerManagement(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 4)
@@ -2567,7 +2652,7 @@ static uint32_t atapiR3GetConfigurationFillFeaturePowerManagement(ATADevState *s
     return 4;
 }
 
-static uint32_t atapiR3GetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static DECLCALLBACK(uint32_t) atapiR3GetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF1(s);
     if (cbBuf < 8)
@@ -2581,17 +2666,56 @@ static uint32_t atapiR3GetConfigurationFillFeatureTimeout(ATADevState *s, uint8_
     return 8;
 }
 
+/**
+ * Callback to fill in the correct data for a feature.
+ *
+ * @returns Number of bytes written into the buffer.
+ * @param   s       The ATA device state.
+ * @param   pbBuf   The buffer to fill the data with.
+ * @param   cbBuf   Size of the buffer.
+ */
+typedef DECLCALLBACK(uint32_t) FNATAPIR3FEATUREFILL(ATADevState *s, uint8_t *pbBuf, size_t cbBuf);
+/** Pointer to a feature fill callback. */
+typedef FNATAPIR3FEATUREFILL *PFNATAPIR3FEATUREFILL;
+
+/**
+ * ATAPI feature descriptor.
+ */
+typedef struct ATAPIR3FEATDESC
+{
+    /** The feature number. */
+    uint16_t u16Feat;
+    /** The callback to fill in the correct data. */
+    PFNATAPIR3FEATUREFILL pfnFeatureFill;
+} ATAPIR3FEATDESC;
+
+/**
+ * Array of known ATAPI feature descriptors.
+ */
+static const ATAPIR3FEATDESC s_aAtapiR3Features[] =
+{
+    { 0x0000, atapiR3GetConfigurationFillFeatureListProfiles},
+    { 0x0001, atapiR3GetConfigurationFillFeatureCore},
+    { 0x0002, atapiR3GetConfigurationFillFeatureMorphing},
+    { 0x0003, atapiR3GetConfigurationFillFeatureRemovableMedium},
+    { 0x0010, atapiR3GetConfigurationFillFeatureRandomReadable},
+    { 0x001e, atapiR3GetConfigurationFillFeatureCDRead},
+    { 0x0100, atapiR3GetConfigurationFillFeaturePowerManagement},
+    { 0x0105, atapiR3GetConfigurationFillFeatureTimeout}
+};
+
 static bool atapiR3GetConfigurationSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
     uint32_t cbBuf = s->cbIOBuffer;
     uint32_t cbCopied = 0;
     uint16_t u16Sfn = scsiBE2H_U16(&s->aATAPICmd[2]);
+    uint8_t u8Rt = s->aATAPICmd[1] & 0x03;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 80);
-    /* Accept valid request types only, and only starting feature 0. */
-    if ((s->aATAPICmd[1] & 0x03) == 3 || u16Sfn != 0)
+    /* Accept valid request types only. */
+    if (u8Rt == 3)
     {
         atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
         return false;
@@ -2606,37 +2730,31 @@ static bool atapiR3GetConfigurationSS(ATADevState *s)
     cbBuf    -= 8;
     pbBuf    += 8;
 
-    cbCopied = atapiR3GetConfigurationFillFeatureListProfiles(s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = atapiR3GetConfigurationFillFeatureCore(s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = atapiR3GetConfigurationFillFeatureMorphing(s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = atapiR3GetConfigurationFillFeatureRemovableMedium(s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = atapiR3GetConfigurationFillFeatureRandomReadable (s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = atapiR3GetConfigurationFillFeatureCDRead(s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = atapiR3GetConfigurationFillFeaturePowerManagement(s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
-
-    cbCopied = atapiR3GetConfigurationFillFeatureTimeout(s, pbBuf, cbBuf);
-    cbBuf -= cbCopied;
-    pbBuf += cbCopied;
+    if (u8Rt == 0x2)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aAtapiR3Features); i++)
+        {
+            if (s_aAtapiR3Features[i].u16Feat == u16Sfn)
+            {
+                cbCopied = s_aAtapiR3Features[i].pfnFeatureFill(s, pbBuf, cbBuf);
+                cbBuf -= cbCopied;
+                pbBuf += cbCopied;
+                break;
+            }
+        }
+    }
+    else
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aAtapiR3Features); i++)
+        {
+            if (s_aAtapiR3Features[i].u16Feat > u16Sfn)
+            {
+                cbCopied = s_aAtapiR3Features[i].pfnFeatureFill(s, pbBuf, cbBuf);
+                cbBuf -= cbCopied;
+                pbBuf += cbCopied;
+            }
+        }
+    }
 
     /* Set data length now - the field is not included in the final length. */
     scsiH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf - 4);
@@ -2864,34 +2982,50 @@ static bool atapiR3ReadTOCNormalSS(ATADevState *s)
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer), *q, iStartTrack;
     bool fMSF;
     uint32_t cbSize;
+    uint32_t cTracks = s->pDrvMedia->pfnGetRegionCount(s->pDrvMedia);
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     fMSF = (s->aATAPICmd[1] >> 1) & 1;
     iStartTrack = s->aATAPICmd[6];
-    if (iStartTrack > 1 && iStartTrack != 0xaa)
+    if (iStartTrack == 0)
+        iStartTrack = 1;
+
+    if (iStartTrack > cTracks && iStartTrack != 0xaa)
     {
         atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
         return false;
     }
     q = pbBuf + 2;
-    *q++ = 1; /* first session */
-    *q++ = 1; /* last session */
-    if (iStartTrack <= 1)
+    *q++ = iStartTrack; /* first track number */
+    *q++ = cTracks;     /* last track number */
+    for (uint32_t iTrack = iStartTrack; iTrack <= cTracks; iTrack++)
     {
-        *q++ = 0; /* reserved */
-        *q++ = 0x14; /* ADR, control */
-        *q++ = 1;    /* track number */
-        *q++ = 0; /* reserved */
+        uint64_t uLbaStart = 0;
+        VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_MODE1_2048;
+
+        int rc = s->pDrvMedia->pfnQueryRegionProperties(s->pDrvMedia, iTrack - 1, &uLbaStart,
+                                                        NULL, NULL, &enmDataForm);
+        AssertRC(rc);
+
+        *q++ = 0;                  /* reserved */
+
+        if (enmDataForm == VDREGIONDATAFORM_CDDA)
+            *q++ = 0x10;           /* ADR, control */
+        else
+            *q++ = 0x14;           /* ADR, control */
+
+        *q++ = (uint8_t)iTrack;    /* track number */
+        *q++ = 0;                  /* reserved */
         if (fMSF)
         {
             *q++ = 0; /* reserved */
-            scsiLBA2MSF(q, 0);
+            scsiLBA2MSF(q, (uint32_t)uLbaStart);
             q += 3;
         }
         else
         {
             /* sector 0 */
-            scsiH2BE_U32(q, 0);
+            scsiH2BE_U32(q, (uint32_t)uLbaStart);
             q += 4;
         }
     }
@@ -2900,15 +3034,25 @@ static bool atapiR3ReadTOCNormalSS(ATADevState *s)
     *q++ = 0x14; /* ADR, control */
     *q++ = 0xaa; /* track number */
     *q++ = 0; /* reserved */
+
+    /* Query start and length of last track to get the start of the lead out track. */
+    uint64_t uLbaStart = 0;
+    uint64_t cBlocks = 0;
+
+    int rc = s->pDrvMedia->pfnQueryRegionProperties(s->pDrvMedia, cTracks - 1, &uLbaStart,
+                                                    &cBlocks, NULL, NULL);
+    AssertRC(rc);
+
+    uLbaStart += cBlocks;
     if (fMSF)
     {
         *q++ = 0; /* reserved */
-        scsiLBA2MSF(q, s->cTotalSectors);
+        scsiLBA2MSF(q, (uint32_t)uLbaStart);
         q += 3;
     }
     else
     {
-        scsiH2BE_U32(q, s->cTotalSectors);
+        scsiH2BE_U32(q, (uint32_t)uLbaStart);
         q += 4;
     }
     cbSize = q - pbBuf;
@@ -2937,7 +3081,17 @@ static bool atapiR3ReadTOCMultiSS(ATADevState *s)
     pbBuf[1] = 0x0a;
     pbBuf[2] = 0x01;
     pbBuf[3] = 0x01;
-    pbBuf[5] = 0x14; /* ADR, control */
+
+    VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_MODE1_2048;
+    int rc = s->pDrvMedia->pfnQueryRegionProperties(s->pDrvMedia, 0, NULL,
+                                                    NULL, NULL, &enmDataForm);
+    AssertRC(rc);
+
+    if (enmDataForm == VDREGIONDATAFORM_CDDA)
+        pbBuf[5] = 0x10;           /* ADR, control */
+    else
+        pbBuf[5] = 0x14;           /* ADR, control */
+
     pbBuf[6] = 1; /* first track in last complete session */
     if (fMSF)
     {
@@ -3138,6 +3292,26 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
             else
                 cSectors = scsiBE2H_U32(pbPacket + 6);
             iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+
+            /* Check that the sector size is valid. */
+            uint64_t cbSector = 2048;
+            int rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, iATAPILBA,
+                                                                  NULL, NULL, &cbSector, NULL);
+            AssertRC(rc);
+            if (cbSector != 2048)
+            {
+                uint8_t abATAPISense[ATAPI_SENSE_SIZE];
+                RT_ZERO(abATAPISense);
+
+                abATAPISense[0] = 0x70 | (1 << 7);
+                abATAPISense[2] = (SCSI_SENSE_ILLEGAL_REQUEST & 0x0f) | SCSI_SENSE_FLAG_ILI;
+                scsiH2BE_U32(&abATAPISense[3], iATAPILBA);
+                abATAPISense[7] = 10;
+                abATAPISense[12] = SCSI_ASC_ILLEGAL_MODE_FOR_THIS_TRACK;
+                atapiR3CmdError(s, &abATAPISense[0], sizeof(abATAPISense));
+                break;
+            }
+
             if (cSectors == 0)
             {
                 atapiR3CmdOK(s);
@@ -3176,6 +3350,11 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
             }
+            if ((pbPacket[10] & 0x7) != 0)
+            {
+                atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                break;
+            }
             cSectors = (pbPacket[6] << 16) | (pbPacket[7] << 8) | pbPacket[8];
             iATAPILBA = scsiBE2H_U32(pbPacket + 2);
             if (cSectors == 0)
@@ -3198,24 +3377,50 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
                 break;
             }
-            switch (pbPacket[9] & 0xf8)
+            /*
+             * If the LBA is in an audio track we are required to ignore pretty much all
+             * of the channel selection values (except 0x00) and map everything to 0x10
+             * which means read user data with a sector size of 2352 bytes.
+             *
+             * (MMC-6 chapter 6.19.2.6)
+             */
+            uint8_t uChnSel = pbPacket[9] & 0xf8;
+            VDREGIONDATAFORM enmDataForm;
+            int rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, iATAPILBA,
+                                                                  NULL, NULL, NULL, &enmDataForm);
+            AssertRC(rc);
+
+            if (enmDataForm == VDREGIONDATAFORM_CDDA)
             {
-                case 0x00:
+                if (uChnSel == 0)
+                {
                     /* nothing */
                     atapiR3CmdOK(s);
-                    break;
-                case 0x10:
-                    /* normal read */
-                    atapiR3ReadSectors(s, iATAPILBA, cSectors, 2048);
-                    break;
-                case 0xf8:
-                    /* read all data */
+                }
+                else
                     atapiR3ReadSectors(s, iATAPILBA, cSectors, 2352);
-                    break;
-                default:
-                    LogRel(("PIIX3 ATA: LUN#%d: CD-ROM sector format not supported (%#x)\n", s->iLUN, pbPacket[9] & 0xf8));
-                    atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
-                    break;
+            }
+            else
+            {
+                switch (uChnSel)
+                {
+                    case 0x00:
+                        /* nothing */
+                        atapiR3CmdOK(s);
+                        break;
+                    case 0x10:
+                        /* normal read */
+                        atapiR3ReadSectors(s, iATAPILBA, cSectors, 2048);
+                        break;
+                    case 0xf8:
+                        /* read all data */
+                        atapiR3ReadSectors(s, iATAPILBA, cSectors, 2352);
+                        break;
+                    default:
+                        LogRel(("PIIX3 ATA: LUN#%d: CD-ROM sector format not supported (%#x)\n", s->iLUN, pbPacket[9] & 0xf8));
+                        atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                        break;
+                }
             }
             break;
         }
@@ -3555,10 +3760,15 @@ static DECLCALLBACK(void) ataR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
     if (!pIf->pDrvMedia)
         return;
 
-    if (pIf->fATAPI)
-        pIf->cTotalSectors = pIf->pDrvMedia->pfnGetSize(pIf->pDrvMedia) / 2048;
-    else
-        pIf->cTotalSectors = pIf->pDrvMedia->pfnGetSize(pIf->pDrvMedia) / pIf->cbSector;
+    uint32_t cRegions = pIf->pDrvMedia->pfnGetRegionCount(pIf->pDrvMedia);
+    for (uint32_t i = 0; i < cRegions; i++)
+    {
+        uint64_t cBlocks = 0;
+        int rc = pIf->pDrvMedia->pfnQueryRegionProperties(pIf->pDrvMedia, i, NULL, &cBlocks,
+                                                          NULL, NULL);
+        AssertRC(rc);
+        pIf->cTotalSectors += cBlocks;
+    }
 
     LogRel(("PIIX3 ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough unchanged\n", pIf->iLUN, pIf->cTotalSectors));
 
@@ -6160,7 +6370,7 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
      * Allocate I/O buffer.
      */
     if (pIf->fATAPI)
-        pIf->cbSector = 2048;
+        pIf->cbSector = 2048; /* Not required for ATAPI, one medium can have multiple sector sizes. */
     else
         pIf->cbSector = pIf->pDrvMedia->pfnGetSectorSize(pIf->pDrvMedia);
 
@@ -6194,9 +6404,19 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     /*
      * Init geometry (only for non-CD/DVD media).
      */
+    uint32_t cRegions = pIf->pDrvMedia->pfnGetRegionCount(pIf->pDrvMedia);
+    pIf->cTotalSectors = 0;
+    for (uint32_t i = 0; i < cRegions; i++)
+    {
+        uint64_t cBlocks = 0;
+        rc = pIf->pDrvMedia->pfnQueryRegionProperties(pIf->pDrvMedia, i, NULL, &cBlocks,
+                                                      NULL, NULL);
+        AssertRC(rc);
+        pIf->cTotalSectors += cBlocks;
+    }
+
     if (pIf->fATAPI)
     {
-        pIf->cTotalSectors = pIf->pDrvMedia->pfnGetSize(pIf->pDrvMedia) / pIf->cbSector;
         pIf->PCHSGeometry.cCylinders = 0; /* dummy */
         pIf->PCHSGeometry.cHeads     = 0; /* dummy */
         pIf->PCHSGeometry.cSectors   = 0; /* dummy */
@@ -6205,7 +6425,6 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     }
     else
     {
-        pIf->cTotalSectors = pIf->pDrvMedia->pfnGetSize(pIf->pDrvMedia) / pIf->cbSector;
         rc = pIf->pDrvMedia->pfnBiosGetPCHSGeometry(pIf->pDrvMedia, &pIf->PCHSGeometry);
         if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
         {
