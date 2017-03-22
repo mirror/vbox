@@ -56,30 +56,33 @@ public:
 protected:
 
     /** Returns whether the page content was changed. */
-    bool changed() const /* override */;
+    virtual bool changed() const /* override */;
 
     /** Loads data into the cache from the corresponding external object(s).
       * @note This task COULD be performed in other than GUI thread. */
-    void loadToCacheFrom(QVariant &data);
+    virtual void loadToCacheFrom(QVariant &data) /* override */;
     /** Loads data into the corresponding widgets from the cache,
       * @note This task SHOULD be performed in GUI thread only! */
-    void getFromCache();
+    virtual void getFromCache() /* override */;
 
     /** Saves the data from the corresponding widgets into the cache,
       * @note This task SHOULD be performed in GUI thread only! */
-    void putToCache();
+    virtual void putToCache() /* override */;
     /** Save data from the cache into the corresponding external object(s).
       * @note This task COULD be performed in other than GUI thread. */
-    void saveFromCacheTo(QVariant &data);
+    virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
     /** Validation routine. */
-    bool validate(QList<UIValidationMessage> &messages);
+    virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
     /** Tab-order assignment routine. */
-    void setOrderAfter(QWidget *aWidget);
+    virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Translation routine. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
+
+    /** Polish routine. */
+    virtual void polishPage() /* override */;
 
 private slots:
 
@@ -100,9 +103,6 @@ private:
     void prepareTabDescription();
     /** Prepare 'Encryption' tab routine. */
     void prepareTabEncryption();
-
-    /** Polish routine. */
-    void polishPage();
 
     /** Holds whether HW virtualization extension is enabled. */
     bool m_fHWVirtExEnabled;

@@ -44,26 +44,26 @@ protected:
 
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
-    void loadToCacheFrom(QVariant &data);
+    virtual void loadToCacheFrom(QVariant &data) /* override */;
     /** Loads data into corresponding widgets from the cache,
       * this task SHOULD be performed in the GUI thread only. */
-    void getFromCache();
+    virtual void getFromCache() /* override */;
 
     /** Saves data from corresponding widgets to the cache,
       * this task SHOULD be performed in the GUI thread only. */
-    void putToCache();
+    virtual void putToCache() /* override */;
     /** Saves data from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
-    void saveFromCacheTo(QVariant &data);
+    virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
     /** Performs validation, updates @a messages list if something is wrong. */
-    bool validate(QList<UIValidationMessage> &messages);
+    virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
     /** Defines TAB order. */
-    void setOrderAfter(QWidget *pWidget);
+    virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
 private slots:
 

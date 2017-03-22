@@ -52,31 +52,34 @@ public:
 protected:
 
     /** Returns whether the page content was changed. */
-    bool changed() const /* override */;
+    virtual bool changed() const /* override */;
 
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
-    void loadToCacheFrom(QVariant &data);
+    virtual void loadToCacheFrom(QVariant &data) /* override */;
     void loadToCacheFrom(UISharedFolderType sharedFoldersType);
     /** Loads data into corresponding widgets from the cache,
       * this task SHOULD be performed in the GUI thread only. */
-    void getFromCache();
+    virtual void getFromCache() /* override */;
 
     /** Saves data from corresponding widgets to the cache,
       * this task SHOULD be performed in the GUI thread only. */
-    void putToCache();
+    virtual void putToCache() /* override */;
     /** Saves data from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
-    void saveFromCacheTo(QVariant &data);
+    virtual void saveFromCacheTo(QVariant &data) /* overrride */;
     /** Saves data of @a sharedFoldersType from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(UISharedFolderType sharedFoldersType);
 
     /** Defines TAB order. */
-    void setOrderAfter(QWidget *pWidget);
+    virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
+
+    /** Performs final page polishing. */
+    virtual void polishPage() /* override */;
 
 private slots:
 
@@ -103,8 +106,6 @@ private:
     bool isSharedFolderTypeSupported(UISharedFolderType sharedFolderType) const;
     void updateRootItemsVisibility();
     void setRootItemVisible(UISharedFolderType sharedFolderType, bool fVisible);
-
-    void polishPage();
 
     CSharedFolderVector getSharedFolders(UISharedFolderType sharedFoldersType);
 

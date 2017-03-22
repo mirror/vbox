@@ -735,6 +735,15 @@ void UIMachineSettingsUSB::retranslateUi()
     mUSBFilterName = tr("New Filter %1", "usb");
 }
 
+void UIMachineSettingsUSB::polishPage()
+{
+    mGbUSB->setEnabled(isMachineOffline());
+    mUSBChild->setEnabled(isMachineInValidMode() && mGbUSB->isChecked());
+    mRbUSB1->setEnabled(isMachineOffline() && mGbUSB->isChecked());
+    mRbUSB2->setEnabled(isMachineOffline() && mGbUSB->isChecked());
+    mRbUSB3->setEnabled(isMachineOffline() && mGbUSB->isChecked());
+}
+
 void UIMachineSettingsUSB::usbAdapterToggled(bool fEnabled)
 {
     /* Enable/disable USB children: */
@@ -1033,15 +1042,6 @@ QString UIMachineSettingsUSB::toolTipFor(const UIDataSettingsMachineUSBFilter &u
     }
 
     return strToolTip;
-}
-
-void UIMachineSettingsUSB::polishPage()
-{
-    mGbUSB->setEnabled(isMachineOffline());
-    mUSBChild->setEnabled(isMachineInValidMode() && mGbUSB->isChecked());
-    mRbUSB1->setEnabled(isMachineOffline() && mGbUSB->isChecked());
-    mRbUSB2->setEnabled(isMachineOffline() && mGbUSB->isChecked());
-    mRbUSB3->setEnabled(isMachineOffline() && mGbUSB->isChecked());
 }
 
 #include "UIMachineSettingsUSB.moc"

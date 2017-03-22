@@ -2648,7 +2648,61 @@ void UIMachineSettingsStorage::retranslateUi()
     mDelAttAction->setToolTip(mDelAttAction->whatsThis());
 }
 
-void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
+void UIMachineSettingsStorage::polishPage()
+{
+    /* Declare required variables: */
+    QModelIndex index = mTwStorageTree->currentIndex();
+    KDeviceType device = mStorageModel->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
+
+    /* Left pane: */
+    mLsLeftPane->setEnabled(isMachineInValidMode());
+    mTwStorageTree->setEnabled(isMachineInValidMode());
+    /* Empty information pane: */
+    mLsEmpty->setEnabled(isMachineInValidMode());
+    mLbInfo->setEnabled(isMachineInValidMode());
+    /* Controllers pane: */
+    mLsParameters->setEnabled(isMachineInValidMode());
+    mLbName->setEnabled(isMachineOffline());
+    mLeName->setEnabled(isMachineOffline());
+    mLbType->setEnabled(isMachineOffline());
+    mCbType->setEnabled(isMachineOffline());
+    mLbPortCount->setEnabled(isMachineOffline());
+    mSbPortCount->setEnabled(isMachineOffline());
+    mCbIoCache->setEnabled(isMachineOffline());
+    /* Attachments pane: */
+    mLsAttributes->setEnabled(isMachineInValidMode());
+    mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
+    mCbSlot->setEnabled(isMachineOffline());
+    mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
+    mCbPassthrough->setEnabled(isMachineOffline());
+    mCbTempEject->setEnabled(isMachineInValidMode());
+    mCbNonRotational->setEnabled(isMachineOffline());
+    m_pCheckBoxHotPluggable->setEnabled(isMachineOffline());
+    mLsInformation->setEnabled(isMachineInValidMode());
+    mLbHDFormat->setEnabled(isMachineInValidMode());
+    mLbHDFormatValue->setEnabled(isMachineInValidMode());
+    mLbCDFDType->setEnabled(isMachineInValidMode());
+    mLbCDFDTypeValue->setEnabled(isMachineInValidMode());
+    mLbHDVirtualSize->setEnabled(isMachineInValidMode());
+    mLbHDVirtualSizeValue->setEnabled(isMachineInValidMode());
+    mLbHDActualSize->setEnabled(isMachineInValidMode());
+    mLbHDActualSizeValue->setEnabled(isMachineInValidMode());
+    mLbSize->setEnabled(isMachineInValidMode());
+    mLbSizeValue->setEnabled(isMachineInValidMode());
+    mLbHDDetails->setEnabled(isMachineInValidMode());
+    mLbHDDetailsValue->setEnabled(isMachineInValidMode());
+    mLbLocation->setEnabled(isMachineInValidMode());
+    mLbLocationValue->setEnabled(isMachineInValidMode());
+    mLbUsage->setEnabled(isMachineInValidMode());
+    mLbUsageValue->setEnabled(isMachineInValidMode());
+    m_pLabelEncryption->setEnabled(isMachineInValidMode());
+    m_pLabelEncryptionValue->setEnabled(isMachineInValidMode());
+
+    /* Update action states: */
+    updateActionsState();
+}
+
+void UIMachineSettingsStorage::showEvent(QShowEvent *pEvent)
 {
     if (!mIsPolished)
     {
@@ -2674,7 +2728,7 @@ void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
         mLtAttachment->setColumnMinimumWidth (1, maxWidth);
 #endif
     }
-    UISettingsPageMachine::showEvent (aEvent);
+    UISettingsPageMachine::showEvent(pEvent);
 }
 
 void UIMachineSettingsStorage::sltHandleMediumEnumerated(const QString &strMediumID)
@@ -4136,60 +4190,6 @@ void UIMachineSettingsStorage::setConfigurationAccessLevel(ConfigurationAccessLe
     mStorageModel->setConfigurationAccessLevel(newConfigurationAccessLevel);
     /* Update 'configuration access level' of base class: */
     UISettingsPageMachine::setConfigurationAccessLevel(newConfigurationAccessLevel);
-}
-
-void UIMachineSettingsStorage::polishPage()
-{
-    /* Declare required variables: */
-    QModelIndex index = mTwStorageTree->currentIndex();
-    KDeviceType device = mStorageModel->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
-
-    /* Left pane: */
-    mLsLeftPane->setEnabled(isMachineInValidMode());
-    mTwStorageTree->setEnabled(isMachineInValidMode());
-    /* Empty information pane: */
-    mLsEmpty->setEnabled(isMachineInValidMode());
-    mLbInfo->setEnabled(isMachineInValidMode());
-    /* Controllers pane: */
-    mLsParameters->setEnabled(isMachineInValidMode());
-    mLbName->setEnabled(isMachineOffline());
-    mLeName->setEnabled(isMachineOffline());
-    mLbType->setEnabled(isMachineOffline());
-    mCbType->setEnabled(isMachineOffline());
-    mLbPortCount->setEnabled(isMachineOffline());
-    mSbPortCount->setEnabled(isMachineOffline());
-    mCbIoCache->setEnabled(isMachineOffline());
-    /* Attachments pane: */
-    mLsAttributes->setEnabled(isMachineInValidMode());
-    mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
-    mCbSlot->setEnabled(isMachineOffline());
-    mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
-    mCbPassthrough->setEnabled(isMachineOffline());
-    mCbTempEject->setEnabled(isMachineInValidMode());
-    mCbNonRotational->setEnabled(isMachineOffline());
-    m_pCheckBoxHotPluggable->setEnabled(isMachineOffline());
-    mLsInformation->setEnabled(isMachineInValidMode());
-    mLbHDFormat->setEnabled(isMachineInValidMode());
-    mLbHDFormatValue->setEnabled(isMachineInValidMode());
-    mLbCDFDType->setEnabled(isMachineInValidMode());
-    mLbCDFDTypeValue->setEnabled(isMachineInValidMode());
-    mLbHDVirtualSize->setEnabled(isMachineInValidMode());
-    mLbHDVirtualSizeValue->setEnabled(isMachineInValidMode());
-    mLbHDActualSize->setEnabled(isMachineInValidMode());
-    mLbHDActualSizeValue->setEnabled(isMachineInValidMode());
-    mLbSize->setEnabled(isMachineInValidMode());
-    mLbSizeValue->setEnabled(isMachineInValidMode());
-    mLbHDDetails->setEnabled(isMachineInValidMode());
-    mLbHDDetailsValue->setEnabled(isMachineInValidMode());
-    mLbLocation->setEnabled(isMachineInValidMode());
-    mLbLocationValue->setEnabled(isMachineInValidMode());
-    mLbUsage->setEnabled(isMachineInValidMode());
-    mLbUsageValue->setEnabled(isMachineInValidMode());
-    m_pLabelEncryption->setEnabled(isMachineInValidMode());
-    m_pLabelEncryptionValue->setEnabled(isMachineInValidMode());
-
-    /* Update action states: */
-    updateActionsState();
 }
 
 # include "UIMachineSettingsStorage.moc"
