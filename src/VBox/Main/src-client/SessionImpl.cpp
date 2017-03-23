@@ -1093,7 +1093,8 @@ HRESULT Session::cancelSaveStateWithReason()
  *                          Must be acquired already and will be released
  *                          and later reacquired during the unlocking.
  *
- *  @note To be called only from #uninit(), #UnlockMachine() or #Uninitialize().
+ *  @note To be called only from #uninit(), ISession::UnlockMachine() or
+ *        ISession::Uninitialize().
  */
 HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWriteLock &aLockW)
 {

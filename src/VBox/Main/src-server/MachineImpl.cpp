@@ -10766,10 +10766,7 @@ void Machine::i_addMediumToRegistry(ComObjPtr<Medium> &pMedium)
  *
  * This method assumes that mMediumAttachments contains the original hard disk
  * attachments it needs to create diffs for. On success, these attachments will
- * be replaced with the created diffs. On failure, #deleteImplicitDiffs() is
- * implicitly called to delete created diffs which will also rollback
- * mMediumAttachments and restore whatever was backed up before calling this
- * method.
+ * be replaced with the created diffs.
  *
  * Attachments with non-normal hard disks are left as is.
  *
@@ -11013,7 +11010,7 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
  * mMediumAttachments.
  *
  * Note that to delete hard disks created by #attachDevice() this method is
- * called from #fixupMedia() when the changes are rolled back.
+ * called from #i_rollbackMedia() when the changes are rolled back.
  *
  * @note Locks this object and the media tree for writing.
  */
@@ -12204,7 +12201,7 @@ void Machine::i_commit()
  *
  * @note This method must be called from under this object's lock.
  *
- * @note This method doesn't call #commit(), so all data remains backed up and
+ * @note This method doesn't call #i_commit(), so all data remains backed up and
  *       unsaved.
  */
 void Machine::i_copyFrom(Machine *aThat)

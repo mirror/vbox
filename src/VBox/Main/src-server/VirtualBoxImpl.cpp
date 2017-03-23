@@ -127,9 +127,8 @@ RWLockHandle *VirtualBox::spMtxNatNetworkNameToRefCountLock;
 
 /**
  *  Abstract callback event class to asynchronously call VirtualBox callbacks
- *  on a dedicated event thread. Subclasses reimplement #handleCallback()
- *  to call appropriate IVirtualBoxCallback methods depending on the event
- *  to be dispatched.
+ *  on a dedicated event thread. Subclasses reimplement #prepareEventDesc()
+ *  to initialize the event depending on the event to be dispatched.
  *
  *  @note The VirtualBox instance passed to the constructor is strongly
  *  referenced, so that the VirtualBox singleton won't be released until the
@@ -2737,7 +2736,7 @@ void VirtualBox::i_updateClientWatcher()
 
 /**
  *  Adds the given child process ID to the list of processes to be reaped.
- *  This call should be followed by #updateClientWatcher() to take the effect.
+ *  This call should be followed by #i_updateClientWatcher() to take the effect.
  *
  *  @note Doesn't lock anything.
  */
@@ -4885,7 +4884,7 @@ RWLockHandle& VirtualBox::i_getMediaTreeLockHandle()
 }
 
 /**
- *  Thread function that handles custom events posted using #postEvent().
+ *  Thread function that handles custom events posted using #i_postEvent().
  */
 // static
 DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
@@ -4947,9 +4946,7 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Takes the current list of registered callbacks of the managed VirtualBox
- *  instance, and calls #handleCallback() for every callback item from the
- *  list, passing the item as an argument.
+ * Prepare the event using the overwritten #prepareEventDesc method and fire.
  *
  *  @note Locks the managed VirtualBox object for reading but leaves the lock
  *        before iterating over callbacks and calling their methods.
