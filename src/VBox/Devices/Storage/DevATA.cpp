@@ -3294,11 +3294,14 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
             iATAPILBA = scsiBE2H_U32(pbPacket + 2);
 
             /* Check that the sector size is valid. */
-            uint64_t cbSector = 2048;
+            VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
             int rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, iATAPILBA,
-                                                                  NULL, NULL, &cbSector, NULL);
+                                                                  NULL, NULL, NULL, &enmDataForm);
             AssertRC(rc);
-            if (cbSector != 2048)
+            if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
+                && enmDataForm != VDREGIONDATAFORM_MODE1_2352
+                && enmDataForm != VDREGIONDATAFORM_MODE2_2336
+                && enmDataForm != VDREGIONDATAFORM_MODE2_2352)
             {
                 uint8_t abATAPISense[ATAPI_SENSE_SIZE];
                 RT_ZERO(abATAPISense);
