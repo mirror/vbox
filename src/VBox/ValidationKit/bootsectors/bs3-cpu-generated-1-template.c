@@ -76,7 +76,7 @@
  */
 #if 0
 # define BS3CG1_DPRINTF(a_ArgList) Bs3TestPrintf a_ArgList
-# define BS3CG1_DEBUG_CTX_MOD
+//# define BS3CG1_DEBUG_CTX_MOD
 #else
 # define BS3CG1_DPRINTF(a_ArgList) do { } while (0)
 #endif
@@ -1354,19 +1354,72 @@ static bool Bs3Cg3SetupSseAndAvx(PBS3CG1STATE pThis)
 
 
 /**
+ * Next CPU configuration to test the current instruction in.
+ *
+ * This is for testing FPU, SSE and AVX instructions with the various lazy state
+ * load and enable bits in different configurations to ensure we're getting the
+ * right response.
+ *
+ * This also cleans up the CPU and test driver state.
+ *
+ * @returns true if we're to do another round, false if we're done.
+ * @param   pThis           The state.
+ * @param   iCpuSetup       The current CPU setup number.
+ * @param   pfInvalidInstr  Where to indicate whether the setup causes an
+ *                          invalid instruction or not.  This is also used as
+ *                          input to avoid unnecessary CPUID work.
+ */
+static bool Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSetup, bool *pfInvalidInstr)
+{
+    if (   (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)
+        && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+        return false;
+
+    switch (pThis->enmCpuTest)
+    {
+        case BS3CG1CPU_ANY:
+        case BS3CG1CPU_GE_80186:
+        case BS3CG1CPU_GE_80286:
+        case BS3CG1CPU_GE_80386:
+        case BS3CG1CPU_GE_80486:
+        case BS3CG1CPU_GE_Pentium:
+            return false;
+
+        case BS3CG1CPU_SSE:
+        case BS3CG1CPU_SSE2:
+        case BS3CG1CPU_SSE3:
+        case BS3CG1CPU_AVX:
+        case BS3CG1CPU_AVX2:
+            if (iCpuSetup > 0 || *pfInvalidInstr)
+            {
+                /** @todo do more configs here. */
+                pThis->fWorkExtCtx = false;
+                ASMSetCR0(ASMGetCR0() | X86_CR0_EM | X86_CR0_MP);
+                ASMSetCR4(ASMGetCR4() & ~(X86_CR4_OSFXSR | X86_CR4_OSXMMEEXCPT | X86_CR4_OSXSAVE));
+                return false;
+            }
+            return false;
+
+        default:
+            Bs3TestFailedF("Invalid enmCpuTest value: %d", pThis->enmCpuTest);
+            return false;
+    }
+}
+
+
+/**
  * Check if the instruction is supported by the CPU, possibly making state
  * adjustments to enable support for it.
  *
  * @returns true if supported, false if not.
  * @param   pThis               The state.
  */
-static bool Bs3Cg1CpuTestAndEnable(PBS3CG1STATE pThis)
+static bool Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
 {
     uint32_t fEax;
     uint32_t fEbx;
     uint32_t fEcx;
     uint32_t fEdx;
-    ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
 
     if (   (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)
         && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
@@ -2458,9 +2511,8 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
          pThis->pabOperands += pThis->cOperands,
          pThis->pabOpcodes  += pThis->cbOpcodes)
     {
-        unsigned iEncoding;
-        unsigned iEncodingNext;
         bool     fInvalidInstr = false;
+        unsigned iCpuSetup;
         uint8_t  bTestXcptExpected = BS3_MODE_IS_PAGED(pThis->bMode) ? X86_XCPT_PF : X86_XCPT_UD;
 
         /*
@@ -2498,119 +2550,127 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
         /*
          * Check if the CPU supports the instruction.
          */
-        if (!Bs3Cg1CpuTestAndEnable(pThis))
+        if (!Bs3Cg1CpuSetupFirst(pThis))
         {
             fInvalidInstr = true;
             bTestXcptExpected = X86_XCPT_UD;
         }
 
-        /*
-         * Prep the operands and encoding handling.
-         */
-        if (!Bs3Cg1EncodePrep(pThis))
-            continue;
-
-        /*
-         * Encode the instruction in various ways and check out the test values.
-         */
-        for (iEncoding = 0;; iEncoding = iEncodingNext)
+        for (iCpuSetup = 0;; iCpuSetup++)
         {
+            unsigned iEncoding;
+            unsigned iEncodingNext;
+
             /*
-             * Encode the next instruction variation.
+             * Prep the operands and encoding handling.
              */
-            iEncodingNext = Bs3Cg1EncodeNext(pThis, iEncoding);
-            if (iEncodingNext <= iEncoding)
+            if (!Bs3Cg1EncodePrep(pThis))
                 break;
-            BS3CG1_DPRINTF(("\ndbg: Encoding #%u: cbCurInst=%u: %.*Rhxs\n",
-                            iEncoding, pThis->cbCurInstr, pThis->cbCurInstr, pThis->abCurInstr));
 
             /*
-             * Do the rings.
+             * Encode the instruction in various ways and check out the test values.
              */
-            for (iRing = pThis->iFirstRing + pThis->fSameRingNotOkay; iRing < pThis->iEndRing; iRing++)
+            for (iEncoding = 0;; iEncoding = iEncodingNext)
             {
-                PCBS3CG1TESTHDR pHdr;
-
-                pThis->uCpl = iRing;
-                BS3CG1_DPRINTF(("dbg:  Ring %u\n", iRing));
+                /*
+                 * Encode the next instruction variation.
+                 */
+                iEncodingNext = Bs3Cg1EncodeNext(pThis, iEncoding);
+                if (iEncodingNext <= iEncoding)
+                    break;
+                BS3CG1_DPRINTF(("\ndbg: Encoding #%u: cbCurInst=%u: %.*Rhxs\n",
+                                iEncoding, pThis->cbCurInstr, pThis->cbCurInstr, pThis->abCurInstr));
 
                 /*
-                 * Do the tests one by one.
+                 * Do the rings.
                  */
-                pHdr = pThis->pTestHdr;
-                for (pThis->iTest = 0;; pThis->iTest++)
+                for (iRing = pThis->iFirstRing + pThis->fSameRingNotOkay; iRing < pThis->iEndRing; iRing++)
                 {
-                    if (Bs3Cg1RunSelector(pThis, pHdr))
+                    PCBS3CG1TESTHDR pHdr;
+
+                    pThis->uCpl = iRing;
+                    BS3CG1_DPRINTF(("dbg:  Ring %u\n", iRing));
+
+                    /*
+                     * Do the tests one by one.
+                     */
+                    pHdr = pThis->pTestHdr;
+                    for (pThis->iTest = 0;; pThis->iTest++)
                     {
-                        /* Okay, set up the execution context. */
-                        unsigned         offCode;
-                        uint8_t BS3_FAR *pbCode;
+                        if (Bs3Cg1RunSelector(pThis, pHdr))
+                        {
+                            /* Okay, set up the execution context. */
+                            unsigned         offCode;
+                            uint8_t BS3_FAR *pbCode;
 
-                        Bs3MemCpy(&pThis->Ctx, &pThis->aInitialCtxs[iRing], sizeof(pThis->Ctx));
-                        if (pThis->fWorkExtCtx)
-                            Bs3ExtCtxCopy(pThis->pExtCtx, pThis->pInitialExtCtx);
-                        if (BS3_MODE_IS_PAGED(pThis->bMode))
-                        {
-                            offCode = X86_PAGE_SIZE - pThis->cbCurInstr;
-                            pbCode = &pThis->pbCodePg[offCode];
-                            //if (iEncoding > 0) { pbCode[-1] = 0xf4; offCode--; }
-                        }
-                        else
-                        {
-                            pbCode = pThis->pbCodePg;
-                            pbCode[pThis->cbCurInstr]     = 0x0f; /* UD2 */
-                            pbCode[pThis->cbCurInstr + 1] = 0x0b;
-                            offCode = 0;
-                        }
-                        pThis->Ctx.rip.u = pThis->CodePgRip + offCode;
-                        Bs3MemCpy(pbCode, pThis->abCurInstr, pThis->cbCurInstr);
-
-                        if (Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput, NULL, pbCode))
-                        {
-                            /* Run the instruction. */
-                            BS3CG1_DPRINTF(("dbg:  Running test #%u\n", pThis->iTest));
-                            //Bs3RegCtxPrint(&pThis->Ctx);
+                            Bs3MemCpy(&pThis->Ctx, &pThis->aInitialCtxs[iRing], sizeof(pThis->Ctx));
                             if (pThis->fWorkExtCtx)
-                                Bs3ExtCtxRestore(pThis->pExtCtx);
-                            Bs3TrapSetJmpAndRestore(&pThis->Ctx, &pThis->TrapFrame);
-                            if (pThis->fWorkExtCtx)
-                                Bs3ExtCtxSave(pThis->pResultExtCtx);
-                            BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64\n",
-                                            pThis->TrapFrame.bXcpt, pThis->Ctx.rip.u, pThis->TrapFrame.Ctx.rip.u));
-
-                            /*
-                             * Apply the output modification program to the context.
-                             */
-                            pThis->Ctx.rflags.u32 &= ~X86_EFL_RF;
-                            pThis->Ctx.rflags.u32 |= pThis->TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
-                            pThis->bValueXcpt      = UINT8_MAX;
-                            if (   fInvalidInstr
-                                || Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr,
-                                                            pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
-                                                            &pThis->TrapFrame.Ctx, NULL /*pbCode*/))
+                                Bs3ExtCtxCopy(pThis->pExtCtx, pThis->pInitialExtCtx);
+                            if (BS3_MODE_IS_PAGED(pThis->bMode))
                             {
-                                Bs3Cg1CheckResult(pThis, fInvalidInstr, bTestXcptExpected, iEncoding);
+                                offCode = X86_PAGE_SIZE - pThis->cbCurInstr;
+                                pbCode = &pThis->pbCodePg[offCode];
+                                //if (iEncoding > 0) { pbCode[-1] = 0xf4; offCode--; }
+                            }
+                            else
+                            {
+                                pbCode = pThis->pbCodePg;
+                                pbCode[pThis->cbCurInstr]     = 0x0f; /* UD2 */
+                                pbCode[pThis->cbCurInstr + 1] = 0x0b;
+                                offCode = 0;
+                            }
+                            pThis->Ctx.rip.u = pThis->CodePgRip + offCode;
+                            Bs3MemCpy(pbCode, pThis->abCurInstr, pThis->cbCurInstr);
+
+                            if (Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput, NULL, pbCode))
+                            {
+                                /* Run the instruction. */
+                                BS3CG1_DPRINTF(("dbg:  Running test #%u\n", pThis->iTest));
+                                //Bs3RegCtxPrint(&pThis->Ctx);
+                                if (pThis->fWorkExtCtx)
+                                    Bs3ExtCtxRestore(pThis->pExtCtx);
+                                Bs3TrapSetJmpAndRestore(&pThis->Ctx, &pThis->TrapFrame);
+                                if (pThis->fWorkExtCtx)
+                                    Bs3ExtCtxSave(pThis->pResultExtCtx);
+                                BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64\n",
+                                                pThis->TrapFrame.bXcpt, pThis->Ctx.rip.u, pThis->TrapFrame.Ctx.rip.u));
+
+                                /*
+                                 * Apply the output modification program to the context.
+                                 */
+                                pThis->Ctx.rflags.u32 &= ~X86_EFL_RF;
+                                pThis->Ctx.rflags.u32 |= pThis->TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
+                                pThis->bValueXcpt      = UINT8_MAX;
+                                if (   fInvalidInstr
+                                    || Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr,
+                                                                pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
+                                                                &pThis->TrapFrame.Ctx, NULL /*pbCode*/))
+                                {
+                                    Bs3Cg1CheckResult(pThis, fInvalidInstr, bTestXcptExpected, iEncoding);
+                                }
                             }
                         }
-                    }
-                    else
-                        BS3CG1_DPRINTF(("dbg:  Skipping #%u\n", pThis->iTest));
+                        else
+                            BS3CG1_DPRINTF(("dbg:  Skipping #%u\n", pThis->iTest));
 
-                    /* advance */
-                    if (pHdr->fLast)
-                    {
-                        BS3CG1_DPRINTF(("dbg:  Last\n\n"));
-                        break;
+                        /* advance */
+                        if (pHdr->fLast)
+                        {
+                            BS3CG1_DPRINTF(("dbg:  Last\n\n"));
+                            break;
+                        }
+                        pHdr = (PCBS3CG1TESTHDR)((uint8_t BS3_FAR *)(pHdr + 1) + pHdr->cbInput + pHdr->cbOutput + pHdr->cbSelector);
                     }
-                    pHdr = (PCBS3CG1TESTHDR)((uint8_t BS3_FAR *)(pHdr + 1) + pHdr->cbInput + pHdr->cbOutput + pHdr->cbSelector);
                 }
             }
-        }
 
-        /*
-         * Clean up (segment registers, etc).
-         */
-        Bs3Cg1EncodeCleanup(pThis);
+            /*
+             * Clean up (segment registers, etc) and get the next CPU config.
+             */
+            Bs3Cg1EncodeCleanup(pThis);
+            if (!Bs3Cg1CpuSetupNext(pThis, iCpuSetup, &fInvalidInstr))
+                break;
+        }
     }
 
     return 0;

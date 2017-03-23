@@ -1129,7 +1129,8 @@ FNIEMOP_STUB(iemOp_vmovss_Wss_Hx_Vss);
  * @oppfx       0xf2
  * @opcpuid     sse2
  * @opgroup     og_sse2_pcksclr_datamov
- * @optestign      op1=1 op2=2 -> op1=2
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
  */
 FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hx_Vsd)
 {
