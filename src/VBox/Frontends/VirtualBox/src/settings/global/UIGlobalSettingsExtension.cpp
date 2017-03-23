@@ -23,17 +23,17 @@
 # include <QHeaderView>
 
 /* GUI includes: */
+# include "QIFileDialog.h"
 # include "UIGlobalSettingsExtension.h"
 # include "UIIconPool.h"
-# include "QIFileDialog.h"
-# include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
+# include "VBoxGlobal.h"
 # include "VBoxLicenseViewer.h"
 
 /* COM includes: */
-# include "CExtPackManager.h"
 # include "CExtPack.h"
 # include "CExtPackFile.h"
+# include "CExtPackManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -373,12 +373,6 @@ void UIGlobalSettingsExtension::saveFromCacheTo(QVariant &data)
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
-}
-
-void UIGlobalSettingsExtension::setOrderAfter(QWidget *pWidget)
-{
-    /* Setup tab-order: */
-    setTabOrder(pWidget, m_pPackagesTree);
 }
 
 void UIGlobalSettingsExtension::retranslateUi()

@@ -20,8 +20,8 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
-# include "UIGlobalSettingsDisplay.h"
 # include "UIExtraDataManager.h"
+# include "UIGlobalSettingsDisplay.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -72,7 +72,8 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     m_pResolutionHeightSpin->setMaximum(iMaxSize);
 
     /* Setup connections: */
-    connect(m_pMaxResolutionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(sltMaxResolutionComboActivated()));
+    connect(m_pMaxResolutionCombo, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(sltHandleMaximumGuestScreenSizePolicyChange()));
 
     /* Apply language settings: */
     retranslateUi();
@@ -183,10 +184,6 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
-}
-
-void UIGlobalSettingsDisplay::setOrderAfter(QWidget*)
-{
 }
 
 void UIGlobalSettingsDisplay::retranslateUi()

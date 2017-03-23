@@ -801,6 +801,26 @@ void UIGlobalSettingsNetwork::sltAddNetworkNAT()
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
 
+void UIGlobalSettingsNetwork::sltEditNetworkNAT()
+{
+    /* Get network item: */
+    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
+    AssertMsg(pItem, ("Current item should present!\n"));
+
+    /* Edit current item data: */
+    UIDataSettingsGlobalNetworkNAT data;
+    pItem->uploadNetworkData(data);
+    UIGlobalSettingsNetworkDetailsNAT details(this, data);
+    if (details.exec() == QDialog::Accepted)
+    {
+        /* Put data back: */
+        pItem->fetchNetworkData(data);
+        sltHandleCurrentItemChangeNetworkNAT();
+        /* Revalidate: */
+        revalidate();
+    }
+}
+
 void UIGlobalSettingsNetwork::sltDelNetworkNAT()
 {
     /* Get network item: */
@@ -829,26 +849,6 @@ void UIGlobalSettingsNetwork::sltDelNetworkNAT()
     removeTreeItemNetworkNAT(pItem);
 }
 
-void UIGlobalSettingsNetwork::sltEditNetworkNAT()
-{
-    /* Get network item: */
-    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
-    AssertMsg(pItem, ("Current item should present!\n"));
-
-    /* Edit current item data: */
-    UIDataSettingsGlobalNetworkNAT data;
-    pItem->uploadNetworkData(data);
-    UIGlobalSettingsNetworkDetailsNAT details(this, data);
-    if (details.exec() == QDialog::Accepted)
-    {
-        /* Put data back: */
-        pItem->fetchNetworkData(data);
-        sltHandleCurrentItemChangeNetworkNAT();
-        /* Revalidate: */
-        revalidate();
-    }
-}
-
 void UIGlobalSettingsNetwork::sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pChangedItem)
 {
     /* Get network item: */
@@ -857,6 +857,32 @@ void UIGlobalSettingsNetwork::sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pCh
 
     /* Update item data: */
     pItem->updateData();
+}
+
+void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNetworkNAT()
+{
+    /* Get current item: */
+    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
+    /* Update availability: */
+    m_pActionDelNetworkNAT->setEnabled(pItem);
+    m_pActionEditNetworkNAT->setEnabled(pItem);
+}
+
+void UIGlobalSettingsNetwork::sltShowContextMenuNetworkNAT(const QPoint &pos)
+{
+    /* Compose temporary context-menu: */
+    QMenu menu;
+    if (m_pTreeNetworkNAT->itemAt(pos))
+    {
+        menu.addAction(m_pActionEditNetworkNAT);
+        menu.addAction(m_pActionDelNetworkNAT);
+    }
+    else
+    {
+        menu.addAction(m_pActionAddNetworkNAT);
+    }
+    /* And show it: */
+    menu.exec(m_pTreeNetworkNAT->mapToGlobal(pos));
 }
 
 void UIGlobalSettingsNetwork::sltAddNetworkHost()
@@ -890,6 +916,26 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     generateDataNetworkHost(iface, data);
     createTreeItemNetworkHost(data, true);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
+}
+
+void UIGlobalSettingsNetwork::sltEditNetworkHost()
+{
+    /* Get network item: */
+    UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->currentItem());
+    AssertMsg(pItem, ("Current item should present!\n"));
+
+    /* Edit current item data: */
+    UIDataSettingsGlobalNetworkHost data;
+    pItem->uploadNetworkData(data);
+    UIGlobalSettingsNetworkDetailsHost details(this, data);
+    if (details.exec() == QDialog::Accepted)
+    {
+        /* Put data back: */
+        pItem->fetchNetworkData(data);
+        sltHandleCurrentItemChangeNetworkHost();
+        /* Revalidate: */
+        revalidate();
+    }
 }
 
 void UIGlobalSettingsNetwork::sltDelNetworkHost()
@@ -933,35 +979,6 @@ void UIGlobalSettingsNetwork::sltDelNetworkHost()
     removeTreeItemNetworkHost(pItem);
 }
 
-void UIGlobalSettingsNetwork::sltEditNetworkHost()
-{
-    /* Get network item: */
-    UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->currentItem());
-    AssertMsg(pItem, ("Current item should present!\n"));
-
-    /* Edit current item data: */
-    UIDataSettingsGlobalNetworkHost data;
-    pItem->uploadNetworkData(data);
-    UIGlobalSettingsNetworkDetailsHost details(this, data);
-    if (details.exec() == QDialog::Accepted)
-    {
-        /* Put data back: */
-        pItem->fetchNetworkData(data);
-        sltHandleCurrentItemChangeNetworkHost();
-        /* Revalidate: */
-        revalidate();
-    }
-}
-
-void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNetworkNAT()
-{
-    /* Get current item: */
-    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
-    /* Update availability: */
-    m_pActionDelNetworkNAT->setEnabled(pItem);
-    m_pActionEditNetworkNAT->setEnabled(pItem);
-}
-
 void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNetworkHost()
 {
     /* Get current item: */
@@ -969,23 +986,6 @@ void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNetworkHost()
     /* Update availability: */
     m_pActionDelNetworkHost->setEnabled(pItem);
     m_pActionEditNetworkHost->setEnabled(pItem);
-}
-
-void UIGlobalSettingsNetwork::sltShowContextMenuNetworkNAT(const QPoint &pos)
-{
-    /* Compose temporary context-menu: */
-    QMenu menu;
-    if (m_pTreeNetworkNAT->itemAt(pos))
-    {
-        menu.addAction(m_pActionEditNetworkNAT);
-        menu.addAction(m_pActionDelNetworkNAT);
-    }
-    else
-    {
-        menu.addAction(m_pActionAddNetworkNAT);
-    }
-    /* And show it: */
-    menu.exec(m_pTreeNetworkNAT->mapToGlobal(pos));
 }
 
 void UIGlobalSettingsNetwork::sltShowContextMenuNetworkHost(const QPoint &pos)

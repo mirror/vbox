@@ -29,7 +29,8 @@ typedef UISettingsCache<UIDataSettingsGlobalUpdate> UISettingsCacheGlobalUpdate;
 
 
 /** Global settings: Update page. */
-class UIGlobalSettingsUpdate : public UISettingsPageGlobal, public Ui::UIGlobalSettingsUpdate
+class UIGlobalSettingsUpdate : public UISettingsPageGlobal,
+                               public Ui::UIGlobalSettingsUpdate
 {
     Q_OBJECT;
 

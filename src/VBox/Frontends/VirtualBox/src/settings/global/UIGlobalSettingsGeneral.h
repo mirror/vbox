@@ -28,7 +28,8 @@ typedef UISettingsCache<UIDataSettingsGlobalGeneral> UISettingsCacheGlobalGenera
 
 
 /** Global settings: General page. */
-class UIGlobalSettingsGeneral : public UISettingsPageGlobal, public Ui::UIGlobalSettingsGeneral
+class UIGlobalSettingsGeneral : public UISettingsPageGlobal,
+                                public Ui::UIGlobalSettingsGeneral
 {
     Q_OBJECT;
 
@@ -54,9 +55,6 @@ protected:
     /** Saves data from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
-
-    /** Defines TAB order. */
-    virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;

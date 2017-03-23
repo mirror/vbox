@@ -28,7 +28,8 @@ typedef UISettingsCache<UIDataSettingsGlobalLanguage> UISettingsCacheGlobalLangu
 
 
 /** Global settings: Language page. */
-class UIGlobalSettingsLanguage : public UISettingsPageGlobal, public Ui::UIGlobalSettingsLanguage
+class UIGlobalSettingsLanguage : public UISettingsPageGlobal,
+                                 public Ui::UIGlobalSettingsLanguage
 {
     Q_OBJECT;
 
@@ -54,9 +55,6 @@ protected:
     /** Saves data from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
-
-    /** Defines TAB order. */
-    virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;

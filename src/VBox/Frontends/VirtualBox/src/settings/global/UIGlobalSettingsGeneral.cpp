@@ -159,14 +159,6 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsGeneral::setOrderAfter(QWidget *pWidget)
-{
-    /* Configure navigation: */
-    setTabOrder(pWidget, m_pSelectorMachineFolder);
-    setTabOrder(m_pSelectorMachineFolder, m_pSelectorVRDPLibName);
-    setTabOrder(m_pSelectorVRDPLibName, m_pCheckBoxHostScreenSaver);
-}
-
 void UIGlobalSettingsGeneral::retranslateUi()
 {
     /* Translate uic generated strings: */

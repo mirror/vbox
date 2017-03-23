@@ -208,16 +208,6 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-void UIGlobalSettingsProxy::setOrderAfter(QWidget *pWidget)
-{
-    /* Configure navigation: */
-    setTabOrder(pWidget, m_pRadioProxyAuto);
-    setTabOrder(m_pRadioProxyAuto, m_pRadioProxyDisabled);
-    setTabOrder(m_pRadioProxyDisabled, m_pRadioProxyEnabled);
-    setTabOrder(m_pRadioProxyEnabled, m_pHostEditor);
-    setTabOrder(m_pHostEditor, m_pPortEditor);
-}
-
 void UIGlobalSettingsProxy::retranslateUi()
 {
     /* Translate uic generated strings: */

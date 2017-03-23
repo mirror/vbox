@@ -299,12 +299,6 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsLanguage::setOrderAfter(QWidget *pWidget)
-{
-    /* Configure navigation: */
-    setTabOrder(pWidget, m_pLanguageTree);
-}
-
 void UIGlobalSettingsLanguage::retranslateUi()
 {
     /* Translate uic generated strings: */
@@ -332,6 +326,39 @@ void UIGlobalSettingsLanguage::polishEvent(QShowEvent*)
 {
     /* Remember current info-label width: */
     m_pLanguageInfo->setMinimumTextWidth(m_pLanguageInfo->width());
+}
+
+void UIGlobalSettingsLanguage::sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter)
+{
+    if (pItem && pItem->type() == QITreeWidgetItem::ItemType)
+    {
+        UILanguageItem *pLanguageItem = static_cast<UILanguageItem*>(pItem);
+        if (pLanguageItem->isBuiltIn())
+        {
+            QRect rect = m_pLanguageTree->visualItemRect(pLanguageItem);
+            pPainter->setPen(m_pLanguageTree->palette().color(QPalette::Mid));
+            pPainter->drawLine(rect.x(), rect.y() + rect.height() - 1,
+                               rect.x() + rect.width(), rect.y() + rect.height() - 1);
+        }
+    }
+}
+
+void UIGlobalSettingsLanguage::sltCurrentLanguageChanged(QTreeWidgetItem *pItem)
+{
+    if (!pItem) return;
+
+    /* Disable labels for the Default language item: */
+    bool fEnabled = !pItem->text (1).isNull();
+
+    m_pLanguageInfo->setEnabled(fEnabled);
+    m_pLanguageInfo->setText(QString("<table>"
+                             "<tr><td>%1&nbsp;</td><td>%2</td></tr>"
+                             "<tr><td>%3&nbsp;</td><td>%4</td></tr>"
+                             "</table>")
+                             .arg(tr("Language:"))
+                             .arg(pItem->text(2))
+                             .arg(tr("Author(s):"))
+                             .arg(pItem->text(3)));
 }
 
 void UIGlobalSettingsLanguage::reload(const QString &strLangId)
@@ -391,38 +418,5 @@ void UIGlobalSettingsLanguage::reload(const QString &strLangId)
 
     m_pLanguageTree->sortItems(0, Qt::AscendingOrder);
     m_pLanguageTree->scrollToItem(pItem);
-}
-
-void UIGlobalSettingsLanguage::sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter)
-{
-    if (pItem && pItem->type() == QITreeWidgetItem::ItemType)
-    {
-        UILanguageItem *pLanguageItem = static_cast<UILanguageItem*>(pItem);
-        if (pLanguageItem->isBuiltIn())
-        {
-            QRect rect = m_pLanguageTree->visualItemRect(pLanguageItem);
-            pPainter->setPen(m_pLanguageTree->palette().color(QPalette::Mid));
-            pPainter->drawLine(rect.x(), rect.y() + rect.height() - 1,
-                               rect.x() + rect.width(), rect.y() + rect.height() - 1);
-        }
-    }
-}
-
-void UIGlobalSettingsLanguage::sltCurrentLanguageChanged(QTreeWidgetItem *pItem)
-{
-    if (!pItem) return;
-
-    /* Disable labels for the Default language item: */
-    bool fEnabled = !pItem->text (1).isNull();
-
-    m_pLanguageInfo->setEnabled(fEnabled);
-    m_pLanguageInfo->setText(QString("<table>"
-                             "<tr><td>%1&nbsp;</td><td>%2</td></tr>"
-                             "<tr><td>%3&nbsp;</td><td>%4</td></tr>"
-                             "</table>")
-                             .arg(tr("Language:"))
-                             .arg(pItem->text(2))
-                             .arg(tr("Author(s):"))
-                             .arg(pItem->text(3)));
 }
 
