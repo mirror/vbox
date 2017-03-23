@@ -51,6 +51,8 @@ class WuiAdminSystemLogList(WuiListContentBase):
         from testmanager.webui.wuiadmin import WuiAdmin;
         oEntry  = self._aoEntries[iEntry];
 
+        oAction = None
+
         if self._oDisp is None or not self._oDisp.isReadOnlyUser():
             if    oEntry.sEvent == SystemLogData.ksEvent_TestBoxUnknown \
               and oEntry.sLogText.find('addr=') >= 0 \
