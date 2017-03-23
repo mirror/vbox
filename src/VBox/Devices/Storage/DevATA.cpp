@@ -3301,7 +3301,8 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
             if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
                 && enmDataForm != VDREGIONDATAFORM_MODE1_2352
                 && enmDataForm != VDREGIONDATAFORM_MODE2_2336
-                && enmDataForm != VDREGIONDATAFORM_MODE2_2352)
+                && enmDataForm != VDREGIONDATAFORM_MODE2_2352
+                && enmDataForm != VDREGIONDATAFORM_RAW)
             {
                 uint8_t abATAPISense[ATAPI_SENSE_SIZE];
                 RT_ZERO(abATAPISense);
