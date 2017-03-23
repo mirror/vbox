@@ -420,8 +420,8 @@ void UIItemNetworkHost::updateInfo()
 
 
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
-    : m_pActionAddNetworkNAT(0), m_pActionDelNetworkNAT(0), m_pActionEditNetworkNAT(0)
-    , m_pActionAddNetworkHost(0), m_pActionDelNetworkHost(0), m_pActionEditNetworkHost(0)
+    : m_pActionAddNetworkNAT(0), m_pActionEditNetworkNAT(0), m_pActionDelNetworkNAT(0)
+    , m_pActionAddNetworkHost(0), m_pActionEditNetworkHost(0), m_pActionDelNetworkHost(0)
     , m_pCache(new UISettingsCacheGlobalNetwork)
 {
     /* Apply UI decorations: */
