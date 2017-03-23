@@ -665,7 +665,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
  * @retval  TRPM_32BIT_HACK if the specified type of event isn't among the set
  *          of recognized trap types.
  *
- * @param   uType       The SVM event type (see SVM_EVENT_XXX).
+ * @param   pEvent       Pointer to the SVM event.
  */
 VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pEvent)
 {
