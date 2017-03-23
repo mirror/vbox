@@ -193,6 +193,7 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_Win2k12_x64 & ~VBOXOSTYPE_x64:    pszOs = "Windows 2k12";   break;
         case VBOXOSTYPE_Win81:                            pszOs = "Windows 8.1";    break;
         case VBOXOSTYPE_Win10:                            pszOs = "Windows 10";     break;
+        case VBOXOSTYPE_Win2k16_x64 & ~VBOXOSTYPE_x64:    pszOs = "Windows 2k16";   break;
         case VBOXOSTYPE_OS2:                              pszOs = "OS/2";           break;
         case VBOXOSTYPE_OS2Warp3:                         pszOs = "OS/2 Warp 3";    break;
         case VBOXOSTYPE_OS2Warp4:                         pszOs = "OS/2 Warp 4";    break;

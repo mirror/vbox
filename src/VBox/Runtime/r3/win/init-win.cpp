@@ -173,7 +173,7 @@ static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEXW const *pOSInfoE
                  && dwMinorVersion == 3)
         {
             if (bProductType != VER_NT_WORKSTATION)
-               enmVer = kRTWinOSType_2012R2;
+                enmVer = kRTWinOSType_2012R2;
             else
                 enmVer = kRTWinOSType_81;
         }

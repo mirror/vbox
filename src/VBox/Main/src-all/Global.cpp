@@ -154,6 +154,11 @@ const Global::OSType Global::sOSTypes[] =
        2048,128, 32 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
         StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
+    { "Windows", "Microsoft Windows", "Windows2016_64",     "Windows 2016 (64-bit)",
+      VBOXOSTYPE_Win2k16_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3,
+       2048,128, 25 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
+        StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, AudioControllerType_HDA, AudioCodecType_STAC9221  },
+
     { "Windows", "Microsoft Windows", "WindowsNT",          "Other Windows (32-bit)",
       VBOXOSTYPE_WinNT,           VBOXOSHINT_NONE,
        512,  16, 20 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
