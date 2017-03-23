@@ -222,9 +222,9 @@ UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
 
     /* Setup connections: */
     connect(m_pLanguageTree, SIGNAL(painted(QTreeWidgetItem*, QPainter*)),
-            this, SLOT(sltLanguageItemPainted(QTreeWidgetItem*, QPainter*)));
+            this, SLOT(sltHandleItemPainting(QTreeWidgetItem*, QPainter*)));
     connect(m_pLanguageTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-            this, SLOT(sltCurrentLanguageChanged(QTreeWidgetItem*)));
+            this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem*)));
 
     /* Apply language settings: */
     retranslateUi();
@@ -264,7 +264,7 @@ void UIGlobalSettingsLanguage::getFromCache()
     const UIDataSettingsGlobalLanguage &oldData = m_pCache->base();
 
     /* Load old data from cache: */
-    reload(oldData.m_strLanguageId);
+    reloadLanguageTree(oldData.m_strLanguageId);
 }
 
 void UIGlobalSettingsLanguage::putToCache()
@@ -305,7 +305,7 @@ void UIGlobalSettingsLanguage::retranslateUi()
     Ui::UIGlobalSettingsLanguage::retranslateUi(this);
 
     /* Reload language tree: */
-    reload(VBoxGlobal::languageId());
+    reloadLanguageTree(VBoxGlobal::languageId());
 }
 
 void UIGlobalSettingsLanguage::showEvent(QShowEvent *pEvent)
@@ -328,14 +328,14 @@ void UIGlobalSettingsLanguage::polishEvent(QShowEvent*)
     m_pLanguageInfo->setMinimumTextWidth(m_pLanguageInfo->width());
 }
 
-void UIGlobalSettingsLanguage::sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter)
+void UIGlobalSettingsLanguage::sltHandleItemPainting(QTreeWidgetItem *pItem, QPainter *pPainter)
 {
     if (pItem && pItem->type() == QITreeWidgetItem::ItemType)
     {
         UILanguageItem *pLanguageItem = static_cast<UILanguageItem*>(pItem);
         if (pLanguageItem->isBuiltIn())
         {
-            QRect rect = m_pLanguageTree->visualItemRect(pLanguageItem);
+            const QRect rect = m_pLanguageTree->visualItemRect(pLanguageItem);
             pPainter->setPen(m_pLanguageTree->palette().color(QPalette::Mid));
             pPainter->drawLine(rect.x(), rect.y() + rect.height() - 1,
                                rect.x() + rect.width(), rect.y() + rect.height() - 1);
@@ -343,12 +343,13 @@ void UIGlobalSettingsLanguage::sltLanguageItemPainted(QTreeWidgetItem *pItem, QP
     }
 }
 
-void UIGlobalSettingsLanguage::sltCurrentLanguageChanged(QTreeWidgetItem *pItem)
+void UIGlobalSettingsLanguage::sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem)
 {
-    if (!pItem) return;
+    if (!pCurrentItem)
+        return;
 
     /* Disable labels for the Default language item: */
-    bool fEnabled = !pItem->text (1).isNull();
+    const bool fEnabled = !pCurrentItem->text (1).isNull();
 
     m_pLanguageInfo->setEnabled(fEnabled);
     m_pLanguageInfo->setText(QString("<table>"
@@ -356,12 +357,12 @@ void UIGlobalSettingsLanguage::sltCurrentLanguageChanged(QTreeWidgetItem *pItem)
                              "<tr><td>%3&nbsp;</td><td>%4</td></tr>"
                              "</table>")
                              .arg(tr("Language:"))
-                             .arg(pItem->text(2))
+                             .arg(pCurrentItem->text(2))
                              .arg(tr("Author(s):"))
-                             .arg(pItem->text(3)));
+                             .arg(pCurrentItem->text(3)));
 }
 
-void UIGlobalSettingsLanguage::reload(const QString &strLangId)
+void UIGlobalSettingsLanguage::reloadLanguageTree(const QString &strLanguageId)
 {
     /* Clear languages tree: */
     m_pLanguageTree->clear();
@@ -404,12 +405,12 @@ void UIGlobalSettingsLanguage::reload(const QString &strLangId)
     m_pLanguageTree->resizeColumnToContents(0);
 
     /* Search for necessary language: */
-    QList<QTreeWidgetItem*> itemsList = m_pLanguageTree->findItems(strLangId, Qt::MatchExactly, 1);
+    QList<QTreeWidgetItem*> itemsList = m_pLanguageTree->findItems(strLanguageId, Qt::MatchExactly, 1);
     QTreeWidgetItem *pItem = itemsList.isEmpty() ? 0 : itemsList[0];
     if (!pItem)
     {
         /* Add an pItem for an invalid language to represent it in the list: */
-        pItem = new UILanguageItem(m_pLanguageTree, strLangId);
+        pItem = new UILanguageItem(m_pLanguageTree, strLanguageId);
         m_pLanguageTree->resizeColumnToContents(0);
     }
     Assert(pItem);

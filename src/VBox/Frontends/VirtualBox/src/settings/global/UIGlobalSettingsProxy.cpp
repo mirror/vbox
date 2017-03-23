@@ -80,7 +80,7 @@ UIGlobalSettingsProxy::UIGlobalSettingsProxy()
     m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d+"), m_pPortEditor));
 
     /* Setup connections: */
-    connect(pButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(sltProxyToggled()));
+    connect(pButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(sltHandleProxyToggle()));
     connect(m_pHostEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
     connect(m_pPortEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
 
@@ -133,7 +133,7 @@ void UIGlobalSettingsProxy::getFromCache()
     }
     m_pHostEditor->setText(oldData.m_strProxyHost);
     m_pPortEditor->setText(oldData.m_strProxyPort);
-    sltProxyToggled();
+    sltHandleProxyToggle();
 
     /* Revalidate: */
     revalidate();
@@ -214,7 +214,7 @@ void UIGlobalSettingsProxy::retranslateUi()
     Ui::UIGlobalSettingsProxy::retranslateUi(this);
 }
 
-void UIGlobalSettingsProxy::sltProxyToggled()
+void UIGlobalSettingsProxy::sltHandleProxyToggle()
 {
     /* Update widgets availability: */
     m_pContainerProxy->setEnabled(m_pRadioProxyEnabled->isChecked());

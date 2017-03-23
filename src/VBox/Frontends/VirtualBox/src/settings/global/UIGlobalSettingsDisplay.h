@@ -62,12 +62,12 @@ protected:
 private slots:
 
     /* Handler: Resolution-combo stuff: */
-    void sltMaxResolutionComboActivated();
+    void sltHandleMaximumGuestScreenSizePolicyChange();
 
 private:
 
     /* Helper: Resolution-combo stuff: */
-    void populate();
+    void reloadMaximumGuestScreenSizePolicyComboBox();
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalDisplay *m_pCache;

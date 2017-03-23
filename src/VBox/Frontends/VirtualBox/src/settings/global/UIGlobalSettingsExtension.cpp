@@ -192,7 +192,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     connect(m_pPackagesTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
             this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem*)));
     connect(m_pPackagesTree, SIGNAL(customContextMenuRequested(const QPoint&)),
-            this, SLOT(sltShowContextMenu(const QPoint&)));
+            this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
 
     /* Determine icon metric: */
     const QStyle *pStyle = QApplication::style();
@@ -203,7 +203,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     m_pPackagesToolbar->setOrientation(Qt::Vertical);
     m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
                                                                      ":/extension_pack_install_disabled_16px.png"),
-                                                 QString(), this, SLOT(sltInstallPackage()));
+                                                 QString(), this, SLOT(sltAddPackage()));
     m_pActionRemove = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
                                                                         ":/extension_pack_uninstall_disabled_16px.png"),
                                                     QString(), this, SLOT(sltRemovePackage()));
@@ -247,9 +247,9 @@ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QStri
         return;
     }
 
-    QString strPackName = extPackFile.GetName();
-    QString strPackDescription = extPackFile.GetDescription();
-    QString strPackVersion = QString("%1r%2%3").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision()).arg(extPackFile.GetEdition());
+    const QString strPackName = extPackFile.GetName();
+    const QString strPackDescription = extPackFile.GetDescription();
+    const QString strPackVersion = QString("%1r%2%3").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision()).arg(extPackFile.GetEdition());
 
     /*
      * Check if there is a version of the extension pack already
@@ -333,7 +333,7 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     for (int i = 0; i < packages.size(); ++i)
     {
         UIDataSettingsGlobalExtensionItem item;
-        fetchData(packages[i], item);
+        loadData(packages[i], item);
         oldData.m_items << item;
     }
 
@@ -398,7 +398,7 @@ void UIGlobalSettingsExtension::sltHandleCurrentItemChange(QTreeWidgetItem *pCur
     m_pActionRemove->setEnabled(pCurrentItem);
 }
 
-void UIGlobalSettingsExtension::sltShowContextMenu(const QPoint &position)
+void UIGlobalSettingsExtension::sltHandleContextMenuRequest(const QPoint &position)
 {
     QMenu menu;
     if (m_pPackagesTree->itemAt(position))
@@ -413,7 +413,7 @@ void UIGlobalSettingsExtension::sltShowContextMenu(const QPoint &position)
     menu.exec(m_pPackagesTree->viewport()->mapToGlobal(position));
 }
 
-void UIGlobalSettingsExtension::sltInstallPackage()
+void UIGlobalSettingsExtension::sltAddPackage()
 {
     /*
      * Open file-open window to let user to choose package file.
@@ -428,13 +428,13 @@ void UIGlobalSettingsExtension::sltInstallPackage()
         if (!QDir(strBaseFolder).exists())
             strBaseFolder = QDir::homePath();
     }
-    QString strTitle = tr("Select an extension package file");
+    const QString strTitle = tr("Select an extension package file");
     QStringList extensions;
     for (int i = 0; i < VBoxExtPackFileExts.size(); ++i)
         extensions << QString("*.%1").arg(VBoxExtPackFileExts[i]);
-    QString strFilter = tr("Extension package files (%1)").arg(extensions.join(" "));
+    const QString strFilter = tr("Extension package files (%1)").arg(extensions.join(" "));
 
-    QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
+    const QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
 
     QString strFilePath;
     if (!fileNames.isEmpty())
@@ -482,7 +482,7 @@ void UIGlobalSettingsExtension::sltInstallPackage()
             if (package.isOk())
             {
                 UIDataSettingsGlobalExtensionItem item;
-                fetchData(package, item);
+                loadData(package, item);
                 m_pCache->data().m_items << item;
 
                 UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_pCache->data().m_items.last());
@@ -504,7 +504,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
     if (pItem)
     {
         /* Get name of current package: */
-        QString strSelectedPackageName = pItem->name();
+        const QString strSelectedPackageName = pItem->name();
         /* Ask the user about package removing: */
         if (msgCenter().confirmRemoveExtensionPack(strSelectedPackageName, this))
         {
@@ -546,7 +546,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
     }
 }
 
-void UIGlobalSettingsExtension::fetchData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const
+void UIGlobalSettingsExtension::loadData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const
 {
     item.m_strName = package.GetName();
     item.m_strDescription = package.GetDescription();

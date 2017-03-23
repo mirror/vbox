@@ -73,8 +73,8 @@ UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     Ui::UIGlobalSettingsUpdate::setupUi(this);
 
     /* Setup connections: */
-    connect(m_pCheckBoxUpdate, SIGNAL(toggled(bool)), this, SLOT(sltUpdaterToggled(bool)));
-    connect(m_pComboBoxUpdatePeriod, SIGNAL(activated(int)), this, SLOT(sltPeriodActivated()));
+    connect(m_pCheckBoxUpdate, SIGNAL(toggled(bool)), this, SLOT(sltHandleUpdateToggle(bool)));
+    connect(m_pComboBoxUpdatePeriod, SIGNAL(activated(int)), this, SLOT(sltHandleUpdatePeriodChange()));
 
     /* Apply language settings: */
     retranslateUi();
@@ -130,7 +130,7 @@ void UIGlobalSettingsUpdate::getFromCache()
             m_pRadioUpdateFilterStable->setChecked(true);
     }
     m_pUpdateDateText->setText(oldData.m_strDate);
-    sltUpdaterToggled(oldData.m_fCheckEnabled);
+    sltHandleUpdateToggle(oldData.m_fCheckEnabled);
 }
 
 void UIGlobalSettingsUpdate::putToCache()
@@ -186,13 +186,13 @@ void UIGlobalSettingsUpdate::retranslateUi()
     m_pComboBoxUpdatePeriod->setCurrentIndex(iCurrenIndex == -1 ? 0 : iCurrenIndex);
 }
 
-void UIGlobalSettingsUpdate::sltUpdaterToggled(bool fEnabled)
+void UIGlobalSettingsUpdate::sltHandleUpdateToggle(bool fEnabled)
 {
     /* Update activity status: */
     m_pContainerUpdate->setEnabled(fEnabled);
 
     /* Update time of next check: */
-    sltPeriodActivated();
+    sltHandleUpdatePeriodChange();
 
     /* Temporary remember branch type if was switched off: */
     if (!fEnabled)
@@ -206,15 +206,15 @@ void UIGlobalSettingsUpdate::sltUpdaterToggled(bool fEnabled)
         m_pLastChosenRadio->setChecked(fEnabled);
 }
 
-void UIGlobalSettingsUpdate::sltPeriodActivated()
+void UIGlobalSettingsUpdate::sltHandleUpdatePeriodChange()
 {
-    VBoxUpdateData data(periodType(), branchType());
+    const VBoxUpdateData data(periodType(), branchType());
     m_pUpdateDateText->setText(data.date());
 }
 
 VBoxUpdateData::PeriodType UIGlobalSettingsUpdate::periodType() const
 {
-    VBoxUpdateData::PeriodType result = m_pCheckBoxUpdate->isChecked() ?
+    const VBoxUpdateData::PeriodType result = m_pCheckBoxUpdate->isChecked() ?
         (VBoxUpdateData::PeriodType)m_pComboBoxUpdatePeriod->currentIndex() : VBoxUpdateData::PeriodNever;
     return result == VBoxUpdateData::PeriodUndefined ? VBoxUpdateData::Period1Day : result;
 }

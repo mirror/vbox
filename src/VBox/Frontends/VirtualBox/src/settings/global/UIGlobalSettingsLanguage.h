@@ -67,15 +67,15 @@ protected:
 private slots:
 
     /* Handler: List-painting stuff: */
-    void sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter);
+    void sltHandleItemPainting(QTreeWidgetItem *pItem, QPainter *pPainter);
 
     /* Handler: Current-changed stuff: */
-    void sltCurrentLanguageChanged(QTreeWidgetItem *pItem);
+    void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
 
 private:
 
     /* Helper: List-loading stuff: */
-    void reload(const QString &strLangId);
+    void reloadLanguageTree(const QString &strLanguageId);
 
     /* Variables: */
     bool m_fPolished;

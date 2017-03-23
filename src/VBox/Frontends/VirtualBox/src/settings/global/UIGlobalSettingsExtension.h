@@ -66,16 +66,16 @@ private slots:
 
     /* Handlers: Tree-widget stuff: */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
-    void sltShowContextMenu(const QPoint &position);
+    void sltHandleContextMenuRequest(const QPoint &position);
 
     /* Handlers: Package stuff: */
-    void sltInstallPackage();
+    void sltAddPackage();
     void sltRemovePackage();
 
 private:
 
     /* Prepare UIDataSettingsGlobalExtensionItem basing on CExtPack: */
-    void fetchData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const;
+    void loadData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const;
 
     /* Variables: Actions: */
     QAction *m_pActionAdd;

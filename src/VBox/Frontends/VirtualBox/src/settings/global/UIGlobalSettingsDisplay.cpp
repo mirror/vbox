@@ -192,21 +192,21 @@ void UIGlobalSettingsDisplay::retranslateUi()
     Ui::UIGlobalSettingsDisplay::retranslateUi(this);
 
     /* Populate combo-box: */
-    populate();
+    reloadMaximumGuestScreenSizePolicyComboBox();
 }
 
-void UIGlobalSettingsDisplay::sltMaxResolutionComboActivated()
+void UIGlobalSettingsDisplay::sltHandleMaximumGuestScreenSizePolicyChange()
 {
     /* Get current resolution-combo tool-tip data: */
-    QString strCurrentComboItemTip = m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex(), Qt::ToolTipRole).toString();
+    const QString strCurrentComboItemTip = m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex(), Qt::ToolTipRole).toString();
     m_pMaxResolutionCombo->setWhatsThis(strCurrentComboItemTip);
 
     /* Get current resolution-combo item data: */
-    QString strCurrentComboItemData = m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString();
+    const QString strCurrentComboItemData = m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString();
     /* Is our combo in state for 'fixed' resolution? */
-    bool fCurrentResolutionStateFixed = strCurrentComboItemData == "fixed";
+    const bool fCurrentResolutionStateFixed = strCurrentComboItemData == "fixed";
     /* Should be combo-level widgets enabled? */
-    bool fComboLevelWidgetsEnabled = fCurrentResolutionStateFixed;
+    const bool fComboLevelWidgetsEnabled = fCurrentResolutionStateFixed;
     /* Enable/disable combo-level widgets: */
     m_pResolutionWidthLabel->setEnabled(fComboLevelWidgetsEnabled);
     m_pResolutionWidthSpin->setEnabled(fComboLevelWidgetsEnabled);
@@ -214,7 +214,7 @@ void UIGlobalSettingsDisplay::sltMaxResolutionComboActivated()
     m_pResolutionHeightSpin->setEnabled(fComboLevelWidgetsEnabled);
 }
 
-void UIGlobalSettingsDisplay::populate()
+void UIGlobalSettingsDisplay::reloadMaximumGuestScreenSizePolicyComboBox()
 {
     /* Remember current position: */
     int iCurrentPosition = m_pMaxResolutionCombo->currentIndex();
@@ -242,6 +242,6 @@ void UIGlobalSettingsDisplay::populate()
 
     /* Choose previous position: */
     m_pMaxResolutionCombo->setCurrentIndex(iCurrentPosition);
-    sltMaxResolutionComboActivated();
+    sltHandleMaximumGuestScreenSizePolicyChange();
 }
 

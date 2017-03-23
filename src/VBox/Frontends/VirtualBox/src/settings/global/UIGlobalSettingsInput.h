@@ -38,11 +38,7 @@ class UIGlobalSettingsInput : public UISettingsPageGlobal,
     Q_OBJECT;
 
     /* Hot-key table indexes: */
-    enum UIHotKeyTableIndex
-    {
-        UIHotKeyTableIndex_Selector = 0,
-        UIHotKeyTableIndex_Machine = 1
-    };
+    enum { UIHotKeyTableIndex_Selector, UIHotKeyTableIndex_Machine };
 
 public:
 

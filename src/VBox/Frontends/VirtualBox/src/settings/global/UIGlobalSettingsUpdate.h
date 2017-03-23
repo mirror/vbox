@@ -66,8 +66,8 @@ protected:
 private slots:
 
     /* Handlers: */
-    void sltUpdaterToggled(bool fEnabled);
-    void sltPeriodActivated();
+    void sltHandleUpdateToggle(bool fEnabled);
+    void sltHandleUpdatePeriodChange();
 
 private:
 

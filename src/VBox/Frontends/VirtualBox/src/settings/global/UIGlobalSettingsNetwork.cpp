@@ -420,8 +420,8 @@ void UIItemNetworkHost::updateInfo()
 
 
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
-    : m_pActionAddNetworkNAT(0), m_pActionEditNetworkNAT(0), m_pActionDelNetworkNAT(0)
-    , m_pActionAddNetworkHost(0), m_pActionEditNetworkHost(0), m_pActionDelNetworkHost(0)
+    : m_pActionAddNetworkNAT(0), m_pActionEditNetworkNAT(0), m_pActionRemoveNetworkNAT(0)
+    , m_pActionAddNetworkHost(0), m_pActionEditNetworkHost(0), m_pActionRemoveNetworkHost(0)
     , m_pCache(new UISettingsCacheGlobalNetwork)
 {
     /* Apply UI decorations: */
@@ -442,7 +442,7 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
         connect(m_pTreeNetworkNAT, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChangeNetworkNAT()));
         connect(m_pTreeNetworkNAT, SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltShowContextMenuNetworkNAT(const QPoint&)));
+                this, SLOT(sltHandleContextMenuRequestNetworkNAT(const QPoint&)));
         connect(m_pTreeNetworkNAT, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltEditNetworkNAT()));
         connect(m_pTreeNetworkNAT, SIGNAL(itemChanged(QTreeWidgetItem*, int)),
@@ -455,7 +455,7 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
         connect(m_pTreeNetworkHost, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChangeNetworkHost()));
         connect(m_pTreeNetworkHost, SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltShowContextMenuNetworkHost(const QPoint&)));
+                this, SLOT(sltHandleContextMenuRequestNetworkHost(const QPoint&)));
         connect(m_pTreeNetworkHost, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltEditNetworkHost()));
     }
@@ -469,13 +469,13 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
                                                             ":/add_host_iface_disabled_16px.png"));
         connect(m_pActionAddNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltAddNetworkNAT()));
     }
-    m_pActionDelNetworkNAT = new QAction(m_pTreeNetworkNAT);
+    m_pActionRemoveNetworkNAT = new QAction(m_pTreeNetworkNAT);
     {
-        m_pActionDelNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionDelNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
-        m_pActionDelNetworkNAT->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
+        m_pActionRemoveNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        m_pActionRemoveNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
+        m_pActionRemoveNetworkNAT->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
                                                             ":/remove_host_iface_disabled_16px.png"));
-        connect(m_pActionDelNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltDelNetworkNAT()));
+        connect(m_pActionRemoveNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltRemoveNetworkNAT()));
     }
     m_pActionEditNetworkNAT = new QAction(m_pTreeNetworkNAT);
     {
@@ -493,13 +493,13 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
                                                              ":/add_host_iface_disabled_16px.png"));
         connect(m_pActionAddNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltAddNetworkHost()));
     }
-    m_pActionDelNetworkHost = new QAction(m_pTreeNetworkHost);
+    m_pActionRemoveNetworkHost = new QAction(m_pTreeNetworkHost);
     {
-        m_pActionDelNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionDelNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
-        m_pActionDelNetworkHost->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
+        m_pActionRemoveNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        m_pActionRemoveNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
+        m_pActionRemoveNetworkHost->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
                                                              ":/remove_host_iface_disabled_16px.png"));
-        connect(m_pActionDelNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltDelNetworkHost()));
+        connect(m_pActionRemoveNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltRemoveNetworkHost()));
     }
     m_pActionEditNetworkHost = new QAction(m_pTreeNetworkHost);
     {
@@ -519,7 +519,7 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
         m_pToolbarNetworkNAT->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
         m_pToolbarNetworkNAT->addAction(m_pActionAddNetworkNAT);
-        m_pToolbarNetworkNAT->addAction(m_pActionDelNetworkNAT);
+        m_pToolbarNetworkNAT->addAction(m_pActionRemoveNetworkNAT);
         m_pToolbarNetworkNAT->addAction(m_pActionEditNetworkNAT);
     }
     /* Prepare Host network toolbar: */
@@ -527,7 +527,7 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
         m_pToolbarNetworkHost->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolbarNetworkHost->setOrientation(Qt::Vertical);
         m_pToolbarNetworkHost->addAction(m_pActionAddNetworkHost);
-        m_pToolbarNetworkHost->addAction(m_pActionDelNetworkHost);
+        m_pToolbarNetworkHost->addAction(m_pActionRemoveNetworkHost);
         m_pToolbarNetworkHost->addAction(m_pActionEditNetworkHost);
     }
 
@@ -563,14 +563,14 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
     foreach (const CNATNetwork &network, vboxGlobal().virtualBox().GetNATNetworks())
     {
         UIDataSettingsGlobalNetworkNAT data;
-        generateDataNetworkNAT(network, data);
+        loadDataNetworkNAT(network, data);
         oldData.m_networksNAT << data;
     }
     foreach (const CHostNetworkInterface &iface, vboxGlobal().host().GetNetworkInterfaces())
         if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
         {
             UIDataSettingsGlobalNetworkHost data;
-            generateDataNetworkHost(iface, data);
+            loadDataNetworkHost(iface, data);
             oldData.m_networksHost << data;
         }
 
@@ -639,10 +639,10 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     {
         if (m_pCache->data().m_networksNAT != m_pCache->base().m_networksNAT)
             foreach (const UIDataSettingsGlobalNetworkNAT &data, m_pCache->data().m_networksNAT)
-                saveCacheItemNetworkNAT(data);
+                saveDataNetworkNAT(data);
         if (m_pCache->data().m_networksHost != m_pCache->base().m_networksHost)
             foreach (const UIDataSettingsGlobalNetworkHost &data, m_pCache->data().m_networksHost)
-                saveCacheItemNetworkHost(data);
+                saveDataNetworkHost(data);
     }
 
     /* Upload properties & settings to data: */
@@ -735,15 +735,15 @@ void UIGlobalSettingsNetwork::retranslateUi()
 
         /* Translate action text: */
         m_pActionAddNetworkNAT->setText(tr("Add NAT Network"));
-        m_pActionDelNetworkNAT->setText(tr("Remove NAT Network"));
+        m_pActionRemoveNetworkNAT->setText(tr("Remove NAT Network"));
         m_pActionEditNetworkNAT->setText(tr("Edit NAT Network"));
 
         m_pActionAddNetworkNAT->setWhatsThis(tr("Adds new NAT network."));
-        m_pActionDelNetworkNAT->setWhatsThis(tr("Removes selected NAT network."));
+        m_pActionRemoveNetworkNAT->setWhatsThis(tr("Removes selected NAT network."));
         m_pActionEditNetworkNAT->setWhatsThis(tr("Edits selected NAT network."));
 
         m_pActionAddNetworkNAT->setToolTip(m_pActionAddNetworkNAT->whatsThis());
-        m_pActionDelNetworkNAT->setToolTip(m_pActionDelNetworkNAT->whatsThis());
+        m_pActionRemoveNetworkNAT->setToolTip(m_pActionRemoveNetworkNAT->whatsThis());
         m_pActionEditNetworkNAT->setToolTip(m_pActionEditNetworkNAT->whatsThis());
     }
 
@@ -751,15 +751,15 @@ void UIGlobalSettingsNetwork::retranslateUi()
     {
         /* Translate action text: */
         m_pActionAddNetworkHost->setText(tr("Add Host-only Network"));
-        m_pActionDelNetworkHost->setText(tr("Remove Host-only Network"));
+        m_pActionRemoveNetworkHost->setText(tr("Remove Host-only Network"));
         m_pActionEditNetworkHost->setText(tr("Edit Host-only Network"));
 
         m_pActionAddNetworkHost->setWhatsThis(tr("Adds new host-only network."));
-        m_pActionDelNetworkHost->setWhatsThis(tr("Removes selected host-only network."));
+        m_pActionRemoveNetworkHost->setWhatsThis(tr("Removes selected host-only network."));
         m_pActionEditNetworkHost->setWhatsThis(tr("Edits selected host-only network."));
 
         m_pActionAddNetworkHost->setToolTip(m_pActionAddNetworkHost->whatsThis());
-        m_pActionDelNetworkHost->setToolTip(m_pActionDelNetworkHost->whatsThis());
+        m_pActionRemoveNetworkHost->setToolTip(m_pActionRemoveNetworkHost->whatsThis());
         m_pActionEditNetworkHost->setToolTip(m_pActionEditNetworkHost->whatsThis());
     }
 }
@@ -782,21 +782,21 @@ void UIGlobalSettingsNetwork::sltAddNetworkNAT()
     const QString strNameTemplate("NatNetwork%1");
     foreach (const QString &strName, names)
     {
-        QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
+        const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
         if (regExp.indexIn(strName) != -1)
             iMaximumIndex = qMax(iMaximumIndex, regExp.cap(1).toInt());
     }
 
     /* Create NAT network: */
-    QString strIndex(iMaximumIndex == -1 ? QString() : QString::number(iMaximumIndex + 1));
-    CNATNetwork network = vbox.CreateNATNetwork(strNameTemplate.arg(strIndex));
+    const QString strIndex(iMaximumIndex == -1 ? QString() : QString::number(iMaximumIndex + 1));
+    const CNATNetwork network = vbox.CreateNATNetwork(strNameTemplate.arg(strIndex));
     if (!vbox.isOk())
         return msgCenter().cannotCreateNATNetwork(vbox, this);
     AssertReturnVoid(!network.isNull());
 
     /* Update tree: */
     UIDataSettingsGlobalNetworkNAT data;
-    generateDataNetworkNAT(network, data);
+    loadDataNetworkNAT(network, data);
     createTreeItemNetworkNAT(data, true);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
@@ -821,7 +821,7 @@ void UIGlobalSettingsNetwork::sltEditNetworkNAT()
     }
 }
 
-void UIGlobalSettingsNetwork::sltDelNetworkNAT()
+void UIGlobalSettingsNetwork::sltRemoveNetworkNAT()
 {
     /* Get network item: */
     UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
@@ -864,18 +864,18 @@ void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNetworkNAT()
     /* Get current item: */
     UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
     /* Update availability: */
-    m_pActionDelNetworkNAT->setEnabled(pItem);
+    m_pActionRemoveNetworkNAT->setEnabled(pItem);
     m_pActionEditNetworkNAT->setEnabled(pItem);
 }
 
-void UIGlobalSettingsNetwork::sltShowContextMenuNetworkNAT(const QPoint &pos)
+void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNetworkNAT(const QPoint &pos)
 {
     /* Compose temporary context-menu: */
     QMenu menu;
     if (m_pTreeNetworkNAT->itemAt(pos))
     {
         menu.addAction(m_pActionEditNetworkNAT);
-        menu.addAction(m_pActionDelNetworkNAT);
+        menu.addAction(m_pActionRemoveNetworkNAT);
     }
     else
     {
@@ -913,7 +913,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
 
     /* Update tree: */
     UIDataSettingsGlobalNetworkHost data;
-    generateDataNetworkHost(iface, data);
+    loadDataNetworkHost(iface, data);
     createTreeItemNetworkHost(data, true);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
 }
@@ -938,7 +938,7 @@ void UIGlobalSettingsNetwork::sltEditNetworkHost()
     }
 }
 
-void UIGlobalSettingsNetwork::sltDelNetworkHost()
+void UIGlobalSettingsNetwork::sltRemoveNetworkHost()
 {
     /* Get network item: */
     UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->currentItem());
@@ -959,7 +959,7 @@ void UIGlobalSettingsNetwork::sltDelNetworkHost()
     AssertReturnVoid(host.isOk() && !iface.isNull());
 
     /* Remove DHCP server if any: */
-    CDHCPServer dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
+    const CDHCPServer &dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
     if (vbox.isOk() && !dhcp.isNull())
     {
         vbox.RemoveDHCPServer(dhcp);
@@ -984,18 +984,18 @@ void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNetworkHost()
     /* Get current item: */
     UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->currentItem());
     /* Update availability: */
-    m_pActionDelNetworkHost->setEnabled(pItem);
+    m_pActionRemoveNetworkHost->setEnabled(pItem);
     m_pActionEditNetworkHost->setEnabled(pItem);
 }
 
-void UIGlobalSettingsNetwork::sltShowContextMenuNetworkHost(const QPoint &pos)
+void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNetworkHost(const QPoint &pos)
 {
     /* Compose temporary context-menu: */
     QMenu menu;
     if (m_pTreeNetworkHost->itemAt(pos))
     {
         menu.addAction(m_pActionEditNetworkHost);
-        menu.addAction(m_pActionDelNetworkHost);
+        menu.addAction(m_pActionRemoveNetworkHost);
     }
     else
     {
@@ -1005,7 +1005,7 @@ void UIGlobalSettingsNetwork::sltShowContextMenuNetworkHost(const QPoint &pos)
     menu.exec(m_pTreeNetworkHost->mapToGlobal(pos));
 }
 
-void UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data)
+void UIGlobalSettingsNetwork::loadDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data)
 {
     /* Load NAT network settings: */
     data.m_fEnabled = network.GetEnabled();
@@ -1017,8 +1017,7 @@ void UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network,
     data.m_fAdvertiseDefaultIPv6Route = network.GetAdvertiseDefaultIPv6RouteEnabled();
 
     /* Load IPv4 rules: */
-    QVector<QString> ipv4rules = network.GetPortForwardRules4();
-    foreach (QString strIPv4Rule, ipv4rules)
+    foreach (QString strIPv4Rule, network.GetPortForwardRules4())
     {
         /* Replace all ':' with ',' first: */
         strIPv4Rule.replace(':', ',');
@@ -1036,8 +1035,7 @@ void UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network,
     }
 
     /* Load IPv6 rules: */
-    QVector<QString> ipv6rules = network.GetPortForwardRules6();
-    foreach (QString strIPv6Rule, ipv6rules)
+    foreach (QString strIPv6Rule, network.GetPortForwardRules6())
     {
         /* Replace all ':' with ',' first: */
         strIPv6Rule.replace(':', ',');
@@ -1065,7 +1063,7 @@ void UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network,
     }
 }
 
-void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data)
+void UIGlobalSettingsNetwork::saveDataNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data)
 {
     /* Make sure corresponding NAT network exists: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1081,8 +1079,7 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataSettingsGlobal
     network.SetAdvertiseDefaultIPv6RouteEnabled(data.m_fAdvertiseDefaultIPv6Route);
 
     /* Rewrite IPv4 rules: */
-    QVector<QString> oldIPv4Rules = network.GetPortForwardRules4();
-    foreach (const QString &strRule, oldIPv4Rules)
+    foreach (const QString &strRule, network.GetPortForwardRules4())
         network.RemovePortForwardRule(false, strRule.section(':', 0, 0));
     foreach (const UIPortForwardingData &newRule, data.m_ipv4rules)
         network.AddPortForwardRule(false,
@@ -1091,8 +1088,7 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataSettingsGlobal
                                    newRule.guestIp, newRule.guestPort.value());
 
     /* Rewrite IPv6 rules: */
-    QVector<QString> oldIPv6Rules = network.GetPortForwardRules6();
-    foreach (const QString &strRule, oldIPv6Rules)
+    foreach (const QString &strRule, network.GetPortForwardRules6())
         network.RemovePortForwardRule(true, strRule.section(':', 0, 0));
     foreach (const UIPortForwardingData &newRule, data.m_ipv6rules)
         network.AddPortForwardRule(true,
@@ -1118,7 +1114,7 @@ void UIGlobalSettingsNetwork::removeTreeItemNetworkNAT(UIItemNetworkNAT *pItem)
     delete pItem;
 }
 
-void UIGlobalSettingsNetwork::generateDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data)
+void UIGlobalSettingsNetwork::loadDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data)
 {
     /* Get DHCP server (create if necessary): */
     CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
@@ -1154,7 +1150,7 @@ void UIGlobalSettingsNetwork::generateDataNetworkHost(const CHostNetworkInterfac
     data.m_dhcpserver.m_strDhcpUpperAddress = dhcp.GetUpperIP();
 }
 
-void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data)
+void UIGlobalSettingsNetwork::saveDataNetworkHost(const UIDataSettingsGlobalNetworkHost &data)
 {
     /* Make sure corresponding Host interface exists: */
     CHost host = vboxGlobal().host();

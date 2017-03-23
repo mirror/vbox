@@ -74,31 +74,31 @@ private slots:
     /* Handlers: NAT network stuff: */
     void sltAddNetworkNAT();
     void sltEditNetworkNAT();
-    void sltDelNetworkNAT();
+    void sltRemoveNetworkNAT();
     void sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pChangedItem);
     void sltHandleCurrentItemChangeNetworkNAT();
-    void sltShowContextMenuNetworkNAT(const QPoint &pos);
+    void sltHandleContextMenuRequestNetworkNAT(const QPoint &position);
 
     /* Handlers: Host network stuff: */
     void sltAddNetworkHost();
     void sltEditNetworkHost();
-    void sltDelNetworkHost();
+    void sltRemoveNetworkHost();
     void sltHandleCurrentItemChangeNetworkHost();
-    void sltShowContextMenuNetworkHost(const QPoint &pos);
+    void sltHandleContextMenuRequestNetworkHost(const QPoint &position);
 
 private:
 
     /* Helpers: NAT network cache stuff: */
-    void generateDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data);
-    void saveCacheItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data);
+    void loadDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data);
+    void saveDataNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data);
 
     /* Helpers: NAT network tree stuff: */
     void createTreeItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem = false);
     void removeTreeItemNetworkNAT(UIItemNetworkNAT *pItem);
 
     /* Helpers: Host network cache stuff: */
-    void generateDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data);
-    void saveCacheItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data);
+    void loadDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data);
+    void saveDataNetworkHost(const UIDataSettingsGlobalNetworkHost &data);
 
     /* Helpers: Host network tree stuff: */
     void createTreeItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem = false);
@@ -107,12 +107,12 @@ private:
     /* Variables: NAT network actions: */
     QAction *m_pActionAddNetworkNAT;
     QAction *m_pActionEditNetworkNAT;
-    QAction *m_pActionDelNetworkNAT;
+    QAction *m_pActionRemoveNetworkNAT;
 
     /* Variables: Host network actions: */
     QAction *m_pActionAddNetworkHost;
     QAction *m_pActionEditNetworkHost;
-    QAction *m_pActionDelNetworkHost;
+    QAction *m_pActionRemoveNetworkHost;
 
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalNetwork *m_pCache;
