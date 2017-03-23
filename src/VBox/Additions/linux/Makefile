@@ -27,7 +27,7 @@ else # ! KBUILD_EXTMOD
 KBUILD_VERBOSE =
 
 all:
-	@echo "*** Building 'vboxguest' module ***"
+	@echo "=== Building 'vboxguest' module ==="
 	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest
 	@if [ -f vboxguest/vboxguest.ko ]; then \
 	    cp vboxguest/vboxguest.ko .; \
@@ -39,7 +39,7 @@ all:
 	    if [ -f vboxguest/Module.symvers ]; then \
 	        cp vboxguest/Module.symvers vboxsf; \
 	    fi; \
-	    echo "*** Building 'vboxsf' module ***"; \
+	    echo "=== Building 'vboxsf' module ==="; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxsf || exit 1; \
 	    if [ -f vboxsf/vboxsf.ko ]; then \
 	        cp vboxsf/vboxsf.ko .; \
@@ -52,7 +52,7 @@ all:
 	    if [ -f vboxguest/Module.symvers ]; then \
 	        cp vboxguest/Module.symvers vboxvideo; \
 	    fi; \
-	    echo "*** Building 'vboxvideo' module ***"; \
+	    echo "=== Building 'vboxvideo' module ==="; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo || exit 1; \
 	    if [ -f vboxvideo/vboxvideo.ko ]; then \
 	        cp vboxvideo/vboxvideo.ko .; \
