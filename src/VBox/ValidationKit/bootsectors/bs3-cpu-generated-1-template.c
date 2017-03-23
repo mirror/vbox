@@ -1062,8 +1062,13 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             {
                 off = Bs3Cg1InsertOpcodes(pThis, 0);
                 pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
-                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_XMM0;
-                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_XMM1;
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_XMM0;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM1;
+            }
+            else if (iEncoding == 1)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM2;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, Bs3Cg1InsertOpcodes(pThis, 0), 2 /*iReg*/, 16, BS3CG1OPLOC_MEM_RW);
             }
             else
                 break;
@@ -1505,6 +1510,26 @@ static bool Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
 }
 
 
+#ifdef BS3CG1_DEBUG_CTX_MOD
+/**
+ * Translates the operator into a string.
+ *
+ * @returns Read-only string pointer.
+ * @param   bOpcode             The context modifier program opcode.
+ */
+static const char BS3_FAR *Bs3Cg1CtxOpToString(uint8_t bOpcode)
+{
+    switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
+    {
+        case BS3CG1_CTXOP_ASSIGN:   return "=";
+        case BS3CG1_CTXOP_OR:       return "|=";
+        case BS3CG1_CTXOP_AND:      return "&=";
+        case BS3CG1_CTXOP_AND_INV:  return "&~=";
+    }
+}
+#endif
+
+
 /**
  * Runs a context modifier program.
  *
@@ -1717,34 +1742,24 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                 return Bs3TestFailedF("Todo implement me: cbDst=%u idxField=%d offField=%#x", cbDst, idxField, offField);
 
 #ifdef BS3CG1_DEBUG_CTX_MOD
+            switch (cbDst)
             {
-                const char BS3_FAR *pszOp;
-                switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
-                {
-                    case BS3CG1_CTXOP_ASSIGN:   pszOp = "="; break;
-                    case BS3CG1_CTXOP_OR:       pszOp = "|="; break;
-                    case BS3CG1_CTXOP_AND:      pszOp = "&="; break;
-                    case BS3CG1_CTXOP_AND_INV:  pszOp = "&~="; break;
-                }
-                switch (cbDst)
-                {
-                    case 1:
-                        BS3CG1_DPRINTF(("dbg: modify %s: %#04RX8 (LB %u) %s %#RX64 (LB %u)\n",
-                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu8, cbDst, pszOp, uValue, cbValue));
-                        break;
-                    case 2:
-                        BS3CG1_DPRINTF(("dbg: modify %s: %#06RX16 (LB %u) %s %#RX64 (LB %u)\n",
-                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu16, cbDst, pszOp, uValue, cbValue));
-                        break;
-                    case 4:
-                        BS3CG1_DPRINTF(("dbg: modify %s: %#010RX32 (LB %u) %s %#RX64 (LB %u)\n",
-                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu32, cbDst, pszOp, uValue, cbValue));
-                        break;
-                    default:
-                        BS3CG1_DPRINTF(("dbg: modify %s: %#018RX64 (LB %u) %s %#RX64 (LB %u)\n",
-                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu64, cbDst, pszOp, uValue, cbValue));
-                        break;
-                }
+                case 1:
+                    BS3CG1_DPRINTF(("dbg: modify %s: %#04RX8 (LB %u) %s %#RX64 (LB %u)\n", g_aszBs3Cg1DstFields[idxField].sz,
+                                    *PtrField.pu8, cbDst, Bs3Cg1CtxOpToString(bOpcode), uValue, cbValue));
+                    break;
+                case 2:
+                    BS3CG1_DPRINTF(("dbg: modify %s: %#06RX16 (LB %u) %s %#RX64 (LB %u)\n", g_aszBs3Cg1DstFields[idxField].sz,
+                                    *PtrField.pu16, cbDst, Bs3Cg1CtxOpToString(bOpcode), uValue, cbValue));
+                    break;
+                case 4:
+                    BS3CG1_DPRINTF(("dbg: modify %s: %#010RX32 (LB %u) %s %#RX64 (LB %u)\n", g_aszBs3Cg1DstFields[idxField].sz,
+                                    *PtrField.pu32, cbDst, Bs3Cg1CtxOpToString(bOpcode), uValue, cbValue));
+                    break;
+                default:
+                    BS3CG1_DPRINTF(("dbg: modify %s: %#018RX64 (LB %u) %s %#RX64 (LB %u)\n", g_aszBs3Cg1DstFields[idxField].sz,
+                                    *PtrField.pu64, cbDst, Bs3Cg1CtxOpToString(bOpcode), uValue, cbValue));
+                    break;
             }
 #endif
 
@@ -1840,13 +1855,51 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
             /* Optimized access to XMM and STx registers. */
             if (   pThis->pExtCtx->enmMethod != BS3EXTCTXMETHOD_ANCIENT
                 && offField - sizeof(BS3REGCTX) <= RT_UOFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]) )
+                PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
+            /* Non-register operands: */
+            else if ((unsigned)(idxField - BS3CG1DST_OP1) < 4U)
             {
-                /* Modify the field. */
+                unsigned const idxOp = idxField - BS3CG1DST_OP1;
+                switch (pThis->aOperands[idxOp].enmLocation)
+                {
+                    case BS3CG1OPLOC_MEM:
+                        if (!pbInstr)
+                            return Bs3TestFailedF("Read only operand specified in output!");
+                        PtrField.pu8 = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[idxOp].off];
+                        break;
+
+                    case BS3CG1OPLOC_MEM_RW:
+                        if (pbInstr)
+                            PtrField.pu8 = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[idxOp].off];
+                        else
+                            PtrField.pu8 = pThis->MemOp.ab;
+                        break;
+
+                    default:
+                        return Bs3TestFailedF("Internal error: Field %d (%d) @ %#x LB %u: enmLocation=%u off=%#x idxField=%u",
+                                              idxField, idxOp, offField, cbDst, pThis->aOperands[idxOp].enmLocation,
+                                              pThis->aOperands[idxOp].off, pThis->aOperands[idxOp].idxField);
+                }
+            }
+            /* The YMM (AVX) and the first 16 ZMM (AVX512) registers have split storage in
+               the state, so they need special handling.  */
+            else
+            {
+                return Bs3TestFailedF("TODO: implement me: cbDst=%d idxField=%d (AVX and other weird state)", cbDst, idxField);
+            }
+
+            if (PtrField.pb)
+            {
+                /* Modify the field / memory. */
                 unsigned i;
                 if (cbDst & 3)
                     return Bs3TestFailedF("Malformed context instruction: cbDst=%u, multiple of 4", cbDst);
 
-                PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
+#ifdef BS3CG1_DEBUG_CTX_MOD
+                BS3CG1_DPRINTF(("dbg: modify %s: %.*Rhxs (LB %u) %s %.*Rhxs (LB %u)\n", g_aszBs3Cg1DstFields[idxField].sz,
+                                cbDst, PtrField.pb, cbDst, Bs3Cg1CtxOpToString(bOpcode), cbValue, Value.ab, cbValue));
+#endif
+
                 i = cbDst / 4;
                 while (i-- > 0)
                 {
@@ -1858,11 +1911,11 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                         case BS3CG1_CTXOP_AND_INV:  PtrField.pu32[i] &= ~Value.au32[i]; break;
                     }
                 }
+
+#ifdef BS3CG1_DEBUG_CTX_MOD
+                BS3CG1_DPRINTF(("dbg:    --> %s: %.*Rhxs\n", g_aszBs3Cg1DstFields[idxField].sz, cbDst, PtrField.pb));
+#endif
             }
-            /* The YMM (AVX) and the first 16 ZMM (AVX512) registers have split storage in
-               the state, so they need special handling.  */
-            else
-                return Bs3TestFailedF("TODO: implement me: cbDst=%d idxField=%d (AVX and other weird state)", cbDst, idxField);
         }
 
         /*
@@ -1982,7 +2035,7 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
             {
                 /* Compare the x87 state, ASSUMING XCR0 bit 1 is set. */
 #define CHECK_FIELD(a_Field, a_szFmt) \
-if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt, pResult->Ctx.a_Field, pExpect->Ctx.a_Field)
+    if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt, pResult->Ctx.a_Field, pExpect->Ctx.a_Field)
                 CHECK_FIELD(x87.FCW, "FCW: %#06x, expected %#06x");
                 CHECK_FIELD(x87.FSW, "FSW: %#06x, expected %#06x");
                 CHECK_FIELD(x87.FTW, "FTW: %#06x, expected %#06x");
@@ -2017,13 +2070,13 @@ if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt
             }
             else
                 fOkay = Bs3TestFailedF("Unsupported extended CPU context method: %d", pExpect->enmMethod);
-
-            /*
-             * Done.
-             */
-            if (fOkay)
-                return true;
         }
+
+        /*
+         * Done.
+         */
+        if (fOkay)
+            return true;
 
         /*
          * Report failure.
@@ -2055,8 +2108,7 @@ if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt
                     PtrUnion.pb = (uint8_t BS3_FAR *)&pThis->Ctx + offField;
                 else
                 {
-                    Bs3TestPrintf("op%u: imm%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
-                                  pThis->aOperands[iOperand].cbOp, *PtrUnion.pu64);
+                    Bs3TestPrintf("op%u: ctx%u: xxxx\n", iOperand, pThis->aOperands[iOperand].cbOp * 8);
                     break;
                 }
                 switch (pThis->aOperands[iOperand].cbOp)
@@ -2067,7 +2119,7 @@ if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt
                     case 8: Bs3TestPrintf("op%u: ctx64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
                     default:
                         Bs3TestPrintf("op%u: ctx%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
-                                      pThis->aOperands[iOperand].cbOp, *PtrUnion.pu64);
+                                      pThis->aOperands[iOperand].cbOp, PtrUnion.pb);
                         break;
                 }
                 break;
@@ -2083,7 +2135,7 @@ if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt
                     case 8: Bs3TestPrintf("op%u: imm64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
                     default:
                         Bs3TestPrintf("op%u: imm%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
-                                      pThis->aOperands[iOperand].cbOp, *PtrUnion.pu64);
+                                      pThis->aOperands[iOperand].cbOp, PtrUnion.pb);
                         break;
                 }
                 break;
@@ -2093,13 +2145,13 @@ if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt
                 PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
                 switch (pThis->aOperands[iOperand].cbOp)
                 {
-                    case 1: Bs3TestPrintf("op%u: mem08: %#04RX8\n", iOperand, *PtrUnion.pu8); break;
-                    case 2: Bs3TestPrintf("op%u: mem16: %#06RX16\n", iOperand, *PtrUnion.pu16); break;
-                    case 4: Bs3TestPrintf("op%u: mem32: %#010RX32\n", iOperand, *PtrUnion.pu32); break;
-                    case 8: Bs3TestPrintf("op%u: mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
+                    case 1: Bs3TestPrintf("op%u: result mem08: %#04RX8\n", iOperand, *PtrUnion.pu8); break;
+                    case 2: Bs3TestPrintf("op%u: result mem16: %#06RX16\n", iOperand, *PtrUnion.pu16); break;
+                    case 4: Bs3TestPrintf("op%u: result mem32: %#010RX32\n", iOperand, *PtrUnion.pu32); break;
+                    case 8: Bs3TestPrintf("op%u: result mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
                     default:
-                        Bs3TestPrintf("op%u: mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
-                                      pThis->aOperands[iOperand].cbOp, *PtrUnion.pu64);
+                        Bs3TestPrintf("op%u: result mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
+                                      pThis->aOperands[iOperand].cbOp, PtrUnion.pb);
                         break;
                 }
                 if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
@@ -2113,7 +2165,7 @@ if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt
                         case 8: Bs3TestPrintf("op%u: expect mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
                         default:
                             Bs3TestPrintf("op%u: expect mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
-                                          pThis->aOperands[iOperand].cbOp, *PtrUnion.pu64);
+                                          pThis->aOperands[iOperand].cbOp, PtrUnion.pb);
                             break;
                     }
                 }
@@ -2212,11 +2264,14 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     {
 #if ARCH_BITS != 16
         pThis->pbCodePg = Bs3MemGuardedTestPageAlloc(enmMemKind);
-        if (!pThis->pbCodePg)
-            return Bs3TestFailedF("First Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
         pThis->pbDataPg = Bs3MemGuardedTestPageAlloc(enmMemKind);
-        if (!pThis->pbDataPg)
-            return Bs3TestFailedF("Second Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
+        if (!pThis->pbCodePg || !pThis->pbDataPg)
+        {
+            Bs3TestFailedF("Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
+            Bs3MemPrintInfo();
+            Bs3Shutdown();
+            return Bs3TestFailedF("Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
+        }
         if (   BS3_MODE_IS_64BIT_CODE(bMode)
             && (uintptr_t)pThis->pbDataPg >= _2G)
             return Bs3TestFailedF("pbDataPg=%p is above 2GB and not simple to address from 64-bit code", pThis->pbDataPg);
@@ -2227,11 +2282,12 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     else
     {
         pThis->pbCodePg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
-        if (!pThis->pbCodePg)
-            return Bs3TestFailedF("First Bs3MemAlloc(%d,Pg) failed", enmMemKind);
         pThis->pbDataPg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
-        if (!pThis->pbDataPg)
-            return Bs3TestFailedF("Second Bs3MemAlloc(%d,Pg) failed", enmMemKind);
+        if (!pThis->pbCodePg || !pThis->pbDataPg)
+        {
+            Bs3MemPrintInfo();
+            return Bs3TestFailedF("Bs3MemAlloc(%d,Pg) failed", enmMemKind);
+        }
     }
     pThis->uCodePgFlat = Bs3SelPtrToFlat(pThis->pbCodePg);
     pThis->uDataPgFlat = Bs3SelPtrToFlat(pThis->pbDataPg);
@@ -2497,6 +2553,7 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                         {
                             offCode = X86_PAGE_SIZE - pThis->cbCurInstr;
                             pbCode = &pThis->pbCodePg[offCode];
+                            //if (iEncoding > 0) { pbCode[-1] = 0xf4; offCode--; }
                         }
                         else
                         {
@@ -2567,7 +2624,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode < BS3_MODE_PE16)
+    if (bMode != BS3_MODE_PP32)
         return BS3TESTDOMODE_SKIPPED;
 #endif
 
