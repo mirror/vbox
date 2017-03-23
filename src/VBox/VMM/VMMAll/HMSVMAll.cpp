@@ -662,8 +662,8 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
  * Converts an SVM event type to a TRPM event type.
  *
  * @returns The TRPM event type.
- * @retval  TRPM_32BIT_HACK if the specified @a uType isn't among the set of
- *          recognized trap types.
+ * @retval  TRPM_32BIT_HACK if the specified type of event isn't among the set
+ *          of recognized trap types.
  *
  * @param   uType       The SVM event type (see SVM_EVENT_XXX).
  */
