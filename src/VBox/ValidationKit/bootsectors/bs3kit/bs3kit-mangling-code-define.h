@@ -31,6 +31,7 @@
 #define Bs3A20EnableViaKbd BS3_CMN_MANGLER(Bs3A20EnableViaKbd)
 #define Bs3A20EnableViaPortA BS3_CMN_MANGLER(Bs3A20EnableViaPortA)
 #define Bs3ExtCtxAlloc BS3_CMN_MANGLER(Bs3ExtCtxAlloc)
+#define Bs3ExtCtxCopy BS3_CMN_MANGLER(Bs3ExtCtxCopy)
 #define Bs3ExtCtxFree BS3_CMN_MANGLER(Bs3ExtCtxFree)
 #define Bs3ExtCtxGetSize BS3_CMN_MANGLER(Bs3ExtCtxGetSize)
 #define Bs3ExtCtxInit BS3_CMN_MANGLER(Bs3ExtCtxInit)

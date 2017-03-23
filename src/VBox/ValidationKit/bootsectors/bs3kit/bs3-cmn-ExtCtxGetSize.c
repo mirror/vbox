@@ -33,19 +33,25 @@
 
 
 #undef Bs3ExtCtxGetSize
-BS3_CMN_DEF(uint16_t, Bs3ExtCtxGetSize,(uint16_t fFlags))
+BS3_CMN_DEF(uint16_t, Bs3ExtCtxGetSize,(uint64_t BS3_FAR *pfFlags))
 {
     uint32_t fEcx, fEdx;
-    BS3_ASSERT(fFlags == 0);
+    *pfFlags = 0;
 
     ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
+#if 1 /* To disable xsave/xrstor till IEM groks it... */
     if (fEcx & X86_CPUID_FEATURE_ECX_XSAVE)
     {
-        ASMCpuIdExSlow(13, 0, 0, 0, NULL, NULL, &fEcx, NULL);
+        uint32_t fEax;
+        ASMCpuIdExSlow(13, 0, 0, 0, &fEax, NULL, &fEcx, &fEdx);
         if (   fEcx >= sizeof(X86FXSTATE) + sizeof(X86XSAVEHDR)
             && fEcx < _32K)
+        {
+            *pfFlags = fEax | ((uint64_t)fEdx << 32);
             return RT_OFFSETOF(BS3EXTCTX, Ctx) + RT_ALIGN(fEcx, 256);
+        }
     }
+#endif
     if (fEdx & X86_CPUID_FEATURE_EDX_FXSR)
         return RT_OFFSETOF(BS3EXTCTX, Ctx) + sizeof(X86FXSTATE);
     return RT_OFFSETOF(BS3EXTCTX, Ctx) + sizeof(X86FPUSTATE);

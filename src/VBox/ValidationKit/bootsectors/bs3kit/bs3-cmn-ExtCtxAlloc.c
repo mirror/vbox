@@ -32,9 +32,10 @@
 
 
 #undef Bs3ExtCtxAlloc
-BS3_CMN_DEF(PBS3EXTCTX, Bs3ExtCtxAlloc,(uint16_t fFlags, BS3MEMKIND enmKind))
+BS3_CMN_DEF(PBS3EXTCTX, Bs3ExtCtxAlloc,(BS3MEMKIND enmKind))
 {
-    uint16_t   cbExtCtx = Bs3ExtCtxGetSize(fFlags);
+    uint64_t   fFlags;
+    uint16_t   cbExtCtx = Bs3ExtCtxGetSize(&fFlags);
     PBS3EXTCTX pExtCtx = (PBS3EXTCTX)Bs3MemAlloc(enmKind, cbExtCtx);
     if (pExtCtx)
         return Bs3ExtCtxInit(pExtCtx, cbExtCtx, fFlags);

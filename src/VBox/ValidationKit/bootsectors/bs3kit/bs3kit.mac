@@ -1424,7 +1424,9 @@ struc BS3EXTCTX
         .u16Magic   resw 1              ; uint16_t            u16Magic;
         .cb         resw 1              ; uint16_t            cb;
         .enmMethod  resb 1              ; uint8_t             enmMethod;
-        alignb 64
+        alignb           8
+        .fXcr0      resq 1
+        alignb           64
         .Ctx        resb 512
 endstruc
 %define BS3EXTCTXMETHOD_ANCIENT     1

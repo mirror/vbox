@@ -2679,9 +2679,12 @@ typedef struct BS3EXTCTX
     uint16_t            cb;
     /** The method used to save and restore the context (BS3EXTCTXMETHOD). */
     uint8_t             enmMethod;
+    uint8_t             abPadding0[3];
+    /** XSAVE_C_XXX. */
+    uint64_t            fXcr0;
 
     /** Explicit alignment padding. */
-    uint8_t             abPadding[64 - 2 - 2 - 1];
+    uint8_t             abPadding[64 - 2 - 2 - 1 - 3 - 8];
 
     /** The context, variable size (see above).
      * This must be aligned on a 64 byte boundrary. */
@@ -2710,10 +2713,9 @@ typedef BS3EXTCTX const BS3_FAR *PCBS3EXTCTX;
  * Allocates and initializes the extended CPU context structure.
  *
  * @returns The new extended CPU context structure.
- * @param   fFlags          Flags, MBZ.
  * @param   enmKind         The kind of allocation to make.
  */
-BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxAlloc,(uint16_t fFlags, BS3MEMKIND enmKind));
+BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxAlloc,(BS3MEMKIND enmKind));
 
 /**
  * Frees an extended CPU context structure.
@@ -2727,18 +2729,19 @@ BS3_CMN_PROTO_STUB(void,       Bs3ExtCtxFree,(PBS3EXTCTX pExtCtx));
  * Get the size required for a BS3EXTCTX structure.
  *
  * @returns size in bytes of the whole structure.
+ * @param   pfFlags         Where to return flags for Bs3ExtCtxInit.
  * @note    Use Bs3ExtCtxAlloc when possible.
  */
-BS3_CMN_PROTO_STUB(uint16_t,   Bs3ExtCtxGetSize,(uint16_t fFlags));
+BS3_CMN_PROTO_STUB(uint16_t,   Bs3ExtCtxGetSize,(uint64_t *pfFlags));
 
 /**
  * Initializes the extended CPU context structure.
  * @returns pExtCtx
  * @param   pExtCtx         The extended CPU context.
  * @param   cbExtCtx        The size of the @a pExtCtx allocation.
- * @param   fFlags          Flags, MBZ.
+ * @param   fFlags          XSAVE_C_XXX flags.
  */
-BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxInit,(PBS3EXTCTX pExtCtx, uint16_t cbExtCtx, uint16_t fFlags));
+BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxInit,(PBS3EXTCTX pExtCtx, uint16_t cbExtCtx, uint64_t fFlags));
 
 /**
  * Saves the extended CPU state to the given structure.
@@ -2755,6 +2758,15 @@ BS3_CMN_PROTO_STUB(void,       Bs3ExtCtxSave,(PBS3EXTCTX pExtCtx));
  * @remarks All GPRs preserved.
  */
 BS3_CMN_PROTO_STUB(void,       Bs3ExtCtxRestore,(PBS3EXTCTX pExtCtx));
+
+/**
+ * Copies the state from one context to another.
+ *
+ * @returns pDst
+ * @param   pDst            The destination extended CPU context.
+ * @param   pSrc            The source extended CPU context.
+ */
+BS3_CMN_PROTO_STUB(PBS3EXTCTX, Bs3ExtCtxCopy,(PBS3EXTCTX pDst, PCBS3EXTCTX pSrc));
 
 
 

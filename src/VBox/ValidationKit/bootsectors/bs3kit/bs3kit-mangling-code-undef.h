@@ -31,6 +31,7 @@
 #undef Bs3A20EnableViaKbd
 #undef Bs3A20EnableViaPortA
 #undef Bs3ExtCtxAlloc
+#undef Bs3ExtCtxCopy
 #undef Bs3ExtCtxFree
 #undef Bs3ExtCtxGetSize
 #undef Bs3ExtCtxInit

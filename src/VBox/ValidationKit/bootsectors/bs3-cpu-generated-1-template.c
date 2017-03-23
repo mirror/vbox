@@ -161,11 +161,13 @@ typedef struct BS3CG1STATE
     /** The offset into abCurInstr of the immediate. */
     uint8_t                 offCurImm;
     /** Buffer for assembling the current instruction. */
-    uint8_t                 abCurInstr[25];
+    uint8_t                 abCurInstr[24];
 
     /** Set if the encoding can't be tested in the same ring as this test code.
      *  This is used to deal with encodings modifying SP/ESP/RSP. */
     bool                    fSameRingNotOkay;
+    /** Whether to work the extended context too. */
+    bool                    fWorkExtCtx;
     /** The aOperands index of the modrm.reg operand (if applicable). */
     uint8_t                 iRegOp;
     /** The aOperands index of the modrm.rm operand (if applicable). */
@@ -227,8 +229,10 @@ typedef struct BS3CG1STATE
     /** Initial contexts, one for each ring. */
     BS3REGCTX               aInitialCtxs[4];
 
-    /** The extended context. */
+    /** The extended context we're working on (input, expected output). */
     PBS3EXTCTX              pExtCtx;
+    /** The extended result context (analoguous to TrapFrame). */
+    PBS3EXTCTX              pResultExtCtx;
     /** The initial extended context. */
     PBS3EXTCTX              pInitialExtCtx;
 
@@ -1302,22 +1306,44 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 }
 
 
-static bool Bs3Cg3SetupAvx(PBS3CG1STATE pThis)
-{
-    return true;
-}
-
-
 /**
- * Sets up SSE.
+ * Sets up SSE and maybe AVX.
  *
  * @returns true (if successful, false if not and the SSE instructions ends up
  *          being invalid).
  * @param   pThis               The state.
  */
-static bool Bs3Cg3SetupSse(PBS3CG1STATE pThis)
+static bool Bs3Cg3SetupSseAndAvx(PBS3CG1STATE pThis)
 {
-    ASMSetCR4(ASMGetCR4() | X86_CR4_OSFXSR | X86_CR4_OSXMMEEXCPT);
+    if (!pThis->fWorkExtCtx)
+    {
+        unsigned i;
+        uint32_t cr0 = ASMGetCR0();
+        uint32_t cr4 = ASMGetCR4();
+
+        cr0 &= ~(X86_CR0_TS | X86_CR0_MP | X86_CR0_EM);
+        cr0 |= X86_CR0_NE;
+        ASMSetCR0(cr0);
+        if (pThis->pExtCtx->enmMethod == BS3EXTCTXMETHOD_XSAVE)
+        {
+            cr4 |= X86_CR4_OSFXSR | X86_CR4_OSXMMEEXCPT | X86_CR4_OSXSAVE;
+            ASMSetCR4(cr4);
+            ASMSetXcr0(pThis->pExtCtx->fXcr0);
+        }
+        else
+        {
+            cr4 |= X86_CR4_OSFXSR | X86_CR4_OSXMMEEXCPT;
+            ASMSetCR4(cr4);
+        }
+
+        for (i = 0; i < RT_ELEMENTS(pThis->aInitialCtxs); i++)
+        {
+            pThis->aInitialCtxs[i].cr0.u32 = cr0;
+            pThis->aInitialCtxs[i].cr4.u32 = cr4;
+        }
+        pThis->fWorkExtCtx = true;
+    }
+
     return true;
 }
 
@@ -1382,19 +1408,19 @@ static bool Bs3Cg1CpuTestAndEnable(PBS3CG1STATE pThis)
                 {
                     case BS3CG1CPU_SSE:
                         if (fEdx & X86_CPUID_FEATURE_EDX_SSE)
-                            return Bs3Cg3SetupSse(pThis);
+                            return Bs3Cg3SetupSseAndAvx(pThis);
                         return false;
                     case BS3CG1CPU_SSE2:
                         if (fEdx & X86_CPUID_FEATURE_EDX_SSE2)
-                            return Bs3Cg3SetupSse(pThis);
+                            return Bs3Cg3SetupSseAndAvx(pThis);
                         return false;
                     case BS3CG1CPU_SSE3:
                         if (fEcx & X86_CPUID_FEATURE_ECX_SSE3)
-                            return Bs3Cg3SetupSse(pThis);
+                            return Bs3Cg3SetupSseAndAvx(pThis);
                         return false;
                     case BS3CG1CPU_AVX:
                         if (fEcx & X86_CPUID_FEATURE_ECX_AVX)
-                            return Bs3Cg3SetupAvx(pThis);
+                            return Bs3Cg3SetupSseAndAvx(pThis);
                         return false;
                     default: BS3_ASSERT(0); /* impossible */
                 }
@@ -1410,7 +1436,7 @@ static bool Bs3Cg1CpuTestAndEnable(PBS3CG1STATE pThis)
                 {
                     case BS3CG1CPU_AVX2:
                         if (fEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2)
-                            return Bs3Cg3SetupAvx(pThis);
+                            return Bs3Cg3SetupSseAndAvx(pThis);
                         return false;
                     default: BS3_ASSERT(0); return false; /* impossible */
                 }
@@ -1681,7 +1707,11 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
             /* FPU and FXSAVE format. */
             else if (   pThis->pExtCtx->enmMethod != BS3EXTCTXMETHOD_ANCIENT
                      && offField - sizeof(BS3REGCTX) <= RT_UOFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]) )
+            {
+                if (!pThis->fWorkExtCtx)
+                    return Bs3TestFailedF("Extended context disabled: Field %d @ %#x LB %u\n", idxField, offField, cbDst);
                 PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
+            }
             /** @todo other FPU fields and FPU state formats. */
             else
                 return Bs3TestFailedF("Todo implement me: cbDst=%u idxField=%d offField=%#x", cbDst, idxField, offField);
@@ -1794,6 +1824,9 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
             } Value;
             unsigned const offField = g_aoffBs3Cg1DstFields[idxField];
 
+            if (!pThis->fWorkExtCtx)
+                return Bs3TestFailedF("Extended context disabled: Field %d @ %#x LB %u\n", idxField, offField, cbDst);
+
             /* Copy the value into the union, doing the zero padding / extending. */
             Bs3MemCpy(&Value, pbCode, cbValue);
             if (cbValue < sizeof(Value))
@@ -1830,7 +1863,6 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                the state, so they need special handling.  */
             else
                 return Bs3TestFailedF("TODO: implement me: cbDst=%d idxField=%d (AVX and other weird state)", cbDst, idxField);
-
         }
 
         /*
@@ -1887,56 +1919,108 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
         /*
          * Check the register content.
          */
-        if (RT_LIKELY(Bs3TestCheckRegCtxEx(&pThis->TrapFrame.Ctx, &pThis->Ctx,
+        bool fOkay = Bs3TestCheckRegCtxEx(&pThis->TrapFrame.Ctx, &pThis->Ctx,
                                            cbAdjustPc, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/,
-                                           pThis->pszMode, iEncoding)))
-        {
-            /*
-             * Check memory output operands.
-             */
-            bool fOkay = true;
-            iOperand = pThis->cOperands;
-            while (iOperand-- > 0)
-                if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
+                                           pThis->pszMode, iEncoding);
+
+        /*
+         * Check memory output operands.
+         */
+        iOperand = pThis->cOperands;
+        while (iOperand-- > 0)
+            if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
+            {
+                BS3PTRUNION PtrUnion;
+                PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
+                switch (pThis->aOperands[iOperand].cbOp)
                 {
-                    BS3PTRUNION PtrUnion;
-                    PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
-                    switch (pThis->aOperands[iOperand].cbOp)
-                    {
-                        case 1:
-                            if (*PtrUnion.pu8 == pThis->MemOp.ab[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#04RX8, expected %#04RX8", iOperand, *PtrUnion.pu8, pThis->MemOp.ab[0]);
-                            break;
-                        case 2:
-                            if (*PtrUnion.pu16 == pThis->MemOp.au16[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#06RX16, expected %#06RX16",
-                                           iOperand, *PtrUnion.pu16, pThis->MemOp.au16[0]);
-                            break;
-                        case 4:
-                            if (*PtrUnion.pu32 == pThis->MemOp.au32[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#010RX32, expected %#010RX32",
-                                           iOperand, *PtrUnion.pu32, pThis->MemOp.au32[0]);
-                            break;
-                        case 8:
-                            if (*PtrUnion.pu64 == pThis->MemOp.au64[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#018RX64, expected %#018RX64",
-                                           iOperand, *PtrUnion.pu64, pThis->MemOp.au64[0]);
-                            break;
-                        default:
-                            if (Bs3MemCmp(PtrUnion.pb, pThis->MemOp.ab, pThis->aOperands[iOperand].cbOp) == 0)
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %.*Rhxs, expected %.*Rhxs",
-                                           iOperand,
-                                           pThis->aOperands[iOperand].cbOp, PtrUnion.pb,
-                                           pThis->aOperands[iOperand].cbOp, pThis->MemOp.ab);
-                            break;
-                    }
-                    fOkay = false;
+                    case 1:
+                        if (*PtrUnion.pu8 == pThis->MemOp.ab[0])
+                            continue;
+                        Bs3TestFailedF("op%u: Wrote %#04RX8, expected %#04RX8", iOperand, *PtrUnion.pu8, pThis->MemOp.ab[0]);
+                        break;
+                    case 2:
+                        if (*PtrUnion.pu16 == pThis->MemOp.au16[0])
+                            continue;
+                        Bs3TestFailedF("op%u: Wrote %#06RX16, expected %#06RX16",
+                                       iOperand, *PtrUnion.pu16, pThis->MemOp.au16[0]);
+                        break;
+                    case 4:
+                        if (*PtrUnion.pu32 == pThis->MemOp.au32[0])
+                            continue;
+                        Bs3TestFailedF("op%u: Wrote %#010RX32, expected %#010RX32",
+                                       iOperand, *PtrUnion.pu32, pThis->MemOp.au32[0]);
+                        break;
+                    case 8:
+                        if (*PtrUnion.pu64 == pThis->MemOp.au64[0])
+                            continue;
+                        Bs3TestFailedF("op%u: Wrote %#018RX64, expected %#018RX64",
+                                       iOperand, *PtrUnion.pu64, pThis->MemOp.au64[0]);
+                        break;
+                    default:
+                        if (Bs3MemCmp(PtrUnion.pb, pThis->MemOp.ab, pThis->aOperands[iOperand].cbOp) == 0)
+                            continue;
+                        Bs3TestFailedF("op%u: Wrote %.*Rhxs, expected %.*Rhxs",
+                                       iOperand,
+                                       pThis->aOperands[iOperand].cbOp, PtrUnion.pb,
+                                       pThis->aOperands[iOperand].cbOp, pThis->MemOp.ab);
+                        break;
                 }
+                fOkay = false;
+            }
+
+        /*
+         * Check extended context if enabled.
+         */
+        if (pThis->fWorkExtCtx)
+        {
+            PBS3EXTCTX pExpect = pThis->pExtCtx;
+            PBS3EXTCTX pResult = pThis->pResultExtCtx;
+            unsigned   i;
+            if (   pExpect->enmMethod == BS3EXTCTXMETHOD_XSAVE
+                || pExpect->enmMethod == BS3EXTCTXMETHOD_FXSAVE)
+            {
+                /* Compare the x87 state, ASSUMING XCR0 bit 1 is set. */
+#define CHECK_FIELD(a_Field, a_szFmt) \
+if (pResult->Ctx.a_Field != pExpect->Ctx.a_Field) fOkay = Bs3TestFailedF(a_szFmt, pResult->Ctx.a_Field, pExpect->Ctx.a_Field)
+                CHECK_FIELD(x87.FCW, "FCW: %#06x, expected %#06x");
+                CHECK_FIELD(x87.FSW, "FSW: %#06x, expected %#06x");
+                CHECK_FIELD(x87.FTW, "FTW: %#06x, expected %#06x");
+                //CHECK_FIELD(x87.FOP,      "FOP: %#06x, expected %#06x");
+                //CHECK_FIELD(x87.FPUIP,    "FPUIP:  %#010x, expected %#010x");
+                //CHECK_FIELD(x87.CS,       "FPUCS:  %#06x, expected %#06x");
+                //CHECK_FIELD(x87.Rsrvd1,   "Rsrvd1: %#06x, expected %#06x");
+                //CHECK_FIELD(x87.DP,       "FPUDP:  %#010x, expected %#010x");
+                //CHECK_FIELD(x87.DS,       "FPUDS:  %#06x, expected %#06x");
+                //CHECK_FIELD(x87.Rsrvd2,   "Rsrvd2: %#06x, expected %#06x");
+                CHECK_FIELD(x87.MXCSR,      "MXCSR:  %#010x, expected %#010x");
+                //CHECK_FIELD(x87.MXCSR_MASK, "MXCSR_MASK: %#010x, expected %#010x");
+#undef CHECK_FIELD
+                for (i = 0; i < RT_ELEMENTS(pExpect->Ctx.x87.aRegs); i++)
+                    if (   pResult->Ctx.x87.aRegs[i].au64[0] != pExpect->Ctx.x87.aRegs[i].au64[0]
+                        || pResult->Ctx.x87.aRegs[i].au16[4] != pExpect->Ctx.x87.aRegs[i].au16[4])
+                        fOkay = Bs3TestFailedF("ST[%u]: %c m=%#RX64 e=%d, expected %c m=%#RX64 e=%d", i,
+                                               pResult->Ctx.x87.aRegs[i].r80Ex.s.fSign ? '-' : '+',
+                                               pResult->Ctx.x87.aRegs[i].r80Ex.s.u64Mantissa,
+                                               pResult->Ctx.x87.aRegs[i].r80Ex.s.uExponent,
+                                               pExpect->Ctx.x87.aRegs[i].r80Ex.s.fSign ? '-' : '+',
+                                               pExpect->Ctx.x87.aRegs[i].r80Ex.s.u64Mantissa,
+                                               pExpect->Ctx.x87.aRegs[i].r80Ex.s.uExponent);
+                for (i = 0; i < (ARCH_BITS == 64 ? 16 : 8); i++)
+                    if (   pResult->Ctx.x87.aXMM[i].au64[0] != pExpect->Ctx.x87.aXMM[i].au64[0]
+                        || pResult->Ctx.x87.aXMM[i].au64[1] != pExpect->Ctx.x87.aXMM[i].au64[1])
+                        fOkay = Bs3TestFailedF("XMM%u: %#010RX64'%08RX64, expected %#010RX64'%08RX64", i,
+                                               pResult->Ctx.x87.aXMM[i].au64[0],
+                                               pResult->Ctx.x87.aXMM[i].au64[1],
+                                               pExpect->Ctx.x87.aXMM[i].au64[0],
+                                               pExpect->Ctx.x87.aXMM[i].au64[1]);
+            }
+            else
+                fOkay = Bs3TestFailedF("Unsupported extended CPU context method: %d", pExpect->enmMethod);
+
+            /*
+             * Done.
+             */
             if (fOkay)
                 return true;
         }
@@ -2068,8 +2152,15 @@ static void Bs3Cg1Destroy(PBS3CG1STATE pThis)
         Bs3MemFree(pThis->pbCodePg, X86_PAGE_SIZE);
         Bs3MemFree(pThis->pbDataPg, X86_PAGE_SIZE);
     }
-    Bs3ExtCtxFree(pThis->pExtCtx);
-    Bs3ExtCtxFree(pThis->pInitialExtCtx);
+
+    if (pThis->pExtCtx)
+        Bs3MemFree(pThis->pExtCtx, pThis->pExtCtx->cb * 3);
+
+    pThis->pbCodePg       = NULL;
+    pThis->pbDataPg       = NULL;
+    pThis->pExtCtx        = NULL;
+    pThis->pResultExtCtx  = NULL;
+    pThis->pInitialExtCtx = NULL;
 }
 
 
@@ -2085,6 +2176,10 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     BS3MEMKIND const    enmMemKind = BS3_MODE_IS_RM_OR_V86(bMode) ? BS3MEMKIND_REAL
                                    : !BS3_MODE_IS_64BIT_CODE(bMode) ? BS3MEMKIND_TILED : BS3MEMKIND_FLAT32;
     unsigned            iRing;
+    unsigned            cb;
+    unsigned            i;
+    uint64_t            fFlags;
+    PBS3EXTCTX          pExtCtx;
 
     Bs3MemSet(pThis, 0, sizeof(*pThis));
 
@@ -2099,10 +2194,18 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     pThis->fAdvanceMnemonic   = 1;
 
     /* Allocate extended context structures. */
-    pThis->pExtCtx            = Bs3ExtCtxAlloc(0, BS3MEMKIND_TILED);
-    pThis->pInitialExtCtx     = Bs3ExtCtxAlloc(0, BS3MEMKIND_TILED);
-    if (!pThis->pExtCtx || !pThis->pInitialExtCtx)
-        return Bs3TestFailed("Bs3ExtCtxAlloc failed");
+    cb = Bs3ExtCtxGetSize(&fFlags);
+    pExtCtx = Bs3MemAlloc(BS3MEMKIND_TILED, cb * 3);
+    if (!pExtCtx)
+        return Bs3TestFailedF("Bs3MemAlloc(tiled,%#x)", cb * 3);
+    pThis->pExtCtx        = pExtCtx;
+    pThis->pResultExtCtx  = (PBS3EXTCTX)((uint8_t BS3_FAR *)pExtCtx + cb);
+    pThis->pInitialExtCtx = (PBS3EXTCTX)((uint8_t BS3_FAR *)pExtCtx + cb + cb);
+
+    Bs3ExtCtxInit(pThis->pExtCtx, cb, fFlags);
+    Bs3ExtCtxInit(pThis->pResultExtCtx, cb, fFlags);
+    Bs3ExtCtxInit(pThis->pInitialExtCtx, cb, fFlags);
+    //Bs3TestPrintf("fCR0=%RX64 cbExtCtx=%#x method=%d\n", fFlags, cb, pExtCtx->enmMethod);
 
     /* Allocate guarded exectuable and data memory. */
     if (BS3_MODE_IS_PAGED(bMode))
@@ -2234,7 +2337,53 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
         }
     }
 
-    ASMCompilerBarrier();
+    /*
+     * Create an initial extended CPU context.
+     */
+    pExtCtx = pThis->pInitialExtCtx;
+    if (   pExtCtx->enmMethod == BS3EXTCTXMETHOD_FXSAVE
+        || pExtCtx->enmMethod == BS3EXTCTXMETHOD_XSAVE)
+    {
+        pExtCtx->Ctx.x87.FCW   = X86_FCW_MASK_ALL | X86_FCW_PC_64 | X86_FCW_RC_NEAREST;
+        pExtCtx->Ctx.x87.FSW   = 0;
+        pExtCtx->Ctx.x87.MXCSR      = X86_MXSCR_IM | X86_MXSCR_DM | X86_MXSCR_RC_NEAREST;
+        pExtCtx->Ctx.x87.MXCSR_MASK = 0;
+        for (i = 0; i < RT_ELEMENTS(pExtCtx->Ctx.x87.aRegs); i++)
+        {
+            pExtCtx->Ctx.x87.aRegs[i].au16[0] = i << 4;
+            pExtCtx->Ctx.x87.aRegs[i].au16[1] = i << 4;
+            pExtCtx->Ctx.x87.aRegs[i].au16[2] = i << 4;
+            pExtCtx->Ctx.x87.aRegs[i].au16[3] = i << 4;
+        }
+        for (i = 0; i < RT_ELEMENTS(pExtCtx->Ctx.x87.aXMM); i++)
+        {
+            pExtCtx->Ctx.x87.aXMM[i].au16[0] = i;
+            pExtCtx->Ctx.x87.aXMM[i].au16[1] = i;
+            pExtCtx->Ctx.x87.aXMM[i].au16[2] = i;
+            pExtCtx->Ctx.x87.aXMM[i].au16[3] = i;
+            pExtCtx->Ctx.x87.aXMM[i].au16[4] = i;
+            pExtCtx->Ctx.x87.aXMM[i].au16[5] = i;
+            pExtCtx->Ctx.x87.aXMM[i].au16[6] = i;
+            pExtCtx->Ctx.x87.aXMM[i].au16[7] = i;
+        }
+        if (pExtCtx->fXcr0 & XSAVE_C_YMM)
+            for (i = 0; i < RT_ELEMENTS(pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi); i++)
+            {
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[0] = i << 8;
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[1] = i << 8;
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[2] = i << 8;
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[3] = i << 8;
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[4] = i << 8;
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[5] = i << 8;
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[6] = i << 8;
+                pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[7] = i << 8;
+            }
+
+    }
+    //else if (pExtCtx->enmMethod == BS3EXTCTXMETHOD_ANCIENT)
+    else
+        return Bs3TestFailedF("Unsupported extended CPU context method: %d", pExtCtx->enmMethod);
+
     return true;
 }
 
@@ -2342,6 +2491,8 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                         uint8_t BS3_FAR *pbCode;
 
                         Bs3MemCpy(&pThis->Ctx, &pThis->aInitialCtxs[iRing], sizeof(pThis->Ctx));
+                        if (pThis->fWorkExtCtx)
+                            Bs3ExtCtxCopy(pThis->pExtCtx, pThis->pInitialExtCtx);
                         if (BS3_MODE_IS_PAGED(pThis->bMode))
                         {
                             offCode = X86_PAGE_SIZE - pThis->cbCurInstr;
@@ -2362,7 +2513,11 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                             /* Run the instruction. */
                             BS3CG1_DPRINTF(("dbg:  Running test #%u\n", pThis->iTest));
                             //Bs3RegCtxPrint(&pThis->Ctx);
+                            if (pThis->fWorkExtCtx)
+                                Bs3ExtCtxRestore(pThis->pExtCtx);
                             Bs3TrapSetJmpAndRestore(&pThis->Ctx, &pThis->TrapFrame);
+                            if (pThis->fWorkExtCtx)
+                                Bs3ExtCtxSave(pThis->pResultExtCtx);
                             BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64\n",
                                             pThis->TrapFrame.bXcpt, pThis->Ctx.rip.u, pThis->TrapFrame.Ctx.rip.u));
 
@@ -2407,15 +2562,14 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 {
-    uint8_t         bRet = 1;
-#if 1
-    BS3CG1STATE     This;
+    uint8_t     bRet = 1;
+    BS3CG1STATE This;
 
-# if 0
+#if 0
     /* (for debugging) */
-    if (bMode < BS3_MODE_LM16)
+    if (bMode < BS3_MODE_PE16)
         return BS3TESTDOMODE_SKIPPED;
-# endif
+#endif
 
     if (BS3_CMN_NM(Bs3Cg1Init)(&This, bMode))
     {
@@ -2423,19 +2577,6 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
         Bs3TestSubDone();
     }
     Bs3Cg1Destroy(&This);
-#else
-    PBS3CG1STATE pThis = (PBS3CG1STATE)Bs3MemAlloc(BS3MEMKIND_REAL, sizeof(*pThis));
-    if (pThis)
-    {
-        if (BS3_CMN_NM(Bs3Cg1Init)(pThis, bMode))
-        {
-            bRet = BS3_CMN_NM(Bs3Cg1WorkerInner)(pThis);
-            Bs3TestSubDone();
-        }
-        Bs3Cg1Destroy(pThis);
-        Bs3MemFree(pThis, sizeof(*pThis));
-    }
-#endif
 
 #if 0
     /* (for debugging) */
