@@ -2123,6 +2123,11 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemGuardedTestPageAllocEx,(BS3MEMKIND enmK
  */
 BS3_CMN_PROTO_STUB(void, Bs3MemGuardedTestPageFree,(void BS3_FAR *pvGuardedPage));
 
+/**
+ * Print all heap info.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3MemPrintInfo, (void));
+
 /** Highes RAM byte below 4G. */
 extern uint32_t  g_uBs3EndOfRamBelow4G;
 

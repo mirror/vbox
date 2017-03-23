@@ -83,6 +83,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-MemAllocZ.c \
        bs3-cmn-MemFree.c \
        bs3-cmn-MemGuardedTestPage.c \
+       bs3-cmn-MemPrintInfo.c \
        bs3-cmn-PagingData.c \
        bs3-cmn-PagingInitRootForPP.c \
        bs3-cmn-PagingInitRootForPAE.c \

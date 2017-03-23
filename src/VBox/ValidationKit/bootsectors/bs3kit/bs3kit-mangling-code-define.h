@@ -53,6 +53,7 @@
 #define Bs3MemGuardedTestPageFree BS3_CMN_MANGLER(Bs3MemGuardedTestPageFree)
 #define Bs3MemMove BS3_CMN_MANGLER(Bs3MemMove)
 #define Bs3MemPCpy BS3_CMN_MANGLER(Bs3MemPCpy)
+#define Bs3MemPrintInfo BS3_CMN_MANGLER(Bs3MemPrintInfo)
 #define Bs3MemSet BS3_CMN_MANGLER(Bs3MemSet)
 #define Bs3MemZero BS3_CMN_MANGLER(Bs3MemZero)
 #define Bs3PagingAlias BS3_CMN_MANGLER(Bs3PagingAlias)

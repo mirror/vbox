@@ -53,6 +53,7 @@
 #undef Bs3MemGuardedTestPageFree
 #undef Bs3MemMove
 #undef Bs3MemPCpy
+#undef Bs3MemPrintInfo
 #undef Bs3MemSet
 #undef Bs3MemZero
 #undef Bs3PagingAlias
