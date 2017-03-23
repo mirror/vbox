@@ -227,7 +227,6 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
         /*
          * Load the VMCB controls.
          */
-        AssertCompile(sizeof(pCtx->hwvirt.svm.VmcbCtrl) < RT_OFFSETOF(SVMVMCB, guest));
         rc = PGMPhysSimpleReadGCPhys(pVM, &pCtx->hwvirt.svm.VmcbCtrl, GCPhysVmcb, sizeof(pCtx->hwvirt.svm.VmcbCtrl));
         if (RT_SUCCESS(rc))
         {
