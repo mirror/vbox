@@ -2392,7 +2392,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
      * CPL can reliably be found in SS.DPL (hidden regs valid) or SS if not.
      *
      * Note! We used to check CS.DPL here, assuming it was always equal to
-     * CPL even if a conforming segment was loaded.  But this truned out to
+     * CPL even if a conforming segment was loaded.  But this turned out to
      * only apply to older AMD-V.  With VT-x we had an ACP2 regression
      * during install after a far call to ring 2 with VT-x.  Then on newer
      * AMD-V CPUs we have to move the VMCB.guest.u8CPL into cs.Attr.n.u2Dpl

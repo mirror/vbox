@@ -3997,7 +3997,7 @@ typedef enum X86XCPT
     /** \#VE - Virtualization Exception. */
     X86_XCPT_VE = 0x14,
     /** \#SX - Security Exception. */
-    X86_XCPT_SX = 0x1f
+    X86_XCPT_SX = 0x1f  /** @todo r=ramshankar: typo. \#SX should be 0x1e (30) but X86_XCPT_MAX probably needs to remain 31. */
 } X86XCPT;
 /** Pointer to a x86 exception code. */
 typedef X86XCPT *PX86XCPT;

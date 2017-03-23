@@ -1318,7 +1318,7 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCPUMCTX pCtx)
  * Checks if the guest VMCB has the specified ctrl/instruction intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx          Pointer to the context. 
+ * @param   pCtx          Pointer to the context.
  * @param   fIntercept    The SVM control/instruction intercept,
  *                        see SVM_CTRL_INTERCEPT_*.
  */
@@ -1332,7 +1332,7 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCPUMCTX pCtx, uint64_t fInterce
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx          Pointer to the context. 
+ * @param   pCtx          Pointer to the context.
  * @param   uCr           The CR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
@@ -1345,7 +1345,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx          Pointer to the context. 
+ * @param   pCtx          Pointer to the context.
  * @param   uCr           The CR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
@@ -1358,7 +1358,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx    Pointer to the context. 
+ * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
@@ -1371,7 +1371,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
- * @param   pCtx    Pointer to the context. 
+ * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
@@ -1384,7 +1384,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
  * intercept active.
  *
  * @returns true if in intercept is active, false otherwise.
- * @param   pCtx        Pointer to the context. 
+ * @param   pCtx        Pointer to the context.
  * @param   enmXcpt     The exception.
  */
 DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCPUMCTX pCtx, X86XCPT enmXcpt)
@@ -1542,6 +1542,8 @@ VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
+VMMDECL(int)            CPUMGetValidateEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
+                                            uint64_t *puValidEfer);
 
 /** @name Typical scalable bus frequency values.
  * @{ */

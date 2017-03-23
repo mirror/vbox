@@ -27,6 +27,7 @@
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/trpm.h>
 #include <iprt/memobj.h>
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
@@ -1100,6 +1101,7 @@ AssertCompileMemberAlignment(HMCPU, vmx, 8);
 AssertCompileMemberAlignment(HMCPU, svm, 8);
 AssertCompileMemberAlignment(HMCPU, Event, 8);
 
+VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
 
 #ifdef IN_RING0
 VMMR0DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void);

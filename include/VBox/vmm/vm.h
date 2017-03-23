@@ -485,6 +485,8 @@ typedef struct VMCPU
 /** The bit number for VMCPU_FF_CPUM. */
 # define VMCPU_FF_CPUM_BIT                  30
 #endif /* VBOX_WITH_RAW_MODE */
+/** Hardware virtualized nested-guest interrupt pending. */
+#define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_32(31)
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
 #define VM_FF_EXTERNAL_SUSPENDED_MASK           (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS )

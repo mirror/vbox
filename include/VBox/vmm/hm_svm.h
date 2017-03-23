@@ -324,7 +324,7 @@
 #define SVM_CTRL_INTERCEPT_NMI                RT_BIT_64(1)
 /** Intercept SMI. */
 #define SVM_CTRL_INTERCEPT_SMI                RT_BIT_64(2)
-/** Intercept INIT. */ 
+/** Intercept INIT. */
 #define SVM_CTRL_INTERCEPT_INIT               RT_BIT_64(3)
 /** Intercept VINTR (virtual maskable interrupt). */
 #define SVM_CTRL_INTERCEPT_VINTR              RT_BIT_64(4)
@@ -338,39 +338,39 @@
 #define SVM_CTRL_INTERCEPT_LDTR_READS         RT_BIT_64(8)
 /** Intercept reads of TR. */
 #define SVM_CTRL_INTERCEPT_TR_READS           RT_BIT_64(9)
-/** Intercept writes of IDTR. */           
+/** Intercept writes of IDTR. */
 #define SVM_CTRL_INTERCEPT_IDTR_WRITES        RT_BIT_64(10)
-/** Intercept writes of GDTR. */           
+/** Intercept writes of GDTR. */
 #define SVM_CTRL_INTERCEPT_GDTR_WRITES        RT_BIT_64(11)
-/** Intercept writes of LDTR. */           
+/** Intercept writes of LDTR. */
 #define SVM_CTRL_INTERCEPT_LDTR_WRITES        RT_BIT_64(12)
-/** Intercept writes of TR. */             
+/** Intercept writes of TR. */
 #define SVM_CTRL_INTERCEPT_TR_WRITES          RT_BIT_64(13)
-/** Intercept RDTSC instruction. */        
+/** Intercept RDTSC instruction. */
 #define SVM_CTRL_INTERCEPT_RDTSC              RT_BIT_64(14)
-/** Intercept RDPMC instruction. */        
+/** Intercept RDPMC instruction. */
 #define SVM_CTRL_INTERCEPT_RDPMC              RT_BIT_64(15)
-/** Intercept PUSHF instruction. */        
+/** Intercept PUSHF instruction. */
 #define SVM_CTRL_INTERCEPT_PUSHF              RT_BIT_64(16)
-/** Intercept POPF instruction. */         
+/** Intercept POPF instruction. */
 #define SVM_CTRL_INTERCEPT_POPF               RT_BIT_64(17)
-/** Intercept CPUID instruction. */        
+/** Intercept CPUID instruction. */
 #define SVM_CTRL_INTERCEPT_CPUID              RT_BIT_64(18)
-/** Intercept RSM instruction. */          
+/** Intercept RSM instruction. */
 #define SVM_CTRL_INTERCEPT_RSM                RT_BIT_64(19)
-/** Intercept IRET instruction. */         
+/** Intercept IRET instruction. */
 #define SVM_CTRL_INTERCEPT_IRET               RT_BIT_64(20)
-/** Intercept INTn instruction. */         
+/** Intercept INTn instruction. */
 #define SVM_CTRL_INTERCEPT_INTN               RT_BIT_64(21)
-/** Intercept INVD instruction. */         
+/** Intercept INVD instruction. */
 #define SVM_CTRL_INTERCEPT_INVD               RT_BIT_64(22)
-/** Intercept PAUSE instruction. */        
+/** Intercept PAUSE instruction. */
 #define SVM_CTRL_INTERCEPT_PAUSE              RT_BIT_64(23)
-/** Intercept HLT instruction. */          
+/** Intercept HLT instruction. */
 #define SVM_CTRL_INTERCEPT_HLT                RT_BIT_64(24)
-/** Intercept INVLPG instruction. */       
+/** Intercept INVLPG instruction. */
 #define SVM_CTRL_INTERCEPT_INVLPG             RT_BIT_64(25)
-/** Intercept INVLPGA instruction. */      
+/** Intercept INVLPGA instruction. */
 #define SVM_CTRL_INTERCEPT_INVLPGA            RT_BIT_64(26)
 /** IOIO_PROT Intercept IN/OUT accesses to selected ports. */
 #define SVM_CTRL_INTERCEPT_INOUT_BITMAP       RT_BIT_64(27)
@@ -380,33 +380,33 @@
 #define SVM_CTRL_INTERCEPT_TASK_SWITCH        RT_BIT_64(29)
 /** FERR_FREEZE: intercept processor "freezing" during legacy FERR handling. */
 #define SVM_CTRL_INTERCEPT_FERR_FREEZE        RT_BIT_64(30)
-/** Intercept shutdown events. */                
+/** Intercept shutdown events. */
 #define SVM_CTRL_INTERCEPT_SHUTDOWN           RT_BIT_64(31)
-/** Intercept VMRUN instruction. */              
+/** Intercept VMRUN instruction. */
 #define SVM_CTRL_INTERCEPT_VMRUN              RT_BIT_64(32 + 0)
-/** Intercept VMMCALL instruction. */            
+/** Intercept VMMCALL instruction. */
 #define SVM_CTRL_INTERCEPT_VMMCALL            RT_BIT_64(32 + 1)
-/** Intercept VMLOAD instruction. */                  
+/** Intercept VMLOAD instruction. */
 #define SVM_CTRL_INTERCEPT_VMLOAD             RT_BIT_64(32 + 2)
-/** Intercept VMSAVE instruction. */             
+/** Intercept VMSAVE instruction. */
 #define SVM_CTRL_INTERCEPT_VMSAVE             RT_BIT_64(32 + 3)
-/** Intercept STGI instruction. */               
+/** Intercept STGI instruction. */
 #define SVM_CTRL_INTERCEPT_STGI               RT_BIT_64(32 + 4)
-/** Intercept CLGI instruction. */               
+/** Intercept CLGI instruction. */
 #define SVM_CTRL_INTERCEPT_CLGI               RT_BIT_64(32 + 5)
-/** Intercept SKINIT instruction. */             
+/** Intercept SKINIT instruction. */
 #define SVM_CTRL_INTERCEPT_SKINIT             RT_BIT_64(32 + 6)
-/** Intercept RDTSCP instruction. */             
+/** Intercept RDTSCP instruction. */
 #define SVM_CTRL_INTERCEPT_RDTSCP             RT_BIT_64(32 + 7)
-/** Intercept ICEBP instruction. */              
+/** Intercept ICEBP instruction. */
 #define SVM_CTRL_INTERCEPT_ICEBP              RT_BIT_64(32 + 8)
-/** Intercept WBINVD instruction. */             
+/** Intercept WBINVD instruction. */
 #define SVM_CTRL_INTERCEPT_WBINVD             RT_BIT_64(32 + 9)
-/** Intercept MONITOR instruction. */            
+/** Intercept MONITOR instruction. */
 #define SVM_CTRL_INTERCEPT_MONITOR            RT_BIT_64(32 + 10)
-/** Intercept MWAIT instruction unconditionally. */   
+/** Intercept MWAIT instruction unconditionally. */
 #define SVM_CTRL_INTERCEPT_MWAIT              RT_BIT_64(32 + 11)
-/** Intercept MWAIT instruction when armed. */   
+/** Intercept MWAIT instruction when armed. */
 #define SVM_CTRL_INTERCEPT_MWAIT_ARMED        RT_BIT_64(32 + 12)
 /** Intercept XSETBV instruction. */
 #define SVM_CTRL_INTERCEPT_XSETBV             RT_BIT_64(32 + 13)
@@ -450,15 +450,20 @@
 /** @name SVMVMCB.ctrl.u64NestedPaging
  * @{
  */
-#define SVM_NESTED_PAGING_ENABLE              RT_BIT(0)
+#define SVM_NESTED_PAGING_ENABLE              RT_BIT_64(0)
 /** @} */
 
 /** @name SVMVMCB.ctrl.u64IntShadow
  * @{
  */
-#define SVM_INTERRUPT_SHADOW_ACTIVE           RT_BIT(0)
+#define SVM_INTERRUPT_SHADOW_ACTIVE           RT_BIT_64(0)
 /** @} */
 
+/** @name SVMVMCB.u64LbrVirt
+ * @{
+ */
+#define SVM_LBR_VIRT_ENABLE                   RT_BIT_64(0)
+/** @} */
 
 /** @name SVMINTCTRL.u3Type
  * @{
@@ -531,6 +536,8 @@ typedef union
 } SVMEVENT;
 /** Pointer to the SVMEVENT union. */
 typedef SVMEVENT *PSVMEVENT;
+/** Pointer to a const SVMEVENT union. */
+typedef const SVMEVENT *PCSVMEVENT;
 
 /**
  * SVM Interrupt control structure (Virtual Interrupt Control).
@@ -927,8 +934,8 @@ AssertCompileSize(SVMVMCB, 0x1000);
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 #endif /* IN_RING0 */
 
-/** 
- * Segment attribute conversion between CPU and AMD-V VMCB format. 
+/**
+ * Segment attribute conversion between CPU and AMD-V VMCB format.
  *
  * The CPU format of the segment attribute is described in X86DESCATTRBITS
  * which is 16-bits (i.e. includes 4 bits of the segment limit).
@@ -941,45 +948,45 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 
 /** @def HMSVM_SEG_REG_COPY_TO_VMCB
  * Copies the specified segment register to a VMCB from a virtual CPU context.
- *  
- * @param   a_pCtx      The virtual-CPU context. 
- * @param   a_pVmcb     The VMCB. 
- * @param   REG         The segment register in the VMCB struct. (CS, DS, FS 
- *                      etc.)
- * @param   reg         The segment register in the virtual CPU struct (cs, ds, 
- *                      fs etc.)
+ *
+ * @param   a_pCtx              The virtual-CPU context.
+ * @param   a_pVmcbStateSave    Pointer to the VMCB state-save area.
+ * @param   a_REG               The segment register in the VMCB state-save
+ *                              struct (ES/CS/SS/DS).
+ * @param   a_reg               The segment register in the virtual CPU struct
+ *                              (es/cs/ss/ds).
  */
-#define HMSVM_SEG_REG_COPY_TO_VMCB(a_pCtx, a_pVmcb, REG, reg) \
+#define HMSVM_SEG_REG_COPY_TO_VMCB(a_pCtx, a_pVmcbStateSave, a_REG, a_reg) \
     do \
     { \
-        Assert((a_pCtx)->reg.fFlags & CPUMSELREG_FLAGS_VALID);  \
-        Assert((a_pCtx)->reg.ValidSel == (a_pCtx)->reg.Sel);    \
-        (a_pVmcb)->guest.REG.u16Sel    = (a_pCtx)->reg.Sel;      \
-        (a_pVmcb)->guest.REG.u32Limit  = (a_pCtx)->reg.u32Limit; \
-        (a_pVmcb)->guest.REG.u64Base   = (a_pCtx)->reg.u64Base;  \
-        (a_pVmcb)->guest.REG.u16Attr   = HMSVM_CPU_2_VMCB_SEG_ATTR((a_pCtx)->reg.Attr.u); \
+        Assert((a_pCtx)->a_reg.fFlags & CPUMSELREG_FLAGS_VALID);  \
+        Assert((a_pCtx)->a_reg.ValidSel == (a_pCtx)->a_reg.Sel);    \
+        (a_pVmcbStateSave)->a_REG.u16Sel    = (a_pCtx)->a_reg.Sel;      \
+        (a_pVmcbStateSave)->a_REG.u32Limit  = (a_pCtx)->a_reg.u32Limit; \
+        (a_pVmcbStateSave)->a_REG.u64Base   = (a_pCtx)->a_reg.u64Base;  \
+        (a_pVmcbStateSave)->a_REG.u16Attr   = HMSVM_CPU_2_VMCB_SEG_ATTR((a_pCtx)->a_reg.Attr.u); \
     } while (0)
 
 /** @def HMSVM_SEG_REG_COPY_TO_VMCB
- * Copies the specified segment register from the VMCB to a virtual CPU 
- * context. 
- *  
- * @param   a_pCtx      The virtual-CPU context. 
- * @param   a_pVmcb     The VMCB. 
- * @param   REG         The segment register in the VMCB struct. (CS, DS, FS 
- *                      etc.)
- * @param   reg         The segment register in the virtual CPU struct (cs, ds, 
- *                      fs etc.)
+ * Copies the specified segment register from the VMCB to a virtual CPU
+ * context.
+ *
+ * @param   a_pCtx              The virtual-CPU context.
+ * @param   a_pVmcbStateSave    Pointer to the VMCB state-save area.
+ * @param   a_REG               The segment register in the VMCB state-save
+ *                              struct (ES/CS/SS/DS).
+ * @param   a_reg               The segment register in the virtual CPU struct
+ *                              (es/ds/ss/ds).
  */
-#define HMSVM_SEG_REG_COPY_FROM_VMCB(a_pCtx, a_pVmcb, REG, reg) \
+#define HMSVM_SEG_REG_COPY_FROM_VMCB(a_pCtx, a_pVmcbStateSave, a_REG, a_reg) \
     do \
     { \
-        (a_pCtx)->reg.Sel       = (a_pVmcb)->guest.REG.u16Sel;   \
-        (a_pCtx)->reg.ValidSel  = (a_pVmcb)->guest.REG.u16Sel;   \
-        (a_pCtx)->reg.fFlags    = CPUMSELREG_FLAGS_VALID;    \
-        (a_pCtx)->reg.u32Limit  = (a_pVmcb)->guest.REG.u32Limit; \
-        (a_pCtx)->reg.u64Base   = (a_pVmcb)->guest.REG.u64Base;  \
-        (a_pCtx)->reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcb)->guest.REG.u16Attr); \
+        (a_pCtx)->a_reg.Sel       = (a_pVmcbStateSave)->a_REG.u16Sel;   \
+        (a_pCtx)->a_reg.ValidSel  = (a_pVmcbStateSave)->a_REG.u16Sel;   \
+        (a_pCtx)->a_reg.fFlags    = CPUMSELREG_FLAGS_VALID;    \
+        (a_pCtx)->a_reg.u32Limit  = (a_pVmcbStateSave)->a_REG.u32Limit; \
+        (a_pCtx)->a_reg.u64Base   = (a_pVmcbStateSave)->a_REG.u64Base;  \
+        (a_pCtx)->a_reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcbStateSave)->a_REG.u16Attr); \
     } while (0)
 /** @} */
 

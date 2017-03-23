@@ -2127,6 +2127,10 @@
 #define VERR_SVM_IPE_4                              (-4064)
 /** Internal SVM processing error no 5. */
 #define VERR_SVM_IPE_5                              (-4065)
+/** \#VMEXIT processing failed, initiate shutdown. */
+#define VERR_SVM_VMEXIT_FAILED                      (-4066)
+/** An operation caused a nested-guest SVM \#VMEXIT. */
+#define VINF_SVM_VMEXIT                             4067
 /** @} */
 
 

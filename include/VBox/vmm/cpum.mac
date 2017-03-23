@@ -262,6 +262,8 @@ struc CPUMCTX
     .hwvirt.svm.VmcbCtrl            resb  256
     .hwvirt.svm.HostState           resb  184
     .hwvirt.svm.fGif                resb    1
+    .hwvirt.svm.abPadding0          resb    7
+    .hwvirt.fLocalForcedActions     resd    1
     alignb 64
 endstruc
 

@@ -5900,7 +5900,12 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 #endif
 
     VBOXSTRICTRC rcStrict = HMSvmVmrun(pVCpu, pCtx, GCPhysVmcb);
-    RT_NOREF(cbInstr);
+    /* If VMRUN execution causes a #VMEXIT, we continue executing the instruction following the VMRUN. */
+    if (rcStrict == VINF_SVM_VMEXIT)
+    {
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        rcStrict = VINF_SUCCESS;
+    }
     return rcStrict;
 }
 
@@ -5961,10 +5966,10 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     if (rcStrict == VINF_SUCCESS)
     {
         PCSVMVMCB pVmcb = (PCSVMVMCB)pvVmcb;
-        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, FS, fs);
-        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, GS, gs);
-        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, TR, tr);
-        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, LDTR, ldtr);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, &pVmcb->guest, FS, fs);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, &pVmcb->guest, GS, gs);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, &pVmcb->guest, TR, tr);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, &pVmcb->guest, LDTR, ldtr);
 
         pCtx->msrKERNELGSBASE = pVmcb->guest.u64KernelGSBase;
         pCtx->msrSTAR         = pVmcb->guest.u64STAR;
@@ -6012,10 +6017,10 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     if (rcStrict == VINF_SUCCESS)
     {
         PSVMVMCB pVmcb = (PSVMVMCB)pvVmcb;
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, FS, fs);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, GS, gs);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, TR, tr);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, LDTR, ldtr);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, FS, fs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, GS, gs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, TR, tr);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, LDTR, ldtr);
 
         pVmcb->guest.u64KernelGSBase  = pCtx->msrKERNELGSBASE;
         pVmcb->guest.u64STAR          = pCtx->msrSTAR;

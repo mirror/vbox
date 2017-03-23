@@ -727,8 +727,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
         pVmcb->ctrl.IntCtrl.n.u1VIrqMasking = 1;
 
-        /* Ignore the priority in the TPR. This is necessary for delivering PIC style (ExtInt) interrupts and we currently
-           deliver both PIC and APIC interrupts alike. See hmR0SvmInjectPendingEvent() */
+        /* Ignore the priority in the virtual TPR. This is necessary for delivering PIC style (ExtInt) interrupts
+           and we currently deliver both PIC and APIC interrupts alike. See hmR0SvmInjectPendingEvent() */
         pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR   = 1;
 
         /* Set IO and MSR bitmap permission bitmap physical addresses. */
@@ -1300,12 +1300,12 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
     /* Guest Segment registers: CS, SS, DS, ES, FS, GS. */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS))
     {
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, CS, cs);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, SS, ss);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, DS, ds);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, ES, es);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, FS, fs);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, GS, gs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, CS, cs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, SS, ss);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, DS, ds);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, ES, es);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, FS, fs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, GS, gs);
 
         pVmcb->guest.u8CPL = pCtx->ss.Attr.n.u2Dpl;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
@@ -1315,14 +1315,14 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
     /* Guest TR. */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_TR))
     {
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, TR, tr);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, TR, tr);
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_TR);
     }
 
     /* Guest LDTR. */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LDTR))
     {
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, LDTR, ldtr);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &pVmcb->guest, LDTR, ldtr);
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LDTR);
     }
 
@@ -1950,12 +1950,12 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest segment registers (includes FS, GS base MSRs for 64-bit guests).
      */
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, CS, cs);
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, SS, ss);
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, DS, ds);
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, ES, es);
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, FS, fs);
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, GS, gs);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, CS, cs);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, SS, ss);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, DS, ds);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, ES, es);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, FS, fs);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, GS, gs);
 
     /*
      * Correct the hidden CS granularity bit. Haven't seen it being wrong in any other
@@ -2005,7 +2005,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * between Intel and AMD. See @bugref{6208#c39}.
      * ASSUME that it's normally correct and that we're in 32-bit or 64-bit mode.
      */
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, TR, tr);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, TR, tr);
     if (pMixedCtx->tr.Attr.n.u4Type != X86_SEL_TYPE_SYS_386_TSS_BUSY)
     {
         if (   pMixedCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
@@ -2018,7 +2018,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest Descriptor-Table registers.
      */
-    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, LDTR, ldtr);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, &pVmcb->guest, LDTR, ldtr);
     pMixedCtx->gdtr.cbGdt = pVmcb->guest.GDTR.u32Limit;
     pMixedCtx->gdtr.pGdt  = pVmcb->guest.GDTR.u64Base;
 
@@ -2452,27 +2452,9 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
     SVMEVENT Event;
     Event.u = pVCpu->hm.s.Event.u64IntInfo;
 
-    uint8_t uVector     = Event.n.u8Vector;
-    uint8_t uVectorType = Event.n.u3Type;
-
-    TRPMEVENT enmTrapType;
-    switch (uVectorType)
-    {
-        case SVM_EVENT_EXTERNAL_IRQ:
-           enmTrapType = TRPM_HARDWARE_INT;
-           break;
-        case SVM_EVENT_SOFTWARE_INT:
-            enmTrapType = TRPM_SOFTWARE_INT;
-            break;
-        case SVM_EVENT_EXCEPTION:
-        case SVM_EVENT_NMI:
-            enmTrapType = TRPM_TRAP;
-            break;
-        default:
-            AssertMsgFailed(("Invalid pending-event type %#x\n", uVectorType));
-            enmTrapType = TRPM_32BIT_HACK;
-            break;
-    }
+    uint8_t   uVector     = Event.n.u8Vector;
+    uint8_t   uVectorType = Event.n.u3Type;
+    TRPMEVENT enmTrapType = HMSvmEventToTrpmEventType(&Event);
 
     Log4(("HM event->TRPM: uVector=%#x enmTrapType=%d\n", uVector, uVectorType));
 
