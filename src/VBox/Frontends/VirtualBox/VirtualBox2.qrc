@@ -4,6 +4,7 @@
         <file alias="os_win10_64.png">images/os_win10_64.png</file>
         <file alias="os_win2k.png">images/os_win2k.png</file>
         <file alias="os_win2k12_64.png">images/os_win2k12_64.png</file>
+        <file alias="os_win2k16_64.png">images/os_win2k16_64.png</file>
         <file alias="os_win2k3.png">images/os_win2k3.png</file>
         <file alias="os_win2k3_64.png">images/os_win2k3_64.png</file>
         <file alias="os_win2k8.png">images/os_win2k8.png</file>

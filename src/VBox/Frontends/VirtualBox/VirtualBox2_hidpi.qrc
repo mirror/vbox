@@ -12,6 +12,7 @@
         <file alias="os_win10_64_hidpi.png">images/hidpi/os_win10_64_hidpi.png</file>
         <file alias="os_win10_hidpi.png">images/hidpi/os_win10_hidpi.png</file>
         <file alias="os_win2k12_64_hidpi.png">images/hidpi/os_win2k12_64_hidpi.png</file>
+        <file alias="os_win2k16_64_hidpi.png">images/hidpi/os_win2k16_64_hidpi.png</file>
         <file alias="os_win2k3_64_hidpi.png">images/hidpi/os_win2k3_64_hidpi.png</file>
         <file alias="os_win2k3_hidpi.png">images/hidpi/os_win2k3_hidpi.png</file>
         <file alias="os_win2k8_64_hidpi.png">images/hidpi/os_win2k8_64_hidpi.png</file>
