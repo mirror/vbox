@@ -136,7 +136,7 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
 
     rc = VBoxHGSMIGetModeHints(&vbox->submit_info, vbox->num_crtcs,
                                vbox->last_mode_hints);
-    if RT_FAILURE(rc) {
+    if (RT_FAILURE(rc)) {
         printk("vboxvideo: VBoxHGSMIGetModeHints failed, rc=%i.\n", rc);
         return;
     }
