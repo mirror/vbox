@@ -354,12 +354,12 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             Assert(   !(uValidEfer & MSR_K6_EFER_LME)
                    ||  VmcbNstGst.u64CR0 & X86_CR0_PG);
             bool const fSvm                     = (uValidEfer & MSR_K6_EFER_SVME);
-            bool const fLongModeSupported       = pVM->cpum.ro.GuestFeatures.fLongMode;
-            bool const fLongModeActiveOrEnabled = (uValidEfer & (MSR_K6_EFER_LME | MSR_K6_EFER_LMA));
-            bool const fLongModeEnabled         = (uValidEfer & MSR_K6_EFER_LME);
-            bool const fPaging                  = (VmcbNstGst.u64CR0 & X86_CR0_PG);
-            bool const fPae                     = (VmcbNstGst.u64CR4 & X86_CR4_PAE);
-            bool const fProtMode                = (VmcbNstGst.u64CR0 & X86_CR0_PE);
+            bool const fLongModeSupported       = RT_BOOL(pVM->cpum.ro.GuestFeatures.fLongMode);
+            bool const fLongModeActiveOrEnabled = RT_BOOL(uValidEfer & (MSR_K6_EFER_LME | MSR_K6_EFER_LMA));
+            bool const fLongModeEnabled         = RT_BOOL(uValidEfer & MSR_K6_EFER_LME);
+            bool const fPaging                  = RT_BOOL(VmcbNstGst.u64CR0 & X86_CR0_PG);
+            bool const fPae                     = RT_BOOL(VmcbNstGst.u64CR4 & X86_CR4_PAE);
+            bool const fProtMode                = RT_BOOL(VmcbNstGst.u64CR0 & X86_CR0_PE);
             bool const fLongModeWithPaging      = fLongModeEnabled && fPaging;
             bool const fLongModeConformCS       = pCtx->cs.Attr.n.u1Long && pCtx->cs.Attr.n.u1DefBig;
             if (   !fSvm
