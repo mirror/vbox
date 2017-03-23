@@ -3072,7 +3072,7 @@ typedef X86XSAVEAREA *PX86XSAVEAREA;
 typedef X86XSAVEAREA const *PCX86XSAVEAREA;
 
 
-/** @name XSAVE_C_XXX - XSAVE State Components Bits.
+/** @name XSAVE_C_XXX - XSAVE State Components Bits (XCR0).
  * @{ */
 /** Bit 0 - x87 - Legacy FPU state (bit number) */
 #define XSAVE_C_X87_BIT         0
@@ -3114,6 +3114,10 @@ typedef X86XSAVEAREA const *PCX86XSAVEAREA;
 #define XSAVE_C_LWP_BIT         62
 /** Bit 62 - LWP - Lightweight Profiling (AMD). */
 #define XSAVE_C_LWP             RT_BIT_64(XSAVE_C_LWP_BIT)
+/** Bit 63 - X - Reserved (MBZ) for extending XCR0 (bit number). */
+#define XSAVE_C_X_BIT           63
+/** Bit 63 - X - Reserved (MBZ) for extending XCR0 (AMD). */
+#define XSAVE_C_X               RT_BIT_64(XSAVE_C_X_BIT)
 /** @} */
 
 
