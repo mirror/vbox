@@ -63,7 +63,7 @@ protected:
     /** Performs validation, updates @a messages list if something is wrong. */
     virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
-    /** Defines TAB order. */
+    /** Defines TAB order for passed @a pWidget. */
     virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
@@ -71,47 +71,62 @@ protected:
 
 private slots:
 
-    /* Handlers: NAT network stuff: */
+    /** Handles command to add NAT network. */
     void sltAddNetworkNAT();
+    /** Handles command to edit NAT network. */
     void sltEditNetworkNAT();
+    /** Handles command to remove NAT network. */
     void sltRemoveNetworkNAT();
+    /** Handles @a pChangedItem change for NAT network tree. */
     void sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pChangedItem);
+    /** Handles NAT network tree current item change. */
     void sltHandleCurrentItemChangeNetworkNAT();
+    /** Handles context menu request for @a position of NAT network tree. */
     void sltHandleContextMenuRequestNetworkNAT(const QPoint &position);
 
-    /* Handlers: Host network stuff: */
+    /** Handles command to add host network. */
     void sltAddNetworkHost();
+    /** Handles command to edit host network. */
     void sltEditNetworkHost();
+    /** Handles command to remove host network. */
     void sltRemoveNetworkHost();
+    /** Handles host network tree current item change. */
     void sltHandleCurrentItemChangeNetworkHost();
+    /** Handles context menu request for @a position of host network tree. */
     void sltHandleContextMenuRequestNetworkHost(const QPoint &position);
 
 private:
 
-    /* Helpers: NAT network cache stuff: */
+    /** Uploads NAT @a network data into passed @a data storage unit. */
     void loadDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data);
+    /** Saves @a data to corresponding NAT network. */
     void saveDataNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data);
-
-    /* Helpers: NAT network tree stuff: */
+    /** Creates a new item in the NAT network tree on the basis of passed @a data, @a fChooseItem if requested. */
     void createTreeItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem = false);
+    /** Removes existing @a pItem from the NAT network tree. */
     void removeTreeItemNetworkNAT(UIItemNetworkNAT *pItem);
 
-    /* Helpers: Host network cache stuff: */
+    /** Uploads host @a network data into passed @a data storage unit. */
     void loadDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data);
+    /** Saves @a data to corresponding host network. */
     void saveDataNetworkHost(const UIDataSettingsGlobalNetworkHost &data);
-
-    /* Helpers: Host network tree stuff: */
+    /** Creates a new item in the host network tree on the basis of passed @a data, @a fChooseItem if requested. */
     void createTreeItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem = false);
+    /** Removes existing @a pItem from the host network tree. */
     void removeTreeItemNetworkHost(UIItemNetworkHost *pItem);
 
-    /* Variables: NAT network actions: */
+    /** Holds the Add NAT network action instance. */
     QAction *m_pActionAddNetworkNAT;
+    /** Holds the Edit NAT network action instance. */
     QAction *m_pActionEditNetworkNAT;
+    /** Holds the Remove NAT network action instance. */
     QAction *m_pActionRemoveNetworkNAT;
 
-    /* Variables: Host network actions: */
+    /** Holds the Add host network action instance. */
     QAction *m_pActionAddNetworkHost;
+    /** Holds the Edit host network action instance. */
     QAction *m_pActionEditNetworkHost;
+    /** Holds the Remove host network action instance. */
     QAction *m_pActionRemoveNetworkHost;
 
     /** Holds the page data cache instance. */

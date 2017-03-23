@@ -41,6 +41,11 @@ public:
     /** Destructs Extension settings page. */
     ~UIGlobalSettingsExtension();
 
+    /** Initiates the extension pack installation process.
+      * @param  strFilePath      Brings the extension pack file path.
+      * @param  strDigest        Brings the extension pack file digest.
+      * @param  pParent          Brings the parent dialog reference.
+      * @param  pstrExtPackName  Brings the extension pack name. */
     static void doInstallation(QString const &strFilePath, QString const &strDigest, QWidget *pParent, QString *pstrExtPackName);
 
 protected:
@@ -64,21 +69,24 @@ protected:
 
 private slots:
 
-    /* Handlers: Tree-widget stuff: */
+    /** Handles @a pCurrentItem change. */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
+    /** Handles context menu request for @a position. */
     void sltHandleContextMenuRequest(const QPoint &position);
 
-    /* Handlers: Package stuff: */
+    /** Handles command to add extension pack. */
     void sltAddPackage();
+    /** Handles command to remove extension pack. */
     void sltRemovePackage();
 
 private:
 
-    /* Prepare UIDataSettingsGlobalExtensionItem basing on CExtPack: */
+    /** Uploads @a package data into passed @a item. */
     void loadData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const;
 
-    /* Variables: Actions: */
+    /** Holds the Add action instance. */
     QAction *m_pActionAdd;
+    /** Holds the Remove action instance. */
     QAction *m_pActionRemove;
 
     /** Holds the page data cache instance. */

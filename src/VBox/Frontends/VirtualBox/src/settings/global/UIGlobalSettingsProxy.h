@@ -65,7 +65,7 @@ protected:
 
 private slots:
 
-    /* Handler: Proxy-checkbox stuff: */
+    /** Handles proxy toggling. */
     void sltHandleProxyToggle();
 
 private:

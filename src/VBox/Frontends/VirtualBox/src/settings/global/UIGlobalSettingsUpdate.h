@@ -57,7 +57,7 @@ protected:
       * this task COULD be performed in other than the GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
-    /** Defines TAB order. */
+    /** Defines TAB order for passed @a pWidget. */
     virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
@@ -65,17 +65,19 @@ protected:
 
 private slots:
 
-    /* Handlers: */
+    /** Handles whether update is @a fEnabled. */
     void sltHandleUpdateToggle(bool fEnabled);
+    /** Handles update period change. */
     void sltHandleUpdatePeriodChange();
 
 private:
 
-    /* Helpers: */
+    /** Returns period type. */
     VBoxUpdateData::PeriodType periodType() const;
+    /** Returns branch type. */
     VBoxUpdateData::BranchType branchType() const;
 
-    /* Variables: */
+    /** Holds the last checked button reference. */
     QRadioButton *m_pLastChosenRadio;
 
     /** Holds the page data cache instance. */

@@ -66,18 +66,18 @@ protected:
 
 private slots:
 
-    /* Handler: List-painting stuff: */
+    /** Handles @a pItem painting with passed @a pPainter. */
     void sltHandleItemPainting(QTreeWidgetItem *pItem, QPainter *pPainter);
 
-    /* Handler: Current-changed stuff: */
+    /** Handles @a pCurrentItem change. */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
 
 private:
 
-    /* Helper: List-loading stuff: */
+    /** Reloads language list, choosing item with @a strLanguageId as current. */
     void reloadLanguageTree(const QString &strLanguageId);
 
-    /* Variables: */
+    /** Holds whether the page is polished. */
     bool m_fPolished;
 
     /** Holds the page data cache instance. */

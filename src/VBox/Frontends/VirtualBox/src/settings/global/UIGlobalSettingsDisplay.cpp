@@ -191,7 +191,7 @@ void UIGlobalSettingsDisplay::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIGlobalSettingsDisplay::retranslateUi(this);
 
-    /* Populate combo-box: */
+    /* Reload combo-box: */
     reloadMaximumGuestScreenSizePolicyComboBox();
 }
 

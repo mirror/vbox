@@ -38,6 +38,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
 #include <QShortcut>
 
 /* Namespaces: */
@@ -862,7 +863,6 @@ void UIHotKeyTable::prepare()
 *   Class UIGlobalSettingsInput implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-/* Input page constructor: */
 UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pTabWidget(0)
     , m_pSelectorFilterEditor(0), m_pSelectorModel(0), m_pSelectorTable(0)
@@ -887,10 +887,9 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
             m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
     QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
 #ifndef VBOX_WS_WIN
-    /* On Windows host that looks ugly, but
-     * On Mac OS X and X11 that deserves it's place. */
+    /* On Mac OS X and X11 we can do a bit of smoothness. */
     pSelectorLayout->setContentsMargins(0, 0, 0, 0);
-#endif /* !VBOX_WS_WIN */
+#endif
     pSelectorLayout->setSpacing(1);
     pSelectorLayout->addWidget(m_pSelectorFilterEditor);
     pSelectorLayout->addWidget(m_pSelectorTable);
@@ -907,10 +906,9 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
             m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
     QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
 #ifndef VBOX_WS_WIN
-    /* On Windows host that looks ugly, but
-     * On Mac OS X and X11 that deserves it's place. */
+    /* On Mac OS X and X11 we can do a bit of smoothness. */
     pMachineLayout->setContentsMargins(0, 0, 0, 0);
-#endif /* !VBOX_WS_WIN */
+#endif
     pMachineLayout->setSpacing(1);
     pMachineLayout->addWidget(m_pMachineFilterEditor);
     pMachineLayout->addWidget(m_pMachineTable);

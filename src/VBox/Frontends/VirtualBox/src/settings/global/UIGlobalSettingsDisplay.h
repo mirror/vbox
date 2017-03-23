@@ -61,12 +61,12 @@ protected:
 
 private slots:
 
-    /* Handler: Resolution-combo stuff: */
+    /** Handles maximum guest-screen size policy change. */
     void sltHandleMaximumGuestScreenSizePolicyChange();
 
 private:
 
-    /* Helper: Resolution-combo stuff: */
+    /** Reloads maximum guest-screen size policy combo-box. */
     void reloadMaximumGuestScreenSizePolicyComboBox();
 
     /** Holds the page data cache instance. */

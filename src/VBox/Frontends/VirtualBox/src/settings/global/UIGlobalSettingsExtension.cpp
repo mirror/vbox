@@ -223,9 +223,7 @@ UIGlobalSettingsExtension::~UIGlobalSettingsExtension()
 void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QString const &strDigest,
                                                QWidget *pParent, QString *pstrExtPackName)
 {
-    /*
-     * Open the extpack tarball via IExtPackManager.
-     */
+    /* Open the extpack tarball via IExtPackManager: */
     CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
     CExtPackFile extPackFile;
     if (strDigest.isEmpty())
@@ -251,11 +249,8 @@ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QStri
     const QString strPackDescription = extPackFile.GetDescription();
     const QString strPackVersion = QString("%1r%2%3").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision()).arg(extPackFile.GetEdition());
 
-    /*
-     * Check if there is a version of the extension pack already
-     * installed on the system and let the user decide what to do about
-     * it.
-     */
+    /* Check if there is a version of the extension pack already
+     * installed on the system and let the user decide what to do about it. */
     CExtPack extPackCur = manager.Find(strPackName);
     bool fReplaceIt = extPackCur.isOk();
     if (fReplaceIt)
@@ -264,18 +259,14 @@ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QStri
         if (!msgCenter().confirmReplaceExtensionPack(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
             return;
     }
-    /*
-     * If it's a new package just ask for general confirmation.
-     */
+    /* If it's a new package just ask for general confirmation. */
     else
     {
         if (!msgCenter().confirmInstallExtensionPack(strPackName, strPackVersion, strPackDescription, pParent))
             return;
     }
 
-    /*
-     * Display the license dialog if required by the extension pack.
-     */
+    /* Display the license dialog if required by the extension pack. */
     if (extPackFile.GetShowLicense())
     {
         QString strLicense = extPackFile.GetLicense();
@@ -284,17 +275,14 @@ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QStri
             return;
     }
 
-    /*
-     * Install the selected package.
-     *
-     * Set the package name return value before doing this as the caller should
-     * do a refresh even on failure.
-     */
+    /* Install the selected package.
+     * Set the package name return value before doing
+     * this as the caller should do a refresh even on failure. */
     QString displayInfo;
 #ifdef VBOX_WS_WIN
     if (pParent)
         displayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)pParent->winId());
-#endif /* VBOX_WS_WIN */
+#endif
     /* Prepare installation progress: */
     CProgress progress = extPackFile.Install(fReplaceIt, displayInfo);
     if (extPackFile.isOk())
@@ -394,7 +382,6 @@ void UIGlobalSettingsExtension::retranslateUi()
 void UIGlobalSettingsExtension::sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem)
 {
     /* Check action's availability: */
-    //m_pActionAdd->setEnabled(true);
     m_pActionRemove->setEnabled(pCurrentItem);
 }
 
@@ -415,12 +402,9 @@ void UIGlobalSettingsExtension::sltHandleContextMenuRequest(const QPoint &positi
 
 void UIGlobalSettingsExtension::sltAddPackage()
 {
-    /*
-     * Open file-open window to let user to choose package file.
-     *
+    /* Open file-open window to let user to choose package file.
      * The default location is the user's Download or Downloads directory with
-     * the user's home directory as a fallback.  ExtPacks are downloaded.
-     */
+     * the user's home directory as a fallback. ExtPacks are downloaded. */
     QString strBaseFolder = QDir::homePath() + "/Downloads";
     if (!QDir(strBaseFolder).exists())
     {
@@ -440,21 +424,17 @@ void UIGlobalSettingsExtension::sltAddPackage()
     if (!fileNames.isEmpty())
         strFilePath = fileNames.at(0);
 
-    /*
-     * Install the chosen package.
-     */
+    /* Install the chosen package: */
     if (!strFilePath.isEmpty())
     {
         QString strExtPackName;
         doInstallation(strFilePath, QString(), this, &strExtPackName);
 
-        /*
-         * Since we might be reinstalling an existing package, we have to
-         * do a little refreshing regardless of what the user chose.
-         */
+        /* Since we might be reinstalling an existing package, we have to
+         * do a little refreshing regardless of what the user chose. */
         if (!strExtPackName.isNull())
         {
-            /* Remove it from the cache. */
+            /* Remove it from the cache: */
             for (int i = 0; i < m_pCache->data().m_items.size(); ++i)
             {
                 if (!strExtPackName.compare(m_pCache->data().m_items.at(i).m_strName, Qt::CaseInsensitive))
@@ -464,7 +444,7 @@ void UIGlobalSettingsExtension::sltAddPackage()
                 }
             }
 
-            /* Remove it from the tree. */
+            /* Remove it from the tree: */
             const int cItems = m_pPackagesTree->topLevelItemCount();
             for (int i = 0; i < cItems; i++)
             {
@@ -476,7 +456,7 @@ void UIGlobalSettingsExtension::sltAddPackage()
                 }
             }
 
-            /* Reinsert it into the cache and tree. */
+            /* Reinsert it into the cache and tree: */
             CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
             const CExtPack &package = manager.Find(strExtPackName);
             if (package.isOk())
@@ -508,9 +488,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
         /* Ask the user about package removing: */
         if (msgCenter().confirmRemoveExtensionPack(strSelectedPackageName, this))
         {
-            /*
-             * Uninstall the package.
-             */
+            /* Uninstall the package: */
             CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
             /** @todo Refuse this if any VMs are running. */
             QString displayInfo;
