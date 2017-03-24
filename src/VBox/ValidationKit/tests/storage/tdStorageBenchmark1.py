@@ -8,7 +8,7 @@ VirtualBox Validation Kit - Storage benchmark.
 
 __copyright__ = \
 """
-Copyright (C) 2012-2016 Oracle Corporation
+Copyright (C) 2012-2017 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -429,7 +429,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             'RecordSize':  '64k',
             'TestsetSize': '20g',
             'QueueDepth':  '32',
-            'DiskSizeGb':  100
+            'DiskSizeGb':  30
         },
         # For stress testing which takes a lot of time.
         'Stress': {
@@ -499,6 +499,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.sIoLogPathDef           = self.sScratchPath;
         self.sIoLogPath              = self.sIoLogPathDef;
         self.fIoLog                  = False;
+        self.fUseRamDiskDef          = False;
+        self.fUseRamDisk             = self.fUseRamDiskDef;
 
     #
     # Overridden methods.
@@ -551,6 +553,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('      Default: %s' % (self.sIoLogPathDef));
         reporter.log('  --enable-io-log');
         reporter.log('      Whether to enable I/O logging for each test');
+        reporter.log('  --use-ramdisk');
+        reporter.log('      Default: %s' % (self.fUseRamDiskDef));
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -640,6 +644,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             self.sIoLogPath = asArgs[iArg];
         elif asArgs[iArg] == '--enable-io-log':
             self.fIoLog = True;
+        elif asArgs[iArg] == '--use-ramdisk':
+            self.fUseRamDisk = True;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -702,13 +708,13 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     # Test execution helpers.
     #
 
-    def prepareStorage(self, oStorCfg):
+    def prepareStorage(self, oStorCfg, fRamDisk = False, cbPool = None):
         """
         Prepares the host storage for disk images or direct testing on the host.
         """
         # Create a basic pool with the default configuration.
         sMountPoint = None;
-        fRc, sPoolId = oStorCfg.createStoragePool();
+        fRc, sPoolId = oStorCfg.createStoragePool(cbPool = cbPool, fRamDisk = fRamDisk);
         if fRc:
             fRc, sMountPoint = oStorCfg.createVolume(sPoolId);
             if not fRc:
@@ -983,7 +989,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             # If requested recreate the storage space to start with a clean config
             # for benchmarks
             if self.fRecreateStorCfg:
-                sMountPoint = self.prepareStorage(self.oStorCfg);
+                sMountPoint = self.prepareStorage(self.oStorCfg, self.fUseRamDisk, cbDisk);
                 if sMountPoint is not None:
                     # Create a directory where every normal user can write to.
                     self.oStorCfg.mkDirOnVolume(sMountPoint, 'test', 0777);

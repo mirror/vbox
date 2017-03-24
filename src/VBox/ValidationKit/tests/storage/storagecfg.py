@@ -7,7 +7,7 @@ VirtualBox Validation Kit - Storage test configuration API.
 
 __copyright__ = \
 """
-Copyright (C) 2016 Oracle Corporation
+Copyright (C) 2016-2017 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -37,9 +37,10 @@ class StorageDisk(object):
     Class representing a disk for testing.
     """
 
-    def __init__(self, sPath):
-        self.sPath   = sPath;
-        self.fUsed   = False;
+    def __init__(self, sPath, fRamDisk = False):
+        self.sPath    = sPath;
+        self.fUsed    = False;
+        self.fRamDisk = fRamDisk;
 
     def getPath(self):
         """
@@ -52,6 +53,12 @@ class StorageDisk(object):
         Returns whether the disk is currently in use.
         """
         return self.fUsed;
+
+    def isRamDisk(self):
+        """
+        Returns whether the disk objecthas a RAM backing.
+        """
+        return self.fRamDisk;
 
     def setUsed(self, fUsed):
         """
@@ -93,6 +100,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
 
     def __init__(self):
         StorageConfigOs.__init__(self);
+        self.idxRamDisk = 0;
 
     def _getActivePoolsStartingWith(self, oExec, sPoolIdStart):
         """
@@ -210,6 +218,26 @@ class StorageConfigOsSolaris(StorageConfigOs):
 
         return fRc;
 
+    def createRamDisk(self, oExec, cbRamDisk):
+        """
+        Creates a RAM backed disk with the given size.
+        """
+        oDisk = None;
+        sRamDiskName = 'ramdisk%u' % (self.idxRamDisk,);
+        fRc, sOut, _ = oExec.execBinary('ramdiskadm', '-a', sRamDiskName, str(cbRamDisk));
+        if fRc:
+            self.idxRamDisk += 1;
+            oDisk = StorageDisk(sOut.rstrip(), True);
+
+        return oDisk;
+
+    def destroyRamDisk(self, oExec, oDisk):
+        """
+        Destroys the given ramdisk object.
+        """
+        sRamDiskName = os.path.basename(oDisk.getPath());
+        return oExec.execBinaryNoStdOut('ramdiskadm', ('-d', sRamDiskName));
+
 class StorageConfigOsLinux(StorageConfigOs):
     """
     Class implementing the Linux specifics for a storage configuration.
@@ -284,16 +312,20 @@ class StorageConfigOsLinux(StorageConfigOs):
         sBlkDev = None;
         if self.dSimplePools.has_key(sPool):
             sDiskPath = self.dSimplePools.get(sPool);
-            # Create a partition with the requested size
-            sFdiskScript = ';\n'; # Single partition filling everything
-            if cbVol is not None:
-                sFdiskScript = ',' + str(cbVol / 512) + '\n'; # Get number of sectors
-            fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), sFdiskScript);
-            if fRc:
-                if sDiskPath.find('nvme') != -1:
-                    sBlkDev = sDiskPath + 'p1';
-                else:
-                    sBlkDev = sDiskPath + '1';
+            if sDiskPath.find('zram') != -1:
+                sBlkDev = sDiskPath;
+            else:
+                # Create a partition with the requested size
+                sFdiskScript = ';\n'; # Single partition filling everything
+                if cbVol is not None:
+                    sFdiskScript = ',' + str(cbVol / 512) + '\n'; # Get number of sectors
+                fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), \
+                                               sFdiskScript);
+                if fRc:
+                    if sDiskPath.find('nvme') != -1:
+                        sBlkDev = sDiskPath + 'p1';
+                    else:
+                        sBlkDev = sDiskPath + '1';
         else:
             if cbVol is None:
                 fRc = oExec.execBinaryNoStdOut('lvcreate', ('-l', '100%FREE', '-n', sVol, sPool));
@@ -323,7 +355,9 @@ class StorageConfigOsLinux(StorageConfigOs):
         if self.dSimplePools.has_key(sPool):
             # Wipe partition table
             sDiskPath = self.dSimplePools.get(sPool);
-            fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', '--delete', sDiskPath));
+            if sDiskPath.find('zram') == -1:
+                fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', '--delete', \
+                                               sDiskPath));
         else:
             fRc = oExec.execBinaryNoStdOut('lvremove', (sPool + '/' + sVol,));
         return fRc;
@@ -350,6 +384,26 @@ class StorageConfigOsLinux(StorageConfigOs):
         _ = sPoolIdStart;
         _ = sVolIdStart;
         return True;
+
+    def createRamDisk(self, oExec, cbRamDisk):
+        """
+        Creates a RAM backed disk with the given size.
+        """
+        # Make sure the ZRAM module is loaded.
+        oDisk = None;
+        fRc = oExec.execBinaryNoStdOut('modprobe', ('zram',));
+        if fRc:
+            fRc, sOut, _ = oExec.execBinary('zramctl', ('--raw', '-f', '-s', str(cbRamDisk)));
+            if fRc:
+                oDisk = StorageDisk(sOut.rstrip(), True);
+
+        return oDisk;
+
+    def destroyRamDisk(self, oExec, oDisk):
+        """
+        Destroys the given ramdisk object.
+        """
+        return oExec.execBinaryNoStdOut('zramctl', ('-r', oDisk.getPath()));
 
 class StorageCfg(object):
     """
@@ -426,7 +480,8 @@ class StorageCfg(object):
 
         return cDisksUnused;
 
-    def createStoragePool(self, cDisks = 0, sRaidLvl = None):
+    def createStoragePool(self, cDisks = 0, sRaidLvl = None,
+                          cbPool = None, fRamDisk = False):
         """
         Create a new storage pool
         """
@@ -434,15 +489,21 @@ class StorageCfg(object):
         fRc = True;
         sPool = None;
 
-        if cDisks == 0:
-            cDisks = self.getUnusedDiskCount();
-
-        for oDisk in self.lstDisks:
-            if not oDisk.isUsed():
-                oDisk.setUsed(True);
+        if fRamDisk:
+            oDisk = self.oStorOs.createRamDisk(self.oExec, cbPool);
+            if oDisk is not None:
                 lstDisks.append(oDisk);
-                if len(lstDisks) == cDisks:
-                    break;
+                cDisks = 1;
+        else:
+            if cDisks == 0:
+                cDisks = self.getUnusedDiskCount();
+
+            for oDisk in self.lstDisks:
+                if not oDisk.isUsed():
+                    oDisk.setUsed(True);
+                    lstDisks.append(oDisk);
+                    if len(lstDisks) == cDisks:
+                        break;
 
         # Enough drives to satisfy the request?
         if len(lstDisks) == cDisks:
@@ -467,6 +528,8 @@ class StorageCfg(object):
         if not fRc:
             for oDisk in lstDisks:
                 oDisk.setUsed(False);
+                if oDisk.isRamDisk():
+                    self.oStorOs.destroyRamDisk(self.oExec, oDisk);
 
         return fRc, sPool;
 
@@ -483,6 +546,8 @@ class StorageCfg(object):
                 self.dPools.pop(sPool);
                 for oDisk in lstDisks:
                     oDisk.setUsed(False);
+                    if oDisk.isRamDisk():
+                        self.oStorOs.destroyRamDisk(self.oExec, oDisk);
         else:
             fRc = False;
 
