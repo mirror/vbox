@@ -164,54 +164,37 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsAudio::setOrderAfter(QWidget *pWidget)
-{
-    /* Audio-page order: */
-    setTabOrder(pWidget, m_pCheckBoxAudio);
-    setTabOrder(m_pCheckBoxAudio, m_pComboAudioDriver);
-    setTabOrder(m_pComboAudioDriver, m_pComboAudioController);
-}
-
 void UIMachineSettingsAudio::retranslateUi()
 {
     /* Translate generated strings: */
     Ui::UIMachineSettingsAudio::retranslateUi(this);
 
-
     /* Translate audio-driver combo.
      * Make sure this order corresponds the same in prepareComboboxes(): */
     int iIndex = -1;
-
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_Null));
-
 #ifdef Q_OS_WIN
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_DirectSound));
 # ifdef VBOX_WITH_WINMM
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_WinMM));
 # endif /* VBOX_WITH_WINMM */
 #endif /* Q_OS_WIN */
-
 #ifdef VBOX_WITH_AUDIO_OSS
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_OSS));
 #endif
-
 #ifdef VBOX_WITH_AUDIO_ALSA
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_ALSA));
 #endif
-
 #ifdef VBOX_WITH_AUDIO_PULSE
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_Pulse));
 #endif
-
 #ifdef Q_OS_MACX
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_CoreAudio));
 #endif /* Q_OS_MACX */
 
-
     /* Translate audio-controller combo.
      * Make sure this order corresponds the same in prepareComboboxes(): */
     iIndex = -1;
-
     m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_HDA));
     m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_AC97));
     m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_SB16));
@@ -241,9 +224,7 @@ void UIMachineSettingsAudio::prepareComboboxes()
     /* Prepare audio-driver combo.
      * Make sure this order corresponds the same in retranslateUi(): */
     int iIndex = -1;
-
     m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_Null);
-
 #ifdef Q_OS_WIN
     m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_DirectSound);
 # ifdef VBOX_WITH_WINMM
@@ -266,7 +247,6 @@ void UIMachineSettingsAudio::prepareComboboxes()
     /* Prepare audio-controller combo.
      * Make sure this order corresponds the same in retranslateUi(): */
     iIndex = -1;
-
     m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_HDA);
     m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_AC97);
     m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_SB16);

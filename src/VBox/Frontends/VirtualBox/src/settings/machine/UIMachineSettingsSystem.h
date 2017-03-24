@@ -77,6 +77,9 @@ protected:
     /** Performs final page polishing. */
     virtual void polishPage() /* override */;
 
+    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+
 private slots:
 
     /* Handlers: Memory-size stuff: */
@@ -99,7 +102,6 @@ private:
     void prepareTabMotherboard();
     void prepareTabProcessor();
     void prepareTabAcceleration();
-    void prepareValidation();
 
     /* Helper: Pointing HID type combo stuff: */
     void repopulateComboPointingHIDType();
@@ -111,9 +113,6 @@ private:
 
     /* Helper: Boot-table stuff: */
     void adjustBootOrderTWSize();
-
-    /* Handler: Event-filtration stuff: */
-    bool eventFilter(QObject *aObject, QEvent *aEvent);
 
     /* Variable: Boot-table stuff: */
     QList<KDeviceType> m_possibleBootItems;

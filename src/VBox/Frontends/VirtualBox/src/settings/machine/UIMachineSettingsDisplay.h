@@ -46,6 +46,7 @@ public:
 
     /* API: Correlation stuff: */
     void setGuestOSType(CGuestOSType guestOSType);
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool isAcceleration2DVideoSelected() const;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -111,8 +112,6 @@ private:
     void prepareRemoteDisplayTab();
     /** Prepare routine: Video Capture tab. */
     void prepareVideoCaptureTab();
-    /** Prepare routine: Validation. */
-    void prepareValidation();
 
     /* Helpers: Video stuff: */
     void checkVRAMRequirements();

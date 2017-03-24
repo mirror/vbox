@@ -36,14 +36,14 @@
 
 /* COM includes: */
 # include "CConsole.h"
-# include "CUSBController.h"
-# include "CUSBDeviceFilters.h"
-# include "CUSBDevice.h"
-# include "CUSBDeviceFilter.h"
+# include "CExtPack.h"
+# include "CExtPackManager.h"
 # include "CHostUSBDevice.h"
 # include "CHostUSBDeviceFilter.h"
-# include "CExtPackManager.h"
-# include "CExtPack.h"
+# include "CUSBController.h"
+# include "CUSBDevice.h"
+# include "CUSBDeviceFilter.h"
+# include "CUSBDeviceFilters.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -327,6 +327,11 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     m_pFiltersToolBar->addAction(mMdnAction);
 
     /* Setup connections */
+    connect(mGbUSB, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+    connect(mRbUSB1, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
+    connect(mRbUSB2, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
+    connect(mRbUSB3, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
+
     connect (mGbUSB, SIGNAL (toggled (bool)),
              this, SLOT (usbAdapterToggled (bool)));
     connect (mTwFilters, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
@@ -356,9 +361,6 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
 
     /* Setup dialog */
     mTwFilters->header()->hide();
-
-    /* Prepare validation: */
-    prepareValidation();
 
     /* Applying language settings */
     retranslateUi();
@@ -784,6 +786,35 @@ void UIMachineSettingsUSB::currentChanged(QTreeWidgetItem *aItem)
     mMdnAction->setEnabled(aItem && mTwFilters->itemBelow(aItem));
 }
 
+void UIMachineSettingsUSB::showContextMenu(const QPoint &pos)
+{
+    QMenu menu;
+    if (mTwFilters->isEnabled())
+    {
+        menu.addAction(mNewAction);
+        menu.addAction(mAddAction);
+        menu.addSeparator();
+        menu.addAction(mEdtAction);
+        menu.addSeparator();
+        menu.addAction(mDelAction);
+        menu.addSeparator();
+        menu.addAction(mMupAction);
+        menu.addAction(mMdnAction);
+    }
+    if (!menu.isEmpty())
+        menu.exec(mTwFilters->mapToGlobal(pos));
+}
+
+void UIMachineSettingsUSB::sltUpdateActivityState(QTreeWidgetItem *pChangedItem)
+{
+    /* Check changed USB filter item: */
+    Assert(pChangedItem);
+
+    /* Delete corresponding items: */
+    UIDataSettingsMachineUSBFilter &data = m_filters[mTwFilters->indexOfTopLevelItem(pChangedItem)];
+    data.m_fActive = pChangedItem->checkState(0) == Qt::Checked;
+}
+
 void UIMachineSettingsUSB::newClicked()
 {
     /* Search for the max available filter index: */
@@ -943,44 +974,6 @@ void UIMachineSettingsUSB::mdnClicked()
     m_filters.swap (index, index + 1);
 
     mTwFilters->setCurrentItem (takenItem);
-}
-
-void UIMachineSettingsUSB::showContextMenu(const QPoint &pos)
-{
-    QMenu menu;
-    if (mTwFilters->isEnabled())
-    {
-        menu.addAction(mNewAction);
-        menu.addAction(mAddAction);
-        menu.addSeparator();
-        menu.addAction(mEdtAction);
-        menu.addSeparator();
-        menu.addAction(mDelAction);
-        menu.addSeparator();
-        menu.addAction(mMupAction);
-        menu.addAction(mMdnAction);
-    }
-    if (!menu.isEmpty())
-        menu.exec(mTwFilters->mapToGlobal(pos));
-}
-
-void UIMachineSettingsUSB::sltUpdateActivityState(QTreeWidgetItem *pChangedItem)
-{
-    /* Check changed USB filter item: */
-    Assert(pChangedItem);
-
-    /* Delete corresponding items: */
-    UIDataSettingsMachineUSBFilter &data = m_filters[mTwFilters->indexOfTopLevelItem(pChangedItem)];
-    data.m_fActive = pChangedItem->checkState(0) == Qt::Checked;
-}
-
-void UIMachineSettingsUSB::prepareValidation()
-{
-    /* Prepare validation: */
-    connect(mGbUSB, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
-    connect(mRbUSB1, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
-    connect(mRbUSB2, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
-    connect(mRbUSB3, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew)

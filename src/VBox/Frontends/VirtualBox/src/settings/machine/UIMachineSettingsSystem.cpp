@@ -631,6 +631,46 @@ void UIMachineSettingsSystem::polishPage()
     m_pCheckBoxNestedPaging->setEnabled(isMachineOffline() && m_pCheckBoxVirtualization->isChecked());
 }
 
+bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (!pObject->isWidgetType())
+        return QWidget::eventFilter(pObject, pEvent);
+
+    QWidget *pWidget = static_cast<QWidget*>(pObject);
+    if (pWidget->window() != window())
+        return QWidget::eventFilter(pObject, pEvent);
+
+    switch (pEvent->type())
+    {
+        case QEvent::FocusIn:
+        {
+            /* Boot Table: */
+            if (pWidget == mTwBootOrder)
+            {
+                if (!mTwBootOrder->currentItem())
+                    mTwBootOrder->setCurrentItem(mTwBootOrder->item(0));
+                else
+                    sltCurrentBootItemChanged(mTwBootOrder->currentRow());
+                mTwBootOrder->currentItem()->setSelected(true);
+            }
+            else if (pWidget != mTbBootItemUp && pWidget != mTbBootItemDown)
+            {
+                if (mTwBootOrder->currentItem())
+                {
+                    mTwBootOrder->currentItem()->setSelected(false);
+                    mTbBootItemUp->setEnabled(false);
+                    mTbBootItemDown->setEnabled(false);
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    return QWidget::eventFilter(pObject, pEvent);
+}
+
 void UIMachineSettingsSystem::sltHandleMemorySizeSliderChange()
 {
     /* Apply new memory-size value: */
@@ -719,9 +759,6 @@ void UIMachineSettingsSystem::prepare()
     prepareTabProcessor();
     prepareTabAcceleration();
 
-    /* Prepare validation: */
-    prepareValidation();
-
     /* Retranslate finally: */
     retranslateUi();
 }
@@ -780,9 +817,11 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
     /* Populate 'chipset type' combo: */
     m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
     m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
+    connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
 
     /* Preconfigure 'pointing HID type' combo: */
     m_pComboPointingHIDType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
 
     /* Install memory-size widget connections: */
     connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
@@ -792,6 +831,9 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
     connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
     connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
     connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(sltCurrentBootItemChanged(int)));
+
+    /* Advanced options: */
+    connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsSystem::prepareTabProcessor()
@@ -856,14 +898,8 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
     m_pWidgetPlaceholder->setVisible(false);
     m_pCheckBoxVirtualization->setVisible(false);
 #endif /* !VBOX_WITH_RAW_MODE */
-}
 
-void UIMachineSettingsSystem::prepareValidation()
-{
-    /* Prepare validation: */
-    connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
-    connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
-    connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+    /* Advanced options: */
     connect(m_pCheckBoxVirtualization, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 }
 
@@ -965,45 +1001,5 @@ void UIMachineSettingsSystem::adjustBootOrderTWSize()
         m_pTabMotherboard->layout()->activate();
         m_pTabMotherboard->layout()->update();
     }
-}
-
-bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    if (!pObject->isWidgetType())
-        return QWidget::eventFilter(pObject, pEvent);
-
-    QWidget *pWidget = static_cast<QWidget*>(pObject);
-    if (pWidget->window() != window())
-        return QWidget::eventFilter(pObject, pEvent);
-
-    switch (pEvent->type())
-    {
-        case QEvent::FocusIn:
-        {
-            /* Boot Table: */
-            if (pWidget == mTwBootOrder)
-            {
-                if (!mTwBootOrder->currentItem())
-                    mTwBootOrder->setCurrentItem(mTwBootOrder->item(0));
-                else
-                    sltCurrentBootItemChanged(mTwBootOrder->currentRow());
-                mTwBootOrder->currentItem()->setSelected(true);
-            }
-            else if (pWidget != mTbBootItemUp && pWidget != mTbBootItemDown)
-            {
-                if (mTwBootOrder->currentItem())
-                {
-                    mTwBootOrder->currentItem()->setSelected(false);
-                    mTbBootItemUp->setEnabled(false);
-                    mTbBootItemDown->setEnabled(false);
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    return QWidget::eventFilter(pObject, pEvent);
 }
 

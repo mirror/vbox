@@ -39,12 +39,7 @@ class UIMachineSettingsUSB : public UISettingsPageMachine,
 
 public:
 
-    enum RemoteMode
-    {
-        ModeAny = 0,
-        ModeOn,
-        ModeOff
-    };
+    enum { ModeAny, ModeOn, ModeOff };
 
     /** Constructs USB settings page. */
     UIMachineSettingsUSB();
@@ -87,7 +82,10 @@ protected:
 private slots:
 
     void usbAdapterToggled(bool fEnabled);
+
     void currentChanged (QTreeWidgetItem *aItem = 0);
+    void showContextMenu(const QPoint &pos);
+    void sltUpdateActivityState(QTreeWidgetItem *pChangedItem);
 
     void newClicked();
     void addClicked();
@@ -96,13 +94,8 @@ private slots:
     void delClicked();
     void mupClicked();
     void mdnClicked();
-    void showContextMenu(const QPoint &pos);
-    void sltUpdateActivityState(QTreeWidgetItem *pChangedItem);
 
 private:
-
-    /* Helper: Prepare stuff: */
-    void prepareValidation();
 
     void addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew);
 
@@ -118,7 +111,9 @@ private:
     QAction *mMupAction;
     QAction *mMdnAction;
     VBoxUSBMenu *mUSBDevicesMenu;
+
     QString mUSBFilterName;
+
     QList<UIDataSettingsMachineUSBFilter> m_filters;
 
     /** Holds the page data cache instance. */

@@ -869,9 +869,6 @@ void UIMachineSettingsDisplay::prepare()
     prepareRemoteDisplayTab();
     prepareVideoCaptureTab();
 
-    /* Prepare validation: */
-    prepareValidation();
-
     /* Translate finally: */
     retranslateUi();
 }
@@ -932,13 +929,24 @@ void UIMachineSettingsDisplay::prepareScreenTab()
     m_pEditorGuestScreenScale->setMaximum(200);
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorGuestScreenScale, 5);
     connect(m_pEditorGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleEditorChange()));
+
+    /* Prepare advanced options: */
+    connect(m_pCheckbox3D, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    connect(m_pCheckbox2DVideo, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+#endif
 }
 
 void UIMachineSettingsDisplay::prepareRemoteDisplayTab()
 {
-    /* Setup validators: */
+    /* Prepare check-box: */
+    connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
+
+    /* Prepare port/timeout editors: */
     m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
     m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
+    connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString &)), this, SLOT(revalidate()));
+    connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString &)), this, SLOT(revalidate()));
 
     /* Prepare auth-method combo: */
     m_pComboRemoteDisplayAuthMethod->insertItem(0, ""); /* KAuthType_Null */
@@ -1026,18 +1034,6 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pEditorVideoCaptureBitRate->setMinimum(32);
     m_pEditorVideoCaptureBitRate->setMaximum(2048);
     connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateEditorChange()));
-}
-
-void UIMachineSettingsDisplay::prepareValidation()
-{
-    /* Configure validation: */
-    connect(m_pCheckbox3D, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    connect(m_pCheckbox2DVideo, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-    connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
-    connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
-    connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()

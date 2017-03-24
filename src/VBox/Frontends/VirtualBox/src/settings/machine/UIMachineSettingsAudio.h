@@ -59,9 +59,6 @@ protected:
       * this task COULD be performed in other than the GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
-    /** Defines TAB order. */
-    virtual void setOrderAfter(QWidget *pWidget) /* override */;
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 

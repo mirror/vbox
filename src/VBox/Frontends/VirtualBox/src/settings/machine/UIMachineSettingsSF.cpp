@@ -235,6 +235,7 @@ private:
     QStringList mTextList;
 };
 
+
 UIMachineSettingsSF::UIMachineSettingsSF()
     : mNewAction(0), mEdtAction(0), mDelAction(0)
     , m_pCache(new UISettingsCacheSharedFolders)
@@ -293,12 +294,6 @@ UIMachineSettingsSF::~UIMachineSettingsSF()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
-}
-
-void UIMachineSettingsSF::resizeEvent (QResizeEvent *aEvent)
-{
-    NOREF(aEvent);
-    adjustList();
 }
 
 bool UIMachineSettingsSF::changed() const
@@ -475,11 +470,6 @@ void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType sharedFoldersType)
     }
 }
 
-void UIMachineSettingsSF::setOrderAfter (QWidget *aWidget)
-{
-    setTabOrder (aWidget, mTwFolders);
-}
-
 void UIMachineSettingsSF::retranslateUi()
 {
     /* Translate uic generated strings: */
@@ -511,6 +501,23 @@ void UIMachineSettingsSF::polishPage()
 
     /* Update root items visibility: */
     updateRootItemsVisibility();
+}
+
+void UIMachineSettingsSF::showEvent (QShowEvent *aEvent)
+{
+    UISettingsPageMachine::showEvent (aEvent);
+
+    /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized. */
+    connect (mTwFolders->header(), SIGNAL (sectionResized (int, int, int)), this, SLOT (adjustFields()));
+
+    /* Adjusting size after all pending show events are processed. */
+    QTimer::singleShot (0, this, SLOT (adjustList()));
+}
+
+void UIMachineSettingsSF::resizeEvent (QResizeEvent *aEvent)
+{
+    NOREF(aEvent);
+    adjustList();
 }
 
 void UIMachineSettingsSF::addTriggered()
@@ -597,8 +604,6 @@ void UIMachineSettingsSF::processCurrentChanged (QTreeWidgetItem *aCurrentItem)
 {
     if (aCurrentItem && aCurrentItem->parent() && !aCurrentItem->isSelected())
         aCurrentItem->setSelected (true);
-    QString key = !aCurrentItem ? QString::null : aCurrentItem->parent() ?
-                  aCurrentItem->parent()->text (1) : aCurrentItem->text (1);
     bool addEnabled = aCurrentItem;
     bool removeEnabled = addEnabled && aCurrentItem->parent();
     mNewAction->setEnabled (addEnabled);
@@ -674,17 +679,6 @@ void UIMachineSettingsSF::adjustFields()
                 item->adjustText();
         }
     }
-}
-
-void UIMachineSettingsSF::showEvent (QShowEvent *aEvent)
-{
-    UISettingsPageMachine::showEvent (aEvent);
-
-    /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized. */
-    connect (mTwFolders->header(), SIGNAL (sectionResized (int, int, int)), this, SLOT (adjustFields()));
-
-    /* Adjusting size after all pending show events are processed. */
-    QTimer::singleShot (0, this, SLOT (adjustList()));
 }
 
 SFTreeViewItem* UIMachineSettingsSF::root(UISharedFolderType sharedFolderType)
@@ -808,61 +802,6 @@ CSharedFolderVector UIMachineSettingsSF::getSharedFolders(UISharedFolderType sha
     return sharedFolders;
 }
 
-bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &folderCache)
-{
-    /* Get shared folder data: */
-    const UIDataSettingsSharedFolder &folderData = folderCache.base();
-    QString strName = folderData.m_strName;
-    QString strPath = folderData.m_strHostPath;
-    UISharedFolderType sharedFoldersType = folderData.m_type;
-
-    /* Get current shared folders: */
-    CSharedFolderVector sharedFolders = getSharedFolders(sharedFoldersType);
-    /* Check that such shared folder really exists: */
-    CSharedFolder sharedFolder;
-    for (int iSharedFolderIndex = 0; iSharedFolderIndex < sharedFolders.size(); ++iSharedFolderIndex)
-        if (sharedFolders[iSharedFolderIndex].GetName() == strName)
-            sharedFolder = sharedFolders[iSharedFolderIndex];
-    if (!sharedFolder.isNull())
-    {
-        /* Remove existing shared folder: */
-        switch(sharedFoldersType)
-        {
-            case MachineType:
-            {
-                m_machine.RemoveSharedFolder(strName);
-                if (!m_machine.isOk())
-                {
-                    /* Mark the page as failed: */
-                    setFailed(true);
-                    /* Show error message: */
-                    msgCenter().cannotRemoveSharedFolder(m_machine, strName, strPath, this);
-                    /* Finish early: */
-                    return false;
-                }
-                break;
-            }
-            case ConsoleType:
-            {
-                m_console.RemoveSharedFolder(strName);
-                if (!m_console.isOk())
-                {
-                    /* Mark the page as failed: */
-                    setFailed(true);
-                    /* Show error message: */
-                    msgCenter().cannotRemoveSharedFolder(m_console, strName, strPath, this);
-                    /* Finish early: */
-                    return false;
-                }
-                break;
-            }
-            default:
-                break;
-        }
-    }
-    return true;
-}
-
 bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &folderCache)
 {
     /* Get shared folder data: */
@@ -909,6 +848,61 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
                     setFailed(true);
                     /* Show error message: */
                     msgCenter().cannotCreateSharedFolder(m_console, strName, strPath, this);
+                    /* Finish early: */
+                    return false;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    return true;
+}
+
+bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &folderCache)
+{
+    /* Get shared folder data: */
+    const UIDataSettingsSharedFolder &folderData = folderCache.base();
+    QString strName = folderData.m_strName;
+    QString strPath = folderData.m_strHostPath;
+    UISharedFolderType sharedFoldersType = folderData.m_type;
+
+    /* Get current shared folders: */
+    CSharedFolderVector sharedFolders = getSharedFolders(sharedFoldersType);
+    /* Check that such shared folder really exists: */
+    CSharedFolder sharedFolder;
+    for (int iSharedFolderIndex = 0; iSharedFolderIndex < sharedFolders.size(); ++iSharedFolderIndex)
+        if (sharedFolders[iSharedFolderIndex].GetName() == strName)
+            sharedFolder = sharedFolders[iSharedFolderIndex];
+    if (!sharedFolder.isNull())
+    {
+        /* Remove existing shared folder: */
+        switch(sharedFoldersType)
+        {
+            case MachineType:
+            {
+                m_machine.RemoveSharedFolder(strName);
+                if (!m_machine.isOk())
+                {
+                    /* Mark the page as failed: */
+                    setFailed(true);
+                    /* Show error message: */
+                    msgCenter().cannotRemoveSharedFolder(m_machine, strName, strPath, this);
+                    /* Finish early: */
+                    return false;
+                }
+                break;
+            }
+            case ConsoleType:
+            {
+                m_console.RemoveSharedFolder(strName);
+                if (!m_console.isOk())
+                {
+                    /* Mark the page as failed: */
+                    setFailed(true);
+                    /* Show error message: */
+                    msgCenter().cannotRemoveSharedFolder(m_console, strName, strPath, this);
                     /* Finish early: */
                     return false;
                 }

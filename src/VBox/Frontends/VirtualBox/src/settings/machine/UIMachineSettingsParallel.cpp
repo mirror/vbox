@@ -23,8 +23,8 @@
 # include <QDir>
 
 /* GUI includes: */
-# include "QIWidgetValidator.h"
 # include "QITabWidget.h"
+# include "QIWidgetValidator.h"
 # include "UIMachineSettingsParallel.h"
 # include "VBoxGlobal.h"
 

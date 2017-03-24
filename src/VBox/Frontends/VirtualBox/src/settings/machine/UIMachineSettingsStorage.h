@@ -590,8 +590,6 @@ public:
 private:
 
     void paint (QPainter *aPainter, const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const;
-
-    bool mDisableStaticControls;
 };
 
 
@@ -601,6 +599,10 @@ class UIMachineSettingsStorage : public UISettingsPageMachine,
 {
     Q_OBJECT;
 
+signals:
+
+    void storageChanged();
+
 public:
 
     /** Constructs Storage settings page. */
@@ -609,10 +611,6 @@ public:
     ~UIMachineSettingsStorage();
 
     void setChipsetType(KChipsetType type);
-
-signals:
-
-    void storageChanged();
 
 protected:
 
@@ -635,6 +633,9 @@ protected:
 
     /** Performs validation, updates @a messages list if something is wrong. */
     virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
+
+    /** Defines the configuration access @a enmLevel. */
+    virtual void setConfigurationAccessLevel(ConfigurationAccessLevel enmLevel) /* override */;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -721,9 +722,6 @@ private:
     bool isControllerCouldBeUpdated(const UISettingsCacheMachineStorageController &controllerCache) const;
     bool isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const;
 
-    /** Defines configuration access level. */
-    void setConfigurationAccessLevel(ConfigurationAccessLevel configurationAccessLevel);
-
     QString m_strMachineId;
     QString m_strMachineSettingsFilePath;
     QString m_strMachineGuestOSTypeId;
@@ -750,9 +748,8 @@ private:
 
     UIMediumIDHolder *m_pMediumIdHolder;
 
-    bool mIsLoadingInProgress;
-    bool mIsPolished;
-    bool mDisableStaticControls;
+    bool  mIsPolished;
+    bool  mIsLoadingInProgress;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineStorage *m_pCache;

@@ -311,13 +311,6 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsInterface::setOrderAfter(QWidget *pWidget)
-{
-    /* Tab-order: */
-    setTabOrder(pWidget, m_pCheckBoxShowMiniToolBar);
-    setTabOrder(m_pCheckBoxShowMiniToolBar, m_pComboToolBarAlignment);
-}
-
 void UIMachineSettingsInterface::retranslateUi()
 {
     /* Translate uic generated strings: */

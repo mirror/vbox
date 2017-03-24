@@ -72,14 +72,17 @@ protected:
       * this task COULD be performed in other than the GUI thread. */
     void saveFromCacheTo(UISharedFolderType sharedFoldersType);
 
-    /** Defines TAB order. */
-    virtual void setOrderAfter(QWidget *pWidget) /* override */;
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
     /** Performs final page polishing. */
     virtual void polishPage() /* override */;
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *aEvent) /* override */;
+
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
 private slots:
 
@@ -96,10 +99,6 @@ private slots:
 
 private:
 
-    void resizeEvent (QResizeEvent *aEvent);
-
-    void showEvent (QShowEvent *aEvent);
-
     SFTreeViewItem* root(UISharedFolderType type);
     SFoldersNameList usedList (bool aIncludeSelected);
 
@@ -109,8 +108,8 @@ private:
 
     CSharedFolderVector getSharedFolders(UISharedFolderType sharedFoldersType);
 
-    bool removeSharedFolder(const UISettingsCacheSharedFolder &folderCache);
     bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
+    bool removeSharedFolder(const UISettingsCacheSharedFolder &folderCache);
 
     QAction  *mNewAction;
     QAction  *mEdtAction;

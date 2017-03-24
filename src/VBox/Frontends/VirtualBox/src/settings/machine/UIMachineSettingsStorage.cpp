@@ -197,6 +197,7 @@ private:
 };
 UIIconPoolStorageSettings* iconPool() { return UIIconPoolStorageSettings::instance(); }
 
+
 /* static */
 UIIconPoolStorageSettings* UIIconPoolStorageSettings::m_spInstance = 0;
 UIIconPoolStorageSettings* UIIconPoolStorageSettings::instance() { return m_spInstance; }
@@ -442,6 +443,7 @@ DeviceTypeList AbstractControllerType::deviceTypeList() const
     return vboxGlobal().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
 }
 
+
 /* IDE Controller Type */
 IDEControllerType::IDEControllerType (KStorageControllerType aSubType)
     : AbstractControllerType (KStorageBus_IDE, aSubType)
@@ -457,6 +459,7 @@ uint IDEControllerType::size() const
 {
     return 3;
 }
+
 
 /* SATA Controller Type */
 SATAControllerType::SATAControllerType (KStorageControllerType aSubType)
@@ -474,6 +477,7 @@ uint SATAControllerType::size() const
     return 1;
 }
 
+
 /* SCSI Controller Type */
 SCSIControllerType::SCSIControllerType (KStorageControllerType aSubType)
     : AbstractControllerType (KStorageBus_SCSI, aSubType)
@@ -489,6 +493,7 @@ uint SCSIControllerType::size() const
 {
     return 2;
 }
+
 
 /* Floppy Controller Type */
 FloppyControllerType::FloppyControllerType (KStorageControllerType aSubType)
@@ -506,6 +511,7 @@ uint FloppyControllerType::size() const
     return 1;
 }
 
+
 /* SAS Controller Type */
 SASControllerType::SASControllerType (KStorageControllerType aSubType)
     : AbstractControllerType (KStorageBus_SAS, aSubType)
@@ -521,6 +527,7 @@ uint SASControllerType::size() const
 {
     return 1;
 }
+
 
 /* USB Controller Type */
 USBStorageControllerType::USBStorageControllerType (KStorageControllerType aSubType)
@@ -538,6 +545,7 @@ uint USBStorageControllerType::size() const
     return 1;
 }
 
+
 /* NVMe Controller Type */
 NVMeStorageControllerType::NVMeStorageControllerType (KStorageControllerType aSubType)
     : AbstractControllerType (KStorageBus_PCIe, aSubType)
@@ -553,6 +561,7 @@ uint NVMeStorageControllerType::size() const
 {
     return 1;
 }
+
 
 /* Abstract Item */
 AbstractItem::AbstractItem(QITreeView *pParent)
@@ -598,6 +607,7 @@ void AbstractItem::setMachineId (const QString &aMachineId)
 {
     mMachineId = aMachineId;
 }
+
 
 /* Root Item */
 RootItem::RootItem(QITreeView *pParent)
@@ -675,6 +685,7 @@ void RootItem::delChild (AbstractItem *aItem)
 {
     mControllers.removeAll (aItem);
 }
+
 
 /* Controller Item */
 ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
@@ -871,6 +882,7 @@ void ControllerItem::delChild (AbstractItem *aItem)
 {
     mAttachments.removeAll (aItem);
 }
+
 
 /* Attachment Item */
 AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
@@ -1134,6 +1146,7 @@ void AttachmentItem::addChild (AbstractItem* /* aItem */)
 void AttachmentItem::delChild (AbstractItem* /* aItem */)
 {
 }
+
 
 /* Storage model */
 StorageModel::StorageModel(QITreeView *pParent)
@@ -1966,6 +1979,7 @@ Qt::ItemFlags StorageModel::flags (const QModelIndex &aIndex) const
            Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
+
 /* Storage Delegate */
 StorageDelegate::StorageDelegate (QObject *aParent)
     : QItemDelegate (aParent)
@@ -2073,6 +2087,7 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
     drawFocus (aPainter, aOption, rect);
 }
 
+
 /**
  * UI Medium ID Holder.
  * Used for compliance with other storage page widgets
@@ -2115,9 +2130,8 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     , mAddAttAction(0), mDelAttAction(0)
     , mAddHDAttAction(0), mAddCDAttAction(0), mAddFDAttAction(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
-    , mIsLoadingInProgress(0)
     , mIsPolished(false)
-    , mDisableStaticControls(0)
+    , mIsLoadingInProgress(0)
     , m_pCache(new UISettingsCacheMachineStorage)
 {
     /* Apply UI decorations */
@@ -2607,6 +2621,14 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
+void UIMachineSettingsStorage::setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel)
+{
+    /* Update model 'configuration access level': */
+    mStorageModel->setConfigurationAccessLevel(newConfigurationAccessLevel);
+    /* Update 'configuration access level' of base class: */
+    UISettingsPageMachine::setConfigurationAccessLevel(newConfigurationAccessLevel);
+}
+
 void UIMachineSettingsStorage::retranslateUi()
 {
     /* Translate uic generated strings: */
@@ -2827,7 +2849,8 @@ void UIMachineSettingsStorage::addNVMeController()
 void UIMachineSettingsStorage::delController()
 {
     QModelIndex index = mTwStorageTree->currentIndex();
-    if (!mStorageModel->data (index, StorageModel::R_IsController).toBool()) return;
+    if (!mStorageModel->data (index, StorageModel::R_IsController).toBool())
+        return;
 
     mStorageModel->delController (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
     emit storageChanged();
@@ -3063,7 +3086,8 @@ void UIMachineSettingsStorage::getInformation()
 void UIMachineSettingsStorage::setInformation()
 {
     QModelIndex index = mTwStorageTree->currentIndex();
-    if (mIsLoadingInProgress || !index.isValid() || index == mStorageModel->root()) return;
+    if (mIsLoadingInProgress || !index.isValid() || index == mStorageModel->root())
+        return;
 
     QObject *sdr = sender();
     switch (mStorageModel->data (index, StorageModel::R_ItemType).value <AbstractItem::ItemType>())
@@ -3364,7 +3388,8 @@ void UIMachineSettingsStorage::onContextMenuRequested (const QPoint &aPosition)
 
 void UIMachineSettingsStorage::onDrawItemBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex)
 {
-    if (!aIndex.parent().isValid() || !aIndex.parent().parent().isValid()) return;
+    if (!aIndex.parent().isValid() || !aIndex.parent().parent().isValid())
+        return;
 
     aPainter->save();
     QStyleOption options;
@@ -3842,8 +3867,8 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
         QString strControllerName = controllerData.m_strControllerName;
         KStorageBus controllerBus = controllerData.m_controllerBus;
         KStorageControllerType controllerType = controllerData.m_controllerType;
-        ULONG uPortCount = controllerData.m_uPortCount;
         bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
+        ULONG uPortCount = controllerData.m_uPortCount;
 
         /* Check that storage controller doesn't exists: */
         CStorageController controller = m_machine.GetStorageControllerByName(strControllerName);
@@ -3898,8 +3923,8 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
         QString strControllerName = controllerData.m_strControllerName;
         KStorageBus controllerBus = controllerData.m_controllerBus;
         KStorageControllerType controllerType = controllerData.m_controllerType;
-        ULONG uPortCount = controllerData.m_uPortCount;
         bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
+        ULONG uPortCount = controllerData.m_uPortCount;
 
         /* Check that controller exists: */
         CStorageController controller = m_machine.GetStorageControllerByName(strControllerName);
@@ -4182,14 +4207,6 @@ bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UISettingsCacheM
            (iCurrentAttachmentDevice == iInitialAttachmentDevice) &&
            (iCurrentAttachmentPort == iInitialAttachmentPort) &&
            (currentAttachmentDeviceType == KDeviceType_Floppy || currentAttachmentDeviceType == KDeviceType_DVD);
-}
-
-void UIMachineSettingsStorage::setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel)
-{
-    /* Update model 'configuration access level': */
-    mStorageModel->setConfigurationAccessLevel(newConfigurationAccessLevel);
-    /* Update 'configuration access level' of base class: */
-    UISettingsPageMachine::setConfigurationAccessLevel(newConfigurationAccessLevel);
 }
 
 # include "UIMachineSettingsStorage.moc"
