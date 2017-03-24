@@ -237,26 +237,26 @@ private:
 
 
 UIMachineSettingsSF::UIMachineSettingsSF()
-    : mNewAction(0), mEdtAction(0), mDelAction(0)
+    : m_pActionAdd(0), m_pActionEdit(0), m_pActionRemove(0)
     , m_pCache(new UISettingsCacheSharedFolders)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsSF::setupUi (this);
 
     /* Prepare actions */
-    mNewAction = new QAction (this);
-    mEdtAction = new QAction (this);
-    mDelAction = new QAction (this);
+    m_pActionAdd = new QAction (this);
+    m_pActionEdit = new QAction (this);
+    m_pActionRemove = new QAction (this);
 
-    mNewAction->setShortcut (QKeySequence ("Ins"));
-    mEdtAction->setShortcut (QKeySequence ("Ctrl+Space"));
-    mDelAction->setShortcut (QKeySequence ("Del"));
+    m_pActionAdd->setShortcut (QKeySequence ("Ins"));
+    m_pActionEdit->setShortcut (QKeySequence ("Ctrl+Space"));
+    m_pActionRemove->setShortcut (QKeySequence ("Del"));
 
-    mNewAction->setIcon(UIIconPool::iconSet(":/sf_add_16px.png",
+    m_pActionAdd->setIcon(UIIconPool::iconSet(":/sf_add_16px.png",
                                             ":/sf_add_disabled_16px.png"));
-    mEdtAction->setIcon(UIIconPool::iconSet(":/sf_edit_16px.png",
+    m_pActionEdit->setIcon(UIIconPool::iconSet(":/sf_edit_16px.png",
                                             ":/sf_edit_disabled_16px.png"));
-    mDelAction->setIcon(UIIconPool::iconSet(":/sf_remove_16px.png",
+    m_pActionRemove->setIcon(UIIconPool::iconSet(":/sf_remove_16px.png",
                                             ":/sf_remove_disabled_16px.png"));
 
     /* Determine icon metric: */
@@ -266,9 +266,9 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     /* Prepare tool-bar: */
     m_pFoldersToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
     m_pFoldersToolBar->setOrientation(Qt::Vertical);
-    m_pFoldersToolBar->addAction(mNewAction);
-    m_pFoldersToolBar->addAction(mEdtAction);
-    m_pFoldersToolBar->addAction(mDelAction);
+    m_pFoldersToolBar->addAction(m_pActionAdd);
+    m_pFoldersToolBar->addAction(m_pActionEdit);
+    m_pFoldersToolBar->addAction(m_pActionRemove);
 
     /* Setup connections */
 #if QT_VERSION >= 0x050000
@@ -276,15 +276,15 @@ UIMachineSettingsSF::UIMachineSettingsSF()
 #else /* QT_VERSION < 0x050000 */
     mTwFolders->header()->setMovable (false);
 #endif /* QT_VERSION < 0x050000 */
-    connect (mNewAction, SIGNAL (triggered (bool)), this, SLOT (addTriggered()));
-    connect (mEdtAction, SIGNAL (triggered (bool)), this, SLOT (edtTriggered()));
-    connect (mDelAction, SIGNAL (triggered (bool)), this, SLOT (delTriggered()));
+    connect (m_pActionAdd, SIGNAL (triggered (bool)), this, SLOT (sltAddSharedFolder()));
+    connect (m_pActionEdit, SIGNAL (triggered (bool)), this, SLOT (sltEditSharedFolder()));
+    connect (m_pActionRemove, SIGNAL (triggered (bool)), this, SLOT (sltDeleteSharedFolder()));
     connect (mTwFolders, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
-             this, SLOT (processCurrentChanged (QTreeWidgetItem *)));
+             this, SLOT (sltHandleCurrentItemChange (QTreeWidgetItem *)));
     connect (mTwFolders, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
-             this, SLOT (processDoubleClick (QTreeWidgetItem *)));
+             this, SLOT (sltHandleDoubleClick (QTreeWidgetItem *)));
     connect (mTwFolders, SIGNAL (customContextMenuRequested (const QPoint &)),
-             this, SLOT (showContextMenu (const QPoint &)));
+             this, SLOT (sltHandleContextMenuRequest (const QPoint &)));
 
     retranslateUi();
 }
@@ -320,10 +320,10 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSF::loadToCacheFrom(UISharedFolderType sharedFoldersType)
+void UIMachineSettingsSF::loadToCacheFrom(UISharedFolderType enmSharedFoldersType)
 {
     /* Get current shared folders: */
-    CSharedFolderVector sharedFolders = getSharedFolders(sharedFoldersType);
+    CSharedFolderVector sharedFolders = getSharedFolders(enmSharedFoldersType);
 
     /* For each shared folder: */
     for (int iFolderIndex = 0; iFolderIndex < sharedFolders.size(); ++iFolderIndex)
@@ -337,7 +337,7 @@ void UIMachineSettingsSF::loadToCacheFrom(UISharedFolderType sharedFoldersType)
         if (!folder.isNull())
         {
             /* Gather shared folder values: */
-            sharedFolderData.m_type = sharedFoldersType;
+            sharedFolderData.m_type = enmSharedFoldersType;
             sharedFolderData.m_strName = folder.GetName();
             sharedFolderData.m_strHostPath = folder.GetHostPath();
             sharedFolderData.m_fAutoMount = folder.GetAutoMount();
@@ -368,14 +368,14 @@ void UIMachineSettingsSF::getFromCache()
         QStringList fields;
         fields << sharedFolderData.m_strName
                << sharedFolderData.m_strHostPath
-               << (sharedFolderData.m_fAutoMount ? mTrYes : "")
-               << (sharedFolderData.m_fWritable ? mTrFull : mTrReadOnly);
+               << (sharedFolderData.m_fAutoMount ? m_strTrYes : "")
+               << (sharedFolderData.m_fWritable ? m_strTrFull : m_strTrReadOnly);
         /* Create new shared folders item: */
         new SFTreeViewItem(root(sharedFolderData.m_type), fields, SFTreeViewItem::EllipsisFile);
     }
     /* Ensure current item fetched: */
     mTwFolders->setCurrentItem(mTwFolders->topLevelItem(0));
-    processCurrentChanged(mTwFolders->currentItem());
+    sltHandleCurrentItemChange(mTwFolders->currentItem());
 
     /* Polish page finally: */
     polishPage();
@@ -398,8 +398,8 @@ void UIMachineSettingsSF::putToCache()
             sharedFolderData.m_type = sharedFolderType;
             sharedFolderData.m_strName = pFolderItem->getText(0);
             sharedFolderData.m_strHostPath = pFolderItem->getText(1);
-            sharedFolderData.m_fAutoMount = pFolderItem->getText(2) == mTrYes ? true : false;
-            sharedFolderData.m_fWritable = pFolderItem->getText(3) == mTrFull ? true : false;
+            sharedFolderData.m_fAutoMount = pFolderItem->getText(2) == m_strTrYes ? true : false;
+            sharedFolderData.m_fWritable = pFolderItem->getText(3) == m_strTrFull ? true : false;
             m_pCache->child(sharedFolderData.m_strName).cacheCurrentData(sharedFolderData);
         }
     }
@@ -425,7 +425,7 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType sharedFoldersType)
+void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType enmSharedFoldersType)
 {
     /* For each shared folder data set: */
     for (int iSharedFolderIndex = 0; iSharedFolderIndex < m_pCache->childCount(); ++iSharedFolderIndex)
@@ -440,7 +440,7 @@ void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType sharedFoldersType)
                 /* Get shared folder data: */
                 const UIDataSettingsSharedFolder &sharedFolderData = sharedFolderCache.base();
                 /* Check if thats shared folder of required type before removing: */
-                if (sharedFolderData.m_type == sharedFoldersType)
+                if (sharedFolderData.m_type == enmSharedFoldersType)
                     removeSharedFolder(sharedFolderCache);
             }
 
@@ -450,7 +450,7 @@ void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType sharedFoldersType)
                 /* Get shared folder data: */
                 const UIDataSettingsSharedFolder &sharedFolderData = sharedFolderCache.data();
                 /* Check if thats shared folder of required type before creating: */
-                if (sharedFolderData.m_type == sharedFoldersType)
+                if (sharedFolderData.m_type == enmSharedFoldersType)
                     createSharedFolder(sharedFolderCache);
             }
 
@@ -460,7 +460,7 @@ void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType sharedFoldersType)
                 /* Get shared folder data: */
                 const UIDataSettingsSharedFolder &sharedFolderData = sharedFolderCache.data();
                 /* Check if thats shared folder of required type before recreating: */
-                if (sharedFolderData.m_type == sharedFoldersType)
+                if (sharedFolderData.m_type == enmSharedFoldersType)
                 {
                     removeSharedFolder(sharedFolderCache);
                     createSharedFolder(sharedFolderCache);
@@ -475,21 +475,21 @@ void UIMachineSettingsSF::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsSF::retranslateUi(this);
 
-    mNewAction->setText(tr("Add Shared Folder"));
-    mEdtAction->setText(tr("Edit Shared Folder"));
-    mDelAction->setText(tr("Remove Shared Folder"));
+    m_pActionAdd->setText(tr("Add Shared Folder"));
+    m_pActionEdit->setText(tr("Edit Shared Folder"));
+    m_pActionRemove->setText(tr("Remove Shared Folder"));
 
-    mNewAction->setWhatsThis(tr("Adds new shared folder."));
-    mEdtAction->setWhatsThis(tr("Edits selected shared folder."));
-    mDelAction->setWhatsThis(tr("Removes selected shared folder."));
+    m_pActionAdd->setWhatsThis(tr("Adds new shared folder."));
+    m_pActionEdit->setWhatsThis(tr("Edits selected shared folder."));
+    m_pActionRemove->setWhatsThis(tr("Removes selected shared folder."));
 
-    mNewAction->setToolTip(mNewAction->whatsThis());
-    mEdtAction->setToolTip(mEdtAction->whatsThis());
-    mDelAction->setToolTip(mDelAction->whatsThis());
+    m_pActionAdd->setToolTip(m_pActionAdd->whatsThis());
+    m_pActionEdit->setToolTip(m_pActionEdit->whatsThis());
+    m_pActionRemove->setToolTip(m_pActionRemove->whatsThis());
 
-    mTrFull = tr("Full");
-    mTrReadOnly = tr("Read-only");
-    mTrYes = tr("Yes");
+    m_strTrFull = tr("Full");
+    m_strTrReadOnly = tr("Read-only");
+    m_strTrYes = tr("Yes");
 }
 
 void UIMachineSettingsSF::polishPage()
@@ -503,139 +503,138 @@ void UIMachineSettingsSF::polishPage()
     updateRootItemsVisibility();
 }
 
-void UIMachineSettingsSF::showEvent (QShowEvent *aEvent)
+void UIMachineSettingsSF::showEvent(QShowEvent *pEvent)
 {
-    UISettingsPageMachine::showEvent (aEvent);
+    UISettingsPageMachine::showEvent(pEvent);
 
-    /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized. */
-    connect (mTwFolders->header(), SIGNAL (sectionResized (int, int, int)), this, SLOT (adjustFields()));
+    /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized: */
+    connect(mTwFolders->header(), SIGNAL(sectionResized(int, int, int)), this, SLOT(sltAdjustTreeFields()));
 
-    /* Adjusting size after all pending show events are processed. */
-    QTimer::singleShot (0, this, SLOT (adjustList()));
+    /* Adjusting size after all pending show events are processed: */
+    QTimer::singleShot(0, this, SLOT(sltAdjustTree()));
 }
 
-void UIMachineSettingsSF::resizeEvent (QResizeEvent *aEvent)
+void UIMachineSettingsSF::resizeEvent(QResizeEvent * /* pEvent */)
 {
-    NOREF(aEvent);
-    adjustList();
+    sltAdjustTree();
 }
 
-void UIMachineSettingsSF::addTriggered()
+void UIMachineSettingsSF::sltAddSharedFolder()
 {
-    /* Invoke Add-Box Dialog */
-    UIMachineSettingsSFDetails dlg (UIMachineSettingsSFDetails::AddType, isSharedFolderTypeSupported(ConsoleType), usedList (true), this);
+    /* Invoke Add-Box Dialog: */
+    UIMachineSettingsSFDetails dlg(UIMachineSettingsSFDetails::AddType, isSharedFolderTypeSupported(ConsoleType), usedList(true), this);
     if (dlg.exec() == QDialog::Accepted)
     {
-        QString name = dlg.name();
-        QString path = dlg.path();
-        bool isPermanent = dlg.isPermanent();
-        /* Shared folder's name & path could not be empty */
-        Assert (!name.isEmpty() && !path.isEmpty());
-        /* Appending a new listview item to the root */
+        const QString strName = dlg.name();
+        const QString strPath = dlg.path();
+        const bool fPermanent = dlg.isPermanent();
+        /* Shared folder's name & path could not be empty: */
+        Assert(!strName.isEmpty() && !strPath.isEmpty());
+        /* Appending a new listview item to the root: */
         QStringList fields;
-        fields << name /* name */ << path /* path */
-               << (dlg.isAutoMounted() ? mTrYes : "" /* auto mount? */)
-               << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */);
-        SFTreeViewItem *item = new SFTreeViewItem (root(isPermanent ? MachineType : ConsoleType),
+        fields << strName /* name */ << strPath /* path */
+               << (dlg.isAutoMounted() ? m_strTrYes : "" /* auto mount? */)
+               << (dlg.isWriteable() ? m_strTrFull : m_strTrReadOnly /* writable? */);
+        SFTreeViewItem *pItem = new SFTreeViewItem(root(fPermanent ? MachineType : ConsoleType),
                                                    fields, SFTreeViewItem::EllipsisFile);
-        mTwFolders->sortItems (0, Qt::AscendingOrder);
-        mTwFolders->scrollToItem (item);
-        mTwFolders->setCurrentItem (item);
-        processCurrentChanged (item);
+        mTwFolders->sortItems(0, Qt::AscendingOrder);
+        mTwFolders->scrollToItem(pItem);
+        mTwFolders->setCurrentItem(pItem);
+        sltHandleCurrentItemChange(pItem);
         mTwFolders->setFocus();
-        adjustList();
+        sltAdjustTree();
     }
 }
 
-void UIMachineSettingsSF::edtTriggered()
+void UIMachineSettingsSF::sltEditSharedFolder()
 {
-    /* Check selected item */
-    QTreeWidgetItem *selectedItem = mTwFolders->selectedItems().size() == 1 ? mTwFolders->selectedItems() [0] : 0;
-    SFTreeViewItem *item = selectedItem ? static_cast <SFTreeViewItem*> (selectedItem) : 0;
-    Assert (item);
-    Assert (item->parentItem());
+    /* Check selected item: */
+    QTreeWidgetItem *pSelectedItem = mTwFolders->selectedItems().size() == 1 ? mTwFolders->selectedItems()[0] : 0;
+    SFTreeViewItem *pItem = pSelectedItem ? static_cast<SFTreeViewItem*>(pSelectedItem) : 0;
+    Assert(pItem);
+    Assert(pItem->parentItem());
 
-    /* Invoke Edit-Box Dialog */
-    UIMachineSettingsSFDetails dlg (UIMachineSettingsSFDetails::EditType, isSharedFolderTypeSupported(ConsoleType), usedList (false), this);
-    dlg.setPath (item->getText (1));
-    dlg.setName (item->getText (0));
-    dlg.setPermanent ((UISharedFolderType)item->parentItem()->text (1).toInt() != ConsoleType);
-    dlg.setAutoMount (item->getText (2) == mTrYes);
-    dlg.setWriteable (item->getText (3) == mTrFull);
+    /* Invoke Edit-Box Dialog: */
+    UIMachineSettingsSFDetails dlg(UIMachineSettingsSFDetails::EditType, isSharedFolderTypeSupported(ConsoleType), usedList(false), this);
+    dlg.setPath(pItem->getText(1));
+    dlg.setName(pItem->getText(0));
+    dlg.setPermanent((UISharedFolderType)pItem->parentItem()->text(1).toInt() != ConsoleType);
+    dlg.setAutoMount(pItem->getText(2) == m_strTrYes);
+    dlg.setWriteable(pItem->getText(3) == m_strTrFull);
     if (dlg.exec() == QDialog::Accepted)
     {
-        QString name = dlg.name();
-        QString path = dlg.path();
-        bool isPermanent = dlg.isPermanent();
-        /* Shared folder's name & path could not be empty */
-        Assert (!name.isEmpty() && !path.isEmpty());
-        /* Searching new root for the selected listview item */
-        SFTreeViewItem *pRoot = root(isPermanent ? MachineType : ConsoleType);
-        /* Updating an edited listview item */
+        const QString strName = dlg.name();
+        const QString strPath = dlg.path();
+        const bool fPermanent = dlg.isPermanent();
+        /* Shared folder's name & path could not be empty: */
+        Assert(!strName.isEmpty() && !strPath.isEmpty());
+        /* Searching new root for the selected listview item: */
+        SFTreeViewItem *pRoot = root(fPermanent ? MachineType : ConsoleType);
+        /* Updating an edited listview item: */
         QStringList fields;
-        fields << name /* name */ << path /* path */
-               << (dlg.isAutoMounted() ? mTrYes : "" /* auto mount? */)
-               << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */);
-        item->updateText (fields);
-        mTwFolders->sortItems (0, Qt::AscendingOrder);
-        if (item->parentItem() != pRoot)
+        fields << strName /* name */ << strPath /* path */
+               << (dlg.isAutoMounted() ? m_strTrYes : "" /* auto mount? */)
+               << (dlg.isWriteable() ? m_strTrFull : m_strTrReadOnly /* writable? */);
+        pItem->updateText(fields);
+        mTwFolders->sortItems(0, Qt::AscendingOrder);
+        if (pItem->parentItem() != pRoot)
         {
-            /* Move the selected item into new location */
-            item->parentItem()->takeChild (item->parentItem()->indexOfChild (item));
-            pRoot->insertChild (pRoot->childCount(), item);
-            mTwFolders->scrollToItem (item);
-            mTwFolders->setCurrentItem (item);
-            processCurrentChanged (item);
+            /* Move the selected item into new location: */
+            pItem->parentItem()->takeChild(pItem->parentItem()->indexOfChild(pItem));
+            pRoot->insertChild(pRoot->childCount(), pItem);
+            mTwFolders->scrollToItem(pItem);
+            mTwFolders->setCurrentItem(pItem);
+            sltHandleCurrentItemChange(pItem);
             mTwFolders->setFocus();
         }
-        adjustList();
+        sltAdjustTree();
     }
 }
 
-void UIMachineSettingsSF::delTriggered()
+void UIMachineSettingsSF::sltDeleteSharedFolder()
 {
-    QTreeWidgetItem *selectedItem = mTwFolders->selectedItems().size() == 1 ? mTwFolders->selectedItems() [0] : 0;
-    Assert (selectedItem);
-    delete selectedItem;
-    adjustList();
+    QTreeWidgetItem *pSelectedItem = mTwFolders->selectedItems().size() == 1 ? mTwFolders->selectedItems()[0] : 0;
+    Assert(pSelectedItem);
+    delete pSelectedItem;
+    sltAdjustTree();
 }
 
-void UIMachineSettingsSF::processCurrentChanged (QTreeWidgetItem *aCurrentItem)
+void UIMachineSettingsSF::sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem)
 {
-    if (aCurrentItem && aCurrentItem->parent() && !aCurrentItem->isSelected())
-        aCurrentItem->setSelected (true);
-    bool addEnabled = aCurrentItem;
-    bool removeEnabled = addEnabled && aCurrentItem->parent();
-    mNewAction->setEnabled (addEnabled);
-    mEdtAction->setEnabled (removeEnabled);
-    mDelAction->setEnabled (removeEnabled);
+    if (pCurrentItem && pCurrentItem->parent() && !pCurrentItem->isSelected())
+        pCurrentItem->setSelected(true);
+    const bool fAddEnabled = pCurrentItem;
+    const bool fRemoveEnabled = fAddEnabled && pCurrentItem->parent();
+    m_pActionAdd->setEnabled(fAddEnabled);
+    m_pActionEdit->setEnabled(fRemoveEnabled);
+    m_pActionRemove->setEnabled(fRemoveEnabled);
 }
 
-void UIMachineSettingsSF::processDoubleClick (QTreeWidgetItem *aItem)
+void UIMachineSettingsSF::sltHandleDoubleClick(QTreeWidgetItem *pItem)
 {
-    bool editEnabled = aItem && aItem->parent();
-    if (editEnabled)
-        edtTriggered();
+    const bool fEditEnabled = pItem && pItem->parent();
+    if (fEditEnabled)
+        sltEditSharedFolder();
 }
 
-void UIMachineSettingsSF::showContextMenu(const QPoint &pos)
+void UIMachineSettingsSF::sltHandleContextMenuRequest(const QPoint &position)
 {
     QMenu menu;
-    QTreeWidgetItem *pItem = mTwFolders->itemAt(pos);
+    QTreeWidgetItem *pItem = mTwFolders->itemAt(position);
     if (mTwFolders->isEnabled() && pItem && pItem->flags() & Qt::ItemIsSelectable)
     {
-        menu.addAction(mEdtAction);
-        menu.addAction(mDelAction);
+        menu.addAction(m_pActionEdit);
+        menu.addAction(m_pActionRemove);
     }
     else
     {
-        menu.addAction(mNewAction);
+        menu.addAction(m_pActionAdd);
     }
     if (!menu.isEmpty())
-        menu.exec(mTwFolders->viewport()->mapToGlobal(pos));
+        menu.exec(mTwFolders->viewport()->mapToGlobal(position));
 }
 
-void UIMachineSettingsSF::adjustList()
+void UIMachineSettingsSF::sltAdjustTree()
 {
     /*
      * Calculates required columns sizes to max out column 2
@@ -647,41 +646,41 @@ void UIMachineSettingsSF::adjustList()
      * 2 = Auto-mount flag
      * 3 = Writable flag
      */
-    QAbstractItemView *itemView = mTwFolders;
-    QHeaderView *itemHeader = mTwFolders->header();
-    int total = mTwFolders->viewport()->width();
+    QAbstractItemView *pItemView = mTwFolders;
+    QHeaderView *pItemHeader = mTwFolders->header();
+    const int iTotal = mTwFolders->viewport()->width();
 
-    int mw0 = qMax (itemView->sizeHintForColumn (0), itemHeader->sectionSizeHint (0));
-    int mw2 = qMax (itemView->sizeHintForColumn (2), itemHeader->sectionSizeHint (2));
-    int mw3 = qMax (itemView->sizeHintForColumn (3), itemHeader->sectionSizeHint (3));
+    const int mw0 = qMax(pItemView->sizeHintForColumn(0), pItemHeader->sectionSizeHint(0));
+    const int mw2 = qMax(pItemView->sizeHintForColumn(2), pItemHeader->sectionSizeHint(2));
+    const int mw3 = qMax(pItemView->sizeHintForColumn(3), pItemHeader->sectionSizeHint(3));
 
-    int w0 = mw0 < total / 4 ? mw0 : total / 4;
-    int w2 = mw2 < total / 4 ? mw2 : total / 4;
-    int w3 = mw3 < total / 4 ? mw3 : total / 4;
+    const int w0 = mw0 < iTotal / 4 ? mw0 : iTotal / 4;
+    const int w2 = mw2 < iTotal / 4 ? mw2 : iTotal / 4;
+    const int w3 = mw3 < iTotal / 4 ? mw3 : iTotal / 4;
 
     /* Giving 1st column all the available space. */
-    mTwFolders->setColumnWidth (0, w0);
-    mTwFolders->setColumnWidth (1, total - w0 - w2 - w3);
-    mTwFolders->setColumnWidth (2, w2);
-    mTwFolders->setColumnWidth (3, w3);
+    mTwFolders->setColumnWidth(0, w0);
+    mTwFolders->setColumnWidth(1, iTotal - w0 - w2 - w3);
+    mTwFolders->setColumnWidth(2, w2);
+    mTwFolders->setColumnWidth(3, w3);
 }
 
-void UIMachineSettingsSF::adjustFields()
+void UIMachineSettingsSF::sltAdjustTreeFields()
 {
-    QTreeWidgetItem *mainRoot = mTwFolders->invisibleRootItem();
-    for (int i = 0; i < mainRoot->childCount(); ++ i)
+    QTreeWidgetItem *pMainRoot = mTwFolders->invisibleRootItem();
+    for (int i = 0; i < pMainRoot->childCount(); ++i)
     {
-        QTreeWidgetItem *subRoot = mainRoot->child (i);
-        for (int j = 0; j < subRoot->childCount(); ++ j)
+        QTreeWidgetItem *pSubRoot = pMainRoot->child(i);
+        for (int j = 0; j < pSubRoot->childCount(); ++j)
         {
-            SFTreeViewItem *item = subRoot->child (j) ? static_cast <SFTreeViewItem*> (subRoot->child (j)) : 0;
-            if (item)
-                item->adjustText();
+            SFTreeViewItem *pItem = pSubRoot->child(j) ? static_cast <SFTreeViewItem*>(pSubRoot->child(j)) : 0;
+            if (pItem)
+                pItem->adjustText();
         }
     }
 }
 
-SFTreeViewItem* UIMachineSettingsSF::root(UISharedFolderType sharedFolderType)
+SFTreeViewItem *UIMachineSettingsSF::root(UISharedFolderType enmSharedFolderType)
 {
     /* Search for the corresponding root item among all the top-level items: */
     SFTreeViewItem *pRootItem = 0;
@@ -691,7 +690,7 @@ SFTreeViewItem* UIMachineSettingsSF::root(UISharedFolderType sharedFolderType)
         /* Get iterated item: */
         QTreeWidgetItem *pIteratedItem = pMainRootItem->child(iFolderTypeIndex);
         /* If iterated item type is what we are looking for: */
-        if (pIteratedItem->text(1).toInt() == sharedFolderType)
+        if (pIteratedItem->text(1).toInt() == enmSharedFolderType)
         {
             /* Remember the item: */
             pRootItem = static_cast<SFTreeViewItem*>(pIteratedItem);
@@ -703,28 +702,28 @@ SFTreeViewItem* UIMachineSettingsSF::root(UISharedFolderType sharedFolderType)
     return pRootItem;
 }
 
-SFoldersNameList UIMachineSettingsSF::usedList (bool aIncludeSelected)
+SFoldersNameList UIMachineSettingsSF::usedList(bool fIncludeSelected)
 {
     /* Make the used names list: */
     SFoldersNameList list;
-    QTreeWidgetItemIterator it (mTwFolders);
+    QTreeWidgetItemIterator it(mTwFolders);
     while (*it)
     {
-        if ((*it)->parent() && (aIncludeSelected || !(*it)->isSelected()))
+        if ((*it)->parent() && (fIncludeSelected || !(*it)->isSelected()))
         {
-            SFTreeViewItem *item = static_cast <SFTreeViewItem*> (*it);
-            UISharedFolderType type = (UISharedFolderType) item->parentItem()->text (1).toInt();
-            list << qMakePair (item->getText (0), type);
+            SFTreeViewItem *pItem = static_cast <SFTreeViewItem*>(*it);
+            UISharedFolderType type = (UISharedFolderType)pItem->parentItem()->text(1).toInt();
+            list << qMakePair(pItem->getText(0), type);
         }
-        ++ it;
+        ++it;
     }
     return list;
 }
 
-bool UIMachineSettingsSF::isSharedFolderTypeSupported(UISharedFolderType sharedFolderType) const
+bool UIMachineSettingsSF::isSharedFolderTypeSupported(UISharedFolderType enmSharedFolderType) const
 {
     bool fIsSharedFolderTypeSupported = false;
-    switch (sharedFolderType)
+    switch (enmSharedFolderType)
     {
         case MachineType:
             fIsSharedFolderTypeSupported = isMachineInValidMode();
@@ -746,17 +745,17 @@ void UIMachineSettingsSF::updateRootItemsVisibility()
     setRootItemVisible(ConsoleType, isSharedFolderTypeSupported(ConsoleType));
 }
 
-void UIMachineSettingsSF::setRootItemVisible(UISharedFolderType sharedFolderType, bool fVisible)
+void UIMachineSettingsSF::setRootItemVisible(UISharedFolderType enmSharedFolderType, bool fVisible)
 {
     /* Search for the corresponding root item among all the top-level items: */
-    SFTreeViewItem *pRootItem = root(sharedFolderType);
+    SFTreeViewItem *pRootItem = root(enmSharedFolderType);
     /* If root item, we are looking for, still not found: */
     if (!pRootItem)
     {
         /* Prepare fields for the new root item: */
         QStringList fields;
         /* Depending on folder type: */
-        switch (sharedFolderType)
+        switch (enmSharedFolderType)
         {
             case MachineType:
                 fields << tr(" Machine Folders") << QString::number(MachineType);
@@ -776,12 +775,12 @@ void UIMachineSettingsSF::setRootItemVisible(UISharedFolderType sharedFolderType
     pRootItem->setHidden(!fVisible);
 }
 
-CSharedFolderVector UIMachineSettingsSF::getSharedFolders(UISharedFolderType sharedFoldersType)
+CSharedFolderVector UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmSharedFoldersType)
 {
     CSharedFolderVector sharedFolders;
-    if (isSharedFolderTypeSupported(sharedFoldersType))
+    if (isSharedFolderTypeSupported(enmSharedFoldersType))
     {
-        switch (sharedFoldersType)
+        switch (enmSharedFoldersType)
         {
             case MachineType:
             {
@@ -806,14 +805,14 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
 {
     /* Get shared folder data: */
     const UIDataSettingsSharedFolder &folderData = folderCache.data();
-    QString strName = folderData.m_strName;
-    QString strPath = folderData.m_strHostPath;
-    bool fIsWritable = folderData.m_fWritable;
-    bool fIsAutoMount = folderData.m_fAutoMount;
-    UISharedFolderType sharedFoldersType = folderData.m_type;
+    const QString strName = folderData.m_strName;
+    const QString strPath = folderData.m_strHostPath;
+    const bool fIsWritable = folderData.m_fWritable;
+    const bool fIsAutoMount = folderData.m_fAutoMount;
+    const UISharedFolderType enmSharedFoldersType = folderData.m_type;
 
     /* Get current shared folders: */
-    CSharedFolderVector sharedFolders = getSharedFolders(sharedFoldersType);
+    const CSharedFolderVector sharedFolders = getSharedFolders(enmSharedFoldersType);
     /* Check if such shared folder do not exists: */
     CSharedFolder sharedFolder;
     for (int iSharedFolderIndex = 0; iSharedFolderIndex < sharedFolders.size(); ++iSharedFolderIndex)
@@ -822,10 +821,11 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
     if (sharedFolder.isNull())
     {
         /* Create new shared folder: */
-        switch(sharedFoldersType)
+        switch(enmSharedFoldersType)
         {
             case MachineType:
             {
+                /* Create new shared folder: */
                 m_machine.CreateSharedFolder(strName, strPath, fIsWritable, fIsAutoMount);
                 if (!m_machine.isOk())
                 {
@@ -864,12 +864,12 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
 {
     /* Get shared folder data: */
     const UIDataSettingsSharedFolder &folderData = folderCache.base();
-    QString strName = folderData.m_strName;
-    QString strPath = folderData.m_strHostPath;
-    UISharedFolderType sharedFoldersType = folderData.m_type;
+    const QString strName = folderData.m_strName;
+    const QString strPath = folderData.m_strHostPath;
+    const UISharedFolderType enmSharedFoldersType = folderData.m_type;
 
     /* Get current shared folders: */
-    CSharedFolderVector sharedFolders = getSharedFolders(sharedFoldersType);
+    const CSharedFolderVector sharedFolders = getSharedFolders(enmSharedFoldersType);
     /* Check that such shared folder really exists: */
     CSharedFolder sharedFolder;
     for (int iSharedFolderIndex = 0; iSharedFolderIndex < sharedFolders.size(); ++iSharedFolderIndex)
@@ -878,10 +878,11 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
     if (!sharedFolder.isNull())
     {
         /* Remove existing shared folder: */
-        switch(sharedFoldersType)
+        switch(enmSharedFoldersType)
         {
             case MachineType:
             {
+                /* Remove existing shared folder: */
                 m_machine.RemoveSharedFolder(strName);
                 if (!m_machine.isOk())
                 {
@@ -896,6 +897,7 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
             }
             case ConsoleType:
             {
+                /* Remove existing shared folder: */
                 m_console.RemoveSharedFolder(strName);
                 if (!m_console.isOk())
                 {

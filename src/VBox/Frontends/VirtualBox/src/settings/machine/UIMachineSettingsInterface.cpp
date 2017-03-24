@@ -133,8 +133,8 @@ struct UIDataSettingsMachineInterface
 };
 
 
-UIMachineSettingsInterface::UIMachineSettingsInterface(const QString strMachineID)
-    : m_strMachineID(strMachineID)
+UIMachineSettingsInterface::UIMachineSettingsInterface(const QString strMachineId)
+    : m_strMachineId(strMachineId)
     , m_pActionPool(0)
     , m_pCache(new UISettingsCacheMachineInterface)
 {
@@ -343,8 +343,8 @@ void UIMachineSettingsInterface::prepare()
     m_pMenuBarEditor->setActionPool(m_pActionPool);
 
     /* Assign corresponding machine ID: */
-    m_pMenuBarEditor->setMachineID(m_strMachineID);
-    m_pStatusBarEditor->setMachineID(m_strMachineID);
+    m_pMenuBarEditor->setMachineID(m_strMachineId);
+    m_pStatusBarEditor->setMachineID(m_strMachineId);
 
     /* Translate finally: */
     retranslateUi();

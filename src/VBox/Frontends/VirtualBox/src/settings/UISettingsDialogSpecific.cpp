@@ -388,7 +388,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 case MachineSettingsPageType_Storage:
                 {
                     pSettingsPage = new UIMachineSettingsStorage;
-                    connect(pSettingsPage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
+                    connect(pSettingsPage, SIGNAL(sigStorageChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/hd_32px.png", ":/hd_24px.png", ":/hd_16px.png",
                             iPageIndex, "#storage", pSettingsPage);
                     break;

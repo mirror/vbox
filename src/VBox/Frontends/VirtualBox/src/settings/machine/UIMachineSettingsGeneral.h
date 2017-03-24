@@ -105,20 +105,20 @@ private:
     void prepareTabEncryption();
 
     /** Holds whether HW virtualization extension is enabled. */
-    bool m_fHWVirtExEnabled;
+    bool  m_fHWVirtExEnabled;
 
     /** Holds whether the encryption cipher was changed.
       * We are holding that argument here because we do not know
       * the old <i>cipher</i> for sure to compare the new one with. */
-    bool m_fEncryptionCipherChanged;
+    bool  m_fEncryptionCipherChanged;
     /** Holds whether the encryption password was changed.
       * We are holding that argument here because we do not know
       * the old <i>password</i> at all to compare the new one with. */
-    bool m_fEncryptionPasswordChanged;
+    bool  m_fEncryptionPasswordChanged;
 
     /** Holds the hard-coded encryption cipher list.
       * We are hard-coding it because there is no place we can get it from. */
-    QStringList m_encryptionCiphers;
+    QStringList  m_encryptionCiphers;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineGeneral *m_pCache;

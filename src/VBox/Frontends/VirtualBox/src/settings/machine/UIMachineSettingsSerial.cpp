@@ -497,8 +497,8 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
     {
         /* Get current tab/page: */
         QWidget *pTab = mTabWidget->widget(iIndex);
-        UIMachineSettingsSerial *page = static_cast<UIMachineSettingsSerial*>(pTab);
-        if (!page->mGbSerial->isChecked())
+        UIMachineSettingsSerial *pPage = static_cast<UIMachineSettingsSerial*>(pTab);
+        if (!pPage->mGbSerial->isChecked())
             continue;
 
         /* Prepare message: */
@@ -506,9 +506,9 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
         message.first = vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(pTab)));
 
         /* Check the port attribute emptiness & uniqueness: */
-        const QString strIRQ(page->mLeIRQ->text());
-        const QString strIOPort(page->mLeIOPort->text());
-        QPair<QString, QString> pair(strIRQ, strIOPort);
+        const QString strIRQ(pPage->mLeIRQ->text());
+        const QString strIOPort(pPage->mLeIOPort->text());
+        const QPair<QString, QString> pair(strIRQ, strIOPort);
 
         if (strIRQ.isEmpty())
         {
@@ -528,10 +528,10 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
 
         ports << pair;
 
-        KPortMode mode = gpConverter->fromString<KPortMode>(page->mCbMode->currentText());
-        if (mode != KPortMode_Disconnected)
+        const KPortMode enmMode = gpConverter->fromString<KPortMode>(pPage->mCbMode->currentText());
+        if (enmMode != KPortMode_Disconnected)
         {
-            const QString strPath(page->mLePath->text());
+            const QString strPath(pPage->mLePath->text());
 
             if (strPath.isEmpty())
             {
@@ -558,11 +558,11 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
 
 void UIMachineSettingsSerialPage::retranslateUi()
 {
-    for (int i = 0; i < mTabWidget->count(); ++ i)
+    for (int i = 0; i < mTabWidget->count(); ++i)
     {
-        UIMachineSettingsSerial *page =
-            static_cast<UIMachineSettingsSerial*> (mTabWidget->widget (i));
-        mTabWidget->setTabText (i, page->pageTitle());
+        UIMachineSettingsSerial *pPage =
+            static_cast<UIMachineSettingsSerial*>(mTabWidget->widget(i));
+        mTabWidget->setTabText(i, pPage->pageTitle());
     }
 }
 

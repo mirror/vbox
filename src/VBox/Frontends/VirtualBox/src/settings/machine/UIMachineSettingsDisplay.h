@@ -45,7 +45,7 @@ public:
     ~UIMachineSettingsDisplay();
 
     /* API: Correlation stuff: */
-    void setGuestOSType(CGuestOSType guestOSType);
+    void setGuestOSType(CGuestOSType comGuestOSType);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool isAcceleration2DVideoSelected() const;
@@ -87,8 +87,8 @@ private slots:
     /* Handlers: Screen stuff: */
     void sltHandleVideoMemorySizeSliderChange();
     void sltHandleVideoMemorySizeEditorChange();
-    void sltHandleVideoScreenCountSliderChange();
-    void sltHandleVideoScreenCountEditorChange();
+    void sltHandleGuestScreenCountSliderChange();
+    void sltHandleGuestScreenCountEditorChange();
     void sltHandleGuestScreenScaleSliderChange();
     void sltHandleGuestScreenScaleEditorChange();
 
@@ -115,35 +115,35 @@ private:
 
     /* Helpers: Video stuff: */
     void checkVRAMRequirements();
-    bool shouldWeWarnAboutLowVideoMemory();
-    static int calcPageStep(int iMax);
+    bool shouldWeWarnAboutLowVRAM();
+    static int calculatePageStep(int iMax);
 
     /* Helpers: Video Capture stuff: */
-    void lookForCorrespondingSizePreset();
-    void updateVideoCaptureScreenCount();
-    void updateVideoCaptureSizeHint();
-    static void lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData);
+    void lookForCorrespondingFrameSizePreset();
+    void updateGuestScreenCount();
+    void updateVideoCaptureFileSizeHint();
+    static void lookForCorrespondingPreset(QComboBox *pComboBox, const QVariant &data);
     static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
 
     /* Guest OS type id: */
-    CGuestOSType m_guestOSType;
+    CGuestOSType  m_comGuestOSType;
     /* System minimum lower limit of VRAM (MiB). */
-    int m_iMinVRAM;
+    int           m_iMinVRAM;
     /* System maximum limit of VRAM (MiB). */
-    int m_iMaxVRAM;
+    int           m_iMaxVRAM;
     /* Upper limit of VRAM in MiB for this dialog. This value is lower than
      * m_maxVRAM to save careless users from setting useless big values. */
-    int m_iMaxVRAMVisible;
+    int           m_iMaxVRAMVisible;
     /* Initial VRAM value when the dialog is opened. */
-    int m_iInitialVRAM;
+    int           m_iInitialVRAM;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Specifies whether the guest OS supports 2D video-acceleration: */
-    bool m_f2DVideoAccelerationSupported;
+    bool          m_f2DVideoAccelerationSupported;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef VBOX_WITH_CRHGSMI
     /* Specifies whether the guest OS supports WDDM: */
-    bool m_fWddmModeSupported;
+    bool          m_fWddmModeSupported;
 #endif /* VBOX_WITH_CRHGSMI */
 
     /** Holds the page data cache instance. */

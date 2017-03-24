@@ -276,40 +276,40 @@ protected:
 
 UIMachineSettingsUSB::UIMachineSettingsUSB()
     : m_pToolBar(0)
-    , mNewAction(0), mAddAction(0), mEdtAction(0), mDelAction(0)
-    , mMupAction(0), mMdnAction(0)
-    , mUSBDevicesMenu(0)
+    , m_pActionNew(0), m_pActionAdd(0), m_pActionEdit(0), m_pActionRemove(0)
+    , m_pActionMoveUp(0), m_pActionMoveDown(0)
+    , m_pMenuUSBDevices(0)
     , m_pCache(new UISettingsCacheMachineUSB)
 {
     /* Apply UI decorations */
-    Ui::UIMachineSettingsUSB::setupUi (this);
+    Ui::UIMachineSettingsUSB::setupUi(this);
 
     /* Prepare actions */
-    mNewAction = new QAction (mTwFilters);
-    mAddAction = new QAction (mTwFilters);
-    mEdtAction = new QAction (mTwFilters);
-    mDelAction = new QAction (mTwFilters);
-    mMupAction = new QAction (mTwFilters);
-    mMdnAction = new QAction (mTwFilters);
+    m_pActionNew = new QAction(mTwFilters);
+    m_pActionAdd = new QAction(mTwFilters);
+    m_pActionEdit = new QAction(mTwFilters);
+    m_pActionRemove = new QAction(mTwFilters);
+    m_pActionMoveUp = new QAction(mTwFilters);
+    m_pActionMoveDown = new QAction(mTwFilters);
 
-    mNewAction->setShortcut (QKeySequence ("Ins"));
-    mAddAction->setShortcut (QKeySequence ("Alt+Ins"));
-    mEdtAction->setShortcut (QKeySequence ("Ctrl+Return"));
-    mDelAction->setShortcut (QKeySequence ("Del"));
-    mMupAction->setShortcut (QKeySequence ("Ctrl+Up"));
-    mMdnAction->setShortcut (QKeySequence ("Ctrl+Down"));
+    m_pActionNew->setShortcut (QKeySequence ("Ins"));
+    m_pActionAdd->setShortcut (QKeySequence ("Alt+Ins"));
+    m_pActionEdit->setShortcut (QKeySequence ("Ctrl+Return"));
+    m_pActionRemove->setShortcut (QKeySequence ("Del"));
+    m_pActionMoveUp->setShortcut (QKeySequence ("Ctrl+Up"));
+    m_pActionMoveDown->setShortcut (QKeySequence ("Ctrl+Down"));
 
-    mNewAction->setIcon(UIIconPool::iconSet(":/usb_new_16px.png",
+    m_pActionNew->setIcon(UIIconPool::iconSet(":/usb_new_16px.png",
                                             ":/usb_new_disabled_16px.png"));
-    mAddAction->setIcon(UIIconPool::iconSet(":/usb_add_16px.png",
+    m_pActionAdd->setIcon(UIIconPool::iconSet(":/usb_add_16px.png",
                                             ":/usb_add_disabled_16px.png"));
-    mEdtAction->setIcon(UIIconPool::iconSet(":/usb_filter_edit_16px.png",
+    m_pActionEdit->setIcon(UIIconPool::iconSet(":/usb_filter_edit_16px.png",
                                             ":/usb_filter_edit_disabled_16px.png"));
-    mDelAction->setIcon(UIIconPool::iconSet(":/usb_remove_16px.png",
+    m_pActionRemove->setIcon(UIIconPool::iconSet(":/usb_remove_16px.png",
                                             ":/usb_remove_disabled_16px.png"));
-    mMupAction->setIcon(UIIconPool::iconSet(":/usb_moveup_16px.png",
+    m_pActionMoveUp->setIcon(UIIconPool::iconSet(":/usb_moveup_16px.png",
                                             ":/usb_moveup_disabled_16px.png"));
-    mMdnAction->setIcon(UIIconPool::iconSet(":/usb_movedown_16px.png",
+    m_pActionMoveDown->setIcon(UIIconPool::iconSet(":/usb_movedown_16px.png",
                                             ":/usb_movedown_disabled_16px.png"));
 
     /* Determine icon metric: */
@@ -319,12 +319,12 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     /* Prepare tool-bar: */
     m_pFiltersToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
     m_pFiltersToolBar->setOrientation(Qt::Vertical);
-    m_pFiltersToolBar->addAction(mNewAction);
-    m_pFiltersToolBar->addAction(mAddAction);
-    m_pFiltersToolBar->addAction(mEdtAction);
-    m_pFiltersToolBar->addAction(mDelAction);
-    m_pFiltersToolBar->addAction(mMupAction);
-    m_pFiltersToolBar->addAction(mMdnAction);
+    m_pFiltersToolBar->addAction(m_pActionNew);
+    m_pFiltersToolBar->addAction(m_pActionAdd);
+    m_pFiltersToolBar->addAction(m_pActionEdit);
+    m_pFiltersToolBar->addAction(m_pActionRemove);
+    m_pFiltersToolBar->addAction(m_pActionMoveUp);
+    m_pFiltersToolBar->addAction(m_pActionMoveDown);
 
     /* Setup connections */
     connect(mGbUSB, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
@@ -333,31 +333,31 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     connect(mRbUSB3, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
 
     connect (mGbUSB, SIGNAL (toggled (bool)),
-             this, SLOT (usbAdapterToggled (bool)));
+             this, SLOT (sltHandleUsbAdapterToggle (bool)));
     connect (mTwFilters, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
-             this, SLOT (currentChanged (QTreeWidgetItem*)));
+             this, SLOT (sltHandleCurrentItemChange (QTreeWidgetItem*)));
     connect (mTwFilters, SIGNAL (customContextMenuRequested (const QPoint &)),
-             this, SLOT (showContextMenu (const QPoint &)));
+             this, SLOT (sltHandleContextMenuRequest (const QPoint &)));
     connect (mTwFilters, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
-             this, SLOT (edtClicked()));
+             this, SLOT (sltEditFilter()));
     connect (mTwFilters, SIGNAL (itemChanged (QTreeWidgetItem *, int)),
-             this, SLOT (sltUpdateActivityState(QTreeWidgetItem *)));
+             this, SLOT (sltHandleActivityStateChange(QTreeWidgetItem *)));
 
-    mUSBDevicesMenu = new VBoxUSBMenu (this);
-    connect (mUSBDevicesMenu, SIGNAL (triggered (QAction*)),
-             this, SLOT (addConfirmed (QAction *)));
-    connect (mNewAction, SIGNAL (triggered (bool)),
-             this, SLOT (newClicked()));
-    connect (mAddAction, SIGNAL (triggered (bool)),
-             this, SLOT (addClicked()));
-    connect (mEdtAction, SIGNAL (triggered (bool)),
-             this, SLOT (edtClicked()));
-    connect (mDelAction, SIGNAL (triggered (bool)),
-             this, SLOT (delClicked()));
-    connect (mMupAction, SIGNAL (triggered (bool)),
-             this, SLOT (mupClicked()));
-    connect (mMdnAction, SIGNAL (triggered (bool)),
-             this, SLOT (mdnClicked()));
+    m_pMenuUSBDevices = new VBoxUSBMenu (this);
+    connect (m_pMenuUSBDevices, SIGNAL (triggered (QAction*)),
+             this, SLOT (sltAddFilterConfirmed (QAction *)));
+    connect (m_pActionNew, SIGNAL (triggered (bool)),
+             this, SLOT (sltNewFilter()));
+    connect (m_pActionAdd, SIGNAL (triggered (bool)),
+             this, SLOT (sltAddFilter()));
+    connect (m_pActionEdit, SIGNAL (triggered (bool)),
+             this, SLOT (sltEditFilter()));
+    connect (m_pActionRemove, SIGNAL (triggered (bool)),
+             this, SLOT (sltRemoveFilter()));
+    connect (m_pActionMoveUp, SIGNAL (triggered (bool)),
+             this, SLOT (sltMoveFilterUp()));
+    connect (m_pActionMoveDown, SIGNAL (triggered (bool)),
+             this, SLOT (sltMoveFilterDown()));
 
     /* Setup dialog */
     mTwFilters->header()->hide();
@@ -372,7 +372,7 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
 
 UIMachineSettingsUSB::~UIMachineSettingsUSB()
 {
-    delete mUSBDevicesMenu;
+    delete m_pMenuUSBDevices;
 
     /* Cleanup cache: */
     delete m_pCache;
@@ -472,7 +472,7 @@ void UIMachineSettingsUSB::getFromCache()
     mTwFilters->setCurrentItem(mTwFilters->topLevelItem(0));
 
     /* Update page: */
-    usbAdapterToggled(mGbUSB->isChecked());
+    sltHandleUsbAdapterToggle(mGbUSB->isChecked());
 
     /* Polish page finally: */
     polishPage();
@@ -675,7 +675,7 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 
 #ifdef VBOX_WITH_EXTPACK
     /* USB 2.0/3.0 Extension Pack presence test: */
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    const CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     if (   mGbUSB->isChecked()
         && (mRbUSB2->isChecked() || mRbUSB3->isChecked())
         && (extPack.isNull() || !extPack.GetUsable()))
@@ -697,13 +697,13 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-void UIMachineSettingsUSB::setOrderAfter (QWidget *aWidget)
+void UIMachineSettingsUSB::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder (aWidget, mGbUSB);
-    setTabOrder (mGbUSB, mRbUSB1);
-    setTabOrder (mRbUSB1, mRbUSB2);
-    setTabOrder (mRbUSB2, mRbUSB3);
-    setTabOrder (mRbUSB3, mTwFilters);
+    setTabOrder(pWidget, mGbUSB);
+    setTabOrder(mGbUSB, mRbUSB1);
+    setTabOrder(mRbUSB1, mRbUSB2);
+    setTabOrder(mRbUSB2, mRbUSB3);
+    setTabOrder(mRbUSB3, mTwFilters);
 }
 
 void UIMachineSettingsUSB::retranslateUi()
@@ -711,30 +711,30 @@ void UIMachineSettingsUSB::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsUSB::retranslateUi(this);
 
-    mNewAction->setText(tr("Add Empty Filter"));
-    mAddAction->setText(tr("Add Filter From Device"));
-    mEdtAction->setText(tr("Edit Filter"));
-    mDelAction->setText(tr("Remove Filter"));
-    mMupAction->setText(tr("Move Filter Up"));
-    mMdnAction->setText(tr("Move Filter Down"));
+    m_pActionNew->setText(tr("Add Empty Filter"));
+    m_pActionAdd->setText(tr("Add Filter From Device"));
+    m_pActionEdit->setText(tr("Edit Filter"));
+    m_pActionRemove->setText(tr("Remove Filter"));
+    m_pActionMoveUp->setText(tr("Move Filter Up"));
+    m_pActionMoveDown->setText(tr("Move Filter Down"));
 
-    mNewAction->setWhatsThis(tr("Adds new USB filter with all fields initially set to empty strings. "
+    m_pActionNew->setWhatsThis(tr("Adds new USB filter with all fields initially set to empty strings. "
                                 "Note that such a filter will match any attached USB device."));
-    mAddAction->setWhatsThis(tr("Adds new USB filter with all fields set to the values of the "
+    m_pActionAdd->setWhatsThis(tr("Adds new USB filter with all fields set to the values of the "
                                 "selected USB device attached to the host PC."));
-    mEdtAction->setWhatsThis(tr("Edits selected USB filter."));
-    mDelAction->setWhatsThis(tr("Removes selected USB filter."));
-    mMupAction->setWhatsThis(tr("Moves selected USB filter up."));
-    mMdnAction->setWhatsThis(tr("Moves selected USB filter down."));
+    m_pActionEdit->setWhatsThis(tr("Edits selected USB filter."));
+    m_pActionRemove->setWhatsThis(tr("Removes selected USB filter."));
+    m_pActionMoveUp->setWhatsThis(tr("Moves selected USB filter up."));
+    m_pActionMoveDown->setWhatsThis(tr("Moves selected USB filter down."));
 
-    mNewAction->setToolTip(mNewAction->whatsThis());
-    mAddAction->setToolTip(mAddAction->whatsThis());
-    mEdtAction->setToolTip(mEdtAction->whatsThis());
-    mDelAction->setToolTip(mDelAction->whatsThis());
-    mMupAction->setToolTip(mMupAction->whatsThis());
-    mMdnAction->setToolTip(mMdnAction->whatsThis());
+    m_pActionNew->setToolTip(m_pActionNew->whatsThis());
+    m_pActionAdd->setToolTip(m_pActionAdd->whatsThis());
+    m_pActionEdit->setToolTip(m_pActionEdit->whatsThis());
+    m_pActionRemove->setToolTip(m_pActionRemove->whatsThis());
+    m_pActionMoveUp->setToolTip(m_pActionMoveUp->whatsThis());
+    m_pActionMoveDown->setToolTip(m_pActionMoveDown->whatsThis());
 
-    mUSBFilterName = tr("New Filter %1", "usb");
+    m_strTrUSBFilterName = tr("New Filter %1", "usb");
 }
 
 void UIMachineSettingsUSB::polishPage()
@@ -746,7 +746,7 @@ void UIMachineSettingsUSB::polishPage()
     mRbUSB3->setEnabled(isMachineOffline() && mGbUSB->isChecked());
 }
 
-void UIMachineSettingsUSB::usbAdapterToggled(bool fEnabled)
+void UIMachineSettingsUSB::sltHandleUsbAdapterToggle(bool fEnabled)
 {
     /* Enable/disable USB children: */
     mUSBChild->setEnabled(isMachineInValidMode() && fEnabled);
@@ -760,10 +760,10 @@ void UIMachineSettingsUSB::usbAdapterToggled(bool fEnabled)
             mTwFilters->setCurrentItem(mTwFilters->topLevelItem(0));
     }
     /* Update current item: */
-    currentChanged(mTwFilters->currentItem());
+    sltHandleCurrentItemChange(mTwFilters->currentItem());
 }
 
-void UIMachineSettingsUSB::currentChanged(QTreeWidgetItem *aItem)
+void UIMachineSettingsUSB::sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem)
 {
     /* Get selected items: */
     QList<QTreeWidgetItem*> selectedItems = mTwFilters->selectedItems();
@@ -776,36 +776,36 @@ void UIMachineSettingsUSB::currentChanged(QTreeWidgetItem *aItem)
         return;
 
     /* Select item if requested: */
-    if (aItem)
-        aItem->setSelected(true);
+    if (pCurrentItem)
+        pCurrentItem->setSelected(true);
 
     /* Update corresponding action states: */
-    mEdtAction->setEnabled(aItem);
-    mDelAction->setEnabled(aItem);
-    mMupAction->setEnabled(aItem && mTwFilters->itemAbove(aItem));
-    mMdnAction->setEnabled(aItem && mTwFilters->itemBelow(aItem));
+    m_pActionEdit->setEnabled(pCurrentItem);
+    m_pActionRemove->setEnabled(pCurrentItem);
+    m_pActionMoveUp->setEnabled(pCurrentItem && mTwFilters->itemAbove(pCurrentItem));
+    m_pActionMoveDown->setEnabled(pCurrentItem && mTwFilters->itemBelow(pCurrentItem));
 }
 
-void UIMachineSettingsUSB::showContextMenu(const QPoint &pos)
+void UIMachineSettingsUSB::sltHandleContextMenuRequest(const QPoint &pos)
 {
     QMenu menu;
     if (mTwFilters->isEnabled())
     {
-        menu.addAction(mNewAction);
-        menu.addAction(mAddAction);
+        menu.addAction(m_pActionNew);
+        menu.addAction(m_pActionAdd);
         menu.addSeparator();
-        menu.addAction(mEdtAction);
+        menu.addAction(m_pActionEdit);
         menu.addSeparator();
-        menu.addAction(mDelAction);
+        menu.addAction(m_pActionRemove);
         menu.addSeparator();
-        menu.addAction(mMupAction);
-        menu.addAction(mMdnAction);
+        menu.addAction(m_pActionMoveUp);
+        menu.addAction(m_pActionMoveDown);
     }
     if (!menu.isEmpty())
         menu.exec(mTwFilters->mapToGlobal(pos));
 }
 
-void UIMachineSettingsUSB::sltUpdateActivityState(QTreeWidgetItem *pChangedItem)
+void UIMachineSettingsUSB::sltHandleActivityStateChange(QTreeWidgetItem *pChangedItem)
 {
     /* Check changed USB filter item: */
     Assert(pChangedItem);
@@ -815,16 +815,16 @@ void UIMachineSettingsUSB::sltUpdateActivityState(QTreeWidgetItem *pChangedItem)
     data.m_fActive = pChangedItem->checkState(0) == Qt::Checked;
 }
 
-void UIMachineSettingsUSB::newClicked()
+void UIMachineSettingsUSB::sltNewFilter()
 {
     /* Search for the max available filter index: */
     int iMaxFilterIndex = 0;
-    QRegExp regExp(QString("^") + mUSBFilterName.arg("([0-9]+)") + QString("$"));
+    const QRegExp regExp(QString("^") + m_strTrUSBFilterName.arg("([0-9]+)") + QString("$"));
     QTreeWidgetItemIterator iterator(mTwFilters);
     while (*iterator)
     {
-        QString filterName = (*iterator)->text(0);
-        int pos = regExp.indexIn(filterName);
+        const QString filterName = (*iterator)->text(0);
+        const int pos = regExp.indexIn(filterName);
         if (pos != -1)
             iMaxFilterIndex = regExp.cap(1).toInt() > iMaxFilterIndex ?
                               regExp.cap(1).toInt() : iMaxFilterIndex;
@@ -834,7 +834,7 @@ void UIMachineSettingsUSB::newClicked()
     /* Prepare new USB filter data: */
     UIDataSettingsMachineUSBFilter usbFilterData;
     usbFilterData.m_fActive = true;
-    usbFilterData.m_strName = mUSBFilterName.arg(iMaxFilterIndex + 1);
+    usbFilterData.m_strName = m_strTrUSBFilterName.arg(iMaxFilterIndex + 1);
     usbFilterData.m_fHostUSBDevice = false;
 
     /* Add new USB filter data: */
@@ -844,15 +844,15 @@ void UIMachineSettingsUSB::newClicked()
     revalidate();
 }
 
-void UIMachineSettingsUSB::addClicked()
+void UIMachineSettingsUSB::sltAddFilter()
 {
-    mUSBDevicesMenu->exec(QCursor::pos());
+    m_pMenuUSBDevices->exec(QCursor::pos());
 }
 
-void UIMachineSettingsUSB::addConfirmed(QAction *pAction)
+void UIMachineSettingsUSB::sltAddFilterConfirmed(QAction *pAction)
 {
     /* Get USB device: */
-    CUSBDevice usb = mUSBDevicesMenu->getUSB(pAction);
+    const CUSBDevice usb = m_pMenuUSBDevices->getUSB(pAction);
     if (usb.isNull())
         return;
 
@@ -883,7 +883,7 @@ void UIMachineSettingsUSB::addConfirmed(QAction *pAction)
     revalidate();
 }
 
-void UIMachineSettingsUSB::edtClicked()
+void UIMachineSettingsUSB::sltEditFilter()
 {
     /* Get current USB filter item: */
     QTreeWidgetItem *pItem = mTwFilters->currentItem();
@@ -931,7 +931,7 @@ void UIMachineSettingsUSB::edtClicked()
     }
 }
 
-void UIMachineSettingsUSB::delClicked()
+void UIMachineSettingsUSB::sltRemoveFilter()
 {
     /* Get current USB filter item: */
     QTreeWidgetItem *pItem = mTwFilters->currentItem();
@@ -942,41 +942,41 @@ void UIMachineSettingsUSB::delClicked()
     delete pItem;
 
     /* Update current item: */
-    currentChanged(mTwFilters->currentItem());
+    sltHandleCurrentItemChange(mTwFilters->currentItem());
 
     /* Revalidate: */
     revalidate();
 }
 
-void UIMachineSettingsUSB::mupClicked()
+void UIMachineSettingsUSB::sltMoveFilterUp()
 {
-    QTreeWidgetItem *item = mTwFilters->currentItem();
-    Assert (item);
+    QTreeWidgetItem *pItem = mTwFilters->currentItem();
+    Assert(pItem);
 
-    int index = mTwFilters->indexOfTopLevelItem (item);
-    QTreeWidgetItem *takenItem = mTwFilters->takeTopLevelItem (index);
-    Assert (item == takenItem);
-    mTwFilters->insertTopLevelItem (index - 1, takenItem);
-    m_filters.swap (index, index - 1);
+    const int index = mTwFilters->indexOfTopLevelItem(pItem);
+    QTreeWidgetItem *takenItem = mTwFilters->takeTopLevelItem(index);
+    Assert(pItem == takenItem);
+    mTwFilters->insertTopLevelItem(index - 1, takenItem);
+    m_filters.swap(index, index - 1);
 
-    mTwFilters->setCurrentItem (takenItem);
+    mTwFilters->setCurrentItem(takenItem);
 }
 
-void UIMachineSettingsUSB::mdnClicked()
+void UIMachineSettingsUSB::sltMoveFilterDown()
 {
-    QTreeWidgetItem *item = mTwFilters->currentItem();
-    Assert (item);
+    QTreeWidgetItem *pItem = mTwFilters->currentItem();
+    Assert(pItem);
 
-    int index = mTwFilters->indexOfTopLevelItem (item);
-    QTreeWidgetItem *takenItem = mTwFilters->takeTopLevelItem (index);
-    Assert (item == takenItem);
-    mTwFilters->insertTopLevelItem (index + 1, takenItem);
-    m_filters.swap (index, index + 1);
+    const int index = mTwFilters->indexOfTopLevelItem(pItem);
+    QTreeWidgetItem *takenItem = mTwFilters->takeTopLevelItem(index);
+    Assert(pItem == takenItem);
+    mTwFilters->insertTopLevelItem(index + 1, takenItem);
+    m_filters.swap(index, index + 1);
 
-    mTwFilters->setCurrentItem (takenItem);
+    mTwFilters->setCurrentItem(takenItem);
 }
 
-void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew)
+void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fChoose)
 {
     /* Append internal list with data: */
     m_filters << usbFilterData;
@@ -989,7 +989,7 @@ void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &us
     mTwFilters->addTopLevelItem(pItem);
 
     /* Select this item if its new: */
-    if (fIsNew)
+    if (fChoose)
         mTwFilters->setCurrentItem(pItem);
 }
 
@@ -999,31 +999,31 @@ QString UIMachineSettingsUSB::toolTipFor(const UIDataSettingsMachineUSBFilter &u
     /* Prepare tool-tip: */
     QString strToolTip;
 
-    QString strVendorId = usbFilterData.m_strVendorId;
+    const QString strVendorId = usbFilterData.m_strVendorId;
     if (!strVendorId.isEmpty())
         strToolTip += tr("<nobr>Vendor ID: %1</nobr>", "USB filter tooltip").arg(strVendorId);
 
-    QString strProductId = usbFilterData.m_strProductId;
+    const QString strProductId = usbFilterData.m_strProductId;
     if (!strProductId.isEmpty())
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Product ID: %2</nobr>", "USB filter tooltip").arg(strProductId);
 
-    QString strRevision = usbFilterData.m_strRevision;
+    const QString strRevision = usbFilterData.m_strRevision;
     if (!strRevision.isEmpty())
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Revision: %3</nobr>", "USB filter tooltip").arg(strRevision);
 
-    QString strProduct = usbFilterData.m_strProduct;
+    const QString strProduct = usbFilterData.m_strProduct;
     if (!strProduct.isEmpty())
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Product: %4</nobr>", "USB filter tooltip").arg(strProduct);
 
-    QString strManufacturer = usbFilterData.m_strManufacturer;
+    const QString strManufacturer = usbFilterData.m_strManufacturer;
     if (!strManufacturer.isEmpty())
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Manufacturer: %5</nobr>", "USB filter tooltip").arg(strManufacturer);
 
-    QString strSerial = usbFilterData.m_strSerialNumber;
+    const QString strSerial = usbFilterData.m_strSerialNumber;
     if (!strSerial.isEmpty())
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Serial No.: %1</nobr>", "USB filter tooltip").arg(strSerial);
 
-    QString strPort = usbFilterData.m_strPort;
+    const QString strPort = usbFilterData.m_strPort;
     if (!strPort.isEmpty())
         strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Port: %1</nobr>", "USB filter tooltip").arg(strPort);
 

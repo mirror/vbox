@@ -37,7 +37,7 @@ class UIMachineSettingsInterface : public UISettingsPageMachine,
 public:
 
     /** Constructs User Interface settings page. */
-    UIMachineSettingsInterface(const QString strMachineID);
+    UIMachineSettingsInterface(const QString strMachineId);
     /** Destructs User Interface settings page. */
     ~UIMachineSettingsInterface();
 
@@ -75,9 +75,9 @@ private:
     void cleanup();
 
     /** Holds the machine ID copy. */
-    const QString m_strMachineID;
+    const QString  m_strMachineId;
     /** Holds the action-pool instance. */
-    UIActionPool *m_pActionPool;
+    UIActionPool  *m_pActionPool;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineInterface *m_pCache;

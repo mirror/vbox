@@ -81,40 +81,40 @@ protected:
 
 private slots:
 
-    void usbAdapterToggled(bool fEnabled);
+    void sltHandleUsbAdapterToggle(bool fEnabled);
 
-    void currentChanged (QTreeWidgetItem *aItem = 0);
-    void showContextMenu(const QPoint &pos);
-    void sltUpdateActivityState(QTreeWidgetItem *pChangedItem);
+    void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
+    void sltHandleContextMenuRequest(const QPoint &position);
+    void sltHandleActivityStateChange(QTreeWidgetItem *pChangedItem);
 
-    void newClicked();
-    void addClicked();
-    void edtClicked();
-    void addConfirmed (QAction *aAction);
-    void delClicked();
-    void mupClicked();
-    void mdnClicked();
+    void sltNewFilter();
+    void sltAddFilter();
+    void sltEditFilter();
+    void sltAddFilterConfirmed(QAction *pAction);
+    void sltRemoveFilter();
+    void sltMoveFilterUp();
+    void sltMoveFilterDown();
 
 private:
 
-    void addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew);
+    void addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fChoose);
 
     /* Returns the multi-line description of the given USB filter: */
     static QString toolTipFor(const UIDataSettingsMachineUSBFilter &data);
 
     /* Other variables: */
-    UIToolBar *m_pToolBar;
-    QAction *mNewAction;
-    QAction *mAddAction;
-    QAction *mEdtAction;
-    QAction *mDelAction;
-    QAction *mMupAction;
-    QAction *mMdnAction;
-    VBoxUSBMenu *mUSBDevicesMenu;
+    UIToolBar   *m_pToolBar;
+    QAction     *m_pActionNew;
+    QAction     *m_pActionAdd;
+    QAction     *m_pActionEdit;
+    QAction     *m_pActionRemove;
+    QAction     *m_pActionMoveUp;
+    QAction     *m_pActionMoveDown;
+    VBoxUSBMenu *m_pMenuUSBDevices;
 
-    QString mUSBFilterName;
+    QString  m_strTrUSBFilterName;
 
-    QList<UIDataSettingsMachineUSBFilter> m_filters;
+    QList<UIDataSettingsMachineUSBFilter>  m_filters;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineUSB *m_pCache;

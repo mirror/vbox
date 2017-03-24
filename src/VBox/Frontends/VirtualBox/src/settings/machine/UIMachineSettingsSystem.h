@@ -42,8 +42,11 @@ public:
 
     /* API: Correlation stuff: */
     bool isHWVirtExEnabled() const;
+
     bool isHIDEnabled() const;
+
     KChipsetType chipsetType() const;
+
     void setUSBEnabled(bool fEnabled);
 
 protected:
@@ -87,7 +90,7 @@ private slots:
     void sltHandleMemorySizeEditorChange();
 
     /* Handler: Boot-table stuff: */
-    void sltCurrentBootItemChanged(int iCurrentIndex);
+    void sltHandleCurrentBootItemChange(int iCurrentIndex);
 
     /* Handlers: CPU stuff: */
     void sltHandleCPUCountSliderChange();
@@ -115,14 +118,14 @@ private:
     void adjustBootOrderTWSize();
 
     /* Variable: Boot-table stuff: */
-    QList<KDeviceType> m_possibleBootItems;
+    QList<KDeviceType>  m_possibleBootItems;
 
     /* Variables: CPU stuff: */
-    uint m_uMinGuestCPU;
-    uint m_uMaxGuestCPU;
-    uint m_uMinGuestCPUExecCap;
-    uint m_uMedGuestCPUExecCap;
-    uint m_uMaxGuestCPUExecCap;
+    uint  m_uMinGuestCPU;
+    uint  m_uMaxGuestCPU;
+    uint  m_uMinGuestCPUExecCap;
+    uint  m_uMedGuestCPUExecCap;
+    uint  m_uMaxGuestCPUExecCap;
 
     /* Variable: Correlation stuff: */
     bool m_fIsUSBEnabled;

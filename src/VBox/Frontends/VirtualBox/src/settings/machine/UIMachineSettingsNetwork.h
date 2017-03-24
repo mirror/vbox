@@ -45,15 +45,15 @@ public:
     ~UIMachineSettingsNetworkPage();
 
     /* Bridged adapter list: */
-    const QStringList& bridgedAdapterList() const { return m_bridgedAdapterList; }
+    const QStringList &bridgedAdapterList() const { return m_bridgedAdapterList; }
     /* Internal network list: */
-    const QStringList& internalNetworkList() const { return m_internalNetworkList; }
+    const QStringList &internalNetworkList() const { return m_internalNetworkList; }
     /* Host-only interface list: */
-    const QStringList& hostInterfaceList() const { return m_hostInterfaceList; }
+    const QStringList &hostInterfaceList() const { return m_hostInterfaceList; }
     /* Generic driver list: */
-    const QStringList& genericDriverList() const { return m_genericDriverList; }
+    const QStringList &genericDriverList() const { return m_genericDriverList; }
     /* NAT network list: */
-    const QStringList& natNetworkList() const { return m_natNetworkList; }
+    const QStringList &natNetworkList() const { return m_natNetworkList; }
 
 protected:
 
@@ -86,7 +86,7 @@ protected:
 private slots:
 
     /* Handles tab updates: */
-    void sltHandleUpdatedTab();
+    void sltHandleTabUpdate();
 
     /** Handles advanced button state change to @a fExpanded. */
     void sltHandleAdvancedButtonStateChange(bool fExpanded);
@@ -103,18 +103,18 @@ private:
     /* Various static stuff: */
     static QStringList otherInternalNetworkList();
     static QStringList otherGenericDriverList();
-    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
-    static void updateGenericProperties(CNetworkAdapter &adapter, const QString &strPropText);
+    static QString loadGenericProperties(const CNetworkAdapter &adapter);
+    static void saveGenericProperties(CNetworkAdapter &adapter, const QString &strProperties);
 
     /* Tab holder: */
-    QITabWidget *m_pTwAdapters;
+    QITabWidget *m_pTabWidgetAdapters;
 
     /* Alternative-name lists: */
-    QStringList m_bridgedAdapterList;
-    QStringList m_internalNetworkList;
-    QStringList m_hostInterfaceList;
-    QStringList m_genericDriverList;
-    QStringList m_natNetworkList;
+    QStringList  m_bridgedAdapterList;
+    QStringList  m_internalNetworkList;
+    QStringList  m_hostInterfaceList;
+    QStringList  m_genericDriverList;
+    QStringList  m_natNetworkList;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineNetwork *m_pCache;

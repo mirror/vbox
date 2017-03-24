@@ -442,7 +442,7 @@ bool UIMachineSettingsParallelPage::validate(QList<UIValidationMessage> &message
     {
         /* Get current tab/page: */
         QWidget *pTab = mTabWidget->widget(iIndex);
-        UIMachineSettingsParallel *pPage = static_cast<UIMachineSettingsParallel*> (pTab);
+        UIMachineSettingsParallel *pPage = static_cast<UIMachineSettingsParallel*>(pTab);
         if (!pPage->mGbParallel->isChecked())
             continue;
 
@@ -454,7 +454,7 @@ bool UIMachineSettingsParallelPage::validate(QList<UIValidationMessage> &message
         const QString strIRQ(pPage->mLeIRQ->text());
         const QString strIOPort(pPage->mLeIOPort->text());
         const QString strPath(pPage->mLePath->text());
-        QPair<QString, QString> pair(strIRQ, strIOPort);
+        const QPair<QString, QString> pair(strIRQ, strIOPort);
 
         if (strIRQ.isEmpty())
         {
@@ -496,11 +496,11 @@ bool UIMachineSettingsParallelPage::validate(QList<UIValidationMessage> &message
 
 void UIMachineSettingsParallelPage::retranslateUi()
 {
-    for (int i = 0; i < mTabWidget->count(); ++ i)
+    for (int i = 0; i < mTabWidget->count(); ++i)
     {
-        UIMachineSettingsParallel *page =
-            static_cast<UIMachineSettingsParallel*> (mTabWidget->widget (i));
-        mTabWidget->setTabText (i, page->pageTitle());
+        UIMachineSettingsParallel *pPage =
+            static_cast<UIMachineSettingsParallel*>(mTabWidget->widget(i));
+        mTabWidget->setTabText(i, pPage->pageTitle());
     }
 }
 

@@ -429,7 +429,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(0));
 
         /* RAM amount test: */
-        ulong uFullSize = vboxGlobal().host().GetMemorySize();
+        const ulong uFullSize = vboxGlobal().host().GetMemorySize();
         if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMAlw())
         {
             message.second << tr(
@@ -478,7 +478,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(1));
 
         /* VCPU amount test: */
-        int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
+        const int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
         if (m_pSliderCPUCount->value() > 2 * cTotalCPUs)
         {
             message.second << tr(
@@ -650,7 +650,7 @@ bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
                 if (!mTwBootOrder->currentItem())
                     mTwBootOrder->setCurrentItem(mTwBootOrder->item(0));
                 else
-                    sltCurrentBootItemChanged(mTwBootOrder->currentRow());
+                    sltHandleCurrentBootItemChange(mTwBootOrder->currentRow());
                 mTwBootOrder->currentItem()->setSelected(true);
             }
             else if (pWidget != mTbBootItemUp && pWidget != mTbBootItemDown)
@@ -693,11 +693,11 @@ void UIMachineSettingsSystem::sltHandleMemorySizeEditorChange()
     revalidate();
 }
 
-void UIMachineSettingsSystem::sltCurrentBootItemChanged(int iCurrentItem)
+void UIMachineSettingsSystem::sltHandleCurrentBootItemChange(int iCurrentItem)
 {
     /* Update boot-order tool-buttons: */
-    bool fEnabledUP = iCurrentItem > 0;
-    bool fEnabledDOWN = iCurrentItem < mTwBootOrder->count() - 1;
+    const bool fEnabledUP = iCurrentItem > 0;
+    const bool fEnabledDOWN = iCurrentItem < mTwBootOrder->count() - 1;
     if ((mTbBootItemUp->hasFocus() && !fEnabledUP) ||
         (mTbBootItemDown->hasFocus() && !fEnabledDOWN))
         mTwBootOrder->setFocus();
@@ -766,7 +766,7 @@ void UIMachineSettingsSystem::prepare()
 void UIMachineSettingsSystem::prepareTabMotherboard()
 {
     /* Load configuration: */
-    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+    const CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
 
     /* Preconfigure memory-size editor: */
     m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
@@ -795,7 +795,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
      * so we should get them (randomely?) from the list of all device types.
      * Until there will be separate Main getter for list of supported boot device types,
      * this list will be hard-coded here... */
-    int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
+    const int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
     for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
     {
         switch (iBootPosition)
@@ -830,7 +830,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
     /* Install boot-table connections: */
     connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
     connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
-    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(sltCurrentBootItemChanged(int)));
+    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(sltHandleCurrentBootItemChange(int)));
 
     /* Advanced options: */
     connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
@@ -839,8 +839,8 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 void UIMachineSettingsSystem::prepareTabProcessor()
 {
     /* Load configuration: */
-    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    uint hostCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
+    const CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+    const uint hostCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
     m_uMinGuestCPU = properties.GetMinGuestCPUCount();
     m_uMaxGuestCPU = qMin(2 * hostCPUs, (uint)properties.GetMaxGuestCPUCount());
     m_uMinGuestCPUExecCap = 1;
@@ -906,31 +906,31 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
 void UIMachineSettingsSystem::repopulateComboPointingHIDType()
 {
     /* Is there any value currently present/selected? */
-    KPointingHIDType currentValue = KPointingHIDType_None;
+    KPointingHIDType enmCurrentValue = KPointingHIDType_None;
     {
-        int iCurrentIndex = m_pComboPointingHIDType->currentIndex();
+        const int iCurrentIndex = m_pComboPointingHIDType->currentIndex();
         if (iCurrentIndex != -1)
-            currentValue = (KPointingHIDType)m_pComboPointingHIDType->itemData(iCurrentIndex).toInt();
+            enmCurrentValue = (KPointingHIDType)m_pComboPointingHIDType->itemData(iCurrentIndex).toInt();
     }
 
     /* Clear combo: */
     m_pComboPointingHIDType->clear();
 
     /* Repopulate combo taking into account currently cached value: */
-    KPointingHIDType cachedValue = m_pCache->base().m_pointingHIDType;
+    const KPointingHIDType enmCachedValue = m_pCache->base().m_pointingHIDType;
     {
         /* "PS/2 Mouse" value is always here: */
         m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_PS2Mouse), (int)KPointingHIDType_PS2Mouse);
 
         /* "USB Mouse" value is here only if it is currently selected: */
-        if (cachedValue == KPointingHIDType_USBMouse)
+        if (enmCachedValue == KPointingHIDType_USBMouse)
             m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMouse), (int)KPointingHIDType_USBMouse);
 
         /* "USB Mouse/Tablet" value is always here: */
         m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBTablet), (int)KPointingHIDType_USBTablet);
 
         /* "PS/2 and USB Mouse" value is here only if it is currently selected: */
-        if (cachedValue == KPointingHIDType_ComboMouse)
+        if (enmCachedValue == KPointingHIDType_ComboMouse)
             m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_ComboMouse), (int)KPointingHIDType_ComboMouse);
 
         /* "USB Multi-Touch Mouse/Tablet" value is always here: */
@@ -938,9 +938,9 @@ void UIMachineSettingsSystem::repopulateComboPointingHIDType()
     }
 
     /* Was there any value previously present/selected? */
-    if (currentValue != KPointingHIDType_None)
+    if (enmCurrentValue != KPointingHIDType_None)
     {
-        int iPreviousIndex = m_pComboPointingHIDType->findData((int)currentValue);
+        int iPreviousIndex = m_pComboPointingHIDType->findData((int)enmCurrentValue);
         if (iPreviousIndex != -1)
             m_pComboPointingHIDType->setCurrentIndex(iPreviousIndex);
     }
@@ -952,12 +952,12 @@ void UIMachineSettingsSystem::retranslateComboChipsetType()
     for (int iIndex = (int)KChipsetType_Null; iIndex < (int)KChipsetType_Max; ++iIndex)
     {
         /* Cast to the corresponding type: */
-        KChipsetType type = (KChipsetType)iIndex;
+        const KChipsetType enmType = (KChipsetType)iIndex;
         /* Look for the corresponding item: */
-        int iCorrespondingIndex = m_pComboChipsetType->findData((int)type);
+        const int iCorrespondingIndex = m_pComboChipsetType->findData((int)enmType);
         /* Re-translate if corresponding item was found: */
         if (iCorrespondingIndex != -1)
-            m_pComboChipsetType->setItemText(iCorrespondingIndex, gpConverter->toString(type));
+            m_pComboChipsetType->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
     }
 }
 
@@ -967,12 +967,12 @@ void UIMachineSettingsSystem::retranslateComboPointingHIDType()
     for (int iIndex = (int)KPointingHIDType_None; iIndex < (int)KPointingHIDType_Max; ++iIndex)
     {
         /* Cast to the corresponding type: */
-        KPointingHIDType type = (KPointingHIDType)iIndex;
+        const KPointingHIDType enmType = (KPointingHIDType)iIndex;
         /* Look for the corresponding item: */
-        int iCorrespondingIndex = m_pComboPointingHIDType->findData((int)type);
+        const int iCorrespondingIndex = m_pComboPointingHIDType->findData((int)enmType);
         /* Re-translate if corresponding item was found: */
         if (iCorrespondingIndex != -1)
-            m_pComboPointingHIDType->setItemText(iCorrespondingIndex, gpConverter->toString(type));
+            m_pComboPointingHIDType->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
     }
 }
 
@@ -982,12 +982,12 @@ void UIMachineSettingsSystem::retranslateComboParavirtProvider()
     for (int iIndex = (int)KParavirtProvider_None; iIndex < (int)KParavirtProvider_Max; ++iIndex)
     {
         /* Cast to the corresponding type: */
-        KParavirtProvider type = (KParavirtProvider)iIndex;
+        const KParavirtProvider enmType = (KParavirtProvider)iIndex;
         /* Look for the corresponding item: */
-        int iCorrespondingIndex = m_pComboParavirtProvider->findData((int)type);
+        const int iCorrespondingIndex = m_pComboParavirtProvider->findData((int)enmType);
         /* Re-translate if corresponding item was found: */
         if (iCorrespondingIndex != -1)
-            m_pComboParavirtProvider->setItemText(iCorrespondingIndex, gpConverter->toString(type));
+            m_pComboParavirtProvider->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
     }
 }
 

@@ -258,7 +258,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     connect(m_pAdvancedArrow, SIGNAL(sigClicked()), this, SLOT(sltHandleAdvancedButtonStateChange()));
     connect(m_pMACButton, SIGNAL(clicked()), this, SLOT(sltGenerateMac()));
     connect(m_pPortForwardingButton, SIGNAL(clicked()), this, SLOT(sltOpenPortForwardingDlg()));
-    connect(this, SIGNAL(sigTabUpdated()), m_pParent, SLOT(sltHandleUpdatedTab()));
+    connect(this, SIGNAL(sigTabUpdated()), m_pParent, SLOT(sltHandleTabUpdate()));
 
     /* Prepare validation: */
     prepareValidation();
@@ -991,7 +991,7 @@ int UIMachineSettingsNetwork::position(QComboBox *pComboBox, const QString &strT
 
 /* UIMachineSettingsNetworkPage Stuff: */
 UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
-    : m_pTwAdapters(0)
+    : m_pTabWidgetAdapters(0)
     , m_pCache(new UISettingsCacheMachineNetwork)
 {
     /* Setup main layout: */
@@ -999,8 +999,8 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     pMainLayout->setContentsMargins(0, 5, 0, 5);
 
     /* Creating tab-widget: */
-    m_pTwAdapters = new QITabWidget(this);
-    pMainLayout->addWidget(m_pTwAdapters);
+    m_pTabWidgetAdapters = new QITabWidget(this);
+    pMainLayout->addWidget(m_pTabWidgetAdapters);
 
     /* How many adapters to display: */
     /** @todo r=klaus this needs to be done based on the actual chipset type of the VM,
@@ -1015,7 +1015,7 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
         UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(this);
         connect(pTab, SIGNAL(sigNotifyAdvancedButtonStateChange(bool)),
                 this, SLOT(sltHandleAdvancedButtonStateChange(bool)));
-        m_pTwAdapters->addTab(pTab, pTab->tabTitle());
+        m_pTabWidgetAdapters->addTab(pTab, pTab->tabTitle());
     }
 }
 
@@ -1047,7 +1047,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     refreshNATNetworkList();
 
     /* For each network adapter: */
-    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
     {
         /* Prepare adapter data: */
         UIDataSettingsMachineNetworkAdapter adapterData;
@@ -1070,7 +1070,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             adapterData.m_adapterType = adapter.GetAdapterType();
             adapterData.m_promiscuousMode = adapter.GetPromiscModePolicy();
             adapterData.m_strMACAddress = adapter.GetMACAddress();
-            adapterData.m_strGenericProperties = summarizeGenericProperties(adapter);
+            adapterData.m_strGenericProperties = loadGenericProperties(adapter);
             adapterData.m_fCableConnected = adapter.GetCableConnected();
 
             /* Gather redirect options: */
@@ -1100,14 +1100,14 @@ void UIMachineSettingsNetworkPage::getFromCache()
 {
     /* Setup tab order: */
     Assert(firstWidget());
-    setTabOrder(firstWidget(), m_pTwAdapters->focusProxy());
-    QWidget *pLastFocusWidget = m_pTwAdapters->focusProxy();
+    setTabOrder(firstWidget(), m_pTabWidgetAdapters->focusProxy());
+    QWidget *pLastFocusWidget = m_pTabWidgetAdapters->focusProxy();
 
     /* For each network adapter: */
-    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
     {
         /* Get adapter page: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
 
         /* Load adapter data to page: */
         pTab->fetchAdapterCache(m_pCache->child(iSlot));
@@ -1129,10 +1129,10 @@ void UIMachineSettingsNetworkPage::getFromCache()
 void UIMachineSettingsNetworkPage::putToCache()
 {
     /* For each network adapter: */
-    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
     {
         /* Get adapter page: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
 
         /* Gather & cache adapter data: */
         pTab->uploadAdapterCache(m_pCache->child(iSlot));
@@ -1148,7 +1148,7 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     if (m_pCache->wasChanged())
     {
         /* For each network adapter: */
-        for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+        for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
         {
             /* Check if adapter data was changed: */
             const UISettingsCacheMachineNetworkAdapter &adapterCache = m_pCache->child(iSlot);
@@ -1185,7 +1185,7 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
                                 break;
                             case KNetworkAttachmentType_Generic:
                                 adapter.SetGenericDriver(adapterData.m_strGenericDriverName);
-                                updateGenericProperties(adapter, adapterData.m_strGenericProperties);
+                                saveGenericProperties(adapter, adapterData.m_strGenericProperties);
                                 break;
                             case KNetworkAttachmentType_NATNetwork:
                                 adapter.SetNATNetwork(adapterData.m_strNATNetworkName);
@@ -1230,9 +1230,9 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
     bool fValid = true;
 
     /* Delegate validation to adapter tabs: */
-    for (int i = 0; i < m_pTwAdapters->count(); ++i)
+    for (int i = 0; i < m_pTabWidgetAdapters->count(); ++i)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(i));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(i));
         AssertMsg(pTab, ("Can't get adapter tab!\n"));
         if (!pTab->validate(messages))
             fValid = false;
@@ -1244,36 +1244,36 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
 
 void UIMachineSettingsNetworkPage::retranslateUi()
 {
-    for (int i = 0; i < m_pTwAdapters->count(); ++ i)
+    for (int i = 0; i < m_pTabWidgetAdapters->count(); ++i)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(i));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(i));
         Assert(pTab);
-        m_pTwAdapters->setTabText(i, pTab->tabTitle());
+        m_pTabWidgetAdapters->setTabText(i, pTab->tabTitle());
     }
 }
 
 void UIMachineSettingsNetworkPage::polishPage()
 {
     /* Get the count of network adapter tabs: */
-    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
     {
-        m_pTwAdapters->setTabEnabled(iSlot,
-                                     isMachineOffline() ||
-                                     (isMachineInValidMode() && m_pCache->child(iSlot).base().m_fAdapterEnabled));
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
+        m_pTabWidgetAdapters->setTabEnabled(iSlot,
+                                            isMachineOffline() ||
+                                            (isMachineInValidMode() && m_pCache->child(iSlot).base().m_fAdapterEnabled));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
         pTab->polishTab();
     }
 }
 
-void UIMachineSettingsNetworkPage::sltHandleUpdatedTab()
+void UIMachineSettingsNetworkPage::sltHandleTabUpdate()
 {
     /* Determine the sender: */
     UIMachineSettingsNetwork *pSender = qobject_cast<UIMachineSettingsNetwork*>(sender());
     AssertMsg(pSender, ("This slot should be called only through signal<->slot mechanism from one of UIMachineSettingsNetwork tabs!\n"));
 
     /* Determine sender's attachment type: */
-    KNetworkAttachmentType senderAttachmentType = pSender->attachmentType();
-    switch (senderAttachmentType)
+    const KNetworkAttachmentType enmSenderAttachmentType = pSender->attachmentType();
+    switch (enmSenderAttachmentType)
     {
         case KNetworkAttachmentType_Internal:
         {
@@ -1290,14 +1290,14 @@ void UIMachineSettingsNetworkPage::sltHandleUpdatedTab()
     }
 
     /* Update all the tabs except the sender: */
-    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
     {
         /* Get the iterated tab: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
-        AssertMsg(pTab, ("All the tabs of m_pTwAdapters should be of the UIMachineSettingsNetwork type!\n"));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
+        AssertMsg(pTab, ("All the tabs of m_pTabWidgetAdapters should be of the UIMachineSettingsNetwork type!\n"));
 
         /* Update all the tabs (except sender) with the same attachment type as sender have: */
-        if (pTab != pSender && pTab->attachmentType() == senderAttachmentType)
+        if (pTab != pSender && pTab->attachmentType() == enmSenderAttachmentType)
             pTab->reloadAlternative();
     }
 }
@@ -1305,9 +1305,9 @@ void UIMachineSettingsNetworkPage::sltHandleUpdatedTab()
 void UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange(bool fExpanded)
 {
     /* Update the advanced button states for all the pages: */
-    for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
         pTab->setAdvancedButtonState(fExpanded);
     }
 }
@@ -1333,12 +1333,12 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
     if (fFullRefresh)
         m_internalNetworkList << otherInternalNetworkList();
     /* Append internal network list with names from all the tabs: */
-    for (int iTab = 0; iTab < m_pTwAdapters->count(); ++iTab)
+    for (int iTab = 0; iTab < m_pTabWidgetAdapters->count(); ++iTab)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iTab));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iTab));
         if (pTab)
         {
-            QString strName = pTab->alternativeName(KNetworkAttachmentType_Internal);
+            const QString strName = pTab->alternativeName(KNetworkAttachmentType_Internal);
             if (!strName.isEmpty() && !m_internalNetworkList.contains(strName))
                 m_internalNetworkList << strName;
         }
@@ -1366,12 +1366,12 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
     if (fFullRefresh)
         m_genericDriverList << otherGenericDriverList();
     /* Append generic driver list with names from all the tabs: */
-    for (int iTab = 0; iTab < m_pTwAdapters->count(); ++iTab)
+    for (int iTab = 0; iTab < m_pTabWidgetAdapters->count(); ++iTab)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iTab));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iTab));
         if (pTab)
         {
-            QString strName = pTab->alternativeName(KNetworkAttachmentType_Generic);
+            const QString strName = pTab->alternativeName(KNetworkAttachmentType_Generic);
             if (!strName.isEmpty() && !m_genericDriverList.contains(strName))
                 m_genericDriverList << strName;
         }
@@ -1394,8 +1394,8 @@ void UIMachineSettingsNetworkPage::refreshNATNetworkList()
 QStringList UIMachineSettingsNetworkPage::otherInternalNetworkList()
 {
     /* Load total internal network list of all VMs: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QStringList otherInternalNetworks(QList<QString>::fromVector(vbox.GetInternalNetworks()));
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    const QStringList otherInternalNetworks(QList<QString>::fromVector(vbox.GetInternalNetworks()));
     return otherInternalNetworks;
 }
 
@@ -1403,13 +1403,13 @@ QStringList UIMachineSettingsNetworkPage::otherInternalNetworkList()
 QStringList UIMachineSettingsNetworkPage::otherGenericDriverList()
 {
     /* Load total generic driver list of all VMs: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QStringList otherGenericDrivers(QList<QString>::fromVector(vbox.GetGenericNetworkDrivers()));
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    const QStringList otherGenericDrivers(QList<QString>::fromVector(vbox.GetGenericNetworkDrivers()));
     return otherGenericDrivers;
 }
 
 /* static */
-QString UIMachineSettingsNetworkPage::summarizeGenericProperties(const CNetworkAdapter &adapter)
+QString UIMachineSettingsNetworkPage::loadGenericProperties(const CNetworkAdapter &adapter)
 {
     /* Prepare formatted string: */
     QVector<QString> names;
@@ -1428,21 +1428,21 @@ QString UIMachineSettingsNetworkPage::summarizeGenericProperties(const CNetworkA
 }
 
 /* static */
-void UIMachineSettingsNetworkPage::updateGenericProperties(CNetworkAdapter &adapter, const QString &strPropText)
+void UIMachineSettingsNetworkPage::saveGenericProperties(CNetworkAdapter &adapter, const QString &strProperties)
 {
     /* Parse new properties: */
-    QStringList newProps = strPropText.split("\n");
+    const QStringList newProps = strProperties.split("\n");
     QHash<QString, QString> hash;
 
     /* Save new properties: */
     for (int i = 0; i < newProps.size(); ++i)
     {
-        QString strLine = newProps[i];
-        int iSplitPos = strLine.indexOf("=");
+        const QString strLine = newProps[i];
+        const int iSplitPos = strLine.indexOf("=");
         if (iSplitPos)
         {
-            QString strKey = strLine.left(iSplitPos);
-            QString strVal = strLine.mid(iSplitPos+1);
+            const QString strKey = strLine.left(iSplitPos);
+            const QString strVal = strLine.mid(iSplitPos + 1);
             adapter.SetProperty(strKey, strVal);
             hash[strKey] = strVal;
         }
@@ -1454,8 +1454,8 @@ void UIMachineSettingsNetworkPage::updateGenericProperties(CNetworkAdapter &adap
     props = adapter.GetProperties(QString(), names);
     for (int i = 0; i < names.size(); ++i)
     {
-        QString strName = names[i];
-        QString strValue = props[i];
+        const QString strName = names[i];
+        const QString strValue = props[i];
         if (strValue != hash[strName])
             adapter.SetProperty(strName, hash[strName]);
     }

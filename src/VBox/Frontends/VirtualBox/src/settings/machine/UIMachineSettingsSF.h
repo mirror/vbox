@@ -86,21 +86,21 @@ protected:
 
 private slots:
 
-    void addTriggered();
-    void edtTriggered();
-    void delTriggered();
+    void sltAddSharedFolder();
+    void sltEditSharedFolder();
+    void sltDeleteSharedFolder();
 
-    void processCurrentChanged (QTreeWidgetItem *aCurrentItem);
-    void processDoubleClick (QTreeWidgetItem *aItem);
-    void showContextMenu (const QPoint &aPos);
+    void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
+    void sltHandleDoubleClick(QTreeWidgetItem *pItem);
+    void sltHandleContextMenuRequest(const QPoint &position);
 
-    void adjustList();
-    void adjustFields();
+    void sltAdjustTree();
+    void sltAdjustTreeFields();
 
 private:
 
-    SFTreeViewItem* root(UISharedFolderType type);
-    SFoldersNameList usedList (bool aIncludeSelected);
+    SFTreeViewItem *root(UISharedFolderType type);
+    SFoldersNameList usedList(bool aIncludeSelected);
 
     bool isSharedFolderTypeSupported(UISharedFolderType sharedFolderType) const;
     void updateRootItemsVisibility();
@@ -111,12 +111,13 @@ private:
     bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
     bool removeSharedFolder(const UISettingsCacheSharedFolder &folderCache);
 
-    QAction  *mNewAction;
-    QAction  *mEdtAction;
-    QAction  *mDelAction;
-    QString   mTrFull;
-    QString   mTrReadOnly;
-    QString   mTrYes;
+    QAction *m_pActionAdd;
+    QAction *m_pActionEdit;
+    QAction *m_pActionRemove;
+
+    QString  m_strTrFull;
+    QString  m_strTrReadOnly;
+    QString  m_strTrYes;
 
     /** Holds the page data cache instance. */
     UISettingsCacheSharedFolders *m_pCache;

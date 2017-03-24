@@ -601,7 +601,7 @@ class UIMachineSettingsStorage : public UISettingsPageMachine,
 
 signals:
 
-    void storageChanged();
+    void sigStorageChanged();
 
 public:
 
@@ -610,7 +610,7 @@ public:
     /** Destructs Storage settings page. */
     ~UIMachineSettingsStorage();
 
-    void setChipsetType(KChipsetType type);
+    void setChipsetType(KChipsetType enmType);
 
 protected:
 
@@ -649,27 +649,27 @@ protected:
 private slots:
 
     /* Handlers: Medium-processing stuff: */
-    void sltHandleMediumEnumerated(const QString &strMediumID);
-    void sltHandleMediumDeleted(const QString &strMediumID);
+    void sltHandleMediumEnumerated(const QString &strMediumId);
+    void sltHandleMediumDeleted(const QString &strMediumId);
 
-    void addController();
-    void addIDEController();
-    void addSATAController();
-    void addSCSIController();
-    void addFloppyController();
-    void addSASController();
-    void addUSBController();
-    void addNVMeController();
-    void delController();
+    void sltAddController();
+    void sltAddControllerIDE();
+    void sltAddControllerSATA();
+    void sltAddControllerSCSI();
+    void sltAddControllerFloppy();
+    void sltAddControllerSAS();
+    void sltAddControllerUSB();
+    void sltAddControllerNVMe();
+    void sltRemoveController();
 
-    void addAttachment();
-    void addHDAttachment();
-    void addCDAttachment();
-    void addFDAttachment();
-    void delAttachment();
+    void sltAddAttachment();
+    void sltAddAttachmentHD();
+    void sltAddAttachmentCD();
+    void sltAddAttachmentFD();
+    void sltRemoveAttachment();
 
-    void getInformation();
-    void setInformation();
+    void sltGetInformation();
+    void sltSetInformation();
 
     void sltPrepareOpenMediumMenu();
     void sltCreateNewHardDisk();
@@ -678,36 +678,36 @@ private slots:
     void sltChooseHostDrive();
     void sltChooseRecentMedium();
 
-    void updateActionsState();
+    void sltUpdateActionsState();
 
-    void onRowInserted (const QModelIndex &aParent, int aIndex);
-    void onRowRemoved();
+    void sltHandleRowInsertion(const QModelIndex &parent, int iPosition);
+    void sltHandleRowRemoval();
 
-    void onCurrentItemChanged();
+    void sltHandleCurrentItemChange();
 
-    void onContextMenuRequested (const QPoint &aPosition);
+    void sltHandleContextMenuRequest(const QPoint &position);
 
-    void onDrawItemBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex);
+    void sltHandleDrawItemBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index);
 
-    void onMouseMoved (QMouseEvent *aEvent);
-    void onMouseClicked (QMouseEvent *aEvent);
+    void sltHandleMouseMove(QMouseEvent *pEvent);
+    void sltHandleMouseClick(QMouseEvent *pEvent);
 
 private:
 
-    void addControllerWrapper (const QString &aName, KStorageBus aBus, KStorageControllerType aType);
-    void addAttachmentWrapper (KDeviceType aDevice);
+    void addControllerWrapper(const QString &strName, KStorageBus enmBus, KStorageControllerType enmType);
+    void addAttachmentWrapper(KDeviceType enmDevice);
 
     QString getWithNewHDWizard();
 
-    void updateAdditionalObjects (KDeviceType aType);
+    void updateAdditionalDetails(KDeviceType enmType);
 
-    QString generateUniqueName (const QString &aTemplate) const;
+    QString generateUniqueControllerName(const QString &strTemplate) const;
 
-    uint32_t deviceCount (KDeviceType aType) const;
+    uint32_t deviceCount(KDeviceType enmType) const;
 
     void addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName);
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
-    void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType recentMediumType);
+    void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType enmRecentMediumType);
 
     bool updateStorageData();
     bool removeStorageController(const UISettingsCacheMachineStorageController &controllerCache);
@@ -722,34 +722,34 @@ private:
     bool isControllerCouldBeUpdated(const UISettingsCacheMachineStorageController &controllerCache) const;
     bool isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const;
 
-    QString m_strMachineId;
-    QString m_strMachineSettingsFilePath;
-    QString m_strMachineGuestOSTypeId;
+    QString  m_strMachineId;
+    QString  m_strMachineSettingsFilePath;
+    QString  m_strMachineGuestOSTypeId;
 
     /** Holds the storage-tree instance. */
-    QITreeView *mTwStorageTree;
+    QITreeView   *m_pTreeStorage;
     /** Holds the storage-model instance. */
-    StorageModel *mStorageModel;
+    StorageModel *m_pModelStorage;
 
-    QAction *mAddCtrAction;
-    QAction *mDelCtrAction;
-    QAction *mAddIDECtrAction;
-    QAction *mAddSATACtrAction;
-    QAction *mAddSCSICtrAction;
-    QAction *mAddSASCtrAction;
-    QAction *mAddFloppyCtrAction;
-    QAction *mAddUSBCtrAction;
-    QAction *mAddNVMeCtrAction;
-    QAction *mAddAttAction;
-    QAction *mDelAttAction;
-    QAction *mAddHDAttAction;
-    QAction *mAddCDAttAction;
-    QAction *mAddFDAttAction;
+    QAction *m_pActionAddController;
+    QAction *m_pActionRemoveController;
+    QAction *m_pActionAddControllerIDE;
+    QAction *m_pActionAddControllerSATA;
+    QAction *m_pActionAddControllerSCSI;
+    QAction *m_pActionAddControllerSAS;
+    QAction *m_pActionAddControllerFloppy;
+    QAction *m_pActionAddControllerUSB;
+    QAction *m_pActionAddControllerNVMe;
+    QAction *m_pActionAddAttachment;
+    QAction *m_pActionRemoveAttachment;
+    QAction *m_pActionAddAttachmentHD;
+    QAction *m_pActionAddAttachmentCD;
+    QAction *m_pActionAddAttachmentFD;
 
     UIMediumIDHolder *m_pMediumIdHolder;
 
-    bool  mIsPolished;
-    bool  mIsLoadingInProgress;
+    bool  m_fPolished;
+    bool  m_fLoadingInProgress;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineStorage *m_pCache;

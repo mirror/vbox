@@ -173,24 +173,24 @@ UIMachineSettingsDisplay::~UIMachineSettingsDisplay()
     m_pCache = 0;
 }
 
-void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
+void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
 {
     /* Check if guest os type changed: */
-    if (m_guestOSType == guestOSType)
+    if (m_comGuestOSType == comGuestOSType)
         return;
 
     /* Remember new guest os type: */
-    m_guestOSType = guestOSType;
+    m_comGuestOSType = comGuestOSType;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Check if 2D video acceleration supported by the guest OS type: */
-    QString strguestOSTypeFamily = m_guestOSType.GetFamilyId();
-    m_f2DVideoAccelerationSupported = strguestOSTypeFamily == "Windows";
+    const QString strGuestOSTypeFamily = m_comGuestOSType.GetFamilyId();
+    m_f2DVideoAccelerationSupported = strGuestOSTypeFamily == "Windows";
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef VBOX_WITH_CRHGSMI
     /* Check if WDDM mode supported by the guest OS type: */
-    QString strguestOSTypeId = m_guestOSType.GetId();
-    m_fWddmModeSupported = VBoxGlobal::isWddmCompatibleOsType(strguestOSTypeId);
+    const QString strGuestOSTypeId = m_comGuestOSType.GetId();
+    m_fWddmModeSupported = VBoxGlobal::isWddmCompatibleOsType(strGuestOSTypeId);
 #endif /* VBOX_WITH_CRHGSMI */
 
     /* Recheck video RAM requirement: */
@@ -465,9 +465,9 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Video RAM amount test: */
-        if (shouldWeWarnAboutLowVideoMemory() && !m_guestOSType.isNull())
+        if (shouldWeWarnAboutLowVRAM() && !m_comGuestOSType.isNull())
         {
-            quint64 uNeedBytes = VBoxGlobal::requiredVideoMemory(m_guestOSType.GetId(), m_pEditorVideoScreenCount->value());
+            quint64 uNeedBytes = VBoxGlobal::requiredVideoMemory(m_comGuestOSType.GetId(), m_pEditorVideoScreenCount->value());
 
             /* Basic video RAM amount test: */
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
@@ -628,7 +628,7 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelVideoCaptureQualityMed->setText(tr("medium", "quality"));
     m_pLabelVideoCaptureQualityMax->setText(tr("high", "quality"));
 
-    updateVideoCaptureSizeHint();
+    updateVideoCaptureFileSizeHint();
 }
 
 void UIMachineSettingsDisplay::polishPage()
@@ -701,7 +701,7 @@ void UIMachineSettingsDisplay::sltHandleVideoMemorySizeEditorChange()
     revalidate();
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoScreenCountSliderChange()
+void UIMachineSettingsDisplay::sltHandleGuestScreenCountSliderChange()
 {
     /* Apply proposed screen-count: */
     m_pEditorVideoScreenCount->blockSignals(true);
@@ -712,13 +712,13 @@ void UIMachineSettingsDisplay::sltHandleVideoScreenCountSliderChange()
     checkVRAMRequirements();
 
     /* Update Video Capture tab screen count: */
-    updateVideoCaptureScreenCount();
+    updateGuestScreenCount();
 
     /* Revalidate: */
     revalidate();
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoScreenCountEditorChange()
+void UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange()
 {
     /* Apply proposed screen-count: */
     m_pSliderVideoScreenCount->blockSignals(true);
@@ -729,7 +729,7 @@ void UIMachineSettingsDisplay::sltHandleVideoScreenCountEditorChange()
     checkVRAMRequirements();
 
     /* Update Video Capture tab screen count: */
-    updateVideoCaptureScreenCount();
+    updateGuestScreenCount();
 
     /* Revalidate: */
     revalidate();
@@ -756,12 +756,12 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
     /* Video Capture options should be enabled only if:
      * 1. Machine is in 'offline' or 'saved' state and check-box is checked,
      * 2. Machine is in 'online' state, check-box is checked, and video recording is *disabled* currently. */
-    bool fIsVideoCaptureOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
-                                         (isMachineOnline() && !m_pCache->base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked());
+    const bool fIsVideoCaptureOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
+                                               (isMachineOnline() && !m_pCache->base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked());
 
     /* Video Capture Screens option should be enabled only if:
      * Machine is in *any* valid state and check-box is checked. */
-    bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
+    const bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
 
     m_pLabelVideoCapturePath->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pEditorVideoCapturePath->setEnabled(fIsVideoCaptureOptionsEnabled);
@@ -787,8 +787,8 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameSizeComboboxChange()
 {
     /* Get the proposed size: */
-    int iCurrentIndex = m_pComboVideoCaptureSize->currentIndex();
-    QSize videoCaptureSize = m_pComboVideoCaptureSize->itemData(iCurrentIndex).toSize();
+    const int iCurrentIndex = m_pComboVideoCaptureSize->currentIndex();
+    const QSize videoCaptureSize = m_pComboVideoCaptureSize->itemData(iCurrentIndex).toSize();
 
     /* Make sure its valid: */
     if (!videoCaptureSize.isValid())
@@ -802,7 +802,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameSizeComboboxChange()
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameWidthEditorChange()
 {
     /* Look for preset: */
-    lookForCorrespondingSizePreset();
+    lookForCorrespondingFrameSizePreset();
     /* Update quality and bit-rate: */
     sltHandleVideoCaptureQualitySliderChange();
 }
@@ -810,7 +810,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameWidthEditorChange()
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameHeightEditorChange()
 {
     /* Look for preset: */
-    lookForCorrespondingSizePreset();
+    lookForCorrespondingFrameSizePreset();
     /* Update quality and bit-rate: */
     sltHandleVideoCaptureQualitySliderChange();
 }
@@ -844,7 +844,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureQualitySliderChange()
                                                             m_pEditorVideoCaptureFrameRate->value(),
                                                             m_pSliderVideoCaptureQuality->value()));
     m_pEditorVideoCaptureBitRate->blockSignals(false);
-    updateVideoCaptureSizeHint();
+    updateVideoCaptureFileSizeHint();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
@@ -856,7 +856,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
                                                             m_pEditorVideoCaptureFrameRate->value(),
                                                             m_pEditorVideoCaptureBitRate->value()));
     m_pSliderVideoCaptureQuality->blockSignals(false);
-    updateVideoCaptureSizeHint();
+    updateVideoCaptureFileSizeHint();
 }
 
 void UIMachineSettingsDisplay::prepare()
@@ -876,14 +876,14 @@ void UIMachineSettingsDisplay::prepare()
 void UIMachineSettingsDisplay::prepareScreenTab()
 {
     /* Prepare memory-size slider: */
-    CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
+    const CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     m_iMinVRAM = sys.GetMinGuestVRAM();
     m_iMaxVRAM = sys.GetMaxGuestVRAM();
     m_iMaxVRAMVisible = m_iMaxVRAM;
     const uint cHostScreens = gpDesktop->screenCount();
     m_pSliderVideoMemorySize->setMinimum(m_iMinVRAM);
     m_pSliderVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
-    m_pSliderVideoMemorySize->setPageStep(calcPageStep(m_iMaxVRAMVisible));
+    m_pSliderVideoMemorySize->setPageStep(calculatePageStep(m_iMaxVRAMVisible));
     m_pSliderVideoMemorySize->setSingleStep(m_pSliderVideoMemorySize->pageStep() / 4);
     m_pSliderVideoMemorySize->setTickInterval(m_pSliderVideoMemorySize->pageStep());
     m_pSliderVideoMemorySize->setSnappingEnabled(true);
@@ -907,13 +907,13 @@ void UIMachineSettingsDisplay::prepareScreenTab()
     m_pSliderVideoScreenCount->setTickInterval(1);
     m_pSliderVideoScreenCount->setOptimalHint(cMinGuestScreens, cHostScreens);
     m_pSliderVideoScreenCount->setWarningHint(cHostScreens, cMaxGuestScreensForSlider);
-    connect(m_pSliderVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoScreenCountSliderChange()));
+    connect(m_pSliderVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountSliderChange()));
 
     /* Prepare screen-count editor: */
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoScreenCount, 3);
     m_pEditorVideoScreenCount->setMinimum(1);
     m_pEditorVideoScreenCount->setMaximum(cMaxGuestScreens);
-    connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoScreenCountEditorChange()));
+    connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountEditorChange()));
 
     /* Prepare scale-factor slider: */
     m_pSliderGuestScreenScale->setMinimum(100);
@@ -1039,12 +1039,12 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
 void UIMachineSettingsDisplay::checkVRAMRequirements()
 {
     /* Make sure guest OS type is set: */
-    if (m_guestOSType.isNull())
+    if (m_comGuestOSType.isNull())
         return;
 
     /* Get monitors count and base video memory requirements: */
-    int cGuestScreenCount = m_pEditorVideoScreenCount->value();
-    quint64 uNeedMBytes = VBoxGlobal::requiredVideoMemory(m_guestOSType.GetId(), cGuestScreenCount) / _1M;
+    const int cGuestScreenCount = m_pEditorVideoScreenCount->value();
+    quint64 uNeedMBytes = VBoxGlobal::requiredVideoMemory(m_comGuestOSType.GetId(), cGuestScreenCount) / _1M;
 
     /* Initial value: */
     m_iMaxVRAMVisible = cGuestScreenCount * 32;
@@ -1080,41 +1080,41 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
 
     m_pEditorVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
     m_pSliderVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
-    m_pSliderVideoMemorySize->setPageStep(calcPageStep(m_iMaxVRAMVisible));
+    m_pSliderVideoMemorySize->setPageStep(calculatePageStep(m_iMaxVRAMVisible));
     m_pSliderVideoMemorySize->setWarningHint(1, qMin((int)uNeedMBytes, m_iMaxVRAMVisible));
     m_pSliderVideoMemorySize->setOptimalHint(qMin((int)uNeedMBytes, m_iMaxVRAMVisible), m_iMaxVRAMVisible);
     m_pLabelVideoMemorySizeMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
 }
 
-bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVideoMemory()
+bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVRAM()
 {
     bool fResult = true;
 
     QStringList excludingOSList = QStringList()
         << "Other" << "DOS" << "Netware" << "L4" << "QNX" << "JRockitVE";
-    if (excludingOSList.contains(m_guestOSType.GetId()))
+    if (excludingOSList.contains(m_comGuestOSType.GetId()))
         fResult = false;
 
     return fResult;
 }
 
 /* static */
-int UIMachineSettingsDisplay::calcPageStep(int iMax)
+int UIMachineSettingsDisplay::calculatePageStep(int iMax)
 {
     /* Reasonable max. number of page steps is 32. */
-    uint page = ((uint)iMax + 31) / 32;
+    uint uPage = ((uint)iMax + 31) / 32;
     /* Make it a power of 2: */
-    uint p = page, p2 = 0x1;
-    while ((p >>= 1))
+    uint uP = uPage, p2 = 0x1;
+    while ((uP >>= 1))
         p2 <<= 1;
-    if (page != p2)
+    if (uPage != p2)
         p2 <<= 1;
     if (p2 < 4)
         p2 = 4;
     return (int)p2;
 }
 
-void UIMachineSettingsDisplay::lookForCorrespondingSizePreset()
+void UIMachineSettingsDisplay::lookForCorrespondingFrameSizePreset()
 {
     /* Look for video-capture size preset: */
     lookForCorrespondingPreset(m_pComboVideoCaptureSize,
@@ -1122,7 +1122,7 @@ void UIMachineSettingsDisplay::lookForCorrespondingSizePreset()
                                      m_pEditorVideoCaptureHeight->value()));
 }
 
-void UIMachineSettingsDisplay::updateVideoCaptureScreenCount()
+void UIMachineSettingsDisplay::updateGuestScreenCount()
 {
     /* Update copy of the cached item to get the desired result: */
     QVector<BOOL> screens = m_pCache->base().m_screens;
@@ -1130,31 +1130,31 @@ void UIMachineSettingsDisplay::updateVideoCaptureScreenCount()
     m_pScrollerVideoCaptureScreens->setValue(screens);
 }
 
-void UIMachineSettingsDisplay::updateVideoCaptureSizeHint()
+void UIMachineSettingsDisplay::updateVideoCaptureFileSizeHint()
 {
     m_pLabelVideoCaptureSizeHint->setText(tr("<i>About %1MB per 5 minute video</i>").arg(m_pEditorVideoCaptureBitRate->value() * 300 / 8 / 1024));
 }
 
 /* static */
-void UIMachineSettingsDisplay::lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData)
+void UIMachineSettingsDisplay::lookForCorrespondingPreset(QComboBox *pComboBox, const QVariant &data)
 {
     /* Use passed iterator to look for corresponding preset of passed combo-box: */
-    int iLookupResult = pWhere->findData(whichData);
-    if (iLookupResult != -1 && pWhere->currentIndex() != iLookupResult)
-        pWhere->setCurrentIndex(iLookupResult);
-    else if (iLookupResult == -1 && pWhere->currentIndex() != 0)
-        pWhere->setCurrentIndex(0);
+    const int iLookupResult = pComboBox->findData(data);
+    if (iLookupResult != -1 && pComboBox->currentIndex() != iLookupResult)
+        pComboBox->setCurrentIndex(iLookupResult);
+    else if (iLookupResult == -1 && pComboBox->currentIndex() != 0)
+        pComboBox->setCurrentIndex(0);
 }
 
 /* static */
 int UIMachineSettingsDisplay::calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality)
 {
     /* Linear quality<=>bit-rate scale-factor: */
-    double dResult = (double)iQuality
-                   * (double)iFrameWidth * (double)iFrameHeight * (double)iFrameRate
-                   / (double)10 /* translate quality to [%] */
-                   / (double)1024 /* translate bit-rate to [kbps] */
-                   / (double)18.75 /* linear scale factor */;
+    const double dResult = (double)iQuality
+                         * (double)iFrameWidth * (double)iFrameHeight * (double)iFrameRate
+                         / (double)10 /* translate quality to [%] */
+                         / (double)1024 /* translate bit-rate to [kbps] */
+                         / (double)18.75 /* linear scale factor */;
     return (int)dResult;
 }
 
@@ -1162,11 +1162,11 @@ int UIMachineSettingsDisplay::calculateBitRate(int iFrameWidth, int iFrameHeight
 int UIMachineSettingsDisplay::calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate)
 {
     /* Linear bit-rate<=>quality scale-factor: */
-    double dResult = (double)iBitRate
-                   / (double)iFrameWidth / (double)iFrameHeight / (double)iFrameRate
-                   * (double)10 /* translate quality to [%] */
-                   * (double)1024 /* translate bit-rate to [kbps] */
-                   * (double)18.75 /* linear scale factor */;
+    const double dResult = (double)iBitRate
+                         / (double)iFrameWidth / (double)iFrameHeight / (double)iFrameRate
+                         * (double)10 /* translate quality to [%] */
+                         * (double)1024 /* translate bit-rate to [kbps] */
+                         * (double)18.75 /* linear scale factor */;
     return (int)dResult;
 }
 
