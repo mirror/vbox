@@ -67,8 +67,9 @@ protected:
 
 private:
 
-    /* Helpers: Prepare stuff: */
+    /** Prepares all. */
     void prepare();
+    /** Prepares combo-boxes. */
     void prepareComboboxes();
 
     /** Holds the page data cache instance. */

@@ -35,13 +35,14 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* COM includes: */
 #include "CNATEngine.h"
 
 /* Other VBox includes: */
 #ifdef VBOX_WITH_VDE
 # include <iprt/ldr.h>
 # include <VBox/VDEPlug.h>
-#endif /* VBOX_WITH_VDE */
+#endif
 
 
 /* Empty item extra-code: */
@@ -228,6 +229,10 @@ private:
     UIPortForwardingDataList m_portForwardingRules;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIMachineSettingsNetwork implementation.                                                                               *
+*********************************************************************************************************************************/
 
 UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent)
     : QIWithRetranslateUI<QWidget>(0)
@@ -989,7 +994,11 @@ int UIMachineSettingsNetwork::position(QComboBox *pComboBox, const QString &strT
     return iPosition == -1 ? 0 : iPosition;
 }
 
-/* UIMachineSettingsNetworkPage Stuff: */
+
+/*********************************************************************************************************************************
+*   Class UIMachineSettingsNetworkPage implementation.                                                                           *
+*********************************************************************************************************************************/
+
 UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     : m_pTabWidgetAdapters(0)
     , m_pCache(new UISettingsCacheMachineNetwork)

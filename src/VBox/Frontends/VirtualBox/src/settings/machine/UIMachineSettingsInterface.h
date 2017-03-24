@@ -68,10 +68,10 @@ protected:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
 
-    /** Cleanup routine. */
+    /** Cleanups all. */
     void cleanup();
 
     /** Holds the machine ID copy. */

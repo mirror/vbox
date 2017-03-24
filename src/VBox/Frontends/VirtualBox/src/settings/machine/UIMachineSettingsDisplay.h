@@ -44,12 +44,13 @@ public:
     /** Destructs Display settings page. */
     ~UIMachineSettingsDisplay();
 
-    /* API: Correlation stuff: */
+    /** Defines @a comGuestOSType. */
     void setGuestOSType(CGuestOSType comGuestOSType);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
+    /** Returns whether 2D Video Acceleration is enabled. */
     bool isAcceleration2DVideoSelected() const;
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+#endif
 
 protected:
 
@@ -73,7 +74,7 @@ protected:
     /** Performs validation, updates @a messages list if something is wrong. */
     virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
-    /** Defines TAB order. */
+    /** Defines TAB order for passed @a pWidget. */
     virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
@@ -84,67 +85,87 @@ protected:
 
 private slots:
 
-    /* Handlers: Screen stuff: */
+    /** Handles Video Memory size slider change. */
     void sltHandleVideoMemorySizeSliderChange();
+    /** Handles Video Memory size editor change. */
     void sltHandleVideoMemorySizeEditorChange();
+    /** Handles Guest Screen count slider change. */
     void sltHandleGuestScreenCountSliderChange();
+    /** Handles Guest Screen count editor change. */
     void sltHandleGuestScreenCountEditorChange();
+    /** Handles Guest Screen scale-factor slider change. */
     void sltHandleGuestScreenScaleSliderChange();
+    /** Handles Guest Screen scale-factor editor change. */
     void sltHandleGuestScreenScaleEditorChange();
 
-    /* Handlers: Video Capture stuff: */
+    /** Handles Video Capture toggle. */
     void sltHandleVideoCaptureCheckboxToggle();
+    /** Handles Video Capture frame size change. */
     void sltHandleVideoCaptureFrameSizeComboboxChange();
+    /** Handles Video Capture frame width change. */
     void sltHandleVideoCaptureFrameWidthEditorChange();
+    /** Handles Video Capture frame height change. */
     void sltHandleVideoCaptureFrameHeightEditorChange();
+    /** Handles Video Capture frame rate slider change. */
     void sltHandleVideoCaptureFrameRateSliderChange();
+    /** Handles Video Capture frame rate editor change. */
     void sltHandleVideoCaptureFrameRateEditorChange();
+    /** Handles Video Capture quality slider change. */
     void sltHandleVideoCaptureQualitySliderChange();
+    /** Handles Video Capture bit-rate editor change. */
     void sltHandleVideoCaptureBitRateEditorChange();
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
-    /** Prepare routine: Screen tab. */
+    /** Prepares 'Screen' tab. */
     void prepareScreenTab();
-    /** Prepare routine: Remote Display tab. */
+    /** Prepares 'Remote Display' tab. */
     void prepareRemoteDisplayTab();
-    /** Prepare routine: Video Capture tab. */
+    /** Prepares 'Video Capture' tab. */
     void prepareVideoCaptureTab();
 
-    /* Helpers: Video stuff: */
+    /** Checks the VRAM requirements. */
     void checkVRAMRequirements();
+    /** Returns whether the VRAM requirements are important. */
     bool shouldWeWarnAboutLowVRAM();
+    /** Calculates the reasonably sane slider page step. */
     static int calculatePageStep(int iMax);
 
-    /* Helpers: Video Capture stuff: */
+    /** Searches for corresponding frame size preset. */
     void lookForCorrespondingFrameSizePreset();
+    /** Updates guest-screen count. */
     void updateGuestScreenCount();
+    /** Updates video capture file size hint. */
     void updateVideoCaptureFileSizeHint();
+    /** Searches for the @a data field in corresponding @a pComboBox. */
     static void lookForCorrespondingPreset(QComboBox *pComboBox, const QVariant &data);
+    /** Calculates Video Capture bit-rate for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iQuality. */
     static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
+    /** Calculates Video Capture quality for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iBitRate. */
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
 
-    /* Guest OS type id: */
+    /** Holds the guest OS type ID. */
     CGuestOSType  m_comGuestOSType;
-    /* System minimum lower limit of VRAM (MiB). */
+    /** Holds the minimum lower limit of VRAM (MiB). */
     int           m_iMinVRAM;
-    /* System maximum limit of VRAM (MiB). */
+    /** Holds the maximum upper limit of VRAM (MiB). */
     int           m_iMaxVRAM;
-    /* Upper limit of VRAM in MiB for this dialog. This value is lower than
-     * m_maxVRAM to save careless users from setting useless big values. */
+    /** Holds the upper limit of VRAM (MiB) for this dialog.
+      * This value is lower than m_iMaxVRAM to save careless
+      * users from setting useless big values. */
     int           m_iMaxVRAMVisible;
-    /* Initial VRAM value when the dialog is opened. */
+    /** Holds the initial VRAM value when the dialog is opened. */
     int           m_iInitialVRAM;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    /* Specifies whether the guest OS supports 2D video-acceleration: */
+    /** Holds whether the guest OS supports 2D Video Acceleration. */
     bool          m_f2DVideoAccelerationSupported;
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+#endif
 #ifdef VBOX_WITH_CRHGSMI
-    /* Specifies whether the guest OS supports WDDM: */
+    /** Holds whether the guest OS supports WDDM. */
     bool          m_fWddmModeSupported;
-#endif /* VBOX_WITH_CRHGSMI */
+#endif
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineDisplay *m_pCache;

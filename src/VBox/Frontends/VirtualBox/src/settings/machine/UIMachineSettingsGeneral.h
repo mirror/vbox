@@ -72,16 +72,16 @@ protected:
       * @note This task COULD be performed in other than GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
-    /** Validation routine. */
+    /** Performs validation, updates @a messages list if something is wrong. */
     virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
-    /** Tab-order assignment routine. */
+    /** Defines TAB order for passed @a pWidget. */
     virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
-    /** Translation routine. */
+    /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-    /** Polish routine. */
+    /** Performs final page polishing. */
     virtual void polishPage() /* override */;
 
 private slots:
@@ -93,15 +93,15 @@ private slots:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
-    /** Prepare 'Basic' tab routine. */
+    /** Prepares 'Basic' tab. */
     void prepareTabBasic();
-    /** Prepare 'Advanced' tab routine. */
+    /** Prepares 'Advanced' tab. */
     void prepareTabAdvanced();
-    /** Prepare 'Description' tab routine. */
+    /** Prepares 'Description' tab. */
     void prepareTabDescription();
-    /** Prepare 'Encryption' tab routine. */
+    /** Prepares 'Encryption' tab. */
     void prepareTabEncryption();
 
     /** Holds whether HW virtualization extension is enabled. */

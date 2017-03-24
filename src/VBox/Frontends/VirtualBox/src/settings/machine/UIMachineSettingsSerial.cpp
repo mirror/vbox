@@ -138,7 +138,10 @@ private:
 };
 
 
-/* UIMachineSettingsSerial stuff */
+/*********************************************************************************************************************************
+*   Class UIMachineSettingsSerial implementation.                                                                                *
+*********************************************************************************************************************************/
+
 UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pParent)
     : QIWithRetranslateUI<QWidget> (0)
     , m_pParent(pParent)
@@ -326,7 +329,10 @@ void UIMachineSettingsSerial::prepareValidation()
 }
 
 
-/* UIMachineSettingsSerialPage stuff */
+/*********************************************************************************************************************************
+*   Class UIMachineSettingsSerialPage implementation.                                                                            *
+*********************************************************************************************************************************/
+
 UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
     : mTabWidget(0)
     , m_pCache(new UISettingsCacheMachineSerial)

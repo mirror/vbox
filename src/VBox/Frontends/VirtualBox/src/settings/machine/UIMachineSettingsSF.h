@@ -86,37 +86,59 @@ protected:
 
 private slots:
 
+    /** Handles command to add shared folder. */
     void sltAddSharedFolder();
+    /** Handles command to edit shared folder. */
     void sltEditSharedFolder();
+    /** Handles command to delete shared folder. */
     void sltDeleteSharedFolder();
 
+    /** Handles @a pCurrentItem change. */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
+    /** Handles @a pItem double-click. */
     void sltHandleDoubleClick(QTreeWidgetItem *pItem);
+    /** Handles context menu request for @a position. */
     void sltHandleContextMenuRequest(const QPoint &position);
 
+    /** Performs request to adjust tree. */
     void sltAdjustTree();
+    /** Performs request to adjust tree fields. */
     void sltAdjustTreeFields();
 
 private:
 
+    /** Returns the tree-view root item for corresponding shared folder @a type. */
     SFTreeViewItem *root(UISharedFolderType type);
+    /** Returns a list of used shared folder names paired with their types. */
     SFoldersNameList usedList(bool aIncludeSelected);
 
+    /** Returns whether the corresponding @a sharedFolderType supported. */
     bool isSharedFolderTypeSupported(UISharedFolderType sharedFolderType) const;
+    /** Updates root item visibility. */
     void updateRootItemsVisibility();
+    /** Defines whether the root item of @a sharedFolderType is @a fVisible. */
     void setRootItemVisible(UISharedFolderType sharedFolderType, bool fVisible);
 
+    /** Gathers a vector of shared folders of the passed @a sharedFoldersType. */
     CSharedFolderVector getSharedFolders(UISharedFolderType sharedFoldersType);
 
+    /** Creates shared folder defined by a @a folderCache. */
     bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
+    /** Removes shared folder defined by a @a folderCache. */
     bool removeSharedFolder(const UISettingsCacheSharedFolder &folderCache);
 
+    /** Holds the Add action instance. */
     QAction *m_pActionAdd;
+    /** Holds the Edit action instance. */
     QAction *m_pActionEdit;
+    /** Holds the Remove action instance. */
     QAction *m_pActionRemove;
 
+    /** Holds the "Full" access translation tag. */
     QString  m_strTrFull;
+    /** Holds the "Read-only" access translation tag. */
     QString  m_strTrReadOnly;
+    /** Holds the "Yes" for auto-mount translation tag. */
     QString  m_strTrYes;
 
     /** Holds the page data cache instance. */

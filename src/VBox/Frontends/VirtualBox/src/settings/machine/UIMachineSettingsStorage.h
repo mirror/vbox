@@ -601,6 +601,7 @@ class UIMachineSettingsStorage : public UISettingsPageMachine,
 
 signals:
 
+    /** Notifies listeners about storage changed. */
     void sigStorageChanged();
 
 public:
@@ -610,6 +611,7 @@ public:
     /** Destructs Storage settings page. */
     ~UIMachineSettingsStorage();
 
+    /** Defines chipset @a type. */
     void setChipsetType(KChipsetType enmType);
 
 protected:
@@ -648,82 +650,134 @@ protected:
 
 private slots:
 
-    /* Handlers: Medium-processing stuff: */
+    /** Handles enumeration of medium with @a strMediumId. */
     void sltHandleMediumEnumerated(const QString &strMediumId);
+    /** Handles removing of medium with @a strMediumId. */
     void sltHandleMediumDeleted(const QString &strMediumId);
 
+    /** Handles command to add controller. */
     void sltAddController();
+    /** Handles command to add IDE controller. */
     void sltAddControllerIDE();
+    /** Handles command to add SATA controller. */
     void sltAddControllerSATA();
+    /** Handles command to add SCSI controller. */
     void sltAddControllerSCSI();
+    /** Handles command to add Floppy controller. */
     void sltAddControllerFloppy();
+    /** Handles command to add SAS controller. */
     void sltAddControllerSAS();
+    /** Handles command to add USB controller. */
     void sltAddControllerUSB();
+    /** Handles command to add NVMe controller. */
     void sltAddControllerNVMe();
+    /** Handles command to remove controller. */
     void sltRemoveController();
 
+    /** Handles command to add attachment. */
     void sltAddAttachment();
+    /** Handles command to add HD attachment. */
     void sltAddAttachmentHD();
+    /** Handles command to add CD attachment. */
     void sltAddAttachmentCD();
+    /** Handles command to add FD attachment. */
     void sltAddAttachmentFD();
+    /** Handles command to remove attachment. */
     void sltRemoveAttachment();
 
+    /** Loads information from model to widgets. */
     void sltGetInformation();
+    /** Saves information from widgets to model. */
     void sltSetInformation();
 
+    /** Prepares 'Open Medium' menu. */
     void sltPrepareOpenMediumMenu();
+    /** Mounts newly created hard-drive. */
     void sltCreateNewHardDisk();
+    /** Unmounts current device. */
     void sltUnmountDevice();
+    /** Mounts existing medium. */
     void sltChooseExistingMedium();
+    /** Mounts existing host-drive. */
     void sltChooseHostDrive();
+    /** Mounts one of recent mediums. */
     void sltChooseRecentMedium();
 
+    /** Updates action states. */
     void sltUpdateActionsState();
 
+    /** Handles row insertion into @a parent on @a iPosition. */
     void sltHandleRowInsertion(const QModelIndex &parent, int iPosition);
+    /** Handles row removal. */
     void sltHandleRowRemoval();
 
+    /** Handles current item change. */
     void sltHandleCurrentItemChange();
 
+    /** Handles context menu request for @a position. */
     void sltHandleContextMenuRequest(const QPoint &position);
 
+    /** Handles item branch drawing with @a pPainter, within @a rect for item with @a index. */
     void sltHandleDrawItemBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index);
 
+    /** Handles mouse-move @a pEvent. */
     void sltHandleMouseMove(QMouseEvent *pEvent);
+    /** Handles mouse-click @a pEvent. */
     void sltHandleMouseClick(QMouseEvent *pEvent);
 
 private:
 
+    /** Adds controller with @a strName, @a enmBus and @a enmType. */
     void addControllerWrapper(const QString &strName, KStorageBus enmBus, KStorageControllerType enmType);
+    /** Adds attachment with @a enmDevice. */
     void addAttachmentWrapper(KDeviceType enmDevice);
 
+    /** Creates new hard-drive. */
     QString getWithNewHDWizard();
 
+    /** Updates additions details according to passed @a enmType. */
     void updateAdditionalDetails(KDeviceType enmType);
 
+    /** Generates unique controller name based on passed @a strTemplate. */
     QString generateUniqueControllerName(const QString &strTemplate) const;
 
+    /** Returns current devices count for passed @a enmType. */
     uint32_t deviceCount(KDeviceType enmType) const;
 
+    /** Adds 'Choose Existing Medium' action into passed @a pOpenMediumMenu under passed @a strActionName. */
     void addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName);
+    /** Adds 'Choose Host Drive' actions into passed @a pOpenMediumMenu. */
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
+    /** Adds 'Choose Recent Medium' actions of passed @a enmRecentMediumType into passed @a pOpenMediumMenu. */
     void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType enmRecentMediumType);
 
+    /** Updates existing storage data from the cache. */
     bool updateStorageData();
+    /** Removes existing storage controller described by the @a controllerCache. */
     bool removeStorageController(const UISettingsCacheMachineStorageController &controllerCache);
+    /** Creates existing storage controller described by the @a controllerCache. */
     bool createStorageController(const UISettingsCacheMachineStorageController &controllerCache);
+    /** Updates existing storage controller described by the @a controllerCache. */
     bool updateStorageController(const UISettingsCacheMachineStorageController &controllerCache);
+    /** Removes existing storage attachment described by the @a controllerCache and @a attachmentCache. */
     bool removeStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
                                  const UISettingsCacheMachineStorageAttachment &attachmentCache);
+    /** Creates existing storage attachment described by the @a controllerCache and @a attachmentCache. */
     bool createStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
                                  const UISettingsCacheMachineStorageAttachment &attachmentCache);
+    /** Updates existing storage attachment described by the @a controllerCache and @a attachmentCache. */
     bool updateStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
                                  const UISettingsCacheMachineStorageAttachment &attachmentCache);
+    /** Returns whether the controller described by the @a controllerCache could be updated or recreated otherwise. */
     bool isControllerCouldBeUpdated(const UISettingsCacheMachineStorageController &controllerCache) const;
+    /** Returns whether the attachment described by the @a attachmentCache could be updated or recreated otherwise. */
     bool isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const;
 
+    /** Holds the machine ID. */
     QString  m_strMachineId;
+    /** Holds the machine settings file-path. */
     QString  m_strMachineSettingsFilePath;
+    /** Holds the machine guest OS type ID. */
     QString  m_strMachineGuestOSTypeId;
 
     /** Holds the storage-tree instance. */
@@ -731,24 +785,41 @@ private:
     /** Holds the storage-model instance. */
     StorageModel *m_pModelStorage;
 
+    /** Holds the 'Add Controller' action instance. */
     QAction *m_pActionAddController;
+    /** Holds the 'Remove Controller' action instance. */
     QAction *m_pActionRemoveController;
+    /** Holds the 'Add IDE Controller' action instance. */
     QAction *m_pActionAddControllerIDE;
+    /** Holds the 'Add SATA Controller' action instance. */
     QAction *m_pActionAddControllerSATA;
+    /** Holds the 'Add SCSI Controller' action instance. */
     QAction *m_pActionAddControllerSCSI;
+    /** Holds the 'Add SAS Controller' action instance. */
     QAction *m_pActionAddControllerSAS;
+    /** Holds the 'Add Floppy Controller' action instance. */
     QAction *m_pActionAddControllerFloppy;
+    /** Holds the 'Add USB Controller' action instance. */
     QAction *m_pActionAddControllerUSB;
+    /** Holds the 'Add NVMe Controller' action instance. */
     QAction *m_pActionAddControllerNVMe;
+    /** Holds the 'Add Attachment' action instance. */
     QAction *m_pActionAddAttachment;
+    /** Holds the 'Remove Attachment' action instance. */
     QAction *m_pActionRemoveAttachment;
+    /** Holds the 'Add HD Attachment' action instance. */
     QAction *m_pActionAddAttachmentHD;
+    /** Holds the 'Add CD Attachment' action instance. */
     QAction *m_pActionAddAttachmentCD;
+    /** Holds the 'Add FD Attachment' action instance. */
     QAction *m_pActionAddAttachmentFD;
 
+    /** Holds the medium ID wrapper instance. */
     UIMediumIDHolder *m_pMediumIdHolder;
 
+    /** Holds whether the page is polished. */
     bool  m_fPolished;
+    /** Holds whether the loading is in progress. */
     bool  m_fLoadingInProgress;
 
     /** Holds the page data cache instance. */

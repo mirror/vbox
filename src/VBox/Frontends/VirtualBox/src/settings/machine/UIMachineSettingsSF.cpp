@@ -505,6 +505,7 @@ void UIMachineSettingsSF::polishPage()
 
 void UIMachineSettingsSF::showEvent(QShowEvent *pEvent)
 {
+    /* Call to base-class: */
     UISettingsPageMachine::showEvent(pEvent);
 
     /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized: */

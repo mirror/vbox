@@ -678,7 +678,7 @@ void UIMachineSettingsGeneral::prepareTabDescription()
         /* Configure Description text editor: */
 #ifdef VBOX_WS_MAC
         mTeDescription->setMinimumHeight(150);
-#endif /* VBOX_WS_MAC */
+#endif
     }
 }
 

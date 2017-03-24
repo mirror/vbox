@@ -44,15 +44,15 @@ public:
     /** Destructs Network settings page. */
     ~UIMachineSettingsNetworkPage();
 
-    /* Bridged adapter list: */
+    /** Returns the bridged adapter list. */
     const QStringList &bridgedAdapterList() const { return m_bridgedAdapterList; }
-    /* Internal network list: */
+    /** Returns the internal network list. */
     const QStringList &internalNetworkList() const { return m_internalNetworkList; }
-    /* Host-only interface list: */
+    /** Returns the host-only interface list. */
     const QStringList &hostInterfaceList() const { return m_hostInterfaceList; }
-    /* Generic driver list: */
+    /** Returns the generic driver list. */
     const QStringList &genericDriverList() const { return m_genericDriverList; }
-    /* NAT network list: */
+    /** Returns the NAT network list. */
     const QStringList &natNetworkList() const { return m_natNetworkList; }
 
 protected:
@@ -85,35 +85,46 @@ protected:
 
 private slots:
 
-    /* Handles tab updates: */
+    /** Handles particular tab update. */
     void sltHandleTabUpdate();
 
-    /** Handles advanced button state change to @a fExpanded. */
+    /** Handles whether the advanced button is @a fExpanded. */
     void sltHandleAdvancedButtonStateChange(bool fExpanded);
 
 private:
 
-    /* Private helpers: */
+    /** Repopulates bridged adapter list. */
     void refreshBridgedAdapterList();
+    /** Repopulates internal network list. */
     void refreshInternalNetworkList(bool fFullRefresh = false);
+    /** Repopulates host-only interface list. */
     void refreshHostInterfaceList();
+    /** Repopulates generic driver list. */
     void refreshGenericDriverList(bool fFullRefresh = false);
+    /** Repopulates NAT network list. */
     void refreshNATNetworkList();
 
-    /* Various static stuff: */
+    /** Populates a list of known internal networks. */
     static QStringList otherInternalNetworkList();
+    /** Populates a list of known generic drivers. */
     static QStringList otherGenericDriverList();
+    /** Loads generic properties from passed @a adapter. */
     static QString loadGenericProperties(const CNetworkAdapter &adapter);
+    /** Saves generic @a strProperties to passed @a adapter. */
     static void saveGenericProperties(CNetworkAdapter &adapter, const QString &strProperties);
 
-    /* Tab holder: */
+    /** Holds the tab-widget instance. */
     QITabWidget *m_pTabWidgetAdapters;
 
-    /* Alternative-name lists: */
+    /** Holds the bridged adapter list. */
     QStringList  m_bridgedAdapterList;
+    /** Holds the internal network list. */
     QStringList  m_internalNetworkList;
+    /** Holds the host-only interface list. */
     QStringList  m_hostInterfaceList;
+    /** Holds the generic driver list. */
     QStringList  m_genericDriverList;
+    /** Holds the NAT network list. */
     QStringList  m_natNetworkList;
 
     /** Holds the page data cache instance. */

@@ -39,6 +39,7 @@ class UIMachineSettingsUSB : public UISettingsPageMachine,
 
 public:
 
+    /** Remote mode types. */
     enum { ModeAny, ModeOn, ModeOff };
 
     /** Constructs USB settings page. */
@@ -46,6 +47,7 @@ public:
     /** Destructs USB settings page. */
     ~UIMachineSettingsUSB();
 
+    /** Returns whether the USB is enabled. */
     bool isUSBEnabled() const;
 
 protected:
@@ -70,7 +72,7 @@ protected:
     /** Performs validation, updates @a messages list if something is wrong. */
     virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
-    /** Defines TAB order. */
+    /** Defines TAB order for passed @a pWidget. */
     virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
@@ -81,39 +83,60 @@ protected:
 
 private slots:
 
+    /** Handles whether USB adapted is @a fEnabled. */
     void sltHandleUsbAdapterToggle(bool fEnabled);
 
+    /** Handles USB filter tree @a pCurrentItem change. */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
+    /** Handles context menu request for @a position of USB filter tree. */
     void sltHandleContextMenuRequest(const QPoint &position);
+    /** Handles USB filter tree activity state change for @a pChangedItem. */
     void sltHandleActivityStateChange(QTreeWidgetItem *pChangedItem);
 
+    /** Handles command to add new filter. */
     void sltNewFilter();
+    /** Handles command to add existing filter. */
     void sltAddFilter();
+    /** Handles command to edit filter. */
     void sltEditFilter();
+    /** Handles command to confirm add of existing filter defined by @a pAction. */
     void sltAddFilterConfirmed(QAction *pAction);
+    /** Handles command to remove chosen filter. */
     void sltRemoveFilter();
+    /** Handles command to move chosen filter up. */
     void sltMoveFilterUp();
+    /** Handles command to move chosen filter down. */
     void sltMoveFilterDown();
 
 private:
 
+    /** Adds USB filter item based on a given @a usbFilterData, fChoose if requested. */
     void addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fChoose);
 
-    /* Returns the multi-line description of the given USB filter: */
+    /** Returns the multi-line description of the given USB filter. */
     static QString toolTipFor(const UIDataSettingsMachineUSBFilter &data);
 
-    /* Other variables: */
+    /** Holds the toolbar instance. */
     UIToolBar   *m_pToolBar;
+    /** Holds the New action instance. */
     QAction     *m_pActionNew;
+    /** Holds the Add action instance. */
     QAction     *m_pActionAdd;
+    /** Holds the Edit action instance. */
     QAction     *m_pActionEdit;
+    /** Holds the Remove action instance. */
     QAction     *m_pActionRemove;
+    /** Holds the Move Up action instance. */
     QAction     *m_pActionMoveUp;
+    /** Holds the Move Down action instance. */
     QAction     *m_pActionMoveDown;
+    /** Holds the USB devices menu instance. */
     VBoxUSBMenu *m_pMenuUSBDevices;
 
+    /** Holds the "New Filter %1" translation tag. */
     QString  m_strTrUSBFilterName;
 
+    /** Holds the list of all USB filters. */
     QList<UIDataSettingsMachineUSBFilter>  m_filters;
 
     /** Holds the page data cache instance. */

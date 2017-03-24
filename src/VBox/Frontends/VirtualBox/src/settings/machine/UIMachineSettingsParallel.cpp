@@ -128,7 +128,10 @@ private:
 };
 
 
-/* UIMachineSettingsParallel stuff */
+/*********************************************************************************************************************************
+*   Class UIMachineSettingsParallel implementation.                                                                              *
+*********************************************************************************************************************************/
+
 UIMachineSettingsParallel::UIMachineSettingsParallel(UIMachineSettingsParallelPage *pParent)
     : QIWithRetranslateUI<QWidget> (0)
     , m_pParent(pParent)
@@ -278,7 +281,10 @@ void UIMachineSettingsParallel::prepareValidation()
 }
 
 
-/* UIMachineSettingsParallelPage stuff */
+/*********************************************************************************************************************************
+*   Class UIMachineSettingsParallelPage implementation.                                                                          *
+*********************************************************************************************************************************/
+
 UIMachineSettingsParallelPage::UIMachineSettingsParallelPage()
     : mTabWidget(0)
     , m_pCache(new UISettingsCacheMachineParallel)

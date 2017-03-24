@@ -40,13 +40,16 @@ public:
     /** Destructs System settings page. */
     ~UIMachineSettingsSystem();
 
-    /* API: Correlation stuff: */
+    /** Returns whether the HW Virt Ex is enabled. */
     bool isHWVirtExEnabled() const;
 
+    /** Returns whether the HID is enabled. */
     bool isHIDEnabled() const;
 
+    /** Returns the chipset type. */
     KChipsetType chipsetType() const;
 
+    /** Defines whether the USB is enabled. */
     void setUSBEnabled(bool fEnabled);
 
 protected:
@@ -71,7 +74,7 @@ protected:
     /** Performs validation, updates @a messages list if something is wrong. */
     virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
 
-    /** Defines TAB order. */
+    /** Defines TAB order for passed @a pWidget. */
     virtual void setOrderAfter(QWidget *pWidget) /* override */;
 
     /** Handles translation event. */
@@ -85,49 +88,62 @@ protected:
 
 private slots:
 
-    /* Handlers: Memory-size stuff: */
+    /** Handles memory size slider change. */
     void sltHandleMemorySizeSliderChange();
+    /** Handles memory size editor change. */
     void sltHandleMemorySizeEditorChange();
 
-    /* Handler: Boot-table stuff: */
+    /** Handle current boot item change to @a iCurrentIndex. */
     void sltHandleCurrentBootItemChange(int iCurrentIndex);
 
-    /* Handlers: CPU stuff: */
+    /** Handles CPU count slider change. */
     void sltHandleCPUCountSliderChange();
+    /** Handles CPU count editor change. */
     void sltHandleCPUCountEditorChange();
+    /** Handles CPU execution cap slider change. */
     void sltHandleCPUExecCapSliderChange();
+    /** Handles CPU execution cap editor change. */
     void sltHandleCPUExecCapEditorChange();
 
 private:
 
-    /* Helpers: Prepare stuff: */
+    /** Prepares all. */
     void prepare();
+    /** Prepares 'Motherboard' tab. */
     void prepareTabMotherboard();
+    /** Prepares 'Processor' tab. */
     void prepareTabProcessor();
+    /** Prepares 'Acceleration' tab. */
     void prepareTabAcceleration();
 
-    /* Helper: Pointing HID type combo stuff: */
+    /** Repopulates Pointing HID type combo-box. */
     void repopulateComboPointingHIDType();
 
-    /* Helpers: Translation stuff: */
+    /** Retranslates Chipset type combo-box. */
     void retranslateComboChipsetType();
+    /** Retranslates Pointing HID type combo-box. */
     void retranslateComboPointingHIDType();
+    /** Retranslates Paravirtualization providers combo-box. */
     void retranslateComboParavirtProvider();
 
-    /* Helper: Boot-table stuff: */
+    /** Adjusts boot-order tree-widget size. */
     void adjustBootOrderTWSize();
 
-    /* Variable: Boot-table stuff: */
+    /** Holds the list of all possible boot items. */
     QList<KDeviceType>  m_possibleBootItems;
 
-    /* Variables: CPU stuff: */
+    /** Holds the minimum guest CPU count. */
     uint  m_uMinGuestCPU;
+    /** Holds the maximum guest CPU count. */
     uint  m_uMaxGuestCPU;
+    /** Holds the minimum guest CPU execution cap. */
     uint  m_uMinGuestCPUExecCap;
+    /** Holds the medium guest CPU execution cap. */
     uint  m_uMedGuestCPUExecCap;
+    /** Holds the maximum guest CPU execution cap. */
     uint  m_uMaxGuestCPUExecCap;
 
-    /* Variable: Correlation stuff: */
+    /** Holds whether the USB is enabled. */
     bool m_fIsUSBEnabled;
 
     /** Holds the page data cache instance. */

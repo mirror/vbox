@@ -668,6 +668,7 @@ bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
             break;
     }
 
+    /* Call to base-class: */
     return QWidget::eventFilter(pObject, pEvent);
 }
 

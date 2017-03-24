@@ -2119,10 +2119,7 @@ private:
     UIMediumType m_type;
 };
 
-/**
- * QWidget class reimplementation.
- * Used as HD Settings widget.
- */
+
 UIMachineSettingsStorage::UIMachineSettingsStorage()
     : m_pModelStorage(0)
     , m_pActionAddController(0), m_pActionRemoveController(0)
@@ -2735,7 +2732,7 @@ void UIMachineSettingsStorage::showEvent(QShowEvent *pEvent)
         mLtController->setColumnMinimumWidth(0, 10);
         mLtAttachment->setColumnMinimumWidth(0, 10);
 #if 0
-        /* Second column indent minimum width */
+        /* Second column indent minimum width: */
         QList <QLabel*> labelsList;
         labelsList << mLbMedium << mLbHDFormat << mLbCDFDType
                    << mLbHDVirtualSize << mLbHDActualSize << mLbSize
@@ -2750,6 +2747,8 @@ void UIMachineSettingsStorage::showEvent(QShowEvent *pEvent)
         mLtAttachment->setColumnMinimumWidth(1, maxWidth);
 #endif
     }
+
+    /* Call to base-class: */
     UISettingsPageMachine::showEvent(pEvent);
 }
 
@@ -2959,7 +2958,7 @@ void UIMachineSettingsStorage::sltGetInformation()
                 /* Getting Controller Name: */
                 mLeName->setText(m_pModelStorage->data(index, StorageModel::R_CtrName).toString());
 
-                /* Getting Controller Sub type */
+                /* Getting Controller Sub type: */
                 mCbType->clear();
                 const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, StorageModel::R_CtrTypes).value <ControllerTypeList>());
                 for (int i = 0; i < controllerTypeList.size(); ++i)
@@ -2979,13 +2978,13 @@ void UIMachineSettingsStorage::sltGetInformation()
                 const bool fUseIoCache = m_pModelStorage->data(index, StorageModel::R_CtrIoCache).toBool();
                 mCbIoCache->setChecked(fUseIoCache);
 
-                /* Showing Controller Page */
+                /* Showing Controller Page: */
                 mSwRightPane->setCurrentIndex(1);
                 break;
             }
             case AbstractItem::Type_AttachmentItem:
             {
-                /* Getting Attachment Slot */
+                /* Getting Attachment Slot: */
                 mCbSlot->clear();
                 const SlotsList slotsList(m_pModelStorage->data(index, StorageModel::R_AttSlots).value <SlotsList>());
                 for (int i = 0; i < slotsList.size(); ++i)
@@ -2995,7 +2994,7 @@ void UIMachineSettingsStorage::sltGetInformation()
                 mCbSlot->setCurrentIndex(iAttSlotPos == -1 ? 0 : iAttSlotPos);
                 mCbSlot->setToolTip(mCbSlot->itemText(mCbSlot->currentIndex()));
 
-                /* Getting Attachment Medium */
+                /* Getting Attachment Medium: */
                 const KDeviceType enmDevice = m_pModelStorage->data(index, StorageModel::R_AttDevice).value <KDeviceType>();
                 switch (enmDevice)
                 {
@@ -3119,7 +3118,7 @@ void UIMachineSettingsStorage::sltSetInformation()
                 AssertMsg(theSameIndexAtNewPosition.isValid(), ("Current attachment disappears!\n"));
                 m_pTreeStorage->setCurrentIndex(theSameIndexAtNewPosition);
             }
-            /* Setting Attachment Medium */
+            /* Setting Attachment Medium: */
             else if (pSdr == m_pMediumIdHolder)
                 m_pModelStorage->setData(index, m_pMediumIdHolder->id(), StorageModel::R_AttMediumId);
             else if (pSdr == mCbPassthrough)
@@ -3414,7 +3413,7 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
     const QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
     const QRect indexRect = m_pTreeStorage->visualRect(index);
 
-    /* Expander tool-tip */
+    /* Expander tool-tip: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
     {
         QRect expanderRect = m_pModelStorage->data(index, StorageModel::R_ItemPixmapRect).toRect();
@@ -3428,7 +3427,7 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
         }
     }
 
-    /* Adder tool-tip */
+    /* Adder tool-tip: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool() &&
         m_pTreeStorage->currentIndex() == index)
     {
@@ -3491,7 +3490,7 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
         }
     }
 
-    /* Default tool-tip */
+    /* Default tool-tip: */
     if (m_pModelStorage->data(index, StorageModel::R_ToolTipType).value<StorageModel::ToolTipType>() != StorageModel::DefaultToolTip)
         m_pModelStorage->setData(index, StorageModel::DefaultToolTip, StorageModel::R_ToolTipType);
 }
@@ -3501,7 +3500,7 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
     const QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
     const QRect indexRect = m_pTreeStorage->visualRect(index);
 
-    /* Expander icon */
+    /* Expander icon: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool())
     {
         QRect expanderRect = m_pModelStorage->data(index, StorageModel::R_ItemPixmapRect).toRect();
@@ -3514,7 +3513,7 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
         }
     }
 
-    /* Adder icons */
+    /* Adder icons: */
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool() &&
         m_pTreeStorage->currentIndex() == index)
     {

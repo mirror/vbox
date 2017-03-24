@@ -281,7 +281,7 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     , m_pMenuUSBDevices(0)
     , m_pCache(new UISettingsCacheMachineUSB)
 {
-    /* Apply UI decorations */
+    /* Apply UI decorations: */
     Ui::UIMachineSettingsUSB::setupUi(this);
 
     /* Prepare actions */

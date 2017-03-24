@@ -73,6 +73,7 @@ protected:
 
 private:
 
+    /** Holds the tab-widget instance. */
     QITabWidget *mTabWidget;
 
     /** Holds the page data cache instance. */
