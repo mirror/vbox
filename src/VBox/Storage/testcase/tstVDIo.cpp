@@ -2440,7 +2440,7 @@ static uint32_t tstVDIoTestReqInitSegments(PVDIOTEST pIoTest, PRTSGSEG paSegs, u
     while (   iSeg < cSegs - 1
            && cSectorsLeft)
     {
-        uint32_t cThisSectors = VDIoRndGetU32Ex(pIoTest->pIoRnd, 1, cSectorsLeft / 2);
+        uint32_t cThisSectors = VDIoRndGetU32Ex(pIoTest->pIoRnd, 1, (uint32_t)cSectorsLeft / 2);
         size_t cbThisBuf = cThisSectors * 512;
 
         paSegs[iSeg].pvSeg = pbBuf;
