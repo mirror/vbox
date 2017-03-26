@@ -23,6 +23,7 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <iprt/initterm.h>
+#include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
@@ -463,6 +464,8 @@ static int handleGeometry(HandlerArg *a)
 typedef struct FILEIOSTATE
 {
     RTFILE file;
+    /** Size of file. */
+    uint64_t cb;
     /** Offset in the file. */
     uint64_t off;
     /** Offset where the buffer contents start. UINT64_MAX=buffer invalid. */
@@ -493,6 +496,7 @@ static DECLCALLBACK(int) convInOpen(void *pvUser, const char *pszLocation, uint3
         return VERR_NO_MEMORY;
 
     pFS->file = file;
+    pFS->cb   = 0;
     pFS->off = 0;
     pFS->offBuffer = UINT64_MAX;
     pFS->cbBuffer = 0;
@@ -667,8 +671,8 @@ static DECLCALLBACK(int) convInFlush(void *pvUser, void *pStorage)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) convOutOpen(void *pvUser, const char *pszLocation, uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
-                                     void **ppStorage)
+static DECLCALLBACK(int) convStdOutOpen(void *pvUser, const char *pszLocation, uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
+                                        void **ppStorage)
 {
     RT_NOREF2(pvUser, pszLocation);
 
@@ -687,6 +691,7 @@ static DECLCALLBACK(int) convOutOpen(void *pvUser, const char *pszLocation, uint
         return VERR_NO_MEMORY;
 
     pFS->file = file;
+    pFS->cb   = 0;
     pFS->off = 0;
     pFS->offBuffer = 0;
     pFS->cbBuffer = sizeof(FILEIOSTATE);
@@ -695,7 +700,7 @@ static DECLCALLBACK(int) convOutOpen(void *pvUser, const char *pszLocation, uint
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) convOutClose(void *pvUser, void *pStorage)
+static DECLCALLBACK(int) convStdOutClose(void *pvUser, void *pStorage)
 {
     NOREF(pvUser);
     AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
@@ -705,20 +710,35 @@ static DECLCALLBACK(int) convOutClose(void *pvUser, void *pStorage)
     /* Flush any remaining buffer contents. */
     if (pFS->cbBuffer)
         rc = RTFileWrite(pFS->file, &pFS->abBuffer[0], pFS->cbBuffer, NULL);
+    if (   RT_SUCCESS(rc)
+        && pFS->cb > pFS->off)
+    {
+        /* Write zeros if the set file size is not met. */
+        uint64_t cbLeft = pFS->cb - pFS->off;
+        RT_ZERO(pFS->abBuffer);
+
+        while (cbLeft)
+        {
+            size_t cbThisWrite = RT_MIN(cbLeft, sizeof(pFS->abBuffer));
+            rc = RTFileWrite(pFS->file, &pFS->abBuffer[0],
+                             cbThisWrite, NULL);
+            cbLeft -= cbThisWrite;
+        }
+    }
 
     RTMemFree(pFS);
 
     return rc;
 }
 
-static DECLCALLBACK(int) convOutDelete(void *pvUser, const char *pcszFilename)
+static DECLCALLBACK(int) convStdOutDelete(void *pvUser, const char *pcszFilename)
 {
     NOREF(pvUser);
     NOREF(pcszFilename);
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
-static DECLCALLBACK(int) convOutMove(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+static DECLCALLBACK(int) convStdOutMove(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
 {
     NOREF(pvUser);
     NOREF(pcszSrc);
@@ -727,7 +747,7 @@ static DECLCALLBACK(int) convOutMove(void *pvUser, const char *pcszSrc, const ch
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
-static DECLCALLBACK(int) convOutGetFreeSpace(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
+static DECLCALLBACK(int) convStdOutGetFreeSpace(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
 {
     NOREF(pvUser);
     NOREF(pcszFilename);
@@ -736,7 +756,7 @@ static DECLCALLBACK(int) convOutGetFreeSpace(void *pvUser, const char *pcszFilen
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) convOutGetModificationTime(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+static DECLCALLBACK(int) convStdOutGetModificationTime(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
 {
     NOREF(pvUser);
     NOREF(pcszFilename);
@@ -744,7 +764,7 @@ static DECLCALLBACK(int) convOutGetModificationTime(void *pvUser, const char *pc
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
-static DECLCALLBACK(int) convOutGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
+static DECLCALLBACK(int) convStdOutGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
 {
     NOREF(pvUser);
     NOREF(pStorage);
@@ -752,16 +772,15 @@ static DECLCALLBACK(int) convOutGetSize(void *pvUser, void *pStorage, uint64_t *
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
-static DECLCALLBACK(int) convOutSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
+static DECLCALLBACK(int) convStdOutSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
 {
-    NOREF(pvUser);
-    NOREF(pStorage);
-    NOREF(cbSize);
+    RT_NOREF2(pvUser, cbSize);
+    AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
-static DECLCALLBACK(int) convOutRead(void *pvUser, void *pStorage, uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
-                                     size_t *pcbRead)
+static DECLCALLBACK(int) convStdOutRead(void *pvUser, void *pStorage, uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
+                                        size_t *pcbRead)
 {
     NOREF(pvUser);
     NOREF(pStorage);
@@ -772,8 +791,8 @@ static DECLCALLBACK(int) convOutRead(void *pvUser, void *pStorage, uint64_t uOff
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
-static DECLCALLBACK(int) convOutWrite(void *pvUser, void *pStorage, uint64_t uOffset, const void *pvBuffer, size_t cbBuffer,
-                                      size_t *pcbWritten)
+static DECLCALLBACK(int) convStdOutWrite(void *pvUser, void *pStorage, uint64_t uOffset, const void *pvBuffer, size_t cbBuffer,
+                                         size_t *pcbWritten)
 {
     NOREF(pvUser);
     AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
@@ -817,7 +836,172 @@ static DECLCALLBACK(int) convOutWrite(void *pvUser, void *pStorage, uint64_t uOf
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) convOutFlush(void *pvUser, void *pStorage)
+static DECLCALLBACK(int) convStdOutFlush(void *pvUser, void *pStorage)
+{
+    NOREF(pvUser);
+    NOREF(pStorage);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) convFileOutOpen(void *pvUser, const char *pszLocation, uint32_t fOpen, PFNVDCOMPLETED pfnCompleted,
+                                         void **ppStorage)
+{
+    RT_NOREF1(pvUser);
+
+    /* Validate input. */
+    AssertPtrReturn(ppStorage, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
+    AssertReturn((fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_WRITE, VERR_INVALID_PARAMETER);
+    RTFILE file;
+    int rc = RTFileOpen(&file, pszLocation, fOpen);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Must clear buffer, so that skipped over data is initialized properly. */
+    PFILEIOSTATE pFS = (PFILEIOSTATE)RTMemAllocZ(sizeof(FILEIOSTATE));
+    if (!pFS)
+        return VERR_NO_MEMORY;
+
+    pFS->file      = file;
+    pFS->cb        = 0;
+    pFS->off       = 0;
+    pFS->offBuffer = 0;
+    pFS->cbBuffer  = sizeof(FILEIOSTATE);
+
+    *ppStorage = pFS;
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) convFileOutClose(void *pvUser, void *pStorage)
+{
+    NOREF(pvUser);
+    AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
+    PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
+    int rc = VINF_SUCCESS;
+
+    /* Flush any remaining buffer contents. */
+    if (pFS->cbBuffer)
+        rc = RTFileWriteAt(pFS->file, pFS->offBuffer, &pFS->abBuffer[0], pFS->cbBuffer, NULL);
+    RTFileClose(pFS->file);
+
+    RTMemFree(pFS);
+
+    return rc;
+}
+
+static DECLCALLBACK(int) convFileOutDelete(void *pvUser, const char *pcszFilename)
+{
+    NOREF(pvUser);
+    NOREF(pcszFilename);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+static DECLCALLBACK(int) convFileOutMove(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+{
+    NOREF(pvUser);
+    NOREF(pcszSrc);
+    NOREF(pcszDst);
+    NOREF(fMove);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+static DECLCALLBACK(int) convFileOutGetFreeSpace(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
+{
+    NOREF(pvUser);
+    NOREF(pcszFilename);
+    AssertPtrReturn(pcbFreeSpace, VERR_INVALID_POINTER);
+    *pcbFreeSpace = INT64_MAX;
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) convFileOutGetModificationTime(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+{
+    NOREF(pvUser);
+    NOREF(pcszFilename);
+    AssertPtrReturn(pModificationTime, VERR_INVALID_POINTER);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+static DECLCALLBACK(int) convFileOutGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
+{
+    NOREF(pvUser);
+    NOREF(pStorage);
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+static DECLCALLBACK(int) convFileOutSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
+{
+    NOREF(pvUser);
+    AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
+    PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
+
+    int rc = RTFileSetSize(pFS->file, cbSize);
+    if (RT_SUCCESS(rc))
+        pFS->cb = cbSize;
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) convFileOutRead(void *pvUser, void *pStorage, uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
+                                         size_t *pcbRead)
+{
+    NOREF(pvUser);
+    NOREF(pStorage);
+    NOREF(uOffset);
+    NOREF(cbBuffer);
+    NOREF(pcbRead);
+    AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+static DECLCALLBACK(int) convFileOutWrite(void *pvUser, void *pStorage, uint64_t uOffset, const void *pvBuffer, size_t cbBuffer,
+                                          size_t *pcbWritten)
+{
+    NOREF(pvUser);
+    AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
+    PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
+    AssertReturn(uOffset >= pFS->off, VERR_INVALID_PARAMETER);
+    int rc;
+
+    /* Write the data to the buffer, flushing as required. */
+    size_t cbTotalWritten = 0;
+    do
+    {
+        /* Flush the buffer if we need a new one. */
+        while (uOffset > pFS->offBuffer + sizeof(pFS->abBuffer) - 1)
+        {
+            if (!ASMMemIsZero(pFS->abBuffer, sizeof(pFS->abBuffer)))
+                rc = RTFileWriteAt(pFS->file, pFS->offBuffer,
+                                   &pFS->abBuffer[0],
+                                   sizeof(pFS->abBuffer), NULL);
+            RT_ZERO(pFS->abBuffer);
+            pFS->offBuffer += sizeof(pFS->abBuffer);
+            pFS->cbBuffer = 0;
+        }
+
+        uint32_t cbThisWrite = (uint32_t)RT_MIN(cbBuffer,
+                                                sizeof(pFS->abBuffer) - uOffset % sizeof(pFS->abBuffer));
+        memcpy(&pFS->abBuffer[uOffset % sizeof(pFS->abBuffer)], pvBuffer,
+               cbThisWrite);
+        uOffset += cbThisWrite;
+        pvBuffer = (uint8_t *)pvBuffer + cbThisWrite;
+        cbBuffer -= cbThisWrite;
+        cbTotalWritten += cbThisWrite;
+    } while (cbBuffer > 0);
+
+    if (pcbWritten)
+        *pcbWritten = cbTotalWritten;
+
+    pFS->cbBuffer = uOffset % sizeof(pFS->abBuffer);
+    if (!pFS->cbBuffer)
+        pFS->cbBuffer = sizeof(pFS->abBuffer);
+    pFS->off = uOffset;
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) convFileOutFlush(void *pvUser, void *pStorage)
 {
     NOREF(pvUser);
     NOREF(pStorage);
@@ -830,6 +1014,7 @@ static int handleConvert(HandlerArg *a)
     const char *pszDstFilename = NULL;
     bool fStdIn = false;
     bool fStdOut = false;
+    bool fCreateSparse = false;
     const char *pszSrcFormat = NULL;
     VDTYPE enmSrcType = VDTYPE_HDD;
     const char *pszDstFormat = NULL;
@@ -852,7 +1037,8 @@ static int handleConvert(HandlerArg *a)
         { "--stdout", 'P', RTGETOPT_REQ_NOTHING },
         { "--srcformat", 's', RTGETOPT_REQ_STRING },
         { "--dstformat", 'd', RTGETOPT_REQ_STRING },
-        { "--variant", 'v', RTGETOPT_REQ_STRING }
+        { "--variant", 'v', RTGETOPT_REQ_STRING },
+        { "--create-sparse", 'c', RTGETOPT_REQ_NOTHING }
     };
     int ch;
     RTGETOPTUNION ValueUnion;
@@ -882,6 +1068,9 @@ static int handleConvert(HandlerArg *a)
                 break;
             case 'v':   // --variant
                 pszVariant = ValueUnion.psz;
+                break;
+            case 'c':   // --create-sparse
+                fCreateSparse = true;
                 break;
 
             default:
@@ -935,18 +1124,34 @@ static int handleConvert(HandlerArg *a)
     }
     if (fStdOut)
     {
-        IfsOutputIO.pfnOpen                   = convOutOpen;
-        IfsOutputIO.pfnClose                  = convOutClose;
-        IfsOutputIO.pfnDelete                 = convOutDelete;
-        IfsOutputIO.pfnMove                   = convOutMove;
-        IfsOutputIO.pfnGetFreeSpace           = convOutGetFreeSpace;
-        IfsOutputIO.pfnGetModificationTime    = convOutGetModificationTime;
-        IfsOutputIO.pfnGetSize                = convOutGetSize;
-        IfsOutputIO.pfnSetSize                = convOutSetSize;
-        IfsOutputIO.pfnReadSync               = convOutRead;
-        IfsOutputIO.pfnWriteSync              = convOutWrite;
-        IfsOutputIO.pfnFlushSync              = convOutFlush;
+        IfsOutputIO.pfnOpen                   = convStdOutOpen;
+        IfsOutputIO.pfnClose                  = convStdOutClose;
+        IfsOutputIO.pfnDelete                 = convStdOutDelete;
+        IfsOutputIO.pfnMove                   = convStdOutMove;
+        IfsOutputIO.pfnGetFreeSpace           = convStdOutGetFreeSpace;
+        IfsOutputIO.pfnGetModificationTime    = convStdOutGetModificationTime;
+        IfsOutputIO.pfnGetSize                = convStdOutGetSize;
+        IfsOutputIO.pfnSetSize                = convStdOutSetSize;
+        IfsOutputIO.pfnReadSync               = convStdOutRead;
+        IfsOutputIO.pfnWriteSync              = convStdOutWrite;
+        IfsOutputIO.pfnFlushSync              = convStdOutFlush;
         VDInterfaceAdd(&IfsOutputIO.Core, "stdout", VDINTERFACETYPE_IO,
+                       NULL, sizeof(VDINTERFACEIO), &pIfsImageOutput);
+    }
+    else if (fCreateSparse)
+    {
+        IfsOutputIO.pfnOpen                   = convFileOutOpen;
+        IfsOutputIO.pfnClose                  = convFileOutClose;
+        IfsOutputIO.pfnDelete                 = convFileOutDelete;
+        IfsOutputIO.pfnMove                   = convFileOutMove;
+        IfsOutputIO.pfnGetFreeSpace           = convFileOutGetFreeSpace;
+        IfsOutputIO.pfnGetModificationTime    = convFileOutGetModificationTime;
+        IfsOutputIO.pfnGetSize                = convFileOutGetSize;
+        IfsOutputIO.pfnSetSize                = convFileOutSetSize;
+        IfsOutputIO.pfnReadSync               = convFileOutRead;
+        IfsOutputIO.pfnWriteSync              = convFileOutWrite;
+        IfsOutputIO.pfnFlushSync              = convFileOutFlush;
+        VDInterfaceAdd(&IfsOutputIO.Core, "fileout", VDINTERFACETYPE_IO,
                        NULL, sizeof(VDINTERFACEIO), &pIfsImageOutput);
     }
 
