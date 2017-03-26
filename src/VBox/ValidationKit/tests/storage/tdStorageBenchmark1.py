@@ -105,6 +105,7 @@ class FioTest(object):
         else:
             cfgBuf.write('direct=0\n');
         cfgBuf.write('directory=' + self.dCfg.get('FilePath', '/mnt') + '\n');
+        cfgBuf.write('filename=fio.test.file')
 
         cfgBuf.write('[seq-write]\n');
         cfgBuf.write('rw=write\n');
