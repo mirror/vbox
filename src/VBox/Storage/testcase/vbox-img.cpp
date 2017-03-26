@@ -269,7 +269,7 @@ static int handleSetUUID(HandlerArg *a)
             return errorRuntime("Format autodetect failed: %Rrc\n", rc);
     }
 
-    PVBOXHDD pVD = NULL;
+    PVDISK pVD = NULL;
     rc = VDCreate(pVDIfs, enmType, &pVD);
     if (RT_FAILURE(rc))
         return errorRuntime("Cannot create the virtual disk container: %Rrf (%Rrc)\n", rc, rc);
@@ -405,7 +405,7 @@ static int handleGeometry(HandlerArg *a)
             return errorRuntime("Format autodetect failed: %Rrc\n", rc);
     }
 
-    PVBOXHDD pVD = NULL;
+    PVDISK pVD = NULL;
     rc = VDCreate(pVDIfs, enmType, &pVD);
     if (RT_FAILURE(rc))
         return errorRuntime("Cannot create the virtual disk container: %Rrf (%Rrc)\n", rc, rc);
@@ -1019,8 +1019,8 @@ static int handleConvert(HandlerArg *a)
     VDTYPE enmSrcType = VDTYPE_HDD;
     const char *pszDstFormat = NULL;
     const char *pszVariant = NULL;
-    PVBOXHDD pSrcDisk = NULL;
-    PVBOXHDD pDstDisk = NULL;
+    PVDISK pSrcDisk = NULL;
+    PVDISK pDstDisk = NULL;
     unsigned uImageFlags = VD_IMAGE_FLAGS_NONE;
     PVDINTERFACE pIfsImageInput = NULL;
     PVDINTERFACE pIfsImageOutput = NULL;
@@ -1258,7 +1258,7 @@ static int handleConvert(HandlerArg *a)
 static int handleInfo(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
     const char *pszFilename = NULL;
 
     /* Parse the command line. */
@@ -1317,7 +1317,7 @@ static int handleInfo(HandlerArg *a)
 static DECLCALLBACK(int) vboximgDvmRead(void *pvUser, uint64_t off, void *pvBuf, size_t cbRead)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = (PVBOXHDD)pvUser;
+    PVDISK pDisk = (PVDISK)pvUser;
 
     /* Take shortcut if possible. */
     if (   off % 512 == 0
@@ -1376,7 +1376,7 @@ static DECLCALLBACK(int) vboximgDvmRead(void *pvUser, uint64_t off, void *pvBuf,
 
 static DECLCALLBACK(int) vboximgDvmWrite(void *pvUser, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    PVBOXHDD pDisk = (PVBOXHDD)pvUser;
+    PVDISK pDisk = (PVDISK)pvUser;
     return VDWrite(pDisk, off, pvBuf, cbWrite);
 }
 
@@ -1408,7 +1408,7 @@ typedef struct VBOXIMGVFS
 static int handleCompact(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
     const char *pszFilename = NULL;
     bool fFilesystemAware = false;
     VDINTERFACEQUERYRANGEUSE VDIfQueryRangeUse;
@@ -1589,7 +1589,7 @@ static int handleCompact(HandlerArg *a)
 static int handleCreateCache(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
     const char *pszFilename = NULL;
     uint64_t cbSize = 0;
 
@@ -1685,7 +1685,7 @@ static DECLCALLBACK(int) vdIfCfgCreateBaseQuery(void *pvUser, const char *pszNam
 static int handleCreateBase(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
     const char *pszFilename = NULL;
     const char *pszBackend  = "VDI";
     const char *pszVariant  = NULL;
@@ -1853,7 +1853,7 @@ static int handleRepair(HandlerArg *a)
 static int handleClearComment(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
     const char *pszFilename = NULL;
 
     /* Parse the command line. */
@@ -1910,7 +1910,7 @@ static int handleClearComment(HandlerArg *a)
 static int handleClearResize(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
     const char *pszFilename = NULL;
     uint64_t    cbNew = 0;
     VDGEOMETRY LCHSGeometry, PCHSGeometry;

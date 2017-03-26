@@ -1061,7 +1061,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     RTStrmPrintf(g_pStdErr, "Converting from raw image file=\"%s\" to file=\"%s\"...\n",
                  srcfilename, dstfilename);
 
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
 
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACEERROR vdInterfaceError;

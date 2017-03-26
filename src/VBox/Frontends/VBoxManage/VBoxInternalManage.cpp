@@ -124,7 +124,7 @@ typedef struct HOSTPARTITION
 typedef struct HOSTPARTITIONS
 {
     /** partitioning type - MBR or GPT */
-    VBOXHDDPARTTYPE uPartitioningType;
+    VDISKPARTTYPE uPartitioningType;
     unsigned        cPartitions;
     HOSTPARTITION   aPartitions[HOSTPARTITION_MAX];
 } HOSTPARTITIONS, *PHOSTPARTITIONS;
@@ -657,7 +657,7 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Format autodetect failed: %Rrc", rc);
 
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
 
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACEERROR vdInterfaceError;
@@ -710,7 +710,7 @@ static RTEXITCODE CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Format autodetect failed: %Rrc", rc);
 
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
 
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACEERROR vdInterfaceError;
@@ -745,7 +745,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     uint64_t lastUsableLBA = 0;
     int rc;
 
-    VBOXHDDPARTTYPE partitioningType;
+    VDISKPARTTYPE partitioningType;
 
     pPart->cPartitions = 0;
     memset(pPart->aPartitions, '\0', sizeof(pPart->aPartitions));
@@ -1133,17 +1133,17 @@ static RTEXITCODE CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> a
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static PVBOXHDDRAWPARTDESC appendPartDesc(uint32_t *pcPartDescs, PVBOXHDDRAWPARTDESC *ppPartDescs)
+static PVDISKRAWPARTDESC appendPartDesc(uint32_t *pcPartDescs, PVDISKRAWPARTDESC *ppPartDescs)
 {
     (*pcPartDescs)++;
-    PVBOXHDDRAWPARTDESC p;
-    p = (PVBOXHDDRAWPARTDESC)RTMemRealloc(*ppPartDescs,
-                                          *pcPartDescs * sizeof(VBOXHDDRAWPARTDESC));
+    PVDISKRAWPARTDESC p;
+    p = (PVDISKRAWPARTDESC)RTMemRealloc(*ppPartDescs,
+                                          *pcPartDescs * sizeof(VDISKRAWPARTDESC));
     *ppPartDescs = p;
     if (p)
     {
         p = p + *pcPartDescs - 1;
-        memset(p, '\0', sizeof(VBOXHDDRAWPARTDESC));
+        memset(p, '\0', sizeof(VDISKRAWPARTDESC));
     }
 
     return p;
@@ -1160,8 +1160,8 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     bool fRelative = false;
 
     uint64_t cbSize = 0;
-    PVBOXHDD pDisk = NULL;
-    VBOXHDDRAW RawDescriptor;
+    PVDISK pDisk = NULL;
+    VDISKRAW RawDescriptor;
     PVDINTERFACE pVDIfs = NULL;
 
     /* let's have a closer look at the arguments */
@@ -1512,12 +1512,12 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     RawDescriptor.szSignature[3] = '\0';
     if (!pszPartitions)
     {
-        RawDescriptor.uFlags = VBOXHDDRAW_DISK;
+        RawDescriptor.uFlags = VDISKRAW_DISK;
         RawDescriptor.pszRawDisk = rawdisk.c_str();
     }
     else
     {
-        RawDescriptor.uFlags = VBOXHDDRAW_NORMAL;
+        RawDescriptor.uFlags = VDISKRAW_NORMAL;
         RawDescriptor.pszRawDisk = NULL;
         RawDescriptor.cPartDescs = 0;
         RawDescriptor.pPartDescs = NULL;
@@ -1582,7 +1582,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
 
         for (unsigned i = 0; i < partitions.cPartitions; i++)
         {
-            PVBOXHDDRAWPARTDESC pPartDesc = NULL;
+            PVDISKRAWPARTDESC pPartDesc = NULL;
 
             /* first dump the MBR/EPT data area */
             if (partitions.aPartitions[i].cPartDataSectors)
@@ -1664,7 +1664,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             if (uPartitions & RT_BIT(partitions.aPartitions[i].uIndex))
             {
                 if (uPartitionsRO & RT_BIT(partitions.aPartitions[i].uIndex))
-                    pPartDesc->uFlags |= VBOXHDDRAW_READONLY;
+                    pPartDesc->uFlags |= VDISKRAW_READONLY;
 
                 if (fRelative)
                 {
@@ -1755,7 +1755,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
             if (uMinIdx != i)
             {
                 /* Swap entries at index i and uMinIdx. */
-                VBOXHDDRAWPARTDESC tmp;
+                VDISKRAWPARTDESC tmp;
                 memcpy(&tmp, &RawDescriptor.pPartDescs[i], sizeof(tmp));
                 memcpy(&RawDescriptor.pPartDescs[i], &RawDescriptor.pPartDescs[uMinIdx], sizeof(tmp));
                 memcpy(&RawDescriptor.pPartDescs[uMinIdx], &tmp, sizeof(tmp));
@@ -1795,7 +1795,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
     RTFileClose(hRawFile);
 
 #ifdef DEBUG_klaus
-    if (!(RawDescriptor.uFlags & VBOXHDDRAW_DISK))
+    if (!(RawDescriptor.uFlags & VDISKRAW_DISK))
     {
         RTPrintf("#            start         length    startoffset  partdataptr  device\n");
         for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
@@ -1906,7 +1906,7 @@ static RTEXITCODE CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     if (dst.isEmpty())
         return errorSyntax(USAGE_RENAMEVMDK, "Mandatory parameter -to missing");
 
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
 
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACEERROR vdInterfaceError;
@@ -1979,7 +1979,7 @@ static RTEXITCODE CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVi
     if (dst.isEmpty())
         return errorSyntax(USAGE_CONVERTTORAW, "Mandatory outputfile parameter missing");
 
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
 
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACEERROR vdInterfaceError;
@@ -2100,8 +2100,8 @@ static RTEXITCODE CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> 
     Utf8Str src;
     Utf8Str dst;
     int vrc;
-    PVBOXHDD pSrcDisk = NULL;
-    PVBOXHDD pDstDisk = NULL;
+    PVDISK pSrcDisk = NULL;
+    PVDISK pDstDisk = NULL;
     VDTYPE enmSrcType = VDTYPE_INVALID;
 
     /* Parse the arguments. */

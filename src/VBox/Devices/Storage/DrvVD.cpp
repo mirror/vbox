@@ -267,7 +267,7 @@ typedef VDLSTIOREQALLOC *PVDLSTIOREQALLOC;
 typedef struct VBOXDISK
 {
     /** The VBox disk container. */
-    PVBOXHDD                 pDisk;
+    PVDISK                   pDisk;
     /** The media interface. */
     PDMIMEDIA                IMedia;
     /** Media port. */
@@ -2477,15 +2477,18 @@ static DECLCALLBACK(uint32_t) drvvdGetRegionCount(PPDMIMEDIA pInterface)
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     uint32_t cRegions = 0;
 
-    if (!pThis->pRegionList)
+    if (pThis->pDisk)
     {
-        int rc = VDQueryRegions(pThis->pDisk, VD_LAST_IMAGE, VD_REGION_LIST_F_LOC_SIZE_BLOCKS,
-                                &pThis->pRegionList);
-        if (RT_SUCCESS(rc))
+        if (!pThis->pRegionList)
+        {
+            int rc = VDQueryRegions(pThis->pDisk, VD_LAST_IMAGE, VD_REGION_LIST_F_LOC_SIZE_BLOCKS,
+                                    &pThis->pRegionList);
+            if (RT_SUCCESS(rc))
+                cRegions = pThis->pRegionList->cRegions;
+        }
+        else
             cRegions = pThis->pRegionList->cRegions;
     }
-    else
-        cRegions = pThis->pRegionList->cRegions;
 
     LogFlowFunc(("returns %u\n", cRegions));
     return cRegions;

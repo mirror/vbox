@@ -124,7 +124,7 @@ static void tstVDSnapSegmentsDice(PVDSNAPTEST pTest, PVDDISKSEG paDiskSeg, uint3
     }
 }
 
-static int tstVDSnapWrite(PVBOXHDD pVD, PVDDISKSEG paDiskSegments, uint32_t cDiskSegments, uint64_t cbDisk, bool fInit)
+static int tstVDSnapWrite(PVDISK pVD, PVDDISKSEG paDiskSegments, uint32_t cDiskSegments, uint64_t cbDisk, bool fInit)
 {
     RT_NOREF1(cbDisk);
     int rc = VINF_SUCCESS;
@@ -151,7 +151,7 @@ static int tstVDSnapWrite(PVBOXHDD pVD, PVDDISKSEG paDiskSegments, uint32_t cDis
     return rc;
 }
 
-static int tstVDSnapReadVerify(PVBOXHDD pVD, PVDDISKSEG paDiskSegments, uint32_t cDiskSegments, uint64_t cbDisk)
+static int tstVDSnapReadVerify(PVDISK pVD, PVDDISKSEG paDiskSegments, uint32_t cDiskSegments, uint64_t cbDisk)
 {
     RT_NOREF1(cbDisk);
     int rc = VINF_SUCCESS;
@@ -217,7 +217,7 @@ static int tstVDSnapReadVerify(PVBOXHDD pVD, PVDDISKSEG paDiskSegments, uint32_t
 static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
 {
     int rc;
-    PVBOXHDD pVD = NULL;
+    PVDISK pVD = NULL;
     VDGEOMETRY       PCHS = { 0, 0, 0 };
     VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;

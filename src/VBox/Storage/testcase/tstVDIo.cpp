@@ -98,7 +98,7 @@ typedef struct VDDISK
     /** Name of the disk handle for identification. */
     char          *pszName;
     /** HDD handle to operate on. */
-    PVBOXHDD       pVD;
+    PVDISK       pVD;
     /** Memory disk used for data verification. */
     PVDMEMDISK     pMemDiskVerify;
     /** Critical section to serialize access to the memory disk. */
@@ -181,14 +181,18 @@ typedef struct VDIOREQ
     size_t        cbReq;
     /** S/G Buffer */
     RTSGBUF       SgBuf;
-    /** Data segment */
-    RTSGSEG       DataSeg;
     /** Flag whether the request is outstanding or not. */
     volatile bool fOutstanding;
     /** Buffer to use for reads. */
     void          *pvBufRead;
+    /** Contiguous buffer pointer backing the segments. */
+    void          *pvBuf;
     /** Opaque user data. */
     void          *pvUser;
+    /** Number of segments used for the data buffer. */
+    uint32_t      cSegs;
+    /** Array of data segments. */
+    RTSGSEG       aSegs[10];
 } VDIOREQ, *PVDIOREQ;
 
 /**
@@ -208,6 +212,8 @@ typedef struct VDIOTEST
     uint64_t    cbIo;
     /** Chance in percent to get a write. */
     unsigned    uWriteChance;
+    /** Maximum number of segments to create for one request. */
+    uint32_t    cSegsMax;
     /** Pointer to the I/O data generator. */
     PVDIORND    pIoRnd;
     /** Pointer to the data pattern to use. */
@@ -531,8 +537,8 @@ static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_li
     return VINF_SUCCESS;
 }
 
-static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint64_t cbIo,
-                           size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
+static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint32_t cSegsMax,
+                           uint64_t cbIo, size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
                            unsigned uWriteChance, PVDPATTERN pPattern);
 static bool tstVDIoTestRunning(PVDIOTEST pIoTest);
 static void tstVDIoTestDestroy(PVDIOTEST pIoTest);
@@ -755,7 +761,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
         VDIOTEST IoTest;
 
         RTTestSub(pGlob->hTest, "Basic I/O");
-        rc = tstVDIoTestInit(&IoTest, pGlob, fRandomAcc, cbIo, cbBlkSize, offStart, offEnd, uWriteChance, pPattern);
+        rc = tstVDIoTestInit(&IoTest, pGlob, fRandomAcc, 5, cbIo, cbBlkSize, offStart, offEnd, uWriteChance, pPattern);
         if (RT_SUCCESS(rc))
         {
             PVDIOREQ paIoReq = NULL;
@@ -803,13 +809,13 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                     {
                                         case VDIOREQTXDIR_READ:
                                         {
-                                            rc = VDRead(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].DataSeg.pvSeg, paIoReq[idx].cbReq);
+                                            rc = VDRead(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].aSegs[0].pvSeg, paIoReq[idx].cbReq);
 
                                             if (RT_SUCCESS(rc)
                                                 && pDisk->pMemDiskVerify)
                                             {
                                                 RTSGBUF SgBuf;
-                                                RTSgBufInit(&SgBuf, &paIoReq[idx].DataSeg, 1);
+                                                RTSgBufInit(&SgBuf, &paIoReq[idx].aSegs[0], paIoReq[idx].cSegs);
 
                                                 if (VDMemDiskCmp(pDisk->pMemDiskVerify, paIoReq[idx].off, paIoReq[idx].cbReq, &SgBuf))
                                                 {
@@ -821,13 +827,13 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                         }
                                         case VDIOREQTXDIR_WRITE:
                                         {
-                                            rc = VDWrite(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].DataSeg.pvSeg, paIoReq[idx].cbReq);
+                                            rc = VDWrite(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].aSegs[0].pvSeg, paIoReq[idx].cbReq);
 
                                             if (RT_SUCCESS(rc)
                                                 && pDisk->pMemDiskVerify)
                                             {
                                                 RTSGBUF SgBuf;
-                                                RTSgBufInit(&SgBuf, &paIoReq[idx].DataSeg, 1);
+                                                RTSgBufInit(&SgBuf, &paIoReq[idx].aSegs[0], paIoReq[idx].cSegs);
                                                 rc = VDMemDiskWrite(pDisk->pMemDiskVerify, paIoReq[idx].off, paIoReq[idx].cbReq, &SgBuf);
                                             }
                                             break;
@@ -2370,8 +2376,8 @@ static DECLCALLBACK(int) tstVDIoFileFlushAsync(void *pvUser, void *pStorage, voi
     return rc;
 }
 
-static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint64_t cbIo,
-                           size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
+static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc, uint32_t cSegsMax,
+                           uint64_t cbIo, size_t cbBlkSize, uint64_t offStart, uint64_t offEnd,
                            unsigned uWriteChance, PVDPATTERN pPattern)
 {
     int rc = VINF_SUCCESS;
@@ -2383,6 +2389,7 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
     pIoTest->offStart      = offStart;
     pIoTest->offEnd        = offEnd;
     pIoTest->uWriteChance  = uWriteChance;
+    pIoTest->cSegsMax      = cSegsMax;
     pIoTest->pIoRnd        = pGlob->pIoRnd;
     pIoTest->pPattern      = pPattern;
 
@@ -2423,6 +2430,36 @@ static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq)
     return pIoReq->fOutstanding;
 }
 
+static uint32_t tstVDIoTestReqInitSegments(PVDIOTEST pIoTest, PRTSGSEG paSegs, uint32_t cSegs, void *pvBuf, size_t cbBuf)
+{
+    uint8_t *pbBuf = (uint8_t *)pvBuf;
+    size_t cSectorsLeft = cbBuf / 512;
+    uint32_t iSeg = 0;
+
+    /* Init all but the last segment which needs to take the rest. */
+    while (   iSeg < cSegs - 1
+           && cSectorsLeft)
+    {
+        uint32_t cThisSectors = VDIoRndGetU32Ex(pIoTest->pIoRnd, 1, cSectorsLeft / 2);
+        size_t cbThisBuf = cThisSectors * 512;
+
+        paSegs[iSeg].pvSeg = pbBuf;
+        paSegs[iSeg].cbSeg = cbThisBuf;
+        pbBuf        += cbThisBuf;
+        cSectorsLeft -= cThisSectors;
+        iSeg++;
+    }
+
+    if (cSectorsLeft)
+    {
+        paSegs[iSeg].pvSeg = pbBuf;
+        paSegs[iSeg].cbSeg = cSectorsLeft * 512;
+        iSeg++;
+    }
+
+    return iSeg;
+}
+
 /**
  * Returns true with the given chance in percent.
  *
@@ -2446,25 +2483,29 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
         pIoReq->enmTxDir = tstVDIoTestIsTrue(pIoTest, pIoTest->uWriteChance) ? VDIOREQTXDIR_WRITE : VDIOREQTXDIR_READ;
         pIoReq->cbReq = RT_MIN(pIoTest->cbBlkIo, pIoTest->cbIo);
         pIoTest->cbIo -= pIoReq->cbReq;
-        pIoReq->DataSeg.cbSeg = pIoReq->cbReq;
+
+        void *pvBuf = NULL;
 
         if (pIoReq->enmTxDir == VDIOREQTXDIR_WRITE)
         {
             if (pIoTest->pPattern)
-                rc = tstVDIoPatternGetBuffer(pIoTest->pPattern, &pIoReq->DataSeg.pvSeg, pIoReq->cbReq);
+                rc = tstVDIoPatternGetBuffer(pIoTest->pPattern, &pvBuf, pIoReq->cbReq);
             else
-                rc = VDIoRndGetBuffer(pIoTest->pIoRnd, &pIoReq->DataSeg.pvSeg, pIoReq->cbReq);
+                rc = VDIoRndGetBuffer(pIoTest->pIoRnd, &pvBuf, pIoReq->cbReq);
             AssertRC(rc);
         }
         else
         {
             /* Read */
-            pIoReq->DataSeg.pvSeg = pIoReq->pvBufRead;
+            pvBuf = pIoReq->pvBufRead;
         }
 
         if (RT_SUCCESS(rc))
         {
-            RTSgBufInit(&pIoReq->SgBuf, &pIoReq->DataSeg, 1);
+            pIoReq->pvBuf = pvBuf;
+            uint32_t cSegsMax = VDIoRndGetU32Ex(pIoTest->pIoRnd, 1, RT_MIN(pIoTest->cSegsMax, RT_ELEMENTS(pIoReq->aSegs)));
+            pIoReq->cSegs = tstVDIoTestReqInitSegments(pIoTest, &pIoReq->aSegs[0], cSegsMax, pvBuf, pIoReq->cbReq);
+            RTSgBufInit(&pIoReq->SgBuf, &pIoReq->aSegs[0], pIoReq->cSegs);
 
             if (pIoTest->fRandomAccess)
             {
@@ -2546,10 +2587,15 @@ static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, i
             case VDIOREQTXDIR_READ:
             {
                 RTCritSectEnter(&pDisk->CritSectVerify);
-                RTSgBufReset(&pIoReq->SgBuf);
+
+                RTSGBUF SgBufCmp;
+                RTSGSEG SegCmp;
+                SegCmp.pvSeg = pIoReq->pvBuf;
+                SegCmp.cbSeg = pIoReq->cbReq;
+                RTSgBufInit(&SgBufCmp, &SegCmp, 1);
 
                 if (VDMemDiskCmp(pDisk->pMemDiskVerify, pIoReq->off, pIoReq->cbReq,
-                                 &pIoReq->SgBuf))
+                                 &SgBufCmp))
                     RTTestFailed(pDisk->pTestGlob->hTest, "Corrupted disk at offset %llu!\n", pIoReq->off);
                 RTCritSectLeave(&pDisk->CritSectVerify);
                 break;
@@ -2557,10 +2603,15 @@ static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, i
             case VDIOREQTXDIR_WRITE:
             {
                 RTCritSectEnter(&pDisk->CritSectVerify);
-                RTSgBufReset(&pIoReq->SgBuf);
+
+                RTSGBUF SgBuf;
+                RTSGSEG Seg;
+                Seg.pvSeg = pIoReq->pvBuf;
+                Seg.cbSeg = pIoReq->cbReq;
+                RTSgBufInit(&SgBuf, &Seg, 1);
 
                 int rc = VDMemDiskWrite(pDisk->pMemDiskVerify, pIoReq->off, pIoReq->cbReq,
-                                        &pIoReq->SgBuf);
+                                        &SgBuf);
                 AssertRC(rc);
                 RTCritSectLeave(&pDisk->CritSectVerify);
                 break;

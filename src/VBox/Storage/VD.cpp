@@ -96,7 +96,7 @@ typedef struct VDIO
     /** Opaque backend data. */
     void               *pBackendData;
     /** Disk this image is part of */
-    PVBOXHDD            pDisk;
+    PVDISK              pDisk;
     /** Flag whether to ignore flush requests. */
     bool                fIgnoreFlush;
 } VDIO, *PVDIO;
@@ -221,7 +221,7 @@ typedef VDFILTER *PVDFILTER;
 /**
  * VBox HDD Container main structure, private part.
  */
-struct VBOXHDD
+struct VDISK
 {
     /** Structure signature (VDISK_SIGNATURE). */
     uint32_t               u32Signature;
@@ -314,7 +314,7 @@ struct VBOXHDD
 typedef struct VDPARENTSTATEDESC
 {
     /** Pointer to disk descriptor. */
-    PVBOXHDD pDisk;
+    PVDISK pDisk;
     /** Pointer to image descriptor. */
     PVDIMAGE pImage;
 } VDPARENTSTATEDESC, *PVDPARENTSTATEDESC;
@@ -349,7 +349,7 @@ typedef struct VDIOCTX
     /** Pointer to the next I/O context. */
     struct VDIOCTX * volatile    pIoCtxNext;
     /** Disk this is request is for. */
-    PVBOXHDD                     pDisk;
+    PVDISK                     pDisk;
     /** Return code. */
     int                          rcReq;
     /** Various flags for the I/O context. */
@@ -669,8 +669,8 @@ static PRTLDRMOD g_pahFilterBackendPlugins = NULL;
 /** Forward declaration of the async discard helper. */
 static DECLCALLBACK(int) vdDiscardHelperAsync(PVDIOCTX pIoCtx);
 static DECLCALLBACK(int) vdWriteHelperAsync(PVDIOCTX pIoCtx);
-static void vdDiskProcessBlockedIoCtx(PVBOXHDD pDisk);
-static int vdDiskUnlock(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc);
+static void vdDiskProcessBlockedIoCtx(PVDISK pDisk);
+static int vdDiskUnlock(PVDISK pDisk, PVDIOCTX pIoCtxRc);
 static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 /**
@@ -787,7 +787,7 @@ DECLINLINE(int) vdAddFilterBackend(RTLDRMOD hPlugin, PCVDFILTERBACKEND pBackend)
 /**
  * internal: issue error message.
  */
-static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
+static int vdError(PVDISK pDisk, int rc, RT_SRC_POS_DECL,
                    const char *pszFormat, ...)
 {
     va_list va;
@@ -801,7 +801,7 @@ static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
 /**
  * internal: thread synchronization, start read.
  */
-DECLINLINE(int) vdThreadStartRead(PVBOXHDD pDisk)
+DECLINLINE(int) vdThreadStartRead(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     if (RT_UNLIKELY(pDisk->pInterfaceThreadSync))
@@ -812,7 +812,7 @@ DECLINLINE(int) vdThreadStartRead(PVBOXHDD pDisk)
 /**
  * internal: thread synchronization, finish read.
  */
-DECLINLINE(int) vdThreadFinishRead(PVBOXHDD pDisk)
+DECLINLINE(int) vdThreadFinishRead(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     if (RT_UNLIKELY(pDisk->pInterfaceThreadSync))
@@ -823,7 +823,7 @@ DECLINLINE(int) vdThreadFinishRead(PVBOXHDD pDisk)
 /**
  * internal: thread synchronization, start write.
  */
-DECLINLINE(int) vdThreadStartWrite(PVBOXHDD pDisk)
+DECLINLINE(int) vdThreadStartWrite(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     if (RT_UNLIKELY(pDisk->pInterfaceThreadSync))
@@ -834,7 +834,7 @@ DECLINLINE(int) vdThreadStartWrite(PVBOXHDD pDisk)
 /**
  * internal: thread synchronization, finish write.
  */
-DECLINLINE(int) vdThreadFinishWrite(PVBOXHDD pDisk)
+DECLINLINE(int) vdThreadFinishWrite(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     if (RT_UNLIKELY(pDisk->pInterfaceThreadSync))
@@ -912,7 +912,7 @@ static int vdFindFilterBackend(const char *pszFilter, PCVDFILTERBACKEND *ppBacke
 /**
  * internal: add image structure to the end of images list.
  */
-static void vdAddImageToList(PVBOXHDD pDisk, PVDIMAGE pImage)
+static void vdAddImageToList(PVDISK pDisk, PVDIMAGE pImage)
 {
     pImage->pPrev = NULL;
     pImage->pNext = NULL;
@@ -937,7 +937,7 @@ static void vdAddImageToList(PVBOXHDD pDisk, PVDIMAGE pImage)
 /**
  * internal: remove image structure from the images list.
  */
-static void vdRemoveImageFromList(PVBOXHDD pDisk, PVDIMAGE pImage)
+static void vdRemoveImageFromList(PVDISK pDisk, PVDIMAGE pImage)
 {
     Assert(pDisk->cImages > 0);
 
@@ -990,7 +990,7 @@ static uint32_t vdFilterRetain(PVDFILTER pFilter)
 /**
  * internal: find image by index into the images list.
  */
-static PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
+static PVDIMAGE vdGetImageByNumber(PVDISK pDisk, unsigned nImage)
 {
     PVDIMAGE pImage = pDisk->pBase;
     if (nImage == VD_LAST_IMAGE)
@@ -1012,7 +1012,7 @@ static PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
  * @param   cbWrite  Number of bytes to write.
  * @param   pIoCtx   The I/O context associated with the request.
  */
-static int vdFilterChainApplyWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
+static int vdFilterChainApplyWrite(PVDISK pDisk, uint64_t uOffset, size_t cbWrite,
                                    PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
@@ -1041,7 +1041,7 @@ static int vdFilterChainApplyWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWr
  * @param   cbRead   Number of bytes read.
  * @param   pIoCtx   The I/O context associated with the request.
  */
-static int vdFilterChainApplyRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
+static int vdFilterChainApplyRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
                                   PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
@@ -1064,7 +1064,7 @@ static int vdFilterChainApplyRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRea
     return rc;
 }
 
-DECLINLINE(void) vdIoCtxRootComplete(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+DECLINLINE(void) vdIoCtxRootComplete(PVDISK pDisk, PVDIOCTX pIoCtx)
 {
     if (   RT_SUCCESS(pIoCtx->rcReq)
         && pIoCtx->enmTxDir == VDIOCTXTXDIR_READ)
@@ -1079,7 +1079,7 @@ DECLINLINE(void) vdIoCtxRootComplete(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
 /**
  * Initialize the structure members of a given I/O context.
  */
-DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
+DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                              uint64_t uOffset, size_t cbTransfer, PVDIMAGE pImageStart,
                              PCRTSGBUF pcSgBuf, void *pvAllocation,
                              PFNVDIOCTXTRANSFER pfnIoCtxTransfer, uint32_t fFlags)
@@ -1227,7 +1227,7 @@ static PVDDISCARDSTATE vdDiscardStateCreate(void)
  * @param   cbDiscardingNew    How many bytes should be waiting on success.
  *                             The number of bytes waiting can be less.
  */
-static int vdDiscardRemoveBlocks(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, size_t cbDiscardingNew)
+static int vdDiscardRemoveBlocks(PVDISK pDisk, PVDDISCARDSTATE pDiscard, size_t cbDiscardingNew)
 {
     int rc = VINF_SUCCESS;
 
@@ -1312,7 +1312,7 @@ static int vdDiscardRemoveBlocks(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, size_
  * @returns VBox status code.
  * @param   pDisk    VD disk container.
  */
-static int vdDiscardStateDestroy(PVBOXHDD pDisk)
+static int vdDiscardStateDestroy(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
 
@@ -1338,7 +1338,7 @@ static int vdDiscardStateDestroy(PVBOXHDD pDisk)
  * @param   uOffset  First byte to mark as allocated.
  * @param   cbRange  Number of bytes to mark as allocated.
  */
-static int vdDiscardSetRangeAllocated(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRange)
+static int vdDiscardSetRangeAllocated(PVDISK pDisk, uint64_t uOffset, size_t cbRange)
 {
     PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
     int rc = VINF_SUCCESS;
@@ -1380,7 +1380,7 @@ static int vdDiscardSetRangeAllocated(PVBOXHDD pDisk, uint64_t uOffset, size_t c
     return rc;
 }
 
-DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
+DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                                   uint64_t uOffset, size_t cbTransfer,
                                   PVDIMAGE pImageStart,PCRTSGBUF pcSgBuf,
                                   void *pvAllocation, PFNVDIOCTXTRANSFER pfnIoCtxTransfer,
@@ -1398,7 +1398,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
     return pIoCtx;
 }
 
-DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
+DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                                       uint64_t uOffset, size_t cbTransfer,
                                       PVDIMAGE pImageStart, PCRTSGBUF pcSgBuf,
                                       PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
@@ -1422,7 +1422,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
     return pIoCtx;
 }
 
-DECLINLINE(void) vdIoCtxDiscardInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, PCRTRANGE paRanges,
+DECLINLINE(void) vdIoCtxDiscardInit(PVDIOCTX pIoCtx, PVDISK pDisk, PCRTRANGE paRanges,
                                     unsigned cRanges, PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                     void *pvUser1, void *pvUser2, void *pvAllocation,
                                     PFNVDIOCTXTRANSFER pfnIoCtxTransfer, uint32_t fFlags)
@@ -1451,7 +1451,7 @@ DECLINLINE(void) vdIoCtxDiscardInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, PCRTRANGE p
     pIoCtx->Type.Root.pvUser2     = pvUser2;
 }
 
-DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
+DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVDISK pDisk, PCRTRANGE paRanges,
                                          unsigned cRanges,
                                          PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                          void *pvUser1, void *pvUser2,
@@ -1472,7 +1472,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
     return pIoCtx;
 }
 
-DECLINLINE(PVDIOCTX) vdIoCtxChildAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
+DECLINLINE(PVDIOCTX) vdIoCtxChildAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                                        uint64_t uOffset, size_t cbTransfer,
                                        PVDIMAGE pImageStart, PCRTSGBUF pcSgBuf,
                                        PVDIOCTX pIoCtxParent, size_t cbTransferParent,
@@ -1533,7 +1533,7 @@ DECLINLINE(PVDIOTASK) vdIoTaskMetaAlloc(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLE
     return pIoTask;
 }
 
-DECLINLINE(void) vdIoCtxFree(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+DECLINLINE(void) vdIoCtxFree(PVDISK pDisk, PVDIOCTX pIoCtx)
 {
     Log(("Freeing I/O context %#p\n", pIoCtx));
 
@@ -1548,7 +1548,7 @@ DECLINLINE(void) vdIoCtxFree(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
     }
 }
 
-DECLINLINE(void) vdIoTaskFree(PVBOXHDD pDisk, PVDIOTASK pIoTask)
+DECLINLINE(void) vdIoTaskFree(PVDISK pDisk, PVDIOTASK pIoTask)
 {
 #ifdef DEBUG
     memset(pIoTask, 0xff, sizeof(VDIOTASK));
@@ -1600,7 +1600,7 @@ DECLINLINE(void) vdIoCtxAddToWaitingList(volatile PVDIOCTX *ppList, PVDIOCTX pIo
     }
 }
 
-DECLINLINE(void) vdIoCtxDefer(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+DECLINLINE(void) vdIoCtxDefer(PVDISK pDisk, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("Deferring I/O context pIoCtx=%#p\n", pIoCtx));
 
@@ -1764,7 +1764,7 @@ static int vdIoCtxProcessLocked(PVDIOCTX pIoCtx)
  *                   The status code is returned. NULL if there is no I/O context
  *                   to return the status code for.
  */
-static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
+static int vdDiskProcessWaitingIoCtx(PVDISK pDisk, PVDIOCTX pIoCtxRc)
 {
     int rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
 
@@ -1849,7 +1849,7 @@ static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
  * @returns nothing.
  * @param   pDisk    The disk structure.
  */
-static void vdDiskProcessBlockedIoCtx(PVBOXHDD pDisk)
+static void vdDiskProcessBlockedIoCtx(PVDISK pDisk)
 {
     LogFlowFunc(("pDisk=%#p\n", pDisk));
 
@@ -1907,7 +1907,7 @@ static void vdDiskProcessBlockedIoCtx(PVBOXHDD pDisk)
 static int vdIoCtxProcessTryLockDefer(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
 
     Log(("Defer pIoCtx=%#p\n", pIoCtx));
 
@@ -1940,7 +1940,7 @@ static int vdIoCtxProcessTryLockDefer(PVDIOCTX pIoCtx)
 static int vdIoCtxProcessSync(PVDIOCTX pIoCtx, RTSEMEVENT hEventComplete)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
 
     LogFlowFunc(("pIoCtx=%p\n", pIoCtx));
 
@@ -1963,12 +1963,12 @@ static int vdIoCtxProcessSync(PVDIOCTX pIoCtx, RTSEMEVENT hEventComplete)
     return rc;
 }
 
-DECLINLINE(bool) vdIoCtxIsDiskLockOwner(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+DECLINLINE(bool) vdIoCtxIsDiskLockOwner(PVDISK pDisk, PVDIOCTX pIoCtx)
 {
     return pDisk->pIoCtxLockOwner == pIoCtx;
 }
 
-static int vdIoCtxLockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+static int vdIoCtxLockDisk(PVDISK pDisk, PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
 
@@ -1987,7 +1987,7 @@ static int vdIoCtxLockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
     return rc;
 }
 
-static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessBlockedReqs)
+static void vdIoCtxUnlockDisk(PVDISK pDisk, PVDIOCTX pIoCtx, bool fProcessBlockedReqs)
 {
     RT_NOREF1(pIoCtx);
     LogFlowFunc(("pDisk=%#p pIoCtx=%#p fProcessBlockedReqs=%RTbool\n",
@@ -2011,7 +2011,7 @@ static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessBloc
 /**
  * Internal: Reads a given amount of data from the image chain of the disk.
  **/
-static int vdDiskReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+static int vdDiskReadHelper(PVDISK pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
                             uint64_t uOffset, size_t cbRead, PVDIOCTX pIoCtx, size_t *pcbThisRead)
 {
     RT_NOREF1(pDisk);
@@ -2055,7 +2055,7 @@ static int vdDiskReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImagePare
 static DECLCALLBACK(int) vdReadHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc;
-    PVBOXHDD pDisk                = pIoCtx->pDisk;
+    PVDISK pDisk                = pIoCtx->pDisk;
     size_t cbToRead               = pIoCtx->Req.Io.cbTransfer;
     uint64_t uOffset              = pIoCtx->Req.Io.uOffset;
     PVDIMAGE pCurrImage           = pIoCtx->Req.Io.pImageCur;
@@ -2260,7 +2260,7 @@ static DECLCALLBACK(int) vdParentRead(void *pvUser, uint64_t uOffset, void *pvBu
  * @param   cImagesRead             Number of images in the chain to read until
  *                                  the read is cut off. A value of 0 disables the cut off.
  */
-static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+static int vdReadHelperEx(PVDISK pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
                           uint64_t uOffset, void *pvBuf, size_t cbRead,
                           bool fZeroFreeBlocks, bool fUpdateCache, unsigned cImagesRead)
 {
@@ -2300,7 +2300,7 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
  * internal: read the specified amount of data in whatever blocks the backend
  * will give us.
  */
-static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
+static int vdReadHelper(PVDISK pDisk, PVDIMAGE pImage, uint64_t uOffset,
                         void *pvBuf, size_t cbRead, bool fUpdateCache)
 {
     return vdReadHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbRead,
@@ -2310,7 +2310,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
 /**
  * internal: mark the disk as not modified.
  */
-static void vdResetModifiedFlag(PVBOXHDD pDisk)
+static void vdResetModifiedFlag(PVDISK pDisk)
 {
     if (pDisk->uModified & VD_IMAGE_MODIFIED_FLAG)
     {
@@ -2335,7 +2335,7 @@ static void vdResetModifiedFlag(PVBOXHDD pDisk)
 /**
  * internal: mark the disk as modified.
  */
-static void vdSetModifiedFlag(PVBOXHDD pDisk)
+static void vdSetModifiedFlag(PVDISK pDisk)
 {
     pDisk->uModified |= VD_IMAGE_MODIFIED_FLAG;
     if (pDisk->uModified & VD_IMAGE_MODIFIED_FIRST)
@@ -2359,7 +2359,7 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
  * internal: write buffer to the image, taking care of block boundaries and
  * write optimizations.
  */
-static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
+static int vdWriteHelperEx(PVDISK pDisk, PVDIMAGE pImage,
                            PVDIMAGE pImageParentOverride, uint64_t uOffset,
                            const void *pvBuf, size_t cbWrite,
                            uint32_t fFlags, unsigned cImagesRead)
@@ -2399,7 +2399,7 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
  * internal: write buffer to the image, taking care of block boundaries and
  * write optimizations.
  */
-static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
+static int vdWriteHelper(PVDISK pDisk, PVDIMAGE pImage, uint64_t uOffset,
                          const void *pvBuf, size_t cbWrite, uint32_t fFlags)
 {
     return vdWriteHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite,
@@ -2410,7 +2410,7 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
  * Internal: Copies the content of one disk to another one applying optimizations
  * to speed up the copy process if possible.
  */
-static int vdCopyHelper(PVBOXHDD pDiskFrom, PVDIMAGE pImageFrom, PVBOXHDD pDiskTo,
+static int vdCopyHelper(PVDISK pDiskFrom, PVDIMAGE pImageFrom, PVDISK pDiskTo,
                         uint64_t cbSize, unsigned cImagesFromRead, unsigned cImagesToRead,
                         bool fSuppressRedundantIo, PVDINTERFACEPROGRESS pIfProgress,
                         PVDINTERFACEPROGRESS pDstIfProgress)
@@ -2578,7 +2578,7 @@ static DECLCALLBACK(int) vdSetModifiedHelperAsync(PVDIOCTX pIoCtx)
 /**
  * internal: mark the disk as modified - async version.
  */
-static int vdSetModifiedFlagAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+static int vdSetModifiedFlagAsync(PVDISK pDisk, PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
 
@@ -2763,7 +2763,7 @@ static DECLCALLBACK(int) vdWriteHelperOptimizedPreReadAsync(PVDIOCTX pIoCtx)
  */
 static DECLCALLBACK(int) vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
 {
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
     uint64_t uOffset   = pIoCtx->Type.Child.uOffsetSaved;
     size_t cbThisWrite = pIoCtx->Type.Child.cbTransferParent;
     size_t cbPreRead   = pIoCtx->Type.Child.cbPreRead;
@@ -2933,7 +2933,7 @@ static DECLCALLBACK(int) vdWriteHelperStandardPreReadAsync(PVDIOCTX pIoCtx)
 
 static DECLCALLBACK(int) vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
 {
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
     uint64_t uOffset   = pIoCtx->Type.Child.uOffsetSaved;
     size_t cbThisWrite = pIoCtx->Type.Child.cbTransferParent;
     size_t cbPreRead   = pIoCtx->Type.Child.cbPreRead;
@@ -2998,7 +2998,7 @@ static DECLCALLBACK(int) vdWriteHelperAsync(PVDIOCTX pIoCtx)
     size_t cbWrite   = pIoCtx->Req.Io.cbTransfer;
     uint64_t uOffset = pIoCtx->Req.Io.uOffset;
     PVDIMAGE pImage  = pIoCtx->Req.Io.pImageCur;
-    PVBOXHDD pDisk   = pIoCtx->pDisk;
+    PVDISK pDisk   = pIoCtx->pDisk;
     unsigned fWrite;
     size_t cbThisWrite;
     size_t cbPreRead, cbPostRead;
@@ -3175,7 +3175,7 @@ static DECLCALLBACK(int) vdWriteHelperAsync(PVDIOCTX pIoCtx)
 static DECLCALLBACK(int) vdFlushHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
     PVDIMAGE pImage = pIoCtx->Req.Io.pImageCur;
 
     rc = vdIoCtxLockDisk(pDisk, pIoCtx);
@@ -3219,7 +3219,7 @@ static DECLCALLBACK(int) vdFlushHelperAsync(PVDIOCTX pIoCtx)
 static DECLCALLBACK(int) vdDiscardWholeBlockAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
     PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
     PVDDISCARDBLOCK pBlock = pIoCtx->Req.Discard.pBlock;
     size_t cbPreAllocated, cbPostAllocated, cbActuallyDiscarded;
@@ -3267,7 +3267,7 @@ static DECLCALLBACK(int) vdDiscardWholeBlockAsync(PVDIOCTX pIoCtx)
  * @param   cbDiscardingNew    How many bytes should be waiting on success.
  *                             The number of bytes waiting can be less.
  */
-static int vdDiscardRemoveBlocksAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx, size_t cbDiscardingNew)
+static int vdDiscardRemoveBlocksAsync(PVDISK pDisk, PVDIOCTX pIoCtx, size_t cbDiscardingNew)
 {
     int rc = VINF_SUCCESS;
     PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
@@ -3356,7 +3356,7 @@ static int vdDiscardRemoveBlocksAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx, size_t cb
  */
 static DECLCALLBACK(int) vdDiscardCurrentRangeAsync(PVDIOCTX pIoCtx)
 {
-    PVBOXHDD        pDisk         = pIoCtx->pDisk;
+    PVDISK        pDisk         = pIoCtx->pDisk;
     PVDDISCARDSTATE pDiscard      = pDisk->pDiscard;
     uint64_t        offStart      = pIoCtx->Req.Discard.offCur;
     size_t          cbThisDiscard = pIoCtx->Req.Discard.cbThisDiscard;
@@ -3430,7 +3430,7 @@ static DECLCALLBACK(int) vdDiscardCurrentRangeAsync(PVDIOCTX pIoCtx)
 static DECLCALLBACK(int) vdDiscardHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc             = VINF_SUCCESS;
-    PVBOXHDD  pDisk    = pIoCtx->pDisk;
+    PVDISK  pDisk    = pIoCtx->pDisk;
     PCRTRANGE paRanges = pIoCtx->Req.Discard.paRanges;
     unsigned  cRanges  = pIoCtx->Req.Discard.cRanges;
     PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
@@ -4137,7 +4137,7 @@ static DECLCALLBACK(int) vdIOFlushAsyncFallback(void *pvUser, void *pStorage,
  */
 static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
 {
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
     int rc = VINF_SUCCESS;
 
     VD_IS_LOCKED(pDisk);
@@ -4237,7 +4237,7 @@ static int vdUserXferCompleted(PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
                                size_t cbTransfer, int rcReq)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDISK pDisk = pIoCtx->pDisk;
 
     LogFlowFunc(("pIoStorage=%#p pIoCtx=%#p pfnComplete=%#p pvUser=%#p cbTransfer=%zu rcReq=%Rrc\n",
                  pIoStorage, pIoCtx, pfnComplete, pvUser, cbTransfer, rcReq));
@@ -4297,7 +4297,7 @@ static void vdIoCtxContinueDeferredList(PVDIOSTORAGE pIoStorage, PRTLISTANCHOR p
 static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnComplete, void *pvUser,
                                PVDMETAXFER pMetaXfer, int rcReq)
 {
-    PVBOXHDD pDisk = pIoStorage->pVDIo->pDisk;
+    PVDISK pDisk = pIoStorage->pVDIo->pDisk;
     RTLISTNODE ListIoCtxWaiting;
     bool fFlush;
 
@@ -4413,7 +4413,7 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
  * @returns nothing.
  * @param   pDisk    The disk to process the list for.
  */
-static void vdIoTaskProcessWaitingList(PVBOXHDD pDisk)
+static void vdIoTaskProcessWaitingList(PVDISK pDisk)
 {
     LogFlowFunc(("pDisk=%#p\n", pDisk));
 
@@ -4458,7 +4458,7 @@ static void vdIoTaskProcessWaitingList(PVBOXHDD pDisk)
  * @returns nothing.
  * @param   pDisk    The disk.
  */
-static void vdIoCtxProcessHaltedList(PVBOXHDD pDisk)
+static void vdIoCtxProcessHaltedList(PVDISK pDisk)
 {
     LogFlowFunc(("pDisk=%#p\n", pDisk));
 
@@ -4500,7 +4500,7 @@ static void vdIoCtxProcessHaltedList(PVBOXHDD pDisk)
  * @param   pDisk    The disk to unlock.
  * @param   pIoCtxRc The I/O context to get the status code from, optional.
  */
-static int vdDiskUnlock(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
+static int vdDiskUnlock(PVDISK pDisk, PVDIOCTX pIoCtxRc)
 {
     int rc = VINF_SUCCESS;
 
@@ -4551,7 +4551,7 @@ static int vdDiskUnlock(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
 static void vdXferTryLockDiskDeferIoTask(PVDIOTASK pIoTask)
 {
     PVDIOSTORAGE pIoStorage = pIoTask->pIoStorage;
-    PVBOXHDD pDisk = pIoStorage->pVDIo->pDisk;
+    PVDISK pDisk = pIoStorage->pVDIo->pDisk;
 
     Log(("Deferring I/O task pIoTask=%p\n", pIoTask));
 
@@ -4753,7 +4753,7 @@ static DECLCALLBACK(int) vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, 
 {
     int rc = VINF_SUCCESS;
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
 
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p uOffset=%llu pIoCtx=%#p cbRead=%u\n",
                  pvUser, pIoStorage, uOffset, pIoCtx, cbRead));
@@ -4851,7 +4851,7 @@ static DECLCALLBACK(int) vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage,
 {
     int rc = VINF_SUCCESS;
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
 
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p uOffset=%llu pIoCtx=%#p cbWrite=%u\n",
                  pvUser, pIoStorage, uOffset, pIoCtx, cbWrite));
@@ -4951,7 +4951,7 @@ static DECLCALLBACK(int) vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, 
                                          void *pvCompleteUser)
 {
     PVDIO pVDIo     = (PVDIO)pvUser;
-    PVBOXHDD pDisk  = pVDIo->pDisk;
+    PVDISK pDisk  = pVDIo->pDisk;
     int rc = VINF_SUCCESS;
     RTSGSEG Seg;
     PVDIOTASK pIoTask;
@@ -5072,7 +5072,7 @@ static DECLCALLBACK(int) vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage,
                                           PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
     int rc = VINF_SUCCESS;
     RTSGSEG Seg;
     PVDIOTASK pIoTask;
@@ -5228,7 +5228,7 @@ static DECLCALLBACK(int) vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage,
 static DECLCALLBACK(void) vdIOIntMetaXferRelease(void *pvUser, PVDMETAXFER pMetaXfer)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
     PVDIOSTORAGE pIoStorage;
 
     /*
@@ -5264,7 +5264,7 @@ static DECLCALLBACK(int) vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVD
                                       PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
     int rc = VINF_SUCCESS;
     PVDIOTASK pIoTask;
     PVDMETAXFER pMetaXfer = NULL;
@@ -5341,7 +5341,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
                                                const void *pvBuf, size_t cbBuf)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
     size_t cbCopied = 0;
 
     /** @todo Enable check for sync I/O later. */
@@ -5361,7 +5361,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
                                                  void *pvBuf, size_t cbBuf)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
     size_t cbCopied = 0;
 
     /** @todo Enable check for sync I/O later. */
@@ -5380,7 +5380,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
 static DECLCALLBACK(size_t) vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int ch, size_t cb)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
     size_t cbSet = 0;
 
     /** @todo Enable check for sync I/O later. */
@@ -5401,7 +5401,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pI
                                                        size_t cbData)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
     size_t cbCreated = 0;
 
     /** @todo It is possible that this gets called from a filter plugin
@@ -5424,7 +5424,7 @@ static DECLCALLBACK(void) vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, i
                                                 size_t cbCompleted)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
 
     LogFlowFunc(("pvUser=%#p pIoCtx=%#p rcReq=%Rrc cbCompleted=%zu\n",
                  pvUser, pIoCtx, rcReq, cbCompleted));
@@ -5480,7 +5480,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxGetDataUnitSize(void *pvUser, PVDIOCTX p
 {
     RT_NOREF1(pIoCtx);
     PVDIO    pVDIo = (PVDIO)pvUser;
-    PVBOXHDD pDisk = pVDIo->pDisk;
+    PVDISK pDisk = pVDIo->pDisk;
 
     PVDIMAGE pImage = vdGetImageByNumber(pDisk, VD_LAST_IMAGE);
     AssertPtrReturn(pImage, 0);
@@ -5653,7 +5653,7 @@ static DECLCALLBACK(int) vdLogMessage(void *pvUser, const char *pszFormat, va_li
     return VINF_SUCCESS;
 }
 
-DECLINLINE(int) vdMessageWrapper(PVBOXHDD pDisk, const char *pszFormat, ...)
+DECLINLINE(int) vdMessageWrapper(PVDISK pDisk, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -6141,10 +6141,10 @@ VBOXDDU_DECL(int) VDFilterInfoOne(const char *pszFilter, PVDFILTERINFO pEntry)
  * @param   enmType         Type of the image container.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *ppDisk)
+VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVDISK *ppDisk)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = NULL;
+    PVDISK pDisk = NULL;
 
     LogFlowFunc(("pVDIfsDisk=%#p\n", pVDIfsDisk));
     do
@@ -6154,7 +6154,7 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
                            ("ppDisk=%#p\n", ppDisk),
                            rc = VERR_INVALID_PARAMETER);
 
-        pDisk = (PVBOXHDD)RTMemAllocZ(sizeof(VBOXHDD));
+        pDisk = (PVDISK)RTMemAllocZ(sizeof(VDISK));
         if (pDisk)
         {
             pDisk->u32Signature            = VDISK_SIGNATURE;
@@ -6224,7 +6224,7 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(int) VDDestroy(PVBOXHDD pDisk)
+VBOXDDU_DECL(int) VDDestroy(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     LogFlowFunc(("pDisk=%#p\n", pDisk));
@@ -6410,7 +6410,7 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  */
-VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
+VBOXDDU_DECL(int) VDOpen(PVDISK pDisk, const char *pszBackend,
                          const char *pszFilename, unsigned uOpenFlags,
                          PVDINTERFACE pVDIfsImage)
 {
@@ -6737,7 +6737,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pVDIfsCache     Pointer to the per-cache VD interface list.
  */
-VBOXDDU_DECL(int) VDCacheOpen(PVBOXHDD pDisk, const char *pszBackend,
+VBOXDDU_DECL(int) VDCacheOpen(PVDISK pDisk, const char *pszBackend,
                               const char *pszFilename, unsigned uOpenFlags,
                               PVDINTERFACE pVDIfsCache)
 {
@@ -6909,7 +6909,7 @@ VBOXDDU_DECL(int) VDCacheOpen(PVBOXHDD pDisk, const char *pszBackend,
     return rc;
 }
 
-VBOXDDU_DECL(int) VDFilterAdd(PVBOXHDD pDisk, const char *pszFilter, uint32_t fFlags,
+VBOXDDU_DECL(int) VDFilterAdd(PVDISK pDisk, const char *pszFilter, uint32_t fFlags,
                               PVDINTERFACE pVDIfsFilter)
 {
     int rc = VINF_SUCCESS;
@@ -7020,7 +7020,7 @@ VBOXDDU_DECL(int) VDFilterAdd(PVBOXHDD pDisk, const char *pszFilter, uint32_t fF
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
-VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
+VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                                const char *pszFilename, uint64_t cbSize,
                                unsigned uImageFlags, const char *pszComment,
                                PCVDGEOMETRY pPCHSGeometry,
@@ -7317,7 +7317,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
-VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
+VBOXDDU_DECL(int) VDCreateDiff(PVDISK pDisk, const char *pszBackend,
                                const char *pszFilename, unsigned uImageFlags,
                                const char *pszComment, PCRTUUID pUuid,
                                PCRTUUID pParentUuid, unsigned uOpenFlags,
@@ -7592,7 +7592,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pVDIfsCache     Pointer to the per-cache VD interface list.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
-VBOXDDU_DECL(int) VDCreateCache(PVBOXHDD pDisk, const char *pszBackend,
+VBOXDDU_DECL(int) VDCreateCache(PVDISK pDisk, const char *pszBackend,
                                 const char *pszFilename, uint64_t cbSize,
                                 unsigned uImageFlags, const char *pszComment,
                                 PCRTUUID pUuid, unsigned uOpenFlags,
@@ -7807,7 +7807,7 @@ VBOXDDU_DECL(int) VDCreateCache(PVBOXHDD pDisk, const char *pszBackend,
  * @param   nImageTo        Name of the image file to merge to.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
-VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
+VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
                           unsigned nImageTo, PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
@@ -8257,7 +8257,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pDstVDIfsOperation Pointer to the per-operation VD interface list,
  *                          for the destination operation.
  */
-VBOXDDU_DECL(int) VDCopyEx(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
+VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
                            const char *pszBackend, const char *pszFilename,
                            bool fMoveByRename, uint64_t cbSize,
                            unsigned nImageFromSame, unsigned nImageToSame,
@@ -8588,7 +8588,7 @@ VBOXDDU_DECL(int) VDCopyEx(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo
  * @param   pDstVDIfsOperation Pointer to the per-image VD interface list,
  *                          for the destination image.
  */
-VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
+VBOXDDU_DECL(int) VDCopy(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
                          const char *pszBackend, const char *pszFilename,
                          bool fMoveByRename, uint64_t cbSize,
                          unsigned uImageFlags, PCRTUUID pDstUuid,
@@ -8618,7 +8618,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
-VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDCompact(PVDISK pDisk, unsigned nImage,
                             PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
@@ -8726,7 +8726,7 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
  * @param   pLCHSGeometry   Pointer to the new logical disk geometry <= (x,255,63). Not NULL.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
-VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
+VBOXDDU_DECL(int) VDResize(PVDISK pDisk, uint64_t cbSize,
                            PCVDGEOMETRY pPCHSGeometry,
                            PCVDGEOMETRY pLCHSGeometry,
                            PVDINTERFACE pVDIfsOperation)
@@ -8845,7 +8845,7 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
     return rc;
 }
 
-VBOXDDU_DECL(int) VDPrepareWithFilters(PVBOXHDD pDisk, PVDINTERFACE pVDIfsOperation)
+VBOXDDU_DECL(int) VDPrepareWithFilters(PVDISK pDisk, PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -9047,7 +9047,7 @@ VBOXDDU_DECL(int) VDPrepareWithFilters(PVBOXHDD pDisk, PVDINTERFACE pVDIfsOperat
  * @param   pDisk           Pointer to HDD container.
  * @param   fDelete         If true, delete the image from the host disk.
  */
-VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
+VBOXDDU_DECL(int) VDClose(PVDISK pDisk, bool fDelete)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -9157,7 +9157,7 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
  * @param   pDisk           Pointer to HDD container.
  * @param   fDelete         If true, delete the image from the host disk.
  */
-VBOXDDU_DECL(int) VDCacheClose(PVBOXHDD pDisk, bool fDelete)
+VBOXDDU_DECL(int) VDCacheClose(PVDISK pDisk, bool fDelete)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -9197,7 +9197,7 @@ VBOXDDU_DECL(int) VDCacheClose(PVBOXHDD pDisk, bool fDelete)
     return rc;
 }
 
-VBOXDDU_DECL(int) VDFilterRemove(PVBOXHDD pDisk, uint32_t fFlags)
+VBOXDDU_DECL(int) VDFilterRemove(PVDISK pDisk, uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -9255,7 +9255,7 @@ VBOXDDU_DECL(int) VDFilterRemove(PVBOXHDD pDisk, uint32_t fFlags)
  * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
+VBOXDDU_DECL(int) VDCloseAll(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -9319,7 +9319,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
  * @return  VBox status code.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(int) VDFilterRemoveAll(PVBOXHDD pDisk)
+VBOXDDU_DECL(int) VDFilterRemoveAll(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -9373,7 +9373,7 @@ VBOXDDU_DECL(int) VDFilterRemoveAll(PVBOXHDD pDisk)
  * @param   pvBuf           Pointer to buffer for reading data.
  * @param   cbRead          Number of bytes to read.
  */
-VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
+VBOXDDU_DECL(int) VDRead(PVDISK pDisk, uint64_t uOffset, void *pvBuf,
                          size_t cbRead)
 {
     int rc = VINF_SUCCESS;
@@ -9442,7 +9442,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
  * @param   pvBuf           Pointer to buffer for writing data.
  * @param   cbWrite         Number of bytes to write.
  */
-VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
+VBOXDDU_DECL(int) VDWrite(PVDISK pDisk, uint64_t uOffset, const void *pvBuf,
                           size_t cbWrite)
 {
     int rc = VINF_SUCCESS;
@@ -9513,7 +9513,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
  * @retval  VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
+VBOXDDU_DECL(int) VDFlush(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -9567,7 +9567,7 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
  * @returns Number of opened images for HDD container. 0 if no images have been opened.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(unsigned) VDGetCount(PVBOXHDD pDisk)
+VBOXDDU_DECL(unsigned) VDGetCount(PVDISK pDisk)
 {
     unsigned cImages;
     int rc2;
@@ -9604,7 +9604,7 @@ VBOXDDU_DECL(unsigned) VDGetCount(PVBOXHDD pDisk)
  * @returns true if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
+VBOXDDU_DECL(bool) VDIsReadOnly(PVDISK pDisk)
 {
     bool fReadOnly;
     int rc2;
@@ -9647,7 +9647,7 @@ VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  */
-VBOXDDU_DECL(uint32_t) VDGetSectorSize(PVBOXHDD pDisk, unsigned nImage)
+VBOXDDU_DECL(uint32_t) VDGetSectorSize(PVDISK pDisk, unsigned nImage)
 {
     uint64_t cbSector;
     int rc2;
@@ -9687,7 +9687,7 @@ VBOXDDU_DECL(uint32_t) VDGetSectorSize(PVBOXHDD pDisk, unsigned nImage)
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  */
-VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage)
+VBOXDDU_DECL(uint64_t) VDGetSize(PVDISK pDisk, unsigned nImage)
 {
     uint64_t cbSize;
     int rc2;
@@ -9727,7 +9727,7 @@ VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage)
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  */
-VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage)
+VBOXDDU_DECL(uint64_t) VDGetFileSize(PVDISK pDisk, unsigned nImage)
 {
     uint64_t cbSize;
     int rc2;
@@ -9769,7 +9769,7 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage)
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pPCHSGeometry   Where to store PCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetPCHSGeometry(PVDISK pDisk, unsigned nImage,
                                     PVDGEOMETRY pPCHSGeometry)
 {
     int rc = VINF_SUCCESS;
@@ -9833,7 +9833,7 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pPCHSGeometry   Where to load PCHS geometry from. Not NULL.
  */
-VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDSetPCHSGeometry(PVDISK pDisk, unsigned nImage,
                                     PCVDGEOMETRY pPCHSGeometry)
 {
     int rc = VINF_SUCCESS;
@@ -9937,7 +9937,7 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pLCHSGeometry   Where to store LCHS geometry. Not NULL.
  */
-VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetLCHSGeometry(PVDISK pDisk, unsigned nImage,
                                     PVDGEOMETRY pLCHSGeometry)
 {
     int rc = VINF_SUCCESS;
@@ -10001,7 +10001,7 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pLCHSGeometry   Where to load LCHS geometry from. Not NULL.
  */
-VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDSetLCHSGeometry(PVDISK pDisk, unsigned nImage,
                                     PCVDGEOMETRY pLCHSGeometry)
 {
     int rc = VINF_SUCCESS;
@@ -10107,7 +10107,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * @param   ppRegionList    Where to store the pointer to the region list on success, must be freed
  *                          with VDRegionListFree().
  */
-VBOXDDU_DECL(int) VDQueryRegions(PVBOXHDD pDisk, unsigned nImage, uint32_t fFlags,
+VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
                                  PPVDREGIONLIST ppRegionList)
 {
     int rc = VINF_SUCCESS;
@@ -10218,7 +10218,7 @@ VBOXDDU_DECL(void) VDRegionListFree(PVDREGIONLIST pRegionList)
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puVersion       Where to store the image version.
  */
-VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetVersion(PVDISK pDisk, unsigned nImage,
                                unsigned *puVersion)
 {
     int rc = VINF_SUCCESS;
@@ -10267,7 +10267,7 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pBackendInfo    Where to store the backend information.
  */
-VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDBackendInfoSingle(PVDISK pDisk, unsigned nImage,
                                       PVDBACKENDINFO pBackendInfo)
 {
     int rc = VINF_SUCCESS;
@@ -10319,7 +10319,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puImageFlags    Where to store the image flags.
  */
-VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetImageFlags(PVDISK pDisk, unsigned nImage,
                                   unsigned *puImageFlags)
 {
     int rc = VINF_SUCCESS;
@@ -10368,7 +10368,7 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puOpenFlags     Where to store the image open flags.
  */
-VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetOpenFlags(PVDISK pDisk, unsigned nImage,
                                  unsigned *puOpenFlags)
 {
     int rc = VINF_SUCCESS;
@@ -10419,7 +10419,7 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  */
-VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDSetOpenFlags(PVDISK pDisk, unsigned nImage,
                                  unsigned uOpenFlags)
 {
     int rc;
@@ -10479,7 +10479,7 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
  * @param   pszFilename     Where to store the image file name.
  * @param   cbFilename      Size of buffer pszFilename points to.
  */
-VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetFilename(PVDISK pDisk, unsigned nImage,
                                 char *pszFilename, unsigned cbFilename)
 {
     int rc;
@@ -10544,7 +10544,7 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
  * @param   pszComment      Where to store the comment string of image. NULL is ok.
  * @param   cbComment       The size of pszComment buffer. 0 is ok.
  */
-VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetComment(PVDISK pDisk, unsigned nImage,
                                char *pszComment, unsigned cbComment)
 {
     int rc;
@@ -10597,7 +10597,7 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pszComment      New comment string (UTF-8). NULL is allowed to reset the comment.
  */
-VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDSetComment(PVDISK pDisk, unsigned nImage,
                                const char *pszComment)
 {
     int rc;
@@ -10647,7 +10647,7 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image creation UUID.
  */
-VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
+VBOXDDU_DECL(int) VDGetUuid(PVDISK pDisk, unsigned nImage, PRTUUID pUuid)
 {
     int rc;
     int rc2;
@@ -10694,7 +10694,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  */
-VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
+VBOXDDU_DECL(int) VDSetUuid(PVDISK pDisk, unsigned nImage, PCRTUUID pUuid)
 {
     int rc;
     int rc2;
@@ -10747,7 +10747,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image modification UUID.
  */
-VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
+VBOXDDU_DECL(int) VDGetModificationUuid(PVDISK pDisk, unsigned nImage, PRTUUID pUuid)
 {
     int rc = VINF_SUCCESS;
     int rc2;
@@ -10795,7 +10795,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           New modification UUID of the image. If NULL, a new UUID is created.
  */
-VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
+VBOXDDU_DECL(int) VDSetModificationUuid(PVDISK pDisk, unsigned nImage, PCRTUUID pUuid)
 {
     int rc;
     int rc2;
@@ -10850,7 +10850,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the parent image UUID.
  */
-VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDGetParentUuid(PVDISK pDisk, unsigned nImage,
                                   PRTUUID pUuid)
 {
     int rc = VINF_SUCCESS;
@@ -10897,7 +10897,7 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           New parent UUID of the image. If NULL, a new UUID is created.
  */
-VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
+VBOXDDU_DECL(int) VDSetParentUuid(PVDISK pDisk, unsigned nImage,
                                   PCRTUUID pUuid)
 {
     int rc;
@@ -10949,7 +10949,7 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
  *
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
+VBOXDDU_DECL(void) VDDumpImages(PVDISK pDisk)
 {
     int rc2;
     bool fLockRead = false;
@@ -10984,7 +10984,7 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
 }
 
 
-VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges)
+VBOXDDU_DECL(int) VDDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigned cRanges)
 {
     int rc;
     int rc2;
@@ -11042,7 +11042,7 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned c
 }
 
 
-VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
+VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
                               PCRTSGBUF pcSgBuf,
                               PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                               void *pvUser1, void *pvUser2)
@@ -11114,7 +11114,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
 }
 
 
-VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
+VBOXDDU_DECL(int) VDAsyncWrite(PVDISK pDisk, uint64_t uOffset, size_t cbWrite,
                                PCRTSGBUF pcSgBuf,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2)
@@ -11184,7 +11184,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
 }
 
 
-VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
+VBOXDDU_DECL(int) VDAsyncFlush(PVDISK pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2)
 {
     int rc;
@@ -11239,7 +11239,7 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCom
     return rc;
 }
 
-VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges,
+VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigned cRanges,
                                        PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                        void *pvUser1, void *pvUser2)
 {

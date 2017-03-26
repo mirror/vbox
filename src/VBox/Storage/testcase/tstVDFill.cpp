@@ -59,7 +59,7 @@ static DECLCALLBACK(int) tstVDMessage(void *pvUser, const char *pszFormat, va_li
 static int tstFill(const char *pszFilename, const char *pszFormat, bool fStreamOptimized, uint64_t cbDisk, uint64_t cbFill)
 {
     int rc;
-    PVBOXHDD pVD = NULL;
+    PVDISK pVD = NULL;
     VDGEOMETRY       PCHS = { 0, 0, 0 };
     VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;

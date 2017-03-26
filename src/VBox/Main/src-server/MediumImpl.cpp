@@ -3660,7 +3660,7 @@ HRESULT Medium::getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPass
                            tr("Encryption is not supported because the extension pack '%s' is missing"),
                            ORACLE_PUEL_EXTPACK_NAME);
 
-        PVBOXHDD pDisk = NULL;
+        PVDISK pDisk = NULL;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -3736,7 +3736,7 @@ HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
                            tr("Encryption is not supported because the extension pack '%s' is missing"),
                            ORACLE_PUEL_EXTPACK_NAME);
 
-        PVBOXHDD pDisk = NULL;
+        PVDISK pDisk = NULL;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -6002,7 +6002,7 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
 
     try
     {
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -6647,7 +6647,7 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
             throw S_OK;
         }
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -6988,7 +6988,7 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
 
         try
         {
-            PVBOXHDD hdd;
+            PVDISK hdd;
             vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
@@ -7892,7 +7892,7 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
                                        | MediumFormatCapabilities_CreateDynamic), E_FAIL);
         Assert(m->state == MediumState_Creating);
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -8051,7 +8051,7 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
         Assert(pTarget->m->state == MediumState_Creating);
         Assert(m->state == MediumState_LockedRead);
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -8246,7 +8246,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                                task.mParentForTarget->m->strLocationFull.c_str());
             }
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -8588,7 +8588,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
             unconst(pTarget->m->id) = targetId;
         }
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -8645,7 +8645,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                     throw rc;
             }
 
-            PVBOXHDD targetHdd;
+            PVDISK targetHdd;
             vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &targetHdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
@@ -8900,7 +8900,7 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
 
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9044,7 +9044,7 @@ HRESULT Medium::i_taskDeleteHandler(Medium::DeleteTask &task)
          * releases it only after RTThreadCreate()) that we can start the job */
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9116,7 +9116,7 @@ HRESULT Medium::i_taskResetHandler(Medium::ResetTask &task)
         /// the diff contents but the most efficient way will of course be
         /// to add a VDResetDiff() API call
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9254,7 +9254,7 @@ HRESULT Medium::i_taskCompactHandler(Medium::CompactTask &task)
 
     try
     {
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9352,7 +9352,7 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
          * releases it only after RTThreadCreate()) that we can start the job */
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9464,7 +9464,7 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
         ComObjPtr<Medium> pBase = i_getBase();
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9590,7 +9590,7 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
                     throw rc;
             }
 
-            PVBOXHDD targetHdd;
+            PVDISK targetHdd;
             vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &targetHdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9690,7 +9690,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
         }
 
 
-        PVBOXHDD hdd;
+        PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9729,7 +9729,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                     throw rc;
             }
 
-            PVBOXHDD targetHdd;
+            PVDISK targetHdd;
             vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &targetHdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
@@ -9983,7 +9983,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                            tr("Encryption is not supported because the extension pack '%s' is missing"),
                            ORACLE_PUEL_EXTPACK_NAME);
 
-        PVBOXHDD pDisk = NULL;
+        PVDISK pDisk = NULL;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
         ComAssertRCThrow(vrc, E_FAIL);
 
