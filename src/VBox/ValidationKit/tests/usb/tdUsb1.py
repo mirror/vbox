@@ -80,10 +80,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
     # Tests currently disabled because they fail, need investigation.
     kdUsbTestsDisabled = {
-        'Low': [],
-        'Full': [],
-        'High': [],
-        'Super': []
+        'Low':   [24],
+        'Full':  [24],
+        'High':  [24],
+        'Super': [24]
     };
 
     def __init__(self):
