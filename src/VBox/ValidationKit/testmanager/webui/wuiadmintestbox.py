@@ -319,7 +319,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                 iSep = sOsVersion.find('build');
                 if iSep > 0:
                     sVer1 = sOsVersion[:iSep].strip();
-		    sVer2 = 'B' + sOsVersion[iSep + 1:].strip();
+                    sVer2 = 'B' + sOsVersion[iSep + 1:].strip();
             aoOs = [
                 WuiSpanText('tmspan-osarch', u'%s.%s' % (oEntry.sOs, oEntry.sCpuArch,)),
                 WuiSpanText('tmspan-osver1', sVer1.replace('-', u'\u2011'),),
