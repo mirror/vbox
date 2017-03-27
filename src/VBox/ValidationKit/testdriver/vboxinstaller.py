@@ -864,7 +864,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
         for sService in self.kasWindowsServices:
             fRc2, _ = self._sudoExecuteSync(['sc.exe', 'query', sService]);
-            if fIgnoreServices is False and fRc2 is False:
+            if fIgnoreServices is False and fRc2 is True:
                 fRc = False
 
         return fRc;
