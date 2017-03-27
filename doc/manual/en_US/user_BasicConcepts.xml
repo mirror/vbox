@@ -1434,9 +1434,9 @@
     of EFI applications, without booting any OS.</para>
 
     <para>Note that the VirtualBox EFI support is experimental and will be
-    enhanced as EFI matures and becomes more widespread. While Mac OS X and
-    Linux guests are known to work fine, Windows guests are currently unable
-    to boot with the VirtualBox EFI implementation.</para>
+      enhanced as EFI matures and becomes more widespread. Mac OS X, Linux
+      and newer Windows guests are known to work fine. Windows 7 guests are
+      unable to boot with the VirtualBox EFI implementation.</para>
 
     <sect2 id="efividmode">
       <title>Video modes in EFI</title>
