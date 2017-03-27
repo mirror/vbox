@@ -722,7 +722,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
     #
 
     ## VBox windows services we can query the status of.
-    kasWindowsServices = [ 'vboxdrv', 'vboxusbmon' ];
+    kasWindowsServices = [ 'vboxdrv', 'vboxusbmon', 'vboxnetadp', 'vboxnetflt', 'vboxnetadp6', 'vboxnetlwf' ];
 
     def _installVBoxOnWindows(self):
         """ Installs VBox on Windows."""
@@ -750,7 +750,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # TEMPORARY HACK - END
 
         # Uninstall any previous vbox version first.
-        fRc = self._uninstallVBoxOnWindows();
+        fRc = self._uninstallVBoxOnWindows(True);
         if fRc is not True:
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
@@ -801,7 +801,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
                             cKilled += 1;
         return cKilled;
 
-    def _uninstallVBoxOnWindows(self):
+    def _uninstallVBoxOnWindows(self, fIgnoreServices = False):
         """
         Uninstalls VBox on Windows, all installations we find to be on the safe side...
         """
@@ -863,7 +863,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
         for sService in self.kasWindowsServices:
-            self._sudoExecuteSync(['sc.exe', 'query', sService]);
+            fRc2, _ = self._sudoExecuteSync(['sc.exe', 'query', sService]);
+            if fIgnoreServices is False and fRc2 is False:
+                fRc = False
 
         return fRc;
 
