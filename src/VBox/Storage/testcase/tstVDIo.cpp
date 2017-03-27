@@ -158,42 +158,42 @@ typedef struct VDTESTGLOB
 /**
  * Transfer direction.
  */
-typedef enum VDIOREQTXDIR
+typedef enum TSTVDIOREQTXDIR
 {
-    VDIOREQTXDIR_READ = 0,
-    VDIOREQTXDIR_WRITE,
-    VDIOREQTXDIR_FLUSH,
-    VDIOREQTXDIR_DISCARD
-} VDIOREQTXDIR;
+    TSTVDIOREQTXDIR_READ = 0,
+    TSTVDIOREQTXDIR_WRITE,
+    TSTVDIOREQTXDIR_FLUSH,
+    TSTVDIOREQTXDIR_DISCARD
+} TSTVDIOREQTXDIR;
 
 /**
  * I/O request.
  */
-typedef struct VDIOREQ
+typedef struct TSTVDIOREQ
 {
     /** Transfer type. */
-    VDIOREQTXDIR  enmTxDir;
+    TSTVDIOREQTXDIR  enmTxDir;
     /** slot index. */
-    unsigned      idx;
+    unsigned         idx;
     /** Start offset. */
-    uint64_t      off;
+    uint64_t         off;
     /** Size to transfer. */
-    size_t        cbReq;
+    size_t           cbReq;
     /** S/G Buffer */
-    RTSGBUF       SgBuf;
+    RTSGBUF          SgBuf;
     /** Flag whether the request is outstanding or not. */
-    volatile bool fOutstanding;
+    volatile bool    fOutstanding;
     /** Buffer to use for reads. */
-    void          *pvBufRead;
+    void             *pvBufRead;
     /** Contiguous buffer pointer backing the segments. */
-    void          *pvBuf;
+    void             *pvBuf;
     /** Opaque user data. */
-    void          *pvUser;
+    void             *pvUser;
     /** Number of segments used for the data buffer. */
-    uint32_t      cSegs;
+    uint32_t         cSegs;
     /** Array of data segments. */
-    RTSGSEG       aSegs[10];
-} VDIOREQ, *PVDIOREQ;
+    RTSGSEG          aSegs[10];
+} TSTVDIOREQ, *PTSTVDIOREQ;
 
 /**
  * I/O test data.
@@ -542,8 +542,8 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
                            unsigned uWriteChance, PVDPATTERN pPattern);
 static bool tstVDIoTestRunning(PVDIOTEST pIoTest);
 static void tstVDIoTestDestroy(PVDIOTEST pIoTest);
-static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq);
-static int  tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser);
+static bool tstVDIoTestReqOutstanding(PTSTVDIOREQ pIoReq);
+static int  tstVDIoTestReqInit(PVDIOTEST pIoTest, PTSTVDIOREQ pIoReq, void *pvUser);
 static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 static PVDDISK tstVDIoGetDiskByName(PVDTESTGLOB pGlob, const char *pcszDisk);
@@ -764,12 +764,12 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
         rc = tstVDIoTestInit(&IoTest, pGlob, fRandomAcc, 5, cbIo, cbBlkSize, offStart, offEnd, uWriteChance, pPattern);
         if (RT_SUCCESS(rc))
         {
-            PVDIOREQ paIoReq = NULL;
+            PTSTVDIOREQ paIoReq = NULL;
             unsigned cMaxTasksOutstanding = fAsync ? cMaxReqs : 1;
             RTSEMEVENT EventSem;
 
             rc = RTSemEventCreate(&EventSem);
-            paIoReq = (PVDIOREQ)RTMemAllocZ(cMaxTasksOutstanding * sizeof(VDIOREQ));
+            paIoReq = (PTSTVDIOREQ)RTMemAllocZ(cMaxTasksOutstanding * sizeof(TSTVDIOREQ));
             if (paIoReq && RT_SUCCESS(rc))
             {
                 uint64_t NanoTS = RTTimeNanoTS();
@@ -807,7 +807,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                 {
                                     switch (paIoReq[idx].enmTxDir)
                                     {
-                                        case VDIOREQTXDIR_READ:
+                                        case TSTVDIOREQTXDIR_READ:
                                         {
                                             rc = VDRead(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].aSegs[0].pvSeg, paIoReq[idx].cbReq);
 
@@ -825,7 +825,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                             }
                                             break;
                                         }
-                                        case VDIOREQTXDIR_WRITE:
+                                        case TSTVDIOREQTXDIR_WRITE:
                                         {
                                             rc = VDWrite(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].aSegs[0].pvSeg, paIoReq[idx].cbReq);
 
@@ -838,12 +838,12 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                             }
                                             break;
                                         }
-                                        case VDIOREQTXDIR_FLUSH:
+                                        case TSTVDIOREQTXDIR_FLUSH:
                                         {
                                             rc = VDFlush(pDisk->pVD);
                                             break;
                                         }
-                                        case VDIOREQTXDIR_DISCARD:
+                                        case TSTVDIOREQTXDIR_DISCARD:
                                             AssertMsgFailed(("Invalid\n"));
                                     }
 
@@ -856,24 +856,24 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                     LogFlow(("Queuing request %d\n", idx));
                                     switch (paIoReq[idx].enmTxDir)
                                     {
-                                        case VDIOREQTXDIR_READ:
+                                        case TSTVDIOREQTXDIR_READ:
                                         {
                                             rc = VDAsyncRead(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
                                                              tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
                                             break;
                                         }
-                                        case VDIOREQTXDIR_WRITE:
+                                        case TSTVDIOREQTXDIR_WRITE:
                                         {
                                             rc = VDAsyncWrite(pDisk->pVD, paIoReq[idx].off, paIoReq[idx].cbReq, &paIoReq[idx].SgBuf,
                                                               tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
                                             break;
                                         }
-                                        case VDIOREQTXDIR_FLUSH:
+                                        case TSTVDIOREQTXDIR_FLUSH:
                                         {
                                             rc = VDAsyncFlush(pDisk->pVD, tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
                                             break;
                                         }
-                                        case VDIOREQTXDIR_DISCARD:
+                                        case TSTVDIOREQTXDIR_DISCARD:
                                             AssertMsgFailed(("Invalid\n"));
                                     }
 
@@ -888,7 +888,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                         LogFlow(("Request %d completed\n", idx));
                                         switch (paIoReq[idx].enmTxDir)
                                         {
-                                            case VDIOREQTXDIR_READ:
+                                            case TSTVDIOREQTXDIR_READ:
                                             {
                                                 if (pDisk->pMemDiskVerify)
                                                 {
@@ -905,7 +905,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                                 }
                                                 break;
                                             }
-                                            case VDIOREQTXDIR_WRITE:
+                                            case TSTVDIOREQTXDIR_WRITE:
                                             {
                                                 if (pDisk->pMemDiskVerify)
                                                 {
@@ -918,9 +918,9 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                                                 }
                                                 break;
                                             }
-                                            case VDIOREQTXDIR_FLUSH:
+                                            case TSTVDIOREQTXDIR_FLUSH:
                                                 break;
-                                            case VDIOREQTXDIR_DISCARD:
+                                            case TSTVDIOREQTXDIR_DISCARD:
                                                 AssertMsgFailed(("Invalid\n"));
                                         }
 
@@ -1015,14 +1015,14 @@ static DECLCALLBACK(int) vdScriptHandlerFlush(PVDSCRIPTARG paScriptArgs, void *p
             rc = VERR_NOT_FOUND;
         else if (fAsync)
         {
-            VDIOREQ IoReq;
+            TSTVDIOREQ IoReq;
             RTSEMEVENT EventSem;
 
             rc = RTSemEventCreate(&EventSem);
             if (RT_SUCCESS(rc))
             {
-                memset(&IoReq, 0, sizeof(VDIOREQ));
-                IoReq.enmTxDir = VDIOREQTXDIR_FLUSH;
+                memset(&IoReq, 0, sizeof(TSTVDIOREQ));
+                IoReq.enmTxDir = TSTVDIOREQTXDIR_FLUSH;
                 IoReq.pvUser   = pDisk;
                 IoReq.idx      = 0;
                 rc = VDAsyncFlush(pDisk->pVD, tstVDIoTestReqComplete, &IoReq, EventSem);
@@ -1246,14 +1246,14 @@ static DECLCALLBACK(int) vdScriptHandlerDiscard(PVDSCRIPTARG paScriptArgs, void 
                 rc = VDDiscardRanges(pDisk->pVD, paRanges, cRanges);
             else
             {
-                VDIOREQ IoReq;
+                TSTVDIOREQ IoReq;
                 RTSEMEVENT EventSem;
 
                 rc = RTSemEventCreate(&EventSem);
                 if (RT_SUCCESS(rc))
                 {
-                    memset(&IoReq, 0, sizeof(VDIOREQ));
-                    IoReq.enmTxDir = VDIOREQTXDIR_FLUSH;
+                    memset(&IoReq, 0, sizeof(TSTVDIOREQ));
+                    IoReq.enmTxDir = TSTVDIOREQTXDIR_FLUSH;
                     IoReq.pvUser   = pDisk;
                     IoReq.idx      = 0;
                     rc = VDAsyncDiscardRanges(pDisk->pVD, paRanges, cRanges, tstVDIoTestReqComplete, &IoReq, EventSem);
@@ -2425,7 +2425,7 @@ static bool tstVDIoTestRunning(PVDIOTEST pIoTest)
     return pIoTest->cbIo > 0;
 }
 
-static bool tstVDIoTestReqOutstanding(PVDIOREQ pIoReq)
+static bool tstVDIoTestReqOutstanding(PTSTVDIOREQ pIoReq)
 {
     return pIoReq->fOutstanding;
 }
@@ -2473,20 +2473,20 @@ static bool tstVDIoTestIsTrue(PVDIOTEST pIoTest, int iPercentage)
     return (uRnd < iPercentage); /* This should be enough for our purpose */
 }
 
-static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
+static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PTSTVDIOREQ pIoReq, void *pvUser)
 {
     int rc = VINF_SUCCESS;
 
     if (pIoTest->cbIo)
     {
         /* Read or Write? */
-        pIoReq->enmTxDir = tstVDIoTestIsTrue(pIoTest, pIoTest->uWriteChance) ? VDIOREQTXDIR_WRITE : VDIOREQTXDIR_READ;
+        pIoReq->enmTxDir = tstVDIoTestIsTrue(pIoTest, pIoTest->uWriteChance) ? TSTVDIOREQTXDIR_WRITE : TSTVDIOREQTXDIR_READ;
         pIoReq->cbReq = RT_MIN(pIoTest->cbBlkIo, pIoTest->cbIo);
         pIoTest->cbIo -= pIoReq->cbReq;
 
         void *pvBuf = NULL;
 
-        if (pIoReq->enmTxDir == VDIOREQTXDIR_WRITE)
+        if (pIoReq->enmTxDir == TSTVDIOREQTXDIR_WRITE)
         {
             if (pIoTest->pPattern)
                 rc = tstVDIoPatternGetBuffer(pIoTest->pPattern, &pvBuf, pIoReq->cbReq);
@@ -2574,7 +2574,7 @@ static int tstVDIoTestReqInit(PVDIOTEST pIoTest, PVDIOREQ pIoReq, void *pvUser)
 static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     RT_NOREF1(rcReq);
-    PVDIOREQ pIoReq = (PVDIOREQ)pvUser1;
+    PTSTVDIOREQ pIoReq = (PTSTVDIOREQ)pvUser1;
     RTSEMEVENT hEventSem = (RTSEMEVENT)pvUser2;
     PVDDISK pDisk = (PVDDISK)pIoReq->pvUser;
 
@@ -2584,7 +2584,7 @@ static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, i
     {
         switch (pIoReq->enmTxDir)
         {
-            case VDIOREQTXDIR_READ:
+            case TSTVDIOREQTXDIR_READ:
             {
                 RTCritSectEnter(&pDisk->CritSectVerify);
 
@@ -2600,7 +2600,7 @@ static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, i
                 RTCritSectLeave(&pDisk->CritSectVerify);
                 break;
             }
-            case VDIOREQTXDIR_WRITE:
+            case TSTVDIOREQTXDIR_WRITE:
             {
                 RTCritSectEnter(&pDisk->CritSectVerify);
 
@@ -2616,8 +2616,8 @@ static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, i
                 RTCritSectLeave(&pDisk->CritSectVerify);
                 break;
             }
-            case VDIOREQTXDIR_FLUSH:
-            case VDIOREQTXDIR_DISCARD:
+            case TSTVDIOREQTXDIR_FLUSH:
+            case TSTVDIOREQTXDIR_DISCARD:
                 break;
         }
     }
