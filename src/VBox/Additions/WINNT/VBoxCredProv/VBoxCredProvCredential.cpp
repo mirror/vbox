@@ -317,18 +317,19 @@ HRESULT VBoxCredProvCredential::kerberosLogonSerialize(const KERB_INTERACTIVE_LO
      * credentials.
      */
     DWORD cbLogon = sizeof(KERB_INTERACTIVE_UNLOCK_LOGON)
-                  + pLogonIn->LogonDomainName.Length +
-                  + pLogonIn->UserName.Length +
+                  + pLogonIn->LogonDomainName.Length
+                  + pLogonIn->UserName.Length
                   + pLogonIn->Password.Length;
 
-#ifdef DEBUG
-    VBoxCredProvVerbose(3, "VBoxCredProvCredential::AllocateLogonPackage: Allocating %ld bytes (%d bytes credentials)\n",
+    VBoxCredProvVerbose(3, "VBoxCredProvCredential::AllocateLogonPackage: Allocating %ld bytes (%zu bytes credentials)\n",
                         cbLogon, cbLogon - sizeof(KERB_INTERACTIVE_UNLOCK_LOGON));
-#endif
 
     KERB_INTERACTIVE_UNLOCK_LOGON *pLogon = (KERB_INTERACTIVE_UNLOCK_LOGON*)CoTaskMemAlloc(cbLogon);
     if (!pLogon)
         return E_OUTOFMEMORY;
+
+    /* Make sure to zero everything first. */
+    RT_BZERO(pLogon, cbLogon);
 
     /* Let our byte buffer point to the end of our allocated structure so that it can
      * be used to store the credential data sequentially in a binary blob
@@ -338,17 +339,19 @@ HRESULT VBoxCredProvCredential::kerberosLogonSerialize(const KERB_INTERACTIVE_LO
     /* The buffer of the packed destination string does not contain the actual
      * string content but a relative offset starting at the given
      * KERB_INTERACTIVE_UNLOCK_LOGON structure. */
-#define KERB_CRED_INIT_PACKED(StringDst, StringSrc, LogonOffset)         \
-    StringDst.Length         = StringSrc.Length;                         \
-    StringDst.MaximumLength  = StringSrc.Length;                         \
-    StringDst.Buffer         = (PWSTR)pbBuffer;                          \
-    memcpy(StringDst.Buffer, StringSrc.Buffer, StringDst.Length);        \
-    StringDst.Buffer         = (PWSTR)(pbBuffer - (PBYTE)LogonOffset);   \
-    pbBuffer                += StringDst.Length;
-
-    RT_BZERO(&pLogon->LogonId, sizeof(LUID));
+#define KERB_CRED_INIT_PACKED(StringDst, StringSrc, LogonOffset)             \
+    StringDst.Length         = StringSrc.Length;                             \
+    StringDst.MaximumLength  = StringSrc.Length;                             \
+    if (StringDst.Length)                                                    \
+    {                                                                        \
+        StringDst.Buffer         = (PWSTR)pbBuffer;                          \
+        memcpy(StringDst.Buffer, StringSrc.Buffer, StringDst.Length);        \
+        StringDst.Buffer         = (PWSTR)(pbBuffer - (PBYTE)LogonOffset);   \
+        pbBuffer                += StringDst.Length;                         \
+    }
 
     KERB_INTERACTIVE_LOGON *pLogonOut = &pLogon->Logon;
+
     pLogonOut->MessageType = pLogonIn->MessageType;
 
     KERB_CRED_INIT_PACKED(pLogonOut->LogonDomainName, pLogonIn->LogonDomainName, pLogon);
