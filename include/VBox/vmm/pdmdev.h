@@ -510,6 +510,8 @@ typedef struct PDMMSIREG
     uint8_t    iMsiNextOffset;
     /** If we support 64-bit MSI addressing */
     bool       fMsi64bit;
+    /** If we do not support per-vector masking */
+    bool       fMsiNoMasking;
 
     /** Number of MSI-X interrupt vectors, 0 if MSI-X not supported */
     uint16_t   cMsixVectors;

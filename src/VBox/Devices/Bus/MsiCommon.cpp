@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,20 +42,26 @@ DECLINLINE(bool) msiIs64Bit(PPDMPCIDEV pDev)
     return pciDevIsMsi64Capable(pDev);
 }
 
+/** @todo r=klaus This design assumes that the config space cache is always
+ * up to date, which is a wrong assumption for the "emulate passthrough" case
+ * where only the callbacks give the correct data. */
 DECLINLINE(uint32_t*) msiGetMaskBits(PPDMPCIDEV pDev)
 {
     uint8_t iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_MASK_BITS_64 : VBOX_MSI_CAP_MASK_BITS_32;
-    /* passthrough devices may have no masked/pending support */
+    /* devices may have no masked/pending support */
     if (iOff >= pDev->Int.s.u8MsiCapSize)
         return NULL;
     iOff += pDev->Int.s.u8MsiCapOffset;
     return (uint32_t*)(pDev->abConfig + iOff);
 }
 
+/** @todo r=klaus This design assumes that the config space cache is always
+ * up to date, which is a wrong assumption for the "emulate passthrough" case
+ * where only the callbacks give the correct data. */
 DECLINLINE(uint32_t*) msiGetPendingBits(PPDMPCIDEV pDev)
 {
     uint8_t iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_PENDING_BITS_64 : VBOX_MSI_CAP_PENDING_BITS_32;
-    /* passthrough devices may have no masked/pending support */
+    /* devices may have no masked/pending support */
     if (iOff >= pDev->Int.s.u8MsiCapSize)
         return NULL;
     iOff += pDev->Int.s.u8MsiCapOffset;
@@ -214,27 +220,35 @@ int MsiInit(PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     uint8_t    iCapOffset  = pMsiReg->iMsiCapOffset;
     uint8_t    iNextOffset = pMsiReg->iMsiNextOffset;
     bool       f64bit      = pMsiReg->fMsi64bit;
+    bool       fNoMasking  = pMsiReg->fMsiNoMasking;
     uint16_t   iFlags      = 0;
-    int        iMmc;
-
-    /* Compute multiple-message capable bitfield */
-    for (iMmc = 0; iMmc < 6; iMmc++)
-    {
-        if ((1 << iMmc) >= cVectors)
-            break;
-    }
-
-    if ((cVectors > VBOX_MSI_MAX_ENTRIES) || (1 << iMmc) < cVectors)
-        return VERR_TOO_MUCH_DATA;
 
     Assert(iCapOffset != 0 && iCapOffset < 0xff && iNextOffset < 0xff);
 
-    /* We always support per-vector masking */
-    iFlags |= VBOX_PCI_MSI_FLAGS_MASKBIT | iMmc;
+    if (!fNoMasking)
+    {
+        int iMmc;
+
+        /* Compute multiple-message capable bitfield */
+        for (iMmc = 0; iMmc < 6; iMmc++)
+        {
+            if ((1 << iMmc) >= cVectors)
+                break;
+        }
+
+        if ((cVectors > VBOX_MSI_MAX_ENTRIES) || (1 << iMmc) < cVectors)
+            return VERR_TOO_MUCH_DATA;
+
+        /* We support per-vector masking */
+        iFlags |= VBOX_PCI_MSI_FLAGS_MASKBIT;
+        /* How many vectors we're capable of */
+        iFlags |= iMmc;
+    }
+    else
+        AssertReturn(cVectors == 1, VERR_TOO_MUCH_DATA);
+
     if (f64bit)
         iFlags |= VBOX_PCI_MSI_FLAGS_64BIT;
-    /* How many vectors we're capable of */
-    iFlags |= iMmc;
 
     pDev->Int.s.u8MsiCapOffset = iCapOffset;
     pDev->Int.s.u8MsiCapSize   = f64bit ? VBOX_MSI_CAP_SIZE_64 : VBOX_MSI_CAP_SIZE_32;
@@ -243,10 +257,15 @@ int MsiInit(PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     PCIDevSetByte(pDev,  iCapOffset + 1, iNextOffset); /* next */
     PCIDevSetWord(pDev,  iCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL, iFlags);
 
-    *msiGetMaskBits(pDev)    = 0;
-    *msiGetPendingBits(pDev) = 0;
+    if (!fNoMasking)
+    {
+        *msiGetMaskBits(pDev)    = 0;
+        *msiGetPendingBits(pDev) = 0;
+    }
 
     pciDevSetMsiCapable(pDev);
+    if (f64bit)
+        pciDevSetMsi64Capable(pDev);
 
     return VINF_SUCCESS;
 }
