@@ -314,6 +314,8 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
                 return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
             }
 
+            /** @todo gPAT MSR validation? */
+
             /*
              * Copy segments from nested-guest VMCB state to the guest-CPU state.
              *
@@ -351,17 +353,18 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
                 Log(("HMSvmVmRun: EFER invalid uOldEfer=%#RX64 uValidEfer=%#RX64 -> #VMEXIT\n", VmcbNstGst.u64EFER, uValidEfer));
                 return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
             }
-            Assert(   !(uValidEfer & MSR_K6_EFER_LME)
-                   ||  VmcbNstGst.u64CR0 & X86_CR0_PG);
             bool const fSvm                     = RT_BOOL(uValidEfer & MSR_K6_EFER_SVME);
             bool const fLongModeSupported       = RT_BOOL(pVM->cpum.ro.GuestFeatures.fLongMode);
-            bool const fLongModeActiveOrEnabled = RT_BOOL(uValidEfer & (MSR_K6_EFER_LME | MSR_K6_EFER_LMA));
             bool const fLongModeEnabled         = RT_BOOL(uValidEfer & MSR_K6_EFER_LME);
             bool const fPaging                  = RT_BOOL(VmcbNstGst.u64CR0 & X86_CR0_PG);
             bool const fPae                     = RT_BOOL(VmcbNstGst.u64CR4 & X86_CR4_PAE);
             bool const fProtMode                = RT_BOOL(VmcbNstGst.u64CR0 & X86_CR0_PE);
             bool const fLongModeWithPaging      = fLongModeEnabled && fPaging;
             bool const fLongModeConformCS       = pCtx->cs.Attr.n.u1Long && pCtx->cs.Attr.n.u1DefBig;
+            /* Adjust EFER.LMA (this is normally done by the CPU when system software writes CR0). */
+            if (fLongModeWithPaging)
+                uValidEfer |= MSR_K6_EFER_LMA;
+            bool const fLongModeActiveOrEnabled = RT_BOOL(uValidEfer & (MSR_K6_EFER_LME | MSR_K6_EFER_LMA));
             if (   !fSvm
                 || (!fLongModeSupported && fLongModeActiveOrEnabled)
                 || (fLongModeWithPaging && !fPae)
@@ -381,7 +384,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
              * We only preserve the force-flags that would affect the execution of the
              * nested-guest (or the guest).
              *
-             *   - VMCPU_FF_INHIBIT_INTERRUPTS needn't be preserved as it's for a single
+             *   - VMCPU_FF_INHIBIT_INTERRUPTS need not be preserved as it's for a single
              *     instruction which is this VMRUN instruction itself.
              *
              *   - VMCPU_FF_BLOCK_NMIS needs to be preserved as it blocks NMI until the
@@ -418,7 +421,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             pCtx->gdtr.pGdt  = VmcbNstGst.GDTR.u64Base;
             pCtx->idtr.cbIdt = VmcbNstGst.IDTR.u32Limit;
             pCtx->idtr.pIdt  = VmcbNstGst.IDTR.u64Base;
-            pCtx->cr0        = VmcbNstGst.u64CR0;
+            pCtx->cr0        = VmcbNstGst.u64CR0;   /** @todo What about informing PGM about CR0.WP? */
             pCtx->cr4        = VmcbNstGst.u64CR4;
             pCtx->cr3        = VmcbNstGst.u64CR3;
             pCtx->cr2        = VmcbNstGst.u64CR2;
@@ -428,6 +431,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             pCtx->rax        = VmcbNstGst.u64RAX;
             pCtx->rsp        = VmcbNstGst.u64RSP;
             pCtx->rip        = VmcbNstGst.u64RIP;
+            pCtx->msrEFER    = uValidEfer;
 
             /* Mask DR6, DR7 bits mandatory set/clear bits. */
             pCtx->dr[6] &= ~(X86_DR6_RAZ_MASK | X86_DR6_MBZ_MASK);
