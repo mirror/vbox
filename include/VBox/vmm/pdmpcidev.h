@@ -132,7 +132,7 @@ typedef FNPCIIOREGIONOLDSETTER *PFNPCIIOREGIONOLDSETTER;
  * devices associated with it.  The first PCI device that it registers
  * automatically becomes the default PCI device and can be used implicitly
  * with the device helper APIs.  Subsequent PCI devices must be specified
- * expeclitly to the device helper APIs when used.
+ * explicitly to the device helper APIs when used.
  */
 typedef struct PDMPCIDEV
 {
