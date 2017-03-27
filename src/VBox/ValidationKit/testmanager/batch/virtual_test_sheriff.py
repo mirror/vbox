@@ -465,6 +465,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_DriverNotLoaded                      = ( 'Host',              'Driver not loaded' );
     ktReason_Host_DriverNotUnloading                   = ( 'Host',              'Driver not unloading' );
     ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
+    ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
@@ -648,6 +649,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
     katSimpleInstallUninstallMainLogReasons = [
         # ( Whether to stop on hit, reason tuple, needle text. )
+        ( False, ktReason_Host_LeftoverService,
+		'SERVICE_NAME: vbox' ),
     ];
 
     kdatSimpleInstallUninstallMainLogReasonsPerOs = {
