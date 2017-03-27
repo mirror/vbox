@@ -310,7 +310,7 @@ static inline void get_ss_esp_from_tss(uint32_t *ss_ptr,
     if (!(env->tr.flags & DESC_P_MASK))
         cpu_abort(env, "invalid tss");
     type = (env->tr.flags >> DESC_TYPE_SHIFT) & 0xf;
-    if ((type & 7) != 1)
+    if ((type & 7) != 3)
         cpu_abort(env, "invalid tss type");
     shift = type >> 3;
     index = (dpl * 4 + 2) << shift;
@@ -595,7 +595,7 @@ static void switch_tss(int tss_selector,
 #ifndef VBOX
     env->tr.flags = e2 & ~DESC_TSS_BUSY_MASK;
 #else
-    env->tr.flags = e2 & (DESC_RAW_FLAG_BITS & ~(DESC_TSS_BUSY_MASK)); /** @todo stop clearing the busy bit, VT-x and AMD-V seems to set it in the hidden bits. */
+    env->tr.flags = (e2 | DESC_TSS_BUSY_MASK) & DESC_RAW_FLAG_BITS;
     env->tr.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
     env->tr.newselector = 0;
 #endif
@@ -703,7 +703,7 @@ static inline void check_io(int addr, int size)
 
     /* TSS must be a valid 32 bit one */
     if (!(env->tr.flags & DESC_P_MASK) ||
-        ((env->tr.flags >> DESC_TYPE_SHIFT) & 0xf) != 9 ||
+        ((env->tr.flags >> DESC_TYPE_SHIFT) & 0xf) != 11 ||
         env->tr.limit < 103)
         goto fail;
     io_offset = lduw_kernel(env->tr.base + 0x66);
@@ -1126,7 +1126,7 @@ DECLINLINE(bool) is_vme_irq_redirected(int intno)
 
     /* TSS must be a valid 32 bit one */
     if (!(env->tr.flags & DESC_P_MASK) ||
-        ((env->tr.flags >> DESC_TYPE_SHIFT) & 0xf) != 9 ||
+        ((env->tr.flags >> DESC_TYPE_SHIFT) & 0xf) != 11 ||
         env->tr.limit < 103)
         goto fail;
     io_offset = lduw_kernel(env->tr.base + 0x66);
@@ -2638,6 +2638,7 @@ void helper_ltr(int selector)
         {
             load_seg_cache_raw_dt(&env->tr, e1, e2);
         }
+        env->tr.flags |= DESC_TSS_BUSY_MASK;
         e2 |= DESC_TSS_BUSY_MASK;
         stl_kernel(ptr + 4, e2);
     }
@@ -6122,7 +6123,7 @@ int get_ss_esp_from_tss_raw(CPUX86State *env1, uint32_t *ss_ptr,
     if (!(env->tr.flags & DESC_P_MASK))
         cpu_abort(env, "invalid tss");
     type = (env->tr.flags >> DESC_TYPE_SHIFT) & 0xf;
-    if ((type & 7) != 1)
+    if ((type & 7) != 3)
         cpu_abort(env, "invalid tss type %d", type);
     shift = type >> 3;
     index = (dpl * 4 + 2) << shift;
