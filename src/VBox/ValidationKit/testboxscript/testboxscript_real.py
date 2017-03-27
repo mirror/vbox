@@ -879,10 +879,10 @@ class TestBoxScript(object):
                 oConnection.close();
 
             # Automatically reboot if scratch init fails.
-            if self._cReinitScratchErrors > 8 and self.reinitScratch(cRetries = 3) is False:
-                testboxcommons.log('Scratch does not initialize cleanly after %d attempts, rebooting...'
-                                   % ( self._cReinitScratchErrors, ));
-                self._oCommand.doReboot();
+            #if self._cReinitScratchErrors > 8 and self.reinitScratch(cRetries = 3) is False:
+            #    testboxcommons.log('Scratch does not initialize cleanly after %d attempts, rebooting...'
+            #                       % ( self._cReinitScratchErrors, ));
+            #    self._oCommand.doReboot();
 
             # delay a wee bit before looping.
             ## @todo We shouldn't bother the server too frequently.  We should try combine the test reporting done elsewhere
