@@ -45,7 +45,7 @@ RT_C_DECLS_BEGIN
 # error "There are no VBox HDD Container APIs available in Ring-0 Host Context!"
 #endif
 
-/** @defgroup grp_vd            VBox HDD Container
+/** @defgroup grp_vd            Virtual Disk Container
  * @{
  */
 
@@ -1390,6 +1390,172 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
  */
 VBOXDDU_DECL(int) VDCreateVfsFileFromDisk(PVDISK pDisk, uint32_t fFlags,
                                           PRTVFSFILE phVfsFile);
+
+/** @defgroup grp_vd_ioqueue    I/O queues
+ * @{
+ */
+
+/** VD I/O queue handle. */
+typedef struct VDIOQUEUEINT *VDIOQUEUE;
+/** Pointer to an VD I/O queue handle. */
+typedef VDIOQUEUE *PVDIOQUEUE;
+
+/** VD I/O queue request handle. */
+typedef struct VDIOREQINT *VDIOREQ;
+/** Pointer to an VD I/O queue request handle. */
+typedef VDIOREQ *PVDIOREQ;
+
+/** A I/O request ID. */
+typedef uint64_t VDIOREQID;
+
+/**
+ * I/O queue request completion callback.
+ *
+ * @returns nothing.
+ * @param   hVdIoQueue      The VD I/O queue handle.
+ * @param   pDisk           The disk the queue is attached to.
+ * @param   hVdIoReq        The VD I/O request which completed.
+ * @param   pvVdIoReq       Pointer to the allocator specific memory for this request.
+ * @param   rcReq           The completion status code.
+ */
+typedef DECLCALLBACK(void) FNVDIOQUEUEREQCOMPLETE(VDIOQUEUE hVdIoQueue, PVDISK pDisk,
+                                                  VDIOREQ hVdIoReq, void *pvVdIoReq,
+                                                  int rcReq);
+/** Pointer to a VD I/O queue request completion callback. */
+typedef FNVDIOQUEUEREQCOMPLETE *PFNVDIOQUEUEREQCOMPLETE;
+
+
+/**
+ * Creates a new I/O queue.
+ *
+ * @returns VBox status code.
+ * @param   phVdIoQueue      Where to store the handle to the I/O queue on success.
+ * @param   pfnIoReqComplete The completion handle to call when a request on the specified queue completes.
+ * @param   cbIoReqAlloc     The extra amount of memory to allocate and associate with allocated requests
+ *                           for use by the caller.
+ * @param   iPriority        The priority of the queue from 0..UINT32_MAX. The lower the number the higher
+ *                           the priority of the queue.
+ */
+VBOXDDU_DECL(int) VDIoQueueCreate(PVDIOQUEUE phVdIoQueue, PFNVDIOQUEUEREQCOMPLETE pfnIoReqComplete,
+                                  size_t cbIoReqAlloc, uint32_t iPriority);
+
+/**
+ * Destroys the given I/O queue.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoQueue       The I/O queue handle.
+ */
+VBOXDDU_DECL(int) VDIoQueueDestroy(VDIOQUEUE hVdIoQueue);
+
+/**
+ * Attaches the given I/O queue to the given virtual disk container.
+ *
+ * @returns VBox status code.
+ * @param   pDisk            The disk container handle.
+ * @param   hVdIoQueue       The I/O queue to attach.
+ */
+VBOXDDU_DECL(int) VDIoQueueAttach(PVDISK pDisk, VDIOQUEUE hVdIoQueue);
+
+/**
+ * Detaches the given I/O queue from the currently attached disk container.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoQueue       The I/O queue.
+ * @param   fPurge           Flag whether to cancel all active requests on this queue
+ *                           before detaching.
+ */
+VBOXDDU_DECL(int) VDIoQueueDetach(VDIOQUEUE hVdIoQueue, bool fPurge);
+
+/**
+ * Purges all requests on the given queue.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoQueue       The I/O queue.
+ */
+VBOXDDU_DECL(int) VDIoQueuePurge(VDIOQUEUE hVdIoQueue);
+
+/**
+ * Allocates a new request from the given queue.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoQueue       The I/O queue.
+ * @param   phVdIoReq        Where to store the handle of the request on success.
+ * @param   ppvVdIoReq       Where to store the pointer to the allocator usable memory on success.
+ * @param   uIoReqId         The request ID to assign to the request for canceling.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqAlloc(VDIOQUEUE hVdIoQueue, PVDIOREQ phVdIoReq,
+                                    void **ppvVdIoReq, VDIOREQID uIoReqId);
+
+/**
+ * Frees a given non active request.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoReq         The I/O request to free.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqFree(VDIOREQ hVdIoReq);
+
+/**
+ * Cancels an active request by the given request ID.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoQueue       The I/O queue to cancel the request on.
+ * @param   uIoReqId         The request ID.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqCancelById(VDIOQUEUE hVdIoQueue, VDIOREQID uIoReqId);
+
+/**
+ * Cancels an active request by the given handle.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoReq         The I/O request handle to cancel.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqCancelByHandle(VDIOREQ hVdIoReq);
+
+/**
+ * Initiates a read request using the given request handle.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoReq         The I/O request handle.
+ * @param   off              Where to start reading from.
+ * @param   cbRead           Number of bytes to read.
+ * @param   pcSgBuf          The S/G buffer to use.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqRead(VDIOREQ hVdIoReq, uint64_t off, size_t cbRead,
+                                   PCRTSGBUF pcSgBuf);
+
+/**
+ * Initiates a write request using the given request handle.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoReq         The I/O request handle.
+ * @param   off              Where to start writing to.
+ * @param   cbWrite          Number of bytes to write.
+ * @param   pcSgBuf          The S/G buffer to use.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqWrite(VDIOREQ hVdIoReq, uint64_t off, size_t cbWrite,
+                                    PCRTSGBUF pcSgBuf);
+
+/**
+ * Initiates a flush request using the given request handle.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoReq         The I/O request handle.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqFlush(VDIOREQ hVdIoReq);
+
+/**
+ * Initiates a discard request using the given request handle.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoReq         The I/O request handle.
+ * @param   paRanges         Pointer to the array of ranges to discard.
+ * @param   cRanges          Number of entries in the array.
+ */
+VBOXDDU_DECL(int) VDIoQueueReqDiscard(VDIOREQ hVdIoReq, PCRTRANGE paRanges,
+                                      unsigned cRanges);
+
+/** @} */
+
 
 RT_C_DECLS_END
 
