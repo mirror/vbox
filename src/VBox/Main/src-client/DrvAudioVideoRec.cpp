@@ -654,6 +654,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
                 {
                     HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(abDst, cbDst, RTTimeMilliTS() /* Now */);
                     Assert(hr == S_OK);
+                    RT_NOREF(hr);
 
                     break;
                 }
