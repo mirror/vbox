@@ -245,9 +245,6 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
     if (!pMachineView)
         return;
 
-    /* Cleanup filters: */
-    pMachineView->cleanupFilters();
-
     /* Cleanup frame-buffer: */
     pMachineView->cleanupFrameBuffer();
 
@@ -258,6 +255,10 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
         pMachineView->m_pDnDHandler = NULL;
     }
 #endif
+
+    /* Cleanup native filters: */
+    pMachineView->cleanupNativeFilters();
+
     delete pMachineView;
 }
 
@@ -861,20 +862,6 @@ void UIMachineView::prepareConsoleConnections()
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
 }
 
-void UIMachineView::cleanupFilters()
-{
-#if QT_VERSION >= 0x050000
-    /* If native event filter exists: */
-    if (m_pNativeEventFilter)
-    {
-        /* Uninstall/destroy existing native event filter: */
-        qApp->removeNativeEventFilter(m_pNativeEventFilter);
-        delete m_pNativeEventFilter;
-        m_pNativeEventFilter = 0;
-    }
-#endif
-}
-
 void UIMachineView::cleanupFrameBuffer()
 {
     /* Make sure proper framebuffer assigned: */
@@ -902,6 +889,20 @@ void UIMachineView::cleanupFrameBuffer()
 
     /* Detach framebuffer from view: */
     m_pFrameBuffer->setView(NULL);
+}
+
+void UIMachineView::cleanupNativeFilters()
+{
+#if QT_VERSION >= 0x050000
+    /* If native event filter exists: */
+    if (m_pNativeEventFilter)
+    {
+        /* Uninstall/destroy existing native event filter: */
+        qApp->removeNativeEventFilter(m_pNativeEventFilter);
+        delete m_pNativeEventFilter;
+        m_pNativeEventFilter = 0;
+    }
+#endif
 }
 
 UISession* UIMachineView::uisession() const

@@ -178,6 +178,7 @@ protected:
 
     /* Prepare routines: */
     virtual void loadMachineViewSettings();
+    //virtual void prepareNativeFilters() {}
     virtual void prepareViewport();
     virtual void prepareFrameBuffer();
     virtual void prepareCommon();
@@ -188,10 +189,11 @@ protected:
     /* Cleanup routines: */
     //virtual void cleanupConsoleConnections() {}
     //virtual void cleanupConnections() {}
-    virtual void cleanupFilters();
+    //virtual void cleanupFilters() {}
     //virtual void cleanupCommon() {}
     virtual void cleanupFrameBuffer();
     //virtual void cleanupViewport();
+    virtual void cleanupNativeFilters();
     //virtual void saveMachineViewSettings() {}
 
     /** Returns the session UI reference. */
