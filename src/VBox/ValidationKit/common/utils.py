@@ -218,6 +218,32 @@ def getHostOsVersion():
                      "14": "Unknown 14", }
         sVersion += ' / OS X ' + sOsxVersion + ' (' + codenames[sOsxVersion.split('.')[1]] + ')'
 
+    elif sOs == 'win':
+        class OSVersionInfoEx(ctypes.Structure):
+            """ OSVERSIONEX """
+            kaFields = [
+                    ('dwOSVersionInfoSize', ctypes.c_ulong),
+                    ('dwMajorVersion',      ctypes.c_ulong),
+                    ('dwMinorVersion',      ctypes.c_ulong),
+                    ('dwBuildNumber',       ctypes.c_ulong),
+                    ('dwPlatformId',        ctypes.c_ulong),
+                    ('szCSDVersion',        ctypes.c_wchar*128),
+                    ('wServicePackMajor',   ctypes.c_ushort),
+                    ('wServicePackMinor',   ctypes.c_ushort),
+                    ('wSuiteMask',          ctypes.c_ushort),
+                    ('wProductType',        ctypes.c_byte),
+                    ('wReserved',           ctypes.c_byte)]
+            _fields_ = kaFields # pylint: disable=invalid-name
+
+            def __init__(self):
+                super(OSVersionInfoEx, self).__init__()
+                self.dwOSVersionInfoSize = ctypes.sizeof(self)
+
+        oOsVersion = OSVersionInfoEx()
+        rc = ctypes.windll.Ntdll.RtlGetVersion(ctypes.byref(oOsVersion))
+        if rc == 0:
+            sVersion += ' build ' + str(oOsVersion.dwBuildNumber)
+
     return sVersion;
 
 #
