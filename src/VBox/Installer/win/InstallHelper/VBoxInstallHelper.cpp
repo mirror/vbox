@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -504,6 +504,9 @@ UINT __stdcall InstallBranding(MSIHANDLE hModule)
 
 static MSIHANDLE g_hCurrentModule = NULL;
 
+static UINT _uninstallNetFlt(MSIHANDLE hModule);
+static UINT _uninstallNetLwf(MSIHANDLE hModule);
+
 static VOID vboxDrvLoggerCallback(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext)
 {
     RT_NOREF1(pvContext);
@@ -698,7 +701,7 @@ static UINT vboxNetFltQueryInfArray(MSIHANDLE hModule, OUT LPWSTR pwszPtInf, OUT
 
 #endif /*VBOX_WITH_NETFLT*/
 
-UINT __stdcall UninstallNetFlt(MSIHANDLE hModule)
+/*static*/ UINT _uninstallNetFlt(MSIHANDLE hModule)
 {
 #ifdef VBOX_WITH_NETFLT
     INetCfg *pNetCfg;
@@ -739,11 +742,17 @@ UINT __stdcall UninstallNetFlt(MSIHANDLE hModule)
     }
 #endif /* VBOX_WITH_NETFLT */
 
-    /* Never fail the install even if we did not succeed. */
+    /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
 
-UINT __stdcall InstallNetFlt(MSIHANDLE hModule)
+UINT __stdcall UninstallNetFlt(MSIHANDLE hModule)
+{
+    (void)_uninstallNetLwf(hModule);
+    return _uninstallNetFlt(hModule);
+}
+
+static UINT _installNetFlt(MSIHANDLE hModule)
 {
 #ifdef VBOX_WITH_NETFLT
     UINT uErr;
@@ -798,8 +807,14 @@ UINT __stdcall InstallNetFlt(MSIHANDLE hModule)
     return ERROR_SUCCESS;
 }
 
+UINT __stdcall InstallNetFlt(MSIHANDLE hModule)
+{
+    (void)_uninstallNetLwf(hModule);
+    return _installNetFlt(hModule);
+}
 
-UINT __stdcall UninstallNetLwf(MSIHANDLE hModule)
+
+/*static*/ UINT _uninstallNetLwf(MSIHANDLE hModule)
 {
 #ifdef VBOX_WITH_NETFLT
     INetCfg *pNetCfg;
@@ -840,11 +855,17 @@ UINT __stdcall UninstallNetLwf(MSIHANDLE hModule)
     }
 #endif /* VBOX_WITH_NETFLT */
 
-    /* Never fail the install even if we did not succeed. */
+    /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
 
-UINT __stdcall InstallNetLwf(MSIHANDLE hModule)
+UINT __stdcall UninstallNetLwf(MSIHANDLE hModule)
+{
+    (void)_uninstallNetFlt(hModule);
+    return _uninstallNetLwf(hModule);
+}
+
+static UINT _installNetLwf(MSIHANDLE hModule)
 {
 #ifdef VBOX_WITH_NETFLT
     UINT uErr;
@@ -912,6 +933,12 @@ UINT __stdcall InstallNetLwf(MSIHANDLE hModule)
 
     /* Never fail the install even if we did not succeed. */
     return ERROR_SUCCESS;
+}
+
+UINT __stdcall InstallNetLwf(MSIHANDLE hModule)
+{
+    (void)_uninstallNetFlt(hModule);
+    return _installNetLwf(hModule);
 }
 
 
@@ -1129,7 +1156,7 @@ static UINT _removeHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
 
-    /* Never fail the install even if we did not succeed. */
+    /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
 
@@ -1162,7 +1189,7 @@ static UINT _stopHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
 
-    /* Never fail the install even if we did not succeed. */
+    /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
 
@@ -1243,7 +1270,7 @@ static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LP
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
 
-    /* Never fail the install even if we did not succeed. */
+    /* Never fail the update even if we did not succeed. */
     return ERROR_SUCCESS;
 }
 
@@ -1298,7 +1325,7 @@ static UINT _uninstallNetAdp(MSIHANDLE hModule, LPCWSTR pwszId)
     }
 #endif /* VBOX_WITH_NETFLT */
 
-    /* Never fail the install even if we did not succeed. */
+    /* Never fail the uninstall even if we did not succeed. */
     return ERROR_SUCCESS;
 }
 
