@@ -545,7 +545,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 ||  rc == VERR_ALREADY_LOADED /* A competing process. */
                                )
                             {
-                                LogRel(("SUP: Loaded %s (%s) at %#RKv - ModuleInit at %RKv and ModuleTerm at %RKvr%s\n",
+                                LogRel(("SUP: Loaded %s (%s) at %#RKv - ModuleInit at %RKv and ModuleTerm at %RKv%s\n",
                                         pszModule, pszFilename, OpenReq.u.Out.pvImageBase, (RTR0PTR)ModuleInit, (RTR0PTR)ModuleTerm,
                                         OpenReq.u.Out.fNativeLoader ? " using the native ring-0 loader" : ""));
                                 if (fIsVMMR0)
