@@ -481,10 +481,14 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     if (fFlags & RTSTR_F_SPECIAL)
                         cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("0x"));
 
-# ifdef RT_ARCH_X86
+# if R0_ARCH_BITS == 32
                     cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXX"));
-# else
+# elif R0_ARCH_BITS == 64
                     cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXXXXXXXXXX"));
+# elif R0_ARCH_BITS == 16
+                    cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXX"));
+# else
+#  error implement me!
 # endif
                     return cch;
                 }
