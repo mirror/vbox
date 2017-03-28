@@ -2455,7 +2455,7 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
 
     uint8_t   uVector     = Event.n.u8Vector;
     uint8_t   uVectorType = Event.n.u3Type;
-    TRPMEVENT enmTrapType = HMSvmEventToTrpmEventType(&Event);
+    TRPMEVENT enmTrapType = hmSvmEventToTrpmEventType(&Event);
 
     Log4(("HM event->TRPM: uVector=%#x enmTrapType=%d\n", uVector, uVectorType));
 
@@ -2742,7 +2742,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 
     if (rcVMRun == VERR_SVM_INVALID_GUEST_STATE)
     {
-        hmDumpRegs(pVM, pVCpu, pCtx); NOREF(pVM);
+        hmR0DumpRegs(pVM, pVCpu, pCtx); NOREF(pVM);
 #ifdef VBOX_STRICT
         Log4(("ctrl.u64VmcbCleanBits             %#RX64\n",   pVmcb->ctrl.u64VmcbCleanBits));
         Log4(("ctrl.u16InterceptRdCRx            %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));

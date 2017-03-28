@@ -12013,7 +12013,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMix
     NOREF(pVmxTransient);
 #endif
 
-    hmDumpRegs(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
+    hmR0DumpRegs(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
     return VERR_VMX_INVALID_GUEST_STATE;
 }
 

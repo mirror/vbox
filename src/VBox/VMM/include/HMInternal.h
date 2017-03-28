@@ -1101,16 +1101,16 @@ AssertCompileMemberAlignment(HMCPU, vmx, 8);
 AssertCompileMemberAlignment(HMCPU, svm, 8);
 AssertCompileMemberAlignment(HMCPU, Event, 8);
 
-VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
+VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
 
 #ifdef IN_RING0
-VMMR0DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void);
+VMMR0_INT_DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void);
 
 # ifdef VBOX_STRICT
-VMMR0DECL(void) hmDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
+VMMR0_INT_DECL(void) hmR0DumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
 # else
-#  define hmDumpRegs(a, b ,c)            do { } while (0)
+#  define hmR0DumpRegs(a, b ,c)          do { } while (0)
 #  define hmR0DumpDescriptor(a, b, c)    do { } while (0)
 # endif /* VBOX_STRICT */
 

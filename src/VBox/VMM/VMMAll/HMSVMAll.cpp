@@ -457,7 +457,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             if (pEventInject->n.u1Valid)
             {
                 uint8_t   const uVector    = pEventInject->n.u8Vector;
-                TRPMEVENT const enmType    = HMSvmEventToTrpmEventType(pEventInject);
+                TRPMEVENT const enmType    = hmSvmEventToTrpmEventType(pEventInject);
                 uint16_t  const uErrorCode = pEventInject->n.u1ErrorCodeValid ? pEventInject->n.u32ErrorCode : 0;
 
                 /* Validate vectors for hardware exceptions, see AMD spec. 15.20 "Event Injection". */
@@ -680,7 +680,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
  *
  * @param   pEvent       Pointer to the SVM event.
  */
-VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pEvent)
+VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pEvent)
 {
     uint8_t const uType = pEvent->n.u3Type;
     switch (uType)
