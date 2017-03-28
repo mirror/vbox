@@ -468,7 +468,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if   sHost == 'darwin':     fRc = self._uninstallVBoxOnDarwin();
         elif sHost == 'linux':      fRc = self._uninstallVBoxOnLinux();
         elif sHost == 'solaris':    fRc = self._uninstallVBoxOnSolaris();
-        elif sHost == 'win':        fRc = self._uninstallVBoxOnWindows();
+        elif sHost == 'win':        fRc = self._uninstallVBoxOnWindows(True);
         else:
             reporter.error('Unsupported host "%s".' % (sHost,));
         if fRc is False and not fIgnoreError:
