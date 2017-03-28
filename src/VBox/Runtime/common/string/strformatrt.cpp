@@ -475,20 +475,16 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                 /*
                  * For now don't show the address.
                  */
-                cch = 0;
                 if (fFlags & RTSTR_F_OBFUSCATE_PTR)
                 {
-                    if (fFlags & RTSTR_F_SPECIAL)
-                        cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("0x"));
-
-# if R0_ARCH_BITS == 32
-                    cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXX"));
-# elif R0_ARCH_BITS == 64
-                    cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXXXXXXXXXX"));
+# if R0_ARCH_BITS == 64
+                    static const char s_szObfuscated[] = "0xXXXXXXXX";
 # else
-#  error implement me!
+                    static const char s_szObfuscated[] = "0xXXXXXXXXXXXXXXXX";
 # endif
-                    return cch;
+                    if (fFlags & RTSTR_F_SPECIAL)
+                        return pfnOutput(pvArgOutput, s_szObfuscated, sizeof(s_szObfuscated) - 1);
+                    return pfnOutput(pvArgOutput, &s_szObfuscated[2], sizeof(s_szObfuscated) - 1 - 2);
                 }
 #endif
 
