@@ -279,21 +279,20 @@
   Note!! Don't forget to update the python bindings (++) when changing the
          UUID or version!!
 -->
-    <library
-      name="VirtualBox"
-      uuid="d7569351-1750-46f0-936e-bd127d5bc264"
-      version="1.3"
+<library
+  name="VirtualBox"
+  uuid="d7569351-1750-46f0-936e-bd127d5bc264"
+  version="1.3"
 >
 
 <application
-        name="VirtualBox"
-        uuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
-        supportsErrorInfo="yes"
+  name="VirtualBox"
+  uuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
+  supportsErrorInfo="yes"
 >
 
 
-
-            <!--
+  <!--
   // COM result codes for VirtualBox
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -3754,7 +3753,7 @@
   // IUnattended
   /////////////////////////////////////////////////////////////////////////
   -->
-  
+
   <interface
     name="IUnattended" extends="$unknown"
     uuid="ba702c0a-af6c-4598-b20c-247fb9e46406"
@@ -3792,8 +3791,8 @@
     <attribute name="fileWithPreparedData" type="wstring">
       <desc>
         A path to the file with data prepared by user.
-	The internal rule is "name = value" like "isoPath = /correct/path/to/the/iso"
-	One line - one parameter
+        The internal rule is "name = value" like "isoPath = /correct/path/to/the/iso"
+        One line - one parameter
       </desc>
     </attribute>
 
@@ -3812,14 +3811,14 @@
 
     <attribute name="productKey" type="wstring">
       <desc>
-        Any key which is used as authorization of access to install genuine OS 
+        Any key which is used as authorization of access to install genuine OS
       </desc>
     </attribute>
 
     <attribute name="installGuestAdditions" type="boolean">
       <desc>
         specifies if the Oracle VirtualBox additions should be installed or not.
-        (Answering "false" does not affect Guest Additions, that come 
+        (Answering "false" does not affect Guest Additions, that come
         pre-installed with certain versions of Linux guests, such as openSUSE).
         Currently not implemented.
       </desc>
@@ -3846,7 +3845,7 @@
     <method name="constructMedia">
       <desc>
         Fix scripts in auxiliary CD ISO if it's needed
-        Packages Guest-OS-specific unattended script into auxiliary CD ISO 
+        Packages Guest-OS-specific unattended script into auxiliary CD ISO
         or into auxiliary floppy, depending on IMachine::OSTypId.
       </desc>
     </method>
@@ -23886,7 +23885,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 </application>
 
 <!-- Pay attention! Application uuid of this application is used in midl.xsl
-     So if you change it then change filter in "interface" and "class" template in midl.xsl too 
+     So if you change it then change filter in "interface" and "class" template in midl.xsl too
 -->
 <application
   name="VirtualBox System Service"
@@ -23926,7 +23925,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
               Client informs that it releases it's VirtualBox reference
           </desc>
       </method>
-      
+
   </interface>
 </if>
 
