@@ -1143,6 +1143,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
 
                 case 'a':
                     lstLicenseHashes.append(ValueUnion.psz);
+                    lstLicenseHashes[lstLicenseHashes.size() - 1].toLower();
                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
@@ -1180,36 +1181,28 @@ RTEXITCODE handleExtPack(HandlerArg *a)
                                            bstrLicense.asOutParam()), RTEXITCODE_FAILURE);
             Utf8Str strLicense(bstrLicense);
             uint8_t abHash[RTSHA256_HASH_SIZE];
+            char    szDigest[RTSHA256_DIGEST_LEN + 1];
             RTSha256(strLicense.c_str(), strLicense.length(), abHash);
-            char *pszDigest = NULL;
-            vrc = RTStrAllocEx(&pszDigest, RTSHA256_DIGEST_LEN + 1);
-            if (RT_SUCCESS(vrc))
-                RTSha256ToString(abHash, pszDigest, RTSHA256_DIGEST_LEN + 1);
-            if (   pszDigest
-                && lstLicenseHashes.contains(pszDigest))
+            vrc = RTSha256ToString(abHash, szDigest, sizeof(szDigest));
+            AssertRCStmt(vrc, szDigest[0] = '\0');
+            if (lstLicenseHashes.contains(szDigest))
                 RTPrintf("License accepted.\n");
             else
             {
-                RTPrintf("%ls\n", bstrLicense.raw());
+                RTPrintf("%s\n", srcLicense.c_str());
                 RTPrintf("Do you agree to these license terms and conditions (y/n)? " );
                 ch = RTStrmGetCh(g_pStdIn);
                 RTPrintf("\n");
                 if (ch != 'y' && ch != 'Y')
                 {
                     RTPrintf("Installation of \"%ls\" aborted.\n", bstrName.raw());
-                    if (pszDigest)
-                        RTStrFree(pszDigest);
                     return RTEXITCODE_SUCCESS;
                 }
-                if (pszDigest)
-                {
+                if (szDigest[0])
                     RTPrintf("License accepted. For batch installaltion add\n"
                              "--accept-license=%s\n"
-                             "to the VBoxManage command line.\n\n", pszDigest);
-                }
+                             "to the VBoxManage command line.\n\n", szDigest);
             }
-            if (pszDigest)
-                RTStrFree(pszDigest);
         }
         ComPtr<IProgress> ptrProgress;
         CHECK_ERROR2I_RET(ptrExtPackFile, Install(fReplace, NULL, ptrProgress.asOutParam()), RTEXITCODE_FAILURE);
