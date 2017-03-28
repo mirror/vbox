@@ -1064,11 +1064,14 @@ LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszModuleName, const
 
     if (pState->fUpdate)
     {
+        HKEY hkeyServiceExe;
+
         vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszAppId, pszDescription, __LINE__);
 
         if (fIsService)
         {
             char szModule[MAX_PATH + 2];
+            HKEY hkeyApp;
             size_t len = RTStrNLen(pszModuleName, MAX_PATH);
             Assert(len);
             Assert(len < MAX_PATH);
@@ -1076,7 +1079,6 @@ LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszModuleName, const
             AssertRC(rc);
             szModule[len - 4] = '\0';
 
-            HKEY hkeyApp;
             rc = RegOpenKeyExA(hkeyAppIds, pszAppId, 0 /*fOptions*/, pState->fSamBoth, &hkeyApp);
             if (rc == ERROR_FILE_NOT_FOUND)
                 return ERROR_SUCCESS;
@@ -1087,7 +1089,6 @@ LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszModuleName, const
 
         vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszModuleName, "", __LINE__);
 
-        HKEY hkeyServiceExe;
         rc = RegOpenKeyExA(hkeyAppIds, pszModuleName, 0 /*fOptions*/, pState->fSamBoth, &hkeyServiceExe);
         if (rc == ERROR_FILE_NOT_FOUND)
             return ERROR_SUCCESS;
