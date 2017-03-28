@@ -243,6 +243,10 @@ def getHostOsVersion():
         rc = ctypes.windll.Ntdll.RtlGetVersion(ctypes.byref(oOsVersion))
         if rc == 0:
             sVersion += ' build ' + str(oOsVersion.dwBuildNumber)
+            if oOsVersion.wServicePackMajor:
+                sVersion += ' SP' + str(oOsVersion.wServicePackMajor)
+                if oOsVersion.wServicePackMinor:
+                    sVersion += '.' + str(oOsVersion.wServicePackMinor)
 
     return sVersion;
 
