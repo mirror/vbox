@@ -251,6 +251,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
             case 'I':
             case 'X':
             case 'U':
+            case 'K':
             {
                 /*
                  * Interpret the type.
@@ -304,6 +305,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     { STRMEM("I32"),     sizeof(int32_t),        10, RTSF_INT,   RTSTR_F_VALSIGNED },
                     { STRMEM("I64"),     sizeof(int64_t),        10, RTSF_INT,   RTSTR_F_VALSIGNED },
                     { STRMEM("I8"),      sizeof(int8_t),         10, RTSF_INT,   RTSTR_F_VALSIGNED },
+                    { STRMEM("Kv"),      sizeof(RTHCPTR),        16, RTSF_INT,   RTSTR_F_OBFUSCATE_PTR },
                     { STRMEM("Rv"),      sizeof(RTRCPTR),        16, RTSF_INTW,  0 },
                     { STRMEM("Tbool"),   sizeof(bool),           10, RTSF_BOOL,  0 },
                     { STRMEM("Tfile"),   sizeof(RTFILE),         10, RTSF_INT,   0 },
@@ -467,6 +469,23 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             AssertMsgFailed(("Invalid format error, size %d'!\n", s_aTypes[i].cb));
                             break;
                     }
+                }
+
+                /*
+                 * For now don't show the address.
+                 */
+                cch = 0;
+                if (fFlags & RTSTR_F_OBFUSCATE_PTR)
+                {
+                    if (fFlags & RTSTR_F_SPECIAL)
+                        cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("0x"));
+
+#ifdef RT_ARCH_X86
+                    cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXX"));
+#else
+                    cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXXXXXXXXXX"));
+#endif
+                    return cch;
                 }
 
                 /*

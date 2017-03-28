@@ -1434,6 +1434,7 @@ typedef FNRTSTROUTPUT *PFNRTSTROUTPUT;
 #define RTSTR_F_WIDTH           0x0080
 #define RTSTR_F_PRECISION       0x0100
 #define RTSTR_F_THOUSAND_SEP    0x0200
+#define RTSTR_F_OBFUSCATE_PTR   0x0400
 
 #define RTSTR_F_BIT_MASK        0xf800
 #define RTSTR_F_8BIT            0x0800
