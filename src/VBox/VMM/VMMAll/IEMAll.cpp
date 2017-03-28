@@ -10758,6 +10758,8 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     do { (a_u64Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[0]; } while (0)
 #define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg) \
     do { (a_u32Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au32[0]; } while (0)
+#define IEM_MC_FETCH_XREG_HI_U64(a_u64Value, a_iXReg) \
+    do { (a_u64Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[1]; } while (0)
 #define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value) \
     do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].xmm = (a_u128Value); } while (0)
 #define IEM_MC_STORE_XREG_U64(a_iXReg, a_u64Value) \

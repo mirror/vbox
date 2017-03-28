@@ -165,8 +165,13 @@ g_kdOpTypes = {
     'Wps':  ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',     ),
     'Wpd':  ( 'IDX_UseModRM',       'rm',     '%Wpd', 'Wpd',     ),
 
+    # ModR/M.rm - register only.
+    'Uq':   ( 'IDX_UseModRM',       'rm',     '%Uq',  'Uq',      ),
+    'UqHi': ( 'IDX_UseModRM',       'rm',     '%Uq',  'UqHi',    ),
+
     # ModR/M.rm - memory only.
     'Ma':   ( 'IDX_UseModRM',       'rm',     '%Ma',  'Ma',      ), ##< Only used by BOUND.
+    'Mq':   ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
 
     # ModR/M.reg
     'Gb':   ( 'IDX_UseModRM',       'reg',    '%Gb',  'Gb',      ),
@@ -176,6 +181,7 @@ g_kdOpTypes = {
     'Vsd':  ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
     'Vps':  ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
     'Vpd':  ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     ),
+    'Vq':   ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      ),
 
     # Immediate values.
     'Ib':   ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.
