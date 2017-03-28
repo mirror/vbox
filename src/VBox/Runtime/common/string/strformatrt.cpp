@@ -471,6 +471,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     }
                 }
 
+#ifndef DEBUG
                 /*
                  * For now don't show the address.
                  */
@@ -480,13 +481,14 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     if (fFlags & RTSTR_F_SPECIAL)
                         cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("0x"));
 
-#ifdef RT_ARCH_X86
+# ifdef RT_ARCH_X86
                     cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXX"));
-#else
+# else
                     cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXXXXXXXXXX"));
-#endif
+# endif
                     return cch;
                 }
+#endif
 
                 /*
                  * Format the output.
