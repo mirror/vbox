@@ -34,7 +34,7 @@
 #undef Bs3RegCtxPrint
 BS3_CMN_DEF(void, Bs3RegCtxPrint,(PCBS3REGCTX pRegCtx))
 {
-    if (BS3_MODE_IS_64BIT_CODE(pRegCtx->bMode))
+    if (!BS3_MODE_IS_64BIT_CODE(pRegCtx->bMode))
     {
         Bs3TestPrintf("eax=%08RX32 ebx=%08RX32 ecx=%08RX32 edx=%08RX32 esi=%08RX32 edi=%08RX32\n",
                       pRegCtx->rax.u32, pRegCtx->rbx.u32, pRegCtx->rcx.u32, pRegCtx->rdx.u32, pRegCtx->rsi.u32, pRegCtx->rdi.u32);
