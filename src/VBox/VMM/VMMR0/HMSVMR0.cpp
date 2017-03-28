@@ -2527,8 +2527,8 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 {
     if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR))
     {
-        pVmcb->ctrl.IntCtrl.n.u1VIrqValid  = 1;     /* A virtual interrupt is pending. */
-        pVmcb->ctrl.IntCtrl.n.u8VIrqVector = 0;     /* Not necessary as we #VMEXIT for delivering the interrupt. */
+        pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 1;     /* A virtual interrupt is pending. */
+        pVmcb->ctrl.IntCtrl.n.u8VIntrVector = 0;     /* Vector not necessary as we #VMEXIT for delivering the interrupt. */
         pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VINTR;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
 
@@ -2640,7 +2640,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         /*
          * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt() returns
-         * a valid interrupt we must- deliver the interrupt. We can no longer re-request it from the APIC.
+         * a valid interrupt we -must- deliver the interrupt. We can no longer re-request it from the APIC.
          */
         if (   !fBlockInt
             && !fIntShadow)
@@ -2760,14 +2760,14 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.TLBCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.TLBCtrl.n.u24Reserved));
 
         Log4(("ctrl.IntCtrl.u8VTPR               %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VTPR));
-        Log4(("ctrl.IntCtrl.u1VIrqValid          %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqValid));
+        Log4(("ctrl.IntCtrl.u1VIrqPending        %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqPending));
         Log4(("ctrl.IntCtrl.u7Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u7Reserved));
-        Log4(("ctrl.IntCtrl.u4VIrqPriority       %#x\n",      pVmcb->ctrl.IntCtrl.n.u4VIrqPriority));
+        Log4(("ctrl.IntCtrl.u4VIntrPrio          %#x\n",      pVmcb->ctrl.IntCtrl.n.u4VIntrPrio));
         Log4(("ctrl.IntCtrl.u1IgnoreTPR          %#x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
         Log4(("ctrl.IntCtrl.u3Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
         Log4(("ctrl.IntCtrl.u1VIntrMasking       %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIntrMasking));
         Log4(("ctrl.IntCtrl.u6Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved));
-        Log4(("ctrl.IntCtrl.u8VIrqVector         %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIrqVector));
+        Log4(("ctrl.IntCtrl.u8VIntrVector        %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
         Log4(("ctrl.IntCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 
         Log4(("ctrl.u64IntShadow                 %#RX64\n",   pVmcb->ctrl.u64IntShadow));
@@ -5105,8 +5105,8 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    pVmcb->ctrl.IntCtrl.n.u1VIrqValid  = 0;  /* No virtual interrupts pending, we'll inject the current one/NMI before reentry. */
-    pVmcb->ctrl.IntCtrl.n.u8VIrqVector = 0;
+    pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 0;  /* No virtual interrupts pending, we'll inject the current one/NMI before reentry. */
+    pVmcb->ctrl.IntCtrl.n.u8VIntrVector = 0;
 
     /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive interrupts/NMIs, it is now ready. */
     pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;

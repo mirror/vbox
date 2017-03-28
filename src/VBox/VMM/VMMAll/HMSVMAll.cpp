@@ -442,7 +442,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             /*
              * Check for pending virtual interrupts.
              */
-            if (pVmcbCtrl->IntCtrl.n.u1VIrqValid)
+            if (pVmcbCtrl->IntCtrl.n.u1VIrqPending)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
 
             /*
@@ -583,8 +583,8 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
          */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
         {
-            Assert(pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIrqValid);
-            Assert(pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u8VIrqVector);
+            Assert(pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIrqPending);
+            Assert(pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u8VIntrVector);
         }
         /** @todo Save V_TPR, V_IRQ. */
         /** @todo NRIP. */
@@ -618,6 +618,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
             /* Clear TSC offset. */
             pCtx->hwvirt.svm.VmcbCtrl.u64TSCOffset = 0;
             pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIrqValid = 0;
+            pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIntrMasking = 0;
 #endif
             /* Restore guest's force-flags. */
             if (pCtx->hwvirt.fLocalForcedActions)
@@ -697,17 +698,43 @@ VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pEvent)
 }
 
 
-#if 0
-VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PVMCPU pVCpu)
+VMM_INT_DECL(bool) HMSvmNstGstIsInterruptPending(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
-
+    RT_NOREF1(pVCpu);
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
-    Assert(RT_BOOL(pVmcbCtrl->IntCtrl.n.u1VIrqValid));
 
+    if (    !CPUMIsGuestInNestedHwVirtMode(pCtx)
+        || !pCtx->hwvirt.svm.fGif)
+        return false;
+
+    X86RFLAGS RFlags;
     if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
-    {
-    }
+        RFlags.u = pCtx->rflags.u;
+    else
+        RFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+
+    if (!RFlags.Bits.u1IF)
+        return false;
+
+    return RT_BOOL(pVmcbCtrl->IntCtrl.n.u1VIrqPending);
 }
+
+
+VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t *pu8Interrupt)
+{
+    RT_NOREF1(pVCpu);
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+
+    /** @todo remove later, paranoia for now. */
+#ifdef DEBUG_ramshankar
+    Assert(HMSvmNstGstIsInterruptPending);
 #endif
+
+    *pu8Interrupt = pVmcbCtrl->IntCtrl.n.u8VIntrVector;
+    if (   pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
+        || pVmcbCtrl->IntCtrl.n.u4VIntrPrio > pVmcbCtrl->IntCtrl.n.u8VTPR)
+        return VINF_SUCCESS;
+
+    return VERR_APIC_INTR_MASKED_BY_TPR;
+}
+

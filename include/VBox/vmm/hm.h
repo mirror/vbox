@@ -153,6 +153,8 @@ VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, u
 VMM_INT_DECL(void)              HMVmxNstGstVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb);
+VMM_INT_DECL(int)               HMSvmNstGstGetInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t *pu8Interrupt);
+VMM_INT_DECL(bool)              HMSvmNstGstIsInterruptPending(PVMCPU pVCpu, PCCPUMCTX pCtx);
 
 #ifndef IN_RC
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);

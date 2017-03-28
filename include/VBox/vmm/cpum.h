@@ -1309,7 +1309,7 @@ DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
  * @returns true if SMV is enabled, otherwise false.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
 {
     return RT_BOOL(pCtx->msrEFER & MSR_K6_EFER_SVME);
 }
@@ -1322,7 +1322,7 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCPUMCTX pCtx)
  * @param   fIntercept    The SVM control/instruction intercept,
  *                        see SVM_CTRL_INTERCEPT_*.
  */
-DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCPUMCTX pCtx, uint64_t fIntercept)
+DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCCPUMCTX pCtx, uint64_t fIntercept)
 {
     return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u64InterceptCtrl & fIntercept);
 }
@@ -1335,7 +1335,7 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCPUMCTX pCtx, uint64_t fInterce
  * @param   pCtx          Pointer to the context.
  * @param   uCr           The CR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
+DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
 {
     return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptRdCRx & (1 << uCr));
 }
@@ -1348,7 +1348,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
  * @param   pCtx          Pointer to the context.
  * @param   uCr           The CR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
+DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
 {
     return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptWrCRx & (1 << uCr));
 }
@@ -1361,7 +1361,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
  * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
+DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
 {
     return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptRdDRx & (1 << uDr));
 }
@@ -1374,7 +1374,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
  * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
+DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
 {
     return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptWrDRx & (1 << uDr));
 }
@@ -1387,7 +1387,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
  * @param   pCtx        Pointer to the context.
  * @param   enmXcpt     The exception.
  */
-DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCPUMCTX pCtx, X86XCPT enmXcpt)
+DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCCPUMCTX pCtx, X86XCPT enmXcpt)
 {
     return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u32InterceptXcpt & enmXcpt);
 }
@@ -1398,7 +1398,7 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCPUMCTX pCtx, X86XCPT enmXcpt)
  * @returns true if in nested-guest mode, false otherwise.
  * @param   pCtx        Pointer to the context.
  */
-DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCCPUMCTX pCtx)
 {
     /*
      * With AMD-V, the VMRUN intercept is a pre-requisite to entering SVM guest-mode.
