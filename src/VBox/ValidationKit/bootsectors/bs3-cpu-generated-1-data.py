@@ -309,7 +309,12 @@ class Bs3Cg1Instruction(object):
             self.asFlags.append('BS3CG1INSTR_F_INVALID_64BIT')
 
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
-        if self.sEncoding == 'ModR/M':
+        if oInstr.sPrefix:
+            if oInstr.sPrefix == 'none':
+                self.sPfxKind = 'BS3CGPFXKIND_NO_F2_F3_66';
+            else:
+                self.sPfxKind = 'BS3CGPFXKIND_REQ_' + oInstr.sPrefix[-2:].upper();
+        elif oInstr.sEncoding == 'ModR/M':
             if 'ignores_op_size' not in oInstr.dHints:
                 self.sPfxKind   = 'BS3CGPFXKIND_MODRM';
             else:

@@ -1075,10 +1075,19 @@ FNIEMOP_STUB(iemOp_vmovss_Vx_Hx_Wss);
 FNIEMOP_STUB(iemOp_vmovsd_Vx_Hx_Wsd);
 
 
-/** Opcode      0x0f 0x11 - vmovups Wps, Vps */
+/**
+ * @opcode      0x11
+ * @oppfx       none
+ * @opcpuid     sse2
+ * @opgroup     og_sse2_pcksclr_datamov
+ * @opxcpttype  4UA
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ * @oponlytest
+ */
 FNIEMOP_DEF(iemOp_vmovups_Wps_Vps)
 {
-    IEMOP_MNEMONIC(movups_Wps_Vps, "movups Wps,Vps");
+    IEMOP_MNEMONIC2(MR, MOVUPS, movups, Wps, Vps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1129,8 +1138,10 @@ FNIEMOP_STUB(iemOp_vmovss_Wss_Hx_Vss);
  * @oppfx       0xf2
  * @opcpuid     sse2
  * @opgroup     og_sse2_pcksclr_datamov
+ * @opxcpttype  E5
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
+ * @oponlytest
  */
 FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hx_Vsd)
 {

@@ -44,11 +44,12 @@ typedef enum BS3CG1OP
     BS3CG1OP_Eb,
     BS3CG1OP_Ev,
     BS3CG1OP_Wsd,
+    BS3CG1OP_Wps,
 
     BS3CG1OP_Gb,
     BS3CG1OP_Gv,
-
     BS3CG1OP_Vsd,
+    BS3CG1OP_Vps,
 
     BS3CG1OP_Ib,
     BS3CG1OP_Iz,
@@ -77,6 +78,7 @@ typedef enum BS3CG1ENC
     BS3CG1ENC_MODRM_Eb_Gb,
     BS3CG1ENC_MODRM_Ev_Gv,
     BS3CG1ENC_MODRM_Wsd_Vsd,
+    BS3CG1ENC_MODRM_Wps_Vps,
 
     BS3CG1ENC_MODRM_Gb_Eb,
     BS3CG1ENC_MODRM_Gv_Ev,
@@ -97,6 +99,12 @@ typedef enum BS3CGPFXKIND
 {
     BS3CGPFXKIND_INVALID = 0,
 
+    BS3CGPFXKIND_NO_F2_F3_66,           /**< No 66, F2 or F3 prefixes allowed as that would alter the meaning. */
+    BS3CGPFXKIND_REQ_F2,                /**< Requires F2 (REPNE) prefix as part of the instr encoding. */
+    BS3CGPFXKIND_REQ_F3,                /**< Requires F3 (REPE) prefix as part of the instr encoding. */
+    BS3CGPFXKIND_REQ_66,                /**< Requires 66 (OP SIZE) prefix as part of the instr encoding.  */
+
+    /** @todo more work to be done here...   */
     BS3CGPFXKIND_MODRM,
     BS3CGPFXKIND_MODRM_NO_OP_SIZES,
 
@@ -372,6 +380,38 @@ typedef enum BS3CG1DST
     BS3CG1DST_XMM13,
     BS3CG1DST_XMM14,
     BS3CG1DST_XMM15,
+    BS3CG1DST_XMM0_LO,
+    BS3CG1DST_XMM1_LO,
+    BS3CG1DST_XMM2_LO,
+    BS3CG1DST_XMM3_LO,
+    BS3CG1DST_XMM4_LO,
+    BS3CG1DST_XMM5_LO,
+    BS3CG1DST_XMM6_LO,
+    BS3CG1DST_XMM7_LO,
+    BS3CG1DST_XMM8_LO,
+    BS3CG1DST_XMM9_LO,
+    BS3CG1DST_XMM10_LO,
+    BS3CG1DST_XMM11_LO,
+    BS3CG1DST_XMM12_LO,
+    BS3CG1DST_XMM13_LO,
+    BS3CG1DST_XMM14_LO,
+    BS3CG1DST_XMM15_LO,
+    BS3CG1DST_XMM0_HI,
+    BS3CG1DST_XMM1_HI,
+    BS3CG1DST_XMM2_HI,
+    BS3CG1DST_XMM3_HI,
+    BS3CG1DST_XMM4_HI,
+    BS3CG1DST_XMM5_HI,
+    BS3CG1DST_XMM6_HI,
+    BS3CG1DST_XMM7_HI,
+    BS3CG1DST_XMM8_HI,
+    BS3CG1DST_XMM9_HI,
+    BS3CG1DST_XMM10_HI,
+    BS3CG1DST_XMM11_HI,
+    BS3CG1DST_XMM12_HI,
+    BS3CG1DST_XMM13_HI,
+    BS3CG1DST_XMM14_HI,
+    BS3CG1DST_XMM15_HI,
     /* AVX registers. */
     BS3CG1DST_YMM0,
     BS3CG1DST_YMM1,

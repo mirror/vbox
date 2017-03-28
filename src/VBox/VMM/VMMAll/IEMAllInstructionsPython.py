@@ -161,15 +161,17 @@ g_kdOpTypes = {
     'Ew':   ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      ),
     'Ev':   ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      ),
     'Wsd':  ( 'IDX_UseModRM',       'rm',     '%Wsd', 'Wsd',      ),
+    'Wps':  ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',      ),
 
     # ModR/M.rm - memory only.
-    'Ma':   ( 'IDX_UseModRM',        'rm',    '%Ma',  'Ma',      ), ##< Only used by BOUND.
+    'Ma':   ( 'IDX_UseModRM',       'rm',     '%Ma',  'Ma',      ), ##< Only used by BOUND.
 
     # ModR/M.reg
     'Gb':   ( 'IDX_UseModRM',       'reg',    '%Gb',  'Gb',      ),
     'Gw':   ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      ),
     'Gv':   ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
     'Vsd':  ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
+    'Vps':  ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
 
     # Immediate values.
     'Ib':   ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.
@@ -230,6 +232,7 @@ g_kdIemForms = { # sEncoding,   [ sWhere1, ... ]
 
 ## \@oppfx values.
 g_kdPrefixes = {
+    'none': [],
     '0x66': [],
     '0xf3': [],
     '0xf2': [],
@@ -346,6 +349,40 @@ g_kdHints = {
     'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet!
     'ignores_op_size':       '',                                ##< Ignores both operand size prefixes.
     'lock_allowed':          '',                                ##< Lock prefix allowed.
+};
+
+## \@opxcpttype values (see SDMv2 2.4, 2.7).
+g_kdXcptTypes = {
+    'none':     [],
+    '1':        [],
+    '2':        [],
+    '3':        [],
+    '4':        [],
+    '4UA':      [],
+    '5':        [],
+    '6':        [],
+    '7':        [],
+    '8':        [],
+    '11':       [],
+    '12':       [],
+    'E1':       [],
+    'E1NF':     [],
+    'E2':       [],
+    'E3':       [],
+    'E3NF':     [],
+    'E4':       [],
+    'E4NF':     [],
+    'E5':       [],
+    'E5NF':     [],
+    'E6':       [],
+    'E6NF':     [],
+    'E7NF':     [],
+    'E9':       [],
+    'E9NF':     [],
+    'E10':      [],
+    'E11':      [],
+    'E12':      [],
+    'E12NF':    [],
 };
 
 
@@ -947,7 +984,7 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         self.asDescSections = [];       # type: list(str)
         self.aoMaps         = [];       # type: list(InstructionMap)
         self.aoOperands     = [];       # type: list(Operand)
-        self.sPrefix        = None;     ##< Single prefix: None, 0x66, 0xf3, 0xf2
+        self.sPrefix        = None;     ##< Single prefix: None, 'none', 0x66, 0xf3, 0xf2
         self.sOpcode        = None;     # type: str
         self.sEncoding      = None;
         self.asFlTest       = None;
@@ -966,6 +1003,7 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         self.fUnused        = False;    ##< Unused instruction.
         self.fInvalid       = False;    ##< Invalid instruction (like UD2).
         self.sInvalidStyle  = None;     ##< Invalid behviour style
+        self.sXcptType      = None;     ##< Exception type (g_kdXcptTypes).
         ## @}
 
         ## @name Implementation attributes.
@@ -1243,6 +1281,7 @@ class SimpleParser(object):
             '@optestignore': self.parseTagOpTestIgnore,
             '@opcopytests': self.parseTagOpCopyTests,
             '@oponlytest':  self.parseTagOpOnlyTest,
+            '@opxcpttype':  self.parseTagOpXcptType,
             '@opstats':     self.parseTagOpStats,
             '@opfunction':  self.parseTagOpFunction,
             '@opdone':      self.parseTagOpDone,
@@ -1676,7 +1715,7 @@ class SimpleParser(object):
     def parseTagOpPfx(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        \@oppfx
-        Value:      none|0x66|0xf3|0xf2
+        Value:      n/a|none|0x66|0xf3|0xf2
 
         Required prefix for the instruction.  (In a (E)VEX context this is the
         value of the 'pp' field rather than an actual prefix.)
@@ -1691,6 +1730,8 @@ class SimpleParser(object):
 
         sPrefix = asPrefixes[0].lower();
         if sPrefix == 'none':
+            sPrefix = 'none';
+        elif sPrefix == 'n/a':
             sPrefix = None;
         else:
             if len(sPrefix) == 2:
@@ -1976,14 +2017,14 @@ class SimpleParser(object):
             return self.errorComment(iTagLine, '%s: exactly one invalid behviour style, please: %s' % (sTag, asStyles,));
         sStyle = asStyles[0];
         if sStyle not in g_kdInvalidStyles:
-            return self.errorComment(iTagLine, '%s: invalid invalid behviour style: %s (valid: %s)'
+            return self.errorComment(iTagLine, '%s: invalid invalid behaviour style: %s (valid: %s)'
                                                % (sTag, sStyle, g_kdInvalidStyles.keys(),));
         # Set it.
-        if oInstr.sInvlStyle is not None:
+        if oInstr.sInvalidStyle is not None:
             return self.errorComment(iTagLine,
                                      '%s: attempting to overwrite "%s" with "%s" (only one @opunused, @opinvalid, @opinvlstyle)'
-                                     % ( sTag, oInstr.sInvlStyle, sStyle,));
-        oInstr.sInvlStyle = sStyle;
+                                     % ( sTag, oInstr.sInvalidStyle, sStyle,));
+        oInstr.sInvalidStyle = sStyle;
         if sTag == '@opunused':
             oInstr.fUnused = True;
         elif sTag == '@opinvalid':
@@ -2197,6 +2238,33 @@ class SimpleParser(object):
 
         if oInstr not in g_aoOnlyTestInstructions:
             g_aoOnlyTestInstructions.append(oInstr);
+
+        _ = iEndLine;
+        return True;
+
+    def parseTagOpXcptType(self, sTag, aasSections, iTagLine, iEndLine):
+        """
+        Tag:        \@opxcpttype
+        Value:      [none|1|2|3|4|4UA|5|6|7|8|11|12|E1|E1NF|E2|E3|E3NF|E4|E4NF|E5|E5NF|E6|E6NF|E7NF|E9|E9NF|E10|E11|E12|E12NF]
+
+        Sets the SSE or AVX exception type (see SDMv2 2.4, 2.7).
+        """
+        oInstr = self.ensureInstructionForOpTag(iTagLine);
+
+        # Flatten as a space separated list, split it up and validate the values.
+        asTypes = self.flattenAllSections(aasSections).split();
+        if len(asTypes) != 1:
+            return self.errorComment(iTagLine, '%s: exactly one invalid exception type, please: %s' % (sTag, asTypes,));
+        sType = asTypes[0];
+        if sType not in g_kdXcptTypes:
+            return self.errorComment(iTagLine, '%s: invalid invalid exception type: %s (valid: %s)'
+                                               % (sTag, sType, sorted(g_kdXcptTypes.keys()),));
+        # Set it.
+        if oInstr.sXcptType is not None:
+            return self.errorComment(iTagLine,
+                                     '%s: attempting to overwrite "%s" with "%s" (only one @opxcpttype)'
+                                     % ( sTag, oInstr.sXcptType, sType,));
+        oInstr.sXcptType = sType;
 
         _ = iEndLine;
         return True;
