@@ -1079,7 +1079,7 @@ FNIEMOP_STUB(iemOp_vmovsd_Vx_Hx_Wsd);
  * @opcode      0x11
  * @oppfx       none
  * @opcpuid     sse
- * @opgroup     og_sse2_pcksclr_datamov
+ * @opgroup     og_sse_simdfp_datamove
  * @opxcpttype  4UA
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
@@ -1131,7 +1131,7 @@ FNIEMOP_DEF(iemOp_vmovups_Wps_Vps)
  * @opcode      0x11
  * @oppfx       0x66
  * @opcpuid     sse2
- * @opgroup     og_sse2_pcksclr_datamov
+ * @opgroup     og_sse2_pcksclr_datamove
  * @opxcpttype  4UA
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
@@ -1179,15 +1179,67 @@ FNIEMOP_DEF(iemOp_vmovupd_Wpd_Vpd)
 }
 
 
-/** Opcode 0xf3 0x0f 0x11 - vmovss Wss, Hx, Vss */
-FNIEMOP_STUB(iemOp_vmovss_Wss_Hx_Vss);
+/**
+ * @opcode      0x11
+ * @oppfx       0xf3
+ * @opcpuid     sse
+ * @opgroup     og_sse_simdfp_datamove
+ * @opxcpttype  5
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-22 -> op1=-22
+ * @oponlytest
+ */
+FNIEMOP_DEF(iemOp_vmovss_Wss_Hx_Vss)
+{
+    IEMOP_MNEMONIC2(MR, MOVSS, movss, Wss, Vss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint32_t,                  uSrc);
+
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_FETCH_XREG_U32(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_XREG_U32((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Memory, register.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint32_t,                  uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+        IEM_MC_FETCH_XREG_U32(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_MEM_U32(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
 
 /**
  * @opcode      0x11
  * @oppfx       0xf2
  * @opcpuid     sse2
- * @opgroup     og_sse2_pcksclr_datamov
- * @opxcpttype  E5
+ * @opgroup     og_sse2_pcksclr_datamove
+ * @opxcpttype  5
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
  * @oponlytest

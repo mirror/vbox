@@ -469,6 +469,22 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_HI] = */    8,
     /* [BS3CG1DST_XMM14_HI] = */    8,
     /* [BS3CG1DST_XMM15_HI] = */    8,
+    /* [BS3CG1DST_XMM0_DW0] = */    4,
+    /* [BS3CG1DST_XMM1_DW0] = */    4,
+    /* [BS3CG1DST_XMM2_DW0] = */    4,
+    /* [BS3CG1DST_XMM3_DW0] = */    4,
+    /* [BS3CG1DST_XMM4_DW0] = */    4,
+    /* [BS3CG1DST_XMM5_DW0] = */    4,
+    /* [BS3CG1DST_XMM6_DW0] = */    4,
+    /* [BS3CG1DST_XMM7_DW0] = */    4,
+    /* [BS3CG1DST_XMM8_DW0] = */    4,
+    /* [BS3CG1DST_XMM9_DW0] = */    4,
+    /* [BS3CG1DST_XMM10_DW0] = */   4,
+    /* [BS3CG1DST_XMM11_DW0] = */   4,
+    /* [BS3CG1DST_XMM12_DW0] = */   4,
+    /* [BS3CG1DST_XMM13_DW0] = */   4,
+    /* [BS3CG1DST_XMM14_DW0] = */   4,
+    /* [BS3CG1DST_XMM15_DW0] = */   4,
     /* [BS3CG1DST_YMM0] = */        32,
     /* [BS3CG1DST_YMM1] = */        32,
     /* [BS3CG1DST_YMM2] = */        32,
@@ -666,6 +682,22 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_HI] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]) + sizeof(uint64_t),
     /* [BS3CG1DST_XMM14_HI] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]) + sizeof(uint64_t),
     /* [BS3CG1DST_XMM15_HI] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]) + sizeof(uint64_t),
+    /* [BS3CG1DST_XMM0_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[0]),
+    /* [BS3CG1DST_XMM1_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[1]),
+    /* [BS3CG1DST_XMM2_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[2]),
+    /* [BS3CG1DST_XMM3_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[3]),
+    /* [BS3CG1DST_XMM4_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[4]),
+    /* [BS3CG1DST_XMM5_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[5]),
+    /* [BS3CG1DST_XMM6_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[6]),
+    /* [BS3CG1DST_XMM7_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[7]),
+    /* [BS3CG1DST_XMM8_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[8]),
+    /* [BS3CG1DST_XMM9_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[9]),
+    /* [BS3CG1DST_XMM10_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[10]),
+    /* [BS3CG1DST_XMM11_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[11]),
+    /* [BS3CG1DST_XMM12_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[12]),
+    /* [BS3CG1DST_XMM13_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]),
+    /* [BS3CG1DST_XMM14_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]),
+    /* [BS3CG1DST_XMM15_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]),
 
     /* [BS3CG1DST_YMM0] = */        ~0U,
     /* [BS3CG1DST_YMM1] = */        ~0U,
@@ -690,7 +722,7 @@ AssertCompile(RT_ELEMENTS(g_aoffBs3Cg1DstFields) == BS3CG1DST_END);
 
 #ifdef BS3CG1_DEBUG_CTX_MOD
 /** Destination field names. */
-static const struct { char sz[8]; } g_aszBs3Cg1DstFields[] =
+static const struct { char sz[10]; } g_aszBs3Cg1DstFields[] =
 {
     { "INVALID" },
     { "OP1" },
@@ -863,6 +895,22 @@ static const struct { char sz[8]; } g_aszBs3Cg1DstFields[] =
     { "XMM13_HI" },
     { "XMM14_HI" },
     { "XMM15_HI" },
+    { "XMM0_DW0" },
+    { "XMM1_DW0" },
+    { "XMM2_DW0" },
+    { "XMM3_DW0" },
+    { "XMM4_DW0" },
+    { "XMM5_DW0" },
+    { "XMM6_DW0" },
+    { "XMM7_DW0" },
+    { "XMM8_DW0" },
+    { "XMM9_DW0" },
+    { "XMM10_DW0" },
+    { "XMM11_DW0" },
+    { "XMM12_DW0" },
+    { "XMM13_DW0" },
+    { "XMM14_DW0" },
+    { "XMM15_DW0" },
     { "YMM0" },
     { "YMM1" },
     { "YMM2" },
@@ -1232,6 +1280,32 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_Wss_Vss:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_XMM0_DW0;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM1_DW0;
+            }
+            else if (iEncoding == 1)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM2_DW0;
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 2 /*iReg*/, 4, 0, BS3CG1OPLOC_MEM_RW);
+            }
+            else if (iEncoding == 2)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3_DW0;
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 4, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM_RW);
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
         case BS3CG1ENC_MODRM_Wsd_Vsd:
             if (iEncoding == 0)
             {
@@ -1489,6 +1563,15 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_MEM;
             pThis->aOperands[1].idxField    = BS3CG1DST_INVALID;
+            break;
+
+        case BS3CG1ENC_MODRM_Wss_Vss:
+            pThis->iRmOp             = 0;
+            pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 4;
+            pThis->aOperands[1].cbOp = 4;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_MODRM_Wsd_Vsd:
