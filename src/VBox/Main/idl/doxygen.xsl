@@ -408,7 +408,7 @@ owns the object will most likely fail or crash your application.
 <!--
  *  libraries
 -->
-<xsl:template match="library">
+<xsl:template match="application">
   <!-- result codes -->
   <xsl:for-each select="result">
     <xsl:apply-templates select="."/>
@@ -424,7 +424,7 @@ owns the object will most likely fail or crash your application.
 <!--
  *  result codes
 -->
-<xsl:template match="result">
+<xsl:template match="application//result">
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:apply-templates select="desc"/>
   <xsl:value-of select="concat('const HRESULT ',@name,' = ',@value,';')"/>
@@ -630,15 +630,15 @@ owns the object will most likely fail or crash your application.
           <xsl:choose>
             <!-- enum types -->
             <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
+              (ancestor::library/application/enum[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
             ">
               <xsl:value-of select="."/>
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              ((ancestor::library/interface[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/interface[@name=current()])
+              ((ancestor::library/application/interface[@name=current()]) or
+               (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
               )
             ">
               <xsl:value-of select="."/>
