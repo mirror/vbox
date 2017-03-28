@@ -166,7 +166,7 @@ HRESULT VBoxCredProvCredential::RTUTF16ToUnicodeA(PUNICODE_STRING pUnicodeDest, 
     AssertPtrReturn(pUnicodeDest, E_POINTER);
     AssertPtrReturn(pwszSource,   E_POINTER);
 
-    size_t cbLen = (RTUtf16Len(pwszSource) + 1 /* Trailing zero */) * sizeof(WCHAR);
+    size_t cbLen = RTUtf16Len(pwszSource) * sizeof(RTUTF16);
 
     pUnicodeDest->Buffer = (LPWSTR)CoTaskMemAlloc(cbLen);
 
@@ -195,7 +195,7 @@ void VBoxCredProvCredential::UnicodeStringFree(PUNICODE_STRING pUnicode)
         Assert(pUnicode->MaximumLength);
 
         /* Make sure to wipe contents before free'ing. */
-        RTMemWipeThoroughly(pUnicode->Buffer, pUnicode->MaximumLength * sizeof(WCHAR), 3 /* Passes */);
+        RTMemWipeThoroughly(pUnicode->Buffer, pUnicode->MaximumLength /* MaximumLength is bytes! */, 3 /* Passes */);
 
         CoTaskMemFree(pUnicode->Buffer);
         pUnicode->Buffer = NULL;
@@ -321,8 +321,10 @@ HRESULT VBoxCredProvCredential::kerberosLogonSerialize(const KERB_INTERACTIVE_LO
                   + pLogonIn->UserName.Length
                   + pLogonIn->Password.Length;
 
-    VBoxCredProvVerbose(3, "VBoxCredProvCredential::AllocateLogonPackage: Allocating %ld bytes (%zu bytes credentials)\n",
+#ifdef DEBUG /* Do not reveal any hints to credential data in release mode. */
+    VBoxCredProvVerbose(1, "VBoxCredProvCredential::AllocateLogonPackage: Allocating %ld bytes (%zu bytes credentials)\n",
                         cbLogon, cbLogon - sizeof(KERB_INTERACTIVE_UNLOCK_LOGON));
+#endif
 
     KERB_INTERACTIVE_UNLOCK_LOGON *pLogon = (KERB_INTERACTIVE_UNLOCK_LOGON*)CoTaskMemAlloc(cbLogon);
     if (!pLogon)
@@ -1040,6 +1042,10 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
 
                             /* We're done -- let the logon UI know. */
                             *pcpGetSerializationResponse = CPGSR_RETURN_CREDENTIAL_FINISHED;
+
+                            VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: Finished for user '%ls' (domain '%s')\n",
+                                                m_apwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
+                                                m_apwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
                         }
                         else
                             VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: LsaLookupAuthenticationPackage failed with ntStatus=%ld\n", s);
@@ -1060,7 +1066,7 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
     else
         VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: kerberosLogonCreate failed with hr=0x%08x\n", hr);
 
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization returned hr=0x%08x\n", hr);
+    VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization returned hr=0x%08x\n", hr);
     return hr;
 }
 
