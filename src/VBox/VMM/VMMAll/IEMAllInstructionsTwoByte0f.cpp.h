@@ -1396,18 +1396,16 @@ FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
-#if 0
-FNIEMOP_STUB(iemOp_vmovsldup_Vx_Wx); //NEXT
-#else
+
 /**
- * opcode      0x12
- * opcodesub   !11 mr/reg
- * oppfx       0xf3
- * opcpuid     sse3
- * opgroup     og_sse3_pcksclr_datamove
- * opxcpttype  4
- * optest      op1=-1 op2=0xdddddddd00000002eeeeeeee00000001 ->
+ * @opcode      0x12
+ * @oppfx       0xf3
+ * @opcpuid     sse3
+ * @opgroup     og_sse3_pcksclr_datamove
+ * @opxcpttype  4
+ * @optest      op1=-1 op2=0xdddddddd00000002eeeeeeee00000001 ->
  *              op1=0x00000002000000020000000100000001
+ * @oponlytest
  */
 FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
 {
@@ -1449,7 +1447,7 @@ FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
         IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
-        IEM_MC_FETCH_MEM_U128(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_REF_XREG_U128(puDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
         IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_movsldup, puDst, puSrc);
 
@@ -1459,7 +1457,6 @@ FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
     return VINF_SUCCESS;
 
 }
-#endif
 
 /** Opcode 0xf2 0x0f 0x12. */
 FNIEMOP_STUB(iemOp_vmovddup_Vx_Wx);  //NEXT

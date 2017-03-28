@@ -1401,6 +1401,36 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_Vdq_Wdq:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_XMM0;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM1;
+            }
+            else if (iEncoding == 1)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM2;
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 2 /*iReg*/, 16, 0, BS3CG1OPLOC_MEM);
+            }
+            else if (iEncoding == 2)
+            {
+                if (pThis->bMode == BS3_MODE_RM)
+                    break; /** @todo fix real mode #GP() context gathering. */
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3;
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 16, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM);
+                if (!Bs3Cg1XcptTypeIsUnaligned(pThis->enmXcptType))
+                    pThis->bAlignmentXcpt = X86_XCPT_GP;
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
         case BS3CG1ENC_MODRM_Gv_Ma:
             cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
             if (iEncoding == 0)
@@ -1670,6 +1700,15 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
         case BS3CG1ENC_MODRM_Wpd_Vpd:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 16;
+            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
+            break;
+
+        case BS3CG1ENC_MODRM_Vdq_Wdq:
+            pThis->iRmOp             = 1;
+            pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 16;
             pThis->aOperands[1].cbOp = 16;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
@@ -3065,6 +3104,8 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                                 pThis->Ctx.rflags.u32 |= pThis->TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
                                 pThis->bValueXcpt      = UINT8_MAX;
                                 if (   fInvalidInstr
+                                    || pThis->bAlignmentXcpt != UINT8_MAX
+                                    || pThis->bValueXcpt     != UINT8_MAX
                                     || Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr,
                                                                 pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
                                                                 &pThis->TrapFrame.Ctx, NULL /*pbCode*/))
