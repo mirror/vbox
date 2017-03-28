@@ -74,7 +74,7 @@ VBOX_MAIN_DEFS += \
 	$(if $(VBOX_WITH_USB_CARDREADER_TEST),VBOX_WITH_USB_CARDREADER_TEST,) \
 	$(if $(VBOX_WITH_HOSTNETIF_API),VBOX_WITH_HOSTNETIF_API,) \
 	$(if $(VBOX_WITH_MIDL_PROXY_STUB),VBOX_WITH_MIDL_PROXY_STUB,) \
-    $(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) \
+	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) \
 
 # Unconditionally enable the new semaphore key generation code
 VBOX_MAIN_DEFS += VBOX_WITH_NEW_SYS_V_KEYGEN
@@ -126,8 +126,8 @@ if "$(KBUILD_TARGET)" != "win"
  BLDDIRS += \
 	$(VBOX_PATH_SDK)/bindings/xpcom/idl \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include
- # switch off VBoxSDS in XPCOM	
- override VBOX_WITH_SDS = 
+ # disable VBoxSDS for XPCOM	
+ override VBOX_WITH_SDS =
 endif # xpcom
 
 
@@ -734,7 +734,7 @@ VBoxC_DEFS = \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
 	$(if $(VBOX_WITH_VRDEAUTH_IN_VBOXSVC),VBOX_WITH_VRDEAUTH_IN_VBOXSVC,) \
-    $(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) 
+	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_CRHGSMI
  VBoxC_DEFS += VBOX_WITH_CRHGSMI
 endif
@@ -1146,7 +1146,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  DLLS += VBoxProxyStub
  VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
  VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL PROXY_CLSID_IS="$(VBOX_MIDL_PROXY_CLSID_IS)" \
-     $(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) 
+	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
  VBoxProxyStub_DEFS.win.x86 = WIN32
  VBoxProxyStub_SDKS     = VBOX_NTDLL
  VBoxProxyStub_DEFPATH  = $(VBoxCOM_0_OUTDIR)/# Hack to workaround drive letter in $(VBoxCOM_0_OUTDIR)/ for CFLAGS hack below.
@@ -1220,9 +1220,9 @@ $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
-     $(if $(VBOX_WITH_MIDL_PROXY_STUB),-stringparam g_fGenProxy yes,) \
-     $(if $(VBOX_WITH_SDS),-stringparam g_fVBoxWithSDS yes,) \
-     $< $(VBOX_XIDL_FILE)
+		$(if $(VBOX_WITH_MIDL_PROXY_STUB),-stringparam g_fGenProxy yes,) \
+		$(if $(VBOX_WITH_SDS),-stringparam g_fVBoxWithSDS yes,) \
+		$< $(VBOX_XIDL_FILE)
 
 # Aliases for testing purposes.
 ifdef VBOX_WITH_XPCOM

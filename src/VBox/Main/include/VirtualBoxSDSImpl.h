@@ -78,11 +78,12 @@ private:
 
     /**
     *  Prints current user name of this thread to the log
-    *  @prefix - strigng fragment that will be inserted at beginning of logging line
+    *  @param prefix    string fragment that will be inserted at the beginning
+    *                   of the logging line
     */
     void LogUserName(char *prefix);
 
-    /** 
+    /**
     *  Thread that periodically checks items in cache and cleans obsolete items
     */
     static DWORD WINAPI CheckCacheThread(LPVOID);

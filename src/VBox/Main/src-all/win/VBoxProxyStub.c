@@ -1015,16 +1015,13 @@ static LSTATUS vbpsDeleteKeyRecursiveW(VBPSREGSTATE *pState, HKEY hkeyParent, PC
  *
  * @returns Windows error code (errors are rememberd in the state).
  * @param   pState              The registry modifier state.
+ * @param   pszModuleName       The module name.
  * @param   pszAppId            The application UUID string.
  * @param   pszDescription      The description string.
- * @param   bIsService          The application is windows service
+ * @param   fIsService          The application is windows service
  */
-LSTATUS VbpsRegisterAppId(
-    VBPSREGSTATE *pState, 
-    const char *pszModuleName, 
-    const char *pszAppId, 
-    const char *pszDescription, 
-    bool bIsService)
+LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszModuleName, const char *pszAppId,
+                          const char *pszDescription, bool fIsService)
 {
     LSTATUS rc;
     HKEY hkeyAppIds;
@@ -1051,7 +1048,6 @@ LSTATUS VbpsRegisterAppId(
     if (pState->fUpdate)
         rc = RegCreateKeyExW(pState->hkeyClassesRootDst, L"AppID", 0 /*Reserved*/, NULL /*pszClass*/, 0 /*fOptions*/,
                              pState->fSamBoth, NULL /*pSecAttr*/, &hkeyAppIds, NULL /*pdwDisposition*/);
-
     else
     {
         rc = RegOpenKeyExW(pState->hkeyClassesRootDst, L"AppID", 0 /*fOptions*/, pState->fSamBoth, &hkeyAppIds);
@@ -1066,40 +1062,38 @@ LSTATUS VbpsRegisterAppId(
         vbpsDeleteKeyRecursiveA(pState, hkeyAppIds, pszModuleName, __LINE__);
     }
 
-        if (pState->fUpdate)
+    if (pState->fUpdate)
+    {
+        vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszAppId, pszDescription, __LINE__);
+
+        if (fIsService)
         {
-            //HKEY hkeyApp;
-            HKEY hkeyServiceExe;
-    
-            vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszAppId, pszDescription, __LINE__);
-    
-            if (bIsService)
-            {
-                HKEY hkeyApp;
+            char szModule[MAX_PATH + 2];
+            size_t len = RTStrNLen(pszModuleName, MAX_PATH);
+            Assert(len);
+            Assert(len < MAX_PATH);
+            rc = RTStrCopy(szModule, sizeof(szModule), pszModuleName);
+            AssertRC(rc);
+            szModule[len - 4] = '\0';
 
-                char szModule[MAX_PATH + 2];
-                size_t len = RTStrNLen(pszModuleName, MAX_PATH);
-                Assert(len);
-                Assert(len < MAX_PATH);
-                rc = RTStrCopy(szModule, sizeof(szModule), pszModuleName); 
-                AssertRC(rc);
-                szModule[len - 4] = '\0';
-
-                rc = RegOpenKeyExA(hkeyAppIds, pszAppId, 0 /*fOptions*/, pState->fSamBoth, &hkeyApp);
-                if (rc == ERROR_FILE_NOT_FOUND)
-                    return ERROR_SUCCESS;
-                // create the value "Service" with the service name
-                vbpsSetRegValueAA(pState, hkeyApp, "LocalService", szModule, __LINE__);
-                vbpsCloseKey(pState, hkeyApp, __LINE__);
-            }
-    
-            vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszModuleName, "", __LINE__);
-            rc = RegOpenKeyExA(hkeyAppIds, pszModuleName, 0 /*fOptions*/, pState->fSamBoth, &hkeyServiceExe);
+            HKEY hkeyApp;
+            rc = RegOpenKeyExA(hkeyAppIds, pszAppId, 0 /*fOptions*/, pState->fSamBoth, &hkeyApp);
             if (rc == ERROR_FILE_NOT_FOUND)
                 return ERROR_SUCCESS;
-            vbpsSetRegValueAA(pState, hkeyServiceExe, "AppID", pszAppId, __LINE__);
-            vbpsCloseKey(pState, hkeyServiceExe, __LINE__);
+            // create the value "Service" with the service name
+            vbpsSetRegValueAA(pState, hkeyApp, "LocalService", szModule, __LINE__);
+            vbpsCloseKey(pState, hkeyApp, __LINE__);
         }
+
+        vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszModuleName, "", __LINE__);
+
+        HKEY hkeyServiceExe;
+        rc = RegOpenKeyExA(hkeyAppIds, pszModuleName, 0 /*fOptions*/, pState->fSamBoth, &hkeyServiceExe);
+        if (rc == ERROR_FILE_NOT_FOUND)
+            return ERROR_SUCCESS;
+        vbpsSetRegValueAA(pState, hkeyServiceExe, "AppID", pszAppId, __LINE__);
+        vbpsCloseKey(pState, hkeyServiceExe, __LINE__);
+    }
 
     vbpsCloseKey(pState, hkeyAppIds, __LINE__);
 
@@ -1287,7 +1281,7 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
             }
 
             /* AppID = pszAppId */
-            if(pszAppId && fQuoteIt)
+            if (pszAppId && fQuoteIt)
                 vbpsSetRegValueAA(pState, hkeyClass, "AppID", pszAppId, __LINE__);
 
             vbpsCloseKey(pState, hkeyClass, __LINE__);
@@ -1338,7 +1332,7 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
     const char *pszAppId        = "{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}";
     const char *pszInprocDll = !fIs32On64 ? "VBoxC.dll" : "x86\\VBoxClient-x86.dll";
     const char *pszLocalServer      = "VBoxSVC.exe";
-        
+
     VbpsRegisterAppId(pState, pszLocalServer, pszAppId, "VirtualBox Application", false);
 
     /* VBoxSVC */

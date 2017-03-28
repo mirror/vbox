@@ -4077,16 +4077,16 @@ void VBoxGlobal::prepare()
     }
     
 #ifdef VBOX_WITH_SDS
-    // setup Client COM Security to enable impersonation that required by VBOX_SDS
+    // setup Client COM Security to enable impersonation required by VBOX_SDS
     HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
-        -1,
-        NULL,
-        NULL,
-        RPC_C_AUTHN_LEVEL_DEFAULT,
-        RPC_C_IMP_LEVEL_IMPERSONATE, //RPC_C_IMP_LEVEL_DELEGATE,//RPC_C_IMP_LEVEL_IMPERSONATE, 
-        NULL,
-        EOAC_NONE,//EOAC_NONE,//EOAC_DYNAMIC_CLOAKING,//EOAC_STATIC_CLOAKING,  
-        NULL);
+                                                             -1,
+                                                             NULL,
+                                                             NULL,
+                                                             RPC_C_AUTHN_LEVEL_DEFAULT,
+                                                             RPC_C_IMP_LEVEL_IMPERSONATE,
+                                                             NULL,
+                                                             EOAC_NONE,
+                                                             NULL);
     Assert(RPC_E_TOO_LATE != hrGUICoInitializeSecurity);
     Assert(hrGUICoInitializeSecurity == S_OK);
 #endif
