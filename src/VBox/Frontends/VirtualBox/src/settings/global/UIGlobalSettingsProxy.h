@@ -70,6 +70,11 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalProxy *m_pCache;
 };

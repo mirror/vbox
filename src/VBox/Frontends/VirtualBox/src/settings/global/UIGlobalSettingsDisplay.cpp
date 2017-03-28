@@ -57,33 +57,16 @@ struct UIDataSettingsGlobalDisplay
 
 
 UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
-    : m_pCache(new UISettingsCacheGlobalDisplay)
+    : m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsDisplay::setupUi(this);
-
-    /* Setup widgets: */
-    int iMinWidth = 640;
-    int iMinHeight = 480;
-    int iMaxSize = 16 * _1K;
-    m_pResolutionWidthSpin->setMinimum(iMinWidth);
-    m_pResolutionHeightSpin->setMinimum(iMinHeight);
-    m_pResolutionWidthSpin->setMaximum(iMaxSize);
-    m_pResolutionHeightSpin->setMaximum(iMaxSize);
-
-    /* Setup connections: */
-    connect(m_pMaxResolutionCombo, SIGNAL(currentIndexChanged(int)),
-            this, SLOT(sltHandleMaximumGuestScreenSizePolicyChange()));
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsDisplay::~UIGlobalSettingsDisplay()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
@@ -212,6 +195,40 @@ void UIGlobalSettingsDisplay::sltHandleMaximumGuestScreenSizePolicyChange()
     m_pResolutionWidthSpin->setEnabled(fComboLevelWidgetsEnabled);
     m_pResolutionHeightLabel->setEnabled(fComboLevelWidgetsEnabled);
     m_pResolutionHeightSpin->setEnabled(fComboLevelWidgetsEnabled);
+}
+
+void UIGlobalSettingsDisplay::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsDisplay::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalDisplay;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Layout/widgets created in the .ui file. */
+    {
+        /* Prepare widgets: */
+        const int iMinWidth = 640;
+        const int iMinHeight = 480;
+        const int iMaxSize = 16 * _1K;
+        m_pResolutionWidthSpin->setMinimum(iMinWidth);
+        m_pResolutionHeightSpin->setMinimum(iMinHeight);
+        m_pResolutionWidthSpin->setMaximum(iMaxSize);
+        m_pResolutionHeightSpin->setMaximum(iMaxSize);
+        connect(m_pMaxResolutionCombo, SIGNAL(currentIndexChanged(int)),
+                this, SLOT(sltHandleMaximumGuestScreenSizePolicyChange()));
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsDisplay::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIGlobalSettingsDisplay::reloadMaximumGuestScreenSizePolicyComboBox()

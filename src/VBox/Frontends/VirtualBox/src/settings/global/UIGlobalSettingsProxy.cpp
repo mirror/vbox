@@ -65,34 +65,16 @@ struct UIDataSettingsGlobalProxy
 
 
 UIGlobalSettingsProxy::UIGlobalSettingsProxy()
-    : m_pCache(new UISettingsCacheGlobalProxy)
+    : m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsProxy::setupUi(this);
-
-    /* Setup widgets: */
-    QButtonGroup *pButtonGroup = new QButtonGroup(this);
-    pButtonGroup->addButton(m_pRadioProxyAuto);
-    pButtonGroup->addButton(m_pRadioProxyDisabled);
-    pButtonGroup->addButton(m_pRadioProxyEnabled);
-    m_pPortEditor->setFixedWidthByText(QString().fill('0', 6));
-    m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pHostEditor));
-    m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d+"), m_pPortEditor));
-
-    /* Setup connections: */
-    connect(pButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(sltHandleProxyToggle()));
-    connect(m_pHostEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
-    connect(m_pPortEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsProxy::~UIGlobalSettingsProxy()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
@@ -221,5 +203,54 @@ void UIGlobalSettingsProxy::sltHandleProxyToggle()
 
     /* Revalidate: */
     revalidate();
+}
+
+void UIGlobalSettingsProxy::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsProxy::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalProxy;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Layout created in the .ui file. */
+    {
+        /* Create button-group: */
+        QButtonGroup *pButtonGroup = new QButtonGroup(this);
+        AssertPtrReturnVoid(pButtonGroup);
+        {
+            /* Prepare button-group: */
+            pButtonGroup->addButton(m_pRadioProxyAuto);
+            pButtonGroup->addButton(m_pRadioProxyDisabled);
+            pButtonGroup->addButton(m_pRadioProxyEnabled);
+            connect(pButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SLOT(sltHandleProxyToggle()));
+        }
+
+        /* Host editor created in the .ui file. */
+        {
+            /* Prepare editor: */
+            m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pHostEditor));
+            connect(m_pHostEditor, SIGNAL(textEdited(const QString &)), this, SLOT(revalidate()));
+        }
+
+        /* Port editor created in the .ui file. */
+        {
+            /* Prepare editor: */
+            m_pPortEditor->setFixedWidthByText(QString().fill('0', 6));
+            m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d+"), m_pPortEditor));
+            connect(m_pPortEditor, SIGNAL(textEdited(const QString &)), this, SLOT(revalidate()));
+        }
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsProxy::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 

@@ -81,6 +81,11 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Uploads @a package data into passed @a item. */
     void loadData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const;
 

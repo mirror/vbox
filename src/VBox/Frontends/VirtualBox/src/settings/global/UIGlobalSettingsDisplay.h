@@ -66,6 +66,11 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Reloads maximum guest-screen size policy combo-box. */
     void reloadMaximumGuestScreenSizePolicyComboBox();
 

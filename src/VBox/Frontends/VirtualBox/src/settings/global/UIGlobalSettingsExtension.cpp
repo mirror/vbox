@@ -171,52 +171,16 @@ private:
 
 UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     : m_pActionAdd(0), m_pActionRemove(0)
-    , m_pCache(new UISettingsCacheGlobalExtension)
+    , m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsExtension::setupUi(this);
-
-    /* Setup tree-widget: */
-    //m_pPackagesTree->header()->hide();
-    m_pPackagesTree->header()->setStretchLastSection(false);
-#if QT_VERSION >= 0x050000
-    m_pPackagesTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    m_pPackagesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-    m_pPackagesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-#else /* QT_VERSION < 0x050000 */
-    m_pPackagesTree->header()->setResizeMode(0, QHeaderView::ResizeToContents);
-    m_pPackagesTree->header()->setResizeMode(1, QHeaderView::Stretch);
-    m_pPackagesTree->header()->setResizeMode(2, QHeaderView::ResizeToContents);
-#endif /* QT_VERSION < 0x050000 */
-    m_pPackagesTree->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_pPackagesTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-            this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem*)));
-    connect(m_pPackagesTree, SIGNAL(customContextMenuRequested(const QPoint&)),
-            this, SLOT(sltHandleContextMenuRequest(const QPoint&)));
-
-    /* Determine icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-
-    /* Setup tool-bar: */
-    m_pPackagesToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
-    m_pPackagesToolbar->setOrientation(Qt::Vertical);
-    m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
-                                                                     ":/extension_pack_install_disabled_16px.png"),
-                                                 QString(), this, SLOT(sltAddPackage()));
-    m_pActionRemove = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
-                                                                        ":/extension_pack_uninstall_disabled_16px.png"),
-                                                    QString(), this, SLOT(sltRemovePackage()));
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsExtension::~UIGlobalSettingsExtension()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 /* static */
@@ -522,6 +486,57 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 msgCenter().cannotUninstallExtPack(manager, strSelectedPackageName, this);
         }
     }
+}
+
+void UIGlobalSettingsExtension::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsExtension::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalExtension;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Layout created in the .ui file. */
+    {
+        /* Tree-widget created in the .ui file. */
+        {
+            /* Prepare tree-widget: */
+            m_pPackagesTree->header()->setStretchLastSection(false);
+            m_pPackagesTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+            m_pPackagesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+            m_pPackagesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+            m_pPackagesTree->setContextMenuPolicy(Qt::CustomContextMenu);
+            connect(m_pPackagesTree, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
+                    this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem *)));
+            connect(m_pPackagesTree, SIGNAL(customContextMenuRequested(const QPoint &)),
+                    this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
+        }
+
+        /* Tool-bar created in the .ui file. */
+        {
+            /* Prepare tool-bar: */
+            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+            m_pPackagesToolbar->setOrientation(Qt::Vertical);
+            m_pPackagesToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
+            m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
+                                                                             ":/extension_pack_install_disabled_16px.png"),
+                                                         QString(), this, SLOT(sltAddPackage()));
+            m_pActionRemove = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
+                                                                                ":/extension_pack_uninstall_disabled_16px.png"),
+                                                            QString(), this, SLOT(sltRemovePackage()));
+        }
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsExtension::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIGlobalSettingsExtension::loadData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const

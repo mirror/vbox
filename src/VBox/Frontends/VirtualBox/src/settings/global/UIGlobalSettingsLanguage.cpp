@@ -206,35 +206,16 @@ private:
 
 UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     : m_fPolished(false)
-    , m_pCache(new UISettingsCacheGlobalLanguage)
+    , m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsLanguage::setupUi(this);
-
-    /* Setup widgets: */
-    m_pLanguageTree->header()->hide();
-    m_pLanguageTree->hideColumn(1);
-    m_pLanguageTree->hideColumn(2);
-    m_pLanguageTree->hideColumn(3);
-    m_pLanguageTree->setMinimumHeight(150);
-    m_pLanguageInfo->setWordWrapMode(QTextOption::WordWrap);
-    m_pLanguageInfo->setMinimumHeight(QFontMetrics(m_pLanguageInfo->font(), m_pLanguageInfo).height() * 5);
-
-    /* Setup connections: */
-    connect(m_pLanguageTree, SIGNAL(painted(QTreeWidgetItem*, QPainter*)),
-            this, SLOT(sltHandleItemPainting(QTreeWidgetItem*, QPainter*)));
-    connect(m_pLanguageTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-            this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem*)));
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsLanguage::~UIGlobalSettingsLanguage()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
@@ -360,6 +341,49 @@ void UIGlobalSettingsLanguage::sltHandleCurrentItemChange(QTreeWidgetItem *pCurr
                              .arg(pCurrentItem->text(2))
                              .arg(tr("Author(s):"))
                              .arg(pCurrentItem->text(3)));
+}
+
+void UIGlobalSettingsLanguage::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsLanguage::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalLanguage;
+
+    /* Layout created in the .ui file. */
+    {
+        /* Tree-widget created in the .ui file. */
+        {
+            /* Prepare tree-widget: */
+            m_pLanguageTree->header()->hide();
+            m_pLanguageTree->hideColumn(1);
+            m_pLanguageTree->hideColumn(2);
+            m_pLanguageTree->hideColumn(3);
+            m_pLanguageTree->setMinimumHeight(150);
+            connect(m_pLanguageTree, SIGNAL(painted(QTreeWidgetItem *, QPainter *)),
+                    this, SLOT(sltHandleItemPainting(QTreeWidgetItem *, QPainter *)));
+            connect(m_pLanguageTree, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
+                    this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem *)));
+        }
+
+        /* Rich-text label created in the .ui file. */
+        {
+            /* Prepare rich-text label: */
+            m_pLanguageInfo->setWordWrapMode(QTextOption::WordWrap);
+            m_pLanguageInfo->setMinimumHeight(QFontMetrics(m_pLanguageInfo->font(), m_pLanguageInfo).height() * 5);
+        }
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsLanguage::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIGlobalSettingsLanguage::reloadLanguageTree(const QString &strLanguageId)

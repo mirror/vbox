@@ -74,6 +74,15 @@ protected:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Prepares Selector UI tab. */
+    void prepareTabSelector();
+    /** Prepares Runtime UI tab. */
+    void prepareTabMachine();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Holds the tab-widget instance. */
     QTabWidget         *m_pTabWidget;
     /** Holds the Selector UI shortcuts filter instance. */

@@ -97,6 +97,15 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Prepares NAT Network tab. */
+    void prepareTabNAT();
+    /** Prepares Host Network tab. */
+    void prepareTabHost();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Uploads NAT @a network data into passed @a data storage unit. */
     void loadDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data);
     /** Saves @a data to corresponding NAT network. */

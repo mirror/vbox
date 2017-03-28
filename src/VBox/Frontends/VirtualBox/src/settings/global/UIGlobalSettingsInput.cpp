@@ -867,71 +867,16 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pTabWidget(0)
     , m_pSelectorFilterEditor(0), m_pSelectorModel(0), m_pSelectorTable(0)
     , m_pMachineFilterEditor(0), m_pMachineModel(0), m_pMachineTable(0)
-    , m_pCache(new UISettingsCacheGlobalInput)
+    , m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsInput::setupUi(this);
-
-    /* Create tab widget: */
-    m_pTabWidget = new QTabWidget(this);
-    m_pTabWidget->setMinimumWidth(400);
-    m_pMainLayout->addWidget(m_pTabWidget, 0, 0, 1, 2);
-
-    /* Create selector tab: */
-    QWidget *pSelectorTab = new QWidget;
-    m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, pSelectorTab, QString());
-    m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
-    m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
-    m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel, "m_pSelectorTable");
-    connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
-            m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
-    QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
-#ifndef VBOX_WS_WIN
-    /* On Mac OS X and X11 we can do a bit of smoothness. */
-    pSelectorLayout->setContentsMargins(0, 0, 0, 0);
-#endif
-    pSelectorLayout->setSpacing(1);
-    pSelectorLayout->addWidget(m_pSelectorFilterEditor);
-    pSelectorLayout->addWidget(m_pSelectorTable);
-    setTabOrder(m_pTabWidget, m_pSelectorFilterEditor);
-    setTabOrder(m_pSelectorFilterEditor, m_pSelectorTable);
-
-    /* Create machine tab: */
-    QWidget *pMachineTab = new QWidget;
-    m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
-    m_pMachineFilterEditor = new QLineEdit(pMachineTab);
-    m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
-    m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel, "m_pMachineTable");
-    connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
-            m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
-    QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
-#ifndef VBOX_WS_WIN
-    /* On Mac OS X and X11 we can do a bit of smoothness. */
-    pMachineLayout->setContentsMargins(0, 0, 0, 0);
-#endif
-    pMachineLayout->setSpacing(1);
-    pMachineLayout->addWidget(m_pMachineFilterEditor);
-    pMachineLayout->addWidget(m_pMachineTable);
-    setTabOrder(m_pSelectorTable, m_pMachineFilterEditor);
-    setTabOrder(m_pMachineFilterEditor, m_pMachineTable);
-
-    /* In the VM process we start by displaying the machine tab: */
-    if (VBoxGlobal::instance()->isVMConsoleProcess())
-        m_pTabWidget->setCurrentWidget(pMachineTab);
-
-    /* Prepare validation: */
-    connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
-    connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsInput::~UIGlobalSettingsInput()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
@@ -1064,6 +1009,10 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
 void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pTabWidget);
+    setTabOrder(m_pTabWidget, m_pSelectorFilterEditor);
+    setTabOrder(m_pSelectorFilterEditor, m_pSelectorTable);
+    setTabOrder(m_pSelectorTable, m_pMachineFilterEditor);
+    setTabOrder(m_pMachineFilterEditor, m_pMachineTable);
     setTabOrder(m_pMachineTable, m_pEnableAutoGrabCheckbox);
 }
 
@@ -1079,6 +1028,132 @@ void UIGlobalSettingsInput::retranslateUi()
     m_pMachineTable->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
     m_pSelectorFilterEditor->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
     m_pMachineFilterEditor->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
+}
+
+void UIGlobalSettingsInput::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsInput::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalInput;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Create tab-widget: */
+    m_pTabWidget = new QTabWidget(this);
+    AssertPtrReturnVoid(m_pTabWidget);
+    {
+        /* Prepare tab-widget: */
+        m_pTabWidget->setMinimumWidth(400);
+
+        /* Create Selector UI tab: */
+        prepareTabSelector();
+        /* Create Runtime UI tab: */
+        prepareTabMachine();
+
+        /* Add tab-widget into layout: */
+        m_pMainLayout->addWidget(m_pTabWidget, 0, 0, 1, 2);
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsInput::prepareTabSelector()
+{
+    /* Create Selector UI tab: */
+    QWidget *pSelectorTab = new QWidget;
+    AssertPtrReturnVoid(pSelectorTab);
+    {
+        /* Create Selector UI layout: */
+        QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
+        AssertPtrReturnVoid(pSelectorLayout);
+        {
+            /* Prepare Selector UI layout: */
+            pSelectorLayout->setSpacing(1);
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X and X11 we can do a bit of smoothness. */
+            pSelectorLayout->setContentsMargins(0, 0, 0, 0);
+#endif
+
+            /* Create Selector UI filter editor: */
+            m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
+            AssertPtrReturnVoid(m_pSelectorFilterEditor);
+            /* Create Selector UI model: */
+            m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
+            AssertPtrReturnVoid(m_pSelectorModel);
+            /* Create Selector UI table: */
+            m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel, "m_pSelectorTable");
+            AssertPtrReturnVoid(m_pSelectorTable);
+
+            /* Prepare Selector UI filter editor: */
+            connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
+                    m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
+            /* Prepare Selector UI model: */
+            connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
+
+            /* Add widgets into layout: */
+            pSelectorLayout->addWidget(m_pSelectorFilterEditor);
+            pSelectorLayout->addWidget(m_pSelectorTable);
+        }
+
+        /* Add tab into tab-widget: */
+        m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, pSelectorTab, QString());
+    }
+}
+
+void UIGlobalSettingsInput::prepareTabMachine()
+{
+    /* Create Runtime UI tab: */
+    QWidget *pMachineTab = new QWidget;
+    AssertPtrReturnVoid(pMachineTab);
+    {
+        /* Create Runtime UI layout: */
+        QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
+        AssertPtrReturnVoid(pMachineLayout);
+        {
+            /* Prepare Runtime UI layout: */
+            pMachineLayout->setSpacing(1);
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X and X11 we can do a bit of smoothness. */
+            pMachineLayout->setContentsMargins(0, 0, 0, 0);
+#endif
+
+            /* Create Runtime UI filter editor: */
+            m_pMachineFilterEditor = new QLineEdit(pMachineTab);
+            AssertPtrReturnVoid(m_pMachineFilterEditor);
+            /* Create Runtime UI model: */
+            m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
+            AssertPtrReturnVoid(m_pMachineModel);
+            /* Create Runtime UI table: */
+            m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel, "m_pMachineTable");
+            AssertPtrReturnVoid(m_pMachineTable);
+
+            /* Prepare Runtime UI filter editor: */
+            connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
+                    m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
+            /* Prepare Runtime UI model: */
+            connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
+
+            /* Add widgets into layout: */
+            pMachineLayout->addWidget(m_pMachineFilterEditor);
+            pMachineLayout->addWidget(m_pMachineTable);
+        }
+
+        /* Add tab into tab-widget: */
+        m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
+
+        /* In the VM process we start by displaying the Runtime UI tab: */
+        if (VBoxGlobal::instance()->isVMConsoleProcess())
+            m_pTabWidget->setCurrentWidget(pMachineTab);
+    }
+}
+
+void UIGlobalSettingsInput::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 # include "UIGlobalSettingsInput.moc"

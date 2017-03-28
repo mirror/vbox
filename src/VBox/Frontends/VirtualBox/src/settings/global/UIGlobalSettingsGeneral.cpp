@@ -64,29 +64,16 @@ struct UIDataSettingsGlobalGeneral
 
 
 UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
-    : m_pCache(new UISettingsCacheGlobalGeneral)
+    : m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsGeneral::setupUi(this);
-
-    /* Hide checkbox for now: */
-    m_pLabelHostScreenSaver->hide();
-    m_pCheckBoxHostScreenSaver->hide();
-
-    /* Setup widgets: */
-    m_pSelectorMachineFolder->setHomeDir(vboxGlobal().homeFolder());
-    m_pSelectorVRDPLibName->setHomeDir(vboxGlobal().homeFolder());
-    m_pSelectorVRDPLibName->setMode(UIFilePathSelector::Mode_File_Open);
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsGeneral::~UIGlobalSettingsGeneral()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
@@ -163,5 +150,38 @@ void UIGlobalSettingsGeneral::retranslateUi()
 {
     /* Translate uic generated strings: */
     Ui::UIGlobalSettingsGeneral::retranslateUi(this);
+}
+
+void UIGlobalSettingsGeneral::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsGeneral::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalGeneral;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Layout/widgets created in the .ui file. */
+    {
+        /* Prepare host screen-saver check-box: */
+        // Hide checkbox for now.
+        m_pLabelHostScreenSaver->hide();
+        m_pCheckBoxHostScreenSaver->hide();
+
+        /* Prepare other widgets: */
+        m_pSelectorMachineFolder->setHomeDir(vboxGlobal().homeFolder());
+        m_pSelectorVRDPLibName->setHomeDir(vboxGlobal().homeFolder());
+        m_pSelectorVRDPLibName->setMode(UIFilePathSelector::Mode_File_Open);
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsGeneral::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 

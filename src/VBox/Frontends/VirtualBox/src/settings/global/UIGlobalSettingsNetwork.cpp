@@ -422,130 +422,16 @@ void UIItemNetworkHost::updateInfo()
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     : m_pActionAddNetworkNAT(0), m_pActionEditNetworkNAT(0), m_pActionRemoveNetworkNAT(0)
     , m_pActionAddNetworkHost(0), m_pActionEditNetworkHost(0), m_pActionRemoveNetworkHost(0)
-    , m_pCache(new UISettingsCacheGlobalNetwork)
+    , m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsNetwork::setupUi(this);
-
-    /* Prepare NAT network tree-widget: */
-    {
-        m_pTreeNetworkNAT->setColumnCount(2);
-        m_pTreeNetworkNAT->header()->setStretchLastSection(false);
-#if QT_VERSION >= 0x050000
-        m_pTreeNetworkNAT->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-        m_pTreeNetworkNAT->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-#else /* QT_VERSION < 0x050000 */
-        m_pTreeNetworkNAT->header()->setResizeMode(0, QHeaderView::ResizeToContents);
-        m_pTreeNetworkNAT->header()->setResizeMode(1, QHeaderView::Stretch);
-#endif /* QT_VERSION < 0x050000 */
-        m_pTreeNetworkNAT->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(m_pTreeNetworkNAT, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChangeNetworkNAT()));
-        connect(m_pTreeNetworkNAT, SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltHandleContextMenuRequestNetworkNAT(const QPoint&)));
-        connect(m_pTreeNetworkNAT, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-                this, SLOT(sltEditNetworkNAT()));
-        connect(m_pTreeNetworkNAT, SIGNAL(itemChanged(QTreeWidgetItem*, int)),
-                this, SLOT(sltHandleItemChangeNetworkNAT(QTreeWidgetItem*)));
-    }
-    /* Prepare Host network tree-widget: */
-    {
-        m_pTreeNetworkHost->header()->hide();
-        m_pTreeNetworkHost->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(m_pTreeNetworkHost, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-                this, SLOT(sltHandleCurrentItemChangeNetworkHost()));
-        connect(m_pTreeNetworkHost, SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltHandleContextMenuRequestNetworkHost(const QPoint&)));
-        connect(m_pTreeNetworkHost, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-                this, SLOT(sltEditNetworkHost()));
-    }
-
-    /* Prepare actions: */
-    m_pActionAddNetworkNAT = new QAction(m_pTreeNetworkNAT);
-    {
-        m_pActionAddNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionAddNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
-        m_pActionAddNetworkNAT->setIcon(UIIconPool::iconSet(":/add_host_iface_16px.png",
-                                                            ":/add_host_iface_disabled_16px.png"));
-        connect(m_pActionAddNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltAddNetworkNAT()));
-    }
-    m_pActionRemoveNetworkNAT = new QAction(m_pTreeNetworkNAT);
-    {
-        m_pActionRemoveNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionRemoveNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
-        m_pActionRemoveNetworkNAT->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
-                                                            ":/remove_host_iface_disabled_16px.png"));
-        connect(m_pActionRemoveNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltRemoveNetworkNAT()));
-    }
-    m_pActionEditNetworkNAT = new QAction(m_pTreeNetworkNAT);
-    {
-        m_pActionEditNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionEditNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
-        m_pActionEditNetworkNAT->setIcon(UIIconPool::iconSet(":/guesttools_16px.png",
-                                                             ":/guesttools_disabled_16px.png"));
-        connect(m_pActionEditNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltEditNetworkNAT()));
-    }
-    m_pActionAddNetworkHost = new QAction(m_pTreeNetworkHost);
-    {
-        m_pActionAddNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionAddNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
-        m_pActionAddNetworkHost->setIcon(UIIconPool::iconSet(":/add_host_iface_16px.png",
-                                                             ":/add_host_iface_disabled_16px.png"));
-        connect(m_pActionAddNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltAddNetworkHost()));
-    }
-    m_pActionRemoveNetworkHost = new QAction(m_pTreeNetworkHost);
-    {
-        m_pActionRemoveNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionRemoveNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
-        m_pActionRemoveNetworkHost->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
-                                                             ":/remove_host_iface_disabled_16px.png"));
-        connect(m_pActionRemoveNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltRemoveNetworkHost()));
-    }
-    m_pActionEditNetworkHost = new QAction(m_pTreeNetworkHost);
-    {
-        m_pActionEditNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        m_pActionEditNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
-        m_pActionEditNetworkHost->setIcon(UIIconPool::iconSet(":/guesttools_16px.png",
-                                                              ":/guesttools_disabled_16px.png"));
-        connect(m_pActionEditNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltEditNetworkHost()));
-    }
-
-    /* Determine icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-
-    /* Prepare NAT network toolbar: */
-    {
-        m_pToolbarNetworkNAT->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
-        m_pToolbarNetworkNAT->addAction(m_pActionAddNetworkNAT);
-        m_pToolbarNetworkNAT->addAction(m_pActionRemoveNetworkNAT);
-        m_pToolbarNetworkNAT->addAction(m_pActionEditNetworkNAT);
-    }
-    /* Prepare Host network toolbar: */
-    {
-        m_pToolbarNetworkHost->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolbarNetworkHost->setOrientation(Qt::Vertical);
-        m_pToolbarNetworkHost->addAction(m_pActionAddNetworkHost);
-        m_pToolbarNetworkHost->addAction(m_pActionRemoveNetworkHost);
-        m_pToolbarNetworkHost->addAction(m_pActionEditNetworkHost);
-    }
-
-#ifdef VBOX_WS_MAC
-    /* On macOS we can do a bit of smoothness: */
-    m_pLayoutNAT->setContentsMargins(0, 0, 0, 0);
-    m_pLayoutHostOnly->setContentsMargins(0, 0, 0, 0);
-#endif
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsNetwork::~UIGlobalSettingsNetwork()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
@@ -1003,6 +889,197 @@ void UIGlobalSettingsNetwork::sltHandleContextMenuRequestNetworkHost(const QPoin
     }
     /* And show it: */
     menu.exec(m_pTreeNetworkHost->mapToGlobal(pos));
+}
+
+void UIGlobalSettingsNetwork::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsNetwork::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalNetwork;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Tree-widget created in the .ui file. */
+    {
+        /* Prepare NAT Network tab: */
+        prepareTabNAT();
+        /* Prepare Host-only Network tab: */
+        prepareTabHost();
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsNetwork::prepareTabNAT()
+{
+    /* Tab and it's layout created in the .ui file. */
+    {
+#ifdef VBOX_WS_MAC
+        /* On macOS we can do a bit of smoothness: */
+        m_pLayoutNAT->setContentsMargins(0, 0, 0, 0);
+#endif
+
+        /* NAT Network tree-widget created in the .ui file. */
+        {
+            /* Prepare tree-widget: */
+            m_pTreeNetworkNAT->setColumnCount(2);
+            m_pTreeNetworkNAT->header()->setStretchLastSection(false);
+            m_pTreeNetworkNAT->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+            m_pTreeNetworkNAT->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+            m_pTreeNetworkNAT->setContextMenuPolicy(Qt::CustomContextMenu);
+            connect(m_pTreeNetworkNAT, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
+                    this, SLOT(sltHandleCurrentItemChangeNetworkNAT()));
+            connect(m_pTreeNetworkNAT, SIGNAL(customContextMenuRequested(const QPoint &)),
+                    this, SLOT(sltHandleContextMenuRequestNetworkNAT(const QPoint &)));
+            connect(m_pTreeNetworkNAT, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
+                    this, SLOT(sltEditNetworkNAT()));
+            connect(m_pTreeNetworkNAT, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
+                    this, SLOT(sltHandleItemChangeNetworkNAT(QTreeWidgetItem *)));
+        }
+
+        /* NAT Network toolbar created in the .ui file. */
+        {
+            /* Determine icon metric: */
+            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+
+            /* Prepare toolbar: */
+            m_pToolbarNetworkNAT->setIconSize(QSize(iIconMetric, iIconMetric));
+            m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
+
+            /* Create Add NAT Network action: */
+            m_pActionAddNetworkNAT = new QAction(m_pTreeNetworkNAT);
+            AssertPtrReturnVoid(m_pActionAddNetworkNAT);
+            {
+                /* Prepare action: */
+                m_pActionAddNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+                m_pActionAddNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
+                m_pActionAddNetworkNAT->setIcon(UIIconPool::iconSet(":/add_host_iface_16px.png",
+                                                                    ":/add_host_iface_disabled_16px.png"));
+                connect(m_pActionAddNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltAddNetworkNAT()));
+
+                /* Add action to toolbar: */
+                m_pToolbarNetworkNAT->addAction(m_pActionAddNetworkNAT);
+            }
+
+            /* Create Edit NAT Network action: */
+            m_pActionEditNetworkNAT = new QAction(m_pTreeNetworkNAT);
+            AssertPtrReturnVoid(m_pActionEditNetworkNAT);
+            {
+                /* Prepare action: */
+                m_pActionEditNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+                m_pActionEditNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
+                m_pActionEditNetworkNAT->setIcon(UIIconPool::iconSet(":/guesttools_16px.png",
+                                                                     ":/guesttools_disabled_16px.png"));
+                connect(m_pActionEditNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltEditNetworkNAT()));
+
+                /* Add action to toolbar: */
+                m_pToolbarNetworkNAT->addAction(m_pActionEditNetworkNAT);
+            }
+
+            /* Create Remove NAT Network action: */
+            m_pActionRemoveNetworkNAT = new QAction(m_pTreeNetworkNAT);
+            AssertPtrReturnVoid(m_pActionRemoveNetworkNAT);
+            {
+                /* Prepare action: */
+                m_pActionRemoveNetworkNAT->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+                m_pActionRemoveNetworkNAT->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
+                m_pActionRemoveNetworkNAT->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
+                                                                    ":/remove_host_iface_disabled_16px.png"));
+                connect(m_pActionRemoveNetworkNAT, SIGNAL(triggered(bool)), this, SLOT(sltRemoveNetworkNAT()));
+
+                /* Add action to toolbar: */
+                m_pToolbarNetworkNAT->addAction(m_pActionRemoveNetworkNAT);
+            }
+        }
+    }
+}
+
+void UIGlobalSettingsNetwork::prepareTabHost()
+{
+    /* Tab and it's layout created in the .ui file. */
+    {
+#ifdef VBOX_WS_MAC
+        /* On macOS we can do a bit of smoothness: */
+        m_pLayoutHostOnly->setContentsMargins(0, 0, 0, 0);
+#endif
+
+        /* Host-only Network tree-widget created in the .ui file. */
+        {
+            /* Prepare tree-widget: */
+            m_pTreeNetworkHost->header()->hide();
+            m_pTreeNetworkHost->setContextMenuPolicy(Qt::CustomContextMenu);
+            connect(m_pTreeNetworkHost, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
+                    this, SLOT(sltHandleCurrentItemChangeNetworkHost()));
+            connect(m_pTreeNetworkHost, SIGNAL(customContextMenuRequested(const QPoint &)),
+                    this, SLOT(sltHandleContextMenuRequestNetworkHost(const QPoint &)));
+            connect(m_pTreeNetworkHost, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
+                    this, SLOT(sltEditNetworkHost()));
+        }
+
+        /* Host-only Network toolbar created in the .ui file. */
+        {
+            /* Determine icon metric: */
+            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+
+            /* Prepare toolbar: */
+            m_pToolbarNetworkHost->setIconSize(QSize(iIconMetric, iIconMetric));
+            m_pToolbarNetworkHost->setOrientation(Qt::Vertical);
+
+            /* Create Add Host-only Network action: */
+            m_pActionAddNetworkHost = new QAction(m_pTreeNetworkHost);
+            AssertPtrReturnVoid(m_pActionAddNetworkHost);
+            {
+                /* Prepare action: */
+                m_pActionAddNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+                m_pActionAddNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
+                m_pActionAddNetworkHost->setIcon(UIIconPool::iconSet(":/add_host_iface_16px.png",
+                                                                     ":/add_host_iface_disabled_16px.png"));
+                connect(m_pActionAddNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltAddNetworkHost()));
+
+                /* Add action to toolbar: */
+                m_pToolbarNetworkHost->addAction(m_pActionAddNetworkHost);
+            }
+
+            /* Create Edit Host-only Network action: */
+            m_pActionEditNetworkHost = new QAction(m_pTreeNetworkHost);
+            AssertPtrReturnVoid(m_pActionEditNetworkHost);
+            {
+                /* Prepare action: */
+                m_pActionEditNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+                m_pActionEditNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
+                m_pActionEditNetworkHost->setIcon(UIIconPool::iconSet(":/guesttools_16px.png",
+                                                                      ":/guesttools_disabled_16px.png"));
+                connect(m_pActionEditNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltEditNetworkHost()));
+
+                /* Add action to toolbar: */
+                m_pToolbarNetworkHost->addAction(m_pActionEditNetworkHost);
+            }
+
+            /* Create Remove Host-only Network action: */
+            m_pActionRemoveNetworkHost = new QAction(m_pTreeNetworkHost);
+            AssertPtrReturnVoid(m_pActionRemoveNetworkHost);
+            {
+                /* Prepare action: */
+                m_pActionRemoveNetworkHost->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+                m_pActionRemoveNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
+                m_pActionRemoveNetworkHost->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
+                                                                     ":/remove_host_iface_disabled_16px.png"));
+                connect(m_pActionRemoveNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltRemoveNetworkHost()));
+
+                /* Add action to toolbar: */
+                m_pToolbarNetworkHost->addAction(m_pActionRemoveNetworkHost);
+            }
+        }
+    }
+}
+
+void UIGlobalSettingsNetwork::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIGlobalSettingsNetwork::loadDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data)

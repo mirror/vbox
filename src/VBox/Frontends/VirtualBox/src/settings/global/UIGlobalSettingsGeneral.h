@@ -61,6 +61,11 @@ protected:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalGeneral *m_pCache;
 };

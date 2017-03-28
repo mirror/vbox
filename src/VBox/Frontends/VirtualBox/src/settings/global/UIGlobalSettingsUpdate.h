@@ -72,6 +72,11 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Returns period type. */
     VBoxUpdateData::PeriodType periodType() const;
     /** Returns branch type. */

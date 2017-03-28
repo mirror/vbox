@@ -67,24 +67,16 @@ struct UIDataSettingsGlobalUpdate
 
 UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     : m_pLastChosenRadio(0)
-    , m_pCache(new UISettingsCacheGlobalUpdate)
+    , m_pCache(0)
 {
-    /* Apply UI decorations: */
-    Ui::UIGlobalSettingsUpdate::setupUi(this);
-
-    /* Setup connections: */
-    connect(m_pCheckBoxUpdate, SIGNAL(toggled(bool)), this, SLOT(sltHandleUpdateToggle(bool)));
-    connect(m_pComboBoxUpdatePeriod, SIGNAL(activated(int)), this, SLOT(sltHandleUpdatePeriodChange()));
-
-    /* Apply language settings: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIGlobalSettingsUpdate::~UIGlobalSettingsUpdate()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
@@ -210,6 +202,33 @@ void UIGlobalSettingsUpdate::sltHandleUpdatePeriodChange()
 {
     const VBoxUpdateData data(periodType(), branchType());
     m_pUpdateDateText->setText(data.date());
+}
+
+void UIGlobalSettingsUpdate::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsUpdate::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheGlobalUpdate;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Layout/widgets created in the .ui file. */
+    {
+        /* Prepare widgets: */
+        connect(m_pCheckBoxUpdate, SIGNAL(toggled(bool)), this, SLOT(sltHandleUpdateToggle(bool)));
+        connect(m_pComboBoxUpdatePeriod, SIGNAL(activated(int)), this, SLOT(sltHandleUpdatePeriodChange()));
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIGlobalSettingsUpdate::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 VBoxUpdateData::PeriodType UIGlobalSettingsUpdate::periodType() const
