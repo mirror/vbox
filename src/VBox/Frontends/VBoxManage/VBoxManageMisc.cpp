@@ -1196,7 +1196,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
                 if (ch != 'y' && ch != 'Y')
                 {
                     RTPrintf("Installation of \"%ls\" aborted.\n", bstrName.raw());
-                    return RTEXITCODE_SUCCESS;
+                    return RTEXITCODE_FAILURE;
                 }
                 if (szDigest[0])
                     RTPrintf("License accepted. For batch installaltion add\n"
