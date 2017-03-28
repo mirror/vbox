@@ -303,10 +303,15 @@ class Bs3Cg1Instruction(object):
         self.sEncoding          = iai.g_kdEncodings[oInstr.sEncoding][0];
         for oOp in oInstr.aoOperands:
             self.sEncoding     += '_' + oOp.sType;
+        if oInstr.fUnused:
+            if oInstr.sInvalidStyle == 'immediate' and oInstr.sSubOpcode:
+                self.sEncoding += '_MOD_EQ_3' if oInstr.sSubOpcode == '11 mr/reg' else '_MOD_NE_3';
 
         self.asFlags            = [];
         if 'invalid_64' in oInstr.dHints:
-            self.asFlags.append('BS3CG1INSTR_F_INVALID_64BIT')
+            self.asFlags.append('BS3CG1INSTR_F_INVALID_64BIT');
+        if oInstr.fUnused:
+            self.asFlags.append('BS3CG1INSTR_F_UNUSED');
 
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
         if oInstr.sPrefix:

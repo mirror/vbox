@@ -1292,13 +1292,13 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
     {
         /**
          * @opcode      0x12
+         * @opcodesub   11 mr/reg
          * @oppfx       none
          * @opcpuid     sse
          * @opgroup     og_sse_simdfp_datamove
          * @opxcpttype  5
          * @optest      op1=1 op2=2 -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
-         * @oponlytest
          */
         IEMOP_MNEMONIC2(RM_REG, MOVHLPS, movhlps, Vq, UqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
@@ -1319,6 +1319,7 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
         /**
          * @opdone
          * @opcode      0x12
+         * @opcodesub   !11 mr/reg
          * @oppfx       none
          * @opcpuid     sse
          * @opgroup     og_sse_simdfp_datamove
@@ -1326,7 +1327,6 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
          * @optest      op1=1 op2=2 -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
          * @opfunction  iemOp_vmovlps_Vq_Hq_Mq__vmovhlps
-         * @oponlytest
          */
         IEMOP_MNEMONIC2(RM_MEM, MOVLPS, movlps, Vq, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
@@ -1349,39 +1349,21 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
 }
 
 
+/**
+ * @opcode      0x12
+ * @opcodesub   !11 mr/reg
+ * @oppfx       0x66
+ * @opcpuid     sse2
+ * @opgroup     og_sse2_pcksclr_datamove
+ * @opxcpttype  5
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
 FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        /**
-         * @todo figure this out!
-         * opcode      0x12
-         * todo        11 /reg
-         * oppfx       0x66
-         * openc       ModR/M
-         * opcpuid     sse2
-         * opgroup     og_sse_simdfp_datamove
-         * opunused    immediate
-         * optest      op1=1 op2=2 -> op1=2
-         * oponlytest
-         */
-        return IEMOP_RAISE_INVALID_OPCODE();
-    }
-    else
-    {
-        /**
-         * @opdone
-         * @opcode      0x12
-         * @oppfx       0x66
-         * @opcpuid     sse2
-         * @opgroup     og_sse2_pcksclr_datamove
-         * @opxcpttype  5
-         * @optest      op1=1 op2=2 -> op1=2
-         * @optest      op1=0 op2=-42 -> op1=-42
-         * @opfunction  iemOp_vmovlpd_Vq_Hq_Mq
-         * @oponlytest
-         */
         IEMOP_MNEMONIC2(RM_MEM, MOVLPD, movlpd, Vq, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
@@ -1398,8 +1380,20 @@ FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
+        return VINF_SUCCESS;
     }
-    return VINF_SUCCESS;
+
+    /**
+     * @opdone
+     * @opmnemonic  ud660f12m3
+     * @opcode      0x12
+     * @opcodesub   11 mr/reg
+     * @oppfx       0x66
+     * @opunused    immediate
+     * @opcpuid     sse
+     * @optest      ->
+     */
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 

@@ -100,6 +100,9 @@ typedef enum BS3CG1ENC
     BS3CG1ENC_FIXED_AL_Ib,
     BS3CG1ENC_FIXED_rAX_Iz,
 
+    BS3CG1ENC_MODRM_MOD_EQ_3, /**< Unused or invalid instruction. */
+    BS3CG1ENC_MODRM_MOD_NE_3, /**< Unused or invalid instruction. */
+
     BS3CG1ENC_END
 } BS3CG1ENC;
 
@@ -197,7 +200,7 @@ typedef struct BS3CG1INSTR
     /** The number of operands.   */
     uint32_t    cOperands : 2;
     /** The length of the mnemonic. */
-    uint32_t    cchMnemonic : 3;
+    uint32_t    cchMnemonic : 4;
     /** Whether to advance the mnemonic array pointer. */
     uint32_t    fAdvanceMnemonic : 1;
     /** Offset into g_abBs3Cg1Tests of the first test. */
@@ -211,7 +214,7 @@ typedef struct BS3CG1INSTR
     /** Exception type (BS3CG1XCPTTYPE)   */
     uint32_t    enmXcptType : 5;
     /** Currently unused bits. */
-    uint32_t    uUnused : 7;
+    uint32_t    uUnused : 6;
     /** BS3CG1INSTR_F_XXX. */
     uint32_t    fFlags;
 } BS3CG1INSTR;
@@ -226,6 +229,8 @@ typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
 #define BS3CG1INSTR_F_DEF_SS            UINT32_C(0x00000001)
 /** Invalid instruction in 64-bit mode. */
 #define BS3CG1INSTR_F_INVALID_64BIT     UINT32_C(0x00000002)
+/** Unused instruction. */
+#define BS3CG1INSTR_F_UNUSED            UINT32_C(0x00000004)
 /** @} */
 
 

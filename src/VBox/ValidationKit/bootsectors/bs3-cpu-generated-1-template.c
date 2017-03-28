@@ -1523,6 +1523,49 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_MOD_EQ_3:
+            if (iEncoding < 8)
+            {
+                off = Bs3Cg1InsertReqPrefix(pThis, 0);
+                off = Bs3Cg1InsertOpcodes(pThis, off);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, iEncoding, 1);
+            }
+            else if (iEncoding < 16)
+            {
+                off = Bs3Cg1InsertReqPrefix(pThis, 0);
+                off = Bs3Cg1InsertOpcodes(pThis, off);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 0, iEncoding);
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
+        case BS3CG1ENC_MODRM_MOD_NE_3:
+            if (iEncoding < 3)
+            {
+                off = Bs3Cg1InsertReqPrefix(pThis, 0);
+                off = Bs3Cg1InsertOpcodes(pThis, off);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(iEncoding, 0, 1);
+                if (iEncoding >= 1)
+                    pThis->abCurInstr[off++] = 0x7f;
+                if (iEncoding == 2)
+                {
+                    pThis->abCurInstr[off++] = 0x5f;
+                    if (!BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                    {
+                        pThis->abCurInstr[off++] = 0x3f;
+                        pThis->abCurInstr[off++] = 0x1f;
+                    }
+                }
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
         default:
             Bs3TestFailedF("Internal error! BS3CG1ENC_XXX = %u not implemented", pThis->enmEncoding);
             break;
@@ -1671,6 +1714,11 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_IMM;
             pThis->aOperands[0].idxField    = BS3CG1DST_OZ_RAX;
             pThis->aOperands[1].idxField    = BS3CG1DST_INVALID;
+            break;
+
+        case BS3CG1ENC_MODRM_MOD_EQ_3:
+        case BS3CG1ENC_MODRM_MOD_NE_3:
+            /* Unused or invalid instructions mostly. */
             break;
 
         default:
@@ -2924,7 +2972,8 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
         /*
          * Check if the CPU supports the instruction.
          */
-        if (!Bs3Cg1CpuSetupFirst(pThis))
+        if (   !Bs3Cg1CpuSetupFirst(pThis)
+            || (pThis->fFlags & BS3CG1INSTR_F_UNUSED))
         {
             fInvalidInstr = true;
             bTestXcptExpected = X86_XCPT_UD;
@@ -3044,6 +3093,10 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
             Bs3Cg1EncodeCleanup(pThis);
             if (!Bs3Cg1CpuSetupNext(pThis, iCpuSetup, &fInvalidInstr))
                 break;
+            if (pThis->fFlags & BS3CG1INSTR_F_UNUSED)
+                fInvalidInstr = true;
+            if (fInvalidInstr)
+                bTestXcptExpected = X86_XCPT_UD;
         }
     }
 
