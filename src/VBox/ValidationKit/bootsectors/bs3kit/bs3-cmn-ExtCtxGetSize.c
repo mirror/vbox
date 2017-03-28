@@ -39,7 +39,7 @@ BS3_CMN_DEF(uint16_t, Bs3ExtCtxGetSize,(uint64_t BS3_FAR *pfFlags))
     *pfFlags = 0;
 
     ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, &fEcx, &fEdx);
-#if 1 /* To disable xsave/xrstor till IEM groks it... */
+#if 0 /* To disable xsave/xrstor till IEM groks it... */
     if (fEcx & X86_CPUID_FEATURE_ECX_XSAVE)
     {
         uint32_t fEax;

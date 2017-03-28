@@ -1059,6 +1059,25 @@ static unsigned Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool fAddrOverride,
         off += 4;
     }
 
+    /*
+     * Fill the memory with 0xcc.
+     */
+    switch (cbOp + cbMissalign)
+    {
+        case 8: pThis->pbDataPg[X86_PAGE_SIZE - 8] = 0xcc;  /* fall thru */
+        case 7: pThis->pbDataPg[X86_PAGE_SIZE - 7] = 0xcc;  /* fall thru */
+        case 6: pThis->pbDataPg[X86_PAGE_SIZE - 6] = 0xcc;  /* fall thru */
+        case 5: pThis->pbDataPg[X86_PAGE_SIZE - 5] = 0xcc;  /* fall thru */
+        case 4: pThis->pbDataPg[X86_PAGE_SIZE - 4] = 0xcc;  /* fall thru */
+        case 3: pThis->pbDataPg[X86_PAGE_SIZE - 3] = 0xcc;  /* fall thru */
+        case 2: pThis->pbDataPg[X86_PAGE_SIZE - 2] = 0xcc;  /* fall thru */
+        case 1: pThis->pbDataPg[X86_PAGE_SIZE - 1] = 0xcc;  /* fall thru */
+        case 0: break;
+        default:
+            Bs3MemSet(&pThis->pbDataPg[X86_PAGE_SIZE - cbOp - cbMissalign], 0xcc, cbOp - cbMissalign);
+            break;
+    }
+
     return off;
 }
 
@@ -1240,6 +1259,7 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             break;
 
         case BS3CG1ENC_MODRM_Wps_Vps:
+        case BS3CG1ENC_MODRM_Wpd_Vpd:
             if (iEncoding == 0)
             {
                 off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
@@ -1266,7 +1286,6 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             pThis->cbCurInstr = off;
             iEncoding++;
             break;
-
 
         case BS3CG1ENC_MODRM_Gv_Ma:
             cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
@@ -1482,6 +1501,7 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_Wps_Vps:
+        case BS3CG1ENC_MODRM_Wpd_Vpd:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 16;
