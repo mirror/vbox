@@ -2436,6 +2436,7 @@ void ExtPackManager::i_removeExtPack(const char *a_pszName)
 }
 
 #if !defined(VBOX_COM_INPROC)
+
 /**
  * Refreshes the specified extension pack.
  *
@@ -2639,14 +2640,20 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
         {
             if (pExtPack && a_fReplace)
             {
-                if (!i_areThereAnyRunningVMs())
-                    hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, false /*a_ForcedRemoval*/);
-                else
+                /* We must leave the lock when calling i_areThereAnyRunningVMs,
+                   which means we have to redo the refresh call afterwards. */
+                autoLock.release();
+                bool fRunningVMs = i_areThereAnyRunningVMs();
+                autoLock.acquire();
+                hrc = i_refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+                if (fRunningVMs)
                 {
                     LogRel(("Install extension pack '%s' failed because at least one VM is still running.", pStrName->c_str()));
                     hrc = setError(E_FAIL, tr("Install extension pack '%s' failed because at least one VM is still running"),
                                    pStrName->c_str());
                 }
+                else if (SUCCEEDED(hrc) && pExtPack)
+                    hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, false /*a_ForcedRemoval*/);
             }
             else if (pExtPack)
                 hrc = setError(E_FAIL,
@@ -2742,12 +2749,12 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
-
     if (SUCCEEDED(hrc))
     {
-        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
         if (a_fForcedRemoval || !i_areThereAnyRunningVMs())
         {
+            AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
             /*
              * Refresh the data we have on the extension pack as it may be made
              * stale by direct meddling or some other user.
@@ -2817,10 +2824,7 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
          * extension pack (old ones will not be called).
          */
         if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
-        {
-            autoLock.release();
             i_callAllVirtualBoxReadyHooks();
-        }
     }
 
     return hrc;
@@ -2851,7 +2855,8 @@ void ExtPackManager::i_callAllVirtualBoxReadyHooks(void)
             ++it;
     }
 }
-#endif
+
+#endif /* !VBOX_COM_INPROC */
 
 /**
  * Calls the pfnConsoleReady hook for all working extension packs.
