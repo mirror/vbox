@@ -485,8 +485,6 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXX"));
 # elif R0_ARCH_BITS == 64
                     cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXXXXXXXXXXXXXX"));
-# elif R0_ARCH_BITS == 16
-                    cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("XXXX"));
 # else
 #  error implement me!
 # endif
