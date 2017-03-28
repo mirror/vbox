@@ -1189,7 +1189,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
                 RTPrintf("License accepted.\n");
             else
             {
-                RTPrintf("%s\n", srcLicense.c_str());
+                RTPrintf("%s\n", strLicense.c_str());
                 RTPrintf("Do you agree to these license terms and conditions (y/n)? " );
                 ch = RTStrmGetCh(g_pStdIn);
                 RTPrintf("\n");
