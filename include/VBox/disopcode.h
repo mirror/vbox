@@ -179,6 +179,7 @@ enum OPCODES
     OP_3DNOW,
     OP_MOVUPS,
     OP_MOVLPS,
+    OP_MOVHLPS = OP_MOVLPS, /**< @todo OP_MOVHLPS */
     OP_UNPCKLPS,
     OP_MOVHPS,
     OP_UNPCKHPS,
@@ -1049,6 +1050,10 @@ enum OP_PARM
 #define OP_PARM_Upd             (OP_PARM_U+OP_PARM_pd)
 #define OP_PARM_Udq             (OP_PARM_U+OP_PARM_dq)
 #define OP_PARM_Lx              (OP_PARM_L+OP_PARM_x)
+
+/* For making IEM happy: */
+#define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
+#define OP_PARM_UqHi            OP_PARM_Uq
 
 /** @} */
 
