@@ -311,14 +311,14 @@ class Bs3Cg1Instruction(object):
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
         if oInstr.sPrefix:
             if oInstr.sPrefix == 'none':
-                self.sPfxKind = 'BS3CGPFXKIND_NO_F2_F3_66';
+                self.sPfxKind = 'BS3CG1PFXKIND_NO_F2_F3_66';
             else:
-                self.sPfxKind = 'BS3CGPFXKIND_REQ_' + oInstr.sPrefix[-2:].upper();
+                self.sPfxKind = 'BS3CG1PFXKIND_REQ_' + oInstr.sPrefix[-2:].upper();
         elif oInstr.sEncoding == 'ModR/M':
             if 'ignores_op_size' not in oInstr.dHints:
-                self.sPfxKind   = 'BS3CGPFXKIND_MODRM';
+                self.sPfxKind   = 'BS3CG1PFXKIND_MODRM';
             else:
-                self.sPfxKind   = 'BS3CGPFXKIND_MODRM_NO_OP_SIZES';
+                self.sPfxKind   = 'BS3CG1PFXKIND_MODRM_NO_OP_SIZES';
         else:
             self.sPfxKind       = '0';
 
@@ -331,6 +331,10 @@ class Bs3Cg1Instruction(object):
         else:
             self.sCpu += 'ANY';
 
+        if oInstr.sXcptType:
+            self.sXcptType = 'BS3CG1XCPTTYPE_' + oInstr.sXcptType.upper();
+        else:
+            self.sXcptType = 'BS3CG1XCPTTYPE_NONE';
 
     def getOperands(self):
         """ Returns comma separated string of operand values for g_abBs3Cg1Operands. """
@@ -347,6 +351,7 @@ class Bs3Cg1Instruction(object):
             '        /* enmEncoding = */      (unsigned)%s,' % (self.sEncoding,),
             '        /* enmPrefixKind = */    (unsigned)%s,' % (self.sPfxKind,),
             '        /* enmCpuTest = */       (unsigned)%s,' % (self.sCpu,),
+            '        /* enmXcptType = */      (unsigned)%s,' % (self.sXcptType,),
             '        /* uUnused = */          0,',
             '        /* fFlags = */           %s' % (' | '.join(self.asFlags) if self.asFlags else '0'),
         ];

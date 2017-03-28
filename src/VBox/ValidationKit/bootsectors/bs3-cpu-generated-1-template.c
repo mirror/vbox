@@ -122,7 +122,9 @@ typedef struct BS3CG1STATE
     /** The CPU test / CPU ID. */
     BS3CG1CPU               enmCpuTest;
     /** Prefix sensitivity and requirements. */
-    BS3CGPFXKIND            enmPrefixKind;
+    BS3CG1PFXKIND           enmPrefixKind;
+    /** Exception type (SSE, AVX). */
+    BS3CG1XCPTTYPE          enmXcptType;
     /** Per operand flags. */
     BS3CG1OP                aenmOperands[4];
     /** Opcode bytes. */
@@ -223,6 +225,9 @@ typedef struct BS3CG1STATE
      * UINT8_MAX if no special exception expected. */
     uint8_t                 bValueXcpt;
     /** @} */
+    /** Alignment exception expected by the encoder.
+     * UINT8_MAX if no special exception expected. */
+    uint8_t                 bAlignmentXcpt;
 
     /** The context we're working on. */
     BS3REGCTX               Ctx;
@@ -917,27 +922,46 @@ static const struct
     { 2, { P_OZ, P_SS, }, BS3CG1_PF_SS | BS3CFG1_PF_OZ },
 };
 
-static const uint16_t g_afPfxKindToIgnoredFlags[BS3CGPFXKIND_END] =
+static const uint16_t g_afPfxKindToIgnoredFlags[BS3CG1PFXKIND_END] =
 {
-    /* [BS3CGPFXKIND_INVALID] = */              UINT16_MAX,
-    /* [BS3CGPFXKIND_MODRM] = */                0,
-    /* [BS3CGPFXKIND_MODRM_NO_OP_SIZES] = */    BS3CG1_PF_OZ | BS3CG1_PF_W,
+    /* [BS3CG1PFXKIND_INVALID] = */              UINT16_MAX,
+    /* [BS3CG1PFXKIND_MODRM] = */                0,
+    /* [BS3CG1PFXKIND_MODRM_NO_OP_SIZES] = */    BS3CG1_PF_OZ | BS3CG1_PF_W,
 };
 
 #endif
+
+
+/**
+ * Checks if >= 16 byte SSE/AVX alignment are exempted for the exception type.
+ *
+ * @returns true / false.
+ * @param   enmXcptType         The type to check.
+ */
+static bool Bs3Cg1XcptTypeIsUnaligned(BS3CG1XCPTTYPE enmXcptType)
+{
+    switch (enmXcptType)
+    {
+        case BS3CG1XCPTTYPE_4UA:
+        case BS3CG1XCPTTYPE_5:
+            return true;
+        default:
+            return false;
+    }
+}
 
 
 DECLINLINE(unsigned) Bs3Cg1InsertReqPrefix(PBS3CG1STATE pThis, unsigned offDst)
 {
     switch (pThis->enmPrefixKind)
     {
-        case BS3CGPFXKIND_REQ_66:
+        case BS3CG1PFXKIND_REQ_66:
             pThis->abCurInstr[offDst] = 0x66;
             break;
-        case BS3CGPFXKIND_REQ_F2:
+        case BS3CG1PFXKIND_REQ_F2:
             pThis->abCurInstr[offDst] = 0xf2;
             break;
-        case BS3CGPFXKIND_REQ_F3:
+        case BS3CG1PFXKIND_REQ_F3:
             pThis->abCurInstr[offDst] = 0xf3;
             break;
         default:
@@ -1052,6 +1076,9 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     unsigned cbOp;
+
+    pThis->bAlignmentXcpt = UINT8_MAX;
+
     switch (pThis->enmEncoding)
     {
         case BS3CG1ENC_MODRM_Eb_Gb:
@@ -1226,12 +1253,14 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                 off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
                 off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 2 /*iReg*/, 16, 0, BS3CG1OPLOC_MEM_RW);
             }
-            //else if (iEncoding == 2)
-            //{
-            //    pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3;
-            //    off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-            //    off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 16, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM_RW);
-            //}
+            else if (iEncoding == 2)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3;
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 16, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM_RW);
+                if (!Bs3Cg1XcptTypeIsUnaligned(pThis->enmXcptType))
+                    pThis->bAlignmentXcpt = X86_XCPT_GP;
+            }
             else
                 break;
             pThis->cbCurInstr = off;
@@ -2183,7 +2212,9 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
     uint8_t cbAdjustPc;
     if (!fInvalidInstr)
     {
-        bExpectedXcpt = pThis->bValueXcpt;
+        bExpectedXcpt = pThis->bAlignmentXcpt;
+        if (bExpectedXcpt == UINT8_MAX)
+            bExpectedXcpt = pThis->bValueXcpt;
         if (bExpectedXcpt == UINT8_MAX)
         {
             cbAdjustPc    = pThis->cbCurInstr;
@@ -2705,7 +2736,8 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
         pThis->fFlags          = pInstr->fFlags;
         pThis->enmEncoding     = (BS3CG1ENC)pInstr->enmEncoding;
         pThis->enmCpuTest      = (BS3CG1CPU)pInstr->enmCpuTest;
-        pThis->enmPrefixKind   = (BS3CG1CPU)pInstr->enmPrefixKind;
+        pThis->enmPrefixKind   = (BS3CG1PFXKIND)pInstr->enmPrefixKind;
+        pThis->enmXcptType     = (BS3CG1XCPTTYPE)pInstr->enmXcptType;
         pThis->cchMnemonic     = pInstr->cchMnemonic;
         if (pThis->fAdvanceMnemonic)
             Bs3TestSubF("%s / %.*s", pThis->pszModeShort, pThis->cchMnemonic, pThis->pchMnemonic);

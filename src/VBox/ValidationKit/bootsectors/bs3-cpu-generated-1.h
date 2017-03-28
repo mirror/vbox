@@ -95,21 +95,21 @@ typedef enum BS3CG1ENC
 /**
  * Prefix sensitivitiy kind.
  */
-typedef enum BS3CGPFXKIND
+typedef enum BS3CG1PFXKIND
 {
-    BS3CGPFXKIND_INVALID = 0,
+    BS3CG1PFXKIND_INVALID = 0,
 
-    BS3CGPFXKIND_NO_F2_F3_66,           /**< No 66, F2 or F3 prefixes allowed as that would alter the meaning. */
-    BS3CGPFXKIND_REQ_F2,                /**< Requires F2 (REPNE) prefix as part of the instr encoding. */
-    BS3CGPFXKIND_REQ_F3,                /**< Requires F3 (REPE) prefix as part of the instr encoding. */
-    BS3CGPFXKIND_REQ_66,                /**< Requires 66 (OP SIZE) prefix as part of the instr encoding.  */
+    BS3CG1PFXKIND_NO_F2_F3_66,           /**< No 66, F2 or F3 prefixes allowed as that would alter the meaning. */
+    BS3CG1PFXKIND_REQ_F2,                /**< Requires F2 (REPNE) prefix as part of the instr encoding. */
+    BS3CG1PFXKIND_REQ_F3,                /**< Requires F3 (REPE) prefix as part of the instr encoding. */
+    BS3CG1PFXKIND_REQ_66,                /**< Requires 66 (OP SIZE) prefix as part of the instr encoding.  */
 
     /** @todo more work to be done here...   */
-    BS3CGPFXKIND_MODRM,
-    BS3CGPFXKIND_MODRM_NO_OP_SIZES,
+    BS3CG1PFXKIND_MODRM,
+    BS3CG1PFXKIND_MODRM_NO_OP_SIZES,
 
-    BS3CGPFXKIND_END
-} BS3CGPFXKIND;
+    BS3CG1PFXKIND_END
+} BS3CG1PFXKIND;
 
 /**
  * CPU selection or CPU ID.
@@ -132,6 +132,49 @@ typedef enum BS3CG1CPU
     BS3CG1CPU_END
 } BS3CG1CPU;
 
+
+/**
+ * SSE & AVX exception types.
+ */
+typedef enum BS3CG1XCPTTYPE
+{
+    BS3CG1XCPTTYPE_NONE = 0,
+    /* SSE: */
+    BS3CG1XCPTTYPE_1,
+    BS3CG1XCPTTYPE_2,
+    BS3CG1XCPTTYPE_3,
+    BS3CG1XCPTTYPE_4,
+    BS3CG1XCPTTYPE_4UA,
+    BS3CG1XCPTTYPE_5,
+    BS3CG1XCPTTYPE_6,
+    BS3CG1XCPTTYPE_7,
+    BS3CG1XCPTTYPE_8,
+    BS3CG1XCPTTYPE_11,
+    BS3CG1XCPTTYPE_12,
+    /* EVEX: */
+    BS3CG1XCPTTYPE_E1,
+    BS3CG1XCPTTYPE_E1NF,
+    BS3CG1XCPTTYPE_E2,
+    BS3CG1XCPTTYPE_E3,
+    BS3CG1XCPTTYPE_E3NF,
+    BS3CG1XCPTTYPE_E4,
+    BS3CG1XCPTTYPE_E4NF,
+    BS3CG1XCPTTYPE_E5,
+    BS3CG1XCPTTYPE_E5NF,
+    BS3CG1XCPTTYPE_E6,
+    BS3CG1XCPTTYPE_E6NF,
+    BS3CG1XCPTTYPE_E7NF,
+    BS3CG1XCPTTYPE_E9,
+    BS3CG1XCPTTYPE_E9NF,
+    BS3CG1XCPTTYPE_E10,
+    BS3CG1XCPTTYPE_E11,
+    BS3CG1XCPTTYPE_E12,
+    BS3CG1XCPTTYPE_E12NF,
+    BS3CG1XCPTTYPE_END
+} BS3CG1XCPTTYPE;
+AssertCompile(BS3CG1XCPTTYPE_END <= 32);
+
+
 /**
  * Generated instruction info.
  */
@@ -149,12 +192,14 @@ typedef struct BS3CG1INSTR
     uint32_t    offTests : 23;
     /** BS3CG1ENC values. */
     uint32_t    enmEncoding : 10;
-    /** BS3CGPFXKIND values. */
+    /** BS3CG1PFXKIND values. */
     uint32_t    enmPrefixKind : 4;
     /** CPU test / CPU ID bit test (BS3CG1CPU). */
     uint32_t    enmCpuTest : 6;
+    /** Exception type (BS3CG1XCPTTYPE)   */
+    uint32_t    enmXcptType : 5;
     /** Currently unused bits. */
-    uint32_t    uUnused : 12;
+    uint32_t    uUnused : 7;
     /** BS3CG1INSTR_F_XXX. */
     uint32_t    fFlags;
 } BS3CG1INSTR;
