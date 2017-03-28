@@ -263,6 +263,13 @@ struc CPUMCTX
     .hwvirt.svm.HostState           resb  184
     .hwvirt.svm.fGif                resb    1
     .hwvirt.svm.abPadding0          resb    7
+    .hwvirt.svm.pvMsrBitmapR0       RTR0PTR_RES 1
+    .hwvirt.svm.pvMsrBitmapR3       RTR3PTR_RES 1
+    .hwvirt.svm.pvIoBitmapR0        RTR0PTR_RES 1
+    .hwvirt.svm.pvIoBitmapR3        RTR3PTR_RES 1
+%if HC_ARCH_BITS == 32
+    .hwvirt.svm.abPadding1          resb   16
+%endif
     .hwvirt.fLocalForcedActions     resd    1
     alignb 64
 endstruc

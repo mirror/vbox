@@ -74,6 +74,17 @@
 #define AMD_CPUID_SVM_FEATURE_EDX_AVIC                      RT_BIT(13)
 /** @} */
 
+/** @name SVM generic / convenient defines.
+ * @{
+ */
+/** Number of pages required for the VMCB. */
+#define SVM_VMCB_PAGES                  1
+/** Number of pages required for the MSR permission bitmap. */
+#define SVM_MSRPM_PAGES                 2
+/** Number of pages required for the IO permission bitmap. */
+#define SVM_IOPM_PAGES                  3
+/** @} */
+
 /*
  * Ugly!
  * When compiling the recompiler, its own svm.h defines clash with
@@ -552,7 +563,7 @@ typedef union
         uint32_t    u4VIrqPriority      : 4;    /* V_INTR_PRIO */
         uint32_t    u1IgnoreTPR         : 1;    /* V_IGN_TPR */
         uint32_t    u3Reserved          : 3;
-        uint32_t    u1VIrqMasking       : 1;    /* V_INTR_MASKING */
+        uint32_t    u1VIntrMasking      : 1;    /* V_INTR_MASKING */
         uint32_t    u6Reserved          : 6;
         uint32_t    u1AvicEnable        : 1;
         uint32_t    u8VIrqVector        : 8;    /* V_INTR_VECTOR */

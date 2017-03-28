@@ -236,6 +236,13 @@ struc CPUMCPU
     .Guest.hwvirt.svm.HostState         resb  184
     .Guest.hwvirt.svm.fGif              resb    1
     .Guest.hwvirt.svm.abPadding0        resb    7
+    .Guest.hwvirt.svm.pvMsrBitmapR0     RTR0PTR_RES 1
+    .Guest.hwvirt.svm.pvMsrBitmapR3     RTR3PTR_RES 1
+    .Guest.hwvirt.svm.pvIoBitmapR0      RTR0PTR_RES 1
+    .Guest.hwvirt.svm.pvIoBitmapR3      RTR3PTR_RES 1
+%if HC_ARCH_BITS == 32
+    .Guest.hwvirt.svm.abPadding1        resb    16
+%endif
     .Guest.hwvirt.fLocalForcedActions   resd    1
     alignb 64
 
@@ -506,6 +513,13 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.HostState         resb  184
     .Hyper.hwvirt.svm.fGif              resb    1
     .Hyper.hwvirt.svm.abPadding0        resb    7
+    .Hyper.hwvirt.svm.pvMsrBitmapR0     RTR0PTR_RES 1
+    .Hyper.hwvirt.svm.pvMsrBitmapR3     RTR3PTR_RES 1
+    .Hyper.hwvirt.svm.pvIoBitmapR0      RTR0PTR_RES 1
+    .Hyper.hwvirt.svm.pvIoBitmapR3      RTR3PTR_RES 1
+%if HC_ARCH_BITS == 32
+    .Hyper.hwvirt.svm.abPadding1        resb   16
+%endif
     .Hyper.hwvirt.fLocalForcedActions   resd    1
     alignb 64
 

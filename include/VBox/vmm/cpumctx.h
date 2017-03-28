@@ -475,17 +475,29 @@ typedef struct CPUMCTX
             struct
             {
                 /** 728 - MSR holding physical address of the Guest's Host-state. */
-                uint64_t        uMsrHSavePa;
+                uint64_t            uMsrHSavePa;
                 /** 736 - Guest physical address of the nested-guest VMCB. */
-                RTGCPHYS        GCPhysVmcb;
+                RTGCPHYS            GCPhysVmcb;
                 /** 744 - Cache of the nested-guest VMCB control area. */
-                SVMVMCBCTRL     VmcbCtrl;
+                SVMVMCBCTRL         VmcbCtrl;
                 /** 1000 - Guest's host-state save area. */
-                SVMHOSTSTATE    HostState;
+                SVMHOSTSTATE        HostState;
                 /** 1184 - Global interrupt flag. */
-                uint8_t         fGif;
+                uint8_t             fGif;
                 /** 1185 - Padding. */
-                uint8_t         abPadding0[7];
+                uint8_t             abPadding0[7];
+                /** 1192 - MSR permission bitmap - R0 ptr. */
+                R0PTRTYPE(void *)   pvMsrBitmapR0;
+                /** 1200 / 1196 - MSR permission bitmap - R3 ptr. */
+                R3PTRTYPE(void *)   pvMsrBitmapR3;
+                /** 1208 / 1200 - IO permission bitmap - R0 ptr. */
+                R0PTRTYPE(void *)   pvIoBitmapR0;
+                /** 1216 / 1204 - IO permission bitmap - R3 ptr. */
+                R3PTRTYPE(void *)   pvIoBitmapR3;
+#if HC_ARCH_BITS == 32
+                /** NA / 1200 - Padding. */
+                uint8_t             abPadding1[16];
+#endif
             } svm;
 #if 0
             struct
@@ -494,11 +506,11 @@ typedef struct CPUMCTX
 #endif
         } CPUM_UNION_NM(s);
 
-        /** 1192 - A subset of force flags that are preserved while running
+        /** 1224 - A subset of force flags that are preserved while running
          *  the nested-guest. */
         uint32_t                fLocalForcedActions;
-        /** Padding. */
-        uint8_t                 abPadding1[20];
+        /** 1212 - Padding. */
+        uint8_t                 abPadding1[52];
     } hwvirt;
     /** @} */
 } CPUMCTX;
@@ -559,7 +571,11 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.GCPhysVmcb,     
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.VmcbCtrl,         744);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,       1000);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,            1184);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) fLocalForcedActions, 1192);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0, 1192);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3, HC_ARCH_BITS == 64 ? 1200 : 1196);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,  HC_ARCH_BITS == 64 ? 1208 : 1200);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,  HC_ARCH_BITS == 64 ? 1216 : 1204);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) fLocalForcedActions, 1224);
 
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);

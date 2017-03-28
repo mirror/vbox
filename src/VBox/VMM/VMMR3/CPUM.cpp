@@ -749,6 +749,87 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
 
 
 /**
+ * Frees memory allocated by cpumR3AllocHwVirtState().
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void cpumR3FreeHwVirtState(PVM pVM)
+{
+    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    {
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+            if (pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3)
+            {
+                SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES);
+                pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3 = NULL;
+            }
+
+            if (pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3)
+            {
+                SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3, SVM_IOPM_PAGES);
+                pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3 = NULL;
+            }
+        }
+    }
+}
+
+
+/**
+ * Allocates memory required by the hardware virtualization state.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+static int cpumR3AllocHwVirtState(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    {
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+
+            /*
+             * Allocate the MSRPM (MSR Permission bitmap).
+             */
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
+            rc = SUPR3PageAllocEx(SVM_MSRPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3,
+                                  &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR0, NULL /* paPages */);
+            if (RT_FAILURE(rc))
+            {
+                Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
+                LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's MSR permission bitmap\n", pVCpu->idCpu,
+                        SVM_MSRPM_PAGES));
+                break;
+            }
+
+            /*
+             * Allocate the IOPM (IO Permission bitmap).
+             */
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3);
+            rc = SUPR3PageAllocEx(SVM_IOPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3,
+                                  &pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR0, NULL /* paPages */);
+            if (RT_FAILURE(rc))
+            {
+                Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3);
+                LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's IO permission bitmap\n", pVCpu->idCpu,
+                        SVM_IOPM_PAGES));
+                break;
+            }
+        }
+
+        /* On any failure, cleanup. */
+        if (RT_FAILURE(rc))
+            cpumR3FreeHwVirtState(pVM);
+    }
+
+    return rc;
+}
+
+
+/**
  * Initializes the CPUM.
  *
  * @returns VBox status code.
@@ -882,8 +963,11 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     }
 
     /*
-     * Setup hypervisor startup values.
+     * Allocate memory required by the hardware virtualization state.
      */
+    rc = cpumR3AllocHwVirtState(pVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Register saved state data item.
@@ -1004,9 +1088,9 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
         pVCpu->cpum.s.uMagic     = 0;
         pCtx->dr[5]              = 0;
     }
-#else
-    NOREF(pVM);
 #endif
+
+    cpumR3FreeHwVirtState(pVM);
     return VINF_SUCCESS;
 }
 

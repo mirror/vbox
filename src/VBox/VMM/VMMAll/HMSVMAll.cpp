@@ -483,10 +483,20 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
                     /** @todo any others? */
                 }
 
+                /*
+                 * Update the exit interruption info field so that if an exception occurs
+                 * while delivering the event causing a #VMEXIT, we only need to update
+                 * the valid bit while the rest is already in place.
+                 */
+                pVmcbCtrl->ExitIntInfo.u = pVmcbCtrl->EventInject.u;
+                pVmcbCtrl->ExitIntInfo.n.u1Valid = 0;
+
                 /** @todo NRIP: Software interrupts can only be pushed properly if we support
                  *        NRIP for the nested-guest to calculate the instruction length
                  *        below. */
-                IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
+                VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
+                if (rcStrict == VINF_SVM_VMEXIT)
+                    return rcStrict;
             }
 
             return VINF_SUCCESS;
@@ -576,8 +586,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
             Assert(pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIrqValid);
             Assert(pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u8VIrqVector);
         }
-        /* Save V_TPR. */
-
+        /** @todo Save V_TPR, V_IRQ. */
         /** @todo NRIP. */
 
         /* Save exit information. */
@@ -586,7 +595,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
         pCtx->hwvirt.svm.VmcbCtrl.u64ExitInfo2 = uExitInfo2;
 
         /*
-         * Clear event injection.
+         * Clear event injection in the VMCB.
          */
         pCtx->hwvirt.svm.VmcbCtrl.EventInject.n.u1Valid = 0;
 
@@ -687,3 +696,18 @@ VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pEvent)
     return TRPM_32BIT_HACK;
 }
 
+
+#if 0
+VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PVMCPU pVCpu)
+{
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+    Assert(RT_BOOL(pVmcbCtrl->IntCtrl.n.u1VIrqValid));
+
+    if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
+    {
+    }
+}
+#endif
