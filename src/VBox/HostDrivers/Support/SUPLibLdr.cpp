@@ -545,16 +545,16 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 ||  rc == VERR_ALREADY_LOADED /* A competing process. */
                                )
                             {
-                                LogRel(("SUP: Loaded %s (%s) at %#p - ModuleInit at %RTptr and ModuleTerm at %RTptr%s\n",
+                                LogRel(("SUP: Loaded %s (%s) at %#RKv - ModuleInit at %RKv and ModuleTerm at %RKvr%s\n",
                                         pszModule, pszFilename, OpenReq.u.Out.pvImageBase, ModuleInit, ModuleTerm,
                                         OpenReq.u.Out.fNativeLoader ? " using the native ring-0 loader" : ""));
                                 if (fIsVMMR0)
                                 {
                                     g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
-                                    LogRel(("SUP: VMMR0EntryEx located at %RTptr and VMMR0EntryFast at %RTptr\n", VMMR0EntryEx, VMMR0EntryFast));
+                                    LogRel(("SUP: VMMR0EntryEx located at %RKv and VMMR0EntryFast at %RKv\n", VMMR0EntryEx, VMMR0EntryFast));
                                 }
 #ifdef RT_OS_WINDOWS
-                                LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
+                                LogRel(("SUP: windbg> .reload /f %s=%#RKv\n", pszFilename, OpenReq.u.Out.pvImageBase));
 #endif
 
                                 RTMemTmpFree(pLoadReq);
@@ -609,10 +609,10 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
         {
             if (fIsVMMR0)
                 g_pvVMMR0 = OpenReq.u.Out.pvImageBase;
-            LogRel(("SUP: Opened %s (%s) at %#p%s.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase,
+            LogRel(("SUP: Opened %s (%s) at %#RKv%s.\n", pszModule, pszFilename, OpenReq.u.Out.pvImageBase,
                     OpenReq.u.Out.fNativeLoader ? " loaded by the native ring-0 loader" : ""));
 #ifdef RT_OS_WINDOWS
-            LogRel(("SUP: windbg> .reload /f %s=%#p\n", pszFilename, OpenReq.u.Out.pvImageBase));
+            LogRel(("SUP: windbg> .reload /f %s=%#RKv\n", pszFilename, OpenReq.u.Out.pvImageBase));
 #endif
         }
         /*
