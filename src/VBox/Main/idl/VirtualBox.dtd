@@ -16,17 +16,18 @@
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 -->
   <!ELEMENT idl (desc|if|library)*>                           <!-- done -->
-  <!ELEMENT if ANY>
-    <!ATTLIST if target (midl|xpidl|wsdl) #REQUIRED>          <!-- done -->
-  <!ELEMENT cpp ANY>
-    <!ATTLIST cpp line CDATA #IMPLIED>                        <!-- done -->
-  <!ELEMENT library (descGroup|if|result|enum|interface|module)*>
+  <!ELEMENT if ANY>                                           <!-- done -->
+    <!ATTLIST if target (midl|xpidl|wsdl) #REQUIRED>
+  <!ELEMENT cpp ANY>                                          <!-- done -->
+    <!ATTLIST cpp line CDATA #IMPLIED>
+  <!ELEMENT library (application)*>                           <!-- done -->
     <!ATTLIST library name CDATA #REQUIRED>
     <!ATTLIST library uuid CDATA #REQUIRED>
     <!ATTLIST library version CDATA #REQUIRED>
-    <!ATTLIST library desc CDATA #REQUIRED>
-    <!ATTLIST library appUuid CDATA #REQUIRED>
-    <!ATTLIST library supportsErrorInfo CDATA #REQUIRED>
+  <!ELEMENT application (descGroup|if|result|enum|interface|module)*>   <!-- done -->
+    <!ATTLIST application name CDATA #REQUIRED>
+    <!ATTLIST application uuid CDATA #REQUIRED>
+    <!ATTLIST application supportsErrorInfo CDATA #REQUIRED>
   <!ELEMENT result (#PCDATA|desc|link)*>                      <!-- done -->
     <!ATTLIST result name CDATA #REQUIRED>
     <!ATTLIST result value CDATA #IMPLIED>

@@ -23,5 +23,8 @@
 // registry script resource ID
 #define IDR_VIRTUALBOX 101
 
+// service name string resource ID
+#define IDS_SERVICENAME 102
+
 
 #endif // __H_RESOURCEVBOXCOM

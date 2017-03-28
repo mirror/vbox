@@ -62,6 +62,14 @@
 
 <xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
 
+<!--
+* filters to skip VBoxSDS class and interfaces if a VBOX_WITH_SDS is not defined in kmk
+-->
+    <xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']">
+        <xsl:if test="a_sWithSDS='yes'" >
+            <xsl:call-template name="application_template" />
+        </xsl:if>
+    </xsl:template>
 
 <!--
   Libraries.
@@ -74,27 +82,37 @@
       <xsl:attribute name="MajorVersion"><xsl:value-of select="substring(@version,1,1)"/></xsl:attribute>
       <xsl:attribute name="MinorVersion"><xsl:value-of select="substring(@version,3)"/></xsl:attribute>
       <xsl:attribute name="Language">0</xsl:attribute>
-      <xsl:attribute name="Description"><xsl:value-of select="@desc"/></xsl:attribute>
+      <xsl:attribute name="Description"><xsl:value-of select="@name"/></xsl:attribute>
       <xsl:attribute name="HelpDirectory"><xsl:text>msm_VBoxApplicationFolder</xsl:text></xsl:attribute>
-      <AppId>
-        <xsl:attribute name="Id"><xsl:value-of select="@appUuid"/></xsl:attribute>
-        <xsl:attribute name="Description"><xsl:value-of select="@name"/> Application</xsl:attribute>
-        <xsl:choose>
-          <xsl:when test="$a_sTarget = 'VBoxClient-x86'">
-            <xsl:apply-templates select="module[@name='VBoxC']/class"/>
-          </xsl:when>
-          <xsl:otherwise>
-            <xsl:apply-templates select="module/class"/>
-          </xsl:otherwise>
-        </xsl:choose>
-      </AppId>
-      <xsl:apply-templates select="interface | if/interface">
-        <xsl:sort select="translate(@uuid,'abcdef','ABCDEF')"/>
-      </xsl:apply-templates>
+        <xsl:apply-templates select="application" />
     </TypeLib>
   </Include>
 </xsl:template>
 
+<!-- 
+Applications.
+-->
+<xsl:template match="application">
+    <AppId>
+        <xsl:attribute name="Id">
+            <xsl:value-of select="@uuid"/>
+        </xsl:attribute>
+        <xsl:attribute name="Description">
+            <xsl:value-of select="@name"/> Application
+        </xsl:attribute>
+        <xsl:choose>
+            <xsl:when test="$a_sTarget = 'VBoxClient-x86'">
+                <xsl:apply-templates select="module[@name='VBoxC']/class"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates select="module/class"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </AppId>
+    <xsl:apply-templates select="interface | if/interface">
+        <xsl:sort select="translate(@uuid,'abcdef','ABCDEF')"/>
+    </xsl:apply-templates>
+</xsl:template>
 
 <!--
   Classes.
@@ -113,6 +131,7 @@
       <xsl:choose>
         <xsl:when test="../@context='InprocServer'">InprocServer32</xsl:when>
         <xsl:when test="../@context='LocalServer'">LocalServer32</xsl:when>
+          <xsl:when test="../@context='LocalService'">LocalServer32</xsl:when>
         <xsl:otherwise>
           <xsl:message terminate="yes">
             <xsl:value-of select="concat(../../@name,'::',../@name,': ')"/>
@@ -159,11 +178,11 @@
   </Class>
 </xsl:template>
 
-
+ 
 <!--
   Interfaces.
 -->
-<xsl:template match="library/interface | library/if[@target='midl']/interface">
+<xsl:template match="library/application/interface | library/application/if[@target='midl']/interface">
   <Interface>
 <!-- Interface Id="{00C8F974-92C5-44A1-8F3F-702469FDD04B}" Name="IDHCPServer" ProxyStubClassId32="{0BB3B78C-1807-4249-5BA5-EA42D66AF0BF}" NumMethods="33" -->
     <xsl:attribute name="Id">
@@ -177,6 +196,7 @@
   </Interface>
 </xsl:template>
 
+    
 
 <!--
   Count the number of methods.  This must match what midl.exe initializes

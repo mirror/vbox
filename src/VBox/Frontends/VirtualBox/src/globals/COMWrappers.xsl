@@ -55,6 +55,7 @@
 -->
 <xsl:template match="*"/>
 <xsl:template match="*|/" mode="declare"/>
+<xsl:template match="*|/" mode="include"/>
 <xsl:template match="*|/" mode="define"/>
 <xsl:template match="*|/" mode="end"/>
 <xsl:template match="*|/" mode="begin"/>
@@ -68,6 +69,22 @@
   <xsl:apply-templates/>
 </xsl:template>
 
+
+<!--
+ *  Encloses |if| element's contents (unconditionally expanded by
+ *  <apply-templates mode="include"/>) with #ifdef / #endif.
+ *
+ *  @note this can produce an empty #if/#endif block if |if|'s children
+ *  expand to nothing (such as |cpp|). I see no need to handle this situation
+ *  specially.
+-->
+<xsl:template match="if" mode="include">
+  <xsl:if test="(@target='xpidl') or (@target='midl')">
+    <xsl:apply-templates select="." mode="begin"/>
+    <xsl:apply-templates mode="include"/>
+    <xsl:apply-templates select="." mode="end"/>
+  </xsl:if>
+</xsl:template>
 
 <!--
  *  Encloses |if| element's contents (unconditionally expanded by
@@ -148,7 +165,7 @@
     <xsl:call-template name="declareEnums"/>
 
     <!-- Declare interfaces: -->
-    <xsl:apply-templates select="if | interface[not(@internal='yes')]" mode="declare"/>
+    <xsl:apply-templates select="application/if | application/interface[not(@internal='yes')]" mode="declare"/>
 
     <!-- Define interfaces: -->
     <xsl:call-template name="defineInterfaces"/>
@@ -180,7 +197,7 @@
     <xsl:text>#include "QMetaType"&#x0A;&#x0A;</xsl:text>
 
     <!-- Enumerate all enums: -->
-    <xsl:for-each select="enum">
+    <xsl:for-each select="application/enum">
         <xsl:text>/* </xsl:text>
         <xsl:value-of select="concat('K',@name)"/>
         <xsl:text> enum: */&#x0A;</xsl:text>
@@ -202,7 +219,7 @@
 
     <!-- Declare enums to QMetaObject: -->
     <xsl:text>/* Let QMetaType know about generated enums: */&#x0A;</xsl:text>
-    <xsl:for-each select="enum">
+    <xsl:for-each select="application/enum">
         <xsl:text>Q_DECLARE_METATYPE(</xsl:text>
         <xsl:value-of select="concat('K',@name)"/>
         <xsl:text>)&#x0A;</xsl:text>
@@ -248,13 +265,9 @@
     <xsl:text>#include "COMEnums.h"&#x0A;</xsl:text>
 
     <!-- Enumerate all interface definitions: -->
-    <xsl:for-each select="interface[not(@internal='yes')]">
-        <xsl:text>#include "C</xsl:text>
-        <xsl:value-of select="substring(@name,2)"/>
-        <xsl:text>.h"&#x0A;</xsl:text>
-    </xsl:for-each>
+    <xsl:apply-templates select="application/if | application/interface[not(@internal='yes')]" mode="include"/>
     <xsl:text>&#x0A;</xsl:text>
-    <xsl:apply-templates select="if | interface[not(@internal='yes')]" mode="define"/>
+    <xsl:apply-templates select="application/if | application/interface[not(@internal='yes')]" mode="define"/>
 
     <!-- Finishing COMWrappers.cpp file: -->
     <xsl:call-template name="endFile">
@@ -381,7 +394,7 @@
   <!-- go to the base interface -->
   <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
     <xsl:choose>
-      <!-- interfaces within library/if -->
+      <!-- interfaces within application/if -->
       <xsl:when test="name(..)='if'">
         <xsl:call-template name="declareAttributes">
           <xsl:with-param name="iface" select="
@@ -396,7 +409,7 @@
           "/>
         </xsl:call-template>
       </xsl:when>
-      <!-- interfaces within library -->
+      <!-- interfaces within application -->
       <xsl:otherwise>
         <xsl:call-template name="declareAttributes">
           <xsl:with-param name="iface" select="
@@ -423,7 +436,7 @@
   <!-- go to the base interface -->
   <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
     <xsl:choose>
-      <!-- interfaces within library/if -->
+      <!-- interfaces within application/if -->
       <xsl:when test="name(..)='if'">
         <xsl:call-template name="declareMethods">
           <xsl:with-param name="iface" select="
@@ -438,7 +451,7 @@
           "/>
         </xsl:call-template>
       </xsl:when>
-      <!-- interfaces within library -->
+      <!-- interfaces within application -->
       <xsl:otherwise>
         <xsl:call-template name="declareMethods">
           <xsl:with-param name="iface" select="
@@ -598,7 +611,7 @@
       </xsl:if>
     </xsl:for-each>
   </xsl:if>
-  <!-- for definitions outside <if> (i.e. inside <library>) -->
+  <!-- for definitions outside <if> (i.e. inside <application>) -->
   <xsl:if test="name(..)!='if'">
     <xsl:for-each select="
       preceding-sibling::*[self::interface] |
@@ -641,6 +654,17 @@
   <xsl:call-template name="composeMethod"/>
   <xsl:apply-templates select="@if" mode="end"/>
   <xsl:apply-templates select="parent::node()" mode="end"/>
+</xsl:template>
+
+
+<!--
+ *  interface includes
+-->
+<xsl:template match="interface" mode="include">
+
+  <xsl:text>#include "C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>.h"&#x0A;</xsl:text>
 </xsl:template>
 
 
@@ -739,7 +763,7 @@
   <!-- go to the base interface -->
   <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
     <xsl:choose>
-      <!-- interfaces within library/if -->
+      <!-- interfaces within application/if -->
       <xsl:when test="name(..)='if'">
         <xsl:call-template name="defineAttributes">
           <xsl:with-param name="iface" select="
@@ -754,7 +778,7 @@
           "/>
         </xsl:call-template>
       </xsl:when>
-      <!-- interfaces within library -->
+      <!-- interfaces within application -->
       <xsl:otherwise>
         <xsl:call-template name="defineAttributes">
           <xsl:with-param name="iface" select="
@@ -781,7 +805,7 @@
   <!-- go to the base interface -->
   <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
     <xsl:choose>
-      <!-- interfaces within library/if -->
+      <!-- interfaces within application/if -->
       <xsl:when test="name(..)='if'">
         <xsl:call-template name="defineMethods">
           <xsl:with-param name="iface" select="
@@ -796,7 +820,7 @@
           "/>
         </xsl:call-template>
       </xsl:when>
-      <!-- interfaces within library -->
+      <!-- interfaces within application -->
       <xsl:otherwise>
         <xsl:call-template name="defineMethods">
           <xsl:with-param name="iface" select="
@@ -1313,7 +1337,7 @@
   <xsl:variable name="ifaceSupportsErrorInfo" select="
     ancestor-or-self::interface[1]/@supportsErrorInfo
   "/>
-  <xsl:variable name="librarySupportsErrorInfo" select="ancestor::library/@supportsErrorInfo"/>
+  <xsl:variable name="applicationSupportsErrorInfo" select="ancestor::application/@supportsErrorInfo"/>
 
   <xsl:choose>
     <xsl:when test="$ifaceSupportsErrorInfo">
@@ -1322,9 +1346,9 @@
         <xsl:with-param name="mode" select="$mode"/>
       </xsl:call-template>
     </xsl:when>
-    <xsl:when test="$librarySupportsErrorInfo">
+    <xsl:when test="$applicationSupportsErrorInfo">
       <xsl:call-template name="composeFetchErrorInfo">
-        <xsl:with-param name="supports" select="string($librarySupportsErrorInfo)"/>
+        <xsl:with-param name="supports" select="string($applicationSupportsErrorInfo)"/>
         <xsl:with-param name="mode" select="$mode"/>
       </xsl:call-template>
     </xsl:when>

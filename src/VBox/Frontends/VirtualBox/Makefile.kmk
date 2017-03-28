@@ -143,7 +143,8 @@ VirtualBox_DEFS           += \
 	$(if $(VBOX_GUI_WITH_PIDFILE),VBOX_GUI_WITH_PIDFILE) \
 	$(if $(VBOX_GUI_WITH_KEYS_RESET_HANDLER),VBOX_GUI_WITH_KEYS_RESET_HANDLER) \
 	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1) \
-	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE)
+	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
+    $(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_DEBUGGER_GUI
  VirtualBox_DEFS        += VBOX_WITH_DEBUGGER_GUI
  if "$(KBUILD_TYPE)" != "release"
@@ -981,7 +982,8 @@ $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
 	$(QUIET)$(RM) -f -- "$@" "$(PATH_TARGET)/VirtualBoxComWrapperFiles.dep"
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
+                $(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VirtualBox_0_OUTDIR)/include \
 		$(PATH_TARGET)/VirtualBoxComWrapperFiles.dep VirtualBox_VBOX_COMWRAPPERS
 	$(APPEND) "$@"

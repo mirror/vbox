@@ -162,6 +162,7 @@ regsvr32 /s /u "%_VBOX_DIR%VBoxC.dll"
 %windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxProxyStub.dll"
 @if %fUninstallOnly% == 1 goto end
 "%_VBOX_DIR%VBoxSVC.exe" /RegServer
+"%_VBOX_DIR%VBoxSDS.exe" /RegService
 regsvr32 /s    "%_VBOX_DIR%VBoxC.dll"
 @if %fNoProxy% == 1 goto end
 if exist "%_VBOX_DIR%VBoxProxyStub.dll"     %windir%\system32\regsvr32 /s "%_VBOX_DIR%VBoxProxyStub.dll"
@@ -182,12 +183,14 @@ set s64BitProxyStub=VBoxProxyStub.dll
 echo s64BitProxyStub=%s64BitProxyStub%
 @echo on
 "%_VBOX_DIR%VBoxSVC.exe" /UnregServer
+"%_VBOX_DIR%VBoxSDS.exe" /UnregService
 %windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxC.dll"
 %windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%x86\VBoxClient-x86.dll"
 %windir%\system32\regsvr32 /s /u "%_VBOX_DIR%%s64BitProxyStub%"
 %windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%x86\VBoxProxyStub-x86.dll"
 if %fUninstallOnly% == 1 goto end
 "%_VBOX_DIR%VBoxSVC.exe" /RegServer
+"%_VBOX_DIR%VBoxSDS.exe" /RegService
 %windir%\system32\regsvr32 /s    "%_VBOX_DIR%VBoxC.dll"
 %windir%\syswow64\regsvr32 /s    "%_VBOX_DIR%x86\VBoxClient-x86.dll"
 if %fNoProxy% == 1 goto end

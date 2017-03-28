@@ -579,6 +579,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_WITH_VIDEOHWACCEL=$(if $(VBOX_WITH_VIDEOHWACCEL),yes,no)' \
 		-E 'VBOX_WITH_VRDP=$(if-expr defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL),yes,no)' \
 		-E 'VBOX_WITH_WEBSERVICES=$(if $(VBOX_WITH_WEBSERVICES),yes,no)' \
+        -E 'VBOX_WITH_SDS=$(if $(VBOX_WITH_SDS),yes,no)' \
 		-E 'VBOX_WITH_UNATTENDED=$(if $(VBOX_WITH_UNATTENDED),yes,no)' \
 		-E 'BUILD_TYPE=$(KBUILD_TYPE)' \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
@@ -670,6 +671,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj: \
 		-E 'VBOX_WITH_VIDEOHWACCEL=$(if $(VBOX_WITH_VIDEOHWACCEL),yes,no)' \
 		-E 'VBOX_WITH_VRDP=$(if-expr defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL),yes,no)' \
 		-E 'VBOX_WITH_WEBSERVICES=$(if $(VBOX_WITH_WEBSERVICES),yes,no)' \
+        -E 'VBOX_WITH_SDS=$(if $(VBOX_WITH_SDS),yes,no)' \
 		-E 'VBOX_WITH_UNATTENDED=$(if $(VBOX_WITH_UNATTENDED),yes,no)' \
 		-E 'BUILD_TYPE=$(KBUILD_TYPE)' \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
@@ -699,7 +701,8 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi: \
 		$(MAKEFILE) \
 		| $$(dir $$@)
 	$(VBOX_XSLTPROC) \
-		$(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),--stringparam "a_sProxyStubClsid" '$(VBOX_MIDL_PROXY_CLSID)',) \
+		$(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),--stringparam "a_sProxyStubClsid" "$(VBOX_MIDL_PROXY_CLSID)",) \
+        $(if-expr defined(VBOX_WITH_SDS),--stringparam "a_sWithSDS" "yes",) \
 		-o $@ $< $(VBOX_XIDL_FILE)
 
 $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi: \
@@ -707,8 +710,9 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi: \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
 	$(VBOX_XSLTPROC) --stringparam "a_sTarget" "VBoxClient-x86" \
-		$(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),--stringparam "a_sProxyStubClsid" '$(VBOX_MIDL_PROXY_CLSID)',) \
-		-o $@ $< $(VBOX_XIDL_FILE)
+		$(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),--stringparam "a_sProxyStubClsid" "$(VBOX_MIDL_PROXY_CLSID)",) \
+        $(if-expr defined(VBOX_WITH_SDS),--stringparam "a_sWithSDS" "yes",) \
+ 		-o $@ $< $(VBOX_XIDL_FILE)
 
 #
 # Construct the list of GUI translations.

@@ -29,6 +29,13 @@
 <xsl:strip-space elements="*"/>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+   XSLT parameters
+ - - - - - - - - - - - - - - - - - - - - - - -->
+    
+<!-- Whether to generate wrappers for VBoxSDS-->
+<xsl:param name="g_fVBoxWithSDS" select="'no'"/>
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
   global XSLT variables
  - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -97,6 +104,22 @@
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+  application match
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:template match="application" mode="filelist-even-sources" name="template_app_filelist_even_sources">
+    <xsl:apply-templates mode="filelist-even-sources"/>
+</xsl:template>
+
+<xsl:template match="application" mode="filelist-odd-sources" name="template_app_filelist_odd_sources">
+    <xsl:apply-templates mode="filelist-odd-sources"/>
+</xsl:template>
+
+<xsl:template match="application" mode="filelist-headers" name="template_app_filelist_headers">
+    <xsl:apply-templates mode="filelist-headers"/>
+</xsl:template>
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
   library match
  - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -132,6 +155,26 @@
     <xsl:apply-templates mode="filelist-headers"/>
     <xsl:value-of select="concat($G_sNewLine, $G_sNewLine)"/>
 </xsl:template>
+
+    
+    <xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']" mode="filelist-even-sources" >
+        <xsl:if test="$g_fVBoxWithSDS='yes'" >
+            <xsl:call-template name="template_app_filelist_even_sources" />
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']" mode="filelist-headers" >
+        <xsl:if test="$g_fVBoxWithSDS='yes'" >
+            <xsl:call-template name="template_app_filelist_headers" />
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']" mode="filelist-odd-sources" >
+        <xsl:if test="$g_fVBoxWithSDS='yes'" >
+            <xsl:call-template name="template_app_filelist_odd_sources" />
+        </xsl:if>
+    </xsl:template>
+    
 
 </xsl:stylesheet>
 <!-- vi: set tabstop=4 shiftwidth=4 expandtab: -->

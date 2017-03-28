@@ -912,6 +912,17 @@ endif
 # If issues are found, create high priority defects and temporarily comment
 # the next line.
 VBOX_WITH_STRICT_LOCKS = 1
+## VBoxSDS is the bridge windows service that sits between 
+# VirtualBox object client and VBoxSVC that fixes problem
+# when multiple VBoxSVC starts for the same user
+# it is enabled for windows build only
+ifdef VBOX_WITH_SDS
+ ifneq  ($(KBUILD_TARGET),win)
+  VBOX_WITH_SDS = 
+ endif
+endif
+# disabled by default
+VBOX_WITH_SDS =  
 
 
 #

@@ -279,17 +279,21 @@
   Note!! Don't forget to update the python bindings (++) when changing the
          UUID or version!!
 -->
-<library
-  name="VirtualBox"
-  uuid="d7569351-1750-46f0-936e-bd127d5bc264"
-  version="1.3"
-  desc="VirtualBox Type Library"
-  appUuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
-  supportsErrorInfo="yes"
+    <library
+      name="VirtualBox"
+      uuid="d7569351-1750-46f0-936e-bd127d5bc264"
+      version="1.3"
+>
+
+<application
+        name="VirtualBox"
+        uuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
+        supportsErrorInfo="yes"
 >
 
 
-  <!--
+
+            <!--
   // COM result codes for VirtualBox
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -23878,6 +23882,62 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <interface name="ISession" default="yes"/>
     </class>
   </module>
+
+</application>
+
+<!-- Pay attention! Application uuid of this application is used in midl.xsl
+     So if you change it then change filter in "interface" and "class" template in midl.xsl too 
+-->
+<application
+  name="VirtualBox System Service"
+  uuid="ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa"
+  supportsErrorInfo="yes"
+>
+
+<if target="midl">
+  <!--
+  // IVirtualBoxSDS
+  //////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="IVirtualBoxSDS" extends="$unknown"
+    uuid="28932695-fb72-4708-8904-e1077dac7f9a"
+    wsmap="suppress"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>
+      The IVirtualBoxSDS interface represents the system-wide directory service
+      helper.
+
+      It exists only on Windows host, and its purpose is to work around design
+      flaws in Microsoft's (D)COM, in particular the local server instantiation
+      behavior.
+    </desc>
+
+    <attribute name="virtualBox" type="IVirtualBox" readonly="yes">
+      <desc>
+        Reference to the server-side API root object.
+      </desc>
+    </attribute>
+
+      <method name="releaseVirtualBox">
+          <desc>
+              Client informs that it releases it's VirtualBox reference
+          </desc>
+      </method>
+      
+  </interface>
+</if>
+
+  <module name="VBoxSDS" context="LocalService">
+    <class name="VirtualBoxSDS" uuid="74ab5ffe-8726-4435-aa7e-876d705bcba5"
+           namespace="virtualbox.org">
+      <interface name="IVirtualBoxSDS" default="yes"/>
+    </class>
+  </module>
+
+</application>
 
 </library>
 

@@ -1606,25 +1606,28 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 <!--
  *  libraries
 -->
-<xsl:template match="library">
+<xsl:template match="idl/library">
   <!-- result codes -->
   <xsl:call-template name="xsltprocNewlineOutputHack"/>
-  <xsl:for-each select="result">
+  <xsl:for-each select="application/result">
     <xsl:apply-templates select="."/>
   </xsl:for-each>
   <xsl:call-template name="xsltprocNewlineOutputHack"/>
   <xsl:call-template name="xsltprocNewlineOutputHack"/>
   <!-- forward declarations -->
-  <xsl:apply-templates select="interface | if/interface" mode="forward"/>
+  <xsl:apply-templates select="application/interface | application/if/interface" mode="forward"/>
   <xsl:call-template name="xsltprocNewlineOutputHack"/>
   <!-- typedef'ing the struct declarations -->
-  <xsl:apply-templates select="interface | if/interface" mode="typedef"/>
+  <xsl:apply-templates select="application/interface | application/if/interface" mode="typedef"/>
   <xsl:call-template name="xsltprocNewlineOutputHack"/>
   <!-- all enums go first -->
-  <xsl:apply-templates select="enum | if/enum"/>
-  <!-- everything else but result codes and enums -->
+  <xsl:apply-templates select="application/enum | application/if/enum"/>
+  <!-- everything else but result codes and enums 
   <xsl:apply-templates select="*[not(self::result or self::enum) and
-                                 not(self::if[result] or self::if[enum])]"/>
+                                 not(self::if[result] or self::if[enum])]"/> -->
+    <!-- the modules (i.e. everything else) -->
+  <xsl:apply-templates select="application/interface | application/if[interface]
+                                   | application/module | application/if[module]"/>
   <!-- -->
 </xsl:template>
 
@@ -2454,7 +2457,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
   <xsl:choose>
-    <!-- modifiers (ignored for 'enumeration' attributes)-->
+    <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
       <xsl:choose>
         <xsl:when test="../@mod='ptr'">
@@ -2556,20 +2559,15 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
           <xsl:choose>
             <!-- enum types -->
             <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
+              (ancestor::library/application/enum[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
             ">
               <xsl:text>PRUint32</xsl:text>
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              (name(current())='enumerator' and
-               ((ancestor::library/enumerator[@name=current()]) or
-                (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
-              ) or
-              ((ancestor::library/interface[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              )
+              (ancestor::library/application/interface[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
             ">
               <xsl:value-of select="."/>
             </xsl:when>
@@ -2592,7 +2590,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
   <xsl:choose>
-    <!-- modifiers (ignored for 'enumeration' attributes)-->
+    <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
       <xsl:choose>
         <xsl:when test="../@mod='ptr'">
@@ -2682,20 +2680,15 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
           <xsl:choose>
             <!-- enum types -->
             <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
+              (ancestor::library/application/enum[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
             ">
               <xsl:text>PRUint32</xsl:text>
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              (name(current())='enumerator' and
-               ((ancestor::library/enumerator[@name=current()]) or
-                (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
-              ) or
-              ((ancestor::library/interface[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              )
+              (ancestor::library/application/interface[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
             ">
               <xsl:value-of select="."/>
               <xsl:text> *</xsl:text>
@@ -2708,5 +2701,13 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   </xsl:choose>
 </xsl:template>
 
-</xsl:stylesheet>
 
+<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//module/class" />
+
+<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']/if//interface
+| application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//interface" />
+
+<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//interface" mode="forward" />
+
+
+</xsl:stylesheet>

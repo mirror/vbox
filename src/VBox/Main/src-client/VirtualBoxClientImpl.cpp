@@ -58,8 +58,67 @@ void VirtualBoxClient::FinalRelease()
     BaseFinalRelease();
 }
 
+
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_WITH_SDS
+
+HRESULT CreateVirtualBoxThroughSDS(ComPtr<IVirtualBox> &aVirtualBox)
+{
+    ComPtr<IVirtualBoxSDS> aVirtualBoxSDS;
+
+    HRESULT rc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
+        NULL,                   /* no aggregation */
+        CLSCTX_LOCAL_SERVER,   /* the object lives in the current process */
+        IID_IVirtualBoxSDS,  /* IID of the interface */
+        (void **)aVirtualBoxSDS.asOutParam());
+    if (FAILED(rc))
+    {
+        //AssertComRCThrow(rc, setError(rc,
+        //    tr("Could not create VirtualBoxSDS bridge object for VirtualBoxClient")));
+        Assert(SUCCEEDED(rc));
+        return rc;
+    }
+
+    rc = aVirtualBoxSDS->get_VirtualBox(aVirtualBox.asOutParam());
+    if (FAILED(rc))
+    {
+        Assert(SUCCEEDED(rc));
+        //AssertComRCThrow(rc, setError(rc,
+        //    tr("Could not create VirtualBox object for VirtualBoxClient")));
+    }
+    return rc;
+}
+
+HRESULT ReleaseVirtualBoxThroughSDS()
+{
+    ComPtr<IVirtualBoxSDS> aVirtualBoxSDS;
+
+    HRESULT rc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
+        NULL,                   /* no aggregation */
+        CLSCTX_LOCAL_SERVER,   /* the object lives in the current process */
+        IID_IVirtualBoxSDS,  /* IID of the interface */
+        (void **)aVirtualBoxSDS.asOutParam());
+    if (FAILED(rc))
+    {
+        //AssertComRCThrow(rc, setError(rc,
+        //    tr("Could not create VirtualBoxSDS bridge object for VirtualBoxClient")));
+        LogRel(("ReleaseVirtualBox - instantiation of IVirtualBoxSDS failed, %x\n", rc));
+        Assert(SUCCEEDED(rc));
+        return rc;
+    }
+
+    rc = aVirtualBoxSDS->ReleaseVirtualBox();
+    if (FAILED(rc))
+    {
+        LogRel(("DeregisterVirtualBox() failed, %x\n", rc));
+        Assert(SUCCEEDED(rc));
+    }
+    return rc;
+}
+
+#endif
 
 /**
  * Initializes the VirtualBoxClient object.
@@ -68,6 +127,25 @@ void VirtualBoxClient::FinalRelease()
  */
 HRESULT VirtualBoxClient::init()
 {
+
+#ifdef VBOX_WITH_SDS
+    // TODO: AM rework for final version
+    // setup COM Security to enable impersonation
+    // This works for console Virtual Box clients, GUI has own security settings 
+    //  For GUI Virtual Box it will be second call so can return TOO_LATE error
+    HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
+        -1,
+        NULL,
+        NULL,
+        RPC_C_AUTHN_LEVEL_DEFAULT,
+        RPC_C_IMP_LEVEL_IMPERSONATE, //RPC_C_IMP_LEVEL_DELEGATE,//RPC_C_IMP_LEVEL_IMPERSONATE, 
+        NULL,
+        EOAC_NONE,//EOAC_NONE,//EOAC_DYNAMIC_CLOAKING,//EOAC_STATIC_CLOAKING,  
+        NULL);
+    //Assert(RPC_E_TOO_LATE != hrGUICoInitializeSecurity);
+    Assert(SUCCEEDED(hrGUICoInitializeSecurity) || hrGUICoInitializeSecurity == RPC_E_TOO_LATE);
+#endif
+
     LogFlowThisFuncEnter();
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -91,8 +169,13 @@ HRESULT VirtualBoxClient::init()
 
         mData.m_ThreadWatcher = NIL_RTTHREAD;
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
-
+        
+#ifdef VBOX_WITH_SDS
+        // TODO: AM create virtual box through SDS 
+        rc = CreateVirtualBoxThroughSDS(mData.m_pVirtualBox);
+#else
         rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
+#endif
         if (FAILED(rc))
 #ifdef RT_OS_WINDOWS
             throw i_investigateVirtualBoxObjectCreationFailure(rc);
@@ -173,7 +256,8 @@ HRESULT VirtualBoxClient::init()
  */
 HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT hrcCaller)
 {
-    /*
+    // TODO: AM place creation of VBox through SDS
+     /*
      * First step is to try get an IUnknown interface of the VirtualBox object.
      *
      * This will succeed even when oleaut32.msm (see @bugref{8016}, @ticketref{12087})
@@ -339,6 +423,10 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
 void VirtualBoxClient::uninit()
 {
     LogFlowThisFunc(("\n"));
+
+#ifdef VBOX_WITH_SDS
+    ReleaseVirtualBoxThroughSDS();
+#endif
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);

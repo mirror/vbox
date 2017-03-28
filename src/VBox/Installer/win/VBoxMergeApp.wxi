@@ -81,6 +81,12 @@
         <!-- Include the auto-generated TypeLib block -->
         <?include $(env.PATH_TARGET)\VirtualBox_TypeLib.wxi ?>
 <?endif?>
+        
+ <?if $(env.VBOX_WITH_SDS) = "yes" ?>
+        <File Id="VBoxSDS" Name="VBoxSDS.exe"
+              Source="$(env.PATH_OUT)\bin\VBoxSDS.exe">
+        </File>
+ <?endif?>
     </Component>
 
 <?if $(env.VBOX_WITH_MIDL_PROXY_STUB) = "yes" ?>

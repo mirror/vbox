@@ -147,21 +147,34 @@
   <xsl:text>#endif // !VBOX_EXTERN_C&#x0A;</xsl:text>
   <!-- result codes -->
   <xsl:text>// result codes declared in API spec&#x0A;</xsl:text>
-  <xsl:for-each select="result">
+  <xsl:for-each select="application/result">
     <xsl:apply-templates select="."/>
   </xsl:for-each>
   <xsl:text>%}&#x0A;&#x0A;</xsl:text>
   <!-- forward declarations -->
-  <xsl:apply-templates select="if | interface" mode="forward"/>
+  <xsl:apply-templates select="application/if | application/interface" mode="forward"/>
   <xsl:text>&#x0A;</xsl:text>
   <!-- all enums go first -->
-  <xsl:apply-templates select="enum | if/enum"/>
-  <!-- everything else but result codes and enums -->
-  <xsl:apply-templates select="*[not(self::result or self::enum) and
-                                 not(self::if[result] or self::if[enum])]"/>
+  <xsl:apply-templates select="application/enum | application/if/enum"/>
+  <!-- everything else but result codes and enums 
+  <xsl:apply-templates select="*[not(self::application/result or self::application/enum) and
+                                 not(self::application[result] or self::application/if[enum])]"/> -->
+  <!-- the modules (i.e. everything else) -->
+  <xsl:apply-templates select="application/interface | application/if[interface]
+                                   | application/module | application/if[module]"/>
   <!-- -->
 </xsl:template>
 
+
+ <!--
+ *  applications
+-->
+<xsl:template match="application">
+  <xsl:apply-templates/>
+</xsl:template>
+<xsl:template match="application" mode="forward">
+  <xsl:apply-templates mode="forward"/>
+</xsl:template>
 
 <!--
  *  result codes
@@ -885,15 +898,15 @@
           <xsl:choose>
             <!-- enum types -->
             <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
+              (ancestor::library/application/enum[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
             ">
               <xsl:text>PRUint32</xsl:text>
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              (ancestor::library/interface[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/interface[@name=current()])
+              (ancestor::library/application/interface[@name=current()]) or
+               (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
             ">
               <xsl:value-of select="."/>
             </xsl:when>
@@ -1007,15 +1020,15 @@
           <xsl:choose>
             <!-- enum types -->
             <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
+              (ancestor::library/application/enum[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
             ">
               <xsl:text>PRUint32</xsl:text>
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              (ancestor::library/interface[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/interface[@name=current()])
+              (ancestor::library/application/interface[@name=current()]) or
+              (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
             ">
               <xsl:value-of select="."/>
               <xsl:text> *</xsl:text>
@@ -1027,6 +1040,16 @@
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
+
+<!-- Filters for switch off VBoxSDS definitions -->
+  
+<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//module/class" />
+
+<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']/if//interface
+| application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//interface" />
+
+<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//interface" mode="forward" />
+
 
 </xsl:stylesheet>
 

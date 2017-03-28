@@ -44,6 +44,9 @@
 #ifndef VBOXSVC_LOG_DEFAULT
 # define VBOXSVC_LOG_DEFAULT "all"
 #endif
+#ifndef VBOXSDS_LOG_DEFAULT
+# define VBOXSDS_LOG_DEFAULT "all"
+#endif
 
 #include <VBox/log.h>
 

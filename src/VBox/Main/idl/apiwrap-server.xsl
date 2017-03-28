@@ -2489,6 +2489,14 @@ private:</xsl:text>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+  application match
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:template match="application">
+    <xsl:apply-templates/>
+</xsl:template>
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
   library match
  - - - - - - - - - - - - - - - - - - - - - - -->
 

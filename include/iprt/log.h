@@ -1663,6 +1663,33 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
     do { LogRelMax(a_cMax, ("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
 #endif
 
+/** @def LogRelFlowThisFunc
+ * The same as LogRelFlowFunc but for class functions (methods): the resulting
+ * log line is additionally prepended with a hex value of |this| pointer.
+ */
+#ifdef LOG_USE_C99
+# define LogRelFlowThisFunc(a) \
+    _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogRelFlowThisFunc(a) do { LogRelFlow(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
+#endif
+
+
+/** Shortcut to |LogRelFlowFunc ("ENTER\n")|, marks the beginnig of the function. */
+#define LogRelFlowFuncEnter()      LogRelFlowFunc(("ENTER\n"))
+
+/** Shortcut to |LogRelFlowFunc ("LEAVE\n")|, marks the end of the function. */
+#define LogRelFlowFuncLeave()      LogRelFlowFunc(("LEAVE\n"))
+
+/** Shortcut to |LogRelFlowFunc ("LEAVE: %Rrc\n")|, marks the end of the function. */
+#define LogRelFlowFuncLeaveRC(rc)  LogRelFlowFunc(("LEAVE: %Rrc\n", (rc)))
+
+/** Shortcut to |LogRelFlowThisFunc ("ENTER\n")|, marks the beginnig of the function. */
+#define LogRelFlowThisFuncEnter()  LogRelFlowThisFunc(("ENTER\n"))
+
+/** Shortcut to |LogRelFlowThisFunc ("LEAVE\n")|, marks the end of the function. */
+#define LogRelFlowThisFuncLeave()  LogRelFlowThisFunc(("LEAVE\n"))
+
 /** @} */
 
 

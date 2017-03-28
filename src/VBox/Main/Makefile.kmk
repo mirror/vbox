@@ -74,6 +74,7 @@ VBOX_MAIN_DEFS += \
 	$(if $(VBOX_WITH_USB_CARDREADER_TEST),VBOX_WITH_USB_CARDREADER_TEST,) \
 	$(if $(VBOX_WITH_HOSTNETIF_API),VBOX_WITH_HOSTNETIF_API,) \
 	$(if $(VBOX_WITH_MIDL_PROXY_STUB),VBOX_WITH_MIDL_PROXY_STUB,) \
+    $(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) \
 
 # Unconditionally enable the new semaphore key generation code
 VBOX_MAIN_DEFS += VBOX_WITH_NEW_SYS_V_KEYGEN
@@ -125,6 +126,8 @@ if "$(KBUILD_TARGET)" != "win"
  BLDDIRS += \
 	$(VBOX_PATH_SDK)/bindings/xpcom/idl \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include
+ # switch off VBoxSDS in XPCOM	
+ override VBOX_WITH_SDS = 
 endif # xpcom
 
 
@@ -264,6 +267,48 @@ BLDDIRS += $(PATH_TARGET)/Main
 
 testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
+
+#
+# VBoxSDS executable
+#
+if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
+PROGRAMS += VBoxSDS
+VBoxSDS_TEMPLATE = VBOXMAINEXE
+VBoxSDS_DEFS = \
+VBoxSDS_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
+VBoxSDS_DEFS.win += _WIN32_WINNT=0x0510
+VBoxSDS_INCS = \
+	include \
+	$(VBoxSDS_0_OUTDIR) \
+	$(VBOX_MAIN_APIWRAPPER_INCS)
+VBoxSDS_INCS.win = \
+	$(VBoxCOM_0_OUTDIR)
+VBoxSDS_LIBS += \
+	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
+VBoxSDS_INTERMEDIATES = \
+	$(VBOX_MAIN_PREREQS) \
+	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+VBoxSDS_SOURCES = \
+	src-all/Global.cpp \
+	src-all/AutoCaller.cpp \
+	src-all/VirtualBoxBase.cpp \
+	src-all/VirtualBoxErrorInfoImpl.cpp \
+	src-global/VirtualBoxSDSImpl.cpp
+VBoxSDS_SOURCES.win = \
+	src-global/win/VBoxSDS.cpp \
+	src-global/win/VBoxSDS.rc
+
+src-global/win/VBoxSDS.rc_INCS  = $(VBoxSDS_0_OUTDIR)
+src-global/win/VBoxSDS.rc_DEPS  = $(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc
+src-global/win/VBoxSDS.rc_CLEAN = $(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc
+
+$$(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
+	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+
+$$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
+	$(VBOX_XSLTPROC) --stringparam Application "VirtualBox System" --stringparam Module VBoxSDS -o $@ $< $(VBOX_XIDL_FILE)
+
+endif #if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
 
 #
 # VBoxSVC executable
@@ -562,7 +607,7 @@ ifndef VBOX_WITH_MIDL_PROXY_STUB
 src-server/win/VBoxSVC.rc_DEPS  += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
 src-server/win/VBoxSVC.rc_CLEAN += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
 $$(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
-	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
+	$(VBOX_XSLTPROC) --stringparam Application VirtualBox --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
 endif
 
 ## @todo r=klaus unfortunately we don't have xmllint everywhere, would be
@@ -688,7 +733,8 @@ VBoxC_DEFS = \
 	$(if-expr defined(VBOX_WITH_EHCI) && defined(VBOX_WITH_USB),VBOX_WITH_EHCI,) \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
-	$(if $(VBOX_WITH_VRDEAUTH_IN_VBOXSVC),VBOX_WITH_VRDEAUTH_IN_VBOXSVC,)
+	$(if $(VBOX_WITH_VRDEAUTH_IN_VBOXSVC),VBOX_WITH_VRDEAUTH_IN_VBOXSVC,) \
+    $(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) 
 ifdef VBOX_WITH_CRHGSMI
  VBoxC_DEFS += VBOX_WITH_CRHGSMI
 endif
@@ -894,7 +940,7 @@ src-client/win/VBoxC.rc_DEPS = $(VBoxC_0_OUTDIR)/VBoxC.rgs $(VBoxCOM_0_OUTDIR)/V
 VBoxC_CLEAN.win  += $(VBoxC_0_OUTDIR)/VBoxC.rgs
 
 $$(VBoxC_0_OUTDIR)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
-	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
+	$(VBOX_XSLTPROC) --stringparam Application VirtualBox --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API
  #
@@ -952,7 +998,7 @@ endif
  $$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs: \
  		$(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl \
 		$(VBOX_XIDL_FILE) | $$(dir $$@)
-	$(VBOX_XSLTPROC) --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
+	$(VBOX_XSLTPROC) --stringparam Application VirtualBox --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
 
 endif
 
@@ -1099,7 +1145,8 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  #
  DLLS += VBoxProxyStub
  VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
- VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL PROXY_CLSID_IS="$(VBOX_MIDL_PROXY_CLSID_IS)"
+ VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL PROXY_CLSID_IS="$(VBOX_MIDL_PROXY_CLSID_IS)" \
+     $(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) 
  VBoxProxyStub_DEFS.win.x86 = WIN32
  VBoxProxyStub_SDKS     = VBOX_NTDLL
  VBoxProxyStub_DEFPATH  = $(VBoxCOM_0_OUTDIR)/# Hack to workaround drive letter in $(VBoxCOM_0_OUTDIR)/ for CFLAGS hack below.
@@ -1172,7 +1219,10 @@ $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 
 $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(if $(VBOX_WITH_MIDL_PROXY_STUB),-stringparam g_fGenProxy yes,) $< $(VBOX_XIDL_FILE)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
+     $(if $(VBOX_WITH_MIDL_PROXY_STUB),-stringparam g_fGenProxy yes,) \
+     $(if $(VBOX_WITH_SDS),-stringparam g_fVBoxWithSDS yes,) \
+     $< $(VBOX_XIDL_FILE)
 
 # Aliases for testing purposes.
 ifdef VBOX_WITH_XPCOM
@@ -1370,6 +1420,7 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts \
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+        $(if $(VBOX_WITH_SDS),-stringparam g_fVBoxWithSDS yes,) \
 		-o $@ $(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server-filelist.xsl $<
 	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_VBOX_KMK_FILE)
 
