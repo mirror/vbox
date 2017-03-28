@@ -2563,7 +2563,7 @@ typedef X86FPUREG const *PCX86FPUREG;
  */
 typedef union X86XMMREG
 {
-    /** XMM Register view *. */
+    /** XMM Register view. */
     uint128_t   xmm;
     /** 8-bit view. */
     uint8_t     au8[16];
@@ -2575,6 +2575,8 @@ typedef union X86XMMREG
     uint64_t    au64[2];
     /** 128-bit view. (yeah, very helpful) */
     uint128_t   au128[1];
+    /** Confusing nested 128-bit union view (this is what xmm should've been). */
+    RTUINT128U  uXmm;
 } X86XMMREG;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86XMMREG, 16);

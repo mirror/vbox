@@ -9177,14 +9177,15 @@ DECL_NO_INLINE(IEM_STATIC, void) iemMemFetchDataR80Jmp(PVMCPU pVCpu, PRTFLOAT80U
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128(PVMCPU pVCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128(PVMCPU pVCpu, PRTUINT128U pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
     /* The lazy approach for now... */
-    uint128_t const *pu128Src;
+    PCRTUINT128U pu128Src;
     VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu128Src, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
     if (rc == VINF_SUCCESS)
     {
-        *pu128Dst = *pu128Src;
+        pu128Dst->au64[0] = pu128Src->au64[0];
+        pu128Dst->au64[1] = pu128Src->au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
     }
     return rc;
@@ -9201,11 +9202,12 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128(PVMCPU pVCpu, uint128_t *pu128Dst, u
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-IEM_STATIC void iemMemFetchDataU128Jmp(PVMCPU pVCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+IEM_STATIC void iemMemFetchDataU128Jmp(PVMCPU pVCpu, PRTUINT128U pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
     /* The lazy approach for now... */
-    uint128_t const *pu128Src = (uint128_t const *)iemMemMapJmp(pVCpu, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
-    *pu128Dst = *pu128Src;
+    PCRTUINT128U pu128Src = (PCRTUINT128U)iemMemMapJmp(pVCpu, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    pu128Dst->au64[0] = pu128Src->au64[0];
+    pu128Dst->au64[1] = pu128Src->au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
 }
 #endif
@@ -9224,7 +9226,7 @@ IEM_STATIC void iemMemFetchDataU128Jmp(PVMCPU pVCpu, uint128_t *pu128Dst, uint8_
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPU pVCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPU pVCpu, PRTUINT128U pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
     /* The lazy approach for now... */
     /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
@@ -9232,11 +9234,12 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPU pVCpu, uint128_t *p
         && !(IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
-    uint128_t const *pu128Src;
+    PCRTUINT128U pu128Src;
     VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu128Src, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
     if (rc == VINF_SUCCESS)
     {
-        *pu128Dst = *pu128Src;
+        pu128Dst->au64[0] = pu128Src->au64[0];
+        pu128Dst->au64[1] = pu128Src->au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
     }
     return rc;
@@ -9256,16 +9259,16 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPU pVCpu, uint128_t *p
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-DECL_NO_INLINE(IEM_STATIC, void) iemMemFetchDataU128AlignedSseJmp(PVMCPU pVCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+DECL_NO_INLINE(IEM_STATIC, void) iemMemFetchDataU128AlignedSseJmp(PVMCPU pVCpu, PRTUINT128U pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
     /* The lazy approach for now... */
     /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
     if (   (GCPtrMem & 15) == 0
         || (IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
     {
-        uint128_t const *pu128Src = (uint128_t const *)iemMemMapJmp(pVCpu, sizeof(*pu128Src), iSegReg, GCPtrMem,
-                                                                    IEM_ACCESS_DATA_R);
-        *pu128Dst = *pu128Src;
+        PCRTUINT128U pu128Src = (PCRTUINT128U)iemMemMapJmp(pVCpu, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+        pu128Dst->au64[0] = pu128Src->au64[0];
+        pu128Dst->au64[1] = pu128Src->au64[1];
         iemMemCommitAndUnmapJmp(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
         return;
     }
@@ -9536,14 +9539,15 @@ IEM_STATIC void iemMemStoreDataU64Jmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCP
  * @param   GCPtrMem            The address of the guest memory.
  * @param   u128Value            The value to store.
  */
-IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
+IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, RTUINT128U u128Value)
 {
     /* The lazy approach for now... */
-    uint128_t *pu128Dst;
+    PRTUINT128U pu128Dst;
     VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu128Dst, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
     if (rc == VINF_SUCCESS)
     {
-        *pu128Dst = u128Value;
+        pu128Dst->au64[0] = u128Value.au64[0];
+        pu128Dst->au64[1] = u128Value.au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
     }
     return rc;
@@ -9560,11 +9564,12 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128(PVMCPU pVCpu, uint8_t iSegReg, RTGCP
  * @param   GCPtrMem            The address of the guest memory.
  * @param   u128Value            The value to store.
  */
-IEM_STATIC void iemMemStoreDataU128Jmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
+IEM_STATIC void iemMemStoreDataU128Jmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, RTUINT128U u128Value)
 {
     /* The lazy approach for now... */
-    uint128_t *pu128Dst = (uint128_t *)iemMemMapJmp(pVCpu, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
-    *pu128Dst = u128Value;
+    PRTUINT128U pu128Dst = (PRTUINT128U)iemMemMapJmp(pVCpu, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+    pu128Dst->au64[0] = u128Value.au64[0];
+    pu128Dst->au64[1] = u128Value.au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
 }
 #endif
@@ -9580,18 +9585,19 @@ IEM_STATIC void iemMemStoreDataU128Jmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GC
  * @param   GCPtrMem            The address of the guest memory.
  * @param   u128Value           The value to store.
  */
-IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
+IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, RTUINT128U u128Value)
 {
     /* The lazy approach for now... */
     if (   (GCPtrMem & 15)
         && !(IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
-    uint128_t *pu128Dst;
+    PRTUINT128U pu128Dst;
     VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu128Dst, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
     if (rc == VINF_SUCCESS)
     {
-        *pu128Dst = u128Value;
+        pu128Dst->au64[0] = u128Value.au64[0];
+        pu128Dst->au64[1] = u128Value.au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
     }
     return rc;
@@ -9610,14 +9616,15 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PVMCPU pVCpu, uint8_t iSeg
  * @param   u128Value           The value to store.
  */
 DECL_NO_INLINE(IEM_STATIC, void)
-iemMemStoreDataU128AlignedSseJmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
+iemMemStoreDataU128AlignedSseJmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, RTUINT128U u128Value)
 {
     /* The lazy approach for now... */
     if (   (GCPtrMem & 15) == 0
         || (IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
     {
-        uint128_t *pu128Dst = (uint128_t *)iemMemMapJmp(pVCpu, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
-        *pu128Dst = u128Value;
+        PRTUINT128U pu128Dst = (PRTUINT128U)iemMemMapJmp(pVCpu, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+        pu128Dst->au64[0] = u128Value.au64[0];
+        pu128Dst->au64[1] = u128Value.au64[1];
         iemMemCommitAndUnmapJmp(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
         return;
     }
@@ -10533,6 +10540,15 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if ((pVCpu)->iem.s.CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87.FSW & X86_FSW_ES) \
             return iemRaiseMathFault(pVCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT() \
+    do { \
+        if (   (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_EM) \
+            || !(IEM_GET_CTX(pVCpu)->cr4 & X86_CR4_OSFXSR) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse3) \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        if (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pVCpu); \
+    } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT() \
     do { \
         if (   (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_EM) \
@@ -10753,7 +10769,9 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         (a_pu32Dst) = ((uint32_t const *)&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx)
 
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg) \
-    do { (a_u128Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].xmm; } while (0)
+    do { (a_u128Value).au64[0] = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[0]; \
+         (a_u128Value).au64[1] = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[1]; \
+    } while (0)
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg) \
     do { (a_u64Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[0]; } while (0)
 #define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg) \
@@ -10761,7 +10779,9 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #define IEM_MC_FETCH_XREG_HI_U64(a_u64Value, a_iXReg) \
     do { (a_u64Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[1]; } while (0)
 #define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value) \
-    do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].xmm = (a_u128Value); } while (0)
+    do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[0] = (a_u128Value).au64[0]; \
+         IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[1] = (a_u128Value).au64[1]; \
+    } while (0)
 #define IEM_MC_STORE_XREG_U64(a_iXReg, a_u64Value) \
     do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[0] = (a_u64Value); } while (0)
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
@@ -10775,14 +10795,17 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[1] = 0; \
     } while (0)
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)       \
-    (a_pu128Dst) = (&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].xmm)
+    (a_pu128Dst) = (&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].uXmm)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg) \
-    (a_pu128Dst) = ((uint128_t const *)&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].xmm)
+    (a_pu128Dst) = ((PCRTUINT128U)&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].uXmm)
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
     (a_pu64Dst) = ((uint64_t const *)&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXReg)].au64[0])
 #define IEM_MC_COPY_XREG_U128(a_iXRegDst, a_iXRegSrc) \
-    do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXRegDst)].xmm \
-            = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXRegSrc)].xmm; } while (0)
+    do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXRegDst)].au64[0] \
+            = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXRegSrc)].au64[0]; \
+         IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXRegDst)].au64[1] \
+            = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXRegSrc)].au64[1]; \
+    } while (0)
 
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \

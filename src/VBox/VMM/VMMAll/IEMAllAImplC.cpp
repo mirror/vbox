@@ -1370,3 +1370,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_fallback,(PRTUINT128U pu128Dst, PRTU
     }
 }
 
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
+{
+    RT_NOREF(pFpuState);
+    puDst->au32[0] = puSrc->au32[0];
+    puDst->au32[1] = puSrc->au32[0];
+    puDst->au32[2] = puSrc->au32[2];
+    puDst->au32[3] = puSrc->au32[2];
+}
+
