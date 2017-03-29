@@ -401,17 +401,17 @@ typedef IEMSELDESC *PIEMSELDESC;
 /**
  * Check if an SVM read CRx intercept is set.
  */
-#define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+#define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM write CRx intercept is set.
  */
-#define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+#define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM read DRx intercept is set.
  */
-#define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
+#define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM write DRx intercept is set.

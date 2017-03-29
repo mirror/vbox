@@ -5895,7 +5895,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMRUN))
     {
         Log(("vmrun: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMRUN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
 
