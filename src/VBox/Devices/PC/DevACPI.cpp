@@ -3138,10 +3138,17 @@ static int acpiR3PlantTables(ACPIState *pThis)
     pThis->u64RamSize = MMR3PhysGetRamSize(pVM);
     if (pThis->fPciPref64Enabled)
     {
-        /* Activate MEM4. See also DevPciIch9.cpp / ich9pciFakePCIBIOS() / uPciBiosMmio64 */
-        pThis->u64PciPref64Min = _4G + cbAbove4GB;
-        LogRel(("ACPI: enabling 64-bit prefetch root bus resource %#018RX64..%#018RX64\n",
-               pThis->u64PciPref64Min, pThis->u64PciPref64Max-1));
+        uint64_t const u64PciPref64Min = _4G + cbAbove4GB;
+        if (pThis->u64PciPref64Max > u64PciPref64Min)
+        {
+            /* Activate MEM4. See also DevPciIch9.cpp / ich9pciFakePCIBIOS() / uPciBiosMmio64 */
+            pThis->u64PciPref64Min = u64PciPref64Min;
+            LogRel(("ACPI: enabling 64-bit prefetch root bus resource %#018RX64..%#018RX64\n",
+                   u64PciPref64Min, pThis->u64PciPref64Max-1));
+        }
+        else
+            LogRel(("ACPI: NOT enabling 64-bit prefetch root bus resource (min/%#018RX64 >= max/%#018RX64)\n",
+                   u64PciPref64Min, pThis->u64PciPref64Max-1));
     }
     if (cbBelow4GB > UINT32_C(0xffe00000)) /* See MEM3. */
     {
