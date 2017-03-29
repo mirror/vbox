@@ -888,6 +888,7 @@ int Display::i_notifyCroglResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen,
     return VINF_SUCCESS;
 }
 
+#ifndef NEW_RESIZE
 /**
  *  Handles display resize event.
  *
@@ -901,10 +902,23 @@ int Display::i_notifyCroglResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen,
  *
  * @thread EMT
  */
-#ifndef NEW_RESIZE
 int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM,
                                    uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags)
 #else
+/**
+ *  Handles display resize event.
+ *
+ * @param uScreenId Screen ID
+ * @param bpp       New bits per pixel.
+ * @param pvVRAM    VRAM pointer.
+ * @param cbLine    New bytes per line.
+ * @param w         New display width.
+ * @param h         New display height.
+ * @param flags     Flags of the new video mode.
+ * @param xOrigin   New display origin X.
+ * @param yOrigin   New display origin Y.
+ * @param fVGAResize Whether the resize is originated from the VGA device (DevVGA).
+ */
 int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM,
                                    uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags,
                                    uint32_t xOrigin, uint32_t yOrigin, bool fVGAResize)
