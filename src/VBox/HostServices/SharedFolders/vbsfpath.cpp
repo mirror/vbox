@@ -111,10 +111,10 @@ static int vbsfCorrectCasing(SHFLCLIENTDATA *pClient, char *pszFullPath, char *p
                 if (   rc != VINF_SUCCESS
                     && rc != VWRN_NO_DIRENT_INFO)
                 {
-                    AssertFailed();
                     if (   rc == VERR_NO_TRANSLATION
                         || rc == VERR_INVALID_UTF8_ENCODING)
                         continue;
+                    AssertMsgFailed(("%Rrc\n", rc));
                     break;
                 }
 
