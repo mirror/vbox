@@ -99,10 +99,12 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares NAT Network tab. */
+    /** Prepares 'NAT Network' tab. */
     void prepareTabNAT();
-    /** Prepares Host Network tab. */
+    /** Prepares 'Host Network' tab. */
     void prepareTabHost();
+    /** Prepares connections. */
+    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 

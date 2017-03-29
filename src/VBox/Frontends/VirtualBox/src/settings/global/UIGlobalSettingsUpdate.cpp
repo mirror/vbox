@@ -214,8 +214,10 @@ void UIGlobalSettingsUpdate::prepare()
     AssertPtrReturnVoid(m_pCache);
 
     /* Layout/widgets created in the .ui file. */
+    AssertPtrReturnVoid(m_pCheckBoxUpdate);
+    AssertPtrReturnVoid(m_pComboBoxUpdatePeriod);
     {
-        /* Prepare widgets: */
+        /* Configure widgets: */
         connect(m_pCheckBoxUpdate, SIGNAL(toggled(bool)), this, SLOT(sltHandleUpdateToggle(bool)));
         connect(m_pComboBoxUpdatePeriod, SIGNAL(activated(int)), this, SLOT(sltHandleUpdatePeriodChange()));
     }

@@ -76,10 +76,12 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares Selector UI tab. */
+    /** Prepares 'Selector UI' tab. */
     void prepareTabSelector();
-    /** Prepares Runtime UI tab. */
+    /** Prepares 'Runtime UI' tab. */
     void prepareTabMachine();
+    /** Prepares connections. */
+    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 

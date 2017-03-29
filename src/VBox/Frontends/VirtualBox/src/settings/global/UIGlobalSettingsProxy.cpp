@@ -220,7 +220,7 @@ void UIGlobalSettingsProxy::prepare()
         QButtonGroup *pButtonGroup = new QButtonGroup(this);
         AssertPtrReturnVoid(pButtonGroup);
         {
-            /* Prepare button-group: */
+            /* Configure button-group: */
             pButtonGroup->addButton(m_pRadioProxyAuto);
             pButtonGroup->addButton(m_pRadioProxyDisabled);
             pButtonGroup->addButton(m_pRadioProxyEnabled);
@@ -228,15 +228,17 @@ void UIGlobalSettingsProxy::prepare()
         }
 
         /* Host editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pHostEditor);
         {
-            /* Prepare editor: */
+            /* Configure editor: */
             m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pHostEditor));
             connect(m_pHostEditor, SIGNAL(textEdited(const QString &)), this, SLOT(revalidate()));
         }
 
         /* Port editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pPortEditor);
         {
-            /* Prepare editor: */
+            /* Configure editor: */
             m_pPortEditor->setFixedWidthByText(QString().fill('0', 6));
             m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d+"), m_pPortEditor));
             connect(m_pPortEditor, SIGNAL(textEdited(const QString &)), this, SLOT(revalidate()));

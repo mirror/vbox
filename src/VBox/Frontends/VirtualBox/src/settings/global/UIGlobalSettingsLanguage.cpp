@@ -350,12 +350,14 @@ void UIGlobalSettingsLanguage::prepare()
 
     /* Prepare cache: */
     m_pCache = new UISettingsCacheGlobalLanguage;
+    AssertPtrReturnVoid(m_pCache);
 
     /* Layout created in the .ui file. */
     {
         /* Tree-widget created in the .ui file. */
+        AssertPtrReturnVoid(m_pLanguageTree);
         {
-            /* Prepare tree-widget: */
+            /* Configure tree-widget: */
             m_pLanguageTree->header()->hide();
             m_pLanguageTree->hideColumn(1);
             m_pLanguageTree->hideColumn(2);
@@ -368,8 +370,9 @@ void UIGlobalSettingsLanguage::prepare()
         }
 
         /* Rich-text label created in the .ui file. */
+        AssertPtrReturnVoid(m_pLanguageInfo);
         {
-            /* Prepare rich-text label: */
+            /* Configure rich-text label: */
             m_pLanguageInfo->setWordWrapMode(QTextOption::WordWrap);
             m_pLanguageInfo->setMinimumHeight(QFontMetrics(m_pLanguageInfo->font(), m_pLanguageInfo).height() * 5);
         }

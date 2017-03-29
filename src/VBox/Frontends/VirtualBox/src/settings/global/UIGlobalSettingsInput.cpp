@@ -1043,13 +1043,15 @@ void UIGlobalSettingsInput::prepare()
     m_pTabWidget = new QTabWidget(this);
     AssertPtrReturnVoid(m_pTabWidget);
     {
-        /* Prepare tab-widget: */
+        /* Configure tab-widget: */
         m_pTabWidget->setMinimumWidth(400);
 
-        /* Create Selector UI tab: */
+        /* Prepare 'Selector UI' tab: */
         prepareTabSelector();
-        /* Create Runtime UI tab: */
+        /* Prepare 'Runtime UI' tab: */
         prepareTabMachine();
+        /* Prepare connections: */
+        prepareConnections();
 
         /* Add tab-widget into layout: */
         m_pMainLayout->addWidget(m_pTabWidget, 0, 0, 1, 2);
@@ -1069,7 +1071,7 @@ void UIGlobalSettingsInput::prepareTabSelector()
         QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
         AssertPtrReturnVoid(pSelectorLayout);
         {
-            /* Prepare Selector UI layout: */
+            /* Configure Selector UI layout: */
             pSelectorLayout->setSpacing(1);
 #ifdef VBOX_WS_MAC
             /* On Mac OS X and X11 we can do a bit of smoothness. */
@@ -1079,22 +1081,21 @@ void UIGlobalSettingsInput::prepareTabSelector()
             /* Create Selector UI filter editor: */
             m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
             AssertPtrReturnVoid(m_pSelectorFilterEditor);
+            {
+                /* Add filter editor into layout: */
+                pSelectorLayout->addWidget(m_pSelectorFilterEditor);
+            }
+
             /* Create Selector UI model: */
             m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
-            AssertPtrReturnVoid(m_pSelectorModel);
+
             /* Create Selector UI table: */
             m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel, "m_pSelectorTable");
             AssertPtrReturnVoid(m_pSelectorTable);
-
-            /* Prepare Selector UI filter editor: */
-            connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
-                    m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
-            /* Prepare Selector UI model: */
-            connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
-
-            /* Add widgets into layout: */
-            pSelectorLayout->addWidget(m_pSelectorFilterEditor);
-            pSelectorLayout->addWidget(m_pSelectorTable);
+            {
+                /* Add table into layout: */
+                pSelectorLayout->addWidget(m_pSelectorTable);
+            }
         }
 
         /* Add tab into tab-widget: */
@@ -1112,7 +1113,7 @@ void UIGlobalSettingsInput::prepareTabMachine()
         QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
         AssertPtrReturnVoid(pMachineLayout);
         {
-            /* Prepare Runtime UI layout: */
+            /* Configure Runtime UI layout: */
             pMachineLayout->setSpacing(1);
 #ifdef VBOX_WS_MAC
             /* On Mac OS X and X11 we can do a bit of smoothness. */
@@ -1122,22 +1123,21 @@ void UIGlobalSettingsInput::prepareTabMachine()
             /* Create Runtime UI filter editor: */
             m_pMachineFilterEditor = new QLineEdit(pMachineTab);
             AssertPtrReturnVoid(m_pMachineFilterEditor);
+            {
+                /* Add filter editor into layout: */
+                pMachineLayout->addWidget(m_pMachineFilterEditor);
+            }
+
             /* Create Runtime UI model: */
             m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
-            AssertPtrReturnVoid(m_pMachineModel);
+
             /* Create Runtime UI table: */
             m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel, "m_pMachineTable");
             AssertPtrReturnVoid(m_pMachineTable);
-
-            /* Prepare Runtime UI filter editor: */
-            connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
-                    m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
-            /* Prepare Runtime UI model: */
-            connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
-
-            /* Add widgets into layout: */
-            pMachineLayout->addWidget(m_pMachineFilterEditor);
-            pMachineLayout->addWidget(m_pMachineTable);
+            {
+                /* Add table into layout: */
+                pMachineLayout->addWidget(m_pMachineTable);
+            }
         }
 
         /* Add tab into tab-widget: */
@@ -1147,6 +1147,19 @@ void UIGlobalSettingsInput::prepareTabMachine()
         if (VBoxGlobal::instance()->isVMConsoleProcess())
             m_pTabWidget->setCurrentWidget(pMachineTab);
     }
+}
+
+void UIGlobalSettingsInput::prepareConnections()
+{
+    /* Configure 'Selector UI' connections: */
+    connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
+            m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
+    connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
+
+    /* Configure 'Runtime UI' connections: */
+    connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
+            m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
+    connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
 }
 
 void UIGlobalSettingsInput::cleanup()

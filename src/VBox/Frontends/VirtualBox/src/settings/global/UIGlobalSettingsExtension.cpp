@@ -500,8 +500,9 @@ void UIGlobalSettingsExtension::prepare()
     /* Layout created in the .ui file. */
     {
         /* Tree-widget created in the .ui file. */
+        AssertPtrReturnVoid(m_pPackagesTree);
         {
-            /* Prepare tree-widget: */
+            /* Configure tree-widget: */
             m_pPackagesTree->header()->setStretchLastSection(false);
             m_pPackagesTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
             m_pPackagesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
@@ -514,14 +515,19 @@ void UIGlobalSettingsExtension::prepare()
         }
 
         /* Tool-bar created in the .ui file. */
+        AssertPtrReturnVoid(m_pPackagesToolbar);
         {
-            /* Prepare tool-bar: */
+            /* Configure toolbar: */
             const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
             m_pPackagesToolbar->setOrientation(Qt::Vertical);
             m_pPackagesToolbar->setIconSize(QSize(iIconMetric, iIconMetric));
+
+            /* Create 'Add Package' action: */
             m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
                                                                              ":/extension_pack_install_disabled_16px.png"),
                                                          QString(), this, SLOT(sltAddPackage()));
+
+            /* Create 'Remove Package' action: */
             m_pActionRemove = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
                                                                                 ":/extension_pack_uninstall_disabled_16px.png"),
                                                             QString(), this, SLOT(sltRemovePackage()));
