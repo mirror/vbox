@@ -33,7 +33,7 @@
 
 #include "DisplaySourceBitmapWrap.h"
 
-// #define NEW_RESIZE
+#define NEW_RESIZE
 
 class Console;
 struct VIDEORECCONTEXT;
