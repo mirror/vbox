@@ -7582,7 +7582,7 @@ FNIEMOP_DEF(iemOp_vmovq_Wq_Vq)
     else
     {
         /*
-         * Register, memory.
+         * Memory, register.
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
