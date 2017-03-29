@@ -517,12 +517,10 @@ CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
     {  UD_T_MODRM_RR7, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* 00=sfence */
     {  UD_T_MODRM, 2, { 0x0f, 0xb8 }, UD_F_NOT_RN_PFX },
     {  UD_T_MODRM | UD_T_NOAMD, 2, { 0x0f, 0xb9 }, UD_F_ANY_PFX }, /* UD1 */
-#endif
     {  UD_T_MODRM_MR0_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
     {  UD_T_MODRM_MR1_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
     {  UD_T_MODRM_MR2_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
     {  UD_T_MODRM_MR3_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
-#if 0
     /** @todo f3 0f bb rm and f2 0f bb rm does stuff on skylake even if their are blank in intel and AMD tables! */
     //{  UD_T_MODRM, 2, { 0x0f, 0xbb }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
     /** @todo AMD tables indicates that f2 0f bc rm is invalid, but on skylake it works differently (BSF?)  */
@@ -534,6 +532,22 @@ CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
     {  UD_T_MODRM_I8, 2, { 0x0f, 0xc4 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
     {  UD_T_MODRM_I8, 2, { 0x0f, 0xc5 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
     {  UD_T_MODRM_I8, 2, { 0x0f, 0xc6 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+#endif
+    {  UD_T_MODRM_MR0, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_RR0, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    //{  UD_T_MODRM_MR1, 2, { 0x0f, 0xc7 }, xxxx }, - cmpxchg8b/16b is weird, needs special testcase.
+    {  UD_T_MODRM_RR1, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_MR2, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_RR2, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_MR3, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_RR3, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_MR4, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_RR4, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_MR5, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM_RR5, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+    //{  UD_T_MODRM_MR0, 2, { 0x0f, 0xc7 }, UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX |  },
+    {  UD_T_MODRM_RR0, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
+#if 0
     {  UD_T_MODRM, 2, { 0x0f, 0xd0 }, UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX },
     {  UD_T_MODRM, 2, { 0x0f, 0xd1 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
     {  UD_T_MODRM, 2, { 0x0f, 0xd2 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
