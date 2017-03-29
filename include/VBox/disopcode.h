@@ -1051,9 +1051,10 @@ enum OP_PARM
 #define OP_PARM_Udq             (OP_PARM_U+OP_PARM_dq)
 #define OP_PARM_Lx              (OP_PARM_L+OP_PARM_x)
 
-/* For making IEM happy: */
+/* For making IEM / bs3-cpu-generated-1 happy: */
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
 #define OP_PARM_UqHi            OP_PARM_Uq
+#define OP_PARM_WqZxReg         OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */
 
 /** @} */
 

@@ -165,6 +165,7 @@ g_kdOpTypes = {
     'Wps':  ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',     ),
     'Wpd':  ( 'IDX_UseModRM',       'rm',     '%Wpd', 'Wpd',     ),
     'Wdq':  ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     ),
+    'WqZxReg': ( 'IDX_UseModRM',    'rm',     '%Wq',  'Wq',      ),
 
     # ModR/M.rm - register only.
     'Uq':   ( 'IDX_UseModRM',       'rm',     '%Uq',  'Uq',      ),

@@ -469,6 +469,22 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_HI] = */    8,
     /* [BS3CG1DST_XMM14_HI] = */    8,
     /* [BS3CG1DST_XMM15_HI] = */    8,
+    /* [BS3CG1DST_XMM0_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM1_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM2_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM3_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM4_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM5_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM6_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM7_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM8_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM9_LO_ZX] = */  8,
+    /* [BS3CG1DST_XMM10_LO_ZX] = */ 8,
+    /* [BS3CG1DST_XMM11_LO_ZX] = */ 8,
+    /* [BS3CG1DST_XMM12_LO_ZX] = */ 8,
+    /* [BS3CG1DST_XMM13_LO_ZX] = */ 8,
+    /* [BS3CG1DST_XMM14_LO_ZX] = */ 8,
+    /* [BS3CG1DST_XMM15_LO_ZX] = */ 8,
     /* [BS3CG1DST_XMM0_DW0] = */    4,
     /* [BS3CG1DST_XMM1_DW0] = */    4,
     /* [BS3CG1DST_XMM2_DW0] = */    4,
@@ -682,6 +698,22 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_HI] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]) + sizeof(uint64_t),
     /* [BS3CG1DST_XMM14_HI] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]) + sizeof(uint64_t),
     /* [BS3CG1DST_XMM15_HI] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]) + sizeof(uint64_t),
+    /* [BS3CG1DST_XMM0_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[0]),
+    /* [BS3CG1DST_XMM1_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[1]),
+    /* [BS3CG1DST_XMM2_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[2]),
+    /* [BS3CG1DST_XMM3_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[3]),
+    /* [BS3CG1DST_XMM4_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[4]),
+    /* [BS3CG1DST_XMM5_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[5]),
+    /* [BS3CG1DST_XMM6_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[6]),
+    /* [BS3CG1DST_XMM7_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[7]),
+    /* [BS3CG1DST_XMM8_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[8]),
+    /* [BS3CG1DST_XMM9_LO_ZX] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[9]),
+    /* [BS3CG1DST_XMM10_LO_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[10]),
+    /* [BS3CG1DST_XMM11_LO_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[11]),
+    /* [BS3CG1DST_XMM12_LO_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[12]),
+    /* [BS3CG1DST_XMM13_LO_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]),
+    /* [BS3CG1DST_XMM14_LO_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]),
+    /* [BS3CG1DST_XMM15_LO_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]),
     /* [BS3CG1DST_XMM0_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[0]),
     /* [BS3CG1DST_XMM1_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[1]),
     /* [BS3CG1DST_XMM2_DW0] = */    sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[2]),
@@ -722,7 +754,7 @@ AssertCompile(RT_ELEMENTS(g_aoffBs3Cg1DstFields) == BS3CG1DST_END);
 
 #ifdef BS3CG1_DEBUG_CTX_MOD
 /** Destination field names. */
-static const struct { char sz[10]; } g_aszBs3Cg1DstFields[] =
+static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
 {
     { "INVALID" },
     { "OP1" },
@@ -895,6 +927,22 @@ static const struct { char sz[10]; } g_aszBs3Cg1DstFields[] =
     { "XMM13_HI" },
     { "XMM14_HI" },
     { "XMM15_HI" },
+    { "XMM0_LO_ZX" },
+    { "XMM1_LO_ZX" },
+    { "XMM2_LO_ZX" },
+    { "XMM3_LO_ZX" },
+    { "XMM4_LO_ZX" },
+    { "XMM5_LO_ZX" },
+    { "XMM6_LO_ZX" },
+    { "XMM7_LO_ZX" },
+    { "XMM8_LO_ZX" },
+    { "XMM9_LO_ZX" },
+    { "XMM10_LO_ZX" },
+    { "XMM11_LO_ZX" },
+    { "XMM12_LO_ZX" },
+    { "XMM13_LO_ZX" },
+    { "XMM14_LO_ZX" },
+    { "XMM15_LO_ZX" },
     { "XMM0_DW0" },
     { "XMM1_DW0" },
     { "XMM2_DW0" },
@@ -1361,6 +1409,32 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_WqZxReg_Vq:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_XMM0_LO_ZX;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM1_LO;
+            }
+            else if (iEncoding == 1)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM2_LO;
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 2 /*iReg*/, 8, 0, BS3CG1OPLOC_MEM_RW);
+            }
+            else if (iEncoding == 2)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3_LO;
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 8, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM_RW);
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
         case BS3CG1ENC_MODRM_Vq_UqHi:
             if (iEncoding == 0)
             {
@@ -1686,6 +1760,7 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_Wsd_Vsd:
+        case BS3CG1ENC_MODRM_WqZxReg_Vq:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 8;
@@ -2307,6 +2382,8 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                     break;
 
                 case 8:
+                    if ((unsigned)(idxField - BS3CG1DST_XMM0_LO_ZX) <= (unsigned)(BS3CG1DST_XMM15_LO_ZX - BS3CG1DST_XMM0_LO_ZX))
+                        PtrField.pu64[1] = 0;
                     switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
                     {
                         case BS3CG1_CTXOP_ASSIGN:   *PtrField.pu64  =  (uint64_t)uValue; break;
