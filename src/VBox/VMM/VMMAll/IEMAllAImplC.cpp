@@ -1380,3 +1380,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PCX86FXSTATE pFpuState, PRTUINT128U p
     puDst->au32[3] = puSrc->au32[2];
 }
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_movddup,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, uint64_t uSrc))
+{
+    RT_NOREF(pFpuState);
+    puDst->au64[0] = uSrc;
+    puDst->au64[1] = uSrc;
+}
+
