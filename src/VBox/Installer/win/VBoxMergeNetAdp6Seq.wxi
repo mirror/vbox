@@ -38,14 +38,14 @@
     </Custom>
     <!-- First stop the existing host-only interfaces on update ... -->
     <Custom Action="ca_StopHostOnlyInterfacesNDIS6" After="InstallInitialize" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
+        <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
     </Custom>
 
     <Custom Action="ca_UninstallNetAdp6Args" Before="ca_UninstallNetAdp6" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
+        <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
     </Custom>
     <Custom Action="ca_UninstallNetAdp6" After="ca_StopHostOnlyInterfacesNDIS6" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
+        <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
     </Custom>
 
 <?endif ?>
