@@ -5845,11 +5845,9 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
  * @opcpuid     clfsh
  * @opgroup     og_cachectl
  * @optest      op1=1 ->
- * @oponlytest
  */
 FNIEMOP_DEF_1(iemOp_Grp15_clflush,  uint8_t, bRm)
 {
-    /** @todo clflushopt is same with 66h prefix.   */
     IEMOP_MNEMONIC1(M_MEM, CLFLUSH, clflush, MbRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fClFlush)
         return IEMOP_RAISE_INVALID_OPCODE();
@@ -5872,7 +5870,6 @@ FNIEMOP_DEF_1(iemOp_Grp15_clflush,  uint8_t, bRm)
  * @opcpuid     clflushopt
  * @opgroup     og_cachectl
  * @optest      op1=1 ->
- * @oponlytest
  */
 FNIEMOP_DEF_1(iemOp_Grp15_clflushopt,  uint8_t, bRm)
 {
