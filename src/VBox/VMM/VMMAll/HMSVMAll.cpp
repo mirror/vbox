@@ -651,9 +651,14 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
             pCtx->rip        = pHostState->uRip;
             pCtx->rsp        = pHostState->uRsp;
             pCtx->rax        = pHostState->uRax;
-            /* The spec says "Disables all hardware breakpoints in DR7"... */
             pCtx->dr[7]     &= ~(X86_DR7_ENABLED_MASK | X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
             pCtx->dr[7]     |= X86_DR7_RA1_MASK;
+
+            /** @todo if RIP is not canonical or outside the CS segment limit, we need to
+             *        raise #GP(0) in the guest. */
+
+            /** @todo check the loaded host-state for consistency. Figure out what
+             *        exactly this involves? */
 
             rc = VINF_SVM_VMEXIT;
         }
