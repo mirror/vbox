@@ -383,6 +383,14 @@ typedef CPUDECODE1UDTST const BS3_FAR *PCCPUDECODE1UDTST;
 #define UD_T_MODRM_MR5      0x25
 #define UD_T_MODRM_MR6      0x26
 #define UD_T_MODRM_MR7      0x27
+#define UD_T_MODRM_MR0_I8   0x28
+#define UD_T_MODRM_MR1_I8   0x29
+#define UD_T_MODRM_MR2_I8   0x2a
+#define UD_T_MODRM_MR3_I8   0x2b
+#define UD_T_MODRM_MR4_I8   0x2c
+#define UD_T_MODRM_MR5_I8   0x2d
+#define UD_T_MODRM_MR6_I8   0x2e
+#define UD_T_MODRM_MR7_I8   0x2f
 
 #define UD_F_ANY_PFX 0
 #define UD_F_NOT_NO_PFX     UINT8_C(0x01)  /**< Must have some kind of prefix to be \#UD. */
@@ -508,8 +516,12 @@ CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
     {  UD_T_MODRM_RR6, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* 00=mfence */
     {  UD_T_MODRM_RR7, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* 00=sfence */
     {  UD_T_MODRM, 2, { 0x0f, 0xb8 }, UD_F_NOT_RN_PFX },
-#endif
     {  UD_T_MODRM | UD_T_NOAMD, 2, { 0x0f, 0xb9 }, UD_F_ANY_PFX }, /* UD1 */
+#endif
+    {  UD_T_MODRM_MR0_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
+    {  UD_T_MODRM_MR1_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
+    {  UD_T_MODRM_MR2_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
+    {  UD_T_MODRM_MR3_I8, 2, { 0x0f, 0xba }, UD_F_ANY_PFX }, /* grp8 */
 #if 0
     /** @todo f3 0f bb rm and f2 0f bb rm does stuff on skylake even if their are blank in intel and AMD tables! */
     //{  UD_T_MODRM, 2, { 0x0f, 0xbb }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
@@ -1019,6 +1031,56 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
                 { 3, { RM_EDI_SIB_DISP8,  SIB_EBX_X1_NONE, 0 },             0 },
                 { 6, { RM_EDI_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0 },    0 },
             };
+            static CPUDECODE1UDSEQ const s_aModRmMRxImm8[] = /* index*5 */
+            {
+                { 2+1, { RM_EAX_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_EAX_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_EAX_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_EAX_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+
+                { 2+1, { RM_ECX_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_ECX_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_ECX_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_ECX_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_ECX_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+
+                { 2+1, { RM_EDX_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_EDX_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_EDX_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_EDX_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_EDX_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+
+                { 2+1, { RM_EBX_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_EBX_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_EBX_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_EBX_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_EBX_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+
+                { 2+1, { RM_ESP_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_ESP_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_ESP_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_ESP_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_ESP_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+
+                { 2+1, { RM_EBP_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_EBP_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_EBP_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_EBP_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_EBP_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+
+                { 2+1, { RM_ESI_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_ESI_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_ESI_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_ESI_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_ESI_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+
+                { 2+1, { RM_EDI_DEREF_EBX_DISP8, 0,                      0x11 }, 0 },
+                { 5+1, { RM_EDI_DEREF_EBX_DISP32, 0, 0, 0, 0,            0x11 }, 0 },
+                { 2+1, { RM_EDI_SIB, SIB_EBX_X1_NONE,                    0x11 }, 0 },
+                { 3+1, { RM_EDI_SIB_DISP8,  SIB_EBX_X1_NONE, 0,          0x11 }, 0 },
+                { 6+1, { RM_EDI_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 }, 0 },
+            };
             unsigned            iPrefix;
             unsigned            cSuffixes;
             PCCPUDECODE1UDSEQ   paSuffixes;
@@ -1092,6 +1154,17 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
                 case UD_T_MODRM_MR7:
                     cSuffixes   = 5;
                     paSuffixes  = &s_aModRmMRx[(paTests[iTest].enmType - UD_T_MODRM_MR0) * 5];
+                    break;
+                case UD_T_MODRM_MR0_I8:
+                case UD_T_MODRM_MR1_I8:
+                case UD_T_MODRM_MR2_I8:
+                case UD_T_MODRM_MR3_I8:
+                case UD_T_MODRM_MR4_I8:
+                case UD_T_MODRM_MR5_I8:
+                case UD_T_MODRM_MR6_I8:
+                case UD_T_MODRM_MR7_I8:
+                    cSuffixes   = 5;
+                    paSuffixes  = &s_aModRmMRxImm8[(paTests[iTest].enmType - UD_T_MODRM_MR0_I8) * 5];
                     break;
                 default:
                     Bs3TestPrintf("#%u: enmType=%d\n", paTests[iTest].enmType);
@@ -1573,7 +1646,7 @@ BS3_DECL(void) Main_pp32()
     Bs3TestInit("bs3-cpu-decoding-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
-#if 1
+#if 0
     Bs3TestSub("CMPPS, CMPPD, CMPSS, CMPSD");
     DecodeCmppsCmppdCmpssCmpsd();
 
@@ -1585,12 +1658,12 @@ BS3_DECL(void) Main_pp32()
     Bs3TestSub("2 byte undefined opcodes 0f");
     DecodeUdEdgeTest(g_aUdTest2Byte_0f, RT_ELEMENTS(g_aUdTest2Byte_0f));
 #endif
-#if 1
+#if 0
     Bs3TestSub("3 byte undefined opcodes 0f 38");
     DecodeUdEdgeTest(g_aUdTest3Byte_0f_38, RT_ELEMENTS(g_aUdTest3Byte_0f_38));
 #endif
 
-#if 1
+#if 0
     Bs3TestSub("misc");
     DecodeEdgeTest();
 #endif
