@@ -655,7 +655,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
             pCtx->dr[7]     |= X86_DR7_RA1_MASK;
 
             /** @todo if RIP is not canonical or outside the CS segment limit, we need to
-             *        raise #GP(0) in the guest. */
+             *        raise \#GP(0) in the guest. */
 
             /** @todo check the loaded host-state for consistency. Figure out what
              *        exactly this involves? */
