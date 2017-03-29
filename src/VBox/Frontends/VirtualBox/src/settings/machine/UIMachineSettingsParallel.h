@@ -73,8 +73,13 @@ protected:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Holds the tab-widget instance. */
-    QITabWidget *mTabWidget;
+    QITabWidget *m_pTabWidget;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineParallel *m_pCache;

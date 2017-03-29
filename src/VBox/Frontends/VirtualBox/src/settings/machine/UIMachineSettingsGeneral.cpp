@@ -119,20 +119,16 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : m_fHWVirtExEnabled(false)
     , m_fEncryptionCipherChanged(false)
     , m_fEncryptionPasswordChanged(false)
-    , m_pCache(new UISettingsCacheMachineGeneral)
+    , m_pCache(0)
 {
     /* Prepare: */
     prepare();
-
-    /* Translate: */
-    retranslateUi();
 }
 
 UIMachineSettingsGeneral::~UIMachineSettingsGeneral()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 CGuestOSType UIMachineSettingsGeneral::guestOSType() const
@@ -629,100 +625,141 @@ void UIMachineSettingsGeneral::prepare()
     /* Apply UI decorations: */
     Ui::UIMachineSettingsGeneral::setupUi(this);
 
-    /* Prepare tabs: */
-    prepareTabBasic();
-    prepareTabAdvanced();
-    prepareTabDescription();
-    prepareTabEncryption();
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineGeneral;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Tree-widget created in the .ui file. */
+    {
+        /* Prepare 'Basic' tab: */
+        prepareTabBasic();
+        /* Prepare 'Advanced' tab: */
+        prepareTabAdvanced();
+        /* Prepare 'Description' tab: */
+        prepareTabDescription();
+        /* Prepare 'Encryption' tab: */
+        prepareTabEncryption();
+        /* Prepare connections: */
+        prepareConnections();
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UIMachineSettingsGeneral::prepareTabBasic()
 {
-    /* Name and OS Type widget was created in the .ui file: */
-    AssertPtrReturnVoid(m_pNameAndSystemEditor);
+    /* Tab and it's layout created in the .ui file. */
     {
-        /* Configure Name and OS Type widget: */
-        m_pNameAndSystemEditor->nameEditor()->setValidator(new QRegExpValidator(QRegExp(".+"), this));
-        connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(revalidate()));
-        connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString&)), this, SLOT(revalidate()));
+        /* Name and OS Type widget created in the .ui file. */
+        AssertPtrReturnVoid(m_pNameAndSystemEditor);
+        {
+            /* Configure widget: */
+            m_pNameAndSystemEditor->nameEditor()->setValidator(new QRegExpValidator(QRegExp(".+"), this));
+        }
     }
 }
 
 void UIMachineSettingsGeneral::prepareTabAdvanced()
 {
-    /* Shared Clipboard mode combo was created in the .ui file: */
-    AssertPtrReturnVoid(mCbClipboard);
+    /* Tab and it's layout created in the .ui file. */
     {
-        /* Configure Shared Clipboard mode combo: */
-        mCbClipboard->addItem(""); /* KClipboardMode_Disabled */
-        mCbClipboard->addItem(""); /* KClipboardMode_HostToGuest */
-        mCbClipboard->addItem(""); /* KClipboardMode_GuestToHost */
-        mCbClipboard->addItem(""); /* KClipboardMode_Bidirectional */
-    }
-    /* Drag&drop mode combo was created in the .ui file: */
-    AssertPtrReturnVoid(mCbDragAndDrop);
-    {
-        /* Configure Drag&drop mode combo: */
-        mCbDragAndDrop->addItem(""); /* KDnDMode_Disabled */
-        mCbDragAndDrop->addItem(""); /* KDnDMode_HostToGuest */
-        mCbDragAndDrop->addItem(""); /* KDnDMode_GuestToHost */
-        mCbDragAndDrop->addItem(""); /* KDnDMode_Bidirectional */
+        /* Shared Clipboard Mode combo-box created in the .ui file. */
+        AssertPtrReturnVoid(mCbClipboard);
+        {
+            /* Configure combo-box: */
+            mCbClipboard->addItem(""); /* KClipboardMode_Disabled */
+            mCbClipboard->addItem(""); /* KClipboardMode_HostToGuest */
+            mCbClipboard->addItem(""); /* KClipboardMode_GuestToHost */
+            mCbClipboard->addItem(""); /* KClipboardMode_Bidirectional */
+        }
+
+        /* Drag&drop Mode combo-box created in the .ui file. */
+        AssertPtrReturnVoid(mCbDragAndDrop);
+        {
+            /* Configure combo-box: */
+            mCbDragAndDrop->addItem(""); /* KDnDMode_Disabled */
+            mCbDragAndDrop->addItem(""); /* KDnDMode_HostToGuest */
+            mCbDragAndDrop->addItem(""); /* KDnDMode_GuestToHost */
+            mCbDragAndDrop->addItem(""); /* KDnDMode_Bidirectional */
+        }
     }
 }
 
 void UIMachineSettingsGeneral::prepareTabDescription()
 {
-    /* Description text editor was created in the .ui file: */
-    AssertPtrReturnVoid(mTeDescription);
+    /* Tab and it's layout created in the .ui file. */
     {
-        /* Configure Description text editor: */
+        /* Description Text editor created in the .ui file. */
+        AssertPtrReturnVoid(mTeDescription);
+        {
+            /* Configure editor: */
 #ifdef VBOX_WS_MAC
-        mTeDescription->setMinimumHeight(150);
+            mTeDescription->setMinimumHeight(150);
 #endif
+        }
     }
 }
 
 void UIMachineSettingsGeneral::prepareTabEncryption()
 {
-    /* Encryption check-box was created in the .ui file: */
-    AssertPtrReturnVoid(m_pCheckBoxEncryption);
+    /* Tab and it's layout created in the .ui file. */
     {
-        /* Configure Encryption check-box: */
-        connect(m_pCheckBoxEncryption, SIGNAL(toggled(bool)),
-                this, SLOT(revalidate()));
+        /* Encryption Cipher combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboCipher);
+        {
+            /* Configure combo-box: */
+            m_encryptionCiphers << QString()
+                                << "AES-XTS256-PLAIN64"
+                                << "AES-XTS128-PLAIN64";
+            m_pComboCipher->addItems(m_encryptionCiphers);
+        }
+
+        /* Encryption Password editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorEncryptionPassword);
+        {
+            /* Configure editor: */
+            m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
+        }
+
+        /* Encryption Password Confirmation editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorEncryptionPasswordConfirm);
+        {
+            /* Configure editor: */
+            m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
+        }
     }
-    /* Encryption Cipher combo was created in the .ui file: */
-    AssertPtrReturnVoid(m_pComboCipher);
-    {
-        /* Configure Encryption Cipher combo: */
-        m_encryptionCiphers << QString()
-                            << "AES-XTS256-PLAIN64"
-                            << "AES-XTS128-PLAIN64";
-        m_pComboCipher->addItems(m_encryptionCiphers);
-        connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
-                this, SLOT(sltMarkEncryptionCipherChanged()));
-        connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
-                this, SLOT(revalidate()));
-    }
-    /* Encryption Password editor was created in the .ui file: */
-    AssertPtrReturnVoid(m_pEditorEncryptionPassword);
-    {
-        /* Configure Encryption Password editor: */
-        m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
-        connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
-                this, SLOT(sltMarkEncryptionPasswordChanged()));
-        connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
-                this, SLOT(revalidate()));
-    }
-    /* Encryption Password Confirmation editor was created in the .ui file: */
-    AssertPtrReturnVoid(m_pEditorEncryptionPasswordConfirm);
-    {
-        /* Configure Encryption Password Confirmation editor: */
-        m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
-        connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
-                this, SLOT(sltMarkEncryptionPasswordChanged()));
-        connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
-                this, SLOT(revalidate()));
-    }
+}
+
+void UIMachineSettingsGeneral::prepareConnections()
+{
+    /* Configure 'Basic' connections: */
+    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()),
+            this, SLOT(revalidate()));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)),
+            this, SLOT(revalidate()));
+
+    /* Configure 'Encryption' connections: */
+    connect(m_pCheckBoxEncryption, SIGNAL(toggled(bool)),
+            this, SLOT(revalidate()));
+    connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(sltMarkEncryptionCipherChanged()));
+    connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(revalidate()));
+    connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
+            this, SLOT(sltMarkEncryptionPasswordChanged()));
+    connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
+            this, SLOT(revalidate()));
+    connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
+            this, SLOT(sltMarkEncryptionPasswordChanged()));
+    connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
+            this, SLOT(revalidate()));
+}
+
+void UIMachineSettingsGeneral::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 

@@ -70,7 +70,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-
     /** Cleanups all. */
     void cleanup();
 

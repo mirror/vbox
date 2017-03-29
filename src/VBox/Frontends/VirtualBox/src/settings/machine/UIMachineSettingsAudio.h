@@ -69,8 +69,8 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares combo-boxes. */
-    void prepareComboboxes();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineAudio *m_pCache;

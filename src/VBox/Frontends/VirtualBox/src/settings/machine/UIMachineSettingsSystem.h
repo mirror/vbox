@@ -115,6 +115,10 @@ private:
     void prepareTabProcessor();
     /** Prepares 'Acceleration' tab. */
     void prepareTabAcceleration();
+    /** Prepares connections. */
+    void prepareConnections();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Repopulates Pointing HID type combo-box. */
     void repopulateComboPointingHIDType();

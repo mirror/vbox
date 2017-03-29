@@ -110,6 +110,17 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Prepares USB filters tree. */
+    void prepareFiltersTree();
+    /** Prepares USB filters toolbar. */
+    void prepareFiltersToolbar();
+    /** Prepares connections. */
+    void prepareConnections();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Adds USB filter item based on a given @a usbFilterData, fChoose if requested. */
     void addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fChoose);
 

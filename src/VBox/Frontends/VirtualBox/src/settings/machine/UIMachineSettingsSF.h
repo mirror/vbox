@@ -90,8 +90,8 @@ private slots:
     void sltAddSharedFolder();
     /** Handles command to edit shared folder. */
     void sltEditSharedFolder();
-    /** Handles command to delete shared folder. */
-    void sltDeleteSharedFolder();
+    /** Handles command to remove shared folder. */
+    void sltRemoveSharedFolder();
 
     /** Handles @a pCurrentItem change. */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
@@ -106,6 +106,17 @@ private slots:
     void sltAdjustTreeFields();
 
 private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Prepares shared folders tree. */
+    void prepareFoldersTree();
+    /** Prepares shared folders toolbar. */
+    void prepareFoldersToolbar();
+    /** Prepares connections. */
+    void prepareConnections();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Returns the tree-view root item for corresponding shared folder @a type. */
     SFTreeViewItem *root(UISharedFolderType type);

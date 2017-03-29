@@ -238,62 +238,16 @@ private:
 
 UIMachineSettingsSF::UIMachineSettingsSF()
     : m_pActionAdd(0), m_pActionEdit(0), m_pActionRemove(0)
-    , m_pCache(new UISettingsCacheSharedFolders)
+    , m_pCache(0)
 {
-    /* Apply UI decorations */
-    Ui::UIMachineSettingsSF::setupUi (this);
-
-    /* Prepare actions */
-    m_pActionAdd = new QAction (this);
-    m_pActionEdit = new QAction (this);
-    m_pActionRemove = new QAction (this);
-
-    m_pActionAdd->setShortcut (QKeySequence ("Ins"));
-    m_pActionEdit->setShortcut (QKeySequence ("Ctrl+Space"));
-    m_pActionRemove->setShortcut (QKeySequence ("Del"));
-
-    m_pActionAdd->setIcon(UIIconPool::iconSet(":/sf_add_16px.png",
-                                            ":/sf_add_disabled_16px.png"));
-    m_pActionEdit->setIcon(UIIconPool::iconSet(":/sf_edit_16px.png",
-                                            ":/sf_edit_disabled_16px.png"));
-    m_pActionRemove->setIcon(UIIconPool::iconSet(":/sf_remove_16px.png",
-                                            ":/sf_remove_disabled_16px.png"));
-
-    /* Determine icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-
-    /* Prepare tool-bar: */
-    m_pFoldersToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-    m_pFoldersToolBar->setOrientation(Qt::Vertical);
-    m_pFoldersToolBar->addAction(m_pActionAdd);
-    m_pFoldersToolBar->addAction(m_pActionEdit);
-    m_pFoldersToolBar->addAction(m_pActionRemove);
-
-    /* Setup connections */
-#if QT_VERSION >= 0x050000
-    mTwFolders->header()->setSectionsMovable(false);
-#else /* QT_VERSION < 0x050000 */
-    mTwFolders->header()->setMovable (false);
-#endif /* QT_VERSION < 0x050000 */
-    connect (m_pActionAdd, SIGNAL (triggered (bool)), this, SLOT (sltAddSharedFolder()));
-    connect (m_pActionEdit, SIGNAL (triggered (bool)), this, SLOT (sltEditSharedFolder()));
-    connect (m_pActionRemove, SIGNAL (triggered (bool)), this, SLOT (sltDeleteSharedFolder()));
-    connect (mTwFolders, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
-             this, SLOT (sltHandleCurrentItemChange (QTreeWidgetItem *)));
-    connect (mTwFolders, SIGNAL (itemDoubleClicked (QTreeWidgetItem *, int)),
-             this, SLOT (sltHandleDoubleClick (QTreeWidgetItem *)));
-    connect (mTwFolders, SIGNAL (customContextMenuRequested (const QPoint &)),
-             this, SLOT (sltHandleContextMenuRequest (const QPoint &)));
-
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UIMachineSettingsSF::~UIMachineSettingsSF()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 bool UIMachineSettingsSF::changed() const
@@ -592,7 +546,7 @@ void UIMachineSettingsSF::sltEditSharedFolder()
     }
 }
 
-void UIMachineSettingsSF::sltDeleteSharedFolder()
+void UIMachineSettingsSF::sltRemoveSharedFolder()
 {
     QTreeWidgetItem *pSelectedItem = mTwFolders->selectedItems().size() == 1 ? mTwFolders->selectedItems()[0] : 0;
     Assert(pSelectedItem);
@@ -679,6 +633,99 @@ void UIMachineSettingsSF::sltAdjustTreeFields()
                 pItem->adjustText();
         }
     }
+}
+
+void UIMachineSettingsSF::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsSF::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheSharedFolders;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Layout created in the .ui file. */
+    {
+        /* Prepare shared folders tree: */
+        prepareFoldersTree();
+        /* Prepare shared folders toolbar: */
+        prepareFoldersToolbar();
+        /* Prepare connections: */
+        prepareConnections();
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIMachineSettingsSF::prepareFoldersTree()
+{
+    /* Shared Folders tree-widget created in the .ui file. */
+    AssertPtrReturnVoid(mTwFolders);
+    {
+        /* Configure tree-widget: */
+        mTwFolders->header()->setSectionsMovable(false);
+    }
+}
+
+void UIMachineSettingsSF::prepareFoldersToolbar()
+{
+    /* Shared Folders toolbar created in the .ui file. */
+    AssertPtrReturnVoid(m_pFoldersToolBar);
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pFoldersToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pFoldersToolBar->setOrientation(Qt::Vertical);
+
+        /* Create 'Add Shared Folder' action: */
+        m_pActionAdd = m_pFoldersToolBar->addAction(UIIconPool::iconSet(":/sf_add_16px.png",
+                                                                        ":/sf_add_disabled_16px.png"),
+                                                    QString(), this, SLOT(sltAddSharedFolder()));
+        AssertPtrReturnVoid(m_pActionAdd);
+        {
+            /* Configure action: */
+            m_pActionAdd->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
+        }
+
+        /* Create 'Edit Shared Folder' action: */
+        m_pActionEdit = m_pFoldersToolBar->addAction(UIIconPool::iconSet(":/sf_edit_16px.png",
+                                                                         ":/sf_edit_disabled_16px.png"),
+                                                     QString(), this, SLOT(sltEditSharedFolder()));
+        AssertPtrReturnVoid(m_pActionEdit);
+        {
+            /* Configure action: */
+            m_pActionEdit->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
+        }
+
+        /* Create 'Remove Shared Folder' action: */
+        m_pActionRemove = m_pFoldersToolBar->addAction(UIIconPool::iconSet(":/sf_remove_16px.png",
+                                                                           ":/sf_remove_disabled_16px.png"),
+                                                       QString(), this, SLOT(sltRemoveSharedFolder()));
+        AssertPtrReturnVoid(m_pActionRemove);
+        {
+            /* Configure action: */
+            m_pActionRemove->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
+        }
+    }
+}
+
+void UIMachineSettingsSF::prepareConnections()
+{
+    /* Configure tree-widget connections: */
+    connect(mTwFolders, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
+            this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem *)));
+    connect(mTwFolders, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
+            this, SLOT(sltHandleDoubleClick(QTreeWidgetItem *)));
+    connect(mTwFolders, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
+}
+
+void UIMachineSettingsSF::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 SFTreeViewItem *UIMachineSettingsSF::root(UISharedFolderType enmSharedFolderType)

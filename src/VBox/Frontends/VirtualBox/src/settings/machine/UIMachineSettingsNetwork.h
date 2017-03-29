@@ -93,6 +93,11 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Repopulates bridged adapter list. */
     void refreshBridgedAdapterList();
     /** Repopulates internal network list. */
@@ -114,7 +119,7 @@ private:
     static void saveGenericProperties(CNetworkAdapter &adapter, const QString &strProperties);
 
     /** Holds the tab-widget instance. */
-    QITabWidget *m_pTabWidgetAdapters;
+    QITabWidget *m_pTabWidget;
 
     /** Holds the bridged adapter list. */
     QStringList  m_bridgedAdapterList;

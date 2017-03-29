@@ -136,7 +136,7 @@ struct UIDataSettingsMachineInterface
 UIMachineSettingsInterface::UIMachineSettingsInterface(const QString strMachineId)
     : m_strMachineId(strMachineId)
     , m_pActionPool(0)
-    , m_pCache(new UISettingsCacheMachineInterface)
+    , m_pCache(0)
 {
     /* Prepare: */
     prepare();
@@ -338,15 +338,30 @@ void UIMachineSettingsInterface::prepare()
     /* Apply UI decorations: */
     Ui::UIMachineSettingsInterface::setupUi(this);
 
-    /* Create personal action-pool: */
-    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
-    m_pMenuBarEditor->setActionPool(m_pActionPool);
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineInterface;
+    AssertPtrReturnVoid(m_pCache);
 
-    /* Assign corresponding machine ID: */
-    m_pMenuBarEditor->setMachineID(m_strMachineId);
-    m_pStatusBarEditor->setMachineID(m_strMachineId);
+    /* Layout created in the .ui file. */
+    {
+        /* Menu-bar editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pMenuBarEditor);
+        {
+            /* Configure editor: */
+            m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+            m_pMenuBarEditor->setActionPool(m_pActionPool);
+            m_pMenuBarEditor->setMachineID(m_strMachineId);
+        }
 
-    /* Translate finally: */
+        /* Status-bar editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pStatusBarEditor);
+        {
+            /* Configure editor: */
+            m_pStatusBarEditor->setMachineID(m_strMachineId);
+        }
+    }
+
+    /* Apply language settings: */
     retranslateUi();
 }
 

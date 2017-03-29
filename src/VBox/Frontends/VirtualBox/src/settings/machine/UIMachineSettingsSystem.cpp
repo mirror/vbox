@@ -160,7 +160,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     : m_uMinGuestCPU(0), m_uMaxGuestCPU(0)
     , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
     , m_fIsUSBEnabled(false)
-    , m_pCache(new UISettingsCacheMachineSystem)
+    , m_pCache(0)
 {
     /* Prepare: */
     prepare();
@@ -168,9 +168,8 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
 
 UIMachineSettingsSystem::~UIMachineSettingsSystem()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 bool UIMachineSettingsSystem::isHWVirtExEnabled() const
@@ -755,153 +754,236 @@ void UIMachineSettingsSystem::prepare()
     /* Apply UI decorations: */
     Ui::UIMachineSettingsSystem::setupUi(this);
 
-    /* Prepare tabs: */
-    prepareTabMotherboard();
-    prepareTabProcessor();
-    prepareTabAcceleration();
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineSystem;
+    AssertPtrReturnVoid(m_pCache);
 
-    /* Retranslate finally: */
+    /* Tree-widget created in the .ui file. */
+    {
+        /* Prepare 'Motherboard' tab: */
+        prepareTabMotherboard();
+        /* Prepare 'Processor' tab: */
+        prepareTabProcessor();
+        /* Prepare 'Acceleration' tab: */
+        prepareTabAcceleration();
+        /* Prepare connections: */
+        prepareConnections();
+    }
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
 void UIMachineSettingsSystem::prepareTabMotherboard()
 {
-    /* Load configuration: */
-    const CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-
-    /* Preconfigure memory-size editor: */
-    m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
-    m_pEditorMemorySize->setMaximum(m_pSliderMemorySize->maxRAM());
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
-
-    /* Preconfigure boot-table widgets: */
-    mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png", ":/list_moveup_disabled_16px.png"));
-    mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png", ":/list_movedown_disabled_16px.png"));
-#ifdef VBOX_WS_MAC
-    /* We need a little space for the focus rect: */
-    m_pLayoutBootOrder->setContentsMargins(3, 3, 3, 3);
-    m_pLayoutBootOrder->setSpacing(3);
-#endif /* VBOX_WS_MAC */
-    /* Install global event filter
-     * to handle boot-table focus in/out events: */
-    /// @todo Get rid of that *crap*!
-    qApp->installEventFilter(this);
-
-    /* Populate possible boot items list.
-     * Currently, it seems, we are supporting only 4 possible boot device types:
-     * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
-     * But maximum boot devices count supported by machine
-     * should be retrieved through the ISystemProperties getter.
-     * Moreover, possible boot device types are not listed in some separate Main vector,
-     * so we should get them (randomely?) from the list of all device types.
-     * Until there will be separate Main getter for list of supported boot device types,
-     * this list will be hard-coded here... */
-    const int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
-    for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
+    /* Tab and it's layout created in the .ui file. */
     {
-        switch (iBootPosition)
+        /* Memory Size editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorMemorySize);
         {
-            case 1: m_possibleBootItems << KDeviceType_Floppy; break;
-            case 2: m_possibleBootItems << KDeviceType_DVD; break;
-            case 3: m_possibleBootItems << KDeviceType_HardDisk; break;
-            case 4: m_possibleBootItems << KDeviceType_Network; break;
-            default: break;
+            /* Configure editor: */
+            m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
+            m_pEditorMemorySize->setMaximum(m_pSliderMemorySize->maxRAM());
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
+        }
+
+        /* Boot-order layout created in the .ui file. */
+        AssertPtrReturnVoid(m_pLayoutBootOrder);
+        {
+            /* Configure layout: */
+#ifdef VBOX_WS_MAC
+            /* We need a little space for the focus rect: */
+            m_pLayoutBootOrder->setContentsMargins(3, 3, 3, 3);
+            m_pLayoutBootOrder->setSpacing(3);
+#endif
+
+            /* Boot-order tree-widget created in the .ui file. */
+            AssertPtrReturnVoid(mTwBootOrder);
+            {
+                /* Install global event filter to handle
+                 * boot-table focus in/out events: */
+                /// @todo Get rid of that *crap*!
+                qApp->installEventFilter(this);
+
+                /* Populate possible boot items list.
+                 * Currently, it seems, we are supporting only 4 possible boot device types:
+                 * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
+                 * But maximum boot devices count supported by machine
+                 * should be retrieved through the ISystemProperties getter.
+                 * Moreover, possible boot device types are not listed in some separate Main vector,
+                 * so we should get them (randomely?) from the list of all device types.
+                 * Until there will be separate Main getter for list of supported boot device types,
+                 * this list will be hard-coded here... */
+                const CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+                const int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
+                for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
+                {
+                    switch (iBootPosition)
+                    {
+                        case 1: m_possibleBootItems << KDeviceType_Floppy; break;
+                        case 2: m_possibleBootItems << KDeviceType_DVD; break;
+                        case 3: m_possibleBootItems << KDeviceType_HardDisk; break;
+                        case 4: m_possibleBootItems << KDeviceType_Network; break;
+                        default: break;
+                    }
+                }
+                /* Add all available devices types, so we could initially calculate the right size: */
+                for (int i = 0; i < m_possibleBootItems.size(); ++i)
+                {
+                    QListWidgetItem *pItem = new UIBootTableItem(m_possibleBootItems[i]);
+                    mTwBootOrder->addItem(pItem);
+                }
+            }
+
+            /* Boot-order Button-up created in the .ui file. */
+            AssertPtrReturnVoid(mTbBootItemUp);
+            {
+                /* Configure button: */
+                mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png", ":/list_moveup_disabled_16px.png"));
+            }
+
+            /* Boot-order Button-down created in the .ui file. */
+            AssertPtrReturnVoid(mTbBootItemUp);
+            {
+                /* Configure button: */
+                mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png", ":/list_movedown_disabled_16px.png"));
+            }
+        }
+
+        /* Chipset Type combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboChipsetType);
+        {
+            /* Configure combo-box: */
+            m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
+            m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
+        }
+
+        /* Pointing HID Type combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboPointingHIDType);
+        {
+            /* Configure combo-box: */
+            m_pComboPointingHIDType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
         }
     }
-    /* Add all available devices types, so we could initially calculate the right size: */
-    for (int i = 0; i < m_possibleBootItems.size(); ++i)
-    {
-        QListWidgetItem *pItem = new UIBootTableItem(m_possibleBootItems[i]);
-        mTwBootOrder->addItem(pItem);
-    }
-
-    /* Populate 'chipset type' combo: */
-    m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
-    m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
-    connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
-
-    /* Preconfigure 'pointing HID type' combo: */
-    m_pComboPointingHIDType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
-
-    /* Install memory-size widget connections: */
-    connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
-    connect(m_pEditorMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeEditorChange()));
-
-    /* Install boot-table connections: */
-    connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
-    connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
-    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(sltHandleCurrentBootItemChange(int)));
-
-    /* Advanced options: */
-    connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsSystem::prepareTabProcessor()
 {
-    /* Load configuration: */
+    /* Prepare common variables: */
     const CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    const uint hostCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
+    const uint uHostCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
     m_uMinGuestCPU = properties.GetMinGuestCPUCount();
-    m_uMaxGuestCPU = qMin(2 * hostCPUs, (uint)properties.GetMaxGuestCPUCount());
+    m_uMaxGuestCPU = qMin(2 * uHostCPUs, (uint)properties.GetMaxGuestCPUCount());
     m_uMinGuestCPUExecCap = 1;
     m_uMedGuestCPUExecCap = 40;
     m_uMaxGuestCPUExecCap = 100;
 
-    /* Preconfigure CPU-count slider: */
-    m_pSliderCPUCount->setPageStep(1);
-    m_pSliderCPUCount->setSingleStep(1);
-    m_pSliderCPUCount->setTickInterval(1);
-    m_pSliderCPUCount->setMinimum(m_uMinGuestCPU);
-    m_pSliderCPUCount->setMaximum(m_uMaxGuestCPU);
-    m_pSliderCPUCount->setOptimalHint(1, hostCPUs);
-    m_pSliderCPUCount->setWarningHint(hostCPUs, m_uMaxGuestCPU);
+    /* Tab and it's layout created in the .ui file. */
+    {
+        /* CPU-count slider created in the .ui file. */
+        AssertPtrReturnVoid(m_pSliderCPUCount);
+        {
+            /* Configure slider: */
+            m_pSliderCPUCount->setPageStep(1);
+            m_pSliderCPUCount->setSingleStep(1);
+            m_pSliderCPUCount->setTickInterval(1);
+            m_pSliderCPUCount->setMinimum(m_uMinGuestCPU);
+            m_pSliderCPUCount->setMaximum(m_uMaxGuestCPU);
+            m_pSliderCPUCount->setOptimalHint(1, uHostCPUs);
+            m_pSliderCPUCount->setWarningHint(uHostCPUs, m_uMaxGuestCPU);
+        }
 
-    /* Preconfigure CPU-count editor: */
-    m_pEditorCPUCount->setMinimum(m_uMinGuestCPU);
-    m_pEditorCPUCount->setMaximum(m_uMaxGuestCPU);
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUCount, 4);
+        /* CPU-count editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorCPUCount);
+        {
+            /* Configure editor: */
+            m_pEditorCPUCount->setMinimum(m_uMinGuestCPU);
+            m_pEditorCPUCount->setMaximum(m_uMaxGuestCPU);
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUCount, 4);
+        }
 
-    /* Preconfigure CPU-execution-cap slider: */
-    m_pSliderCPUExecCap->setPageStep(10);
-    m_pSliderCPUExecCap->setSingleStep(1);
-    m_pSliderCPUExecCap->setTickInterval(10);
-    /* Setup the scale so that ticks are at page step boundaries: */
-    m_pSliderCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
-    m_pSliderCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
-    m_pSliderCPUExecCap->setWarningHint(m_uMinGuestCPUExecCap, m_uMedGuestCPUExecCap);
-    m_pSliderCPUExecCap->setOptimalHint(m_uMedGuestCPUExecCap, m_uMaxGuestCPUExecCap);
+        /* CPU-execution-cap slider created in the .ui file. */
+        AssertPtrReturnVoid(m_pSliderCPUExecCap);
+        {
+            /* Configure slider: */
+            m_pSliderCPUExecCap->setPageStep(10);
+            m_pSliderCPUExecCap->setSingleStep(1);
+            m_pSliderCPUExecCap->setTickInterval(10);
+            /* Setup the scale so that ticks are at page step boundaries: */
+            m_pSliderCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
+            m_pSliderCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
+            m_pSliderCPUExecCap->setWarningHint(m_uMinGuestCPUExecCap, m_uMedGuestCPUExecCap);
+            m_pSliderCPUExecCap->setOptimalHint(m_uMedGuestCPUExecCap, m_uMaxGuestCPUExecCap);
+        }
 
-    /* Preconfigure CPU-execution-cap editor: */
-    m_pEditorCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
-    m_pEditorCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUExecCap, 4);
-
-    /* Install CPU widget connections: */
-    connect(m_pSliderCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountSliderChange()));
-    connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
-    connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
-    connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
+        /* CPU-execution-cap editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorCPUExecCap);
+        {
+            /* Configure editor: */
+            m_pEditorCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
+            m_pEditorCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUExecCap, 4);
+        }
+    }
 }
 
 void UIMachineSettingsSystem::prepareTabAcceleration()
 {
-    /* Populate 'paravirt provider' combo: */
-    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_None), QVariant(KParavirtProvider_None));
-    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Default), QVariant(KParavirtProvider_Default));
-    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Legacy), QVariant(KParavirtProvider_Legacy));
-    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Minimal), QVariant(KParavirtProvider_Minimal));
-    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_HyperV), QVariant(KParavirtProvider_HyperV));
-    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_KVM), QVariant(KParavirtProvider_KVM));
+    /* Tab and it's layout created in the .ui file. */
+    {
+        /* Paravirtualization Provider combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboParavirtProvider);
+        {
+            /* Configure combo-box: */
+            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_None), QVariant(KParavirtProvider_None));
+            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Default), QVariant(KParavirtProvider_Default));
+            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Legacy), QVariant(KParavirtProvider_Legacy));
+            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Minimal), QVariant(KParavirtProvider_Minimal));
+            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_HyperV), QVariant(KParavirtProvider_HyperV));
+            m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_KVM), QVariant(KParavirtProvider_KVM));
+        }
 
-    /* Hide VT-x/AMD-V checkbox when raw-mode is not supported: */
+        /* Other widgets created in the .ui file. */
+        AssertPtrReturnVoid(m_pWidgetPlaceholder);
+        AssertPtrReturnVoid(m_pCheckBoxVirtualization);
+        {
+            /* Configure widgets: */
 #ifndef VBOX_WITH_RAW_MODE
-    m_pWidgetPlaceholder->setVisible(false);
-    m_pCheckBoxVirtualization->setVisible(false);
-#endif /* !VBOX_WITH_RAW_MODE */
+            /* Hide VT-x/AMD-V checkbox when raw-mode is not supported: */
+            m_pWidgetPlaceholder->setVisible(false);
+            m_pCheckBoxVirtualization->setVisible(false);
+#endif
+        }
+    }
+}
 
-    /* Advanced options: */
+void UIMachineSettingsSystem::prepareConnections()
+{
+    /* Configure 'Motherboard' connections: */
+    connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
+    connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
+    connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
+    connect(m_pEditorMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeEditorChange()));
+    connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
+    connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
+    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(sltHandleCurrentBootItemChange(int)));
+    connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+
+    /* Configure 'Processor' connections: */
+    connect(m_pSliderCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountSliderChange()));
+    connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
+    connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
+    connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
+
+    /* Configure 'Acceleration' connections: */
     connect(m_pCheckBoxVirtualization, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+}
+
+void UIMachineSettingsSystem::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIMachineSettingsSystem::repopulateComboPointingHIDType()

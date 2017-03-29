@@ -727,6 +727,19 @@ private slots:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+    /** Prepares storage tree. */
+    void prepareStorageTree();
+    /** Prepares storage toolbar. */
+    void prepareStorageToolbar();
+    /** Prepares storage widgets. */
+    void prepareStorageWidgets();
+    /** Prepares connections. */
+    void prepareConnections();
+    /** Cleanups all. */
+    void cleanup();
+
     /** Adds controller with @a strName, @a enmBus and @a enmType. */
     void addControllerWrapper(const QString &strName, KStorageBus enmBus, KStorageControllerType enmType);
     /** Adds attachment with @a enmDevice. */

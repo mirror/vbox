@@ -120,11 +120,15 @@ private:
     /** Prepares all. */
     void prepare();
     /** Prepares 'Screen' tab. */
-    void prepareScreenTab();
+    void prepareTabScreen();
     /** Prepares 'Remote Display' tab. */
-    void prepareRemoteDisplayTab();
+    void prepareTabRemoteDisplay();
     /** Prepares 'Video Capture' tab. */
-    void prepareVideoCaptureTab();
+    void prepareTabVideoCapture();
+    /** Prepares connections. */
+    void prepareConnections();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Checks the VRAM requirements. */
     void checkVRAMRequirements();

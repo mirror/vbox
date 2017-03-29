@@ -2129,181 +2129,16 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
     , m_fPolished(false)
     , m_fLoadingInProgress(0)
-    , m_pCache(new UISettingsCacheMachineStorage)
+    , m_pCache(0)
 {
-    /* Apply UI decorations */
-    Ui::UIMachineSettingsStorage::setupUi (this);
-
-    /* Enumerate Mediums. We need at least the MediaList filled, so this is the
-     * lasted point, where we can start. The rest of the media checking is done
-     * in a background thread. */
-    vboxGlobal().startMediumEnumeration();
-
-    /* Create icon-pool: */
-    UIIconPoolStorageSettings::create();
-
-    /* Controller Actions */
-    m_pActionAddController = new QAction (this);
-    m_pActionAddController->setIcon(iconPool()->icon(ControllerAddEn, ControllerAddDis));
-
-    m_pActionAddControllerIDE = new QAction (this);
-    m_pActionAddControllerIDE->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
-
-    m_pActionAddControllerSATA = new QAction (this);
-    m_pActionAddControllerSATA->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
-
-    m_pActionAddControllerSCSI = new QAction (this);
-    m_pActionAddControllerSCSI->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
-
-    m_pActionAddControllerFloppy = new QAction (this);
-    m_pActionAddControllerFloppy->setIcon(iconPool()->icon(FloppyControllerAddEn, FloppyControllerAddDis));
-
-    m_pActionAddControllerSAS = new QAction (this);
-    m_pActionAddControllerSAS->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
-
-    m_pActionAddControllerUSB = new QAction (this);
-    m_pActionAddControllerUSB->setIcon(iconPool()->icon(USBControllerAddEn, USBControllerAddDis));
-
-    m_pActionAddControllerNVMe = new QAction (this);
-    m_pActionAddControllerNVMe->setIcon(iconPool()->icon(NVMeControllerAddEn, NVMeControllerAddDis));
-
-    m_pActionRemoveController = new QAction (this);
-    m_pActionRemoveController->setIcon(iconPool()->icon(ControllerDelEn, ControllerDelDis));
-
-    /* Attachment Actions */
-    m_pActionAddAttachment = new QAction (this);
-    m_pActionAddAttachment->setIcon(iconPool()->icon(AttachmentAddEn, AttachmentAddDis));
-
-    m_pActionAddAttachmentHD = new QAction (this);
-    m_pActionAddAttachmentHD->setIcon(iconPool()->icon(HDAttachmentAddEn, HDAttachmentAddDis));
-
-    m_pActionAddAttachmentCD = new QAction (this);
-    m_pActionAddAttachmentCD->setIcon(iconPool()->icon(CDAttachmentAddEn, CDAttachmentAddDis));
-
-    m_pActionAddAttachmentFD = new QAction (this);
-    m_pActionAddAttachmentFD->setIcon(iconPool()->icon(FDAttachmentAddEn, FDAttachmentAddDis));
-
-    m_pActionRemoveAttachment = new QAction (this);
-    m_pActionRemoveAttachment->setIcon(iconPool()->icon(AttachmentDelEn, AttachmentDelDis));
-
-    /* Create storage-view: */
-    m_pTreeStorage = new QITreeView(this);
-    {
-        /* Configure storage-view: */
-        mLsLeftPane->setBuddy(m_pTreeStorage);
-        /* Add storage-view into layout: */
-        mLtStorage->insertWidget(0, m_pTreeStorage);
-    }
-
-    /* Create storage-model: */
-    m_pModelStorage = new StorageModel (m_pTreeStorage);
-    StorageDelegate *storageDelegate = new StorageDelegate (m_pTreeStorage);
-    m_pTreeStorage->setMouseTracking (true);
-    m_pTreeStorage->setContextMenuPolicy (Qt::CustomContextMenu);
-    m_pTreeStorage->setModel (m_pModelStorage);
-    m_pTreeStorage->setItemDelegate (storageDelegate);
-    m_pTreeStorage->setRootIndex (m_pModelStorage->root());
-    m_pTreeStorage->setCurrentIndex (m_pModelStorage->root());
-
-    /* Determine icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-
-    /* Storage ToolBar */
-    mTbStorageBar->setIconSize (QSize (iIconMetric, iIconMetric));
-    mTbStorageBar->addAction (m_pActionAddAttachment);
-    mTbStorageBar->addAction (m_pActionRemoveAttachment);
-    mTbStorageBar->addAction (m_pActionAddController);
-    mTbStorageBar->addAction (m_pActionRemoveController);
-
-#ifdef VBOX_WS_MAC
-    /* We need a little more space for the focus rect. */
-    mLtStorage->setContentsMargins (3, 0, 3, 0);
-    mLtStorage->setSpacing (3);
-#endif /* VBOX_WS_MAC */
-
-    /* Setup choose-medium button: */
-    QMenu *pOpenMediumMenu = new QMenu(mTbOpen);
-    mTbOpen->setMenu(pOpenMediumMenu);
-
-    /* Controller pane initialization: */
-    mSbPortCount->setValue(0);
-
-    /* Info Pane initialization */
-    mLbHDFormatValue->setFullSizeSelection (true);
-    mLbCDFDTypeValue->setFullSizeSelection (true);
-    mLbHDVirtualSizeValue->setFullSizeSelection (true);
-    mLbHDActualSizeValue->setFullSizeSelection (true);
-    mLbSizeValue->setFullSizeSelection (true);
-    mLbHDDetailsValue->setFullSizeSelection (true);
-    mLbLocationValue->setFullSizeSelection (true);
-    mLbUsageValue->setFullSizeSelection (true);
-    m_pLabelEncryptionValue->setFullSizeSelection(true);
-
-    /* Setup connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QString&)),
-            this, SLOT(sltHandleMediumEnumerated(const QString&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
-            this, SLOT(sltHandleMediumDeleted(const QString&)));
-    connect (m_pActionAddController, SIGNAL (triggered (bool)), this, SLOT (sltAddController()));
-    connect (m_pActionAddControllerIDE, SIGNAL (triggered (bool)), this, SLOT (sltAddControllerIDE()));
-    connect (m_pActionAddControllerSATA, SIGNAL (triggered (bool)), this, SLOT (sltAddControllerSATA()));
-    connect (m_pActionAddControllerSCSI, SIGNAL (triggered (bool)), this, SLOT (sltAddControllerSCSI()));
-    connect (m_pActionAddControllerSAS, SIGNAL (triggered (bool)), this, SLOT (sltAddControllerSAS()));
-    connect (m_pActionAddControllerFloppy, SIGNAL (triggered (bool)), this, SLOT (sltAddControllerFloppy()));
-    connect (m_pActionAddControllerUSB, SIGNAL (triggered (bool)), this, SLOT (sltAddControllerUSB()));
-    connect (m_pActionAddControllerNVMe, SIGNAL (triggered (bool)), this, SLOT (sltAddControllerNVMe()));
-    connect (m_pActionRemoveController, SIGNAL (triggered (bool)), this, SLOT (sltRemoveController()));
-    connect (m_pActionAddAttachment, SIGNAL (triggered (bool)), this, SLOT (sltAddAttachment()));
-    connect (m_pActionAddAttachmentHD, SIGNAL (triggered (bool)), this, SLOT (sltAddAttachmentHD()));
-    connect (m_pActionAddAttachmentCD, SIGNAL (triggered (bool)), this, SLOT (sltAddAttachmentCD()));
-    connect (m_pActionAddAttachmentFD, SIGNAL (triggered (bool)), this, SLOT (sltAddAttachmentFD()));
-    connect (m_pActionRemoveAttachment, SIGNAL (triggered (bool)), this, SLOT (sltRemoveAttachment()));
-    connect (m_pModelStorage, SIGNAL (rowsInserted (const QModelIndex&, int, int)),
-             this, SLOT (sltHandleRowInsertion (const QModelIndex&, int)));
-    connect (m_pModelStorage, SIGNAL (rowsRemoved (const QModelIndex&, int, int)),
-             this, SLOT (sltHandleRowRemoval()));
-    connect (m_pTreeStorage, SIGNAL (currentItemChanged (const QModelIndex&, const QModelIndex&)),
-             this, SLOT (sltHandleCurrentItemChange()));
-    connect (m_pTreeStorage, SIGNAL (customContextMenuRequested (const QPoint&)),
-             this, SLOT (sltHandleContextMenuRequest (const QPoint&)));
-    connect (m_pTreeStorage, SIGNAL (drawItemBranches (QPainter*, const QRect&, const QModelIndex&)),
-             this, SLOT (sltHandleDrawItemBranches (QPainter *, const QRect &, const QModelIndex &)));
-    connect (m_pTreeStorage, SIGNAL (mouseMoved (QMouseEvent*)),
-             this, SLOT (sltHandleMouseMove (QMouseEvent*)));
-    connect (m_pTreeStorage, SIGNAL (mousePressed (QMouseEvent*)),
-             this, SLOT (sltHandleMouseClick (QMouseEvent*)));
-    connect (m_pTreeStorage, SIGNAL (mouseDoubleClicked (QMouseEvent*)),
-             this, SLOT (sltHandleMouseClick (QMouseEvent*)));
-    connect (mLeName, SIGNAL (textEdited (const QString&)), this, SLOT (sltSetInformation()));
-    connect (mCbType, SIGNAL (activated (int)), this, SLOT (sltSetInformation()));
-    connect (mCbSlot, SIGNAL (activated (int)), this, SLOT (sltSetInformation()));
-    connect (mSbPortCount, SIGNAL (valueChanged (int)), this, SLOT (sltSetInformation()));
-    connect (mCbIoCache, SIGNAL (stateChanged (int)), this, SLOT (sltSetInformation()));
-    connect (m_pMediumIdHolder, SIGNAL (sigChanged()), this, SLOT (sltSetInformation()));
-    connect (mTbOpen, SIGNAL (clicked (bool)), mTbOpen, SLOT (showMenu()));
-    connect (pOpenMediumMenu, SIGNAL (aboutToShow()), this, SLOT (sltPrepareOpenMediumMenu()));
-    connect (mCbPassthrough, SIGNAL (stateChanged (int)), this, SLOT (sltSetInformation()));
-    connect (mCbTempEject, SIGNAL (stateChanged (int)), this, SLOT (sltSetInformation()));
-    connect (mCbNonRotational, SIGNAL (stateChanged (int)), this, SLOT (sltSetInformation()));
-    connect(m_pCheckBoxHotPluggable, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
-
-    /* Applying language settings */
-    retranslateUi();
-
-    /* Initial setup */
-    setMinimumWidth (500);
-    mSplitter->setSizes (QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
+    /* Prepare: */
+    prepare();
 }
 
 UIMachineSettingsStorage::~UIMachineSettingsStorage()
 {
-    /* Destroy icon-pool: */
-    UIIconPoolStorageSettings::destroy();
-
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIMachineSettingsStorage::setChipsetType(KChipsetType enmType)
@@ -3554,6 +3389,332 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
             }
         }
     }
+}
+
+void UIMachineSettingsStorage::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsStorage::setupUi(this);
+
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineStorage;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Create icon-pool: */
+    UIIconPoolStorageSettings::create();
+
+    /* Enumerate Mediums. We need at least the MediaList filled, so this is the
+     * lasted point, where we can start. The rest of the media checking is done
+     * in a background thread. */
+    vboxGlobal().startMediumEnumeration();
+
+    /* Layout created in the .ui file. */
+    AssertPtrReturnVoid(mLtStorage);
+    {
+#ifdef VBOX_WS_MAC
+        /* We need a little more space for the focus rect: */
+        mLtStorage->setContentsMargins(3, 0, 3, 0);
+        mLtStorage->setSpacing(3);
+#endif
+
+        /* Prepare storage tree: */
+        prepareStorageTree();
+        /* Prepare storage toolbar: */
+        prepareStorageToolbar();
+        /* Prepare storage widgets: */
+        prepareStorageWidgets();
+        /* Prepare connections: */
+        prepareConnections();
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Initial setup (after first retranslateUi() call): */
+    setMinimumWidth(500);
+    mSplitter->setSizes(QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
+}
+
+void UIMachineSettingsStorage::prepareStorageTree()
+{
+    /* Create storage tree-view: */
+    m_pTreeStorage = new QITreeView;
+    AssertPtrReturnVoid(m_pTreeStorage);
+    AssertPtrReturnVoid(mLsLeftPane);
+    {
+        /* Configure tree-view: */
+        mLsLeftPane->setBuddy(m_pTreeStorage);
+        m_pTreeStorage->setMouseTracking(true);
+        m_pTreeStorage->setContextMenuPolicy(Qt::CustomContextMenu);
+
+        /* Create storage model: */
+        m_pModelStorage = new StorageModel(m_pTreeStorage);
+        AssertPtrReturnVoid(m_pModelStorage);
+        {
+            /* Configure model: */
+            m_pTreeStorage->setModel(m_pModelStorage);
+            m_pTreeStorage->setRootIndex(m_pModelStorage->root());
+            m_pTreeStorage->setCurrentIndex(m_pModelStorage->root());
+        }
+
+        /* Create storage delegate: */
+        StorageDelegate *pStorageDelegate = new StorageDelegate(m_pTreeStorage);
+        AssertPtrReturnVoid(pStorageDelegate);
+        {
+            /* Configure delegate: */
+            m_pTreeStorage->setItemDelegate(pStorageDelegate);
+        }
+
+        /* Insert tree-view into layout: */
+        mLtStorage->insertWidget(0, m_pTreeStorage);
+    }
+}
+
+void UIMachineSettingsStorage::prepareStorageToolbar()
+{
+    /* Storage toolbar created in the .ui file. */
+    AssertPtrReturnVoid(mTbStorageBar);
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        mTbStorageBar->setIconSize(QSize(iIconMetric, iIconMetric));
+
+        /* Create 'Add Controller' action: */
+        m_pActionAddController = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddController);
+        {
+            /* Configure action: */
+            m_pActionAddController->setIcon(iconPool()->icon(ControllerAddEn, ControllerAddDis));
+
+            /* Add action into toolbar: */
+            mTbStorageBar->addAction(m_pActionAddController);
+        }
+
+        /* Create 'Add IDE Controller' action: */
+        m_pActionAddControllerIDE = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerIDE);
+        {
+            /* Configure action: */
+            m_pActionAddControllerIDE->setIcon(iconPool()->icon(IDEControllerAddEn, IDEControllerAddDis));
+        }
+
+        /* Create 'Add SATA Controller' action: */
+        m_pActionAddControllerSATA = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerSATA);
+        {
+            /* Configure action: */
+            m_pActionAddControllerSATA->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
+        }
+
+        /* Create 'Add SCSI Controller' action: */
+        m_pActionAddControllerSCSI = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerSCSI);
+        {
+            /* Configure action: */
+            m_pActionAddControllerSCSI->setIcon(iconPool()->icon(SCSIControllerAddEn, SCSIControllerAddDis));
+        }
+
+        /* Create 'Add Floppy Controller' action: */
+        m_pActionAddControllerFloppy = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerFloppy);
+        {
+            /* Configure action: */
+            m_pActionAddControllerFloppy->setIcon(iconPool()->icon(FloppyControllerAddEn, FloppyControllerAddDis));
+        }
+
+        /* Create 'Add SAS Controller' action: */
+        m_pActionAddControllerSAS = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerSAS);
+        {
+            /* Configure action: */
+            m_pActionAddControllerSAS->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
+        }
+
+        /* Create 'Add USB Controller' action: */
+        m_pActionAddControllerUSB = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerUSB);
+        {
+            /* Configure action: */
+            m_pActionAddControllerUSB->setIcon(iconPool()->icon(USBControllerAddEn, USBControllerAddDis));
+        }
+
+        /* Create 'Add NVMe Controller' action: */
+        m_pActionAddControllerNVMe = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerNVMe);
+        {
+            /* Configure action: */
+            m_pActionAddControllerNVMe->setIcon(iconPool()->icon(NVMeControllerAddEn, NVMeControllerAddDis));
+        }
+
+        /* Create 'Remove Controller' action: */
+        m_pActionRemoveController = new QAction(this);
+        AssertPtrReturnVoid(m_pActionRemoveController);
+        {
+            /* Configure action: */
+            m_pActionRemoveController->setIcon(iconPool()->icon(ControllerDelEn, ControllerDelDis));
+
+            /* Add action into toolbar: */
+            mTbStorageBar->addAction(m_pActionRemoveController);
+        }
+
+        /* Create 'Add Attachment' action: */
+        m_pActionAddAttachment = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddAttachment);
+        {
+            /* Configure action: */
+            m_pActionAddAttachment->setIcon(iconPool()->icon(AttachmentAddEn, AttachmentAddDis));
+
+            /* Add action into toolbar: */
+            mTbStorageBar->addAction(m_pActionAddAttachment);
+        }
+
+        /* Create 'Add HD Attachment' action: */
+        m_pActionAddAttachmentHD = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddAttachmentHD);
+        {
+            /* Configure action: */
+            m_pActionAddAttachmentHD->setIcon(iconPool()->icon(HDAttachmentAddEn, HDAttachmentAddDis));
+        }
+
+        /* Create 'Add CD Attachment' action: */
+        m_pActionAddAttachmentCD = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddAttachmentCD);
+        {
+            /* Configure action: */
+            m_pActionAddAttachmentCD->setIcon(iconPool()->icon(CDAttachmentAddEn, CDAttachmentAddDis));
+        }
+
+        /* Create 'Add FD Attachment' action: */
+        m_pActionAddAttachmentFD = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddAttachmentFD);
+        {
+            /* Configure action: */
+            m_pActionAddAttachmentFD->setIcon(iconPool()->icon(FDAttachmentAddEn, FDAttachmentAddDis));
+        }
+
+        /* Create 'Remove Attachment' action: */
+        m_pActionRemoveAttachment = new QAction(this);
+        AssertPtrReturnVoid(m_pActionRemoveAttachment);
+        {
+            /* Configure action: */
+            m_pActionRemoveAttachment->setIcon(iconPool()->icon(AttachmentDelEn, AttachmentDelDis));
+
+            /* Add action into toolbar: */
+            mTbStorageBar->addAction(m_pActionRemoveAttachment);
+        }
+    }
+}
+
+void UIMachineSettingsStorage::prepareStorageWidgets()
+{
+    /* Open Medium tool-button created in the .ui file. */
+    AssertPtrReturnVoid(mTbOpen);
+    {
+        /* Create Open Medium menu: */
+        QMenu *pOpenMediumMenu = new QMenu(mTbOpen);
+        AssertPtrReturnVoid(pOpenMediumMenu);
+        {
+            /* Add menu into tool-button: */
+            mTbOpen->setMenu(pOpenMediumMenu);
+        }
+    }
+
+    /* Other widgets created in the .ui file. */
+    AssertPtrReturnVoid(mSbPortCount);
+    AssertPtrReturnVoid(mLbHDFormatValue);
+    AssertPtrReturnVoid(mLbCDFDTypeValue);
+    AssertPtrReturnVoid(mLbHDVirtualSizeValue);
+    AssertPtrReturnVoid(mLbHDActualSizeValue);
+    AssertPtrReturnVoid(mLbSizeValue);
+    AssertPtrReturnVoid(mLbHDDetailsValue);
+    AssertPtrReturnVoid(mLbLocationValue);
+    AssertPtrReturnVoid(mLbUsageValue);
+    AssertPtrReturnVoid(m_pLabelEncryptionValue);
+    {
+        /* Configure widgets: */
+        mSbPortCount->setValue(0);
+        mLbHDFormatValue->setFullSizeSelection(true);
+        mLbCDFDTypeValue->setFullSizeSelection(true);
+        mLbHDVirtualSizeValue->setFullSizeSelection(true);
+        mLbHDActualSizeValue->setFullSizeSelection(true);
+        mLbSizeValue->setFullSizeSelection(true);
+        mLbHDDetailsValue->setFullSizeSelection(true);
+        mLbLocationValue->setFullSizeSelection(true);
+        mLbUsageValue->setFullSizeSelection(true);
+        m_pLabelEncryptionValue->setFullSizeSelection(true);
+    }
+}
+
+void UIMachineSettingsStorage::prepareConnections()
+{
+    /* Configure this: */
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QString &)),
+            this, SLOT(sltHandleMediumEnumerated(const QString &)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString &)),
+            this, SLOT(sltHandleMediumDeleted(const QString &)));
+
+    /* Configure tree-view: */
+    connect(m_pTreeStorage, SIGNAL(currentItemChanged(const QModelIndex &, const QModelIndex &)),
+             this, SLOT(sltHandleCurrentItemChange()));
+    connect(m_pTreeStorage, SIGNAL(customContextMenuRequested(const QPoint &)),
+             this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
+    connect(m_pTreeStorage, SIGNAL(drawItemBranches(QPainter *, const QRect &, const QModelIndex &)),
+             this, SLOT(sltHandleDrawItemBranches(QPainter *, const QRect &, const QModelIndex &)));
+    connect(m_pTreeStorage, SIGNAL(mouseMoved(QMouseEvent *)),
+             this, SLOT(sltHandleMouseMove(QMouseEvent *)));
+    connect(m_pTreeStorage, SIGNAL(mousePressed(QMouseEvent *)),
+             this, SLOT(sltHandleMouseClick(QMouseEvent *)));
+    connect(m_pTreeStorage, SIGNAL(mouseDoubleClicked(QMouseEvent *)),
+             this, SLOT(sltHandleMouseClick(QMouseEvent *)));
+
+    /* Create model: */
+    connect(m_pModelStorage, SIGNAL(rowsInserted(const QModelIndex &, int, int)),
+            this, SLOT(sltHandleRowInsertion(const QModelIndex &, int)));
+    connect(m_pModelStorage, SIGNAL(rowsRemoved(const QModelIndex&, int, int)),
+            this, SLOT(sltHandleRowRemoval()));
+
+    /* Configure actions: */
+    connect(m_pActionAddController, SIGNAL(triggered(bool)), this, SLOT(sltAddController()));
+    connect(m_pActionAddControllerIDE, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerIDE()));
+    connect(m_pActionAddControllerSATA, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerSATA()));
+    connect(m_pActionAddControllerSCSI, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerSCSI()));
+    connect(m_pActionAddControllerFloppy, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerFloppy()));
+    connect(m_pActionAddControllerSAS, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerSAS()));
+    connect(m_pActionAddControllerUSB, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerUSB()));
+    connect(m_pActionAddControllerNVMe, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerNVMe()));
+    connect(m_pActionRemoveController, SIGNAL(triggered(bool)), this, SLOT(sltRemoveController()));
+    connect(m_pActionAddAttachment, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachment()));
+    connect(m_pActionAddAttachmentHD, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachmentHD()));
+    connect(m_pActionAddAttachmentCD, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachmentCD()));
+    connect(m_pActionAddAttachmentFD, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachmentFD()));
+    connect(m_pActionRemoveAttachment, SIGNAL(triggered(bool)), this, SLOT(sltRemoveAttachment()));
+
+    /* Configure tool-button: */
+    connect(mTbOpen, SIGNAL(clicked(bool)), mTbOpen, SLOT(showMenu()));
+    /* Configure menu: */
+    connect(mTbOpen->menu(), SIGNAL(aboutToShow()), this, SLOT(sltPrepareOpenMediumMenu()));
+
+    /* Configure widgets: */
+    connect(m_pMediumIdHolder, SIGNAL(sigChanged()), this, SLOT(sltSetInformation()));
+    connect(mSbPortCount, SIGNAL(valueChanged(int)), this, SLOT(sltSetInformation()));
+    connect(mLeName, SIGNAL(textEdited(const QString &)), this, SLOT(sltSetInformation()));
+    connect(mCbType, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
+    connect(mCbSlot, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
+    connect(mCbIoCache, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
+    connect(mCbPassthrough, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
+    connect(mCbTempEject, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
+    connect(mCbNonRotational, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
+    connect(m_pCheckBoxHotPluggable, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
+}
+
+void UIMachineSettingsStorage::cleanup()
+{
+    /* Destroy icon-pool: */
+    UIIconPoolStorageSettings::destroy();
+
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KStorageBus enmBus, KStorageControllerType enmType)

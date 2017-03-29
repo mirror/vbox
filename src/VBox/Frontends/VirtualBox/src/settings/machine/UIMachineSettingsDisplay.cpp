@@ -160,7 +160,7 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #ifdef VBOX_WITH_CRHGSMI
     , m_fWddmModeSupported(false)
 #endif /* VBOX_WITH_CRHGSMI */
-    , m_pCache(new UISettingsCacheMachineDisplay)
+    , m_pCache(0)
 {
     /* Prepare: */
     prepare();
@@ -168,9 +168,8 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 
 UIMachineSettingsDisplay::~UIMachineSettingsDisplay()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
@@ -864,176 +863,283 @@ void UIMachineSettingsDisplay::prepare()
     /* Apply UI decorations: */
     Ui::UIMachineSettingsDisplay::setupUi(this);
 
-    /* Prepare tabs: */
-    prepareScreenTab();
-    prepareRemoteDisplayTab();
-    prepareVideoCaptureTab();
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineDisplay;
+    AssertPtrReturnVoid(m_pCache);
 
-    /* Translate finally: */
+    /* Tree-widget created in the .ui file. */
+    {
+        /* Prepare 'Screen' tab: */
+        prepareTabScreen();
+        /* Prepare 'Remote Display' tab: */
+        prepareTabRemoteDisplay();
+        /* Prepare 'Video Capture' tab: */
+        prepareTabVideoCapture();
+        /* Prepare connections: */
+        prepareConnections();
+    }
+
+    /* Apply language settings: */
     retranslateUi();
 }
 
-void UIMachineSettingsDisplay::prepareScreenTab()
+void UIMachineSettingsDisplay::prepareTabScreen()
 {
-    /* Prepare memory-size slider: */
+    /* Prepare common variables: */
     const CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     m_iMinVRAM = sys.GetMinGuestVRAM();
     m_iMaxVRAM = sys.GetMaxGuestVRAM();
     m_iMaxVRAMVisible = m_iMaxVRAM;
-    const uint cHostScreens = gpDesktop->screenCount();
-    m_pSliderVideoMemorySize->setMinimum(m_iMinVRAM);
-    m_pSliderVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
-    m_pSliderVideoMemorySize->setPageStep(calculatePageStep(m_iMaxVRAMVisible));
-    m_pSliderVideoMemorySize->setSingleStep(m_pSliderVideoMemorySize->pageStep() / 4);
-    m_pSliderVideoMemorySize->setTickInterval(m_pSliderVideoMemorySize->pageStep());
-    m_pSliderVideoMemorySize->setSnappingEnabled(true);
-    m_pSliderVideoMemorySize->setErrorHint(0, 1);
+
+    /* Tab and it's layout created in the .ui file. */
+    {
+        /* Memory-size slider created in the .ui file. */
+        AssertPtrReturnVoid(m_pSliderVideoMemorySize);
+        {
+            /* Configure slider: */
+            m_pSliderVideoMemorySize->setMinimum(m_iMinVRAM);
+            m_pSliderVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
+            m_pSliderVideoMemorySize->setPageStep(calculatePageStep(m_iMaxVRAMVisible));
+            m_pSliderVideoMemorySize->setSingleStep(m_pSliderVideoMemorySize->pageStep() / 4);
+            m_pSliderVideoMemorySize->setTickInterval(m_pSliderVideoMemorySize->pageStep());
+            m_pSliderVideoMemorySize->setSnappingEnabled(true);
+            m_pSliderVideoMemorySize->setErrorHint(0, 1);
+        }
+
+        /* Memory-size editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorVideoMemorySize);
+        {
+            /* Configure editor: */
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoMemorySize, 4);
+            m_pEditorVideoMemorySize->setMinimum(m_iMinVRAM);
+            m_pEditorVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
+        }
+
+        /* Screen-count slider created in the .ui file. */
+        AssertPtrReturnVoid(m_pSliderVideoScreenCount);
+        {
+            /* Configure slider: */
+            const uint cHostScreens = gpDesktop->screenCount();
+            const uint cMinGuestScreens = 1;
+            const uint cMaxGuestScreens = sys.GetMaxGuestMonitors();
+            const uint cMaxGuestScreensForSlider = qMin(cMaxGuestScreens, (uint)8);
+            m_pSliderVideoScreenCount->setMinimum(cMinGuestScreens);
+            m_pSliderVideoScreenCount->setMaximum(cMaxGuestScreensForSlider);
+            m_pSliderVideoScreenCount->setPageStep(1);
+            m_pSliderVideoScreenCount->setSingleStep(1);
+            m_pSliderVideoScreenCount->setTickInterval(1);
+            m_pSliderVideoScreenCount->setOptimalHint(cMinGuestScreens, cHostScreens);
+            m_pSliderVideoScreenCount->setWarningHint(cHostScreens, cMaxGuestScreensForSlider);
+        }
+
+        /* Screen-count editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorVideoScreenCount);
+        {
+            /* Configure editor: */
+            const uint cMaxGuestScreens = sys.GetMaxGuestMonitors();
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoScreenCount, 3);
+            m_pEditorVideoScreenCount->setMinimum(1);
+            m_pEditorVideoScreenCount->setMaximum(cMaxGuestScreens);
+        }
+
+        /* Scale-factor slider created in the .ui file. */
+        AssertPtrReturnVoid(m_pSliderGuestScreenScale);
+        {
+            /* Configure slider: */
+            m_pSliderGuestScreenScale->setMinimum(100);
+            m_pSliderGuestScreenScale->setMaximum(200);
+            m_pSliderGuestScreenScale->setPageStep(10);
+            m_pSliderGuestScreenScale->setSingleStep(1);
+            m_pSliderGuestScreenScale->setTickInterval(10);
+            m_pSliderGuestScreenScale->setSnappingEnabled(true);
+        }
+
+        /* Scale-factor editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorGuestScreenScale);
+        {
+            /* Configure editor: */
+            m_pEditorGuestScreenScale->setMinimum(100);
+            m_pEditorGuestScreenScale->setMaximum(200);
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorGuestScreenScale, 5);
+        }
+    }
+}
+
+void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
+{
+    /* Tab and it's layout created in the .ui file. */
+    {
+        /* Port editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorRemoteDisplayPort);
+        {
+            /* Configure editor: */
+            m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(
+                QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
+        }
+
+        /* Timeout editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorRemoteDisplayTimeout);
+        {
+            /* Configure editor: */
+            m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
+        }
+
+        /* Auth-method combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboRemoteDisplayAuthMethod);
+        {
+            /* Configure combo-box: */
+            m_pComboRemoteDisplayAuthMethod->insertItem(0, ""); /* KAuthType_Null */
+            m_pComboRemoteDisplayAuthMethod->insertItem(1, ""); /* KAuthType_External */
+            m_pComboRemoteDisplayAuthMethod->insertItem(2, ""); /* KAuthType_Guest */
+        }
+    }
+}
+
+void UIMachineSettingsDisplay::prepareTabVideoCapture()
+{
+    /* Tab and it's layout created in the .ui file. */
+    {
+        /* File-path selector created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorVideoCapturePath);
+        {
+            /* Configure selector: */
+            m_pEditorVideoCapturePath->setEditable(false);
+            m_pEditorVideoCapturePath->setMode(UIFilePathSelector::Mode_File_Save);
+        }
+
+        /* Frame-size combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboVideoCaptureSize);
+        {
+            /* Configure combo-box: */
+            m_pComboVideoCaptureSize->addItem(""); /* User Defined */
+            m_pComboVideoCaptureSize->addItem("320 x 200 (16:10)",   QSize(320, 200));
+            m_pComboVideoCaptureSize->addItem("640 x 480 (4:3)",     QSize(640, 480));
+            m_pComboVideoCaptureSize->addItem("720 x 400 (9:5)",     QSize(720, 400));
+            m_pComboVideoCaptureSize->addItem("720 x 480 (3:2)",     QSize(720, 480));
+            m_pComboVideoCaptureSize->addItem("800 x 600 (4:3)",     QSize(800, 600));
+            m_pComboVideoCaptureSize->addItem("1024 x 768 (4:3)",    QSize(1024, 768));
+            m_pComboVideoCaptureSize->addItem("1152 x 864 (4:3)",    QSize(1152, 864));
+            m_pComboVideoCaptureSize->addItem("1280 x 720 (16:9)",   QSize(1280, 720));
+            m_pComboVideoCaptureSize->addItem("1280 x 800 (16:10)",  QSize(1280, 800));
+            m_pComboVideoCaptureSize->addItem("1280 x 960 (4:3)",    QSize(1280, 960));
+            m_pComboVideoCaptureSize->addItem("1280 x 1024 (5:4)",   QSize(1280, 1024));
+            m_pComboVideoCaptureSize->addItem("1366 x 768 (16:9)",   QSize(1366, 768));
+            m_pComboVideoCaptureSize->addItem("1440 x 900 (16:10)",  QSize(1440, 900));
+            m_pComboVideoCaptureSize->addItem("1440 x 1080 (4:3)",   QSize(1440, 1080));
+            m_pComboVideoCaptureSize->addItem("1600 x 900 (16:9)",   QSize(1600, 900));
+            m_pComboVideoCaptureSize->addItem("1680 x 1050 (16:10)", QSize(1680, 1050));
+            m_pComboVideoCaptureSize->addItem("1600 x 1200 (4:3)",   QSize(1600, 1200));
+            m_pComboVideoCaptureSize->addItem("1920 x 1080 (16:9)",  QSize(1920, 1080));
+            m_pComboVideoCaptureSize->addItem("1920 x 1200 (16:10)", QSize(1920, 1200));
+            m_pComboVideoCaptureSize->addItem("1920 x 1440 (4:3)",   QSize(1920, 1440));
+            m_pComboVideoCaptureSize->addItem("2880 x 1800 (16:10)", QSize(2880, 1800));
+        }
+
+        /* Frame-width editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorVideoCaptureWidth);
+        {
+            /* Configure editor: */
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureWidth, 5);
+            m_pEditorVideoCaptureWidth->setMinimum(16);
+            m_pEditorVideoCaptureWidth->setMaximum(2880);
+        }
+
+        /* Frame-height editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorVideoCaptureHeight);
+        {
+            /* Configure editor: */
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureHeight, 5);
+            m_pEditorVideoCaptureHeight->setMinimum(16);
+            m_pEditorVideoCaptureHeight->setMaximum(1800);
+        }
+
+        /* Frame-rate slider created in the .ui file. */
+        AssertPtrReturnVoid(m_pSliderVideoCaptureFrameRate);
+        {
+            /* Configure slider: */
+            m_pSliderVideoCaptureFrameRate->setMinimum(1);
+            m_pSliderVideoCaptureFrameRate->setMaximum(30);
+            m_pSliderVideoCaptureFrameRate->setPageStep(1);
+            m_pSliderVideoCaptureFrameRate->setSingleStep(1);
+            m_pSliderVideoCaptureFrameRate->setTickInterval(1);
+            m_pSliderVideoCaptureFrameRate->setSnappingEnabled(true);
+            m_pSliderVideoCaptureFrameRate->setOptimalHint(1, 25);
+            m_pSliderVideoCaptureFrameRate->setWarningHint(25, 30);
+        }
+
+        /* Frame-rate editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorVideoCaptureFrameRate);
+        {
+            /* Configure editor: */
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
+            m_pEditorVideoCaptureFrameRate->setMinimum(1);
+            m_pEditorVideoCaptureFrameRate->setMaximum(30);
+        }
+
+        /* Frame quality combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pContainerLayoutSliderVideoCaptureQuality);
+        AssertPtrReturnVoid(m_pSliderVideoCaptureQuality);
+        {
+            /* Configure combo-box: */
+            m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(1, 4);
+            m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(3, 5);
+            m_pSliderVideoCaptureQuality->setMinimum(1);
+            m_pSliderVideoCaptureQuality->setMaximum(10);
+            m_pSliderVideoCaptureQuality->setPageStep(1);
+            m_pSliderVideoCaptureQuality->setSingleStep(1);
+            m_pSliderVideoCaptureQuality->setTickInterval(1);
+            m_pSliderVideoCaptureQuality->setSnappingEnabled(true);
+            m_pSliderVideoCaptureQuality->setOptimalHint(1, 5);
+            m_pSliderVideoCaptureQuality->setWarningHint(5, 9);
+            m_pSliderVideoCaptureQuality->setErrorHint(9, 10);
+        }
+
+        /* Bit-rate editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pEditorVideoCaptureBitRate);
+        {
+            /* Configure editor: */
+            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
+            m_pEditorVideoCaptureBitRate->setMinimum(32);
+            m_pEditorVideoCaptureBitRate->setMaximum(2048);
+        }
+    }
+}
+
+void UIMachineSettingsDisplay::prepareConnections()
+{
+    /* Configure 'Screen' connections: */
     connect(m_pSliderVideoMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoMemorySizeSliderChange()));
-
-    /* Prepare memory-size editor: */
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoMemorySize, 4);
-    m_pEditorVideoMemorySize->setMinimum(m_iMinVRAM);
-    m_pEditorVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
     connect(m_pEditorVideoMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoMemorySizeEditorChange()));
-
-    /* Prepare screen-count slider: */
-    const uint cMinGuestScreens = 1;
-    const uint cMaxGuestScreens = sys.GetMaxGuestMonitors();
-    const uint cMaxGuestScreensForSlider = qMin(cMaxGuestScreens, (uint)8);
-    m_pSliderVideoScreenCount->setMinimum(cMinGuestScreens);
-    m_pSliderVideoScreenCount->setMaximum(cMaxGuestScreensForSlider);
-    m_pSliderVideoScreenCount->setPageStep(1);
-    m_pSliderVideoScreenCount->setSingleStep(1);
-    m_pSliderVideoScreenCount->setTickInterval(1);
-    m_pSliderVideoScreenCount->setOptimalHint(cMinGuestScreens, cHostScreens);
-    m_pSliderVideoScreenCount->setWarningHint(cHostScreens, cMaxGuestScreensForSlider);
     connect(m_pSliderVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountSliderChange()));
-
-    /* Prepare screen-count editor: */
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoScreenCount, 3);
-    m_pEditorVideoScreenCount->setMinimum(1);
-    m_pEditorVideoScreenCount->setMaximum(cMaxGuestScreens);
     connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountEditorChange()));
-
-    /* Prepare scale-factor slider: */
-    m_pSliderGuestScreenScale->setMinimum(100);
-    m_pSliderGuestScreenScale->setMaximum(200);
-    m_pSliderGuestScreenScale->setPageStep(10);
-    m_pSliderGuestScreenScale->setSingleStep(1);
-    m_pSliderGuestScreenScale->setTickInterval(10);
-    m_pSliderGuestScreenScale->setSnappingEnabled(true);
     connect(m_pSliderGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleSliderChange()));
-
-    /* Prepare scale-factor editor: */
-    m_pEditorGuestScreenScale->setMinimum(100);
-    m_pEditorGuestScreenScale->setMaximum(200);
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorGuestScreenScale, 5);
     connect(m_pEditorGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleEditorChange()));
-
-    /* Prepare advanced options: */
     connect(m_pCheckbox3D, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 #ifdef VBOX_WITH_VIDEOHWACCEL
     connect(m_pCheckbox2DVideo, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 #endif
-}
 
-void UIMachineSettingsDisplay::prepareRemoteDisplayTab()
-{
-    /* Prepare check-box: */
+    /* Configure 'Remote Display' connections: */
     connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
-
-    /* Prepare port/timeout editors: */
-    m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
-    m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
     connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString &)), this, SLOT(revalidate()));
     connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString &)), this, SLOT(revalidate()));
 
-    /* Prepare auth-method combo: */
-    m_pComboRemoteDisplayAuthMethod->insertItem(0, ""); /* KAuthType_Null */
-    m_pComboRemoteDisplayAuthMethod->insertItem(1, ""); /* KAuthType_External */
-    m_pComboRemoteDisplayAuthMethod->insertItem(2, ""); /* KAuthType_Guest */
-}
-
-void UIMachineSettingsDisplay::prepareVideoCaptureTab()
-{
-    /* Prepare Video Capture checkbox: */
+    /* Configure 'Video Capture' connections: */
     connect(m_pCheckboxVideoCapture, SIGNAL(toggled(bool)), this, SLOT(sltHandleVideoCaptureCheckboxToggle()));
-
-    /* Prepare filepath selector: */
-    m_pEditorVideoCapturePath->setEditable(false);
-    m_pEditorVideoCapturePath->setMode(UIFilePathSelector::Mode_File_Save);
-
-    /* Prepare frame-size combo-box: */
-    m_pComboVideoCaptureSize->addItem(""); /* User Defined */
-    m_pComboVideoCaptureSize->addItem("320 x 200 (16:10)",   QSize(320, 200));
-    m_pComboVideoCaptureSize->addItem("640 x 480 (4:3)",     QSize(640, 480));
-    m_pComboVideoCaptureSize->addItem("720 x 400 (9:5)",     QSize(720, 400));
-    m_pComboVideoCaptureSize->addItem("720 x 480 (3:2)",     QSize(720, 480));
-    m_pComboVideoCaptureSize->addItem("800 x 600 (4:3)",     QSize(800, 600));
-    m_pComboVideoCaptureSize->addItem("1024 x 768 (4:3)",    QSize(1024, 768));
-    m_pComboVideoCaptureSize->addItem("1152 x 864 (4:3)",    QSize(1152, 864));
-    m_pComboVideoCaptureSize->addItem("1280 x 720 (16:9)",   QSize(1280, 720));
-    m_pComboVideoCaptureSize->addItem("1280 x 800 (16:10)",  QSize(1280, 800));
-    m_pComboVideoCaptureSize->addItem("1280 x 960 (4:3)",    QSize(1280, 960));
-    m_pComboVideoCaptureSize->addItem("1280 x 1024 (5:4)",   QSize(1280, 1024));
-    m_pComboVideoCaptureSize->addItem("1366 x 768 (16:9)",   QSize(1366, 768));
-    m_pComboVideoCaptureSize->addItem("1440 x 900 (16:10)",  QSize(1440, 900));
-    m_pComboVideoCaptureSize->addItem("1440 x 1080 (4:3)",   QSize(1440, 1080));
-    m_pComboVideoCaptureSize->addItem("1600 x 900 (16:9)",   QSize(1600, 900));
-    m_pComboVideoCaptureSize->addItem("1680 x 1050 (16:10)", QSize(1680, 1050));
-    m_pComboVideoCaptureSize->addItem("1600 x 1200 (4:3)",   QSize(1600, 1200));
-    m_pComboVideoCaptureSize->addItem("1920 x 1080 (16:9)",  QSize(1920, 1080));
-    m_pComboVideoCaptureSize->addItem("1920 x 1200 (16:10)", QSize(1920, 1200));
-    m_pComboVideoCaptureSize->addItem("1920 x 1440 (4:3)",   QSize(1920, 1440));
-    m_pComboVideoCaptureSize->addItem("2880 x 1800 (16:10)", QSize(2880, 1800));
     connect(m_pComboVideoCaptureSize, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureFrameSizeComboboxChange()));
-
-    /* Prepare frame-width/height editors: */
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureWidth, 5);
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureHeight, 5);
-    m_pEditorVideoCaptureWidth->setMinimum(16);
-    m_pEditorVideoCaptureWidth->setMaximum(2880);
-    m_pEditorVideoCaptureHeight->setMinimum(16);
-    m_pEditorVideoCaptureHeight->setMaximum(1800);
     connect(m_pEditorVideoCaptureWidth, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameWidthEditorChange()));
     connect(m_pEditorVideoCaptureHeight, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameHeightEditorChange()));
-
-    /* Prepare frame-rate slider: */
-    m_pSliderVideoCaptureFrameRate->setMinimum(1);
-    m_pSliderVideoCaptureFrameRate->setMaximum(30);
-    m_pSliderVideoCaptureFrameRate->setPageStep(1);
-    m_pSliderVideoCaptureFrameRate->setSingleStep(1);
-    m_pSliderVideoCaptureFrameRate->setTickInterval(1);
-    m_pSliderVideoCaptureFrameRate->setSnappingEnabled(true);
-    m_pSliderVideoCaptureFrameRate->setOptimalHint(1, 25);
-    m_pSliderVideoCaptureFrameRate->setWarningHint(25, 30);
     connect(m_pSliderVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateSliderChange()));
-
-    /* Prepare frame-rate editor: */
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
-    m_pEditorVideoCaptureFrameRate->setMinimum(1);
-    m_pEditorVideoCaptureFrameRate->setMaximum(30);
     connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateEditorChange()));
-
-    /* Prepare quality combo-box: */
-    m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(1, 4);
-    m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(3, 5);
-    m_pSliderVideoCaptureQuality->setMinimum(1);
-    m_pSliderVideoCaptureQuality->setMaximum(10);
-    m_pSliderVideoCaptureQuality->setPageStep(1);
-    m_pSliderVideoCaptureQuality->setSingleStep(1);
-    m_pSliderVideoCaptureQuality->setTickInterval(1);
-    m_pSliderVideoCaptureQuality->setSnappingEnabled(true);
-    m_pSliderVideoCaptureQuality->setOptimalHint(1, 5);
-    m_pSliderVideoCaptureQuality->setWarningHint(5, 9);
-    m_pSliderVideoCaptureQuality->setErrorHint(9, 10);
     connect(m_pSliderVideoCaptureQuality, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureQualitySliderChange()));
-
-    /* Prepare bit-rate editor: */
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
-    m_pEditorVideoCaptureBitRate->setMinimum(32);
-    m_pEditorVideoCaptureBitRate->setMaximum(2048);
     connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateEditorChange()));
+}
+
+void UIMachineSettingsDisplay::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()

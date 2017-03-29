@@ -268,7 +268,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     /* Prepare validation: */
     prepareValidation();
 
-    /* Applying language settings: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -1000,39 +1000,17 @@ int UIMachineSettingsNetwork::position(QComboBox *pComboBox, const QString &strT
 *********************************************************************************************************************************/
 
 UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
-    : m_pTabWidgetAdapters(0)
-    , m_pCache(new UISettingsCacheMachineNetwork)
+    : m_pTabWidget(0)
+    , m_pCache(0)
 {
-    /* Setup main layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    pMainLayout->setContentsMargins(0, 5, 0, 5);
-
-    /* Creating tab-widget: */
-    m_pTabWidgetAdapters = new QITabWidget(this);
-    pMainLayout->addWidget(m_pTabWidgetAdapters);
-
-    /* How many adapters to display: */
-    /** @todo r=klaus this needs to be done based on the actual chipset type of the VM,
-     * but in this place the m_machine field isn't set yet. My observation (on Linux)
-     * is that the limitation to 4 isn't necessary any more, but this needs to be checked
-     * on all platforms to be certain that it's usable everywhere. */
-    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
-    /* Add corresponding tab pages to parent tab widget: */
-    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
-    {
-        /* Creating adapter tab: */
-        UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(this);
-        connect(pTab, SIGNAL(sigNotifyAdvancedButtonStateChange(bool)),
-                this, SLOT(sltHandleAdvancedButtonStateChange(bool)));
-        m_pTabWidgetAdapters->addTab(pTab, pTab->tabTitle());
-    }
+    /* Prepare: */
+    prepare();
 }
 
 UIMachineSettingsNetworkPage::~UIMachineSettingsNetworkPage()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 bool UIMachineSettingsNetworkPage::changed() const
@@ -1056,7 +1034,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     refreshNATNetworkList();
 
     /* For each network adapter: */
-    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Prepare adapter data: */
         UIDataSettingsMachineNetworkAdapter adapterData;
@@ -1109,14 +1087,14 @@ void UIMachineSettingsNetworkPage::getFromCache()
 {
     /* Setup tab order: */
     Assert(firstWidget());
-    setTabOrder(firstWidget(), m_pTabWidgetAdapters->focusProxy());
-    QWidget *pLastFocusWidget = m_pTabWidgetAdapters->focusProxy();
+    setTabOrder(firstWidget(), m_pTabWidget->focusProxy());
+    QWidget *pLastFocusWidget = m_pTabWidget->focusProxy();
 
     /* For each network adapter: */
-    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get adapter page: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
 
         /* Load adapter data to page: */
         pTab->fetchAdapterCache(m_pCache->child(iSlot));
@@ -1125,7 +1103,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
         pLastFocusWidget = pTab->setOrderAfter(pLastFocusWidget);
     }
 
-    /* Applying language settings: */
+    /* Apply language settings: */
     retranslateUi();
 
     /* Polish page finally: */
@@ -1138,10 +1116,10 @@ void UIMachineSettingsNetworkPage::getFromCache()
 void UIMachineSettingsNetworkPage::putToCache()
 {
     /* For each network adapter: */
-    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get adapter page: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
 
         /* Gather & cache adapter data: */
         pTab->uploadAdapterCache(m_pCache->child(iSlot));
@@ -1157,7 +1135,7 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     if (m_pCache->wasChanged())
     {
         /* For each network adapter: */
-        for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
+        for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
         {
             /* Check if adapter data was changed: */
             const UISettingsCacheMachineNetworkAdapter &adapterCache = m_pCache->child(iSlot);
@@ -1239,9 +1217,9 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
     bool fValid = true;
 
     /* Delegate validation to adapter tabs: */
-    for (int i = 0; i < m_pTabWidgetAdapters->count(); ++i)
+    for (int i = 0; i < m_pTabWidget->count(); ++i)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(i));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(i));
         AssertMsg(pTab, ("Can't get adapter tab!\n"));
         if (!pTab->validate(messages))
             fValid = false;
@@ -1253,23 +1231,23 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
 
 void UIMachineSettingsNetworkPage::retranslateUi()
 {
-    for (int i = 0; i < m_pTabWidgetAdapters->count(); ++i)
+    for (int i = 0; i < m_pTabWidget->count(); ++i)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(i));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(i));
         Assert(pTab);
-        m_pTabWidgetAdapters->setTabText(i, pTab->tabTitle());
+        m_pTabWidget->setTabText(i, pTab->tabTitle());
     }
 }
 
 void UIMachineSettingsNetworkPage::polishPage()
 {
     /* Get the count of network adapter tabs: */
-    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        m_pTabWidgetAdapters->setTabEnabled(iSlot,
+        m_pTabWidget->setTabEnabled(iSlot,
                                             isMachineOffline() ||
                                             (isMachineInValidMode() && m_pCache->child(iSlot).base().m_fAdapterEnabled));
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
         pTab->polishTab();
     }
 }
@@ -1299,11 +1277,11 @@ void UIMachineSettingsNetworkPage::sltHandleTabUpdate()
     }
 
     /* Update all the tabs except the sender: */
-    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get the iterated tab: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
-        AssertMsg(pTab, ("All the tabs of m_pTabWidgetAdapters should be of the UIMachineSettingsNetwork type!\n"));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        AssertMsg(pTab, ("All the tabs of m_pTabWidget should be of the UIMachineSettingsNetwork type!\n"));
 
         /* Update all the tabs (except sender) with the same attachment type as sender have: */
         if (pTab != pSender && pTab->attachmentType() == enmSenderAttachmentType)
@@ -1314,11 +1292,64 @@ void UIMachineSettingsNetworkPage::sltHandleTabUpdate()
 void UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange(bool fExpanded)
 {
     /* Update the advanced button states for all the pages: */
-    for (int iSlot = 0; iSlot < m_pTabWidgetAdapters->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
         pTab->setAdvancedButtonState(fExpanded);
     }
+}
+
+void UIMachineSettingsNetworkPage::prepare()
+{
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineNetwork;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Create main layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(pMainLayout);
+    {
+        /* Configure layout: */
+        pMainLayout->setContentsMargins(0, 5, 0, 5);
+
+        /* Creating tab-widget: */
+        m_pTabWidget = new QITabWidget;
+        AssertPtrReturnVoid(m_pTabWidget);
+        {
+            /* How many adapters to display: */
+            /** @todo r=klaus this needs to be done based on the actual chipset type of the VM,
+              * but in this place the m_machine field isn't set yet. My observation (on Linux)
+              * is that the limitation to 4 isn't necessary any more, but this needs to be checked
+              * on all platforms to be certain that it's usable everywhere. */
+            const ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
+
+            /* Create corresponding adapter tabs: */
+            for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
+            {
+                /* Create adapter tab: */
+                UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(this);
+                AssertPtrReturnVoid(pTab);
+                {
+                    /* Configure tab: */
+                    connect(pTab, SIGNAL(sigNotifyAdvancedButtonStateChange(bool)),
+                            this, SLOT(sltHandleAdvancedButtonStateChange(bool)));
+
+                    /* Add tab into tab-widget: */
+                    m_pTabWidget->addTab(pTab, pTab->tabTitle());
+                }
+            }
+
+            /* Add tab-widget into layout: */
+            pMainLayout->addWidget(m_pTabWidget);
+        }
+    }
+}
+
+void UIMachineSettingsNetworkPage::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIMachineSettingsNetworkPage::refreshBridgedAdapterList()
@@ -1342,9 +1373,9 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
     if (fFullRefresh)
         m_internalNetworkList << otherInternalNetworkList();
     /* Append internal network list with names from all the tabs: */
-    for (int iTab = 0; iTab < m_pTabWidgetAdapters->count(); ++iTab)
+    for (int iTab = 0; iTab < m_pTabWidget->count(); ++iTab)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iTab));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iTab));
         if (pTab)
         {
             const QString strName = pTab->alternativeName(KNetworkAttachmentType_Internal);
@@ -1375,9 +1406,9 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
     if (fFullRefresh)
         m_genericDriverList << otherGenericDriverList();
     /* Append generic driver list with names from all the tabs: */
-    for (int iTab = 0; iTab < m_pTabWidgetAdapters->count(); ++iTab)
+    for (int iTab = 0; iTab < m_pTabWidget->count(); ++iTab)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidgetAdapters->widget(iTab));
+        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iTab));
         if (pTab)
         {
             const QString strName = pTab->alternativeName(KNetworkAttachmentType_Generic);

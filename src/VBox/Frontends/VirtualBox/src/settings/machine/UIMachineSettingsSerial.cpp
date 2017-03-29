@@ -334,31 +334,17 @@ void UIMachineSettingsSerial::prepareValidation()
 *********************************************************************************************************************************/
 
 UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
-    : mTabWidget(0)
-    , m_pCache(new UISettingsCacheMachineSerial)
+    : m_pTabWidget(0)
+    , m_pCache(0)
 {
-    /* TabWidget creation */
-    mTabWidget = new QITabWidget (this);
-    QVBoxLayout *layout = new QVBoxLayout (this);
-    layout->setContentsMargins (0, 5, 0, 5);
-    layout->addWidget (mTabWidget);
-
-    /* How many ports to display: */
-    ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
-    /* Add corresponding tab pages to parent tab widget: */
-    for (ulong uPort = 0; uPort < uCount; ++uPort)
-    {
-        /* Creating port page: */
-        UIMachineSettingsSerial *pPage = new UIMachineSettingsSerial(this);
-        mTabWidget->addTab(pPage, pPage->pageTitle());
-    }
+    /* Prepare: */
+    prepare();
 }
 
 UIMachineSettingsSerialPage::~UIMachineSettingsSerialPage()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 bool UIMachineSettingsSerialPage::changed() const
@@ -375,7 +361,7 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
     m_pCache->clear();
 
     /* For each serial port: */
-    for (int iSlot = 0; iSlot < mTabWidget->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Prepare port data: */
         UIDataSettingsMachineSerialPort portData;
@@ -406,14 +392,14 @@ void UIMachineSettingsSerialPage::getFromCache()
 {
     /* Setup tab order: */
     Assert(firstWidget());
-    setTabOrder(firstWidget(), mTabWidget->focusProxy());
-    QWidget *pLastFocusWidget = mTabWidget->focusProxy();
+    setTabOrder(firstWidget(), m_pTabWidget->focusProxy());
+    QWidget *pLastFocusWidget = m_pTabWidget->focusProxy();
 
     /* For each serial port: */
-    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         /* Get port page: */
-        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
+        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iPort));
 
         /* Load port data to page: */
         pPage->fetchPortData(m_pCache->child(iPort));
@@ -422,7 +408,7 @@ void UIMachineSettingsSerialPage::getFromCache()
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
     }
 
-    /* Applying language settings: */
+    /* Apply language settings: */
     retranslateUi();
 
     /* Polish page finally: */
@@ -435,10 +421,10 @@ void UIMachineSettingsSerialPage::getFromCache()
 void UIMachineSettingsSerialPage::putToCache()
 {
     /* For each serial port: */
-    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         /* Getting port page: */
-        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
+        UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iPort));
 
         /* Gather & cache port data: */
         pPage->uploadPortData(m_pCache->child(iPort));
@@ -454,7 +440,7 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     if (m_pCache->wasChanged())
     {
         /* For each serial port: */
-        for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+        for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
         {
             /* Check if port data was changed: */
             const UISettingsCacheMachineSerialPort &portCache = m_pCache->child(iPort);
@@ -499,17 +485,17 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
     QStringList paths;
 
     /* Validate all the ports: */
-    for (int iIndex = 0; iIndex < mTabWidget->count(); ++iIndex)
+    for (int iIndex = 0; iIndex < m_pTabWidget->count(); ++iIndex)
     {
         /* Get current tab/page: */
-        QWidget *pTab = mTabWidget->widget(iIndex);
+        QWidget *pTab = m_pTabWidget->widget(iIndex);
         UIMachineSettingsSerial *pPage = static_cast<UIMachineSettingsSerial*>(pTab);
         if (!pPage->mGbSerial->isChecked())
             continue;
 
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(pTab)));
+        message.first = vboxGlobal().removeAccelMark(m_pTabWidget->tabText(m_pTabWidget->indexOf(pTab)));
 
         /* Check the port attribute emptiness & uniqueness: */
         const QString strIRQ(pPage->mLeIRQ->text());
@@ -564,25 +550,70 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
 
 void UIMachineSettingsSerialPage::retranslateUi()
 {
-    for (int i = 0; i < mTabWidget->count(); ++i)
+    for (int i = 0; i < m_pTabWidget->count(); ++i)
     {
         UIMachineSettingsSerial *pPage =
-            static_cast<UIMachineSettingsSerial*>(mTabWidget->widget(i));
-        mTabWidget->setTabText(i, pPage->pageTitle());
+            static_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(i));
+        m_pTabWidget->setTabText(i, pPage->pageTitle());
     }
 }
 
 void UIMachineSettingsSerialPage::polishPage()
 {
     /* Get the count of serial port tabs: */
-    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
-        mTabWidget->setTabEnabled(iPort,
+        m_pTabWidget->setTabEnabled(iPort,
                                   isMachineOffline() ||
                                   (isMachineInValidMode() && m_pCache->child(iPort).base().m_fPortEnabled));
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(mTabWidget->widget(iPort));
+        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iPort));
         pTab->polishTab();
     }
+}
+
+void UIMachineSettingsSerialPage::prepare()
+{
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineSerial;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Create main layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(pMainLayout);
+    {
+        /* Configure layout: */
+        pMainLayout->setContentsMargins(0, 5, 0, 5);
+
+        /* Creating tab-widget: */
+        m_pTabWidget = new QITabWidget;
+        AssertPtrReturnVoid(m_pTabWidget);
+        {
+            /* How many ports to display: */
+            const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
+
+            /* Create corresponding port tabs: */
+            for (ulong uPort = 0; uPort < uCount; ++uPort)
+            {
+                /* Create port tab: */
+                UIMachineSettingsSerial *pTab = new UIMachineSettingsSerial(this);
+                AssertPtrReturnVoid(pTab);
+                {
+                    /* Add tab into tab-widget: */
+                    m_pTabWidget->addTab(pTab, pTab->pageTitle());
+                }
+            }
+
+            /* Add tab-widget into layout: */
+            pMainLayout->addWidget(m_pTabWidget);
+        }
+    }
+}
+
+void UIMachineSettingsSerialPage::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 # include "UIMachineSettingsSerial.moc"

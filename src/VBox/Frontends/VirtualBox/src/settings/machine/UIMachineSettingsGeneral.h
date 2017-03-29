@@ -103,6 +103,10 @@ private:
     void prepareTabDescription();
     /** Prepares 'Encryption' tab. */
     void prepareTabEncryption();
+    /** Prepares connections. */
+    void prepareConnections();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds whether HW virtualization extension is enabled. */
     bool  m_fHWVirtExEnabled;

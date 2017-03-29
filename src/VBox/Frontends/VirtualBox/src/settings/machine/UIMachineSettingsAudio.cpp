@@ -64,7 +64,7 @@ struct UIDataSettingsMachineAudio
 
 
 UIMachineSettingsAudio::UIMachineSettingsAudio()
-    : m_pCache(new UISettingsCacheMachineAudio)
+    : m_pCache(0)
 {
     /* Prepare: */
     prepare();
@@ -72,9 +72,8 @@ UIMachineSettingsAudio::UIMachineSettingsAudio()
 
 UIMachineSettingsAudio::~UIMachineSettingsAudio()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 bool UIMachineSettingsAudio::changed() const
@@ -170,7 +169,7 @@ void UIMachineSettingsAudio::retranslateUi()
     Ui::UIMachineSettingsAudio::retranslateUi(this);
 
     /* Translate audio-driver combo.
-     * Make sure this order corresponds the same in prepareComboboxes(): */
+     * Make sure this order corresponds the same in prepare(): */
     int iIndex = -1;
     m_pComboAudioDriver->setItemText(++iIndex, gpConverter->toString(KAudioDriverType_Null));
 #ifdef Q_OS_WIN
@@ -193,7 +192,7 @@ void UIMachineSettingsAudio::retranslateUi()
 #endif
 
     /* Translate audio-controller combo.
-     * Make sure this order corresponds the same in prepareComboboxes(): */
+     * Make sure this order corresponds the same in prepare(): */
     iIndex = -1;
     m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_HDA));
     m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_AC97));
@@ -212,43 +211,59 @@ void UIMachineSettingsAudio::prepare()
     /* Apply UI decorations: */
     Ui::UIMachineSettingsAudio::setupUi(this);
 
-    /* Prepare combo-boxes: */
-    prepareComboboxes();
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineAudio;
+    AssertPtrReturnVoid(m_pCache);
 
-    /* Translate finally: */
-    retranslateUi();
-}
-
-void UIMachineSettingsAudio::prepareComboboxes()
-{
-    /* Prepare audio-driver combo.
-     * Make sure this order corresponds the same in retranslateUi(): */
-    int iIndex = -1;
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_Null);
+    /* Layout created in the .ui file. */
+    {
+        /* Audio-driver combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboAudioDriver);
+        {
+            /* Configure combo-box.
+             * Make sure this order corresponds the same in retranslateUi(): */
+            int iIndex = -1;
+            m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_Null);
 #ifdef Q_OS_WIN
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_DirectSound);
+            m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_DirectSound);
 # ifdef VBOX_WITH_WINMM
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_WinMM);
+            m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_WinMM);
 # endif
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_OSS);
+            m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_OSS);
 #endif
 #ifdef VBOX_WITH_AUDIO_ALSA
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_ALSA);
+            m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_ALSA);
 #endif
 #ifdef VBOX_WITH_AUDIO_PULSE
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_Pulse);
+            m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_Pulse);
 #endif
 #ifdef Q_OS_MACX
-    m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_CoreAudio);
+            m_pComboAudioDriver->insertItem(++iIndex, "", KAudioDriverType_CoreAudio);
 #endif
+        }
 
-    /* Prepare audio-controller combo.
-     * Make sure this order corresponds the same in retranslateUi(): */
-    iIndex = -1;
-    m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_HDA);
-    m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_AC97);
-    m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_SB16);
+        /* Audio-controller combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboAudioController);
+        {
+            /* Configure combo-box.
+             * Make sure this order corresponds the same in retranslateUi(): */
+            int iIndex = -1;
+            m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_HDA);
+            m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_AC97);
+            m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_SB16);
+        }
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIMachineSettingsAudio::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 

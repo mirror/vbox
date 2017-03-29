@@ -286,31 +286,17 @@ void UIMachineSettingsParallel::prepareValidation()
 *********************************************************************************************************************************/
 
 UIMachineSettingsParallelPage::UIMachineSettingsParallelPage()
-    : mTabWidget(0)
-    , m_pCache(new UISettingsCacheMachineParallel)
+    : m_pTabWidget(0)
+    , m_pCache(0)
 {
-    /* TabWidget creation */
-    mTabWidget = new QITabWidget (this);
-    QVBoxLayout *layout = new QVBoxLayout (this);
-    layout->setContentsMargins (0, 5, 0, 5);
-    layout->addWidget (mTabWidget);
-
-    /* How many ports to display: */
-    ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetParallelPortCount();
-    /* Add corresponding tab pages to parent tab widget: */
-    for (ulong uPort = 0; uPort < uCount; ++uPort)
-    {
-        /* Creating port page: */
-        UIMachineSettingsParallel *pPage = new UIMachineSettingsParallel(this);
-        mTabWidget->addTab(pPage, pPage->pageTitle());
-    }
+    /* Prepare: */
+    prepare();
 }
 
 UIMachineSettingsParallelPage::~UIMachineSettingsParallelPage()
 {
-    /* Cleanup cache: */
-    delete m_pCache;
-    m_pCache = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 bool UIMachineSettingsParallelPage::changed() const
@@ -327,7 +313,7 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
     m_pCache->clear();
 
     /* For each parallel port: */
-    for (int iSlot = 0; iSlot < mTabWidget->count(); ++iSlot)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Prepare port data: */
         UIDataSettingsMachineParallelPort portData;
@@ -356,14 +342,14 @@ void UIMachineSettingsParallelPage::getFromCache()
 {
     /* Setup tab order: */
     Assert(firstWidget());
-    setTabOrder(firstWidget(), mTabWidget->focusProxy());
-    QWidget *pLastFocusWidget = mTabWidget->focusProxy();
+    setTabOrder(firstWidget(), m_pTabWidget->focusProxy());
+    QWidget *pLastFocusWidget = m_pTabWidget->focusProxy();
 
     /* For each parallel port: */
-    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         /* Get port page: */
-        UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(mTabWidget->widget(iPort));
+        UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
 
         /* Load port data to page: */
         pPage->fetchPortData(m_pCache->child(iPort));
@@ -372,7 +358,7 @@ void UIMachineSettingsParallelPage::getFromCache()
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
     }
 
-    /* Applying language settings: */
+    /* Apply language settings: */
     retranslateUi();
 
     /* Polish page finally: */
@@ -385,10 +371,10 @@ void UIMachineSettingsParallelPage::getFromCache()
 void UIMachineSettingsParallelPage::putToCache()
 {
     /* For each parallel port: */
-    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         /* Getting port page: */
-        UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(mTabWidget->widget(iPort));
+        UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
 
         /* Gather & cache port data: */
         pPage->uploadPortData(m_pCache->child(iPort));
@@ -404,7 +390,7 @@ void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
     if (m_pCache->wasChanged())
     {
         /* For each parallel port: */
-        for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+        for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
         {
             /* Check if port data was changed: */
             const UISettingsCacheMachineParallelPort &portCache = m_pCache->child(iPort);
@@ -444,17 +430,17 @@ bool UIMachineSettingsParallelPage::validate(QList<UIValidationMessage> &message
     QStringList paths;
 
     /* Validate all the ports: */
-    for (int iIndex = 0; iIndex < mTabWidget->count(); ++iIndex)
+    for (int iIndex = 0; iIndex < m_pTabWidget->count(); ++iIndex)
     {
         /* Get current tab/page: */
-        QWidget *pTab = mTabWidget->widget(iIndex);
+        QWidget *pTab = m_pTabWidget->widget(iIndex);
         UIMachineSettingsParallel *pPage = static_cast<UIMachineSettingsParallel*>(pTab);
         if (!pPage->mGbParallel->isChecked())
             continue;
 
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(pTab)));
+        message.first = vboxGlobal().removeAccelMark(m_pTabWidget->tabText(m_pTabWidget->indexOf(pTab)));
 
         /* Check the port attribute emptiness & uniqueness: */
         const QString strIRQ(pPage->mLeIRQ->text());
@@ -502,25 +488,70 @@ bool UIMachineSettingsParallelPage::validate(QList<UIValidationMessage> &message
 
 void UIMachineSettingsParallelPage::retranslateUi()
 {
-    for (int i = 0; i < mTabWidget->count(); ++i)
+    for (int i = 0; i < m_pTabWidget->count(); ++i)
     {
         UIMachineSettingsParallel *pPage =
-            static_cast<UIMachineSettingsParallel*>(mTabWidget->widget(i));
-        mTabWidget->setTabText(i, pPage->pageTitle());
+            static_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(i));
+        m_pTabWidget->setTabText(i, pPage->pageTitle());
     }
 }
 
 void UIMachineSettingsParallelPage::polishPage()
 {
     /* Get the count of parallel port tabs: */
-    for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
+    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
-        mTabWidget->setTabEnabled(iPort,
+        m_pTabWidget->setTabEnabled(iPort,
                                   isMachineOffline() ||
                                   (isMachineInValidMode() && m_pCache->child(iPort).base().m_fPortEnabled));
-        UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(mTabWidget->widget(iPort));
+        UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
         pTab->polishTab();
     }
+}
+
+void UIMachineSettingsParallelPage::prepare()
+{
+    /* Prepare cache: */
+    m_pCache = new UISettingsCacheMachineParallel;
+    AssertPtrReturnVoid(m_pCache);
+
+    /* Create main layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertPtrReturnVoid(pMainLayout);
+    {
+        /* Configure layout: */
+        pMainLayout->setContentsMargins(0, 5, 0, 5);
+
+        /* Creating tab-widget: */
+        m_pTabWidget = new QITabWidget;
+        AssertPtrReturnVoid(m_pTabWidget);
+        {
+            /* How many ports to display: */
+            const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetParallelPortCount();
+
+            /* Create corresponding port tabs: */
+            for (ulong uPort = 0; uPort < uCount; ++uPort)
+            {
+                /* Create port tab: */
+                UIMachineSettingsParallel *pTab = new UIMachineSettingsParallel(this);
+                AssertPtrReturnVoid(pTab);
+                {
+                    /* Add tab into tab-widget: */
+                    m_pTabWidget->addTab(pTab, pTab->pageTitle());
+                }
+            }
+
+            /* Add tab-widget into layout: */
+            pMainLayout->addWidget(m_pTabWidget);
+        }
+    }
+}
+
+void UIMachineSettingsParallelPage::cleanup()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 # include "UIMachineSettingsParallel.moc"
