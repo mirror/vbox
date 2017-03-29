@@ -1417,8 +1417,6 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             }
             else if (iEncoding == 2)
             {
-                if (pThis->bMode == BS3_MODE_RM)
-                    break; /** @todo fix real mode #GP() context gathering. */
                 pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3;
                 off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
                 off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 16, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM);
@@ -3152,7 +3150,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode != BS3_MODE_PP32)
+    if (!BS3_MODE_IS_RM_OR_V86(bMode))
         return BS3TESTDOMODE_SKIPPED;
 #endif
 
@@ -3165,7 +3163,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode >= BS3_MODE_PE16_32)
+    if (bMode >= BS3_MODE_RM)
     {
         Bs3TestTerm();
         Bs3Shutdown();
