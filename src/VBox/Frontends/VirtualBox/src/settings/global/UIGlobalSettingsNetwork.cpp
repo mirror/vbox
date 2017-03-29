@@ -924,6 +924,7 @@ void UIGlobalSettingsNetwork::prepareTabNAT()
 #endif
 
         /* NAT Network tree-widget created in the .ui file. */
+        AssertPtrReturnVoid(m_pTreeNetworkNAT);
         {
             /* Configure tree-widget: */
             m_pTreeNetworkNAT->setColumnCount(2);
@@ -934,6 +935,7 @@ void UIGlobalSettingsNetwork::prepareTabNAT()
         }
 
         /* NAT Network toolbar created in the .ui file. */
+        AssertPtrReturnVoid(m_pToolbarNetworkNAT);
         {
             /* Configure toolbar: */
             const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
@@ -983,6 +985,7 @@ void UIGlobalSettingsNetwork::prepareTabHost()
 #endif
 
         /* Host-only Network tree-widget created in the .ui file. */
+        AssertPtrReturnVoid(m_pTreeNetworkHost);
         {
             /* Configure tree-widget: */
             m_pTreeNetworkHost->header()->hide();
@@ -990,6 +993,7 @@ void UIGlobalSettingsNetwork::prepareTabHost()
         }
 
         /* Host-only Network toolbar created in the .ui file. */
+        AssertPtrReturnVoid(m_pToolbarNetworkHost);
         {
             /* Configure toolbar: */
             const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
