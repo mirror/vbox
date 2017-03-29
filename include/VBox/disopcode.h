@@ -689,6 +689,7 @@ enum OPCODES
     OP_PFSWAPD,
     OP_PAVGUSB,
     OP_PFNACC,
+/** @}  */
     OP_ROL,
     OP_ROR,
     OP_RCL,
@@ -733,9 +734,10 @@ enum OPCODES
     OP_MOV_DR,
     OP_MOV_TR,
     OP_SWAPGS,
-/** @}  */
+    OP_UD1,
+    OP_UD2,
 /** @name VT-x instructions
-* @{ */
+ * @{ */
     OP_VMREAD,
     OP_VMWRITE,
     OP_VMCALL,

@@ -241,6 +241,8 @@ typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
 #define BS3CG1INSTR_F_INVALID_64BIT     UINT32_C(0x00000002)
 /** Unused instruction. */
 #define BS3CG1INSTR_F_UNUSED            UINT32_C(0x00000004)
+/** Invalid instruction. */
+#define BS3CG1INSTR_F_INVALID           UINT32_C(0x00000008)
 /** @} */
 
 

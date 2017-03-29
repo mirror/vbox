@@ -6554,11 +6554,22 @@ FNIEMOP_UD_STUB(iemOp_jmpe);
 FNIEMOP_STUB(iemOp_popcnt_Gv_Ev);
 
 
-/** Opcode 0x0f 0xb9. */
+/**
+ * @opcode      0xb9
+ * @opinvalid   intel-modrm
+ * @optest      op1=1 op2=2 ->
+ * @oponlytest
+ */
 FNIEMOP_DEF(iemOp_Grp10)
 {
-    Log(("iemOp_Grp10 -> #UD\n"));
-    return IEMOP_RAISE_INVALID_OPCODE();
+    /*
+     * AMD does not decode beyond the 0xb9 whereas intel does the modr/m bit
+     * too. See bs3-cpu-decoder-1.c32.  So, we can forward to iemOp_InvalidNeedRM.
+     */
+    /** @todo fix bs3-cpu-generated-1 to deal with this on AMD! */
+    Log(("iemOp_Grp10 aka UD1 -> #UD\n"));
+    IEMOP_MNEMONIC2EX(ud1, "ud1", RM, UD1, ud1, Gb, Eb, DISOPTYPE_INVALID, IEMOPHINT_IGNORES_OP_SIZE); /* just picked Gb,Eb here. */
+    return FNIEMOP_CALL(iemOp_InvalidNeedRM);
 }
 
 

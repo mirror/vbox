@@ -447,6 +447,7 @@ class InstructionMap(object):
     kdSelectors = {
         'byte':     [ 256, ], ##< next opcode byte selects the instruction (default).
         '/r':       [   8, ], ##< modrm.reg selects the instruction.
+        'memreg /r':[  16, ], ##< modrm.reg and (modrm.mod == 3) selects the instruction.
         'mod /r':   [  32, ], ##< modrm.reg and modrm.mod selects the instruction.
         '!11 /r':   [   8, ], ##< modrm.reg selects the instruction with modrm.mod != 0y11.
         '11 /r':    [   8, ], ##< modrm.reg select the instruction with modrm.mod == 0y11.
@@ -493,6 +494,9 @@ class InstructionMap(object):
 
         if self.sSelector == 'mod /r':
             return (bOpcode >> 3) & 0x1f;
+
+        if self.sSelector == 'memreg /r':
+            return ((bOpcode >> 3) & 0x7) | (int((bOpcode >> 6) == 3) << 3);
 
         if self.sSelector == '!11 /r':
             assert (bOpcode & 0xc0) != 0xc, str(oInstr);
@@ -1206,7 +1210,7 @@ g_dInstructionMaps = {
     'grp12':        InstructionMap('grp12',     asLeadOpcodes = ['0x0f', '0x71',], sSelector = 'mod /r'),
     'grp13':        InstructionMap('grp13',     asLeadOpcodes = ['0x0f', '0x72',], sSelector = 'mod /r'),
     'grp14':        InstructionMap('grp14',     asLeadOpcodes = ['0x0f', '0x73',], sSelector = 'mod /r'),
-    'grp15':        InstructionMap('grp15',     asLeadOpcodes = ['0x0f', '0xae',], sSelector = 'mod /r'),
+    'grp15':        InstructionMap('grp15',     asLeadOpcodes = ['0x0f', '0xae',], sSelector = 'memreg /r'),
     'grp16':        InstructionMap('grp16',     asLeadOpcodes = ['0x0f', '0x18',], sSelector = 'mod /r'),
     'grpA17':       InstructionMap('grpA17',    asLeadOpcodes = ['0x0f', '0x78',], sSelector = '/r'), # AMD: EXTRQ weirdness
     'grpP':         InstructionMap('grpP',      asLeadOpcodes = ['0x0f', '0x0d',], sSelector = '/r'), # AMD: prefetch

@@ -354,6 +354,7 @@ typedef struct CPUDECODE1UDTST
 typedef CPUDECODE1UDTST const BS3_FAR *PCCPUDECODE1UDTST;
 
 #define UD_T_EXACT          0
+#define UD_T_NOAMD          0x80        /**< AMD does not decode unnecessary bytes, Intel does. */
 #define UD_T_MODRM          1
 #define UD_T_MODRM_I8       2
 #define UD_T_MODRM_M        3
@@ -396,7 +397,7 @@ typedef CPUDECODE1UDTST const BS3_FAR *PCCPUDECODE1UDTST;
  */
 CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
 {
-#if 1
+#if 0
     {  UD_T_EXACT, 2, { 0x0f, 0x04 }, UD_F_ANY_PFX },
     {  UD_T_EXACT, 2, { 0x0f, 0x0a }, UD_F_ANY_PFX },
     {  UD_T_EXACT, 2, { 0x0f, 0x0c }, UD_F_ANY_PFX },
@@ -507,6 +508,9 @@ CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
     {  UD_T_MODRM_RR6, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* 00=mfence */
     {  UD_T_MODRM_RR7, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* 00=sfence */
     {  UD_T_MODRM, 2, { 0x0f, 0xb8 }, UD_F_NOT_RN_PFX },
+#endif
+    {  UD_T_MODRM | UD_T_NOAMD, 2, { 0x0f, 0xb9 }, UD_F_ANY_PFX }, /* UD1 */
+#if 0
     /** @todo f3 0f bb rm and f2 0f bb rm does stuff on skylake even if their are blank in intel and AMD tables! */
     //{  UD_T_MODRM, 2, { 0x0f, 0xbb }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
     /** @todo AMD tables indicates that f2 0f bc rm is invalid, but on skylake it works differently (BSF?)  */
@@ -842,10 +846,19 @@ CPUDECODE1UDTST const g_aUdTest3Byte_0f_38[] =
 
 void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
 {
+    uint8_t BS3_FAR *pbPages;
+
+    /*
+     * Detect AMD.
+     */
+    bool fIsAmd = false;
+    if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+        fIsAmd = ASMIsAmdCpu();
+    Bs3TestPrintf("fIsAmd=%d\n", fIsAmd);
+
     /*
      * Allocate and initialize a page pair
      */
-    uint8_t BS3_FAR *pbPages;
     pbPages  = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
     if (pbPages)
     {
@@ -1023,9 +1036,13 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
             switch (paTests[iTest].enmType)
             {
                 case UD_T_EXACT:
+                l_case_exact:
                     cSuffixes   = RT_ELEMENTS(s_aExact);
                     paSuffixes  = s_aExact;
                     break;
+                case UD_T_MODRM | UD_T_NOAMD:
+                    if (fIsAmd)
+                        goto l_case_exact;
                 case UD_T_MODRM:
                     cSuffixes   = RT_ELEMENTS(s_aModRm);
                     paSuffixes  = s_aModRm;
@@ -1556,11 +1573,13 @@ BS3_DECL(void) Main_pp32()
     Bs3TestInit("bs3-cpu-decoding-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
+#if 1
     Bs3TestSub("CMPPS, CMPPD, CMPSS, CMPSD");
     DecodeCmppsCmppdCmpssCmpsd();
 
     Bs3TestSub("MOVBE vs CRC32");
     DecodeMovbeVsCrc32();
+#endif
 
 #if 1
     Bs3TestSub("2 byte undefined opcodes 0f");
@@ -1571,7 +1590,7 @@ BS3_DECL(void) Main_pp32()
     DecodeUdEdgeTest(g_aUdTest3Byte_0f_38, RT_ELEMENTS(g_aUdTest3Byte_0f_38));
 #endif
 
-#if 0
+#if 1
     Bs3TestSub("misc");
     DecodeEdgeTest();
 #endif

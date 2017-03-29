@@ -3127,7 +3127,7 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
          * Check if the CPU supports the instruction.
          */
         if (   !Bs3Cg1CpuSetupFirst(pThis)
-            || (pThis->fFlags & BS3CG1INSTR_F_UNUSED))
+            || (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID)))
         {
             fInvalidInstr = true;
             bTestXcptExpected = X86_XCPT_UD;
@@ -3249,7 +3249,7 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
             Bs3Cg1EncodeCleanup(pThis);
             if (!Bs3Cg1CpuSetupNext(pThis, iCpuSetup, &fInvalidInstr))
                 break;
-            if (pThis->fFlags & BS3CG1INSTR_F_UNUSED)
+            if (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID))
                 fInvalidInstr = true;
             if (fInvalidInstr)
                 bTestXcptExpected = X86_XCPT_UD;

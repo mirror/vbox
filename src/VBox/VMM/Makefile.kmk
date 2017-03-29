@@ -356,8 +356,8 @@ $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 	$(QUIET)$(RM) -f -- "$@.tmp" "$@.tmp" "$@.sorted"
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
 	$(QUIET)$(SED) \
-		-e '/IEMOP_MNEMONIC[01234]*(/!d' \
-               -e 's/^.*IEMOP_MNEMONIC\([01234]*\)(/IEM_DO_INSTR_STAT\1(/' \
+		-e '/IEMOP_MNEMONIC\(\|[01234]\|[01234]EX\)(/!d' \
+               -e 's/^.*IEMOP_MNEMONIC\(\|[01234]\|[01234]EX\)(/IEM_DO_INSTR_STAT\1(/' \
                -e 's/;.*$(DOLLAR)//' \
 		--output "$@.tmp" $(filter %.cpp.h,$^)
 # Windows sort does some kind of seeking. So, we must use a temporary file and kmk_cat to define and undefine our macros.
@@ -383,10 +383,16 @@ $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 		'#undef IEM_DO_INSTR_STAT2' \
 		'#undef IEM_DO_INSTR_STAT3' \
 		'#undef IEM_DO_INSTR_STAT4' \
+		'#undef IEM_DO_INSTR_STAT0EX' \
+		'#undef IEM_DO_INSTR_STAT1EX' \
+		'#undef IEM_DO_INSTR_STAT2EX' \
+		'#undef IEM_DO_INSTR_STAT3EX' \
+		'#undef IEM_DO_INSTR_STAT4EX' \
                ''
 	$(QUIET)$(RM) -f -- "$@.tmp" "$@.sorted"
 	$(QUIET)$(CP) -v -f --changed -- "$@" "$(patsubst %.ts,%,$@)"
 
+foobar: $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
 
 if "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  #

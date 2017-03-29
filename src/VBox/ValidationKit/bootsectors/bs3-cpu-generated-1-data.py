@@ -312,6 +312,8 @@ class Bs3Cg1Instruction(object):
             self.asFlags.append('BS3CG1INSTR_F_INVALID_64BIT');
         if oInstr.fUnused:
             self.asFlags.append('BS3CG1INSTR_F_UNUSED');
+        elif oInstr.fInvalid:
+            self.asFlags.append('BS3CG1INSTR_F_INVALID');
 
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
         if oInstr.sPrefix:

@@ -199,6 +199,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        ../../../Runtime/common/asm/ASMSerializeInstruction-iret.asm \
        ../../../Runtime/common/asm/ASMSerializeInstruction-rdtscp.asm \
        ../../../Runtime/common/asm/ASMCpuIdExSlow.asm \
+       ../../../Runtime/common/asm/ASMCpuId.asm \
        ../../../Runtime/common/asm/ASMGetXcr0.asm \
        ../../../Runtime/common/asm/ASMSetXcr0.asm \
 
