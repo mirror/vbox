@@ -1391,6 +1391,254 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
 VBOXDDU_DECL(int) VDCreateVfsFileFromDisk(PVDISK pDisk, uint32_t fFlags,
                                           PRTVFSFILE phVfsFile);
 
+/** @defgroup grp_vd_ioiter     I/O iterator
+ * @{
+ */
+
+/** Read metadata coming before each main data block addressed in the segment. */
+#define VD_IOITER_SEG_F_PRE_METADATA  RT_BIT_32(0)
+/** Read the main user data of each addressed block in the segment. */
+#define VD_IOITER_SEG_F_MAIN_DATA     RT_BIT_32(1)
+/** Read metadata coming after each main data block addressed in the segment. */
+#define VD_IOITER_SEG_F_POST_METADATA RT_BIT_32(2)
+/** Read checksum data of each data block addressed in the segment. */
+#define VD_IOITER_SEG_F_CHKSUM        RT_BIT_32(3)
+/** Read all available data for each addressed block in the segment. */
+#define VD_IOITER_SEG_F_AVAILABLE     RT_BIT_32(4)
+
+/** The offset and size members in the segments use byte granularity instead of a
+ * block address and number of blocks respectively. */
+#define VDIOITER_F_BYTE_OFFSET_AND_SIZE RT_BIT_32(0)
+
+/**
+ * VD I/O iterator segment.
+ */
+typedef struct VDIOITERSEG
+{
+    /** Start offset for this segment. */
+    uint64_t            offStartSeg;
+    /** Size of the segment (bytes or blocks). */
+    uint64_t            cSizeSeg;
+    /** Flags for this segment, see VD_IOITER_SEG_F_*. */
+    uint32_t            fFlags;
+} VDIOITERSEG;
+/** Pointer to a I/O iterator segment. */
+typedef VDIOITERSEG *PVDIOITERSEG;
+/** Pointer to a constant I/O iterator segment. */
+typedef VDIOITERSEG *PCVDIOITERSEG;
+
+/** I/O iterator handle. */
+typedef struct VDIOITERINT *VDIOITER;
+/** Pointer to a I/O iterator handle. */
+typedef VDIOITER *PVDIOITER;
+
+/**
+ * Create a new I/O iterator.
+ *
+ * @returns VBox status code.
+ * @param   pDisk           The disk to create the iterator for.
+ * @param   phVdIoIter      Where to store the handle to the I/O iterator on success.
+ * @param   paIoIterSegs    The segments for the iterator, can be destroyed after the call.
+ * @param   cIoIterSegs     Number of segments.
+ * @param   fFlags          Flags for the iterator, see VDIOITER_F_*
+ */
+VBOXDDU_DECL(int) VDIoIterCreate(PVDISK pDisk, PVDIOITER phVdIoIter, PCVDIOITERSEG paIoIterSegs,
+                                 uint32_t cIoIterSegs, uint32_t fFlags);
+
+/**
+ * Retains the reference count of the given I/O iterator.
+ *
+ * @returns New reference count.
+ * @param   hVdIoIter       The I/O iterator handle.
+ */
+VBOXDDU_DECL(uint32_t) VDIoIterRetain(VDIOITER hVdIoIter);
+
+/**
+ * Releases the reference count of the given I/O iterator.
+ *
+ * @returns New reference count, on 0 the iterator is destroyed.
+ * @param   hVdIoIter       The I/O iterator handle.
+ */
+VBOXDDU_DECL(uint32_t) VDIoIterRelease(VDIOITER hVdIoIter);
+
+/**
+ * Returns the number of segments in the given I/O iterator.
+ *
+ * @returns Number of segments.
+ * @param   hVdIoIter       The I/O iterator handle.
+ */
+VBOXDDU_DECL(uint32_t) VDIoIterGetSegmentCount(VDIOITER hVdIoIter);
+
+/**
+ * Returns the flags of the given I/O iterator.
+ *
+ * @returns Flags.
+ * @param   hVdIoIter       The I/O iterator handle.
+ */
+VBOXDDU_DECL(uint32_t) VDIoIterGetFlags(VDIOITER hVdIoIter);
+
+/**
+ * Queries the properties of the given segment for the given I/O iterator.
+ *
+ * @returns VBox status code.
+ * @param   hVdIoIter       The I/O iterator handle.
+ * @param   idx             The segment index to query.
+ * @param   pSegment        Where to store the segment properties on success.
+ */
+VBOXDDU_DECL(int) VDIoIterQuerySegment(VDIOITER hVdIoIter, uint32_t idx, PVDIOITERSEG pSegment);
+
+/** @} */
+
+
+/** @defgroup grp_vd_io_buf     I/O buffer management API.
+ * @{
+ */
+
+/** VD I/O buffer manager handle. */
+typedef struct VDIOBUFMGRINT *VDIOBUFMGR;
+/** Pointer to VD I/O buffer manager handle. */
+typedef VDIOBUFMGR *PVDIOBUFMGR;
+
+/** VD I/O buffer handle. */
+typedef struct VDIOBUFINT *VDIOBUF;
+/** Pointer to a VD I/O buffer handle. */
+typedef VDIOBUF *PVDIOBUF;
+
+/** Default I/O buffer manager flags. */
+#define VD_IOBUFMGR_F_DEFAULT             (0)
+/** I/O buffer memory needs to be non pageable (for example because it contains sensitive data
+ * which shouldn't end up in swap unencrypted). */
+#define VD_IOBUFMGR_F_REQUIRE_NOT_PAGABLE RT_BIT(0)
+
+/** Pointer to VD I/O buffer callbacks. */
+typedef struct VDIOBUFCALLBACKS *PVDIOBUFCALLBACKS;
+/** Pointer to const VD I/O buffer callbacks. */
+typedef const VDIOBUFCALLBACKS *PCVDIOBUFCALLBACKS;
+
+/**
+ * VD I/O buffer callbacks.
+ */
+typedef struct VDIOBUFCALLBACKS
+{
+    /**
+     * Copy data from the memory buffer of the caller to the callees memory buffer for the given request.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOBUF_OVERFLOW if there is not enough room to store the data.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoBuf          The I/O request handle.
+     * @param   pvIoBufAlloc    The allocator specific memory for this request.
+     * @param   offDst          The destination offset from the start to write the data to.
+     * @param   pSgBuf          The S/G buffer to read the data from.
+     * @param   cbCopy          How many bytes to copy.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoBufCopyFromBuf, (PVDIOBUFCALLBACKS pInterface, VDIOBUF hIoBuf,
+                                                    void *pvIoBufAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
+                                                    size_t cbCopy));
+
+    /**
+     * Copy data to the memory buffer of the caller from the callees memory buffer for the given request.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOBUF_UNDERRUN if there is not enough data to copy from the buffer.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoBuf          The I/O request handle.
+     * @param   pvIoBufAlloc    The allocator specific memory for this request.
+     * @param   offSrc          The offset from the start of the buffer to read the data from.
+     * @param   pSgBuf          The S/G buffer to write the data to.
+     * @param   cbCopy          How many bytes to copy.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoBufCopyToBuf, (PVDIOBUFCALLBACKS pInterface, VDIOBUF hIoBuf,
+                                                  void *pvIoBufAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
+                                                  size_t cbCopy));
+
+    /**
+     * Queries a pointer to the memory buffer for the request from the drive/device above.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if this is not supported for this request.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoBuf          The I/O request handle.
+     * @param   pvIoBufAlloc    The allocator specific memory for this request.
+     * @param   offBuf          The offset from the start of the buffer to get the buffer address.
+     * @param   cbBuf           The number of bytes requested.
+     * @param   ppvBuf          Where to store the pointer to the guest buffer on success.
+     * @param   pcbBuf          Where to store the size of the buffer on success.
+     *
+     * @note This is an optional feature of the entity implementing this interface to avoid overhead
+     *       by copying the data between buffers. If NULL it is not supported at all and the caller
+     *       has to resort to VDIOBUFCALLBACKS::pfnIoBufCopyToBuf and VDIOBUFCALLBACKS::pfnIoBufCopyFromBuf.
+     *       The same holds when VERR_NOT_SUPPORTED is returned.
+     *
+     *       On the upside the caller of this interface might not call this method at all and just
+     *       use the before mentioned methods to copy the data between the buffers.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoBufQueryBuf, (PVDIOBUFCALLBACKS pInterface, VDIOBUF hIoBuf,
+                                                 void *pvIoBufAlloc, uint32_t offBuf, size_t cbBuf,
+                                                 void **ppvBuf, size_t *pcbBuf));
+
+} VDIOBUFCALLBACKS;
+
+/**
+ * Creates a new I/O buffer manager.
+ *
+ * @returns VBox status code.
+ * @param   phIoBufMgr      Where to store the handle to the I/O buffer manager on success.
+ * @param   cbMax           The maximum amount of I/O memory to allow. Trying to allocate more than
+ *                          this will lead to out of memory errors. 0 for "unlimited" size (only restriction
+ *                          is the available memory on the host).
+ * @param   fFlags          Combination of VD_IOBUFMGR_F_*.
+ * @param   pIoBufClbks     Memory copy callbacks between source and target memory regions, optional.
+ *                          When NULL all I/O buffers must be allocated with a valid S/G buffer laying out the
+ *                          memory.
+ * @param   cbIoBufAlloc    How much to allocate extra in the I/O buffer for private use.
+ */
+VBOXDDU_DECL(int) VDIoBufMgrCreate(PVDIOBUFMGR phIoBufMgr, size_t cbMax, uint32_t fFlags,
+                                   PVDIOBUFCALLBACKS pIoBufClbks, size_t cbIoBufAlloc);
+
+/**
+ * Destroys the given I/O buffer manager.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INVALID_STATE if there are still buffers allocated by the given manager.
+ * @param   hIoBufMgr       The I/O buffer manager.
+ */
+VBOXDDU_DECL(int) VDIoBufMgrDestroy(VDIOBUFMGR hIoBufMgr);
+
+/**-
+ * Allocate a new I/O buffer.
+ *
+ * @returns VBox status code.
+ * @param   hIoBufMgr       The I/O buffer manager to use.
+ * @param   phIoBuf         Where to store the I/O buffer handle on success.
+ * @param   ppvIoBufAlloc   Where to store the pointe to the private party on success.
+ * @param   pSgBuf          The S/G buffer to use, optional. If NULL the I/O buffer callbacks
+ *                          supplied when creating the owning manager are used to transfer the
+ *                          data.
+ * @param   cbBuf           Size of the buffer in bytes.
+ */
+VBOXDDU_DECL(int) VDIoBufMgrAllocBuf(VDIOBUFMGR hIoBufMgr, PVDIOBUF phIoBuf, void **ppvIoBufAlloc,
+                                     PCRTSGBUF pSgBuf, size_t cbBuf);
+
+/**
+ * Retains the I/O buffer reference count.
+ *
+ * @returns New reference count.
+ * @param   hIoBuf          The I/O buffer handle.
+ */
+VBOXDDU_DECL(uint32_t) VDIoBufRetain(VDIOBUF hIoBuf);
+
+/**
+ * Releases the given I/O buffer reference.
+ *
+ * @returns New reference count, on 0 the I/O buffer is destroyed.
+ * @param   hIoBuf          The I/O buffer handle.
+ */
+VBOXDDU_DECL(uint32_t) VDIoBufRelease(VDIOBUF hIoBuf);
+
+/** @} */
+
+
 /** @defgroup grp_vd_ioqueue    I/O queues
  * @{
  */
@@ -1407,6 +1655,27 @@ typedef VDIOREQ *PVDIOREQ;
 
 /** A I/O request ID. */
 typedef uint64_t VDIOREQID;
+
+/**
+ * I/O request type.
+ */
+typedef enum VDIOREQTYPE
+{
+    /** Invalid request type. */
+    VDIOREQTYPE_INVALID = 0,
+    /** Read request. */
+    VDIOREQTYPE_READ,
+    /** Write request. */
+    VDIOREQTYPE_WRITE,
+    /** Flush request. */
+    VDIOREQTYPE_FLUSH,
+    /** Discard request. */
+    VDIOREQTYPE_DISCARD,
+    /** 32bit hack. */
+    VDIOREQTYPE_32BIT_HACK = 0x7fffffff
+} VDIOREQTYPE;
+/** Pointer to a request type. */
+typedef VDIOREQTYPE *PVDIOREQTYPE;
 
 /**
  * I/O queue request completion callback.
@@ -1512,47 +1781,16 @@ VBOXDDU_DECL(int) VDIoQueueReqCancelById(VDIOQUEUE hVdIoQueue, VDIOREQID uIoReqI
 VBOXDDU_DECL(int) VDIoQueueReqCancelByHandle(VDIOREQ hVdIoReq);
 
 /**
- * Initiates a read request using the given request handle.
+ * Submit a new request to the queue the request was allocated from.
  *
  * @returns VBox status code.
- * @param   hVdIoReq         The I/O request handle.
- * @param   off              Where to start reading from.
- * @param   cbRead           Number of bytes to read.
- * @param   pcSgBuf          The S/G buffer to use.
+ * @param   hVdIoReq        The I/O request handle to submit.
+ * @param   enmType         The type of the request.
+ * @param   hVdIoIter       The iterator to use, NULL for flush requests.
+ * @param   hVdIoBuf        The I/O buffer handle to use, NULL for flush and discard requests.
  */
-VBOXDDU_DECL(int) VDIoQueueReqRead(VDIOREQ hVdIoReq, uint64_t off, size_t cbRead,
-                                   PCRTSGBUF pcSgBuf);
-
-/**
- * Initiates a write request using the given request handle.
- *
- * @returns VBox status code.
- * @param   hVdIoReq         The I/O request handle.
- * @param   off              Where to start writing to.
- * @param   cbWrite          Number of bytes to write.
- * @param   pcSgBuf          The S/G buffer to use.
- */
-VBOXDDU_DECL(int) VDIoQueueReqWrite(VDIOREQ hVdIoReq, uint64_t off, size_t cbWrite,
-                                    PCRTSGBUF pcSgBuf);
-
-/**
- * Initiates a flush request using the given request handle.
- *
- * @returns VBox status code.
- * @param   hVdIoReq         The I/O request handle.
- */
-VBOXDDU_DECL(int) VDIoQueueReqFlush(VDIOREQ hVdIoReq);
-
-/**
- * Initiates a discard request using the given request handle.
- *
- * @returns VBox status code.
- * @param   hVdIoReq         The I/O request handle.
- * @param   paRanges         Pointer to the array of ranges to discard.
- * @param   cRanges          Number of entries in the array.
- */
-VBOXDDU_DECL(int) VDIoQueueReqDiscard(VDIOREQ hVdIoReq, PCRTRANGE paRanges,
-                                      unsigned cRanges);
+VBOXDDU_DECL(int) VDIoQueueReqSubmit(VDIOREQ hVdIoReq, VDIOREQTYPE enmType,
+                                     VDIOITER hVdIoIter, VDIOBUF hVdIoBuf);
 
 /** @} */
 
