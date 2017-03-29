@@ -1543,6 +1543,21 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_MbRO:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0)) - 1;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off,
+                                               (pThis->abCurInstr[off] & X86_MODRM_REG_MASK) >> X86_MODRM_REG_SHIFT,
+                                               1, 0, BS3CG1OPLOC_MEM);
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
+
         case BS3CG1ENC_FIXED:
             if (iEncoding == 0)
             {
@@ -1806,6 +1821,12 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_MEM;
             break;
 
+        case BS3CG1ENC_MODRM_MbRO:
+            pThis->iRmOp             = 0;
+            pThis->aOperands[0].cbOp = 1;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM;
+            break;
+
         case BS3CG1ENC_FIXED:
             /* nothing to do here */
             break;
@@ -1913,6 +1934,7 @@ static bool Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSetup, bool *pfI
         case BS3CG1CPU_GE_80386:
         case BS3CG1CPU_GE_80486:
         case BS3CG1CPU_GE_Pentium:
+        case BS3CG1CPU_CLFSH:
             return false;
 
         case BS3CG1CPU_SSE:
@@ -2019,7 +2041,6 @@ static bool Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
             if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
             {
                 ASMCpuIdExSlow(7, 0, 0/*leaf*/, 0, &fEax, &fEbx, &fEcx, &fEdx);
-
                 switch (pThis->enmCpuTest)
                 {
                     case BS3CG1CPU_AVX2:
@@ -2030,6 +2051,16 @@ static bool Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
                 }
             }
             return false;
+
+        case BS3CG1CPU_CLFSH:
+            if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+            {
+                ASMCpuIdExSlow(1, 0, 0, 0, NULL, NULL, NULL, &fEdx);
+                if (fEdx & X86_CPUID_FEATURE_EDX_CLFSH)
+                    return true;
+            }
+            return false;
+
 
         default:
             Bs3TestFailedF("Invalid enmCpuTest value: %d", pThis->enmCpuTest);

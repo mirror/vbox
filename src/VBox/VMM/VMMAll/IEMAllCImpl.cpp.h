@@ -6774,6 +6774,37 @@ IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, 
 
 
 /**
+ * Implements 'CLFLUSH' and 'CLFLUSHOPT'.
+ *
+ * This is implemented in C because it triggers a load like behviour without
+ * actually reading anything.  Since that's not so common, it's implemented
+ * here.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEff        The address of the image.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_clflush_clflushopt, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
+{
+    /*
+     * Pretend to do a load w/o reading (see also iemCImpl_monitor and iemMemMap).
+     */
+    VBOXSTRICTRC rcStrict = iemMemApplySegment(pVCpu, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, iEffSeg, 1, &GCPtrEff);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        RTGCPHYS GCPhysMem;
+        rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrEff, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+    }
+
+    return rcStrict;
+}
+
+
+/**
  * Implements 'FINIT' and 'FNINIT'.
  *
  * @param   fCheckXcpts     Whether to check for umasked pending exceptions or

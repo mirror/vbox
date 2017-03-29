@@ -5838,8 +5838,32 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_xrstor,   uint8_t, bRm);
 /** Opcode 0x0f 0xae mem/6. */
 FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
 
-/** Opcode 0x0f 0xae mem/7. */
-FNIEMOP_STUB_1(iemOp_Grp15_clflush,  uint8_t, bRm);
+/**
+ * @opmaps      grp15
+ * @opcode      /7
+ * @oppfx       none
+ * @opcpuid     clfsh
+ * @opgroup     og_sse2_cachectl
+ * @optest      op1=1 ->
+ * @oponlytest
+ */
+FNIEMOP_DEF_1(iemOp_Grp15_clflush,  uint8_t, bRm)
+{
+    /** @todo clflushopt is same with 66h prefix.   */
+    IEMOP_MNEMONIC1(M_MEM, CLFLUSH, clflush, MbRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fClFlush)
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(2, 0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_clflush_clflushopt, iEffSeg, GCPtrEff);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0x0f 0xae 11b/5. */
