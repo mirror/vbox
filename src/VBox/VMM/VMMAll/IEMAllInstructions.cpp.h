@@ -571,6 +571,26 @@ FNIEMOPRM_DEF(iemOp_InvalidWithRMNeedImm8)
 }
 
 
+/** Invalid with RM byte where intel requires 8-byte immediate.
+ * Both AMD and Intel also needs SIB and displacement according to bRm. */
+FNIEMOPRM_DEF(iemOp_InvalidWithRMAllNeedImm8)
+{
+    IEMOP_MNEMONIC(InvalidWithRMAllNeedImm8, "InvalidWithRMAllNeedImm8");
+#ifndef TST_IEM_CHECK_MC
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        RTGCPTR      GCPtrEff;
+        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+#endif
+    uint8_t bImm8;  IEM_OPCODE_GET_NEXT_U8(&bImm8);  RT_NOREF(bRm);
+    IEMOP_HLP_DONE_DECODING();
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
 /** Invalid opcode where intel requires Mod R/M sequence. */
 FNIEMOP_DEF(iemOp_InvalidNeedRM)
 {

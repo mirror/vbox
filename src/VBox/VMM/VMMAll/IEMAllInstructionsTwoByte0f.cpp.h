@@ -6582,7 +6582,8 @@ FNIEMOP_DEF(iemOp_Grp8)
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
         case 0: case 1: case 2: case 3:
-            return IEMOP_RAISE_INVALID_OPCODE();
+            /* Both AMD and Intel want full modr/m decoding and imm8. */
+            return FNIEMOP_CALL_1(iemOp_InvalidWithRMAllNeedImm8, bRm);
         case 4: pImpl = &g_iemAImpl_bt;  IEMOP_MNEMONIC(bt_Ev_Ib,  "bt  Ev,Ib"); break;
         case 5: pImpl = &g_iemAImpl_bts; IEMOP_MNEMONIC(bts_Ev_Ib, "bts Ev,Ib"); break;
         case 6: pImpl = &g_iemAImpl_btr; IEMOP_MNEMONIC(btr_Ev_Ib, "btr Ev,Ib"); break;
@@ -6742,7 +6743,6 @@ FNIEMOP_DEF(iemOp_Grp8)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-
 }
 
 
