@@ -62,11 +62,7 @@ BS3_PROC_BEGIN Bs3TrapRmV86GenericEntries
 %endmacro
 
 %macro Bs3TrapRmV86GenericEntryErrCd 1
-        push    ax                      ; 1 byte:  Save AX                              (BP(+2) + 2)
-        mov     ax, i | 0ff00h          ; 2 bytes: AL = trap/interrupt number; AH=indicate have error code.
-        jmp     %1                      ; 3 bytes: Jump to handler code
-        ALIGNCODE(8)
-%assign i i+1
+        Bs3TrapRmV86GenericEntryNoErr %1    ; No error code pushed in real mode or V86 mode.
 %endmacro
 
 %assign i 0                             ; start counter.
@@ -111,6 +107,15 @@ AssertCompile(Bs3TrapRmV86GenericEntries_EndProc - Bs3TrapRmV86GenericEntries ==
 
 ;;
 ; Trap or interrupt with error code, faked if necessary.
+;
+; early 386+ stack (movzx ebp, sp):
+;       [bp + 000h]     ebp
+;       [bp + 004h]     ax
+;       [bp + 006h]     errcd                   [bp'+0] <--- bp at jmp to common code.
+;       [bp + 008h]     cs                      [bp'+2]
+;       [bp + 00ah]     ip                      [bp'+4]
+;       [bp + 00ch]     flags                   [bp'+6]
+;      ([bp + 00eh]     post-iret sp value)     [bp'+8]
 ;
 BS3_PROC_BEGIN _bs3TrapRmV86GenericTrapOrInt
 BS3_PROC_BEGIN bs3TrapRmV86GenericTrapOrInt
@@ -159,7 +164,6 @@ CPU 386
 
         test    ah, 0ffh
         jz      .no_error_code
-;; @todo Do voodoo checks for 'int xx' or misguided hardware interrupts.
         mov     dx, [bp + 6]
         mov     [ss:bx + BS3TRAPFRAME.uErrCd], dx
 .no_error_code:
@@ -210,7 +214,6 @@ CPU 8086
 
         test    ah, 0ffh
         jz      .no_error_code
-;; @todo Do voodoo checks for 'int xx' or misguided hardware interrupts.
         mov     dx, [bp + 4]
         mov     [ss:bx + BS3TRAPFRAME.uErrCd], dx
 .no_error_code:
