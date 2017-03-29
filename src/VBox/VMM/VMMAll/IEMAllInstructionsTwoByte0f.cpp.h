@@ -7371,6 +7371,12 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
+FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8bOr16b, uint8_t, bRm)
+{
+    if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
+        return FNIEMOP_CALL_1(iemOp_Grp9_cmpxchg16b_Mdq, bRm);
+    return FNIEMOP_CALL_1(iemOp_Grp9_cmpxchg8b_Mq, bRm);
+}
 
 /** Opcode 0x0f 0xc7 11/6. */
 FNIEMOP_UD_STUB_1(iemOp_Grp9_rdrand_Rv, uint8_t, bRm);
@@ -7387,49 +7393,55 @@ FNIEMOP_UD_STUB_1(iemOp_Grp9_vmxon_Mq, uint8_t, bRm);
 /** Opcode [0xf3] 0x0f 0xc7 !11/7. */
 FNIEMOP_UD_STUB_1(iemOp_Grp9_vmptrst_Mq, uint8_t, bRm);
 
+/** Opcode 0x0f 0xc7 11/7. */
+FNIEMOP_UD_STUB_1(iemOp_Grp9_rdseed_Rv, uint8_t, bRm);
+
+
+/**
+ * Group 9 jump table for register variant.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup9RegReg[] =
+{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
+    /* /0 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /1 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /2 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /3 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /4 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /5 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /6 */ iemOp_Grp9_rdrand_Rv,          iemOp_Grp9_rdrand_Rv,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /7 */ iemOp_Grp9_rdseed_Rv,          iemOp_Grp9_rdseed_Rv,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+};
+AssertCompile(RT_ELEMENTS(g_apfnGroup9RegReg) == 8*4);
+
+
+/**
+ * Group 9 jump table for memory variant.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup9MemReg[] =
+{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
+    /* /0 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /1 */ iemOp_Grp9_cmpxchg8bOr16b,     iemOp_Grp9_cmpxchg8bOr16b,      iemOp_Grp9_cmpxchg8bOr16b,      iemOp_Grp9_cmpxchg8bOr16b, /* see bs3-cpu-decoding-1 */
+    /* /2 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /3 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /4 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /5 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /6 */ iemOp_Grp9_vmptrld_Mq,         iemOp_Grp9_vmclear_Mq,          iemOp_Grp9_vmxon_Mq,            iemOp_InvalidWithRM,
+    /* /7 */ iemOp_Grp9_vmptrst_Mq,         iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+};
+AssertCompile(RT_ELEMENTS(g_apfnGroup9MemReg) == 8*4);
+
 
 /** Opcode 0x0f 0xc7. */
 FNIEMOP_DEF(iemOp_Grp9)
 {
-    /** @todo Testcase: Check mixing 0x66 and 0xf3. Check the effect of 0xf2. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
-    {
-        case 0: case 2: case 3: case 4: case 5:
-            return IEMOP_RAISE_INVALID_OPCODE();
-        case 1:
-            /** @todo Testcase: Check prefix effects on cmpxchg8b/16b. */
-            if (   (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)
-                || (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ))) /** @todo Testcase: AMD seems to express a different idea here wrt prefixes. */
-                return IEMOP_RAISE_INVALID_OPCODE();
-            if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
-                return FNIEMOP_CALL_1(iemOp_Grp9_cmpxchg16b_Mdq, bRm);
-            return FNIEMOP_CALL_1(iemOp_Grp9_cmpxchg8b_Mq, bRm);
-        case 6:
-            if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-                return FNIEMOP_CALL_1(iemOp_Grp9_rdrand_Rv, bRm);
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ))
-            {
-                case 0:
-                    return FNIEMOP_CALL_1(iemOp_Grp9_vmptrld_Mq, bRm);
-                case IEM_OP_PRF_SIZE_OP:
-                    return FNIEMOP_CALL_1(iemOp_Grp9_vmclear_Mq, bRm);
-                case IEM_OP_PRF_REPZ:
-                    return FNIEMOP_CALL_1(iemOp_Grp9_vmxon_Mq, bRm);
-                default:
-                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        case 7:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ))
-            {
-                case 0:
-                case IEM_OP_PRF_REPZ:
-                    return FNIEMOP_CALL_1(iemOp_Grp9_vmptrst_Mq, bRm);
-                default:
-                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        /* register, register */
+        return FNIEMOP_CALL_1(g_apfnGroup9RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                                 + pVCpu->iem.s.idxPrefix], bRm);
+    /* memory, register */
+    return FNIEMOP_CALL_1(g_apfnGroup9MemReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                             + pVCpu->iem.s.idxPrefix], bRm);
 }
 
 

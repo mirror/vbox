@@ -405,7 +405,7 @@ typedef CPUDECODE1UDTST const BS3_FAR *PCCPUDECODE1UDTST;
  */
 CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
 {
-#if 1
+#if 0
     {  UD_T_EXACT, 2, { 0x0f, 0x04 }, UD_F_ANY_PFX },
     {  UD_T_EXACT, 2, { 0x0f, 0x0a }, UD_F_ANY_PFX },
     {  UD_T_EXACT, 2, { 0x0f, 0x0c }, UD_F_ANY_PFX },
@@ -535,7 +535,7 @@ CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
 #endif
     {  UD_T_MODRM_MR0, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
     {  UD_T_MODRM_RR0, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
-    //{  UD_T_MODRM_MR1, 2, { 0x0f, 0xc7 }, xxxx }, - cmpxchg8b/16b is weird, needs special testcase.
+    //{  UD_T_MODRM_MR1, 2, { 0x0f, 0xc7 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX | UD_F_NOT_RZ_PFX | UD_F_NOT_LK_PFX }, - cmpxchg8b ignores everything. @
     {  UD_T_MODRM_RR1, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
     {  UD_T_MODRM_MR2, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
     {  UD_T_MODRM_RR2, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
@@ -545,9 +545,11 @@ CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
     {  UD_T_MODRM_RR4, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
     {  UD_T_MODRM_MR5, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
     {  UD_T_MODRM_RR5, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
-    //{  UD_T_MODRM_MR0, 2, { 0x0f, 0xc7 }, UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX |  },
-    {  UD_T_MODRM_RR0, 2, { 0x0f, 0xc7 }, UD_F_ANY_PFX },
-#if 1
+    {  UD_T_MODRM_MR6, 2, { 0x0f, 0xc7 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX }, /* f2? */
+    {  UD_T_MODRM_RR6, 2, { 0x0f, 0xc7 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX }, /* (rdrand Rv) */
+    {  UD_T_MODRM_MR7, 2, { 0x0f, 0xc7 }, UD_F_NOT_NO_PFX }, /* vmptrst Mq (f2?); */
+    {  UD_T_MODRM_RR7, 2, { 0x0f, 0xc7 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX }, /* rdrand Rv; rdpid Rd/q (f2,66??); */
+#if 0
     {  UD_T_MODRM, 2, { 0x0f, 0xd0 }, UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
     {  UD_T_MODRM, 2, { 0x0f, 0xd1 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
     {  UD_T_MODRM, 2, { 0x0f, 0xd2 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
@@ -1289,6 +1291,40 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
 }
 
 
+#if 0
+/**
+ * Checks how prefixes affects cmpxchg8b and cmpxchg16b
+ *
+ * The thing here is that the intel opcode tables indicates that the 66 and f3
+ * prefixes encodings are reserved and causes \#UD, where AMD doesn't.  Seems
+ * though that the f2, f3 and 66 prefixes are ignored on skylake intel.  Need to
+ * make sure this is the case, also in 64-bit mode and for the 16b version.
+ */
+static void DecodeCmpXchg8bVs16b(void)
+{
+    uint8_t BS3_FAR *pbPages;
+
+    /* Check that the instructions are supported. */
+    if (   !(g_uBs3CpuDetected & BS3CPU_F_CPUID)
+        || !(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_CX8))
+    {
+        Bs3TestSkipped("not supported");
+        return;
+    }
+
+    /* Setup a guarded page. */
+    pbPages = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
+    if (pbPages)
+    {
+
+        Bs3MemGuardedTestPageFree(pbPages);
+    }
+    else
+        Bs3TestFailed("Failed to allocate two pages!\n");
+}
+#endif
+
+
 /**
  * Checks various prefix encodings with the MOVBE and CRC32 instructions to try
  * figure out how they are decoded.
@@ -1660,7 +1696,7 @@ BS3_DECL(void) Main_pp32()
     Bs3TestInit("bs3-cpu-decoding-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
-#if 1
+#if 0
     Bs3TestSub("CMPPS, CMPPD, CMPSS, CMPSD");
     DecodeCmppsCmppdCmpssCmpsd();
 
@@ -1668,11 +1704,14 @@ BS3_DECL(void) Main_pp32()
     DecodeMovbeVsCrc32();
 #endif
 
+    //Bs3TestSub("CMPXCHG8B/16B");
+    //DecodeCmpXchg8bVs16b();
+
 #if 1
     Bs3TestSub("2 byte undefined opcodes 0f");
     DecodeUdEdgeTest(g_aUdTest2Byte_0f, RT_ELEMENTS(g_aUdTest2Byte_0f));
 #endif
-#if 1
+#if 0
     Bs3TestSub("3 byte undefined opcodes 0f 38");
     DecodeUdEdgeTest(g_aUdTest3Byte_0f_38, RT_ELEMENTS(g_aUdTest3Byte_0f_38));
 #endif

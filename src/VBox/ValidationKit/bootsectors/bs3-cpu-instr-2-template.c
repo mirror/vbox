@@ -53,6 +53,12 @@ extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_idiv_xBX_ud2);
 # if ARCH_BITS == 64
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_o16_cmpxchg16b_rdi_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_o16_cmpxchg16b_rdi_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repz_cmpxchg16b_rdi_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repz_cmpxchg16b_rdi_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_repnz_cmpxchg16b_rdi_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_repnz_cmpxchg16b_rdi_ud2);
 # endif
 #endif
 
@@ -549,10 +555,26 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
     RTUINT128U      au128[3];
     PRTUINT128U     pau128       = RT_ALIGN_PT(&au128[0], sizeof(RTUINT128U), PRTUINT128U);
     bool const      fSupportCX16 = RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16);
-    unsigned        iLocked;
     unsigned        iFlags;
     unsigned        offBuf;
     unsigned        iMatch;
+    unsigned        iWorker;
+    static struct
+    {
+        bool        fLocked;
+        uint8_t     offUd2;
+        FNBS3FAR   *pfnWorker;
+    } const s_aWorkers[] =
+    {
+        {   false,  4,  BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2) },
+        {   false,  5,  BS3_CMN_NM(bs3CpuInstr2_o16_cmpxchg16b_rdi_ud2) },
+        {   false,  5,  BS3_CMN_NM(bs3CpuInstr2_repz_cmpxchg16b_rdi_ud2) },
+        {   false,  5,  BS3_CMN_NM(bs3CpuInstr2_repnz_cmpxchg16b_rdi_ud2) },
+        {   true, 1+4,  BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2) },
+        {   true, 1+5,  BS3_CMN_NM(bs3CpuInstr2_lock_o16_cmpxchg16b_rdi_ud2) },
+        {   true, 1+5,  BS3_CMN_NM(bs3CpuInstr2_lock_repz_cmpxchg16b_rdi_ud2) },
+        {   true, 1+5,  BS3_CMN_NM(bs3CpuInstr2_lock_repnz_cmpxchg16b_rdi_ud2) },
+    };
 
     /* Ensure the structures are allocated before we sample the stack pointer. */
     Bs3MemSet(&Ctx, 0, sizeof(Ctx));
@@ -571,9 +593,10 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
      * One loop with the normal variant and one with the locked one
      */
     g_usBs3TestStep = 0;
-    Bs3RegCtxSetRipCsFromCurPtr(&Ctx, BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2));
-    for (iLocked = 0; iLocked < 2; iLocked++)
+    for (iWorker = 0; iWorker < RT_ELEMENTS(s_aWorkers); iWorker++)
     {
+        Bs3RegCtxSetRipCsFromCurPtr(&Ctx, s_aWorkers[iWorker].pfnWorker);
+
         /*
          * One loop with all status flags set, and one with them clear.
          */
@@ -603,7 +626,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
                     ExpectCtx.rdi.u = Ctx.rdi.u = (uintptr_t)pBuf;
                     Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
                     g_usBs3TestStep++;
-                    //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u\n", iFlags, offBuf, iMatch);
+                    //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u iWorker=%u\n", iFlags, offBuf, iMatch, iWorker);
                     bExpectXcpt = X86_XCPT_UD;
                     if (fSupportCX16)
                     {
@@ -621,7 +644,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
                                 ExpectCtx.rflags.u32 = Ctx.rflags.u32 | X86_EFL_ZF;
                             else
                                 ExpectCtx.rflags.u32 = Ctx.rflags.u32 & ~X86_EFL_ZF;
-                            ExpectCtx.rip.u = Ctx.rip.u + 4 + (iLocked & 1);
+                            ExpectCtx.rip.u = Ctx.rip.u + s_aWorkers[iWorker].offUd2;
                         }
                         ExpectCtx.rflags.u32 |= X86_EFL_RF;
                     }
@@ -631,7 +654,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
                     {
                         if (TrapFrame.bXcpt != bExpectXcpt)
                             Bs3TestFailedF("Expected bXcpt=#%x, got %#x (%#x)", bExpectXcpt, TrapFrame.bXcpt, TrapFrame.uErrCd);
-                        Bs3TestFailedF("^^^ iLocked=%d iFlags=%d offBuf=%d iMatch=%u\n", iLocked, iFlags, offBuf, iMatch);
+                        Bs3TestFailedF("^^^ iWorker=%d iFlags=%d offBuf=%d iMatch=%u\n", iWorker, iFlags, offBuf, iMatch);
                         ASMHalt();
                     }
 
@@ -641,11 +664,9 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
             }
             Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
         }
-        Bs3RegCtxSetRipCsFromCurPtr(&Ctx, BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2));
     }
 
     return 0;
-
 }
 # endif /* ARCH_BITS == 64 */
 
