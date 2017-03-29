@@ -157,6 +157,8 @@ typedef struct vusb_pipe
     RTCRITSECT          CritSectCtrl;
     /** Count of active async transfers. */
     volatile uint32_t   async;
+    /** Last scheduled frame - only valid for isochronous endpoints. */
+    uint32_t            uLastFrame;
 } VUSBPIPE;
 /** Pointer to a VUSB pipe structure. */
 typedef VUSBPIPE *PVUSBPIPE;
