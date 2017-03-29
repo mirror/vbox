@@ -1642,7 +1642,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
         {
             pFeatures->fAvx2                = RT_BOOL(pSxfLeaf0->uEcx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
             pFeatures->fAvx512Foundation    = RT_BOOL(pSxfLeaf0->uEcx & X86_CPUID_STEXT_FEATURE_EBX_AVX512F);
-            pFeatures->fClFlushOpt          = RT_BOOL(pSxfLeaf0->uEcx & X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT);
+            pFeatures->fClFlushOpt          = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT);
         }
 
         /* MWAIT/MONITOR leaf. */

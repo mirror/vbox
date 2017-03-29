@@ -729,6 +729,7 @@ enum OPCODES
     OP_MONITOR,
     OP_MWAIT,
     OP_CLFLUSH,
+    OP_CLFLUSHOPT,
     OP_MOV_DR,
     OP_MOV_TR,
     OP_SWAPGS,

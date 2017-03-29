@@ -497,7 +497,7 @@ CPUDECODE1UDTST const g_aUdTest2Byte_0f[] =
     {  UD_T_MODRM_MR4, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* xsave */
     {  UD_T_MODRM_MR5, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* xrstor */
     {  UD_T_MODRM_MR6, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX }, /* xsaveopt */
-    {  UD_T_MODRM_MR7, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX }, /* clflush seems to ignore op size! */
+    {  UD_T_MODRM_MR7, 2, { 0x0f, 0xae }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX }, /* clflush (none) and clflushopt (66) */
     {  UD_T_MODRM_RR0, 2, { 0x0f, 0xae }, UD_F_ANY_PFX }, /* f3=rdfsbase is 64-bit  */
     {  UD_T_MODRM_RR1, 2, { 0x0f, 0xae }, UD_F_ANY_PFX }, /* f3=rdfsbase is 64-bit  */
     {  UD_T_MODRM_RR2, 2, { 0x0f, 0xae }, UD_F_ANY_PFX }, /* f3=rdfsbase is 64-bit  */

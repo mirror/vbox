@@ -5843,7 +5843,7 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
  * @opcode      /7
  * @oppfx       none
  * @opcpuid     clfsh
- * @opgroup     og_sse2_cachectl
+ * @opgroup     og_cachectl
  * @optest      op1=1 ->
  * @oponlytest
  */
@@ -5852,6 +5852,32 @@ FNIEMOP_DEF_1(iemOp_Grp15_clflush,  uint8_t, bRm)
     /** @todo clflushopt is same with 66h prefix.   */
     IEMOP_MNEMONIC1(M_MEM, CLFLUSH, clflush, MbRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fClFlush)
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(2, 0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_clflush_clflushopt, iEffSeg, GCPtrEff);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
+/**
+ * @opmaps      grp15
+ * @opcode      /7
+ * @oppfx       0x66
+ * @opcpuid     clflushopt
+ * @opgroup     og_cachectl
+ * @optest      op1=1 ->
+ * @oponlytest
+ */
+FNIEMOP_DEF_1(iemOp_Grp15_clflushopt,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC1(M_MEM, CLFLUSHOPT, clflushopt, MbRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fClFlushOpt)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(2, 0);
@@ -5939,65 +5965,52 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_wrfsbase, uint8_t, bRm);
 FNIEMOP_UD_STUB_1(iemOp_Grp15_wrgsbase, uint8_t, bRm);
 
 
+/**
+ * Group 15 jump table for register variant.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup15RegReg[] =
+{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
+    /* /0 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_rdfsbase,           iemOp_InvalidWithRM,
+    /* /1 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_rdgsbase,           iemOp_InvalidWithRM,
+    /* /2 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_wrfsbase,           iemOp_InvalidWithRM,
+    /* /3 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_wrgsbase,           iemOp_InvalidWithRM,
+    /* /4 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /5 */ iemOp_Grp15_lfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /6 */ iemOp_Grp15_mfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /7 */ iemOp_Grp15_sfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+};
+AssertCompile(RT_ELEMENTS(g_apfnGroup15RegReg) == 8*4);
+
+
+/**
+ * Group 15 jump table for memory variant.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup15MemReg[] =
+{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
+    /* /0 */ iemOp_Grp15_fxsave,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /1 */ iemOp_Grp15_fxrstor,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /2 */ iemOp_Grp15_ldmxcsr,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /3 */ iemOp_Grp15_stmxcsr,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /4 */ iemOp_Grp15_xsave,             iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /5 */ iemOp_Grp15_xrstor,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /6 */ iemOp_Grp15_xsaveopt,          iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /7 */ iemOp_Grp15_clflush,           iemOp_Grp15_clflushopt,         iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+};
+AssertCompile(RT_ELEMENTS(g_apfnGroup15MemReg) == 8*4);
+
+
 /** Opcode 0x0f 0xae. */
 FNIEMOP_DEF(iemOp_Grp15)
 {
-/** @todo continue here tomorrow! (see bs3-cpu-decoding-1.c32 r113507).  */
     IEMOP_HLP_MIN_586(); /* Not entirely accurate nor needed, but useful for debugging 286 code. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-    {
-        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
-        {
-            case 0: return FNIEMOP_CALL_1(iemOp_Grp15_fxsave,  bRm);
-            case 1: return FNIEMOP_CALL_1(iemOp_Grp15_fxrstor, bRm);
-            case 2: return FNIEMOP_CALL_1(iemOp_Grp15_ldmxcsr, bRm);
-            case 3: return FNIEMOP_CALL_1(iemOp_Grp15_stmxcsr, bRm);
-            case 4: return FNIEMOP_CALL_1(iemOp_Grp15_xsave,   bRm);
-            case 5: return FNIEMOP_CALL_1(iemOp_Grp15_xrstor,  bRm);
-            case 6: return FNIEMOP_CALL_1(iemOp_Grp15_xsaveopt,bRm);
-            case 7: return FNIEMOP_CALL_1(iemOp_Grp15_clflush, bRm);
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-        }
-    }
-    else
-    {
-        switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_LOCK))
-        {
-            case 0:
-                switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
-                {
-                    case 0: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 1: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 2: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 3: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 4: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 5: return FNIEMOP_CALL_1(iemOp_Grp15_lfence, bRm);
-                    case 6: return FNIEMOP_CALL_1(iemOp_Grp15_mfence, bRm);
-                    case 7: return FNIEMOP_CALL_1(iemOp_Grp15_sfence, bRm);
-                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
-                }
-                break;
-
-            case IEM_OP_PRF_REPZ:
-                switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
-                {
-                    case 0: return FNIEMOP_CALL_1(iemOp_Grp15_rdfsbase, bRm);
-                    case 1: return FNIEMOP_CALL_1(iemOp_Grp15_rdgsbase, bRm);
-                    case 2: return FNIEMOP_CALL_1(iemOp_Grp15_wrfsbase, bRm);
-                    case 3: return FNIEMOP_CALL_1(iemOp_Grp15_wrgsbase, bRm);
-                    case 4: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 5: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 6: return IEMOP_RAISE_INVALID_OPCODE();
-                    case 7: return IEMOP_RAISE_INVALID_OPCODE();
-                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
-                }
-                break;
-
-            default:
-                return IEMOP_RAISE_INVALID_OPCODE();
-        }
-    }
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        /* register, register */
+        return FNIEMOP_CALL_1(g_apfnGroup15RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                                  + pVCpu->iem.s.idxPrefix], bRm);
+    /* memory, register */
+    return FNIEMOP_CALL_1(g_apfnGroup15MemReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                              + pVCpu->iem.s.idxPrefix], bRm);
 }
 
 

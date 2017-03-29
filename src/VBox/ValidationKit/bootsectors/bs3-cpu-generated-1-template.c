@@ -1935,6 +1935,7 @@ static bool Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSetup, bool *pfI
         case BS3CG1CPU_GE_80486:
         case BS3CG1CPU_GE_Pentium:
         case BS3CG1CPU_CLFSH:
+        case BS3CG1CPU_CLFLUSHOPT:
             return false;
 
         case BS3CG1CPU_SSE:
@@ -2061,6 +2062,14 @@ static bool Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
             }
             return false;
 
+        case BS3CG1CPU_CLFLUSHOPT:
+            if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+            {
+                ASMCpuIdExSlow(7, 0, 0/*leaf*/, 0, NULL, &fEbx, NULL, NULL);
+                if (fEbx & X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT)
+                    return true;
+            }
+            return false;
 
         default:
             Bs3TestFailedF("Invalid enmCpuTest value: %d", pThis->enmCpuTest);
