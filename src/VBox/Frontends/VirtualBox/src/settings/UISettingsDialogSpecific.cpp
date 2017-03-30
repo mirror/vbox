@@ -462,8 +462,8 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
         }
     }
 
-    /* Recalculate configuration access level: */
-    updateConfigurationAccessLevel();
+    /* Calculate initial configuration access level: */
+    setConfigurationAccessLevel(::configurationAccessLevel(m_sessionState, m_machineState));
 
     /* Retranslate UI: */
     retranslateUi();
