@@ -690,7 +690,7 @@ RTDECL(bool) RTCrX509Name_ConstraintMatch(PCRTCRX509NAME pConstraint, PCRTCRX509
 /**
  * Mapping between X.500 object IDs and short and long names.
  *
- * See RFC-1327, ...
+ * See RFC-1327, RFC-4519 ...
  */
 static struct
 {
@@ -702,17 +702,30 @@ static struct
 {
     {   "0.9.2342.19200300.100.1.3",  RT_STR_TUPLE("Mail"),                 "Rfc822Mailbox" },
     {   "0.9.2342.19200300.100.1.25", RT_STR_TUPLE("DC"),                   "DomainComponent" },
-    {   "1.2.840.113549.1.9.1",       RT_STR_TUPLE("Email"),                "EmailAddress" },
+    {   "1.2.840.113549.1.9.1",       RT_STR_TUPLE("Email") /*nonstandard*/,"EmailAddress" },
     {   "2.5.4.3",                    RT_STR_TUPLE("CN"),                   "CommonName" },
-    {   "2.5.4.4",                    RT_STR_TUPLE("S"),                    "Surname" },
+    {   "2.5.4.4",                    RT_STR_TUPLE("SN"),                   "Surname" },
+    {   "2.5.4.5",                    RT_STR_TUPLE("SRN") /*nonstandard*/,  "SerialNumber" },
     {   "2.5.4.6",                    RT_STR_TUPLE("C"),                    "CountryName" },
     {   "2.5.4.7",                    RT_STR_TUPLE("L"),                    "LocalityName" },
-    {   "2.5.4.8",                    RT_STR_TUPLE("ST"),                   "StatOrProviceName" },
+    {   "2.5.4.8",                    RT_STR_TUPLE("ST"),                   "StateOrProviceName" },
+    {   "2.5.4.9",                    RT_STR_TUPLE("street"),               "Street" },
     {   "2.5.4.10",                   RT_STR_TUPLE("O"),                    "OrganizationName" },
-    {   "2.5.4.11",                   RT_STR_TUPLE("OU"),                   "OrganizationUnitName" },
-    {   "2.5.4.42",                   RT_STR_TUPLE("G"),                    "GivenName" },
-    {   "2.5.4.43",                   RT_STR_TUPLE("I"),                    "Initials" },
-    {   "2.5.4.44",                   RT_STR_TUPLE("GQ"),                   "GenerationQualifier" },
+    {   "2.5.4.11",                   RT_STR_TUPLE("OU"),                   "OrganizationalUnitName" },
+    {   "2.5.4.12",                   RT_STR_TUPLE("title"),                "Title" },
+    {   "2.5.4.13",                   RT_STR_TUPLE("desc"),                 "Description" },
+    {   "2.5.4.15",                   RT_STR_TUPLE("BC") /*nonstandard*/,   "BusinessCategory" },
+    {   "2.5.4.17",                   RT_STR_TUPLE("ZIP") /*nonstandard*/,  "PostalCode" },
+    {   "2.5.4.18",                   RT_STR_TUPLE("POBox") /*nonstandard*/,"PostOfficeBox" },
+    {   "2.5.4.20",                   RT_STR_TUPLE("PN") /*nonstandard*/,   "TelephoneNumber" },
+    {   "2.5.4.33",                   RT_STR_TUPLE("RO") /*nonstandard*/,   "RoleOccupant" },
+    {   "2.5.4.34",                   RT_STR_TUPLE("SA") /*nonstandard*/,   "StreetAddress" },
+    {   "2.5.4.41",                   RT_STR_TUPLE("N") /*nonstandard*/,    "Name" },
+    {   "2.5.4.42",                   RT_STR_TUPLE("GN"),                   "GivenName" },
+    {   "2.5.4.43",                   RT_STR_TUPLE("I") /*nonstandard*/,    "Initials" },
+    {   "2.5.4.44",                   RT_STR_TUPLE("GQ") /*nonstandard*/,   "GenerationQualifier" },
+    {   "2.5.4.46",                   RT_STR_TUPLE("DNQ") /*nonstandard*/,  "DNQualifier" },
+    {   "2.5.4.51",                   RT_STR_TUPLE("HID") /*nonstandard*/,  "HouseIdentifier" },
 };
 
 
