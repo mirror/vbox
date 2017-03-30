@@ -741,6 +741,25 @@ void TstRTStrXCmp(RTTEST hTest)
     CHECK_DIFF(RTStrICmp("AbCdEG", "aBcDef"), > ); /* diff performed on the lower case cp. */
 
 
+    RTTestSub(hTest, "RTStrICmpAscii");
+    CHECK_DIFF(RTStrICmpAscii(NULL, NULL), == );
+    CHECK_DIFF(RTStrICmpAscii(NULL, ""), < );
+    CHECK_DIFF(RTStrICmpAscii("", NULL), > );
+    CHECK_DIFF(RTStrICmpAscii("", ""), == );
+    CHECK_DIFF(RTStrICmpAscii("abcdef", "abcdef"), == );
+    CHECK_DIFF(RTStrICmpAscii("abcdef", "abcde"), > );
+    CHECK_DIFF(RTStrICmpAscii("abcde", "abcdef"), < );
+    CHECK_DIFF(RTStrICmpAscii("abcdeg", "abcdef"), > );
+    CHECK_DIFF(RTStrICmpAscii("abcdef", "abcdeg"), < );
+
+    CHECK_DIFF(RTStrICmpAscii("abcdeF", "abcdef"), ==);
+    CHECK_DIFF(RTStrICmpAscii("abcdef", "abcdeF"), ==);
+    CHECK_DIFF(RTStrICmpAscii("ABCDEF", "abcdef"), ==);
+    CHECK_DIFF(RTStrICmpAscii("abcdef", "ABCDEF"), ==);
+    CHECK_DIFF(RTStrICmpAscii("AbCdEf", "aBcDeF"), ==);
+    CHECK_DIFF(RTStrICmpAscii("AbCdEg", "aBcDeF"), > );
+    CHECK_DIFF(RTStrICmpAscii("AbCdEG", "aBcDef"), > ); /* diff performed on the lower case cp. */
+
 
     RTTestSub(hTest, "RTStrNICmp");
     CHECK_DIFF(RTStrNICmp(NULL, NULL, RTSTR_MAX), == );
