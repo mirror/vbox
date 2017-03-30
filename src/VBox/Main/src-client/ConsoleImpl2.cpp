@@ -3224,7 +3224,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigInteger(pCfg,  "McfgLength", cbMcfgLength);
                 /* 64-bit prefetch window root resource:
                  * Only for ICH9 and if PAE or Long Mode is enabled.
-                 * And only with hardware virtualization (@bugref:5454). */
+                 * And only with hardware virtualization (@bugref{5454}). */
                 if (   (fEnablePAE || fIsGuest64Bit)
                     && fSupportsHwVirtEx /* HwVirt needs to be supported by the host
                                             otherwise VMM falls back to raw mode */
