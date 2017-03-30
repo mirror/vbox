@@ -845,6 +845,7 @@ static DECLCALLBACK(int) rtkldr_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmP
 {
     PRTLDRMODKLDR pThis = (PRTLDRMODKLDR)pMod;
     int           rc;
+    size_t const  cbBufAvail = cbBuf;
     switch (enmProp)
     {
         case RTLDRPROP_UUID:
@@ -853,6 +854,19 @@ static DECLCALLBACK(int) rtkldr_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmP
                 return VERR_NOT_FOUND;
             AssertReturn(rc == 0, VERR_INVALID_PARAMETER);
             cbBuf = RT_MIN(cbBuf, sizeof(RTUUID));
+            break;
+
+        case RTLDRPROP_INTERNAL_NAME:
+            if (!pThis->pMod->cchName)
+                return VERR_NOT_FOUND;
+            cbBuf = pThis->pMod->cchName + 1;
+            if (cbBufAvail < cbBuf)
+            {
+                if (pcbRet)
+                    *pcbRet = cbBufAvail;
+                return VERR_BUFFER_OVERFLOW;
+            }
+            memcpy(pvBuf, pThis->pMod->pszName, cbBuf);
             break;
 
         default:

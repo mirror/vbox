@@ -1028,6 +1028,11 @@ typedef enum RTLDRPROP
     /** The file offset of the main executable header.
      * This is mainly for PE, NE and LX headers, but also Mach-O FAT. */
     RTLDRPROP_FILE_OFF_HEADER,
+    /** The internal module name.
+     * This is the SONAME for ELF, export table name for PE, and zero'th resident
+     * name table entry for LX.
+     * Returns zero terminated string. */
+    RTLDRPROP_INTERNAL_NAME,
 
     /** End of valid properties.  */
     RTLDRPROP_END,

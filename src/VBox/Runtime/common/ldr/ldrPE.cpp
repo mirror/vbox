@@ -1802,6 +1802,74 @@ static int rtLdrPE_CountImports(PRTLDRMODPE pThis, void const *pvBits)
     return rc;
 }
 
+/**
+ * Worker for rtLdrPE_QueryImportModule and rtLdrPE_QueryInternalName that
+ * copies a zero termianted string at the given RVA into the RTLdrQueryPropEx
+ * output buffer.
+ *
+ * @returns IPRT status code. If VERR_BUFFER_OVERFLOW, pcbBuf is required size.
+ * @param   pThis           The PE module instance.
+ * @param   pvBits          Image bits if the caller had them available, NULL if
+ *                          not. Saves a couple of file accesses.
+ * @param   uRvaString      The RVA of the string to copy.
+ * @param   cbMaxString     The max string length.
+ * @param   pvBuf           The output buffer.
+ * @param   cbBuf           The buffer size.
+ * @param   pcbRet          Where to return the number of bytes we've returned
+ *                          (or in case of VERR_BUFFER_OVERFLOW would have).
+ */
+static int rtLdrPE_QueryNameAtRva(PRTLDRMODPE pThis, void const *pvBits, uint32_t uRvaString, uint32_t cbMaxString,
+                                  void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    int rc;
+    if (   uRvaString >= pThis->cbHeaders
+        && uRvaString < pThis->cbImage)
+    {
+        /*
+         * Limit the string.
+         */
+        uint32_t cbMax = pThis->cbImage - uRvaString;
+        if (cbMax > cbMaxString)
+            cbMax = cbMaxString;
+        char *pszString;
+        rc = rtldrPEReadPartByRva(pThis, pvBits, uRvaString, cbMax, (void const **)&pszString);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Make sure it's null terminated and valid UTF-8 encoding.
+             *
+             * Which encoding this really is isn't defined, I think,
+             * but we need to make sure we don't get bogus UTF-8 into
+             * the process, so making sure it's valid UTF-8 is a good
+             * as anything else since it covers ASCII.
+             */
+            size_t cchString = RTStrNLen(pszString, cbMaxString);
+            if (cchString < cbMaxString)
+            {
+                rc = RTStrValidateEncodingEx(pszString, cchString, 0 /*fFlags*/);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Copy out the result and we're done.
+                     * (We have to do all the cleanup code though, so no return success here.)
+                     */
+                    *pcbRet = cchString + 1;
+                    if (cbBuf >= cchString + 1)
+                        memcpy(pvBuf, pszString, cchString + 1);
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+                }
+            }
+            else
+                rc = VERR_BAD_EXE_FORMAT;
+            rtldrPEFreePart(pThis, pvBits, pszString);
+        }
+    }
+    else
+        rc = VERR_BAD_EXE_FORMAT;
+    return rc;
+}
+
 
 /**
  * Worker for rtLdrPE_QueryProp that retrievs the name of an import DLL.
@@ -1840,56 +1908,13 @@ static int rtLdrPE_QueryImportModule(PRTLDRMODPE pThis, void const *pvBits, uint
 
         /*
          * Retrieve the import table descriptor.
+         * Using 1024 as the max name length (should be more than enough).
          */
         PCIMAGE_IMPORT_DESCRIPTOR pImpDesc;
         rc = rtldrPEReadPartByRva(pThis, pvBits, offEntry, sizeof(*pImpDesc), (void const **)&pImpDesc);
         if (RT_SUCCESS(rc))
         {
-            if (   pImpDesc->Name >= pThis->cbHeaders
-                && pImpDesc->Name < pThis->cbImage)
-            {
-                /*
-                 * Limit the name to 1024 bytes (more than enough for everyone).
-                 */
-                uint32_t cchNameMax = pThis->cbImage - pImpDesc->Name;
-                if (cchNameMax > 1024)
-                    cchNameMax = 1024;
-                char *pszName;
-                rc = rtldrPEReadPartByRva(pThis, pvBits, pImpDesc->Name, cchNameMax, (void const **)&pszName);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Make sure it's null terminated and valid UTF-8 encoding.
-                     *
-                     * Which encoding this really is isn't defined, I think,
-                     * but we need to make sure we don't get bogus UTF-8 into
-                     * the process, so making sure it's valid UTF-8 is a good
-                     * as anything else since it covers ASCII.
-                     */
-                    size_t cchName = RTStrNLen(pszName, cchNameMax);
-                    if (cchName < cchNameMax)
-                    {
-                        rc = RTStrValidateEncodingEx(pszName, cchName, 0 /*fFlags*/);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /*
-                             * Copy out the result and we're done.
-                             * (We have to do all the cleanup code though, so no return success here.)
-                             */
-                            *pcbRet = cchName + 1;
-                            if (cbBuf >= cchName + 1)
-                                memcpy(pvBuf, pszName, cchName + 1);
-                            else
-                                rc = VERR_BUFFER_OVERFLOW;
-                        }
-                    }
-                    else
-                        rc = VERR_BAD_EXE_FORMAT;
-                    rtldrPEFreePart(pThis, pvBits, pszName);
-                }
-            }
-            else
-                rc = VERR_BAD_EXE_FORMAT;
+            rc = rtLdrPE_QueryNameAtRva(pThis, pvBits, pImpDesc->Name, 1024 /*cchMaxString*/, pvBuf, cbBuf, pcbRet);
             rtldrPEFreePart(pThis, pvBits, pImpDesc);
         }
     }
@@ -1900,6 +1925,38 @@ static int rtLdrPE_QueryImportModule(PRTLDRMODPE pThis, void const *pvBits, uint
         return VINF_SUCCESS;
 
     *pcbRet = 0;
+    return rc;
+}
+
+
+/**
+ * Worker for rtLdrPE_QueryProp that retrievs the internal module name.
+ *
+ * @returns IPRT status code. If VERR_BUFFER_OVERFLOW, pcbBuf is required size.
+ * @param   pThis           The PE module instance.
+ * @param   pvBits          Image bits if the caller had them available, NULL if
+ *                          not. Saves a couple of file accesses.
+ * @param   pvBuf           The output buffer.
+ * @param   cbBuf           The buffer size.
+ * @param   pcbRet          Where to return the number of bytes we've returned
+ *                          (or in case of VERR_BUFFER_OVERFLOW would have).
+ */
+static int rtLdrPE_QueryInternalName(PRTLDRMODPE pThis, void const *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    *pcbRet = 0;
+
+    if (   pThis->ExportDir.Size < sizeof(IMAGE_EXPORT_DIRECTORY)
+        || pThis->ExportDir.VirtualAddress == 0)
+        return VERR_NOT_FOUND;
+
+    PCIMAGE_EXPORT_DIRECTORY pExpDir;
+    int rc = rtldrPEReadPartByRva(pThis, pvBits, pThis->ExportDir.VirtualAddress, sizeof(*pExpDir), (void const **)&pExpDir);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtLdrPE_QueryNameAtRva(pThis, pvBits, pExpDir->Name, 1024 /*cchMaxString*/, pvBuf, cbBuf, pcbRet);
+        rtldrPEFreePart(pThis, pvBits, pExpDir);
+    }
+
     return rc;
 }
 
@@ -1970,6 +2027,9 @@ static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enm
             else
                 *(uint64_t *)pvBuf = pModPe->offNtHdrs;
             return VINF_SUCCESS;
+
+        case RTLDRPROP_INTERNAL_NAME:
+            return rtLdrPE_QueryInternalName(pModPe, pvBits, pvBuf, cbBuf, pcbRet);
 
         default:
             return VERR_NOT_FOUND;

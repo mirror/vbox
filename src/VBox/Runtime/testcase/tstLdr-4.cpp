@@ -206,9 +206,24 @@ static int testLdrOne(const char *pszFilename)
                 RTPrintf("tstLdr-4: load #%d Test1 -> %#x\n", i, rc);
                 cErrors++;
             }
+
+            /* While we're here, check a couple of RTLdrQueryProp calls too */
+            void *pvBits = aLoads[i].pvBits;
+            for (unsigned iBits = 0; iBits < 2; iBits++, pvBits = NULL)
+            {
+                union
+                {
+                    char szName[127];
+                } uBuf;
+                rc = RTLdrQueryPropEx(aLoads[i].hLdrMod, RTLDRPROP_INTERNAL_NAME, aLoads[i].pvBits,
+                                      uBuf.szName, sizeof(uBuf.szName), NULL);
+                if (RT_SUCCESS(rc))
+                    RTPrintf("tstLdr-4: internal name #%d: '%s'\n", i, uBuf.szName);
+                else if (rc != VERR_NOT_FOUND || rc != VERR_NOT_SUPPORTED)
+                    RTPrintf("tstLdr-4: internal name #%d failed: %Rrc\n", i, rc);
+            }
         }
     }
-
 
     /*
      * Clean up.
