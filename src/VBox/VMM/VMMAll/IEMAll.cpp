@@ -3114,6 +3114,8 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPU pVCpu)
  * @{
  */
 
+/* Currently used only with nested hw.virt. */
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * Initiates a CPU shutdown sequence.
  *
@@ -3128,7 +3130,7 @@ IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
      *        distinguish it from the regular triple fault. */
     return VINF_EM_TRIPLE_FAULT;
 }
-
+#endif
 
 /**
  * Validates a new SS segment.
