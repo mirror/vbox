@@ -25,11 +25,8 @@
 
 /* Forward declarations: */
 class QITabWidget;
-class UIMachineSettingsNetworkPage;
 struct UIDataSettingsMachineNetwork;
-struct UIDataSettingsMachineNetworkAdapter;
-typedef UISettingsCache<UIDataSettingsMachineNetworkAdapter> UISettingsCacheMachineNetworkAdapter;
-typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UISettingsCacheMachineNetworkAdapter> UISettingsCacheMachineNetwork;
+typedef UISettingsCache<UIDataSettingsMachineNetwork> UISettingsCacheMachineNetwork;
 
 
 /** Machine settings: Network page. */
