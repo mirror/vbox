@@ -92,7 +92,7 @@
  * require other definitions and structures in this header.
  */
 #ifndef IN_REM_R3
-/** @name SVM Basic Exit Reasons.
+/** @name SVM_EXIT_XXX - SVM Basic Exit Reasons.
  * @{
  */
 /** Invalid guest state in VMCB. */
@@ -587,28 +587,32 @@ typedef union
 } SVMTLBCTRL;
 
 /**
- * SVM IOIO exit structure (EXITINFO1 for IOIO intercepts).
+ * SVM IOIO exit info. structure (EXITINFO1 for IOIO intercepts).
  */
 typedef union
 {
     struct
     {
-        uint32_t    u1Type              : 1;        /**< Bit 0: 0 = out, 1 = in */
-        uint32_t    u1Reserved          : 1;        /**< Bit 1: Reserved */
-        uint32_t    u1STR               : 1;        /**< Bit 2: String I/O (1) or not (0). */
-        uint32_t    u1REP               : 1;        /**< Bit 3: Repeat prefixed string I/O. */
-        uint32_t    u1OP8               : 1;        /**< Bit 4: 8-bit operand. */
-        uint32_t    u1OP16              : 1;        /**< Bit 5: 16-bit operand. */
-        uint32_t    u1OP32              : 1;        /**< Bit 6: 32-bit operand. */
-        uint32_t    u1ADDR16            : 1;        /**< Bit 7: 16-bit operand. */
-        uint32_t    u1ADDR32            : 1;        /**< Bit 8: 32-bit operand. */
-        uint32_t    u1ADDR64            : 1;        /**< Bit 9: 64-bit operand. */
-        uint32_t    u3SEG               : 3;        /**< BITS 12:10: Effective segment number. Added with decode assist in APM v3.17. */
+        uint32_t    u1Type              : 1;   /**< Bit 0: 0 = out, 1 = in */
+        uint32_t    u1Reserved          : 1;   /**< Bit 1: Reserved */
+        uint32_t    u1STR               : 1;   /**< Bit 2: String I/O (1) or not (0). */
+        uint32_t    u1REP               : 1;   /**< Bit 3: Repeat prefixed string I/O. */
+        uint32_t    u1OP8               : 1;   /**< Bit 4: 8-bit operand. */
+        uint32_t    u1OP16              : 1;   /**< Bit 5: 16-bit operand. */
+        uint32_t    u1OP32              : 1;   /**< Bit 6: 32-bit operand. */
+        uint32_t    u1ADDR16            : 1;   /**< Bit 7: 16-bit operand. */
+        uint32_t    u1ADDR32            : 1;   /**< Bit 8: 32-bit operand. */
+        uint32_t    u1ADDR64            : 1;   /**< Bit 9: 64-bit operand. */
+        uint32_t    u3SEG               : 3;   /**< BITS 12:10: Effective segment number. Added w/ decode assist in APM v3.17. */
         uint32_t    u3Reserved          : 3;
-        uint32_t    u16Port             : 16;       /**< Bits 31:16: Port number. */
+        uint32_t    u16Port             : 16;  /**< Bits 31:16: Port number. */
     } n;
     uint32_t    u;
-} SVMIOIOEXIT;
+} SVMIOIOEXITINFO;
+/** Pointer to an SVM IOIO exit info. structure. */
+typedef SVMIOIOEXITINFO *PSVMIOIOEXITINFO;
+/** Pointer to a const SVM IOIO exit info. structure. */
+typedef const SVMIOIOEXITINFO *PCSVMIOIOEXITINFO;
 
 /** @name SVMIOIOEXIT.u1Type
  *  @{ */

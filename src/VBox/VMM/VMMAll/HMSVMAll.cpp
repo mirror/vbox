@@ -740,7 +740,7 @@ VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx, uint8_t *pu8Interrupt)
 
 
 /**
- * Handles nested-guest SVM intercepts and performs the \#VMEXIT if the
+ * Handles nested-guest SVM control intercepts and performs the \#VMEXIT if the
  * intercept is active.
  *
  * @returns Strict VBox status code.
@@ -750,6 +750,12 @@ VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx, uint8_t *pu8Interrupt)
  *          successfully.
  * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
  *          failed and a shutdown needs to be initiated for the geust.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        The guest-CPU context.
+ * @param   uExitCode   The SVM exit code (see SVM_EXIT_XXX).
+ * @param   uExitInfo1  The exit info. 1 field.
+ * @param   uExitInfo2  The exit info. 2 field.
  */
 VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
                                                           uint64_t uExitInfo2)
@@ -894,6 +900,78 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX
 }
 
 
+/**
+ * Handles nested-guest SVM IO intercepts and performs the \#VMEXIT
+ * if the intercept is active.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SVM_INTERCEPT_NOT_ACTIVE if the intercept is not active or
+ *          we're not executing a nested-guest.
+ * @retval  VINF_SVM_VMEXIT if the intercept is active and the \#VMEXIT occurred
+ *          successfully.
+ * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
+ *          failed and a shutdown needs to be initiated for the geust.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            The guest-CPU context.
+ * @param   pIoExitInfo     The SVM IOIO exit info. structure.
+ * @param   uNextRip        The RIP of the instruction following the IO
+ *                          instruction.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PCSVMIOIOEXITINFO pIoExitInfo,
+                                                        uint64_t uNextRip)
+{
+    /*
+     * Check if any IO accesses are being intercepted.
+     */
+    if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    {
+        Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+
+        /*
+         * The IOPM layout:
+         * Each bit represents one 8-bit port. That makes a total of 0..65535 bits or
+         * two 4K pages. However, since it's possible to do a 32-bit port IO at port
+         * 65534 (thus accessing 4 bytes), we need 3 extra bits beyond the two 4K page.
+         *
+         * For IO instructions that access more than a single byte, the permission bits
+         * for all bytes are checked; if any bit is set to 1, the IO access is intercepted.
+         */
+        uint8_t *pbIopm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
+
+        uint16_t const u16Port     = pIoExitInfo->n.u16Port;
+        uint16_t const offIoBitmap = u16Port >> 3;
+        uint16_t const fSizeMask   = pIoExitInfo->n.u1OP32 ? 0xf : pIoExitInfo->n.u1OP16 ? 3 : 1;
+        uint8_t  const cShift      = u16Port - (offIoBitmap << 3);
+        uint16_t const fIopmMask   = (1 << cShift) | (fSizeMask << cShift);
+
+        pbIopm += offIoBitmap;
+        uint16_t const fIopmBits = *(uint16_t *)pbIopm;
+        if (fIopmBits & fIopmMask)
+            return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_IOIO, pIoExitInfo->u, uNextRip);
+    }
+    return VINF_HM_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * Handles nested-guest SVM MSR read/write intercepts and performs the \#VMEXIT
+ * if the intercept is active.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SVM_INTERCEPT_NOT_ACTIVE if the intercept is not active or
+ *          we're not executing a nested-guest.
+ * @retval  VINF_SVM_VMEXIT if the intercept is active and the \#VMEXIT occurred
+ *          successfully.
+ * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
+ *          failed and a shutdown needs to be initiated for the geust.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        The guest-CPU context.
+ * @param   idMsr       The MSR being accessed in the nested-guest.
+ * @param   fWrite      Whether this is an MSR write access, @c false implies an
+ *                      MSR read.
+ */
 VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t idMsr, bool fWrite)
 {
     /*
@@ -937,6 +1015,17 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX 
     return VINF_HM_INTERCEPT_NOT_ACTIVE;
 }
 
+
+/**
+ * Gets the MSR permission bitmap byte and bit offset for the specified MSR.
+ *
+ * @returns VBox status code.
+ * @param   idMsr       The MSR being requested.
+ * @param   pbOffMsrpm  Where to store the byte offset in the MSR permission
+ *                      bitmap for @a idMsr.
+ * @param   puMsrpmBit  Where to store the bit offset starting at the byte
+ *                      returned in @a pbOffMsrpm.
+ */
 VMM_INT_DECL(int) hmSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint32_t *puMsrpmBit)
 {
     Assert(pbOffMsrpm);
