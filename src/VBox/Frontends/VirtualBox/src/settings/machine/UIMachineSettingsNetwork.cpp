@@ -177,7 +177,7 @@ public:
     bool validate(QList<UIValidationMessage> &messages);
 
     /* Navigation stuff: */
-    QWidget* setOrderAfter(QWidget *pAfter);
+    QWidget *setOrderAfter(QWidget *pAfter);
 
     /* Other public stuff: */
     QString tabTitle() const;
@@ -459,7 +459,7 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-QWidget* UIMachineSettingsNetwork::setOrderAfter(QWidget *pAfter)
+QWidget *UIMachineSettingsNetwork::setOrderAfter(QWidget *pAfter)
 {
     setTabOrder(pAfter, m_pEnableAdapterCheckBox);
     setTabOrder(m_pEnableAdapterCheckBox, m_pAttachmentTypeComboBox);
@@ -987,14 +987,14 @@ void UIMachineSettingsNetwork::handleAdvancedButtonStateChange()
 /* static */
 int UIMachineSettingsNetwork::position(QComboBox *pComboBox, int iData)
 {
-    int iPosition = pComboBox->findData(iData);
+    const int iPosition = pComboBox->findData(iData);
     return iPosition == -1 ? 0 : iPosition;
 }
 
 /* static */
 int UIMachineSettingsNetwork::position(QComboBox *pComboBox, const QString &strText)
 {
-    int iPosition = pComboBox->findText(strText);
+    const int iPosition = pComboBox->findText(strText);
     return iPosition == -1 ? 0 : iPosition;
 }
 
@@ -1143,7 +1143,7 @@ void UIMachineSettingsNetworkPage::putToCache()
         currentData.m_adapters << currentAdapterData;
     }
 
-    /* Cache adapter data: */
+    /* Cache current data: */
     m_pCache->cacheCurrentData(currentData);
 }
 
