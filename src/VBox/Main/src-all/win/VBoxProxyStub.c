@@ -1195,7 +1195,6 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
 {
     LSTATUS rc;
     char szClsId[CURLY_UUID_STR_BUF_SIZE];
-    bool fQuoteIt = false;
     RT_NOREF(pszAppId);
 
     Assert(!pszAppId || *pszAppId == '{');
@@ -1228,6 +1227,7 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
                                                   &hkeyClass, __LINE__);
         if (rc == ERROR_SUCCESS)
         {
+            bool const fIsLocalServer32 = strcmp(pszServerType, "LocalServer32") == 0;
             HKEY hkeyServerType;
             char szCurClassNameVer[128];
 
@@ -1237,8 +1237,7 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
             {
                 RTUTF16 wszModule[MAX_PATH * 2];
                 PRTUTF16 pwszCur = wszModule;
-                fQuoteIt = strcmp(pszServerType, "LocalServer32") == 0;
-                if (fQuoteIt)
+                if (fIsLocalServer32)
                     *pwszCur++ = '"';
 
                 rc = RTUtf16Copy(pwszCur, MAX_PATH, pwszVBoxDir); AssertRC(rc);
@@ -1246,7 +1245,7 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
                 rc = RTUtf16CopyAscii(pwszCur, MAX_PATH - 3, pszServerSubPath); AssertRC(rc);
                 pwszCur += RTUtf16Len(pwszCur);
 
-                if (fQuoteIt)
+                if (fIsLocalServer32)
                     *pwszCur++ = '"';
                 *pwszCur++ = '\0';      /* included, so ++. */
 
@@ -1282,7 +1281,7 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
             }
 
             /* AppID = pszAppId */
-            if (pszAppId && fQuoteIt)
+            if (pszAppId && fIsLocalServer32)
                 vbpsSetRegValueAA(pState, hkeyClass, "AppID", pszAppId, __LINE__);
 
             vbpsCloseKey(pState, hkeyClass, __LINE__);
@@ -1316,7 +1315,8 @@ void RegisterVBoxSDSXidl(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir)
     VbpsRegisterClassId(pState, &CLSID_VirtualBoxSDS, "VirtualBoxSDS Class", pszServiceAppId, "VirtualBox.VirtualBoxSDS", ".1",
         &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszWindowsService, NULL /*N/A*/);
 }
-#endif
+#endif /* VBOX_WITH_SDS */
+
 
 /**
  * Register modules and classes from the VirtualBox.xidl file.
