@@ -29,7 +29,7 @@
    <item>
     <widget class="QILabelSeparator" native="1" name="mNameSeparator">
      <property name="text">
-      <string>&amp;Folders List</string>
+      <string>Shared &amp;Folders</string>
      </property>
      <property name="buddy">
       <cstring>mTwFolders</cstring>

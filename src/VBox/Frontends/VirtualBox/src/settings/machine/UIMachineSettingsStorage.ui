@@ -48,7 +48,7 @@
        <item>
         <widget class="QILabelSeparator" native="1" name="mLsLeftPane" >
          <property name="text" >
-          <string>&amp;Storage Tree</string>
+          <string>&amp;Storage Devices</string>
          </property>
         </widget>
        </item>
