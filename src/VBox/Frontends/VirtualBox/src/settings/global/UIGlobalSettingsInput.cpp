@@ -950,7 +950,7 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     if (m_pCache->wasChanged())
     {
         /* Save host-combo shortcut from cache: */
-        UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
+        const UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
         const int iHostComboItemBase = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->base().shortcuts(), fakeHostComboItem);
         const int iHostComboItemData = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->data().shortcuts(), fakeHostComboItem);
         const QString strHostComboBase = iHostComboItemBase != -1 ? m_pCache->base().shortcuts().at(iHostComboItemBase).currentSequence() : QString();

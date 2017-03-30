@@ -280,12 +280,12 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     UIDataSettingsGlobalExtension oldData;
 
     /* Gather old data: */
-    const CExtPackManager &manager = vboxGlobal().virtualBox().GetExtensionPackManager();
-    const CExtPackVector &packages = manager.GetInstalledExtPacks();
-    for (int i = 0; i < packages.size(); ++i)
+    const CExtPackVector &packages = vboxGlobal().virtualBox().
+                                     GetExtensionPackManager().GetInstalledExtPacks();
+    foreach (const CExtPack &package, packages)
     {
         UIDataSettingsGlobalExtensionItem item;
-        loadData(packages[i], item);
+        loadData(package, item);
         oldData.m_items << item;
     }
 
@@ -302,8 +302,8 @@ void UIGlobalSettingsExtension::getFromCache()
     const UIDataSettingsGlobalExtension &oldData = m_pCache->base();
 
     /* Load old data from cache: */
-    for (int i = 0; i < oldData.m_items.size(); ++i)
-        new UIExtensionPackageItem(m_pPackagesTree, oldData.m_items.at(i));
+    foreach (const UIDataSettingsGlobalExtensionItem &item, oldData.m_items)
+        new UIExtensionPackageItem(m_pPackagesTree, item);
     /* If at least one item present: */
     if (m_pPackagesTree->topLevelItemCount())
         m_pPackagesTree->setCurrentItem(m_pPackagesTree->topLevelItem(0));

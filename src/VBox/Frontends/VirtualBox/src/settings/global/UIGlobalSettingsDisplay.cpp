@@ -97,8 +97,8 @@ void UIGlobalSettingsDisplay::getFromCache()
     const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
 
     /* Load old data from cache: */
-    if ((oldData.m_strMaxGuestResolution.isEmpty()) ||
-        (oldData.m_strMaxGuestResolution == "auto"))
+    if (   (oldData.m_strMaxGuestResolution.isEmpty())
+        || (oldData.m_strMaxGuestResolution == "auto"))
     {
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("auto"));
@@ -113,8 +113,8 @@ void UIGlobalSettingsDisplay::getFromCache()
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("fixed"));
         /* Trying to parse text into 2 sections by ',' symbol: */
-        int iWidth  = oldData.m_strMaxGuestResolution.section(',', 0, 0).toInt();
-        int iHeight = oldData.m_strMaxGuestResolution.section(',', 1, 1).toInt();
+        const int iWidth  = oldData.m_strMaxGuestResolution.section(',', 0, 0).toInt();
+        const int iHeight = oldData.m_strMaxGuestResolution.section(',', 1, 1).toInt();
         /* And set values if they are present: */
         m_pResolutionWidthSpin->setValue(iWidth);
         m_pResolutionHeightSpin->setValue(iHeight);
@@ -133,8 +133,8 @@ void UIGlobalSettingsDisplay::putToCache()
         /* If resolution current combo item is "auto" => resolution set to "auto": */
         newData.m_strMaxGuestResolution = QString();
     }
-    else if (m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "any" ||
-             m_pResolutionWidthSpin->value() == 0 || m_pResolutionHeightSpin->value() == 0)
+    else if (   m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "any"
+             || m_pResolutionWidthSpin->value() == 0 || m_pResolutionHeightSpin->value() == 0)
     {
         /* Else if resolution current combo item is "any"
          * or any of the resolution field attributes is zero => resolution set to "any": */
