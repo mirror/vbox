@@ -80,12 +80,25 @@ struct UIDataSettingsMachineParallelPort
 struct UIDataSettingsMachineParallel
 {
     /** Constructs data. */
-    UIDataSettingsMachineParallel() {}
+    UIDataSettingsMachineParallel()
+        : m_ports(QList<UIDataSettingsMachineParallelPort>())
+    {}
 
     /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineParallel & /* other */) const { return true; }
+    bool equal(const UIDataSettingsMachineParallel &other) const
+    {
+        return true
+               && (m_ports == other.m_ports)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsMachineParallel &other) const { return equal(other); }
     /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineParallel & /* other */) const { return false; }
+    bool operator!=(const UIDataSettingsMachineParallel &other) const { return !equal(other); }
+
+    /** Holds the port list. */
+    QList<UIDataSettingsMachineParallelPort> m_ports;
 };
 
 
@@ -101,10 +114,10 @@ public:
 
     void polishTab();
 
-    void fetchPortData(const UISettingsCacheMachineParallelPort &portCache);
-    void uploadPortData(UISettingsCacheMachineParallelPort &portCache);
+    void loadPortData(const UIDataSettingsMachineParallelPort &portData);
+    void savePortData(UIDataSettingsMachineParallelPort &portData);
 
-    QWidget* setOrderAfter (QWidget *aAfter);
+    QWidget *setOrderAfter(QWidget *pAfter);
 
     QString pageTitle() const;
     bool isUserDefined();
@@ -115,8 +128,8 @@ protected:
 
 private slots:
 
-    void mGbParallelToggled (bool aOn);
-    void mCbNumberActivated (const QString &aText);
+    void sltGbParallelToggled(bool fOn);
+    void sltCbNumberActivated(const QString &strText);
 
 private:
 
@@ -133,37 +146,37 @@ private:
 *********************************************************************************************************************************/
 
 UIMachineSettingsParallel::UIMachineSettingsParallel(UIMachineSettingsParallelPage *pParent)
-    : QIWithRetranslateUI<QWidget> (0)
+    : QIWithRetranslateUI<QWidget>(0)
     , m_pParent(pParent)
     , m_iSlot(-1)
 {
-    /* Apply UI decorations */
-    Ui::UIMachineSettingsParallel::setupUi (this);
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsParallel::setupUi(this);
 
-    /* Setup validation */
-    mLeIRQ->setValidator (new QIULongValidator (0, 255, this));
-    mLeIOPort->setValidator (new QIULongValidator (0, 0xFFFF, this));
-    mLePath->setValidator (new QRegExpValidator (QRegExp (".+"), this));
+    /* Setup validation: */
+    mLeIRQ->setValidator(new QIULongValidator(0, 255, this));
+    mLeIOPort->setValidator(new QIULongValidator(0, 0xFFFF, this));
+    mLePath->setValidator(new QRegExpValidator(QRegExp(".+"), this));
 
-    /* Setup constraints */
-    mLeIRQ->setFixedWidth (mLeIRQ->fontMetrics().width ("8888"));
-    mLeIOPort->setFixedWidth (mLeIOPort->fontMetrics().width ("8888888"));
+    /* Setup constraints: */
+    mLeIRQ->setFixedWidth(mLeIRQ->fontMetrics().width("8888"));
+    mLeIOPort->setFixedWidth(mLeIOPort->fontMetrics().width("8888888"));
 
-    /* Set initial values */
+    /* Set initial values: */
     /* Note: If you change one of the following don't forget retranslateUi. */
-    mCbNumber->insertItem (0, vboxGlobal().toCOMPortName (0, 0));
-    mCbNumber->insertItems (0, vboxGlobal().COMPortNames());
+    mCbNumber->insertItem(0, vboxGlobal().toCOMPortName(0, 0));
+    mCbNumber->insertItems(0, vboxGlobal().COMPortNames());
 
-    /* Setup connections */
-    connect (mGbParallel, SIGNAL (toggled (bool)),
-             this, SLOT (mGbParallelToggled (bool)));
-    connect (mCbNumber, SIGNAL (activated (const QString &)),
-             this, SLOT (mCbNumberActivated (const QString &)));
+    /* Setup connections: */
+    connect(mGbParallel, SIGNAL(toggled(bool)),
+            this, SLOT(sltGbParallelToggled(bool)));
+    connect(mCbNumber, SIGNAL(activated(const QString &)),
+            this, SLOT(sltCbNumberActivated(const QString &)));
 
     /* Prepare validation: */
     prepareValidation();
 
-    /* Applying language settings */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -171,7 +184,7 @@ void UIMachineSettingsParallel::polishTab()
 {
     /* Polish port page: */
     ulong uIRQ, uIOBase;
-    bool fStd = vboxGlobal().toCOMPortNumbers(mCbNumber->currentText(), uIRQ, uIOBase);
+    const bool fStd = vboxGlobal().toCOMPortNumbers(mCbNumber->currentText(), uIRQ, uIOBase);
     mGbParallel->setEnabled(m_pParent->isMachineOffline());
     mLbNumber->setEnabled(m_pParent->isMachineOffline());
     mCbNumber->setEnabled(m_pParent->isMachineOffline());
@@ -183,11 +196,8 @@ void UIMachineSettingsParallel::polishTab()
     mLePath->setEnabled(m_pParent->isMachineOffline());
 }
 
-void UIMachineSettingsParallel::fetchPortData(const UISettingsCacheMachineParallelPort &portCache)
+void UIMachineSettingsParallel::loadPortData(const UIDataSettingsMachineParallelPort &portData)
 {
-    /* Get port data: */
-    const UIDataSettingsMachineParallelPort &portData = portCache.base();
-
     /* Load port number: */
     m_iSlot = portData.m_iSlot;
 
@@ -198,32 +208,26 @@ void UIMachineSettingsParallel::fetchPortData(const UISettingsCacheMachineParall
     mLeIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
     mLePath->setText(portData.m_strPath);
 
-    /* Ensure everything is up-to-date */
-    mGbParallelToggled(mGbParallel->isChecked());
+    /* Ensure everything is up-to-date: */
+    sltGbParallelToggled(mGbParallel->isChecked());
 }
 
-void UIMachineSettingsParallel::uploadPortData(UISettingsCacheMachineParallelPort &portCache)
+void UIMachineSettingsParallel::savePortData(UIDataSettingsMachineParallelPort &portData)
 {
-    /* Prepare port data: */
-    UIDataSettingsMachineParallelPort portData = portCache.base();
-
     /* Save port data: */
     portData.m_fPortEnabled = mGbParallel->isChecked();
     portData.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
     portData.m_uIOBase = mLeIOPort->text().toULong(NULL, 0);
     portData.m_strPath = QDir::toNativeSeparators(mLePath->text());
-
-    /* Cache port data: */
-    portCache.cacheCurrentData(portData);
 }
 
-QWidget* UIMachineSettingsParallel::setOrderAfter (QWidget *aAfter)
+QWidget *UIMachineSettingsParallel::setOrderAfter(QWidget *pAfter)
 {
-    setTabOrder (aAfter, mGbParallel);
-    setTabOrder (mGbParallel, mCbNumber);
-    setTabOrder (mCbNumber, mLeIRQ);
-    setTabOrder (mLeIRQ, mLeIOPort);
-    setTabOrder (mLeIOPort, mLePath);
+    setTabOrder(pAfter, mGbParallel);
+    setTabOrder(mGbParallel, mCbNumber);
+    setTabOrder(mCbNumber, mLeIRQ);
+    setTabOrder(mLeIRQ, mLeIOPort);
+    setTabOrder(mLeIOPort, mLePath);
     return mLePath;
 }
 
@@ -235,37 +239,37 @@ QString UIMachineSettingsParallel::pageTitle() const
 bool UIMachineSettingsParallel::isUserDefined()
 {
     ulong a, b;
-    return !vboxGlobal().toCOMPortNumbers (mCbNumber->currentText(), a, b);
+    return !vboxGlobal().toCOMPortNumbers(mCbNumber->currentText(), a, b);
 }
 
 void UIMachineSettingsParallel::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIMachineSettingsParallel::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIMachineSettingsParallel::retranslateUi(this);
 
-    mCbNumber->setItemText (mCbNumber->count() - 1, vboxGlobal().toCOMPortName (0, 0));
+    mCbNumber->setItemText(mCbNumber->count() - 1, vboxGlobal().toCOMPortName(0, 0));
 }
 
-void UIMachineSettingsParallel::mGbParallelToggled (bool aOn)
+void UIMachineSettingsParallel::sltGbParallelToggled(bool fOn)
 {
-    if (aOn)
-        mCbNumberActivated (mCbNumber->currentText());
+    if (fOn)
+        sltCbNumberActivated(mCbNumber->currentText());
 
     /* Revalidate: */
     m_pParent->revalidate();
 }
 
-void UIMachineSettingsParallel::mCbNumberActivated (const QString &aText)
+void UIMachineSettingsParallel::sltCbNumberActivated(const QString &strText)
 {
-    ulong IRQ, IOBase;
-    bool std = vboxGlobal().toCOMPortNumbers (aText, IRQ, IOBase);
+    ulong uIRQ, uIOBase;
+    bool fStd = vboxGlobal().toCOMPortNumbers(strText, uIRQ, uIOBase);
 
-    mLeIRQ->setEnabled (!std);
-    mLeIOPort->setEnabled (!std);
-    if (std)
+    mLeIRQ->setEnabled(!fStd);
+    mLeIOPort->setEnabled(!fStd);
+    if (fStd)
     {
-        mLeIRQ->setText (QString::number (IRQ));
-        mLeIOPort->setText ("0x" + QString::number (IOBase, 16).toUpper());
+        mLeIRQ->setText(QString::number(uIRQ));
+        mLeIOPort->setText("0x" + QString::number(uIOBase, 16).toUpper());
     }
 
     /* Revalidate: */
@@ -312,27 +316,33 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
+    /* Prepare initial data: */
+    UIDataSettingsMachineParallel initialData;
+
     /* For each parallel port: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Prepare port data: */
-        UIDataSettingsMachineParallelPort portData;
+        UIDataSettingsMachineParallelPort initialPortData;
 
         /* Check if port is valid: */
         const CParallelPort &port = m_machine.GetParallelPort(iSlot);
         if (!port.isNull())
         {
             /* Gather options: */
-            portData.m_iSlot = iSlot;
-            portData.m_fPortEnabled = port.GetEnabled();
-            portData.m_uIRQ = port.GetIRQ();
-            portData.m_uIOBase = port.GetIOBase();
-            portData.m_strPath = port.GetPath();
+            initialPortData.m_iSlot = iSlot;
+            initialPortData.m_fPortEnabled = port.GetEnabled();
+            initialPortData.m_uIRQ = port.GetIRQ();
+            initialPortData.m_uIOBase = port.GetIOBase();
+            initialPortData.m_strPath = port.GetPath();
         }
 
-        /* Cache port data: */
-        m_pCache->child(iSlot).cacheInitialData(portData);
+        /* Append initial port data: */
+        initialData.m_ports << initialPortData;
     }
+
+    /* Cache initial data: */
+    m_pCache->cacheInitialData(initialData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -341,7 +351,7 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsParallelPage::getFromCache()
 {
     /* Setup tab order: */
-    Assert(firstWidget());
+    AssertPtrReturnVoid(firstWidget());
     setTabOrder(firstWidget(), m_pTabWidget->focusProxy());
     QWidget *pLastFocusWidget = m_pTabWidget->focusProxy();
 
@@ -352,7 +362,7 @@ void UIMachineSettingsParallelPage::getFromCache()
         UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
 
         /* Load port data to page: */
-        pPage->fetchPortData(m_pCache->child(iPort));
+        pPage->loadPortData(m_pCache->base().m_ports.at(iPort));
 
         /* Setup tab order: */
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
@@ -370,15 +380,27 @@ void UIMachineSettingsParallelPage::getFromCache()
 
 void UIMachineSettingsParallelPage::putToCache()
 {
+    /* Prepare current data: */
+    UIDataSettingsMachineParallel currentData;
+
     /* For each parallel port: */
     for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         /* Getting port page: */
-        UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
+        UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
 
-        /* Gather & cache port data: */
-        pPage->uploadPortData(m_pCache->child(iPort));
+        /* Prepare current port data: */
+        UIDataSettingsMachineParallelPort currentPortData;
+
+        /* Gather current port data: */
+        pTab->savePortData(currentPortData);
+
+        /* Cache current port data: */
+        currentData.m_ports << currentPortData;
     }
+
+    /* Cache current data: */
+    m_pCache->cacheCurrentData(currentData);
 }
 
 void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
@@ -393,23 +415,33 @@ void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
         for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
         {
             /* Check if port data was changed: */
-            const UISettingsCacheMachineParallelPort &portCache = m_pCache->child(iPort);
-            if (portCache.wasChanged())
+            const UIDataSettingsMachineParallelPort &initialPortData = m_pCache->base().m_ports.at(iPort);
+            const UIDataSettingsMachineParallelPort &currentPortData = m_pCache->data().m_ports.at(iPort);
+            if (currentPortData != initialPortData)
             {
                 /* Check if port still valid: */
                 CParallelPort port = m_machine.GetParallelPort(iPort);
                 if (!port.isNull())
                 {
-                    /* Get port data from cache: */
-                    const UIDataSettingsMachineParallelPort &portData = portCache.data();
-
-                    /* Store adapter data: */
+                    /* Store port data: */
                     if (isMachineOffline())
                     {
-                        port.SetIRQ(portData.m_uIRQ);
-                        port.SetIOBase(portData.m_uIOBase);
-                        port.SetPath(portData.m_strPath);
-                        port.SetEnabled(portData.m_fPortEnabled);
+                        /* Whether the port is enabled: */
+                        if (   port.isOk()
+                            && currentPortData.m_fPortEnabled != initialPortData.m_fPortEnabled)
+                            port.SetEnabled(currentPortData.m_fPortEnabled);
+                        /* Port IRQ: */
+                        if (   port.isOk()
+                            && currentPortData.m_uIRQ != initialPortData.m_uIRQ)
+                            port.SetIRQ(currentPortData.m_uIRQ);
+                        /* Port IO base: */
+                        if (   port.isOk()
+                            && currentPortData.m_uIOBase != initialPortData.m_uIOBase)
+                            port.SetIOBase(currentPortData.m_uIOBase);
+                        /* Port path: */
+                        if (   port.isOk()
+                            && currentPortData.m_strPath != initialPortData.m_strPath)
+                            port.SetPath(currentPortData.m_strPath);
                     }
                 }
             }
@@ -502,8 +534,8 @@ void UIMachineSettingsParallelPage::polishPage()
     for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         m_pTabWidget->setTabEnabled(iPort,
-                                  isMachineOffline() ||
-                                  (isMachineInValidMode() && m_pCache->child(iPort).base().m_fPortEnabled));
+                                    isMachineOffline() ||
+                                    (isMachineInValidMode() && m_pCache->base().m_ports.at(iPort).m_fPortEnabled));
         UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
         pTab->polishTab();
     }

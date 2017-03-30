@@ -26,9 +26,7 @@
 class QITabWidget;
 class UIMachineSettingsParallelPage;
 struct UIDataSettingsMachineParallel;
-struct UIDataSettingsMachineParallelPort;
-typedef UISettingsCache<UIDataSettingsMachineParallelPort> UISettingsCacheMachineParallelPort;
-typedef UISettingsCachePool<UIDataSettingsMachineParallel, UISettingsCacheMachineParallelPort> UISettingsCacheMachineParallel;
+typedef UISettingsCache<UIDataSettingsMachineParallel> UISettingsCacheMachineParallel;
 
 
 /** Machine settings: Parallel page. */
