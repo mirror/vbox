@@ -537,6 +537,7 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrPrintHexBytes.cpp \
 	common/string/RTStrStartsWith.cpp \
 	common/string/RTStrIStartsWith.cpp \
+	common/string/RTStrICmpAscii.cpp \
 	common/string/RTStrStr.cpp \
 	common/string/RTUtf16Copy.cpp \
 	common/string/RTUtf16CopyAscii.cpp \
@@ -1882,6 +1883,8 @@ RuntimeR0_SOURCES      := \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
 	common/string/RTStrCopyPEx.cpp \
+	common/string/RTStrCmp.cpp \
+	common/string/RTStrICmpAscii.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
 	common/table/avlgcptr.cpp \
@@ -2062,6 +2065,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
 	common/string/RTStrCopyPEx.cpp \
+	common/string/RTStrICmpAscii.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
@@ -2593,8 +2597,10 @@ ifdef VBOX_WITH_RAW_MODE
  	common/string/strpbrk.cpp \
  	common/string/strprintf.cpp \
  	common/string/strprintf2.cpp \
+	common/string/RTStrCmp.cpp \
  	common/string/RTStrCopy.cpp \
  	common/string/RTStrCopyEx.cpp \
+	common/string/RTStrICmpAscii.cpp \
  	common/table/avllu32.cpp \
  	common/table/avlou32.cpp \
  	common/table/avlogcphys.cpp \

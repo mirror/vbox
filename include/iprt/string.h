@@ -2211,6 +2211,25 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
 RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax);
 
 /**
+ * Performs a case insensitive string compare between a UTF-8 string and a 7-bit
+ * ASCII string.
+ *
+ * This is potentially faster than RTStrICmp and drags in less dependencies.  It
+ * is really handy for hardcoded inputs.
+ *
+ * If the string encoding is invalid the function will assert (strict builds)
+ * and use RTStrCmp for the remainder of the string.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second string, 7-bit ASCII. Null is allowed.
+ * @sa      RTUtf16ICmpAscii
+ */
+RTDECL(int) RTStrICmpAscii(const char *psz1, const char *psz2);
+
+/**
  * Checks whether @a pszString starts with @a pszStart.
  *
  * @returns true / false.
