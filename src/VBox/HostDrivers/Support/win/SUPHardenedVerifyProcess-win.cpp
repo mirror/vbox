@@ -1757,7 +1757,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
         {
             cXpExceptions++;
             SUP_DPRINTF(("  %p-%p %#06x/%#06x %#09x  XP CSRSS read-only region\n", MemInfo.BaseAddress,
-                         (uintptr_t)MemInfo.BaseAddress - MemInfo.RegionSize - 1, MemInfo.Protect,
+                         (uintptr_t)MemInfo.BaseAddress + MemInfo.RegionSize - 1, MemInfo.Protect,
                          MemInfo.AllocationProtect, MemInfo.Type));
         }
         /*
@@ -1769,7 +1769,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
             SUP_DPRINTF((MemInfo.AllocationBase == MemInfo.BaseAddress
                          ? " *%p-%p %#06x/%#06x %#09x !!\n"
                          : "  %p-%p %#06x/%#06x %#09x !!\n",
-                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress - MemInfo.RegionSize - 1,
+                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress + MemInfo.RegionSize - 1,
                          MemInfo.Protect, MemInfo.AllocationProtect, MemInfo.Type));
 # ifdef IN_RING3
             if (pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
@@ -1827,7 +1827,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
             SUP_DPRINTF((MemInfo.AllocationBase == MemInfo.BaseAddress
                          ? " *%p-%p %#06x/%#06x %#09x\n"
                          : "  %p-%p %#06x/%#06x %#09x\n",
-                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress - MemInfo.RegionSize - 1,
+                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress + MemInfo.RegionSize - 1,
                          MemInfo.Protect, MemInfo.AllocationProtect, MemInfo.Type));
 
         /*
