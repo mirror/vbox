@@ -81,6 +81,8 @@
         <file alias="edataglobal_32px_hidpi.png">images/hidpi/edataglobal_32px_hidpi.png</file>
         <file alias="edataman_16px_hidpi.png">images/hidpi/edataman_16px_hidpi.png</file>
         <file alias="edataman_32px_hidpi.png">images/hidpi/edataman_32px_hidpi.png</file>
+        <file alias="edit_host_iface_16px_hidpi.png">images/hidpi/edit_host_iface_16px_hidpi.png</file>
+        <file alias="edit_host_iface_disabled_16px_hidpi.png">images/hidpi/edit_host_iface_disabled_16px_hidpi.png</file>
         <file alias="eraser_16px_hidpi.png">images/hidpi/eraser_16px_hidpi.png</file>
         <file alias="exit_16px_hidpi.png">images/hidpi/exit_16px_hidpi.png</file>
         <file alias="expanding_collapsing_16px_hidpi.png">images/hidpi/expanding_collapsing_16px_hidpi.png</file>

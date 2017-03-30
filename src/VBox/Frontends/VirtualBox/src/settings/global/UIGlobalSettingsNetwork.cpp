@@ -953,8 +953,8 @@ void UIGlobalSettingsNetwork::prepareTabNAT()
             }
 
             /* Create 'Edit NAT Network' action: */
-            m_pActionEditNetworkNAT = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/guesttools_16px.png",
-                                                                                          ":/guesttools_disabled_16px.png"),
+            m_pActionEditNetworkNAT = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/edit_host_iface_16px.png",
+                                                                                          ":/edit_host_iface_disabled_16px.png"),
                                                                       QString(), this, SLOT(sltEditNetworkNAT()));
             AssertPtrReturnVoid(m_pActionEditNetworkNAT);
             {
@@ -1011,8 +1011,8 @@ void UIGlobalSettingsNetwork::prepareTabHost()
             }
 
             /* Create 'Edit Host-only Network' action: */
-            m_pActionEditNetworkHost = m_pToolbarNetworkHost->addAction(UIIconPool::iconSet(":/guesttools_16px.png",
-                                                                                            ":/guesttools_disabled_16px.png"),
+            m_pActionEditNetworkHost = m_pToolbarNetworkHost->addAction(UIIconPool::iconSet(":/edit_host_iface_16px.png",
+                                                                                            ":/edit_host_iface_disabled_16px.png"),
                                                                         QString(), this, SLOT(sltEditNetworkHost()));
             AssertPtrReturnVoid(m_pActionEditNetworkHost);
             {

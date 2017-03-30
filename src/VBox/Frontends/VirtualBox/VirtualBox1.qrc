@@ -81,6 +81,8 @@
         <file alias="edataglobal_32px.png">images/edataglobal_32px.png</file>
         <file alias="edataman_16px.png">images/edataman_16px.png</file>
         <file alias="edataman_32px.png">images/edataman_32px.png</file>
+        <file alias="edit_host_iface_16px.png">images/edit_host_iface_16px.png</file>
+        <file alias="edit_host_iface_disabled_16px.png">images/edit_host_iface_disabled_16px.png</file>
         <file alias="eraser_16px.png">images/eraser_16px.png</file>
         <file alias="exit_16px.png">images/exit_16px.png</file>
         <file alias="expanding_collapsing_16px.png">images/expanding_collapsing_16px.png</file>
