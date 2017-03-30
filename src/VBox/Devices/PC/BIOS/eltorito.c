@@ -430,7 +430,7 @@ uint16_t cdrom_boot(void)
         break;
     case 0x04:  /* Hard disk */
         cdemu->vdevice.spt       = read_byte(boot_segment,446+6)&0x3f;
-        cdemu->vdevice.cylinders = (read_byte(boot_segment,446+6)<<2) + read_byte(boot_segment,446+7) + 1;
+        cdemu->vdevice.cylinders = ((read_byte(boot_segment,446+6)&~0x3f)<<2) + read_byte(boot_segment,446+7) + 1;
         cdemu->vdevice.heads     = read_byte(boot_segment,446+5) + 1;
         break;
     }
