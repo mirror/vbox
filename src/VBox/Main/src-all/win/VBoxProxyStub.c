@@ -1304,16 +1304,15 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
 */
 void RegisterVBoxSDSXidl(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir)
 {
-    const char *pszServiceAppId = "{EC0E78E8-FA43-43E8-AC0A-02C784C4A4FA}";
+    const char *pszServiceAppId   = "{EC0E78E8-FA43-43E8-AC0A-02C784C4A4FA}";
     const char *pszWindowsService = "VBoxSDS.exe";
 
-    VbpsRegisterAppId(pState, pszWindowsService, pszServiceAppId, "VirtualBox System Service", true);
-
     /* VBoxSDS */
+    VbpsRegisterAppId(pState, pszWindowsService, pszServiceAppId, "VirtualBox System Service", true);
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS.1", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, NULL);
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, ".1");
     VbpsRegisterClassId(pState, &CLSID_VirtualBoxSDS, "VirtualBoxSDS Class", pszServiceAppId, "VirtualBox.VirtualBoxSDS", ".1",
-        &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszWindowsService, NULL /*N/A*/);
+                        &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszWindowsService, NULL /*N/A*/);
 }
 #endif /* VBOX_WITH_SDS */
 
@@ -1331,12 +1330,11 @@ void RegisterVBoxSDSXidl(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir)
 void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir, bool fIs32On64)
 {
     const char *pszAppId        = "{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}";
-    const char *pszInprocDll = !fIs32On64 ? "VBoxC.dll" : "x86\\VBoxClient-x86.dll";
-    const char *pszLocalServer      = "VBoxSVC.exe";
-
-    VbpsRegisterAppId(pState, pszLocalServer, pszAppId, "VirtualBox Application", false);
+    const char *pszInprocDll    = !fIs32On64 ? "VBoxC.dll" : "x86\\VBoxClient-x86.dll";
+    const char *pszLocalServer  = "VBoxSVC.exe";
 
     /* VBoxSVC */
+    VbpsRegisterAppId(pState, pszLocalServer, pszAppId, "VirtualBox Application", false);
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBox.1", "VirtualBox Class", &CLSID_VirtualBox, NULL);
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBox",   "VirtualBox Class", &CLSID_VirtualBox, ".1");
     VbpsRegisterClassId(pState, &CLSID_VirtualBox, "VirtualBox Class", pszAppId, "VirtualBox.VirtualBox", ".1",
