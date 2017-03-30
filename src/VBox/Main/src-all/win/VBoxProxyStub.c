@@ -1018,10 +1018,11 @@ static LSTATUS vbpsDeleteKeyRecursiveW(VBPSREGSTATE *pState, HKEY hkeyParent, PC
  * @param   pszModuleName       The module name.
  * @param   pszAppId            The application UUID string.
  * @param   pszDescription      The description string.
- * @param   fIsService          The application is windows service
+ * @param   pszServiceName      The window service name if the application is a
+ *                              service, otherwise this must be NULL.
  */
 LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszModuleName, const char *pszAppId,
-                          const char *pszDescription, bool fIsService)
+                          const char *pszDescription, const char *pszServiceName)
 {
     LSTATUS rc;
     HKEY hkeyAppIds;
@@ -1062,38 +1063,28 @@ LSTATUS VbpsRegisterAppId(VBPSREGSTATE *pState, const char *pszModuleName, const
         vbpsDeleteKeyRecursiveA(pState, hkeyAppIds, pszModuleName, __LINE__);
     }
 
+    /*
+     * Register / update.
+     */
     if (pState->fUpdate)
     {
-        HKEY hkeyServiceExe;
-
-        vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszAppId, pszDescription, __LINE__);
-
-        if (fIsService)
+        HKEY hkey;
+        rc = vbpsCreateRegKeyA(pState, hkeyAppIds, pszAppId, &hkey, __LINE__);
+        if (rc == ERROR_SUCCESS)
         {
-            char szModule[MAX_PATH + 2];
-            HKEY hkeyApp;
-            size_t len = RTStrNLen(pszModuleName, MAX_PATH);
-            Assert(len);
-            Assert(len < MAX_PATH);
-            rc = RTStrCopy(szModule, sizeof(szModule), pszModuleName);
-            AssertRC(rc);
-            szModule[len - 4] = '\0';
-
-            rc = RegOpenKeyExA(hkeyAppIds, pszAppId, 0 /*fOptions*/, pState->fSamBoth, &hkeyApp);
-            if (rc == ERROR_FILE_NOT_FOUND)
-                return ERROR_SUCCESS;
-            // create the value "Service" with the service name
-            vbpsSetRegValueAA(pState, hkeyApp, "LocalService", szModule, __LINE__);
-            vbpsCloseKey(pState, hkeyApp, __LINE__);
+            vbpsSetRegValueAA(pState, hkey, NULL /*pszValueNm*/, pszDescription, __LINE__);
+            if (pszServiceName)
+                vbpsSetRegValueAA(pState, hkey, "LocalService", pszServiceName, __LINE__);
+            vbpsCloseKey(pState, hkey, __LINE__);
         }
 
-        vbpsCreateRegKeyWithDefaultValueAA(pState, hkeyAppIds, pszModuleName, "", __LINE__);
-
-        rc = RegOpenKeyExA(hkeyAppIds, pszModuleName, 0 /*fOptions*/, pState->fSamBoth, &hkeyServiceExe);
-        if (rc == ERROR_FILE_NOT_FOUND)
-            return ERROR_SUCCESS;
-        vbpsSetRegValueAA(pState, hkeyServiceExe, "AppID", pszAppId, __LINE__);
-        vbpsCloseKey(pState, hkeyServiceExe, __LINE__);
+        rc = vbpsCreateRegKeyA(pState, hkeyAppIds, pszModuleName, &hkey, __LINE__);
+        if (rc == ERROR_SUCCESS)
+        {
+            vbpsSetRegValueAA(pState, hkey, NULL /*pszValueNm*/, "", __LINE__);
+            vbpsSetRegValueAA(pState, hkey, "AppID", pszAppId, __LINE__);
+            vbpsCloseKey(pState, hkey, __LINE__);
+        }
     }
 
     vbpsCloseKey(pState, hkeyAppIds, __LINE__);
@@ -1292,31 +1283,6 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
 }
 
 
-#ifdef VBOX_WITH_SDS
-/**
-* Register VBoxSDS classes from the VirtualBox.xidl file.
-*
-* @returns COM status code.
-* @param   pState
-* @param   pwszVBoxDir         The VirtualBox application directory.
-*
-* @todo convert to XSLT.
-*/
-void RegisterVBoxSDSXidl(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir)
-{
-    const char *pszServiceAppId   = "{EC0E78E8-FA43-43E8-AC0A-02C784C4A4FA}";
-    const char *pszWindowsService = "VBoxSDS.exe";
-
-    /* VBoxSDS */
-    VbpsRegisterAppId(pState, pszWindowsService, pszServiceAppId, "VirtualBox System Service", true);
-    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS.1", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, NULL);
-    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, ".1");
-    VbpsRegisterClassId(pState, &CLSID_VirtualBoxSDS, "VirtualBoxSDS Class", pszServiceAppId, "VirtualBox.VirtualBoxSDS", ".1",
-                        &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszWindowsService, NULL /*N/A*/);
-}
-#endif /* VBOX_WITH_SDS */
-
-
 /**
  * Register modules and classes from the VirtualBox.xidl file.
  *
@@ -1329,12 +1295,17 @@ void RegisterVBoxSDSXidl(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir)
  */
 void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwszVBoxDir, bool fIs32On64)
 {
-    const char *pszAppId        = "{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}";
-    const char *pszInprocDll    = !fIs32On64 ? "VBoxC.dll" : "x86\\VBoxClient-x86.dll";
-    const char *pszLocalServer  = "VBoxSVC.exe";
+    const char *pszAppId            = "{819B4D85-9CEE-493C-B6FC-64FFE759B3C9}";
+    const char *pszInprocDll        = !fIs32On64 ? "VBoxC.dll" : "x86\\VBoxClient-x86.dll";
+    const char *pszLocalServer      = "VBoxSVC.exe";
+#ifdef VBOX_WITH_SDS
+    const char *pszSdsAppId         = "{EC0E78E8-FA43-43E8-AC0A-02C784C4A4FA}";
+    const char *pszSdsExe           = "VBoxSDS.exe";
+    const char *pszSdsServiceName   = "VBoxSDS";
+#endif
 
     /* VBoxSVC */
-    VbpsRegisterAppId(pState, pszLocalServer, pszAppId, "VirtualBox Application", false);
+    VbpsRegisterAppId(pState, pszLocalServer, pszAppId, "VirtualBox Application", NULL);
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBox.1", "VirtualBox Class", &CLSID_VirtualBox, NULL);
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBox",   "VirtualBox Class", &CLSID_VirtualBox, ".1");
     VbpsRegisterClassId(pState, &CLSID_VirtualBox, "VirtualBox Class", pszAppId, "VirtualBox.VirtualBox", ".1",
@@ -1352,7 +1323,12 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
                         &LIBID_VirtualBox, "InprocServer32", pwszVBoxDir, pszInprocDll, "Free");
 
 #ifdef VBOX_WITH_SDS
-    RegisterVBoxSDSXidl(pState, pwszVBoxDir);
+    /* VBoxSDS */
+    VbpsRegisterAppId(pState, pszSdsExe, pszSdsAppId, "VirtualBox System Service", pszSdsServiceName);
+    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS.1", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, NULL);
+    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, ".1");
+    VbpsRegisterClassId(pState, &CLSID_VirtualBoxSDS, "VirtualBoxSDS Class", pszSdsAppId, "VirtualBox.VirtualBoxSDS", ".1",
+                        &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszSdsExe, NULL /*N/A*/);
 #endif
 }
 
