@@ -3114,6 +3114,21 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPU pVCpu)
  * @{
  */
 
+/**
+ * Initiates a CPU shutdown sequence.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ */
+IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
+{
+    RT_NOREF_PV(pVCpu);
+    /** @todo Probably need a separate error code and handling for this to
+     *        distinguish it from the regular triple fault. */
+    return VINF_EM_TRIPLE_FAULT;
+}
+
 
 /**
  * Validates a new SS segment.

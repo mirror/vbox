@@ -148,6 +148,9 @@ VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bo
 VMM_INT_DECL(void)              HMHypercallsEnable(PVMCPU pVCpu);
 VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
 
+/** @name Nested hardware virtualization.
+ * @{
+ */
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
                                                   uint64_t uExitInfo2);
 VMM_INT_DECL(void)              HMVmxNstGstVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
@@ -155,6 +158,10 @@ VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb);
 VMM_INT_DECL(int)               HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx, uint8_t *pu8Interrupt);
 VMM_INT_DECL(bool)              HMSvmNstGstIsInterruptPending(PCCPUMCTX pCtx);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode,
+                                                               uint64_t uExitInfo1,uint64_t uExitInfo2);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t idMsr, bool fWrite);
+/** @} */
 
 #ifndef IN_RC
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);

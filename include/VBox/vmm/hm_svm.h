@@ -176,28 +176,28 @@
 # define SVM_EXIT_EXCEPTION_7            0x47
 # define SVM_EXIT_EXCEPTION_8            0x48
 # define SVM_EXIT_EXCEPTION_9            0x49
-# define SVM_EXIT_EXCEPTION_A            0x4A
-# define SVM_EXIT_EXCEPTION_B            0x4B
-# define SVM_EXIT_EXCEPTION_C            0x4C
-# define SVM_EXIT_EXCEPTION_D            0x4D
-# define SVM_EXIT_EXCEPTION_E            0x4E
-# define SVM_EXIT_EXCEPTION_F            0x4F
-# define SVM_EXIT_EXCEPTION_10           0x50
-# define SVM_EXIT_EXCEPTION_11           0x51
-# define SVM_EXIT_EXCEPTION_12           0x52
-# define SVM_EXIT_EXCEPTION_13           0x53
-# define SVM_EXIT_EXCEPTION_14           0x54
-# define SVM_EXIT_EXCEPTION_15           0x55
-# define SVM_EXIT_EXCEPTION_16           0x56
-# define SVM_EXIT_EXCEPTION_17           0x57
-# define SVM_EXIT_EXCEPTION_18           0x58
-# define SVM_EXIT_EXCEPTION_19           0x59
-# define SVM_EXIT_EXCEPTION_1A           0x5A
-# define SVM_EXIT_EXCEPTION_1B           0x5B
-# define SVM_EXIT_EXCEPTION_1C           0x5C
-# define SVM_EXIT_EXCEPTION_1D           0x5D
-# define SVM_EXIT_EXCEPTION_1E           0x5E
-# define SVM_EXIT_EXCEPTION_1F           0x5F
+# define SVM_EXIT_EXCEPTION_10           0x4A
+# define SVM_EXIT_EXCEPTION_11           0x4B
+# define SVM_EXIT_EXCEPTION_12           0x4C
+# define SVM_EXIT_EXCEPTION_13           0x4D
+# define SVM_EXIT_EXCEPTION_14           0x4E
+# define SVM_EXIT_EXCEPTION_15           0x4F
+# define SVM_EXIT_EXCEPTION_16           0x50
+# define SVM_EXIT_EXCEPTION_17           0x51
+# define SVM_EXIT_EXCEPTION_18           0x52
+# define SVM_EXIT_EXCEPTION_19           0x53
+# define SVM_EXIT_EXCEPTION_20           0x54
+# define SVM_EXIT_EXCEPTION_21           0x55
+# define SVM_EXIT_EXCEPTION_22           0x56
+# define SVM_EXIT_EXCEPTION_23           0x57
+# define SVM_EXIT_EXCEPTION_24           0x58
+# define SVM_EXIT_EXCEPTION_25           0x59
+# define SVM_EXIT_EXCEPTION_26           0x5A
+# define SVM_EXIT_EXCEPTION_27           0x5B
+# define SVM_EXIT_EXCEPTION_28           0x5C
+# define SVM_EXIT_EXCEPTION_29           0x5D
+# define SVM_EXIT_EXCEPTION_30           0x5E
+# define SVM_EXIT_EXCEPTION_31           0x5F
 /** Physical maskable interrupt. */
 # define SVM_EXIT_INTR                   0x60
 /** Non-maskable interrupt. */
@@ -340,7 +340,7 @@
 /** Intercept VINTR (virtual maskable interrupt). */
 #define SVM_CTRL_INTERCEPT_VINTR              RT_BIT_64(4)
 /** Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
-#define SVM_CTRL_INTERCEPT_CR0                RT_BIT_64(5)
+#define SVM_CTRL_INTERCEPT_CR0_SEL_WRITES     RT_BIT_64(5)
 /** Intercept reads of IDTR. */
 #define SVM_CTRL_INTERCEPT_IDTR_READS         RT_BIT_64(6)
 /** Intercept reads of GDTR. */
@@ -384,9 +384,9 @@
 /** Intercept INVLPGA instruction. */
 #define SVM_CTRL_INTERCEPT_INVLPGA            RT_BIT_64(26)
 /** IOIO_PROT Intercept IN/OUT accesses to selected ports. */
-#define SVM_CTRL_INTERCEPT_INOUT_BITMAP       RT_BIT_64(27)
+#define SVM_CTRL_INTERCEPT_IOIO_PROT          RT_BIT_64(27)
 /** MSR_PROT Intercept RDMSR or WRMSR accesses to selected MSRs. */
-#define SVM_CTRL_INTERCEPT_MSR_SHADOW         RT_BIT_64(28)
+#define SVM_CTRL_INTERCEPT_MSR_PROT           RT_BIT_64(28)
 /** Intercept task switches. */
 #define SVM_CTRL_INTERCEPT_TASK_SWITCH        RT_BIT_64(29)
 /** FERR_FREEZE: intercept processor "freezing" during legacy FERR handling. */

@@ -585,52 +585,26 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
  */
 static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite)
 {
-    unsigned uBit;
+    uint16_t offMsrpm;
+    uint32_t uMsrpmBit;
+    int rc = hmSvmGetMsrpmOffsetAndBit(uMsr, &offMsrpm, &uMsrpmBit);
+    AssertRC(rc);
+
+    Assert(uMsrpmBit < 0x3fff);
+    Assert(offMsrpm < SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+
     uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+    pbMsrBitmap += offMsrpm;
 
-    /*
-     * Layout:
-     * Byte offset       MSR range
-     * 0x000  - 0x7ff    0x00000000 - 0x00001fff
-     * 0x800  - 0xfff    0xc0000000 - 0xc0001fff
-     * 0x1000 - 0x17ff   0xc0010000 - 0xc0011fff
-     * 0x1800 - 0x1fff           Reserved
-     */
-    if (uMsr <= 0x00001FFF)
-    {
-        /* Pentium-compatible MSRs. */
-        uBit = uMsr * 2;
-    }
-    else if (   uMsr >= 0xC0000000
-             && uMsr <= 0xC0001FFF)
-    {
-        /* AMD Sixth Generation x86 Processor MSRs. */
-        uBit = (uMsr - 0xC0000000) * 2;
-        pbMsrBitmap += 0x800;
-    }
-    else if (   uMsr >= 0xC0010000
-             && uMsr <= 0xC0011FFF)
-    {
-        /* AMD Seventh and Eighth Generation Processor MSRs. */
-        uBit = (uMsr - 0xC0001000) * 2;
-        pbMsrBitmap += 0x1000;
-    }
-    else
-    {
-        AssertFailed();
-        return;
-    }
-
-    Assert(uBit < 0x3fff /* 16 * 1024 - 1 */);
     if (enmRead == SVMMSREXIT_INTERCEPT_READ)
-        ASMBitSet(pbMsrBitmap, uBit);
+        ASMBitSet(pbMsrBitmap, uMsrpmBit);
     else
-        ASMBitClear(pbMsrBitmap, uBit);
+        ASMBitClear(pbMsrBitmap, uMsrpmBit);
 
     if (enmWrite == SVMMSREXIT_INTERCEPT_WRITE)
-        ASMBitSet(pbMsrBitmap, uBit + 1);
+        ASMBitSet(pbMsrBitmap, uMsrpmBit + 1);
     else
-        ASMBitClear(pbMsrBitmap, uBit + 1);
+        ASMBitClear(pbMsrBitmap, uMsrpmBit + 1);
 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
@@ -698,8 +672,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                      | SVM_CTRL_INTERCEPT_CPUID        /* CPUID causes a #VMEXIT. */
                                      | SVM_CTRL_INTERCEPT_RSM          /* RSM causes a #VMEXIT. */
                                      | SVM_CTRL_INTERCEPT_HLT          /* HLT causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_INOUT_BITMAP /* Use the IOPM to cause IOIO #VMEXITs. */
-                                     | SVM_CTRL_INTERCEPT_MSR_SHADOW   /* MSR access not covered by MSRPM causes a #VMEXIT.*/
+                                     | SVM_CTRL_INTERCEPT_IOIO_PROT    /* Use the IOPM to cause IOIO #VMEXITs. */
+                                     | SVM_CTRL_INTERCEPT_MSR_PROT     /* MSR access not covered by MSRPM causes a #VMEXIT.*/
                                      | SVM_CTRL_INTERCEPT_INVLPGA      /* INVLPGA causes a #VMEXIT. */
                                      | SVM_CTRL_INTERCEPT_SHUTDOWN     /* Shutdown events causes a #VMEXIT. */
                                      | SVM_CTRL_INTERCEPT_FERR_FREEZE  /* Intercept "freezing" during legacy FPU handling. */
@@ -3524,25 +3498,25 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_CPUID:
             return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_E:   /* X86_XCPT_PF */
+        case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
             return hmR0SvmExitXcptPF(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
             return hmR0SvmExitXcptNM(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_6:  /* X86_XCPT_UD */
+        case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
             return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_10:  /* X86_XCPT_MF */
+        case SVM_EXIT_EXCEPTION_16:  /* X86_XCPT_MF */
             return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
             return hmR0SvmExitXcptDB(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_11:  /* X86_XCPT_AC */
+        case SVM_EXIT_EXCEPTION_17:  /* X86_XCPT_AC */
             return hmR0SvmExitXcptAC(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_3:  /* X86_XCPT_BP */
+        case SVM_EXIT_EXCEPTION_3:   /* X86_XCPT_BP */
             return hmR0SvmExitXcptBP(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_MONITOR:
@@ -3656,27 +3630,27 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_EXCEPTION_0:             /* X86_XCPT_DE */
                 /*   SVM_EXIT_EXCEPTION_1: */          /* X86_XCPT_DB - Handled above. */
                 case SVM_EXIT_EXCEPTION_2:             /* X86_XCPT_NMI */
-                /* case SVM_EXIT_EXCEPTION_3: */       /* X86_XCPT_BP - Handled above. */
+                /*   SVM_EXIT_EXCEPTION_3: */         /* X86_XCPT_BP - Handled above. */
                 case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
                 case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
-                /* case SVM_EXIT_EXCEPTION_6: */       /* X86_XCPT_UD - Handled above. */
+                /*   SVM_EXIT_EXCEPTION_6: */          /* X86_XCPT_UD - Handled above. */
                 /*   SVM_EXIT_EXCEPTION_7: */          /* X86_XCPT_NM - Handled above. */
                 case SVM_EXIT_EXCEPTION_8:             /* X86_XCPT_DF */
                 case SVM_EXIT_EXCEPTION_9:             /* X86_XCPT_CO_SEG_OVERRUN */
-                case SVM_EXIT_EXCEPTION_A:             /* X86_XCPT_TS */
-                case SVM_EXIT_EXCEPTION_B:             /* X86_XCPT_NP */
-                case SVM_EXIT_EXCEPTION_C:             /* X86_XCPT_SS */
-                case SVM_EXIT_EXCEPTION_D:             /* X86_XCPT_GP */
-                /*   SVM_EXIT_EXCEPTION_E: */          /* X86_XCPT_PF - Handled above. */
-                /*   SVM_EXIT_EXCEPTION_10: */         /* X86_XCPT_MF - Handled above. */
-                /*   SVM_EXIT_EXCEPTION_11: */         /* X86_XCPT_AC - Handled above. */
-                case SVM_EXIT_EXCEPTION_12:            /* X86_XCPT_MC */
-                case SVM_EXIT_EXCEPTION_13:            /* X86_XCPT_XF */
-                case SVM_EXIT_EXCEPTION_F:             /* Reserved */
-                case SVM_EXIT_EXCEPTION_14: case SVM_EXIT_EXCEPTION_15: case SVM_EXIT_EXCEPTION_16:
-                case SVM_EXIT_EXCEPTION_17: case SVM_EXIT_EXCEPTION_18: case SVM_EXIT_EXCEPTION_19:
-                case SVM_EXIT_EXCEPTION_1A: case SVM_EXIT_EXCEPTION_1B: case SVM_EXIT_EXCEPTION_1C:
-                case SVM_EXIT_EXCEPTION_1D: case SVM_EXIT_EXCEPTION_1E: case SVM_EXIT_EXCEPTION_1F:
+                case SVM_EXIT_EXCEPTION_10:            /* X86_XCPT_TS */
+                case SVM_EXIT_EXCEPTION_11:            /* X86_XCPT_NP */
+                case SVM_EXIT_EXCEPTION_12:            /* X86_XCPT_SS */
+                case SVM_EXIT_EXCEPTION_13:            /* X86_XCPT_GP */
+                /*   SVM_EXIT_EXCEPTION_14: */         /* X86_XCPT_PF - Handled above. */
+                case SVM_EXIT_EXCEPTION_15:            /* Reserved. */
+                /*   SVM_EXIT_EXCEPTION_16: */         /* X86_XCPT_MF - Handled above. */
+                /*   SVM_EXIT_EXCEPTION_17: */         /* X86_XCPT_AC - Handled above. */
+                case SVM_EXIT_EXCEPTION_18:            /* X86_XCPT_MC */
+                case SVM_EXIT_EXCEPTION_19:            /* X86_XCPT_XF */
+                case SVM_EXIT_EXCEPTION_20: case SVM_EXIT_EXCEPTION_21: case SVM_EXIT_EXCEPTION_22:
+                case SVM_EXIT_EXCEPTION_23: case SVM_EXIT_EXCEPTION_24: case SVM_EXIT_EXCEPTION_25:
+                case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27: case SVM_EXIT_EXCEPTION_28:
+                case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
                 {
                     PSVMVMCB pVmcb   = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
                     SVMEVENT Event;
@@ -4023,7 +3997,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         bool fReflectingNmi = false;
         if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION)
         {
-            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_1F)
+            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31)
             {
                 uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
 
@@ -4085,7 +4059,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             enmReflect = SVMREFLECTXCPT_XCPT;
             fReflectingNmi = RT_BOOL(pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI);
 
-            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_1F)
+            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31)
             {
                 uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
                 if (uExitVector == X86_XCPT_PF)
@@ -5207,7 +5181,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 
 
 /**
- * \#VMEXIT handler for page-fault exceptions (SVM_EXIT_EXCEPTION_E).
+ * \#VMEXIT handler for page-fault exceptions (SVM_EXIT_EXCEPTION_14).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -5425,7 +5399,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for math-fault exceptions (SVM_EXIT_EXCEPTION_10).
+ * \#VMEXIT handler for math-fault exceptions (SVM_EXIT_EXCEPTION_16).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -5515,7 +5489,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for alignment check exceptions (SVM_EXIT_EXCEPTION_11).
+ * \#VMEXIT handler for alignment check exceptions (SVM_EXIT_EXCEPTION_17).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptAC(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)

@@ -5907,11 +5907,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
         rcStrict = VINF_SUCCESS;
     }
     else if (rcStrict == VERR_SVM_VMEXIT_FAILED)
-    {
-        /** @todo We're supposed to do a "shutdown" but I don't think we have anything
-         *   for that, so a VM reset is probably the closest. */
-        rcStrict = VINF_EM_RESET;
-    }
+        rcStrict = iemInitiateCpuShutdown(pVCpu);
     return rcStrict;
 }
 

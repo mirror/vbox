@@ -175,6 +175,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpd
 }
 
 
+#ifndef IN_RC
 /**
  * Performs the operations necessary that are part of the vmrun instruction
  * execution in the guest.
@@ -496,7 +497,8 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
                  *        NRIP for the nested-guest to calculate the instruction length
                  *        below. */
                 VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
-                if (rcStrict == VINF_SVM_VMEXIT)
+                if (   rcStrict == VINF_SVM_VMEXIT
+                    || rcStrict == VERR_SVM_VMEXIT_FAILED)
                     return rcStrict;
             }
 
@@ -604,7 +606,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
          * Write back the VMCB controls to the guest VMCB in guest physical memory.
          */
         int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb, &pCtx->hwvirt.svm.VmcbCtrl,
-                                      sizeof(pCtx->hwvirt.svm.VmcbCtrl));
+                                          sizeof(pCtx->hwvirt.svm.VmcbCtrl));
         if (RT_SUCCESS(rc))
         {
             /*
@@ -665,6 +667,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
         else
         {
             Log(("HMNstGstSvmVmExit: Writing VMCB at %#RGp failed\n", pCtx->hwvirt.svm.GCPhysVmcb));
+            Assert(!CPUMIsGuestInNestedHwVirtMode(pCtx));
             rc = VERR_SVM_VMEXIT_FAILED;
         }
 
@@ -675,32 +678,6 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
          uExitInfo1, uExitInfo2));
     RT_NOREF2(uExitInfo1, uExitInfo2);
     return VERR_SVM_IPE_5;
-}
-
-
-/**
- * Converts an SVM event type to a TRPM event type.
- *
- * @returns The TRPM event type.
- * @retval  TRPM_32BIT_HACK if the specified type of event isn't among the set
- *          of recognized trap types.
- *
- * @param   pEvent       Pointer to the SVM event.
- */
-VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pEvent)
-{
-    uint8_t const uType = pEvent->n.u3Type;
-    switch (uType)
-    {
-        case SVM_EVENT_EXTERNAL_IRQ:    return TRPM_HARDWARE_INT;
-        case SVM_EVENT_SOFTWARE_INT:    return TRPM_SOFTWARE_INT;
-        case SVM_EVENT_EXCEPTION:
-        case SVM_EVENT_NMI:             return TRPM_TRAP;
-        default:
-            break;
-    }
-    AssertMsgFailed(("HMSvmEventToTrpmEvent: Invalid pending-event type %#x\n", uType));
-    return TRPM_32BIT_HACK;
 }
 
 
@@ -759,5 +736,277 @@ VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx, uint8_t *pu8Interrupt)
         return VINF_SUCCESS;
 
     return VERR_APIC_INTR_MASKED_BY_TPR;
+}
+
+
+/**
+ * Handles nested-guest SVM intercepts and performs the \#VMEXIT if the
+ * intercept is active.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SVM_INTERCEPT_NOT_ACTIVE if the intercept is not active or
+ *          we're not executing a nested-guest.
+ * @retval  VINF_SVM_VMEXIT if the intercept is active and the \#VMEXIT occurred
+ *          successfully.
+ * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
+ *          failed and a shutdown needs to be initiated for the geust.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
+                                                          uint64_t uExitInfo2)
+{
+#define HMSVM_VMEXIT_RET()    do { return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2); } while (0)
+#define HMSVM_CTRL_INTERCEPT_VMEXIT_RET(a_Intercept) \
+    do { \
+        if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, (a_Intercept))) \
+            return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2); \
+        break; \
+    } while (0)
+
+    if (!CPUMIsGuestInNestedHwVirtMode(pCtx))
+        return VINF_HM_INTERCEPT_NOT_ACTIVE;
+
+    switch (uExitCode)
+    {
+        case SVM_EXIT_EXCEPTION_0:  case SVM_EXIT_EXCEPTION_1:  case SVM_EXIT_EXCEPTION_2:  case SVM_EXIT_EXCEPTION_3:
+        case SVM_EXIT_EXCEPTION_4:  case SVM_EXIT_EXCEPTION_5:  case SVM_EXIT_EXCEPTION_6:  case SVM_EXIT_EXCEPTION_7:
+        case SVM_EXIT_EXCEPTION_8:  case SVM_EXIT_EXCEPTION_9:  case SVM_EXIT_EXCEPTION_10: case SVM_EXIT_EXCEPTION_11:
+        case SVM_EXIT_EXCEPTION_12: case SVM_EXIT_EXCEPTION_13: case SVM_EXIT_EXCEPTION_14: case SVM_EXIT_EXCEPTION_15:
+        case SVM_EXIT_EXCEPTION_16: case SVM_EXIT_EXCEPTION_17: case SVM_EXIT_EXCEPTION_18: case SVM_EXIT_EXCEPTION_19:
+        case SVM_EXIT_EXCEPTION_20: case SVM_EXIT_EXCEPTION_21: case SVM_EXIT_EXCEPTION_22: case SVM_EXIT_EXCEPTION_23:
+        case SVM_EXIT_EXCEPTION_24: case SVM_EXIT_EXCEPTION_25: case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27:
+        case SVM_EXIT_EXCEPTION_28: case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
+            if (CPUMIsGuestSvmXcptInterceptSet(pCtx, (X86XCPT)(uExitCode - SVM_EXIT_EXCEPTION_0)))
+                    HMSVM_VMEXIT_RET();
+                break;
+
+        case SVM_EXIT_WRITE_CR0:  case SVM_EXIT_WRITE_CR1:  case SVM_EXIT_WRITE_CR2:  case SVM_EXIT_WRITE_CR3:
+        case SVM_EXIT_WRITE_CR4:  case SVM_EXIT_WRITE_CR5:  case SVM_EXIT_WRITE_CR6:  case SVM_EXIT_WRITE_CR7:
+        case SVM_EXIT_WRITE_CR8:  case SVM_EXIT_WRITE_CR9:  case SVM_EXIT_WRITE_CR10: case SVM_EXIT_WRITE_CR11:
+        case SVM_EXIT_WRITE_CR12: case SVM_EXIT_WRITE_CR13: case SVM_EXIT_WRITE_CR14: case SVM_EXIT_WRITE_CR15:
+            if (CPUMIsGuestSvmWriteCRxInterceptSet(pCtx, uExitCode - SVM_EXIT_WRITE_CR0))
+                HMSVM_VMEXIT_RET();
+            break;
+
+        case SVM_EXIT_READ_CR0:  case SVM_EXIT_READ_CR1:  case SVM_EXIT_READ_CR2:  case SVM_EXIT_READ_CR3:
+        case SVM_EXIT_READ_CR4:  case SVM_EXIT_READ_CR5:  case SVM_EXIT_READ_CR6:  case SVM_EXIT_READ_CR7:
+        case SVM_EXIT_READ_CR8:  case SVM_EXIT_READ_CR9:  case SVM_EXIT_READ_CR10: case SVM_EXIT_READ_CR11:
+        case SVM_EXIT_READ_CR12: case SVM_EXIT_READ_CR13: case SVM_EXIT_READ_CR14: case SVM_EXIT_READ_CR15:
+            if (CPUMIsGuestSvmReadCRxInterceptSet(pCtx, uExitCode - SVM_EXIT_READ_CR0))
+                HMSVM_VMEXIT_RET();
+            break;
+
+        case SVM_EXIT_READ_DR0:  case SVM_EXIT_READ_DR1:  case SVM_EXIT_READ_DR2:  case SVM_EXIT_READ_DR3:
+        case SVM_EXIT_READ_DR4:  case SVM_EXIT_READ_DR5:  case SVM_EXIT_READ_DR6:  case SVM_EXIT_READ_DR7:
+        case SVM_EXIT_READ_DR8:  case SVM_EXIT_READ_DR9:  case SVM_EXIT_READ_DR10: case SVM_EXIT_READ_DR11:
+        case SVM_EXIT_READ_DR12: case SVM_EXIT_READ_DR13: case SVM_EXIT_READ_DR14: case SVM_EXIT_READ_DR15:
+            if (CPUMIsGuestSvmReadDRxInterceptSet(pCtx, uExitCode - SVM_EXIT_READ_DR0))
+                HMSVM_VMEXIT_RET();
+            break;
+
+        case SVM_EXIT_WRITE_DR0:  case SVM_EXIT_WRITE_DR1:  case SVM_EXIT_WRITE_DR2:  case SVM_EXIT_WRITE_DR3:
+        case SVM_EXIT_WRITE_DR4:  case SVM_EXIT_WRITE_DR5:  case SVM_EXIT_WRITE_DR6:  case SVM_EXIT_WRITE_DR7:
+        case SVM_EXIT_WRITE_DR8:  case SVM_EXIT_WRITE_DR9:  case SVM_EXIT_WRITE_DR10: case SVM_EXIT_WRITE_DR11:
+        case SVM_EXIT_WRITE_DR12: case SVM_EXIT_WRITE_DR13: case SVM_EXIT_WRITE_DR14: case SVM_EXIT_WRITE_DR15:
+            if (CPUMIsGuestSvmWriteDRxInterceptSet(pCtx, uExitCode - SVM_EXIT_WRITE_DR0))
+                HMSVM_VMEXIT_RET();
+            break;
+
+        case SVM_EXIT_INTR:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_INTR);
+        case SVM_EXIT_NMI:                 HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_NMI);
+        case SVM_EXIT_SMI:                 HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_SMI);
+        case SVM_EXIT_INIT:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_INIT);
+        case SVM_EXIT_VINTR:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_VINTR);
+        case SVM_EXIT_CR0_SEL_WRITE:       HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_CR0_SEL_WRITES);
+        case SVM_EXIT_IDTR_READ:           HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_IDTR_READS);
+        case SVM_EXIT_GDTR_READ:           HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_GDTR_READS);
+        case SVM_EXIT_LDTR_READ:           HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_LDTR_READS);
+        case SVM_EXIT_TR_READ:             HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_TR_READS);
+        case SVM_EXIT_IDTR_WRITE:          HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_IDTR_WRITES);
+        case SVM_EXIT_GDTR_WRITE:          HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_GDTR_WRITES);
+        case SVM_EXIT_LDTR_WRITE:          HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_LDTR_WRITES);
+        case SVM_EXIT_TR_WRITE:            HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_TR_WRITES);
+        case SVM_EXIT_RDTSC:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_RDTSC);
+        case SVM_EXIT_RDPMC:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_RDPMC);
+        case SVM_EXIT_PUSHF:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_PUSHF);
+        case SVM_EXIT_POPF:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_POPF);
+        case SVM_EXIT_CPUID:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_CPUID);
+        case SVM_EXIT_RSM:                 HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_RSM);
+        case SVM_EXIT_IRET:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_IRET);
+        case SVM_EXIT_SWINT:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_INTN);
+        case SVM_EXIT_INVD:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_INVD);
+        case SVM_EXIT_PAUSE:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_PAUSE);
+        case SVM_EXIT_HLT:                 HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_HLT);
+        case SVM_EXIT_INVLPG:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_INVLPG);
+        case SVM_EXIT_INVLPGA:             HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_INVLPGA);
+        case SVM_EXIT_TASK_SWITCH:         HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_TASK_SWITCH);
+        case SVM_EXIT_FERR_FREEZE:         HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_FERR_FREEZE);
+        case SVM_EXIT_SHUTDOWN:            HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_SHUTDOWN);
+        case SVM_EXIT_VMRUN:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_VMRUN);
+        case SVM_EXIT_VMMCALL:             HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_VMMCALL);
+        case SVM_EXIT_VMLOAD:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_VMLOAD);
+        case SVM_EXIT_VMSAVE:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_VMSAVE);
+        case SVM_EXIT_STGI:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_STGI);
+        case SVM_EXIT_CLGI:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_CLGI);
+        case SVM_EXIT_SKINIT:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_SKINIT);
+        case SVM_EXIT_RDTSCP:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_RDTSCP);
+        case SVM_EXIT_ICEBP:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_ICEBP);
+        case SVM_EXIT_WBINVD:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_WBINVD);
+        case SVM_EXIT_MONITOR:             HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_MONITOR);
+        case SVM_EXIT_MWAIT:               HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_MWAIT);
+        case SVM_EXIT_MWAIT_ARMED:         HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_MWAIT_ARMED);
+        case SVM_EXIT_XSETBV:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_XSETBV);
+
+#if 0
+        case SVM_EXIT_IOIO:
+        {
+            if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT))
+            {
+                SVMIOIOEXIT IOExitInfo;
+                IOExitInfo.u = uExitInfo1;
+                const volatile void *pvIOPM = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
+                uint16_t const offIoBitmap = pVIOPM + (IOExitInfo.n.u16Port / 8);
+                uint16_t const u16Port  = IOExitInfo.n.u16Port;
+                uint8_t  const cbIoSize = IOExitInfo.n.u1OP32 ? 4 : IOExitInfo.n.u1OP16;
+            }
+            break;
+        }
+#endif
+
+        case SVM_EXIT_MSR:
+            AssertMsgFailed(("Use HMSvmNstGstHandleMsrIntercept!\n"));
+            return VERR_SVM_IPE_1;
+
+        case SVM_EXIT_NPF:
+        case SVM_EXIT_AVIC_INCOMPLETE_IPI:
+        case SVM_EXIT_AVIC_NOACCEL:
+            AssertMsgFailed(("Todo Implement.\n"));
+            return VERR_SVM_IPE_1;
+
+        default:
+            AssertMsgFailed(("Unsupported.\n"));
+            return VERR_SVM_IPE_1;
+    }
+
+    return VINF_HM_INTERCEPT_NOT_ACTIVE;
+
+#undef HMSVM_VMEXIT_RET
+#undef HMSVM_CTRL_INTERCEPT_VMEXIT_RET
+}
+
+
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t idMsr, bool fWrite)
+{
+    /*
+     * Check if any MSRs are being intercepted.
+     */
+    if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_MSR_PROT))
+    {
+        Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+        uint64_t const uExitInfo1 = fWrite ? SVM_EXIT1_MSR_WRITE : SVM_EXIT1_MSR_READ;
+
+        /*
+         * Get the byte and bit offset of the permission bits corresponding to the MSR.
+         */
+        uint16_t offMsrpm;
+        uint32_t uMsrpmBit;
+        int rc = hmSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(uMsrpmBit < 0x3fff);
+            Assert(offMsrpm < SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+            if (fWrite)
+                ++uMsrpmBit;
+
+            /*
+             * Check if the bit is set, if so, trigger a #VMEXIT.
+             */
+            uint8_t *pbMsrpm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
+            pbMsrpm += offMsrpm;
+            if (ASMBitTest(pbMsrpm, uMsrpmBit))
+                return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
+        }
+        else
+        {
+            /*
+             * This shouldn't happen, but if it does, cause a #VMEXIT and let the "host" (guest hypervisor) deal with it.
+             */
+            Log(("HMSvmNstGstHandleIntercept: Invalid/out-of-range MSR %#RX32 fWrite=%RTbool\n", idMsr, fWrite));
+            return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
+        }
+    }
+    return VINF_HM_INTERCEPT_NOT_ACTIVE;
+}
+
+VMM_INT_DECL(int) hmSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint32_t *puMsrpmBit)
+{
+    Assert(pbOffMsrpm);
+    Assert(puMsrpmBit);
+
+    /*
+     * MSRPM Layout:
+     * Byte offset          MSR range
+     * 0x000  - 0x7ff       0x00000000 - 0x00001fff
+     * 0x800  - 0xfff       0xc0000000 - 0xc0001fff
+     * 0x1000 - 0x17ff      0xc0010000 - 0xc0011fff
+     * 0x1800 - 0x1fff              Reserved
+     *
+     * Each MSR is represented by 2 permission bits (read and write).
+     */
+    if (idMsr <= 0x00001fff)
+    {
+        /* Pentium-compatible MSRs. */
+        *pbOffMsrpm = 0;
+        *puMsrpmBit = idMsr << 1;
+        return VINF_SUCCESS;
+    }
+
+    if (   idMsr >= 0xc0000000
+        && idMsr <= 0xc0001fff)
+    {
+        /* AMD Sixth Generation x86 Processor MSRs. */
+        *pbOffMsrpm = 0x800;
+        *puMsrpmBit = (idMsr - 0xc0000000) << 1;
+        return VINF_SUCCESS;
+    }
+
+    if (   idMsr >= 0xc0010000
+        && idMsr <= 0xc0011fff)
+    {
+        /* AMD Seventh and Eighth Generation Processor MSRs. */
+        *pbOffMsrpm += 0x1000;
+        *puMsrpmBit = (idMsr - 0xc0001000) << 1;
+        return VINF_SUCCESS;
+    }
+
+    *pbOffMsrpm = 0;
+    *puMsrpmBit = 0;
+    return VERR_OUT_OF_RANGE;
+}
+#endif /* !IN_RC */
+
+
+/**
+ * Converts an SVM event type to a TRPM event type.
+ *
+ * @returns The TRPM event type.
+ * @retval  TRPM_32BIT_HACK if the specified type of event isn't among the set
+ *          of recognized trap types.
+ *
+ * @param   pEvent       Pointer to the SVM event.
+ */
+VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pEvent)
+{
+    uint8_t const uType = pEvent->n.u3Type;
+    switch (uType)
+    {
+        case SVM_EVENT_EXTERNAL_IRQ:    return TRPM_HARDWARE_INT;
+        case SVM_EVENT_SOFTWARE_INT:    return TRPM_SOFTWARE_INT;
+        case SVM_EVENT_EXCEPTION:
+        case SVM_EVENT_NMI:             return TRPM_TRAP;
+        default:
+            break;
+    }
+    AssertMsgFailed(("HMSvmEventToTrpmEvent: Invalid pending-event type %#x\n", uType));
+    return TRPM_32BIT_HACK;
 }
 
