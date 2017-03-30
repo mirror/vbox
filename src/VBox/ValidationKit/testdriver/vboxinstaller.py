@@ -837,7 +837,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 time.sleep(10); # Give related MSI process a chance to clean up after we killed the driver installer.
 
         if self._isProcessPresent('msiexec'):
-            time.sleep(15);     # In the hope that it goes away.
+            time.sleep(120)     # In the hope that it goes away.
             cKilled = self._killProcessesByName('msiexec', 'MSI driver installation');
             if cKilled > 0:
                 time.sleep(16); # fudge.
