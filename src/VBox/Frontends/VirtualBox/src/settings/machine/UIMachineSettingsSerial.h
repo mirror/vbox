@@ -26,9 +26,7 @@
 class QITabWidget;
 class UIMachineSettingsSerialPage;
 struct UIDataSettingsMachineSerial;
-struct UIDataSettingsMachineSerialPort;
-typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineSerialPort;
-typedef UISettingsCachePool<UIDataSettingsMachineSerial, UISettingsCacheMachineSerialPort> UISettingsCacheMachineSerial;
+typedef UISettingsCache<UIDataSettingsMachineSerial> UISettingsCacheMachineSerial;
 
 
 /** Machine settings: Serial page. */
