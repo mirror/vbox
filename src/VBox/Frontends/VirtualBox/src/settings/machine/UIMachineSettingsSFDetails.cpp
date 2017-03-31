@@ -32,7 +32,7 @@
 
 UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(DialogType type,
                                                        bool fEnableSelector, /* for "permanent" checkbox */
-                                                       const SFoldersNameList &usedNames,
+                                                       const QStringList &usedNames,
                                                        QWidget *pParent /* = 0 */)
    : QIWithRetranslateUI2<QIDialog>(pParent)
    , m_type(type)
@@ -139,14 +139,11 @@ void UIMachineSettingsSFDetails::retranslateUi()
 
 void UIMachineSettingsSFDetails::sltValidate()
 {
-    UISharedFolderType resultType = m_fUsePermanent && !mCbPermanent->isChecked() ? ConsoleType : MachineType;
-    SFolderName pair = qMakePair(mLeName->text(), resultType);
-
     mButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!mPsPath->path().isEmpty() &&
                                                          QDir(mPsPath->path()).exists() &&
                                                          !mLeName->text().trimmed().isEmpty() &&
                                                          !mLeName->text().contains(" ") &&
-                                                         !m_usedNames.contains (pair));
+                                                         !m_usedNames.contains(mLeName->text()));
 }
 
 void UIMachineSettingsSFDetails::sltSelectPath()

@@ -32,8 +32,6 @@ struct UIDataSettingsSharedFolders;
 enum UISharedFolderType { MachineType, ConsoleType };
 typedef UISettingsCache<UIDataSettingsSharedFolder> UISettingsCacheSharedFolder;
 typedef UISettingsCachePool<UIDataSettingsSharedFolders, UISettingsCacheSharedFolder> UISettingsCacheSharedFolders;
-typedef QPair<QString, UISharedFolderType> SFolderName;
-typedef QList<SFolderName> SFoldersNameList;
 
 
 /** Machine settings: Shared Folders page. */
@@ -120,8 +118,8 @@ private:
 
     /** Returns the tree-view root item for corresponding shared folder @a type. */
     SFTreeViewItem *root(UISharedFolderType type);
-    /** Returns a list of used shared folder names paired with their types. */
-    SFoldersNameList usedList(bool aIncludeSelected);
+    /** Returns a list of used shared folder names. */
+    QStringList usedList(bool fIncludeSelected);
 
     /** Returns whether the corresponding @a sharedFolderType supported. */
     bool isSharedFolderTypeSupported(UISharedFolderType sharedFolderType) const;

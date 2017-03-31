@@ -750,19 +750,15 @@ SFTreeViewItem *UIMachineSettingsSF::root(UISharedFolderType enmSharedFolderType
     return pRootItem;
 }
 
-SFoldersNameList UIMachineSettingsSF::usedList(bool fIncludeSelected)
+QStringList UIMachineSettingsSF::usedList(bool fIncludeSelected)
 {
     /* Make the used names list: */
-    SFoldersNameList list;
+    QStringList list;
     QTreeWidgetItemIterator it(mTwFolders);
     while (*it)
     {
         if ((*it)->parent() && (fIncludeSelected || !(*it)->isSelected()))
-        {
-            SFTreeViewItem *pItem = static_cast <SFTreeViewItem*>(*it);
-            UISharedFolderType type = (UISharedFolderType)pItem->parentItem()->text(1).toInt();
-            list << qMakePair(pItem->getText(0), type);
-        }
+            list << static_cast<SFTreeViewItem*>(*it)->getText(0);
         ++it;
     }
     return list;

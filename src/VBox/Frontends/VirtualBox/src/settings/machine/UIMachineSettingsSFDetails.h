@@ -40,7 +40,7 @@ public:
 
     UIMachineSettingsSFDetails(DialogType type,
                                bool fEnableSelector, /* for "permanent" checkbox */
-                               const SFoldersNameList &usedNames,
+                               const QStringList &usedNames,
                                QWidget *pParent = 0);
 
     void setPath(const QString &strPath);
@@ -69,9 +69,9 @@ private slots:
 
 private:
 
-    DialogType       m_type;
-    bool             m_fUsePermanent;
-    SFoldersNameList m_usedNames;
+    DialogType   m_type;
+    bool         m_fUsePermanent;
+    QStringList  m_usedNames;
 };
 
 #endif // __UIMachineSettingsSFDetails_h__
