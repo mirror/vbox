@@ -547,7 +547,7 @@ DECLHIDDEN(int) vdQueryFilterBackend(uint32_t idx, PCVDFILTERBACKEND *ppBackend)
  * Returns the filter backend descriptor matching the given identifier if known.
  *
  * @returns VBox status code.
- * @param   pszBackend      The backend identifier to look for.
+ * @param   pszFilter       The filter identifier to look for.
  * @param   ppBackend       Where to store the pointer to the backend descriptor on success.
  */
 DECLHIDDEN(int) vdFindFilterBackend(const char *pszFilter, PCVDFILTERBACKEND *ppBackend)
