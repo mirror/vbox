@@ -55,7 +55,6 @@ protected:
     /** Loads data into the cache from corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     virtual void loadToCacheFrom(QVariant &data) /* override */;
-    void loadToCacheFrom(UISharedFolderType sharedFoldersType);
     /** Loads data into corresponding widgets from the cache,
       * this task SHOULD be performed in the GUI thread only. */
     virtual void getFromCache() /* override */;
@@ -66,9 +65,6 @@ protected:
     /** Saves data from the cache to corresponding external object(s),
       * this task COULD be performed in other than the GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
-    /** Saves data of @a sharedFoldersType from the cache to corresponding external object(s),
-      * this task COULD be performed in other than the GUI thread. */
-    void saveFromCacheTo(UISharedFolderType sharedFoldersType);
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -121,15 +117,15 @@ private:
     /** Returns a list of used shared folder names. */
     QStringList usedList(bool fIncludeSelected);
 
-    /** Returns whether the corresponding @a sharedFolderType supported. */
-    bool isSharedFolderTypeSupported(UISharedFolderType sharedFolderType) const;
+    /** Returns whether the corresponding @a enmSharedFoldersType supported. */
+    bool isSharedFolderTypeSupported(UISharedFolderType enmSharedFoldersType) const;
     /** Updates root item visibility. */
     void updateRootItemsVisibility();
-    /** Defines whether the root item of @a sharedFolderType is @a fVisible. */
-    void setRootItemVisible(UISharedFolderType sharedFolderType, bool fVisible);
+    /** Defines whether the root item of @a enmSharedFoldersType is @a fVisible. */
+    void setRootItemVisible(UISharedFolderType enmSharedFoldersType, bool fVisible);
 
-    /** Gathers a vector of shared folders of the passed @a sharedFoldersType. */
-    CSharedFolderVector getSharedFolders(UISharedFolderType sharedFoldersType);
+    /** Gathers a vector of shared folders of the passed @a enmSharedFoldersType. */
+    CSharedFolderVector getSharedFolders(UISharedFolderType enmSharedFoldersType);
 
     /** Creates shared folder defined by a @a folderCache. */
     bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
