@@ -434,13 +434,14 @@ setup()
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
 
-    if setup_modules; then
+    if test -n "${INSTALL_NO_MODULE_BUILDS}" || setup_modules; then
         mod_succ=0
     else
         mod_succ=1
     fi
     test -n "${QUICKSETUP}" && return "${mod_succ}"
     extra_setup
+    test -n "${INSTALL_NO_MODULE_BUILDS}" && return 0
     if [ "$mod_succ" -eq "0" ]; then
         if running_vboxguest || running_vboxadd; then
             info "You should restart your guest to make sure the new modules are actually used"
