@@ -540,12 +540,10 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
     {
         RT_NOREF(pVCpu);
 
+        /*
+         * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
+         */
         pCtx->hwvirt.svm.fGif = 0;
-#ifdef VBOX_STRICT
-        RT_ZERO(pCtx->hwvirt.svm.VmcbCtrl);
-        RT_ZERO(pCtx->hwvirt.svm.HostState);
-        pCtx->hwvirt.svm.GCPhysVmcb = NIL_RTGCPHYS;
-#endif
 
         /*
          * Save the nested-guest state into the VMCB state-save area.
@@ -576,10 +574,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
         /* Save interrupt shadow of the nested-guest instruction if any. */
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
-        {
-            RT_ZERO(pCtx->hwvirt.svm.VmcbCtrl);
             pCtx->hwvirt.svm.VmcbCtrl.u64IntShadow |= SVM_INTERRUPT_SHADOW_ACTIVE;
-        }
 
         /*
          * Save additional state and intercept information.
