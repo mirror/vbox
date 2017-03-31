@@ -614,7 +614,7 @@ typedef SVMIOIOEXITINFO *PSVMIOIOEXITINFO;
 /** Pointer to a const SVM IOIO exit info. structure. */
 typedef const SVMIOIOEXITINFO *PCSVMIOIOEXITINFO;
 
-/** @name SVMIOIOEXIT.u1Type
+/** @name SVMIOIOEXITINFO.u1Type
  *  @{ */
 /** IO write. */
 #define SVM_IOIO_WRITE                  0
