@@ -285,13 +285,13 @@ const Global::OSType Global::sOSTypes[] =
 
     { "Linux",   "Linux",             "Ubuntu",             "Ubuntu (32-bit)",
       VBOXOSTYPE_Ubuntu,          VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC,
-      1024,  16,  8 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
+      1024,  16, 10 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, AudioControllerType_AC97, AudioCodecType_AD1980  },
 
     { "Linux",   "Linux",             "Ubuntu_64",          "Ubuntu (64-bit)",
       VBOXOSTYPE_Ubuntu_x64,      VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_RTCUTC
                                 | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC,
-      1024,  16,  8 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
+      1024,  16, 10 * _1G64, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, AudioControllerType_AC97, AudioCodecType_AD1980  },
 
     { "Linux",   "Linux",             "Xandros",            "Xandros (32-bit)",
