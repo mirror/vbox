@@ -6223,14 +6223,23 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
         if (FAILED(rc))
             throw rc;
 
+        bool fInsertDiskIntegrityDrv = false;
+        Bstr strDiskIntegrityFlag;
+        rc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableDiskIntegrityDriver").raw(),
+                                    strDiskIntegrityFlag.asOutParam());
+        if (   rc   == S_OK
+            && strDiskIntegrityFlag == "1")
+            fInsertDiskIntegrityDrv = true;
+
         alock.release();
 
         IMediumAttachment *pAttachment = aAttachments[i];
         int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                                   (PFNRT)i_reconfigureMediumAttachment, 13,
+                                   (PFNRT)i_reconfigureMediumAttachment, 14,
                                    this, ptrVM.rawUVM(), pcszDevice, lInstance, enmBus, fUseHostIOCache,
-                                   fBuiltinIOCache, false /* fSetupMerge */, 0 /* uMergeSource */,
-                                   0 /* uMergeTarget */, pAttachment, mMachineState, &rc);
+                                   fBuiltinIOCache, fInsertDiskIntegrityDrv,
+                                   false /* fSetupMerge */, 0 /* uMergeSource */, 0 /* uMergeTarget */,
+                                   pAttachment, mMachineState, &rc);
         if (RT_FAILURE(vrc))
             throw setError(E_FAIL, tr("%Rrc"), vrc);
         if (FAILED(rc))
