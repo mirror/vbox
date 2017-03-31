@@ -16,17 +16,13 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# This is a stub installation script to be included in VirtualBox Makeself
-# installers which removes any previous installations of the package, unpacks
-# the package into the filesystem (by default under /opt) and starts the real
-# installation script.
-#
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
 # Note: These variable names must *not* clash with variables in $CONFIG_DIR/$CONFIG!
 PACKAGE="VBoxGuestAdditions"
 PACKAGE_NAME="VirtualBox Guest Additions"
 UNINSTALL="uninstall.sh"
+PUBLIC_UNINSTALL_HOOK="/usr/sbin/vbox-uninstall-guest-additions"
 ROUTINES="routines.sh"
 INSTALLATION_VER="_VERSION_"
 BUILD_TYPE="_BUILDTYPE_"
@@ -299,6 +295,13 @@ do
 done
 
 # uninstall any previous installation
+# If the currently installed Additions have provided an uninstallation hook, try
+# that first.
+if test -x "${PUBLIC_UNINSTALL_HOOK}"; then
+  "${PUBLIC_UNINSTALL_HOOK}" 1>&2 || 
+    abort "Failed to remove existing installation.  Aborting..."
+fi
+
 INSTALL_DIR=""
 uninstalled=0
 test -r "$CONFIG_DIR/$CONFIG" &&
@@ -527,6 +530,20 @@ chmod 0755 $INSTALLATION_DIR/$UNINSTALL
 echo $INSTALLATION_DIR/$UNINSTALL >> "$CONFIG_DIR/$CONFIG_FILES"
 test -n "$REMOVE_INSTALLATION_DIR" &&
   echo "$INSTALLATION_DIR/" >> "$CONFIG_DIR/$CONFIG_FILES"
+
+cat > "${PUBLIC_UNINSTALL_HOOK}" << EOF
+#!/bin/sh
+# This executable provides a well-known way to uninstall VirtualBox Guest
+# Additions in order to re-install them from a different source.  A common case
+# is uninstalling distribution-provide Additions to install the version provided
+# by VirtualBox.  Distributions should put the right command in here to do the
+# removal, e.g. "dnf remove VirtualBox-guest-additions".  Leaving kernel modules
+# provided by the distribution kernel package in place is acceptable if the
+# location does not clash with the VirtualBox-provided module location (misc).
+$INSTALLATION_DIR/$UNINSTALL
+EOF
+chmod 0755 "${PUBLIC_UNINSTALL_HOOK}"
+echo "$PUBLIC_UNINSTALL_HOOK" >> "$CONFIG_DIR/$CONFIG_FILES"
 
 # Test for a problem with old Mesa versions which stopped our 3D libraries
 # from working.  Known to affect Debian 7.11, probably OL/RHEL 5.
