@@ -1298,7 +1298,9 @@ void UIMachineSettingsNetworkPage::polishPage()
     {
         m_pTabWidget->setTabEnabled(iSlot,
                                     isMachineOffline() ||
-                                    (isMachineInValidMode() && m_pCache->base().m_adapters.at(iSlot).m_fAdapterEnabled));
+                                    (isMachineInValidMode() &&
+                                     m_pCache->base().m_adapters.size() > iSlot &&
+                                     m_pCache->base().m_adapters.at(iSlot).m_fAdapterEnabled));
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
         pTab->polishTab();
     }
