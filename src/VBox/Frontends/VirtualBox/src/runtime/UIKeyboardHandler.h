@@ -49,7 +49,9 @@ class WinAltGrMonitor;
 #ifdef VBOX_WS_X11
 # if QT_VERSION < 0x050000
 typedef union _XEvent XEvent;
-# endif /* QT_VERSION < 0x050000 */
+#else
+#  include <xcb/xcb.h>
+# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_X11 */
 
 
@@ -242,7 +244,12 @@ protected:
     WinAltGrMonitor *m_pAltGrMonitor;
     /** Win: Holds the keyboard handler reference to be accessible from the keyboard hook. */
     static UIKeyboardHandler *m_spKeyboardHandler;
-#endif /* VBOX_WS_WIN */
+#elif defined(VBOX_WS_X11)
+# if QT_VERSION >= 0x050000
+    /** The root window at the time we grab the mouse buttons. */
+    xcb_window_t m_hButtonGrabWindow;
+# endif
+#endif /* VBOX_WS_X11 */
 
     ULONG m_cMonitors;
 };
