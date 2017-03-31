@@ -41,11 +41,12 @@
         <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
     </Custom>
 
+    <!-- Finally uninstall the driver, but only on package uninstall -->
     <Custom Action="ca_UninstallNetAdp6Args" Before="ca_UninstallNetAdp6" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
+        <![CDATA[NOT (UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
     </Custom>
     <Custom Action="ca_UninstallNetAdp6" After="ca_StopHostOnlyInterfacesNDIS6" >
-        <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
+        <![CDATA[NOT (UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
     </Custom>
 
 <?endif ?>
