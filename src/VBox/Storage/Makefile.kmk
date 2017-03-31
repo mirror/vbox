@@ -37,6 +37,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
 
  StorageLib_SOURCES  = \
 	VD.cpp \
+	VDPlugin.cpp \
 	VDVfs.cpp \
 	VDIfVfs.cpp \
 	VDIfVfs2.cpp \

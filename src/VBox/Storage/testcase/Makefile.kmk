@@ -120,6 +120,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  vbox-img_SOURCES = \
 	vbox-img.cpp \
 	../VD.cpp \
+	../VDPlugin.cpp \
 	../VDVfs.cpp \
 	../VDI.cpp \
 	../VMDK.cpp \

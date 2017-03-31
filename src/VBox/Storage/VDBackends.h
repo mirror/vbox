@@ -23,6 +23,8 @@
 
 #include <VBox/vd-plugin.h>
 
+#include <iprt/cdefs.h>
+
 RT_C_DECLS_BEGIN
 
 extern const VDIMAGEBACKEND g_RawBackend;
