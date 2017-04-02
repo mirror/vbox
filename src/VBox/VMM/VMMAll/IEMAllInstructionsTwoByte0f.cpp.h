@@ -5796,6 +5796,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxsave,   uint8_t, bRm)
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
     IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fxsave, iEffSeg, GCPtrEff, enmEffOpSize);
     IEM_MC_END();
@@ -5816,6 +5817,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
     IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
     IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
     IEM_MC_CALL_CIMPL_3(iemCImpl_fxrstor, iEffSeg, GCPtrEff, enmEffOpSize);
     IEM_MC_END();
@@ -5826,8 +5828,35 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
 /** Opcode 0x0f 0xae mem/2. */
 FNIEMOP_STUB_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm);
 
-/** Opcode 0x0f 0xae mem/3. */
-FNIEMOP_STUB_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm);
+
+/**
+ * @opmaps      grp15
+ * @opcode      !11/3
+ * @oppfx       none
+ * @opcpuid     sse
+ * @opgroup     og_cachectl
+ * @optest      mxcsr=0      -> op1=0
+ * @optest      mxcsr=0x2083 -> op1=0x2083
+ * @oponlytest
+ */
+FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC1(M_MEM, STMXCSR, stmxcsr, MdWO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse)
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(2, 1);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_stmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0x0f 0xae mem/4. */
 FNIEMOP_UD_STUB_1(iemOp_Grp15_xsave,    uint8_t, bRm);
@@ -5840,7 +5869,7 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
 
 /**
  * @opmaps      grp15
- * @opcode      /7
+ * @opcode      !11/7
  * @oppfx       none
  * @opcpuid     clfsh
  * @opgroup     og_cachectl
@@ -5865,7 +5894,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_clflush,  uint8_t, bRm)
 
 /**
  * @opmaps      grp15
- * @opcode      /7
+ * @opcode      !11/7
  * @oppfx       0x66
  * @opcpuid     clflushopt
  * @opgroup     og_cachectl
@@ -6558,7 +6587,6 @@ FNIEMOP_STUB(iemOp_popcnt_Gv_Ev);
  * @opcode      0xb9
  * @opinvalid   intel-modrm
  * @optest      op1=1 op2=2 ->
- * @oponlytest
  */
 FNIEMOP_DEF(iemOp_Grp10)
 {

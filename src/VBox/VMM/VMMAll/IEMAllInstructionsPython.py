@@ -174,6 +174,7 @@ g_kdOpTypes = {
     # ModR/M.rm - memory only.
     'Ma':   ( 'IDX_UseModRM',       'rm',     '%Ma',  'Ma',      ), ##< Only used by BOUND.
     'MbRO': ( 'IDX_UseModRM',       'rm',     '%Mb',  'Mb',      ),
+    'MdWO': ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'Mq':   ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
 
     # ModR/M.reg
@@ -846,6 +847,132 @@ class TestInOut(object):
         'oz.r13':       ( 'uint', 'both',   ),
         'oz.r14':       ( 'uint', 'both',   ),
         'oz.r15':       ( 'uint', 'both',   ),
+        # FPU Registers
+        'fcw':          ( 'uint', 'both',   ),
+        'fsw':          ( 'uint', 'both',   ),
+        'ftw':          ( 'uint', 'both',   ),
+        'fop':          ( 'uint', 'both',   ),
+        'fpuip':        ( 'uint', 'both',   ),
+        'fpucs':        ( 'uint', 'both',   ),
+        'fpudp':        ( 'uint', 'both',   ),
+        'fpuds':        ( 'uint', 'both',   ),
+        'mxcsr':        ( 'uint', 'both',   ),
+        'st0':          ( 'uint', 'both',   ),
+        'st1':          ( 'uint', 'both',   ),
+        'st2':          ( 'uint', 'both',   ),
+        'st3':          ( 'uint', 'both',   ),
+        'st4':          ( 'uint', 'both',   ),
+        'st5':          ( 'uint', 'both',   ),
+        'st6':          ( 'uint', 'both',   ),
+        'st7':          ( 'uint', 'both',   ),
+        # MMX registers.
+        'mm0':          ( 'uint', 'both',   ),
+        'mm1':          ( 'uint', 'both',   ),
+        'mm2':          ( 'uint', 'both',   ),
+        'mm3':          ( 'uint', 'both',   ),
+        'mm4':          ( 'uint', 'both',   ),
+        'mm5':          ( 'uint', 'both',   ),
+        'mm6':          ( 'uint', 'both',   ),
+        'mm7':          ( 'uint', 'both',   ),
+        # SSE registers.
+        'xmm0':         ( 'uint', 'both',   ),
+        'xmm1':         ( 'uint', 'both',   ),
+        'xmm2':         ( 'uint', 'both',   ),
+        'xmm3':         ( 'uint', 'both',   ),
+        'xmm4':         ( 'uint', 'both',   ),
+        'xmm5':         ( 'uint', 'both',   ),
+        'xmm6':         ( 'uint', 'both',   ),
+        'xmm7':         ( 'uint', 'both',   ),
+        'xmm8':         ( 'uint', 'both',   ),
+        'xmm9':         ( 'uint', 'both',   ),
+        'xmm10':        ( 'uint', 'both',   ),
+        'xmm11':        ( 'uint', 'both',   ),
+        'xmm12':        ( 'uint', 'both',   ),
+        'xmm13':        ( 'uint', 'both',   ),
+        'xmm14':        ( 'uint', 'both',   ),
+        'xmm15':        ( 'uint', 'both',   ),
+        'xmm0.lo':      ( 'uint', 'both',   ),
+        'xmm1.lo':      ( 'uint', 'both',   ),
+        'xmm2.lo':      ( 'uint', 'both',   ),
+        'xmm3.lo':      ( 'uint', 'both',   ),
+        'xmm4.lo':      ( 'uint', 'both',   ),
+        'xmm5.lo':      ( 'uint', 'both',   ),
+        'xmm6.lo':      ( 'uint', 'both',   ),
+        'xmm7.lo':      ( 'uint', 'both',   ),
+        'xmm8.lo':      ( 'uint', 'both',   ),
+        'xmm9.lo':      ( 'uint', 'both',   ),
+        'xmm10.lo':     ( 'uint', 'both',   ),
+        'xmm11.lo':     ( 'uint', 'both',   ),
+        'xmm12.lo':     ( 'uint', 'both',   ),
+        'xmm13.lo':     ( 'uint', 'both',   ),
+        'xmm14.lo':     ( 'uint', 'both',   ),
+        'xmm15.lo':     ( 'uint', 'both',   ),
+        'xmm0.hi':      ( 'uint', 'both',   ),
+        'xmm1.hi':      ( 'uint', 'both',   ),
+        'xmm2.hi':      ( 'uint', 'both',   ),
+        'xmm3.hi':      ( 'uint', 'both',   ),
+        'xmm4.hi':      ( 'uint', 'both',   ),
+        'xmm5.hi':      ( 'uint', 'both',   ),
+        'xmm6.hi':      ( 'uint', 'both',   ),
+        'xmm7.hi':      ( 'uint', 'both',   ),
+        'xmm8.hi':      ( 'uint', 'both',   ),
+        'xmm9.hi':      ( 'uint', 'both',   ),
+        'xmm10.hi':     ( 'uint', 'both',   ),
+        'xmm11.hi':     ( 'uint', 'both',   ),
+        'xmm12.hi':     ( 'uint', 'both',   ),
+        'xmm13.hi':     ( 'uint', 'both',   ),
+        'xmm14.hi':     ( 'uint', 'both',   ),
+        'xmm15.hi':     ( 'uint', 'both',   ),
+        'xmm0.lo.zx':   ( 'uint', 'both',   ),
+        'xmm1.lo.zx':   ( 'uint', 'both',   ),
+        'xmm2.lo.zx':   ( 'uint', 'both',   ),
+        'xmm3.lo.zx':   ( 'uint', 'both',   ),
+        'xmm4.lo.zx':   ( 'uint', 'both',   ),
+        'xmm5.lo.zx':   ( 'uint', 'both',   ),
+        'xmm6.lo.zx':   ( 'uint', 'both',   ),
+        'xmm7.lo.zx':   ( 'uint', 'both',   ),
+        'xmm8.lo.zx':   ( 'uint', 'both',   ),
+        'xmm9.lo.zx':   ( 'uint', 'both',   ),
+        'xmm10.lo.zx':  ( 'uint', 'both',   ),
+        'xmm11.lo.zx':  ( 'uint', 'both',   ),
+        'xmm12.lo.zx':  ( 'uint', 'both',   ),
+        'xmm13.lo.zx':  ( 'uint', 'both',   ),
+        'xmm14.lo.zx':  ( 'uint', 'both',   ),
+        'xmm15.lo.zx':  ( 'uint', 'both',   ),
+        'xmm0.dw0':     ( 'uint', 'both',   ),
+        'xmm1.dw0':     ( 'uint', 'both',   ),
+        'xmm2.dw0':     ( 'uint', 'both',   ),
+        'xmm3.dw0':     ( 'uint', 'both',   ),
+        'xmm4.dw0':     ( 'uint', 'both',   ),
+        'xmm5.dw0':     ( 'uint', 'both',   ),
+        'xmm6.dw0':     ( 'uint', 'both',   ),
+        'xmm7.dw0':     ( 'uint', 'both',   ),
+        'xmm8.dw0':     ( 'uint', 'both',   ),
+        'xmm9.dw0':     ( 'uint', 'both',   ),
+        'xmm10.dw0':    ( 'uint', 'both',   ),
+        'xmm11.dw0':    ( 'uint', 'both',   ),
+        'xmm12.dw0':    ( 'uint', 'both',   ),
+        'xmm13.dw0':    ( 'uint', 'both',   ),
+        'xmm14.dw0':    ( 'uint', 'both',   ),
+        'xmm15_dw0':    ( 'uint', 'both',   ),
+        # AVX registers.
+        'ymm0':         ( 'uint', 'both',   ),
+        'ymm1':         ( 'uint', 'both',   ),
+        'ymm2':         ( 'uint', 'both',   ),
+        'ymm3':         ( 'uint', 'both',   ),
+        'ymm4':         ( 'uint', 'both',   ),
+        'ymm5':         ( 'uint', 'both',   ),
+        'ymm6':         ( 'uint', 'both',   ),
+        'ymm7':         ( 'uint', 'both',   ),
+        'ymm8':         ( 'uint', 'both',   ),
+        'ymm9':         ( 'uint', 'both',   ),
+        'ymm10':        ( 'uint', 'both',   ),
+        'ymm11':        ( 'uint', 'both',   ),
+        'ymm12':        ( 'uint', 'both',   ),
+        'ymm13':        ( 'uint', 'both',   ),
+        'ymm14':        ( 'uint', 'both',   ),
+        'ymm15':        ( 'uint', 'both',   ),
+
         # Special ones.
         'value.xcpt':   ( 'uint', 'output', ),
     };
@@ -1126,8 +1253,17 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
             return int(sOpcode, 16);
 
         # The /r form:
-        if sOpcode[0] == '/' and sOpcode[1].isdigit() and len(sOpcode) == 2:
-            return int(sOpcode[1:]) << 3;
+        if len(sOpcode) == 4 and sOpcode.startswith('/') and sOpcode[-1].isdigit():
+            return int(sOpcode[-1:]) << 3;
+
+        # The 11/r form:
+        if len(sOpcode) == 4 and sOpcode.startswith('11/') and sOpcode[-1].isdigit():
+            return (int(sOpcode[-1:]) << 3) | 0xc0;
+
+        # The !11/r form (returns mod=1):
+        ## @todo this doesn't really work...
+        if len(sOpcode) == 5 and sOpcode.startswith('!11/') and sOpcode[-1].isdigit():
+            return (int(sOpcode[-1:]) << 3) | 0x80;
 
         raise Exception('unsupported opcode byte spec "%s" for %s' % (sOpcode, self,));
 
@@ -1796,7 +1932,11 @@ class SimpleParser(object):
         sOpcode = self.flattenAllSections(aasSections);
         if _isValidOpcodeByte(sOpcode):
             pass;
-        elif len(sOpcode) == 2 and sOpcode[0] == '/' and sOpcode[1] in '012345678':
+        elif len(sOpcode) == 2 and sOpcode.startswith('/') and sOpcode[-1] in '012345678':
+            pass;
+        elif len(sOpcode) == 4 and sOpcode.startswith('11/') and sOpcode[-1] in '012345678':
+            pass;
+        elif len(sOpcode) == 5 and sOpcode.startswith('!11/') and sOpcode[-1] in '012345678':
             pass;
         else:
             return self.errorComment(iTagLine, '%s: invalid opcode: %s' % (sTag, sOpcode,));

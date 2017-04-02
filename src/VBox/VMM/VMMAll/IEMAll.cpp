@@ -6563,7 +6563,8 @@ DECLINLINE(void) iemFpuActualizeStateForChange(PVMCPU pVCpu)
 
 
 /**
- * Hook for actualizing the guest XMM0..15 register state for read only.
+ * Hook for actualizing the guest XMM0..15 and MXCSR register state for read
+ * only.
  *
  * This is necessary in ring-0 and raw-mode context (nop in ring-3).
  *
@@ -6580,7 +6581,8 @@ DECLINLINE(void) iemFpuActualizeSseStateForRead(PVMCPU pVCpu)
 
 
 /**
- * Hook for actualizing the guest XMM0..15 register state for read+write.
+ * Hook for actualizing the guest XMM0..15 and MXCSR register state for
+ * read+write.
  *
  * This is necessary in ring-0 and raw-mode context (nop in ring-3).
  *
@@ -11426,9 +11428,9 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
  * Ensures that we can use the host SSE/FPU in the current context (RC+R0.
  * Ensures the guest SSE state in the CPUMCTX is up to date. */
 #define IEM_MC_PREPARE_SSE_USAGE()              iemFpuPrepareUsageSse(pVCpu)
-/** Actualizes the guest XMM0..15 register state for read-only access. */
+/** Actualizes the guest XMM0..15 and MXCSR register state for read-only access. */
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()   iemFpuActualizeSseStateForRead(pVCpu)
-/** Actualizes the guest XMM0..15 register state for read-write access. */
+/** Actualizes the guest XMM0..15 and MXCSR register state for read-write access. */
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE() iemFpuActualizeSseStateForChange(pVCpu)
 
 /**

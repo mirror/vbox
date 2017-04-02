@@ -404,7 +404,6 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
     /* [BS3CG1DST_FPUDP] = */       2,
     /* [BS3CG1DST_FPUDS] = */       2,
     /* [BS3CG1DST_MXCSR] = */       4,
-    /* [BS3CG1DST_MXCSR_MASK] = */  4,
     /* [BS3CG1DST_ST0] = */         12,
     /* [BS3CG1DST_ST1] = */         12,
     /* [BS3CG1DST_ST2] = */         12,
@@ -632,7 +631,6 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
     /* [BS3CG1DST_FPUDP] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FPUDP),
     /* [BS3CG1DST_FPUDS] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.DS),
     /* [BS3CG1DST_MXCSR] = */       sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.MXCSR),
-    /* [BS3CG1DST_MXCSR_MASK] = */  sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.MXCSR_MASK),
     /* [BS3CG1DST_ST0] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[0]),
     /* [BS3CG1DST_ST1] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[1]),
     /* [BS3CG1DST_ST2] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aRegs[2]),
@@ -1557,6 +1555,19 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_MdWO:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0)) - 1;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off,
+                                               (pThis->abCurInstr[off] & X86_MODRM_REG_MASK) >> X86_MODRM_REG_SHIFT,
+                                               4, 0, BS3CG1OPLOC_MEM_RW);
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
 
         case BS3CG1ENC_FIXED:
             if (iEncoding == 0)
@@ -1825,6 +1836,12 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 1;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM;
+            break;
+
+        case BS3CG1ENC_MODRM_MdWO:
+            pThis->iRmOp             = 0;
+            pThis->aOperands[0].cbOp = 4;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM_RW;
             break;
 
         case BS3CG1ENC_FIXED:
@@ -2674,7 +2691,6 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
                 //CHECK_FIELD(x87.DS,       "FPUDS:  %#06x, expected %#06x");
                 //CHECK_FIELD(x87.Rsrvd2,   "Rsrvd2: %#06x, expected %#06x");
                 CHECK_FIELD(x87.MXCSR,      "MXCSR:  %#010x, expected %#010x");
-                //CHECK_FIELD(x87.MXCSR_MASK, "MXCSR_MASK: %#010x, expected %#010x");
 #undef CHECK_FIELD
                 for (i = 0; i < RT_ELEMENTS(pExpect->Ctx.x87.aRegs); i++)
                     if (   pResult->Ctx.x87.aRegs[i].au64[0] != pExpect->Ctx.x87.aRegs[i].au64[0]
