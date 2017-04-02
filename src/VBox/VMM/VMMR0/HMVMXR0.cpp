@@ -13598,7 +13598,9 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     RT_NOREF_PV(pMixedCtx);
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
-    Assert(pVCpu->hm.s.fUsingDebugLoop);
+    AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVCpu->hm.s.vmx.RealMode.fRealOnV86Active,
+              ("uVector=%#04x u32XcptBitmap=%#010RX32\n",
+               VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo), pVCpu->hm.s.vmx.u32XcptBitmap));
 #endif
 
     /* Re-inject the exception into the guest. This cannot be a double-fault condition which would have been handled in
