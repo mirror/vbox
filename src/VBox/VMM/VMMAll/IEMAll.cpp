@@ -9250,7 +9250,7 @@ IEM_STATIC VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPU pVCpu, PRTUINT128U 
     /* The lazy approach for now... */
     /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
     if (   (GCPtrMem & 15)
-        && !(IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+        && !(IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXCSR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
     PCRTUINT128U pu128Src;
@@ -9283,7 +9283,7 @@ DECL_NO_INLINE(IEM_STATIC, void) iemMemFetchDataU128AlignedSseJmp(PVMCPU pVCpu, 
     /* The lazy approach for now... */
     /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
     if (   (GCPtrMem & 15) == 0
-        || (IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+        || (IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXCSR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
     {
         PCRTUINT128U pu128Src = (PCRTUINT128U)iemMemMapJmp(pVCpu, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
         pu128Dst->au64[0] = pu128Src->au64[0];
@@ -9608,7 +9608,7 @@ IEM_STATIC VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PVMCPU pVCpu, uint8_t iSeg
 {
     /* The lazy approach for now... */
     if (   (GCPtrMem & 15)
-        && !(IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+        && !(IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXCSR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pVCpu);
 
     PRTUINT128U pu128Dst;
@@ -9639,7 +9639,7 @@ iemMemStoreDataU128AlignedSseJmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
 {
     /* The lazy approach for now... */
     if (   (GCPtrMem & 15) == 0
-        || (IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+        || (IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.MXCSR & X86_MXCSR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
     {
         PRTUINT128U pu128Dst = (PRTUINT128U)iemMemMapJmp(pVCpu, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
         pu128Dst->au64[0] = u128Value.au64[0];

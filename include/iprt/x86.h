@@ -2827,50 +2827,50 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 /** @name SSE MXCSR
  * @{ */
 /** Exception Flag: Invalid operation.  */
-#define X86_MXSCR_IE          RT_BIT_32(0)
+#define X86_MXCSR_IE          RT_BIT_32(0)
 /** Exception Flag: Denormalized operand.  */
-#define X86_MXSCR_DE          RT_BIT_32(1)
+#define X86_MXCSR_DE          RT_BIT_32(1)
 /** Exception Flag: Zero divide.  */
-#define X86_MXSCR_ZE          RT_BIT_32(2)
+#define X86_MXCSR_ZE          RT_BIT_32(2)
 /** Exception Flag: Overflow.  */
-#define X86_MXSCR_OE          RT_BIT_32(3)
+#define X86_MXCSR_OE          RT_BIT_32(3)
 /** Exception Flag: Underflow.  */
-#define X86_MXSCR_UE          RT_BIT_32(4)
+#define X86_MXCSR_UE          RT_BIT_32(4)
 /** Exception Flag: Precision.  */
-#define X86_MXSCR_PE          RT_BIT_32(5)
+#define X86_MXCSR_PE          RT_BIT_32(5)
 
 /** Denormals are zero. */
-#define X86_MXSCR_DAZ         RT_BIT_32(6)
+#define X86_MXCSR_DAZ         RT_BIT_32(6)
 
 /** Exception Mask: Invalid operation. */
-#define X86_MXSCR_IM          RT_BIT_32(7)
+#define X86_MXCSR_IM          RT_BIT_32(7)
 /** Exception Mask: Denormalized operand. */
-#define X86_MXSCR_DM          RT_BIT_32(8)
+#define X86_MXCSR_DM          RT_BIT_32(8)
 /** Exception Mask: Zero divide.  */
-#define X86_MXSCR_ZM          RT_BIT_32(9)
+#define X86_MXCSR_ZM          RT_BIT_32(9)
 /** Exception Mask: Overflow.  */
-#define X86_MXSCR_OM          RT_BIT_32(10)
+#define X86_MXCSR_OM          RT_BIT_32(10)
 /** Exception Mask: Underflow.  */
-#define X86_MXSCR_UM          RT_BIT_32(11)
+#define X86_MXCSR_UM          RT_BIT_32(11)
 /** Exception Mask: Precision.  */
-#define X86_MXSCR_PM          RT_BIT_32(12)
+#define X86_MXCSR_PM          RT_BIT_32(12)
 
 /** Rounding control mask. */
-#define X86_MXSCR_RC_MASK     UINT16_C(0x6000)
+#define X86_MXCSR_RC_MASK     UINT16_C(0x6000)
 /** Rounding control: To nearest. */
-#define X86_MXSCR_RC_NEAREST  UINT16_C(0x0000)
+#define X86_MXCSR_RC_NEAREST  UINT16_C(0x0000)
 /** Rounding control: Down. */
-#define X86_MXSCR_RC_DOWN     UINT16_C(0x2000)
+#define X86_MXCSR_RC_DOWN     UINT16_C(0x2000)
 /** Rounding control: Up. */
-#define X86_MXSCR_RC_UP       UINT16_C(0x4000)
+#define X86_MXCSR_RC_UP       UINT16_C(0x4000)
 /** Rounding control: Towards zero. */
-#define X86_MXSCR_RC_ZERO     UINT16_C(0x6000)
+#define X86_MXCSR_RC_ZERO     UINT16_C(0x6000)
 
 /** Flush-to-zero for masked underflow.  */
-#define X86_MXSCR_FZ          RT_BIT_32(15)
+#define X86_MXCSR_FZ          RT_BIT_32(15)
 
 /** Misaligned Exception Mask (AMD MISALIGNSSE).  */
-#define X86_MXSCR_MM          RT_BIT_32(17)
+#define X86_MXCSR_MM          RT_BIT_32(17)
 /** @} */
 
 /**
