@@ -200,6 +200,7 @@ public:
     void cannotACPIShutdownMachine(const CConsole &console) const;
     void cannotPowerDownMachine(const CConsole &console) const;
     void cannotPowerDownMachine(const CProgress &progress, const QString &strMachineName) const;
+    bool confirmStartMultipleMachines(const QString &strNames) const;
 
     /* API: Snapshot warnings: */
     int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;

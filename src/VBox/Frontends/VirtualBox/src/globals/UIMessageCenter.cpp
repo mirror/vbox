@@ -845,6 +845,15 @@ void UIMessageCenter::cannotPowerDownMachine(const CProgress &progress, const QS
           formatErrorInfo(progress));
 }
 
+bool UIMessageCenter::confirmStartMultipleMachines(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>You are about to start all of the following virtual machines:</p>"
+                             "<p><b>%1</b></p><p>This could take some time and consume a lot of "
+                             "host system resources. Do you wish to proceed?</p>").arg(strNames),
+                          "confirmStartMultipleMachines" /* auto-confirm id */);
+}
+
 int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const
 {
     return fAlsoCreateNewSnapshot ?

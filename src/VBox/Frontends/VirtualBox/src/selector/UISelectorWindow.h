@@ -293,6 +293,10 @@ private:
         static bool isAtLeastOneItemInaccessible(const QList<UIVMItem*> &items);
         /** Returns whether at least one of passed @a items is removable. */
         static bool isAtLeastOneItemRemovable(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items can be started. */
+        static bool isAtLeastOneItemCanBeStarted(const QList<UIVMItem*> &items);
+        /** Returns whether at least one of passed @a items can be shown. */
+        static bool isAtLeastOneItemCanBeShown(const QList<UIVMItem*> &items);
         /** Returns whether at least one of passed @a items can be started or shown. */
         static bool isAtLeastOneItemCanBeStartedOrShown(const QList<UIVMItem*> &items);
         /** Returns whether at least one of passed @a items can be discarded. */
