@@ -406,7 +406,7 @@ TMPL_BEGIN_TEXT
         mov     rax, rdi
         shr     rax, 32
         mov     [pRegCtx + BS3REGCTX.rdi + 4], eax
-        ;and     byte [pRegCtx + BS3REGCTX.fbFlags], ~BS3REG_CTX_F_NO_AMD64 - enable later.
+        and     byte [pRegCtx + BS3REGCTX.fbFlags], ~BS3REG_CTX_F_NO_AMD64
 .supplemented_64bit_registers:
 %endif
         ; The rest requires ring-0 (at least during restore).
