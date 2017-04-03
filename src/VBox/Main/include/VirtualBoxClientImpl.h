@@ -70,6 +70,11 @@ private:
     virtual HRESULT i_investigateVirtualBoxObjectCreationFailure(HRESULT hrc);
 #endif
 
+#ifdef VBOX_WITH_SDS
+    DWORD getServiceAccount(const wchar_t* wszServiceName, wchar_t* wszAccountName, size_t cbAccountNameSize);
+    HRESULT isServiceDisabled(const wchar_t* wszServiceName, bool* pOutIsDisabled);
+#endif
+
     static DECLCALLBACK(int) SVCWatcherThread(RTTHREAD ThreadSelf, void *pvUser);
 
     struct Data

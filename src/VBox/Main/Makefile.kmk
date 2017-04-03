@@ -989,7 +989,9 @@ endif
  VBoxClient-x86_LIBS = \
 	$(PATH_STAGE_LIB)/VBoxAPIWrap-x86$(VBOX_SUFF_LIB)
  VBoxClient-x86_LIBS.win = $(NO_SUCH_VARIABLE)
- VBoxClient-x86_LIBS.win.x86 = $(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib
+ VBoxClient-x86_LIBS.win.x86 += \
+    $(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/WbemUuid.Lib
  VBoxClient-x86_CLEAN.win += $(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs
  src-client/win/VBoxClient-x86.rc_DEPS = \
  	$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs \
