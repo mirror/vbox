@@ -1962,13 +1962,13 @@ DECLASM(void) ASMXRstor(struct X86XSAVEAREA const *pXStateArea, uint64_t fCompon
 struct X86FXSTATE;
 /**
  * Save FPU and SSE CPU state.
- * @param   pFxState        Where to save the state.
+ * @param   pXStateArea     Where to save the state.
  */
 DECLASM(void) ASMFxSave(struct X86FXSTATE *pXStateArea);
 
 /**
  * Load FPU and SSE CPU state.
- * @param   pFxState        Where to load the state from.
+ * @param   pXStateArea     Where to load the state from.
  */
 DECLASM(void) ASMFxRstor(struct X86FXSTATE const *pXStateArea);
 
