@@ -44,7 +44,7 @@ bool RTCALL VBoxOglIs3DAccelerationSupported(void)
     RTPROCSTATUS ProcStatus;
     uint64_t StartTS;
 
-#ifdef VBOX_WITH_GCC_SANITIZER
+#ifdef __SANITIZE_ADDRESS__
     /* The OpenGL test tool contains a number of memory leaks which cause it to
      * return failure when run with ASAN unless we disable the leak detector. */
     RTENV env;
@@ -61,7 +61,7 @@ bool RTCALL VBoxOglIs3DAccelerationSupported(void)
     papszArgs[0] = pszVBoxPath;         /* argv[0] */
     AssertRCReturn(rc, false);
 
-#ifndef VBOX_WITH_GCC_SANITIZER
+#ifndef __SANITIZE_ADDRESS__
     rc = RTProcCreate(pszVBoxPath, papszArgs, RTENV_DEFAULT, 0, &Process);
 #else
     rc = RTProcCreate(pszVBoxPath, papszArgs, env, 0, &Process);
