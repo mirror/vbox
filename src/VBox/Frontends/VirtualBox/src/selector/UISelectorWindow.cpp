@@ -68,7 +68,6 @@
 # include "UIExtraDataManager.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIModalWindowManager.h"
-# include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
 #  include "UIWindowMenuManager.h"
@@ -603,81 +602,34 @@ void UISelectorWindow::sltOpenCloneMachineWizard()
 
 void UISelectorWindow::sltPerformStartOrShowMachine()
 {
-    /* Get selected items: */
+    /* Start selected VMs in corresponding mode: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    /* For every selected item: */
-    foreach (UIVMItem *pItem, items)
-    {
-        /* Check if current item could be started/showed: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, QList<UIVMItem*>() << pItem))
-            continue;
-
-        /* Launch/show current VM: */
-        CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine,
-                                   UIVMItem::isItemRunningHeadless(pItem)         ? VBoxGlobal::LaunchMode_Separate :
-                                   qApp->keyboardModifiers() == Qt::ShiftModifier ? VBoxGlobal::LaunchMode_Headless :
-                                                                                    VBoxGlobal::LaunchMode_Default);
-    }
+    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Invalid);
 }
 
 void UISelectorWindow::sltPerformStartMachineNormal()
 {
-    /* Get selected items: */
+    /* Start selected VMs in corresponding mode: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    /* For every selected item: */
-    foreach (UIVMItem *pItem, items)
-    {
-        /* Check if current item could be started/showed: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, QList<UIVMItem*>() << pItem))
-            continue;
-
-        /* Launch/show current VM: */
-        CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Default);
-    }
+    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Default);
 }
 
 void UISelectorWindow::sltPerformStartMachineHeadless()
 {
-    /* Get selected items: */
+    /* Start selected VMs in corresponding mode: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    /* For every selected item: */
-    foreach (UIVMItem *pItem, items)
-    {
-        /* Check if current item could be started/showed: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, QList<UIVMItem*>() << pItem))
-            continue;
-
-        /* Launch/show current VM: */
-        CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Headless);
-    }
+    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Headless);
 }
 
 void UISelectorWindow::sltPerformStartMachineDetachable()
 {
-    /* Get selected items: */
+    /* Start selected VMs in corresponding mode: */
     QList<UIVMItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    /* For every selected item: */
-    foreach (UIVMItem *pItem, items)
-    {
-        /* Check if current item could be started/showed: */
-        if (!isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, QList<UIVMItem*>() << pItem))
-            continue;
-
-        /* Launch/show current VM: */
-        CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate);
-    }
+    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Separate);
 }
 
 void UISelectorWindow::sltPerformDiscardMachineState()
@@ -2052,6 +2004,25 @@ void UISelectorWindow::cleanup()
     cleanupMenuBar();
 }
 
+void UISelectorWindow::performStartOrShowVirtualMachines(const QList<UIVMItem*> &items, VBoxGlobal::LaunchMode enmLaunchMode)
+{
+    /* For every item => check if it could be launched: */
+    foreach (UIVMItem *pItem, items)
+        if (isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, QList<UIVMItem*>() << pItem))
+        {
+            /* Fetch item launch mode: */
+            VBoxGlobal::LaunchMode enmItemLaunchMode = enmLaunchMode;
+            if (enmItemLaunchMode == VBoxGlobal::LaunchMode_Invalid)
+                enmItemLaunchMode = UIVMItem::isItemRunningHeadless(pItem)         ? VBoxGlobal::LaunchMode_Separate :
+                                    qApp->keyboardModifiers() == Qt::ShiftModifier ? VBoxGlobal::LaunchMode_Headless :
+                                                                                     VBoxGlobal::LaunchMode_Default;
+
+            /* Launch current VM: */
+            CMachine machine = pItem->machine();
+            vboxGlobal().launchMachine(machine, enmItemLaunchMode);
+        }
+}
+
 void UISelectorWindow::updateActionsAppearance()
 {
     /* Get current item(s): */
@@ -2209,7 +2180,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable:
         {
             return !m_pPaneChooser->isGroupSavingInProgress() &&
-                   isAtLeastOneItemCanBeStartedOrShowed(items);
+                   isAtLeastOneItemCanBeStartedOrShown(items);
         }
         case UIActionIndexST_M_Group_S_Discard:
         case UIActionIndexST_M_Machine_S_Discard:
@@ -2369,7 +2340,7 @@ bool UISelectorWindow::isAtLeastOneItemRemovable(const QList<UIVMItem*> &items)
 }
 
 /* static */
-bool UISelectorWindow::isAtLeastOneItemCanBeStartedOrShowed(const QList<UIVMItem*> &items)
+bool UISelectorWindow::isAtLeastOneItemCanBeStartedOrShown(const QList<UIVMItem*> &items)
 {
     foreach (UIVMItem *pItem, items)
     {

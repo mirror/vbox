@@ -5042,6 +5042,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
         case LaunchMode_Default:  strType = ""; break;
         case LaunchMode_Separate: strType = vboxGlobal().isSeparateProcess() ? "headless" : "separate"; break;
         case LaunchMode_Headless: strType = "headless"; break;
+        default: AssertFailedReturn(false);
     }
 
     /* Prepare "VM spawning" progress: */

@@ -80,6 +80,7 @@ public:
     /** VM launch modes. */
     enum LaunchMode
     {
+        LaunchMode_Invalid,
         LaunchMode_Default,
         LaunchMode_Headless,
         LaunchMode_Separate

@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
+#include "VBoxGlobal.h"
 
 /* Forward declarations: */
 class CMachine;
@@ -265,6 +266,12 @@ private:
         void cleanup();
     /** @} */
 
+    /** @name VM launching stuff.
+      * @{ */
+        /** Launches or shows virtual machines represented by passed @a items in corresponding @a enmLaunchMode (for launch). */
+        void performStartOrShowVirtualMachines(const QList<UIVMItem*> &items, VBoxGlobal::LaunchMode enmLaunchMode);
+    /** @} */
+
     /** @name Action update stuff.
       * @{ */
         /** Performs update of actions appearance. */
@@ -287,7 +294,7 @@ private:
         /** Returns whether at least one of passed @a items is removable. */
         static bool isAtLeastOneItemRemovable(const QList<UIVMItem*> &items);
         /** Returns whether at least one of passed @a items can be started or shown. */
-        static bool isAtLeastOneItemCanBeStartedOrShowed(const QList<UIVMItem*> &items);
+        static bool isAtLeastOneItemCanBeStartedOrShown(const QList<UIVMItem*> &items);
         /** Returns whether at least one of passed @a items can be discarded. */
         static bool isAtLeastOneItemDiscardable(const QList<UIVMItem*> &items);
         /** Returns whether at least one of passed @a items is started. */
