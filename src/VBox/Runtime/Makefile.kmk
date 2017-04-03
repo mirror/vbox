@@ -707,6 +707,8 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
 	common/asm/ASMXRstor.asm \
+	common/asm/ASMFxSave.asm \
+	common/asm/ASMFxRstor.asm \
 	common/asm/ASMSerializeInstruction-cpuid.asm \
 	common/asm/ASMSerializeInstruction-iret.asm \
 	common/asm/ASMSerializeInstruction-rdtscp.asm \
@@ -726,6 +728,8 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
 	common/asm/ASMXRstor.asm \
+	common/asm/ASMFxSave.asm \
+	common/asm/ASMFxRstor.asm \
 	common/asm/ASMSerializeInstruction-cpuid.asm \
 	common/asm/ASMSerializeInstruction-iret.asm \
 	common/asm/ASMSerializeInstruction-rdtscp.asm \
@@ -1944,6 +1948,8 @@ RuntimeR0_SOURCES.x86 += \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
 	common/asm/ASMXRstor.asm \
+	common/asm/ASMFxSave.asm \
+	common/asm/ASMFxRstor.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm
 RuntimeR0_SOURCES.amd64 += \
@@ -1959,6 +1965,8 @@ RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
 	common/asm/ASMXRstor.asm \
+	common/asm/ASMFxSave.asm \
+	common/asm/ASMFxRstor.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm
 
@@ -2567,6 +2575,8 @@ ifdef VBOX_WITH_RAW_MODE
 	common/asm/ASMSetXcr0.asm \
 	common/asm/ASMXSave.asm \
 	common/asm/ASMXRstor.asm \
+	common/asm/ASMFxSave.asm \
+	common/asm/ASMFxRstor.asm \
 	common/checksum/alt-md5.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
