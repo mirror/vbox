@@ -63,6 +63,7 @@ class InstallTestVm(vboxtestvms.TestVm):
     ## @{
     kf32Bit                 = 0x01;
     kf64Bit                 = 0x02;
+    # most likely for ancient Linux kernels assuming that AMD processors have always an I/O-APIC
     kfReqIoApic             = 0x10;
     kfReqIoApicSmp          = 0x20;
     kfReqPae                = 0x40;
