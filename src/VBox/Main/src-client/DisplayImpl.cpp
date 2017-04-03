@@ -921,7 +921,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
  */
 int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM,
                                    uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags,
-                                   uint32_t xOrigin, uint32_t yOrigin, bool fVGAResize)
+                                   int32_t xOrigin, int32_t yOrigin, bool fVGAResize)
 #endif
 {
     LogRel(("Display::handleDisplayResize: uScreenId=%d pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X flags=0x%X\n", uScreenId,
@@ -1019,9 +1019,25 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     /* Caller must not hold the object lock. */
     AssertReturn(!isWriteLockOnCurrentThread(), VERR_INVALID_STATE);
 
+    /* Note: the old code checked if the video mode was actially chnaged and
+     * did not invalidate the source bitmap if the mode did not change.
+     * The new code always invalidates the source bitmap, i.e. it will
+     * notify the frontend even if nothing actually changed.
+     *
+     * Implementing the filtering is possible but might lead to pfnSetRenderVRAM races
+     * between this method and QuerySourceBitmap. Such races can be avoided by implementing
+     * the @todo below.
+     */
+
     /* Make sure that the VGA device does not access the source bitmap. */
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && mpDrv)
     {
+        /// @todo It is probably more convenient to implement
+        // mpDrv->pUpPort->pfnSetOutputBitmap(pvVRAM, cbScanline, cBits, cx, cy, bool fSet);
+        // and remove IConnector.pbData, cbScanline, cBits, cx, cy.
+        // fSet = false disables rendering and VGA can check
+        // if it is already rendering to a different bitmap, avoiding
+        // enable/disable rendering races.
         mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, false);
 
         mpDrv->IConnector.pbData     = NULL;
@@ -1039,6 +1055,20 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
 
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
 
+    /* Whether the monitor position has changed.
+     * A resize initiated by the VGA device does not change the monitor position.
+     */
+    const bool fNewOrigin =    !fVGAResize
+                            && (   pFBInfo->xOrigin != xOrigin
+                                || pFBInfo->yOrigin != yOrigin);
+
+    /* The event for disabled->enabled transition.
+     * VGA resizes also come when the guest uses VBVA mode. They do not affect pFBInfo->fDisabled.
+     * The primary screen is re-enabled when the guest leaves the VBVA mode in i_displayVBVADisable.
+     */
+    const bool fGuestMonitorChangedEvent =   !fVGAResize
+                                          && (pFBInfo->fDisabled != RT_BOOL(flags & VBVA_SCREEN_F_DISABLED));
+
     /* Reset the update mode. */
     pFBInfo->updateImage.pSourceBitmap.setNull();
     pFBInfo->updateImage.pu8Address = NULL;
@@ -1053,9 +1083,10 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     pFBInfo->u16BitsPerPixel = (uint16_t)bpp;
     pFBInfo->pu8FramebufferVRAM = (uint8_t *)pvVRAM;
     pFBInfo->u32LineSize = cbLine;
-    pFBInfo->flags = flags;
     if (!fVGAResize)
     {
+        /* Fields which are not used in not VBVA modes and not affected by a VGA resize. */
+        pFBInfo->flags = flags;
         pFBInfo->xOrigin = xOrigin;
         pFBInfo->yOrigin = yOrigin;
         pFBInfo->fDisabled = RT_BOOL(flags & VBVA_SCREEN_F_DISABLED);
@@ -1064,6 +1095,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
 
     /* Prepare local vars for the notification code below. */
     ComPtr<IFramebuffer> pFramebuffer = pFBInfo->pFramebuffer;
+    const bool fDisabled = pFBInfo->fDisabled;
 
     alock.release();
 
@@ -1073,6 +1105,26 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         LogFunc(("NotifyChange hr %08X\n", hr));
         NOREF(hr);
     }
+
+    if (fGuestMonitorChangedEvent)
+    {
+        if (fDisabled)
+            fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
+                                         GuestMonitorChangedEventType_Disabled,
+                                         uScreenId,
+                                         0, 0, 0, 0);
+        else
+            fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
+                                         GuestMonitorChangedEventType_Enabled,
+                                         uScreenId,
+                                         xOrigin, yOrigin, w, h);
+    }
+
+    if (fNewOrigin)
+        fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
+                                     GuestMonitorChangedEventType_NewOrigin,
+                                     uScreenId,
+                                     xOrigin, yOrigin, 0, 0);
 
     /* Inform the VRDP server about the change of display parameters. */
     LogRelFlowFunc(("Calling VRDP\n"));
@@ -3358,8 +3410,7 @@ DECLCALLBACK(int) Display::i_displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterf
 #ifndef NEW_RESIZE
     int rc = pThis->i_handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy, VBVA_SCREEN_F_ACTIVE);
 #else
-    int rc = pThis->i_handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy,
-                                          VBVA_SCREEN_F_ACTIVE, 0, 0, true);
+    int rc = pThis->i_handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy, 0, 0, 0, true);
 #endif
 
     /* Restore the flag.  */
@@ -4142,6 +4193,9 @@ DECLCALLBACK(void) Display::i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterfac
         /* Make sure that the primary screen is visible now.
          * The guest can't use VBVA anymore, so only only the VGA device output works.
          */
+#ifdef NEW_RESIZE
+        pFBInfo->flags = 0;
+#endif
         if (pFBInfo->fDisabled)
         {
             pFBInfo->fDisabled = false;
@@ -4526,10 +4580,6 @@ int Display::processVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, v
         i_handleDisplayResize(pScreen->u32ViewIndex, 0, (uint8_t *)NULL, 0,
                               u32Width, u32Height, pScreen->u16Flags, xOrigin, yOrigin, false);
 
-        fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                     GuestMonitorChangedEventType_Disabled,
-                                     pScreen->u32ViewIndex,
-                                     0, 0, 0, 0);
         return VINF_SUCCESS;
     }
 
@@ -4555,32 +4605,6 @@ int Display::processVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, v
         pScreen = &screenInfo;
     }
 
-    /* Resize if VBVA was just enabled or display was in disabled state.
-     * Also if there is no framebuffer, a resize will be required, because the framebuffer was/will be changed.
-     */
-    bool fResize = pFBInfo->fVBVAForceResize || pFBInfo->fDisabled || pFBInfo->pFramebuffer.isNull();
-
-    /* If the screen blanked state is changing, then do a resize request to make sure that the framebuffer
-     * is notified and requests a new source bitmap.
-     */
-    fResize = fResize || RT_BOOL((pScreen->u16Flags ^ pFBInfo->flags) & VBVA_SCREEN_F_BLANK);
-
-    /* Check if this is a real resize or a notification about the screen origin.
-     * The guest uses this VBVAResize call for both.
-     */
-    fResize =    fResize
-              || pFBInfo->u16BitsPerPixel != pScreen->u16BitsPerPixel
-              || pFBInfo->pu8FramebufferVRAM != (uint8_t *)pvVRAM + pScreen->u32StartOffset
-              || pFBInfo->u32LineSize != pScreen->u32LineSize
-              || pFBInfo->w != pScreen->u32Width
-              || pFBInfo->h != pScreen->u32Height;
-
-    bool fNewOrigin =    pFBInfo->xOrigin != pScreen->i32OriginX
-                      || pFBInfo->yOrigin != pScreen->i32OriginY;
-
-    /* The event for disabled->enabled transition. */
-    const bool fGuestMonitorChangedEvent = pFBInfo->fDisabled;
-
     if (fResetInputMapping)
     {
         /// @todo Rename to m* and verify whether some kind of lock is required.
@@ -4592,36 +4616,8 @@ int Display::processVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, v
 
     alock.release();
 
-    if (fNewOrigin || fResize)
-        i_notifyCroglResize(pView, pScreen, pvVRAM);
+    i_notifyCroglResize(pView, pScreen, pvVRAM);
 
-    if (fGuestMonitorChangedEvent)
-        fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                     GuestMonitorChangedEventType_Enabled,
-                                     pScreen->u32ViewIndex,
-                                     pScreen->i32OriginX, pScreen->i32OriginY,
-                                     pScreen->u32Width, pScreen->u32Height);
-
-    if (fNewOrigin)
-        fireGuestMonitorChangedEvent(mParent->i_getEventSource(),
-                                     GuestMonitorChangedEventType_NewOrigin,
-                                     pScreen->u32ViewIndex,
-                                     pScreen->i32OriginX, pScreen->i32OriginY,
-                                     0, 0);
-
-    if (!fResize)
-    {
-        /* No parameters of the framebuffer have actually changed. */
-        if (fNewOrigin)
-        {
-            /* VRDP server still need this notification. */
-            LogRelFlowFunc(("Calling VRDP\n"));
-            mParent->i_consoleVRDPServer()->SendResize();
-        }
-        return VINF_SUCCESS;
-    }
-
-    /* Do a regular resize. */
     return i_handleDisplayResize(pScreen->u32ViewIndex, pScreen->u16BitsPerPixel,
                                  (uint8_t *)pvVRAM + pScreen->u32StartOffset,
                                  pScreen->u32LineSize, pScreen->u32Width, pScreen->u32Height, pScreen->u16Flags,
