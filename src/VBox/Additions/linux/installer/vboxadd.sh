@@ -31,6 +31,15 @@
 ## @todo This file duplicates a lot of script with vboxdrv.sh.  When making
 # changes please try to reduce differences between the two wherever possible.
 
+# Testing:
+# * Should fail if the configuration file is missing or missing INSTALL_[DIR|VER].
+# * vboxadd user and vboxsf groups should be created if they do not exist.
+# * udev rule should be successfully created.
+# * Shared folders can be mounted and auto-mounts accessible to vboxsf group,
+#   including on recent Fedoras with SELinux.
+# * Setting INSTALL_NO_MODULE_BUILDS does not set up modules, users, udev.
+# * rcvboxadd udev sets up udev but not modules, users, shared folders.
+
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
 LOG="/var/log/vboxadd-setup.log"
@@ -110,6 +119,14 @@ config=/var/lib/VBoxGuestAdditions/config
 owner=vboxadd
 group=1
 
+if test -r $config; then
+  . $config
+else
+  fail "Configuration file $config not found"
+fi
+test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
+  fail "Configuration file $config not complete"
+
 running_vboxguest()
 {
     lsmod | grep -q "vboxguest[^_-]"
@@ -183,13 +200,6 @@ start()
     begin "Starting."
     # If we got this far assume that the slow set-up has been done.
     QUICKSETUP=yes
-    if test -r $config; then
-      . $config
-    else
-      fail "Configuration file $config not found"
-    fi
-    test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
-      fail "Configuration file $config not complete"
     uname -r | grep -q -E '^2\.6|^3|^4' 2>/dev/null &&
         ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
         no_udev=1
@@ -320,7 +330,7 @@ setup_modules()
         # If check_module_dependencies.sh fails it prints a message itself.
         "${INSTALL_DIR}"/other/check_module_dependencies.sh 2>&1 &&
             info "Look at $LOG to find out what went wrong"
-        return 1
+        return 0
     fi
     log "Building the shared folder support module"
     if ! $BUILDINTMP \
@@ -328,7 +338,7 @@ setup_modules()
         --module-source $MODULE_SRC/vboxsf \
         --no-print-directory install >> $LOG 2>&1; then
         info  "Look at $LOG to find out what went wrong"
-        return 1
+        return 0
     fi
     log "Building the graphics driver module"
     if ! $BUILDINTMP \
@@ -345,9 +355,7 @@ setup_modules()
     return 0
 }
 
-# Do non-kernel bits needed for the kernel modules to work properly (user
-# creation, udev, mount helper...)
-extra_setup()
+create_vbox_user()
 {
     log "Creating user for the Guest Additions."
     # This is the LSB version of useradd and should work on recent
@@ -356,11 +364,10 @@ extra_setup()
     # And for the others, we choose a UID ourselves
     useradd -d /var/run/vboxadd -g 1 -u 501 -o -s /bin/false vboxadd >/dev/null 2>&1
 
-    # Add a group "vboxsf" for Shared Folders access
-    # All users which want to access the auto-mounted Shared Folders have to
-    # be added to this group.
-    groupadd -r -f vboxsf >/dev/null 2>&1
+}
 
+create_udev_rule()
+{
     # Create udev description file
     if [ -d /etc/udev/rules.d ]; then
         log "Creating udev rule for the Guest Additions kernel module."
@@ -386,9 +393,10 @@ extra_setup()
         echo "KERNEL=${udev_fix}\"vboxguest\", NAME=\"vboxguest\", OWNER=\"vboxadd\", MODE=\"0660\"" > /etc/udev/rules.d/60-vboxadd.rules
         echo "KERNEL=${udev_fix}\"vboxuser\", NAME=\"vboxuser\", OWNER=\"vboxadd\", MODE=\"0666\"" >> /etc/udev/rules.d/60-vboxadd.rules
     fi
+}
 
-    # Put mount.vboxsf in the right place
-    ln -sf "${INSTALL_DIR}/other/mount.vboxsf" /sbin
+create_module_rebuild_script()
+{
     # And a post-installation script for rebuilding modules when a new kernel
     # is installed.
     mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
@@ -406,6 +414,19 @@ rmdir -p /lib/modules/"\$1"/misc 2>/dev/null
 exit 0
 EOF
     chmod 0755 /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
+}
+
+shared_folder_setup()
+{
+    # Add a group "vboxsf" for Shared Folders access
+    # All users which want to access the auto-mounted Shared Folders have to
+    # be added to this group.
+    groupadd -r -f vboxsf >/dev/null 2>&1
+
+    # Put the mount.vboxsf mount helper in the right place.
+    ## @todo It would be nicer if the kernel module just parsed parameters
+    # itself instead of needing a separate binary to do that.
+    ln -sf "${INSTALL_DIR}/other/mount.vboxsf" /sbin
     # SELinux security context for the mount helper.
     if test -e /etc/selinux/config; then
         # This is correct.  semanage maps this to the real path, and it aborts
@@ -420,13 +441,6 @@ EOF
 # setup_script
 setup()
 {
-    if test -r $config; then
-      . $config
-    else
-      fail "Configuration file $config not found"
-    fi
-    test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
-      fail "Configuration file $config not complete"
     export BUILD_TYPE
     export USERNAME
 
@@ -434,33 +448,21 @@ setup()
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
 
-    if test -n "${INSTALL_NO_MODULE_BUILDS}" || setup_modules; then
-        mod_succ=0
-    else
-        mod_succ=1
+    setup_modules
+    create_vbox_user
+    create_udev_rule
+    create_module_rebuild_script
+    test -n "${QUICKSETUP}" && return 0
+    shared_folder_setup
+    if  running_vboxguest || running_vboxadd; then
+        info "Running kernel modules will not be replaced until the system is restarted"
     fi
-    test -n "${QUICKSETUP}" && return "${mod_succ}"
-    extra_setup
-    test -n "${INSTALL_NO_MODULE_BUILDS}" && return 0
-    if [ "$mod_succ" -eq "0" ]; then
-        if running_vboxguest || running_vboxadd; then
-            info "You should restart your guest to make sure the new modules are actually used"
-        fi
-    fi
-    return "${mod_succ}"
+    return 0
 }
 
 # cleanup_script
 cleanup()
 {
-    if test -r $config; then
-      . $config
-      test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
-        fail "Configuration file $config not complete"
-    else
-      fail "Configuration file $config not found"
-    fi
-
     # Delete old versions of VBox modules.
     cleanup_modules
     depmod
@@ -503,11 +505,19 @@ restart)
     restart
     ;;
 setup)
-    setup && start
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        setup
+    else
+        shared_folder_setup
+    fi
+    start
     ;;
 quicksetup)
     QUICKSETUP=yes
     setup
+    ;;
+udev)
+    create_udev_rule
     ;;
 cleanup)
     cleanup
