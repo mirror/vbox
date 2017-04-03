@@ -5824,9 +5824,42 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
     return VINF_SUCCESS;
 }
 
+/**
+ * @opmaps      grp15
+ * @opcode      !11/2
+ * @oppfx       none
+ * @opcpuid     sse
+ * @opgroup     og_cachectl
+ * @optest      op1=0      -> mxcsr=0
+ * @optest      op1=0x2083 -> mxcsr=0x2083
+ * @optest      op1=0xfffffffe -> value.xcpt=0xd
+ * @optest      op1=0x2083 cr0|=ts -> value.xcpt=0x7
+ * @optest      op1=0x2083 cr0|=em -> value.xcpt=0x6
+ * @optest      op1=0x2083 cr0|=mp -> mxcsr=0x2083
+ * @optest      op1=0x2083 cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      op1=0x2083 cr0|=ts,em -> value.xcpt=0x6
+ * @optest      op1=0x2083 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      op1=0x2083 cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      op1=0x2083 cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
+ * @oponlytest
+ */
+FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC1(M_MEM, LDMXCSR, ldmxcsr, MdRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse)
+        return IEMOP_RAISE_INVALID_OPCODE();
 
-/** Opcode 0x0f 0xae mem/2. */
-FNIEMOP_STUB_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm);
+    IEM_MC_BEGIN(2, 0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_ldmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -5834,10 +5867,8 @@ FNIEMOP_STUB_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm);
  * @opcode      !11/3
  * @oppfx       none
  * @opcpuid     sse
- * @opgroup     og_cachectl
- * @optest      mxcsr=0      -> op1=0
- * @optest      mxcsr=0x2083 -> op1=0x2083
- * @oponlytest
+ * @opgroup     og_sse_mxcsrsm
+ * @optest      mxcsr=0 op1=0x2083 -> mxcsr=0x2083
  */
 FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
 {
@@ -5845,7 +5876,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse)
         return IEMOP_RAISE_INVALID_OPCODE();
 
-    IEM_MC_BEGIN(2, 1);
+    IEM_MC_BEGIN(2, 0);
     IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);

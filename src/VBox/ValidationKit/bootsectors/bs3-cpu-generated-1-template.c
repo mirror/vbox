@@ -395,6 +395,9 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
     /* [BS3CG1DST_OZ_R14] = */  BS3CG1DSTSIZE_OPERAND_SIZE_GRP,
     /* [BS3CG1DST_OZ_R15] = */  BS3CG1DSTSIZE_OPERAND_SIZE_GRP,
 
+    /* [BS3CG1DST_CR0] = */     4,
+    /* [BS3CG1DST_CR4] = */     4,
+
     /* [BS3CG1DST_FCW] = */         2,
     /* [BS3CG1DST_FSW] = */         2,
     /* [BS3CG1DST_FTW] = */         2,
@@ -621,6 +624,9 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
     /* [BS3CG1DST_OZ_R13] = */      RT_OFFSETOF(BS3REGCTX, r13),
     /* [BS3CG1DST_OZ_R14] = */      RT_OFFSETOF(BS3REGCTX, r14),
     /* [BS3CG1DST_OZ_R15] = */      RT_OFFSETOF(BS3REGCTX, r15),
+
+    /* [BS3CG1DST_CR0] = */         RT_OFFSETOF(BS3REGCTX, cr0),
+    /* [BS3CG1DST_CR4] = */         RT_OFFSETOF(BS3REGCTX, cr4),
 
     /* [BS3CG1DST_FCW] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FCW),
     /* [BS3CG1DST_FSW] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FSW),
@@ -851,6 +857,9 @@ static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
     { "OZ_R14" },
     { "OZ_R15" },
 
+    { "CR0" },
+    { "CR4" },
+
     { "FCW" },
     { "FSW" },
     { "FTW" },
@@ -860,7 +869,6 @@ static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
     { "FPUDP" },
     { "FPUDS" },
     { "MXCSR" },
-    { "MXCSR_M" },
     { "ST0" },
     { "ST1" },
     { "ST2" },
@@ -976,6 +984,7 @@ static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
 
     { "VALXCPT" },
 };
+AssertCompile(RT_ELEMENTS(g_aszBs3Cg1DstFields) >= BS3CG1DST_END);
 AssertCompile(RT_ELEMENTS(g_aszBs3Cg1DstFields) == BS3CG1DST_END);
 
 #endif
@@ -1555,6 +1564,20 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
+        case BS3CG1ENC_MODRM_MdRO:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0)) - 1;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off,
+                                               (pThis->abCurInstr[off] & X86_MODRM_REG_MASK) >> X86_MODRM_REG_SHIFT,
+                                               4, 0, BS3CG1OPLOC_MEM);
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
         case BS3CG1ENC_MODRM_MdWO:
             if (iEncoding == 0)
             {
@@ -1835,6 +1858,12 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
         case BS3CG1ENC_MODRM_MbRO:
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 1;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM;
+            break;
+
+        case BS3CG1ENC_MODRM_MdRO:
+            pThis->iRmOp             = 0;
+            pThis->aOperands[0].cbOp = 4;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM;
             break;
 
@@ -2165,6 +2194,7 @@ static const char BS3_FAR *Bs3Cg1CtxOpToString(uint8_t bOpcode)
         case BS3CG1_CTXOP_OR:       return "|=";
         case BS3CG1_CTXOP_AND:      return "&=";
         case BS3CG1_CTXOP_AND_INV:  return "&~=";
+        default:                    return "?WTF?";
     }
 }
 #endif
@@ -3283,7 +3313,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (!BS3_MODE_IS_RM_OR_V86(bMode))
+    if (bMode != BS3_MODE_PPV86)
         return BS3TESTDOMODE_SKIPPED;
 #endif
 

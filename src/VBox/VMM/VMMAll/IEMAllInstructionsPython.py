@@ -122,6 +122,43 @@ g_kdEFlagsMnemonics = {
     'id':   'X86_EFL_ID',
 };
 
+## Constants and values for CR0.
+g_kdX86Cr0Constants = {
+    'X86_CR0_PE':           0x00000001, # RT_BIT_32(0)
+    'X86_CR0_MP':           0x00000002, # RT_BIT_32(1)
+    'X86_CR0_EM':           0x00000004, # RT_BIT_32(2)
+    'X86_CR0_TS':           0x00000008, # RT_BIT_32(3)
+    'X86_CR0_ET':           0x00000010, # RT_BIT_32(4)
+    'X86_CR0_NE':           0x00000020, # RT_BIT_32(5)
+    'X86_CR0_WP':           0x00010000, # RT_BIT_32(16)
+    'X86_CR0_AM':           0x00040000, # RT_BIT_32(18)
+    'X86_CR0_NW':           0x20000000, # RT_BIT_32(29)
+    'X86_CR0_CD':           0x40000000, # RT_BIT_32(30)
+    'X86_CR0_PG':           0x80000000, # RT_BIT_32(31)
+};
+
+## Constants and values for CR4.
+g_kdX86Cr4Constants = {
+    'X86_CR4_VME':          0x00000001, # RT_BIT_32(0)
+    'X86_CR4_PVI':          0x00000002, # RT_BIT_32(1)
+    'X86_CR4_TSD':          0x00000004, # RT_BIT_32(2)
+    'X86_CR4_DE':           0x00000008, # RT_BIT_32(3)
+    'X86_CR4_PSE':          0x00000010, # RT_BIT_32(4)
+    'X86_CR4_PAE':          0x00000020, # RT_BIT_32(5)
+    'X86_CR4_MCE':          0x00000040, # RT_BIT_32(6)
+    'X86_CR4_PGE':          0x00000080, # RT_BIT_32(7)
+    'X86_CR4_PCE':          0x00000100, # RT_BIT_32(8)
+    'X86_CR4_OSFXSR':       0x00000200, # RT_BIT_32(9)
+    'X86_CR4_OSXMMEEXCPT':  0x00000400, # RT_BIT_32(10)
+    'X86_CR4_VMXE':         0x00002000, # RT_BIT_32(13)
+    'X86_CR4_SMXE':         0x00004000, # RT_BIT_32(14)
+    'X86_CR4_PCIDE':        0x00020000, # RT_BIT_32(17)
+    'X86_CR4_OSXSAVE':      0x00040000, # RT_BIT_32(18)
+    'X86_CR4_SMEP':         0x00100000, # RT_BIT_32(20)
+    'X86_CR4_SMAP':         0x00200000, # RT_BIT_32(21)
+    'X86_CR4_PKE':          0x00400000, # RT_BIT_32(22)
+};
+
 ## \@op[1-4] locations
 g_kdOpLocations = {
     'reg':      [], ## modrm.reg
@@ -174,6 +211,7 @@ g_kdOpTypes = {
     # ModR/M.rm - memory only.
     'Ma':   ( 'IDX_UseModRM',       'rm',     '%Ma',  'Ma',      ), ##< Only used by BOUND.
     'MbRO': ( 'IDX_UseModRM',       'rm',     '%Mb',  'Mb',      ),
+    'MdRO': ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'MdWO': ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'Mq':   ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
 
@@ -728,6 +766,26 @@ class TestTypeEflags(TestType):
                 return True;
         return False;
 
+class TestTypeFromDict(TestType):
+    """
+    Special value parsing for CR0.
+    """
+
+    kdZeroValueFlags = { 'nv': 0, 'pl': 0, 'nz': 0, 'na': 0, 'pe': 0, 'nc': 0, 'di': 0, 'up': 0 };
+
+    def __init__(self, sName, kdConstantsAndValues, sConstantPrefix):
+        TestType.__init__(self, sName, acbSizes = [1, 2, 4, 8], fUnsigned = True);
+        self.kdConstantsAndValues = kdConstantsAndValues;
+        self.sConstantPrefix      = sConstantPrefix;
+
+    def get(self, sValue):
+        fValue = 0;
+        for sFlag in sValue.split(','):
+            fFlagValue = self.kdConstantsAndValues.get(self.sConstantPrefix + sFlag.upper(), None);
+            if fFlagValue is None:
+                raise self.BadValue('Unknown flag "%s" in "%s"' % (sFlag, sValue))
+            fValue |= fFlagValue;
+        return TestType.get(self, '0x%x' % (fValue,));
 
 
 class TestInOut(object):
@@ -750,6 +808,8 @@ class TestInOut(object):
         'uint':  TestType('uint', fUnsigned = True),
         'int':   TestType('int'),
         'efl':   TestTypeEflags('efl'),
+        'cr0':   TestTypeFromDict('cr0', g_kdX86Cr0Constants, 'X86_CR0_'),
+        'cr4':   TestTypeFromDict('cr4', g_kdX86Cr4Constants, 'X86_CR4_'),
     };
     ## CPU context fields.
     kdFields = {
@@ -847,6 +907,9 @@ class TestInOut(object):
         'oz.r13':       ( 'uint', 'both',   ),
         'oz.r14':       ( 'uint', 'both',   ),
         'oz.r15':       ( 'uint', 'both',   ),
+        # Control registers.
+        'cr0':          ( 'cr0',  'both',   ),
+        'cr4':          ( 'cr4',  'both',   ),
         # FPU Registers
         'fcw':          ( 'uint', 'both',   ),
         'fsw':          ( 'uint', 'both',   ),

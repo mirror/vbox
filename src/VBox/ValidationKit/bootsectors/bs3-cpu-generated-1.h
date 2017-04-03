@@ -69,6 +69,7 @@ typedef enum BS3CG1OP
 
     BS3CG1OP_Ma,
     BS3CG1OP_MbRO,
+    BS3CG1OP_MdRO,
     BS3CG1OP_MdWO,
     BS3CG1OP_Mq,
 
@@ -103,6 +104,7 @@ typedef enum BS3CG1ENC
     BS3CG1ENC_MODRM_Vq_Mq,
     BS3CG1ENC_MODRM_Vdq_Wdq,
     BS3CG1ENC_MODRM_MbRO,
+    BS3CG1ENC_MODRM_MdRO,
     BS3CG1ENC_MODRM_MdWO,
 
     BS3CG1ENC_FIXED,
@@ -409,6 +411,10 @@ typedef enum BS3CG1DST
     BS3CG1DST_OZ_R13,
     BS3CG1DST_OZ_R14,
     BS3CG1DST_OZ_R15,
+
+    /* Control registers.*/
+    BS3CG1DST_CR0,
+    BS3CG1DST_CR4,
 
     /* FPU registers. */
     BS3CG1DST_FPU_FIRST,
