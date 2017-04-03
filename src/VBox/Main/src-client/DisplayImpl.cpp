@@ -888,6 +888,23 @@ int Display::i_notifyCroglResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen,
     return VINF_SUCCESS;
 }
 
+#ifndef NEW_RESIZE
+/**
+ *  Handles display resize event.
+ *
+ * @param uScreenId Screen ID
+ * @param bpp       New bits per pixel.
+ * @param pvVRAM    VRAM pointer.
+ * @param cbLine    New bytes per line.
+ * @param w         New display width.
+ * @param h         New display height.
+ * @param flags     Flags of the new video mode.
+ *
+ * @thread EMT
+ */
+int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM,
+                                   uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags)
+#else
 /**
  *  Handles display resize event.
  *
@@ -905,9 +922,99 @@ int Display::i_notifyCroglResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen,
 int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM,
                                    uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags,
                                    uint32_t xOrigin, uint32_t yOrigin, bool fVGAResize)
+#endif
 {
     LogRel(("Display::handleDisplayResize: uScreenId=%d pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X flags=0x%X\n", uScreenId,
             pvVRAM, w, h, bpp, cbLine, flags));
+
+#ifndef NEW_RESIZE
+    if (uScreenId >= mcMonitors)
+        return VINF_SUCCESS;
+
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
+    /* Reset the update mode. */
+    pFBInfo->updateImage.pSourceBitmap.setNull();
+    pFBInfo->updateImage.pu8Address = NULL;
+    pFBInfo->updateImage.cbLine = 0;
+
+    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    {
+        pFBInfo->w = w;
+        pFBInfo->h = h;
+
+        pFBInfo->u16BitsPerPixel = (uint16_t)bpp;
+        pFBInfo->pu8FramebufferVRAM = (uint8_t *)pvVRAM;
+        pFBInfo->u32LineSize = cbLine;
+        pFBInfo->flags = flags;
+    }
+
+    /* Guest screen image will be invalid during resize, make sure that it is not updated. */
+    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    {
+        if (mpDrv)
+        {
+            mpDrv->pUpPort->pfnSetRenderVRAM(mpDrv->pUpPort, false);
+
+            mpDrv->IConnector.pbData     = NULL;
+            mpDrv->IConnector.cbScanline = 0;
+            mpDrv->IConnector.cBits      = 32; /* DevVGA does not work with cBits == 0. */
+            mpDrv->IConnector.cx         = 0;
+            mpDrv->IConnector.cy         = 0;
+        }
+    }
+
+    maFramebuffers[uScreenId].pSourceBitmap.setNull();
+
+    if (!maFramebuffers[uScreenId].pFramebuffer.isNull())
+    {
+        HRESULT hr = maFramebuffers[uScreenId].pFramebuffer->NotifyChange(uScreenId, 0, 0, w, h); /** @todo origin */
+        LogFunc(("NotifyChange hr %08X\n", hr));
+        NOREF(hr);
+    }
+
+    bool fUpdateImage = RT_BOOL(pFBInfo->u32Caps & FramebufferCapabilities_UpdateImage);
+    if (fUpdateImage && !pFBInfo->pFramebuffer.isNull())
+    {
+        ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+        HRESULT hr = QuerySourceBitmap(uScreenId, pSourceBitmap.asOutParam());
+        if (SUCCEEDED(hr))
+        {
+            BYTE *pAddress = NULL;
+            ULONG ulWidth = 0;
+            ULONG ulHeight = 0;
+            ULONG ulBitsPerPixel = 0;
+            ULONG ulBytesPerLine = 0;
+            BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
+
+            hr = pSourceBitmap->QueryBitmapInfo(&pAddress,
+                                                &ulWidth,
+                                                &ulHeight,
+                                                &ulBitsPerPixel,
+                                                &ulBytesPerLine,
+                                                &bitmapFormat);
+            if (SUCCEEDED(hr))
+            {
+                pFBInfo->updateImage.pSourceBitmap = pSourceBitmap;
+                pFBInfo->updateImage.pu8Address = pAddress;
+                pFBInfo->updateImage.cbLine = ulBytesPerLine;
+            }
+        }
+    }
+
+    /* Inform the VRDP server about the change of display parameters. */
+    LogRelFlowFunc(("Calling VRDP\n"));
+    mParent->i_consoleVRDPServer()->SendResize();
+
+    /* And re-send the seamless rectangles if necessary. */
+    if (mfSeamlessEnabled)
+        i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
+
+#ifdef VBOX_WITH_VIDEOREC
+    videoCaptureScreenChanged(uScreenId);
+#endif
+
+#else /* NEW_RESIZE */
 
     /* Caller must not hold the object lock. */
     AssertReturn(!isWriteLockOnCurrentThread(), VERR_INVALID_STATE);
@@ -979,6 +1086,8 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     videoCaptureScreenChanged(uScreenId);
 #endif
 
+#endif /* NEW_RESIZE */
+
     LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
     return VINF_SUCCESS;
@@ -1039,6 +1148,50 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
     /* if (maFramebuffers[uScreenId].flags & VBVA_SCREEN_F_BLANK)
         return; */
 
+#ifndef NEW_RESIZE
+    i_checkCoordBounds(&x, &y, &w, &h, maFramebuffers[uScreenId].w,
+                                       maFramebuffers[uScreenId].h);
+
+    IFramebuffer *pFramebuffer = maFramebuffers[uScreenId].pFramebuffer;
+    if (pFramebuffer != NULL)
+    {
+        if (w != 0 && h != 0)
+        {
+            bool fUpdateImage = RT_BOOL(maFramebuffers[uScreenId].u32Caps & FramebufferCapabilities_UpdateImage);
+            if (RT_LIKELY(!fUpdateImage))
+            {
+                pFramebuffer->NotifyUpdate(x, y, w, h);
+            }
+            else
+            {
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
+                if (!pFBInfo->updateImage.pSourceBitmap.isNull())
+                {
+                    Assert(pFBInfo->updateImage.pu8Address);
+
+                    size_t cbData = w * h * 4;
+                    com::SafeArray<BYTE> image(cbData);
+
+                    uint8_t *pu8Dst = image.raw();
+                    const uint8_t *pu8Src = pFBInfo->updateImage.pu8Address + pFBInfo->updateImage.cbLine * y + x * 4;
+
+                    int i;
+                    for (i = y; i < y + h; ++i)
+                    {
+                        memcpy(pu8Dst, pu8Src, w * 4);
+                        pu8Dst += w * 4;
+                        pu8Src += pFBInfo->updateImage.cbLine;
+                    }
+
+                    pFramebuffer->NotifyUpdateImage(x, y, w, h, ComSafeArrayAsInParam(image));
+                }
+            }
+        }
+    }
+#else /* NEW_RESIZE */
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
     AutoReadLock alockr(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1141,6 +1294,7 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
             }
         }
     }
+#endif /* NEW_RESIZE */
 
 #ifndef VBOX_WITH_HGSMI
     if (!mVideoAccelLegacy.fVideoAccelEnabled)
@@ -1627,6 +1781,14 @@ void Display::i_notifyPowerDown(void)
         DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
         if (!pFBInfo->fDisabled)
         {
+#ifndef NEW_RESIZE
+            i_handleDisplayResize(uScreenId, 32,
+                                  pFBInfo->pu8FramebufferVRAM,
+                                  pFBInfo->u32LineSize,
+                                  pFBInfo->w,
+                                  pFBInfo->h,
+                                  pFBInfo->flags);
+#else
             i_handleDisplayResize(uScreenId, 32,
                                   pFBInfo->pu8FramebufferVRAM,
                                   pFBInfo->u32LineSize,
@@ -1636,6 +1798,7 @@ void Display::i_notifyPowerDown(void)
                                   pFBInfo->xOrigin,
                                   pFBInfo->yOrigin,
                                   false);
+#endif
         }
     }
 }
@@ -1709,6 +1872,15 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
     /* The driver might not have been constructed yet */
     if (mpDrv)
     {
+#ifndef NEW_RESIZE
+        /* Setup the new framebuffer. */
+        i_handleDisplayResize(aScreenId, pFBInfo->u16BitsPerPixel,
+                              pFBInfo->pu8FramebufferVRAM,
+                              pFBInfo->u32LineSize,
+                              pFBInfo->w,
+                              pFBInfo->h,
+                              pFBInfo->flags);
+#else
         /* Inform the framebuffer about the actual screen size. */
         HRESULT hr = aFramebuffer->NotifyChange(aScreenId, 0, 0, pFBInfo->w, pFBInfo->h); /** @todo origin */
         LogFunc(("NotifyChange hr %08X\n", hr)); NOREF(hr);
@@ -1716,6 +1888,7 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
         /* Re-send the seamless rectangles if necessary. */
         if (mfSeamlessEnabled)
             i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
+#endif
     }
 
     Console::SafeVMPtrQuiet ptrVM(mParent);
@@ -2902,6 +3075,50 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
 
     if (pFBInfo->pSourceBitmap.isNull())
     {
+#ifndef NEW_RESIZE
+        /* Create a new object. */
+        ComObjPtr<DisplaySourceBitmap> obj;
+        hr = obj.createObject();
+        if (SUCCEEDED(hr))
+            hr = obj->init(this, aScreenId, pFBInfo);
+
+        if (SUCCEEDED(hr))
+        {
+            bool fDefaultFormat = !obj->i_usesVRAM();
+
+            if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+            {
+                /* Start buffer updates. */
+                BYTE *pAddress = NULL;
+                ULONG ulWidth = 0;
+                ULONG ulHeight = 0;
+                ULONG ulBitsPerPixel = 0;
+                ULONG ulBytesPerLine = 0;
+                BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
+
+                obj->QueryBitmapInfo(&pAddress,
+                                     &ulWidth,
+                                     &ulHeight,
+                                     &ulBitsPerPixel,
+                                     &ulBytesPerLine,
+                                     &bitmapFormat);
+
+                mpDrv->IConnector.pbData     = pAddress;
+                mpDrv->IConnector.cbScanline = ulBytesPerLine;
+                mpDrv->IConnector.cBits      = ulBitsPerPixel;
+                mpDrv->IConnector.cx         = ulWidth;
+                mpDrv->IConnector.cy         = ulHeight;
+
+                fSetRenderVRAM = fDefaultFormat;
+            }
+
+            /* Make sure that the bitmap contains the latest image. */
+            fInvalidate = fDefaultFormat;
+
+            pFBInfo->pSourceBitmap = obj;
+            pFBInfo->fDefaultFormat = fDefaultFormat;
+        }
+#else /* NEW_RESIZE */
         /* Create a new object. */
         ComObjPtr<DisplaySourceBitmap> obj;
         hr = obj.createObject();
@@ -2942,6 +3159,7 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
             /* Make sure that the bitmap contains the latest image. */
             fInvalidate = pFBInfo->fDefaultFormat;
         }
+#endif /* NEW_RESIZE */
     }
 
     if (SUCCEEDED(hr))
@@ -3137,8 +3355,12 @@ DECLCALLBACK(int) Display::i_displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterf
         return VINF_VGA_RESIZE_IN_PROGRESS;
     }
 
+#ifndef NEW_RESIZE
+    int rc = pThis->i_handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy, VBVA_SCREEN_F_ACTIVE);
+#else
     int rc = pThis->i_handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy,
                                           VBVA_SCREEN_F_ACTIVE, 0, 0, true);
+#endif
 
     /* Restore the flag.  */
     f = ASMAtomicCmpXchgBool(&pThis->fVGAResizing, false, true);
@@ -4135,9 +4357,152 @@ DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface,
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
 
+#ifndef NEW_RESIZE
+    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[pScreen->u32ViewIndex];
+
+    if (pScreen->u16Flags & VBVA_SCREEN_F_DISABLED)
+    {
+        pThis->i_notifyCroglResize(pView, pScreen, pvVRAM);
+
+        pFBInfo->fDisabled = true;
+        pFBInfo->flags = pScreen->u16Flags;
+
+        /* Ask the framebuffer to resize using a default format. The framebuffer will be black.
+         * So if the frontend does not support GuestMonitorChangedEventType_Disabled event,
+         * the VM window will be black. */
+        uint32_t u32Width = pFBInfo->w ? pFBInfo->w : 640;
+        uint32_t u32Height = pFBInfo->h ? pFBInfo->h : 480;
+        pThis->i_handleDisplayResize(pScreen->u32ViewIndex, 0, (uint8_t *)NULL, 0,
+                                     u32Width, u32Height, pScreen->u16Flags);
+
+        fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
+                                     GuestMonitorChangedEventType_Disabled,
+                                     pScreen->u32ViewIndex,
+                                     0, 0, 0, 0);
+        return VINF_SUCCESS;
+    }
+
+    VBVAINFOSCREEN screenInfo;
+    RT_ZERO(screenInfo);
+
+    if (pScreen->u16Flags & VBVA_SCREEN_F_BLANK2)
+    {
+        /* Init a local VBVAINFOSCREEN structure, which will be used instead of
+         * the original pScreen. Set VBVA_SCREEN_F_BLANK, which will force
+         * the code below to choose the "blanking" branches.
+         */
+        screenInfo.u32ViewIndex    = pScreen->u32ViewIndex;
+        screenInfo.i32OriginX      = pFBInfo->xOrigin;
+        screenInfo.i32OriginY      = pFBInfo->yOrigin;
+        screenInfo.u32StartOffset  = 0; /* Irrelevant */
+        screenInfo.u32LineSize     = pFBInfo->u32LineSize;
+        screenInfo.u32Width        = pFBInfo->w;
+        screenInfo.u32Height       = pFBInfo->h;
+        screenInfo.u16BitsPerPixel = pFBInfo->u16BitsPerPixel;
+        screenInfo.u16Flags        = pScreen->u16Flags | VBVA_SCREEN_F_BLANK;
+
+        pScreen = &screenInfo;
+    }
+
+    /* If display was disabled or there is no framebuffer, a resize will be required,
+     * because the framebuffer was/will be changed.
+     */
+    bool fResize = pFBInfo->fDisabled || pFBInfo->pFramebuffer.isNull();
+
+    if (pFBInfo->fVBVAForceResize)
+    {
+        /* VBVA was just enabled. Do the resize. */
+        fResize = true;
+        pFBInfo->fVBVAForceResize = false;
+    }
+
+    /* If the screen if blanked, then do a resize request to make sure that the framebuffer
+     * switches to the default format.
+     */
+    fResize = fResize || RT_BOOL((pScreen->u16Flags ^ pFBInfo->flags) & VBVA_SCREEN_F_BLANK);
+
+    /* Check if this is a real resize or a notification about the screen origin.
+     * The guest uses this VBVAResize call for both.
+     */
+    fResize =    fResize
+              || pFBInfo->u16BitsPerPixel != pScreen->u16BitsPerPixel
+              || pFBInfo->pu8FramebufferVRAM != (uint8_t *)pvVRAM + pScreen->u32StartOffset
+              || pFBInfo->u32LineSize != pScreen->u32LineSize
+              || pFBInfo->w != pScreen->u32Width
+              || pFBInfo->h != pScreen->u32Height;
+
+    bool fNewOrigin =    pFBInfo->xOrigin != pScreen->i32OriginX
+                      || pFBInfo->yOrigin != pScreen->i32OriginY;
+
+    if (fNewOrigin || fResize)
+        pThis->i_notifyCroglResize(pView, pScreen, pvVRAM);
+
+    if (pFBInfo->fDisabled)
+    {
+        pFBInfo->fDisabled = false;
+        fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
+                                     GuestMonitorChangedEventType_Enabled,
+                                     pScreen->u32ViewIndex,
+                                     pScreen->i32OriginX, pScreen->i32OriginY,
+                                     pScreen->u32Width, pScreen->u32Height);
+        /* Continue to update pFBInfo. */
+    }
+
+    pFBInfo->u32Offset = pView->u32ViewOffset; /* Not used in HGSMI. */
+    pFBInfo->u32MaxFramebufferSize = pView->u32MaxScreenSize; /* Not used in HGSMI. */
+    pFBInfo->u32InformationSize = 0; /* Not used in HGSMI. */
+
+    pFBInfo->xOrigin = pScreen->i32OriginX;
+    pFBInfo->yOrigin = pScreen->i32OriginY;
+
+    pFBInfo->w = pScreen->u32Width;
+    pFBInfo->h = pScreen->u32Height;
+
+    pFBInfo->u16BitsPerPixel = pScreen->u16BitsPerPixel;
+    pFBInfo->pu8FramebufferVRAM = (uint8_t *)pvVRAM + pScreen->u32StartOffset;
+    pFBInfo->u32LineSize = pScreen->u32LineSize;
+
+    pFBInfo->flags = pScreen->u16Flags;
+
+    if (fResetInputMapping)
+    {
+        pThis->xInputMappingOrigin = 0;
+        pThis->yInputMappingOrigin = 0;
+        pThis->cxInputMapping = 0;
+        pThis->cyInputMapping = 0;
+    }
+
+    if (fNewOrigin)
+    {
+        fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
+                                     GuestMonitorChangedEventType_NewOrigin,
+                                     pScreen->u32ViewIndex,
+                                     pScreen->i32OriginX, pScreen->i32OriginY,
+                                     0, 0);
+    }
+
+    if (!fResize)
+    {
+        /* No parameters of the framebuffer have actually changed. */
+        if (fNewOrigin)
+        {
+            /* VRDP server still need this notification. */
+            LogRelFlowFunc(("Calling VRDP\n"));
+            pThis->mParent->i_consoleVRDPServer()->SendResize();
+        }
+        return VINF_SUCCESS;
+    }
+
+    /* Do a regular resize. */
+    return pThis->i_handleDisplayResize(pScreen->u32ViewIndex, pScreen->u16BitsPerPixel,
+                                        (uint8_t *)pvVRAM + pScreen->u32StartOffset,
+                                        pScreen->u32LineSize, pScreen->u32Width, pScreen->u32Height, pScreen->u16Flags);
+#else /* NEW_RESIZE */
     return pThis->processVBVAResize(pView, pScreen, pvVRAM, fResetInputMapping);
+#endif /* NEW_RESIZE */
 }
 
+#ifdef NEW_RESIZE
 int Display::processVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -4262,6 +4627,7 @@ int Display::processVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, v
                                  pScreen->u32LineSize, pScreen->u32Width, pScreen->u32Height, pScreen->u16Flags,
                                  pScreen->i32OriginX, pScreen->i32OriginY, false);
 }
+#endif /* NEW_RESIZE */
 
 DECLCALLBACK(int) Display::i_displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha,
                                                           uint32_t xHot, uint32_t yHot,
