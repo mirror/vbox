@@ -70,6 +70,8 @@ static bool             g_fIntelNetBurst = false;
 static PRTSTREAM        g_pReportOut;
 /** The alternative debug stream. */
 static PRTSTREAM        g_pDebugOut;
+/** Whether to skip MSR collection.   */
+static bool             g_fNoMsrs = false;
 
 /** Snooping info storage for vbCpuRepGuessScalableBusFrequencyName. */
 static uint64_t         g_uMsrIntelP6FsbFrequency = UINT64_MAX;
@@ -162,16 +164,19 @@ static int vbCpuRepMsrsAddOne(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs,
 static uint8_t vbCpuRepGetPhysAddrWidth(void)
 {
     uint8_t  cMaxWidth;
-    uint32_t cMaxExt = ASMCpuId_EAX(0x80000000);
     if (!ASMHasCpuId())
         cMaxWidth = 32;
-    else if (ASMIsValidExtRange(cMaxExt)&& cMaxExt >= 0x80000008)
-        cMaxWidth = ASMCpuId_EAX(0x80000008) & 0xff;
-    else if (   ASMIsValidStdRange(ASMCpuId_EAX(0))
-             && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PSE36))
-        cMaxWidth = 36;
     else
-        cMaxWidth = 32;
+    {
+        uint32_t cMaxExt = ASMCpuId_EAX(0x80000000);
+        if (ASMIsValidExtRange(cMaxExt)&& cMaxExt >= 0x80000008)
+            cMaxWidth = ASMCpuId_EAX(0x80000008) & 0xff;
+        else if (   ASMIsValidStdRange(ASMCpuId_EAX(0))
+                 && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PSE36))
+            cMaxWidth = 36;
+        else
+            cMaxWidth = 32;
+    }
     return cMaxWidth;
 }
 
@@ -4330,6 +4335,11 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
         vbCpuRepDebug("Skipping MSR probing, CPUID indicates there isn't any MSR support.\n");
         return VINF_SUCCESS;
     }
+    if (g_fNoMsrs)
+    {
+        vbCpuRepDebug("Skipping MSR probing (--no-msr).\n");
+        return VINF_SUCCESS;
+    }
 
     /*
      * Initialize the support library and check if we can read MSRs.
@@ -4717,6 +4727,7 @@ static int produceCpuReport(void)
                    "    /*.uScalableBusFreq = */ CPUM_SBUSFREQ_%s,\n"
                    "    /*.fFlags           = */ 0,\n"
                    "    /*.cMaxPhysAddrWidth= */ %u,\n"
+                   "    /*.fMxCsrMask       = */ %#010x,\n"
                    "    /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_%s),\n"
                    "    /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_%s)),\n"
                    "    /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_%s,\n"
@@ -4739,6 +4750,7 @@ static int produceCpuReport(void)
                    CPUMR3MicroarchName(enmMicroarch),
                    vbCpuRepGuessScalableBusFrequencyName(),
                    vbCpuRepGetPhysAddrWidth(),
+                   CPUMR3DeterminHostMxCsrMask(),
                    szNameC,
                    szNameC,
                    CPUMR3CpuIdUnknownLeafMethodName(enmUnknownMethod),
@@ -4769,6 +4781,7 @@ int main(int argc, char **argv)
     {
         { "--msrs-only", 'm', RTGETOPT_REQ_NOTHING },
         { "--msrs-dev",  'd', RTGETOPT_REQ_NOTHING },
+        { "--no-msrs",   'n', RTGETOPT_REQ_NOTHING },
         { "--output",    'o', RTGETOPT_REQ_STRING  },
         { "--log",       'l', RTGETOPT_REQ_STRING  },
     };
@@ -4800,6 +4813,10 @@ int main(int argc, char **argv)
                 enmOp = kCpuReportOp_MsrsHacking;
                 break;
 
+            case 'n':
+                g_fNoMsrs = true;
+                break;
+
             case 'o':
                 pszOutput = ValueUnion.psz;
                 break;
@@ -4809,7 +4826,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("Usage: VBoxCpuReport [-m|--msrs-only] [-d|--msrs-dev] [-h|--help] [-V|--version] [-o filename.h] [-l debug.log]\n");
+                RTPrintf("Usage: VBoxCpuReport [-m|--msrs-only] [-d|--msrs-dev] [-n|--no-msrs] [-h|--help] [-V|--version] [-o filename.h] [-l debug.log]\n");
                 RTPrintf("Internal tool for gathering information to the VMM CPU database.\n");
                 return RTEXITCODE_SUCCESS;
             case 'V':

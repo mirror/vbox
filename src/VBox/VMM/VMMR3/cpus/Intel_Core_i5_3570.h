@@ -322,6 +322,7 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i5_3570 =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_100MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 36,
+    /*.fMxCsrMask       = */ 0xffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Core_i5_3570),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Core_i5_3570)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,

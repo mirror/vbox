@@ -193,6 +193,7 @@ static CPUMDBENTRY const g_Entry_Intel_Atom_330_1_60GHz =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_133MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 32,
+    /*.fMxCsrMask       = */ 0xffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Atom_330_1_60GHz),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Atom_330_1_60GHz)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF,

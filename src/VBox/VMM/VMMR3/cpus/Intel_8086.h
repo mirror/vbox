@@ -58,6 +58,7 @@ static CPUMDBENTRY const g_Entry_Intel_8086 =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ CPUDB_F_EXECUTE_ALL_IN_IEM,
     /*.cMaxPhysAddrWidth= */ 20,
+    /*.fMxCsrMask       = */ 0,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_8086),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_8086)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_DEFAULTS,

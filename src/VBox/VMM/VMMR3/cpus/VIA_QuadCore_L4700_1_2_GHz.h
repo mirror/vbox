@@ -387,6 +387,7 @@ static CPUMDBENTRY const g_Entry_VIA_QuadCore_L4700_1_2_GHz =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_267MHZ, /*??*/
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 36,
+    /*.fMxCsrMask       = */ 0xffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_VIA_QuadCore_L4700_1_2_GHz),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_VIA_QuadCore_L4700_1_2_GHz)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_DEFAULTS,

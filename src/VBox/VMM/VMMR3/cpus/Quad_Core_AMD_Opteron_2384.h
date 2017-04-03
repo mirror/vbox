@@ -253,6 +253,7 @@ static CPUMDBENTRY const g_Entry_Quad_Core_AMD_Opteron_2384 =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 48,
+    /*.fMxCsrMask       = */ 0x2ffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Quad_Core_AMD_Opteron_2384),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Quad_Core_AMD_Opteron_2384)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_DEFAULTS,

@@ -57,6 +57,8 @@ typedef struct CPUMDBENTRY
     /** The maximum physical address with of the CPU.  This should correspond to
      * the value in CPUID leaf 0x80000008 when present. */
     uint8_t         cMaxPhysAddrWidth;
+    /** The MXCSR mask. */
+    uint32_t        fMxCsrMask;
     /** Pointer to an array of CPUID leaves.  */
     PCCPUMCPUIDLEAF paCpuIdLeaves;
     /** The number of CPUID leaves in the array paCpuIdLeaves points to. */
@@ -66,7 +68,8 @@ typedef struct CPUMDBENTRY
     /** The default unknown CPUID value. */
     CPUMCPUID       DefUnknownCpuId;
 
-    /** MSR mask.  Several microarchitectures ignore higher bits of the    */
+    /** MSR mask.  Several microarchitectures ignore the higher bits of ECX in
+     *  the RDMSR and WRMSR instructions. */
     uint32_t        fMsrMask;
 
     /** The number of ranges in the table pointed to b paMsrRanges. */
@@ -799,6 +802,7 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
         rc = CPUMR3CpuIdCollectLeaves(&pInfo->paCpuIdLeavesR3, &pInfo->cCpuIdLeaves);
         if (RT_FAILURE(rc))
             return rc;
+        pInfo->fMxCsrMask = CPUMR3DeterminHostMxCsrMask();
 
         /* Lookup database entry for MSRs. */
         CPUMCPUVENDOR const enmVendor    = CPUMR3CpuIdDetectVendorEx(pInfo->paCpuIdLeavesR3[0].uEax,
@@ -916,7 +920,8 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
             pInfo->paCpuIdLeavesR3 = NULL;
 
         pInfo->enmUnknownCpuIdMethod = pEntry->enmUnknownCpuId;
-        pInfo->DefCpuId         = pEntry->DefUnknownCpuId;
+        pInfo->DefCpuId              = pEntry->DefUnknownCpuId;
+        pInfo->fMxCsrMask            = pEntry->fMxCsrMask;
 
         LogRel(("CPUM: Using CPU DB entry '%s' (%s %#x/%#x/%#x %s)\n",
                 pEntry->pszName, CPUMR3CpuVendorName((CPUMCPUVENDOR)pEntry->enmVendor),
@@ -925,7 +930,6 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
 
     pInfo->fMsrMask             = pEntry->fMsrMask;
     pInfo->iFirstExtCpuIdLeaf   = 0; /* Set by caller. */
-    pInfo->uPadding             = 0;
     pInfo->uScalableBusFreq     = pEntry->uScalableBusFreq;
     pInfo->paCpuIdLeavesR0      = NIL_RTR0PTR;
     pInfo->paMsrRangesR0        = NIL_RTR0PTR;

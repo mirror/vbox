@@ -207,6 +207,7 @@ static CPUMDBENTRY const g_Entry_AMD_Athlon_64_3200 =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 40,
+    /*.fMxCsrMask       = */ 0xffff, ///< @todo check.
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_AMD_Athlon_64_3200),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_AMD_Athlon_64_3200)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_DEFAULTS,

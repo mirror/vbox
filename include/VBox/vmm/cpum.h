@@ -1041,7 +1041,13 @@ typedef struct CPUMFEATURES
     /** Alignment padding / reserved for future use. */
     uint32_t        fPadding : 23;
 
-    /** Hardware virtualization features. */
+    /** Hardware virtualization features.
+     *
+     *  @todo r=bird: Please drop the unions and flatten this as much as possible.
+     *        Prefix the names with 'Svm' 'Vmx' if there is any confusion. Group the
+     *        flags into common and specific bunches.
+     *
+     */
     union
     {
         /** SVM features.  */
@@ -1545,6 +1551,7 @@ VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
+VMMDECL(uint32_t)       CPUMGetGuestMxCsrMask(PVM pVM);
 VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
 VMMDECL(int)            CPUMGetValidateEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
                                             uint64_t *puValidEfer);
@@ -1590,6 +1597,7 @@ VMMR3DECL(int)              CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUNKNOWNCPUID
 VMMR3DECL(const char *)     CPUMR3CpuIdUnknownLeafMethodName(CPUMUNKNOWNCPUID enmUnknownMethod);
 VMMR3DECL(CPUMCPUVENDOR)    CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
 VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
+VMMR3DECL(uint32_t)         CPUMR3DeterminHostMxCsrMask(void);
 
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 

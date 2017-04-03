@@ -2527,3 +2527,18 @@ VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu)
     return DISCPUMODE_16BIT;
 }
 
+
+/**
+ * Gets the guest MXCSR_MASK value.
+ *
+ * This does not access the x87 state, but the value we determined at VM
+ * initialization.
+ *
+ * @returns MXCSR mask.
+ * @param   pVM                 The cross context VM structure.
+ */
+VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
+{
+    return pVM->cpum.s.GuestInfo.fMxCsrMask;
+}
+

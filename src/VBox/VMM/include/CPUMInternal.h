@@ -156,13 +156,14 @@ typedef struct CPUMINFO
      * instruction.  Older hardware has been observed to ignore higher bits. */
     uint32_t                    fMsrMask;
 
+    /** MXCSR mask. */
+    uint32_t                    fMxCsrMask;
+
     /** The number of CPUID leaves (CPUMCPUIDLEAF) in the array pointed to below. */
     uint32_t                    cCpuIdLeaves;
     /** The index of the first extended CPUID leaf in the array.
      *  Set to cCpuIdLeaves if none present. */
     uint32_t                    iFirstExtCpuIdLeaf;
-    /** Alignment padding. */
-    uint32_t                    uPadding;
     /** How to handle unknown CPUID leaves. */
     CPUMUNKNOWNCPUID            enmUnknownCpuIdMethod;
     /** For use with CPUMUNKNOWNCPUID_DEFAULTS (DB & VM),
@@ -402,7 +403,10 @@ typedef struct CPUM
     /** XSAVE/XRSTOR host mask.  Only state components in this mask can be exposed
      * to the guest.  This is 0 if no XSAVE/XRSTOR bits can be exposed. */
     uint64_t                fXStateHostMask;
-    uint8_t                 abPadding1[24];
+
+    /** The host MXCSR mask (determined at init). */
+    uint32_t                fHostMxCsrMask;
+    uint8_t                 abPadding1[20];
 
     /** Host CPU feature information.
      * Externaly visible via the VM structure, aligned on 64-byte boundrary. */
@@ -498,7 +502,7 @@ typedef struct CPUMCPU
      *  when loading state, so we won't save it.) */
     bool                    fCpuIdApicFeatureVisible;
 
-    /** Align the next member on a 64-bit boundrary. */
+    /** Align the next member on a 64-byte boundrary. */
     uint8_t                 abPadding2[64 - 16 - (HC_ARCH_BITS == 64 ? 8 : 4) - 4 - 1 - 3];
 
     /** Saved host context.  Only valid while inside RC or HM contexts.

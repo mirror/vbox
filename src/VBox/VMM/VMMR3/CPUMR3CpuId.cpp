@@ -549,6 +549,28 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
 }
 
 
+/**
+ * Determins the host CPU MXCSR mask.
+ *
+ * @returns MXCSR mask.
+ */
+VMMR3DECL(uint32_t) CPUMR3DeterminHostMxCsrMask(void)
+{
+    if (   ASMHasCpuId()
+        && ASMIsValidStdRange(ASMCpuId_EAX(0))
+        && ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_FXSR)
+    {
+        uint8_t volatile abBuf[sizeof(X86FXSTATE) + 64];
+        PX86FXSTATE      pState = (PX86FXSTATE)&abBuf[64 - ((uintptr_t)&abBuf[0] & 63)];
+        RT_ZERO(*pState);
+        ASMFxSave(pState);
+        if (pState->MXCSR_MASK == 0)
+            return 0xffbf;
+        return pState->MXCSR_MASK;
+    }
+    return 0;
+}
+
 
 /**
  * Gets a matching leaf in the CPUID leaf array.
@@ -3980,6 +4002,14 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
              ? VMSetError(pVM, rc, RT_SRC_POS,
                           "Info on guest CPU '%s' could not be found. Please, select a different CPU.", Config.szCpuName)
              : rc;
+
+    if (pCpum->GuestInfo.fMxCsrMask & ~pVM->cpum.s.fHostMxCsrMask)
+    {
+        LogRel(("Stripping unsupported MXCSR bits from guest mask: %#x -> %#x (host: %#x)\n", pCpum->GuestInfo.fMxCsrMask,
+                pCpum->GuestInfo.fMxCsrMask & pVM->cpum.s.fHostMxCsrMask, pVM->cpum.s.fHostMxCsrMask));
+        pCpum->GuestInfo.fMxCsrMask &= pVM->cpum.s.fHostMxCsrMask;
+    }
+    LogRel(("CPUM: MXCSR_MASK=%#x (host: %#x)\n", pCpum->GuestInfo.fMxCsrMask, pVM->cpum.s.fHostMxCsrMask));
 
     /** @cfgm{/CPUM/MSRs/[Name]/[First|Last|Type|Value|...],}
      * Overrides the guest MSRs.

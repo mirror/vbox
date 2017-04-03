@@ -366,6 +366,7 @@ static CPUMDBENTRY const g_Entry_AMD_FX_8150_Eight_Core =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 48,
+    /*.fMxCsrMask       = */ 0x2ffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_AMD_FX_8150_Eight_Core),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_AMD_FX_8150_Eight_Core)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_DEFAULTS,

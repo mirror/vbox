@@ -199,6 +199,7 @@ static CPUMDBENTRY const g_Entry_Intel_Pentium_M_processor_2_00GHz =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_UNKNOWN,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 32,
+    /*.fMxCsrMask       = */ 0xffbf, ///< @todo check this
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Pentium_M_processor_2_00GHz),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Pentium_M_processor_2_00GHz)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF,

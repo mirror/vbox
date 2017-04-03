@@ -315,6 +315,7 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_2635QM =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_100MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 36,
+    /*.fMxCsrMask       = */ 0xffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Core_i7_2635QM),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Core_i7_2635QM)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,

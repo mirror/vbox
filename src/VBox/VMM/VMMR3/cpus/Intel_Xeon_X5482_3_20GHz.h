@@ -228,6 +228,7 @@ static CPUMDBENTRY const g_Entry_Intel_Xeon_X5482_3_20GHz =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_400MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 38,
+    /*.fMxCsrMask       = */ 0xffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Xeon_X5482_3_20GHz),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Xeon_X5482_3_20GHz)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF,

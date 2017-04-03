@@ -248,6 +248,7 @@ static CPUMDBENTRY const g_Entry_Intel_Pentium_N3530_2_16GHz =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_267MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 36,
+    /*.fMxCsrMask       = */ 0xffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Pentium_N3530_2_16GHz),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Pentium_N3530_2_16GHz)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,

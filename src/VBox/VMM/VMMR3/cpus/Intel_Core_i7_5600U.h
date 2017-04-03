@@ -351,6 +351,7 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_5600U =
     /*.uScalableBusFreq = */ CPUM_SBUSFREQ_100MHZ,
     /*.fFlags           = */ 0,
     /*.cMaxPhysAddrWidth= */ 39,
+    /*.fMxCsrMask       = */ 0xffff,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Core_i7_5600U),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Core_i7_5600U)),
     /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,

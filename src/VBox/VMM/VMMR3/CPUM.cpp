@@ -883,6 +883,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         return VERR_UNSUPPORTED_CPU;
     }
 
+    pVM->cpum.s.fHostMxCsrMask = CPUMR3DeterminHostMxCsrMask();
+
     PCPUMCPUIDLEAF  paLeaves;
     uint32_t        cLeaves;
     int rc = CPUMR3CpuIdCollectLeaves(&paLeaves, &cLeaves);
