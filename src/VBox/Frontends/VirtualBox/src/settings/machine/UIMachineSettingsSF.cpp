@@ -299,7 +299,7 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
                 strFolderKey = initialFolderData.m_strName;
             }
 
-            /* Cache initial data: */
+            /* Cache initial shared folder data: */
             m_pCache->child(strFolderKey).cacheInitialData(initialFolderData);
         }
     }
@@ -376,13 +376,13 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Check if shared folders data was changed at all: */
+    /* Check if shared folders data was changed: */
     if (m_pCache->wasChanged())
     {
         /* For each shared folder record: */
         for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
         {
-            /* Check if this shared folder data was actually changed: */
+            /* Check if this shared folder data was changed: */
             const UISettingsCacheSharedFolder &currentFolderCache = m_pCache->child(iFolderIndex);
             if (currentFolderCache.wasChanged())
             {
