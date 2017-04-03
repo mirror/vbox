@@ -33,8 +33,6 @@
 
 #include "DisplaySourceBitmapWrap.h"
 
-#define NEW_RESIZE
-
 class Console;
 struct VIDEORECCONTEXT;
 
@@ -157,14 +155,9 @@ public:
     int  i_registerSSM(PUVM pUVM);
 
     // public methods only for internal purposes
-#ifndef NEW_RESIZE
-    int  i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine,
-                               uint32_t w, uint32_t h, uint16_t flags);
-#else
     int i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM,
                               uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags,
                               uint32_t xOrigin, uint32_t yOrigin, bool fVGAResize);
-#endif
     void i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int h);
     void i_handleUpdateVMMDevSupportsGraphics(bool fSupportsGraphics);
     void i_handleUpdateGuestVBVACapabilities(uint32_t fNewCapabilities);
@@ -309,9 +302,7 @@ private:
                                  ULONG aHeight,
                                  BitmapFormat_T aBitmapFormat,
                                  ULONG *pcbOut);
-#ifdef NEW_RESIZE
     int processVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping);
-#endif
 
 #ifdef VBOX_WITH_CRHGSMI
     void i_setupCrHgsmiData(void);
