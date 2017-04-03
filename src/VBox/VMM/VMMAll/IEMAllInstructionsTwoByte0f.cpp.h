@@ -5824,12 +5824,13 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
     return VINF_SUCCESS;
 }
 
+
 /**
  * @opmaps      grp15
  * @opcode      !11/2
  * @oppfx       none
  * @opcpuid     sse
- * @opgroup     og_cachectl
+ * @opgroup     og_sse_mxcsrsm
  * @optest      op1=0      -> mxcsr=0
  * @optest      op1=0x2083 -> mxcsr=0x2083
  * @optest      op1=0xfffffffe -> value.xcpt=0xd
@@ -5841,9 +5842,8 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
  * @optest      op1=0x2083 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
  * @optest      op1=0x2083 cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
  * @optest      op1=0x2083 cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
- * @oponlytest
  */
-FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm)
+FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr, uint8_t, bRm)
 {
     IEMOP_MNEMONIC1(M_MEM, LDMXCSR, ldmxcsr, MdRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse)
@@ -5868,7 +5868,16 @@ FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm)
  * @oppfx       none
  * @opcpuid     sse
  * @opgroup     og_sse_mxcsrsm
- * @optest      mxcsr=0 op1=0x2083 -> mxcsr=0x2083
+ * @optest      mxcsr=0      -> op1=0
+ * @optest      mxcsr=0x2083 -> op1=0x2083
+ * @optest      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
+ * @optest      mxcsr=0x2085 cr0|=em -> value.xcpt=0x6
+ * @optest      mxcsr=0x2086 cr0|=mp -> op1=0x2086
+ * @optest      mxcsr=0x2087 cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x6
+ * @optest      mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
  */
 FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
 {
