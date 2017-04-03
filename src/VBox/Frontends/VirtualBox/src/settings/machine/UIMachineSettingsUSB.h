@@ -147,9 +147,6 @@ private:
     /** Holds the "New Filter %1" translation tag. */
     QString  m_strTrUSBFilterName;
 
-    /** Holds the list of all USB filters. */
-    QList<UIDataSettingsMachineUSBFilter>  m_filters;
-
     /** Holds the page data cache instance. */
     UISettingsCacheMachineUSB *m_pCache;
 };
