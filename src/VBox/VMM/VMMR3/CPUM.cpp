@@ -1189,8 +1189,8 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1.
        IA-32 Processor States Following Power-up, Reset, or INIT */
     pFpuCtx->MXCSR                  = 0x1F80;
-    pFpuCtx->MXCSR_MASK             = 0xffff; /** @todo REM always changed this for us. Should probably check if the HW really
-                                                        supports all bits, since a zero value here should be read as 0xffbf. */
+    pFpuCtx->MXCSR_MASK             = pVM->cpum.s.GuestInfo.fMxCsrMask; /** @todo check if REM messes this up... */
+
     pCtx->aXcr[0]                   = XSAVE_C_X87;
     if (pVM->cpum.s.HostFeatures.cbMaxExtendedState >= RT_OFFSETOF(X86XSAVEAREA, Hdr))
     {

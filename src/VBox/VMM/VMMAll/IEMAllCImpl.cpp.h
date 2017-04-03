@@ -6887,7 +6887,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     pDst->FTW           = pSrc->FTW & UINT16_C(0xff);
     pDst->FOP           = pSrc->FOP;
     pDst->MXCSR         = pSrc->MXCSR;
-    pDst->MXCSR_MASK    = pSrc->MXCSR_MASK;
+    pDst->MXCSR_MASK    = CPUMGetGuestMxCsrMask(pVCpu->CTX_SUFF(pVM));
     for (uint32_t i = 0; i < RT_ELEMENTS(pDst->aRegs); i++)
     {
         /** @todo Testcase: What actually happens to the 6 reserved bytes? I'm clearing
@@ -6983,7 +6983,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
      * Check the state for stuff which will #GP(0).
      */
     uint32_t const fMXCSR      = pSrc->MXCSR;
-    uint32_t const fMXCSR_MASK = pDst->MXCSR_MASK ? pDst->MXCSR_MASK : UINT32_C(0xffbf);
+    uint32_t const fMXCSR_MASK = CPUMGetGuestMxCsrMask(pVCpu->CTX_SUFF(pVM));
     if (fMXCSR & ~fMXCSR_MASK)
     {
         Log(("fxrstor: MXCSR=%#x (MXCSR_MASK=%#x) -> #GP(0)\n", fMXCSR, fMXCSR_MASK));
