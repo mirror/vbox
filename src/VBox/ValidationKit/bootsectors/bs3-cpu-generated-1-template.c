@@ -2714,13 +2714,13 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
                 CHECK_FIELD(x87.FSW, "FSW: %#06x, expected %#06x");
                 CHECK_FIELD(x87.FTW, "FTW: %#06x, expected %#06x");
                 //CHECK_FIELD(x87.FOP,      "FOP: %#06x, expected %#06x");
-                //CHECK_FIELD(x87.FPUIP,    "FPUIP:  %#010x, expected %#010x");
+                //CHECK_FIELD(x87.FPUIP,    "FPUIP:  %#010RX32, expected %#010RX32");
                 //CHECK_FIELD(x87.CS,       "FPUCS:  %#06x, expected %#06x");
                 //CHECK_FIELD(x87.Rsrvd1,   "Rsrvd1: %#06x, expected %#06x");
-                //CHECK_FIELD(x87.DP,       "FPUDP:  %#010x, expected %#010x");
+                //CHECK_FIELD(x87.DP,       "FPUDP:  %#010RX32, expected %#010RX32");
                 //CHECK_FIELD(x87.DS,       "FPUDS:  %#06x, expected %#06x");
                 //CHECK_FIELD(x87.Rsrvd2,   "Rsrvd2: %#06x, expected %#06x");
-                CHECK_FIELD(x87.MXCSR,      "MXCSR:  %#010x, expected %#010x");
+                CHECK_FIELD(x87.MXCSR,      "MXCSR:  %#010RX32, expected %#010RX32");
 #undef CHECK_FIELD
                 for (i = 0; i < RT_ELEMENTS(pExpect->Ctx.x87.aRegs); i++)
                     if (   pResult->Ctx.x87.aRegs[i].au64[0] != pExpect->Ctx.x87.aRegs[i].au64[0]
