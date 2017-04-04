@@ -141,6 +141,7 @@ SRCS += \
 	RTSemEventMultiWait-2-ex-generic.c \
 	RTSemEventMultiWaitNoResume-2-ex-generic.c \
 	RTTimerCreate-generic.c \
+	rtStrFormatKernelAddress-generic.c \
 	errvars-generic.c \
 	mppresent-generic.c \
 	timer-generic.c

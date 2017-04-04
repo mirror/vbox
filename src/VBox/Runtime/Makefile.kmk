@@ -637,6 +637,7 @@ RuntimeR3_SOURCES       = \
 	generic/RTPathGetCurrentDrive-generic.cpp \
 	generic/RTPathIsSame-generic.cpp \
 	generic/RTTimerLRCreate-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	generic/mempool-generic.cpp \
 	generic/semfastmutex-generic.cpp \
 	generic/semxroads-generic.cpp \
@@ -2107,6 +2108,7 @@ RuntimeR0Drv_SOURCES    = \
  	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	generic/critsect-generic.cpp \
 	generic/errvars-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -2627,6 +2629,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/time/timesup.cpp \
  	gc/initterm-gc.cpp \
  	generic/RTAssertShouldPanic-generic.cpp \
+	generic/rtStrFormatKernelAddress-generic.cpp \
 	generic/errvars-generic.cpp \
  	\
  	$(RuntimeNoCrt_SOURCES)

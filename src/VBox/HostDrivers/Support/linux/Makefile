@@ -148,6 +148,7 @@ OBJS   = \
 	generic/RTSemEventMultiWait-2-ex-generic.o \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.o \
 	generic/RTTimerCreate-generic.o \
+	generic/rtStrFormatKernelAddress-generic.o \
 	generic/errvars-generic.o \
 	generic/mppresent-generic.o \
 	generic/uuid-generic.o \
