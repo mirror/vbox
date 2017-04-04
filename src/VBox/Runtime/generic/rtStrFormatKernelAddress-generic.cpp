@@ -43,11 +43,13 @@
 DECLHIDDEN(size_t) rtStrFormatKernelAddress(char *pszBuf, size_t cbBuf, RTR0INTPTR uPtr, signed int cchWidth,
                                             signed int cchPrecision, unsigned int fFlags)
 {
-#if R0_ARCH_BITS == 64
+#ifndef DEBUG
+    RT_NOREF(uPtr, cchWidth, cchPrecision);
+# if R0_ARCH_BITS == 64
     static const char s_szObfuscated[] = "0xXXXXXXXXXXXXXXXX";
-#else
+# else
     static const char s_szObfuscated[] = "0xXXXXXXXX";
-#endif
+# endif
     size_t      cbSrc  = sizeof(s_szObfuscated);
     const char *pszSrc = s_szObfuscated;
     if (!(fFlags & RTSTR_F_SPECIAL))
@@ -64,5 +66,8 @@ DECLHIDDEN(size_t) rtStrFormatKernelAddress(char *pszBuf, size_t cbBuf, RTR0INTP
     memcpy(pszBuf, pszSrc, cbBuf);
     pszBuf[cbBuf - 1] = '\0';
     return cbBuf - 1;
+#else  /* DEBUG */
+    return RT_CONCAT(RTStrFormatU,R0_ARCH_BITS)(pszBuf, cbBuf, uPtr, 16, cchWidth, cchPrecision, fFlags);
+#endif /* DEBUG */
 }
 
