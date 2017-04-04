@@ -5902,10 +5902,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
  * @opmaps      vexgrp15
  * @opcode      !11/3
  * @oppfx       none
- * @opcpuid     sse
+ * @opcpuid     avx
  * @opgroup     og_avx_mxcsrsm
- * @optestign      mxcsr=0      -> op1=0
- * @optestign      mxcsr=0x2083 -> op1=0x2083
+ * @optest         mxcsr=0      -> op1=0
+ * @optest         mxcsr=0x2083 -> op1=0x2083
  * @optestign      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
  * @optestign      mxcsr=0x2085 cr0|=em -> value.xcpt=0x6
  * @optestign      mxcsr=0x2086 cr0|=mp -> op1=0x2086
@@ -5914,10 +5914,11 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
  * @optestign      mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
  * @optestign      mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
  * @optestign      mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
+ * @oponlytest
  */
 FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
 {
-    IEMOP_MNEMONIC1(M_MEM, VSTMXCSR, vstmxcsr, MdWO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC1(VEX_M_MEM, VSTMXCSR, vstmxcsr, MdWO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
         return IEMOP_RAISE_INVALID_OPCODE();
 

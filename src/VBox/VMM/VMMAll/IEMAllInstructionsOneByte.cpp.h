@@ -6172,51 +6172,6 @@ FNIEMOP_DEF(iemOp_retn)
  */
 FNIEMOP_DEF(iemOp_les_Gv_Mp__vex2)
 {
-    /* The LES instruction is invalid 64-bit mode. In legacy and
-       compatability mode it is invalid with MOD=3.
-       The use as a VEX prefix is made possible by assigning the inverted
-       REX.R to the top MOD bit, and the top bit in the inverted register
-       specifier to the bottom MOD bit, thereby effectively limiting 32-bit
-       to accessing registers 0..7 in this VEX form. */
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
-        || (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-    {
-        IEMOP_MNEMONIC(vex2_prefix, "vex2");
-        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
-        {
-            uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
-            if (   (  pVCpu->iem.s.fPrefixes
-                    & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_LOCK | IEM_OP_PRF_REX))
-                == 0)
-            {
-                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
-                pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
-                pVCpu->iem.s.uVex3rdReg = (~bRm >> 3) & 0xf;
-                pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
-                pVCpu->iem.s.idxPrefix  = bRm & 0x3;
-
-                return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
-            }
-
-            Log(("VEX2: Invalid prefix mix!\n"));
-        }
-        else
-            Log(("VEX2: AVX support disabled!\n"));
-
-        /* @todo does intel completely decode the sequence with SIB/disp before \#UD? */
-        return IEMOP_RAISE_INVALID_OPCODE();
-    }
-    IEMOP_MNEMONIC(les_Gv_Mp, "les Gv,Mp");
-    return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_ES, bRm);
-}
-
-
-/**
- * @opcode      0xc5
- */
-FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
-{
     /* The LDS instruction is invalid 64-bit mode. In legacy and
        compatability mode it is invalid with MOD=3.
        The use as a VEX prefix is made possible by assigning the inverted
@@ -6227,8 +6182,8 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
     {
         if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
         {
-            IEMOP_MNEMONIC(lds_Gv_Mp, "lds Gv,Mp");
-            return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_DS, bRm);
+            IEMOP_MNEMONIC(les_Gv_Mp, "les Gv,Mp");
+            return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_ES, bRm);
         }
         IEMOP_HLP_NO_REAL_OR_V86_MODE();
     }
@@ -6280,6 +6235,52 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
     else
         Log(("VEX3: AVX support disabled!\n"));
     return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
+/**
+ * @opcode      0xc5
+ */
+FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
+{
+    /* The LES instruction is invalid 64-bit mode. In legacy and
+       compatability mode it is invalid with MOD=3.
+       The use as a VEX prefix is made possible by assigning the inverted
+       REX.R to the top MOD bit, and the top bit in the inverted register
+       specifier to the bottom MOD bit, thereby effectively limiting 32-bit
+       to accessing registers 0..7 in this VEX form. */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+        || (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_MNEMONIC(vex2_prefix, "vex2");
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
+        {
+            uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
+            if (   (  pVCpu->iem.s.fPrefixes
+                    & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_LOCK | IEM_OP_PRF_REX))
+                == 0)
+            {
+                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
+                pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
+                pVCpu->iem.s.uVex3rdReg = (~bRm >> 3) & 0xf;
+                pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
+                pVCpu->iem.s.idxPrefix  = bRm & 0x3;
+
+                return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
+            }
+
+            Log(("VEX2: Invalid prefix mix!\n"));
+        }
+        else
+            Log(("VEX2: AVX support disabled!\n"));
+
+        /* @todo does intel completely decode the sequence with SIB/disp before \#UD? */
+        return IEMOP_RAISE_INVALID_OPCODE();
+    }
+
+    IEMOP_MNEMONIC(lds_Gv_Mp, "lds Gv,Mp");
+    return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_DS, bRm);
 }
 
 
@@ -11752,7 +11753,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0xb8 */  iemOp_eAX_Iv,           iemOp_eCX_Iv,           iemOp_eDX_Iv,           iemOp_eBX_Iv,
     /* 0xbc */  iemOp_eSP_Iv,           iemOp_eBP_Iv,           iemOp_eSI_Iv,           iemOp_eDI_Iv,
     /* 0xc0 */  iemOp_Grp2_Eb_Ib,       iemOp_Grp2_Ev_Ib,       iemOp_retn_Iw,          iemOp_retn,
-    /* 0xc4 */  iemOp_les_Gv_Mp__vex2,  iemOp_lds_Gv_Mp__vex3,  iemOp_Grp11_Eb_Ib,      iemOp_Grp11_Ev_Iz,
+    /* 0xc4 */  iemOp_les_Gv_Mp__vex3,  iemOp_lds_Gv_Mp__vex2,  iemOp_Grp11_Eb_Ib,      iemOp_Grp11_Ev_Iz,
     /* 0xc8 */  iemOp_enter_Iw_Ib,      iemOp_leave,            iemOp_retf_Iw,          iemOp_retf,
     /* 0xcc */  iemOp_int3,             iemOp_int_Ib,           iemOp_into,             iemOp_iret,
     /* 0xd0 */  iemOp_Grp2_Eb_1,        iemOp_Grp2_Ev_1,        iemOp_Grp2_Eb_CL,       iemOp_Grp2_Ev_CL,

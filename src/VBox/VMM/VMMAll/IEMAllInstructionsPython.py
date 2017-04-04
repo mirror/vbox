@@ -267,20 +267,32 @@ g_kdOpTypes = {
 
 
 ## IEMFORM_XXX mappings.
-g_kdIemForms = { # sEncoding,   [ sWhere1, ... ]
-    'RM':       ( 'ModR/M',     [ 'reg', 'rm' ], ),
-    'RM_REG':   ( 'ModR/M',     [ 'reg', 'rm' ], ),
-    'RM_MEM':   ( 'ModR/M',     [ 'reg', 'rm' ], ),
-    'MR':       ( 'ModR/M',     [ 'rm', 'reg' ], ),
-    'MR_REG':   ( 'ModR/M',     [ 'rm', 'reg' ], ),
-    'MR_MEM':   ( 'ModR/M',     [ 'rm', 'reg' ], ),
-    'M':        ( 'ModR/M',     [ 'rm', ], ),
-    'M_REG':    ( 'ModR/M',     [ 'rm', ], ),
-    'M_MEM':    ( 'ModR/M',     [ 'rm', ], ),
-    'R':        ( 'ModR/M',     [ 'reg', ], ),
-    'RVM':      ( 'ModR/M+VEX', [ 'reg', 'vvvv', 'rm'], ),
-    'MVR':      ( 'ModR/M+VEX', [ 'rm', 'vvvv', 'reg'], ),
-    'FIXED':    ( 'fixed',      None, )
+g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]
+    'RM':           ( 'ModR/M',     [ 'reg', 'rm' ], ),
+    'RM_REG':       ( 'ModR/M',     [ 'reg', 'rm' ], ),
+    'RM_MEM':       ( 'ModR/M',     [ 'reg', 'rm' ], ),
+    'MR':           ( 'ModR/M',     [ 'rm', 'reg' ], ),
+    'MR_REG':       ( 'ModR/M',     [ 'rm', 'reg' ], ),
+    'MR_MEM':       ( 'ModR/M',     [ 'rm', 'reg' ], ),
+    'M':            ( 'ModR/M',     [ 'rm', ], ),
+    'M_REG':        ( 'ModR/M',     [ 'rm', ], ),
+    'M_MEM':        ( 'ModR/M',     [ 'rm', ], ),
+    'R':            ( 'ModR/M',     [ 'reg', ], ),
+
+    'VEX_RM':       ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
+    'VEX_RM_REG':   ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
+    'VEX_RM_MEM':   ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
+    'VEX_MR':       ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
+    'VEX_MR_REG':   ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
+    'VEX_MR_MEM':   ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
+    'VEX_M':        ( 'VEX.ModR/M', [ 'rm', ], ),
+    'VEX_M_REG':    ( 'VEX.ModR/M', [ 'rm', ], ),
+    'VEX_M_MEM':    ( 'VEX.ModR/M', [ 'rm', ], ),
+    'VEX_R':        ( 'VEX.ModR/M', [ 'reg', ], ),
+    'VEX_RVM':      ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm'], ),
+    'VEX_MVR':      ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg'], ),
+
+    'FIXED':        ( 'fixed',      None, )
 };
 
 ## \@oppfx values.
@@ -312,9 +324,10 @@ g_kdSubOpcodes = {
 
 ## Valid values for \@openc
 g_kdEncodings = {
-    'ModR/M':   [ 'BS3CG1ENC_MODRM', ],     ##< ModR/M
-    'fixed':    [ 'BS3CG1ENC_FIXED', ],     ##< Fixed encoding (address, registers, etc).
-    'prefix':   [ None, ],                  ##< Prefix
+    'ModR/M':       [ 'BS3CG1ENC_MODRM', ],     ##< ModR/M
+    'VEX.ModR/M':   [ 'BS3CG1ENC_VEX_MODRM', ], ##< VEX...ModR/M
+    'fixed':        [ 'BS3CG1ENC_FIXED', ],     ##< Fixed encoding (address, registers, etc).
+    'prefix':       [ None, ],                  ##< Prefix
 };
 
 ## \@opunused, \@opinvalid, \@opinvlstyle
