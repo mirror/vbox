@@ -6170,7 +6170,7 @@ FNIEMOP_DEF(iemOp_retn)
 /**
  * @opcode      0xc4
  */
-FNIEMOP_DEF(iemOp_les_Gv_Mp__vex2)
+FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
 {
     /* The LDS instruction is invalid 64-bit mode. In legacy and
        compatability mode it is invalid with MOD=3.
@@ -6241,7 +6241,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex2)
 /**
  * @opcode      0xc5
  */
-FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
+FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
 {
     /* The LES instruction is invalid 64-bit mode. In legacy and
        compatability mode it is invalid with MOD=3.
