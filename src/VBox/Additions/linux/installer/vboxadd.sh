@@ -32,15 +32,17 @@
 # changes please try to reduce differences between the two wherever possible.
 
 # Testing:
-# * Should fail if the configuration file is missing or missing INSTALL_[DIR|VER].
-# * vboxadd user and vboxsf groups should be created if they do not exist.
-# * udev rule should be successfully created.
+# * Should fail if the configuration file is missing or missing INSTALL_DIR or
+#   INSTALL_VER entries.
+# * vboxadd user and vboxsf groups should be created if they do not exist - test
+#   by removing them before installing.
 # * Shared folders can be mounted and auto-mounts accessible to vboxsf group,
 #   including on recent Fedoras with SELinux.
-# * Setting INSTALL_NO_MODULE_BUILDS inhibits modules, users, udev in setup and
-#   cleanup but not the shared folder group creation.
-# * rcvboxadd udev[cleanup] sets up udev and creates the user but skips modules,
-#   shared folders and group creation.
+# * Setting INSTALL_NO_MODULE_BUILDS inhibits modules and module automatic
+#   rebuild script creation; otherwise modules, user, group, rebuild script,
+#   udev rule and shared folder mount helper should be created/set up.
+# * Setting INSTALL_NO_MODULE_BUILDS inhibits module load and unload on start
+#   and stop.
 # * Uninstalling the Additions and re-installing them does not trigger warnings.
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
@@ -203,42 +205,44 @@ start()
     begin "Starting."
     # If we got this far assume that the slow set-up has been done.
     QUICKSETUP=yes
-    uname -r | grep -q -E '^2\.6|^3|^4' 2>/dev/null &&
-        ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
-        no_udev=1
-    running_vboxguest || {
-        rm -f $dev || {
-            fail "Cannot remove $dev"
-        }
-
-        rm -f $userdev || {
-            fail "Cannot remove $userdev"
-        }
-
-        $MODPROBE vboxguest >/dev/null 2>&1 || {
-            setup
-            $MODPROBE vboxguest >/dev/null 2>&1 || {
-                "${INSTALL_DIR}/init/vboxadd-x11" cleanup 2>> "${LOG}"
-                fail "modprobe vboxguest failed"
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        uname -r | grep -q -E '^2\.6|^3|^4' 2>/dev/null &&
+            ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
+            no_udev=1
+        running_vboxguest || {
+            rm -f $dev || {
+                fail "Cannot remove $dev"
             }
+
+            rm -f $userdev || {
+                fail "Cannot remove $userdev"
+            }
+
+            $MODPROBE vboxguest >/dev/null 2>&1 || {
+                setup
+                $MODPROBE vboxguest >/dev/null 2>&1 || {
+                    "${INSTALL_DIR}/init/vboxadd-x11" cleanup 2>> "${LOG}"
+                    fail "modprobe vboxguest failed"
+                }
+            }
+            case "$no_udev" in 1)
+                sleep .5;;
+            esac
         }
         case "$no_udev" in 1)
-            sleep .5;;
+            do_vboxguest_non_udev;;
         esac
-    }
-    case "$no_udev" in 1)
-        do_vboxguest_non_udev;;
-    esac
 
-    running_vboxsf || {
-        $MODPROBE vboxsf > /dev/null 2>&1 || {
-            if dmesg | grep "VbglR0SfConnect failed" > /dev/null 2>&1; then
-                info "Unable to start shared folders support.  Make sure that your VirtualBox build supports this feature."
-            else
-                info "modprobe vboxsf failed"
-            fi
+        running_vboxsf || {
+            $MODPROBE vboxsf > /dev/null 2>&1 || {
+                if dmesg | grep "VbglR0SfConnect failed" > /dev/null 2>&1; then
+                    info "Unable to start shared folders support.  Make sure that your VirtualBox build supports this feature."
+                else
+                    info "modprobe vboxsf failed"
+                fi
+            }
         }
-    }
+    fi  # INSTALL_NO_MODULE_BUILDS
 
     # Put the X.Org driver in place.  This is harmless if it is not needed.
     "${INSTALL_DIR}/init/vboxadd-x11" setup 2>> "${LOG}"
@@ -282,6 +286,7 @@ stop()
     if ! umount -a -t vboxsf 2>/dev/null; then
         fail "Cannot unmount vboxsf folders"
     fi
+    test -n "${INSTALL_NO_MODULE_BUILDS}" && return 0
     modprobe -q -r -a vboxvideo vboxsf vboxguest
     if egrep -q 'vboxguest|vboxsf|vboxvideo' /proc/modules; then
         info "You may need to restart your guest system to finish removing the guest drivers."
@@ -451,10 +456,10 @@ setup()
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
 
-    setup_modules
+    test -z "${INSTALL_NO_MODULE_BUILDS}" && setup_modules
     create_vbox_user
     create_udev_rule
-    create_module_rebuild_script
+    test -z "${INSTALL_NO_MODULE_BUILDS}" && create_module_rebuild_script
     test -n "${QUICKSETUP}" && return 0
     shared_folder_setup
     if  running_vboxguest || running_vboxadd; then
@@ -466,22 +471,26 @@ setup()
 # cleanup_script
 cleanup()
 {
-    # Delete old versions of VBox modules.
-    cleanup_modules
-    depmod
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        # Delete old versions of VBox modules.
+        cleanup_modules
+        depmod
 
-    # Remove old module sources
-    for i in $OLDMODULES; do
-      rm -rf /usr/src/$i-*
-    done
+        # Remove old module sources
+        for i in $OLDMODULES; do
+          rm -rf /usr/src/$i-*
+        done
+    fi
 
     # Clean-up X11-related bits
     "${INSTALL_DIR}/init/vboxadd-x11" cleanup 2>> "${LOG}"
 
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null
-    rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
-    rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
+        rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
+    fi
     rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
 }
 
@@ -508,11 +517,7 @@ restart)
     restart
     ;;
 setup)
-    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
-        setup
-    else
-        shared_folder_setup
-    fi
+    setup
     start
     ;;
 quicksetup)
@@ -520,24 +525,13 @@ quicksetup)
     setup
     ;;
 cleanup)
-    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
-        cleanup
-    else
-        rm /sbin/mount.vboxsf 2>/dev/null
-    fi
-    ;;
-udevsetup)
-    create_vbox_user
-    create_udev_rule
-    ;;
-udevcleanup)
-    rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
+    cleanup
     ;;
 status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup|udevsetup|udevcleanup} [quiet]"
+    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup} [quiet]"
     exit 1
 esac
 
