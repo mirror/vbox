@@ -32,7 +32,6 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
-#include <iprt/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
@@ -66,8 +65,10 @@ DECLHIDDEN(size_t) rtStrFormatKernelAddress(char *pszBuf, size_t cbBuf, RTR0INTP
     memcpy(pszBuf, pszSrc, cbBuf);
     pszBuf[cbBuf - 1] = '\0';
     return cbBuf - 1;
+
 #else  /* DEBUG */
-    return RT_CONCAT(RTStrFormatU,R0_ARCH_BITS)(pszBuf, cbBuf, uPtr, 16, cchWidth, cchPrecision, fFlags);
+    Assert(cbBuf >= 64);
+    return RTStrFormatNumber(pszBuf, uPtr, 16, cchWidth, cchPrecision, fFlags);
 #endif /* DEBUG */
 }
 
