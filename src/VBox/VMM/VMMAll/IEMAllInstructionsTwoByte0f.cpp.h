@@ -5898,6 +5898,42 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
 }
 
 
+/**
+ * @opmaps      vexgrp15
+ * @opcode      !11/3
+ * @oppfx       none
+ * @opcpuid     sse
+ * @opgroup     og_avx_mxcsrsm
+ * @optestign      mxcsr=0      -> op1=0
+ * @optestign      mxcsr=0x2083 -> op1=0x2083
+ * @optestign      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
+ * @optestign      mxcsr=0x2085 cr0|=em -> value.xcpt=0x6
+ * @optestign      mxcsr=0x2086 cr0|=mp -> op1=0x2086
+ * @optestign      mxcsr=0x2087 cr4&~=osfxsr -> value.xcpt=0x6
+ * @optestign      mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x6
+ * @optestign      mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optestign      mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optestign      mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
+ */
+FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC1(M_MEM, VSTMXCSR, vstmxcsr, MdWO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(2, 0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_stmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0xae mem/4. */
 FNIEMOP_UD_STUB_1(iemOp_Grp15_xsave,    uint8_t, bRm);
 
@@ -6077,6 +6113,56 @@ FNIEMOP_DEF(iemOp_Grp15)
     /* memory, register */
     return FNIEMOP_CALL_1(g_apfnGroup15MemReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
                                               + pVCpu->iem.s.idxPrefix], bRm);
+}
+
+
+/**
+ * Vex group 15 jump table for register variant.
+ * @todo work in progress
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnVexGroup15RegReg[] =
+{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
+    /* /0 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_rdfsbase,           iemOp_InvalidWithRM,
+    /* /1 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_rdgsbase,           iemOp_InvalidWithRM,
+    /* /2 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_wrfsbase,           iemOp_InvalidWithRM,
+    /* /3 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_wrgsbase,           iemOp_InvalidWithRM,
+    /* /4 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /5 */ iemOp_Grp15_lfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /6 */ iemOp_Grp15_mfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /7 */ iemOp_Grp15_sfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+};
+AssertCompile(RT_ELEMENTS(g_apfnVexGroup15RegReg) == 8*4);
+
+
+/**
+ * Vex group 15 jump table for memory variant.
+ * @todo work in progress
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnVexGroup15MemReg[] =
+{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
+    /* /0 */ iemOp_Grp15_fxsave,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /1 */ iemOp_Grp15_fxrstor,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /2 */ iemOp_Grp15_ldmxcsr,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /3 */ iemOp_VGrp15_vstmxcsr,         iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /4 */ iemOp_Grp15_xsave,             iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /5 */ iemOp_Grp15_xrstor,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /6 */ iemOp_Grp15_xsaveopt,          iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+    /* /7 */ iemOp_Grp15_clflush,           iemOp_Grp15_clflushopt,         iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
+};
+AssertCompile(RT_ELEMENTS(g_apfnVexGroup15MemReg) == 8*4);
+
+
+/** Opcode vex. 0xae. */
+FNIEMOP_DEF(iemOp_VGrp15)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        /* register, register */
+        return FNIEMOP_CALL_1(g_apfnVexGroup15RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                                     + pVCpu->iem.s.idxPrefix], bRm);
+    /* memory, register */
+    return FNIEMOP_CALL_1(g_apfnVexGroup15MemReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                                 + pVCpu->iem.s.idxPrefix], bRm);
 }
 
 
@@ -8662,7 +8748,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
     /* 0xab */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xac */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xad */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xae */  IEMOP_X4(iemOp_Grp15), /** @todo groups and vex */
+    /* 0xae */  IEMOP_X4(iemOp_VGrp15),
     /* 0xaf */  IEMOP_X4(iemOp_InvalidNeedRM),
 
     /* 0xb0 */  IEMOP_X4(iemOp_InvalidNeedRM),

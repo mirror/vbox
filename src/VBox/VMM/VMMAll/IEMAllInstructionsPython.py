@@ -1421,7 +1421,7 @@ g_dInstructionMaps = {
     'vexgrp12':     InstructionMap('vexgrp12',  sEncoding = 'vex1', asLeadOpcodes = ['0x71',], sSelector = 'mod /r'),
     'vexgrp13':     InstructionMap('vexgrp13',  sEncoding = 'vex1', asLeadOpcodes = ['0x72',], sSelector = 'mod /r'),
     'vexgrp14':     InstructionMap('vexgrp14',  sEncoding = 'vex1', asLeadOpcodes = ['0x73',], sSelector = 'mod /r'),
-    'vexgrp15':     InstructionMap('vexgrp15',  sEncoding = 'vex1', asLeadOpcodes = ['0xae',], sSelector = 'mod /r'),
+    'vexgrp15':     InstructionMap('vexgrp15',  sEncoding = 'vex1', asLeadOpcodes = ['0xae',], sSelector = 'memreg /r'),
     'vexgrp17':     InstructionMap('vexgrp17',  sEncoding = 'vex1', asLeadOpcodes = ['0xf3',], sSelector = '/r'),
 
     'vexmap2':      InstructionMap('vexmap2',   sEncoding = 'vex2'),

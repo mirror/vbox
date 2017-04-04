@@ -736,6 +736,11 @@ enum OPCODES
     OP_SWAPGS,
     OP_UD1,
     OP_UD2,
+/** @name AVX instructions
+ * @{ */
+    OP_VLDMXCSR,
+    OP_VSTMXCSR,
+/** @} */
 /** @name VT-x instructions
  * @{ */
     OP_VMREAD,
