@@ -1060,7 +1060,36 @@ static DECLCALLBACK(VUSBDEVICESTATE) vusbRhDevGetState(PVUSBIDEVICE pInterface)
 }
 
 
+static const char *vusbGetSpeedString(VUSBSPEED enmSpeed)
+{
+    const char  *pszSpeed = NULL;
 
+    switch (enmSpeed)
+    {
+        case VUSB_SPEED_LOW:
+            pszSpeed = "Low";
+            break;
+        case VUSB_SPEED_FULL:
+            pszSpeed = "Full";
+            break;
+        case VUSB_SPEED_HIGH:
+            pszSpeed = "High";
+            break;
+        case VUSB_SPEED_VARIABLE:
+            pszSpeed = "Variable";
+            break;
+        case VUSB_SPEED_SUPER:
+            pszSpeed = "Super";
+            break;
+        case VUSB_SPEED_SUPERPLUS:
+            pszSpeed = "SuperPlus";
+            break;
+        default:
+            pszSpeed = "Unknown";
+            break;
+    }
+    return pszSpeed;
+}
 
 /* -=-=-=-=-=- VUSB Hub methods -=-=-=-=-=- */
 
@@ -1101,7 +1130,8 @@ static int vusbRhHubOpAttach(PVUSBHUB pHub, PVUSBDEV pDev)
         pDev->pNext = pRh->pDevices;
         pRh->pDevices = pDev;
         RTCritSectLeave(&pRh->CritSectDevices);
-        LogRel(("VUSB: Attached '%s' to port %d\n", pDev->pUsbIns->pszName, iPort));
+        LogRel(("VUSB: Attached '%s' to port %d on %s (%sSpeed)\n", pDev->pUsbIns->pszName, 
+                iPort, pHub->pszName, vusbGetSpeedString(pDev->pUsbIns->enmSpeed)));
     }
     else
     {
@@ -1148,7 +1178,7 @@ static void vusbRhHubOpDetach(PVUSBHUB pHub, PVUSBDEV pDev)
      */
     unsigned uPort = pDev->i16Port;
     pRh->pIRhPort->pfnDetach(pRh->pIRhPort, &pDev->IDevice, uPort);
-    LogRel(("VUSB: Detached '%s' from port %u\n", pDev->pUsbIns->pszName, uPort));
+    LogRel(("VUSB: Detached '%s' from port %u on %s\n", pDev->pUsbIns->pszName, uPort, pHub->pszName));
     ASMBitSet(&pRh->Bitmap, uPort);
     pHub->cDevices--;
 }
