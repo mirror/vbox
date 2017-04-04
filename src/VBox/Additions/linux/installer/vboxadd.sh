@@ -37,8 +37,11 @@
 # * udev rule should be successfully created.
 # * Shared folders can be mounted and auto-mounts accessible to vboxsf group,
 #   including on recent Fedoras with SELinux.
-# * Setting INSTALL_NO_MODULE_BUILDS does not set up modules, users, udev.
-# * rcvboxadd udev sets up udev but not modules, users, shared folders.
+# * Setting INSTALL_NO_MODULE_BUILDS inhibits modules, users, udev in setup and
+#   cleanup but not the shared folder group creation.
+# * rcvboxadd udev[cleanup] sets up udev and creates the user but skips modules,
+#   shared folders and group creation.
+# * Uninstalling the Additions and re-installing them does not trigger warnings.
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
@@ -516,17 +519,25 @@ quicksetup)
     QUICKSETUP=yes
     setup
     ;;
-udev)
+cleanup)
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        cleanup
+    else
+        rm /sbin/mount.vboxsf 2>/dev/null
+    fi
+    ;;
+udevsetup)
+    create_vbox_user
     create_udev_rule
     ;;
-cleanup)
-    cleanup
+udevcleanup)
+    rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
     ;;
 status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup} [quiet]"
+    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup|udevsetup|udevcleanup} [quiet]"
     exit 1
 esac
 
