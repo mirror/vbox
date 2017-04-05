@@ -89,21 +89,21 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare audio data: */
-    UIDataSettingsMachineAudio audioData;
+    /* Prepare old audio data: */
+    UIDataSettingsMachineAudio oldAudioData;
 
-    /* Check if adapter is valid: */
-    const CAudioAdapter &adapter = m_machine.GetAudioAdapter();
-    if (!adapter.isNull())
+    /* Check whether adapter is valid: */
+    const CAudioAdapter &comAdapter = m_machine.GetAudioAdapter();
+    if (!comAdapter.isNull())
     {
-        /* Gather audio data: */
-        audioData.m_fAudioEnabled = adapter.GetEnabled();
-        audioData.m_audioDriverType = adapter.GetAudioDriver();
-        audioData.m_audioControllerType = adapter.GetAudioController();
+        /* Gather old audio data: */
+        oldAudioData.m_fAudioEnabled = comAdapter.GetEnabled();
+        oldAudioData.m_audioDriverType = comAdapter.GetAudioDriver();
+        oldAudioData.m_audioControllerType = comAdapter.GetAudioController();
     }
 
-    /* Cache audio data: */
-    m_pCache->cacheInitialData(audioData);
+    /* Cache old audio data: */
+    m_pCache->cacheInitialData(oldAudioData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -111,13 +111,13 @@ void UIMachineSettingsAudio::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsAudio::getFromCache()
 {
-    /* Get audio data from cache: */
-    const UIDataSettingsMachineAudio &audioData = m_pCache->base();
+    /* Get old audio data from the cache: */
+    const UIDataSettingsMachineAudio &oldAudioData = m_pCache->base();
 
-    /* Load audio data to page: */
-    m_pCheckBoxAudio->setChecked(audioData.m_fAudioEnabled);
-    m_pComboAudioDriver->setCurrentIndex(m_pComboAudioDriver->findData((int)audioData.m_audioDriverType));
-    m_pComboAudioController->setCurrentIndex(m_pComboAudioController->findData((int)audioData.m_audioControllerType));
+    /* Load old audio data to the page: */
+    m_pCheckBoxAudio->setChecked(oldAudioData.m_fAudioEnabled);
+    m_pComboAudioDriver->setCurrentIndex(m_pComboAudioDriver->findData((int)oldAudioData.m_audioDriverType));
+    m_pComboAudioController->setCurrentIndex(m_pComboAudioController->findData((int)oldAudioData.m_audioControllerType));
 
     /* Polish page finally: */
     polishPage();
@@ -125,16 +125,16 @@ void UIMachineSettingsAudio::getFromCache()
 
 void UIMachineSettingsAudio::putToCache()
 {
-    /* Prepare audio data: */
-    UIDataSettingsMachineAudio audioData = m_pCache->base();
+    /* Prepare new audio data: */
+    UIDataSettingsMachineAudio newAudioData;
 
-    /* Gather audio data: */
-    audioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
-    audioData.m_audioDriverType = static_cast<KAudioDriverType>(m_pComboAudioDriver->itemData(m_pComboAudioDriver->currentIndex()).toInt());
-    audioData.m_audioControllerType = static_cast<KAudioControllerType>(m_pComboAudioController->itemData(m_pComboAudioController->currentIndex()).toInt());
+    /* Gather new audio data: */
+    newAudioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
+    newAudioData.m_audioDriverType = static_cast<KAudioDriverType>(m_pComboAudioDriver->itemData(m_pComboAudioDriver->currentIndex()).toInt());
+    newAudioData.m_audioControllerType = static_cast<KAudioControllerType>(m_pComboAudioController->itemData(m_pComboAudioController->currentIndex()).toInt());
 
-    /* Cache audio data: */
-    m_pCache->cacheCurrentData(audioData);
+    /* Cache new audio data: */
+    m_pCache->cacheCurrentData(newAudioData);
 }
 
 void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
@@ -142,20 +142,27 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is in 'offline' mode & audio data was changed: */
+    /* Make sure machine is offline & audio data was changed: */
     if (isMachineOffline() && m_pCache->wasChanged())
     {
-        /* Check if adapter still valid: */
-        CAudioAdapter audioAdapter = m_machine.GetAudioAdapter();
-        if (!audioAdapter.isNull())
+        /* Check whether adapter still valid: */
+        CAudioAdapter comAdapter = m_machine.GetAudioAdapter();
+        if (!comAdapter.isNull())
         {
-            /* Get audio data from cache: */
-            const UIDataSettingsMachineAudio &audioData = m_pCache->data();
+            /* Get old audio data from the cache: */
+            const UIDataSettingsMachineAudio &oldAudioData = m_pCache->base();
+            /* Get new audio data from the cache: */
+            const UIDataSettingsMachineAudio &newAudioData = m_pCache->data();
 
-            /* Store audio data: */
-            audioAdapter.SetEnabled(audioData.m_fAudioEnabled);
-            audioAdapter.SetAudioDriver(audioData.m_audioDriverType);
-            audioAdapter.SetAudioController(audioData.m_audioControllerType);
+            /* Store whether audio is enabled: */
+            if (newAudioData.m_fAudioEnabled != oldAudioData.m_fAudioEnabled)
+                comAdapter.SetEnabled(newAudioData.m_fAudioEnabled);
+            /* Store audio driver type: */
+            if (newAudioData.m_audioDriverType != oldAudioData.m_audioDriverType)
+                comAdapter.SetAudioDriver(newAudioData.m_audioDriverType);
+            /* Store audio controller type: */
+            if (newAudioData.m_audioControllerType != oldAudioData.m_audioControllerType)
+                comAdapter.SetAudioController(newAudioData.m_audioControllerType);
         }
     }
 
