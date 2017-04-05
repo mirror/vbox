@@ -704,7 +704,7 @@ private slots:
     void sltChooseRecentMedium();
 
     /** Updates action states. */
-    void sltUpdateActionsState();
+    void sltUpdateActionStates();
 
     /** Handles row insertion into @a parent on @a iPosition. */
     void sltHandleRowInsertion(const QModelIndex &parent, int iPosition);
