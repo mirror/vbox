@@ -364,35 +364,35 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare initial data: */
-    UIDataSettingsMachineSerial initialData;
+    /* Prepare old parallel data: */
+    UIDataSettingsMachineSerial oldSerialData;
 
-    /* For each serial port: */
+    /* For each port: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        /* Prepare port data: */
-        UIDataSettingsMachineSerialPort initialPortData;
+        /* Prepare old port data: */
+        UIDataSettingsMachineSerialPort oldPortData;
 
-        /* Check if port is valid: */
-        const CSerialPort &port = m_machine.GetSerialPort(iSlot);
-        if (!port.isNull())
+        /* Check whether port is valid: */
+        const CSerialPort &comPort = m_machine.GetSerialPort(iSlot);
+        if (!comPort.isNull())
         {
-            /* Gather options: */
-            initialPortData.m_iSlot = iSlot;
-            initialPortData.m_fPortEnabled = port.GetEnabled();
-            initialPortData.m_uIRQ = port.GetIRQ();
-            initialPortData.m_uIOBase = port.GetIOBase();
-            initialPortData.m_hostMode = port.GetHostMode();
-            initialPortData.m_fServer = port.GetServer();
-            initialPortData.m_strPath = port.GetPath();
+            /* Gather old port data: */
+            oldPortData.m_iSlot = iSlot;
+            oldPortData.m_fPortEnabled = comPort.GetEnabled();
+            oldPortData.m_uIRQ = comPort.GetIRQ();
+            oldPortData.m_uIOBase = comPort.GetIOBase();
+            oldPortData.m_hostMode = comPort.GetHostMode();
+            oldPortData.m_fServer = comPort.GetServer();
+            oldPortData.m_strPath = comPort.GetPath();
         }
 
-        /* Append initial port data: */
-        initialData.m_ports << initialPortData;
+        /* Cache old port data: */
+        oldSerialData.m_ports << oldPortData;
     }
 
-    /* Cache initial data: */
-    m_pCache->cacheInitialData(initialData);
+    /* Cache old serial data: */
+    m_pCache->cacheInitialData(oldSerialData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -405,13 +405,13 @@ void UIMachineSettingsSerialPage::getFromCache()
     setTabOrder(firstWidget(), m_pTabWidget->focusProxy());
     QWidget *pLastFocusWidget = m_pTabWidget->focusProxy();
 
-    /* For each serial port: */
+    /* For each port: */
     for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         /* Get port page: */
         UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iPort));
 
-        /* Load port data to page: */
+        /* Load old port data to the page: */
         pPage->loadPortData(m_pCache->base().m_ports.at(iPort));
 
         /* Setup tab order: */
@@ -430,27 +430,27 @@ void UIMachineSettingsSerialPage::getFromCache()
 
 void UIMachineSettingsSerialPage::putToCache()
 {
-    /* Prepare current data: */
-    UIDataSettingsMachineSerial currentData;
+    /* Prepare new serial data: */
+    UIDataSettingsMachineSerial newSerialData;
 
-    /* For each serial port: */
+    /* For each port: */
     for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
     {
         /* Getting port page: */
         UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iPort));
 
-        /* Prepare current port data: */
-        UIDataSettingsMachineSerialPort currentPortData;
+        /* Prepare new port data: */
+        UIDataSettingsMachineSerialPort newPortData;
 
-        /* Gather current port data: */
-        pTab->savePortData(currentPortData);
+        /* Gather new port data: */
+        pTab->savePortData(newPortData);
 
-        /* Cache current port data: */
-        currentData.m_ports << currentPortData;
+        /* Cache new port data: */
+        newSerialData.m_ports << newPortData;
     }
 
-    /* Cache current data: */
-    m_pCache->cacheCurrentData(currentData);
+    /* Cache new serial data: */
+    m_pCache->cacheCurrentData(newSerialData);
 }
 
 void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
@@ -458,51 +458,51 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Check if ports data was changed: */
-    if (m_pCache->wasChanged())
+    /* Make sure machine is offline & serial data was changed: */
+    if (isMachineOffline() && m_pCache->wasChanged())
     {
         /* For each serial port: */
         for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
         {
-            /* Check if port data was changed: */
-            const UIDataSettingsMachineSerialPort &initialPortData = m_pCache->base().m_ports.at(iPort);
-            const UIDataSettingsMachineSerialPort &currentPortData = m_pCache->data().m_ports.at(iPort);
-            if (currentPortData != initialPortData)
+            /* Get old serial data from the cache: */
+            const UIDataSettingsMachineSerialPort &oldPortData = m_pCache->base().m_ports.at(iPort);
+            /* Get new serial data from the cache: */
+            const UIDataSettingsMachineSerialPort &newPortData = m_pCache->data().m_ports.at(iPort);
+
+            /* Make sure port data was changed: */
+            if (newPortData != oldPortData)
             {
                 /* Check if port still valid: */
-                CSerialPort port = m_machine.GetSerialPort(iPort);
-                if (!port.isNull())
+                CSerialPort comPort = m_machine.GetSerialPort(iPort);
+                /* Store new adapter data: */
+                if (!comPort.isNull())
                 {
-                    /* Store adapter data: */
-                    if (isMachineOffline())
-                    {
-                        /* Whether the port is enabled: */
-                        if (   port.isOk()
-                            && currentPortData.m_fPortEnabled != initialPortData.m_fPortEnabled)
-                            port.SetEnabled(currentPortData.m_fPortEnabled);
-                        /* Port IRQ: */
-                        if (   port.isOk()
-                            && currentPortData.m_uIRQ != initialPortData.m_uIRQ)
-                            port.SetIRQ(currentPortData.m_uIRQ);
-                        /* Port IO base: */
-                        if (   port.isOk()
-                            && currentPortData.m_uIOBase != initialPortData.m_uIOBase)
-                            port.SetIOBase(currentPortData.m_uIOBase);
-                        /* Whether the port is server: */
-                        if (   port.isOk()
-                            && currentPortData.m_fServer != initialPortData.m_fServer)
-                            port.SetServer(currentPortData.m_fServer);
-                        /* Port path: */
-                        if (   port.isOk()
-                            && currentPortData.m_strPath != initialPortData.m_strPath)
-                            port.SetPath(currentPortData.m_strPath);
-                        /* This *must* be last. The host mode will be changed to disconnected if
-                         * some of the necessary settings above will not meet the requirements for
-                         * the selected mode. */
-                        if (   port.isOk()
-                            && currentPortData.m_hostMode != initialPortData.m_hostMode)
-                            port.SetHostMode(currentPortData.m_hostMode);
-                    }
+                    /* Whether the port is enabled: */
+                    if (   comPort.isOk()
+                        && newPortData.m_fPortEnabled != oldPortData.m_fPortEnabled)
+                        comPort.SetEnabled(newPortData.m_fPortEnabled);
+                    /* Port IRQ: */
+                    if (   comPort.isOk()
+                        && newPortData.m_uIRQ != oldPortData.m_uIRQ)
+                        comPort.SetIRQ(newPortData.m_uIRQ);
+                    /* Port IO base: */
+                    if (   comPort.isOk()
+                        && newPortData.m_uIOBase != oldPortData.m_uIOBase)
+                        comPort.SetIOBase(newPortData.m_uIOBase);
+                    /* Whether the port is server: */
+                    if (   comPort.isOk()
+                        && newPortData.m_fServer != oldPortData.m_fServer)
+                        comPort.SetServer(newPortData.m_fServer);
+                    /* Port path: */
+                    if (   comPort.isOk()
+                        && newPortData.m_strPath != oldPortData.m_strPath)
+                        comPort.SetPath(newPortData.m_strPath);
+                    /* This *must* be last. The host mode will be changed to disconnected if
+                     * some of the necessary settings above will not meet the requirements for
+                     * the selected mode. */
+                    if (   comPort.isOk()
+                        && newPortData.m_hostMode != oldPortData.m_hostMode)
+                        comPort.SetHostMode(newPortData.m_hostMode);
                 }
             }
         }
