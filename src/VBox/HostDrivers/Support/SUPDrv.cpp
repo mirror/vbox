@@ -4924,7 +4924,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
     if (RT_SUCCESS(rc))
     {
-        SUPR0Printf("vboxdrv: %p %s\n", pImage->pvImage, pImage->szName);
+        SUPR0Printf("vboxdrv: %RKv %s\n", pImage->pvImage, pImage->szName);
         pReq->u.Out.uErrorMagic = 0;
         pReq->u.Out.szError[0]  = '\0';
     }
