@@ -161,36 +161,36 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare interface data: */
-    UIDataSettingsMachineInterface interfaceData;
+    /* Prepare old interface data: */
+    UIDataSettingsMachineInterface oldInterfaceData;
 
-    /* Cache interface data: */
-    interfaceData.m_fStatusBarEnabled = gEDataManager->statusBarEnabled(m_machine.GetId());
-    interfaceData.m_statusBarRestrictions = gEDataManager->restrictedStatusBarIndicators(m_machine.GetId());
-    interfaceData.m_statusBarOrder = gEDataManager->statusBarIndicatorOrder(m_machine.GetId());
+    /* Gather old interface data: */
+    oldInterfaceData.m_fStatusBarEnabled = gEDataManager->statusBarEnabled(m_machine.GetId());
+    oldInterfaceData.m_statusBarRestrictions = gEDataManager->restrictedStatusBarIndicators(m_machine.GetId());
+    oldInterfaceData.m_statusBarOrder = gEDataManager->statusBarIndicatorOrder(m_machine.GetId());
 #ifndef VBOX_WS_MAC
-    interfaceData.m_fMenuBarEnabled = gEDataManager->menuBarEnabled(m_machine.GetId());
-#endif /* !VBOX_WS_MAC */
-    interfaceData.m_restrictionsOfMenuBar = gEDataManager->restrictedRuntimeMenuTypes(m_machine.GetId());
-    interfaceData.m_restrictionsOfMenuApplication = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(m_machine.GetId());
-    interfaceData.m_restrictionsOfMenuMachine = gEDataManager->restrictedRuntimeMenuMachineActionTypes(m_machine.GetId());
-    interfaceData.m_restrictionsOfMenuView = gEDataManager->restrictedRuntimeMenuViewActionTypes(m_machine.GetId());
-    interfaceData.m_restrictionsOfMenuInput = gEDataManager->restrictedRuntimeMenuInputActionTypes(m_machine.GetId());
-    interfaceData.m_restrictionsOfMenuDevices = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(m_machine.GetId());
+    oldInterfaceData.m_fMenuBarEnabled = gEDataManager->menuBarEnabled(m_machine.GetId());
+#endif
+    oldInterfaceData.m_restrictionsOfMenuBar = gEDataManager->restrictedRuntimeMenuTypes(m_machine.GetId());
+    oldInterfaceData.m_restrictionsOfMenuApplication = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(m_machine.GetId());
+    oldInterfaceData.m_restrictionsOfMenuMachine = gEDataManager->restrictedRuntimeMenuMachineActionTypes(m_machine.GetId());
+    oldInterfaceData.m_restrictionsOfMenuView = gEDataManager->restrictedRuntimeMenuViewActionTypes(m_machine.GetId());
+    oldInterfaceData.m_restrictionsOfMenuInput = gEDataManager->restrictedRuntimeMenuInputActionTypes(m_machine.GetId());
+    oldInterfaceData.m_restrictionsOfMenuDevices = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(m_machine.GetId());
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    interfaceData.m_restrictionsOfMenuDebug = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(m_machine.GetId());
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+    oldInterfaceData.m_restrictionsOfMenuDebug = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(m_machine.GetId());
+#endif
 #ifdef VBOX_WS_MAC
-    interfaceData.m_restrictionsOfMenuWindow = gEDataManager->restrictedRuntimeMenuWindowActionTypes(m_machine.GetId());
-#endif /* VBOX_WS_MAC */
-    interfaceData.m_restrictionsOfMenuHelp = gEDataManager->restrictedRuntimeMenuHelpActionTypes(m_machine.GetId());
+    oldInterfaceData.m_restrictionsOfMenuWindow = gEDataManager->restrictedRuntimeMenuWindowActionTypes(m_machine.GetId());
+#endif
+    oldInterfaceData.m_restrictionsOfMenuHelp = gEDataManager->restrictedRuntimeMenuHelpActionTypes(m_machine.GetId());
 #ifndef VBOX_WS_MAC
-    interfaceData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
-    interfaceData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
-#endif /* !VBOX_WS_MAC */
+    oldInterfaceData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
+    oldInterfaceData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
+#endif
 
-    /* Cache interface data: */
-    m_pCache->cacheInitialData(interfaceData);
+    /* Cache old interface data: */
+    m_pCache->cacheInitialData(oldInterfaceData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -198,33 +198,33 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsInterface::getFromCache()
 {
-    /* Get interface data from cache: */
-    const UIDataSettingsMachineInterface &interfaceData = m_pCache->base();
+    /* Get old interface data from the cache: */
+    const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
 
-    /* Prepare interface data: */
-    m_pStatusBarEditor->setStatusBarEnabled(interfaceData.m_fStatusBarEnabled);
-    m_pStatusBarEditor->setStatusBarConfiguration(interfaceData.m_statusBarRestrictions,
-                                                  interfaceData.m_statusBarOrder);
+    /* Load old interface data to the page: */
+    m_pStatusBarEditor->setStatusBarEnabled(oldInterfaceData.m_fStatusBarEnabled);
+    m_pStatusBarEditor->setStatusBarConfiguration(oldInterfaceData.m_statusBarRestrictions,
+                                                  oldInterfaceData.m_statusBarOrder);
 #ifndef VBOX_WS_MAC
-    m_pMenuBarEditor->setMenuBarEnabled(interfaceData.m_fMenuBarEnabled);
-#endif /* !VBOX_WS_MAC */
-    m_pMenuBarEditor->setRestrictionsOfMenuBar(interfaceData.m_restrictionsOfMenuBar);
-    m_pMenuBarEditor->setRestrictionsOfMenuApplication(interfaceData.m_restrictionsOfMenuApplication);
-    m_pMenuBarEditor->setRestrictionsOfMenuMachine(interfaceData.m_restrictionsOfMenuMachine);
-    m_pMenuBarEditor->setRestrictionsOfMenuView(interfaceData.m_restrictionsOfMenuView);
-    m_pMenuBarEditor->setRestrictionsOfMenuInput(interfaceData.m_restrictionsOfMenuInput);
-    m_pMenuBarEditor->setRestrictionsOfMenuDevices(interfaceData.m_restrictionsOfMenuDevices);
+    m_pMenuBarEditor->setMenuBarEnabled(oldInterfaceData.m_fMenuBarEnabled);
+#endif
+    m_pMenuBarEditor->setRestrictionsOfMenuBar(oldInterfaceData.m_restrictionsOfMenuBar);
+    m_pMenuBarEditor->setRestrictionsOfMenuApplication(oldInterfaceData.m_restrictionsOfMenuApplication);
+    m_pMenuBarEditor->setRestrictionsOfMenuMachine(oldInterfaceData.m_restrictionsOfMenuMachine);
+    m_pMenuBarEditor->setRestrictionsOfMenuView(oldInterfaceData.m_restrictionsOfMenuView);
+    m_pMenuBarEditor->setRestrictionsOfMenuInput(oldInterfaceData.m_restrictionsOfMenuInput);
+    m_pMenuBarEditor->setRestrictionsOfMenuDevices(oldInterfaceData.m_restrictionsOfMenuDevices);
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    m_pMenuBarEditor->setRestrictionsOfMenuDebug(interfaceData.m_restrictionsOfMenuDebug);
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+    m_pMenuBarEditor->setRestrictionsOfMenuDebug(oldInterfaceData.m_restrictionsOfMenuDebug);
+#endif
 #ifdef VBOX_WS_MAC
-    m_pMenuBarEditor->setRestrictionsOfMenuWindow(interfaceData.m_restrictionsOfMenuWindow);
-#endif /* VBOX_WS_MAC */
-    m_pMenuBarEditor->setRestrictionsOfMenuHelp(interfaceData.m_restrictionsOfMenuHelp);
+    m_pMenuBarEditor->setRestrictionsOfMenuWindow(oldInterfaceData.m_restrictionsOfMenuWindow);
+#endif
+    m_pMenuBarEditor->setRestrictionsOfMenuHelp(oldInterfaceData.m_restrictionsOfMenuHelp);
 #ifndef VBOX_WS_MAC
-    m_pCheckBoxShowMiniToolBar->setChecked(interfaceData.m_fShowMiniToolBar);
-    m_pComboToolBarAlignment->setChecked(interfaceData.m_fMiniToolBarAtTop);
-#endif /* !VBOX_WS_MAC */
+    m_pCheckBoxShowMiniToolBar->setChecked(oldInterfaceData.m_fShowMiniToolBar);
+    m_pComboToolBarAlignment->setChecked(oldInterfaceData.m_fMiniToolBarAtTop);
+#endif
 
     /* Polish page finally: */
     polishPage();
@@ -235,36 +235,36 @@ void UIMachineSettingsInterface::getFromCache()
 
 void UIMachineSettingsInterface::putToCache()
 {
-    /* Prepare interface data: */
-    UIDataSettingsMachineInterface interfaceData = m_pCache->base();
+    /* Prepare new interface data: */
+    UIDataSettingsMachineInterface newInterfaceData = m_pCache->base();
 
-    /* Gather interface data from page: */
-    interfaceData.m_fStatusBarEnabled = m_pStatusBarEditor->isStatusBarEnabled();
-    interfaceData.m_statusBarRestrictions = m_pStatusBarEditor->statusBarIndicatorRestrictions();
-    interfaceData.m_statusBarOrder = m_pStatusBarEditor->statusBarIndicatorOrder();
+    /* Gather new interface data from page: */
+    newInterfaceData.m_fStatusBarEnabled = m_pStatusBarEditor->isStatusBarEnabled();
+    newInterfaceData.m_statusBarRestrictions = m_pStatusBarEditor->statusBarIndicatorRestrictions();
+    newInterfaceData.m_statusBarOrder = m_pStatusBarEditor->statusBarIndicatorOrder();
 #ifndef VBOX_WS_MAC
-    interfaceData.m_fMenuBarEnabled = m_pMenuBarEditor->isMenuBarEnabled();
-#endif /* !VBOX_WS_MAC */
-    interfaceData.m_restrictionsOfMenuBar = m_pMenuBarEditor->restrictionsOfMenuBar();
-    interfaceData.m_restrictionsOfMenuApplication = m_pMenuBarEditor->restrictionsOfMenuApplication();
-    interfaceData.m_restrictionsOfMenuMachine = m_pMenuBarEditor->restrictionsOfMenuMachine();
-    interfaceData.m_restrictionsOfMenuView = m_pMenuBarEditor->restrictionsOfMenuView();
-    interfaceData.m_restrictionsOfMenuInput = m_pMenuBarEditor->restrictionsOfMenuInput();
-    interfaceData.m_restrictionsOfMenuDevices = m_pMenuBarEditor->restrictionsOfMenuDevices();
+    newInterfaceData.m_fMenuBarEnabled = m_pMenuBarEditor->isMenuBarEnabled();
+#endif
+    newInterfaceData.m_restrictionsOfMenuBar = m_pMenuBarEditor->restrictionsOfMenuBar();
+    newInterfaceData.m_restrictionsOfMenuApplication = m_pMenuBarEditor->restrictionsOfMenuApplication();
+    newInterfaceData.m_restrictionsOfMenuMachine = m_pMenuBarEditor->restrictionsOfMenuMachine();
+    newInterfaceData.m_restrictionsOfMenuView = m_pMenuBarEditor->restrictionsOfMenuView();
+    newInterfaceData.m_restrictionsOfMenuInput = m_pMenuBarEditor->restrictionsOfMenuInput();
+    newInterfaceData.m_restrictionsOfMenuDevices = m_pMenuBarEditor->restrictionsOfMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    interfaceData.m_restrictionsOfMenuDebug = m_pMenuBarEditor->restrictionsOfMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+    newInterfaceData.m_restrictionsOfMenuDebug = m_pMenuBarEditor->restrictionsOfMenuDebug();
+#endif
 #ifdef VBOX_WS_MAC
-    interfaceData.m_restrictionsOfMenuWindow = m_pMenuBarEditor->restrictionsOfMenuWindow();
-#endif /* VBOX_WS_MAC */
-    interfaceData.m_restrictionsOfMenuHelp = m_pMenuBarEditor->restrictionsOfMenuHelp();
+    newInterfaceData.m_restrictionsOfMenuWindow = m_pMenuBarEditor->restrictionsOfMenuWindow();
+#endif
+    newInterfaceData.m_restrictionsOfMenuHelp = m_pMenuBarEditor->restrictionsOfMenuHelp();
 #ifndef VBOX_WS_MAC
-    interfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
-    interfaceData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
-#endif /* !VBOX_WS_MAC */
+    newInterfaceData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
+    newInterfaceData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
+#endif
 
-    /* Cache interface data: */
-    m_pCache->cacheCurrentData(interfaceData);
+    /* Cache new interface data: */
+    m_pCache->cacheCurrentData(newInterfaceData);
 }
 
 void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
@@ -275,36 +275,64 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
     /* Make sure machine is in valid mode & interface data was changed: */
     if (isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Get interface data from cache: */
-        const UIDataSettingsMachineInterface &interfaceData = m_pCache->data();
+        /* Get old interface data from the cache: */
+        const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
+        /* Get new interface data from the cache: */
+        const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data();
 
-        /* Store interface data: */
-        if (isMachineInValidMode())
-        {
-            gEDataManager->setStatusBarEnabled(interfaceData.m_fStatusBarEnabled, m_machine.GetId());
-            gEDataManager->setRestrictedStatusBarIndicators(interfaceData.m_statusBarRestrictions, m_machine.GetId());
-            gEDataManager->setStatusBarIndicatorOrder(interfaceData.m_statusBarOrder, m_machine.GetId());
+        /* Store whether status-bar is enabled: */
+        if (newInterfaceData.m_fStatusBarEnabled != oldInterfaceData.m_fStatusBarEnabled)
+            gEDataManager->setStatusBarEnabled(newInterfaceData.m_fStatusBarEnabled, m_machine.GetId());
+        /* Store status-bar restrictions: */
+        if (newInterfaceData.m_statusBarRestrictions != oldInterfaceData.m_statusBarRestrictions)
+            gEDataManager->setRestrictedStatusBarIndicators(newInterfaceData.m_statusBarRestrictions, m_machine.GetId());
+        /* Store status-bar order: */
+        if (newInterfaceData.m_statusBarOrder != oldInterfaceData.m_statusBarOrder)
+            gEDataManager->setStatusBarIndicatorOrder(newInterfaceData.m_statusBarOrder, m_machine.GetId());
 #ifndef VBOX_WS_MAC
-            gEDataManager->setMenuBarEnabled(interfaceData.m_fMenuBarEnabled, m_machine.GetId());
-#endif /* !VBOX_WS_MAC */
-            gEDataManager->setRestrictedRuntimeMenuTypes(interfaceData.m_restrictionsOfMenuBar, m_machine.GetId());
-            gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(interfaceData.m_restrictionsOfMenuApplication, m_machine.GetId());
-            gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(interfaceData.m_restrictionsOfMenuMachine, m_machine.GetId());
-            gEDataManager->setRestrictedRuntimeMenuViewActionTypes(interfaceData.m_restrictionsOfMenuView, m_machine.GetId());
-            gEDataManager->setRestrictedRuntimeMenuInputActionTypes(interfaceData.m_restrictionsOfMenuInput, m_machine.GetId());
-            gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(interfaceData.m_restrictionsOfMenuDevices, m_machine.GetId());
+        /* Store whether menu-bar is enabled: */
+        if (newInterfaceData.m_fMenuBarEnabled != oldInterfaceData.m_fMenuBarEnabled)
+            gEDataManager->setMenuBarEnabled(newInterfaceData.m_fMenuBarEnabled, m_machine.GetId());
+#endif
+        /* Store menu-bar restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuBar != oldInterfaceData.m_restrictionsOfMenuBar)
+            gEDataManager->setRestrictedRuntimeMenuTypes(newInterfaceData.m_restrictionsOfMenuBar, m_machine.GetId());
+        /* Store menu-bar Application menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuApplication != oldInterfaceData.m_restrictionsOfMenuApplication)
+            gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(newInterfaceData.m_restrictionsOfMenuApplication, m_machine.GetId());
+        /* Store menu-bar Machine menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuMachine != oldInterfaceData.m_restrictionsOfMenuMachine)
+            gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(newInterfaceData.m_restrictionsOfMenuMachine, m_machine.GetId());
+        /* Store menu-bar View menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuView != oldInterfaceData.m_restrictionsOfMenuView)
+            gEDataManager->setRestrictedRuntimeMenuViewActionTypes(newInterfaceData.m_restrictionsOfMenuView, m_machine.GetId());
+        /* Store menu-bar Input menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuInput != oldInterfaceData.m_restrictionsOfMenuInput)
+            gEDataManager->setRestrictedRuntimeMenuInputActionTypes(newInterfaceData.m_restrictionsOfMenuInput, m_machine.GetId());
+        /* Store menu-bar Devices menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuDevices != oldInterfaceData.m_restrictionsOfMenuDevices)
+            gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(newInterfaceData.m_restrictionsOfMenuDevices, m_machine.GetId());
 #ifdef VBOX_WITH_DEBUGGER_GUI
-            gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(interfaceData.m_restrictionsOfMenuDebug, m_machine.GetId());
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+        /* Store menu-bar Debug menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuDebug != oldInterfaceData.m_restrictionsOfMenuDebug)
+            gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(newInterfaceData.m_restrictionsOfMenuDebug, m_machine.GetId());
+#endif
 #ifdef VBOX_WS_MAC
-            gEDataManager->setRestrictedRuntimeMenuWindowActionTypes(interfaceData.m_restrictionsOfMenuWindow, m_machine.GetId());
-#endif /* VBOX_WS_MAC */
-            gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(interfaceData.m_restrictionsOfMenuHelp, m_machine.GetId());
+        /* Store menu-bar Window menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuWindow != oldInterfaceData.m_restrictionsOfMenuWindow)
+            gEDataManager->setRestrictedRuntimeMenuWindowActionTypes(newInterfaceData.m_restrictionsOfMenuWindow, m_machine.GetId());
+#endif
+        /* Store menu-bar Help menu restrictions: */
+        if (newInterfaceData.m_restrictionsOfMenuHelp != oldInterfaceData.m_restrictionsOfMenuHelp)
+            gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(newInterfaceData.m_restrictionsOfMenuHelp, m_machine.GetId());
 #ifndef VBOX_WS_MAC
-            gEDataManager->setMiniToolbarEnabled(interfaceData.m_fShowMiniToolBar, m_machine.GetId());
-            gEDataManager->setMiniToolbarAlignment(interfaceData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
-#endif /* !VBOX_WS_MAC */
-        }
+        /* Store whether mini-toolbar is enabled: */
+        if (newInterfaceData.m_fShowMiniToolBar != oldInterfaceData.m_fShowMiniToolBar)
+            gEDataManager->setMiniToolbarEnabled(newInterfaceData.m_fShowMiniToolBar, m_machine.GetId());
+        /* Store whether mini-toolbar should be location at top of screen: */
+        if (newInterfaceData.m_fMiniToolBarAtTop != oldInterfaceData.m_fMiniToolBarAtTop)
+            gEDataManager->setMiniToolbarAlignment(newInterfaceData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
+#endif
     }
 
     /* Upload machine to data: */
