@@ -914,13 +914,13 @@ static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGM
     PGMMCHUNK pChunk = (PGMMCHUNK)pNode;
 
     if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
-        SUPR0Printf("GMMR0Term: %p/%#x: cFree=%d cPrivate=%d cShared=%d cMappings=%d\n", pChunk,
+        SUPR0Printf("GMMR0Term: %RKv/%#x: cFree=%d cPrivate=%d cShared=%d cMappings=%d\n", pChunk,
                     pChunk->Core.Key, pChunk->cFree, pChunk->cPrivate, pChunk->cShared, pChunk->cMappingsX);
 
     int rc = RTR0MemObjFree(pChunk->hMemObj, true /* fFreeMappings */);
     if (RT_FAILURE(rc))
     {
-        SUPR0Printf("GMMR0Term: %p/%#x: RTRMemObjFree(%p,true) -> %d (cMappings=%d)\n", pChunk,
+        SUPR0Printf("GMMR0Term: %RKv/%#x: RTRMemObjFree(%RKv,true) -> %d (cMappings=%d)\n", pChunk,
                     pChunk->Core.Key, pChunk->hMemObj, rc, pChunk->cMappingsX);
         AssertRC(rc);
     }
@@ -1458,7 +1458,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
                         ||  pChunk->cPrivate != cPrivate
                         ||  pChunk->cShared != cShared))
         {
-            SUPR0Printf("gmmR0CleanupVMScanChunk: Chunk %p/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n",
+            SUPR0Printf("gmmR0CleanupVMScanChunk: Chunk %RKv/%#x has bogus stats - free=%d/%d private=%d/%d shared=%d/%d\n",
                         pChunk, pChunk->Core.Key, pChunk->cFree, cFree, pChunk->cPrivate, cPrivate, pChunk->cShared, cShared);
             pChunk->cFree = cFree;
             pChunk->cPrivate = cPrivate;
@@ -1476,7 +1476,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
             pChunk->hGVM = NIL_GVM_HANDLE;
         else if (pChunk->cFree != GMM_CHUNK_NUM_PAGES)
         {
-            SUPR0Printf("gmmR0CleanupVMScanChunk: %p/%#x: cFree=%#x - it should be 0 in bound mode!\n",
+            SUPR0Printf("gmmR0CleanupVMScanChunk: %RKv/%#x: cFree=%#x - it should be 0 in bound mode!\n",
                         pChunk, pChunk->Core.Key, pChunk->cFree);
             AssertMsgFailed(("%p/%#x: cFree=%#x - it should be 0 in bound mode!\n", pChunk, pChunk->Core.Key, pChunk->cFree));
 
@@ -1510,7 +1510,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
             int rc = RTR0MemObjFree(hMemObj, false /* fFreeMappings (NA) */);
             if (RT_FAILURE(rc))
             {
-                SUPR0Printf("gmmR0CleanupVMScanChunk: %p/%#x: mapping #%x: RTRMemObjFree(%p,false) -> %d \n",
+                SUPR0Printf("gmmR0CleanupVMScanChunk: %RKv/%#x: mapping #%x: RTRMemObjFree(%RKv,false) -> %d \n",
                             pChunk, pChunk->Core.Key, i, hMemObj, rc);
                 AssertRC(rc);
             }

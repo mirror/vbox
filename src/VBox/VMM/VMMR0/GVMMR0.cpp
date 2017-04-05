@@ -526,7 +526,7 @@ GVMMR0DECL(void) GVMMR0Term(void)
     g_pGVMM = NULL;
     if (RT_UNLIKELY(!VALID_PTR(pGVMM)))
     {
-        SUPR0Printf("GVMMR0Term: pGVMM=%p\n", pGVMM);
+        SUPR0Printf("GVMMR0Term: pGVMM=%RKv\n", pGVMM);
         return;
     }
 
@@ -1204,7 +1204,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     }
     else
     {
-        SUPR0Printf("GVMMR0DestroyVM: pHandle=%p:{.pVM=%p, .hEMT0=%p, .ProcId=%u, .pvObj=%p} pVM=%p hSelf=%p\n",
+        SUPR0Printf("GVMMR0DestroyVM: pHandle=%RKv:{.pVM=%p, .hEMT0=%p, .ProcId=%u, .pvObj=%p} pVM=%p hSelf=%p\n",
                     pHandle, pHandle->pVM, pHandle->hEMT0, pHandle->ProcId, pHandle->pvObj, pVM, hSelf);
         gvmmR0CreateDestroyUnlock(pGVMM);
         rc = VERR_GVMM_IPE_2;
