@@ -4627,6 +4627,7 @@ static bool omfDetails_AddSegDefIfNeeded(POMFDETAILS pOmfStuff, uint8_t bSegAttr
 }
 
 
+#if 0 /* unused */
 /**
  * Looks up a GRPDEF in the .
  *
@@ -4646,6 +4647,7 @@ static uint16_t omfDetails_GrpDefLookupN(POMFDETAILS pOmfStuff, const char *pchN
     }
     return UINT16_MAX;
 }
+#endif
 
 
 /**
