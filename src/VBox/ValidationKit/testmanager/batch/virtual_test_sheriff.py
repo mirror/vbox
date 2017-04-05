@@ -467,6 +467,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
     ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
+    ktReason_Host_Modprobe_Failed                      = ( 'Host',              'Modprobe failed' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
     ktReason_Panic_BootManagerC000000F                 = ( 'Panic',             'Hardware Changed' );
@@ -835,7 +836,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           'Error: failed to start machine. Error message: File not found. (VERR_FILE_NOT_FOUND)' ),
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
-        ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' )
+        ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' ),
+        ( True,  ktReason_Host_Modprobe_Failed,                     'modprobe vboxdrv failed' )
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
