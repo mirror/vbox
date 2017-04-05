@@ -219,49 +219,49 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare display data: */
-    UIDataSettingsMachineDisplay displayData;
+    /* Prepare old display data: */
+    UIDataSettingsMachineDisplay oldDisplayData;
 
-    /* Cache Screen data: */
-    displayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
-    displayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
-    displayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
+    /* Gather old 'Screen' data: */
+    oldDisplayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
+    oldDisplayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
+    oldDisplayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
 #ifdef VBOX_WS_MAC
-    displayData.m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(m_machine.GetId());
-#endif /* VBOX_WS_MAC */
-    displayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
+    oldDisplayData.m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(m_machine.GetId());
+#endif
+    oldDisplayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    displayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+    oldDisplayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
+#endif
 
-    /* Check if Remote Display server is valid: */
-    CVRDEServer remoteDisplayServer = m_machine.GetVRDEServer();
-    displayData.m_fRemoteDisplayServerSupported = !remoteDisplayServer.isNull();
-    if (!remoteDisplayServer.isNull())
+    /* Check whether remote display server is valid: */
+    const CVRDEServer &comServer = m_machine.GetVRDEServer();
+    oldDisplayData.m_fRemoteDisplayServerSupported = !comServer.isNull();
+    if (!comServer.isNull())
     {
-        /* Cache Remote Display data: */
-        displayData.m_fRemoteDisplayServerEnabled = remoteDisplayServer.GetEnabled();
-        displayData.m_strRemoteDisplayPort = remoteDisplayServer.GetVRDEProperty("TCP/Ports");
-        displayData.m_remoteDisplayAuthType = remoteDisplayServer.GetAuthType();
-        displayData.m_uRemoteDisplayTimeout = remoteDisplayServer.GetAuthTimeout();
-        displayData.m_fRemoteDisplayMultiConnAllowed = remoteDisplayServer.GetAllowMultiConnection();
+        /* Gather old 'Remote Display' data: */
+        oldDisplayData.m_fRemoteDisplayServerEnabled = comServer.GetEnabled();
+        oldDisplayData.m_strRemoteDisplayPort = comServer.GetVRDEProperty("TCP/Ports");
+        oldDisplayData.m_remoteDisplayAuthType = comServer.GetAuthType();
+        oldDisplayData.m_uRemoteDisplayTimeout = comServer.GetAuthTimeout();
+        oldDisplayData.m_fRemoteDisplayMultiConnAllowed = comServer.GetAllowMultiConnection();
     }
 
-    /* Cache Video Capture data: */
-    displayData.m_fVideoCaptureEnabled = m_machine.GetVideoCaptureEnabled();
-    displayData.m_strVideoCaptureFolder = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
-    displayData.m_strVideoCaptureFilePath = m_machine.GetVideoCaptureFile();
-    displayData.m_iVideoCaptureFrameWidth = m_machine.GetVideoCaptureWidth();
-    displayData.m_iVideoCaptureFrameHeight = m_machine.GetVideoCaptureHeight();
-    displayData.m_iVideoCaptureFrameRate = m_machine.GetVideoCaptureFPS();
-    displayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
-    displayData.m_screens = m_machine.GetVideoCaptureScreens();
+    /* Gather old 'Video Capture' data: */
+    oldDisplayData.m_fVideoCaptureEnabled = m_machine.GetVideoCaptureEnabled();
+    oldDisplayData.m_strVideoCaptureFolder = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
+    oldDisplayData.m_strVideoCaptureFilePath = m_machine.GetVideoCaptureFile();
+    oldDisplayData.m_iVideoCaptureFrameWidth = m_machine.GetVideoCaptureWidth();
+    oldDisplayData.m_iVideoCaptureFrameHeight = m_machine.GetVideoCaptureHeight();
+    oldDisplayData.m_iVideoCaptureFrameRate = m_machine.GetVideoCaptureFPS();
+    oldDisplayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
+    oldDisplayData.m_screens = m_machine.GetVideoCaptureScreens();
 
-    /* Initialize other variables: */
-    m_iInitialVRAM = RT_MIN(displayData.m_iCurrentVRAM, m_iMaxVRAM);
+    /* Gather other old display data: */
+    m_iInitialVRAM = RT_MIN(oldDisplayData.m_iCurrentVRAM, m_iMaxVRAM);
 
-    /* Cache display data: */
-    m_pCache->cacheInitialData(displayData);
+    /* Cache old display data: */
+    m_pCache->cacheInitialData(oldDisplayData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -269,42 +269,42 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsDisplay::getFromCache()
 {
-    /* Get display data from cache: */
-    const UIDataSettingsMachineDisplay &displayData = m_pCache->base();
+    /* Get old display data from the cache: */
+    const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
-    /* Load Screen data to page: */
-    m_pEditorVideoScreenCount->setValue(displayData.m_cGuestScreenCount);
-    m_pEditorGuestScreenScale->setValue((int)(displayData.m_dScaleFactor * 100));
+    /* Load old 'Screen' data to the page: */
+    m_pEditorVideoScreenCount->setValue(oldDisplayData.m_cGuestScreenCount);
+    m_pEditorGuestScreenScale->setValue((int)(oldDisplayData.m_dScaleFactor * 100));
 #ifdef VBOX_WS_MAC
-    m_pCheckBoxUnscaledHiDPIOutput->setChecked(displayData.m_fUseUnscaledHiDPIOutput);
-#endif /* VBOX_WS_MAC */
-    m_pCheckbox3D->setChecked(displayData.m_f3dAccelerationEnabled);
+    m_pCheckBoxUnscaledHiDPIOutput->setChecked(oldDisplayData.m_fUseUnscaledHiDPIOutput);
+#endif
+    m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    m_pCheckbox2DVideo->setChecked(displayData.m_f2dAccelerationEnabled);
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-    /* Should be the last one from this tab: */
-    m_pEditorVideoMemorySize->setValue(displayData.m_iCurrentVRAM);
+    m_pCheckbox2DVideo->setChecked(oldDisplayData.m_f2dAccelerationEnabled);
+#endif
+    // Should be the last one for this tab:
+    m_pEditorVideoMemorySize->setValue(oldDisplayData.m_iCurrentVRAM);
 
-    /* If Remote Display server is supported: */
-    if (displayData.m_fRemoteDisplayServerSupported)
+    /* If remote display server is supported: */
+    if (oldDisplayData.m_fRemoteDisplayServerSupported)
     {
-        /* Load Remote Display data to page: */
-        m_pCheckboxRemoteDisplay->setChecked(displayData.m_fRemoteDisplayServerEnabled);
-        m_pEditorRemoteDisplayPort->setText(displayData.m_strRemoteDisplayPort);
-        m_pComboRemoteDisplayAuthMethod->setCurrentIndex(m_pComboRemoteDisplayAuthMethod->findText(gpConverter->toString(displayData.m_remoteDisplayAuthType)));
-        m_pEditorRemoteDisplayTimeout->setText(QString::number(displayData.m_uRemoteDisplayTimeout));
-        m_pCheckboxMultipleConn->setChecked(displayData.m_fRemoteDisplayMultiConnAllowed);
+        /* Load old 'Remote Display' data to the page: */
+        m_pCheckboxRemoteDisplay->setChecked(oldDisplayData.m_fRemoteDisplayServerEnabled);
+        m_pEditorRemoteDisplayPort->setText(oldDisplayData.m_strRemoteDisplayPort);
+        m_pComboRemoteDisplayAuthMethod->setCurrentIndex(m_pComboRemoteDisplayAuthMethod->findText(gpConverter->toString(oldDisplayData.m_remoteDisplayAuthType)));
+        m_pEditorRemoteDisplayTimeout->setText(QString::number(oldDisplayData.m_uRemoteDisplayTimeout));
+        m_pCheckboxMultipleConn->setChecked(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
     }
 
-    /* Load Video Capture data to page: */
-    m_pCheckboxVideoCapture->setChecked(displayData.m_fVideoCaptureEnabled);
-    m_pEditorVideoCapturePath->setHomeDir(displayData.m_strVideoCaptureFolder);
-    m_pEditorVideoCapturePath->setPath(displayData.m_strVideoCaptureFilePath);
-    m_pEditorVideoCaptureWidth->setValue(displayData.m_iVideoCaptureFrameWidth);
-    m_pEditorVideoCaptureHeight->setValue(displayData.m_iVideoCaptureFrameHeight);
-    m_pEditorVideoCaptureFrameRate->setValue(displayData.m_iVideoCaptureFrameRate);
-    m_pEditorVideoCaptureBitRate->setValue(displayData.m_iVideoCaptureBitRate);
-    m_pScrollerVideoCaptureScreens->setValue(displayData.m_screens);
+    /* Load old 'Video Capture' data to the page: */
+    m_pCheckboxVideoCapture->setChecked(oldDisplayData.m_fVideoCaptureEnabled);
+    m_pEditorVideoCapturePath->setHomeDir(oldDisplayData.m_strVideoCaptureFolder);
+    m_pEditorVideoCapturePath->setPath(oldDisplayData.m_strVideoCaptureFilePath);
+    m_pEditorVideoCaptureWidth->setValue(oldDisplayData.m_iVideoCaptureFrameWidth);
+    m_pEditorVideoCaptureHeight->setValue(oldDisplayData.m_iVideoCaptureFrameHeight);
+    m_pEditorVideoCaptureFrameRate->setValue(oldDisplayData.m_iVideoCaptureFrameRate);
+    m_pEditorVideoCaptureBitRate->setValue(oldDisplayData.m_iVideoCaptureBitRate);
+    m_pScrollerVideoCaptureScreens->setValue(oldDisplayData.m_screens);
 
     /* Polish page finally: */
     polishPage();
@@ -315,43 +315,45 @@ void UIMachineSettingsDisplay::getFromCache()
 
 void UIMachineSettingsDisplay::putToCache()
 {
-    /* Prepare display data: */
-    UIDataSettingsMachineDisplay displayData = m_pCache->base();
+    /* Prepare new display data: */
+    UIDataSettingsMachineDisplay newDisplayData;
 
-    /* Gather Screen data from page: */
-    displayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
-    displayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
-    displayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
+    /* Gather new 'Screen' data from page: */
+    newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
+    newDisplayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
+    newDisplayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
 #ifdef VBOX_WS_MAC
-    displayData.m_fUseUnscaledHiDPIOutput = m_pCheckBoxUnscaledHiDPIOutput->isChecked();
-#endif /* VBOX_WS_MAC */
-    displayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
+    newDisplayData.m_fUseUnscaledHiDPIOutput = m_pCheckBoxUnscaledHiDPIOutput->isChecked();
+#endif
+    newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    displayData.m_f2dAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+    newDisplayData.m_f2dAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
+#endif
 
-    /* If Remote Display server is supported: */
-    if (displayData.m_fRemoteDisplayServerSupported)
+    /* If remote display server is supported: */
+    newDisplayData.m_fRemoteDisplayServerSupported = m_pCache->base().m_fRemoteDisplayServerSupported;
+    if (newDisplayData.m_fRemoteDisplayServerSupported)
     {
-        /* Gather Remote Display data from page: */
-        displayData.m_fRemoteDisplayServerEnabled = m_pCheckboxRemoteDisplay->isChecked();
-        displayData.m_strRemoteDisplayPort = m_pEditorRemoteDisplayPort->text();
-        displayData.m_remoteDisplayAuthType = gpConverter->fromString<KAuthType>(m_pComboRemoteDisplayAuthMethod->currentText());
-        displayData.m_uRemoteDisplayTimeout = m_pEditorRemoteDisplayTimeout->text().toULong();
-        displayData.m_fRemoteDisplayMultiConnAllowed = m_pCheckboxMultipleConn->isChecked();
+        /* Gather new 'Remote Display' data from page: */
+        newDisplayData.m_fRemoteDisplayServerEnabled = m_pCheckboxRemoteDisplay->isChecked();
+        newDisplayData.m_strRemoteDisplayPort = m_pEditorRemoteDisplayPort->text();
+        newDisplayData.m_remoteDisplayAuthType = gpConverter->fromString<KAuthType>(m_pComboRemoteDisplayAuthMethod->currentText());
+        newDisplayData.m_uRemoteDisplayTimeout = m_pEditorRemoteDisplayTimeout->text().toULong();
+        newDisplayData.m_fRemoteDisplayMultiConnAllowed = m_pCheckboxMultipleConn->isChecked();
     }
 
-    /* Gather Video Capture data from page: */
-    displayData.m_fVideoCaptureEnabled = m_pCheckboxVideoCapture->isChecked();
-    displayData.m_strVideoCaptureFilePath = m_pEditorVideoCapturePath->path();
-    displayData.m_iVideoCaptureFrameWidth = m_pEditorVideoCaptureWidth->value();
-    displayData.m_iVideoCaptureFrameHeight = m_pEditorVideoCaptureHeight->value();
-    displayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
-    displayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
-    displayData.m_screens = m_pScrollerVideoCaptureScreens->value();
+    /* Gather new 'Video Capture' data from page: */
+    newDisplayData.m_fVideoCaptureEnabled = m_pCheckboxVideoCapture->isChecked();
+    newDisplayData.m_strVideoCaptureFolder = m_pCache->base().m_strVideoCaptureFolder;
+    newDisplayData.m_strVideoCaptureFilePath = m_pEditorVideoCapturePath->path();
+    newDisplayData.m_iVideoCaptureFrameWidth = m_pEditorVideoCaptureWidth->value();
+    newDisplayData.m_iVideoCaptureFrameHeight = m_pEditorVideoCaptureHeight->value();
+    newDisplayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
+    newDisplayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
+    newDisplayData.m_screens = m_pScrollerVideoCaptureScreens->value();
 
-    /* Cache display data: */
-    m_pCache->cacheCurrentData(displayData);
+    /* Cache new display data: */
+    m_pCache->cacheCurrentData(newDisplayData);
 }
 
 void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
@@ -362,78 +364,124 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Make sure machine is in valid mode & display data was changed: */
     if (isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Get display data from cache: */
-        const UIDataSettingsMachineDisplay &displayData = m_pCache->data();
+        /* Get old display data from the cache: */
+        const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
+        /* Get new display data from the cache: */
+        const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
-        /* Store Screen data: */
-        if (isMachineOffline())
-        {
-            m_machine.SetVRAMSize(displayData.m_iCurrentVRAM);
-            m_machine.SetMonitorCount(displayData.m_cGuestScreenCount);
-            m_machine.SetAccelerate3DEnabled(displayData.m_f3dAccelerationEnabled);
+        /* Store video RAM size: */
+        if (isMachineOffline() && newDisplayData.m_iCurrentVRAM != oldDisplayData.m_iCurrentVRAM)
+            m_machine.SetVRAMSize(newDisplayData.m_iCurrentVRAM);
+        /* Store guest screen count: */
+        if (isMachineOffline() && newDisplayData.m_cGuestScreenCount != oldDisplayData.m_cGuestScreenCount)
+            m_machine.SetMonitorCount(newDisplayData.m_cGuestScreenCount);
+        /* Store whether 3D acceleration is enabled: */
+        if (isMachineOffline() && newDisplayData.m_f3dAccelerationEnabled != oldDisplayData.m_f3dAccelerationEnabled)
+            m_machine.SetAccelerate3DEnabled(newDisplayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-            m_machine.SetAccelerate2DVideoEnabled(displayData.m_f2dAccelerationEnabled);
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-        }
-        if (isMachineInValidMode())
-        {
-            gEDataManager->setScaleFactor(displayData.m_dScaleFactor, m_machine.GetId());
+        /* Store whether 2D video acceleration is enabled: */
+        if (isMachineOffline() && newDisplayData.m_f2dAccelerationEnabled != oldDisplayData.m_f2dAccelerationEnabled)
+            m_machine.SetAccelerate2DVideoEnabled(newDisplayData.m_f2dAccelerationEnabled);
+#endif
+        /* Store guest-screen scale-factor: */
+        if (newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
+            gEDataManager->setScaleFactor(newDisplayData.m_dScaleFactor, m_machine.GetId());
 #ifdef VBOX_WS_MAC
-            gEDataManager->setUseUnscaledHiDPIOutput(displayData.m_fUseUnscaledHiDPIOutput, m_machine.GetId());
-#endif /* VBOX_WS_MAC */
-        }
+        /* Store whether Unscaled HiDPI Output is enabled: : */
+        if (newDisplayData.m_fUseUnscaledHiDPIOutput != oldDisplayData.m_fUseUnscaledHiDPIOutput)
+            gEDataManager->setUseUnscaledHiDPIOutput(newDisplayData.m_fUseUnscaledHiDPIOutput, m_machine.GetId());
+#endif
 
-        /* Check if Remote Display server still valid: */
-        CVRDEServer remoteDisplayServer = m_machine.GetVRDEServer();
-        if (!remoteDisplayServer.isNull())
+        /* Check whether remote display server still valid: */
+        CVRDEServer server = m_machine.GetVRDEServer();
+        if (!server.isNull())
         {
-            /* Store Remote Display data: */
-            remoteDisplayServer.SetEnabled(displayData.m_fRemoteDisplayServerEnabled);
-            remoteDisplayServer.SetVRDEProperty("TCP/Ports", displayData.m_strRemoteDisplayPort);
-            remoteDisplayServer.SetAuthType(displayData.m_remoteDisplayAuthType);
-            remoteDisplayServer.SetAuthTimeout(displayData.m_uRemoteDisplayTimeout);
-            /* Make sure machine is 'offline' or 'saved': */
-            if (isMachineOffline() || isMachineSaved())
-                remoteDisplayServer.SetAllowMultiConnection(displayData.m_fRemoteDisplayMultiConnAllowed);
+            /* Store whether remote display server is enabled: */
+            if (newDisplayData.m_fRemoteDisplayServerEnabled != oldDisplayData.m_fRemoteDisplayServerEnabled)
+                server.SetEnabled(newDisplayData.m_fRemoteDisplayServerEnabled);
+            /* Store remote display server port: */
+            if (newDisplayData.m_strRemoteDisplayPort != oldDisplayData.m_strRemoteDisplayPort)
+                server.SetVRDEProperty("TCP/Ports", newDisplayData.m_strRemoteDisplayPort);
+            /* Store remote display server auth type: */
+            if (newDisplayData.m_remoteDisplayAuthType != oldDisplayData.m_remoteDisplayAuthType)
+                server.SetAuthType(newDisplayData.m_remoteDisplayAuthType);
+            /* Store remote display server timeout: */
+            if (newDisplayData.m_uRemoteDisplayTimeout != oldDisplayData.m_uRemoteDisplayTimeout)
+                server.SetAuthTimeout(newDisplayData.m_uRemoteDisplayTimeout);
+            /* Store whether remote display server allows multiple connections: */
+            if (   (isMachineOffline() || isMachineSaved())
+                && (newDisplayData.m_fRemoteDisplayMultiConnAllowed != oldDisplayData.m_fRemoteDisplayMultiConnAllowed))
+                server.SetAllowMultiConnection(newDisplayData.m_fRemoteDisplayMultiConnAllowed);
         }
 
-        /* Store Video Capture data: */
+        /* Store new 'Video Capture' data for online case: */
         if (isMachineOnline())
         {
-            /* If Video Capture is *enabled* now: */
-            if (m_pCache->base().m_fVideoCaptureEnabled)
+            /* If 'Video Capture' was *enabled*: */
+            if (oldDisplayData.m_fVideoCaptureEnabled)
             {
-                /* We can still save the *screens* option: */
-                m_machine.SetVideoCaptureScreens(displayData.m_screens);
-                /* Finally we should *disable* Video Capture if necessary: */
-                if (!displayData.m_fVideoCaptureEnabled)
-                    m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
+                // We can still save the *screens* option.
+                // And finally we should *disable* 'Video Capture' if necessary.
+                /* Store video capture recording screens: */
+                if (newDisplayData.m_screens != oldDisplayData.m_screens)
+                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
+                /* Store whether video capture is enabled: */
+                if (newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
+                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
             }
-            /* If Video Capture is *disabled* now: */
+            /* If 'Video Capture' was *disabled*: */
             else
             {
-                /* We should save all the options *before* Video Capture activation: */
-                m_machine.SetVideoCaptureFile(displayData.m_strVideoCaptureFilePath);
-                m_machine.SetVideoCaptureWidth(displayData.m_iVideoCaptureFrameWidth);
-                m_machine.SetVideoCaptureHeight(displayData.m_iVideoCaptureFrameHeight);
-                m_machine.SetVideoCaptureFPS(displayData.m_iVideoCaptureFrameRate);
-                m_machine.SetVideoCaptureRate(displayData.m_iVideoCaptureBitRate);
-                m_machine.SetVideoCaptureScreens(displayData.m_screens);
-                /* Finally we should *enable* Video Capture if necessary: */
-                if (displayData.m_fVideoCaptureEnabled)
-                    m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
+                // We should save all the options *before* 'Video Capture' activation.
+                // And finally we should *enable* Video Capture if necessary.
+                /* Store video capture file path: */
+                if (newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
+                    m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
+                /* Store video capture frame width: */
+                if (newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
+                    m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
+                /* Store video capture frame height: */
+                if (newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
+                    m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
+                /* Store video capture frame rate: */
+                if (newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
+                    m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
+                /* Store video capture frame bit rate: */
+                if (newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
+                    m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
+                /* Store video capture recording screens: */
+                if (newDisplayData.m_screens != oldDisplayData.m_screens)
+                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
+                /* Store whether video capture is enabled: */
+                if (newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
+                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
             }
         }
+        /* Store new 'Video Capture' data for offline case: */
         else
         {
-            /* For 'offline' and 'saved' states the order is irrelevant: */
-            m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
-            m_machine.SetVideoCaptureFile(displayData.m_strVideoCaptureFilePath);
-            m_machine.SetVideoCaptureWidth(displayData.m_iVideoCaptureFrameWidth);
-            m_machine.SetVideoCaptureHeight(displayData.m_iVideoCaptureFrameHeight);
-            m_machine.SetVideoCaptureFPS(displayData.m_iVideoCaptureFrameRate);
-            m_machine.SetVideoCaptureRate(displayData.m_iVideoCaptureBitRate);
-            m_machine.SetVideoCaptureScreens(displayData.m_screens);
+            // For 'offline', 'powered off' and 'saved' states the order is irrelevant.
+            /* Store whether video capture is enabled: */
+            if (newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
+                m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
+            /* Store video capture file path: */
+            if (newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
+                m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
+            /* Store video capture frame width: */
+            if (newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
+                m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
+            /* Store video capture frame height: */
+            if (newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
+                m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
+            /* Store video capture frame rate: */
+            if (newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
+                m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
+            /* Store video capture frame bit rate: */
+            if (newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
+                m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
+            /* Store video capture recording screens: */
+            if (newDisplayData.m_screens != oldDisplayData.m_screens)
+                m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
         }
     }
 
@@ -632,7 +680,7 @@ void UIMachineSettingsDisplay::retranslateUi()
 
 void UIMachineSettingsDisplay::polishPage()
 {
-    /* Get system data from cache: */
+    /* Get system data from the cache: */
     const UIDataSettingsMachineDisplay &displayData = m_pCache->base();
 
     /* Screen tab: */
