@@ -4520,7 +4520,7 @@ static bool omfDetails_AddLName(POMFDETAILS pOmfStuff, const char *pszName, uint
      * Check if we've already got the name.
      */
     for (unsigned iName = 1; iName < pOmfStuff->cLNames; iName++)
-        if (   pOmfStuff->papchLNames[iName][0] == cchName
+        if (   (unsigned char)pOmfStuff->papchLNames[iName][0] == cchName
             && memcmp(pOmfStuff->papchLNames[iName] + 1, pszName, cchName) == 0)
         {
             *pidxName = iName;
