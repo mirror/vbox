@@ -1043,7 +1043,7 @@ static const uint16_t g_afPfxKindToIgnoredFlags[BS3CG1PFXKIND_END] =
  * @returns true / false.
  * @param   enmXcptType         The type to check.
  */
-static bool Bs3Cg1XcptTypeIsUnaligned(BS3CG1XCPTTYPE enmXcptType)
+static bool BS3_NEAR_CODE Bs3Cg1XcptTypeIsUnaligned(BS3CG1XCPTTYPE enmXcptType)
 {
     switch (enmXcptType)
     {
@@ -1066,7 +1066,8 @@ static bool Bs3Cg1XcptTypeIsUnaligned(BS3CG1XCPTTYPE enmXcptType)
  * @param   uVexV       The VEX.V value (caller inverted it already).
  * @param   uVexR       The VEX.R value (caller inverted it already).
  */
-DECLINLINE(unsigned) Bs3Cg1InsertVex2bPrefix(PBS3CG1STATE pThis, unsigned offDst, uint8_t uVexV, uint8_t uVexL, uint8_t uVexR)
+DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex2bPrefix(PBS3CG1STATE pThis, unsigned offDst,
+                                                           uint8_t uVexV, uint8_t uVexL, uint8_t uVexR)
 {
     uint8_t b = uVexR << 7;
     b        |= uVexV << 3;
@@ -1101,8 +1102,8 @@ DECLINLINE(unsigned) Bs3Cg1InsertVex2bPrefix(PBS3CG1STATE pThis, unsigned offDst
  * @param   uVexR       The VEX.B value (caller inverted it already).
  * @param   uVexR       The VEX.W value (straight).
  */
-DECLINLINE(unsigned) Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, unsigned offDst, uint8_t uVexV, uint8_t uVexL,
-                                             uint8_t uVexR, uint8_t uVexX, uint8_t uVexB, uint8_t uVexW)
+DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, unsigned offDst, uint8_t uVexV, uint8_t uVexL,
+                                                           uint8_t uVexR, uint8_t uVexX, uint8_t uVexB, uint8_t uVexW)
 {
     uint8_t b1;
     uint8_t b2;
@@ -1120,7 +1121,7 @@ DECLINLINE(unsigned) Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, unsigned offDst
         case BS3CG1PFXKIND_REQ_F3:          b2 |= 2; break;
         case BS3CG1PFXKIND_REQ_F2:          b2 |= 3; break;
         default:
-            Bs3TestFailedF("enmPrefixKind=%d not supported for VEX!\n");
+            Bs3TestFailedF("enmPrefixKind=%d not supported for VEX!\n", pThis->enmPrefixKind);
             break;
     }
 
@@ -1131,7 +1132,7 @@ DECLINLINE(unsigned) Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, unsigned offDst
 }
 
 
-DECLINLINE(unsigned) Bs3Cg1InsertReqPrefix(PBS3CG1STATE pThis, unsigned offDst)
+DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertReqPrefix(PBS3CG1STATE pThis, unsigned offDst)
 {
     switch (pThis->enmPrefixKind)
     {
@@ -1151,7 +1152,7 @@ DECLINLINE(unsigned) Bs3Cg1InsertReqPrefix(PBS3CG1STATE pThis, unsigned offDst)
 }
 
 
-DECLINLINE(unsigned) Bs3Cg1InsertOpcodes(PBS3CG1STATE pThis, unsigned offDst)
+DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertOpcodes(PBS3CG1STATE pThis, unsigned offDst)
 {
     switch (pThis->cbOpcodes)
     {
@@ -1173,7 +1174,7 @@ DECLINLINE(unsigned) Bs3Cg1InsertOpcodes(PBS3CG1STATE pThis, unsigned offDst)
  *
  * @param   pThis       The state.
  */
-static void Bs3Cg1EncodeCleanup(PBS3CG1STATE pThis)
+static void BS3_NEAR_CODE Bs3Cg1EncodeCleanup(PBS3CG1STATE pThis)
 {
     /* Restore the DS registers in the contexts. */
     unsigned iRing = 4;
@@ -1189,8 +1190,8 @@ static void Bs3Cg1EncodeCleanup(PBS3CG1STATE pThis)
 }
 
 
-static unsigned Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool fAddrOverride, unsigned off, uint8_t iReg,
-                                         uint8_t cbOp, uint8_t cbMissalign, BS3CG1OPLOC enmLocation)
+static unsigned BS3_NEAR_CODE Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool fAddrOverride, unsigned off, uint8_t iReg,
+                                                       uint8_t cbOp, uint8_t cbMissalign, BS3CG1OPLOC enmLocation)
 {
     pThis->aOperands[pThis->iRmOp].idxField     = BS3CG1DST_INVALID;
     pThis->aOperands[pThis->iRmOp].enmLocation  = enmLocation;
@@ -1254,15 +1255,19 @@ static unsigned Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool fAddrOverride,
         case 1: pThis->pbDataPg[X86_PAGE_SIZE - 1] = 0xcc;  /* fall thru */
         case 0: break;
         default:
+        {
+            BS3CG1_DPRINTF(("Bs3MemSet(%p,%#x,%#x)\n", &pThis->pbDataPg[X86_PAGE_SIZE - cbOp - cbMissalign], 0xcc, cbOp - cbMissalign));
+            ASMHalt();
             Bs3MemSet(&pThis->pbDataPg[X86_PAGE_SIZE - cbOp - cbMissalign], 0xcc, cbOp - cbMissalign);
             break;
+        }
     }
 
     return off;
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Eb_Gb(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Eb_Gb(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     /* Start by reg,reg encoding. */
@@ -1293,7 +1298,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Eb_Gb(PBS3CG1STATE pThis, unsig
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gb_Eb(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gb_Eb(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     /* Start by reg,reg encoding. */
@@ -1324,7 +1329,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gb_Eb(PBS3CG1STATE pThis, unsig
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ev__OR__BS3CG1ENC_MODRM_Ev_Gv(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ev__OR__BS3CG1ENC_MODRM_Ev_Gv(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     unsigned cbOp;
@@ -1403,7 +1408,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ev__OR__BS3CG1ENC_MODRM_Ev_G
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wss_Vss(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wss_Vss(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1432,7 +1437,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wss_Vss(PBS3CG1STATE pThis, uns
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wsd_Vsd(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wsd_Vsd(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1461,7 +1466,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wsd_Vsd(PBS3CG1STATE pThis, uns
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wps_Vps__OR__BS3CG1ENC_MODRM_Wpd_Vpd(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wps_Vps__OR__BS3CG1ENC_MODRM_Wpd_Vpd(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1492,7 +1497,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wps_Vps__OR__BS3CG1ENC_MODRM_Wp
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_WqZxReg_Vq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_WqZxReg_Vq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1521,7 +1526,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_WqZxReg_Vq(PBS3CG1STATE pThis, 
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_UqHi(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_UqHi(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1545,7 +1550,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_UqHi(PBS3CG1STATE pThis, uns
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_Mq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_Mq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1567,7 +1572,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_Mq(PBS3CG1STATE pThis, unsig
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_Wdq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_Wdq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1598,7 +1603,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_Wdq(PBS3CG1STATE pThis, uns
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     unsigned cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
@@ -1641,7 +1646,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(PBS3CG1STATE pThis, unsig
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MbRO(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MbRO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1658,7 +1663,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MbRO(PBS3CG1STATE pThis, unsign
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdRO(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdRO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1675,7 +1680,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdRO(PBS3CG1STATE pThis, unsign
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdWO(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdWO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1692,7 +1697,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdWO(PBS3CG1STATE pThis, unsign
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_VEX_MODRM_MdWO(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_VEX_MODRM_MdWO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1792,7 +1797,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_VEX_MODRM_MdWO(PBS3CG1STATE pThis, un
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_FIXED(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_FIXED(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1807,7 +1812,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_FIXED(PBS3CG1STATE pThis, unsigned iE
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_FIXED_AL_Ib(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_FIXED_AL_Ib(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1823,7 +1828,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_FIXED_AL_Ib(PBS3CG1STATE pThis, unsig
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_FIXED_rAX_Iz(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_FIXED_rAX_Iz(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1888,7 +1893,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_FIXED_rAX_Iz(PBS3CG1STATE pThis, unsi
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding < 8)
@@ -1911,7 +1916,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, un
 }
 
 
-static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MOD_NE_3(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MOD_NE_3(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding < 3)
@@ -1948,7 +1953,7 @@ static unsigned Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MOD_NE_3(PBS3CG1STATE pThis, un
  *                          each BS3CG1ENC_XXX value and should be considered
  *                          internal.
  */
-static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     pThis->bAlignmentXcpt = UINT8_MAX;
 
@@ -2023,7 +2028,8 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
  * @returns Success indicator (true/false).
  * @param   pThis           The state.
  */
-static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
+#define Bs3Cg1EncodePrep BS3_CMN_NM(Bs3Cg1EncodePrep)
+bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 {
     unsigned iRing = 4;
     while (iRing-- > 0)
@@ -2188,8 +2194,10 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         default:
-            return Bs3TestFailedF("Invalid/unimplemented enmEncoding for instruction #%RU32 (%.*s): %d",
-                                  pThis->iInstr, pThis->cchMnemonic, pThis->pchMnemonic, pThis->enmEncoding);
+            ASMHalt();
+            Bs3TestFailedF("Invalid/unimplemented enmEncoding for instruction #%RU32 (%.*s): %d",
+                           pThis->iInstr, pThis->cchMnemonic, pThis->pchMnemonic, pThis->enmEncoding);
+            return false;
     }
     return true;
 }
@@ -2202,7 +2210,7 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
  *          being invalid).
  * @param   pThis               The state.
  */
-static bool Bs3Cg3SetupSseAndAvx(PBS3CG1STATE pThis)
+static bool BS3_NEAR_CODE Bs3Cg3SetupSseAndAvx(PBS3CG1STATE pThis)
 {
     if (!pThis->fWorkExtCtx)
     {
@@ -2253,7 +2261,7 @@ static bool Bs3Cg3SetupSseAndAvx(PBS3CG1STATE pThis)
  *                          invalid instruction or not.  This is also used as
  *                          input to avoid unnecessary CPUID work.
  */
-static bool Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSetup, bool BS3_FAR *pfInvalidInstr)
+static bool BS3_NEAR_CODE Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSetup, bool BS3_FAR *pfInvalidInstr)
 {
     if (   (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)
         && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
@@ -2300,7 +2308,7 @@ static bool Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSetup, bool BS3_
  * @returns true if supported, false if not.
  * @param   pThis               The state.
  */
-static bool Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
+static bool BS3_NEAR_CODE Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
 {
     uint32_t fEax;
     uint32_t fEbx;
@@ -2419,7 +2427,7 @@ static bool Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
  * @param   pThis       The state.
  * @param   pHdr        The test header.
  */
-static bool Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
+static bool BS3_NEAR_CODE Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
 {
 
     uint8_t const BS3_FAR *pbCode = (uint8_t const BS3_FAR *)(pHdr + 1);
@@ -2473,7 +2481,7 @@ static bool Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
  * @returns Read-only string pointer.
  * @param   bOpcode             The context modifier program opcode.
  */
-static const char BS3_FAR *Bs3Cg1CtxOpToString(uint8_t bOpcode)
+static const char BS3_FAR * BS3_NEAR_CODE Bs3Cg1CtxOpToString(uint8_t bOpcode)
 {
     switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
     {
@@ -2502,8 +2510,9 @@ static const char BS3_FAR *Bs3Cg1CtxOpToString(uint8_t bOpcode)
  *                      immediate operands during input context modification.
  *                      NULL for output contexts.
  */
-static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3CG1TESTHDR pHdr, unsigned off, unsigned cb,
-                                     PCBS3REGCTX pEflCtx, uint8_t BS3_FAR *pbInstr)
+static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3CG1TESTHDR pHdr,
+                                                   unsigned off, unsigned cb,
+                                                   PCBS3REGCTX pEflCtx, uint8_t BS3_FAR *pbInstr)
 {
     uint8_t const BS3_FAR *pbCode = (uint8_t const BS3_FAR *)(pHdr + 1) + off;
     int                    cbLeft = cb;
@@ -2897,7 +2906,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
  *                              executing.
  * @param   iEncoding           For error reporting.
  */
-static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcptExpected, unsigned iEncoding)
+static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcptExpected, unsigned iEncoding)
 {
     unsigned iOperand;
 
@@ -3152,7 +3161,7 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcptExpected, uns
  *
  * @param   pThis               The state.
  */
-static void Bs3Cg1Destroy(PBS3CG1STATE pThis)
+static void BS3_NEAR_CODE Bs3Cg1Destroy(PBS3CG1STATE pThis)
 {
     if (BS3_MODE_IS_PAGED(pThis->bMode))
     {
@@ -3185,7 +3194,7 @@ static void Bs3Cg1Destroy(PBS3CG1STATE pThis)
  * @param   pThis               The state.
  * @param   bMode               The mode being tested.
  */
-bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
+bool BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
 {
     BS3MEMKIND const    enmMemKind = BS3_MODE_IS_RM_OR_V86(bMode) ? BS3MEMKIND_REAL
                                    : !BS3_MODE_IS_64BIT_CODE(bMode) ? BS3MEMKIND_TILED : BS3MEMKIND_FLAT32;
@@ -3293,6 +3302,9 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
         pThis->CodePgRip     = (uintptr_t)pThis->pbCodePg;
     }
 #endif
+    BS3CG1_DPRINTF(("pbDataPg=%p %04x:%04x  pbCodePg=%p %04x:%04x\n",
+                    pThis->pbDataPg, pThis->DataPgFar.sel, pThis->DataPgFar.off,
+                    pThis->pbCodePg, pThis->CodePgFar.sel, pThis->CodePgFar.off));
 
     /*
      * Create basic context for each target ring.
@@ -3406,7 +3418,7 @@ bool BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
 }
 
 
-static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
+static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
 {
     uint8_t  iRing;
     unsigned iInstr;
@@ -3444,18 +3456,18 @@ static uint8_t BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
         pThis->cbOpcodes       = pInstr->cbOpcodes;
         switch (pThis->cOperands)
         {
-            case 3: pThis->aenmOperands[3] = (BS3CG1OP)pThis->pabOperands[3];
-            case 2: pThis->aenmOperands[2] = (BS3CG1OP)pThis->pabOperands[2];
-            case 1: pThis->aenmOperands[1] = (BS3CG1OP)pThis->pabOperands[1];
-            case 0: pThis->aenmOperands[0] = (BS3CG1OP)pThis->pabOperands[0];
+            case 4: pThis->aenmOperands[3] = (BS3CG1OP)pThis->pabOperands[3];
+            case 3: pThis->aenmOperands[2] = (BS3CG1OP)pThis->pabOperands[2];
+            case 2: pThis->aenmOperands[1] = (BS3CG1OP)pThis->pabOperands[1];
+            case 1: pThis->aenmOperands[0] = (BS3CG1OP)pThis->pabOperands[0];
         }
 
         switch (pThis->cbOpcodes)
         {
-            case 3: pThis->abOpcodes[3] = pThis->pabOpcodes[3];
-            case 2: pThis->abOpcodes[2] = pThis->pabOpcodes[2];
-            case 1: pThis->abOpcodes[1] = pThis->pabOpcodes[1];
-            case 0: pThis->abOpcodes[0] = pThis->pabOpcodes[0];
+            case 4: pThis->abOpcodes[3] = pThis->pabOpcodes[3];
+            case 3: pThis->abOpcodes[2] = pThis->pabOpcodes[2];
+            case 2: pThis->abOpcodes[1] = pThis->pabOpcodes[1];
+            case 1: pThis->abOpcodes[0] = pThis->pabOpcodes[0];
         }
 
         /*
@@ -3598,7 +3610,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode < BS3_MODE_PE32)
+    if (bMode >= BS3_MODE_PE16)
         return BS3TESTDOMODE_SKIPPED;
 #endif
 

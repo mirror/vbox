@@ -172,6 +172,34 @@ typedef OMFRECHDR *PCOMFRECHDR;
 #define OMF_CCLS_BORLAND_DEP_FILES  UINT8_C(0xe9)
 /** @} */
 
+/** @name OMF SEGDEF Attrib.
+ * @{ */
+#define OMF_SEG_ATTR_ALIGN_ABS       (UINT8_C(0) << 5)  /**< SEGDEF attrib A: absolute - frame and offset fields present. */
+#define OMF_SEG_ATTR_ALIGN_BYTE      (UINT8_C(1) << 5)  /**< SEGDEF attrib A: 1-byte alignment. */
+#define OMF_SEG_ATTR_ALIGN_WORD      (UINT8_C(2) << 5)  /**< SEGDEF attrib A: 2-byte alignment. */
+#define OMF_SEG_ATTR_ALIGN_PARA      (UINT8_C(3) << 5)  /**< SEGDEF attrib A: 16-byte alignment. */
+#define OMF_SEG_ATTR_ALIGN_PAGE      (UINT8_C(4) << 5)  /**< SEGDEF attrib A: 4096-byte alignment (or 256-byte). */
+#define OMF_SEG_ATTR_ALIGN_DWORD     (UINT8_C(5) << 5)  /**< SEGDEF attrib A: 4-byte alignment. */
+#define OMF_SEG_ATTR_ALIGN_6         (UINT8_C(6) << 5)  /**< SEGDEF attrib A: not supported (load-time locatable, paragraph aligned). */
+#define OMF_SEG_ATTR_ALIGN_7         (UINT8_C(7) << 5)  /**< SEGDEF attrib A: undefined. */
+#define OMF_SEG_ATTR_ALIGN_MASK      (UINT8_C(7) << 5)  /**< SEGDEF attrib A: Mask for the alignment field. */
+#define OMF_SEG_ATTR_ALIGN_SHIFT     5                  /**< SEGDEF attrib A: Shift count for the alignment field. */
+
+#define OMF_SEG_ATTR_COMB_PRIVATE    (UINT8_C(0) << 2)  /**< SEGDEF attrib C: Private - do not combine with anyone. */
+#define OMF_SEG_ATTR_COMB_1          (UINT8_C(1) << 2)  /**< SEGDEF attrib C: Reserved */
+#define OMF_SEG_ATTR_COMB_PUBLIC     (UINT8_C(2) << 2)  /**< SEGDEF attrib C: Public - append at offset meeting alignment. */
+#define OMF_SEG_ATTR_COMB_3          (UINT8_C(3) << 2)  /**< SEGDEF attrib C: Reserved */
+#define OMF_SEG_ATTR_COMB_PUBLIC_4   (UINT8_C(4) << 2)  /**< SEGDEF attrib C: Public - append at offset meeting alignment. */
+#define OMF_SEG_ATTR_COMB_STACK      (UINT8_C(5) << 2)  /**< SEGDEF attrib C: Stack - same as public, but forced byte alignment. */
+#define OMF_SEG_ATTR_COMB_COMMON     (UINT8_C(6) << 2)  /**< SEGDEF attrib C: Common - overlay using maximum size. */
+#define OMF_SEG_ATTR_COMB_PUBLIC_7   (UINT8_C(5) << 2)  /**< SEGDEF attrib C: Public - append at offset meeting alignment. */
+#define OMF_SEG_ATTR_COMB_MASK       (UINT8_C(7) << 2)  /**< SEGDEF attrib C: Mask for the combination field. */
+#define OMF_SEG_ATTR_COMB_SHIFT      2                  /**< SEGDEF attrib C: Shift count for the combination field. */
+#define OMF_SEG_ATTR_BIG             UINT8_C(2)         /**< SEGDEF attrib B: Big segment 64K / 4GB. */
+#define OMF_SEG_ATTR_USE32           UINT8_C(1)         /**< SEGDEF attrib P: Indicates 32-bit data or code. */
+#define OMF_SEG_ATTR_USE16           UINT8_C(0)         /**< SEGDEF attrib ~P: Just for spelling out !USE32. */
+/** @} */
+
 
 /** @name OMF FIXUPP Locations.
  * @{ */

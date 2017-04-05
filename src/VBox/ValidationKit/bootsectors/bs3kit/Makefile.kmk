@@ -238,6 +238,10 @@ bs3kit-common-16_bs3-cmn-UInt64Div.c_CFLAGS = -oh -d0 # -d1+ vs -d0 saves 0x6a3-
 
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMMemFirstMismatchingU8,8)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMMemFirstNonZero,6)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMCpuIdExSlow,32)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMCpuId,20)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMSetXcr0,8)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMGetXcr0,0)
 -include $(PATH_SUB_CURRENT)/bs3kit-autostubs.kmk # manually generated from headers, see bottom of this file.
 
 # The 32-bit BS3Kit library.

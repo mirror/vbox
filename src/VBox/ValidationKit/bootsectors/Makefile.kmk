@@ -322,14 +322,14 @@ bs3-cpu-generated-1_SOURCES = \
 	bs3kit/bs3-first-rm.asm \
 	bs3-cpu-generated-1.c \
 	bs3-cpu-generated-1-asm.asm \
-       bs3kit/bs3-cmn-instantiate.c16 \
+       bs3kit/bs3-cmn-instantiate-x0.c16 \
        bs3kit/bs3-cmn-instantiate.c32 \
        bs3kit/bs3-cmn-instantiate.c64 \
 	$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
 bs3-cpu-generated-1_CLEAN = $(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
 
 bs3-cpu-generated-1-template.o:: \
-	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
+	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
 	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
 	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-asm.o16
