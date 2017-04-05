@@ -213,16 +213,21 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare system data: */
-    UIDataSettingsMachineSystem systemData;
+    /* Prepare old system data: */
+    UIDataSettingsMachineSystem oldSystemData;
 
-    /* Load support flags: */
-    systemData.m_fSupportedPAE = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
-    systemData.m_fSupportedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    /* Gather support flags: */
+    oldSystemData.m_fSupportedPAE = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
+    oldSystemData.m_fSupportedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
 
-    /* Load motherboard data: */
-    systemData.m_iMemorySize = m_machine.GetMemorySize();
-    /* Load boot-items of current VM: */
+    /* Gather old 'Motherboard' data: */
+    oldSystemData.m_iMemorySize = m_machine.GetMemorySize();
+    oldSystemData.m_chipsetType = m_machine.GetChipsetType();
+    oldSystemData.m_pointingHIDType = m_machine.GetPointingHIDType();
+    oldSystemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
+    oldSystemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
+    oldSystemData.m_fEnabledUTC = m_machine.GetRTCUseUTC();
+    /* Gather boot-items of current VM: */
     QList<KDeviceType> usedBootItems;
     for (int i = 1; i <= m_possibleBootItems.size(); ++i)
     {
@@ -233,10 +238,10 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
             UIBootItemData data;
             data.m_type = type;
             data.m_fEnabled = true;
-            systemData.m_bootItems << data;
+            oldSystemData.m_bootItems << data;
         }
     }
-    /* Load other unique boot-items: */
+    /* Gather other unique boot-items: */
     for (int i = 0; i < m_possibleBootItems.size(); ++i)
     {
         KDeviceType type = m_possibleBootItems[i];
@@ -245,28 +250,22 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
             UIBootItemData data;
             data.m_type = type;
             data.m_fEnabled = false;
-            systemData.m_bootItems << data;
+            oldSystemData.m_bootItems << data;
         }
     }
-    /* Load other motherboard data: */
-    systemData.m_chipsetType = m_machine.GetChipsetType();
-    systemData.m_pointingHIDType = m_machine.GetPointingHIDType();
-    systemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
-    systemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
-    systemData.m_fEnabledUTC = m_machine.GetRTCUseUTC();
 
-    /* Load CPU data: */
-    systemData.m_cCPUCount = systemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
-    systemData.m_iCPUExecCap = m_machine.GetCPUExecutionCap();
-    systemData.m_fEnabledPAE = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
+    /* Gather old 'Processor' data: */
+    oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
+    oldSystemData.m_iCPUExecCap = m_machine.GetCPUExecutionCap();
+    oldSystemData.m_fEnabledPAE = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
 
-    /* Load acceleration data: */
-    systemData.m_paravirtProvider = m_machine.GetParavirtProvider();
-    systemData.m_fEnabledHwVirtEx = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
-    systemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
+    /* Gather old 'Acceleration' data: */
+    oldSystemData.m_paravirtProvider = m_machine.GetParavirtProvider();
+    oldSystemData.m_fEnabledHwVirtEx = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
+    oldSystemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
-    /* Cache system data: */
-    m_pCache->cacheInitialData(systemData);
+    /* Cache old system data: */
+    m_pCache->cacheInitialData(oldSystemData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -274,46 +273,45 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsSystem::getFromCache()
 {
-    /* Get system data from cache: */
-    const UIDataSettingsMachineSystem &systemData = m_pCache->base();
+    /* Get old system data from the cache: */
+    const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
 
     /* Repopulate 'pointing HID type' combo.
-     * We are doing that *now* because it has dynamical content
-     * which depends on recashed value: */
+     * We are doing that *now* because it has
+     * dynamical content which depends on cashed value: */
     repopulateComboPointingHIDType();
 
-    /* Load motherboard data to page: */
-    m_pSliderMemorySize->setValue(systemData.m_iMemorySize);
+    /* Load old 'Motherboard' data to the page: */
+    m_pSliderMemorySize->setValue(oldSystemData.m_iMemorySize);
+    const int iChipsetTypePosition = m_pComboChipsetType->findData(oldSystemData.m_chipsetType);
+    m_pComboChipsetType->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
+    const int iHIDTypePosition = m_pComboPointingHIDType->findData(oldSystemData.m_pointingHIDType);
+    m_pComboPointingHIDType->setCurrentIndex(iHIDTypePosition == -1 ? 0 : iHIDTypePosition);
+    m_pCheckBoxApic->setChecked(oldSystemData.m_fEnabledIoApic);
+    m_pCheckBoxEFI->setChecked(oldSystemData.m_fEnabledEFI);
+    m_pCheckBoxUseUTC->setChecked(oldSystemData.m_fEnabledUTC);
     /* Remove any old data in the boot view: */
-    QAbstractItemView *iv = qobject_cast <QAbstractItemView*> (mTwBootOrder);
-    iv->model()->removeRows(0, iv->model()->rowCount());
+    QAbstractItemView *pItemView = qobject_cast<QAbstractItemView*>(mTwBootOrder);
+    pItemView->model()->removeRows(0, pItemView->model()->rowCount());
     /* Apply internal variables data to QWidget(s): */
-    for (int i = 0; i < systemData.m_bootItems.size(); ++i)
+    for (int i = 0; i < oldSystemData.m_bootItems.size(); ++i)
     {
-        UIBootItemData data = systemData.m_bootItems[i];
+        const UIBootItemData data = oldSystemData.m_bootItems[i];
         QListWidgetItem *pItem = new UIBootTableItem(data.m_type);
         pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
         mTwBootOrder->addItem(pItem);
     }
-    /* Load other motherboard data to page: */
-    int iChipsetTypePosition = m_pComboChipsetType->findData(systemData.m_chipsetType);
-    m_pComboChipsetType->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
-    int iHIDTypePosition = m_pComboPointingHIDType->findData(systemData.m_pointingHIDType);
-    m_pComboPointingHIDType->setCurrentIndex(iHIDTypePosition == -1 ? 0 : iHIDTypePosition);
-    m_pCheckBoxApic->setChecked(systemData.m_fEnabledIoApic);
-    m_pCheckBoxEFI->setChecked(systemData.m_fEnabledEFI);
-    m_pCheckBoxUseUTC->setChecked(systemData.m_fEnabledUTC);
 
-    /* Load CPU data to page: */
-    m_pSliderCPUCount->setValue(systemData.m_cCPUCount);
-    m_pSliderCPUExecCap->setValue(systemData.m_iCPUExecCap);
-    m_pCheckBoxPAE->setChecked(systemData.m_fEnabledPAE);
+    /* Load old 'Processor' data to the page: */
+    m_pSliderCPUCount->setValue(oldSystemData.m_cCPUCount);
+    m_pSliderCPUExecCap->setValue(oldSystemData.m_iCPUExecCap);
+    m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
 
-    /* Load acceleration data to page: */
-    int iParavirtProviderPosition = m_pComboParavirtProvider->findData(systemData.m_paravirtProvider);
+    /* Load old 'Acceleration' data to the page: */
+    const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
     m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
-    m_pCheckBoxVirtualization->setChecked(systemData.m_fEnabledHwVirtEx);
-    m_pCheckBoxNestedPaging->setChecked(systemData.m_fEnabledNestedPaging);
+    m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
+    m_pCheckBoxNestedPaging->setChecked(oldSystemData.m_fEnabledNestedPaging);
 
     /* Polish page finally: */
     polishPage();
@@ -324,41 +322,44 @@ void UIMachineSettingsSystem::getFromCache()
 
 void UIMachineSettingsSystem::putToCache()
 {
-    /* Prepare system data: */
-    UIDataSettingsMachineSystem systemData = m_pCache->base();
+    /* Prepare new system data: */
+    UIDataSettingsMachineSystem newSystemData;
 
-    /* Gather motherboard data: */
-    systemData.m_iMemorySize = m_pSliderMemorySize->value();
+    /* Gather support flags: */
+    newSystemData.m_fSupportedPAE = m_pCache->base().m_fSupportedPAE;
+    newSystemData.m_fSupportedHwVirtEx = m_pCache->base().m_fSupportedHwVirtEx;
+
+    /* Gather 'Motherboard' data: */
+    newSystemData.m_iMemorySize = m_pSliderMemorySize->value();
+    newSystemData.m_chipsetType = (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
+    newSystemData.m_pointingHIDType = (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt();
+    newSystemData.m_fEnabledIoApic = m_pCheckBoxApic->isChecked() || m_pSliderCPUCount->value() > 1 ||
+                                  (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9;
+    newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
+    newSystemData.m_fEnabledUTC = m_pCheckBoxUseUTC->isChecked();
     /* Gather boot-table data: */
-    systemData.m_bootItems.clear();
+    newSystemData.m_bootItems.clear();
     for (int i = 0; i < mTwBootOrder->count(); ++i)
     {
         QListWidgetItem *pItem = mTwBootOrder->item(i);
-        UIBootItemData data;
-        data.m_type = static_cast<UIBootTableItem*>(pItem)->type();
-        data.m_fEnabled = pItem->checkState() == Qt::Checked;
-        systemData.m_bootItems << data;
+        UIBootItemData bootData;
+        bootData.m_type = static_cast<UIBootTableItem*>(pItem)->type();
+        bootData.m_fEnabled = pItem->checkState() == Qt::Checked;
+        newSystemData.m_bootItems << bootData;
     }
-    /* Gather other motherboard data: */
-    systemData.m_chipsetType = (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
-    systemData.m_pointingHIDType = (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt();
-    systemData.m_fEnabledIoApic = m_pCheckBoxApic->isChecked() || m_pSliderCPUCount->value() > 1 ||
-                                  (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9;
-    systemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
-    systemData.m_fEnabledUTC = m_pCheckBoxUseUTC->isChecked();
 
-    /* Gather CPU data: */
-    systemData.m_cCPUCount = m_pSliderCPUCount->value();
-    systemData.m_iCPUExecCap = m_pSliderCPUExecCap->value();
-    systemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
+    /* Gather 'Processor' data: */
+    newSystemData.m_cCPUCount = m_pSliderCPUCount->value();
+    newSystemData.m_iCPUExecCap = m_pSliderCPUExecCap->value();
+    newSystemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
 
-    /* Gather acceleration data: */
-    systemData.m_paravirtProvider = (KParavirtProvider)m_pComboParavirtProvider->itemData(m_pComboParavirtProvider->currentIndex()).toInt();
-    systemData.m_fEnabledHwVirtEx = m_pCheckBoxVirtualization->checkState() == Qt::Checked || m_pSliderCPUCount->value() > 1;
-    systemData.m_fEnabledNestedPaging = m_pCheckBoxNestedPaging->isChecked();
+    /* Gather 'Acceleration' data: */
+    newSystemData.m_paravirtProvider = (KParavirtProvider)m_pComboParavirtProvider->itemData(m_pComboParavirtProvider->currentIndex()).toInt();
+    newSystemData.m_fEnabledHwVirtEx = m_pCheckBoxVirtualization->checkState() == Qt::Checked || m_pSliderCPUCount->value() > 1;
+    newSystemData.m_fEnabledNestedPaging = m_pCheckBoxNestedPaging->isChecked();
 
-    /* Cache system data: */
-    m_pCache->cacheCurrentData(systemData);
+    /* Cache new system data: */
+    m_pCache->cacheCurrentData(newSystemData);
 }
 
 void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
@@ -366,50 +367,57 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Check if system data was changed: */
-    if (m_pCache->wasChanged())
+    /* Make sure machine is in valid mode & system data was changed: */
+    if (isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Get system data from cache: */
-        const UIDataSettingsMachineSystem &systemData = m_pCache->data();
+        /* Get old system data from the cache: */
+        const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
+        /* Get new system data from the cache: */
+        const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
 
-        /* Store system data: */
-        if (isMachineOffline())
+        /* Store new 'Motherboard' data: */
+        if (isMachineOffline() && newSystemData.m_iMemorySize != oldSystemData.m_iMemorySize)
+            m_machine.SetMemorySize(newSystemData.m_iMemorySize);
+        if (isMachineOffline() && newSystemData.m_chipsetType != oldSystemData.m_chipsetType)
+            m_machine.SetChipsetType(newSystemData.m_chipsetType);
+        if (isMachineOffline() && newSystemData.m_pointingHIDType != oldSystemData.m_pointingHIDType)
+            m_machine.SetPointingHIDType(newSystemData.m_pointingHIDType);
+        if (isMachineOffline() && newSystemData.m_fEnabledIoApic != oldSystemData.m_fEnabledIoApic)
+            m_machine.GetBIOSSettings().SetIOAPICEnabled(newSystemData.m_fEnabledIoApic);
+        if (isMachineOffline() && newSystemData.m_fEnabledEFI != oldSystemData.m_fEnabledEFI)
+            m_machine.SetFirmwareType(newSystemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
+        if (isMachineOffline() && newSystemData.m_fEnabledUTC != oldSystemData.m_fEnabledUTC)
+            m_machine.SetRTCUseUTC(newSystemData.m_fEnabledUTC);
+        if (isMachineOffline() && newSystemData.m_bootItems != oldSystemData.m_bootItems)
         {
-            /* Motherboard tab: */
-            m_machine.SetMemorySize(systemData.m_iMemorySize);
-            /* Save boot-items of current VM: */
             int iBootIndex = 0;
-            for (int i = 0; i < systemData.m_bootItems.size(); ++i)
+            for (int i = 0; i < newSystemData.m_bootItems.size(); ++i)
             {
-                if (systemData.m_bootItems[i].m_fEnabled)
-                    m_machine.SetBootOrder(++iBootIndex, systemData.m_bootItems[i].m_type);
+                if (newSystemData.m_bootItems.at(i).m_fEnabled)
+                    m_machine.SetBootOrder(++iBootIndex, newSystemData.m_bootItems.at(i).m_type);
             }
-            /* Save other unique boot-items: */
-            for (int i = 0; i < systemData.m_bootItems.size(); ++i)
+            for (int i = 0; i < newSystemData.m_bootItems.size(); ++i)
             {
-                if (!systemData.m_bootItems[i].m_fEnabled)
+                if (!newSystemData.m_bootItems.at(i).m_fEnabled)
                     m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
             }
-            m_machine.SetChipsetType(systemData.m_chipsetType);
-            m_machine.SetPointingHIDType(systemData.m_pointingHIDType);
-            m_machine.GetBIOSSettings().SetIOAPICEnabled(systemData.m_fEnabledIoApic);
-            m_machine.SetFirmwareType(systemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
-            m_machine.SetRTCUseUTC(systemData.m_fEnabledUTC);
-
-            /* Processor tab: */
-            m_machine.SetCPUCount(systemData.m_cCPUCount);
-            m_machine.SetCPUProperty(KCPUPropertyType_PAE, systemData.m_fEnabledPAE);
-
-            /* Acceleration tab: */
-            m_machine.SetParavirtProvider(systemData.m_paravirtProvider);
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, systemData.m_fEnabledHwVirtEx);
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, systemData.m_fEnabledNestedPaging);
         }
-        if (isMachineInValidMode())
-        {
-            /* Processor tab: */
-            m_machine.SetCPUExecutionCap(systemData.m_iCPUExecCap);
-        }
+
+        /* Store new 'Processor' data: */
+        if (isMachineOffline() && newSystemData.m_cCPUCount != oldSystemData.m_cCPUCount)
+            m_machine.SetCPUCount(newSystemData.m_cCPUCount);
+        if (isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
+            m_machine.SetCPUProperty(KCPUPropertyType_PAE, newSystemData.m_fEnabledPAE);
+        if (newSystemData.m_iCPUExecCap != oldSystemData.m_iCPUExecCap)
+            m_machine.SetCPUExecutionCap(newSystemData.m_iCPUExecCap);
+
+        /* Store new 'Acceleration' data: */
+        if (isMachineOffline() && newSystemData.m_paravirtProvider != oldSystemData.m_paravirtProvider)
+            m_machine.SetParavirtProvider(newSystemData.m_paravirtProvider);
+        if (isMachineOffline() && newSystemData.m_fEnabledHwVirtEx != oldSystemData.m_fEnabledHwVirtEx)
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, newSystemData.m_fEnabledHwVirtEx);
+        if (isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
     }
 
     /* Upload machine to data: */
@@ -585,7 +593,7 @@ void UIMachineSettingsSystem::retranslateUi()
 
 void UIMachineSettingsSystem::polishPage()
 {
-    /* Get system data from cache: */
+    /* Get system data from the cache: */
     const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
     /* Motherboard tab: */
