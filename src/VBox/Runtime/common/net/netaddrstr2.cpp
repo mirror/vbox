@@ -158,9 +158,9 @@ RTDECL(int) RTNetMaskToPrefixIPv4(PCRTNETADDRIPV4 pMask, int *piPrefix)
 
     if (pMask->u == 0)
     {
-	if (piPrefix != NULL)
-	    *piPrefix = 0;
-	return VINF_SUCCESS;
+        if (piPrefix != NULL)
+            *piPrefix = 0;
+        return VINF_SUCCESS;
     }
 
     const uint32_t uMask = RT_N2H_U32(pMask->u);
@@ -168,16 +168,17 @@ RTDECL(int) RTNetMaskToPrefixIPv4(PCRTNETADDRIPV4 pMask, int *piPrefix)
     uint32_t uPrefixMask = UINT32_C(0xffffffff);
     int iPrefixLen = 32;
 
-    while (iPrefixLen > 0) { 
-	if (uMask == uPrefixMask)
-	{
-	    if (piPrefix != NULL)
-		*piPrefix = iPrefixLen;
-	    return VINF_SUCCESS;
-	}
+    while (iPrefixLen > 0)
+    {
+        if (uMask == uPrefixMask)
+        {
+            if (piPrefix != NULL)
+                *piPrefix = iPrefixLen;
+            return VINF_SUCCESS;
+        }
 
-	--iPrefixLen;
-	uPrefixMask <<= 1;
+        --iPrefixLen;
+        uPrefixMask <<= 1;
     }
 
     return VERR_INVALID_PARAMETER;
@@ -190,12 +191,12 @@ RTDECL(int) RTNetPrefixToMaskIPv4(int iPrefix, PRTNETADDRIPV4 pMask)
     AssertReturn(pMask != NULL, VERR_INVALID_PARAMETER);
 
     if (RT_UNLIKELY(iPrefix < 0 || 32 < iPrefix))
-	return VERR_INVALID_PARAMETER;
+        return VERR_INVALID_PARAMETER;
 
     if (RT_LIKELY(iPrefix != 0))
-	pMask->u = RT_H2N_U32(UINT32_C(0xffffffff) << (32 - iPrefix));
+        pMask->u = RT_H2N_U32(UINT32_C(0xffffffff) << (32 - iPrefix));
     else /* avoid UB in the shift */
-	pMask->u = 0;
+        pMask->u = 0;
 
     return VINF_SUCCESS;
 }
@@ -254,7 +255,7 @@ DECLHIDDEN(int) rtNetStrToIPv6AddrBase(const char *pcszAddr, PRTNETADDRIPV6 pAdd
     uint16_t u16;
     int rc;
 
-    memset(&ipv6, 0, sizeof(ipv6));
+    RT_ZERO(ipv6);
 
     pcszPos = pcszAddr;
 
@@ -325,7 +326,7 @@ DECLHIDDEN(int) rtNetStrToIPv6AddrBase(const char *pcszAddr, PRTNETADDRIPV6 pAdd
         const int iMaybeStart = iGroup;
         int j;
 
-        memset(&ipv6Tail, 0, sizeof(ipv6Tail));
+        RT_ZERO(ipv6Tail);
 
         /*
          * We try to accept longest match; we'll shift if necessary.
