@@ -652,8 +652,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( False, ktReason_Host_LeftoverService,
           'SERVICE_NAME: vbox' ),
-        ( True,  ktReason_Host_Modprobe_Failed,
-          'modprobe vboxdrv failed' )
     ];
 
     kdatSimpleInstallUninstallMainLogReasonsPerOs = {
@@ -839,6 +837,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
         ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' ),
+        ( True,  ktReason_Host_Modprobe_Failed,	                    'Kernel driver not installed' )
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
