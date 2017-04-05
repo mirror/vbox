@@ -59,7 +59,7 @@ DECLHIDDEN(size_t) rtStrFormatKernelAddress(char *pszBuf, size_t cbBuf, RTR0INTP
     if (cbSrc <= cbBuf)
     {
         memcpy(pszBuf, pszSrc, cbSrc);
-        return cbSrc;
+        return cbSrc - 1;
     }
     AssertFailed();
     memcpy(pszBuf, pszSrc, cbBuf);
