@@ -30,10 +30,6 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_STRING
 #include "the-linux-kernel.h"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-# include <linux/capability.h>
-# include <linux/security.h>
-#endif
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
@@ -46,49 +42,15 @@ DECLHIDDEN(size_t) rtStrFormatKernelAddress(char *pszBuf, size_t cbBuf, RTR0INTP
                                             signed int cchPrecision, unsigned int fFlags)
 {
 #if !defined(DEBUG) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-    bool fRestrict = true;
-#if 0
-    if (kptr_restrict > 1)
-        fRestrict = true;
-    else if (kptr_restrict == 1)
-    {
-        const struct cred *cred = current_cred();
-        if (   !has_capability_noaudit(current, CAP_SYSLOG)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
-            || !uid_eq(cred->euid, cred->uid)
-            || !gid_eq(cred->egid, cred->gid)
-# endif
-            )
-            fRestrict = true;
-    }
-#endif
-
-    if (fRestrict)
-    {
-        RT_NOREF(uPtr, cchWidth, cchPrecision);
-# if R0_ARCH_BITS == 64
-        static const char s_szObfuscated[] = "0xXXXXXXXXXXXXXXXX";
-# else
-        static const char s_szObfuscated[] = "0xXXXXXXXX";
-# endif
-        size_t      cbSrc  = sizeof(s_szObfuscated);
-        const char *pszSrc = s_szObfuscated;
-        if (!(fFlags & RTSTR_F_SPECIAL))
-        {
-            pszSrc += 2;
-            cbSrc  -= 2;
-        }
-        if (cbSrc <= cbBuf)
-        {
-            memcpy(pszBuf, pszSrc, cbSrc);
-            return cbSrc;
-        }
-        AssertFailed();
-        memcpy(pszBuf, pszSrc, cbBuf);
-        pszBuf[cbBuf - 1] = '\0';
-        return cbBuf - 1;
-    }
-#endif  /* DEBUG && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38) */
+    RT_NOREF(cchWidth, cchPrecision);
+    /* use the Linux kernel function which is able to handle "%pK" */
+    static const char s_szFmt[] = "0x%pK";
+    const char *pszFmt = s_szFmt;
+    if (!(fFlags & RTSTR_F_SPECIAL))
+        pszFmt += 2;
+    return snprintf(pszBuf, cbBuf, pszFmt, uPtr);
+#else
     Assert(cbBuf >= 64);
     return RTStrFormatNumber(pszBuf, uPtr, 16, cchWidth, cchPrecision, fFlags);
+#endif
 }
