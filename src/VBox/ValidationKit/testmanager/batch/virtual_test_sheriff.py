@@ -652,7 +652,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( False, ktReason_Host_LeftoverService,
           'SERVICE_NAME: vbox' ),
-        ( True,  ktReason_Host_Modprobe_Failed, 
+        ( True,  ktReason_Host_Modprobe_Failed,
           'modprobe vboxdrv failed' )
     ];
 
