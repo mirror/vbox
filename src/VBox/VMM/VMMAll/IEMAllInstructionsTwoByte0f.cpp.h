@@ -5904,16 +5904,23 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
  * @oppfx       none
  * @opcpuid     avx
  * @opgroup     og_avx_mxcsrsm
- * @optest         mxcsr=0      -> op1=0
- * @optest         mxcsr=0x2083 -> op1=0x2083
- * @optestign      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
- * @optestign      mxcsr=0x2085 cr0|=em -> value.xcpt=0x6
- * @optestign      mxcsr=0x2086 cr0|=mp -> op1=0x2086
- * @optestign      mxcsr=0x2087 cr4&~=osfxsr -> value.xcpt=0x6
- * @optestign      mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x6
- * @optestign      mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
- * @optestign      mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
- * @optestign      mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      mxcsr=0      -> op1=0
+ * @optest      mxcsr=0x2083 -> op1=0x2083
+ * @optest      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
+ * @optest      mxcsr=0x2085 cr0|=em -> op1=0x2085
+ * @optest      mxcsr=0x2086 cr0|=mp -> op1=0x2086
+ * @optest      mxcsr=0x2087 cr4&~=osfxsr -> op1=0x2087
+ * @optest      mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x7
+ * @optest      mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> op1=0x2089
+ * @optest      mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x7
+ * @optest      mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x7
+ * @optest      mxcsr=0x208c xcr0&~=all_avx -> value.xcpt=0x6
+ * @optest      mxcsr=0x208d xcr0&~=all_avx_sse -> value.xcpt=0x6
+ * @optest      mxcsr=0x208e xcr0&~=all_avx cr0|=ts -> value.xcpt=0x6
+ * @optest      mxcsr=0x208f cr4&~=osxsave -> value.xcpt=0x6
+ * @optest      mxcsr=0x2082 cr0|=ts cr4&~=osxsave -> value.xcpt=0x6
+ * @optest      mxcsr=0x2081 xcr0&~=all_avx cr0|=ts cr4&~=osxsave
+ *              -> value.xcpt=0x6
  * @oponlytest
  */
 FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)

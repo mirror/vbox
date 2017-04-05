@@ -35,8 +35,9 @@
 #undef Bs3ExtCtxCopy
 BS3_CMN_DEF(PBS3EXTCTX, Bs3ExtCtxCopy,(PBS3EXTCTX pDst, PCBS3EXTCTX pSrc))
 {
-    BS3_ASSERT(pDst->cb == pSrc->cb && pDst->enmMethod == pSrc->enmMethod && pDst->fXcr0 == pSrc->fXcr0);
+    BS3_ASSERT(pDst->cb == pSrc->cb && pDst->enmMethod == pSrc->enmMethod && pDst->fXcr0Nominal == pSrc->fXcr0Nominal);
     Bs3MemCpy(&pDst->Ctx, &pSrc->Ctx, pDst->cb - RT_OFFSETOF(BS3EXTCTX, Ctx));
+    pDst->fXcr0Saved = pSrc->fXcr0Saved;
     return pDst;
 }
 

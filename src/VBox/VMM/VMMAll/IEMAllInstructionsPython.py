@@ -159,6 +159,24 @@ g_kdX86Cr4Constants = {
     'X86_CR4_PKE':          0x00400000, # RT_BIT_32(22)
 };
 
+## XSAVE components (XCR0).
+g_kdX86XSaveCConstants = {
+    'XSAVE_C_X87':          0x00000001,
+    'XSAVE_C_SSE':          0x00000002,
+    'XSAVE_C_YMM':          0x00000004,
+    'XSAVE_C_BNDREGS':      0x00000008,
+    'XSAVE_C_BNDCSR':       0x00000010,
+    'XSAVE_C_OPMASK':       0x00000020,
+    'XSAVE_C_ZMM_HI256':    0x00000040,
+    'XSAVE_C_ZMM_16HI':     0x00000080,
+    'XSAVE_C_PKRU':         0x00000200,
+    'XSAVE_C_LWP':          0x4000000000000000,
+    'XSAVE_C_X':            0x8000000000000000,
+    'XSAVE_C_ALL_AVX':      0x000000c4, # For clearing all AVX bits.
+    'XSAVE_C_ALL_AVX_SSE':  0x000000c6, # For clearing all AVX and SSE bits.
+};
+
+
 ## \@op[1-4] locations
 g_kdOpLocations = {
     'reg':      [], ## modrm.reg
@@ -823,6 +841,7 @@ class TestInOut(object):
         'efl':   TestTypeEflags('efl'),
         'cr0':   TestTypeFromDict('cr0', g_kdX86Cr0Constants, 'X86_CR0_'),
         'cr4':   TestTypeFromDict('cr4', g_kdX86Cr4Constants, 'X86_CR4_'),
+        'xcr0':  TestTypeFromDict('xcr0', g_kdX86XSaveCConstants, 'XSAVE_C_'),
     };
     ## CPU context fields.
     kdFields = {
@@ -923,6 +942,7 @@ class TestInOut(object):
         # Control registers.
         'cr0':          ( 'cr0',  'both',   ),
         'cr4':          ( 'cr4',  'both',   ),
+        'xcr0':         ( 'xcr0', 'both',   ),
         # FPU Registers
         'fcw':          ( 'uint', 'both',   ),
         'fsw':          ( 'uint', 'both',   ),

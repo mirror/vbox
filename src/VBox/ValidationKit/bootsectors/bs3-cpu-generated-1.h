@@ -417,6 +417,7 @@ typedef enum BS3CG1DST
     /* Control registers.*/
     BS3CG1DST_CR0,
     BS3CG1DST_CR4,
+    BS3CG1DST_XCR0,
 
     /* FPU registers. */
     BS3CG1DST_FPU_FIRST,

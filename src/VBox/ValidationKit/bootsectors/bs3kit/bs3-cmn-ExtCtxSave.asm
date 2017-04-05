@@ -35,10 +35,11 @@
 BS3_PROC_BEGIN_CMN Bs3ExtCtxSave, BS3_PBC_NEAR
         push    xBP
         mov     xBP, xSP
-        push    xAX
-BONLY32 push    xCX
+        push    sAX
+        push    sCX
+        push    sDX
+        push    xBX
 BONLY16 push    es
-BONLY16 push    bx
 
 %if ARCH_BITS == 16
         les     bx, [xBP + xCB + cbCurRetAddr]
@@ -55,18 +56,31 @@ BONLY16 push    bx
         fnsave  [es:bx + BS3EXTCTX.Ctx]
         jmp     .return
 
-.do_16_xsave:
-        xsave   [es:bx + BS3EXTCTX.Ctx]
-        jmp     .return
-
 .do_16_fxsave:
         fxsave  [es:bx + BS3EXTCTX.Ctx]
+        jmp     .return
+
+.do_16_xsave:
+        xor     ecx, ecx
+        xgetbv
+        mov     [es:bx + BS3EXTCTX.fXcr0Saved], eax
+        mov     [es:bx + BS3EXTCTX.fXcr0Saved + 4], edx
+        mov     eax, [es:bx + BS3EXTCTX.fXcr0Nominal]
+        mov     edx, [es:bx + BS3EXTCTX.fXcr0Nominal + 4]
+        xsetbv
+
+        xsave   [es:bx + BS3EXTCTX.Ctx]
+
+        mov     eax, [es:bx + BS3EXTCTX.fXcr0Saved]
+        mov     edx, [es:bx + BS3EXTCTX.fXcr0Saved + 4]
+        xsetbv
         ;jmp     .return
 
 %else
-BONLY32 mov     ecx, [xBP + xCB + cbCurRetAddr]
+BONLY32 mov     ebx, [xBP + xCB + cbCurRetAddr]
+BONLY64 mov     rbx, rcx
 
-        mov     al, [xCX + BS3EXTCTX.enmMethod]
+        mov     al, [xBX + BS3EXTCTX.enmMethod]
         cmp     al, BS3EXTCTXMETHOD_XSAVE
         je      .do_xsave
         cmp     al, BS3EXTCTXMETHOD_FXSAVE
@@ -76,26 +90,39 @@ BONLY32 mov     ecx, [xBP + xCB + cbCurRetAddr]
         int3
 
 .do_ancient:
-        fnsave  [xCX + BS3EXTCTX.Ctx]
-        jmp     .return
-
-.do_xsave:
-BONLY32 xsave   [xCX + BS3EXTCTX.Ctx]
-BONLY64 xsave64 [xCX + BS3EXTCTX.Ctx]
+        fnsave  [xBX + BS3EXTCTX.Ctx]
         jmp     .return
 
 .do_fxsave:
-BONLY32 fxsave  [xCX + BS3EXTCTX.Ctx]
-BONLY64 fxsave64 [xCX + BS3EXTCTX.Ctx]
+BONLY32 fxsave  [xBX + BS3EXTCTX.Ctx]
+BONLY64 fxsave64 [xBX + BS3EXTCTX.Ctx]
+        jmp     .return
+
+.do_xsave:
+        xor     ecx, ecx
+        xgetbv
+        mov     [xBX + BS3EXTCTX.fXcr0Saved], eax
+        mov     [xBX + BS3EXTCTX.fXcr0Saved + 4], edx
+        mov     eax, [xBX + BS3EXTCTX.fXcr0Nominal]
+        mov     edx, [xBX + BS3EXTCTX.fXcr0Nominal + 4]
+        xsetbv
+
+BONLY32 xsave   [xBX + BS3EXTCTX.Ctx]
+BONLY64 xsave64 [xBX + BS3EXTCTX.Ctx]
+
+        mov     eax, [xBX + BS3EXTCTX.fXcr0Saved]
+        mov     edx, [xBX + BS3EXTCTX.fXcr0Saved + 4]
+        xsetbv
         ;jmp     .return
 
 %endif
 
 .return:
-BONLY16 pop     bx
 BONLY16 pop     es
-BONLY32 pop     xCX
-        pop     xAX
+        pop     xBX
+        pop     sDX
+        pop     sCX
+        pop     sAX
         mov     xSP, xBP
         pop     xBP
         ret

@@ -399,6 +399,7 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
 
     /* [BS3CG1DST_CR0] = */     4,
     /* [BS3CG1DST_CR4] = */     4,
+    /* [BS3CG1DST_XCR0] = */    8,
 
     /* [BS3CG1DST_FCW] = */         2,
     /* [BS3CG1DST_FSW] = */         2,
@@ -629,6 +630,7 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
 
     /* [BS3CG1DST_CR0] = */         RT_OFFSETOF(BS3REGCTX, cr0),
     /* [BS3CG1DST_CR4] = */         RT_OFFSETOF(BS3REGCTX, cr4),
+    /* [BS3CG1DST_XCR0] = */        sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, fXcr0Saved),
 
     /* [BS3CG1DST_FCW] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FCW),
     /* [BS3CG1DST_FSW] = */         sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.FSW),
@@ -861,6 +863,7 @@ static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
 
     { "CR0" },
     { "CR4" },
+    { "XCR0" },
 
     { "FCW" },
     { "FSW" },
@@ -2225,7 +2228,7 @@ static bool BS3_NEAR_CODE Bs3Cg3SetupSseAndAvx(PBS3CG1STATE pThis)
         {
             cr4 |= X86_CR4_OSFXSR | X86_CR4_OSXMMEEXCPT | X86_CR4_OSXSAVE;
             ASMSetCR4(cr4);
-            ASMSetXcr0(pThis->pExtCtx->fXcr0);
+            ASMSetXcr0(pThis->pExtCtx->fXcr0Nominal);
         }
         else
         {
@@ -3396,7 +3399,7 @@ bool BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
             pExtCtx->Ctx.x87.aXMM[i].au16[6] = i;
             pExtCtx->Ctx.x87.aXMM[i].au16[7] = i;
         }
-        if (pExtCtx->fXcr0 & XSAVE_C_YMM)
+        if (pExtCtx->fXcr0Nominal & XSAVE_C_YMM)
             for (i = 0; i < RT_ELEMENTS(pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi); i++)
             {
                 pExtCtx->Ctx.x.u.Intel.YmmHi.aYmmHi[i].au16[0] = i << 8;

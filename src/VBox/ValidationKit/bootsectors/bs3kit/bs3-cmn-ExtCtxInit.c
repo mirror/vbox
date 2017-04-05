@@ -53,9 +53,10 @@ BS3_CMN_DEF(PBS3EXTCTX, Bs3ExtCtxInit,(PBS3EXTCTX pExtCtx, uint16_t cbExtCtx, ui
         BS3_ASSERT(cbExtCtx >= RT_OFFSETOF(BS3EXTCTX, Ctx) + sizeof(X86FPUSTATE));
         pExtCtx->enmMethod = BS3EXTCTXMETHOD_ANCIENT;
     }
-    pExtCtx->cb       = cbExtCtx;
-    pExtCtx->u16Magic = BS3EXTCTX_MAGIC;
-    pExtCtx->fXcr0    = fFlags;
+    pExtCtx->cb             = cbExtCtx;
+    pExtCtx->u16Magic       = BS3EXTCTX_MAGIC;
+    pExtCtx->fXcr0Nominal   = fFlags;
+    pExtCtx->fXcr0Saved     = fFlags;
     return pExtCtx;
 }
 

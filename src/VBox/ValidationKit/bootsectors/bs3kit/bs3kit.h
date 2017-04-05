@@ -2685,11 +2685,13 @@ typedef struct BS3EXTCTX
     /** The method used to save and restore the context (BS3EXTCTXMETHOD). */
     uint8_t             enmMethod;
     uint8_t             abPadding0[3];
-    /** XSAVE_C_XXX. */
-    uint64_t            fXcr0;
+    /** Nominal XSAVE_C_XXX. */
+    uint64_t            fXcr0Nominal;
+    /** The saved XCR0 mask (restored after xrstor).  */
+    uint64_t            fXcr0Saved;
 
     /** Explicit alignment padding. */
-    uint8_t             abPadding[64 - 2 - 2 - 1 - 3 - 8];
+    uint8_t             abPadding[64 - 2 - 2 - 1 - 3 - 8 - 8];
 
     /** The context, variable size (see above).
      * This must be aligned on a 64 byte boundrary. */
