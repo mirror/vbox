@@ -1973,7 +1973,7 @@ FNIEMOP_DEF(iemOp_bound_Gv_Ma__evex)
         if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx512Foundation)
         {
             Log(("evex not supported by the guest CPU!\n"));
-            return FNIEMOP_CALL(iemOp_InvalidNeedRM);
+            return FNIEMOP_CALL(iemOp_InvalidAllNeedRM);
         }
         IEM_OPCODE_GET_NEXT_U8(&bRm);
     }

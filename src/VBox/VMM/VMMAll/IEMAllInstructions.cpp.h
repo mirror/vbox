@@ -548,6 +548,25 @@ FNIEMOPRM_DEF(iemOp_InvalidWithRM)
 }
 
 
+/** Invalid with RM byte where both AMD and Intel decodes any additional
+ *  address encoding bytes. */
+FNIEMOPRM_DEF(iemOp_InvalidWithRMAllNeeded)
+{
+    IEMOP_MNEMONIC(InvalidWithRMAllNeeded, "InvalidWithRMAllNeeded");
+#ifndef TST_IEM_CHECK_MC
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        RTGCPTR      GCPtrEff;
+        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+#endif
+    IEMOP_HLP_DONE_DECODING();
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
 /** Invalid with RM byte where intel requires 8-byte immediate.
  * Intel will also need SIB and displacement if bRm indicates memory. */
 FNIEMOPRM_DEF(iemOp_InvalidWithRMNeedImm8)
@@ -608,6 +627,25 @@ FNIEMOP_DEF(iemOp_InvalidNeedRM)
         }
 #endif
     }
+    IEMOP_HLP_DONE_DECODING();
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
+/** Invalid opcode where both AMD and Intel requires Mod R/M sequence. */
+FNIEMOP_DEF(iemOp_InvalidAllNeedRM)
+{
+    IEMOP_MNEMONIC(InvalidAllNeedRM, "InvalidAllNeedRM");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); RT_NOREF(bRm);
+#ifndef TST_IEM_CHECK_MC
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        RTGCPTR      GCPtrEff;
+        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+#endif
     IEMOP_HLP_DONE_DECODING();
     return IEMOP_RAISE_INVALID_OPCODE();
 }

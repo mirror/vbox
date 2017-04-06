@@ -120,6 +120,9 @@ typedef struct BS3CG1STATE
     uint32_t                fFlags;
     /** The encoding. */
     BS3CG1ENC               enmEncoding;
+    /** The non-invalid encoding.  This differs from enmEncoding when
+     * Bs3Cg1CalcNoneIntelInvalidEncoding has been called. */
+    BS3CG1ENC               enmEncodingNonInvalid;
     /** The CPU test / CPU ID. */
     BS3CG1CPU               enmCpuTest;
     /** Prefix sensitivity and requirements. */
@@ -2218,6 +2221,7 @@ static BS3CG1ENC Bs3Cg1CalcNoneIntelInvalidEncoding(BS3CG1ENC enmEncoding)
     switch (enmEncoding)
     {
         case BS3CG1ENC_MODRM_Gb_Eb:
+        case BS3CG1ENC_MODRM_Gv_Ma:
         case BS3CG1ENC_FIXED:
             return BS3CG1ENC_FIXED;
         default:
@@ -2702,6 +2706,8 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                         break;
 
                     default:
+                        if (pThis->enmEncoding != pThis->enmEncodingNonInvalid)
+                            goto l_advance_to_next;
                         return Bs3TestFailedF("Internal error: cbDst=%u idxField=%d (%d) offField=%#x: enmLocation=%u off=%#x idxField=%u",
                                               cbDst, idxField, idxOp, offField, pThis->aOperands[idxOp].enmLocation,
                                               pThis->aOperands[idxOp].off, pThis->aOperands[idxOp].idxField);
@@ -2916,6 +2922,7 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
         /*
          * Advance to the next instruction.
          */
+l_advance_to_next:
         pbCode += cbValue;
         cbLeft -= cbValue;
     }
@@ -3496,19 +3503,20 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
          * Note! 16-bit will switch to a two level test header lookup once we exceed 64KB.
          */
         PCBS3CG1INSTR pInstr = &g_aBs3Cg1Instructions[iInstr];
-        pThis->iInstr          = iInstr;
-        pThis->pTestHdr        = (PCBS3CG1TESTHDR)&g_abBs3Cg1Tests[pInstr->offTests];
-        pThis->fFlags          = pInstr->fFlags;
-        pThis->enmEncoding     = (BS3CG1ENC)pInstr->enmEncoding;
-        pThis->enmCpuTest      = (BS3CG1CPU)pInstr->enmCpuTest;
-        pThis->enmPrefixKind   = (BS3CG1PFXKIND)pInstr->enmPrefixKind;
-        pThis->enmXcptType     = (BS3CG1XCPTTYPE)pInstr->enmXcptType;
-        pThis->cchMnemonic     = pInstr->cchMnemonic;
+        pThis->iInstr                   = iInstr;
+        pThis->pTestHdr                 = (PCBS3CG1TESTHDR)&g_abBs3Cg1Tests[pInstr->offTests];
+        pThis->fFlags                   = pInstr->fFlags;
+        pThis->enmEncoding              = (BS3CG1ENC)pInstr->enmEncoding;
+        pThis->enmEncodingNonInvalid    = (BS3CG1ENC)pInstr->enmEncoding;
+        pThis->enmCpuTest               = (BS3CG1CPU)pInstr->enmCpuTest;
+        pThis->enmPrefixKind            = (BS3CG1PFXKIND)pInstr->enmPrefixKind;
+        pThis->enmXcptType              = (BS3CG1XCPTTYPE)pInstr->enmXcptType;
+        pThis->cchMnemonic              = pInstr->cchMnemonic;
         if (pThis->fAdvanceMnemonic)
             Bs3TestSubF("%s / %.*s", pThis->pszModeShort, pThis->cchMnemonic, pThis->pchMnemonic);
-        pThis->fAdvanceMnemonic = pInstr->fAdvanceMnemonic;
-        pThis->cOperands       = pInstr->cOperands;
-        pThis->cbOpcodes       = pInstr->cbOpcodes;
+        pThis->fAdvanceMnemonic         = pInstr->fAdvanceMnemonic;
+        pThis->cOperands                = pInstr->cOperands;
+        pThis->cbOpcodes                = pInstr->cbOpcodes;
         switch (pThis->cOperands)
         {
             case 4: pThis->aenmOperands[3] = (BS3CG1OP)pThis->pabOperands[3];
@@ -3516,7 +3524,6 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
             case 2: pThis->aenmOperands[1] = (BS3CG1OP)pThis->pabOperands[1];
             case 1: pThis->aenmOperands[0] = (BS3CG1OP)pThis->pabOperands[0];
         }
-
         switch (pThis->cbOpcodes)
         {
             case 4: pThis->abOpcodes[3] = pThis->pabOpcodes[3];
@@ -3525,19 +3532,20 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
             case 1: pThis->abOpcodes[0] = pThis->pabOpcodes[0];
         }
 
-        /* Switch the encoder for some of the invalid instructions on non-intel CPUs. */
-        if (   (pThis->fFlags & BS3CG1INSTR_F_INTEL_DECODES_INVALID)
-            && pThis->bCpuVendor != BS3CPUVENDOR_INTEL
-            && (   (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID))
-                || (BS3_MODE_IS_64BIT_CODE(pThis->bMode) && (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)) ) )
-            pThis->enmEncoding = Bs3Cg1CalcNoneIntelInvalidEncoding(pThis->enmEncoding);
-
         /*
          * Check if the CPU supports the instruction.
          */
         if (   !Bs3Cg1CpuSetupFirst(pThis)
             || (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID)))
             fOuterInvalidInstr = true;
+
+        /* Switch the encoder for some of the invalid instructions on non-intel CPUs. */
+        if (   (pThis->fFlags & BS3CG1INSTR_F_INTEL_DECODES_INVALID)
+            && pThis->bCpuVendor != BS3CPUVENDOR_INTEL
+            && (   (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID))
+                || (BS3_MODE_IS_64BIT_CODE(pThis->bMode) && (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT))
+                || fOuterInvalidInstr ) )
+            pThis->enmEncoding = Bs3Cg1CalcNoneIntelInvalidEncoding(pThis->enmEncoding);
 
         for (iCpuSetup = 0;; iCpuSetup++)
         {
@@ -3704,7 +3712,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode != BS3_MODE_PPV86)
+    if (bMode < BS3_MODE_LM16)
         return BS3TESTDOMODE_SKIPPED;
 #endif
 
