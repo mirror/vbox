@@ -766,7 +766,10 @@ void createBugReportOsSpecific(BugReport* report, const char *pszHome)
         "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}", NULL),
                     new BugReportFilterRegistryWin());
     report->addItem(new BugReportCommandTemp("RegNetwork", PathJoin(WinSysDir.c_str(), "reg.exe"), "export",
-        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}", NULL),
+        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Network", NULL),
+                    new BugReportFilterRegistryWin());
+    report->addItem(new BugReportCommandTemp("RegNetFltNobj", PathJoin(WinSysDir.c_str(), "reg.exe"), "export",
+        "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\CLSID\\{f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}", NULL),
                     new BugReportFilterRegistryWin());
     report->addItem(new BugReportUsbTreeWin);
     report->addItem(new BugReportDriversWin);
