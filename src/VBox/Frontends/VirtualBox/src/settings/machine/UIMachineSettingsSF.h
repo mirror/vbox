@@ -81,11 +81,11 @@ protected:
 private slots:
 
     /** Handles command to add shared folder. */
-    void sltAddSharedFolder();
+    void sltAddFolder();
     /** Handles command to edit shared folder. */
-    void sltEditSharedFolder();
+    void sltEditFolder();
     /** Handles command to remove shared folder. */
-    void sltRemoveSharedFolder();
+    void sltRemoveFolder();
 
     /** Handles @a pCurrentItem change. */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
@@ -127,6 +127,9 @@ private:
     /** Gathers a vector of shared folders of the passed @a enmSharedFoldersType. */
     CSharedFolderVector getSharedFolders(UISharedFolderType enmSharedFoldersType);
 
+    /** Creates shared folder item based on passed @a data. */
+    void addSharedFolderItem(const UIDataSettingsSharedFolder &sharedFolderData, bool fChoose);
+
     /** Creates shared folder defined by a @a folderCache. */
     bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
     /** Removes shared folder defined by a @a folderCache. */
@@ -138,13 +141,6 @@ private:
     QAction *m_pActionEdit;
     /** Holds the Remove action instance. */
     QAction *m_pActionRemove;
-
-    /** Holds the "Full" access translation tag. */
-    QString  m_strTrFull;
-    /** Holds the "Read-only" access translation tag. */
-    QString  m_strTrReadOnly;
-    /** Holds the "Yes" for auto-mount translation tag. */
-    QString  m_strTrYes;
 
     /** Holds the page data cache instance. */
     UISettingsCacheSharedFolders *m_pCache;
