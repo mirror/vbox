@@ -77,14 +77,14 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old display data: */
     UIDataSettingsGlobalDisplay oldData;
 
-    /* Gather old data: */
+    /* Gather old display data: */
     oldData.m_strMaxGuestResolution = m_settings.maxGuestRes();
     oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 
-    /* Cache old data: */
+    /* Cache old display data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -93,10 +93,10 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsDisplay::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old display data from the cache: */
     const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old display data from the cache: */
     if (   (oldData.m_strMaxGuestResolution.isEmpty())
         || (oldData.m_strMaxGuestResolution == "auto"))
     {
@@ -124,10 +124,10 @@ void UIGlobalSettingsDisplay::getFromCache()
 
 void UIGlobalSettingsDisplay::putToCache()
 {
-    /* Prepare new data: */
+    /* Prepare new display data: */
     UIDataSettingsGlobalDisplay newData = m_pCache->base();
 
-    /* Gather new data: */
+    /* Gather new display data: */
     if (m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "auto")
     {
         /* If resolution current combo item is "auto" => resolution set to "auto": */
@@ -147,7 +147,7 @@ void UIGlobalSettingsDisplay::putToCache()
     }
     newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
 
-    /* Cache new data: */
+    /* Cache new display data: */
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -156,9 +156,10 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save new data from cache: */
+    /* Make sure display data was changed: */
     if (m_pCache->wasChanged())
     {
+        /* Save new display data from the cache: */
         if (m_pCache->data().m_strMaxGuestResolution != m_pCache->base().m_strMaxGuestResolution)
             m_settings.setMaxGuestRes(m_pCache->data().m_strMaxGuestResolution);
         if (m_pCache->data().m_fActivateHoveredMachineWindow != m_pCache->base().m_fActivateHoveredMachineWindow)

@@ -887,10 +887,10 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old input data: */
     UIDataSettingsGlobalInput oldData;
 
-    /* Gather old data: */
+    /* Gather old input data: */
     oldData.shortcuts() << UIDataShortcutRow(m_pMachineTable, UIHostCombo::hostComboCacheKey(), tr("Host Key Combination"),  m_settings.hostCombo(), QString());
     const QMap<QString, UIShortcut> &shortcuts = gShortcutPool->shortcuts();
     const QList<QString> shortcutKeys = shortcuts.keys();
@@ -906,7 +906,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     }
     oldData.setAutoCapture(m_settings.autoCapture());
 
-    /* Cache old data: */
+    /* Cache old input data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -915,10 +915,10 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsInput::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old input data from the cache: */
     const UIDataSettingsGlobalInput &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old input data from the cache: */
     m_pSelectorModel->load(oldData.shortcuts());
     m_pMachineModel->load(oldData.shortcuts());
     m_pEnableAutoGrabCheckbox->setChecked(oldData.autoCapture());
@@ -929,15 +929,15 @@ void UIGlobalSettingsInput::getFromCache()
 
 void UIGlobalSettingsInput::putToCache()
 {
-    /* Prepare new data: */
+    /* Prepare new input data: */
     UIDataSettingsGlobalInput newData = m_pCache->base();
 
-    /* Gather new data: */
+    /* Gather new input data: */
     m_pSelectorModel->save(newData.shortcuts());
     m_pMachineModel->save(newData.shortcuts());
     newData.setAutoCapture(m_pEnableAutoGrabCheckbox->isChecked());
 
-    /* Cache new data: */
+    /* Cache new input data: */
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -946,10 +946,10 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save new data from cache: */
+    /* Make sure input data was changed: */
     if (m_pCache->wasChanged())
     {
-        /* Save host-combo shortcut from cache: */
+        /* Save new host-combo shortcut from the cache: */
         const UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
         const int iHostComboItemBase = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->base().shortcuts(), fakeHostComboItem);
         const int iHostComboItemData = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->data().shortcuts(), fakeHostComboItem);
@@ -958,7 +958,7 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
         if (strHostComboData != strHostComboBase)
             m_settings.setHostCombo(strHostComboData);
 
-        /* Save other shortcut sequences from cache: */
+        /* Save other new shortcuts from the cache: */
         QMap<QString, QString> sequencesBase;
         QMap<QString, QString> sequencesData;
         foreach (const UIDataShortcutRow &item, m_pCache->base().shortcuts())
@@ -968,7 +968,7 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
         if (sequencesData != sequencesBase)
             gShortcutPool->setOverrides(sequencesData);
 
-        /* Save other things from cache: */
+        /* Save other new things from the cache: */
         if (m_pCache->data().autoCapture() != m_pCache->base().autoCapture())
             m_settings.setAutoCapture(m_pCache->data().autoCapture());
     }

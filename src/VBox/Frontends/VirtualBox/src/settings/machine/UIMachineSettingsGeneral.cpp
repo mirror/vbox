@@ -242,12 +242,12 @@ void UIMachineSettingsGeneral::getFromCache()
     /* Get old general data from the cache: */
     const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
 
-    /* Load old 'Basic' data to the page: */
+    /* Load old 'Basic' data from the cache: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
     m_pNameAndSystemEditor->setName(oldGeneralData.m_strName);
     m_pNameAndSystemEditor->setType(vboxGlobal().vmGuestOSType(oldGeneralData.m_strGuestOsTypeId));
 
-    /* Load old 'Advanced' data to the page: */
+    /* Load old 'Advanced' data from the cache: */
     AssertPtrReturnVoid(mPsSnapshot);
     AssertPtrReturnVoid(mCbClipboard);
     AssertPtrReturnVoid(mCbDragAndDrop);
@@ -256,11 +256,11 @@ void UIMachineSettingsGeneral::getFromCache()
     mCbClipboard->setCurrentIndex(oldGeneralData.m_clipboardMode);
     mCbDragAndDrop->setCurrentIndex(oldGeneralData.m_dndMode);
 
-    /* Load old 'Description' data to the page: */
+    /* Load old 'Description' data from the cache: */
     AssertPtrReturnVoid(mTeDescription);
     mTeDescription->setPlainText(oldGeneralData.m_strDescription);
 
-    /* Load old 'Encryption' data to the page: */
+    /* Load old 'Encryption' data from the cache: */
     AssertPtrReturnVoid(m_pCheckBoxEncryption);
     AssertPtrReturnVoid(m_pComboCipher);
     m_pCheckBoxEncryption->setChecked(oldGeneralData.m_fEncryptionEnabled);
@@ -280,12 +280,12 @@ void UIMachineSettingsGeneral::putToCache()
     /* Prepare new general data: */
     UIDataSettingsMachineGeneral newGeneralData;
 
-    /* Gather new 'Basic' data from page: */
+    /* Gather new 'Basic' data: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
     newGeneralData.m_strName = m_pNameAndSystemEditor->name();
     newGeneralData.m_strGuestOsTypeId = m_pNameAndSystemEditor->type().GetId();
 
-    /* Gather new 'Advanced' data from page: */
+    /* Gather new 'Advanced' data: */
     AssertPtrReturnVoid(mPsSnapshot);
     AssertPtrReturnVoid(mCbClipboard);
     AssertPtrReturnVoid(mCbDragAndDrop);
@@ -293,12 +293,12 @@ void UIMachineSettingsGeneral::putToCache()
     newGeneralData.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
     newGeneralData.m_dndMode = (KDnDMode)mCbDragAndDrop->currentIndex();
 
-    /* Gather new 'Description' data from page: */
+    /* Gather new 'Description' data: */
     AssertPtrReturnVoid(mTeDescription);
     newGeneralData.m_strDescription = mTeDescription->toPlainText().isEmpty() ?
                                       QString::null : mTeDescription->toPlainText();
 
-    /* Gather new 'Encryption' data from page: */
+    /* Gather new 'Encryption' data: */
     AssertPtrReturnVoid(m_pCheckBoxEncryption);
     AssertPtrReturnVoid(m_pComboCipher);
     AssertPtrReturnVoid(m_pEditorEncryptionPassword);
@@ -589,11 +589,11 @@ void UIMachineSettingsGeneral::retranslateUi()
 
 void UIMachineSettingsGeneral::polishPage()
 {
-    /* 'Basic' tab: */
+    /* Polish 'Basic' availability: */
     AssertPtrReturnVoid(m_pNameAndSystemEditor);
     m_pNameAndSystemEditor->setEnabled(isMachineOffline());
 
-    /* 'Advanced' tab: */
+    /* Polish 'Advanced' availability: */
     AssertPtrReturnVoid(mLbSnapshot);
     AssertPtrReturnVoid(mPsSnapshot);
     AssertPtrReturnVoid(mLbClipboard);
@@ -607,11 +607,11 @@ void UIMachineSettingsGeneral::polishPage()
     mLbDragAndDrop->setEnabled(isMachineInValidMode());
     mCbDragAndDrop->setEnabled(isMachineInValidMode());
 
-    /* 'Description' tab: */
+    /* Polish 'Description' availability: */
     AssertPtrReturnVoid(mTeDescription);
     mTeDescription->setEnabled(isMachineInValidMode());
 
-    /* 'Encryption' tab: */
+    /* Polish 'Encryption' availability: */
     AssertPtrReturnVoid(m_pCheckBoxEncryption);
     AssertPtrReturnVoid(m_pWidgetEncryption);
     m_pCheckBoxEncryption->setEnabled(isMachineOffline());

@@ -353,7 +353,7 @@ void UIMachineSettingsSF::getFromCache()
     /* Update root items visibility: */
     updateRootItemsVisibility();
 
-    /* For each folder => load it to the page: */
+    /* For each folder => load it from the cache: */
     for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
         addSharedFolderItem(m_pCache->child(iFolderIndex).base(), false /* its new? */);
 
@@ -380,7 +380,7 @@ void UIMachineSettingsSF::putToCache()
         /* For each folder of current type: */
         for (int iFolderIndex = 0; iFolderIndex < pFolderTypeRoot->childCount(); ++iFolderIndex)
         {
-            /* Get and cache new folder item: */
+            /* Gather and cache new folder data: */
             const SFTreeViewItem *pItem = static_cast<SFTreeViewItem*>(pFolderTypeRoot->child(iFolderIndex));
             m_pCache->child(pItem->m_strName).cacheCurrentData(*pItem);
         }
@@ -395,8 +395,8 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Check if folders data was changed: */
-    if (m_pCache->wasChanged())
+    /* Make sure machine is in valid mode & folders data was changed: */
+    if (isMachineInValidMode() && m_pCache->wasChanged())
     {
         /* For each folder record: */
         for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
@@ -453,7 +453,7 @@ void UIMachineSettingsSF::retranslateUi()
 
 void UIMachineSettingsSF::polishPage()
 {
-    /* Update widgets availability: */
+    /* Polish shared folders page availability: */
     mNameSeparator->setEnabled(isMachineInValidMode());
     m_pFoldersToolBar->setEnabled(isMachineInValidMode());
     m_pFoldersToolBar->setEnabled(isMachineInValidMode());

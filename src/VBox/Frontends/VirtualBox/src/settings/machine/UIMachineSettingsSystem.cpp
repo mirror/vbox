@@ -281,7 +281,7 @@ void UIMachineSettingsSystem::getFromCache()
      * dynamical content which depends on cashed value: */
     repopulateComboPointingHIDType();
 
-    /* Load old 'Motherboard' data to the page: */
+    /* Load old 'Motherboard' data from the cache: */
     m_pSliderMemorySize->setValue(oldSystemData.m_iMemorySize);
     const int iChipsetTypePosition = m_pComboChipsetType->findData(oldSystemData.m_chipsetType);
     m_pComboChipsetType->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
@@ -302,12 +302,12 @@ void UIMachineSettingsSystem::getFromCache()
         mTwBootOrder->addItem(pItem);
     }
 
-    /* Load old 'Processor' data to the page: */
+    /* Load old 'Processor' data from the cache: */
     m_pSliderCPUCount->setValue(oldSystemData.m_cCPUCount);
     m_pSliderCPUExecCap->setValue(oldSystemData.m_iCPUExecCap);
     m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
 
-    /* Load old 'Acceleration' data to the page: */
+    /* Load old 'Acceleration' data from the cache: */
     const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
     m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
     m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
@@ -593,10 +593,10 @@ void UIMachineSettingsSystem::retranslateUi()
 
 void UIMachineSettingsSystem::polishPage()
 {
-    /* Get system data from the cache: */
+    /* Get old system data from the cache: */
     const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
-    /* Motherboard tab: */
+    /* Polish 'Motherboard' availability: */
     m_pLabelMemorySize->setEnabled(isMachineOffline());
     m_pLabelMemoryMin->setEnabled(isMachineOffline());
     m_pLabelMemoryMax->setEnabled(isMachineOffline());
@@ -615,7 +615,7 @@ void UIMachineSettingsSystem::polishPage()
     m_pCheckBoxEFI->setEnabled(isMachineOffline());
     m_pCheckBoxUseUTC->setEnabled(isMachineOffline());
 
-    /* Processor tab: */
+    /* Polish 'Processor' availability: */
     m_pLabelCPUCount->setEnabled(isMachineOffline());
     m_pLabelCPUMin->setEnabled(isMachineOffline());
     m_pLabelCPUMax->setEnabled(isMachineOffline());
@@ -629,7 +629,7 @@ void UIMachineSettingsSystem::polishPage()
     m_pLabelCPUExtended->setEnabled(isMachineOffline());
     m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
 
-    /* Acceleration tab: */
+    /* Polish 'Acceleration' availability: */
     m_pTabWidgetSystem->setTabEnabled(2, systemData.m_fSupportedHwVirtEx);
     m_pLabelParavirtProvider->setEnabled(isMachineOffline());
     m_pComboParavirtProvider->setEnabled(isMachineOffline());

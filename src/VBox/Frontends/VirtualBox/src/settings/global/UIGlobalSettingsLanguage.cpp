@@ -226,13 +226,13 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old language data: */
     UIDataSettingsGlobalLanguage oldData;
 
-    /* Gather old data: */
+    /* Gather old language data: */
     oldData.m_strLanguageId = m_settings.languageId();
 
-    /* Cache old data: */
+    /* Cache old language data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -241,25 +241,25 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsLanguage::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old language data from the cache: */
     const UIDataSettingsGlobalLanguage &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old language data from the cache: */
     reloadLanguageTree(oldData.m_strLanguageId);
 }
 
 void UIGlobalSettingsLanguage::putToCache()
 {
-    /* Prepare new data: */
+    /* Prepare new language data: */
     UIDataSettingsGlobalLanguage newData = m_pCache->base();
 
-    /* Gather new data: */
+    /* Gather new language data: */
     QTreeWidgetItem *pCurrentItem = m_pLanguageTree->currentItem();
     Assert(pCurrentItem);
     if (pCurrentItem)
         newData.m_strLanguageId = pCurrentItem->text(1);
 
-    /* Cache new data: */
+    /* Cache new language data: */
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -268,10 +268,10 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save new data from cache: */
+    /* Make sure language data was changed: */
     if (m_pCache->wasChanged())
     {
-        /* Save from cache: */
+        /* Save new language data from the cache: */
         if (m_pCache->data().m_strLanguageId != m_pCache->base().m_strLanguageId)
             m_settings.setLanguageId(m_pCache->data().m_strLanguageId);
     }

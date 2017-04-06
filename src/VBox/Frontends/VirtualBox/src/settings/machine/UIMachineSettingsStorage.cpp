@@ -2249,7 +2249,7 @@ void UIMachineSettingsStorage::getFromCache()
     /* Clear model initially: */
     m_pModelStorage->clear();
 
-    /* Load old common data to the page: */
+    /* Load old common data from the cache: */
     m_pModelStorage->setMachineId(m_strMachineId);
 
     /* For each controller: */
@@ -2260,7 +2260,7 @@ void UIMachineSettingsStorage::getFromCache()
         /* Get old controller data from the cache: */
         const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
 
-        /* Load old controller data to the page: */
+        /* Load old controller data from the cache: */
         const QModelIndex controllerIndex = m_pModelStorage->addController(oldControllerData.m_strControllerName,
                                                                            oldControllerData.m_controllerBus,
                                                                            oldControllerData.m_controllerType);
@@ -2276,7 +2276,7 @@ void UIMachineSettingsStorage::getFromCache()
             /* Get old attachment data from the cache: */
             const UIDataSettingsMachineStorageAttachment &oldAttachmentData = attachmentCache.base();
 
-            /* Load old attachment data to the page: */
+            /* Load old attachment data from the cache: */
             const QModelIndex attachmentIndex = m_pModelStorage->addAttachment(controllerId,
                                                                                oldAttachmentData.m_attachmentType,
                                                                                oldAttachmentData.m_strAttachmentMediumId);
@@ -2517,13 +2517,15 @@ void UIMachineSettingsStorage::polishPage()
     const QModelIndex index = m_pTreeStorage->currentIndex();
     const KDeviceType enmDevice = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
 
-    /* Left pane: */
+    /* Polish left pane availability: */
     mLsLeftPane->setEnabled(isMachineInValidMode());
     m_pTreeStorage->setEnabled(isMachineInValidMode());
-    /* Empty information pane: */
+
+    /* Polish empty information pane availability: */
     mLsEmpty->setEnabled(isMachineInValidMode());
     mLbInfo->setEnabled(isMachineInValidMode());
-    /* Controllers pane: */
+
+    /* Polish controllers pane availability: */
     mLsParameters->setEnabled(isMachineInValidMode());
     mLbName->setEnabled(isMachineOffline());
     mLeName->setEnabled(isMachineOffline());
@@ -2532,7 +2534,8 @@ void UIMachineSettingsStorage::polishPage()
     mLbPortCount->setEnabled(isMachineOffline());
     mSbPortCount->setEnabled(isMachineOffline());
     mCbIoCache->setEnabled(isMachineOffline());
-    /* Attachments pane: */
+
+    /* Polish attachments pane availability: */
     mLsAttributes->setEnabled(isMachineInValidMode());
     mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && enmDevice != KDeviceType_HardDisk));
     mCbSlot->setEnabled(isMachineOffline());
@@ -3942,8 +3945,8 @@ bool UIMachineSettingsStorage::updateStorageData()
     bool fSuccess = m_machine.isOk();
     if (fSuccess)
     {
-        /* Check if storage data was changed: */
-        if (m_pCache->wasChanged())
+        /* Make sure machine is in valid mode & storage data was changed: */
+        if (isMachineInValidMode() && m_pCache->wasChanged())
         {
             /* For each controller (removing step): */
             for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
@@ -4141,9 +4144,9 @@ bool UIMachineSettingsStorage::removeStorageAttachment(const UISettingsCacheMach
     bool fSuccess = m_machine.isOk();
     if (fSuccess)
     {
-        /* Get storage controller data from the cache: */
+        /* Get old storage controller data from the cache: */
         const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
-        /* Get storage attachment data from the cache: */
+        /* Get old storage attachment data from the cache: */
         const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.base();
 
         /* Get storage controller attributes: */
@@ -4176,9 +4179,9 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMach
     bool fSuccess = m_machine.isOk();
     if (fSuccess)
     {
-        /* Get storage controller data from the cache: */
+        /* Get new storage controller data from the cache: */
         const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
-        /* Get storage attachment data from the cache: */
+        /* Get new storage attachment data from the cache: */
         const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
 
         /* Get storage controller attributes: */
@@ -4265,9 +4268,9 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
     bool fSuccess = m_machine.isOk();
     if (fSuccess)
     {
-        /* Get storage controller data from the cache: */
+        /* Get new storage controller data from the cache: */
         const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
-        /* Get current storage attachment data from the cache: */
+        /* Get new storage attachment data from the cache: */
         const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
 
         /* Get storage controller attributes: */

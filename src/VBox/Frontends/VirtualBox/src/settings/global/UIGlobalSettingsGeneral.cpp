@@ -84,15 +84,15 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old general data: */
     UIDataSettingsGlobalGeneral oldData;
 
-    /* Gather old data: */
+    /* Gather old general data: */
     oldData.m_strDefaultMachineFolder = m_properties.GetDefaultMachineFolder();
     oldData.m_strVRDEAuthLibrary = m_properties.GetVRDEAuthLibrary();
     oldData.m_fHostScreenSaverDisabled = m_settings.hostScreenSaverDisabled();
 
-    /* Cache old data: */
+    /* Cache old general data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -101,10 +101,10 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsGeneral::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old general data from the cache: */
     const UIDataSettingsGlobalGeneral &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old general data from the cache: */
     m_pSelectorMachineFolder->setPath(oldData.m_strDefaultMachineFolder);
     m_pSelectorVRDPLibName->setPath(oldData.m_strVRDEAuthLibrary);
     m_pCheckBoxHostScreenSaver->setChecked(oldData.m_fHostScreenSaverDisabled);
@@ -112,15 +112,15 @@ void UIGlobalSettingsGeneral::getFromCache()
 
 void UIGlobalSettingsGeneral::putToCache()
 {
-    /* Prepare new data: */
+    /* Prepare new general data: */
     UIDataSettingsGlobalGeneral newData = m_pCache->base();
 
-    /* Gather new data: */
+    /* Gather new general data: */
     newData.m_strDefaultMachineFolder = m_pSelectorMachineFolder->path();
     newData.m_strVRDEAuthLibrary = m_pSelectorVRDPLibName->path();
     newData.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
 
-    /* Cache new data: */
+    /* Cache new general data: */
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -129,9 +129,10 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save new data from cache: */
+    /* Make sure general data was changed: */
     if (m_pCache->wasChanged())
     {
+        /* Save new general data from the cache: */
         if (   m_properties.isOk()
             && m_pCache->data().m_strDefaultMachineFolder != m_pCache->base().m_strDefaultMachineFolder)
             m_properties.SetDefaultMachineFolder(m_pCache->data().m_strDefaultMachineFolder);

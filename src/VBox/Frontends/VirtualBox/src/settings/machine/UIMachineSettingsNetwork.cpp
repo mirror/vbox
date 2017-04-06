@@ -1101,7 +1101,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
         /* Get adapter page: */
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
 
-        /* Load old adapter data to the page: */
+        /* Load old adapter data from the cache: */
         pTab->loadAdapterData(m_pCache->base().m_adapters.at(iSlot));
 
         /* Setup tab order: */

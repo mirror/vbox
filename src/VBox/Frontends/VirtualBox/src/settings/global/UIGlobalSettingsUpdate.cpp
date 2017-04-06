@@ -87,17 +87,17 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old update data: */
     UIDataSettingsGlobalUpdate oldData;
 
-    /* Gather old data: */
+    /* Gather old update data: */
     const VBoxUpdateData updateData(gEDataManager->applicationUpdateData());
     oldData.m_fCheckEnabled = !updateData.isNoNeedToCheck();
     oldData.m_periodIndex = updateData.periodIndex();
     oldData.m_branchIndex = updateData.branchIndex();
     oldData.m_strDate = updateData.date();
 
-    /* Cache old data: */
+    /* Cache old update data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -106,10 +106,10 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsUpdate::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old update data from the cache: */
     const UIDataSettingsGlobalUpdate &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old update data from the cache: */
     m_pCheckBoxUpdate->setChecked(oldData.m_fCheckEnabled);
     if (m_pCheckBoxUpdate->isChecked())
     {
@@ -127,14 +127,14 @@ void UIGlobalSettingsUpdate::getFromCache()
 
 void UIGlobalSettingsUpdate::putToCache()
 {
-    /* Prepare new data: */
+    /* Prepare new update data: */
     UIDataSettingsGlobalUpdate newData = m_pCache->base();
 
-    /* Gather new data: */
+    /* Gather new update data: */
     newData.m_periodIndex = periodType();
     newData.m_branchIndex = branchType();
 
-    /* Cache new data: */
+    /* Cache new update data: */
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -143,10 +143,10 @@ void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save new data from cache: */
+    /* Make sure update data was changed: */
     if (m_pCache->wasChanged())
     {
-        /* Gather corresponding values from internal variables: */
+        /* Save new update data from the cache: */
         const VBoxUpdateData newData(m_pCache->data().m_periodIndex, m_pCache->data().m_branchIndex);
         gEDataManager->setApplicationUpdateData(newData.data());
     }

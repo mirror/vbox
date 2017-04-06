@@ -276,10 +276,10 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old extension data: */
     UIDataSettingsGlobalExtension oldData;
 
-    /* Gather old data: */
+    /* Gather old extension data: */
     const CExtPackVector &packages = vboxGlobal().virtualBox().
                                      GetExtensionPackManager().GetInstalledExtPacks();
     foreach (const CExtPack &package, packages)
@@ -289,7 +289,7 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
         oldData.m_items << item;
     }
 
-    /* Cache old data: */
+    /* Cache old extension data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -298,10 +298,10 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsExtension::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old extension data from the cache: */
     const UIDataSettingsGlobalExtension &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old extension data from the cache: */
     foreach (const UIDataSettingsGlobalExtensionItem &item, oldData.m_items)
         new UIExtensionPackageItem(m_pPackagesTree, item);
     /* If at least one item present: */
@@ -313,7 +313,7 @@ void UIGlobalSettingsExtension::getFromCache()
 
 void UIGlobalSettingsExtension::putToCache()
 {
-    /* Nothing to upload to cache... */
+    /* Nothing to cache... */
 }
 
 void UIGlobalSettingsExtension::saveFromCacheTo(QVariant &data)
@@ -321,7 +321,7 @@ void UIGlobalSettingsExtension::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Nothing to save from cache... */
+    /* Nothing to save from the cache... */
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -467,7 +467,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 msgCenter().showModalProgressDialog(progress, tr("Extensions"), ":/progress_install_guest_additions_90px.png", this);
                 if (progress.isOk() && progress.GetResultCode() == 0)
                 {
-                    /* Remove selected package from cache: */
+                    /* Remove selected package from the cache: */
                     for (int i = 0; i < m_pCache->data().m_items.size(); ++i)
                     {
                         if (!strSelectedPackageName.compare(m_pCache->data().m_items.at(i).m_strName, Qt::CaseInsensitive))

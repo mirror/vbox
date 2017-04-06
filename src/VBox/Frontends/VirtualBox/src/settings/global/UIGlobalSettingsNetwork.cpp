@@ -142,7 +142,7 @@ UIItemNetworkNAT::UIItemNetworkNAT()
 
 void UIItemNetworkNAT::fetchNetworkData(const UIDataSettingsGlobalNetworkNAT &data)
 {
-    /* Get from cache: */
+    /* Get from the cache: */
     m_data = data;
 
     /* Fetch info: */
@@ -151,7 +151,7 @@ void UIItemNetworkNAT::fetchNetworkData(const UIDataSettingsGlobalNetworkNAT &da
 
 void UIItemNetworkNAT::uploadNetworkData(UIDataSettingsGlobalNetworkNAT &data)
 {
-    /* Put to cache: */
+    /* Put to the cache: */
     data = m_data;
 }
 
@@ -264,7 +264,7 @@ UIItemNetworkHost::UIItemNetworkHost()
 
 void UIItemNetworkHost::fetchNetworkData(const UIDataSettingsGlobalNetworkHost &data)
 {
-    /* Get from cache: */
+    /* Get from the cache: */
     m_data = data;
 
     /* Fetch info: */
@@ -273,7 +273,7 @@ void UIItemNetworkHost::fetchNetworkData(const UIDataSettingsGlobalNetworkHost &
 
 void UIItemNetworkHost::uploadNetworkData(UIDataSettingsGlobalNetworkHost &data)
 {
-    /* Put to cache: */
+    /* Put to the cache: */
     data = m_data;
 }
 
@@ -442,10 +442,10 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old network data: */
     UIDataSettingsGlobalNetwork oldData;
 
-    /* Gather old data: */
+    /* Gather old network data: */
     foreach (const CNATNetwork &network, vboxGlobal().virtualBox().GetNATNetworks())
     {
         UIDataSettingsGlobalNetworkNAT data;
@@ -460,7 +460,7 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
             oldData.m_networksHost << data;
         }
 
-    /* Cache old data: */
+    /* Cache old network data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -469,10 +469,10 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsNetwork::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old network data from the cache: */
     const UIDataSettingsGlobalNetwork &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old network data from the cache: */
     foreach (const UIDataSettingsGlobalNetworkNAT &network, oldData.m_networksNAT)
         createTreeItemNetworkNAT(network);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
@@ -490,10 +490,10 @@ void UIGlobalSettingsNetwork::getFromCache()
 
 void UIGlobalSettingsNetwork::putToCache()
 {
-    /* Prepare new data: */
+    /* Prepare new network data: */
     UIDataSettingsGlobalNetwork newData = m_pCache->base();
 
-    /* Gather new data: */
+    /* Gather new network data: */
     newData.m_networksNAT.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iNetworkIndex)
     {
@@ -511,7 +511,7 @@ void UIGlobalSettingsNetwork::putToCache()
         newData.m_networksHost << data;
     }
 
-    /* Cache new data: */
+    /* Cache new network data: */
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -520,9 +520,10 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save new data from cache: */
+    /* Make sure network data was changed: */
     if (m_pCache->wasChanged())
     {
+        /* Save new network data from the cache: */
         if (m_pCache->data().m_networksNAT != m_pCache->base().m_networksNAT)
             foreach (const UIDataSettingsGlobalNetworkNAT &data, m_pCache->data().m_networksNAT)
                 saveDataNetworkNAT(data);

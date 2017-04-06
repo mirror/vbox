@@ -201,7 +201,7 @@ void UIMachineSettingsInterface::getFromCache()
     /* Get old interface data from the cache: */
     const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
 
-    /* Load old interface data to the page: */
+    /* Load old interface data from the cache: */
     m_pStatusBarEditor->setStatusBarEnabled(oldInterfaceData.m_fStatusBarEnabled);
     m_pStatusBarEditor->setStatusBarConfiguration(oldInterfaceData.m_statusBarRestrictions,
                                                   oldInterfaceData.m_statusBarOrder);
@@ -236,9 +236,9 @@ void UIMachineSettingsInterface::getFromCache()
 void UIMachineSettingsInterface::putToCache()
 {
     /* Prepare new interface data: */
-    UIDataSettingsMachineInterface newInterfaceData = m_pCache->base();
+    UIDataSettingsMachineInterface newInterfaceData;
 
-    /* Gather new interface data from page: */
+    /* Gather new interface data: */
     newInterfaceData.m_fStatusBarEnabled = m_pStatusBarEditor->isStatusBarEnabled();
     newInterfaceData.m_statusBarRestrictions = m_pStatusBarEditor->statusBarIndicatorRestrictions();
     newInterfaceData.m_statusBarOrder = m_pStatusBarEditor->statusBarIndicatorOrder();
@@ -347,7 +347,7 @@ void UIMachineSettingsInterface::retranslateUi()
 
 void UIMachineSettingsInterface::polishPage()
 {
-    /* Polish interface availability: */
+    /* Polish interface page availability: */
     m_pMenuBarEditor->setEnabled(isMachineInValidMode());
 #ifdef VBOX_WS_MAC
     m_pLabelMiniToolBar->hide();

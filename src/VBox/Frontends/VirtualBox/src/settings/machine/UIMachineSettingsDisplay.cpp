@@ -272,7 +272,7 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Get old display data from the cache: */
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
-    /* Load old 'Screen' data to the page: */
+    /* Load old 'Screen' data from the cache: */
     m_pEditorVideoScreenCount->setValue(oldDisplayData.m_cGuestScreenCount);
     m_pEditorGuestScreenScale->setValue((int)(oldDisplayData.m_dScaleFactor * 100));
 #ifdef VBOX_WS_MAC
@@ -288,7 +288,7 @@ void UIMachineSettingsDisplay::getFromCache()
     /* If remote display server is supported: */
     if (oldDisplayData.m_fRemoteDisplayServerSupported)
     {
-        /* Load old 'Remote Display' data to the page: */
+        /* Load old 'Remote Display' data from the cache: */
         m_pCheckboxRemoteDisplay->setChecked(oldDisplayData.m_fRemoteDisplayServerEnabled);
         m_pEditorRemoteDisplayPort->setText(oldDisplayData.m_strRemoteDisplayPort);
         m_pComboRemoteDisplayAuthMethod->setCurrentIndex(m_pComboRemoteDisplayAuthMethod->findText(gpConverter->toString(oldDisplayData.m_remoteDisplayAuthType)));
@@ -296,7 +296,7 @@ void UIMachineSettingsDisplay::getFromCache()
         m_pCheckboxMultipleConn->setChecked(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
     }
 
-    /* Load old 'Video Capture' data to the page: */
+    /* Load old 'Video Capture' data from the cache: */
     m_pCheckboxVideoCapture->setChecked(oldDisplayData.m_fVideoCaptureEnabled);
     m_pEditorVideoCapturePath->setHomeDir(oldDisplayData.m_strVideoCaptureFolder);
     m_pEditorVideoCapturePath->setPath(oldDisplayData.m_strVideoCaptureFilePath);
@@ -318,7 +318,7 @@ void UIMachineSettingsDisplay::putToCache()
     /* Prepare new display data: */
     UIDataSettingsMachineDisplay newDisplayData;
 
-    /* Gather new 'Screen' data from page: */
+    /* Gather new 'Screen' data: */
     newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
     newDisplayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
     newDisplayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
@@ -334,7 +334,7 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_fRemoteDisplayServerSupported = m_pCache->base().m_fRemoteDisplayServerSupported;
     if (newDisplayData.m_fRemoteDisplayServerSupported)
     {
-        /* Gather new 'Remote Display' data from page: */
+        /* Gather new 'Remote Display' data: */
         newDisplayData.m_fRemoteDisplayServerEnabled = m_pCheckboxRemoteDisplay->isChecked();
         newDisplayData.m_strRemoteDisplayPort = m_pEditorRemoteDisplayPort->text();
         newDisplayData.m_remoteDisplayAuthType = gpConverter->fromString<KAuthType>(m_pComboRemoteDisplayAuthMethod->currentText());
@@ -342,7 +342,7 @@ void UIMachineSettingsDisplay::putToCache()
         newDisplayData.m_fRemoteDisplayMultiConnAllowed = m_pCheckboxMultipleConn->isChecked();
     }
 
-    /* Gather new 'Video Capture' data from page: */
+    /* Gather new 'Video Capture' data: */
     newDisplayData.m_fVideoCaptureEnabled = m_pCheckboxVideoCapture->isChecked();
     newDisplayData.m_strVideoCaptureFolder = m_pCache->base().m_strVideoCaptureFolder;
     newDisplayData.m_strVideoCaptureFilePath = m_pEditorVideoCapturePath->path();
@@ -680,10 +680,10 @@ void UIMachineSettingsDisplay::retranslateUi()
 
 void UIMachineSettingsDisplay::polishPage()
 {
-    /* Get system data from the cache: */
-    const UIDataSettingsMachineDisplay &displayData = m_pCache->base();
+    /* Get old display data from the cache: */
+    const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
-    /* Screen tab: */
+    /* Polish 'Screen' availability: */
     m_pLabelVideoMemorySize->setEnabled(isMachineOffline());
     m_pSliderVideoMemorySize->setEnabled(isMachineOffline());
     m_pLabelVideoMemorySizeMin->setEnabled(isMachineOffline());
@@ -714,14 +714,14 @@ void UIMachineSettingsDisplay::polishPage()
     m_pCheckbox2DVideo->hide();
 #endif /* !VBOX_WITH_VIDEOHWACCEL */
 
-    /* Remote Display tab: */
-    m_pTabWidget->setTabEnabled(1, displayData.m_fRemoteDisplayServerSupported);
+    /* Polish 'Remote Display' availability: */
+    m_pTabWidget->setTabEnabled(1, oldDisplayData.m_fRemoteDisplayServerSupported);
     m_pContainerRemoteDisplay->setEnabled(isMachineInValidMode());
     m_pContainerRemoteDisplayOptions->setEnabled(m_pCheckboxRemoteDisplay->isChecked());
     m_pLabelRemoteDisplayOptions->setEnabled(isMachineOffline() || isMachineSaved());
     m_pCheckboxMultipleConn->setEnabled(isMachineOffline() || isMachineSaved());
 
-    /* Video Capture tab: */
+    /* Polish 'Video Capture' availability: */
     m_pContainerVideoCapture->setEnabled(isMachineInValidMode());
     sltHandleVideoCaptureCheckboxToggle();
 }

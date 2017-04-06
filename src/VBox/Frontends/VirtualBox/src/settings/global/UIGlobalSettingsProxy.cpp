@@ -85,16 +85,16 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Prepare old data: */
+    /* Prepare old proxy data: */
     UIDataSettingsGlobalProxy oldData;
 
-    /* Gather old data: */
+    /* Gather old proxy data: */
     UIProxyManager proxyManager(m_settings.proxySettings());
     oldData.m_enmProxyState = proxyManager.proxyState();
     oldData.m_strProxyHost = proxyManager.proxyHost();
     oldData.m_strProxyPort = proxyManager.proxyPort();
 
-    /* Cache old data: */
+    /* Cache old proxy data: */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
@@ -103,10 +103,10 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsProxy::getFromCache()
 {
-    /* Get old data from cache: */
+    /* Get old proxy data from the cache: */
     const UIDataSettingsGlobalProxy &oldData = m_pCache->base();
 
-    /* Load old data from cache: */
+    /* Load old proxy data from the cache: */
     switch (oldData.m_enmProxyState)
     {
         case UIProxyManager::ProxyState_Auto:     m_pRadioProxyAuto->setChecked(true); break;
@@ -123,17 +123,17 @@ void UIGlobalSettingsProxy::getFromCache()
 
 void UIGlobalSettingsProxy::putToCache()
 {
-    /* Prepare new data: */
+    /* Prepare new proxy data: */
     UIDataSettingsGlobalProxy newData = m_pCache->base();
 
-    /* Gather new data: */
+    /* Gather new proxy data: */
     newData.m_enmProxyState = m_pRadioProxyEnabled->isChecked()  ? UIProxyManager::ProxyState_Enabled :
                               m_pRadioProxyDisabled->isChecked() ? UIProxyManager::ProxyState_Disabled :
                                                                    UIProxyManager::ProxyState_Auto;
     newData.m_strProxyHost = m_pHostEditor->text();
     newData.m_strProxyPort = m_pPortEditor->text();
 
-    /* Cache new data: */
+    /* Cache new proxy data: */
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -142,9 +142,10 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save new data from cache: */
+    /* Make sure proxy data was changed: */
     if (m_pCache->wasChanged())
     {
+        /* Save new proxy data from the cache: */
         UIProxyManager proxyManager;
         proxyManager.setProxyState(m_pCache->data().m_enmProxyState);
         proxyManager.setProxyHost(m_pCache->data().m_strProxyHost);
