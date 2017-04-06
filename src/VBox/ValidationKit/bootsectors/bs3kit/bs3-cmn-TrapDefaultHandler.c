@@ -225,6 +225,7 @@ BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
     /*
      * Fatal.
      */
+    Bs3TestPrintf("*** GURU ***\n");
     Bs3TrapPrintFrame(pTrapFrame);
     Bs3Panic();
 }
