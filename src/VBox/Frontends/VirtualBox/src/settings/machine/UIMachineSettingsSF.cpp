@@ -294,46 +294,52 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_pCache->clear();
 
-    /* Get actual shared folders: */
+    /* Prepare old folders data: */
+    UIDataSettingsSharedFolders oldFoldersData;
+
+    /* Get actual folders: */
     QMap<UISharedFolderType, CSharedFolder> folders;
-    /* Load machine (permanent) shared folders if allowed: */
+    /* Load machine (permanent) folders if allowed: */
     if (isSharedFolderTypeSupported(MachineType))
         foreach (const CSharedFolder &folder, getSharedFolders(MachineType))
             folders.insertMulti(MachineType, folder);
-    /* Load console (temporary) shared folders if allowed: */
+    /* Load console (temporary) folders if allowed: */
     if (isSharedFolderTypeSupported(ConsoleType))
         foreach (const CSharedFolder &folder, getSharedFolders(ConsoleType))
             folders.insertMulti(ConsoleType, folder);
 
-    /* For each shared folder type: */
+    /* For each folder type: */
     foreach (const UISharedFolderType &enmFolderType, folders.keys())
     {
-        /* For each shared folder of current type: */
+        /* For each folder of current type: */
         const QList<CSharedFolder> &currentTypeFolders = folders.values(enmFolderType);
         for (int iFolderIndex = 0; iFolderIndex < currentTypeFolders.size(); ++iFolderIndex)
         {
-            /* Prepare cache key & data: */
+            /* Prepare old folder data & cache key: */
             QString strFolderKey = QString::number(iFolderIndex);
-            UIDataSettingsSharedFolder initialFolderData;
+            UIDataSettingsSharedFolder oldFolderData;
 
-            /* Check if shared folder exists:  */
-            const CSharedFolder &folder = currentTypeFolders.at(iFolderIndex);
-            if (!folder.isNull())
+            /* Check whether folder is valid:  */
+            const CSharedFolder &comFolder = currentTypeFolders.at(iFolderIndex);
+            if (!comFolder.isNull())
             {
-                /* Gather shared folder values: */
-                initialFolderData.m_enmType = enmFolderType;
-                initialFolderData.m_strName = folder.GetName();
-                initialFolderData.m_strPath = folder.GetHostPath();
-                initialFolderData.m_fAutoMount = folder.GetAutoMount();
-                initialFolderData.m_fWritable = folder.GetWritable();
-                /* Override shared folder cache key: */
-                strFolderKey = initialFolderData.m_strName;
+                /* Gather old folder data: */
+                oldFolderData.m_enmType = enmFolderType;
+                oldFolderData.m_strName = comFolder.GetName();
+                oldFolderData.m_strPath = comFolder.GetHostPath();
+                oldFolderData.m_fAutoMount = comFolder.GetAutoMount();
+                oldFolderData.m_fWritable = comFolder.GetWritable();
+                /* Override folder cache key: */
+                strFolderKey = oldFolderData.m_strName;
             }
 
-            /* Cache initial shared folder data: */
-            m_pCache->child(strFolderKey).cacheInitialData(initialFolderData);
+            /* Cache old folder data: */
+            m_pCache->child(strFolderKey).cacheInitialData(oldFolderData);
         }
     }
+
+    /* Cache old folders data: */
+    m_pCache->cacheInitialData(oldFoldersData);
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -347,11 +353,11 @@ void UIMachineSettingsSF::getFromCache()
     /* Update root items visibility: */
     updateRootItemsVisibility();
 
-    /* For each shared folder: */
+    /* For each folder => load it to the page: */
     for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
         addSharedFolderItem(m_pCache->child(iFolderIndex).base(), false /* its new? */);
 
-    /* Ensure current item fetched: */
+    /* Choose first folder as current: */
     mTwFolders->setCurrentItem(mTwFolders->topLevelItem(0));
     sltHandleCurrentItemChange(mTwFolders->currentItem());
 
@@ -361,21 +367,27 @@ void UIMachineSettingsSF::getFromCache()
 
 void UIMachineSettingsSF::putToCache()
 {
-    /* For each shared folder type: */
+    /* Prepare new folders data: */
+    UIDataSettingsSharedFolders newFoldersData;
+
+    /* For each folder type: */
     QTreeWidgetItem *pMainRootItem = mTwFolders->invisibleRootItem();
     for (int iFolderTypeIndex = 0; iFolderTypeIndex < pMainRootItem->childCount(); ++iFolderTypeIndex)
     {
-        /* Get shared folder root item: */
+        /* Get folder root item: */
         const SFTreeViewItem *pFolderTypeRoot = static_cast<SFTreeViewItem*>(pMainRootItem->child(iFolderTypeIndex));
 
-        /* For each shared folder of current type: */
+        /* For each folder of current type: */
         for (int iFolderIndex = 0; iFolderIndex < pFolderTypeRoot->childCount(); ++iFolderIndex)
         {
-            /* Get shared folder item: */
-            SFTreeViewItem *pFolderItem = static_cast<SFTreeViewItem*>(pFolderTypeRoot->child(iFolderIndex));
-            m_pCache->child(pFolderItem->m_strName).cacheCurrentData(*pFolderItem);
+            /* Get and cache new folder item: */
+            const SFTreeViewItem *pItem = static_cast<SFTreeViewItem*>(pFolderTypeRoot->child(iFolderIndex));
+            m_pCache->child(pItem->m_strName).cacheCurrentData(*pItem);
         }
     }
+
+    /* Cache new folders data: */
+    m_pCache->cacheCurrentData(newFoldersData);
 }
 
 void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
@@ -383,29 +395,35 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Check if shared folders data was changed: */
+    /* Check if folders data was changed: */
     if (m_pCache->wasChanged())
     {
-        /* For each shared folder record: */
+        /* For each folder record: */
         for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
         {
-            /* Check if this shared folder data was changed: */
-            const UISettingsCacheSharedFolder &currentFolderCache = m_pCache->child(iFolderIndex);
-            if (currentFolderCache.wasChanged())
+            /* Get folder cache: */
+            const UISettingsCacheSharedFolder &folderCache = m_pCache->child(iFolderIndex);
+
+            /* Check if this folder data was changed: */
+            if (folderCache.wasChanged())
             {
-                /* If shared folder was removed: */
-                if (currentFolderCache.wasRemoved())
-                    removeSharedFolder(currentFolderCache);
+                /* If folder was removed: */
+                if (folderCache.wasRemoved())
+                    removeSharedFolder(folderCache);
 
-                /* If shared folder was created: */
-                if (currentFolderCache.wasCreated())
-                    createSharedFolder(currentFolderCache);
+                else
 
-                /* If shared folder was changed: */
-                if (currentFolderCache.wasUpdated())
+                /* If folder was created: */
+                if (folderCache.wasCreated())
+                    createSharedFolder(folderCache);
+
+                else
+
+                /* If folder was updated: */
+                if (folderCache.wasUpdated())
                 {
-                    removeSharedFolder(currentFolderCache);
-                    createSharedFolder(currentFolderCache);
+                    removeSharedFolder(folderCache);
+                    createSharedFolder(folderCache);
                 }
             }
         }
@@ -880,29 +898,29 @@ void UIMachineSettingsSF::addSharedFolderItem(const UIDataSettingsSharedFolder &
 
 bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &folderCache)
 {
-    /* Get shared folder data: */
-    const UIDataSettingsSharedFolder &folderData = folderCache.data();
-    const QString strName = folderData.m_strName;
-    const QString strPath = folderData.m_strPath;
-    const bool fIsWritable = folderData.m_fWritable;
-    const bool fIsAutoMount = folderData.m_fAutoMount;
-    const UISharedFolderType enmSharedFoldersType = folderData.m_enmType;
+    /* Get new folder data: */
+    const UIDataSettingsSharedFolder &newFolderData = folderCache.data();
+    const UISharedFolderType enmSharedFoldersType = newFolderData.m_enmType;
+    const QString strName = newFolderData.m_strName;
+    const QString strPath = newFolderData.m_strPath;
+    const bool fIsAutoMount = newFolderData.m_fAutoMount;
+    const bool fIsWritable = newFolderData.m_fWritable;
 
-    /* Get current shared folders: */
+    /* Get current folders: */
     const CSharedFolderVector sharedFolders = getSharedFolders(enmSharedFoldersType);
-    /* Check if such shared folder do not exists: */
+    /* Make sure such folder doesn't exist: */
     CSharedFolder sharedFolder;
     for (int iFolderIndex = 0; iFolderIndex < sharedFolders.size(); ++iFolderIndex)
-        if (sharedFolders[iFolderIndex].GetName() == strName)
-            sharedFolder = sharedFolders[iFolderIndex];
+        if (sharedFolders.at(iFolderIndex).GetName() == strName)
+            sharedFolder = sharedFolders.at(iFolderIndex);
     if (sharedFolder.isNull())
     {
-        /* Create new shared folder: */
+        /* Create new folder: */
         switch(enmSharedFoldersType)
         {
             case MachineType:
             {
-                /* Create new shared folder: */
+                /* Create new folder: */
                 m_machine.CreateSharedFolder(strName, strPath, fIsWritable, fIsAutoMount);
                 if (!m_machine.isOk())
                 {
@@ -917,7 +935,7 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
             }
             case ConsoleType:
             {
-                /* Create new shared folder: */
+                /* Create new folder: */
                 m_console.CreateSharedFolder(strName, strPath, fIsWritable, fIsAutoMount);
                 if (!m_console.isOk())
                 {
@@ -939,27 +957,27 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
 
 bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &folderCache)
 {
-    /* Get shared folder data: */
-    const UIDataSettingsSharedFolder &folderData = folderCache.base();
-    const QString strName = folderData.m_strName;
-    const QString strPath = folderData.m_strPath;
-    const UISharedFolderType enmSharedFoldersType = folderData.m_enmType;
+    /* Get old folder data: */
+    const UIDataSettingsSharedFolder &oldFolderData = folderCache.base();
+    const UISharedFolderType enmSharedFoldersType = oldFolderData.m_enmType;
+    const QString strName = oldFolderData.m_strName;
+    const QString strPath = oldFolderData.m_strPath;
 
-    /* Get current shared folders: */
+    /* Get current folders: */
     const CSharedFolderVector sharedFolders = getSharedFolders(enmSharedFoldersType);
-    /* Check that such shared folder really exists: */
+    /* Make sure such folder really exists: */
     CSharedFolder sharedFolder;
     for (int iFolderIndex = 0; iFolderIndex < sharedFolders.size(); ++iFolderIndex)
-        if (sharedFolders[iFolderIndex].GetName() == strName)
-            sharedFolder = sharedFolders[iFolderIndex];
+        if (sharedFolders.at(iFolderIndex).GetName() == strName)
+            sharedFolder = sharedFolders.at(iFolderIndex);
     if (!sharedFolder.isNull())
     {
-        /* Remove existing shared folder: */
+        /* Remove existing folder: */
         switch(enmSharedFoldersType)
         {
             case MachineType:
             {
-                /* Remove existing shared folder: */
+                /* Remove existing folder: */
                 m_machine.RemoveSharedFolder(strName);
                 if (!m_machine.isOk())
                 {
@@ -974,7 +992,7 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
             }
             case ConsoleType:
             {
-                /* Remove existing shared folder: */
+                /* Remove existing folder: */
                 m_console.RemoveSharedFolder(strName);
                 if (!m_console.isOk())
                 {
