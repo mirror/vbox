@@ -314,6 +314,8 @@ class Bs3Cg1Instruction(object):
             self.asFlags.append('BS3CG1INSTR_F_UNUSED');
         elif oInstr.fInvalid:
             self.asFlags.append('BS3CG1INSTR_F_INVALID');
+        if oInstr.sInvalidStyle and oInstr.sInvalidStyle.startswith('intel-'):
+            self.asFlags.append('BS3CG1INSTR_F_INTEL_DECODES_INVALID');
 
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
         if oInstr.sPrefix:
@@ -349,10 +351,13 @@ class Bs3Cg1Instruction(object):
 
     def getInstructionEntry(self):
         """ Returns an array of BS3CG1INSTR member initializers. """
+        sOperands = ', '.join([oOp.sType for oOp in self.oInstr.aoOperands]);
+        if sOperands:
+            sOperands = ' /* ' + sOperands + ' */';
         return [
-            '        /* cbOpcodes = */        %s,' % (len(self.asOpcodes),),
-            '        /* cOperands = */        %s,' % (len(self.oInstr.aoOperands),),
-            '        /* cchMnemonic = */      %s,' % (len(self.oInstr.sMnemonic),),
+            '        /* cbOpcodes = */        %s, /* %s */' % (len(self.asOpcodes), ' '.join(self.asOpcodes),),
+            '        /* cOperands = */        %s,%s' % (len(self.oInstr.aoOperands), sOperands,),
+            '        /* cchMnemonic = */      %s, /* %s */' % (len(self.oInstr.sMnemonic), self.oInstr.sMnemonic,),
             '        /* fAdvanceMnemonic = */ %s,' % ('true' if self.fAdvanceMnemonic else 'false',),
             '        /* offTests = */         %s,' % (self.oTests.offTests,),
             '        /* enmEncoding = */      (unsigned)%s,' % (self.sEncoding,),

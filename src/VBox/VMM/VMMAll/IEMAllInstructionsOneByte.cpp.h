@@ -902,24 +902,37 @@ FNIEMOP_DEF(iemOp_seg_SS)
  * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   pf,zf,sf,of
  * @opgroup     og_gen_arith_dec
- * @optest      efl&~=af ax=9      -> efl&|=nc,po,na,nz,pl,nv
- * @optest      efl&~=af ax=0      -> efl&|=nc,po,na,zf,pl,nv
- * @optest      efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,zf,pl,nv
- * @optest      efl&~=af ax=0x00f9 -> ax=0x0009 efl&|=nc,po,na,nz,pl,nv
- * @optest      efl|=af  ax=0      -> ax=0x0106 efl&|=cf,po,af,nz,pl,nv
- * @optest      efl|=af  ax=0x0100 -> ax=0x0206 efl&|=cf,po,af,nz,pl,nv
- * @optest      efl|=af  ax=0x000a -> ax=0x0100 efl&|=cf,po,af,zf,pl,nv
- * @optest      efl|=af  ax=0x010a -> ax=0x0200 efl&|=cf,po,af,zf,pl,nv
- * @optest      efl|=af  ax=0x0f0a -> ax=0x1000 efl&|=cf,po,af,zf,pl,nv
- * @optest      efl|=af  ax=0x7f0a -> ax=0x8000 efl&|=cf,po,af,zf,pl,nv
- * @optest      efl|=af  ax=0xff0a -> ax=0x0000 efl&|=cf,po,af,zf,pl,nv
- * @optest      efl&~=af ax=0xff0a -> ax=0x0000 efl&|=cf,po,af,zf,pl,nv
- * @optest      efl&~=af ax=0x000b -> ax=0x0101 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000c -> ax=0x0102 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000d -> ax=0x0103 efl&|=cf,po,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000e -> ax=0x0104 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000f -> ax=0x0105 efl&|=cf,po,af,nz,pl,nv
- * @optest      efl&~=af ax=0x020f -> ax=0x0305 efl&|=cf,po,af,nz,pl,nv
+ * @optest              efl&~=af ax=9      -> efl&|=nc,po,na,nz,pl,nv
+ * @optest              efl&~=af ax=0      -> efl&|=nc,po,na,zf,pl,nv
+ * @optest      intel / efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,zf,pl,nv
+ * @optest      amd   / efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,nz,pl,nv
+ * @optest              efl&~=af ax=0x00f9 -> ax=0x0009 efl&|=nc,po,na,nz,pl,nv
+ * @optest              efl|=af  ax=0      -> ax=0x0106 efl&|=cf,po,af,nz,pl,nv
+ * @optest              efl|=af  ax=0x0100 -> ax=0x0206 efl&|=cf,po,af,nz,pl,nv
+ * @optest      intel / efl|=af  ax=0x000a -> ax=0x0100 efl&|=cf,po,af,zf,pl,nv
+ * @optest      amd   / efl|=af  ax=0x000a -> ax=0x0100 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl|=af  ax=0x010a -> ax=0x0200 efl&|=cf,po,af,zf,pl,nv
+ * @optest      amd   / efl|=af  ax=0x010a -> ax=0x0200 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl|=af  ax=0x0f0a -> ax=0x1000 efl&|=cf,po,af,zf,pl,nv
+ * @optest      amd   / efl|=af  ax=0x0f0a -> ax=0x1000 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl|=af  ax=0x7f0a -> ax=0x8000 efl&|=cf,po,af,zf,pl,nv
+ * @optest      amd   / efl|=af  ax=0x7f0a -> ax=0x8000 efl&|=cf,pe,af,nz,ng,ov
+ * @optest      intel / efl|=af  ax=0xff0a -> ax=0x0000 efl&|=cf,po,af,zf,pl,nv
+ * @optest      amd   / efl|=af  ax=0xff0a -> ax=0x0000 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl&~=af ax=0xff0a -> ax=0x0000 efl&|=cf,po,af,zf,pl,nv
+ * @optest      amd   / efl&~=af ax=0xff0a -> ax=0x0000 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl&~=af ax=0x000b -> ax=0x0101 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0x000b -> ax=0x0101 efl&|=cf,po,af,nz,pl,nv
+ * @optest      intel / efl&~=af ax=0x000c -> ax=0x0102 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0x000c -> ax=0x0102 efl&|=cf,po,af,nz,pl,nv
+ * @optest      intel / efl&~=af ax=0x000d -> ax=0x0103 efl&|=cf,po,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0x000d -> ax=0x0103 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl&~=af ax=0x000e -> ax=0x0104 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0x000e -> ax=0x0104 efl&|=cf,po,af,nz,pl,nv
+ * @optest      intel / efl&~=af ax=0x000f -> ax=0x0105 efl&|=cf,po,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0x000f -> ax=0x0105 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl&~=af ax=0x020f -> ax=0x0305 efl&|=cf,po,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0x020f -> ax=0x0305 efl&|=cf,pe,af,nz,pl,nv
  */
 FNIEMOP_DEF(iemOp_aaa)
 {
@@ -1012,25 +1025,41 @@ FNIEMOP_DEF(iemOp_seg_DS)
  * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   pf,zf,sf,of
  * @opgroup     og_gen_arith_dec
- * @optest      efl&~=af ax=0x0009 -> efl&|=nc,po,na,nz,pl,nv
- * @optest      efl&~=af ax=0x0000 -> efl&|=nc,po,na,zf,pl,nv
- * @optest      efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,zf,pl,nv
- * @optest      efl&~=af ax=0x00f9 -> ax=0x0009 efl&|=nc,po,na,nz,pl,nv
- * @optest      efl|=af  ax=0x0000 -> ax=0xfe0a efl&|=cf,po,af,nz,pl,nv
- * @optest      efl|=af  ax=0x0100 -> ax=0xff0a efl&|=cf,po,af,nz,pl,nv
- * @optest      efl|=af  ax=0x000a -> ax=0xff04 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl|=af  ax=0x010a -> ax=0x0004 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl|=af  ax=0x020a -> ax=0x0104 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl|=af  ax=0x0f0a -> ax=0x0e04 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl|=af  ax=0x7f0a -> ax=0x7e04 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl|=af  ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl&~=af ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl&~=af ax=0xff09 -> ax=0xff09 efl&|=nc,po,na,nz,pl,nv
- * @optest      efl&~=af ax=0x000b -> ax=0xff05 efl&|=cf,po,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000c -> ax=0xff06 efl&|=cf,po,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000d -> ax=0xff07 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000e -> ax=0xff08 efl&|=cf,pe,af,nz,pl,nv
- * @optest      efl&~=af ax=0x000f -> ax=0xff09 efl&|=cf,po,af,nz,pl,nv
+ * @optest            / efl&~=af ax=0x0009 -> efl&|=nc,po,na,nz,pl,nv
+ * @optest            / efl&~=af ax=0x0000 -> efl&|=nc,po,na,zf,pl,nv
+ * @optest      intel / efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,zf,pl,nv
+ * @optest      amd   / efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,nz,pl,nv
+ * @optest            / efl&~=af ax=0x00f9 -> ax=0x0009 efl&|=nc,po,na,nz,pl,nv
+ * @optest      intel / efl|=af  ax=0x0000 -> ax=0xfe0a efl&|=cf,po,af,nz,pl,nv
+ * @optest      amd   / efl|=af  ax=0x0000 -> ax=0xfe0a efl&|=cf,po,af,nz,ng,nv
+ * @optest      intel / efl|=af  ax=0x0100 -> ax=0xff0a efl&|=cf,po,af,nz,pl,nv
+ * @optest8     amd   / efl|=af  ax=0x0100 -> ax=0xff0a efl&|=cf,po,af,nz,ng,nv
+ * @optest      intel / efl|=af  ax=0x000a -> ax=0xff04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest10    amd   / efl|=af  ax=0x000a -> ax=0xff04 efl&|=cf,pe,af,nz,ng,nv
+ * @optest            / efl|=af  ax=0x010a -> ax=0x0004 efl&|=cf,pe,af,nz,pl,nv
+ * @optest            / efl|=af  ax=0x020a -> ax=0x0104 efl&|=cf,pe,af,nz,pl,nv
+ * @optest            / efl|=af  ax=0x0f0a -> ax=0x0e04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest            / efl|=af  ax=0x7f0a -> ax=0x7e04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      intel / efl|=af  ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      amd   / efl|=af  ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0xff09 -> ax=0xff09 efl&|=nc,po,na,nz,pl,nv
+ * @optest      amd   / efl&~=af ax=0xff09 -> ax=0xff09 efl&|=nc,po,na,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0x000b -> ax=0xff05 efl&|=cf,po,af,nz,pl,nv
+ * @optest22    amd   / efl&~=af ax=0x000b -> ax=0xff05 efl&|=cf,po,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0x000c -> ax=0xff06 efl&|=cf,po,af,nz,pl,nv
+ * @optest24    amd   / efl&~=af ax=0x000c -> ax=0xff06 efl&|=cf,po,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0x000d -> ax=0xff07 efl&|=cf,pe,af,nz,pl,nv
+ * @optest26    amd   / efl&~=af ax=0x000d -> ax=0xff07 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0x000e -> ax=0xff08 efl&|=cf,pe,af,nz,pl,nv
+ * @optest28    amd   / efl&~=af ax=0x000e -> ax=0xff08 efl&|=cf,pe,af,nz,ng,nv
+ * @optest      intel / efl&~=af ax=0x000f -> ax=0xff09 efl&|=cf,po,af,nz,pl,nv
+ * @optest30    amd   / efl&~=af ax=0x000f -> ax=0xff09 efl&|=cf,po,af,nz,ng,nv
+ * @optest31    intel / efl&~=af ax=0x00fa -> ax=0xff04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest32    amd   / efl&~=af ax=0x00fa -> ax=0xff04 efl&|=cf,pe,af,nz,ng,nv
+ * @optest33    intel / efl&~=af ax=0xfffa -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest34    amd   / efl&~=af ax=0xfffa -> ax=0xfe04 efl&|=cf,pe,af,nz,ng,nv
  */
 FNIEMOP_DEF(iemOp_aas)
 {

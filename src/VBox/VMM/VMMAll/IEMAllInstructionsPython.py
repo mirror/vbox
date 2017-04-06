@@ -1268,7 +1268,7 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         self.sGroup         = None;
         self.fUnused        = False;    ##< Unused instruction.
         self.fInvalid       = False;    ##< Invalid instruction (like UD2).
-        self.sInvalidStyle  = None;     ##< Invalid behviour style
+        self.sInvalidStyle  = None;     ##< Invalid behviour style (g_kdInvalidStyles),
         self.sXcptType      = None;     ##< Exception type (g_kdXcptTypes).
         ## @}
 
@@ -1556,12 +1556,16 @@ class SimpleParser(object):
             '@optestign':   self.parseTagOpTestIgnore,
             '@optestignore': self.parseTagOpTestIgnore,
             '@opcopytests': self.parseTagOpCopyTests,
+            '@oponly':      self.parseTagOpOnlyTest,
             '@oponlytest':  self.parseTagOpOnlyTest,
             '@opxcpttype':  self.parseTagOpXcptType,
             '@opstats':     self.parseTagOpStats,
             '@opfunction':  self.parseTagOpFunction,
             '@opdone':      self.parseTagOpDone,
         };
+        for i in range(48):
+            self.dTagHandlers['@optest%u' % (i,)]   = self.parseTagOpTestNum;
+            self.dTagHandlers['@optest[%u]' % (i,)] = self.parseTagOpTestNum;
 
         self.asErrors = [];
 
@@ -2489,6 +2493,22 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
+    def parseTagOpTestNum(self, sTag, aasSections, iTagLine, iEndLine):
+        """
+        Numbered \@optest tag.  Either \@optest42 or \@optest[42].
+        """
+        oInstr = self.ensureInstructionForOpTag(iTagLine);
+
+        iTest = 0;
+        if sTag[-1] == ']':
+            iTest = int(sTag[8:-1]);
+        else:
+            iTest = int(sTag[7:]);
+
+        if iTest != len(oInstr.aoTests):
+            self.errorComment(iTagLine, '%s: incorrect test number: %u, actual %u' % (sTag, iTest, len(oInstr.aoTests),));
+        return self.parseTagOpTest(sTag, aasSections, iTagLine, iEndLine);
+
     def parseTagOpTestIgnore(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        \@optestign | \@optestignore
@@ -2532,7 +2552,7 @@ class SimpleParser(object):
 
     def parseTagOpOnlyTest(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        \@oponlytest
+        Tag:        \@oponlytest | \@oponly
         Value:      none
 
         Only test instructions with this tag.  This is a trick that is handy

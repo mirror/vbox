@@ -1263,7 +1263,6 @@ static unsigned BS3_NEAR_CODE Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool 
         default:
         {
             BS3CG1_DPRINTF(("Bs3MemSet(%p,%#x,%#x)\n", &pThis->pbDataPg[X86_PAGE_SIZE - cbOp - cbMissalign], 0xcc, cbOp - cbMissalign));
-            ASMHalt();
             Bs3MemSet(&pThis->pbDataPg[X86_PAGE_SIZE - cbOp - cbMissalign], 0xcc, cbOp - cbMissalign);
             break;
         }
@@ -2200,12 +2199,31 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         default:
-            ASMHalt();
             Bs3TestFailedF("Invalid/unimplemented enmEncoding for instruction #%RU32 (%.*s): %d",
                            pThis->iInstr, pThis->cchMnemonic, pThis->pchMnemonic, pThis->enmEncoding);
             return false;
     }
     return true;
+}
+
+
+/**
+ * Calculates the appropriate non-intel invalid instruction encoding.
+ *
+ * @returns the encoding to use instead.
+ * @param   enmEncoding         The intel invalid instruction encoding.
+ */
+static BS3CG1ENC Bs3Cg1CalcNoneIntelInvalidEncoding(BS3CG1ENC enmEncoding)
+{
+    switch (enmEncoding)
+    {
+        case BS3CG1ENC_MODRM_Gb_Eb:
+        case BS3CG1ENC_FIXED:
+            return BS3CG1ENC_FIXED;
+        default:
+            Bs3TestFailedF("Bs3Cg1CalcNoneIntelInvalidEncoding: Unsupported encoding: %d\n", enmEncoding);
+            return BS3CG1ENC_FIXED;
+    }
 }
 
 
@@ -3506,6 +3524,13 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
             case 2: pThis->abOpcodes[1] = pThis->pabOpcodes[1];
             case 1: pThis->abOpcodes[0] = pThis->pabOpcodes[0];
         }
+
+        /* Switch the encoder for some of the invalid instructions on non-intel CPUs. */
+        if (   (pThis->fFlags & BS3CG1INSTR_F_INTEL_DECODES_INVALID)
+            && pThis->bCpuVendor != BS3CPUVENDOR_INTEL
+            && (   (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID))
+                || (BS3_MODE_IS_64BIT_CODE(pThis->bMode) && (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)) ) )
+            pThis->enmEncoding = Bs3Cg1CalcNoneIntelInvalidEncoding(pThis->enmEncoding);
 
         /*
          * Check if the CPU supports the instruction.

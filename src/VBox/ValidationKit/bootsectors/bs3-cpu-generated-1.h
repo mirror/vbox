@@ -242,13 +242,16 @@ typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
 /** @name BS3CG1INSTR_F_XXX
  * @{ */
 /** Defaults to SS rather than DS. */
-#define BS3CG1INSTR_F_DEF_SS            UINT32_C(0x00000001)
+#define BS3CG1INSTR_F_DEF_SS                UINT32_C(0x00000001)
 /** Invalid instruction in 64-bit mode. */
-#define BS3CG1INSTR_F_INVALID_64BIT     UINT32_C(0x00000002)
+#define BS3CG1INSTR_F_INVALID_64BIT         UINT32_C(0x00000002)
 /** Unused instruction. */
-#define BS3CG1INSTR_F_UNUSED            UINT32_C(0x00000004)
+#define BS3CG1INSTR_F_UNUSED                UINT32_C(0x00000004)
 /** Invalid instruction. */
-#define BS3CG1INSTR_F_INVALID           UINT32_C(0x00000008)
+#define BS3CG1INSTR_F_INVALID               UINT32_C(0x00000008)
+/** Only intel does full ModR/M(, ++) decoding for invalid instruction.
+ * Always used with BS3CG1INSTR_F_INVALID or BS3CG1INSTR_F_UNUSED. */
+#define BS3CG1INSTR_F_INTEL_DECODES_INVALID UINT32_C(0x00000010)
 /** @} */
 
 

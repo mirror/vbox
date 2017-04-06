@@ -188,6 +188,28 @@ static void iemHlpUpdateArithEFlagsU8(PVMCPU pVCpu, uint8_t u8Result, uint32_t f
 
 
 /**
+ * Updates the specified flags according to a 16-bit result.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   u16Result           The result to set the flags according to.
+ * @param   fToUpdate           The flags to update.
+ * @param   fUndefined          The flags that are specified as undefined.
+ */
+static void iemHlpUpdateArithEFlagsU16(PVMCPU pVCpu, uint16_t u16Result, uint32_t fToUpdate, uint32_t fUndefined)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+
+    uint32_t fEFlags = pCtx->eflags.u;
+    iemAImpl_test_u16(&u16Result, u16Result, &fEFlags);
+    pCtx->eflags.u &= ~(fToUpdate | fUndefined);
+    pCtx->eflags.u |= (fToUpdate | fUndefined) & fEFlags;
+#ifdef IEM_VERIFICATION_MODE_FULL
+    pVCpu->iem.s.fUndefinedEFlags |= fUndefined;
+#endif
+}
+
+
+/**
  * Helper used by iret.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
@@ -6487,22 +6509,44 @@ IEM_CIMPL_DEF_0(iemCImpl_aaa)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
 
-    uint8_t const uMaskedAl = pCtx->al & 0xf;
-    if (   pCtx->eflags.Bits.u1AF
-        || uMaskedAl >= 10)
+    if (IEM_IS_GUEST_CPU_AMD(pVCpu))
     {
-        pCtx->ax = (pCtx->ax + UINT16_C(0x106)) & UINT16_C(0xff0f);
-        pCtx->eflags.Bits.u1AF = 1;
-        pCtx->eflags.Bits.u1CF = 1;
+        if (   pCtx->eflags.Bits.u1AF
+            || (pCtx->ax & 0xf) >= 10)
+        {
+            iemAImpl_add_u16(&pCtx->ax, 0x106, &pCtx->eflags.u32);
+            pCtx->eflags.Bits.u1AF = 1;
+            pCtx->eflags.Bits.u1CF = 1;
+#ifdef IEM_VERIFICATION_MODE_FULL
+            pVCpu->iem.s.fUndefinedEFlags |= X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF;
+#endif
+        }
+        else
+        {
+            iemHlpUpdateArithEFlagsU16(pVCpu, pCtx->ax, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
+            pCtx->eflags.Bits.u1AF = 0;
+            pCtx->eflags.Bits.u1CF = 0;
+        }
+        pCtx->ax &= UINT16_C(0xff0f);
     }
     else
     {
-        pCtx->al = uMaskedAl;
-        pCtx->eflags.Bits.u1AF = 0;
-        pCtx->eflags.Bits.u1CF = 0;
+        if (   pCtx->eflags.Bits.u1AF
+            || (pCtx->ax & 0xf) >= 10)
+        {
+            pCtx->ax += UINT16_C(0x106);
+            pCtx->eflags.Bits.u1AF = 1;
+            pCtx->eflags.Bits.u1CF = 1;
+        }
+        else
+        {
+            pCtx->eflags.Bits.u1AF = 0;
+            pCtx->eflags.Bits.u1CF = 0;
+        }
+        pCtx->ax &= UINT16_C(0xff0f);
+        iemHlpUpdateArithEFlagsU8(pVCpu, pCtx->al, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
     }
 
-    iemHlpUpdateArithEFlagsU8(pVCpu, pCtx->al, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -6515,23 +6559,44 @@ IEM_CIMPL_DEF_0(iemCImpl_aas)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
 
-    uint8_t const uMaskedAl = pCtx->al & 0xf;
-    if (   pCtx->eflags.Bits.u1AF
-        || uMaskedAl >= 10)
+    if (IEM_IS_GUEST_CPU_AMD(pVCpu))
     {
-        pCtx->ax  = (pCtx->ax - 6) & UINT16_C(0xff0f);
-        pCtx->ah -= 1;
-        pCtx->eflags.Bits.u1AF = 1;
-        pCtx->eflags.Bits.u1CF = 1;
+        if (   pCtx->eflags.Bits.u1AF
+            || (pCtx->ax & 0xf) >= 10)
+        {
+            iemAImpl_sub_u16(&pCtx->ax, 0x106, &pCtx->eflags.u32);
+            pCtx->eflags.Bits.u1AF = 1;
+            pCtx->eflags.Bits.u1CF = 1;
+#ifdef IEM_VERIFICATION_MODE_FULL
+            pVCpu->iem.s.fUndefinedEFlags |= X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF;
+#endif
+        }
+        else
+        {
+            iemHlpUpdateArithEFlagsU16(pVCpu, pCtx->ax, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
+            pCtx->eflags.Bits.u1AF = 0;
+            pCtx->eflags.Bits.u1CF = 0;
+        }
+        pCtx->ax &= UINT16_C(0xff0f);
     }
     else
     {
-        pCtx->al = uMaskedAl;
-        pCtx->eflags.Bits.u1AF = 0;
-        pCtx->eflags.Bits.u1CF = 0;
+        if (   pCtx->eflags.Bits.u1AF
+            || (pCtx->ax & 0xf) >= 10)
+        {
+            pCtx->ax -= UINT16_C(0x106);
+            pCtx->eflags.Bits.u1AF = 1;
+            pCtx->eflags.Bits.u1CF = 1;
+        }
+        else
+        {
+            pCtx->eflags.Bits.u1AF = 0;
+            pCtx->eflags.Bits.u1CF = 0;
+        }
+        pCtx->ax &= UINT16_C(0xff0f);
+        iemHlpUpdateArithEFlagsU8(pVCpu, pCtx->al, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
     }
 
-    iemHlpUpdateArithEFlagsU8(pVCpu, pCtx->al, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
 }
