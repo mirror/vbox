@@ -254,30 +254,23 @@ private:
 };
 
 
-/** QITreeWidgetItem extension representing USB filter item. */
+/** Machine settings: USB Filter tree-widget item. */
 class UIUSBFilterItem : public QITreeWidgetItem, public UIDataSettingsMachineUSBFilter
 {
 public:
 
-    /** Constructs USB filter item. */
-    UIUSBFilterItem() {}
-
-    /** Loads USB filter @a data. */
-    void loadUSBFilterData(const UIDataSettingsMachineUSBFilter &data)
+    /** Constructs USB filter (root) item.
+      * @param  pParent  Brings the item parent. */
+    UIUSBFilterItem(QITreeWidget *pParent)
+        : QITreeWidgetItem(pParent)
     {
-        m_fActive = data.m_fActive;
-        m_strName = data.m_strName;
-        m_strVendorId = data.m_strVendorId;
-        m_strProductId = data.m_strProductId;
-        m_strRevision = data.m_strRevision;
-        m_strManufacturer = data.m_strManufacturer;
-        m_strProduct = data.m_strProduct;
-        m_strSerialNumber = data.m_strSerialNumber;
-        m_strPort = data.m_strPort;
-        m_strRemote = data.m_strRemote;
-        m_enmAction = data.m_enmAction;
-        m_fHostUSBDevice = data.m_fHostUSBDevice;
-        m_enmHostUSBDeviceState = data.m_enmHostUSBDeviceState;
+    }
+
+    /** Updates item fields. */
+    void updateFields()
+    {
+        setText(0, m_strName);
+        setToolTip(0, toolTipFor());
     }
 
 protected:
@@ -288,6 +281,53 @@ protected:
         return checkState(0) == Qt::Checked ?
                tr("%1, Active", "col.1 text, col.1 state").arg(text(0)) :
                tr("%1",         "col.1 text")             .arg(text(0));
+    }
+
+private:
+
+    /** Returns tool-tip generated from item data. */
+    QString toolTipFor()
+    {
+        /* Prepare tool-tip: */
+        QString strToolTip;
+
+        const QString strVendorId = m_strVendorId;
+        if (!strVendorId.isEmpty())
+            strToolTip += UIMachineSettingsUSB::tr("<nobr>Vendor ID: %1</nobr>", "USB filter tooltip").arg(strVendorId);
+
+        const QString strProductId = m_strProductId;
+        if (!strProductId.isEmpty())
+            strToolTip += strToolTip.isEmpty() ? "":"<br/>" + UIMachineSettingsUSB::tr("<nobr>Product ID: %2</nobr>", "USB filter tooltip").arg(strProductId);
+
+        const QString strRevision = m_strRevision;
+        if (!strRevision.isEmpty())
+            strToolTip += strToolTip.isEmpty() ? "":"<br/>" + UIMachineSettingsUSB::tr("<nobr>Revision: %3</nobr>", "USB filter tooltip").arg(strRevision);
+
+        const QString strProduct = m_strProduct;
+        if (!strProduct.isEmpty())
+            strToolTip += strToolTip.isEmpty() ? "":"<br/>" + UIMachineSettingsUSB::tr("<nobr>Product: %4</nobr>", "USB filter tooltip").arg(strProduct);
+
+        const QString strManufacturer = m_strManufacturer;
+        if (!strManufacturer.isEmpty())
+            strToolTip += strToolTip.isEmpty() ? "":"<br/>" + UIMachineSettingsUSB::tr("<nobr>Manufacturer: %5</nobr>", "USB filter tooltip").arg(strManufacturer);
+
+        const QString strSerial = m_strSerialNumber;
+        if (!strSerial.isEmpty())
+            strToolTip += strToolTip.isEmpty() ? "":"<br/>" + UIMachineSettingsUSB::tr("<nobr>Serial No.: %1</nobr>", "USB filter tooltip").arg(strSerial);
+
+        const QString strPort = m_strPort;
+        if (!strPort.isEmpty())
+            strToolTip += strToolTip.isEmpty() ? "":"<br/>" + UIMachineSettingsUSB::tr("<nobr>Port: %1</nobr>", "USB filter tooltip").arg(strPort);
+
+        /* Add the state field if it's a host USB device: */
+        if (m_fHostUSBDevice)
+        {
+            strToolTip += strToolTip.isEmpty() ? "":"<br/>" + UIMachineSettingsUSB::tr("<nobr>State: %1</nobr>", "USB filter tooltip")
+                                                              .arg(gpConverter->toString(m_enmHostUSBDeviceState));
+        }
+
+        /* Return tool-tip: */
+        return strToolTip;
     }
 };
 
@@ -397,7 +437,7 @@ void UIMachineSettingsUSB::getFromCache()
 
     /* For each USB filter => load it to the page: */
     for (int iFilterIndex = 0; iFilterIndex < m_pCache->childCount(); ++iFilterIndex)
-        addUSBFilter(m_pCache->child(iFilterIndex).base(), false /* its new? */);
+        addUSBFilterItem(m_pCache->child(iFilterIndex).base(), false /* its new? */);
 
     /* Choose first filter as current: */
     mTwFilters->setCurrentItem(mTwFilters->topLevelItem(0));
@@ -746,8 +786,8 @@ void UIMachineSettingsUSB::sltNewFilter()
     usbFilterData.m_strName = m_strTrUSBFilterName.arg(iMaxFilterIndex + 1);
     usbFilterData.m_fHostUSBDevice = false;
 
-    /* Add new USB filter data: */
-    addUSBFilter(usbFilterData, true /* its new? */);
+    /* Add new USB filter item: */
+    addUSBFilterItem(usbFilterData, true /* its new? */);
 
     /* Revalidate: */
     revalidate();
@@ -785,8 +825,8 @@ void UIMachineSettingsUSB::sltAddFilterConfirmed(QAction *pAction)
     usbFilterData.m_strSerialNumber = usb.GetSerialNumber();
     usbFilterData.m_strRemote = QString::number(usb.GetRemote());
 
-    /* Add new USB filter data: */
-    addUSBFilter(usbFilterData, true /* its new? */);
+    /* Add new USB filter item: */
+    addUSBFilterItem(usbFilterData, true /* its new? */);
 
     /* Revalidate: */
     revalidate();
@@ -834,8 +874,7 @@ void UIMachineSettingsUSB::sltEditFilter()
             case ModeOff: pItem->m_strRemote = QString::number(0); break;
             default: AssertMsgFailed(("Invalid combo box index"));
         }
-        pItem->setText(0, pItem->m_strName);
-        pItem->setToolTip(0, toolTipFor(*pItem));
+        pItem->updateFields();
     }
 }
 
@@ -1032,69 +1071,36 @@ void UIMachineSettingsUSB::cleanup()
     m_pCache = 0;
 }
 
-void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fChoose)
+void UIMachineSettingsUSB::addUSBFilterItem(const UIDataSettingsMachineUSBFilter &filterData, bool fChoose)
 {
     /* Create USB filter item: */
-    UIUSBFilterItem *pItem = new UIUSBFilterItem;
+    UIUSBFilterItem *pItem = new UIUSBFilterItem(mTwFilters);
     AssertPtrReturnVoid(pItem);
     {
         /* Configure item: */
-        pItem->setCheckState(0, usbFilterData.m_fActive ? Qt::Checked : Qt::Unchecked);
-        pItem->setText(0, usbFilterData.m_strName);
-        pItem->setToolTip(0, toolTipFor(usbFilterData));
-        pItem->loadUSBFilterData(usbFilterData);
-
-        /* Append tree-widget with item: */
-        mTwFilters->addTopLevelItem(pItem);
+        pItem->setCheckState(0, filterData.m_fActive ? Qt::Checked : Qt::Unchecked);
+        pItem->m_strName = filterData.m_strName;
+        pItem->m_strVendorId = filterData.m_strVendorId;
+        pItem->m_strProductId = filterData.m_strProductId;
+        pItem->m_strRevision = filterData.m_strRevision;
+        pItem->m_strManufacturer = filterData.m_strManufacturer;
+        pItem->m_strProduct = filterData.m_strProduct;
+        pItem->m_strSerialNumber = filterData.m_strSerialNumber;
+        pItem->m_strPort = filterData.m_strPort;
+        pItem->m_strRemote = filterData.m_strRemote;
+        pItem->m_enmAction = filterData.m_enmAction;
+        pItem->m_fHostUSBDevice = filterData.m_fHostUSBDevice;
+        pItem->m_enmHostUSBDeviceState = filterData.m_enmHostUSBDeviceState;
+        pItem->updateFields();
 
         /* Select this item if it's new: */
         if (fChoose)
+        {
+            mTwFilters->scrollToItem(pItem);
             mTwFilters->setCurrentItem(pItem);
+            sltHandleCurrentItemChange(pItem);
+        }
     }
-}
-
-/* static */
-QString UIMachineSettingsUSB::toolTipFor(const UIDataSettingsMachineUSBFilter &usbFilterData)
-{
-    /* Prepare tool-tip: */
-    QString strToolTip;
-
-    const QString strVendorId = usbFilterData.m_strVendorId;
-    if (!strVendorId.isEmpty())
-        strToolTip += tr("<nobr>Vendor ID: %1</nobr>", "USB filter tooltip").arg(strVendorId);
-
-    const QString strProductId = usbFilterData.m_strProductId;
-    if (!strProductId.isEmpty())
-        strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Product ID: %2</nobr>", "USB filter tooltip").arg(strProductId);
-
-    const QString strRevision = usbFilterData.m_strRevision;
-    if (!strRevision.isEmpty())
-        strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Revision: %3</nobr>", "USB filter tooltip").arg(strRevision);
-
-    const QString strProduct = usbFilterData.m_strProduct;
-    if (!strProduct.isEmpty())
-        strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Product: %4</nobr>", "USB filter tooltip").arg(strProduct);
-
-    const QString strManufacturer = usbFilterData.m_strManufacturer;
-    if (!strManufacturer.isEmpty())
-        strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Manufacturer: %5</nobr>", "USB filter tooltip").arg(strManufacturer);
-
-    const QString strSerial = usbFilterData.m_strSerialNumber;
-    if (!strSerial.isEmpty())
-        strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Serial No.: %1</nobr>", "USB filter tooltip").arg(strSerial);
-
-    const QString strPort = usbFilterData.m_strPort;
-    if (!strPort.isEmpty())
-        strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>Port: %1</nobr>", "USB filter tooltip").arg(strPort);
-
-    /* Add the state field if it's a host USB device: */
-    if (usbFilterData.m_fHostUSBDevice)
-    {
-        strToolTip += strToolTip.isEmpty() ? "":"<br/>" + tr("<nobr>State: %1</nobr>", "USB filter tooltip")
-                                                          .arg(gpConverter->toString(usbFilterData.m_enmHostUSBDeviceState));
-    }
-
-    return strToolTip;
 }
 
 #include "UIMachineSettingsUSB.moc"
