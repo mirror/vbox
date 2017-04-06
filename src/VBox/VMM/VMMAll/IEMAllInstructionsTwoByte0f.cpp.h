@@ -5831,6 +5831,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
  * @oppfx       none
  * @opcpuid     sse
  * @opgroup     og_sse_mxcsrsm
+ * @opxcpttype  5
  * @optest      op1=0      -> mxcsr=0
  * @optest      op1=0x2083 -> mxcsr=0x2083
  * @optest      op1=0xfffffffe -> value.xcpt=0xd
@@ -5868,6 +5869,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr, uint8_t, bRm)
  * @oppfx       none
  * @opcpuid     sse
  * @opgroup     og_sse_mxcsrsm
+ * @opxcpttype  5
  * @optest      mxcsr=0      -> op1=0
  * @optest      mxcsr=0x2083 -> op1=0x2083
  * @optest      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
@@ -5904,23 +5906,37 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
  * @oppfx       none
  * @opcpuid     avx
  * @opgroup     og_avx_mxcsrsm
+ * @opxcpttype  5
  * @optest      mxcsr=0      -> op1=0
  * @optest      mxcsr=0x2083 -> op1=0x2083
  * @optest      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
- * @optest      mxcsr=0x2085 cr0|=em -> op1=0x2085
+ * @optest      !amd / mxcsr=0x2085 cr0|=em -> op1=0x2085
+ * @optest       amd / mxcsr=0x2085 cr0|=em -> value.xcpt=0x6
  * @optest      mxcsr=0x2086 cr0|=mp -> op1=0x2086
  * @optest      mxcsr=0x2087 cr4&~=osfxsr -> op1=0x2087
- * @optest      mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x7
- * @optest      mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> op1=0x2089
- * @optest      mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x7
- * @optest      mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x7
- * @optest      mxcsr=0x208c xcr0&~=all_avx -> value.xcpt=0x6
- * @optest      mxcsr=0x208d xcr0&~=all_avx_sse -> value.xcpt=0x6
- * @optest      mxcsr=0x208e xcr0&~=all_avx cr0|=ts -> value.xcpt=0x6
  * @optest      mxcsr=0x208f cr4&~=osxsave -> value.xcpt=0x6
+ * @optest      mxcsr=0x2087 cr4&~=osfxsr,osxsave -> value.xcpt=0x6
+ * @optest      !amd / mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x7
+ * @optest      amd  / mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x6
+ * @optest      !amd / mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> op1=0x2089
+ * @optest      amd  / mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      !amd / mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x7
+ * @optest      amd  / mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      !amd / mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x7
+ * @optest      amd  / mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
+ * @optest      !amd / mxcsr=0x208c xcr0&~=all_avx -> value.xcpt=0x6
+ * @optest      amd  / mxcsr=0x208c xcr0&~=all_avx -> op1=0x208c
+ * @optest      !amd / mxcsr=0x208d xcr0&~=all_avx_sse -> value.xcpt=0x6
+ * @optest      amd  / mxcsr=0x208d xcr0&~=all_avx_sse -> op1=0x208d
+ * @optest      !amd / mxcsr=0x208e xcr0&~=all_avx cr0|=ts -> value.xcpt=0x6
+ * @optest      amd  / mxcsr=0x208e xcr0&~=all_avx cr0|=ts -> value.xcpt=0x7
  * @optest      mxcsr=0x2082 cr0|=ts cr4&~=osxsave -> value.xcpt=0x6
  * @optest      mxcsr=0x2081 xcr0&~=all_avx cr0|=ts cr4&~=osxsave
  *              -> value.xcpt=0x6
+ * @remarks     AMD Jaguar CPU (f0x16,m0,s1) \#UD when CR0.EM is set.  It also
+ *              doesn't seem to check XCR0[2:1] != 11b.  This does not match the
+ *              APMv4 rev 3.17 page 509.
+ * @todo        Test this instruction on AMD Ryzen.
  * @oponlytest
  */
 FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
@@ -5933,20 +5949,69 @@ FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
     IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_DONE_VEX_DECODING_L_ZERO_NO_VVV();
     IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
     IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-    IEM_MC_CALL_CIMPL_2(iemCImpl_stmxcsr, iEffSeg, GCPtrEff);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_vstmxcsr, iEffSeg, GCPtrEff);
     IEM_MC_END();
     return VINF_SUCCESS;
 }
 
 
-/** Opcode 0x0f 0xae mem/4. */
-FNIEMOP_UD_STUB_1(iemOp_Grp15_xsave,    uint8_t, bRm);
+/**
+ * @opmaps      vexgrp15
+ * @opcode      !11/4
+ * @oppfx       none
+ * @opcpuid     xsave
+ * @opgroup     og_system
+ * @opxcpttype  none
+ */
+FNIEMOP_DEF_1(iemOp_Grp15_xsave,    uint8_t, bRm)
+{
+    IEMOP_MNEMONIC1(M_MEM, XSAVE, xsave, MRW, DISOPTYPE_HARMLESS, 0);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXSaveRstor)
+        return IEMOP_RAISE_INVALID_OPCODE();
 
-/** Opcode 0x0f 0xae mem/5. */
-FNIEMOP_UD_STUB_1(iemOp_Grp15_xrstor,   uint8_t, bRm);
+    IEM_MC_BEGIN(3, 0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_3(iemCImpl_xsave, iEffSeg, GCPtrEff, enmEffOpSize);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @opmaps      vexgrp15
+ * @opcode      !11/5
+ * @oppfx       none
+ * @opcpuid     xsave
+ * @opgroup     og_system
+ * @opxcpttype  none
+ */
+FNIEMOP_DEF_1(iemOp_Grp15_xrstor,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC1(M_MEM, XRSTOR, xrstor, MRO, DISOPTYPE_HARMLESS, 0);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXSaveRstor)
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(3, 0);
+    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_3(iemCImpl_xrstor, iEffSeg, GCPtrEff, enmEffOpSize);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 /** Opcode 0x0f 0xae mem/6. */
 FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
@@ -8724,7 +8789,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
     /* 0x8d */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x8e */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x8f */  IEMOP_X4(iemOp_InvalidNeedRM),
-                IEMOP_X4(iemOp_InvalidNeedRM),
+
     /* 0x90 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x91 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x92 */  IEMOP_X4(iemOp_InvalidNeedRM),
@@ -8844,7 +8909,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
     /* 0xfe */  iemOp_InvalidNeedRM,        iemOp_vpaddd_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xff */  IEMOP_X4(iemOp_ud0),
 };
-AssertCompile(RT_ELEMENTS(g_apfnTwoByteMap) == 1024);
+AssertCompile(RT_ELEMENTS(g_apfnVexMap1) == 1024);
 /** @}  */
 
 

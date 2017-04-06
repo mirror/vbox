@@ -6178,27 +6178,16 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
        REX.R and REX.X to the two MOD bits, since the REX bits are ignored
        outside of 64-bit mode.  VEX is not available in real or v86 mode. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
+    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+        || (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT) )
     {
-        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        IEMOP_MNEMONIC(vex3_prefix, "vex3");
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
         {
-            IEMOP_MNEMONIC(les_Gv_Mp, "les Gv,Mp");
-            return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_ES, bRm);
-        }
-        IEMOP_HLP_NO_REAL_OR_V86_MODE();
-    }
-
-    IEMOP_MNEMONIC(vex3_prefix, "vex3");
-    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
-    {
-        /** @todo Test when exctly the VEX conformance checks kick in during
-         * instruction decoding and fetching (using \#PF). */
-        uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
-        uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
-        if (   (  pVCpu->iem.s.fPrefixes
-                & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_LOCK | IEM_OP_PRF_REX))
-            == 0)
-        {
+            /* Note! The real mode, v8086 mode and invalid prefix checks are
+                     done once the instruction is fully decoded. */
+            uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
+            uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
             if (bVex2 & 0x80 /* VEX.W */)
                 pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
@@ -6229,12 +6218,12 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
                     return IEMOP_RAISE_INVALID_OPCODE();
             }
         }
-        else
-            Log(("VEX3: Invalid prefix mix!\n"));
-    }
-    else
         Log(("VEX3: AVX support disabled!\n"));
-    return IEMOP_RAISE_INVALID_OPCODE();
+        return IEMOP_RAISE_INVALID_OPCODE();
+    }
+
+    IEMOP_MNEMONIC(les_Gv_Mp, "les Gv,Mp");
+    return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_ES, bRm);
 }
 
 
@@ -6256,26 +6245,20 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
         IEMOP_MNEMONIC(vex2_prefix, "vex2");
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
         {
+            /* Note! The real mode, v8086 mode and invalid prefix checks are
+                     done once the instruction is fully decoded. */
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
-            if (   (  pVCpu->iem.s.fPrefixes
-                    & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_LOCK | IEM_OP_PRF_REX))
-                == 0)
-            {
-                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
-                pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
-                pVCpu->iem.s.uVex3rdReg = (~bRm >> 3) & 0xf;
-                pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
-                pVCpu->iem.s.idxPrefix  = bRm & 0x3;
+            pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
+            pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
+            pVCpu->iem.s.uVex3rdReg = (~bRm >> 3) & 0xf;
+            pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
+            pVCpu->iem.s.idxPrefix  = bRm & 0x3;
 
-                return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
-            }
-
-            Log(("VEX2: Invalid prefix mix!\n"));
+            return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
         }
-        else
-            Log(("VEX2: AVX support disabled!\n"));
 
-        /* @todo does intel completely decode the sequence with SIB/disp before \#UD? */
+        /** @todo does intel completely decode the sequence with SIB/disp before \#UD? */
+        Log(("VEX2: AVX support disabled!\n"));
         return IEMOP_RAISE_INVALID_OPCODE();
     }
 

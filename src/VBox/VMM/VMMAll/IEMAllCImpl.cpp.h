@@ -7055,6 +7055,368 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
 
 
 /**
+ * Implements 'XSAVE'.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEff        The address of the image.
+ * @param   enmEffOpSize    The operand size (only REX.W really matters).
+ */
+IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+
+    /*
+     * Raise exceptions.
+     */
+    if (!(pCtx->cr4 & X86_CR4_OSXSAVE))
+        return iemRaiseUndefinedOpcode(pVCpu);
+    if (pCtx->cr0 & X86_CR0_TS)
+        return iemRaiseDeviceNotAvailable(pVCpu);
+    if (GCPtrEff & 63)
+    {
+        /** @todo CPU/VM detection possible! \#AC might not be signal for
+         * all/any misalignment sizes, intel says its an implementation detail. */
+        if (   (pCtx->cr0 & X86_CR0_AM)
+            && pCtx->eflags.Bits.u1AC
+            && pVCpu->iem.s.uCpl == 3)
+            return iemRaiseAlignmentCheckException(pVCpu);
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /*
+     * Calc the requested mask
+     */
+    uint64_t const fReqComponents = RT_MAKE_U64(pCtx->eax, pCtx->edx) & pCtx->aXcr[0];
+    AssertLogRelReturn(!(fReqComponents & ~(XSAVE_C_X87 | XSAVE_C_SSE | XSAVE_C_YMM)), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+    uint64_t const fXInUse        = pCtx->aXcr[0];
+
+/** @todo figure out the exact protocol for the memory access.  Currently we
+ *        just need this crap to work halfways to make it possible to test
+ *        AVX instructions. */
+/** @todo figure out the XINUSE and XMODIFIED   */
+
+    /*
+     * Access the x87 memory state.
+     */
+    /* The x87+SSE state.  */
+    void *pvMem512;
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    PX86FXSTATE  pDst = (PX86FXSTATE)pvMem512;
+    PCX86FXSTATE pSrc = &pCtx->CTX_SUFF(pXState)->x87;
+
+    /* The header.  */
+    PX86XSAVEHDR pHdr;
+    rcStrict = iemMemMap(pVCpu, (void **)&pHdr, sizeof(&pHdr), iEffSeg, GCPtrEff + 512, IEM_ACCESS_DATA_RW);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Store the X87 state.
+     */
+    if (fReqComponents & XSAVE_C_X87)
+    {
+        /* common for all formats */
+        pDst->FCW    = pSrc->FCW;
+        pDst->FSW    = pSrc->FSW;
+        pDst->FTW    = pSrc->FTW & UINT16_C(0xff);
+        pDst->FOP    = pSrc->FOP;
+        pDst->FPUIP  = pSrc->FPUIP;
+        pDst->CS     = pSrc->CS;
+        pDst->FPUDP  = pSrc->FPUDP;
+        pDst->DS     = pSrc->DS;
+        if (enmEffOpSize == IEMMODE_64BIT)
+        {
+            /* Save upper 16-bits of FPUIP (IP:CS:Rsvd1) and FPUDP (DP:DS:Rsvd2). */
+            pDst->Rsrvd1 = pSrc->Rsrvd1;
+            pDst->Rsrvd2 = pSrc->Rsrvd2;
+            pDst->au32RsrvdForSoftware[0] = 0;
+        }
+        else
+        {
+            pDst->Rsrvd1 = 0;
+            pDst->Rsrvd2 = 0;
+            pDst->au32RsrvdForSoftware[0] = X86_FXSTATE_RSVD_32BIT_MAGIC;
+        }
+        for (uint32_t i = 0; i < RT_ELEMENTS(pDst->aRegs); i++)
+        {
+            /** @todo Testcase: What actually happens to the 6 reserved bytes? I'm clearing
+             *        them for now... */
+            pDst->aRegs[i].au32[0] = pSrc->aRegs[i].au32[0];
+            pDst->aRegs[i].au32[1] = pSrc->aRegs[i].au32[1];
+            pDst->aRegs[i].au32[2] = pSrc->aRegs[i].au32[2] & UINT32_C(0xffff);
+            pDst->aRegs[i].au32[3] = 0;
+        }
+
+    }
+
+    if (fReqComponents & (XSAVE_C_SSE | XSAVE_C_YMM))
+    {
+        pDst->MXCSR         = pSrc->MXCSR;
+        pDst->MXCSR_MASK    = CPUMGetGuestMxCsrMask(pVCpu->CTX_SUFF(pVM));
+    }
+
+    if (fReqComponents & XSAVE_C_SSE)
+    {
+        /* XMM registers. */
+        uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
+        for (uint32_t i = 0; i < cXmmRegs; i++)
+            pDst->aXMM[i] = pSrc->aXMM[i];
+        /** @todo Testcase: What happens to the reserved XMM registers? Untouched,
+         *        right? */
+    }
+
+    /* Commit the x87 state bits. (probably wrong) */
+    rcStrict = iemMemCommitAndUnmap(pVCpu, pvMem512, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Store AVX state.
+     */
+    if (fReqComponents & XSAVE_C_YMM)
+    {
+        /** @todo testcase: xsave64 vs xsave32 wrt XSAVE_C_YMM. */
+        AssertLogRelReturn(pCtx->aoffXState[XSAVE_C_YMM_BIT] != UINT16_MAX, VERR_IEM_IPE_9);
+        PCX86XSAVEYMMHI pCompSrc = CPUMCTX_XSAVE_C_PTR(pCtx, XSAVE_C_YMM_BIT, PCX86XSAVEYMMHI);
+        PX86XSAVEYMMHI  pCompDst;
+        rcStrict = iemMemMap(pVCpu, (void **)&pCompDst, sizeof(*pCompDst), iEffSeg, GCPtrEff + pCtx->aoffXState[XSAVE_C_YMM_BIT],
+                             IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
+        for (uint32_t i = 0; i < cXmmRegs; i++)
+            pCompDst->aYmmHi[i] = pCompSrc->aYmmHi[i];
+
+        rcStrict = iemMemCommitAndUnmap(pVCpu, pCompDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+
+    /*
+     * Update the header.
+     */
+    pHdr->bmXState = (pHdr->bmXState & ~fReqComponents)
+                   | (fReqComponents & fXInUse);
+
+    rcStrict = iemMemCommitAndUnmap(pVCpu, pHdr, IEM_ACCESS_DATA_RW);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'XRSTOR'.
+ *
+ * @param   iEffSeg         The effective segment.
+ * @param   GCPtrEff        The address of the image.
+ * @param   enmEffOpSize    The operand size (only REX.W really matters).
+ */
+IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+
+    /*
+     * Raise exceptions.
+     */
+    if (!(pCtx->cr4 & X86_CR4_OSXSAVE))
+        return iemRaiseUndefinedOpcode(pVCpu);
+    if (pCtx->cr0 & X86_CR0_TS)
+        return iemRaiseDeviceNotAvailable(pVCpu);
+    if (GCPtrEff & 63)
+    {
+        /** @todo CPU/VM detection possible! \#AC might not be signal for
+         * all/any misalignment sizes, intel says its an implementation detail. */
+        if (   (pCtx->cr0 & X86_CR0_AM)
+            && pCtx->eflags.Bits.u1AC
+            && pVCpu->iem.s.uCpl == 3)
+            return iemRaiseAlignmentCheckException(pVCpu);
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+/** @todo figure out the exact protocol for the memory access.  Currently we
+ *        just need this crap to work halfways to make it possible to test
+ *        AVX instructions. */
+/** @todo figure out the XINUSE and XMODIFIED   */
+
+    /*
+     * Access the x87 memory state.
+     */
+    /* The x87+SSE state.  */
+    void *pvMem512;
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    PCX86FXSTATE pSrc = (PCX86FXSTATE)pvMem512;
+    PX86FXSTATE  pDst = &pCtx->CTX_SUFF(pXState)->x87;
+
+    /*
+     * Calc the requested mask
+     */
+    PX86XSAVEHDR  pHdrDst = &pCtx->CTX_SUFF(pXState)->Hdr;
+    PCX86XSAVEHDR pHdrSrc;
+    rcStrict = iemMemMap(pVCpu, (void **)&pHdrSrc, sizeof(&pHdrSrc), iEffSeg, GCPtrEff + 512, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    uint64_t const fReqComponents = RT_MAKE_U64(pCtx->eax, pCtx->edx) & pCtx->aXcr[0];
+    AssertLogRelReturn(!(fReqComponents & ~(XSAVE_C_X87 | XSAVE_C_SSE | XSAVE_C_YMM)), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+    //uint64_t const fXInUse        = pCtx->aXcr[0];
+    uint64_t const fRstorMask     = pHdrSrc->bmXState;
+    uint64_t const fCompMask      = pHdrSrc->bmXComp;
+
+    AssertLogRelReturn(!(fCompMask & XSAVE_C_X), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+
+    uint32_t const cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
+
+    /* We won't need this any longer. */
+    rcStrict = iemMemCommitAndUnmap(pVCpu, (void *)pHdrSrc, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Store the X87 state.
+     */
+    if (fReqComponents & XSAVE_C_X87)
+    {
+        if (fRstorMask & XSAVE_C_X87)
+        {
+            pDst->FCW    = pSrc->FCW;
+            pDst->FSW    = pSrc->FSW;
+            pDst->FTW    = pSrc->FTW & UINT16_C(0xff);
+            pDst->FOP    = pSrc->FOP;
+            pDst->FPUIP  = pSrc->FPUIP;
+            pDst->CS     = pSrc->CS;
+            pDst->FPUDP  = pSrc->FPUDP;
+            pDst->DS     = pSrc->DS;
+            if (enmEffOpSize == IEMMODE_64BIT)
+            {
+                /* Save upper 16-bits of FPUIP (IP:CS:Rsvd1) and FPUDP (DP:DS:Rsvd2). */
+                pDst->Rsrvd1 = pSrc->Rsrvd1;
+                pDst->Rsrvd2 = pSrc->Rsrvd2;
+            }
+            else
+            {
+                pDst->Rsrvd1 = 0;
+                pDst->Rsrvd2 = 0;
+            }
+            for (uint32_t i = 0; i < RT_ELEMENTS(pDst->aRegs); i++)
+            {
+                pDst->aRegs[i].au32[0] = pSrc->aRegs[i].au32[0];
+                pDst->aRegs[i].au32[1] = pSrc->aRegs[i].au32[1];
+                pDst->aRegs[i].au32[2] = pSrc->aRegs[i].au32[2] & UINT32_C(0xffff);
+                pDst->aRegs[i].au32[3] = 0;
+            }
+        }
+        else
+        {
+            pDst->FCW   = 0x37f;
+            pDst->FSW   = 0;
+            pDst->FTW   = 0x00;         /* 0 - empty. */
+            pDst->FPUDP = 0;
+            pDst->DS    = 0; //??
+            pDst->Rsrvd2= 0;
+            pDst->FPUIP = 0;
+            pDst->CS    = 0; //??
+            pDst->Rsrvd1= 0;
+            pDst->FOP   = 0;
+            for (uint32_t i = 0; i < RT_ELEMENTS(pSrc->aRegs); i++)
+            {
+                pDst->aRegs[i].au32[0] = 0;
+                pDst->aRegs[i].au32[1] = 0;
+                pDst->aRegs[i].au32[2] = 0;
+                pDst->aRegs[i].au32[3] = 0;
+            }
+        }
+        pHdrDst->bmXState |= XSAVE_C_X87; /* playing safe for now */
+    }
+
+    /* MXCSR */
+    if (fReqComponents & (XSAVE_C_SSE | XSAVE_C_YMM))
+    {
+        if (fRstorMask & (XSAVE_C_SSE | XSAVE_C_YMM))
+            pDst->MXCSR = pSrc->MXCSR;
+        else
+            pDst->MXCSR = 0x1f80;
+    }
+
+    /* XMM registers. */
+    if (fReqComponents & XSAVE_C_SSE)
+    {
+        if (fRstorMask & XSAVE_C_SSE)
+        {
+            for (uint32_t i = 0; i < cXmmRegs; i++)
+                pDst->aXMM[i] = pSrc->aXMM[i];
+            /** @todo Testcase: What happens to the reserved XMM registers? Untouched,
+             *        right? */
+        }
+        else
+        {
+            for (uint32_t i = 0; i < cXmmRegs; i++)
+            {
+                pDst->aXMM[i].au64[0] = 0;
+                pDst->aXMM[i].au64[1] = 0;
+            }
+        }
+        pHdrDst->bmXState |= XSAVE_C_SSE; /* playing safe for now */
+    }
+
+    /* Unmap the x87 state bits (so we've don't run out of mapping). */
+    rcStrict = iemMemCommitAndUnmap(pVCpu, pvMem512, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Restore AVX state.
+     */
+    if (fReqComponents & XSAVE_C_YMM)
+    {
+        AssertLogRelReturn(pCtx->aoffXState[XSAVE_C_YMM_BIT] != UINT16_MAX, VERR_IEM_IPE_9);
+        PX86XSAVEYMMHI  pCompDst = CPUMCTX_XSAVE_C_PTR(pCtx, XSAVE_C_YMM_BIT, PX86XSAVEYMMHI);
+
+        if (fRstorMask & XSAVE_C_YMM)
+        {
+            /** @todo testcase: xsave64 vs xsave32 wrt XSAVE_C_YMM. */
+            PCX86XSAVEYMMHI pCompSrc;
+            rcStrict = iemMemMap(pVCpu, (void **)&pCompSrc, sizeof(*pCompDst),
+                                 iEffSeg, GCPtrEff + pCtx->aoffXState[XSAVE_C_YMM_BIT], IEM_ACCESS_DATA_R);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+
+            for (uint32_t i = 0; i < cXmmRegs; i++)
+            {
+                pCompDst->aYmmHi[i].au64[0] = pCompSrc->aYmmHi[i].au64[0];
+                pCompDst->aYmmHi[i].au64[1] = pCompSrc->aYmmHi[i].au64[1];
+            }
+
+            rcStrict = iemMemCommitAndUnmap(pVCpu, (void *)pCompSrc, IEM_ACCESS_DATA_R);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+        }
+        else
+        {
+            for (uint32_t i = 0; i < cXmmRegs; i++)
+            {
+                pCompDst->aYmmHi[i].au64[0] = 0;
+                pCompDst->aYmmHi[i].au64[1] = 0;
+            }
+        }
+        pHdrDst->bmXState |= XSAVE_C_YMM; /* playing safe for now */
+    }
+
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+
+
+/**
  * Implements 'STMXCSR'.
  *
  * @param   GCPtrEff        The address of the image.
@@ -7068,6 +7430,42 @@ IEM_CIMPL_DEF_2(iemCImpl_stmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
      */
     if (   !(pCtx->cr0 & X86_CR0_EM)
         && (pCtx->cr4 & X86_CR4_OSFXSR))
+    {
+        if (!(pCtx->cr0 & X86_CR0_TS))
+        {
+            /*
+             * Do the job.
+             */
+            VBOXSTRICTRC rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrEff, pCtx->CTX_SUFF(pXState)->x87.MXCSR);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                return VINF_SUCCESS;
+            }
+            return rcStrict;
+        }
+        return iemRaiseDeviceNotAvailable(pVCpu);
+    }
+    return iemRaiseUndefinedOpcode(pVCpu);
+}
+
+
+/**
+ * Implements 'VSTMXCSR'.
+ *
+ * @param   GCPtrEff        The address of the image.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_vstmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+
+    /*
+     * Raise exceptions.
+     */
+    if (   (   !IEM_IS_GUEST_CPU_AMD(pVCpu)
+            ? (pCtx->aXcr[0] & (XSAVE_C_SSE | XSAVE_C_YMM)) == (XSAVE_C_SSE | XSAVE_C_YMM)
+            : !(pCtx->cr0 & X86_CR0_EM)) /* AMD Jaguar CPU (f0x16,m0,s1) behaviour */
+        && (pCtx->cr4 & X86_CR4_OSXSAVE))
     {
         if (!(pCtx->cr0 & X86_CR0_TS))
         {

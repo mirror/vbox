@@ -97,6 +97,7 @@ typedef enum BS3CG1OPLOC
     BS3CG1OPLOC_END
 } BS3CG1OPLOC;
 
+
 /**
  * The state.
  */
@@ -150,6 +151,8 @@ typedef struct BS3CG1STATE
 
     /** Target mode (g_bBs3CurrentMode).  */
     uint8_t                 bMode;
+    /** The CPU vendor (BS3CPUVENDOR). */
+    uint8_t                 bCpuVendor;
     /** First ring being tested. */
     uint8_t                 iFirstRing;
     /** End of rings being tested. */
@@ -165,7 +168,7 @@ typedef struct BS3CG1STATE
     /** The offset into abCurInstr of the immediate. */
     uint8_t                 offCurImm;
     /** Buffer for assembling the current instruction. */
-    uint8_t                 abCurInstr[24];
+    uint8_t                 abCurInstr[23];
 
     /** Set if the encoding can't be tested in the same ring as this test code.
      *  This is used to deal with encodings modifying SP/ESP/RSP. */
@@ -2466,6 +2469,9 @@ static bool BS3_NEAR_CODE Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR 
             CASE_PRED(BS3CG1PRED_MODE_SVM,   false);
             CASE_PRED(BS3CG1PRED_PAGING_ON,  BS3_MODE_IS_PAGED(pThis->bMode));
             CASE_PRED(BS3CG1PRED_PAGING_OFF, !BS3_MODE_IS_PAGED(pThis->bMode));
+            CASE_PRED(BS3CG1PRED_VENDOR_AMD,   pThis->bCpuVendor == BS3CPUVENDOR_AMD);
+            CASE_PRED(BS3CG1PRED_VENDOR_INTEL, pThis->bCpuVendor == BS3CPUVENDOR_INTEL);
+            CASE_PRED(BS3CG1PRED_VENDOR_VIA,   pThis->bCpuVendor == BS3CPUVENDOR_VIA);
 
 #undef CASE_PRED
             default:
@@ -2904,12 +2910,17 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
  * Checks the result of a run.
  *
  * @returns true if successful, false if not.
- * @param   pThis               The state.
- * @param   bTestXcptExpected   The exception causing the test code to stop
- *                              executing.
- * @param   iEncoding           For error reporting.
+ * @param   pThis                   The state.
+ * @param   bTestXcptExpected       The exception causing the test code to stop
+ *                                  executing.
+ * @param   fInvalidEncodingPgFault Set if we've cut the instruction a byte
+ *                                  short and is expecting a \#PF on the page
+ *                                  boundrary rather than a \#UD.  Only set if
+ *                                  fInvalidEncoding is also set.
+ * @param   iEncoding               For error reporting.
  */
-static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcptExpected, unsigned iEncoding)
+static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcptExpected,
+                                            bool fInvalidEncodingPgFault,  unsigned iEncoding)
 {
     unsigned iOperand;
 
@@ -2936,7 +2947,13 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
     else
     {
         cbAdjustPc = 0;
-        bExpectedXcpt = X86_XCPT_UD;
+        if (!fInvalidEncodingPgFault)
+            bExpectedXcpt = X86_XCPT_UD;
+        else
+        {
+            bExpectedXcpt = X86_XCPT_PF;
+            pThis->Ctx.cr2.u = pThis->uCodePgFlat + X86_PAGE_SIZE;
+        }
     }
     if (RT_LIKELY(   pThis->TrapFrame.bXcpt     == bExpectedXcpt
                   && pThis->TrapFrame.Ctx.rip.u == pThis->Ctx.rip.u + cbAdjustPc))
@@ -2957,42 +2974,48 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
             while (iOperand-- > 0)
                 if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
                 {
-                    BS3PTRUNION PtrUnion;
-                    PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
-                    switch (pThis->aOperands[iOperand].cbOp)
+                    if (pThis->aOperands[iOperand].off)
                     {
-                        case 1:
-                            if (*PtrUnion.pu8 == pThis->MemOp.ab[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#04RX8, expected %#04RX8", iOperand, *PtrUnion.pu8, pThis->MemOp.ab[0]);
-                            break;
-                        case 2:
-                            if (*PtrUnion.pu16 == pThis->MemOp.au16[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#06RX16, expected %#06RX16",
-                                           iOperand, *PtrUnion.pu16, pThis->MemOp.au16[0]);
-                            break;
-                        case 4:
-                            if (*PtrUnion.pu32 == pThis->MemOp.au32[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#010RX32, expected %#010RX32",
-                                           iOperand, *PtrUnion.pu32, pThis->MemOp.au32[0]);
-                            break;
-                        case 8:
-                            if (*PtrUnion.pu64 == pThis->MemOp.au64[0])
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %#018RX64, expected %#018RX64",
-                                           iOperand, *PtrUnion.pu64, pThis->MemOp.au64[0]);
-                            break;
-                        default:
-                            if (Bs3MemCmp(PtrUnion.pb, pThis->MemOp.ab, pThis->aOperands[iOperand].cbOp) == 0)
-                                continue;
-                            Bs3TestFailedF("op%u: Wrote %.*Rhxs, expected %.*Rhxs",
-                                           iOperand,
-                                           pThis->aOperands[iOperand].cbOp, PtrUnion.pb,
-                                           pThis->aOperands[iOperand].cbOp, pThis->MemOp.ab);
-                            break;
+                        BS3PTRUNION PtrUnion;
+                        PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
+                        switch (pThis->aOperands[iOperand].cbOp)
+                        {
+                            case 1:
+                                if (*PtrUnion.pu8 == pThis->MemOp.ab[0])
+                                    continue;
+                                Bs3TestFailedF("op%u: Wrote %#04RX8, expected %#04RX8",
+                                               iOperand, *PtrUnion.pu8, pThis->MemOp.ab[0]);
+                                break;
+                            case 2:
+                                if (*PtrUnion.pu16 == pThis->MemOp.au16[0])
+                                    continue;
+                                Bs3TestFailedF("op%u: Wrote %#06RX16, expected %#06RX16",
+                                               iOperand, *PtrUnion.pu16, pThis->MemOp.au16[0]);
+                                break;
+                            case 4:
+                                if (*PtrUnion.pu32 == pThis->MemOp.au32[0])
+                                    continue;
+                                Bs3TestFailedF("op%u: Wrote %#010RX32, expected %#010RX32",
+                                               iOperand, *PtrUnion.pu32, pThis->MemOp.au32[0]);
+                                break;
+                            case 8:
+                                if (*PtrUnion.pu64 == pThis->MemOp.au64[0])
+                                    continue;
+                                Bs3TestFailedF("op%u: Wrote %#018RX64, expected %#018RX64",
+                                               iOperand, *PtrUnion.pu64, pThis->MemOp.au64[0]);
+                                break;
+                            default:
+                                if (Bs3MemCmp(PtrUnion.pb, pThis->MemOp.ab, pThis->aOperands[iOperand].cbOp) == 0)
+                                    continue;
+                                Bs3TestFailedF("op%u: Wrote %.*Rhxs, expected %.*Rhxs",
+                                               iOperand,
+                                               pThis->aOperands[iOperand].cbOp, PtrUnion.pb,
+                                               pThis->aOperands[iOperand].cbOp, pThis->MemOp.ab);
+                                break;
+                        }
                     }
+                    else
+                        Bs3TestFailedF("op%u: off is zero\n", iOperand);
                     fOkay = false;
                 }
         }
@@ -3055,15 +3078,16 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
         /*
          * Report failure.
          */
-        Bs3TestFailedF("%RU32[%u]: encoding#%u: %.*Rhxs",
-                       pThis->iInstr, pThis->iTest, iEncoding, pThis->cbCurInstr, pThis->abCurInstr);
+        Bs3TestFailedF("ins#%RU32/test#%u: encoding #%u: %.*Rhxs%s",
+                       pThis->iInstr, pThis->iTest, iEncoding, pThis->cbCurInstr, pThis->abCurInstr,
+                       fInvalidEncodingPgFault ? " (cut short)" : "");
     }
     else
-        Bs3TestFailedF("%RU32[%u]: bXcpt=%#x expected %#x; rip=%RX64 expected %RX64; encoding#%u: %.*Rhxs",
+        Bs3TestFailedF("ins#%RU32/test#%u: bXcpt=%#x expected %#x; rip=%RX64 expected %RX64; encoding#%u: %.*Rhxs%s",
                        pThis->iInstr, pThis->iTest,
                        pThis->TrapFrame.bXcpt, bExpectedXcpt,
                        pThis->TrapFrame.Ctx.rip.u, pThis->Ctx.rip.u + cbAdjustPc,
-                       iEncoding, pThis->cbCurInstr, pThis->abCurInstr);
+                       iEncoding, pThis->cbCurInstr, pThis->abCurInstr, fInvalidEncodingPgFault ? " (cut short)" : "");
     Bs3TestPrintf("cpl=%u cbOperands=%u\n", pThis->uCpl, pThis->cbOperand);
 
     /*
@@ -3116,33 +3140,38 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
 
             case BS3CG1OPLOC_MEM:
             case BS3CG1OPLOC_MEM_RW:
-                PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
-                switch (pThis->aOperands[iOperand].cbOp)
+                if (pThis->aOperands[iOperand].off)
                 {
-                    case 1: Bs3TestPrintf("op%u: result mem08: %#04RX8\n", iOperand, *PtrUnion.pu8); break;
-                    case 2: Bs3TestPrintf("op%u: result mem16: %#06RX16\n", iOperand, *PtrUnion.pu16); break;
-                    case 4: Bs3TestPrintf("op%u: result mem32: %#010RX32\n", iOperand, *PtrUnion.pu32); break;
-                    case 8: Bs3TestPrintf("op%u: result mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
-                    default:
-                        Bs3TestPrintf("op%u: result mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
-                                      pThis->aOperands[iOperand].cbOp, PtrUnion.pb);
-                        break;
-                }
-                if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
-                {
-                    PtrUnion.pb = pThis->MemOp.ab;
+                    PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
                     switch (pThis->aOperands[iOperand].cbOp)
                     {
-                        case 1: Bs3TestPrintf("op%u: expect mem08: %#04RX8\n", iOperand, *PtrUnion.pu8); break;
-                        case 2: Bs3TestPrintf("op%u: expect mem16: %#06RX16\n", iOperand, *PtrUnion.pu16); break;
-                        case 4: Bs3TestPrintf("op%u: expect mem32: %#010RX32\n", iOperand, *PtrUnion.pu32); break;
-                        case 8: Bs3TestPrintf("op%u: expect mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
+                        case 1: Bs3TestPrintf("op%u: result mem08: %#04RX8\n", iOperand, *PtrUnion.pu8); break;
+                        case 2: Bs3TestPrintf("op%u: result mem16: %#06RX16\n", iOperand, *PtrUnion.pu16); break;
+                        case 4: Bs3TestPrintf("op%u: result mem32: %#010RX32\n", iOperand, *PtrUnion.pu32); break;
+                        case 8: Bs3TestPrintf("op%u: result mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
                         default:
-                            Bs3TestPrintf("op%u: expect mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
+                            Bs3TestPrintf("op%u: result mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
                                           pThis->aOperands[iOperand].cbOp, PtrUnion.pb);
                             break;
                     }
+                    if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
+                    {
+                        PtrUnion.pb = pThis->MemOp.ab;
+                        switch (pThis->aOperands[iOperand].cbOp)
+                        {
+                            case 1: Bs3TestPrintf("op%u: expect mem08: %#04RX8\n", iOperand, *PtrUnion.pu8); break;
+                            case 2: Bs3TestPrintf("op%u: expect mem16: %#06RX16\n", iOperand, *PtrUnion.pu16); break;
+                            case 4: Bs3TestPrintf("op%u: expect mem32: %#010RX32\n", iOperand, *PtrUnion.pu32); break;
+                            case 8: Bs3TestPrintf("op%u: expect mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
+                            default:
+                                Bs3TestPrintf("op%u: expect mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
+                                              pThis->aOperands[iOperand].cbOp, PtrUnion.pb);
+                                break;
+                        }
+                    }
                 }
+                else
+                    Bs3TestPrintf("op%u: mem%u: zero off value!!\n", iOperand, pThis->aOperands[iOperand].cbOp * 8);
                 break;
         }
     }
@@ -3152,8 +3181,12 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
      */
     Bs3TestPrintf("-- Expected context:\n");
     Bs3RegCtxPrint(&pThis->Ctx);
+    if (pThis->fWorkExtCtx)
+        Bs3TestPrintf("xcr0=%RX64\n", pThis->pExtCtx->fXcr0Saved);
     Bs3TestPrintf("-- Actual context:\n");
     Bs3TrapPrintFrame(&pThis->TrapFrame);
+    if (pThis->fWorkExtCtx)
+        Bs3TestPrintf("xcr0=%RX64\n", pThis->pResultExtCtx->fXcr0Saved);
     Bs3TestPrintf("\n");
     return false;
 }
@@ -3214,6 +3247,7 @@ bool BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1Init)(PBS3CG1STATE pThis, uint8_t bMode)
     pThis->bMode              = bMode;
     pThis->pszMode            = Bs3GetModeName(bMode);
     pThis->pszModeShort       = Bs3GetModeNameShortLower(bMode);
+    pThis->bCpuVendor         = Bs3GetCpuVendor();
     pThis->pchMnemonic        = g_achBs3Cg1Mnemonics;
     pThis->pabOperands        = g_abBs3Cg1Operands;
     pThis->pabOpcodes         = g_abBs3Cg1Opcodes;
@@ -3565,7 +3599,7 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                                  */
                                 pThis->Ctx.rflags.u32 &= ~X86_EFL_RF;
                                 pThis->Ctx.rflags.u32 |= pThis->TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
-                                pThis->bValueXcpt      = UINT8_MAX;
+                                pThis->bValueXcpt      = UINT8_MAX; //???
                                 if (   pThis->fInvalidEncoding
                                     || pThis->bAlignmentXcpt != UINT8_MAX
                                     || pThis->bValueXcpt     != UINT8_MAX
@@ -3573,7 +3607,39 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                                                                 pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
                                                                 &pThis->TrapFrame.Ctx, NULL /*pbCode*/))
                                 {
-                                    Bs3Cg1CheckResult(pThis, bTestXcptExpected, iEncoding);
+                                    Bs3Cg1CheckResult(pThis, bTestXcptExpected, false /*fInvalidEncodingPgFault*/, iEncoding);
+                                }
+
+                                /*
+                                 * If this is an invalid encoding or instruction, check that we
+                                 * get a page fault when shortening it by one byte.
+                                 * (Since we didn't execute the output context modifier, we don't
+                                 * need to re-initialize the start context.)
+                                 */
+                                if (   pThis->fInvalidEncoding
+                                    && BS3_MODE_IS_PAGED(pThis->bMode)
+                                    && pThis->cbCurInstr)
+                                {
+                                    pbCode  += 1;
+                                    offCode += 1;
+                                    pThis->Ctx.rip.u = pThis->CodePgRip + offCode;
+                                    Bs3MemCpy(pbCode, pThis->abCurInstr, pThis->cbCurInstr - 1);
+
+                                    /* Run the instruction. */
+                                    BS3CG1_DPRINTF(("dbg:  Running test #%u (cut short #PF)\n", pThis->iTest));
+                                    //Bs3RegCtxPrint(&pThis->Ctx);
+                                    if (pThis->fWorkExtCtx)
+                                        Bs3ExtCtxRestore(pThis->pExtCtx);
+                                    Bs3TrapSetJmpAndRestore(&pThis->Ctx, &pThis->TrapFrame);
+                                    if (pThis->fWorkExtCtx)
+                                        Bs3ExtCtxSave(pThis->pResultExtCtx);
+                                    BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64 (cut short #PF)\n",
+                                                    pThis->TrapFrame.bXcpt, pThis->Ctx.rip.u, pThis->TrapFrame.Ctx.rip.u));
+
+                                    /* Check it */
+                                    pThis->Ctx.rflags.u32 &= ~X86_EFL_RF;
+                                    pThis->Ctx.rflags.u32 |= pThis->TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
+                                    Bs3Cg1CheckResult(pThis, X86_XCPT_PF, true /*fInvalidEncodingPgFault*/, iEncoding);
                                 }
                             }
                         }
@@ -3613,7 +3679,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode >= BS3_MODE_PE16)
+    if (bMode != BS3_MODE_PPV86)
         return BS3TESTDOMODE_SKIPPED;
 #endif
 
