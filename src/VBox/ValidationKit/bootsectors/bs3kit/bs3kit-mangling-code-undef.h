@@ -37,6 +37,7 @@
 #undef Bs3ExtCtxInit
 #undef Bs3ExtCtxRestore
 #undef Bs3ExtCtxSave
+#undef Bs3GetCpuVendor
 #undef Bs3GetModeName
 #undef Bs3GetModeNameShortLower
 #undef Bs3KbdRead
@@ -165,7 +166,6 @@
 #undef Bs3UtilSetFullIdtr
 #ifndef BS3_CMN_ONLY
 # undef Bs3CpuDetect
-# undef Bs3GetCpuVendor
 # undef Bs3SwitchTo32BitAndCallC
 # undef Bs3TestDoModes
 # undef Bs3TestDoModesByMax
