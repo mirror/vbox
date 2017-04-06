@@ -608,6 +608,10 @@ typedef struct IEMCPU
     /** Pointer set jump buffer - raw-mode context. */
     RCPTRTYPE(jmp_buf *)    pJmpBufRC;
 
+    /** @todo Should move this near @a fCurXcpt later. */
+    /** The error code for the current exception / interrupt. */
+    uint32_t                uCurXcptErr;
+
     /** @name Statistics
      * @{  */
     /** The number of instructions we've executed. */
@@ -687,7 +691,7 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
 
-    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 1 + 2 + 4 + 8 : 1 + 2 + 4]; /**< Alignment padding. */
+    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 2 + 4 + 8 : 2 + 4]; /**< Alignment padding. */
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */
