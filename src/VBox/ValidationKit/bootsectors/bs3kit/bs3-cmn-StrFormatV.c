@@ -214,11 +214,13 @@ static size_t bs3StrFormatU64(PBS3FMTSTATE pState, uint64_t uValue)
 {
 #if ARCH_BITS != 64
     /* Avoid 64-bit division by formatting 64-bit numbers as hex if they're higher than _4G. */
-    if (   pState->uBase == 10
-        && !(uValue >> 32)) /* uValue <= UINT32_MAX does not work, trouble with 64-bit compile time math! */
-        return bs3StrFormatU32(pState, uValue);
-    pState->fFlags |= STR_F_SPECIAL;
-    pState->uBase = 16;
+    if (pState->uBase == 10)
+    {
+        if (!(uValue >> 32)) /* uValue <= UINT32_MAX does not work, trouble with 64-bit compile time math! */
+            return bs3StrFormatU32(pState, uValue);
+        pState->fFlags |= STR_F_SPECIAL;
+        pState->uBase   = 16;
+    }
 #endif
 
     {

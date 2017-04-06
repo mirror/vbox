@@ -512,6 +512,22 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_DW0] = */   4,
     /* [BS3CG1DST_XMM14_DW0] = */   4,
     /* [BS3CG1DST_XMM15_DW0] = */   4,
+    /* [BS3CG1DST_XMM0_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM1_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM2_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM3_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM4_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM5_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM6_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM7_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM8_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM9_DW0_ZX] = */ 4,
+    /* [BS3CG1DST_XMM10_DW0_ZX] =*/ 4,
+    /* [BS3CG1DST_XMM11_DW0_ZX] =*/ 4,
+    /* [BS3CG1DST_XMM12_DW0_ZX] =*/ 4,
+    /* [BS3CG1DST_XMM13_DW0_ZX] =*/ 4,
+    /* [BS3CG1DST_XMM14_DW0_ZX] =*/ 4,
+    /* [BS3CG1DST_XMM15_DW0_ZX] =*/ 4,
     /* [BS3CG1DST_YMM0] = */        32,
     /* [BS3CG1DST_YMM1] = */        32,
     /* [BS3CG1DST_YMM2] = */        32,
@@ -744,6 +760,22 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]),
     /* [BS3CG1DST_XMM14_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]),
     /* [BS3CG1DST_XMM15_DW0] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]),
+    /* [BS3CG1DST_XMM0_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[0]),
+    /* [BS3CG1DST_XMM1_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[1]),
+    /* [BS3CG1DST_XMM2_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[2]),
+    /* [BS3CG1DST_XMM3_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[3]),
+    /* [BS3CG1DST_XMM4_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[4]),
+    /* [BS3CG1DST_XMM5_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[5]),
+    /* [BS3CG1DST_XMM6_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[6]),
+    /* [BS3CG1DST_XMM7_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[7]),
+    /* [BS3CG1DST_XMM8_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[8]),
+    /* [BS3CG1DST_XMM9_DW0_ZX] = */ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[9]),
+    /* [BS3CG1DST_XMM10_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[10]),
+    /* [BS3CG1DST_XMM11_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[11]),
+    /* [BS3CG1DST_XMM12_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[12]),
+    /* [BS3CG1DST_XMM13_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]),
+    /* [BS3CG1DST_XMM14_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]),
+    /* [BS3CG1DST_XMM15_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]),
 
     /* [BS3CG1DST_YMM0] = */        ~0U,
     /* [BS3CG1DST_YMM1] = */        ~0U,
@@ -976,6 +1008,22 @@ static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
     { "XMM13_DW0" },
     { "XMM14_DW0" },
     { "XMM15_DW0" },
+    { "XMM0_DW0_ZX" },
+    { "XMM1_DW0_ZX" },
+    { "XMM2_DW0_ZX" },
+    { "XMM3_DW0_ZX" },
+    { "XMM4_DW0_ZX" },
+    { "XMM5_DW0_ZX" },
+    { "XMM6_DW0_ZX" },
+    { "XMM7_DW0_ZX" },
+    { "XMM8_DW0_ZX" },
+    { "XMM9_DW0_ZX" },
+    { "XMM10_DW0_ZX" },
+    { "XMM11_DW0_ZX" },
+    { "XMM12_DW0_ZX" },
+    { "XMM13_DW0_ZX" },
+    { "XMM14_DW0_ZX" },
+    { "XMM15_DW0_ZX" },
     { "YMM0" },
     { "YMM1" },
     { "YMM2" },
@@ -1611,6 +1659,35 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_Wdq(PBS3CG1ST
 }
 
 
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_Wss(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    unsigned off;
+    if (iEncoding == 0)
+    {
+        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+        pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+        pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_XMM0_LO;
+        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM1_DW0_ZX;
+    }
+    else if (iEncoding == 1)
+    {
+        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM2_DW0_ZX;
+        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+        off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 2 /*iReg*/, 4, 0, BS3CG1OPLOC_MEM);
+    }
+    else if (iEncoding == 2)
+    {
+        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3_DW0_ZX;
+        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+        off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 4, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM);
+    }
+    else
+        return 0;
+    pThis->cbCurInstr = off;
+    return iEncoding + 1;
+}
+
+
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -1991,6 +2068,8 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_Mq(pThis, iEncoding);
         case BS3CG1ENC_MODRM_Vdq_Wdq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_Wdq(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_VssZxReg_Wss:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_Wss(pThis, iEncoding);
 
         case BS3CG1ENC_MODRM_Gv_Ma:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(pThis, iEncoding);
@@ -2153,6 +2232,15 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].cbOp = 8;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_MEM;
+            break;
+
+        case BS3CG1ENC_MODRM_VssZxReg_Wss:
+            pThis->iRmOp             = 1;
+            pThis->iRegOp            = 0;
+            pThis->aOperands[0].cbOp = 4;
+            pThis->aOperands[1].cbOp = 4;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_MODRM_MbRO:
@@ -2786,7 +2874,12 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                     break;
 
                 case 4:
-                    if (offField <= RT_OFFSETOF(BS3REGCTX, r15)) /* Clear the top dword. */
+                    if ((unsigned)(idxField - BS3CG1DST_XMM0_DW0_ZX) <= (unsigned)(BS3CG1DST_XMM15_DW0_ZX - BS3CG1DST_XMM0_DW0_ZX))
+                    {
+                        PtrField.pu32[1] = 0;
+                        PtrField.pu64[1] = 0;
+                    }
+                    else if (offField <= RT_OFFSETOF(BS3REGCTX, r15)) /* Clear the top dword. */
                         PtrField.pu32[1] = 0;
                     switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
                     {
@@ -3084,11 +3177,11 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
                 for (i = 0; i < (ARCH_BITS == 64 ? 16 : 8); i++)
                     if (   pResult->Ctx.x87.aXMM[i].au64[0] != pExpect->Ctx.x87.aXMM[i].au64[0]
                         || pResult->Ctx.x87.aXMM[i].au64[1] != pExpect->Ctx.x87.aXMM[i].au64[1])
-                        fOkay = Bs3TestFailedF("XMM%u: %#010RX64'%08RX64, expected %#010RX64'%08RX64", i,
-                                               pResult->Ctx.x87.aXMM[i].au64[0],
+                        fOkay = Bs3TestFailedF("XMM%u: %#010RX64'%016RX64, expected %#010RX64'%08RX64", i,
                                                pResult->Ctx.x87.aXMM[i].au64[1],
-                                               pExpect->Ctx.x87.aXMM[i].au64[0],
-                                               pExpect->Ctx.x87.aXMM[i].au64[1]);
+                                               pResult->Ctx.x87.aXMM[i].au64[0],
+                                               pExpect->Ctx.x87.aXMM[i].au64[1],
+                                               pExpect->Ctx.x87.aXMM[i].au64[0]);
             }
             else
                 fOkay = Bs3TestFailedF("Unsupported extended CPU context method: %d", pExpect->enmMethod);
@@ -3712,7 +3805,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode < BS3_MODE_LM16)
+    if (bMode != BS3_MODE_PP32)
         return BS3TESTDOMODE_SKIPPED;
 #endif
 
@@ -3725,7 +3818,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
 #if 0
     /* (for debugging) */
-    if (bMode >= BS3_MODE_LM64)
+    //if (bMode == BS3_MODE_PP32)
     {
         Bs3TestTerm();
         Bs3Shutdown();
