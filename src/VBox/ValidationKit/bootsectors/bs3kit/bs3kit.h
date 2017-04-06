@@ -3747,6 +3747,25 @@ BS3_MODE_PROTO_NOSB(uint8_t, Bs3CpuDetect,(void));
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */
 extern uint16_t g_uBs3CpuDetected;
 
+/** CPU vendors. */
+typedef enum BS3CPUVENDOR
+{
+    BS3CPUVENDOR_INVALID = 0,
+    BS3CPUVENDOR_INTEL,
+    BS3CPUVENDOR_AMD,
+    BS3CPUVENDOR_VIA,
+    BS3CPUVENDOR_CYRIX,
+    BS3CPUVENDOR_UNKNOWN,
+    BS3CPUVENDOR_END
+} BS3CPUVENDOR;
+
+/**
+ * Tries to detect the CPU vendor.
+ *
+ * @returns CPU vendor.
+ */
+BS3_MODE_PROTO_STUB(BS3CPUVENDOR, Bs3GetCpuVendor,(void));
+
 /**
  * Call 32-bit prot mode C function.
  *

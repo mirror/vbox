@@ -165,6 +165,7 @@
 #define Bs3UtilSetFullIdtr BS3_CMN_MANGLER(Bs3UtilSetFullIdtr)
 #ifndef BS3_CMN_ONLY
 # define Bs3CpuDetect BS3_MODE_MANGLER(Bs3CpuDetect)
+# define Bs3GetCpuVendor BS3_MODE_MANGLER(Bs3GetCpuVendor)
 # define Bs3SwitchTo32BitAndCallC BS3_MODE_MANGLER(Bs3SwitchTo32BitAndCallC)
 # define Bs3TestDoModes BS3_MODE_MANGLER(Bs3TestDoModes)
 # define Bs3TestDoModesByMax BS3_MODE_MANGLER(Bs3TestDoModesByMax)
