@@ -783,7 +783,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         return False;
 
     def _killProcessesByName(self, sName, sDesc, fChildren = False):
-        """ Checks whether the named process is present or not. """
+        """ Kills the named process, optionally including children. """
         cKilled = 0;
         aoProcesses = utils.processListAll();
         for oProcess in aoProcesses:
@@ -799,6 +799,19 @@ class VBoxInstallerTestDriver(TestDriverBase):
                             reporter.log('Killing %s child process: %s (%s)' % (sDesc, oChild.iPid, sBase));
                             utils.processKill(oChild.iPid);
                             cKilled += 1;
+        return cKilled;
+
+    def _killProcessesByNameAndArgSubstr(self, sName, sArg, sDesc):
+        """ Kills the named process, if one of its args contains the string. """
+        cKilled = 0;
+        aoProcesses = utils.processListAll();
+        for oProcess in aoProcesses:
+            sBase = oProcess.getBaseImageNameNoExeSuff();
+            if sBase is not None and sBase.lower() == sName and any(sArg in s for s in oProcess.asArgs):
+                
+                reporter.log('Killing %s process: %s (%s)' % (sDesc, oProcess.iPid, sBase));
+                utils.processKill(oProcess.iPid);
+                cKilled += 1;
         return cKilled;
 
     def _uninstallVBoxOnWindows(self, fIgnoreServices = False):
@@ -825,7 +838,16 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 asProdCodes.append([sProdCode, sProdName]);
 
         # Before we start uninstalling anything, just ruthlessly kill any
-        # msiexec and drvinst process we might find hanging around.
+        # msiexec, drvinst and some rundll process we might find hanging around.
+        if self._isProcessPresent('rundll32'):
+            cTimes = 0;
+            while cTimes < 3:
+                cTimes += 1;
+                cKilled = self._killProcessesByNameAndArgSubstr('rundll32', 'InstallSecurityPromptRunDllW', 'MSI driver installation');
+                if cKilled <= 0:
+                    break;
+                time.sleep(10); # Give related drvinst process a chance to clean up after we killed the verification dialog.
+
         if self._isProcessPresent('drvinst'):
             time.sleep(15);     # In the hope that it goes away.
             cTimes = 0;
