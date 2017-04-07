@@ -1114,9 +1114,6 @@ FNIEMOP_DEF(iemOp_movss_Vss_Wss)
 }
 
 
-/** Opcode VEX 0xf3 0x0f 0x10 - movsd Vx, Wsd */
-FNIEMOP_STUB(iemOp_movss_Vx_Wss);
-
 /** Opcode 0xf2 0x0f 0x10 - movsd Vx, Wsd */
 FNIEMOP_STUB(iemOp_movsd_Vx_Wsd);
 
