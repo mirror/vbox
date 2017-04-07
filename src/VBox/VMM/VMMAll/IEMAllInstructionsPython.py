@@ -3079,35 +3079,38 @@ class SimpleParser(object):
 
             # We only look for comments, so only lines with a slash might possibly
             # influence the parser state.
-            if sLine.find('/') >= 0:
-                #self.debug('line %d: slash' % (self.iLine,));
+            offSlash = sLine.find('/');
+            if offSlash >= 0:
+                if offSlash + 1 >= len(sLine)  or  sLine[offSlash + 1] != '/'  or  self.iState != self.kiCode:
+                    offLine = 0;
+                    while offLine < len(sLine):
+                        if self.iState == self.kiCode:
+                            offHit = sLine.find('/*', offLine); # only multiline comments for now.
+                            if offHit >= 0:
+                                self.checkCodeForMacro(sLine[offLine:offHit]);
+                                self.sComment     = '';
+                                self.iCommentLine = self.iLine;
+                                self.iState       = self.kiCommentMulti;
+                                offLine = offHit + 2;
+                            else:
+                                self.checkCodeForMacro(sLine[offLine:]);
+                                offLine = len(sLine);
 
-                offLine = 0;
-                while offLine < len(sLine):
-                    if self.iState == self.kiCode:
-                        offHit = sLine.find('/*', offLine); # only multiline comments for now.
-                        if offHit >= 0:
-                            self.checkCodeForMacro(sLine[offLine:offHit]);
-                            self.sComment     = '';
-                            self.iCommentLine = self.iLine;
-                            self.iState       = self.kiCommentMulti;
-                            offLine = offHit + 2;
+                        elif self.iState == self.kiCommentMulti:
+                            offHit = sLine.find('*/', offLine);
+                            if offHit >= 0:
+                                self.sComment += sLine[offLine:offHit];
+                                self.iState    = self.kiCode;
+                                offLine = offHit + 2;
+                                self.parseComment();
+                            else:
+                                self.sComment += sLine[offLine:];
+                                offLine = len(sLine);
                         else:
-                            self.checkCodeForMacro(sLine[offLine:]);
-                            offLine = len(sLine);
-
-                    elif self.iState == self.kiCommentMulti:
-                        offHit = sLine.find('*/', offLine);
-                        if offHit >= 0:
-                            self.sComment += sLine[offLine:offHit];
-                            self.iState    = self.kiCode;
-                            offLine = offHit + 2;
-                            self.parseComment();
-                        else:
-                            self.sComment += sLine[offLine:];
-                            offLine = len(sLine);
-                    else:
-                        assert False;
+                            assert False;
+                # C++ line comment.
+                elif offSlash > 0:
+                    self.checkCodeForMacro(sLine[:offSlash]);
 
             # No slash, but append the line if in multi-line comment.
             elif self.iState == self.kiCommentMulti:
@@ -3212,8 +3215,9 @@ def __parseAll():
     sSrcDir = os.path.dirname(os.path.abspath(__file__));
     cErrors = 0;
     for sDefaultMap, sName in [
-        ( 'one',    'IEMAllInstructionsOneByte.cpp.h'),
-        ( 'two0f',  'IEMAllInstructionsTwoByte0f.cpp.h'),
+        ( 'one',     'IEMAllInstructionsOneByte.cpp.h'),
+        ( 'two0f',   'IEMAllInstructionsTwoByte0f.cpp.h'),
+        ( 'vexmap1', 'IEMAllInstructionsVexMap1.cpp.h'),
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
     cErrors += __doTestCopying();

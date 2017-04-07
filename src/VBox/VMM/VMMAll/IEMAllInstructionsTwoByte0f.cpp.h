@@ -1,10 +1,13 @@
 /* $Id$ */
 /** @file
  * IEM - Instruction Decoding and Emulation.
+ *
+ * @remarks IEMAllInstructionsVexMap1.cpp.h is a VEX mirror of this file.
+ *          Any update here is likely needed in that file too.
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,20 +17,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
-
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forward declare it. */
-
-
-/** @name ..... opcodes.
- *
- * @{
- */
-
-/** @}  */
 
 
 /** @name Two byte opcodes (first byte 0x0f).
@@ -1066,9 +1055,9 @@ FNIEMOP_DEF(iemOp_3Dnow)
 
 
 /** Opcode      0x0f 0x10 - vmovups Vps, Wps */
-FNIEMOP_STUB(iemOp_vmovups_Vps_Wps);
+FNIEMOP_STUB(iemOp_movups_Vps_Wps);
 /** Opcode 0x66 0x0f 0x10 - vmovupd Vpd, Wpd */
-FNIEMOP_STUB(iemOp_vmovupd_Vpd_Wpd);
+FNIEMOP_STUB(iemOp_movupd_Vpd_Wpd);
 
 
 /**
@@ -1079,7 +1068,6 @@ FNIEMOP_STUB(iemOp_vmovupd_Vpd_Wpd);
  * @opxcpttype  5
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-22 -> op1=-22
- * @oponly
  */
 FNIEMOP_DEF(iemOp_movss_Vss_Wss)
 {
@@ -1126,11 +1114,11 @@ FNIEMOP_DEF(iemOp_movss_Vss_Wss)
 }
 
 
-/** Opcode VEX 0xf3 0x0f 0x10 - vmovsd Vx, Hx, Wsd */
-FNIEMOP_STUB(iemOp_vmovss_Vx_Hx_Wss);
+/** Opcode VEX 0xf3 0x0f 0x10 - movsd Vx, Wsd */
+FNIEMOP_STUB(iemOp_movss_Vx_Wss);
 
-/** Opcode 0xf2 0x0f 0x10 - vmovsd Vx, Hx, Wsd */
-FNIEMOP_STUB(iemOp_vmovsd_Vx_Hx_Wsd);
+/** Opcode 0xf2 0x0f 0x10 - movsd Vx, Wsd */
+FNIEMOP_STUB(iemOp_movsd_Vx_Wsd);
 
 
 /**
@@ -1142,7 +1130,7 @@ FNIEMOP_STUB(iemOp_vmovsd_Vx_Hx_Wsd);
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
  */
-FNIEMOP_DEF(iemOp_vmovups_Wps_Vps)
+FNIEMOP_DEF(iemOp_movups_Wps_Vps)
 {
     IEMOP_MNEMONIC2(MR, MOVUPS, movups, Wps, Vps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1193,7 +1181,7 @@ FNIEMOP_DEF(iemOp_vmovups_Wps_Vps)
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
  */
-FNIEMOP_DEF(iemOp_vmovupd_Wpd_Vpd)
+FNIEMOP_DEF(iemOp_movupd_Wpd_Vpd)
 {
     IEMOP_MNEMONIC2(MR, MOVUPD, movupd, Wpd, Vpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1244,7 +1232,7 @@ FNIEMOP_DEF(iemOp_vmovupd_Wpd_Vpd)
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-22 -> op1=-22
  */
-FNIEMOP_DEF(iemOp_vmovss_Wss_Hx_Vss)
+FNIEMOP_DEF(iemOp_movss_Wss_Vss)
 {
     IEMOP_MNEMONIC2(MR, MOVSS, movss, Wss, Vss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1298,7 +1286,7 @@ FNIEMOP_DEF(iemOp_vmovss_Wss_Hx_Vss)
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
  */
-FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hx_Vsd)
+FNIEMOP_DEF(iemOp_movsd_Wsd_Vsd)
 {
     IEMOP_MNEMONIC2(MR, MOVSD, movsd, Wsd, Vsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1343,7 +1331,7 @@ FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hx_Vsd)
 }
 
 
-FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
+FNIEMOP_DEF(iemOp_movlps_Vq_Mq__movhlps)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -1384,7 +1372,7 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
          * @opxcpttype  5
          * @optest      op1=1 op2=2 -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
-         * @opfunction  iemOp_vmovlps_Vq_Hq_Mq__vmovhlps
+         * @opfunction  iemOp_movlps_Vq_Mq__vmovhlps
          */
         IEMOP_MNEMONIC2(RM_MEM, MOVLPS, movlps, Vq, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
@@ -1417,7 +1405,7 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
  */
-FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
+FNIEMOP_DEF(iemOp_movlpd_Vq_Mq)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
@@ -1464,7 +1452,7 @@ FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
  * @optest      op1=-1 op2=0xdddddddd00000002eeeeeeee00000001 ->
  *              op1=0x00000002000000020000000100000001
  */
-FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
+FNIEMOP_DEF(iemOp_movsldup_Vdq_Wdq)
 {
     IEMOP_MNEMONIC2(RM, MOVSLDUP, movsldup, Vdq, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1524,7 +1512,7 @@ FNIEMOP_DEF(iemOp_vmovsldup_Vx_Wx)
  * @optest      op1=-1 op2=0xddddddddeeeeeeee2222222211111111 ->
  *              op1=0x22222222111111112222222211111111
  */
-FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
+FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
 {
     IEMOP_MNEMONIC2(RM, MOVDDUP, movddup, Vdq, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1575,10 +1563,10 @@ FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
 
 
 /** Opcode      0x0f 0x13 - vmovlps Mq, Vq */
-FNIEMOP_STUB(iemOp_vmovlps_Mq_Vq);
+FNIEMOP_STUB(iemOp_movlps_Mq_Vq);
 
 /** Opcode 0x66 0x0f 0x13 - vmovlpd Mq, Vq */
-FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
+FNIEMOP_DEF(iemOp_movlpd_Mq_Vq)
 {
     IEMOP_MNEMONIC(movlpd_Mq_Vq, "movlpd Mq,Vq");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1627,29 +1615,29 @@ FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
 /*  Opcode 0xf3 0x0f 0x13 - invalid */
 /*  Opcode 0xf2 0x0f 0x13 - invalid */
 
-/** Opcode      0x0f 0x14 - vunpcklps Vx, Hx, Wx*/
-FNIEMOP_STUB(iemOp_vunpcklps_Vx_Hx_Wx);
-/** Opcode 0x66 0x0f 0x14 - vunpcklpd Vx,Hx,Wx   */
-FNIEMOP_STUB(iemOp_vunpcklpd_Vx_Hx_Wx);
+/** Opcode      0x0f 0x14 - unpcklps Vx, Wx*/
+FNIEMOP_STUB(iemOp_unpcklps_Vx_Wx);
+/** Opcode 0x66 0x0f 0x14 - unpcklpd Vx, Wx   */
+FNIEMOP_STUB(iemOp_unpcklpd_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x14 - invalid */
 /*  Opcode 0xf2 0x0f 0x14 - invalid */
-/** Opcode      0x0f 0x15 - vunpckhps Vx, Hx, Wx   */
-FNIEMOP_STUB(iemOp_vunpckhps_Vx_Hx_Wx);
-/** Opcode 0x66 0x0f 0x15 - vunpckhpd Vx,Hx,Wx   */
-FNIEMOP_STUB(iemOp_vunpckhpd_Vx_Hx_Wx);
+/** Opcode      0x0f 0x15 - unpckhps Vx, Wx   */
+FNIEMOP_STUB(iemOp_unpckhps_Vx_Wx);
+/** Opcode 0x66 0x0f 0x15 - unpckhpd Vx, Wx   */
+FNIEMOP_STUB(iemOp_unpckhpd_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x15 - invalid */
 /*  Opcode 0xf2 0x0f 0x15 - invalid */
-/** Opcode      0x0f 0x16 - vmovhpsv1 Vdq, Hq, Mq vmovlhps Vdq, Hq, Uq   */
-FNIEMOP_STUB(iemOp_vmovhpsv1_Vdq_Hq_Mq__vmovlhps_Vdq_Hq_Uq);  //NEXT
-/** Opcode 0x66 0x0f 0x16 - vmovhpdv1 Vdq, Hq, Mq   */
-FNIEMOP_STUB(iemOp_vmovhpdv1_Vdq_Hq_Mq);  //NEXT
-/** Opcode 0xf3 0x0f 0x16 - vmovshdup Vx, Wx   */
-FNIEMOP_STUB(iemOp_vmovshdup_Vx_Wx); //NEXT
+/** Opcode      0x0f 0x16 - movhpsv1 Vdq, Mq movlhps Vdq, Uq   */
+FNIEMOP_STUB(iemOp_movhpsv1_Vdq_Mq__movlhps_Vdq_Uq);  //NEXT
+/** Opcode 0x66 0x0f 0x16 - movhpdv1 Vdq, Mq   */
+FNIEMOP_STUB(iemOp_movhpdv1_Vdq_Mq);  //NEXT
+/** Opcode 0xf3 0x0f 0x16 - movshdup Vx, Wx   */
+FNIEMOP_STUB(iemOp_movshdup_Vx_Wx); //NEXT
 /*  Opcode 0xf2 0x0f 0x16 - invalid */
-/** Opcode      0x0f 0x17 - vmovhpsv1 Mq, Vq   */
-FNIEMOP_STUB(iemOp_vmovhpsv1_Mq_Vq);  //NEXT
-/** Opcode 0x66 0x0f 0x17 - vmovhpdv1 Mq, Vq   */
-FNIEMOP_STUB(iemOp_vmovhpdv1_Mq_Vq);  //NEXT
+/** Opcode      0x0f 0x17 - movhpsv1 Mq, Vq   */
+FNIEMOP_STUB(iemOp_movhpsv1_Mq_Vq);  //NEXT
+/** Opcode 0x66 0x0f 0x17 - movhpdv1 Mq, Vq   */
+FNIEMOP_STUB(iemOp_movhpdv1_Mq_Vq);  //NEXT
 /*  Opcode 0xf3 0x0f 0x17 - invalid */
 /*  Opcode 0xf2 0x0f 0x17 - invalid */
 
@@ -1831,8 +1819,8 @@ FNIEMOP_DEF(iemOp_mov_Td_Rd)
 }
 
 
-/** Opcode      0x0f 0x28 - vmovaps Vps, Wps */
-FNIEMOP_DEF(iemOp_vmovaps_Vps_Wps)
+/** Opcode      0x0f 0x28 - movaps Vps, Wps */
+FNIEMOP_DEF(iemOp_movaps_Vps_Wps)
 {
     IEMOP_MNEMONIC(movaps_r_mr, "movaps r,mr");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1873,8 +1861,8 @@ FNIEMOP_DEF(iemOp_vmovaps_Vps_Wps)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x28 - vmovapd Vpd, Wpd */
-FNIEMOP_DEF(iemOp_vmovapd_Vpd_Wpd)
+/** Opcode 0x66 0x0f 0x28 - movapd Vpd, Wpd */
+FNIEMOP_DEF(iemOp_movapd_Vpd_Wpd)
 {
     IEMOP_MNEMONIC(movapd_r_mr, "movapd r,mr");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1918,8 +1906,8 @@ FNIEMOP_DEF(iemOp_vmovapd_Vpd_Wpd)
 /*  Opcode 0xf3 0x0f 0x28 - invalid */
 /*  Opcode 0xf2 0x0f 0x28 - invalid */
 
-/** Opcode      0x0f 0x29 - vmovaps Wps, Vps */
-FNIEMOP_DEF(iemOp_vmovaps_Wps_Vps)
+/** Opcode      0x0f 0x29 - movaps Wps, Vps */
+FNIEMOP_DEF(iemOp_movaps_Wps_Vps)
 {
     IEMOP_MNEMONIC(movaps_mr_r, "movaps Wps,Vps");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1960,8 +1948,8 @@ FNIEMOP_DEF(iemOp_vmovaps_Wps_Vps)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x29 - vmovapd Wpd,Vpd */
-FNIEMOP_DEF(iemOp_vmovapd_Wpd_Vpd)
+/** Opcode 0x66 0x0f 0x29 - movapd Wpd,Vpd */
+FNIEMOP_DEF(iemOp_movapd_Wpd_Vpd)
 {
     IEMOP_MNEMONIC(movapd_mr_r, "movapd Wpd,Vpd");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2011,13 +1999,13 @@ FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi); //NEXT
 /** Opcode 0x66 0x0f 0x2a - cvtpi2pd Vpd, Qpi */
 FNIEMOP_STUB(iemOp_cvtpi2pd_Vpd_Qpi); //NEXT
 /** Opcode 0xf3 0x0f 0x2a - vcvtsi2ss Vss, Hss, Ey */
-FNIEMOP_STUB(iemOp_vcvtsi2ss_Vss_Hss_Ey); //NEXT
+FNIEMOP_STUB(iemOp_cvtsi2ss_Vss_Ey); //NEXT
 /** Opcode 0xf2 0x0f 0x2a - vcvtsi2sd Vsd, Hsd, Ey */
-FNIEMOP_STUB(iemOp_vcvtsi2sd_Vsd_Hsd_Ey); //NEXT
+FNIEMOP_STUB(iemOp_cvtsi2sd_Vsd_Ey); //NEXT
 
 
 /** Opcode      0x0f 0x2b - vmovntps Mps, Vps */
-FNIEMOP_DEF(iemOp_vmovntps_Mps_Vps)
+FNIEMOP_DEF(iemOp_movntps_Mps_Vps)
 {
     IEMOP_MNEMONIC(movntps_mr_r, "movntps Mps,Vps");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2047,8 +2035,8 @@ FNIEMOP_DEF(iemOp_vmovntps_Mps_Vps)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x2b - vmovntpd Mpd, Vpd */
-FNIEMOP_DEF(iemOp_vmovntpd_Mpd_Vpd)
+/** Opcode 0x66 0x0f 0x2b - movntpd Mpd, Vpd */
+FNIEMOP_DEF(iemOp_movntpd_Mpd_Vpd)
 {
     IEMOP_MNEMONIC(movntpd_mr_r, "movntpd Mdq,Vpd");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2085,31 +2073,31 @@ FNIEMOP_DEF(iemOp_vmovntpd_Mpd_Vpd)
 FNIEMOP_STUB(iemOp_cvttps2pi_Ppi_Wps);
 /** Opcode 0x66 0x0f 0x2c - cvttpd2pi Ppi, Wpd */
 FNIEMOP_STUB(iemOp_cvttpd2pi_Ppi_Wpd);
-/** Opcode 0xf3 0x0f 0x2c - vcvttss2si Gy, Wss */
-FNIEMOP_STUB(iemOp_vcvttss2si_Gy_Wss);
-/** Opcode 0xf2 0x0f 0x2c - vcvttsd2si Gy, Wsd */
-FNIEMOP_STUB(iemOp_vcvttsd2si_Gy_Wsd);
+/** Opcode 0xf3 0x0f 0x2c - cvttss2si Gy, Wss */
+FNIEMOP_STUB(iemOp_cvttss2si_Gy_Wss);
+/** Opcode 0xf2 0x0f 0x2c - cvttsd2si Gy, Wsd */
+FNIEMOP_STUB(iemOp_cvttsd2si_Gy_Wsd);
 
 /** Opcode      0x0f 0x2d - cvtps2pi Ppi, Wps */
 FNIEMOP_STUB(iemOp_cvtps2pi_Ppi_Wps);
 /** Opcode 0x66 0x0f 0x2d - cvtpd2pi Qpi, Wpd */
 FNIEMOP_STUB(iemOp_cvtpd2pi_Qpi_Wpd);
-/** Opcode 0xf3 0x0f 0x2d - vcvtss2si Gy, Wss */
-FNIEMOP_STUB(iemOp_vcvtss2si_Gy_Wss);
-/** Opcode 0xf2 0x0f 0x2d - vcvtsd2si Gy, Wsd */
-FNIEMOP_STUB(iemOp_vcvtsd2si_Gy_Wsd);
+/** Opcode 0xf3 0x0f 0x2d - cvtss2si Gy, Wss */
+FNIEMOP_STUB(iemOp_cvtss2si_Gy_Wss);
+/** Opcode 0xf2 0x0f 0x2d - cvtsd2si Gy, Wsd */
+FNIEMOP_STUB(iemOp_cvtsd2si_Gy_Wsd);
 
-/** Opcode      0x0f 0x2e - vucomiss Vss, Wss */
-FNIEMOP_STUB(iemOp_vucomiss_Vss_Wss); // NEXT
-/** Opcode 0x66 0x0f 0x2e - vucomisd Vsd, Wsd */
-FNIEMOP_STUB(iemOp_vucomisd_Vsd_Wsd); // NEXT
+/** Opcode      0x0f 0x2e - ucomiss Vss, Wss */
+FNIEMOP_STUB(iemOp_ucomiss_Vss_Wss); // NEXT
+/** Opcode 0x66 0x0f 0x2e - ucomisd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_ucomisd_Vsd_Wsd); // NEXT
 /*  Opcode 0xf3 0x0f 0x2e - invalid */
 /*  Opcode 0xf2 0x0f 0x2e - invalid */
 
-/** Opcode      0x0f 0x2f - vcomiss Vss, Wss */
-FNIEMOP_STUB(iemOp_vcomiss_Vss_Wss);
-/** Opcode 0x66 0x0f 0x2f - vcomisd Vsd, Wsd */
-FNIEMOP_STUB(iemOp_vcomisd_Vsd_Wsd);
+/** Opcode      0x0f 0x2f - comiss Vss, Wss */
+FNIEMOP_STUB(iemOp_comiss_Vss_Wss);
+/** Opcode 0x66 0x0f 0x2f - comisd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_comisd_Vsd_Wsd);
 /*  Opcode 0xf3 0x0f 0x2f - invalid */
 /*  Opcode 0xf2 0x0f 0x2f - invalid */
 
@@ -2386,134 +2374,134 @@ FNIEMOP_DEF(iemOp_cmovnle_Gv_Ev)
 
 #undef CMOV_X
 
-/** Opcode      0x0f 0x50 - vmovmskps Gy, Ups */
-FNIEMOP_STUB(iemOp_vmovmskps_Gy_Ups);
-/** Opcode 0x66 0x0f 0x50 - vmovmskpd Gy,Upd */
-FNIEMOP_STUB(iemOp_vmovmskpd_Gy_Upd);
+/** Opcode      0x0f 0x50 - movmskps Gy, Ups */
+FNIEMOP_STUB(iemOp_movmskps_Gy_Ups);
+/** Opcode 0x66 0x0f 0x50 - movmskpd Gy, Upd */
+FNIEMOP_STUB(iemOp_movmskpd_Gy_Upd);
 /*  Opcode 0xf3 0x0f 0x50 - invalid */
 /*  Opcode 0xf2 0x0f 0x50 - invalid */
 
-/** Opcode      0x0f 0x51 - vsqrtps Vps, Wps */
-FNIEMOP_STUB(iemOp_vsqrtps_Vps_Wps);
-/** Opcode 0x66 0x0f 0x51 - vsqrtpd Vpd, Wpd */
-FNIEMOP_STUB(iemOp_vsqrtpd_Vpd_Wpd);
-/** Opcode 0xf3 0x0f 0x51 - vsqrtss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vsqrtss_Vss_Hss_Wss);
-/** Opcode 0xf2 0x0f 0x51 - vsqrtsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vsqrtsd_Vsd_Hsd_Wsd);
+/** Opcode      0x0f 0x51 - sqrtps Vps, Wps */
+FNIEMOP_STUB(iemOp_sqrtps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x51 - sqrtpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_sqrtpd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x51 - sqrtss Vss, Wss */
+FNIEMOP_STUB(iemOp_sqrtss_Vss_Wss);
+/** Opcode 0xf2 0x0f 0x51 - sqrtsd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_sqrtsd_Vsd_Wsd);
 
-/** Opcode      0x0f 0x52 - vrsqrtps Vps, Wps */
-FNIEMOP_STUB(iemOp_vrsqrtps_Vps_Wps);
+/** Opcode      0x0f 0x52 - rsqrtps Vps, Wps */
+FNIEMOP_STUB(iemOp_rsqrtps_Vps_Wps);
 /*  Opcode 0x66 0x0f 0x52 - invalid */
-/** Opcode 0xf3 0x0f 0x52 - vrsqrtss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vrsqrtss_Vss_Hss_Wss);
+/** Opcode 0xf3 0x0f 0x52 - rsqrtss Vss, Wss */
+FNIEMOP_STUB(iemOp_rsqrtss_Vss_Wss);
 /*  Opcode 0xf2 0x0f 0x52 - invalid */
 
-/** Opcode      0x0f 0x53 - vrcpps Vps, Wps */
-FNIEMOP_STUB(iemOp_vrcpps_Vps_Wps);
+/** Opcode      0x0f 0x53 - rcpps Vps, Wps */
+FNIEMOP_STUB(iemOp_rcpps_Vps_Wps);
 /*  Opcode 0x66 0x0f 0x53 - invalid */
-/** Opcode 0xf3 0x0f 0x53 - vrcpss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vrcpss_Vss_Hss_Wss);
+/** Opcode 0xf3 0x0f 0x53 - rcpss Vss, Wss */
+FNIEMOP_STUB(iemOp_rcpss_Vss_Wss);
 /*  Opcode 0xf2 0x0f 0x53 - invalid */
 
-/** Opcode      0x0f 0x54 - vandps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vandps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x54 - vandpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vandpd_Vpd_Hpd_Wpd);
+/** Opcode      0x0f 0x54 - andps Vps, Wps */
+FNIEMOP_STUB(iemOp_andps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x54 - andpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_andpd_Vpd_Wpd);
 /*  Opcode 0xf3 0x0f 0x54 - invalid */
 /*  Opcode 0xf2 0x0f 0x54 - invalid */
 
-/** Opcode      0x0f 0x55 - vandnps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vandnps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x55 - vandnpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vandnpd_Vpd_Hpd_Wpd);
+/** Opcode      0x0f 0x55 - andnps Vps, Wps */
+FNIEMOP_STUB(iemOp_andnps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x55 - andnpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_andnpd_Vpd_Wpd);
 /*  Opcode 0xf3 0x0f 0x55 - invalid */
 /*  Opcode 0xf2 0x0f 0x55 - invalid */
 
-/** Opcode      0x0f 0x56 - vorps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vorps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x56 - vorpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vorpd_Vpd_Hpd_Wpd);
+/** Opcode      0x0f 0x56 - orps Vps, Wps */
+FNIEMOP_STUB(iemOp_orps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x56 - orpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_orpd_Vpd_Wpd);
 /*  Opcode 0xf3 0x0f 0x56 - invalid */
 /*  Opcode 0xf2 0x0f 0x56 - invalid */
 
-/** Opcode      0x0f 0x57 - vxorps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vxorps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x57 - vxorpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vxorpd_Vpd_Hpd_Wpd);
+/** Opcode      0x0f 0x57 - xorps Vps, Wps */
+FNIEMOP_STUB(iemOp_xorps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x57 - xorpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_xorpd_Vpd_Wpd);
 /*  Opcode 0xf3 0x0f 0x57 - invalid */
 /*  Opcode 0xf2 0x0f 0x57 - invalid */
 
-/** Opcode      0x0f 0x58 - vaddps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vaddps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x58 - vaddpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vaddpd_Vpd_Hpd_Wpd);
-/** Opcode 0xf3 0x0f 0x58 - vaddss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vaddss_Vss_Hss_Wss);
-/** Opcode 0xf2 0x0f 0x58 - vaddsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vaddsd_Vsd_Hsd_Wsd);
+/** Opcode      0x0f 0x58 - addps Vps, Wps */
+FNIEMOP_STUB(iemOp_addps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x58 - addpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_addpd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x58 - addss Vss, Wss */
+FNIEMOP_STUB(iemOp_addss_Vss_Wss);
+/** Opcode 0xf2 0x0f 0x58 - addsd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_addsd_Vsd_Wsd);
 
-/** Opcode      0x0f 0x59 - vmulps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vmulps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x59 - vmulpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vmulpd_Vpd_Hpd_Wpd);
-/** Opcode 0xf3 0x0f 0x59 - vmulss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vmulss_Vss_Hss_Wss);
-/** Opcode 0xf2 0x0f 0x59 - vmulsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vmulsd_Vsd_Hsd_Wsd);
+/** Opcode      0x0f 0x59 - mulps Vps, Wps */
+FNIEMOP_STUB(iemOp_mulps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x59 - mulpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_mulpd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x59 - mulss Vss, Wss */
+FNIEMOP_STUB(iemOp_mulss_Vss_Wss);
+/** Opcode 0xf2 0x0f 0x59 - mulsd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_mulsd_Vsd_Wsd);
 
-/** Opcode      0x0f 0x5a - vcvtps2pd Vpd, Wps */
-FNIEMOP_STUB(iemOp_vcvtps2pd_Vpd_Wps);
-/** Opcode 0x66 0x0f 0x5a - vcvtpd2ps Vps, Wpd */
-FNIEMOP_STUB(iemOp_vcvtpd2ps_Vps_Wpd);
-/** Opcode 0xf3 0x0f 0x5a - vcvtss2sd Vsd, Hx, Wss */
-FNIEMOP_STUB(iemOp_vcvtss2sd_Vsd_Hx_Wss);
-/** Opcode 0xf2 0x0f 0x5a - vcvtsd2ss Vss, Hx, Wsd */
-FNIEMOP_STUB(iemOp_vcvtsd2ss_Vss_Hx_Wsd);
+/** Opcode      0x0f 0x5a - cvtps2pd Vpd, Wps */
+FNIEMOP_STUB(iemOp_cvtps2pd_Vpd_Wps);
+/** Opcode 0x66 0x0f 0x5a - cvtpd2ps Vps, Wpd */
+FNIEMOP_STUB(iemOp_cvtpd2ps_Vps_Wpd);
+/** Opcode 0xf3 0x0f 0x5a - cvtss2sd Vsd, Wss */
+FNIEMOP_STUB(iemOp_cvtss2sd_Vsd_Wss);
+/** Opcode 0xf2 0x0f 0x5a - cvtsd2ss Vss, Wsd */
+FNIEMOP_STUB(iemOp_cvtsd2ss_Vss_Wsd);
 
-/** Opcode      0x0f 0x5b - vcvtdq2ps Vps, Wdq */
-FNIEMOP_STUB(iemOp_vcvtdq2ps_Vps_Wdq);
-/** Opcode 0x66 0x0f 0x5b - vcvtps2dq Vdq, Wps */
-FNIEMOP_STUB(iemOp_vcvtps2dq_Vdq_Wps);
-/** Opcode 0xf3 0x0f 0x5b - vcvttps2dq Vdq, Wps */
-FNIEMOP_STUB(iemOp_vcvttps2dq_Vdq_Wps);
+/** Opcode      0x0f 0x5b - cvtdq2ps Vps, Wdq */
+FNIEMOP_STUB(iemOp_cvtdq2ps_Vps_Wdq);
+/** Opcode 0x66 0x0f 0x5b - cvtps2dq Vdq, Wps */
+FNIEMOP_STUB(iemOp_cvtps2dq_Vdq_Wps);
+/** Opcode 0xf3 0x0f 0x5b - cvttps2dq Vdq, Wps */
+FNIEMOP_STUB(iemOp_cvttps2dq_Vdq_Wps);
 /*  Opcode 0xf2 0x0f 0x5b - invalid */
 
-/** Opcode      0x0f 0x5c - vsubps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vsubps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x5c - vsubpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vsubpd_Vpd_Hpd_Wpd);
-/** Opcode 0xf3 0x0f 0x5c - vsubss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vsubss_Vss_Hss_Wss);
-/** Opcode 0xf2 0x0f 0x5c - vsubsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vsubsd_Vsd_Hsd_Wsd);
+/** Opcode      0x0f 0x5c - subps Vps, Wps */
+FNIEMOP_STUB(iemOp_subps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x5c - subpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_subpd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x5c - subss Vss, Wss */
+FNIEMOP_STUB(iemOp_subss_Vss_Wss);
+/** Opcode 0xf2 0x0f 0x5c - subsd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_subsd_Vsd_Wsd);
 
-/** Opcode      0x0f 0x5d - vminps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vminps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x5d - vminpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vminpd_Vpd_Hpd_Wpd);
-/** Opcode 0xf3 0x0f 0x5d - vminss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vminss_Vss_Hss_Wss);
-/** Opcode 0xf2 0x0f 0x5d - vminsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vminsd_Vsd_Hsd_Wsd);
+/** Opcode      0x0f 0x5d - minps Vps, Wps */
+FNIEMOP_STUB(iemOp_minps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x5d - minpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_minpd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x5d - minss Vss, Wss */
+FNIEMOP_STUB(iemOp_minss_Vss_Wss);
+/** Opcode 0xf2 0x0f 0x5d - minsd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_minsd_Vsd_Wsd);
 
-/** Opcode      0x0f 0x5e - vdivps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vdivps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x5e - vdivpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vdivpd_Vpd_Hpd_Wpd);
-/** Opcode 0xf3 0x0f 0x5e - vdivss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vdivss_Vss_Hss_Wss);
-/** Opcode 0xf2 0x0f 0x5e - vdivsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vdivsd_Vsd_Hsd_Wsd);
+/** Opcode      0x0f 0x5e - divps Vps, Wps */
+FNIEMOP_STUB(iemOp_divps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x5e - divpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_divpd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x5e - divss Vss, Wss */
+FNIEMOP_STUB(iemOp_divss_Vss_Wss);
+/** Opcode 0xf2 0x0f 0x5e - divsd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_divsd_Vsd_Wsd);
 
-/** Opcode      0x0f 0x5f - vmaxps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vmaxps_Vps_Hps_Wps);
-/** Opcode 0x66 0x0f 0x5f - vmaxpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vmaxpd_Vpd_Hpd_Wpd);
-/** Opcode 0xf3 0x0f 0x5f - vmaxss Vss, Hss, Wss */
-FNIEMOP_STUB(iemOp_vmaxss_Vss_Hss_Wss);
-/** Opcode 0xf2 0x0f 0x5f - vmaxsd Vsd, Hsd, Wsd */
-FNIEMOP_STUB(iemOp_vmaxsd_Vsd_Hsd_Wsd);
+/** Opcode      0x0f 0x5f - maxps Vps, Wps */
+FNIEMOP_STUB(iemOp_maxps_Vps_Wps);
+/** Opcode 0x66 0x0f 0x5f - maxpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_maxpd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x5f - maxss Vss, Wss */
+FNIEMOP_STUB(iemOp_maxss_Vss_Wss);
+/** Opcode 0xf2 0x0f 0x5f - maxsd Vsd, Wsd */
+FNIEMOP_STUB(iemOp_maxsd_Vsd_Wsd);
 
 /**
  * Common worker for MMX instructions on the forms:
@@ -2640,11 +2628,11 @@ FNIEMOP_DEF(iemOp_punpcklbw_Pq_Qd)
     return FNIEMOP_CALL_1(iemOpCommonMmx_LowLow_To_Full, &g_iemAImpl_punpcklbw);
 }
 
-/** Opcode 0x66 0x0f 0x60 - vpunpcklbw Vx, Hx, W */
-FNIEMOP_DEF(iemOp_vpunpcklbw_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x60 - punpcklbw Vx, W */
+FNIEMOP_DEF(iemOp_punpcklbw_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpunpcklbw, "vpunpcklbw Vx, Hx, Wx");
-    return FNIEMOP_CALL_1(iemOpCommonMmx_LowLow_To_Full, &g_iemAImpl_punpcklbw);
+    IEMOP_MNEMONIC(vpunpcklbw_Vx_Wx, "vpunpcklbw Vx, Wx");
+    return FNIEMOP_CALL_1(iemOpCommonSse_LowLow_To_Full, &g_iemAImpl_punpcklbw);
 }
 
 /*  Opcode 0xf3 0x0f 0x60 - invalid */
@@ -2657,10 +2645,10 @@ FNIEMOP_DEF(iemOp_punpcklwd_Pq_Qd)
     return FNIEMOP_CALL_1(iemOpCommonMmx_LowLow_To_Full, &g_iemAImpl_punpcklwd);
 }
 
-/** Opcode 0x66 0x0f 0x61 - vpunpcklwd Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpunpcklwd_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x61 - punpcklwd Vx, Wx */
+FNIEMOP_DEF(iemOp_punpcklwd_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpunpcklwd, "vpunpcklwd Vx, Hx, Wx");
+    IEMOP_MNEMONIC(vpunpcklwd_Vx_Wx, "punpcklwd Vx, Wx");
     return FNIEMOP_CALL_1(iemOpCommonSse_LowLow_To_Full, &g_iemAImpl_punpcklwd);
 }
 
@@ -2674,10 +2662,10 @@ FNIEMOP_DEF(iemOp_punpckldq_Pq_Qd)
     return FNIEMOP_CALL_1(iemOpCommonMmx_LowLow_To_Full, &g_iemAImpl_punpckldq);
 }
 
-/** Opcode 0x66 0x0f 0x62 - vpunpckldq Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpunpckldq_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x62 - punpckldq Vx, Wx */
+FNIEMOP_DEF(iemOp_punpckldq_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpunpckldq, "vpunpckldq Vx, Hx, Wx");
+    IEMOP_MNEMONIC(punpckldq_Vx_Wx, "punpckldq Vx, Wx");
     return FNIEMOP_CALL_1(iemOpCommonSse_LowLow_To_Full, &g_iemAImpl_punpckldq);
 }
 
@@ -2687,32 +2675,32 @@ FNIEMOP_DEF(iemOp_vpunpckldq_Vx_Hx_Wx)
 
 /** Opcode      0x0f 0x63 - packsswb Pq, Qq */
 FNIEMOP_STUB(iemOp_packsswb_Pq_Qq);
-/** Opcode 0x66 0x0f 0x63 - vpacksswb Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpacksswb_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0x63 - packsswb Vx, Wx */
+FNIEMOP_STUB(iemOp_packsswb_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x63 - invalid */
 
 /** Opcode      0x0f 0x64 - pcmpgtb Pq, Qq */
 FNIEMOP_STUB(iemOp_pcmpgtb_Pq_Qq);
-/** Opcode 0x66 0x0f 0x64 - vpcmpgtb Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpcmpgtb_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0x64 - pcmpgtb Vx, Wx */
+FNIEMOP_STUB(iemOp_pcmpgtb_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x64 - invalid */
 
 /** Opcode      0x0f 0x65 - pcmpgtw Pq, Qq */
 FNIEMOP_STUB(iemOp_pcmpgtw_Pq_Qq);
-/** Opcode 0x66 0x0f 0x65 - vpcmpgtw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpcmpgtw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0x65 - pcmpgtw Vx, Wx */
+FNIEMOP_STUB(iemOp_pcmpgtw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x65 - invalid */
 
 /** Opcode      0x0f 0x66 - pcmpgtd Pq, Qq */
 FNIEMOP_STUB(iemOp_pcmpgtd_Pq_Qq);
-/** Opcode 0x66 0x0f 0x66 - vpcmpgtd Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpcmpgtd_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0x66 - pcmpgtd Vx, Wx */
+FNIEMOP_STUB(iemOp_pcmpgtd_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x66 - invalid */
 
 /** Opcode      0x0f 0x67 - packuswb Pq, Qq */
 FNIEMOP_STUB(iemOp_packuswb_Pq_Qq);
-/** Opcode 0x66 0x0f 0x67 - vpackuswb Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpackuswb_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0x67 - packuswb Vx, W */
+FNIEMOP_STUB(iemOp_packuswb_Vx_W);
 /*  Opcode 0xf3 0x0f 0x67 - invalid */
 
 
@@ -2840,10 +2828,10 @@ FNIEMOP_DEF(iemOp_punpckhbw_Pq_Qd)
     return FNIEMOP_CALL_1(iemOpCommonMmx_HighHigh_To_Full, &g_iemAImpl_punpckhbw);
 }
 
-/** Opcode 0x66 0x0f 0x68 - vpunpckhbw Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpunpckhbw_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x68 - punpckhbw Vx, Wx */
+FNIEMOP_DEF(iemOp_punpckhbw_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpunpckhbw, "vpunpckhbw Vx, Hx, Wx");
+    IEMOP_MNEMONIC(vpunpckhbw_Vx_Wx, "vpunpckhbw Vx, Wx");
     return FNIEMOP_CALL_1(iemOpCommonSse_HighHigh_To_Full, &g_iemAImpl_punpckhbw);
 }
 /*  Opcode 0xf3 0x0f 0x68 - invalid */
@@ -2856,10 +2844,10 @@ FNIEMOP_DEF(iemOp_punpckhwd_Pq_Qd)
     return FNIEMOP_CALL_1(iemOpCommonMmx_HighHigh_To_Full, &g_iemAImpl_punpckhwd);
 }
 
-/** Opcode 0x66 0x0f 0x69 - vpunpckhwd Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpunpckhwd_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x69 - punpckhwd Vx, Hx, Wx */
+FNIEMOP_DEF(iemOp_punpckhwd_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpunpckhwd, "vpunpckhwd Vx, Hx, Wx");
+    IEMOP_MNEMONIC(punpckhwd_Vx_Wx, "punpckhwd Vx, Wx");
     return FNIEMOP_CALL_1(iemOpCommonSse_HighHigh_To_Full, &g_iemAImpl_punpckhwd);
 
 }
@@ -2873,10 +2861,10 @@ FNIEMOP_DEF(iemOp_punpckhdq_Pq_Qd)
     return FNIEMOP_CALL_1(iemOpCommonMmx_HighHigh_To_Full, &g_iemAImpl_punpckhdq);
 }
 
-/** Opcode 0x66 0x0f 0x6a - vpunpckhdq Vx, Hx, W */
-FNIEMOP_DEF(iemOp_vpunpckhdq_Vx_Hx_W)
+/** Opcode 0x66 0x0f 0x6a - punpckhdq Vx, W */
+FNIEMOP_DEF(iemOp_punpckhdq_Vx_W)
 {
-    IEMOP_MNEMONIC(vpunpckhdq, "vpunpckhdq Vx, Hx, W");
+    IEMOP_MNEMONIC(punpckhdq_Vx_W, "punpckhdq Vx, W");
     return FNIEMOP_CALL_1(iemOpCommonSse_HighHigh_To_Full, &g_iemAImpl_punpckhdq);
 }
 /*  Opcode 0xf3 0x0f 0x6a - invalid */
@@ -2884,17 +2872,17 @@ FNIEMOP_DEF(iemOp_vpunpckhdq_Vx_Hx_W)
 
 /** Opcode      0x0f 0x6b - packssdw Pq, Qd */
 FNIEMOP_STUB(iemOp_packssdw_Pq_Qd);
-/** Opcode 0x66 0x0f 0x6b - vpackssdw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpackssdw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0x6b - packssdw Vx, Wx */
+FNIEMOP_STUB(iemOp_packssdw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x6b - invalid */
 
 
 /*  Opcode      0x0f 0x6c - invalid */
 
-/** Opcode 0x66 0x0f 0x6c - vpunpcklqdq Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpunpcklqdq_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x6c - punpcklqdq Vx, Wx */
+FNIEMOP_DEF(iemOp_punpcklqdq_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpunpcklqdq, "vpunpcklqdq Vx, Hx, Wx");
+    IEMOP_MNEMONIC(punpcklqdq, "punpcklqdq Vx, Wx");
     return FNIEMOP_CALL_1(iemOpCommonSse_LowLow_To_Full, &g_iemAImpl_punpcklqdq);
 }
 
@@ -2904,10 +2892,10 @@ FNIEMOP_DEF(iemOp_vpunpcklqdq_Vx_Hx_Wx)
 
 /*  Opcode      0x0f 0x6d - invalid */
 
-/** Opcode 0x66 0x0f 0x6d - vpunpckhqdq Vx, Hx, W */
-FNIEMOP_DEF(iemOp_vpunpckhqdq_Vx_Hx_W)
+/** Opcode 0x66 0x0f 0x6d - punpckhqdq Vx, W */
+FNIEMOP_DEF(iemOp_punpckhqdq_Vx_W)
 {
-    IEMOP_MNEMONIC(punpckhqdq, "punpckhqdq");
+    IEMOP_MNEMONIC(punpckhqdq_Vx_W, "punpckhqdq Vx,W");
     return FNIEMOP_CALL_1(iemOpCommonSse_HighHigh_To_Full, &g_iemAImpl_punpckhqdq);
 }
 
@@ -2965,14 +2953,14 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x6e - vmovd/q Vy, Ey */
-FNIEMOP_DEF(iemOp_vmovd_q_Vy_Ey)
+/** Opcode 0x66 0x0f 0x6e - movd/q Vy, Ey */
+FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
-        IEMOP_MNEMONIC(vmovdq_Wq_Eq, "vmovq Wq,Eq");
+        IEMOP_MNEMONIC(movdq_Wq_Eq, "movq Wq,Eq");
     else
-        IEMOP_MNEMONIC(vmovdq_Wd_Ed, "vmovd Wd,Ed");
+        IEMOP_MNEMONIC(movdq_Wd_Ed, "movd Wd,Ed");
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         /* XMM, greg*/
@@ -3069,8 +3057,8 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x6f - vmovdqa Vx, Wx */
-FNIEMOP_DEF(iemOp_vmovdqa_Vx_Wx)
+/** Opcode 0x66 0x0f 0x6f - movdqa Vx, Wx */
+FNIEMOP_DEF(iemOp_movdqa_Vx_Wx)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     IEMOP_MNEMONIC(movdqa_Vdq_Wdq, "movdqa Vdq,Wdq");
@@ -3110,8 +3098,8 @@ FNIEMOP_DEF(iemOp_vmovdqa_Vx_Wx)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0xf3 0x0f 0x6f - vmovdqu Vx, Wx */
-FNIEMOP_DEF(iemOp_vmovdqu_Vx_Wx)
+/** Opcode 0xf3 0x0f 0x6f - movdqu Vx, Wx */
+FNIEMOP_DEF(iemOp_movdqu_Vx_Wx)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     IEMOP_MNEMONIC(movdqu_Vdq_Wdq, "movdqu Vdq,Wdq");
@@ -3205,10 +3193,10 @@ FNIEMOP_DEF(iemOp_pshufw_Pq_Qq_Ib)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x70 - vpshufd Vx, Wx, Ib */
-FNIEMOP_DEF(iemOp_vpshufd_Vx_Wx_Ib)
+/** Opcode 0x66 0x0f 0x70 - pshufd Vx, Wx, Ib */
+FNIEMOP_DEF(iemOp_pshufd_Vx_Wx_Ib)
 {
-    IEMOP_MNEMONIC(vpshufd_Vx_Wx_Ib, "vpshufd Vx,Wx,Ib");
+    IEMOP_MNEMONIC(pshufd_Vx_Wx_Ib, "pshufd Vx,Wx,Ib");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -3258,10 +3246,10 @@ FNIEMOP_DEF(iemOp_vpshufd_Vx_Wx_Ib)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0xf3 0x0f 0x70 - vpshufhw Vx, Wx, Ib */
-FNIEMOP_DEF(iemOp_vpshufhw_Vx_Wx_Ib)
+/** Opcode 0xf3 0x0f 0x70 - pshufhw Vx, Wx, Ib */
+FNIEMOP_DEF(iemOp_pshufhw_Vx_Wx_Ib)
 {
-    IEMOP_MNEMONIC(vpshufhw_Vx_Wx_Ib, "vpshufhw Vx,Wx,Ib");
+    IEMOP_MNEMONIC(pshufhw_Vx_Wx_Ib, "pshufhw Vx,Wx,Ib");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -3311,10 +3299,10 @@ FNIEMOP_DEF(iemOp_vpshufhw_Vx_Wx_Ib)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0xf2 0x0f 0x70 - vpshuflw Vx, Wx, Ib */
-FNIEMOP_DEF(iemOp_vpshuflw_Vx_Wx_Ib)
+/** Opcode 0xf2 0x0f 0x70 - pshuflw Vx, Wx, Ib */
+FNIEMOP_DEF(iemOp_pshuflw_Vx_Wx_Ib)
 {
-    IEMOP_MNEMONIC(vpshuflw_Vx_Wx_Ib, "vpshuflw Vx,Wx,Ib");
+    IEMOP_MNEMONIC(pshuflw_Vx_Wx_Ib, "pshuflw Vx,Wx,Ib");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -3366,22 +3354,22 @@ FNIEMOP_DEF(iemOp_vpshuflw_Vx_Wx_Ib)
 
 
 /** Opcode 0x0f 0x71 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp12_psrlw_Nq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp12_psrlw_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x71 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp12_vpsrlw_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp12_psrlw_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x0f 0x71 11/4. */
-FNIEMOP_STUB_1(iemOp_Grp12_psraw_Nq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp12_psraw_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x71 11/4. */
-FNIEMOP_STUB_1(iemOp_Grp12_vpsraw_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp12_psraw_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x0f 0x71 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp12_psllw_Nq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp12_psllw_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x71 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp12_vpsllw_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp12_psllw_Ux_Ib, uint8_t, bRm);
 
 
 /**
@@ -3391,11 +3379,11 @@ IEM_STATIC const PFNIEMOPRM g_apfnGroup12RegReg[] =
 {
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /2 */ iemOp_Grp12_psrlw_Nq_Ib,   iemOp_Grp12_vpsrlw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /2 */ iemOp_Grp12_psrlw_Nq_Ib,   iemOp_Grp12_psrlw_Ux_Ib,    iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /3 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /4 */ iemOp_Grp12_psraw_Nq_Ib,   iemOp_Grp12_vpsraw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /4 */ iemOp_Grp12_psraw_Nq_Ib,   iemOp_Grp12_psraw_Ux_Ib,    iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /5 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /6 */ iemOp_Grp12_psllw_Nq_Ib,   iemOp_Grp12_vpsllw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /6 */ iemOp_Grp12_psllw_Nq_Ib,   iemOp_Grp12_psllw_Ux_Ib,    iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /7 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8)
 };
 AssertCompile(RT_ELEMENTS(g_apfnGroup12RegReg) == 8*4);
@@ -3414,22 +3402,22 @@ FNIEMOP_DEF(iemOp_Grp12)
 
 
 /** Opcode 0x0f 0x72 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp13_psrld_Nq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_psrld_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x72 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp13_vpsrld_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_psrld_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x0f 0x72 11/4. */
-FNIEMOP_STUB_1(iemOp_Grp13_psrad_Nq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_psrad_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x72 11/4. */
-FNIEMOP_STUB_1(iemOp_Grp13_vpsrad_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_psrad_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x0f 0x72 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp13_pslld_Nq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_pslld_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x72 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp13_vpslld_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_pslld_Ux_Ib, uint8_t, bRm);
 
 
 /**
@@ -3439,11 +3427,11 @@ IEM_STATIC const PFNIEMOPRM g_apfnGroup13RegReg[] =
 {
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /2 */ iemOp_Grp13_psrld_Nq_Ib,   iemOp_Grp13_vpsrld_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /2 */ iemOp_Grp13_psrld_Nq_Ib,   iemOp_Grp13_psrld_Ux_Ib,    iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /3 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /4 */ iemOp_Grp13_psrad_Nq_Ib,   iemOp_Grp13_vpsrad_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /4 */ iemOp_Grp13_psrad_Nq_Ib,   iemOp_Grp13_psrad_Ux_Ib,    iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /5 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /6 */ iemOp_Grp13_pslld_Nq_Ib,   iemOp_Grp13_vpslld_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /6 */ iemOp_Grp13_pslld_Nq_Ib,   iemOp_Grp13_pslld_Ux_Ib,    iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /7 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8)
 };
 AssertCompile(RT_ELEMENTS(g_apfnGroup13RegReg) == 8*4);
@@ -3464,19 +3452,19 @@ FNIEMOP_DEF(iemOp_Grp13)
 FNIEMOP_STUB_1(iemOp_Grp14_psrlq_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp14_vpsrlq_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_psrlq_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/3. */
-FNIEMOP_STUB_1(iemOp_Grp14_vpsrldq_Hx_Ux_Ib, uint8_t, bRm); //NEXT
+FNIEMOP_STUB_1(iemOp_Grp14_psrldq_Ux_Ib, uint8_t, bRm); //NEXT
 
 /** Opcode 0x0f 0x73 11/6. */
 FNIEMOP_STUB_1(iemOp_Grp14_psllq_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp14_vpsllq_Hx_Ux_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_psllq_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/7. */
-FNIEMOP_STUB_1(iemOp_Grp14_vpslldq_Hx_Ux_Ib, uint8_t, bRm); //NEXT
+FNIEMOP_STUB_1(iemOp_Grp14_pslldq_Ux_Ib, uint8_t, bRm); //NEXT
 
 /**
  * Group 14 jump table for register variant.
@@ -3485,12 +3473,12 @@ IEM_STATIC const PFNIEMOPRM g_apfnGroup14RegReg[] =
 {
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /2 */ iemOp_Grp14_psrlq_Nq_Ib,     iemOp_Grp14_vpsrlq_Hx_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
-    /* /3 */ iemOp_InvalidWithRMNeedImm8, iemOp_Grp14_vpsrldq_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /2 */ iemOp_Grp14_psrlq_Nq_Ib,     iemOp_Grp14_psrlq_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /3 */ iemOp_InvalidWithRMNeedImm8, iemOp_Grp14_psrldq_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /4 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /5 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
-    /* /6 */ iemOp_Grp14_psllq_Nq_Ib,     iemOp_Grp14_vpsllq_Hx_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
-    /* /7 */ iemOp_InvalidWithRMNeedImm8, iemOp_Grp14_vpslldq_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /6 */ iemOp_Grp14_psllq_Nq_Ib,     iemOp_Grp14_psllq_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /7 */ iemOp_InvalidWithRMNeedImm8, iemOp_Grp14_pslldq_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
 };
 AssertCompile(RT_ELEMENTS(g_apfnGroup14RegReg) == 8*4);
 
@@ -3621,10 +3609,10 @@ FNIEMOP_DEF(iemOp_pcmpeqb_Pq_Qq)
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
 }
 
-/** Opcode 0x66 0x0f 0x74 - vpcmpeqb Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpcmpeqb_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x74 - pcmpeqb Vx, Wx */
+FNIEMOP_DEF(iemOp_pcmpeqb_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpcmpeqb, "vpcmpeqb");
+    IEMOP_MNEMONIC(vpcmpeqb_Vx_Wx, "pcmpeqb");
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
 }
 
@@ -3639,10 +3627,10 @@ FNIEMOP_DEF(iemOp_pcmpeqw_Pq_Qq)
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
 }
 
-/** Opcode 0x66 0x0f 0x75 - vpcmpeqw Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpcmpeqw_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x75 - pcmpeqw Vx, Wx */
+FNIEMOP_DEF(iemOp_pcmpeqw_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpcmpeqw, "vpcmpeqw");
+    IEMOP_MNEMONIC(pcmpeqw_Vx_Wx, "pcmpeqw");
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
 }
 
@@ -3657,10 +3645,10 @@ FNIEMOP_DEF(iemOp_pcmpeqd_Pq_Qq)
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
 }
 
-/** Opcode 0x66 0x0f 0x76 - vpcmpeqd Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpcmpeqd_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0x76 - pcmpeqd Vx, Wx */
+FNIEMOP_DEF(iemOp_pcmpeqd_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpcmpeqd, "vpcmpeqd");
+    IEMOP_MNEMONIC(pcmpeqd_Vx_Wx, "vpcmpeqd");
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
 }
 
@@ -3668,8 +3656,8 @@ FNIEMOP_DEF(iemOp_vpcmpeqd_Vx_Hx_Wx)
 /*  Opcode 0xf2 0x0f 0x76 - invalid */
 
 
-/** Opcode      0x0f 0x77 - emms vzeroupperv vzeroallv */
-FNIEMOP_STUB(iemOp_emms__vzeroupperv__vzeroallv);
+/** Opcode      0x0f 0x77 - emms (vex has vzeroall and vzeroupper here) */
+FNIEMOP_STUB(iemOp_emms);
 /*  Opcode 0x66 0x0f 0x77 - invalid */
 /*  Opcode 0xf3 0x0f 0x77 - invalid */
 /*  Opcode 0xf2 0x0f 0x77 - invalid */
@@ -3698,18 +3686,18 @@ FNIEMOP_STUB(iemOp_vmwrite_Gy_Ey);
 /*  Opcode 0xf2 0x0f 0x7b - invalid */
 
 /*  Opcode      0x0f 0x7c - invalid */
-/** Opcode 0x66 0x0f 0x7c - vhaddpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vhaddpd_Vpd_Hpd_Wpd);
+/** Opcode 0x66 0x0f 0x7c - haddpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_haddpd_Vpd_Wpd);
 /*  Opcode 0xf3 0x0f 0x7c - invalid */
-/** Opcode 0xf2 0x0f 0x7c - vhaddps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vhaddps_Vps_Hps_Wps);
+/** Opcode 0xf2 0x0f 0x7c - haddps Vps, Wps */
+FNIEMOP_STUB(iemOp_haddps_Vps_Wps);
 
 /*  Opcode      0x0f 0x7d - invalid */
-/** Opcode 0x66 0x0f 0x7d - vhsubpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vhsubpd_Vpd_Hpd_Wpd);
+/** Opcode 0x66 0x0f 0x7d - hsubpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_hsubpd_Vpd_Wpd);
 /*  Opcode 0xf3 0x0f 0x7d - invalid */
-/** Opcode 0xf2 0x0f 0x7d - vhsubps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vhsubps_Vps_Hps_Wps);
+/** Opcode 0xf2 0x0f 0x7d - hsubps Vps, Wps */
+FNIEMOP_STUB(iemOp_hsubps_Vps_Wps);
 
 
 /** Opcode      0x0f 0x7e - movd_q Ey, Pd */
@@ -3769,14 +3757,14 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Pd)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x7e - vmovd_q Ey, Vy */
-FNIEMOP_DEF(iemOp_vmovd_q_Ey_Vy)
+/** Opcode 0x66 0x0f 0x7e - movd_q Ey, Vy */
+FNIEMOP_DEF(iemOp_movd_q_Ey_Vy)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
-        IEMOP_MNEMONIC(vmovq_Eq_Wq, "vmovq Eq,Wq");
+        IEMOP_MNEMONIC(movq_Eq_Wq, "movq Eq,Wq");
     else
-        IEMOP_MNEMONIC(vmovd_Ed_Wd, "vmovd Ed,Wd");
+        IEMOP_MNEMONIC(movd_Ed_Wd, "movd Ed,Wd");
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         /* greg, XMM */
@@ -3826,8 +3814,8 @@ FNIEMOP_DEF(iemOp_vmovd_q_Ey_Vy)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0xf3 0x0f 0x7e - vmovq Vq, Wq */
-FNIEMOP_STUB(iemOp_vmovq_Vq_Wq);
+/** Opcode 0xf3 0x0f 0x7e - movq Vq, Wq */
+FNIEMOP_STUB(iemOp_movq_Vq_Wq);
 /*  Opcode 0xf2 0x0f 0x7e - invalid */
 
 
@@ -3876,10 +3864,10 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x7f - vmovdqa Wx,Vx */
-FNIEMOP_DEF(iemOp_vmovdqa_Wx_Vx)
+/** Opcode 0x66 0x0f 0x7f - movdqa Wx,Vx */
+FNIEMOP_DEF(iemOp_movdqa_Wx_Vx)
 {
-    IEMOP_MNEMONIC(vmovdqa_Wdq_Vdq, "vmovdqa Wx,Vx");
+    IEMOP_MNEMONIC(movdqa_Wdq_Vdq, "movdqa Wx,Vx");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -3918,11 +3906,11 @@ FNIEMOP_DEF(iemOp_vmovdqa_Wx_Vx)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0xf3 0x0f 0x7f - vmovdqu Wx,Vx */
-FNIEMOP_DEF(iemOp_vmovdqu_Wx_Vx)
+/** Opcode 0xf3 0x0f 0x7f - movdqu Wx,Vx */
+FNIEMOP_DEF(iemOp_movdqu_Wx_Vx)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_MNEMONIC(vmovdqu_Wdq_Vdq, "vmovdqu Wx,Vx");
+    IEMOP_MNEMONIC(movdqu_Wdq_Vdq, "movdqu Wx,Vx");
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         /*
@@ -5959,64 +5947,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
 
 
 /**
- * @opmaps      vexgrp15
- * @opcode      !11/3
- * @oppfx       none
- * @opcpuid     avx
- * @opgroup     og_avx_mxcsrsm
- * @opxcpttype  5
- * @optest      mxcsr=0      -> op1=0
- * @optest      mxcsr=0x2083 -> op1=0x2083
- * @optest      mxcsr=0x2084 cr0|=ts -> value.xcpt=0x7
- * @optest      !amd / mxcsr=0x2085 cr0|=em -> op1=0x2085
- * @optest       amd / mxcsr=0x2085 cr0|=em -> value.xcpt=0x6
- * @optest      mxcsr=0x2086 cr0|=mp -> op1=0x2086
- * @optest      mxcsr=0x2087 cr4&~=osfxsr -> op1=0x2087
- * @optest      mxcsr=0x208f cr4&~=osxsave -> value.xcpt=0x6
- * @optest      mxcsr=0x2087 cr4&~=osfxsr,osxsave -> value.xcpt=0x6
- * @optest      !amd / mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x7
- * @optest      amd  / mxcsr=0x2088 cr0|=ts,em -> value.xcpt=0x6
- * @optest      !amd / mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> op1=0x2089
- * @optest      amd  / mxcsr=0x2089 cr0|=em cr4&~=osfxsr -> value.xcpt=0x6
- * @optest      !amd / mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x7
- * @optest      amd  / mxcsr=0x208a cr0|=ts,em cr4&~=osfxsr -> value.xcpt=0x6
- * @optest      !amd / mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x7
- * @optest      amd  / mxcsr=0x208b cr0|=ts,em,mp cr4&~=osfxsr -> value.xcpt=0x6
- * @optest      !amd / mxcsr=0x208c xcr0&~=all_avx -> value.xcpt=0x6
- * @optest      amd  / mxcsr=0x208c xcr0&~=all_avx -> op1=0x208c
- * @optest      !amd / mxcsr=0x208d xcr0&~=all_avx_sse -> value.xcpt=0x6
- * @optest      amd  / mxcsr=0x208d xcr0&~=all_avx_sse -> op1=0x208d
- * @optest      !amd / mxcsr=0x208e xcr0&~=all_avx cr0|=ts -> value.xcpt=0x6
- * @optest      amd  / mxcsr=0x208e xcr0&~=all_avx cr0|=ts -> value.xcpt=0x7
- * @optest      mxcsr=0x2082 cr0|=ts cr4&~=osxsave -> value.xcpt=0x6
- * @optest      mxcsr=0x2081 xcr0&~=all_avx cr0|=ts cr4&~=osxsave
- *              -> value.xcpt=0x6
- * @remarks     AMD Jaguar CPU (f0x16,m0,s1) \#UD when CR0.EM is set.  It also
- *              doesn't seem to check XCR0[2:1] != 11b.  This does not match the
- *              APMv4 rev 3.17 page 509.
- * @todo        Test this instruction on AMD Ryzen.
- */
-FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
-{
-    IEMOP_MNEMONIC1(VEX_M_MEM, VSTMXCSR, vstmxcsr, MdWO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
-    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
-        return IEMOP_RAISE_INVALID_OPCODE();
-
-    IEM_MC_BEGIN(2, 0);
-    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
-    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
-    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-    IEMOP_HLP_DONE_VEX_DECODING_L_ZERO_NO_VVV();
-    IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-    IEM_MC_CALL_CIMPL_2(iemCImpl_vstmxcsr, iEffSeg, GCPtrEff);
-    IEM_MC_END();
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @opmaps      vexgrp15
+ * @opmaps      grp15
  * @opcode      !11/4
  * @oppfx       none
  * @opcpuid     xsave
@@ -6044,7 +5975,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_xsave,    uint8_t, bRm)
 
 
 /**
- * @opmaps      vexgrp15
+ * @opmaps      grp15
  * @opcode      !11/5
  * @oppfx       none
  * @opcpuid     xsave
@@ -6243,56 +6174,6 @@ FNIEMOP_DEF(iemOp_Grp15)
     /* memory, register */
     return FNIEMOP_CALL_1(g_apfnGroup15MemReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
                                               + pVCpu->iem.s.idxPrefix], bRm);
-}
-
-
-/**
- * Vex group 15 jump table for register variant.
- * @todo work in progress
- */
-IEM_STATIC const PFNIEMOPRM g_apfnVexGroup15RegReg[] =
-{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
-    /* /0 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_rdfsbase,           iemOp_InvalidWithRM,
-    /* /1 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_rdgsbase,           iemOp_InvalidWithRM,
-    /* /2 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_wrfsbase,           iemOp_InvalidWithRM,
-    /* /3 */ iemOp_InvalidWithRM,           iemOp_InvalidWithRM,            iemOp_Grp15_wrgsbase,           iemOp_InvalidWithRM,
-    /* /4 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /5 */ iemOp_Grp15_lfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /6 */ iemOp_Grp15_mfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /7 */ iemOp_Grp15_sfence,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-};
-AssertCompile(RT_ELEMENTS(g_apfnVexGroup15RegReg) == 8*4);
-
-
-/**
- * Vex group 15 jump table for memory variant.
- * @todo work in progress
- */
-IEM_STATIC const PFNIEMOPRM g_apfnVexGroup15MemReg[] =
-{   /* pfx:  none,                          066h,                           0f3h,                           0f2h */
-    /* /0 */ iemOp_Grp15_fxsave,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /1 */ iemOp_Grp15_fxrstor,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /2 */ iemOp_Grp15_ldmxcsr,           iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /3 */ iemOp_VGrp15_vstmxcsr,         iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /4 */ iemOp_Grp15_xsave,             iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /5 */ iemOp_Grp15_xrstor,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /6 */ iemOp_Grp15_xsaveopt,          iemOp_InvalidWithRM,            iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-    /* /7 */ iemOp_Grp15_clflush,           iemOp_Grp15_clflushopt,         iemOp_InvalidWithRM,            iemOp_InvalidWithRM,
-};
-AssertCompile(RT_ELEMENTS(g_apfnVexGroup15MemReg) == 8*4);
-
-
-/** Opcode vex. 0xae. */
-FNIEMOP_DEF(iemOp_VGrp15)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-        /* register, register */
-        return FNIEMOP_CALL_1(g_apfnVexGroup15RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
-                                                     + pVCpu->iem.s.idxPrefix], bRm);
-    /* memory, register */
-    return FNIEMOP_CALL_1(g_apfnVexGroup15MemReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
-                                                 + pVCpu->iem.s.idxPrefix], bRm);
 }
 
 
@@ -7445,14 +7326,14 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
 }
 
 
-/** Opcode      0x0f 0xc2 - vcmpps Vps,Hps,Wps,Ib */
-FNIEMOP_STUB(iemOp_vcmpps_Vps_Hps_Wps_Ib);
-/** Opcode 0x66 0x0f 0xc2 - vcmppd Vpd,Hpd,Wpd,Ib */
-FNIEMOP_STUB(iemOp_vcmppd_Vpd_Hpd_Wpd_Ib);
-/** Opcode 0xf3 0x0f 0xc2 - vcmpss Vss,Hss,Wss,Ib */
-FNIEMOP_STUB(iemOp_vcmpss_Vss_Hss_Wss_Ib);
-/** Opcode 0xf2 0x0f 0xc2 - vcmpsd Vsd,Hsd,Wsd,Ib */
-FNIEMOP_STUB(iemOp_vcmpsd_Vsd_Hsd_Wsd_Ib);
+/** Opcode      0x0f 0xc2 - cmpps Vps,Wps,Ib */
+FNIEMOP_STUB(iemOp_cmpps_Vps_Wps_Ib);
+/** Opcode 0x66 0x0f 0xc2 - cmppd Vpd,Wpd,Ib */
+FNIEMOP_STUB(iemOp_cmppd_Vpd_Wpd_Ib);
+/** Opcode 0xf3 0x0f 0xc2 - cmpss Vss,Wss,Ib */
+FNIEMOP_STUB(iemOp_cmpss_Vss_Wss_Ib);
+/** Opcode 0xf2 0x0f 0xc2 - cmpsd Vsd,Wsd,Ib */
+FNIEMOP_STUB(iemOp_cmpsd_Vsd_Wsd_Ib);
 
 
 /** Opcode 0x0f 0xc3. */
@@ -7512,24 +7393,24 @@ FNIEMOP_DEF(iemOp_movnti_My_Gy)
 /*  Opcode 0xf3 0x0f 0xc3 - invalid */
 /*  Opcode 0xf2 0x0f 0xc3 - invalid */
 
-/** Opcode      0x0f 0xc4 - pinsrw Pq,Ry/Mw,Ib */
+/** Opcode      0x0f 0xc4 - pinsrw Pq, Ry/Mw,Ib */
 FNIEMOP_STUB(iemOp_pinsrw_Pq_RyMw_Ib);
-/** Opcode 0x66 0x0f 0xc4 - vpinsrw Vdq,Hdq,Ry/Mw,Ib */
-FNIEMOP_STUB(iemOp_vpinsrw_Vdq_Hdq_RyMw_Ib);
+/** Opcode 0x66 0x0f 0xc4 - pinsrw Vdq, Ry/Mw,Ib */
+FNIEMOP_STUB(iemOp_pinsrw_Vdq_RyMw_Ib);
 /*  Opcode 0xf3 0x0f 0xc4 - invalid */
 /*  Opcode 0xf2 0x0f 0xc4 - invalid */
 
 /** Opcode      0x0f 0xc5 - pextrw Gd, Nq, Ib */
 FNIEMOP_STUB(iemOp_pextrw_Gd_Nq_Ib);
-/** Opcode 0x66 0x0f 0xc5 - vpextrw Gd, Udq, Ib */
-FNIEMOP_STUB(iemOp_vpextrw_Gd_Udq_Ib);
+/** Opcode 0x66 0x0f 0xc5 - pextrw Gd, Udq, Ib */
+FNIEMOP_STUB(iemOp_pextrw_Gd_Udq_Ib);
 /*  Opcode 0xf3 0x0f 0xc5 - invalid */
 /*  Opcode 0xf2 0x0f 0xc5 - invalid */
 
-/** Opcode      0x0f 0xc6 - vshufps Vps,Hps,Wps,Ib */
-FNIEMOP_STUB(iemOp_vshufps_Vps_Hps_Wps_Ib);
-/** Opcode 0x66 0x0f 0xc6 - vshufpd Vpd,Hpd,Wpd,Ib */
-FNIEMOP_STUB(iemOp_vshufpd_Vpd_Hpd_Wpd_Ib);
+/** Opcode      0x0f 0xc6 - shufps Vps, Wps, Ib */
+FNIEMOP_STUB(iemOp_shufps_Vps_Wps_Ib);
+/** Opcode 0x66 0x0f 0xc6 - shufpd Vpd, Wpd, Ib */
+FNIEMOP_STUB(iemOp_shufpd_Vpd_Wpd_Ib);
 /*  Opcode 0xf3 0x0f 0xc6 - invalid */
 /*  Opcode 0xf2 0x0f 0xc6 - invalid */
 
@@ -7845,44 +7726,44 @@ FNIEMOP_DEF(iemOp_bswap_rDI_r15)
 
 
 /*  Opcode      0x0f 0xd0 - invalid */
-/** Opcode 0x66 0x0f 0xd0 - vaddsubpd Vpd, Hpd, Wpd */
-FNIEMOP_STUB(iemOp_vaddsubpd_Vpd_Hpd_Wpd);
+/** Opcode 0x66 0x0f 0xd0 - addsubpd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_addsubpd_Vpd_Wpd);
 /*  Opcode 0xf3 0x0f 0xd0 - invalid */
-/** Opcode 0xf2 0x0f 0xd0 - vaddsubps Vps, Hps, Wps */
-FNIEMOP_STUB(iemOp_vaddsubps_Vps_Hps_Wps);
+/** Opcode 0xf2 0x0f 0xd0 - addsubps Vps, Wps */
+FNIEMOP_STUB(iemOp_addsubps_Vps_Wps);
 
 /** Opcode      0x0f 0xd1 - psrlw Pq, Qq */
 FNIEMOP_STUB(iemOp_psrlw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xd1 - vpsrlw Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsrlw_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xd1 - psrlw Vx, W */
+FNIEMOP_STUB(iemOp_psrlw_Vx_W);
 /*  Opcode 0xf3 0x0f 0xd1 - invalid */
 /*  Opcode 0xf2 0x0f 0xd1 - invalid */
 
 /** Opcode      0x0f 0xd2 - psrld Pq, Qq */
 FNIEMOP_STUB(iemOp_psrld_Pq_Qq);
-/** Opcode 0x66 0x0f 0xd2 - vpsrld Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsrld_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xd2 - psrld Vx, Wx */
+FNIEMOP_STUB(iemOp_psrld_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xd2 - invalid */
 /*  Opcode 0xf2 0x0f 0xd2 - invalid */
 
 /** Opcode      0x0f 0xd3 - psrlq Pq, Qq */
 FNIEMOP_STUB(iemOp_psrlq_Pq_Qq);
-/** Opcode 0x66 0x0f 0xd3 - vpsrlq Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsrlq_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xd3 - psrlq Vx, Wx */
+FNIEMOP_STUB(iemOp_psrlq_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xd3 - invalid */
 /*  Opcode 0xf2 0x0f 0xd3 - invalid */
 
 /** Opcode      0x0f 0xd4 - paddq Pq, Qq */
 FNIEMOP_STUB(iemOp_paddq_Pq_Qq);
-/** Opcode 0x66 0x0f 0xd4 - vpaddq Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpaddq_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xd4 - paddq Vx, W */
+FNIEMOP_STUB(iemOp_paddq_Vx_W);
 /*  Opcode 0xf3 0x0f 0xd4 - invalid */
 /*  Opcode 0xf2 0x0f 0xd4 - invalid */
 
 /** Opcode      0x0f 0xd5 - pmullw Pq, Qq */
 FNIEMOP_STUB(iemOp_pmullw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xd5 - vpmullw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpmullw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xd5 - pmullw Vx, Wx */
+FNIEMOP_STUB(iemOp_pmullw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xd5 - invalid */
 /*  Opcode 0xf2 0x0f 0xd5 - invalid */
 
@@ -7897,7 +7778,7 @@ FNIEMOP_STUB(iemOp_vpmullw_Vx_Hx_Wx);
  * @optest      op1=-1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
  */
-FNIEMOP_DEF(iemOp_vmovq_Wq_Vq)
+FNIEMOP_DEF(iemOp_movq_Wq_Vq)
 {
     IEMOP_MNEMONIC2(MR, MOVQ, movq, WqZxReg, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -8022,7 +7903,7 @@ FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq)
 }
 
 /** Opcode 0x66 0x0f 0xd7 -  */
-FNIEMOP_DEF(iemOp_vpmovmskb_Gd_Ux)
+FNIEMOP_DEF(iemOp_pmovmskb_Gd_Ux)
 {
     /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
     /** @todo testcase: Check that the instruction implicitly clears the high
@@ -8056,109 +7937,109 @@ FNIEMOP_DEF(iemOp_vpmovmskb_Gd_Ux)
 
 /** Opcode      0x0f 0xd8 - psubusb Pq, Qq */
 FNIEMOP_STUB(iemOp_psubusb_Pq_Qq);
-/** Opcode 0x66 0x0f 0xd8 - vpsubusb Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsubusb_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xd8 - psubusb Vx, W */
+FNIEMOP_STUB(iemOp_psubusb_Vx_W);
 /*  Opcode 0xf3 0x0f 0xd8 - invalid */
 /*  Opcode 0xf2 0x0f 0xd8 - invalid */
 
 /** Opcode      0x0f 0xd9 - psubusw Pq, Qq */
 FNIEMOP_STUB(iemOp_psubusw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xd9 - vpsubusw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsubusw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xd9 - psubusw Vx, Wx */
+FNIEMOP_STUB(iemOp_psubusw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xd9 - invalid */
 /*  Opcode 0xf2 0x0f 0xd9 - invalid */
 
 /** Opcode      0x0f 0xda - pminub Pq, Qq */
 FNIEMOP_STUB(iemOp_pminub_Pq_Qq);
-/** Opcode 0x66 0x0f 0xda - vpminub Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpminub_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xda - pminub Vx, Wx */
+FNIEMOP_STUB(iemOp_pminub_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xda - invalid */
 /*  Opcode 0xf2 0x0f 0xda - invalid */
 
 /** Opcode      0x0f 0xdb - pand Pq, Qq */
 FNIEMOP_STUB(iemOp_pand_Pq_Qq);
-/** Opcode 0x66 0x0f 0xdb - vpand Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpand_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xdb - pand Vx, W */
+FNIEMOP_STUB(iemOp_pand_Vx_W);
 /*  Opcode 0xf3 0x0f 0xdb - invalid */
 /*  Opcode 0xf2 0x0f 0xdb - invalid */
 
 /** Opcode      0x0f 0xdc - paddusb Pq, Qq */
 FNIEMOP_STUB(iemOp_paddusb_Pq_Qq);
-/** Opcode 0x66 0x0f 0xdc - vpaddusb Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpaddusb_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xdc - paddusb Vx, Wx */
+FNIEMOP_STUB(iemOp_paddusb_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xdc - invalid */
 /*  Opcode 0xf2 0x0f 0xdc - invalid */
 
 /** Opcode      0x0f 0xdd - paddusw Pq, Qq */
 FNIEMOP_STUB(iemOp_paddusw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xdd - vpaddusw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpaddusw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xdd - paddusw Vx, Wx */
+FNIEMOP_STUB(iemOp_paddusw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xdd - invalid */
 /*  Opcode 0xf2 0x0f 0xdd - invalid */
 
 /** Opcode      0x0f 0xde - pmaxub Pq, Qq */
 FNIEMOP_STUB(iemOp_pmaxub_Pq_Qq);
-/** Opcode 0x66 0x0f 0xde - vpmaxub Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpmaxub_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xde - pmaxub Vx, W */
+FNIEMOP_STUB(iemOp_pmaxub_Vx_W);
 /*  Opcode 0xf3 0x0f 0xde - invalid */
 /*  Opcode 0xf2 0x0f 0xde - invalid */
 
 /** Opcode      0x0f 0xdf - pandn Pq, Qq */
 FNIEMOP_STUB(iemOp_pandn_Pq_Qq);
-/** Opcode 0x66 0x0f 0xdf - vpandn Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpandn_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xdf - pandn Vx, Wx */
+FNIEMOP_STUB(iemOp_pandn_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xdf - invalid */
 /*  Opcode 0xf2 0x0f 0xdf - invalid */
 
 /** Opcode      0x0f 0xe0 - pavgb Pq, Qq */
 FNIEMOP_STUB(iemOp_pavgb_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe0 - vpavgb Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpavgb_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xe0 - pavgb Vx, Wx */
+FNIEMOP_STUB(iemOp_pavgb_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xe0 - invalid */
 /*  Opcode 0xf2 0x0f 0xe0 - invalid */
 
 /** Opcode      0x0f 0xe1 - psraw Pq, Qq */
 FNIEMOP_STUB(iemOp_psraw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe1 - vpsraw Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsraw_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xe1 - psraw Vx, W */
+FNIEMOP_STUB(iemOp_psraw_Vx_W);
 /*  Opcode 0xf3 0x0f 0xe1 - invalid */
 /*  Opcode 0xf2 0x0f 0xe1 - invalid */
 
 /** Opcode      0x0f 0xe2 - psrad Pq, Qq */
 FNIEMOP_STUB(iemOp_psrad_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe2 - vpsrad Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsrad_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xe2 - psrad Vx, Wx */
+FNIEMOP_STUB(iemOp_psrad_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xe2 - invalid */
 /*  Opcode 0xf2 0x0f 0xe2 - invalid */
 
 /** Opcode      0x0f 0xe3 - pavgw Pq, Qq */
 FNIEMOP_STUB(iemOp_pavgw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe3 - vpavgw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpavgw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xe3 - pavgw Vx, Wx */
+FNIEMOP_STUB(iemOp_pavgw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xe3 - invalid */
 /*  Opcode 0xf2 0x0f 0xe3 - invalid */
 
 /** Opcode      0x0f 0xe4 - pmulhuw Pq, Qq */
 FNIEMOP_STUB(iemOp_pmulhuw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe4 - vpmulhuw Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpmulhuw_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xe4 - pmulhuw Vx, W */
+FNIEMOP_STUB(iemOp_pmulhuw_Vx_W);
 /*  Opcode 0xf3 0x0f 0xe4 - invalid */
 /*  Opcode 0xf2 0x0f 0xe4 - invalid */
 
 /** Opcode      0x0f 0xe5 - pmulhw Pq, Qq */
 FNIEMOP_STUB(iemOp_pmulhw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe5 - vpmulhw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpmulhw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xe5 - pmulhw Vx, Wx */
+FNIEMOP_STUB(iemOp_pmulhw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xe5 - invalid */
 /*  Opcode 0xf2 0x0f 0xe5 - invalid */
 
 /*  Opcode      0x0f 0xe6 - invalid */
-/** Opcode 0x66 0x0f 0xe6 - vcvttpd2dq Vx, Wpd */
-FNIEMOP_STUB(iemOp_vcvttpd2dq_Vx_Wpd);
-/** Opcode 0xf3 0x0f 0xe6 - vcvtdq2pd Vx, Wpd */
-FNIEMOP_STUB(iemOp_vcvtdq2pd_Vx_Wpd);
-/** Opcode 0xf2 0x0f 0xe6 - vcvtpd2dq Vx, Wpd */
-FNIEMOP_STUB(iemOp_vcvtpd2dq_Vx_Wpd);
+/** Opcode 0x66 0x0f 0xe6 - cvttpd2dq Vx, Wpd */
+FNIEMOP_STUB(iemOp_cvttpd2dq_Vx_Wpd);
+/** Opcode 0xf3 0x0f 0xe6 - cvtdq2pd Vx, Wpd */
+FNIEMOP_STUB(iemOp_cvtdq2pd_Vx_Wpd);
+/** Opcode 0xf2 0x0f 0xe6 - cvtpd2dq Vx, Wpd */
+FNIEMOP_STUB(iemOp_cvtpd2dq_Vx_Wpd);
 
 
 /** Opcode      0x0f 0xe7 - movntq Mq, Pq */
@@ -8189,14 +8070,14 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq)
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
-/** Opcode 0x66 0x0f 0xe7 - vmovntdq Mx, Vx */
-FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
+/** Opcode 0x66 0x0f 0xe7 - movntdq Mx, Vx */
+FNIEMOP_DEF(iemOp_movntdq_Mx_Vx)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
         /* Register, memory. */
-        IEMOP_MNEMONIC(vmovntdq_Mx_Vx, "vmovntdq Mx,Vx");
+        IEMOP_MNEMONIC(movntdq_Mx_Vx, "movntdq Mx,Vx");
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -8224,50 +8105,50 @@ FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
 
 /** Opcode      0x0f 0xe8 - psubsb Pq, Qq */
 FNIEMOP_STUB(iemOp_psubsb_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe8 - vpsubsb Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsubsb_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xe8 - psubsb Vx, W */
+FNIEMOP_STUB(iemOp_psubsb_Vx_W);
 /*  Opcode 0xf3 0x0f 0xe8 - invalid */
 /*  Opcode 0xf2 0x0f 0xe8 - invalid */
 
 /** Opcode      0x0f 0xe9 - psubsw Pq, Qq */
 FNIEMOP_STUB(iemOp_psubsw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xe9 - vpsubsw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsubsw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xe9 - psubsw Vx, Wx */
+FNIEMOP_STUB(iemOp_psubsw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xe9 - invalid */
 /*  Opcode 0xf2 0x0f 0xe9 - invalid */
 
 /** Opcode      0x0f 0xea - pminsw Pq, Qq */
 FNIEMOP_STUB(iemOp_pminsw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xea - vpminsw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpminsw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xea - pminsw Vx, Wx */
+FNIEMOP_STUB(iemOp_pminsw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xea - invalid */
 /*  Opcode 0xf2 0x0f 0xea - invalid */
 
 /** Opcode      0x0f 0xeb - por Pq, Qq */
 FNIEMOP_STUB(iemOp_por_Pq_Qq);
-/** Opcode 0x66 0x0f 0xeb - vpor Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpor_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xeb - por Vx, W */
+FNIEMOP_STUB(iemOp_por_Vx_W);
 /*  Opcode 0xf3 0x0f 0xeb - invalid */
 /*  Opcode 0xf2 0x0f 0xeb - invalid */
 
 /** Opcode      0x0f 0xec - paddsb Pq, Qq */
 FNIEMOP_STUB(iemOp_paddsb_Pq_Qq);
-/** Opcode 0x66 0x0f 0xec - vpaddsb Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpaddsb_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xec - paddsb Vx, Wx */
+FNIEMOP_STUB(iemOp_paddsb_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xec - invalid */
 /*  Opcode 0xf2 0x0f 0xec - invalid */
 
 /** Opcode      0x0f 0xed - paddsw Pq, Qq */
 FNIEMOP_STUB(iemOp_paddsw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xed - vpaddsw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpaddsw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xed - paddsw Vx, Wx */
+FNIEMOP_STUB(iemOp_paddsw_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0xed - invalid */
 /*  Opcode 0xf2 0x0f 0xed - invalid */
 
 /** Opcode      0x0f 0xee - pmaxsw Pq, Qq */
 FNIEMOP_STUB(iemOp_pmaxsw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xee - vpmaxsw Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpmaxsw_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xee - pmaxsw Vx, W */
+FNIEMOP_STUB(iemOp_pmaxsw_Vx_W);
 /*  Opcode 0xf3 0x0f 0xee - invalid */
 /*  Opcode 0xf2 0x0f 0xee - invalid */
 
@@ -8279,10 +8160,10 @@ FNIEMOP_DEF(iemOp_pxor_Pq_Qq)
     return FNIEMOP_CALL_1(iemOpCommonMmx_FullFull_To_Full, &g_iemAImpl_pxor);
 }
 
-/** Opcode 0x66 0x0f 0xef - vpxor Vx, Hx, Wx */
-FNIEMOP_DEF(iemOp_vpxor_Vx_Hx_Wx)
+/** Opcode 0x66 0x0f 0xef - pxor Vx, Wx */
+FNIEMOP_DEF(iemOp_pxor_Vx_Wx)
 {
-    IEMOP_MNEMONIC(vpxor, "vpxor");
+    IEMOP_MNEMONIC(pxor_Vx_Wx, "pxor");
     return FNIEMOP_CALL_1(iemOpCommonSse2_FullFull_To_Full, &g_iemAImpl_pxor);
 }
 
@@ -8291,91 +8172,91 @@ FNIEMOP_DEF(iemOp_vpxor_Vx_Hx_Wx)
 
 /*  Opcode      0x0f 0xf0 - invalid */
 /*  Opcode 0x66 0x0f 0xf0 - invalid */
-/** Opcode 0xf2 0x0f 0xf0 - vlddqu Vx, Mx */
-FNIEMOP_STUB(iemOp_vlddqu_Vx_Mx);
+/** Opcode 0xf2 0x0f 0xf0 - lddqu Vx, Mx */
+FNIEMOP_STUB(iemOp_lddqu_Vx_Mx);
 
 /** Opcode      0x0f 0xf1 - psllw Pq, Qq */
 FNIEMOP_STUB(iemOp_psllw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf1 - vpsllw Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsllw_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xf1 - psllw Vx, W */
+FNIEMOP_STUB(iemOp_psllw_Vx_W);
 /*  Opcode 0xf2 0x0f 0xf1 - invalid */
 
 /** Opcode      0x0f 0xf2 - pslld Pq, Qq */
 FNIEMOP_STUB(iemOp_pslld_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf2 - vpslld Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpslld_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xf2 - pslld Vx, Wx */
+FNIEMOP_STUB(iemOp_pslld_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xf2 - invalid */
 
 /** Opcode      0x0f 0xf3 - psllq Pq, Qq */
 FNIEMOP_STUB(iemOp_psllq_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf3 - vpsllq Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsllq_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xf3 - psllq Vx, Wx */
+FNIEMOP_STUB(iemOp_psllq_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xf3 - invalid */
 
 /** Opcode      0x0f 0xf4 - pmuludq Pq, Qq */
 FNIEMOP_STUB(iemOp_pmuludq_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf4 - vpmuludq Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpmuludq_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xf4 - pmuludq Vx, W */
+FNIEMOP_STUB(iemOp_pmuludq_Vx_W);
 /*  Opcode 0xf2 0x0f 0xf4 - invalid */
 
 /** Opcode      0x0f 0xf5 - pmaddwd Pq, Qq */
 FNIEMOP_STUB(iemOp_pmaddwd_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf5 - vpmaddwd Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpmaddwd_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xf5 - pmaddwd Vx, Wx */
+FNIEMOP_STUB(iemOp_pmaddwd_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xf5 - invalid */
 
 /** Opcode      0x0f 0xf6 - psadbw Pq, Qq */
 FNIEMOP_STUB(iemOp_psadbw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf6 - vpsadbw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsadbw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xf6 - psadbw Vx, Wx */
+FNIEMOP_STUB(iemOp_psadbw_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xf6 - invalid */
 
 /** Opcode      0x0f 0xf7 - maskmovq Pq, Nq */
 FNIEMOP_STUB(iemOp_maskmovq_Pq_Nq);
-/** Opcode 0x66 0x0f 0xf7 - vmaskmovdqu Vdq, Udq */
-FNIEMOP_STUB(iemOp_vmaskmovdqu_Vdq_Udq);
+/** Opcode 0x66 0x0f 0xf7 - maskmovdqu Vdq, Udq */
+FNIEMOP_STUB(iemOp_maskmovdqu_Vdq_Udq);
 /*  Opcode 0xf2 0x0f 0xf7 - invalid */
 
 /** Opcode      0x0f 0xf8 - psubb Pq, Qq */
 FNIEMOP_STUB(iemOp_psubb_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf8 - vpsubb Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsubb_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xf8 - psubb Vx, W */
+FNIEMOP_STUB(iemOp_psubb_Vx_W);
 /*  Opcode 0xf2 0x0f 0xf8 - invalid */
 
 /** Opcode      0x0f 0xf9 - psubw Pq, Qq */
 FNIEMOP_STUB(iemOp_psubw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xf9 - vpsubw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsubw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xf9 - psubw Vx, Wx */
+FNIEMOP_STUB(iemOp_psubw_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xf9 - invalid */
 
 /** Opcode      0x0f 0xfa - psubd Pq, Qq */
 FNIEMOP_STUB(iemOp_psubd_Pq_Qq);
-/** Opcode 0x66 0x0f 0xfa - vpsubd Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsubd_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xfa - psubd Vx, Wx */
+FNIEMOP_STUB(iemOp_psubd_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xfa - invalid */
 
 /** Opcode      0x0f 0xfb - psubq Pq, Qq */
 FNIEMOP_STUB(iemOp_psubq_Pq_Qq);
-/** Opcode 0x66 0x0f 0xfb - vpsubq Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsubq_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xfb - psubq Vx, W */
+FNIEMOP_STUB(iemOp_psubq_Vx_W);
 /*  Opcode 0xf2 0x0f 0xfb - invalid */
 
 /** Opcode      0x0f 0xfc - paddb Pq, Qq */
 FNIEMOP_STUB(iemOp_paddb_Pq_Qq);
-/** Opcode 0x66 0x0f 0xfc - vpaddb Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpaddb_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xfc - paddb Vx, Wx */
+FNIEMOP_STUB(iemOp_paddb_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xfc - invalid */
 
 /** Opcode      0x0f 0xfd - paddw Pq, Qq */
 FNIEMOP_STUB(iemOp_paddw_Pq_Qq);
-/** Opcode 0x66 0x0f 0xfd - vpaddw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpaddw_Vx_Hx_Wx);
+/** Opcode 0x66 0x0f 0xfd - paddw Vx, Wx */
+FNIEMOP_STUB(iemOp_paddw_Vx_Wx);
 /*  Opcode 0xf2 0x0f 0xfd - invalid */
 
 /** Opcode      0x0f 0xfe - paddd Pq, Qq */
 FNIEMOP_STUB(iemOp_paddd_Pq_Qq);
-/** Opcode 0x66 0x0f 0xfe - vpaddd Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpaddd_Vx_Hx_W);
+/** Opcode 0x66 0x0f 0xfe - paddd Vx, W */
+FNIEMOP_STUB(iemOp_paddd_Vx_W);
 /*  Opcode 0xf2 0x0f 0xfe - invalid */
 
 
@@ -8425,14 +8306,14 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x0e */  IEMOP_X4(iemOp_femms),
     /* 0x0f */  IEMOP_X4(iemOp_3Dnow),
 
-    /* 0x10 */  iemOp_vmovups_Vps_Wps,      iemOp_vmovupd_Vpd_Wpd,      iemOp_movss_Vss_Wss,        iemOp_vmovsd_Vx_Hx_Wsd,
-    /* 0x11 */  iemOp_vmovups_Wps_Vps,      iemOp_vmovupd_Wpd_Vpd,      iemOp_vmovss_Wss_Hx_Vss,    iemOp_vmovsd_Wsd_Hx_Vsd,
-    /* 0x12 */  iemOp_vmovlps_Vq_Hq_Mq__vmovhlps, iemOp_vmovlpd_Vq_Hq_Mq, iemOp_vmovsldup_Vx_Wx,    iemOp_vmovddup_Vx_Wx,
-    /* 0x13 */  iemOp_vmovlps_Mq_Vq,        iemOp_vmovlpd_Mq_Vq,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x14 */  iemOp_vunpcklps_Vx_Hx_Wx,   iemOp_vunpcklpd_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x15 */  iemOp_vunpckhps_Vx_Hx_Wx,   iemOp_vunpckhpd_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x16 */  iemOp_vmovhpsv1_Vdq_Hq_Mq__vmovlhps_Vdq_Hq_Uq, iemOp_vmovhpdv1_Vdq_Hq_Mq, iemOp_vmovshdup_Vx_Wx, iemOp_InvalidNeedRM,
-    /* 0x17 */  iemOp_vmovhpsv1_Mq_Vq,      iemOp_vmovhpdv1_Mq_Vq,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x10 */  iemOp_movups_Vps_Wps,       iemOp_movupd_Vpd_Wpd,      iemOp_movss_Vss_Wss,        iemOp_movsd_Vx_Wsd,
+    /* 0x11 */  iemOp_movups_Wps_Vps,       iemOp_movupd_Wpd_Vpd,      iemOp_movss_Wss_Vss,        iemOp_movsd_Wsd_Vsd,
+    /* 0x12 */  iemOp_movlps_Vq_Mq__movhlps, iemOp_movlpd_Vq_Mq,       iemOp_movsldup_Vdq_Wdq,     iemOp_movddup_Vdq_Wdq,
+    /* 0x13 */  iemOp_movlps_Mq_Vq,         iemOp_movlpd_Mq_Vq,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x14 */  iemOp_unpcklps_Vx_Wx,       iemOp_unpcklpd_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x15 */  iemOp_unpckhps_Vx_Wx,       iemOp_unpckhpd_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x16 */  iemOp_movhpsv1_Vdq_Mq__movlhps_Vdq_Uq,  iemOp_movhpdv1_Vdq_Mq, iemOp_movshdup_Vx_Wx, iemOp_InvalidNeedRM,
+    /* 0x17 */  iemOp_movhpsv1_Mq_Vq,       iemOp_movhpdv1_Mq_Vq,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x18 */  IEMOP_X4(iemOp_prefetch_Grp16),
     /* 0x19 */  IEMOP_X4(iemOp_nop_Ev),
     /* 0x1a */  IEMOP_X4(iemOp_nop_Ev),
@@ -8450,14 +8331,14 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x25 */  iemOp_Invalid,              iemOp_Invalid,              iemOp_Invalid,              iemOp_Invalid,
     /* 0x26 */  iemOp_mov_Td_Rd,            iemOp_mov_Td_Rd,            iemOp_mov_Td_Rd,            iemOp_mov_Td_Rd,
     /* 0x27 */  iemOp_Invalid,              iemOp_Invalid,              iemOp_Invalid,              iemOp_Invalid,
-    /* 0x28 */  iemOp_vmovaps_Vps_Wps,      iemOp_vmovapd_Vpd_Wpd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x29 */  iemOp_vmovaps_Wps_Vps,      iemOp_vmovapd_Wpd_Vpd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x2a */  iemOp_cvtpi2ps_Vps_Qpi,     iemOp_cvtpi2pd_Vpd_Qpi,     iemOp_vcvtsi2ss_Vss_Hss_Ey, iemOp_vcvtsi2sd_Vsd_Hsd_Ey,
-    /* 0x2b */  iemOp_vmovntps_Mps_Vps,     iemOp_vmovntpd_Mpd_Vpd,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x2c */  iemOp_cvttps2pi_Ppi_Wps,    iemOp_cvttpd2pi_Ppi_Wpd,    iemOp_vcvttss2si_Gy_Wss,    iemOp_vcvttsd2si_Gy_Wsd,
-    /* 0x2d */  iemOp_cvtps2pi_Ppi_Wps,     iemOp_cvtpd2pi_Qpi_Wpd,     iemOp_vcvtss2si_Gy_Wss,     iemOp_vcvtsd2si_Gy_Wsd,
-    /* 0x2e */  iemOp_vucomiss_Vss_Wss,     iemOp_vucomisd_Vsd_Wsd,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x2f */  iemOp_vcomiss_Vss_Wss,      iemOp_vcomisd_Vsd_Wsd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x28 */  iemOp_movaps_Vps_Wps,       iemOp_movapd_Vpd_Wpd,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x29 */  iemOp_movaps_Wps_Vps,       iemOp_movapd_Wpd_Vpd,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x2a */  iemOp_cvtpi2ps_Vps_Qpi,     iemOp_cvtpi2pd_Vpd_Qpi,     iemOp_cvtsi2ss_Vss_Ey,      iemOp_cvtsi2sd_Vsd_Ey,
+    /* 0x2b */  iemOp_movntps_Mps_Vps,      iemOp_movntpd_Mpd_Vpd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x2c */  iemOp_cvttps2pi_Ppi_Wps,    iemOp_cvttpd2pi_Ppi_Wpd,    iemOp_cvttss2si_Gy_Wss,     iemOp_cvttsd2si_Gy_Wsd,
+    /* 0x2d */  iemOp_cvtps2pi_Ppi_Wps,     iemOp_cvtpd2pi_Qpi_Wpd,     iemOp_cvtss2si_Gy_Wss,      iemOp_cvtsd2si_Gy_Wsd,
+    /* 0x2e */  iemOp_ucomiss_Vss_Wss,      iemOp_ucomisd_Vsd_Wsd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x2f */  iemOp_comiss_Vss_Wss,       iemOp_comisd_Vsd_Wsd,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
 
     /* 0x30 */  IEMOP_X4(iemOp_wrmsr),
     /* 0x31 */  IEMOP_X4(iemOp_rdtsc),
@@ -8493,57 +8374,57 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x4e */  IEMOP_X4(iemOp_cmovle_Gv_Ev),
     /* 0x4f */  IEMOP_X4(iemOp_cmovnle_Gv_Ev),
 
-    /* 0x50 */  iemOp_vmovmskps_Gy_Ups,     iemOp_vmovmskpd_Gy_Upd,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x51 */  iemOp_vsqrtps_Vps_Wps,      iemOp_vsqrtpd_Vpd_Wpd,      iemOp_vsqrtss_Vss_Hss_Wss,  iemOp_vsqrtsd_Vsd_Hsd_Wsd,
-    /* 0x52 */  iemOp_vrsqrtps_Vps_Wps,     iemOp_InvalidNeedRM,        iemOp_vrsqrtss_Vss_Hss_Wss, iemOp_InvalidNeedRM,
-    /* 0x53 */  iemOp_vrcpps_Vps_Wps,       iemOp_InvalidNeedRM,        iemOp_vrcpss_Vss_Hss_Wss,   iemOp_InvalidNeedRM,
-    /* 0x54 */  iemOp_vandps_Vps_Hps_Wps,   iemOp_vandpd_Vpd_Hpd_Wpd,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x55 */  iemOp_vandnps_Vps_Hps_Wps,  iemOp_vandnpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x56 */  iemOp_vorps_Vps_Hps_Wps,    iemOp_vorpd_Vpd_Hpd_Wpd,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x57 */  iemOp_vxorps_Vps_Hps_Wps,   iemOp_vxorpd_Vpd_Hpd_Wpd,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x58 */  iemOp_vaddps_Vps_Hps_Wps,   iemOp_vaddpd_Vpd_Hpd_Wpd,   iemOp_vaddss_Vss_Hss_Wss,   iemOp_vaddsd_Vsd_Hsd_Wsd,
-    /* 0x59 */  iemOp_vmulps_Vps_Hps_Wps,   iemOp_vmulpd_Vpd_Hpd_Wpd,   iemOp_vmulss_Vss_Hss_Wss,   iemOp_vmulsd_Vsd_Hsd_Wsd,
-    /* 0x5a */  iemOp_vcvtps2pd_Vpd_Wps,    iemOp_vcvtpd2ps_Vps_Wpd,    iemOp_vcvtss2sd_Vsd_Hx_Wss, iemOp_vcvtsd2ss_Vss_Hx_Wsd,
-    /* 0x5b */  iemOp_vcvtdq2ps_Vps_Wdq,    iemOp_vcvtps2dq_Vdq_Wps,    iemOp_vcvttps2dq_Vdq_Wps,   iemOp_InvalidNeedRM,
-    /* 0x5c */  iemOp_vsubps_Vps_Hps_Wps,   iemOp_vsubpd_Vpd_Hpd_Wpd,   iemOp_vsubss_Vss_Hss_Wss,   iemOp_vsubsd_Vsd_Hsd_Wsd,
-    /* 0x5d */  iemOp_vminps_Vps_Hps_Wps,   iemOp_vminpd_Vpd_Hpd_Wpd,   iemOp_vminss_Vss_Hss_Wss,   iemOp_vminsd_Vsd_Hsd_Wsd,
-    /* 0x5e */  iemOp_vdivps_Vps_Hps_Wps,   iemOp_vdivpd_Vpd_Hpd_Wpd,   iemOp_vdivss_Vss_Hss_Wss,   iemOp_vdivsd_Vsd_Hsd_Wsd,
-    /* 0x5f */  iemOp_vmaxps_Vps_Hps_Wps,   iemOp_vmaxpd_Vpd_Hpd_Wpd,   iemOp_vmaxss_Vss_Hss_Wss,   iemOp_vmaxsd_Vsd_Hsd_Wsd,
+    /* 0x50 */  iemOp_movmskps_Gy_Ups,      iemOp_movmskpd_Gy_Upd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x51 */  iemOp_sqrtps_Vps_Wps,       iemOp_sqrtpd_Vpd_Wpd,       iemOp_sqrtss_Vss_Wss,       iemOp_sqrtsd_Vsd_Wsd,
+    /* 0x52 */  iemOp_rsqrtps_Vps_Wps,      iemOp_InvalidNeedRM,        iemOp_rsqrtss_Vss_Wss,      iemOp_InvalidNeedRM,
+    /* 0x53 */  iemOp_rcpps_Vps_Wps,        iemOp_InvalidNeedRM,        iemOp_rcpss_Vss_Wss,        iemOp_InvalidNeedRM,
+    /* 0x54 */  iemOp_andps_Vps_Wps,        iemOp_andpd_Vpd_Wpd,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x55 */  iemOp_andnps_Vps_Wps,       iemOp_andnpd_Vpd_Wpd,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x56 */  iemOp_orps_Vps_Wps,         iemOp_orpd_Vpd_Wpd,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x57 */  iemOp_xorps_Vps_Wps,        iemOp_xorpd_Vpd_Wpd,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x58 */  iemOp_addps_Vps_Wps,        iemOp_addpd_Vpd_Wpd,        iemOp_addss_Vss_Wss,        iemOp_addsd_Vsd_Wsd,
+    /* 0x59 */  iemOp_mulps_Vps_Wps,        iemOp_mulpd_Vpd_Wpd,        iemOp_mulss_Vss_Wss,        iemOp_mulsd_Vsd_Wsd,
+    /* 0x5a */  iemOp_cvtps2pd_Vpd_Wps,     iemOp_cvtpd2ps_Vps_Wpd,     iemOp_cvtss2sd_Vsd_Wss,     iemOp_cvtsd2ss_Vss_Wsd,
+    /* 0x5b */  iemOp_cvtdq2ps_Vps_Wdq,     iemOp_cvtps2dq_Vdq_Wps,     iemOp_cvttps2dq_Vdq_Wps,    iemOp_InvalidNeedRM,
+    /* 0x5c */  iemOp_subps_Vps_Wps,        iemOp_subpd_Vpd_Wpd,        iemOp_subss_Vss_Wss,        iemOp_subsd_Vsd_Wsd,
+    /* 0x5d */  iemOp_minps_Vps_Wps,        iemOp_minpd_Vpd_Wpd,        iemOp_minss_Vss_Wss,        iemOp_minsd_Vsd_Wsd,
+    /* 0x5e */  iemOp_divps_Vps_Wps,        iemOp_divpd_Vpd_Wpd,        iemOp_divss_Vss_Wss,        iemOp_divsd_Vsd_Wsd,
+    /* 0x5f */  iemOp_maxps_Vps_Wps,        iemOp_maxpd_Vpd_Wpd,        iemOp_maxss_Vss_Wss,        iemOp_maxsd_Vsd_Wsd,
 
-    /* 0x60 */  iemOp_punpcklbw_Pq_Qd,      iemOp_vpunpcklbw_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x61 */  iemOp_punpcklwd_Pq_Qd,      iemOp_vpunpcklwd_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x62 */  iemOp_punpckldq_Pq_Qd,      iemOp_vpunpckldq_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x63 */  iemOp_packsswb_Pq_Qq,       iemOp_vpacksswb_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x64 */  iemOp_pcmpgtb_Pq_Qq,        iemOp_vpcmpgtb_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x65 */  iemOp_pcmpgtw_Pq_Qq,        iemOp_vpcmpgtw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x66 */  iemOp_pcmpgtd_Pq_Qq,        iemOp_vpcmpgtd_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x67 */  iemOp_packuswb_Pq_Qq,       iemOp_vpackuswb_Vx_Hx_W,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x68 */  iemOp_punpckhbw_Pq_Qd,      iemOp_vpunpckhbw_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x69 */  iemOp_punpckhwd_Pq_Qd,      iemOp_vpunpckhwd_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6a */  iemOp_punpckhdq_Pq_Qd,      iemOp_vpunpckhdq_Vx_Hx_W,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6b */  iemOp_packssdw_Pq_Qd,       iemOp_vpackssdw_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6c */  iemOp_InvalidNeedRM,        iemOp_vpunpcklqdq_Vx_Hx_Wx, iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6d */  iemOp_InvalidNeedRM,        iemOp_vpunpckhqdq_Vx_Hx_W,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6e */  iemOp_movd_q_Pd_Ey,         iemOp_vmovd_q_Vy_Ey,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6f */  iemOp_movq_Pq_Qq,           iemOp_vmovdqa_Vx_Wx,        iemOp_vmovdqu_Vx_Wx,        iemOp_InvalidNeedRM,
+    /* 0x60 */  iemOp_punpcklbw_Pq_Qd,      iemOp_punpcklbw_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x61 */  iemOp_punpcklwd_Pq_Qd,      iemOp_punpcklwd_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x62 */  iemOp_punpckldq_Pq_Qd,      iemOp_punpckldq_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x63 */  iemOp_packsswb_Pq_Qq,       iemOp_packsswb_Vx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x64 */  iemOp_pcmpgtb_Pq_Qq,        iemOp_pcmpgtb_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x65 */  iemOp_pcmpgtw_Pq_Qq,        iemOp_pcmpgtw_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x66 */  iemOp_pcmpgtd_Pq_Qq,        iemOp_pcmpgtd_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x67 */  iemOp_packuswb_Pq_Qq,       iemOp_packuswb_Vx_W,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x68 */  iemOp_punpckhbw_Pq_Qd,      iemOp_punpckhbw_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x69 */  iemOp_punpckhwd_Pq_Qd,      iemOp_punpckhwd_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x6a */  iemOp_punpckhdq_Pq_Qd,      iemOp_punpckhdq_Vx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x6b */  iemOp_packssdw_Pq_Qd,       iemOp_packssdw_Vx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x6c */  iemOp_InvalidNeedRM,        iemOp_punpcklqdq_Vx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x6d */  iemOp_InvalidNeedRM,        iemOp_punpckhqdq_Vx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x6e */  iemOp_movd_q_Pd_Ey,         iemOp_movd_q_Vy_Ey,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x6f */  iemOp_movq_Pq_Qq,           iemOp_movdqa_Vx_Wx,         iemOp_movdqu_Vx_Wx,         iemOp_InvalidNeedRM,
 
-    /* 0x70 */  iemOp_pshufw_Pq_Qq_Ib,      iemOp_vpshufd_Vx_Wx_Ib,     iemOp_vpshufhw_Vx_Wx_Ib,    iemOp_vpshuflw_Vx_Wx_Ib,
+    /* 0x70 */  iemOp_pshufw_Pq_Qq_Ib,      iemOp_pshufd_Vx_Wx_Ib,      iemOp_pshufhw_Vx_Wx_Ib,     iemOp_pshuflw_Vx_Wx_Ib,
     /* 0x71 */  IEMOP_X4(iemOp_Grp12),
     /* 0x72 */  IEMOP_X4(iemOp_Grp13),
     /* 0x73 */  IEMOP_X4(iemOp_Grp14),
-    /* 0x74 */  iemOp_pcmpeqb_Pq_Qq,        iemOp_vpcmpeqb_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x75 */  iemOp_pcmpeqw_Pq_Qq,        iemOp_vpcmpeqw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x76 */  iemOp_pcmpeqd_Pq_Qq,        iemOp_vpcmpeqd_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x77 */  iemOp_emms__vzeroupperv__vzeroallv, iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,       iemOp_InvalidNeedRM,
+    /* 0x74 */  iemOp_pcmpeqb_Pq_Qq,        iemOp_pcmpeqb_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x75 */  iemOp_pcmpeqw_Pq_Qq,        iemOp_pcmpeqw_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x76 */  iemOp_pcmpeqd_Pq_Qq,        iemOp_pcmpeqd_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x77 */  iemOp_emms,                 iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
 
     /* 0x78 */  iemOp_vmread_Ey_Gy,         iemOp_AmdGrp17,             iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x79 */  iemOp_vmwrite_Gy_Ey,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x7a */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x7b */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x7c */  iemOp_InvalidNeedRM,        iemOp_vhaddpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_vhaddps_Vps_Hps_Wps,
-    /* 0x7d */  iemOp_InvalidNeedRM,        iemOp_vhsubpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_vhsubps_Vps_Hps_Wps,
-    /* 0x7e */  iemOp_movd_q_Ey_Pd,         iemOp_vmovd_q_Ey_Vy,        iemOp_vmovq_Vq_Wq,          iemOp_InvalidNeedRM,
-    /* 0x7f */  iemOp_movq_Qq_Pq,           iemOp_vmovdqa_Wx_Vx,        iemOp_vmovdqu_Wx_Vx,        iemOp_InvalidNeedRM,
+    /* 0x7c */  iemOp_InvalidNeedRM,        iemOp_haddpd_Vpd_Wpd,       iemOp_InvalidNeedRM,        iemOp_haddps_Vps_Wps,
+    /* 0x7d */  iemOp_InvalidNeedRM,        iemOp_hsubpd_Vpd_Wpd,       iemOp_InvalidNeedRM,        iemOp_hsubps_Vps_Wps,
+    /* 0x7e */  iemOp_movd_q_Ey_Pd,         iemOp_movd_q_Ey_Vy,         iemOp_movq_Vq_Wq,           iemOp_InvalidNeedRM,
+    /* 0x7f */  iemOp_movq_Qq_Pq,           iemOp_movdqa_Wx_Vx,         iemOp_movdqu_Wx_Vx,         iemOp_InvalidNeedRM,
 
     /* 0x80 */  IEMOP_X4(iemOp_jo_Jv),
     /* 0x81 */  IEMOP_X4(iemOp_jno_Jv),
@@ -8615,11 +8496,11 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
 
     /* 0xc0 */  IEMOP_X4(iemOp_xadd_Eb_Gb),
     /* 0xc1 */  IEMOP_X4(iemOp_xadd_Ev_Gv),
-    /* 0xc2 */  iemOp_vcmpps_Vps_Hps_Wps_Ib, iemOp_vcmppd_Vpd_Hpd_Wpd_Ib, iemOp_vcmpss_Vss_Hss_Wss_Ib, iemOp_vcmpsd_Vsd_Hsd_Wsd_Ib,
+    /* 0xc2 */  iemOp_cmpps_Vps_Wps_Ib,     iemOp_cmppd_Vpd_Wpd_Ib,     iemOp_cmpss_Vss_Wss_Ib,     iemOp_cmpsd_Vsd_Wsd_Ib,
     /* 0xc3 */  iemOp_movnti_My_Gy,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xc4 */  iemOp_pinsrw_Pq_RyMw_Ib,    iemOp_vpinsrw_Vdq_Hdq_RyMw_Ib, iemOp_InvalidNeedRMImm8, iemOp_InvalidNeedRMImm8,
-    /* 0xc5 */  iemOp_pextrw_Gd_Nq_Ib,      iemOp_vpextrw_Gd_Udq_Ib,    iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
-    /* 0xc6 */  iemOp_vshufps_Vps_Hps_Wps_Ib, iemOp_vshufpd_Vpd_Hpd_Wpd_Ib, iemOp_InvalidNeedRMImm8,iemOp_InvalidNeedRMImm8,
+    /* 0xc4 */  iemOp_pinsrw_Pq_RyMw_Ib,    iemOp_pinsrw_Vdq_RyMw_Ib,   iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
+    /* 0xc5 */  iemOp_pextrw_Gd_Nq_Ib,      iemOp_pextrw_Gd_Udq_Ib,     iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
+    /* 0xc6 */  iemOp_shufps_Vps_Wps_Ib,    iemOp_shufpd_Vpd_Wpd_Ib,    iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
     /* 0xc7 */  IEMOP_X4(iemOp_Grp9),
     /* 0xc8 */  IEMOP_X4(iemOp_bswap_rAX_r8),
     /* 0xc9 */  IEMOP_X4(iemOp_bswap_rCX_r9),
@@ -8630,342 +8511,56 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0xce */  IEMOP_X4(iemOp_bswap_rSI_r14),
     /* 0xcf */  IEMOP_X4(iemOp_bswap_rDI_r15),
 
-    /* 0xd0 */  iemOp_InvalidNeedRM,        iemOp_vaddsubpd_Vpd_Hpd_Wpd, iemOp_InvalidNeedRM,       iemOp_vaddsubps_Vps_Hps_Wps,
-    /* 0xd1 */  iemOp_psrlw_Pq_Qq,          iemOp_vpsrlw_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd2 */  iemOp_psrld_Pq_Qq,          iemOp_vpsrld_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd3 */  iemOp_psrlq_Pq_Qq,          iemOp_vpsrlq_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd4 */  iemOp_paddq_Pq_Qq,          iemOp_vpaddq_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd5 */  iemOp_pmullw_Pq_Qq,         iemOp_vpmullw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd6 */  iemOp_InvalidNeedRM,        iemOp_vmovq_Wq_Vq,          iemOp_movq2dq_Vdq_Nq,       iemOp_movdq2q_Pq_Uq,
-    /* 0xd7 */  iemOp_pmovmskb_Gd_Nq,       iemOp_vpmovmskb_Gd_Ux,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd8 */  iemOp_psubusb_Pq_Qq,        iemOp_vpsubusb_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd9 */  iemOp_psubusw_Pq_Qq,        iemOp_vpsubusw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xda */  iemOp_pminub_Pq_Qq,         iemOp_vpminub_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdb */  iemOp_pand_Pq_Qq,           iemOp_vpand_Vx_Hx_W,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdc */  iemOp_paddusb_Pq_Qq,        iemOp_vpaddusb_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdd */  iemOp_paddusw_Pq_Qq,        iemOp_vpaddusw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xde */  iemOp_pmaxub_Pq_Qq,         iemOp_vpmaxub_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdf */  iemOp_pandn_Pq_Qq,          iemOp_vpandn_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd0 */  iemOp_InvalidNeedRM,        iemOp_addsubpd_Vpd_Wpd,     iemOp_InvalidNeedRM,        iemOp_addsubps_Vps_Wps,
+    /* 0xd1 */  iemOp_psrlw_Pq_Qq,          iemOp_psrlw_Vx_W,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd2 */  iemOp_psrld_Pq_Qq,          iemOp_psrld_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd3 */  iemOp_psrlq_Pq_Qq,          iemOp_psrlq_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd4 */  iemOp_paddq_Pq_Qq,          iemOp_paddq_Vx_W,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd5 */  iemOp_pmullw_Pq_Qq,         iemOp_pmullw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd6 */  iemOp_InvalidNeedRM,        iemOp_movq_Wq_Vq,           iemOp_movq2dq_Vdq_Nq,       iemOp_movdq2q_Pq_Uq,
+    /* 0xd7 */  iemOp_pmovmskb_Gd_Nq,       iemOp_pmovmskb_Gd_Ux,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd8 */  iemOp_psubusb_Pq_Qq,        iemOp_psubusb_Vx_W,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd9 */  iemOp_psubusw_Pq_Qq,        iemOp_psubusw_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xda */  iemOp_pminub_Pq_Qq,         iemOp_pminub_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xdb */  iemOp_pand_Pq_Qq,           iemOp_pand_Vx_W,            iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xdc */  iemOp_paddusb_Pq_Qq,        iemOp_paddusb_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xdd */  iemOp_paddusw_Pq_Qq,        iemOp_paddusw_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xde */  iemOp_pmaxub_Pq_Qq,         iemOp_pmaxub_Vx_W,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xdf */  iemOp_pandn_Pq_Qq,          iemOp_pandn_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
 
-    /* 0xe0 */  iemOp_pavgb_Pq_Qq,          iemOp_vpavgb_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe1 */  iemOp_psraw_Pq_Qq,          iemOp_vpsraw_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe2 */  iemOp_psrad_Pq_Qq,          iemOp_vpsrad_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe3 */  iemOp_pavgw_Pq_Qq,          iemOp_vpavgw_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe4 */  iemOp_pmulhuw_Pq_Qq,        iemOp_vpmulhuw_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe5 */  iemOp_pmulhw_Pq_Qq,         iemOp_vpmulhw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe6 */  iemOp_InvalidNeedRM,        iemOp_vcvttpd2dq_Vx_Wpd,    iemOp_vcvtdq2pd_Vx_Wpd,     iemOp_vcvtpd2dq_Vx_Wpd,
-    /* 0xe7 */  iemOp_movntq_Mq_Pq,         iemOp_vmovntdq_Mx_Vx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe8 */  iemOp_psubsb_Pq_Qq,         iemOp_vpsubsb_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe9 */  iemOp_psubsw_Pq_Qq,         iemOp_vpsubsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xea */  iemOp_pminsw_Pq_Qq,         iemOp_vpminsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xeb */  iemOp_por_Pq_Qq,            iemOp_vpor_Vx_Hx_W,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xec */  iemOp_paddsb_Pq_Qq,         iemOp_vpaddsb_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xed */  iemOp_paddsw_Pq_Qq,         iemOp_vpaddsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xee */  iemOp_pmaxsw_Pq_Qq,         iemOp_vpmaxsw_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xef */  iemOp_pxor_Pq_Qq,           iemOp_vpxor_Vx_Hx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe0 */  iemOp_pavgb_Pq_Qq,          iemOp_pavgb_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe1 */  iemOp_psraw_Pq_Qq,          iemOp_psraw_Vx_W,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe2 */  iemOp_psrad_Pq_Qq,          iemOp_psrad_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe3 */  iemOp_pavgw_Pq_Qq,          iemOp_pavgw_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe4 */  iemOp_pmulhuw_Pq_Qq,        iemOp_pmulhuw_Vx_W,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe5 */  iemOp_pmulhw_Pq_Qq,         iemOp_pmulhw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe6 */  iemOp_InvalidNeedRM,        iemOp_cvttpd2dq_Vx_Wpd,     iemOp_cvtdq2pd_Vx_Wpd,      iemOp_cvtpd2dq_Vx_Wpd,
+    /* 0xe7 */  iemOp_movntq_Mq_Pq,         iemOp_movntdq_Mx_Vx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe8 */  iemOp_psubsb_Pq_Qq,         iemOp_psubsb_Vx_W,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe9 */  iemOp_psubsw_Pq_Qq,         iemOp_psubsw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xea */  iemOp_pminsw_Pq_Qq,         iemOp_pminsw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xeb */  iemOp_por_Pq_Qq,            iemOp_por_Vx_W,             iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xec */  iemOp_paddsb_Pq_Qq,         iemOp_paddsb_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xed */  iemOp_paddsw_Pq_Qq,         iemOp_paddsw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xee */  iemOp_pmaxsw_Pq_Qq,         iemOp_pmaxsw_Vx_W,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xef */  iemOp_pxor_Pq_Qq,           iemOp_pxor_Vx_Wx,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
 
-    /* 0xf0 */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_vlddqu_Vx_Mx,
-    /* 0xf1 */  iemOp_psllw_Pq_Qq,          iemOp_vpsllw_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf2 */  iemOp_pslld_Pq_Qq,          iemOp_vpslld_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf3 */  iemOp_psllq_Pq_Qq,          iemOp_vpsllq_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf4 */  iemOp_pmuludq_Pq_Qq,        iemOp_vpmuludq_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf5 */  iemOp_pmaddwd_Pq_Qq,        iemOp_vpmaddwd_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf6 */  iemOp_psadbw_Pq_Qq,         iemOp_vpsadbw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf7 */  iemOp_maskmovq_Pq_Nq,       iemOp_vmaskmovdqu_Vdq_Udq,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf8 */  iemOp_psubb_Pq_Qq,          iemOp_vpsubb_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf9 */  iemOp_psubw_Pq_Qq,          iemOp_vpsubw_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfa */  iemOp_psubd_Pq_Qq,          iemOp_vpsubd_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfb */  iemOp_psubq_Pq_Qq,          iemOp_vpsubq_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfc */  iemOp_paddb_Pq_Qq,          iemOp_vpaddb_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfd */  iemOp_paddw_Pq_Qq,          iemOp_vpaddw_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfe */  iemOp_paddd_Pq_Qq,          iemOp_vpaddd_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf0 */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_lddqu_Vx_Mx,
+    /* 0xf1 */  iemOp_psllw_Pq_Qq,          iemOp_psllw_Vx_W,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf2 */  iemOp_pslld_Pq_Qq,          iemOp_pslld_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf3 */  iemOp_psllq_Pq_Qq,          iemOp_psllq_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf4 */  iemOp_pmuludq_Pq_Qq,        iemOp_pmuludq_Vx_W,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf5 */  iemOp_pmaddwd_Pq_Qq,        iemOp_pmaddwd_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf6 */  iemOp_psadbw_Pq_Qq,         iemOp_psadbw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf7 */  iemOp_maskmovq_Pq_Nq,       iemOp_maskmovdqu_Vdq_Udq,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf8 */  iemOp_psubb_Pq_Qq,          iemOp_psubb_Vx_W,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xf9 */  iemOp_psubw_Pq_Qq,          iemOp_psubw_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xfa */  iemOp_psubd_Pq_Qq,          iemOp_psubd_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xfb */  iemOp_psubq_Pq_Qq,          iemOp_psubq_Vx_W,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xfc */  iemOp_paddb_Pq_Qq,          iemOp_paddb_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xfd */  iemOp_paddw_Pq_Qq,          iemOp_paddw_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xfe */  iemOp_paddd_Pq_Qq,          iemOp_paddd_Vx_W,           iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xff */  IEMOP_X4(iemOp_ud0),
 };
 AssertCompile(RT_ELEMENTS(g_apfnTwoByteMap) == 1024);
-
-
-/**
- * VEX opcode map \#1.
- *
- * @remarks This is (currently) a subset of g_apfnTwoByteMap, so please check if
- *          it it needs updating too when making changes.
- */
-IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
-{
-    /*          no prefix,                  066h prefix                 f3h prefix,                 f2h prefix */
-    /* 0x00 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x01 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x02 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x03 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x04 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x05 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x06 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x07 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x08 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x09 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x0a */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x0b */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x0c */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x0d */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x0e */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x0f */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0x10 */  iemOp_vmovups_Vps_Wps,      iemOp_vmovupd_Vpd_Wpd,      iemOp_vmovss_Vx_Hx_Wss,     iemOp_vmovsd_Vx_Hx_Wsd,
-    /* 0x11 */  iemOp_vmovups_Wps_Vps,      iemOp_vmovupd_Wpd_Vpd,      iemOp_vmovss_Wss_Hx_Vss,    iemOp_vmovsd_Wsd_Hx_Vsd,
-    /* 0x12 */  iemOp_vmovlps_Vq_Hq_Mq__vmovhlps, iemOp_vmovlpd_Vq_Hq_Mq, iemOp_vmovsldup_Vx_Wx,    iemOp_vmovddup_Vx_Wx,
-    /* 0x13 */  iemOp_vmovlps_Mq_Vq,        iemOp_vmovlpd_Mq_Vq,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x14 */  iemOp_vunpcklps_Vx_Hx_Wx,   iemOp_vunpcklpd_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x15 */  iemOp_vunpckhps_Vx_Hx_Wx,   iemOp_vunpckhpd_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x16 */  iemOp_vmovhpsv1_Vdq_Hq_Mq__vmovlhps_Vdq_Hq_Uq, iemOp_vmovhpdv1_Vdq_Hq_Mq, iemOp_vmovshdup_Vx_Wx, iemOp_InvalidNeedRM,
-    /* 0x17 */  iemOp_vmovhpsv1_Mq_Vq,      iemOp_vmovhpdv1_Mq_Vq,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x18 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x19 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x1a */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x1b */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x1c */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x1d */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x1e */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x1f */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0x20 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x21 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x22 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x23 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x24 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x25 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x26 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x27 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x28 */  iemOp_vmovaps_Vps_Wps,      iemOp_vmovapd_Vpd_Wpd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x29 */  iemOp_vmovaps_Wps_Vps,      iemOp_vmovapd_Wpd_Vpd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x2a */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_vcvtsi2ss_Vss_Hss_Ey, iemOp_vcvtsi2sd_Vsd_Hsd_Ey,
-    /* 0x2b */  iemOp_vmovntps_Mps_Vps,     iemOp_vmovntpd_Mpd_Vpd,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x2c */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_vcvttss2si_Gy_Wss,    iemOp_vcvttsd2si_Gy_Wsd,
-    /* 0x2d */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_vcvtss2si_Gy_Wss,     iemOp_vcvtsd2si_Gy_Wsd,
-    /* 0x2e */  iemOp_vucomiss_Vss_Wss,     iemOp_vucomisd_Vsd_Wsd,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x2f */  iemOp_vcomiss_Vss_Wss,      iemOp_vcomisd_Vsd_Wsd,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-
-    /* 0x30 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x31 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x32 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x33 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x34 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x35 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x36 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x37 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x38 */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-    /* 0x39 */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-    /* 0x3a */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-    /* 0x3b */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-    /* 0x3c */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-    /* 0x3d */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-    /* 0x3e */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-    /* 0x3f */  IEMOP_X4(iemOp_InvalidNeedRM),  /** @todo check that there is no escape table stuff here */
-
-    /* 0x40 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x41 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x42 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x43 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x44 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x45 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x46 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x47 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x48 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x49 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x4a */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x4b */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x4c */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x4d */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x4e */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x4f */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0x50 */  iemOp_vmovmskps_Gy_Ups,     iemOp_vmovmskpd_Gy_Upd,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x51 */  iemOp_vsqrtps_Vps_Wps,      iemOp_vsqrtpd_Vpd_Wpd,      iemOp_vsqrtss_Vss_Hss_Wss,  iemOp_vsqrtsd_Vsd_Hsd_Wsd,
-    /* 0x52 */  iemOp_vrsqrtps_Vps_Wps,     iemOp_InvalidNeedRM,        iemOp_vrsqrtss_Vss_Hss_Wss, iemOp_InvalidNeedRM,
-    /* 0x53 */  iemOp_vrcpps_Vps_Wps,       iemOp_InvalidNeedRM,        iemOp_vrcpss_Vss_Hss_Wss,   iemOp_InvalidNeedRM,
-    /* 0x54 */  iemOp_vandps_Vps_Hps_Wps,   iemOp_vandpd_Vpd_Hpd_Wpd,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x55 */  iemOp_vandnps_Vps_Hps_Wps,  iemOp_vandnpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x56 */  iemOp_vorps_Vps_Hps_Wps,    iemOp_vorpd_Vpd_Hpd_Wpd,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x57 */  iemOp_vxorps_Vps_Hps_Wps,   iemOp_vxorpd_Vpd_Hpd_Wpd,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x58 */  iemOp_vaddps_Vps_Hps_Wps,   iemOp_vaddpd_Vpd_Hpd_Wpd,   iemOp_vaddss_Vss_Hss_Wss,   iemOp_vaddsd_Vsd_Hsd_Wsd,
-    /* 0x59 */  iemOp_vmulps_Vps_Hps_Wps,   iemOp_vmulpd_Vpd_Hpd_Wpd,   iemOp_vmulss_Vss_Hss_Wss,   iemOp_vmulsd_Vsd_Hsd_Wsd,
-    /* 0x5a */  iemOp_vcvtps2pd_Vpd_Wps,    iemOp_vcvtpd2ps_Vps_Wpd,    iemOp_vcvtss2sd_Vsd_Hx_Wss, iemOp_vcvtsd2ss_Vss_Hx_Wsd,
-    /* 0x5b */  iemOp_vcvtdq2ps_Vps_Wdq,    iemOp_vcvtps2dq_Vdq_Wps,    iemOp_vcvttps2dq_Vdq_Wps,   iemOp_InvalidNeedRM,
-    /* 0x5c */  iemOp_vsubps_Vps_Hps_Wps,   iemOp_vsubpd_Vpd_Hpd_Wpd,   iemOp_vsubss_Vss_Hss_Wss,   iemOp_vsubsd_Vsd_Hsd_Wsd,
-    /* 0x5d */  iemOp_vminps_Vps_Hps_Wps,   iemOp_vminpd_Vpd_Hpd_Wpd,   iemOp_vminss_Vss_Hss_Wss,   iemOp_vminsd_Vsd_Hsd_Wsd,
-    /* 0x5e */  iemOp_vdivps_Vps_Hps_Wps,   iemOp_vdivpd_Vpd_Hpd_Wpd,   iemOp_vdivss_Vss_Hss_Wss,   iemOp_vdivsd_Vsd_Hsd_Wsd,
-    /* 0x5f */  iemOp_vmaxps_Vps_Hps_Wps,   iemOp_vmaxpd_Vpd_Hpd_Wpd,   iemOp_vmaxss_Vss_Hss_Wss,   iemOp_vmaxsd_Vsd_Hsd_Wsd,
-
-    /* 0x60 */  iemOp_InvalidNeedRM,        iemOp_vpunpcklbw_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x61 */  iemOp_InvalidNeedRM,        iemOp_vpunpcklwd_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x62 */  iemOp_InvalidNeedRM,        iemOp_vpunpckldq_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x63 */  iemOp_InvalidNeedRM,        iemOp_vpacksswb_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x64 */  iemOp_InvalidNeedRM,        iemOp_vpcmpgtb_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x65 */  iemOp_InvalidNeedRM,        iemOp_vpcmpgtw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x66 */  iemOp_InvalidNeedRM,        iemOp_vpcmpgtd_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x67 */  iemOp_InvalidNeedRM,        iemOp_vpackuswb_Vx_Hx_W,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x68 */  iemOp_InvalidNeedRM,        iemOp_vpunpckhbw_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x69 */  iemOp_InvalidNeedRM,        iemOp_vpunpckhwd_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6a */  iemOp_InvalidNeedRM,        iemOp_vpunpckhdq_Vx_Hx_W,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6b */  iemOp_InvalidNeedRM,        iemOp_vpackssdw_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6c */  iemOp_InvalidNeedRM,        iemOp_vpunpcklqdq_Vx_Hx_Wx, iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6d */  iemOp_InvalidNeedRM,        iemOp_vpunpckhqdq_Vx_Hx_W,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6e */  iemOp_InvalidNeedRM,        iemOp_vmovd_q_Vy_Ey,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6f */  iemOp_InvalidNeedRM,        iemOp_vmovdqa_Vx_Wx,        iemOp_vmovdqu_Vx_Wx,        iemOp_InvalidNeedRM,
-
-    /* 0x70 */  iemOp_InvalidNeedRM,        iemOp_vpshufd_Vx_Wx_Ib,     iemOp_vpshufhw_Vx_Wx_Ib,    iemOp_vpshuflw_Vx_Wx_Ib,
-    /* 0x71 */  iemOp_InvalidNeedRM,        iemOp_Grp12,                iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x72 */  iemOp_InvalidNeedRM,        iemOp_Grp13,                iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x73 */  iemOp_InvalidNeedRM,        iemOp_Grp14,                iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x74 */  iemOp_pcmpeqb_Pq_Qq,        iemOp_vpcmpeqb_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x75 */  iemOp_pcmpeqw_Pq_Qq,        iemOp_vpcmpeqw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x76 */  iemOp_pcmpeqd_Pq_Qq,        iemOp_vpcmpeqd_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x77 */  iemOp_emms__vzeroupperv__vzeroallv, iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,       iemOp_InvalidNeedRM,
-    /* 0x78 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x79 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x7a */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x7b */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x7c */  iemOp_InvalidNeedRM,        iemOp_vhaddpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_vhaddps_Vps_Hps_Wps,
-    /* 0x7d */  iemOp_InvalidNeedRM,        iemOp_vhsubpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_vhsubps_Vps_Hps_Wps,
-    /* 0x7e */  iemOp_InvalidNeedRM,        iemOp_vmovd_q_Ey_Vy,        iemOp_vmovq_Vq_Wq,          iemOp_InvalidNeedRM,
-    /* 0x7f */  iemOp_InvalidNeedRM,        iemOp_vmovdqa_Wx_Vx,        iemOp_vmovdqu_Wx_Vx,        iemOp_InvalidNeedRM,
-
-    /* 0x80 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x81 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x82 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x83 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x84 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x85 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x86 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x87 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x88 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x89 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x8a */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x8b */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x8c */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x8d */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x8e */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x8f */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0x90 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x91 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x92 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x93 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x94 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x95 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x96 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x97 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x98 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x99 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x9a */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x9b */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x9c */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x9d */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x9e */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0x9f */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0xa0 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa1 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa2 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa3 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa4 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa5 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa6 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa7 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa8 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xa9 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xaa */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xab */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xac */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xad */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xae */  IEMOP_X4(iemOp_VGrp15),
-    /* 0xaf */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0xb0 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb1 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb2 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb3 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb4 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb5 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb6 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb7 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb8 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xb9 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xba */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xbb */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xbc */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xbd */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xbe */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xbf */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0xc0 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xc1 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xc2 */  iemOp_vcmpps_Vps_Hps_Wps_Ib, iemOp_vcmppd_Vpd_Hpd_Wpd_Ib, iemOp_vcmpss_Vss_Hss_Wss_Ib, iemOp_vcmpsd_Vsd_Hsd_Wsd_Ib,
-    /* 0xc3 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xc4 */  iemOp_InvalidNeedRM,        iemOp_vpinsrw_Vdq_Hdq_RyMw_Ib, iemOp_InvalidNeedRMImm8, iemOp_InvalidNeedRMImm8,
-    /* 0xc5 */  iemOp_InvalidNeedRM,        iemOp_vpextrw_Gd_Udq_Ib,       iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
-    /* 0xc6 */  iemOp_vshufps_Vps_Hps_Wps_Ib, iemOp_vshufpd_Vpd_Hpd_Wpd_Ib, iemOp_InvalidNeedRMImm8,iemOp_InvalidNeedRMImm8,
-    /* 0xc7 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xc8 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xc9 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xca */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xcb */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xcc */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xcd */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xce */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xcf */  IEMOP_X4(iemOp_InvalidNeedRM),
-
-    /* 0xd0 */  iemOp_InvalidNeedRM,        iemOp_vaddsubpd_Vpd_Hpd_Wpd, iemOp_InvalidNeedRM,       iemOp_vaddsubps_Vps_Hps_Wps,
-    /* 0xd1 */  iemOp_InvalidNeedRM,        iemOp_vpsrlw_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd2 */  iemOp_InvalidNeedRM,        iemOp_vpsrld_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd3 */  iemOp_InvalidNeedRM,        iemOp_vpsrlq_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd4 */  iemOp_InvalidNeedRM,        iemOp_vpaddq_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd5 */  iemOp_InvalidNeedRM,        iemOp_vpmullw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd6 */  iemOp_InvalidNeedRM,        iemOp_vmovq_Wq_Vq,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd7 */  iemOp_InvalidNeedRM,        iemOp_vpmovmskb_Gd_Ux,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd8 */  iemOp_InvalidNeedRM,        iemOp_vpsubusb_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd9 */  iemOp_InvalidNeedRM,        iemOp_vpsubusw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xda */  iemOp_InvalidNeedRM,        iemOp_vpminub_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdb */  iemOp_InvalidNeedRM,        iemOp_vpand_Vx_Hx_W,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdc */  iemOp_InvalidNeedRM,        iemOp_vpaddusb_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdd */  iemOp_InvalidNeedRM,        iemOp_vpaddusw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xde */  iemOp_InvalidNeedRM,        iemOp_vpmaxub_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xdf */  iemOp_InvalidNeedRM,        iemOp_vpandn_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-
-    /* 0xe0 */  iemOp_InvalidNeedRM,        iemOp_vpavgb_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe1 */  iemOp_InvalidNeedRM,        iemOp_vpsraw_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe2 */  iemOp_InvalidNeedRM,        iemOp_vpsrad_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe3 */  iemOp_InvalidNeedRM,        iemOp_vpavgw_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe4 */  iemOp_InvalidNeedRM,        iemOp_vpmulhuw_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe5 */  iemOp_InvalidNeedRM,        iemOp_vpmulhw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe6 */  iemOp_InvalidNeedRM,        iemOp_vcvttpd2dq_Vx_Wpd,    iemOp_vcvtdq2pd_Vx_Wpd,     iemOp_vcvtpd2dq_Vx_Wpd,
-    /* 0xe7 */  iemOp_InvalidNeedRM,        iemOp_vmovntdq_Mx_Vx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe8 */  iemOp_InvalidNeedRM,        iemOp_vpsubsb_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe9 */  iemOp_InvalidNeedRM,        iemOp_vpsubsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xea */  iemOp_InvalidNeedRM,        iemOp_vpminsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xeb */  iemOp_InvalidNeedRM,        iemOp_vpor_Vx_Hx_W,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xec */  iemOp_InvalidNeedRM,        iemOp_vpaddsb_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xed */  iemOp_InvalidNeedRM,        iemOp_vpaddsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xee */  iemOp_InvalidNeedRM,        iemOp_vpmaxsw_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xef */  iemOp_InvalidNeedRM,        iemOp_vpxor_Vx_Hx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-
-    /* 0xf0 */  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_vlddqu_Vx_Mx,
-    /* 0xf1 */  iemOp_InvalidNeedRM,        iemOp_vpsllw_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf2 */  iemOp_InvalidNeedRM,        iemOp_vpslld_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf3 */  iemOp_InvalidNeedRM,        iemOp_vpsllq_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf4 */  iemOp_InvalidNeedRM,        iemOp_vpmuludq_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf5 */  iemOp_InvalidNeedRM,        iemOp_vpmaddwd_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf6 */  iemOp_InvalidNeedRM,        iemOp_vpsadbw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf7 */  iemOp_InvalidNeedRM,        iemOp_vmaskmovdqu_Vdq_Udq,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf8 */  iemOp_InvalidNeedRM,        iemOp_vpsubb_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xf9 */  iemOp_InvalidNeedRM,        iemOp_vpsubw_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfa */  iemOp_InvalidNeedRM,        iemOp_vpsubd_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfb */  iemOp_InvalidNeedRM,        iemOp_vpsubq_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfc */  iemOp_InvalidNeedRM,        iemOp_vpaddb_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfd */  iemOp_InvalidNeedRM,        iemOp_vpaddw_Vx_Hx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xfe */  iemOp_InvalidNeedRM,        iemOp_vpaddd_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xff */  IEMOP_X4(iemOp_ud0),
-};
-AssertCompile(RT_ELEMENTS(g_apfnVexMap1) == 1024);
-/** @}  */
-
 

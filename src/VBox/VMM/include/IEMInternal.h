@@ -41,6 +41,10 @@ RT_C_DECLS_BEGIN
 # define IEM_STATIC static
 #endif
 
+/** @def IEM_WITH_VEX
+ * Enables the VEX decoding. */
+#define IEM_WITH_VEX
+
 /** @def IEM_VERIFICATION_MODE_FULL
  * Shorthand for:
  *    defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL)

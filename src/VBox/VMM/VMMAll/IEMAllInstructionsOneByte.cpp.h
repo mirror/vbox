@@ -6230,7 +6230,12 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
             switch (bRm & 0x1f)
             {
                 case 1: /* 0x0f lead opcode byte. */
+#ifdef IEM_WITH_VEX
                     return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
+#else
+                    IEMOP_BITCH_ABOUT_STUB();
+                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+#endif
 
                 case 2: /* 0x0f 0x38 lead opcode bytes. */
                     /** @todo VEX: Just use new tables and decoders. */
@@ -6283,7 +6288,12 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
             pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bRm & 0x3;
 
+#ifdef IEM_WITH_VEX
             return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
+#else
+            IEMOP_BITCH_ABOUT_STUB();
+            return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+#endif
         }
 
         /** @todo does intel completely decode the sequence with SIB/disp before \#UD? */
