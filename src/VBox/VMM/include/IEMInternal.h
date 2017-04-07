@@ -611,6 +611,8 @@ typedef struct IEMCPU
     /** @todo Should move this near @a fCurXcpt later. */
     /** The error code for the current exception / interrupt. */
     uint32_t                uCurXcptErr;
+    /** The CR2 for the current exception / interrupt. */
+    uint64_t                uCurXcptCr2;
 
     /** @name Statistics
      * @{  */
@@ -691,7 +693,7 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
 
-    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 2 + 4 + 8 : 2 + 4]; /**< Alignment padding. */
+    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 4 + 8 : 4]; /**< Alignment padding. */
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */
