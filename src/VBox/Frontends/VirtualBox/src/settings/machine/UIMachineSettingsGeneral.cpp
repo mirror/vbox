@@ -340,111 +340,8 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is in valid mode & general data was changed: */
-    if (isMachineInValidMode() && m_pCache->wasChanged())
-    {
-        /* Get old general data from the cache: */
-        const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from the cache: */
-        const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
-
-        /* Store machine OS type ID: */
-        if (isMachineOffline() && newGeneralData.m_strGuestOsTypeId != oldGeneralData.m_strGuestOsTypeId)
-        {
-            m_machine.SetOSTypeId(newGeneralData.m_strGuestOsTypeId);
-            // Must update long mode CPU feature bit when os type changed:
-            CVirtualBox vbox = vboxGlobal().virtualBox();
-            const CGuestOSType enmNewType = vbox.GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
-            m_machine.SetCPUProperty(KCPUPropertyType_LongMode, enmNewType.GetIs64Bit());
-        }
-
-        /* Store machine clipboard mode: */
-        if (newGeneralData.m_clipboardMode != oldGeneralData.m_clipboardMode)
-            m_machine.SetClipboardMode(newGeneralData.m_clipboardMode);
-        /* Store machine D&D mode: */
-        if (newGeneralData.m_dndMode != oldGeneralData.m_dndMode)
-            m_machine.SetDnDMode(newGeneralData.m_dndMode);
-        /* Store machine snapshot folder: */
-        if (isMachineOffline() && newGeneralData.m_strSnapshotsFolder != oldGeneralData.m_strSnapshotsFolder)
-            m_machine.SetSnapshotFolder(newGeneralData.m_strSnapshotsFolder);
-
-        // VM name should go after the snapshot folder from the 'Advanced' data
-        // as otherwise VM rename magic can collide with the snapshot folder one.
-        /* Store machine name: */
-        if (isMachineOffline() && newGeneralData.m_strName != oldGeneralData.m_strName)
-            m_machine.SetName(newGeneralData.m_strName);
-
-        /* Store machine description: */
-        if (newGeneralData.m_strDescription != oldGeneralData.m_strDescription)
-            m_machine.SetDescription(newGeneralData.m_strDescription);
-
-        if (isMachineOffline())
-        {
-            /* Make sure it either encryption is changed itself,
-             * or the encryption was already enabled and either cipher or password is changed. */
-            if (   newGeneralData.m_fEncryptionEnabled != oldGeneralData.m_fEncryptionEnabled
-                || (   oldGeneralData.m_fEncryptionEnabled
-                    && (   newGeneralData.m_fEncryptionCipherChanged != oldGeneralData.m_fEncryptionCipherChanged
-                        || newGeneralData.m_fEncryptionPasswordChanged != oldGeneralData.m_fEncryptionPasswordChanged)))
-            {
-                /* Cipher attribute changed? */
-                QString strNewCipher;
-                if (newGeneralData.m_fEncryptionCipherChanged)
-                {
-                    strNewCipher = newGeneralData.m_fEncryptionEnabled ?
-                                   m_encryptionCiphers.at(newGeneralData.m_iEncryptionCipherIndex) : QString();
-                }
-                /* Password attribute changed? */
-                QString strNewPassword;
-                QString strNewPasswordId;
-                if (newGeneralData.m_fEncryptionPasswordChanged)
-                {
-                    strNewPassword = newGeneralData.m_fEncryptionEnabled ?
-                                     newGeneralData.m_strEncryptionPassword : QString();
-                    strNewPasswordId = newGeneralData.m_fEncryptionEnabled ?
-                                       m_machine.GetName() : QString();
-                }
-
-                /* Get the maps of encrypted mediums and their passwords: */
-                const EncryptedMediumMap &encryptedMedium = newGeneralData.m_encryptedMediums;
-                const EncryptionPasswordMap &encryptionPasswords = newGeneralData.m_encryptionPasswords;
-                /* Enumerate attachments: */
-                foreach (const CMediumAttachment &attachment, m_machine.GetMediumAttachments())
-                {
-                    /* Enumerate hard-drives only: */
-                    if (attachment.GetType() == KDeviceType_HardDisk)
-                    {
-                        /* Get corresponding medium: */
-                        CMedium comMedium = attachment.GetMedium();
-
-                        /* Check if old password exists/provided: */
-                        const QString strOldPasswordId = encryptedMedium.key(comMedium.GetId());
-                        const QString strOldPassword = encryptionPasswords.value(strOldPasswordId);
-
-                        /* Update encryption: */
-                        CProgress cprogress = comMedium.ChangeEncryption(strOldPassword,
-                                                                         strNewCipher,
-                                                                         strNewPassword,
-                                                                         strNewPasswordId);
-                        if (!comMedium.isOk())
-                        {
-                            QMetaObject::invokeMethod(this, "sigOperationProgressError", Qt::BlockingQueuedConnection,
-                                                      Q_ARG(QString, UIMessageCenter::formatErrorInfo(comMedium)));
-                            continue;
-                        }
-                        UIProgress uiprogress(cprogress);
-                        connect(&uiprogress, SIGNAL(sigProgressChange(ulong, QString, ulong, ulong)),
-                                this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
-                                Qt::QueuedConnection);
-                        connect(&uiprogress, SIGNAL(sigProgressError(QString)),
-                                this, SIGNAL(sigOperationProgressError(QString)),
-                                Qt::BlockingQueuedConnection);
-                        uiprogress.run(350);
-                    }
-                }
-            }
-        }
-    }
+    /* Update general data and failing state: */
+    setFailed(!saveGeneralData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -760,5 +657,295 @@ void UIMachineSettingsGeneral::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+bool UIMachineSettingsGeneral::saveGeneralData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save general settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
+    {
+        /* Save 'Basic' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveBasicData();
+        /* Save 'Advanced' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveAdvancedData();
+        /* Save 'Description' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveDescriptionData();
+        /* Save 'Encryption' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveEncryptionData();
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsGeneral::saveBasicData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Basic' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old general data from the cache: */
+        const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
+        /* Get new general data from the cache: */
+        const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
+
+        /* Save machine OS type ID: */
+        if (isMachineOffline() && newGeneralData.m_strGuestOsTypeId != oldGeneralData.m_strGuestOsTypeId)
+        {
+            if (fSuccess)
+            {
+                m_machine.SetOSTypeId(newGeneralData.m_strGuestOsTypeId);
+                fSuccess = m_machine.isOk();
+            }
+            if (fSuccess)
+            {
+                // Must update long mode CPU feature bit when os type changed:
+                CVirtualBox vbox = vboxGlobal().virtualBox();
+                // Should we check global object getters?
+                const CGuestOSType &comNewType = vbox.GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
+                m_machine.SetCPUProperty(KCPUPropertyType_LongMode, comNewType.GetIs64Bit());
+                fSuccess = m_machine.isOk();
+            }
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveGeneralSettings(m_machine, this);
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsGeneral::saveAdvancedData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Advanced' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old general data from the cache: */
+        const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
+        /* Get new general data from the cache: */
+        const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
+
+        /* Save machine clipboard mode: */
+        if (fSuccess && newGeneralData.m_clipboardMode != oldGeneralData.m_clipboardMode)
+        {
+            m_machine.SetClipboardMode(newGeneralData.m_clipboardMode);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save machine D&D mode: */
+        if (fSuccess && newGeneralData.m_dndMode != oldGeneralData.m_dndMode)
+        {
+            m_machine.SetDnDMode(newGeneralData.m_dndMode);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save machine snapshot folder: */
+        if (fSuccess && isMachineOffline() && newGeneralData.m_strSnapshotsFolder != oldGeneralData.m_strSnapshotsFolder)
+        {
+            m_machine.SetSnapshotFolder(newGeneralData.m_strSnapshotsFolder);
+            fSuccess = m_machine.isOk();
+        }
+        // VM name from 'Basic' data should go after the snapshot folder from the 'Advanced' data
+        // as otherwise VM rename magic can collide with the snapshot folder one.
+        /* Save machine name: */
+        if (fSuccess && isMachineOffline() && newGeneralData.m_strName != oldGeneralData.m_strName)
+        {
+            m_machine.SetName(newGeneralData.m_strName);
+            fSuccess = m_machine.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveGeneralSettings(m_machine, this);
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsGeneral::saveDescriptionData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Description' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old general data from the cache: */
+        const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
+        /* Get new general data from the cache: */
+        const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
+
+        /* Save machine description: */
+        if (fSuccess && newGeneralData.m_strDescription != oldGeneralData.m_strDescription)
+        {
+            m_machine.SetDescription(newGeneralData.m_strDescription);
+            fSuccess = m_machine.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveGeneralSettings(m_machine, this);
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsGeneral::saveEncryptionData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Encryption' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old general data from the cache: */
+        const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
+        /* Get new general data from the cache: */
+        const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
+
+        /* Make sure it either encryption state is changed itself,
+         * or the encryption was already enabled and either cipher or password is changed. */
+        if (   isMachineOffline()
+            && (   newGeneralData.m_fEncryptionEnabled != oldGeneralData.m_fEncryptionEnabled
+                || (   oldGeneralData.m_fEncryptionEnabled
+                    && (   newGeneralData.m_fEncryptionCipherChanged != oldGeneralData.m_fEncryptionCipherChanged
+                        || newGeneralData.m_fEncryptionPasswordChanged != oldGeneralData.m_fEncryptionPasswordChanged))))
+        {
+            /* Get machine name for further activities: */
+            QString strMachineName;
+            if (fSuccess)
+            {
+                strMachineName = m_machine.GetName();
+                fSuccess = m_machine.isOk();
+            }
+            /* Get machine attachments for further activities: */
+            CMediumAttachmentVector attachments;
+            if (fSuccess)
+            {
+                attachments = m_machine.GetMediumAttachments();
+                fSuccess = m_machine.isOk();
+            }
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveGeneralSettings(m_machine, this);
+
+            /* Enumerate attachments: */
+            for (int iIndex = 0; fSuccess && iIndex < attachments.size(); ++iIndex)
+            {
+                /* Get current attachment: */
+                const CMediumAttachment &comAttachment = attachments.at(iIndex);
+
+                /* Get attachment type for further activities: */
+                KDeviceType enmType = KDeviceType_Null;
+                if (fSuccess)
+                {
+                    enmType = comAttachment.GetType();
+                    fSuccess = comAttachment.isOk();
+                }
+                /* Get attachment medium for further activities: */
+                CMedium comMedium;
+                if (fSuccess)
+                {
+                    comMedium = comAttachment.GetMedium();
+                    fSuccess = comAttachment.isOk();
+                }
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotSaveStorageAttachmentSettings(comAttachment, this);
+
+                /* Enumerate hard-drives only: */
+                if (enmType != KDeviceType_HardDisk)
+                    continue;
+
+                /* Get medium id for further activities: */
+                QString strMediumId;
+                if (fSuccess)
+                {
+                    strMediumId = comMedium.GetId();
+                    fSuccess = comMedium.isOk();
+                }
+
+                /* Create encryption update progress: */
+                CProgress comProgress;
+                if (fSuccess)
+                {
+                    /* Cipher attribute changed? */
+                    QString strNewCipher;
+                    if (newGeneralData.m_fEncryptionCipherChanged)
+                    {
+                        strNewCipher = newGeneralData.m_fEncryptionEnabled ?
+                                       m_encryptionCiphers.at(newGeneralData.m_iEncryptionCipherIndex) : QString();
+                    }
+
+                    /* Password attribute changed? */
+                    QString strNewPassword;
+                    QString strNewPasswordId;
+                    if (newGeneralData.m_fEncryptionPasswordChanged)
+                    {
+                        strNewPassword = newGeneralData.m_fEncryptionEnabled ?
+                                         newGeneralData.m_strEncryptionPassword : QString();
+                        strNewPasswordId = newGeneralData.m_fEncryptionEnabled ?
+                                           strMachineName : QString();
+                    }
+
+                    /* Get the maps of encrypted mediums and their passwords: */
+                    const EncryptedMediumMap &encryptedMedium = newGeneralData.m_encryptedMediums;
+                    const EncryptionPasswordMap &encryptionPasswords = newGeneralData.m_encryptionPasswords;
+
+                    /* Check if old password exists/provided: */
+                    const QString strOldPasswordId = encryptedMedium.key(strMediumId);
+                    const QString strOldPassword = encryptionPasswords.value(strOldPasswordId);
+
+                    /* Create encryption progress: */
+                    comProgress = comMedium.ChangeEncryption(strOldPassword,
+                                                             strNewCipher,
+                                                             strNewPassword,
+                                                             strNewPasswordId);
+                    fSuccess = comMedium.isOk();
+                }
+
+                // TODO: Decide what to do with it (also below).
+                // if (!comMedium.isOk())
+                // {
+                //     QMetaObject::invokeMethod(this, "sigOperationProgressError", Qt::BlockingQueuedConnection,
+                //                               Q_ARG(QString, UIMessageCenter::formatErrorInfo(comMedium)));
+                //     continue;
+                // }
+
+                /* Create encryption update progress dialog: */
+                QPointer<UIProgress> pDlg;
+                if (fSuccess)
+                {
+                    // TODO: Decide what to do with it (also above).
+                    // This dialog connected to settings serializer, not to message-center directly.
+                    // What's the better approach in that case? Probably connect everything to serializer?
+                    pDlg = new UIProgress(comProgress);
+                    connect(pDlg, SIGNAL(sigProgressChange(ulong, QString, ulong, ulong)),
+                            this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
+                            Qt::QueuedConnection);
+                    connect(pDlg, SIGNAL(sigProgressError(QString)),
+                            this, SIGNAL(sigOperationProgressError(QString)),
+                            Qt::BlockingQueuedConnection);
+                    pDlg->run(350);
+                    if (pDlg)
+                        delete pDlg;
+                    else
+                    {
+                        // Premature application shutdown,
+                        // exit immediately:
+                        return true;
+                    }
+                }
+
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotSaveStorageMediumSettings(comMedium, this);
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

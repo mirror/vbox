@@ -1180,6 +1180,27 @@ void UIMessageCenter::cannotSaveRemoteDisplayServerSettings(const CVRDEServer &c
           formatErrorInfo(comServer));
 }
 
+void UIMessageCenter::cannotSaveGeneralSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save general settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveStorageAttachmentSettings(const CMediumAttachment &comAttachment, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save storage attachment settings."),
+          formatErrorInfo(comAttachment));
+}
+
+void UIMessageCenter::cannotSaveStorageMediumSettings(const CMedium &comMedium, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save storage medium settings."),
+          formatErrorInfo(comMedium));
+}
+
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)

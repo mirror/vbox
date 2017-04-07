@@ -242,6 +242,9 @@ public:
     void cannotSaveAudioAdapterSettings(const CAudioAdapter &comAdapter, QWidget *pParent = 0);
     void cannotSaveDisplaySettings(const CMachine &comMachine, QWidget *pParent = 0);
     void cannotSaveRemoteDisplayServerSettings(const CVRDEServer &comServer, QWidget *pParent = 0);
+    void cannotSaveGeneralSettings(const CMachine &comMachine, QWidget *pParent = 0);
+    void cannotSaveStorageAttachmentSettings(const CMediumAttachment &comAttachment, QWidget *pParent = 0);
+    void cannotSaveStorageMediumSettings(const CMedium &comMedium, QWidget *pParent = 0);
     void cannotAttachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
     bool warnAboutIncorrectAddress(QWidget *pParent = 0) const;
