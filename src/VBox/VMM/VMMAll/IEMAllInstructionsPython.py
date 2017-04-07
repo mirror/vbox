@@ -3072,7 +3072,7 @@ class SimpleParser(object):
         Returns number or errors.
         Raises exception on fatal trouble.
         """
-        self.debug('Parsing %s' % (self.sSrcFile,));
+        #self.debug('Parsing %s' % (self.sSrcFile,));
 
         while self.iLine < len(self.asLines):
             sLine = self.asLines[self.iLine];
@@ -3129,8 +3129,7 @@ class SimpleParser(object):
                 self.doneInstructions();
 
         self.doneInstructions();
-        self.debug('%s instructions in %s' % (self.cTotalInstr, self.sSrcFile,));
-        self.debug('%s instruction stubs' % (self.cTotalStubs,));
+        self.debug('%3s stubs out of %3s instructions in %s' % (self.cTotalStubs, self.cTotalInstr, os.path.basename(self.sSrcFile),));
         return self.printErrors();
 
 
@@ -3216,10 +3215,12 @@ def __parseAll():
     sSrcDir = os.path.dirname(os.path.abspath(__file__));
     cErrors = 0;
     for sDefaultMap, sName in [
-        ( 'one',     'IEMAllInstructionsOneByte.cpp.h'),
-        ( 'two0f',   'IEMAllInstructionsTwoByte0f.cpp.h'),
-        ( 'vexmap1', 'IEMAllInstructionsVexMap1.cpp.h'),
-        ( '3dnow',   'IEMAllInstructions3DNow.cpp.h'),
+        ( 'one',        'IEMAllInstructionsOneByte.cpp.h'),
+        ( 'two0f',      'IEMAllInstructionsTwoByte0f.cpp.h'),
+        ( 'three0f38',  'IEMAllInstructionsThree0f38.cpp.h'),
+        ( 'three0f3a',  'IEMAllInstructionsThree0f3a.cpp.h'),
+        ( 'vexmap1',    'IEMAllInstructionsVexMap1.cpp.h'),
+        ( '3dnow',      'IEMAllInstructions3DNow.cpp.h'),
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
     cErrors += __doTestCopying();

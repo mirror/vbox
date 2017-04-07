@@ -2037,10 +2037,32 @@ FNIEMOP_STUB(iemOp_sysenter);
 FNIEMOP_STUB(iemOp_sysexit);
 /** Opcode 0x0f 0x37. */
 FNIEMOP_STUB(iemOp_getsec);
+
+
 /** Opcode 0x0f 0x38. */
-FNIEMOP_STUB(iemOp_3byte_Esc_0f_38);
+FNIEMOP_DEF(iemOp_3byte_Esc_0f_38)
+{
+#ifdef IEM_WITH_THREE_0F_38
+    uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
+    return FNIEMOP_CALL(g_apfnThreeByte0f38[(uintptr_t)b * 4 + pVCpu->iem.s.idxPrefix]);
+#else
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+#endif
+}
+
+
 /** Opcode 0x0f 0x3a. */
-FNIEMOP_STUB(iemOp_3byte_Esc_0f_3a);
+FNIEMOP_DEF(iemOp_3byte_Esc_0f_3a)
+{
+#ifdef IEM_WITH_THREE_0F_3A
+    uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
+    return FNIEMOP_CALL(g_apfnThreeByte0f3a[(uintptr_t)b * 4 + pVCpu->iem.s.idxPrefix]);
+#else
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+#endif
+}
 
 
 /**
@@ -8464,4 +8486,6 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0xff */  IEMOP_X4(iemOp_ud0),
 };
 AssertCompile(RT_ELEMENTS(g_apfnTwoByteMap) == 1024);
+
+/** @} */
 
