@@ -2038,9 +2038,9 @@ FNIEMOP_STUB(iemOp_sysexit);
 /** Opcode 0x0f 0x37. */
 FNIEMOP_STUB(iemOp_getsec);
 /** Opcode 0x0f 0x38. */
-FNIEMOP_UD_STUB(iemOp_3byte_Esc_A4); /* Here there be dragons... */
+FNIEMOP_STUB(iemOp_3byte_Esc_0f_38);
 /** Opcode 0x0f 0x3a. */
-FNIEMOP_UD_STUB(iemOp_3byte_Esc_A5); /* Here there be dragons... */
+FNIEMOP_STUB(iemOp_3byte_Esc_0f_3a);
 
 
 /**
@@ -8249,9 +8249,9 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x35 */  IEMOP_X4(iemOp_sysexit),
     /* 0x36 */  IEMOP_X4(iemOp_Invalid),
     /* 0x37 */  IEMOP_X4(iemOp_getsec),
-    /* 0x38 */  IEMOP_X4(iemOp_3byte_Esc_A4),
+    /* 0x38 */  IEMOP_X4(iemOp_3byte_Esc_0f_38),
     /* 0x39 */  IEMOP_X4(iemOp_InvalidNeed3ByteEscRM),
-    /* 0x3a */  IEMOP_X4(iemOp_3byte_Esc_A5),
+    /* 0x3a */  IEMOP_X4(iemOp_3byte_Esc_0f_3a),
     /* 0x3b */  IEMOP_X4(iemOp_InvalidNeed3ByteEscRMImm8),
     /* 0x3c */  IEMOP_X4(iemOp_InvalidNeed3ByteEscRM),
     /* 0x3d */  IEMOP_X4(iemOp_InvalidNeed3ByteEscRM),
