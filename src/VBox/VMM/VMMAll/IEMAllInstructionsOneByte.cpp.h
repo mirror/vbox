@@ -6238,14 +6238,20 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
 #endif
 
                 case 2: /* 0x0f 0x38 lead opcode bytes. */
-                    /** @todo VEX: Just use new tables and decoders. */
+#ifdef IEM_WITH_VEX
+                    return FNIEMOP_CALL(g_apfnVexMap2[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
+#else
                     IEMOP_BITCH_ABOUT_STUB();
                     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+#endif
 
                 case 3: /* 0x0f 0x3a lead opcode bytes. */
-                    /** @todo VEX: Just use new tables and decoders. */
+#ifdef IEM_WITH_VEX
+                    return FNIEMOP_CALL(g_apfnVexMap3[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
+#else
                     IEMOP_BITCH_ABOUT_STUB();
                     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+#endif
 
                 default:
                     Log(("VEX3: Invalid vvvv value: %#x!\n", bRm & 0x1f));

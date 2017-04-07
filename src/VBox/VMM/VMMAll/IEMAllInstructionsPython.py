@@ -3220,6 +3220,8 @@ def __parseAll():
         ( 'three0f38',  'IEMAllInstructionsThree0f38.cpp.h'),
         ( 'three0f3a',  'IEMAllInstructionsThree0f3a.cpp.h'),
         ( 'vexmap1',    'IEMAllInstructionsVexMap1.cpp.h'),
+        ( 'vexmap2',    'IEMAllInstructionsVexMap2.cpp.h'),
+        ( 'vexmap3',    'IEMAllInstructionsVexMap3.cpp.h'),
         ( '3dnow',      'IEMAllInstructions3DNow.cpp.h'),
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);

@@ -742,6 +742,8 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRMImm8)
 #include "IEMAllInstructionsTwoByte0f.cpp.h"
 #ifdef IEM_WITH_VEX
 # include "IEMAllInstructionsVexMap1.cpp.h"
+# include "IEMAllInstructionsVexMap2.cpp.h"
+# include "IEMAllInstructionsVexMap3.cpp.h"
 #endif
 #include "IEMAllInstructionsOneByte.cpp.h"
 

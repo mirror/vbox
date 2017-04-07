@@ -2,7 +2,7 @@
 /** @file
  * IEM - Instruction Decoding and Emulation.
  *
- * @remarks IEMAllInstructionsVexMap1.cpp.h is a VEX mirror of this file.
+ * @remarks IEMAllInstructionsVexMap2.cpp.h is a VEX mirror of this file.
  *          Any update here is likely needed in that file too.
  */
 
@@ -34,7 +34,7 @@ FNIEMOP_STUB(iemOp_phaddw_Vx_Wx);
 /** Opcode      0x0f 0x38 0x02. */
 FNIEMOP_STUB(iemOp_phaddd_Pq_Qq);
 /** Opcode 0x66 0x0f 0x38 0x02. */
-FNIEMOP_STUB(iemOp_phaddd_vx_Wx);
+FNIEMOP_STUB(iemOp_phaddd_Vx_Wx);
 /** Opcode      0x0f 0x38 0x03. */
 FNIEMOP_STUB(iemOp_phaddsw_Pq_Qq);
 /** Opcode 0x66 0x0f 0x38 0x03. */
@@ -82,7 +82,7 @@ FNIEMOP_STUB(iemOp_pmulhrsw_Vx_Wx);
 
 
 /*  Opcode      0x0f 0x38 0x10 - invalid */
-/** Opcode 0x66 0x0f 0x38 0x10. */
+/** Opcode 0x66 0x0f 0x38 0x10 (legacy only). */
 FNIEMOP_STUB(iemOp_pblendvb_Vdq_Wdq);
 /*  Opcode      0x0f 0x38 0x11 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x11 - invalid */
@@ -91,10 +91,10 @@ FNIEMOP_STUB(iemOp_pblendvb_Vdq_Wdq);
 /*  Opcode      0x0f 0x38 0x13 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x13 - invalid (vex only). */
 /*  Opcode      0x0f 0x38 0x14 - invalid */
-/** Opcode 0x66 0x0f 0x38 0x14. */
+/** Opcode 0x66 0x0f 0x38 0x14 (legacy only). */
 FNIEMOP_STUB(iemOp_blendvps_Vdq_Wdq);
 /*  Opcode      0x0f 0x38 0x15 - invalid */
-/** Opcode 0x66 0x0f 0x38 0x15. */
+/** Opcode 0x66 0x0f 0x38 0x15 (legacy only). */
 FNIEMOP_STUB(iemOp_blendvpd_Vdq_Wdq);
 /*  Opcode      0x0f 0x38 0x16 - invalid */
 /*  Opcode 0x66 0x0f 0x38 0x16 - invalid (vex only). */
@@ -387,22 +387,22 @@ FNIEMOP_STUB(iemOp_aesdec_Vdq_Wdq);
 /** Opcode 0x66 0x0f 0x38 0xdf. */
 FNIEMOP_STUB(iemOp_aesdeclast_Vdq_Wdq);
 
-/*  Opcode 0x66 0x0f 0x38 0xb0 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb1 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb2 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb3 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb4 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb5 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb6 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb7 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb8 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xb9 - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xba - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xbb - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xbc - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xbd - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xbe - invalid. */
-/*  Opcode 0x66 0x0f 0x38 0xbf - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe0 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe1 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe2 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe3 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe4 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe5 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe6 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe7 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe8 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xe9 - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xea - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xeb - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xec - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xed - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xee - invalid. */
+/*  Opcode 0x66 0x0f 0x38 0xef - invalid. */
 
 
 /** Opcode      0x0f 0x38 0xf0. */
@@ -503,7 +503,7 @@ IEM_STATIC const PFNIEMOP g_apfnThreeByte0f38[] =
     /*          no prefix,                  066h prefix                 f3h prefix,                 f2h prefix */
     /* 0x00 */  iemOp_pshufb_Pq_Qq,         iemOp_pshufb_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x01 */  iemOp_phaddw_Pq_Qq,         iemOp_phaddw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x02 */  iemOp_phaddd_Pq_Qq,         iemOp_phaddd_vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x02 */  iemOp_phaddd_Pq_Qq,         iemOp_phaddd_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x03 */  iemOp_phaddsw_Pq_Qq,        iemOp_phaddsw_Vx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x04 */  iemOp_pmaddubsw_Pq_Qq,      iemOp_pmaddubsw_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x05 */  iemOp_phsubw_Pq_Qq,         iemOp_phsubw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,

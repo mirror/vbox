@@ -19,13 +19,6 @@
  */
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forward declare it. */
-
-
-
 /** @name VEX Opcode Map 1
  * @{
  */
@@ -2789,8 +2782,7 @@ FNIEMOP_DEF(iemOp_vud0)
 /**
  * VEX opcode map \#1.
  *
- * @remarks This is (currently) a subset of g_apfnTwoByteMap, so please check if
- *          it it needs updating too when making changes.
+ * @sa  g_apfnTwoByteMap
  */
 IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
 {
