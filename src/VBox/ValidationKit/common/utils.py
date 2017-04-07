@@ -925,7 +925,7 @@ class ProcessInfo(object):
         except: pass;
         try:    self.sImage     = oProcess.Properties_("ExecutablePath").Value;
         except: pass;
-        try:    self.asArgs     = oProcess.Properties_("CommandLine").Value; ## @todo split it.
+        try:    self.asArgs     = [oProcess.Properties_("CommandLine").Value]; ## @todo split it.
         except: pass;
         try:    self.iParentPid = oProcess.Properties_("ParentProcessId").Value;
         except: pass;
