@@ -801,8 +801,11 @@ class VBoxInstallerTestDriver(TestDriverBase):
                             cKilled += 1;
         return cKilled;
 
-    def _killProcessesByNameAndArgSubstr(self, sName, sArg, sDesc):
-        """ Kills the named process, if one of its args contains the string. """
+    def _terminateProcessesByNameAndArgSubstr(self, sName, sArg, sDesc):
+        """
+        Terminates the named process using taskkill.exe, if any of its args
+        contains the passed string.
+        """
         cKilled = 0;
         aoProcesses = utils.processListAll();
         for oProcess in aoProcesses:
@@ -810,7 +813,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
             if sBase is not None and sBase.lower() == sName and any(sArg in s for s in oProcess.asArgs):
 
                 reporter.log('Killing %s process: %s (%s)' % (sDesc, oProcess.iPid, sBase));
-                utils.processKill(oProcess.iPid);
+                self._executeSync(['taskkill.exe', '/pid', '%u' % (oProcess.iPid,));
                 cKilled += 1;
         return cKilled;
 
@@ -843,8 +846,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
             cTimes = 0;
             while cTimes < 3:
                 cTimes += 1;
-                cKilled = self._killProcessesByNameAndArgSubstr('rundll32', 'InstallSecurityPromptRunDllW',
-                                                                'MSI driver installation');
+                cKilled = self._terminateProcessesByNameAndArgSubstr('rundll32', 'InstallSecurityPromptRunDllW',
+                                                                     'MSI driver installation');
                 if cKilled <= 0:
                     break;
                 time.sleep(10); # Give related drvinst process a chance to clean up after we killed the verification dialog.
