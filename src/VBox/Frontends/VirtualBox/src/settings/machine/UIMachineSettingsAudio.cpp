@@ -22,6 +22,7 @@
 /* GUI includes: */
 # include "UIConverter.h"
 # include "UIMachineSettingsAudio.h"
+# include "UIMessageCenter.h"
 
 /* COM includes: */
 # include "CAudioAdapter.h"
@@ -142,29 +143,8 @@ void UIMachineSettingsAudio::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is offline & audio data was changed: */
-    if (isMachineOffline() && m_pCache->wasChanged())
-    {
-        /* Check whether adapter still valid: */
-        CAudioAdapter comAdapter = m_machine.GetAudioAdapter();
-        if (!comAdapter.isNull())
-        {
-            /* Get old audio data from the cache: */
-            const UIDataSettingsMachineAudio &oldAudioData = m_pCache->base();
-            /* Get new audio data from the cache: */
-            const UIDataSettingsMachineAudio &newAudioData = m_pCache->data();
-
-            /* Store whether audio is enabled: */
-            if (newAudioData.m_fAudioEnabled != oldAudioData.m_fAudioEnabled)
-                comAdapter.SetEnabled(newAudioData.m_fAudioEnabled);
-            /* Store audio driver type: */
-            if (newAudioData.m_audioDriverType != oldAudioData.m_audioDriverType)
-                comAdapter.SetAudioDriver(newAudioData.m_audioDriverType);
-            /* Store audio controller type: */
-            if (newAudioData.m_audioControllerType != oldAudioData.m_audioControllerType)
-                comAdapter.SetAudioController(newAudioData.m_audioControllerType);
-        }
-    }
+    /* Update audio data and failing state: */
+    setFailed(!saveAudioData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -272,5 +252,50 @@ void UIMachineSettingsAudio::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+bool UIMachineSettingsAudio::saveAudioData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save audio settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
+    {
+        /* Get old audio data from the cache: */
+        const UIDataSettingsMachineAudio &oldAudioData = m_pCache->base();
+        /* Get new audio data from the cache: */
+        const UIDataSettingsMachineAudio &newAudioData = m_pCache->data();
+
+        /* Get audio adapter for further activities: */
+        CAudioAdapter comAdapter = m_machine.GetAudioAdapter();
+        fSuccess = m_machine.isOk() && comAdapter.isNotNull();
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveAudioSettings(m_machine, this);
+
+        /* Save whether audio is enabled: */
+        if (fSuccess && isMachineOffline() && newAudioData.m_fAudioEnabled != oldAudioData.m_fAudioEnabled)
+        {
+            comAdapter.SetEnabled(newAudioData.m_fAudioEnabled);
+            fSuccess = comAdapter.isOk();
+        }
+        /* Save audio driver type: */
+        if (fSuccess && isMachineOffline() && newAudioData.m_audioDriverType != oldAudioData.m_audioDriverType)
+        {
+            comAdapter.SetAudioDriver(newAudioData.m_audioDriverType);
+            fSuccess = comAdapter.isOk();
+        }
+        /* Save audio controller type: */
+        if (fSuccess && isMachineOffline() && newAudioData.m_audioControllerType != oldAudioData.m_audioControllerType)
+        {
+            comAdapter.SetAudioController(newAudioData.m_audioControllerType);
+            fSuccess = comAdapter.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveAudioAdapterSettings(comAdapter, this);
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

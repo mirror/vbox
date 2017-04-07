@@ -56,6 +56,7 @@
 # endif /* VBOX_WS_WIN */
 
 /* COM includes: */
+# include "CAudioAdapter.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -1149,6 +1150,20 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) c
                           tr("&Remove", "medium") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
+}
+
+void UIMessageCenter::cannotSaveAudioSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save audio settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveAudioAdapterSettings(const CAudioAdapter &comAdapter, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save audio adapter settings."),
+          formatErrorInfo(comAdapter));
 }
 
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,

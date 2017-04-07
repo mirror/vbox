@@ -72,6 +72,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Saves existing audio data from the cache. */
+    bool saveAudioData();
+
     /** Holds the page data cache instance. */
     UISettingsCacheMachineAudio *m_pCache;
 };
