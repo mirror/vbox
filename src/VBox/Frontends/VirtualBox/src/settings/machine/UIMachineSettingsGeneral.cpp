@@ -307,6 +307,7 @@ void UIMachineSettingsGeneral::putToCache()
     newGeneralData.m_fEncryptionPasswordChanged = m_fEncryptionPasswordChanged;
     newGeneralData.m_iEncryptionCipherIndex = m_pComboCipher->currentIndex();
     newGeneralData.m_strEncryptionPassword = m_pEditorEncryptionPassword->text();
+    newGeneralData.m_encryptedMediums = m_pCache->base().m_encryptedMediums;
     /* If encryption status, cipher or password is changed: */
     if (newGeneralData.m_fEncryptionEnabled != m_pCache->base().m_fEncryptionEnabled ||
         newGeneralData.m_fEncryptionCipherChanged != m_pCache->base().m_fEncryptionCipherChanged ||
