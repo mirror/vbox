@@ -813,7 +813,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
             if sBase is not None and sBase.lower() == sName and any(sArg in s for s in oProcess.asArgs):
 
                 reporter.log('Killing %s process: %s (%s)' % (sDesc, oProcess.iPid, sBase));
-                self._executeSync(['taskkill.exe', '/pid', '%u' % (oProcess.iPid,));
+                self._executeSync(['taskkill.exe', '/pid', '%u' % (oProcess.iPid,)]);
                 cKilled += 1;
         return cKilled;
 
