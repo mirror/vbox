@@ -5355,9 +5355,9 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
                 AutoCaller mac(pMedium);
                 if (FAILED(mac.rc())) throw mac.rc();
                 Utf8Str strLocation = pMedium->i_getLocationFull();
+                LogFunc(("Deleting file %s\n", strLocation.c_str()));
                 rc = task.m_pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), strLocation.c_str()).raw(), 1);
                 if (FAILED(rc)) throw rc;
-                LogFunc(("Deleting file %s\n", strLocation.c_str()));
             }
             if (pMedium->i_isMediumFormatFile())
             {
@@ -5525,8 +5525,8 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
                          static_cast<IMachine*>(this) /* aInitiator */,
                          Bstr(tr("Deleting files")).raw(),
                          true /* fCancellable */,
-                         (ULONG)(llFilesToDelete.size() + llMediums.size() + 1),   // cOperations
-                         BstrFmt(tr("Deleting '%s'"), llFilesToDelete.front().c_str()).raw());
+                         (ULONG)(1 + llMediums.size() + llFilesToDelete.size() + 1),    // cOperations
+                         Bstr(tr("Collecting file inventory")).raw());
     if (FAILED(rc))
         return rc;
 
