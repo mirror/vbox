@@ -45,6 +45,11 @@ RT_C_DECLS_BEGIN
  * Enables the VEX decoding. */
 #define IEM_WITH_VEX
 
+/** @def IEM_WITH_3DNOW
+ * Enables the 3DNow decoding.  */
+#define IEM_WITH_3DNOW
+
+
 /** @def IEM_VERIFICATION_MODE_FULL
  * Shorthand for:
  *    defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL)

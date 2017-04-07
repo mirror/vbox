@@ -730,6 +730,9 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRMImm8)
 /*
  * Include the tables.
  */
+#ifdef IEM_WITH_3DNOW
+# include "IEMAllInstructions3DNow.cpp.h"
+#endif
 #include "IEMAllInstructionsTwoByte0f.cpp.h"
 #ifdef IEM_WITH_VEX
 # include "IEMAllInstructionsVexMap1.cpp.h"
@@ -740,3 +743,4 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRMImm8)
 #ifdef _MSC_VER
 # pragma warning(pop)
 #endif
+

@@ -1475,6 +1475,7 @@ g_dInstructionMaps = {
     'vexmap2':      InstructionMap('vexmap2',   sEncoding = 'vex2'),
     'vexmap3':      InstructionMap('vexmap3',   sEncoding = 'vex3'),
 
+    '3dnow':        InstructionMap('3dnow',     asLeadOpcodes = ['0x0f', '0x0f',]),
     'xopmap8':      InstructionMap('xopmap8',   sEncoding = 'xop8'),
     'xopmap9':      InstructionMap('xopmap9',   sEncoding = 'xop9'),
     'xopgrp1':      InstructionMap('xopgrp1',   sEncoding = 'xop9',  asLeadOpcodes = ['0x01'], sSelector = '/r'),
@@ -3218,6 +3219,7 @@ def __parseAll():
         ( 'one',     'IEMAllInstructionsOneByte.cpp.h'),
         ( 'two0f',   'IEMAllInstructionsTwoByte0f.cpp.h'),
         ( 'vexmap1', 'IEMAllInstructionsVexMap1.cpp.h'),
+        ( '3dnow',   'IEMAllInstructions3DNow.cpp.h'),
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
     cErrors += __doTestCopying();

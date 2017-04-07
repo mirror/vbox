@@ -1014,6 +1014,7 @@ IEMAllInstructions.cpp.o           IEMAllInstructions.cpp.obj \
 IEMAllInstructionsOneByte.cpp.o    IEMAllInstructionsOneByte.cpp.obj \
 IEMAllInstructionsTwoByte0f.cpp.o  IEMAllInstructionsTwoByte0f.cpp.obj \
 IEMAllInstructionsVexMap1.cpp.o    IEMAllInstructionsVexMap1.cpp.obj \
+IEMAllInstructions3DNow.cpp.o      IEMAllInstructions3DNow.cpp.obj \
 IEMAllCImpl.cpp.o                  IEMAllCImpl.cpp.obj \
 IEMAllCImplStrInstr.cpp.o          IEMAllCImplStrInstr.cpp.obj: IEMAll.o
 
