@@ -601,7 +601,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap2[] =
     /* 0x14 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x15 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0x16 */  iemOp_InvalidNeedRM,        iemOp_vpermps_Vqq_Hqq_Wqq,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x17 */  iemOp_InvalidNeedRM,        iemOp_ptest_Vx_Wx,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x17 */  iemOp_InvalidNeedRM,        iemOp_vptest_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x18 */  iemOp_InvalidNeedRM,        iemOp_vbroadcastss_Vx_Wd,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x19 */  iemOp_InvalidNeedRM,        iemOp_vbroadcastsd_Vqq_Wq,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x1a */  iemOp_InvalidNeedRM,        iemOp_vbroadcastf128_Vqq_Mdq, iemOp_InvalidNeedRM,      iemOp_InvalidNeedRM,
