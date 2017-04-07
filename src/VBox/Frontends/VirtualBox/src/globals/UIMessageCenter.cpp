@@ -1166,6 +1166,20 @@ void UIMessageCenter::cannotSaveAudioAdapterSettings(const CAudioAdapter &comAda
           formatErrorInfo(comAdapter));
 }
 
+void UIMessageCenter::cannotSaveDisplaySettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save display settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveRemoteDisplayServerSettings(const CVRDEServer &comServer, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save remote display server settings."),
+          formatErrorInfo(comServer));
+}
+
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)

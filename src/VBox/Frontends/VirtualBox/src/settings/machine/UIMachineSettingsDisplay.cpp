@@ -25,6 +25,7 @@
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIMachineSettingsDisplay.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -361,129 +362,8 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is in valid mode & display data was changed: */
-    if (isMachineInValidMode() && m_pCache->wasChanged())
-    {
-        /* Get old display data from the cache: */
-        const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
-        /* Get new display data from the cache: */
-        const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
-
-        /* Store video RAM size: */
-        if (isMachineOffline() && newDisplayData.m_iCurrentVRAM != oldDisplayData.m_iCurrentVRAM)
-            m_machine.SetVRAMSize(newDisplayData.m_iCurrentVRAM);
-        /* Store guest screen count: */
-        if (isMachineOffline() && newDisplayData.m_cGuestScreenCount != oldDisplayData.m_cGuestScreenCount)
-            m_machine.SetMonitorCount(newDisplayData.m_cGuestScreenCount);
-        /* Store whether 3D acceleration is enabled: */
-        if (isMachineOffline() && newDisplayData.m_f3dAccelerationEnabled != oldDisplayData.m_f3dAccelerationEnabled)
-            m_machine.SetAccelerate3DEnabled(newDisplayData.m_f3dAccelerationEnabled);
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* Store whether 2D video acceleration is enabled: */
-        if (isMachineOffline() && newDisplayData.m_f2dAccelerationEnabled != oldDisplayData.m_f2dAccelerationEnabled)
-            m_machine.SetAccelerate2DVideoEnabled(newDisplayData.m_f2dAccelerationEnabled);
-#endif
-        /* Store guest-screen scale-factor: */
-        if (newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
-            gEDataManager->setScaleFactor(newDisplayData.m_dScaleFactor, m_machine.GetId());
-#ifdef VBOX_WS_MAC
-        /* Store whether Unscaled HiDPI Output is enabled: : */
-        if (newDisplayData.m_fUseUnscaledHiDPIOutput != oldDisplayData.m_fUseUnscaledHiDPIOutput)
-            gEDataManager->setUseUnscaledHiDPIOutput(newDisplayData.m_fUseUnscaledHiDPIOutput, m_machine.GetId());
-#endif
-
-        /* Check whether remote display server still valid: */
-        CVRDEServer server = m_machine.GetVRDEServer();
-        if (!server.isNull())
-        {
-            /* Store whether remote display server is enabled: */
-            if (newDisplayData.m_fRemoteDisplayServerEnabled != oldDisplayData.m_fRemoteDisplayServerEnabled)
-                server.SetEnabled(newDisplayData.m_fRemoteDisplayServerEnabled);
-            /* Store remote display server port: */
-            if (newDisplayData.m_strRemoteDisplayPort != oldDisplayData.m_strRemoteDisplayPort)
-                server.SetVRDEProperty("TCP/Ports", newDisplayData.m_strRemoteDisplayPort);
-            /* Store remote display server auth type: */
-            if (newDisplayData.m_remoteDisplayAuthType != oldDisplayData.m_remoteDisplayAuthType)
-                server.SetAuthType(newDisplayData.m_remoteDisplayAuthType);
-            /* Store remote display server timeout: */
-            if (newDisplayData.m_uRemoteDisplayTimeout != oldDisplayData.m_uRemoteDisplayTimeout)
-                server.SetAuthTimeout(newDisplayData.m_uRemoteDisplayTimeout);
-            /* Store whether remote display server allows multiple connections: */
-            if (   (isMachineOffline() || isMachineSaved())
-                && (newDisplayData.m_fRemoteDisplayMultiConnAllowed != oldDisplayData.m_fRemoteDisplayMultiConnAllowed))
-                server.SetAllowMultiConnection(newDisplayData.m_fRemoteDisplayMultiConnAllowed);
-        }
-
-        /* Store new 'Video Capture' data for online case: */
-        if (isMachineOnline())
-        {
-            /* If 'Video Capture' was *enabled*: */
-            if (oldDisplayData.m_fVideoCaptureEnabled)
-            {
-                // We can still save the *screens* option.
-                // And finally we should *disable* 'Video Capture' if necessary.
-                /* Store video capture recording screens: */
-                if (newDisplayData.m_screens != oldDisplayData.m_screens)
-                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
-                /* Store whether video capture is enabled: */
-                if (newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
-                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
-            }
-            /* If 'Video Capture' was *disabled*: */
-            else
-            {
-                // We should save all the options *before* 'Video Capture' activation.
-                // And finally we should *enable* Video Capture if necessary.
-                /* Store video capture file path: */
-                if (newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
-                    m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
-                /* Store video capture frame width: */
-                if (newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
-                    m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
-                /* Store video capture frame height: */
-                if (newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
-                    m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
-                /* Store video capture frame rate: */
-                if (newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
-                    m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
-                /* Store video capture frame bit rate: */
-                if (newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
-                    m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
-                /* Store video capture recording screens: */
-                if (newDisplayData.m_screens != oldDisplayData.m_screens)
-                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
-                /* Store whether video capture is enabled: */
-                if (newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
-                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
-            }
-        }
-        /* Store new 'Video Capture' data for offline case: */
-        else
-        {
-            // For 'offline', 'powered off' and 'saved' states the order is irrelevant.
-            /* Store whether video capture is enabled: */
-            if (newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
-                m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
-            /* Store video capture file path: */
-            if (newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
-                m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
-            /* Store video capture frame width: */
-            if (newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
-                m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
-            /* Store video capture frame height: */
-            if (newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
-                m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
-            /* Store video capture frame rate: */
-            if (newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
-                m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
-            /* Store video capture frame bit rate: */
-            if (newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
-                m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
-            /* Store video capture recording screens: */
-            if (newDisplayData.m_screens != oldDisplayData.m_screens)
-                m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
-        }
-    }
+    /* Update display data and failing state: */
+    setFailed(!saveDisplayData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1322,5 +1202,284 @@ int UIMachineSettingsDisplay::calculateQuality(int iFrameWidth, int iFrameHeight
                          * (double)1024 /* translate bit-rate to [kbps] */
                          * (double)18.75 /* linear scale factor */;
     return (int)dResult;
+}
+
+bool UIMachineSettingsDisplay::saveDisplayData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save display settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
+    {
+        /* Save 'Screen' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveScreenData();
+        /* Save 'Remote Display' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveRemoteDisplayData();
+        /* Save 'Video Capture' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveVideoCaptureData();
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsDisplay::saveScreenData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Screen' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old display data from the cache: */
+        const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
+        /* Get new display data from the cache: */
+        const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
+
+        /* Save video RAM size: */
+        if (fSuccess && isMachineOffline() && newDisplayData.m_iCurrentVRAM != oldDisplayData.m_iCurrentVRAM)
+        {
+            m_machine.SetVRAMSize(newDisplayData.m_iCurrentVRAM);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save guest screen count: */
+        if (fSuccess && isMachineOffline() && newDisplayData.m_cGuestScreenCount != oldDisplayData.m_cGuestScreenCount)
+        {
+            m_machine.SetMonitorCount(newDisplayData.m_cGuestScreenCount);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save whether 3D acceleration is enabled: */
+        if (fSuccess && isMachineOffline() && newDisplayData.m_f3dAccelerationEnabled != oldDisplayData.m_f3dAccelerationEnabled)
+        {
+            m_machine.SetAccelerate3DEnabled(newDisplayData.m_f3dAccelerationEnabled);
+            fSuccess = m_machine.isOk();
+        }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        /* Save whether 2D video acceleration is enabled: */
+        if (fSuccess && isMachineOffline() && newDisplayData.m_f2dAccelerationEnabled != oldDisplayData.m_f2dAccelerationEnabled)
+        {
+            m_machine.SetAccelerate2DVideoEnabled(newDisplayData.m_f2dAccelerationEnabled);
+            fSuccess = m_machine.isOk();
+        }
+#endif
+        /* Get machine ID for further activities: */
+        QString strMachineId;
+        if (fSuccess)
+        {
+            strMachineId = m_machine.GetId();
+            fSuccess = m_machine.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveDisplaySettings(m_machine, this);
+
+        /* Save guest-screen scale-factor: */
+        if (fSuccess && newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
+            /* fSuccess = */ gEDataManager->setScaleFactor(newDisplayData.m_dScaleFactor, strMachineId);
+#ifdef VBOX_WS_MAC
+        /* Save whether Unscaled HiDPI Output is enabled: : */
+        if (fSuccess && newDisplayData.m_fUseUnscaledHiDPIOutput != oldDisplayData.m_fUseUnscaledHiDPIOutput)
+            /* fSuccess = */ gEDataManager->setUseUnscaledHiDPIOutput(newDisplayData.m_fUseUnscaledHiDPIOutput, strMachineId);
+#endif
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsDisplay::saveRemoteDisplayData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Remote Display' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old display data from the cache: */
+        const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
+        /* Get new display data from the cache: */
+        const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
+
+        /* Get remote display server for further activities: */
+        CVRDEServer comServer = m_machine.GetVRDEServer();
+        fSuccess = m_machine.isOk() && comServer.isNotNull();
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveDisplaySettings(m_machine, this);
+
+        /* Save whether remote display server is enabled: */
+        if (fSuccess && newDisplayData.m_fRemoteDisplayServerEnabled != oldDisplayData.m_fRemoteDisplayServerEnabled)
+        {
+            comServer.SetEnabled(newDisplayData.m_fRemoteDisplayServerEnabled);
+            fSuccess = comServer.isOk();
+        }
+        /* Save remote display server port: */
+        if (fSuccess && newDisplayData.m_strRemoteDisplayPort != oldDisplayData.m_strRemoteDisplayPort)
+        {
+            comServer.SetVRDEProperty("TCP/Ports", newDisplayData.m_strRemoteDisplayPort);
+            fSuccess = comServer.isOk();
+        }
+        /* Save remote display server auth type: */
+        if (fSuccess && newDisplayData.m_remoteDisplayAuthType != oldDisplayData.m_remoteDisplayAuthType)
+        {
+            comServer.SetAuthType(newDisplayData.m_remoteDisplayAuthType);
+            fSuccess = comServer.isOk();
+        }
+        /* Save remote display server timeout: */
+        if (fSuccess && newDisplayData.m_uRemoteDisplayTimeout != oldDisplayData.m_uRemoteDisplayTimeout)
+        {
+            comServer.SetAuthTimeout(newDisplayData.m_uRemoteDisplayTimeout);
+            fSuccess = comServer.isOk();
+        }
+        /* Save whether remote display server allows multiple connections: */
+        if (   fSuccess
+            && (isMachineOffline() || isMachineSaved())
+            && (newDisplayData.m_fRemoteDisplayMultiConnAllowed != oldDisplayData.m_fRemoteDisplayMultiConnAllowed))
+        {
+            comServer.SetAllowMultiConnection(newDisplayData.m_fRemoteDisplayMultiConnAllowed);
+            fSuccess = comServer.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveRemoteDisplayServerSettings(comServer, this);
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsDisplay::saveVideoCaptureData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Video Capture' data from the cache: */
+    if (fSuccess)
+    {
+        /* Get old display data from the cache: */
+        const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
+        /* Get new display data from the cache: */
+        const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
+
+        /* Save new 'Video Capture' data for online case: */
+        if (isMachineOnline())
+        {
+            /* If 'Video Capture' was *enabled*: */
+            if (oldDisplayData.m_fVideoCaptureEnabled)
+            {
+                // We can still save the *screens* option.
+                // And finally we should *disable* 'Video Capture' if necessary.
+                /* Save video capture screens: */
+                if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
+                {
+                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Save whether video capture is enabled: */
+                if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
+                {
+                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
+                    fSuccess = m_machine.isOk();
+                }
+            }
+            /* If 'Video Capture' was *disabled*: */
+            else
+            {
+                // We should save all the options *before* 'Video Capture' activation.
+                // And finally we should *enable* Video Capture if necessary.
+                /* Save video capture file path: */
+                if (fSuccess && newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
+                {
+                    m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Save video capture frame width: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
+                {
+                    m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Save video capture frame height: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
+                {
+                    m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Save video capture frame rate: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
+                {
+                    m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Save video capture frame bit rate: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
+                {
+                    m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Save video capture screens: */
+                if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
+                {
+                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Save whether video capture is enabled: */
+                if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
+                {
+                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
+                    fSuccess = m_machine.isOk();
+                }
+            }
+        }
+        /* Save new 'Video Capture' data for offline case: */
+        else
+        {
+            // For 'offline', 'powered off' and 'saved' states the order is irrelevant.
+            /* Save whether video capture is enabled: */
+            if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
+            {
+                m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save video capture file path: */
+            if (fSuccess && newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
+            {
+                m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save video capture frame width: */
+            if (fSuccess && newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
+            {
+                m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save video capture frame height: */
+            if (fSuccess && newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
+            {
+                m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save video capture frame rate: */
+            if (fSuccess && newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
+            {
+                m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save video capture frame bit rate: */
+            if (fSuccess && newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
+            {
+                m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save video capture screens: */
+            if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
+            {
+                m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
+                fSuccess = m_machine.isOk();
+            }
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveDisplaySettings(m_machine, this);
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

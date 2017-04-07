@@ -150,6 +150,15 @@ private:
     /** Calculates Video Capture quality for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iBitRate. */
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
 
+    /** Saves existing display data from the cache. */
+    bool saveDisplayData();
+    /** Saves existing 'Screen' data from the cache. */
+    bool saveScreenData();
+    /** Saves existing 'Remote Display' data from the cache. */
+    bool saveRemoteDisplayData();
+    /** Saves existing 'Video Capture' data from the cache. */
+    bool saveVideoCaptureData();
+
     /** Holds the guest OS type ID. */
     CGuestOSType  m_comGuestOSType;
     /** Holds the minimum lower limit of VRAM (MiB). */
