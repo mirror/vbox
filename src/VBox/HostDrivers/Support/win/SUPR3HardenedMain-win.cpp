@@ -365,14 +365,16 @@ static uint32_t             g_fSupAdversaries = 0;
 #define SUPHARDNT_ADVERSARY_COMODO                  RT_BIT_32(11)
 /** Check Point's Zone Alarm (may include Kaspersky).  */
 #define SUPHARDNT_ADVERSARY_ZONE_ALARM              RT_BIT_32(12)
-/** Digital guardian.  */
-#define SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN        RT_BIT_32(13)
+/** Digital guardian, old problematic version.  */
+#define SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_OLD    RT_BIT_32(13)
+/** Digital guardian, new version.  */
+#define SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_NEW    RT_BIT_32(14)
 /** Cylance protect or something (from googling, no available sample copy). */
-#define SUPHARDNT_ADVERSARY_CYLANCE                 RT_BIT_32(14)
+#define SUPHARDNT_ADVERSARY_CYLANCE                 RT_BIT_32(15)
 /** BeyondTrust / PowerBroker / something (googling, no available sample copy). */
-#define SUPHARDNT_ADVERSARY_BEYONDTRUST             RT_BIT_32(15)
+#define SUPHARDNT_ADVERSARY_BEYONDTRUST             RT_BIT_32(16)
 /** Avecto / Defendpoint / Privilege Guard (details from support guy, hoping to get sample copy). */
-#define SUPHARDNT_ADVERSARY_AVECTO                  RT_BIT_32(16)
+#define SUPHARDNT_ADVERSARY_AVECTO                  RT_BIT_32(17)
 /** Unknown adversary detected while waiting on child. */
 #define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
 /** @} */
@@ -3522,7 +3524,7 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
         cFixes = 0;
         int rc = supHardenedWinVerifyProcess(pThis->hProcess, pThis->hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION,
                                              g_fSupAdversaries & (  SUPHARDNT_ADVERSARY_TRENDMICRO_SAKFILE
-                                                                  | SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN)
+                                                                  | SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_OLD)
                                              ? SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW : 0,
                                              &cFixes, RTErrInfoInitStatic(&g_ErrInfoStatic));
         if (RT_FAILURE(rc))
@@ -4954,18 +4956,244 @@ static char **suplibCommandLineToArgvWStub(PCRTUTF16 pawcCmdLine, size_t cwcCmdL
 
 
 /**
- * Logs information about a file from a protection product or from Windows.
+ * Worker for supR3HardenedFindVersionRsrcOffset.
+ *
+ * @returns RVA the version resource data, UINT32_MAX if not found.
+ * @param   pRootDir            The root resource directory.  Expects data to
+ *                              follow.
+ * @param   cbBuf               The amount of data at pRootDir.
+ * @param   offData             The offset to the data entry.
+ * @param   pcbData             Where to return the size of the data.
+ */
+static uint32_t supR3HardenedGetRvaFromRsrcDataEntry(PIMAGE_RESOURCE_DIRECTORY pRootDir, uint32_t cbBuf, uint32_t offData,
+                                                     uint32_t *pcbData)
+{
+    if (   offData <= cbBuf
+        && offData + sizeof(IMAGE_RESOURCE_DATA_ENTRY) <= cbBuf)
+    {
+        PIMAGE_RESOURCE_DATA_ENTRY pRsrcData = (PIMAGE_RESOURCE_DATA_ENTRY)((uintptr_t)pRootDir + offData);
+        SUP_DPRINTF(("    [Raw version resource data: %#x LB %#x, codepage %#x (reserved %#x)]\n",
+                     pRsrcData->OffsetToData, pRsrcData->Size, pRsrcData->CodePage, pRsrcData->Reserved));
+        if (pRsrcData->Size > 0)
+        {
+            *pcbData = pRsrcData->Size;
+            return pRsrcData->OffsetToData;
+        }
+    }
+    else
+        SUP_DPRINTF(("    Version resource data (%#x) is outside the buffer (%#x)! :-(\n", offData, cbBuf));
+
+    *pcbData = 0;
+    return UINT32_MAX;
+}
+
+
+/** @def SUP_RSRC_DPRINTF
+ * Dedicated debug printf for resource directory parsing.
+ * @sa SUP_DPRINTF
+ */
+#if 0 /* more details */
+# define SUP_RSRC_DPRINTF(a) SUP_DPRINTF(a)
+#else
+# define SUP_RSRC_DPRINTF(a) do { } while (0)
+#endif
+
+/**
+ * Scans the resource directory for a version resource.
+ *
+ * @returns RVA of the version resource data, UINT32_MAX if not found.
+ * @param   pRootDir            The root resource directory.  Expects data to
+ *                              follow.
+ * @param   cbBuf               The amount of data at pRootDir.
+ * @param   pcbData             Where to return the size of the version data.
+ */
+static uint32_t supR3HardenedFindVersionRsrcRva(PIMAGE_RESOURCE_DIRECTORY pRootDir, uint32_t cbBuf, uint32_t *pcbData)
+{
+    SUP_RSRC_DPRINTF(("    ResDir: Char=%#x Time=%#x Ver=%d%d #NamedEntries=%#x #IdEntries=%#x\n",
+                      pRootDir->Characteristics,
+                      pRootDir->TimeDateStamp,
+                      pRootDir->MajorVersion,
+                      pRootDir->MinorVersion,
+                      pRootDir->NumberOfNamedEntries,
+                      pRootDir->NumberOfIdEntries));
+
+    PIMAGE_RESOURCE_DIRECTORY_ENTRY paEntries = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(pRootDir + 1);
+    unsigned cMaxEntries = (cbBuf - sizeof(IMAGE_RESOURCE_DIRECTORY)) / sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY);
+    unsigned cEntries    = pRootDir->NumberOfNamedEntries + pRootDir->NumberOfIdEntries;
+    if (cEntries > cMaxEntries)
+        cEntries = cMaxEntries;
+    for (unsigned i = 0; i < cEntries; i++)
+    {
+        if (!paEntries[i].NameIsString)
+        {
+            if (!paEntries[i].DataIsDirectory)
+                SUP_RSRC_DPRINTF(("    #%u:   ID: #%#06x  Data: %#010x\n",
+                                i, paEntries[i].Id, paEntries[i].OffsetToData));
+            else
+                SUP_RSRC_DPRINTF(("    #%u:   ID: #%#06x  Dir: %#010x\n",
+                                i, paEntries[i].Id, paEntries[i].OffsetToDirectory));
+        }
+        else
+        {
+            if (!paEntries[i].DataIsDirectory)
+                SUP_RSRC_DPRINTF(("    #%u: Name: #%#06x  Data: %#010x\n",
+                                i, paEntries[i].NameOffset, paEntries[i].OffsetToData));
+            else
+                SUP_RSRC_DPRINTF(("    #%u: Name: #%#06x  Dir: %#010x\n",
+                                i, paEntries[i].NameOffset, paEntries[i].OffsetToDirectory));
+        }
+
+        /*
+         * Look for the version resource type.  Skip to the next entry if not found.
+         */
+        if (paEntries[i].NameIsString)
+            continue;
+        if (paEntries[i].Id != 0x10 /*RT_VERSION*/)
+            continue;
+        if (!paEntries[i].DataIsDirectory)
+        {
+            SUP_DPRINTF(("    #%u:   ID: #%#06x  Data: %#010x - WEIRD!\n", i, paEntries[i].Id, paEntries[i].OffsetToData));
+            continue;
+        }
+        SUP_RSRC_DPRINTF(("    Version resource dir entry #%u: dir offset: %#x (cbBuf=%#x)\n",
+                          i, paEntries[i].OffsetToDirectory, cbBuf));
+
+        /*
+         * Locate the sub-resource directory for it.
+         */
+        if (paEntries[i].OffsetToDirectory >= cbBuf)
+        {
+            SUP_DPRINTF(("    Version resource dir is outside the buffer! :-(\n"));
+            continue;
+        }
+        uint32_t cbMax = cbBuf - paEntries[i].OffsetToDirectory;
+        if (cbMax < sizeof(IMAGE_RESOURCE_DIRECTORY) + sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY))
+        {
+            SUP_DPRINTF(("    Version resource dir entry #0 is outside the buffer! :-(\n"));
+            continue;
+        }
+        PIMAGE_RESOURCE_DIRECTORY pVerDir = (PIMAGE_RESOURCE_DIRECTORY)((uintptr_t)pRootDir + paEntries[i].OffsetToDirectory);
+        SUP_RSRC_DPRINTF(("    VerDir: Char=%#x Time=%#x Ver=%d%d #NamedEntries=%#x #IdEntries=%#x\n",
+                          pVerDir->Characteristics,
+                          pVerDir->TimeDateStamp,
+                          pVerDir->MajorVersion,
+                          pVerDir->MinorVersion,
+                          pVerDir->NumberOfNamedEntries,
+                          pVerDir->NumberOfIdEntries));
+        PIMAGE_RESOURCE_DIRECTORY_ENTRY paVerEntries = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(pVerDir + 1);
+        unsigned cMaxVerEntries = (cbMax - sizeof(IMAGE_RESOURCE_DIRECTORY)) / sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY);
+        unsigned cVerEntries    = pVerDir->NumberOfNamedEntries + pVerDir->NumberOfIdEntries;
+        if (cVerEntries > cMaxVerEntries)
+            cVerEntries = cMaxVerEntries;
+        for (unsigned iVer = 0; iVer < cVerEntries; iVer++)
+        {
+            if (!paVerEntries[iVer].NameIsString)
+            {
+                if (!paVerEntries[iVer].DataIsDirectory)
+                    SUP_RSRC_DPRINTF(("      #%u:   ID: #%#06x  Data: %#010x\n",
+                                      iVer, paVerEntries[iVer].Id, paVerEntries[iVer].OffsetToData));
+                else
+                    SUP_RSRC_DPRINTF(("      #%u:   ID: #%#06x  Dir: %#010x\n",
+                                      iVer, paVerEntries[iVer].Id, paVerEntries[iVer].OffsetToDirectory));
+            }
+            else
+            {
+                if (!paVerEntries[iVer].DataIsDirectory)
+                    SUP_RSRC_DPRINTF(("      #%u: Name: #%#06x  Data: %#010x\n",
+                                      iVer, paVerEntries[iVer].NameOffset, paVerEntries[iVer].OffsetToData));
+                else
+                    SUP_RSRC_DPRINTF(("      #%u: Name: #%#06x  Dir: %#010x\n",
+                                      iVer, paVerEntries[iVer].NameOffset, paVerEntries[iVer].OffsetToDirectory));
+            }
+            if (!paVerEntries[iVer].DataIsDirectory)
+            {
+                SUP_DPRINTF(("    [Version info resource found at %#x! (ID/Name: #%#x)]\n",
+                             paVerEntries[iVer].OffsetToData, paVerEntries[iVer].Name));
+                return supR3HardenedGetRvaFromRsrcDataEntry(pRootDir, cbBuf, paVerEntries[iVer].OffsetToData, pcbData);
+            }
+
+            /*
+             * Check out the next directory level.
+             */
+            if (paVerEntries[iVer].OffsetToDirectory >= cbBuf)
+            {
+                SUP_DPRINTF(("    Version resource subdir is outside the buffer! :-(\n"));
+                continue;
+            }
+            cbMax = cbBuf - paVerEntries[iVer].OffsetToDirectory;
+            if (cbMax < sizeof(IMAGE_RESOURCE_DIRECTORY) + sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY))
+            {
+                SUP_DPRINTF(("    Version resource subdir entry #0 is outside the buffer! :-(\n"));
+                continue;
+            }
+            PIMAGE_RESOURCE_DIRECTORY pVerSubDir = (PIMAGE_RESOURCE_DIRECTORY)((uintptr_t)pRootDir + paVerEntries[iVer].OffsetToDirectory);
+            SUP_RSRC_DPRINTF(("      VerSubDir#%u: Char=%#x Time=%#x Ver=%d%d #NamedEntries=%#x #IdEntries=%#x\n",
+                              iVer,
+                              pVerSubDir->Characteristics,
+                              pVerSubDir->TimeDateStamp,
+                              pVerSubDir->MajorVersion,
+                              pVerSubDir->MinorVersion,
+                              pVerSubDir->NumberOfNamedEntries,
+                              pVerSubDir->NumberOfIdEntries));
+            PIMAGE_RESOURCE_DIRECTORY_ENTRY paVerSubEntries = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(pVerSubDir + 1);
+            unsigned cMaxVerSubEntries = (cbMax - sizeof(IMAGE_RESOURCE_DIRECTORY)) / sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY);
+            unsigned cVerSubEntries    = pVerSubDir->NumberOfNamedEntries + pVerSubDir->NumberOfIdEntries;
+            if (cVerSubEntries > cMaxVerSubEntries)
+                cVerSubEntries = cMaxVerSubEntries;
+            for (unsigned iVerSub = 0; iVerSub < cVerSubEntries; iVerSub++)
+            {
+                if (!paVerSubEntries[iVerSub].NameIsString)
+                {
+                    if (!paVerSubEntries[iVerSub].DataIsDirectory)
+                        SUP_RSRC_DPRINTF(("        #%u:   ID: #%#06x  Data: %#010x\n",
+                                          iVerSub, paVerSubEntries[iVerSub].Id, paVerSubEntries[iVerSub].OffsetToData));
+                    else
+                        SUP_RSRC_DPRINTF(("        #%u:   ID: #%#06x  Dir: %#010x\n",
+                                          iVerSub, paVerSubEntries[iVerSub].Id, paVerSubEntries[iVerSub].OffsetToDirectory));
+                }
+                else
+                {
+                    if (!paVerSubEntries[iVerSub].DataIsDirectory)
+                        SUP_RSRC_DPRINTF(("        #%u: Name: #%#06x  Data: %#010x\n",
+                                          iVerSub, paVerSubEntries[iVerSub].NameOffset, paVerSubEntries[iVerSub].OffsetToData));
+                    else
+                        SUP_RSRC_DPRINTF(("        #%u: Name: #%#06x  Dir: %#010x\n",
+                                          iVerSub, paVerSubEntries[iVerSub].NameOffset, paVerSubEntries[iVerSub].OffsetToDirectory));
+                }
+                if (!paVerSubEntries[iVerSub].DataIsDirectory)
+                {
+                    SUP_DPRINTF(("    [Version info resource found at %#x! (ID/Name: %#x; SubID/SubName: %#x)]\n",
+                                 paVerSubEntries[iVerSub].OffsetToData, paVerEntries[iVer].Name, paVerSubEntries[iVerSub].Name));
+                    return supR3HardenedGetRvaFromRsrcDataEntry(pRootDir, cbBuf, paVerSubEntries[iVerSub].OffsetToData, pcbData);
+                }
+            }
+        }
+    }
+
+    *pcbData = 0;
+    return UINT32_MAX;
+}
+
+
+/**
+ * Logs information about a file from a protection product or from Windows,
+ * optionally returning the file version.
  *
  * The purpose here is to better see which version of the product is installed
  * and not needing to depend on the user supplying the correct information.
  *
- * @param   pwszFile            The NT path to the file.
- * @param   fAdversarial        Set if from a protection product, false if
- *                              system file.
+ * @param   pwszFile        The NT path to the file.
+ * @param   pwszFileVersion Where to return the file version, if found. NULL if
+ *                          not interested.
+ * @param   cwcFileVersion  The size of the file version buffer (UTF-16 units).
  */
-static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, bool fAdversarial)
+static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, PRTUTF16 pwszFileVersion, size_t cwcFileVersion)
 {
-    RT_NOREF1(fAdversarial);
+    /*
+     * Make sure the file version is always set when we return.
+     */
+    if (pwszFileVersion && cwcFileVersion)
+        *pwszFileVersion = '\0';
 
     /*
      * Open the file.
@@ -5002,6 +5230,7 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, bool fAdversarial)
             uint8_t                     abBuf[32768];
             RTUTF16                     awcBuf[16384];
             IMAGE_DOS_HEADER            MzHdr;
+            IMAGE_RESOURCE_DIRECTORY    ResDir;
         } u;
         RTTIMESPEC  TimeSpec;
         char        szTmp[64];
@@ -5075,37 +5304,78 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, bool fAdversarial)
                         &&    (uintptr_t)&u + sizeof(u) - (uintptr_t)paSectHdrs
                            >= pNtHdrs64->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER) )
                     {
+                        uint32_t uRvaRsrcSect = 0;
+                        uint32_t cbRsrcSect   = 0;
+                        uint32_t offRsrcSect  = 0;
                         offRead.QuadPart = 0;
                         for (uint32_t i = 0; i < pNtHdrs64->FileHeader.NumberOfSections; i++)
-                            if (   paSectHdrs[i].VirtualAddress - RsrcDir.VirtualAddress < paSectHdrs[i].SizeOfRawData
-                                && paSectHdrs[i].PointerToRawData > offNtHdrs)
+                        {
+                            uRvaRsrcSect = paSectHdrs[i].VirtualAddress;
+                            cbRsrcSect   = paSectHdrs[i].Misc.VirtualSize;
+                            offRsrcSect  = paSectHdrs[i].PointerToRawData;
+                            if (   RsrcDir.VirtualAddress - uRvaRsrcSect < cbRsrcSect
+                                && offRsrcSect > offNtHdrs)
                             {
-                                offRead.QuadPart = paSectHdrs[i].PointerToRawData
-                                                 + (paSectHdrs[i].VirtualAddress - RsrcDir.VirtualAddress);
+                                offRead.QuadPart = offRsrcSect + (RsrcDir.VirtualAddress - uRvaRsrcSect);
                                 break;
                             }
+                        }
                         if (offRead.QuadPart > 0)
                         {
                             RT_ZERO(u);
                             rcNt = NtReadFile(hFile, NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/, &Ios,
                                               &u, (ULONG)sizeof(u), &offRead, NULL);
+                            PCRTUTF16 pwcVersionData = &u.awcBuf[0];
+                            size_t    cbVersionData  = sizeof(u);
+
                             if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
                             {
-                                static const struct { PCRTUTF16 pwsz; size_t cb; } s_abFields[] =
+                                /* Make it less crude by try find the version resource data. */
+                                uint32_t  cbVersion;
+                                uint32_t  uRvaVersion = supR3HardenedFindVersionRsrcRva(&u.ResDir, sizeof(u), &cbVersion);
+                                NOREF(uRvaVersion);
+                                if (   uRvaVersion != UINT32_MAX
+                                    && cbVersion < cbRsrcSect
+                                    && uRvaVersion - uRvaRsrcSect <= cbRsrcSect - cbVersion)
                                 {
-#define MY_WIDE_STR_TUPLE(a_sz)     { L ## a_sz, sizeof(L ## a_sz) - sizeof(RTUTF16) }
-                                    MY_WIDE_STR_TUPLE("ProductName"),
-                                    MY_WIDE_STR_TUPLE("ProductVersion"),
-                                    MY_WIDE_STR_TUPLE("FileVersion"),
-                                    MY_WIDE_STR_TUPLE("SpecialBuild"),
-                                    MY_WIDE_STR_TUPLE("PrivateBuild"),
-                                    MY_WIDE_STR_TUPLE("FileDescription"),
+                                    uint32_t const offVersion = uRvaVersion - uRvaRsrcSect;
+                                    if (   offVersion < sizeof(u)
+                                        && offVersion + cbVersion <= sizeof(u))
+                                    {
+                                        pwcVersionData = (PCRTUTF16)&u.abBuf[offVersion];
+                                        cbVersionData  = cbVersion;
+                                    }
+                                    else
+                                    {
+                                        offRead.QuadPart = offVersion + offRsrcSect;
+                                        RT_ZERO(u);
+                                        rcNt = NtReadFile(hFile, NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/, &Ios,
+                                                          &u, (ULONG)sizeof(u), &offRead, NULL);
+                                        pwcVersionData = &u.awcBuf[0];
+                                        cbVersionData  = RT_MIN(cbVersion, sizeof(u));
+                                    }
+                                }
+                            }
+
+                            if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
+                            {
+                                static const struct { PCRTUTF16 pwsz; size_t cb; bool fRet; } s_abFields[] =
+                                {
+#define MY_WIDE_STR_TUPLE(a_sz, a_fRet) { L ## a_sz, sizeof(L ## a_sz) - sizeof(RTUTF16), a_fRet }
+                                    MY_WIDE_STR_TUPLE("ProductName",        false),
+                                    MY_WIDE_STR_TUPLE("ProductVersion",     false),
+                                    MY_WIDE_STR_TUPLE("FileVersion",        true),
+                                    MY_WIDE_STR_TUPLE("SpecialBuild",       false),
+                                    MY_WIDE_STR_TUPLE("PrivateBuild",       false),
+                                    MY_WIDE_STR_TUPLE("FileDescription",    false),
 #undef MY_WIDE_STR_TUPLE
                                 };
                                 for (uint32_t i = 0; i < RT_ELEMENTS(s_abFields); i++)
                                 {
-                                    size_t          cwcLeft = (sizeof(u) - s_abFields[i].cb - 10) / sizeof(RTUTF16);
-                                    PCRTUTF16       pwc     = u.awcBuf;
+                                    if (cbVersionData <= s_abFields[i].cb + 10)
+                                        continue;
+                                    size_t          cwcLeft = (cbVersionData - s_abFields[i].cb - 10) / sizeof(RTUTF16);
+                                    PCRTUTF16       pwc     = pwcVersionData;
                                     RTUTF16 const   wcFirst = *s_abFields[i].pwsz;
                                     while (cwcLeft-- > 0)
                                     {
@@ -5123,8 +5393,14 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, bool fAdversarial)
                                                 int rc = RTUtf16ValidateEncodingEx(pwc, cwcLeft,
                                                                                    RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
                                                 if (RT_SUCCESS(rc))
+                                                {
                                                     SUP_DPRINTF(("    %ls:%*s %ls",
                                                                  s_abFields[i].pwsz, cwcField < 15 ? 15 - cwcField : 0, "", pwc));
+                                                    if (   s_abFields[i].fRet
+                                                        && pwszFileVersion
+                                                        && cwcFileVersion > 1)
+                                                        RTUtf16Copy(pwszFileVersion, cwcFileVersion, pwc);
+                                                }
                                                 else
                                                     SUP_DPRINTF(("    %ls:%*s rc=%Rrc",
                                                                  s_abFields[i].pwsz, cwcField < 15 ? 15 - cwcField : 0, "", rc));
@@ -5255,7 +5531,7 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         { SUPHARDNT_ADVERSARY_COMODO,               "inspect" },
         { SUPHARDNT_ADVERSARY_COMODO,               "cmdHlp" },
 
-        { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN,     "dgmaster" }, /* Not verified. */
+        { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_OLD, "dgmaster" },
 
         { SUPHARDNT_ADVERSARY_CYLANCE,              "cyprotectdrv" }, /* Not verified. */
 
@@ -5375,7 +5651,7 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         { SUPHARDNT_ADVERSARY_ZONE_ALARM, L"\\SystemRoot\\System32\\drivers\\vsdatant.sys" },
         { SUPHARDNT_ADVERSARY_ZONE_ALARM, L"\\SystemRoot\\System32\\AntiTheftCredentialProvider.dll" },
 
-        { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN, L"\\SystemRoot\\System32\\drivers\\dgmaster.sys" },
+        { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_OLD, L"\\SystemRoot\\System32\\drivers\\dgmaster.sys" },
 
         { SUPHARDNT_ADVERSARY_CYLANCE, L"\\SystemRoot\\System32\\drivers\\cyprotectdrv32.sys" },
         { SUPHARDNT_ADVERSARY_CYLANCE, L"\\SystemRoot\\System32\\drivers\\cyprotectdrv64.sys" },
@@ -5472,12 +5748,46 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
     }
 
     /*
-     * Log details.
+     * Log details and upgrade select adversaries.
      */
     SUP_DPRINTF(("supR3HardenedWinFindAdversaries: %#x\n", fFound));
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFiles); i++)
-        if (fFound & s_aFiles[i].fAdversary)
-            supR3HardenedLogFileInfo(s_aFiles[i].pwszFile, true /* fAdversarial */);
+        if (s_aFiles[i].fAdversary & fFound)
+        {
+            if (!(s_aFiles[i].fAdversary & SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_OLD))
+                supR3HardenedLogFileInfo(s_aFiles[i].pwszFile, NULL, 0);
+            else
+            {
+                /*
+                 * See if it's a newer version of the driver which doesn't BSODs when we free
+                 * its memory.  To use RTStrVersionCompare we do a rough UTF-16 -> ASCII conversion.
+                 */
+                union
+                {
+                    char    szFileVersion[64];
+                    RTUTF16 wszFileVersion[32];
+                } uBuf;
+                supR3HardenedLogFileInfo(s_aFiles[i].pwszFile, uBuf.wszFileVersion, RT_ELEMENTS(uBuf.wszFileVersion));
+                if (uBuf.wszFileVersion[0])
+                {
+                    for (uint32_t off = 0; off < RT_ELEMENTS(uBuf.wszFileVersion); off++)
+                    {
+                        RTUTF16 wch = uBuf.wszFileVersion[off];
+                        uBuf.szFileVersion[off] = (char)wch;
+                        if (!wch)
+                            break;
+                    }
+                    uBuf.szFileVersion[RT_ELEMENTS(uBuf.wszFileVersion)] = '\0';
+                    if (RTStrVersionCompare(uBuf.szFileVersion, "7.3.0.0171") >= 0)
+                    {
+                        uint32_t const fOldFound = fFound;
+                        fFound = (fOldFound & ~SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_OLD)
+                               |               SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN_NEW;
+                        SUP_DPRINTF(("supR3HardenedWinFindAdversaries: Found newer version: %#x -> %#x\n", fOldFound, fFound));
+                    }
+                }
+            }
+        }
 
     return fFound;
 }
@@ -5552,10 +5862,10 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     /*
      * Log information about important system files.
      */
-    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\ntdll.dll", false /* fAdversarial */);
-    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\kernel32.dll", false /* fAdversarial */);
-    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\KernelBase.dll", false /* fAdversarial */);
-    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\apisetschema.dll", false /* fAdversarial */);
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\ntdll.dll",          NULL /*pwszFileVersion*/, 0 /*cwcFileVersion*/);
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\kernel32.dll",       NULL /*pwszFileVersion*/, 0 /*cwcFileVersion*/);
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\KernelBase.dll",     NULL /*pwszFileVersion*/, 0 /*cwcFileVersion*/);
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\apisetschema.dll",   NULL /*pwszFileVersion*/, 0 /*cwcFileVersion*/);
 
     /*
      * Scan the system for adversaries, logging information about them.

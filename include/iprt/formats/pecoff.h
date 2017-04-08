@@ -544,6 +544,80 @@ typedef IMAGE_THUNK_DATA32 const *PCIMAGE_THUNK_DATA32;
 #define IMAGE_SNAP_BY_ORDINAL64(ord)        (!!((ord) & IMAGE_ORDINAL_FLAG64))
 /** @} */
 
+/** @name PE Resource directory
+ * @{ */
+typedef struct _IMAGE_RESOURCE_DIRECTORY
+{
+    uint32_t    Characteristics;
+    uint32_t    TimeDateStamp;
+    uint16_t    MajorVersion;
+    uint16_t    MinorVersion;
+    uint16_t    NumberOfNamedEntries;
+    uint16_t    NumberOfIdEntries;
+} IMAGE_RESOURCE_DIRECTORY;
+typedef IMAGE_RESOURCE_DIRECTORY *PIMAGE_RESOURCE_DIRECTORY;
+typedef IMAGE_RESOURCE_DIRECTORY const *PCIMAGE_RESOURCE_DIRECTORY;
+
+typedef struct _IMAGE_RESOURCE_DIRECTORY_ENTRY
+{
+    union
+    {
+        struct
+        {
+            uint32_t NameOffset        : 31;
+            uint32_t NameIsString      : 1; /**< IMAGE_RESOURCE_NAME_IS_STRING */
+        } s;
+        uint32_t Name;
+        uint16_t Id;
+    } u;
+    union
+    {
+        struct
+        {
+            uint32_t OffsetToDirectory : 31;
+            uint32_t DataIsDirectory   : 1; /**< IMAGE_RESOURCE_DATA_IS_DIRECTORY*/
+        } s2;
+        uint32_t OffsetToData;
+    } u2;
+} IMAGE_RESOURCE_DIRECTORY_ENTRY;
+typedef IMAGE_RESOURCE_DIRECTORY_ENTRY *PIMAGE_RESOURCE_DIRECTORY_ENTRY;
+typedef IMAGE_RESOURCE_DIRECTORY_ENTRY const *PCIMAGE_RESOURCE_DIRECTORY_ENTRY;
+
+#define IMAGE_RESOURCE_NAME_IS_STRING       UINT32_C(0x80000000)
+#define IMAGE_RESOURCE_DATA_IS_DIRECTORY    UINT32_C(0x80000000)
+
+typedef struct _IMAGE_RESOURCE_DIRECTORY_STRING
+{
+    uint16_t    Length;
+    char        NameString[1];
+} IMAGE_RESOURCE_DIRECTORY_STRING;
+typedef IMAGE_RESOURCE_DIRECTORY_STRING *PIMAGE_RESOURCE_DIRECTORY_STRING;
+typedef IMAGE_RESOURCE_DIRECTORY_STRING const *PCIMAGE_RESOURCE_DIRECTORY_STRING;
+
+
+typedef struct _IMAGE_RESOURCE_DIR_STRING_U
+{
+    uint16_t    Length;
+    RTUTF16     NameString[1];
+} IMAGE_RESOURCE_DIR_STRING_U;
+typedef IMAGE_RESOURCE_DIR_STRING_U *PIMAGE_RESOURCE_DIR_STRING_U;
+typedef IMAGE_RESOURCE_DIR_STRING_U const *PCIMAGE_RESOURCE_DIR_STRING_U;
+
+
+typedef struct _IMAGE_RESOURCE_DATA_ENTRY
+{
+    uint32_t    OffsetToData;
+    uint32_t    Size;
+    uint32_t    CodePage;
+    uint32_t    Reserved;
+} IMAGE_RESOURCE_DATA_ENTRY;
+typedef IMAGE_RESOURCE_DATA_ENTRY *PIMAGE_RESOURCE_DATA_ENTRY;
+typedef IMAGE_RESOURCE_DATA_ENTRY const *PCIMAGE_RESOURCE_DATA_ENTRY;
+
+/** @} */
+
+
+
 /** @name Image load config directories
  * @{ */
 
