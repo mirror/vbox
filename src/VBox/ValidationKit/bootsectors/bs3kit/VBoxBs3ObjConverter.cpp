@@ -4765,7 +4765,7 @@ static bool convertOmfAddNeededGrpDefs(POMFDETAILS pOmfStuff)
                     memcpy(szSegNm, pOmfStuff->aGroups[j].pszSeg, cchSegNm);
 
                     /* Add the three segments. */
-                    static RTSTRTUPLE const s_aSuffixes[3] = { RT_STR_TUPLE("_START"), RT_STR_TUPLE(""), RT_STR_TUPLE("_END"), };
+                    static RTSTRTUPLE const s_aSuffixes[3] = { {RT_STR_TUPLE("_START")}, {RT_STR_TUPLE("")}, {RT_STR_TUPLE("_END")}, };
                     for (unsigned iSuffix = 0; iSuffix < RT_ELEMENTS(s_aSuffixes); iSuffix++)
                     {
                         uint16_t idxSegNm;
