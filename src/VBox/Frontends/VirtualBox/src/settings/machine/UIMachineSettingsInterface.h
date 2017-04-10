@@ -73,6 +73,15 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Saves existing interface data from the cache. */
+    bool saveInterfaceData();
+    /** Saves existing 'Menu-bar' data from the cache. */
+    bool saveMenuBarData();
+    /** Saves existing 'Status-bar' data from the cache. */
+    bool saveStatusBarData();
+    /** Saves existing 'Mini-toolbar' data from the cache. */
+    bool saveMiniToolbarData();
+
     /** Holds the machine ID copy. */
     const QString  m_strMachineId;
     /** Holds the action-pool instance. */

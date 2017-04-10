@@ -1201,6 +1201,13 @@ void UIMessageCenter::cannotSaveStorageMediumSettings(const CMedium &comMedium, 
           formatErrorInfo(comMedium));
 }
 
+void UIMessageCenter::cannotSaveInterfaceSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save user interface settings."),
+          formatErrorInfo(comMachine));
+}
+
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)
