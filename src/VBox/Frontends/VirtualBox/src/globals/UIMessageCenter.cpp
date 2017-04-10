@@ -57,6 +57,7 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
+# include "CParallelPort.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -1220,6 +1221,20 @@ void UIMessageCenter::cannotSaveNetworkAdapterSettings(const CNetworkAdapter &co
     error(pParent, MessageType_Error,
           tr("Cannot save network adapter settings."),
           formatErrorInfo(comAdapter));
+}
+
+void UIMessageCenter::cannotSaveParallelSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save parallel ports settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveParallelPortSettings(const CParallelPort &comPort, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save parallel port settings."),
+          formatErrorInfo(comPort));
 }
 
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,

@@ -76,6 +76,11 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Saves existing parallel data from the cache. */
+    bool saveParallelData();
+    /** Saves existing port data from the cache. */
+    bool savePortData(int iPort);
+
     /** Holds the tab-widget instance. */
     QITabWidget *m_pTabWidget;
 

@@ -248,6 +248,8 @@ public:
     void cannotSaveInterfaceSettings(const CMachine &comMachine, QWidget *pParent = 0);
     void cannotSaveNetworkSettings(const CMachine &comMachine, QWidget *pParent = 0);
     void cannotSaveNetworkAdapterSettings(const CNetworkAdapter &comAdapter, QWidget *pParent = 0);
+    void cannotSaveParallelSettings(const CMachine &comMachine, QWidget *pParent = 0);
+    void cannotSaveParallelPortSettings(const CParallelPort &comPort, QWidget *pParent = 0);
     void cannotAttachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
     bool warnAboutIncorrectAddress(QWidget *pParent = 0) const;
