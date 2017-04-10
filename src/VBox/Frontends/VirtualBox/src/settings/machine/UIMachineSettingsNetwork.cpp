@@ -26,6 +26,7 @@
 # include "UIConverter.h"
 # include "UIIconPool.h"
 # include "UIMachineSettingsNetwork.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -1148,115 +1149,8 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is in valid mode & network data was changed: */
-    if (isMachineInValidMode() && m_pCache->wasChanged())
-    {
-        /* For each adapter: */
-        for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
-        {
-            /* Get old network data from the cache: */
-            const UIDataSettingsMachineNetworkAdapter &oldAdapterData = m_pCache->base().m_adapters.at(iSlot);
-            /* Get new network data from the cache: */
-            const UIDataSettingsMachineNetworkAdapter &newAdapterData = m_pCache->data().m_adapters.at(iSlot);
-
-            /* Make sure adapter data was changed: */
-            if (newAdapterData != oldAdapterData)
-            {
-                /* Check if adapter still valid: */
-                CNetworkAdapter comAdapter = m_machine.GetNetworkAdapter(iSlot);
-                if (!comAdapter.isNull())
-                {
-                    /* Store new adapter data: */
-                    if (isMachineOffline())
-                    {
-                        /* Whether the adapter is enabled: */
-                        if (   comAdapter.isOk()
-                            && newAdapterData.m_fAdapterEnabled != oldAdapterData.m_fAdapterEnabled)
-                            comAdapter.SetEnabled(newAdapterData.m_fAdapterEnabled);
-                        /* Adapter type: */
-                        if (   comAdapter.isOk()
-                            && newAdapterData.m_adapterType != oldAdapterData.m_adapterType)
-                            comAdapter.SetAdapterType(newAdapterData.m_adapterType);
-                        /* Adapter MAC address: */
-                        if (   comAdapter.isOk()
-                            && newAdapterData.m_strMACAddress != oldAdapterData.m_strMACAddress)
-                            comAdapter.SetMACAddress(newAdapterData.m_strMACAddress);
-                    }
-                    if (isMachineInValidMode())
-                    {
-                        /* Adapter attachment type: */
-                        switch (newAdapterData.m_attachmentType)
-                        {
-                            case KNetworkAttachmentType_Bridged:
-                            {
-                                if (   comAdapter.isOk()
-                                    && newAdapterData.m_strBridgedAdapterName != oldAdapterData.m_strBridgedAdapterName)
-                                    comAdapter.SetBridgedInterface(newAdapterData.m_strBridgedAdapterName);
-                                break;
-                            }
-                            case KNetworkAttachmentType_Internal:
-                            {
-                                if (   comAdapter.isOk()
-                                    && newAdapterData.m_strInternalNetworkName != oldAdapterData.m_strInternalNetworkName)
-                                    comAdapter.SetInternalNetwork(newAdapterData.m_strInternalNetworkName);
-                                break;
-                            }
-                            case KNetworkAttachmentType_HostOnly:
-                            {
-                                if (   comAdapter.isOk()
-                                    && newAdapterData.m_strHostInterfaceName != oldAdapterData.m_strHostInterfaceName)
-                                    comAdapter.SetHostOnlyInterface(newAdapterData.m_strHostInterfaceName);
-                                break;
-                            }
-                            case KNetworkAttachmentType_Generic:
-                            {
-                                if (   comAdapter.isOk()
-                                    && newAdapterData.m_strGenericDriverName != oldAdapterData.m_strGenericDriverName)
-                                    comAdapter.SetGenericDriver(newAdapterData.m_strGenericDriverName);
-                                if (   comAdapter.isOk()
-                                    && newAdapterData.m_strGenericProperties != oldAdapterData.m_strGenericProperties)
-                                    saveGenericProperties(comAdapter, newAdapterData.m_strGenericProperties);
-                                break;
-                            }
-                            case KNetworkAttachmentType_NATNetwork:
-                            {
-                                if (   comAdapter.isOk()
-                                    && newAdapterData.m_strNATNetworkName != oldAdapterData.m_strNATNetworkName)
-                                    comAdapter.SetNATNetwork(newAdapterData.m_strNATNetworkName);
-                                break;
-                            }
-                            default:
-                                break;
-                        }
-                        if (   comAdapter.isOk()
-                            && newAdapterData.m_attachmentType != oldAdapterData.m_attachmentType)
-                            comAdapter.SetAttachmentType(newAdapterData.m_attachmentType);
-                        /* Adapter promiscuous mode: */
-                        if (   comAdapter.isOk()
-                            && newAdapterData.m_promiscuousMode != oldAdapterData.m_promiscuousMode)
-                            comAdapter.SetPromiscModePolicy(newAdapterData.m_promiscuousMode);
-                        /* Whether the adapter cable connected: */
-                        if (   comAdapter.isOk()
-                            && newAdapterData.m_fCableConnected != oldAdapterData.m_fCableConnected)
-                            comAdapter.SetCableConnected(newAdapterData.m_fCableConnected);
-                        /* Adapter redirect options: */
-                        if (   comAdapter.isOk()
-                            && newAdapterData.m_redirects != oldAdapterData.m_redirects
-                            && (   oldAdapterData.m_attachmentType == KNetworkAttachmentType_NAT
-                                || newAdapterData.m_attachmentType == KNetworkAttachmentType_NAT))
-                        {
-                            foreach (const QString &strOldRedirect, comAdapter.GetNATEngine().GetRedirects())
-                                comAdapter.GetNATEngine().RemoveRedirect(strOldRedirect.section(',', 0, 0));
-                            foreach (const UIPortForwardingData &newRedirect, newAdapterData.m_redirects)
-                                comAdapter.GetNATEngine().AddRedirect(newRedirect.name, newRedirect.protocol,
-                                                                   newRedirect.hostIp, newRedirect.hostPort.value(),
-                                                                   newRedirect.guestIp, newRedirect.guestPort.value());
-                        }
-                    }
-                }
-            }
-        }
-    }
+    /* Update network data and failing state: */
+    setFailed(!saveNetworkData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1521,37 +1415,205 @@ QString UIMachineSettingsNetworkPage::loadGenericProperties(const CNetworkAdapte
 }
 
 /* static */
-void UIMachineSettingsNetworkPage::saveGenericProperties(CNetworkAdapter &adapter, const QString &strProperties)
+bool UIMachineSettingsNetworkPage::saveGenericProperties(CNetworkAdapter &comAdapter, const QString &strProperties)
 {
-    /* Parse new properties: */
-    const QStringList newProps = strProperties.split("\n");
-    QHash<QString, QString> hash;
-
-    /* Save new properties: */
-    for (int i = 0; i < newProps.size(); ++i)
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save generic properties: */
+    if (fSuccess)
     {
-        const QString strLine = newProps[i];
-        const int iSplitPos = strLine.indexOf("=");
-        if (iSplitPos)
+        /* Acquire 'added' properties: */
+        const QStringList newProps = strProperties.split("\n");
+
+        /* Insert 'added' properties: */
+        QHash<QString, QString> hash;
+        for (int i = 0; fSuccess && i < newProps.size(); ++i)
         {
-            const QString strKey = strLine.left(iSplitPos);
-            const QString strVal = strLine.mid(iSplitPos + 1);
-            adapter.SetProperty(strKey, strVal);
+            /* Parse property line: */
+            const QString strLine = newProps.at(i);
+            const QString strKey = strLine.section('=', 0, 0);
+            const QString strVal = strLine.section('=', 1, -1);
+            if (strKey.isEmpty() || strVal.isEmpty())
+                continue;
+            /* Save property in the adapter and the hash: */
+            comAdapter.SetProperty(strKey, strVal);
+            fSuccess = comAdapter.isOk();
             hash[strKey] = strVal;
         }
-    }
 
-    /* Removing deleted properties: */
-    QVector<QString> names;
-    QVector<QString> props;
-    props = adapter.GetProperties(QString(), names);
-    for (int i = 0; i < names.size(); ++i)
-    {
-        const QString strName = names[i];
-        const QString strValue = props[i];
-        if (strValue != hash[strName])
-            adapter.SetProperty(strName, hash[strName]);
+        /* Acquire actual properties ('added' and 'removed'): */
+        QVector<QString> names;
+        QVector<QString> props;
+        if (fSuccess)
+        {
+            props = comAdapter.GetProperties(QString(), names);
+            fSuccess = comAdapter.isOk();
+        }
+
+        /* Exclude 'removed' properties: */
+        for (int i = 0; fSuccess && i < names.size(); ++i)
+        {
+            /* Get property name and value: */
+            const QString strKey = names.at(i);
+            const QString strVal = props.at(i);
+            if (strVal == hash.value(strKey))
+                continue;
+            /* Remove property from the adapter: */
+            // Actually we are _replacing_ property value,
+            // not _removing_ it at all, but we are replacing it
+            // with default constructed value, which is QString().
+            comAdapter.SetProperty(strKey, hash.value(strKey));
+            fSuccess = comAdapter.isOk();
+        }
     }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsNetworkPage::saveNetworkData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save network settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
+    {
+        /* For each adapter: */
+        for (int iSlot = 0; fSuccess && iSlot < m_pTabWidget->count(); ++iSlot)
+            fSuccess = saveAdapterData(iSlot);
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save adapter settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old network data from the cache: */
+        const UIDataSettingsMachineNetworkAdapter &oldAdapterData = m_pCache->base().m_adapters.at(iSlot);
+        /* Get new network data from the cache: */
+        const UIDataSettingsMachineNetworkAdapter &newAdapterData = m_pCache->data().m_adapters.at(iSlot);
+
+        /* Make sure adapter data was changed: */
+        if (newAdapterData != oldAdapterData)
+        {
+            /* Get audio adapter for further activities: */
+            CNetworkAdapter comAdapter = m_machine.GetNetworkAdapter(iSlot);
+            fSuccess = m_machine.isOk() && comAdapter.isNotNull();
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveNetworkSettings(m_machine, this);
+
+            /* Save whether the adapter is enabled: */
+            if (fSuccess && isMachineOffline() && newAdapterData.m_fAdapterEnabled != oldAdapterData.m_fAdapterEnabled)
+            {
+                comAdapter.SetEnabled(newAdapterData.m_fAdapterEnabled);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save adapter type: */
+            if (fSuccess && isMachineOffline() && newAdapterData.m_adapterType != oldAdapterData.m_adapterType)
+            {
+                comAdapter.SetAdapterType(newAdapterData.m_adapterType);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save adapter MAC address: */
+            if (fSuccess && isMachineOffline() && newAdapterData.m_strMACAddress != oldAdapterData.m_strMACAddress)
+            {
+                comAdapter.SetMACAddress(newAdapterData.m_strMACAddress);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save adapter attachment type: */
+            switch (newAdapterData.m_attachmentType)
+            {
+                case KNetworkAttachmentType_Bridged:
+                {
+                    if (fSuccess && newAdapterData.m_strBridgedAdapterName != oldAdapterData.m_strBridgedAdapterName)
+                    {
+                        comAdapter.SetBridgedInterface(newAdapterData.m_strBridgedAdapterName);
+                        fSuccess = comAdapter.isOk();
+                    }
+                    break;
+                }
+                case KNetworkAttachmentType_Internal:
+                {
+                    if (fSuccess && newAdapterData.m_strInternalNetworkName != oldAdapterData.m_strInternalNetworkName)
+                    {
+                        comAdapter.SetInternalNetwork(newAdapterData.m_strInternalNetworkName);
+                        fSuccess = comAdapter.isOk();
+                    }
+                    break;
+                }
+                case KNetworkAttachmentType_HostOnly:
+                {
+                    if (fSuccess && newAdapterData.m_strHostInterfaceName != oldAdapterData.m_strHostInterfaceName)
+                    {
+                        comAdapter.SetHostOnlyInterface(newAdapterData.m_strHostInterfaceName);
+                        fSuccess = comAdapter.isOk();
+                    }
+                    break;
+                }
+                case KNetworkAttachmentType_Generic:
+                {
+                    if (fSuccess && newAdapterData.m_strGenericDriverName != oldAdapterData.m_strGenericDriverName)
+                    {
+                        comAdapter.SetGenericDriver(newAdapterData.m_strGenericDriverName);
+                        fSuccess = comAdapter.isOk();
+                    }
+                    if (fSuccess && newAdapterData.m_strGenericProperties != oldAdapterData.m_strGenericProperties)
+                        fSuccess = saveGenericProperties(comAdapter, newAdapterData.m_strGenericProperties);
+                    break;
+                }
+                case KNetworkAttachmentType_NATNetwork:
+                {
+                    if (fSuccess && newAdapterData.m_strNATNetworkName != oldAdapterData.m_strNATNetworkName)
+                    {
+                        comAdapter.SetNATNetwork(newAdapterData.m_strNATNetworkName);
+                        fSuccess = comAdapter.isOk();
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+            if (fSuccess && newAdapterData.m_attachmentType != oldAdapterData.m_attachmentType)
+            {
+                comAdapter.SetAttachmentType(newAdapterData.m_attachmentType);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save adapter promiscuous mode: */
+            if (fSuccess && newAdapterData.m_promiscuousMode != oldAdapterData.m_promiscuousMode)
+            {
+                comAdapter.SetPromiscModePolicy(newAdapterData.m_promiscuousMode);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save whether the adapter cable connected: */
+            if (fSuccess && newAdapterData.m_fCableConnected != oldAdapterData.m_fCableConnected)
+            {
+                comAdapter.SetCableConnected(newAdapterData.m_fCableConnected);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save adapter redirect options: */
+            if (   fSuccess && newAdapterData.m_redirects != oldAdapterData.m_redirects
+                && (   oldAdapterData.m_attachmentType == KNetworkAttachmentType_NAT
+                    || newAdapterData.m_attachmentType == KNetworkAttachmentType_NAT))
+            {
+                foreach (const QString &strOldRedirect, comAdapter.GetNATEngine().GetRedirects())
+                    comAdapter.GetNATEngine().RemoveRedirect(strOldRedirect.section(',', 0, 0));
+                foreach (const UIPortForwardingData &newRedirect, newAdapterData.m_redirects)
+                    comAdapter.GetNATEngine().AddRedirect(newRedirect.name, newRedirect.protocol,
+                                                       newRedirect.hostIp, newRedirect.hostPort.value(),
+                                                       newRedirect.guestIp, newRedirect.guestPort.value());
+            }
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveNetworkAdapterSettings(comAdapter, this);
+        }
+    }
+    /* Return result: */
+    return fSuccess;
 }
 
 # include "UIMachineSettingsNetwork.moc"

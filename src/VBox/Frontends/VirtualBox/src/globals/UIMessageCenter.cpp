@@ -1208,6 +1208,20 @@ void UIMessageCenter::cannotSaveInterfaceSettings(const CMachine &comMachine, QW
           formatErrorInfo(comMachine));
 }
 
+void UIMessageCenter::cannotSaveNetworkSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save network settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveNetworkAdapterSettings(const CNetworkAdapter &comAdapter, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save network adapter settings."),
+          formatErrorInfo(comAdapter));
+}
+
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)
