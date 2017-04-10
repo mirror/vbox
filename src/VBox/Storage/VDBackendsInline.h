@@ -32,11 +32,11 @@ RT_C_DECLS_BEGIN
  * @param a_szStubName         The name of the stub.
  */
 #define VD_BACKEND_CALLBACK_GET_COMMENT_DEF_NOT_SUPPORTED(a_szStubName) \
-    static DECLCALLBACK(int) a_szStubName(void *pvBackend, char *pszComment, size_t cbComment) \
+    static DECLCALLBACK(int) a_szStubName(void *pBackendData, char *pszComment, size_t cbComment) \
     { \
         RT_NOREF2(pszComment, cbComment); \
-        LogFlowFunc(("pvBackend=%#p pszComment=%#p cbComment=%zu\n", pvBackend, pszComment, cbComment)); \
-        AssertPtrReturn(pvBackend, VERR_VD_NOT_OPENED); \
+        LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment)); \
+        AssertPtrReturn(pBackendData, VERR_VD_NOT_OPENED); \
         LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment)); \
         return VERR_NOT_SUPPORTED; \
     } \
@@ -51,11 +51,11 @@ RT_C_DECLS_BEGIN
  * @param a_ImageStateType     Type of the backend image state.
  */
 #define VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED(a_szStubName, a_ImageStateType) \
-    static DECLCALLBACK(int) a_szStubName(void *pvBackend, const char *pszComment) \
+    static DECLCALLBACK(int) a_szStubName(void *pBackendData, const char *pszComment) \
     { \
         RT_NOREF1(pszComment); \
-        LogFlowFunc(("pvBackend=%#p pszComment=\"%s\"\n", pvBackend, pszComment)); \
-        a_ImageStateType pThis = (a_ImageStateType)pvBackend; \
+        LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment)); \
+        a_ImageStateType pThis = (a_ImageStateType)pBackendData; \
         AssertPtrReturn(pThis, VERR_VD_NOT_OPENED); \
         int rc = VERR_NOT_SUPPORTED; \
         if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY) \
@@ -73,11 +73,11 @@ RT_C_DECLS_BEGIN
  * @param a_szStubName         The name of the stub.
  */
 #define VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(a_szStubName) \
-    static DECLCALLBACK(int) a_szStubName(void *pvBackend, PRTUUID pUuid) \
+    static DECLCALLBACK(int) a_szStubName(void *pBackendData, PRTUUID pUuid) \
     { \
         RT_NOREF1(pUuid); \
-        LogFlowFunc(("pvBackend=%#p pUuid=%#p\n", pvBackend, pUuid)); \
-        AssertPtrReturn(pvBackend, VERR_VD_NOT_OPENED); \
+        LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid)); \
+        AssertPtrReturn(pBackendData, VERR_VD_NOT_OPENED); \
         LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid)); \
         return VERR_NOT_SUPPORTED; \
     } \
@@ -92,11 +92,11 @@ RT_C_DECLS_BEGIN
  * @param a_ImageStateType     Type of the backend image state.
  */
 #define VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(a_szStubName, a_ImageStateType) \
-    static DECLCALLBACK(int) a_szStubName(void *pvBackend, PCRTUUID pUuid) \
+    static DECLCALLBACK(int) a_szStubName(void *pBackendData, PCRTUUID pUuid) \
     { \
         RT_NOREF1(pUuid); \
-        LogFlowFunc(("pvBackend=%#p Uuid=%RTuuid\n", pvBackend, pUuid)); \
-        a_ImageStateType pThis = (a_ImageStateType)pvBackend; \
+        LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid)); \
+        a_ImageStateType pThis = (a_ImageStateType)pBackendData; \
         AssertPtrReturn(pThis, VERR_VD_NOT_OPENED); \
         int rc = VERR_NOT_SUPPORTED; \
         if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY) \
