@@ -95,6 +95,8 @@ typedef struct PARALLELSIMAGE
     bool                fAllocationBitmapChanged;
     /** Current file size. */
     uint64_t            cbFileCurrent;
+    /** The static region list. */
+    VDREGIONLIST        RegionList;
 } PARALLELSIMAGE, *PPARALLELSIMAGE;
 
 
@@ -247,6 +249,21 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
             rc = VERR_VD_PARALLELS_INVALID_HEADER;
     }
 
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -335,7 +352,21 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         parallelsFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
     return rc;
 }
@@ -416,7 +447,7 @@ static DECLCALLBACK(int) parallelsOpen(const char *pszFilename, unsigned uOpenFl
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(VALID_PTR(pszFilename) && *pszFilename, VERR_INVALID_PARAMETER);
 
-    pImage = (PPARALLELSIMAGE)RTMemAllocZ(sizeof(PARALLELSIMAGE));
+    pImage = (PPARALLELSIMAGE)RTMemAllocZ(RT_UOFFSETOF(PARALLELSIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -475,7 +506,7 @@ static DECLCALLBACK(int) parallelsCreate(const char *pszFilename, uint64_t cbSiz
         pvUser = pIfProgress->Core.pvUser;
     }
 
-    pImage = (PPARALLELSIMAGE)RTMemAllocZ(sizeof(PARALLELSIMAGE));
+    pImage = (PPARALLELSIMAGE)RTMemAllocZ(RT_UOFFSETOF(PARALLELSIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -714,38 +745,6 @@ static DECLCALLBACK(unsigned) parallelsGetVersion(void *pBackendData)
     return PARALLELS_DISK_VERSION;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnGetSectorSize */
-static DECLCALLBACK(uint32_t) parallelsGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    uint32_t cb = 0;
-
-    AssertPtrReturn(pImage, 0);
-
-    if (pImage->pStorage)
-        cb = 512;
-
-    LogFlowFunc(("returns %llu\n", cb));
-    return cb;
-}
-
-/** @copydoc VDIMAGEBACKEND::pfnGetSize */
-static DECLCALLBACK(uint64_t) parallelsGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    uint64_t cb = 0;
-
-    AssertPtrReturn(pImage, 0);
-
-    if (pImage->pStorage)
-        cb = pImage->cbSize;
-
-    LogFlowFunc(("returns %llu\n", cb));
-    return cb;
-}
-
 /** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) parallelsGetFileSize(void *pBackendData)
 {
@@ -837,6 +836,30 @@ static DECLCALLBACK(int) parallelsSetLCHSGeometry(void *pBackendData,
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) parallelsQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PPARALLELSIMAGE pThis = (PPARALLELSIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) parallelsRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PPARALLELSIMAGE pThis = (PPARALLELSIMAGE)pBackendData;
+    AssertPtr(pThis); RT_NOREF(pThis);
+
+    /* Nothing to do here. */
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
@@ -1098,10 +1121,6 @@ const VDIMAGEBACKEND g_ParallelsBackend =
     NULL,
     /* pfnGetVersion */
     parallelsGetVersion,
-    /* pfnGetSectorSize */
-    parallelsGetSectorSize,
-    /* pfnGetSize */
-    parallelsGetSize,
     /* pfnGetFileSize */
     parallelsGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -1113,9 +1132,9 @@ const VDIMAGEBACKEND g_ParallelsBackend =
     /* pfnSetLCHSGeometry */
     parallelsSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    parallelsQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    parallelsRegionListRelease,
     /* pfnGetImageFlags */
     parallelsGetImageFlags,
     /* pfnGetOpenFlags */

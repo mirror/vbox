@@ -187,6 +187,8 @@ typedef struct VHDIMAGE
     uint64_t        u64DataOffset;
     /** Flag to force dynamic disk header update. */
     bool            fDynHdrNeedsUpdate;
+    /** The static region list. */
+    VDREGIONLIST    RegionList;
 } VHDIMAGE, *PVHDIMAGE;
 
 /**
@@ -891,7 +893,21 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
     if (!(pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED))
         rc = vhdLoadDynamicDisk(pImage, pImage->u64DataOffset);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         vhdFreeImage(pImage, false);
     return rc;
 }
@@ -1229,7 +1245,21 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
     if (RT_SUCCESS(rc))
         vdIfProgress(pIfProgress, uPercentStart + uPercentSpan);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         vhdFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
     return rc;
 }
@@ -1306,7 +1336,7 @@ static DECLCALLBACK(int) vhdOpen(const char *pszFilename, unsigned uOpenFlags,
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
 
-    PVHDIMAGE pImage = (PVHDIMAGE)RTMemAllocZ(sizeof(VHDIMAGE));
+    PVHDIMAGE pImage = (PVHDIMAGE)RTMemAllocZ(RT_UOFFSETOF(VHDIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -1354,7 +1384,7 @@ static DECLCALLBACK(int) vhdCreate(const char *pszFilename, uint64_t cbSize,
                  && VALID_PTR(pLCHSGeometry), VERR_INVALID_PARAMETER);
     /** @todo Check the values of other params */
 
-    PVHDIMAGE pImage = (PVHDIMAGE)RTMemAllocZ(sizeof(VHDIMAGE));
+    PVHDIMAGE pImage = (PVHDIMAGE)RTMemAllocZ(RT_UOFFSETOF(VHDIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -1828,38 +1858,6 @@ static DECLCALLBACK(unsigned) vhdGetVersion(void *pBackendData)
     return uVersion;
 }
 
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetSectorSize} */
-static DECLCALLBACK(uint32_t) vhdGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
-    uint32_t cb = 0;
-
-    AssertPtrReturn(pImage, 0);
-
-    if (pImage->pStorage)
-        cb = VHD_SECTOR_SIZE;
-
-    LogFlowFunc(("returns %zu\n", cb));
-    return cb;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetSize} */
-static DECLCALLBACK(uint64_t) vhdGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
-    uint64_t cb = 0;
-
-    AssertPtr(pImage);
-
-    if (pImage && pImage->pStorage)
-        cb = pImage->cbSize;
-
-    LogFlowFunc(("returns %llu\n", cb));
-    return cb;
-}
-
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetFileSize} */
 static DECLCALLBACK(uint64_t) vhdGetFileSize(void *pBackendData)
 {
@@ -1948,6 +1946,30 @@ static DECLCALLBACK(int) vhdSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLC
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) vhdQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PVHDIMAGE pThis = (PVHDIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) vhdRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PVHDIMAGE pThis = (PVHDIMAGE)pBackendData;
+    AssertPtr(pThis); RT_NOREF(pThis);
+
+    /* Nothing to do here. */
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetImageFlags} */
@@ -3043,10 +3065,6 @@ const VDIMAGEBACKEND g_VhdBackend =
     NULL,
     /* pfnGetVersion */
     vhdGetVersion,
-    /* pfnGetSectorSize */
-    vhdGetSectorSize,
-    /* pfnGetSize */
-    vhdGetSize,
     /* pfnGetFileSize */
     vhdGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -3058,9 +3076,9 @@ const VDIMAGEBACKEND g_VhdBackend =
     /* pfnSetLCHSGeometry */
     vhdSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    vhdQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    vhdRegionListRelease,
     /* pfnGetImageFlags */
     vhdGetImageFlags,
     /* pfnGetOpenFlags */

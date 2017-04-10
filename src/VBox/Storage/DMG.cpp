@@ -370,6 +370,8 @@ typedef struct DMGIMAGE
     void               *pvDecompExtent;
     /** Size of the buffer. */
     size_t              cbDecompExtent;
+    /** The static region list. */
+    VDREGIONLIST        RegionList;
 } DMGIMAGE;
 /** Pointer to an instance of the DMG Image Interpreter. */
 typedef DMGIMAGE *PDMGIMAGE;
@@ -1716,7 +1718,21 @@ static DECLCALLBACK(int) dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
     }
     RTMemFree(pszXml);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pThis->RegionList.aRegions[0];
+        pThis->RegionList.fFlags   = 0;
+        pThis->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 2048;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 2048;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pThis->cbSize;
+    }
+    else
         dmgFreeImage(pThis, false);
     return rc;
 }
@@ -1854,7 +1870,7 @@ static DECLCALLBACK(int) dmgOpen(const char *pszFilename, unsigned uOpenFlags,
      * then hand it over to a worker function that does all the rest.
      */
     int rc = VERR_NO_MEMORY;
-    PDMGIMAGE pThis = (PDMGIMAGE)RTMemAllocZ(sizeof(*pThis));
+    PDMGIMAGE pThis = (PDMGIMAGE)RTMemAllocZ(RT_UOFFSETOF(DMGIMAGE, RegionList.aRegions[1]));
     if (pThis)
     {
         pThis->pszFilename = pszFilename;
@@ -2056,38 +2072,6 @@ static DECLCALLBACK(unsigned) dmgGetVersion(void *pBackendData)
     return 1;
 }
 
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetSectorSize} */
-static DECLCALLBACK(uint32_t) dmgGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, 0);
-
-    uint32_t cb = 0;
-    if (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE)
-        cb = 2048;
-
-    LogFlowFunc(("returns %u\n", cb));
-    return cb;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetSize} */
-static DECLCALLBACK(uint64_t) dmgGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, 0);
-
-    uint64_t cb = 0;
-    if (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE)
-        cb = pThis->cbSize;
-
-    LogFlowFunc(("returns %llu\n", cb));
-    return cb;
-}
-
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetFileSize} */
 static DECLCALLBACK(uint64_t) dmgGetFileSize(void *pBackendData)
 {
@@ -2180,6 +2164,30 @@ static DECLCALLBACK(int) dmgSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLC
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) dmgQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) dmgRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+    AssertPtr(pThis); RT_NOREF(pThis);
+
+    /* Nothing to do here. */
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetImageFlags} */
@@ -2440,10 +2448,6 @@ const VDIMAGEBACKEND g_DmgBackend =
     NULL,
     /* pfnGetVersion */
     dmgGetVersion,
-    /* pfnGetSectorSize */
-    dmgGetSectorSize,
-    /* pfnGetSize */
-    dmgGetSize,
     /* pfnGetFileSize */
     dmgGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -2455,9 +2459,9 @@ const VDIMAGEBACKEND g_DmgBackend =
     /* pfnSetLCHSGeometry */
     dmgSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    dmgQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    dmgRegionListRelease,
     /* pfnGetImageFlags */
     dmgGetImageFlags,
     /* pfnGetOpenFlags */

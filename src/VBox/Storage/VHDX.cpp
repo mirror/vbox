@@ -549,7 +549,8 @@ typedef struct VHDXIMAGE
     PVhdxBatEntry       paBat;
     /** Chunk ratio. */
     uint32_t            uChunkRatio;
-
+    /** The static region list. */
+    VDREGIONLIST        RegionList;
 } VHDXIMAGE, *PVHDXIMAGE;
 
 /**
@@ -1743,7 +1744,21 @@ static int vhdxOpenImage(PVHDXIMAGE pImage, unsigned uOpenFlags)
             rc = VERR_VD_GEN_INVALID_HEADER;
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = pImage->cbLogicalSector;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = pImage->cbLogicalSector;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         vhdxFreeImage(pImage, false);
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
@@ -1827,7 +1842,7 @@ static DECLCALLBACK(int) vhdxOpen(const char *pszFilename, unsigned uOpenFlags,
         rc = VERR_INVALID_PARAMETER;
     else
     {
-        pImage = (PVHDXIMAGE)RTMemAllocZ(sizeof(VHDXIMAGE));
+        pImage = (PVHDXIMAGE)RTMemAllocZ(RT_UOFFSETOF(VHDXIMAGE, RegionList.aRegions[1]));
         if (!pImage)
             rc = VERR_NO_MEMORY;
         else
@@ -2041,38 +2056,6 @@ static DECLCALLBACK(unsigned) vhdxGetVersion(void *pBackendData)
         return 0;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnGetSectorSize */
-static DECLCALLBACK(uint32_t) vhdxGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PVHDXIMAGE pImage = (PVHDXIMAGE)pBackendData;
-    uint32_t cb = 0;
-
-    AssertPtr(pImage);
-
-    if (pImage && pImage->pStorage)
-        cb = pImage->cbLogicalSector;
-
-    LogFlowFunc(("returns %u\n", cb));
-    return cb;
-}
-
-/** @copydoc VDIMAGEBACKEND::pfnGetSize */
-static DECLCALLBACK(uint64_t) vhdxGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PVHDXIMAGE pImage = (PVHDXIMAGE)pBackendData;
-    uint64_t cb = 0;
-
-    AssertPtr(pImage);
-
-    if (pImage && pImage->pStorage)
-        cb = pImage->cbSize;
-
-    LogFlowFunc(("returns %llu\n", cb));
-    return cb;
-}
-
 /** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) vhdxGetFileSize(void *pBackendData)
 {
@@ -2194,6 +2177,30 @@ static DECLCALLBACK(int) vhdxSetLCHSGeometry(void *pBackendData,
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) vhdxQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PVHDXIMAGE pThis = (PVHDXIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) vhdxRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PVHDXIMAGE pThis = (PVHDXIMAGE)pBackendData;
+    AssertPtr(pThis); RT_NOREF(pThis);
+
+    /* Nothing to do here. */
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
@@ -2519,10 +2526,6 @@ const VDIMAGEBACKEND g_VhdxBackend =
     NULL,
     /* pfnGetVersion */
     vhdxGetVersion,
-    /* pfnGetSectorSize */
-    vhdxGetSectorSize,
-    /* pfnGetSize */
-    vhdxGetSize,
     /* pfnGetFileSize */
     vhdxGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -2534,9 +2537,9 @@ const VDIMAGEBACKEND g_VhdxBackend =
     /* pfnSetLCHSGeometry */
     vhdxSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    vhdxQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    vhdxRegionListRelease,
     /* pfnGetImageFlags */
     vhdxGetImageFlags,
     /* pfnGetOpenFlags */

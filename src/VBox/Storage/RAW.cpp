@@ -70,6 +70,8 @@ typedef struct RAWIMAGE
     VDGEOMETRY          LCHSGeometry;
     /** Sector size of the image. */
     uint32_t            cbSector;
+    /** The static region list. */
+    VDREGIONLIST        RegionList;
 } RAWIMAGE, *PRAWIMAGE;
 
 
@@ -209,7 +211,21 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
     /* else: Do NOT signal an appropriate error here, as the VD layer has the
      *       choice of retrying the open if it failed. */
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = pImage->cbSector;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = pImage->cbSector;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         rawFreeImage(pImage, false);
     return rc;
 }
@@ -281,7 +297,21 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
         rc = vdIfError(pImage->pIfError, VERR_VD_RAW_INVALID_TYPE, RT_SRC_POS, N_("Raw: cannot create diff image '%s'"), pImage->pszFilename);
 
     if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = pImage->cbSector;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = pImage->cbSector;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+
         vdIfProgress(pIfProgress, uPercentStart + uPercentSpan);
+    }
 
     if (RT_FAILURE(rc))
         rawFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
@@ -381,7 +411,7 @@ static DECLCALLBACK(int) rawOpen(const char *pszFilename, unsigned uOpenFlags,
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
 
-    pImage = (PRAWIMAGE)RTMemAllocZ(sizeof(RAWIMAGE));
+    pImage = (PRAWIMAGE)RTMemAllocZ(RT_UOFFSETOF(RAWIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -437,7 +467,7 @@ static DECLCALLBACK(int) rawCreate(const char *pszFilename, uint64_t cbSize,
                  && VALID_PTR(pPCHSGeometry)
                  && VALID_PTR(pLCHSGeometry), VERR_INVALID_PARAMETER);
 
-    PRAWIMAGE pImage = (PRAWIMAGE)RTMemAllocZ(sizeof(RAWIMAGE));
+    PRAWIMAGE pImage = (PRAWIMAGE)RTMemAllocZ(RT_UOFFSETOF(RAWIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -601,38 +631,6 @@ static DECLCALLBACK(unsigned) rawGetVersion(void *pBackendData)
     return 1;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnGetSize */
-static DECLCALLBACK(uint32_t) rawGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-    uint32_t cb = 0;
-
-    AssertPtrReturn(pImage, 0);
-
-    if (pImage->pStorage)
-        cb = pImage->cbSector;
-
-    LogFlowFunc(("returns %u\n", cb));
-    return cb;
-}
-
-/** @copydoc VDIMAGEBACKEND::pfnGetSize */
-static DECLCALLBACK(uint64_t) rawGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-    uint64_t cb = 0;
-
-    AssertPtrReturn(pImage, 0);
-
-    if (pImage->pStorage)
-        cb = pImage->cbSize;
-
-    LogFlowFunc(("returns %llu\n", cb));
-    return cb;
-}
-
 /** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) rawGetFileSize(void *pBackendData)
 {
@@ -729,6 +727,30 @@ static DECLCALLBACK(int) rawSetLCHSGeometry(void *pBackendData,
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) rawQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PRAWIMAGE pThis = (PRAWIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) rawRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PRAWIMAGE pThis = (PRAWIMAGE)pBackendData;
+    AssertPtr(pThis); RT_NOREF(pThis);
+
+    /* Nothing to do here. */
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
@@ -992,10 +1014,6 @@ const VDIMAGEBACKEND g_RawBackend =
     NULL,
     /* pfnGetVersion */
     rawGetVersion,
-    /* pfnGetSectorSize */
-    rawGetSectorSize,
-    /* pfnGetSize */
-    rawGetSize,
     /* pfnGetFileSize */
     rawGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -1007,9 +1025,9 @@ const VDIMAGEBACKEND g_RawBackend =
     /* pfnSetLCHSGeometry */
     rawSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    rawQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    rawRegionListRelease,
     /* pfnGetImageFlags */
     rawGetImageFlags,
     /* pfnGetOpenFlags */

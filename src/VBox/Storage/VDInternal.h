@@ -271,5 +271,9 @@ DECLHIDDEN(uint32_t) vdGetFilterBackendCount(void);
 DECLHIDDEN(int)      vdQueryFilterBackend(uint32_t idx, PCVDFILTERBACKEND *ppBackend);
 DECLHIDDEN(int)      vdFindFilterBackend(const char *pszFilter, PCVDFILTERBACKEND *ppBackend);
 
+DECLHIDDEN(int)      vdIoIterQueryStartNext(VDIOITER hVdIoIter, uint64_t *pu64Start);
+DECLHIDDEN(int)      vdIoIterQuerySegSizeByStart(VDIOITER hVdIoIter, uint64_t u64Start, size_t *pcRegSize);
+DECLHIDDEN(int)      vdIoIterAdvance(VDIOITER hVdIoIter, uint64_t cBlocksOrBytes);
+
 #endif /* !___VDInternal_h */
 

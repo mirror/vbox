@@ -435,6 +435,8 @@ typedef struct VMDKIMAGE
     size_t          cbDescAlloc;
     /** Parsed descriptor file content. */
     VMDKDESCRIPTOR  Descriptor;
+    /** The static region list. */
+    VDREGIONLIST    RegionList;
 } VMDKIMAGE;
 
 
@@ -3339,7 +3341,21 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     /* else: Do NOT signal an appropriate error here, as the VD layer has the
      *       choice of retrying the open if it failed. */
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         vmdkFreeImage(pImage, false);
     return rc;
 }
@@ -4052,7 +4068,21 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
 
 
     if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+
         vdIfProgress(pIfProgress, uPercentStart + uPercentSpan);
+    }
     else
         vmdkFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
     return rc;
@@ -5197,7 +5227,7 @@ static DECLCALLBACK(int) vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
 
-    PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(sizeof(VMDKIMAGE));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(RT_UOFFSETOF(VMDKIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -5258,7 +5288,7 @@ static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
                  && VALID_PTR(pPCHSGeometry)
                  && VALID_PTR(pLCHSGeometry), VERR_INVALID_PARAMETER);
 
-    PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(sizeof(VMDKIMAGE));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(RT_UOFFSETOF(VMDKIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
@@ -5912,28 +5942,6 @@ static DECLCALLBACK(unsigned) vmdkGetVersion(void *pBackendData)
     return VMDK_IMAGE_VERSION;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnGetSectorSize */
-static DECLCALLBACK(uint32_t) vmdkGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, 0);
-
-    return 512;
-}
-
-/** @copydoc VDIMAGEBACKEND::pfnGetSize */
-static DECLCALLBACK(uint64_t) vmdkGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, 0);
-
-    return pImage->cbSize;
-}
-
 /** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) vmdkGetFileSize(void *pBackendData)
 {
@@ -6055,6 +6063,30 @@ static DECLCALLBACK(int) vmdkSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pL
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) vmdkQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PVMDKIMAGE pThis = (PVMDKIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) vmdkRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PVMDKIMAGE pThis = (PVMDKIMAGE)pBackendData;
+    AssertPtr(pThis); RT_NOREF(pThis);
+
+    /* Nothing to do here. */
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
@@ -6400,10 +6432,6 @@ const VDIMAGEBACKEND g_VmdkBackend =
     NULL,
     /* pfnGetVersion */
     vmdkGetVersion,
-    /* pfnGetSectorSize */
-    vmdkGetSectorSize,
-    /* pfnGetSize */
-    vmdkGetSize,
     /* pfnGetFileSize */
     vmdkGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -6415,9 +6443,9 @@ const VDIMAGEBACKEND g_VmdkBackend =
     /* pfnSetLCHSGeometry */
     vmdkSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    vmdkQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    vmdkRegionListRelease,
     /* pfnGetImageFlags */
     vmdkGetImageFlags,
     /* pfnGetOpenFlags */

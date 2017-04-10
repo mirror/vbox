@@ -563,6 +563,8 @@ typedef struct VDIIMAGEDESC
     PVDINTERFACEIOINT       pIfIo;
     /** Current size of the image (used for range validation when reading). */
     uint64_t                cbImage;
+    /** The static region list. */
+    VDREGIONLIST            RegionList;
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 
 /**

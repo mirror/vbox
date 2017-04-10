@@ -259,22 +259,6 @@ typedef struct VDIMAGEBACKEND
     DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pBackendData));
 
     /**
-     * Get the sector size of a disk image.
-     *
-     * @returns size of disk image in bytes.
-     * @param   pBackendData    Opaque state data for this image.
-     */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnGetSectorSize, (void *pBackendData));
-
-    /**
-     * Get the capacity of a disk image.
-     *
-     * @returns size of disk image in bytes.
-     * @param   pBackendData    Opaque state data for this image.
-     */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize, (void *pBackendData));
-
-    /**
      * Get the file size of a disk image.
      *
      * @returns size of disk image in bytes.
@@ -607,7 +591,7 @@ typedef VDIMAGEBACKEND *PVDIMAGEBACKEND;
 typedef const VDIMAGEBACKEND *PCVDIMAGEBACKEND;
 
 /** The current version of the VDIMAGEBACKEND structure. */
-#define VD_IMGBACKEND_VERSION                   VD_VERSION_MAKE(0xff01, 2, 0)
+#define VD_IMGBACKEND_VERSION                   VD_VERSION_MAKE(0xff01, 3, 0)
 
 /** @copydoc VDIMAGEBACKEND::pfnComposeLocation */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation);

@@ -619,6 +619,8 @@ typedef struct ISCSIIMAGE
 
     /** Release log counter. */
     unsigned            cLogRelErrors;
+    /** The static region list. */
+    VDREGIONLIST        RegionList;
 } ISCSIIMAGE;
 
 
@@ -4683,7 +4685,21 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = pImage->cbSector;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = pImage->cbSector;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         iscsiFreeImage(pImage, false);
     return rc;
 }
@@ -4719,7 +4735,7 @@ static DECLCALLBACK(int) iscsiOpen(const char *pszFilename, unsigned uOpenFlags,
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
 
-    PISCSIIMAGE pImage = (PISCSIIMAGE)RTMemAllocZ(sizeof(ISCSIIMAGE));
+    PISCSIIMAGE pImage = (PISCSIIMAGE)RTMemAllocZ(RT_UOFFSETOF(ISCSIIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -5112,28 +5128,6 @@ static DECLCALLBACK(unsigned) iscsiGetVersion(void *pBackendData)
     return 0;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnGetSectorSize */
-static DECLCALLBACK(uint32_t) iscsiGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, 0);
-
-    return pImage->cbSector;
-}
-
-/** @copydoc VDIMAGEBACKEND::pfnGetSize */
-static DECLCALLBACK(uint64_t) iscsiGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, 0);
-
-    return pImage->cbSize;
-}
-
 /** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) iscsiGetFileSize(void *pBackendData)
 {
@@ -5209,6 +5203,30 @@ static DECLCALLBACK(int) iscsiSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY p
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) iscsiQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pImage->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) iscsiRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+    AssertPtr(pImage); RT_NOREF(pImage);
+
+    /* Nothing to do here. */
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
@@ -5527,10 +5545,6 @@ const VDIMAGEBACKEND g_ISCSIBackend =
     NULL,
     /* pfnGetVersion */
     iscsiGetVersion,
-    /* pfnGetSectorSize */
-    iscsiGetSectorSize,
-    /* pfnGetSize */
-    iscsiGetSize,
     /* pfnGetFileSize */
     iscsiGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -5542,9 +5556,9 @@ const VDIMAGEBACKEND g_ISCSIBackend =
     /* pfnSetLCHSGeometry */
     iscsiSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    iscsiQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    iscsiRegionListRelease,
     /* pfnGetImageFlags */
     iscsiGetImageFlags,
     /* pfnGetOpenFlags */

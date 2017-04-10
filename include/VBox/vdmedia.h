@@ -187,7 +187,7 @@ typedef struct VDREGIONLIST
     /** Number of regions in the descriptor array. */
     uint32_t                 cRegions;
     /** Region descriptors - variable in size. */
-    VDREGIONDESC             aRegions[RT_FLEXIBLE_ARRAY];
+    VDREGIONDESC             aRegions[RT_FLEXIBLE_ARRAY_NESTED];
 } VDREGIONLIST;
 /** Pointer to a region list. */
 typedef VDREGIONLIST *PVDREGIONLIST;

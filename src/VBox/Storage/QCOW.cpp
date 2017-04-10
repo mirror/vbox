@@ -250,7 +250,8 @@ typedef struct QCOWIMAGE
     /** Pointer to the L2 table we are currently allocating
      * (can be only one at a time). */
     PQCOWL2CACHEENTRY   pL2TblAlloc;
-
+    /** The static region list. */
+    VDREGIONLIST        RegionList;
 } QCOWIMAGE, *PQCOWIMAGE;
 
 /**
@@ -1226,7 +1227,21 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                        N_("Qcow: Creating the L2 table cache for image '%s' failed"),
                        pImage->pszFilename);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         qcowFreeImage(pImage, false);
     return rc;
 }
@@ -1307,7 +1322,21 @@ static int qcowCreateImage(PQCOWIMAGE pImage, uint64_t cbSize,
     if (RT_SUCCESS(rc))
         vdIfProgress(pIfProgress, uPercentStart + uPercentSpan);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        PVDREGIONDESC pRegion = &pImage->RegionList.aRegions[0];
+        pImage->RegionList.fFlags   = 0;
+        pImage->RegionList.cRegions = 1;
+
+        pRegion->offRegion            = 0; /* Disk start. */
+        pRegion->cbBlock              = 512;
+        pRegion->enmDataForm          = VDREGIONDATAFORM_RAW;
+        pRegion->enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pRegion->cbData               = 512;
+        pRegion->cbMetadata           = 0;
+        pRegion->cRegionBlocksOrBytes = pImage->cbSize;
+    }
+    else
         qcowFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
     return rc;
 }
@@ -1527,7 +1556,7 @@ static DECLCALLBACK(int) qcowOpen(const char *pszFilename, unsigned uOpenFlags,
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
 
-    PQCOWIMAGE pImage = (PQCOWIMAGE)RTMemAllocZ(sizeof(QCOWIMAGE));
+    PQCOWIMAGE pImage = (PQCOWIMAGE)RTMemAllocZ(RT_UOFFSETOF(QCOWIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
@@ -1574,7 +1603,7 @@ static DECLCALLBACK(int) qcowCreate(const char *pszFilename, uint64_t cbSize,
                  && VALID_PTR(pPCHSGeometry)
                  && VALID_PTR(pLCHSGeometry), VERR_INVALID_PARAMETER);
 
-    PQCOWIMAGE pImage = (PQCOWIMAGE)RTMemAllocZ(sizeof(QCOWIMAGE));
+    PQCOWIMAGE pImage = (PQCOWIMAGE)RTMemAllocZ(RT_UOFFSETOF(QCOWIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
@@ -1917,38 +1946,6 @@ static DECLCALLBACK(unsigned) qcowGetVersion(void *pBackendData)
     return pImage->uVersion;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnGetSectorSize */
-static DECLCALLBACK(uint32_t) qcowGetSectorSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-    uint32_t cb = 0;
-
-    AssertPtrReturn(pImage, 0);
-
-    if (pImage->pStorage)
-        cb = 512;
-
-    LogFlowFunc(("returns %u\n", cb));
-    return cb;
-}
-
-/** @copydoc VDIMAGEBACKEND::pfnGetSize */
-static DECLCALLBACK(uint64_t) qcowGetSize(void *pBackendData)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-    uint64_t cb = 0;
-
-    AssertPtrReturn(pImage, 0);
-
-    if (pImage->pStorage)
-        cb = pImage->cbSize;
-
-    LogFlowFunc(("returns %llu\n", cb));
-    return cb;
-}
-
 /** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) qcowGetFileSize(void *pBackendData)
 {
@@ -2043,6 +2040,30 @@ static DECLCALLBACK(int) qcowSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pL
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnQueryRegions */
+static DECLCALLBACK(int) qcowQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
+{
+    LogFlowFunc(("pBackendData=%#p ppRegionList=%#p\n", pBackendData, ppRegionList));
+    PQCOWIMAGE pThis = (PQCOWIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
+    *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDIMAGEBACKEND::pfnRegionListRelease */
+static DECLCALLBACK(void) qcowRegionListRelease(void *pBackendData, PCVDREGIONLIST pRegionList)
+{
+    RT_NOREF1(pRegionList);
+    LogFlowFunc(("pBackendData=%#p pRegionList=%#p\n", pBackendData, pRegionList));
+    PQCOWIMAGE pThis = (PQCOWIMAGE)pBackendData;
+    AssertPtr(pThis); RT_NOREF(pThis);
+
+    /* Nothing to do here. */
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
@@ -2368,10 +2389,6 @@ const VDIMAGEBACKEND g_QCowBackend =
     NULL,
     /* pfnGetVersion */
     qcowGetVersion,
-    /* pfnGetSectorSize */
-    qcowGetSectorSize,
-    /* pfnGetSize */
-    qcowGetSize,
     /* pfnGetFileSize */
     qcowGetFileSize,
     /* pfnGetPCHSGeometry */
@@ -2383,9 +2400,9 @@ const VDIMAGEBACKEND g_QCowBackend =
     /* pfnSetLCHSGeometry */
     qcowSetLCHSGeometry,
     /* pfnQueryRegions */
-    NULL,
+    qcowQueryRegions,
     /* pfnRegionListRelease */
-    NULL,
+    qcowRegionListRelease,
     /* pfnGetImageFlags */
     qcowGetImageFlags,
     /* pfnGetOpenFlags */
