@@ -1500,7 +1500,7 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
         /* Make sure adapter data was changed: */
         if (newAdapterData != oldAdapterData)
         {
-            /* Get audio adapter for further activities: */
+            /* Get network adapter for further activities: */
             CNetworkAdapter comAdapter = m_machine.GetNetworkAdapter(iSlot);
             fSuccess = m_machine.isOk() && comAdapter.isNotNull();
             /* Show error message if necessary: */
