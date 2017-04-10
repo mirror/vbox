@@ -29,6 +29,7 @@
 #include <iprt/path.h>
 
 #include "VDBackends.h"
+#include "VDBackendsInline.h"
 
 
 /*********************************************************************************************************************************
@@ -801,171 +802,34 @@ static DECLCALLBACK(int) rawSetOpenFlags(void *pBackendData, unsigned uOpenFlags
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetComment */
-static DECLCALLBACK(int) rawGetComment(void *pBackendData, char *pszComment,
-                                       size_t cbComment)
-{
-    RT_NOREF2(pszComment, cbComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_COMMENT_DEF_NOT_SUPPORTED(rawGetComment);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetComment */
-static DECLCALLBACK(int) rawSetComment(void *pBackendData, const char *pszComment)
-{
-    RT_NOREF1(pszComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED(rawSetComment, PRAWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetUuid */
-static DECLCALLBACK(int) rawGetUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(rawGetUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetUuid */
-static DECLCALLBACK(int) rawSetUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(rawSetUuid, PRAWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetModificationUuid */
-static DECLCALLBACK(int) rawGetModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(rawGetModificationUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetModificationUuid */
-static DECLCALLBACK(int) rawSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(rawSetModificationUuid, PRAWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetParentUuid */
-static DECLCALLBACK(int) rawGetParentUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(rawGetParentUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentUuid */
-static DECLCALLBACK(int) rawSetParentUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(rawSetParentUuid, PRAWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetParentModificationUuid */
-static DECLCALLBACK(int) rawGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(rawGetParentModificationUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentModificationUuid */
-static DECLCALLBACK(int) rawSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(rawSetParentModificationUuid, PRAWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnDump */
 static DECLCALLBACK(void) rawDump(void *pBackendData)
