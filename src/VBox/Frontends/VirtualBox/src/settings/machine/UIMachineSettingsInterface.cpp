@@ -451,9 +451,9 @@ bool UIMachineSettingsInterface::saveMiniToolbarData()
     if (fSuccess)
     {
         /* Get old interface data from the cache: */
-        const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
+        const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base(); Q_UNUSED(oldInterfaceData);
         /* Get new interface data from the cache: */
-        const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data();
+        const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data(); Q_UNUSED(newInterfaceData);
 
 #ifndef VBOX_WS_MAC
         /* Save whether mini-toolbar is enabled: */
