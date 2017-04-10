@@ -8809,6 +8809,8 @@ VBOXDDU_DECL(uint32_t) VDGetSectorSize(PVDISK pDisk, unsigned nImage)
             AssertPtr(pImage->Backend->pfnRegionListRelease);
             pImage->Backend->pfnRegionListRelease(pImage->pBackendData, pRegionList);
         }
+        else
+            cbSector = 0;
     } while (0);
 
     if (RT_UNLIKELY(fLockRead))
