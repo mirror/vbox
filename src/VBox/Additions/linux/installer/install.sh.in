@@ -16,6 +16,13 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+# Testing:
+# * After successful installation, 0 is returned if the vboxguest module version
+#   built matches the one loaded and 2 is returned otherwise.  E.g. VBoxClient
+#   running will prevent vboxguest reloading.
+# * If the kernel modules cannot be built (run the installer with KERN_DIR=/) or
+#   loaded (run with KERN_VER=<installed non-current version>) then 1 is returned.
+
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
 # Note: These variable names must *not* clash with variables in $CONFIG_DIR/$CONFIG!
@@ -35,6 +42,9 @@ CONFIG="config"
 CONFIG_FILES="filelist"
 SELF=$1
 LOGFILE="/var/log/vboxadd-install.log"
+
+## Were we able to stop any previously running Additions kernel modules?
+MODULES_STOPPED=1
 
 . "./$ROUTINES"
 
@@ -319,6 +329,9 @@ rm -f "$CONFIG_DIR/$CONFIG_FILES"
 rmdir "$CONFIG_DIR" 2>/dev/null
 test "$ACTION" = "install" || exit 0
 
+# Now check whether the kernel modules were stopped.
+lsmod | grep -q vboxguest && MODULES_STOPPED=
+
 # Choose a proper umask
 umask 022
 
@@ -563,3 +576,14 @@ EOF
     done
     echo >&2 "  ldconfig"
 fi
+
+# And do a final test as to whether the kernel modules were properly created
+# and loaded.  Return 0 if both are true, 1 if the modules could not be built
+# or loaded (except due to already running older modules) and 2 if already
+# running modules probably prevented new ones from loading.  vboxvideo is
+# currently not tested.
+# Assume that we have already printed enough messages by now and stay silent.
+modinfo vboxguest >/dev/null 2>&1 || exit 1
+lsmod | grep -q vboxguest || exit 1
+test -n "${MODULES_STOPPED}" || exit 2
+exit 0
