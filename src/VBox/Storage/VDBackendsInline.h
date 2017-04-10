@@ -29,7 +29,7 @@ RT_C_DECLS_BEGIN
  * Stub for VDIMAGEBACKEND::pfnGetComment when the backend doesn't suport comments.
  *
  * @returns VBox status code.
- * @param a_szPrefixBackend    The backend prefix.
+ * @param a_szStubName         The name of the stub.
  */
 #define VD_BACKEND_CALLBACK_GET_COMMENT_DEF_NOT_SUPPORTED(a_szStubName) \
     static DECLCALLBACK(int) a_szStubName(void *pvBackend, char *pszComment, size_t cbComment) \
@@ -47,7 +47,7 @@ RT_C_DECLS_BEGIN
  * Stub for VDIMAGEBACKEND::pfnSetComment when the backend doesn't suport comments.
  *
  * @returns VBox status code.
- * @param a_szPrefixBackend    The backend prefix.
+ * @param a_szStubName         The name of the stub.
  * @param a_ImageStateType     Type of the backend image state.
  */
 #define VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED(a_szStubName, a_ImageStateType) \
@@ -70,7 +70,7 @@ RT_C_DECLS_BEGIN
  * Stub for VDIMAGEBACKEND::pfnGetUuid when the backend doesn't suport UUIDs.
  *
  * @returns VBox status code.
- * @param a_szPrefixBackend    The backend prefix.
+ * @param a_szStubName         The name of the stub.
  */
 #define VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(a_szStubName) \
     static DECLCALLBACK(int) a_szStubName(void *pvBackend, PRTUUID pUuid) \
@@ -88,7 +88,7 @@ RT_C_DECLS_BEGIN
  * Stub for VDIMAGEBACKEND::pfnSetComment when the backend doesn't suport UUIDs.
  *
  * @returns VBox status code.
- * @param a_szPrefixBackend    The backend prefix.
+ * @param a_szStubName         The name of the stub.
  * @param a_ImageStateType     Type of the backend image state.
  */
 #define VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(a_szStubName, a_ImageStateType) \
