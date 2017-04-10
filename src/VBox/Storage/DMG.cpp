@@ -36,6 +36,7 @@
 #include <iprt/formats/xar.h>
 
 #include "VDBackends.h"
+#include "VDBackendsInline.h"
 
 
 /*********************************************************************************************************************************
@@ -2237,171 +2238,35 @@ static DECLCALLBACK(int) dmgSetOpenFlags(void *pBackendData, unsigned uOpenFlags
     return rc;
 }
 
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetComment} */
-static DECLCALLBACK(int) dmgGetComment(void *pBackendData, char *pszComment, size_t cbComment)
-{
-    RT_NOREF2(pszComment, cbComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+/** @copydoc VDIMAGEBACKEND::pfnGetComment */
+VD_BACKEND_CALLBACK_GET_COMMENT_DEF_NOT_SUPPORTED(dmgGetComment);
 
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+/** @copydoc VDIMAGEBACKEND::pfnSetComment */
+VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED(dmgSetComment, PDMGIMAGE);
 
-    LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment));
-    return VERR_NOT_SUPPORTED;
-}
+/** @copydoc VDIMAGEBACKEND::pfnGetUuid */
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(dmgGetUuid);
 
-/** @interface_method_impl{VDIMAGEBACKEND,pfnSetComment} */
-static DECLCALLBACK(int) dmgSetComment(void *pBackendData, const char *pszComment)
-{
-    RT_NOREF1(pszComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+/** @copydoc VDIMAGEBACKEND::pfnSetUuid */
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(dmgSetUuid, PDMGIMAGE);
 
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+/** @copydoc VDIMAGEBACKEND::pfnGetModificationUuid */
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(dmgGetModificationUuid);
 
-    int rc;
-    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
+/** @copydoc VDIMAGEBACKEND::pfnSetModificationUuid */
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(dmgSetModificationUuid, PDMGIMAGE);
 
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+/** @copydoc VDIMAGEBACKEND::pfnGetParentUuid */
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(dmgGetParentUuid);
 
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetUuid} */
-static DECLCALLBACK(int) dmgGetUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+/** @copydoc VDIMAGEBACKEND::pfnSetParentUuid */
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(dmgSetParentUuid, PDMGIMAGE);
 
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+/** @copydoc VDIMAGEBACKEND::pfnGetParentModificationUuid */
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(dmgGetParentModificationUuid);
 
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnSetUuid} */
-static DECLCALLBACK(int) dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetModificationUuid} */
-static DECLCALLBACK(int) dmgGetModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnSetModificationUuid} */
-static DECLCALLBACK(int) dmgSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetParentUuid} */
-static DECLCALLBACK(int) dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnSetParentUuid} */
-static DECLCALLBACK(int) dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnGetParentModificationUuid} */
-static DECLCALLBACK(int) dmgGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
-}
-
-/** @interface_method_impl{VDIMAGEBACKEND,pfnSetParentModificationUuid} */
-static DECLCALLBACK(int) dmgSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-
-    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+/** @copydoc VDIMAGEBACKEND::pfnSetParentModificationUuid */
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(dmgSetParentModificationUuid, PDMGIMAGE);
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnDump} */
 static DECLCALLBACK(void) dmgDump(void *pBackendData)

@@ -37,6 +37,7 @@
 #include <VBox/scsi.h>
 
 #include "VDBackends.h"
+#include "VDBackendsInline.h"
 
 
 /*********************************************************************************************************************************
@@ -5286,165 +5287,34 @@ static DECLCALLBACK(int) iscsiSetOpenFlags(void *pBackendData, unsigned uOpenFla
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetComment */
-static DECLCALLBACK(int) iscsiGetComment(void *pBackendData, char *pszComment,
-                                         size_t cbComment)
-{
-    RT_NOREF2(pszComment, cbComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_COMMENT_DEF_NOT_SUPPORTED(iscsiGetComment);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetComment */
-static DECLCALLBACK(int) iscsiSetComment(void *pBackendData, const char *pszComment)
-{
-    RT_NOREF1(pszComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_IMAGE_READ_ONLY;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED(iscsiSetComment, PISCSIIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetUuid */
-static DECLCALLBACK(int) iscsiGetUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(iscsiGetUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetUuid */
-static DECLCALLBACK(int) iscsiSetUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_IMAGE_READ_ONLY;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(iscsiSetUuid, PISCSIIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetModificationUuid */
-static DECLCALLBACK(int) iscsiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(iscsiGetModificationUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetModificationUuid */
-static DECLCALLBACK(int) iscsiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_IMAGE_READ_ONLY;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(iscsiSetModificationUuid, PISCSIIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetParentUuid */
-static DECLCALLBACK(int) iscsiGetParentUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(iscsiGetParentUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentUuid */
-static DECLCALLBACK(int) iscsiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_IMAGE_READ_ONLY;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(iscsiSetParentUuid, PISCSIIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetParentModificationUuid */
-static DECLCALLBACK(int) iscsiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(iscsiGetParentModificationUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentModificationUuid */
-static DECLCALLBACK(int) iscsiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_IMAGE_READ_ONLY;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(iscsiSetParentModificationUuid, PISCSIIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnDump */
 static DECLCALLBACK(void) iscsiDump(void *pBackendData)

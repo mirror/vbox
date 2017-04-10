@@ -32,6 +32,7 @@
 #include <iprt/list.h>
 
 #include "VDBackends.h"
+#include "VDBackendsInline.h"
 
 /** @page pg_storage_qcow   QCOW Storage Backend
  * The QCOW backend implements support for the qemu copy on write format (short QCOW).
@@ -2115,164 +2116,34 @@ static DECLCALLBACK(int) qcowSetOpenFlags(void *pBackendData, unsigned uOpenFlag
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetComment */
-static DECLCALLBACK(int) qcowGetComment(void *pBackendData, char *pszComment, size_t cbComment)
-{
-    RT_NOREF2(pszComment, cbComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_COMMENT_DEF_NOT_SUPPORTED(qcowGetComment);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetComment */
-static DECLCALLBACK(int) qcowSetComment(void *pBackendData, const char *pszComment)
-{
-    RT_NOREF1(pszComment);
-    LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED(qcowSetComment, PQCOWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetUuid */
-static DECLCALLBACK(int) qcowGetUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(qcowGetUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetUuid */
-static DECLCALLBACK(int) qcowSetUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(qcowSetUuid, PQCOWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetModificationUuid */
-static DECLCALLBACK(int) qcowGetModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(qcowGetModificationUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetModificationUuid */
-static DECLCALLBACK(int) qcowSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(qcowSetModificationUuid, PQCOWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetParentUuid */
-static DECLCALLBACK(int) qcowGetParentUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(qcowGetParentUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentUuid */
-static DECLCALLBACK(int) qcowSetParentUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(qcowSetParentUuid, PQCOWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnGetParentModificationUuid */
-static DECLCALLBACK(int) qcowGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
-    return VERR_NOT_SUPPORTED;
-}
+VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(qcowGetParentModificationUuid);
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentModificationUuid */
-static DECLCALLBACK(int) qcowSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
-{
-    RT_NOREF1(pUuid);
-    LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-
-    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
-
-    int rc;
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        rc = VERR_VD_IMAGE_READ_ONLY;
-    else
-        rc = VERR_NOT_SUPPORTED;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
+VD_BACKEND_CALLBACK_SET_UUID_DEF_NOT_SUPPORTED(qcowSetParentModificationUuid, PQCOWIMAGE);
 
 /** @copydoc VDIMAGEBACKEND::pfnDump */
 static DECLCALLBACK(void) qcowDump(void *pBackendData)
