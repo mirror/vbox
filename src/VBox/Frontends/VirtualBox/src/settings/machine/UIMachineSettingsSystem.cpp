@@ -460,17 +460,17 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
-                "This is needed in order to support a chip set of type ICH9 you have enabled for this VM. "
-                "It will be done automatically if you confirm your changes.");
+                "This is needed to support a chipset of type ICH9. "
+                "It will be enabled automatically if you confirm your changes.");
         }
 
         /* HID vs USB test: */
         if (isHIDEnabled() && !m_fIsUSBEnabled)
         {
             message.second << tr(
-                "USB controller emulation is not currently enabled on the USB page. "
-                "This is needed to support an emulated USB input device you have enabled for this VM. "
-                "It will be done automatically if you confirm your changes.");
+                "The USB controller emulation is not currently enabled on the USB page. "
+                "This is needed to support an emulated USB pointing device. "
+                "It will be enabled automatically if you confirm your changes.");
         }
 
         /* Serialize message: */
@@ -507,17 +507,17 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
-                "This is needed in order to support more than one virtual processor you have chosen for this VM. "
-                "It will be done automatically if you confirm your changes.");
+                "This is needed to support more than one virtual processor. "
+                "It will be enabled automatically if you confirm your changes.");
         }
 
         /* VCPU vs VT-x/AMD-V test: */
         if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxVirtualization->isChecked())
         {
             message.second << tr(
-                "Hardware virtualization is not currently enabled in the Acceleration section of the System page. "
-                "This is needed in order to support more than one virtual processor you have chosen for this VM. "
-                "It will be done automatically if you confirm your changes.");
+                "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
+                "This is needed to support more than one virtual processor. "
+                "It will be enabled automatically if you confirm your changes.");
         }
 
         /* CPU execution cap test: */
