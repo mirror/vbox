@@ -20,6 +20,7 @@
 
 #ifndef RT_OS_OS2
 # include <iprt/asm.h>
+# include <iprt/string.h>
 #endif
 #include <iprt/assert.h>
 #include <iprt/cdefs.h>
@@ -27,10 +28,9 @@
 #include <iprt/list.h>
 #include <iprt/stdarg.h>
 #include <iprt/stdint.h>
-#include <iprt/string.h>
 #include <iprt/types.h>
 
-#if !defined VBOX_XPDM_MINIPORT && !defined VBOX_GUESTR3XORGMOD
+#if !defined VBOX_XPDM_MINIPORT && !defined VBOX_GUESTR3XORGMOD && !defined RT_OS_OS2
 # include <iprt/asm-amd64-x86.h>
 #endif
 
