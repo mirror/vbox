@@ -59,6 +59,7 @@
 # include "CAudioAdapter.h"
 # include "CParallelPort.h"
 # include "CSerialPort.h"
+# include "CSharedFolder.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -1252,6 +1253,48 @@ void UIMessageCenter::cannotSaveSerialPortSettings(const CSerialPort &comPort, Q
           formatErrorInfo(comPort));
 }
 
+void UIMessageCenter::cannotLoadFoldersSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot load shared folders settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveFoldersSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save shared folders settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotLoadFoldersSettings(const CConsole &comConsole, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot load shared folders settings."),
+          formatErrorInfo(comConsole));
+}
+
+void UIMessageCenter::cannotSaveFoldersSettings(const CConsole &comConsole, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save shared folders settings."),
+          formatErrorInfo(comConsole));
+}
+
+void UIMessageCenter::cannotLoadFolderSettings(const CSharedFolder &comFolder, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot load shared folder settings."),
+          formatErrorInfo(comFolder));
+}
+
+void UIMessageCenter::cannotSaveFolderSettings(const CSharedFolder &comFolder, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save shared folder settings."),
+          formatErrorInfo(comFolder));
+}
+
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)
@@ -1333,46 +1376,6 @@ bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* =
                           QString() /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
-}
-
-void UIMessageCenter::cannotCreateSharedFolder(const CMachine &machine, const QString &strName, const QString &strPath, QWidget *pParent /* = 0*/)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the shared folder <b>%1</b> (pointing to "
-             "<nobr><b>%2</b></nobr>) for the virtual machine <b>%3</b>.")
-          .arg(strName, strPath, CMachine(machine).GetName()),
-          formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotCreateSharedFolder(const CConsole &console, const QString &strName, const QString &strPath, QWidget *pParent /* = 0*/)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the shared folder <b>%1</b> (pointing to "
-             "<nobr><b>%2</b></nobr>) for the virtual machine <b>%3</b>.")
-             .arg(strName, strPath, CConsole(console).GetMachine().GetName()),
-          formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotRemoveSharedFolder(const CMachine &machine, const QString &strName, const QString &strPath, QWidget *pParent /* = 0*/)
-{
-    error(pParent, MessageType_Error,
-          tr("<p>Failed to remove the shared folder <b>%1</b> (pointing to "
-             "<nobr><b>%2</b></nobr>) from the virtual machine <b>%3</b>.</p>"
-             "<p>Please close all programs in the guest OS that "
-             "may be using this shared folder and try again.</p>")
-             .arg(strName, strPath, CMachine(machine).GetName()),
-          formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotRemoveSharedFolder(const CConsole &console, const QString &strName, const QString &strPath, QWidget *pParent /* = 0*/)
-{
-    error(pParent, MessageType_Error,
-          tr("<p>Failed to remove the shared folder <b>%1</b> (pointing to "
-             "<nobr><b>%2</b></nobr>) from the virtual machine <b>%3</b>.</p>"
-             "<p>Please close all programs in the guest OS that "
-             "may be using this shared folder and try again.</p>")
-             .arg(strName, strPath, CConsole(console).GetMachine().GetName()),
-          formatErrorInfo(console));
 }
 
 void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /* = 0*/) const

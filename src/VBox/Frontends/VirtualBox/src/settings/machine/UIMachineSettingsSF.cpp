@@ -395,39 +395,8 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is in valid mode & folders data was changed: */
-    if (isMachineInValidMode() && m_pCache->wasChanged())
-    {
-        /* For each folder record: */
-        for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
-        {
-            /* Get folder cache: */
-            const UISettingsCacheSharedFolder &folderCache = m_pCache->child(iFolderIndex);
-
-            /* Check if this folder data was changed: */
-            if (folderCache.wasChanged())
-            {
-                /* If folder was removed: */
-                if (folderCache.wasRemoved())
-                    removeSharedFolder(folderCache);
-
-                else
-
-                /* If folder was created: */
-                if (folderCache.wasCreated())
-                    createSharedFolder(folderCache);
-
-                else
-
-                /* If folder was updated: */
-                if (folderCache.wasUpdated())
-                {
-                    removeSharedFolder(folderCache);
-                    createSharedFolder(folderCache);
-                }
-            }
-        }
-    }
+    /* Update folders data and failing state: */
+    setFailed(!saveFoldersData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -846,32 +815,6 @@ void UIMachineSettingsSF::setRootItemVisible(UISharedFolderType enmSharedFolderT
     pRootItem->setHidden(!fVisible);
 }
 
-CSharedFolderVector UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmSharedFoldersType)
-{
-    CSharedFolderVector sharedFolders;
-    if (isSharedFolderTypeSupported(enmSharedFoldersType))
-    {
-        switch (enmSharedFoldersType)
-        {
-            case MachineType:
-            {
-                AssertMsg(!m_machine.isNull(), ("Machine is NOT set!\n"));
-                sharedFolders = m_machine.GetSharedFolders();
-                break;
-            }
-            case ConsoleType:
-            {
-                AssertMsg(!m_console.isNull(), ("Console is NOT set!\n"));
-                sharedFolders = m_console.GetSharedFolders();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-    return sharedFolders;
-}
-
 void UIMachineSettingsSF::addSharedFolderItem(const UIDataSettingsSharedFolder &sharedFolderData, bool fChoose)
 {
     /* Create shared folder item: */
@@ -896,119 +839,242 @@ void UIMachineSettingsSF::addSharedFolderItem(const UIDataSettingsSharedFolder &
     }
 }
 
-bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &folderCache)
+CSharedFolderVector UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmFoldersType)
 {
-    /* Get new folder data: */
-    const UIDataSettingsSharedFolder &newFolderData = folderCache.data();
-    const UISharedFolderType enmSharedFoldersType = newFolderData.m_enmType;
-    const QString strName = newFolderData.m_strName;
-    const QString strPath = newFolderData.m_strPath;
-    const bool fIsAutoMount = newFolderData.m_fAutoMount;
-    const bool fIsWritable = newFolderData.m_fWritable;
+    /* Wrap up the getter below: */
+    CSharedFolderVector folders;
+    getSharedFolders(enmFoldersType, folders);
+    return folders;
+}
 
-    /* Get current folders: */
-    const CSharedFolderVector sharedFolders = getSharedFolders(enmSharedFoldersType);
-    /* Make sure such folder doesn't exist: */
-    CSharedFolder sharedFolder;
-    for (int iFolderIndex = 0; iFolderIndex < sharedFolders.size(); ++iFolderIndex)
-        if (sharedFolders.at(iFolderIndex).GetName() == strName)
-            sharedFolder = sharedFolders.at(iFolderIndex);
-    if (sharedFolder.isNull())
+bool UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmFoldersType, CSharedFolderVector &folders)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Load folders of passed type: */
+    if (fSuccess)
     {
-        /* Create new folder: */
-        switch(enmSharedFoldersType)
+        /* Make sure folder type is supported: */
+        AssertReturn(isSharedFolderTypeSupported(enmFoldersType), false);
+        switch (enmFoldersType)
         {
             case MachineType:
             {
-                /* Create new folder: */
-                m_machine.CreateSharedFolder(strName, strPath, fIsWritable, fIsAutoMount);
-                if (!m_machine.isOk())
-                {
-                    /* Mark the page as failed: */
-                    setFailed(true);
-                    /* Show error message: */
-                    msgCenter().cannotCreateSharedFolder(m_machine, strName, strPath, this);
-                    /* Finish early: */
-                    return false;
-                }
+                /* Make sure machine was specified: */
+                AssertReturn(!m_machine.isNull(), false);
+                /* Load machine folders: */
+                folders = m_machine.GetSharedFolders();
+                fSuccess = m_machine.isOk();
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotLoadFoldersSettings(m_machine, this);
                 break;
             }
             case ConsoleType:
             {
-                /* Create new folder: */
-                m_console.CreateSharedFolder(strName, strPath, fIsWritable, fIsAutoMount);
-                if (!m_console.isOk())
-                {
-                    /* Mark the page as failed: */
-                    setFailed(true);
-                    /* Show error message: */
-                    msgCenter().cannotCreateSharedFolder(m_console, strName, strPath, this);
-                    /* Finish early: */
-                    return false;
-                }
+                /* Make sure console was specified: */
+                AssertReturn(!m_console.isNull(), false);
+                /* Load console folders: */
+                folders = m_console.GetSharedFolders();
+                fSuccess = m_console.isOk();
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotLoadFoldersSettings(m_console, this);
                 break;
             }
             default:
-                break;
+                AssertFailedReturn(false);
         }
     }
-    return true;
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsSF::getSharedFolder(const QString &strFolderName, const CSharedFolderVector &folders, CSharedFolder &comFolder)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Look for a folder with passed name: */
+    for (int iFolderIndex = 0; fSuccess && iFolderIndex < folders.size(); ++iFolderIndex)
+    {
+        /* Get current folder: */
+        const CSharedFolder &comCurrentFolder = folders.at(iFolderIndex);
+
+        /* Get current folder name for further activities: */
+        QString strCurrentFolderName;
+        if (fSuccess)
+        {
+            strCurrentFolderName = comCurrentFolder.GetName();
+            fSuccess = comCurrentFolder.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotLoadFolderSettings(comCurrentFolder, this);
+
+        /* If that's the folder we are looking for => take it: */
+        if (fSuccess && strCurrentFolderName == strFolderName)
+            comFolder = folders[iFolderIndex];
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsSF::saveFoldersData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save folders settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
+    {
+        /* For each folder: */
+        for (int iFolderIndex = 0; fSuccess && iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
+        {
+            /* Get folder cache: */
+            const UISettingsCacheSharedFolder &folderCache = m_pCache->child(iFolderIndex);
+
+            /* Check if this folder data was changed: */
+            if (folderCache.wasChanged())
+            {
+                /* If folder was removed or updated: */
+                if (folderCache.wasRemoved() || folderCache.wasUpdated())
+                    fSuccess = removeSharedFolder(folderCache);
+
+                /* If folder was created or updated: */
+                if (folderCache.wasCreated() || folderCache.wasUpdated())
+                    fSuccess = createSharedFolder(folderCache);
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
 }
 
 bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &folderCache)
 {
-    /* Get old folder data: */
-    const UIDataSettingsSharedFolder &oldFolderData = folderCache.base();
-    const UISharedFolderType enmSharedFoldersType = oldFolderData.m_enmType;
-    const QString strName = oldFolderData.m_strName;
-    const QString strPath = oldFolderData.m_strPath;
-
-    /* Get current folders: */
-    const CSharedFolderVector sharedFolders = getSharedFolders(enmSharedFoldersType);
-    /* Make sure such folder really exists: */
-    CSharedFolder sharedFolder;
-    for (int iFolderIndex = 0; iFolderIndex < sharedFolders.size(); ++iFolderIndex)
-        if (sharedFolders.at(iFolderIndex).GetName() == strName)
-            sharedFolder = sharedFolders.at(iFolderIndex);
-    if (!sharedFolder.isNull())
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Remove folder: */
+    if (fSuccess)
     {
-        /* Remove existing folder: */
-        switch(enmSharedFoldersType)
+        /* Get folder data: */
+        const UIDataSettingsSharedFolder &newFolderData = folderCache.base();
+        const UISharedFolderType enmFoldersType = newFolderData.m_enmType;
+        const QString strFolderName = newFolderData.m_strName;
+
+        /* Get current folders: */
+        CSharedFolderVector folders;
+        if (fSuccess)
+            fSuccess = getSharedFolders(enmFoldersType, folders);
+
+        /* Search for a folder with the same name: */
+        CSharedFolder comFolder;
+        if (fSuccess)
+            /* fSuccess = */ getSharedFolder(strFolderName, folders, comFolder);
+
+        /* Make sure such folder really exists: */
+        if (!comFolder.isNull())
         {
-            case MachineType:
+            /* Remove existing folder: */
+            switch (enmFoldersType)
             {
-                /* Remove existing folder: */
-                m_machine.RemoveSharedFolder(strName);
-                if (!m_machine.isOk())
+                case MachineType:
                 {
-                    /* Mark the page as failed: */
-                    setFailed(true);
-                    /* Show error message: */
-                    msgCenter().cannotRemoveSharedFolder(m_machine, strName, strPath, this);
-                    /* Finish early: */
-                    return false;
+                    /* Remove existing folder: */
+                    m_machine.RemoveSharedFolder(strFolderName);
+                    /* Check that machine is OK: */
+                    fSuccess = m_machine.isOk();
+                    if (!fSuccess)
+                    {
+                        /* Show error message: */
+                        msgCenter().cannotSaveFoldersSettings(m_machine, this);
+                    }
+                    break;
                 }
-                break;
-            }
-            case ConsoleType:
-            {
-                /* Remove existing folder: */
-                m_console.RemoveSharedFolder(strName);
-                if (!m_console.isOk())
+                case ConsoleType:
                 {
-                    /* Mark the page as failed: */
-                    setFailed(true);
-                    /* Show error message: */
-                    msgCenter().cannotRemoveSharedFolder(m_console, strName, strPath, this);
-                    /* Finish early: */
-                    return false;
+                    /* Remove existing folder: */
+                    m_console.RemoveSharedFolder(strFolderName);
+                    /* Check that console is OK: */
+                    fSuccess = m_console.isOk();
+                    if (!fSuccess)
+                    {
+                        /* Show error message: */
+                        msgCenter().cannotSaveFoldersSettings(m_console, this);
+                    }
+                    break;
                 }
-                break;
+                default:
+                    break;
             }
-            default:
-                break;
         }
     }
-    return true;
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &folderCache)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Remove folder: */
+    if (fSuccess)
+    {
+        /* Get folder data: */
+        const UIDataSettingsSharedFolder &newFolderData = folderCache.data();
+        const UISharedFolderType enmFoldersType = newFolderData.m_enmType;
+        const QString strFolderName = newFolderData.m_strName;
+        const QString strFolderPath = newFolderData.m_strPath;
+        const bool fIsAutoMount = newFolderData.m_fAutoMount;
+        const bool fIsWritable = newFolderData.m_fWritable;
+
+        /* Get current folders: */
+        CSharedFolderVector folders;
+        if (fSuccess)
+            fSuccess = getSharedFolders(enmFoldersType, folders);
+
+        /* Search for a folder with the same name: */
+        CSharedFolder comFolder;
+        if (fSuccess)
+            /* fSuccess = */ getSharedFolder(strFolderName, folders, comFolder);
+
+        /* Make sure such folder doesn't exist: */
+        if (comFolder.isNull())
+        {
+            /* Create new folder: */
+            switch (enmFoldersType)
+            {
+                case MachineType:
+                {
+                    /* Create new folder: */
+                    m_machine.CreateSharedFolder(strFolderName, strFolderPath, fIsWritable, fIsAutoMount);
+                    /* Check that machine is OK: */
+                    fSuccess = m_machine.isOk();
+                    if (!fSuccess)
+                    {
+                        /* Show error message: */
+                        msgCenter().cannotSaveFoldersSettings(m_machine, this);
+                    }
+                    break;
+                }
+                case ConsoleType:
+                {
+                    /* Create new folder: */
+                    m_console.CreateSharedFolder(strFolderName, strFolderPath, fIsWritable, fIsAutoMount);
+                    /* Check that console is OK: */
+                    fSuccess = m_console.isOk();
+                    if (!fSuccess)
+                    {
+                        /* Show error message: */
+                        msgCenter().cannotSaveFoldersSettings(m_console, this);
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

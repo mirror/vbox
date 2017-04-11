@@ -117,23 +117,29 @@ private:
     /** Returns a list of used shared folder names. */
     QStringList usedList(bool fIncludeSelected);
 
-    /** Returns whether the corresponding @a enmSharedFoldersType supported. */
-    bool isSharedFolderTypeSupported(UISharedFolderType enmSharedFoldersType) const;
+    /** Returns whether the corresponding @a enmFoldersType supported. */
+    bool isSharedFolderTypeSupported(UISharedFolderType enmFoldersType) const;
     /** Updates root item visibility. */
     void updateRootItemsVisibility();
-    /** Defines whether the root item of @a enmSharedFoldersType is @a fVisible. */
-    void setRootItemVisible(UISharedFolderType enmSharedFoldersType, bool fVisible);
-
-    /** Gathers a vector of shared folders of the passed @a enmSharedFoldersType. */
-    CSharedFolderVector getSharedFolders(UISharedFolderType enmSharedFoldersType);
+    /** Defines whether the root item of @a enmFoldersType is @a fVisible. */
+    void setRootItemVisible(UISharedFolderType enmFoldersType, bool fVisible);
 
     /** Creates shared folder item based on passed @a data. */
     void addSharedFolderItem(const UIDataSettingsSharedFolder &sharedFolderData, bool fChoose);
 
-    /** Creates shared folder defined by a @a folderCache. */
-    bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
+    /** Gathers a vector of shared folders of the passed @a enmFoldersType. */
+    CSharedFolderVector getSharedFolders(UISharedFolderType enmFoldersType);
+    /** Gathers a vector of shared folders of the passed @a enmFoldersType. */
+    bool getSharedFolders(UISharedFolderType enmFoldersType, CSharedFolderVector &folders);
+    /** Look for a folder with the the passed @a strFolderName. */
+    bool getSharedFolder(const QString &strFolderName, const CSharedFolderVector &folders, CSharedFolder &comFolder);
+
+    /** Saves existing folder data from the cache. */
+    bool saveFoldersData();
     /** Removes shared folder defined by a @a folderCache. */
     bool removeSharedFolder(const UISettingsCacheSharedFolder &folderCache);
+    /** Creates shared folder defined by a @a folderCache. */
+    bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
 
     /** Holds the Add action instance. */
     QAction *m_pActionAdd;
