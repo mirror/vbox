@@ -922,7 +922,7 @@ ifdef VBOX_WITH_SDS
  endif
 endif
 # disabled by default
-VBOX_WITH_SDS =  
+VBOX_WITH_SDS = 1
 
 
 #
