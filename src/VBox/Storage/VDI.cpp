@@ -1380,7 +1380,7 @@ static DECLCALLBACK(int) vdiProbe(const char *pszFilename, PVDINTERFACE pVDIfsDi
 
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
 
-    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)RTMemAllocZ(sizeof(VDIIMAGEDESC));
+    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)RTMemAllocZ(RT_UOFFSETOF(VDIIMAGEDESC, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;

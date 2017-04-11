@@ -5185,7 +5185,7 @@ static DECLCALLBACK(int) vmdkProbe(const char *pszFilename, PVDINTERFACE pVDIfsD
     AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
-    PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(sizeof(VMDKIMAGE));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(RT_UOFFSETOF(VMDKIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
         pImage->pszFilename = pszFilename;
