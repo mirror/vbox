@@ -242,14 +242,12 @@ static void vbox_accel_fini(struct vbox_private *vbox)
 static int vbox_accel_init(struct vbox_private *vbox)
 {
     unsigned i;
+
+    vbox->vbva_info = kcalloc(vbox->num_crtcs, sizeof(*vbox->vbva_info),
+                              GFP_KERNEL);
     if (!vbox->vbva_info)
-    {
-        vbox->vbva_info = kzalloc(  sizeof(struct VBVABUFFERCONTEXT)
-                                  * vbox->num_crtcs,
-                                  GFP_KERNEL);
-        if (!vbox->vbva_info)
-            return -ENOMEM;
-    }
+        return -ENOMEM;
+
     /* Take a command buffer for each screen from the end of usable VRAM. */
     vbox->available_vram_size -= vbox->num_crtcs * VBVA_MIN_BUFFER_SIZE;
     for (i = 0; i < vbox->num_crtcs; ++i)
