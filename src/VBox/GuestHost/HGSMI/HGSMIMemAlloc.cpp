@@ -55,8 +55,7 @@
 #include <HGSMIMemAlloc.h>
 #include <HGSMI.h>
 
-#include <iprt/err.h>
-#include <iprt/string.h>
+#include <VBoxVideoIPRT.h>
 
 /*
  * We do not want assertions in Linux kernel code to reduce symbol dependencies.

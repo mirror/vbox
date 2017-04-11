@@ -20,7 +20,7 @@
 #include <VBoxVideoVBE.h>
 
 #ifndef VBOX_GUESTR3XF86MOD
-# include <iprt/string.h>
+# include <VBoxVideoIPRT.h>
 #endif
 
 /**
@@ -330,7 +330,7 @@ DECLHIDDEN(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                       unsigned cScreens, VBVAMODEHINT *paHints)
 {
     int rc;
-    VBVOAssertPtr(paHints);
+    AssertPtr(paHints);
     if (!VALID_PTR(paHints))
         return VERR_INVALID_POINTER;
     void *p = VBoxHGSMIBufferAlloc(pCtx,   sizeof(VBVAQUERYMODEHINTS)

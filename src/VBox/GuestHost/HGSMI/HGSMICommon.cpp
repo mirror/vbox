@@ -22,7 +22,7 @@
  * is needed. */
 #define LOG_GROUP LOG_GROUP_HGSMI
 
-#include <iprt/string.h>
+#include <VBoxVideoIPRT.h>
 
 #include <HGSMI.h>
 // #include <VBox/log.h>

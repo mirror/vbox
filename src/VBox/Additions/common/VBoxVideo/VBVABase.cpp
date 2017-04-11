@@ -17,9 +17,7 @@
  */
 
 #include <VBoxVideoGuest.h>
-#include <VBox/err.h>
-// #include <VBox/log.h>
-#include <iprt/string.h>
+#include <VBoxVideoIPRT.h>
 
 /*
  * There is a hardware ring buffer in the graphics device video RAM, formerly
@@ -161,8 +159,8 @@ DECLHIDDEN(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
     {
         uint32_t indexRecordNext;
 
-        VBVOAssert(!pCtx->fHwBufferOverflow);
-        VBVOAssert(pCtx->pRecord == NULL);
+        Assert(!pCtx->fHwBufferOverflow);
+        Assert(pCtx->pRecord == NULL);
 
         indexRecordNext = (pCtx->pVBVA->indexRecordFree + 1) % VBVA_MAX_RECORDS;
 
@@ -205,10 +203,10 @@ DECLHIDDEN(void) VBoxVBVABufferEndUpdate(PVBVABUFFERCONTEXT pCtx)
 
     // LogFunc(("\n"));
 
-    VBVOAssert(pCtx->pVBVA);
+    Assert(pCtx->pVBVA);
 
     pRecord = pCtx->pRecord;
-    VBVOAssert(pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
+    Assert(pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
 
     /* Mark the record completed. */
     pRecord->cbRecord &= ~VBVA_F_RECORD_PARTIAL;
@@ -287,17 +285,17 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
     uint32_t cbWritten = 0;
 
     VBVABUFFER *pVBVA = pCtx->pVBVA;
-    VBVOAssert(pVBVA);
+    Assert(pVBVA);
 
     if (!pVBVA || pCtx->fHwBufferOverflow)
     {
         return false;
     }
 
-    VBVOAssert(pVBVA->indexRecordFirst != pVBVA->indexRecordFree);
+    Assert(pVBVA->indexRecordFirst != pVBVA->indexRecordFree);
 
     pRecord = pCtx->pRecord;
-    VBVOAssert(pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
+    Assert(pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
 
     // LogFunc(("%d\n", cb));
 
@@ -327,7 +325,7 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
                 {
                     // LogFunc(("Buffer overflow!!!\n"));
                     pCtx->fHwBufferOverflow = true;
-                    VBVOAssert(false);
+                    Assert(false);
                     return false;
                 }
 
@@ -335,8 +333,8 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
             }
         }
 
-        VBVOAssert(cbChunk <= cb);
-        VBVOAssert(cbChunk <= vboxHwBufferAvail (pVBVA));
+        Assert(cbChunk <= cb);
+        Assert(cbChunk <= vboxHwBufferAvail (pVBVA));
 
         vboxHwBufferPlaceDataAt (pCtx, (uint8_t *)p + cbWritten, cbChunk, pVBVA->off32Free);
 

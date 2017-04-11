@@ -31,18 +31,7 @@
 #include <HGSMI.h>
 #include <HGSMIChSetup.h>
 #include <VBoxVideo.h>
-
-#include <iprt/err.h>  /* The functions in here return IPRT errors. */
-
-#ifdef VBOX_XPDM_MINIPORT
-# include <iprt/nt/miniport.h>
-# include <ntddvdeo.h> /* sdk, clean */
-# include <iprt/nt/Video.h>
-#elif defined VBOX_GUESTR3XORGMOD
-# include <compiler.h>
-#else
-# include <iprt/asm-amd64-x86.h>
-#endif
+#include <VBoxVideoIPRT.h>
 
 #ifdef VBOX_WDDM_MINIPORT
 # include "wddm/VBoxMPShgsmi.h"
@@ -51,22 +40,6 @@
 #else
  typedef HGSMIHEAP HGSMIGUESTCMDHEAP;
 # define HGSMIGUESTCMDHEAP_GET(_p) (_p)
-#endif
-
-#if defined(IN_RING0) && defined(RT_OS_LINUX)
-# define VBVOAssert(a) do {} while(0)
-# define VBVOAssertPtr(a) do {} while(0)
-# define VBVOAssertReturnVoid(a) if (!(a)) return
-# define VBVOAssertRC(a) do {} while(0)
-# define VBVOAssertPtrNullReturnVoid(a) do {} while(0)
-# define VBVOAssertPtrReturnVoid(a) if (!(a)) return
-#else
-# define VBVOAssert Assert
-# define VBVOAssertPtr AssertPtr
-# define VBVOAssertReturnVoid AssertReturnVoid
-# define VBVOAssertRC AssertRC
-# define VBVOAssertPtrNullReturnVoid AssertPtrNullReturnVoid
-# define VBVOAssertPtrReturnVoid AssertPtrReturnVoid
 #endif
 
 RT_C_DECLS_BEGIN
@@ -133,82 +106,6 @@ typedef struct VBVABUFFERCONTEXT
      * be NULL if VBVA is not enabled. */
     struct VBVABUFFER *pVBVA;
 } VBVABUFFERCONTEXT, *PVBVABUFFERCONTEXT;
-
-/** @name Helper functions
- * @{ */
-/** Write an 8-bit value to an I/O port. */
-DECLINLINE(void) VBoxVideoCmnPortWriteUchar(RTIOPORT Port, uint8_t Value)
-{
-#ifdef VBOX_XPDM_MINIPORT
-    VideoPortWritePortUchar((PUCHAR)Port, Value);
-#elif defined VBOX_GUESTR3XORGMOD
-    outb(Port, Value);
-#else  /** @todo make these explicit */
-    ASMOutU8(Port, Value);
-#endif
-}
-
-/** Write a 16-bit value to an I/O port. */
-DECLINLINE(void) VBoxVideoCmnPortWriteUshort(RTIOPORT Port, uint16_t Value)
-{
-#ifdef VBOX_XPDM_MINIPORT
-    VideoPortWritePortUshort((PUSHORT)Port,Value);
-#elif defined VBOX_GUESTR3XORGMOD
-    outw(Port, Value);
-#else
-    ASMOutU16(Port, Value);
-#endif
-}
-
-/** Write a 32-bit value to an I/O port. */
-DECLINLINE(void) VBoxVideoCmnPortWriteUlong(RTIOPORT Port, uint32_t Value)
-{
-#ifdef VBOX_XPDM_MINIPORT
-    VideoPortWritePortUlong((PULONG)Port,Value);
-#elif defined VBOX_GUESTR3XORGMOD
-    outl(Port, Value);
-#else
-    ASMOutU32(Port, Value);
-#endif
-}
-
-/** Read an 8-bit value from an I/O port. */
-DECLINLINE(uint8_t) VBoxVideoCmnPortReadUchar(RTIOPORT Port)
-{
-#ifdef VBOX_XPDM_MINIPORT
-    return VideoPortReadPortUchar((PUCHAR)Port);
-#elif defined VBOX_GUESTR3XORGMOD
-    return inb(Port);
-#else
-    return ASMInU8(Port);
-#endif
-}
-
-/** Read a 16-bit value from an I/O port. */
-DECLINLINE(uint16_t) VBoxVideoCmnPortReadUshort(RTIOPORT Port)
-{
-#ifdef VBOX_XPDM_MINIPORT
-    return VideoPortReadPortUshort((PUSHORT)Port);
-#elif defined VBOX_GUESTR3XORGMOD
-    return inw(Port);
-#else
-    return ASMInU16(Port);
-#endif
-}
-
-/** Read a 32-bit value from an I/O port. */
-DECLINLINE(uint32_t) VBoxVideoCmnPortReadUlong(RTIOPORT Port)
-{
-#ifdef VBOX_XPDM_MINIPORT
-    return VideoPortReadPortUlong((PULONG)Port);
-#elif defined VBOX_GUESTR3XORGMOD
-    return inl(Port);
-#else
-    return ASMInU32(Port);
-#endif
-}
-
-/** @}  */
 
 /** @name Base HGSMI APIs
  * @{ */

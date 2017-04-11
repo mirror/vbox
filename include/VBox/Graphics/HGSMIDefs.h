@@ -29,8 +29,7 @@
 #ifndef ___VBox_Graphics_HGSMIDefs_h
 #define ___VBox_Graphics_HGSMIDefs_h
 
-#include <iprt/assert.h>
-#include <iprt/types.h>
+#include <VBoxVideoIPRT.h>
 
 /* HGSMI uses 32 bit offsets and sizes. */
 typedef uint32_t HGSMISIZE;

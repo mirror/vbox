@@ -30,7 +30,7 @@
 #define ___VBox_Graphics_HGSMIMemAlloc_h
 
 #include <HGSMIDefs.h>
-#include <iprt/list.h>
+#include <VBoxVideoIPRT.h>
 
 
 /* Descriptor. */

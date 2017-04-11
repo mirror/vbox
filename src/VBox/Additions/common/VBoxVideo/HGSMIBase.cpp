@@ -18,9 +18,7 @@
 
 #include <VBoxVideoGuest.h>
 #include <VBoxVideoVBE.h>
-
-#include <iprt/asm.h>
-#include <iprt/string.h>
+#include <VBoxVideoIPRT.h>
 
 /** Send completion notification to the host for the command located at offset
  * @a offt into the host command buffer. */
@@ -42,7 +40,7 @@ DECLHIDDEN(void) VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,
 {
     HGSMIBUFFERHEADER *pHdr = HGSMIBufferHeaderFromData(pvMem);
     HGSMIOFFSET offMem = HGSMIPointerToOffset(&pCtx->areaCtx, pHdr);
-    VBVOAssert(offMem != HGSMIOFFSET_VOID);
+    Assert(offMem != HGSMIOFFSET_VOID);
     if(offMem != HGSMIOFFSET_VOID)
     {
         HGSMINotifyHostCmdComplete(pCtx, offMem);
@@ -55,7 +53,7 @@ static void hgsmiHostCmdProcess(PHGSMIHOSTCOMMANDCONTEXT pCtx,
                                 HGSMIOFFSET offBuffer)
 {
     int rc = HGSMIBufferProcess(&pCtx->areaCtx, &pCtx->channels, offBuffer);
-    VBVOAssert(!RT_FAILURE(rc));
+    Assert(!RT_FAILURE(rc));
     if(RT_FAILURE(rc))
     {
         /* failure means the command was not submitted to the handler for some reason
@@ -76,7 +74,7 @@ static HGSMIOFFSET hgsmiGetHostBuffer(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 static void hgsmiHostCommandQueryProcess(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
     HGSMIOFFSET offset = hgsmiGetHostBuffer(pCtx);
-    VBVOAssertReturnVoid(offset != HGSMIOFFSET_VOID);
+    AssertReturnVoid(offset != HGSMIOFFSET_VOID);
     hgsmiHostCmdProcess(pCtx, offset);
 }
 
@@ -160,7 +158,7 @@ DECLHIDDEN(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     /* Initialize the buffer and get the offset for port IO. */
     HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (HGSMIGUESTCMDHEAP_GET(&pCtx->heapCtx), pvBuffer);
 
-    VBVOAssert(offBuffer != HGSMIOFFSET_VOID);
+    Assert(offBuffer != HGSMIOFFSET_VOID);
     if (offBuffer != HGSMIOFFSET_VOID)
     {
         /* Submit the buffer to the host. */
@@ -240,7 +238,7 @@ static int vboxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         rc = VBoxHGSMIBufferSubmit(pCtx, pCaps);
         if (RT_SUCCESS(rc))
         {
-            VBVOAssertRC(pCaps->rc);
+            AssertRC(pCaps->rc);
             rc = pCaps->rc;
         }
         /* Free the IO buffer. */
@@ -316,11 +314,11 @@ DECLHIDDEN(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
                                              uint32_t *pcbGuestHeapMemory,
                                              uint32_t *poffHostFlags)
 {
-    VBVOAssertPtrNullReturnVoid(poffVRAMBaseMapping);
-    VBVOAssertPtrNullReturnVoid(pcbMapping);
-    VBVOAssertPtrNullReturnVoid(poffGuestHeapMemory);
-    VBVOAssertPtrNullReturnVoid(pcbGuestHeapMemory);
-    VBVOAssertPtrNullReturnVoid(poffHostFlags);
+    AssertPtrNullReturnVoid(poffVRAMBaseMapping);
+    AssertPtrNullReturnVoid(pcbMapping);
+    AssertPtrNullReturnVoid(poffGuestHeapMemory);
+    AssertPtrNullReturnVoid(pcbGuestHeapMemory);
+    AssertPtrNullReturnVoid(poffHostFlags);
     if (poffVRAMBaseMapping)
         *poffVRAMBaseMapping = cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE;
     if (pcbMapping)
@@ -385,8 +383,8 @@ DECLHIDDEN(void) VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 {
     uint32_t offVRAMHostArea = offVRAMBaseMapping, cbHostArea = 0;
 
-    VBVOAssertPtrReturnVoid(poffVRAMHostArea);
-    VBVOAssertPtrReturnVoid(pcbHostArea);
+    AssertPtrReturnVoid(poffVRAMHostArea);
+    AssertPtrReturnVoid(pcbHostArea);
     VBoxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbHostArea);
     if (cbHostArea != 0)
     {
@@ -463,18 +461,18 @@ DECLHIDDEN(int) VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     /* setup the flags first to ensure they are initialized by the time the
      * host heap is ready */
     int rc = vboxHGSMIReportFlagsLocation(pCtx, offVRAMFlagsLocation);
-    VBVOAssertRC(rc);
+    AssertRC(rc);
     if (RT_SUCCESS(rc) && fCaps)
     {
         /* Inform about caps */
         rc = vboxHGSMISendCapsInfo(pCtx, fCaps);
-        VBVOAssertRC(rc);
+        AssertRC(rc);
     }
     if (RT_SUCCESS (rc))
     {
         /* Report the host heap location. */
         rc = vboxHGSMIReportHostArea(pCtx, offVRAMHostArea, cbHostArea);
-        VBVOAssertRC(rc);
+        AssertRC(rc);
     }
     // Log(("VBoxVideo::vboxSetupAdapterInfo finished rc = %d\n", rc));
     return rc;

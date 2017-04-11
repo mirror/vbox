@@ -29,8 +29,7 @@
 #ifndef ___VBox_Graphics_HGSMI_h
 #define ___VBox_Graphics_HGSMI_h
 
-#include <iprt/assert.h>
-#include <iprt/types.h>
+#include <VBoxVideoIPRT.h>
 
 #include <HGSMIDefs.h>
 #include <HGSMIChannels.h>

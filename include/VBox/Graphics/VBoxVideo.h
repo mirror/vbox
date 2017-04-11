@@ -26,9 +26,7 @@
 #ifndef ___VBox_Graphics_VBoxVideo_h
 #define ___VBox_Graphics_VBoxVideo_h
 
-#include <iprt/cdefs.h>
-#include <iprt/types.h>
-#include <iprt/assert.h>
+#include <VBoxVideoIPRT.h>
 
 /* this should be in sync with monitorCount <xsd:maxInclusive value="64"/> in src/VBox/Main/xml/VirtualBox-settings-common.xsd */
 #define VBOX_VIDEO_MAX_SCREENS 64
