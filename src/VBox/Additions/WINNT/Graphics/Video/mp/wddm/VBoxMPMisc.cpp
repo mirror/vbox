@@ -1824,7 +1824,7 @@ static int vboxWddmWdProgram(PVBOXMP_DEVEXT pDevExt, uint32_t cMillis)
                 Assert(offCmd != HGSMIOFFSET_VOID);
                 if (offCmd != HGSMIOFFSET_VOID)
                 {
-                    VBoxVideoCmnPortWriteUlong(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port, offCmd);
+                    VBVO_PORT_WRITE_U32(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port, offCmd);
                     /* Make the compiler aware that the host has changed memory. */
                     ASMCompilerBarrier();
                     rc = VBoxSHGSMICommandDoneSynch(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pHdr);

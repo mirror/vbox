@@ -24,7 +24,7 @@
  * @a offt into the host command buffer. */
 static void HGSMINotifyHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx, HGSMIOFFSET offt)
 {
-    VBoxVideoCmnPortWriteUlong(pCtx->port, offt);
+    VBVO_PORT_WRITE_U32(pCtx->port, offt);
 }
 
 
@@ -66,7 +66,7 @@ static void hgsmiHostCmdProcess(PHGSMIHOSTCOMMANDCONTEXT pCtx,
 /** Get the next command from the host. */
 static HGSMIOFFSET hgsmiGetHostBuffer(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
-    return VBoxVideoCmnPortReadUlong(pCtx->port);
+    return VBVO_PORT_READ_U32(pCtx->port);
 }
 
 
@@ -97,10 +97,10 @@ DECLHIDDEN(bool) VBoxHGSMIIsSupported(void)
 {
     uint16_t DispiId;
 
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_HGSMI);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_HGSMI);
 
-    DispiId = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    DispiId = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
 
     return (DispiId == VBE_DISPI_ID_HGSMI);
 }
@@ -162,7 +162,7 @@ DECLHIDDEN(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     if (offBuffer != HGSMIOFFSET_VOID)
     {
         /* Submit the buffer to the host. */
-        VBoxVideoCmnPortWriteUlong(pCtx->port, offBuffer);
+        VBVO_PORT_WRITE_U32(pCtx->port, offBuffer);
         /* Make the compiler aware that the host has changed memory. */
         ASMCompilerBarrier();
         return VINF_SUCCESS;

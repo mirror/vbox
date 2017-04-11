@@ -115,7 +115,7 @@ DECLINLINE(void) vboxVBVAExFlush(struct VBVAEXBUFFERCONTEXT *pCtx, PHGSMIGUESTCO
 
 static int vboxCmdVbvaSubmitHgsmi(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, HGSMIOFFSET offDr)
 {
-    VBoxVideoCmnPortWriteUlong(pHGSMICtx->port, offDr);
+    VBVO_PORT_WRITE_U32(pHGSMICtx->port, offDr);
     /* Make the compiler aware that the host has changed memory. */
     ASMCompilerBarrier();
     return VINF_SUCCESS;

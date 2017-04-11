@@ -113,7 +113,7 @@ typedef struct VBVABUFFERCONTEXT
 /** Acknowlege an IRQ. */
 DECLINLINE(void) VBoxHGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
-    VBoxVideoCmnPortWriteUlong(pCtx->port, HGSMIOFFSET_VOID);
+    VBVO_PORT_WRITE_U32(pCtx->port, HGSMIOFFSET_VOID);
 }
 
 DECLHIDDEN(void)     VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,

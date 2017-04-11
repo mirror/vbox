@@ -51,7 +51,7 @@ DECLHIDDEN(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
 DECLHIDDEN(uint32_t) VBoxVideoGetVRAMSize(void)
 {
     /** @note A 32bit read on this port returns the VRAM size. */
-    return VBoxVideoCmnPortReadUlong(VBE_DISPI_IOPORT_DATA);
+    return VBVO_PORT_READ_U32(VBE_DISPI_IOPORT_DATA);
 }
 
 
@@ -64,9 +64,9 @@ DECLHIDDEN(uint32_t) VBoxVideoGetVRAMSize(void)
 DECLHIDDEN(bool) VBoxVideoAnyWidthAllowed(void)
 {
     unsigned DispiId;
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_ANYX);
-    DispiId = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_ANYX);
+    DispiId = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
     return (DispiId == VBE_DISPI_ID_ANYX);
 }
 
@@ -130,27 +130,27 @@ DECLHIDDEN(void) VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
                                            uint16_t cy)
 {
     /* set the mode characteristics */
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cWidth);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cHeight);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, cWidth);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, cHeight);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                 VBE_DISPI_INDEX_VIRT_WIDTH);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cVirtWidth);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cBPP);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, cVirtWidth);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, cBPP);
     /* enable the mode */
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                 VBE_DISPI_INDEX_ENABLE);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA,
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA,
                                 fFlags | VBE_DISPI_ENABLED);
     /* Panning registers */
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                 VBE_DISPI_INDEX_X_OFFSET);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cx);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, cx);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                 VBE_DISPI_INDEX_Y_OFFSET);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, cy);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, cy);
     /** @todo read from the port to see if the mode switch was successful */
 }
 
@@ -174,32 +174,32 @@ DECLHIDDEN(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight
 {
     uint16_t fFlags;
 
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                 VBE_DISPI_INDEX_ENABLE);
-    fFlags = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    fFlags = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
     if (pcWidth)
     {
-        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+        VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                     VBE_DISPI_INDEX_XRES);
-        *pcWidth = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+        *pcWidth = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
     }
     if (pcHeight)
     {
-        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+        VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                     VBE_DISPI_INDEX_YRES);
-        *pcHeight = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+        *pcHeight = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
     }
     if (pcVirtWidth)
     {
-        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+        VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                     VBE_DISPI_INDEX_VIRT_WIDTH);
-        *pcVirtWidth = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+        *pcVirtWidth = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
     }
     if (pcBPP)
     {
-        VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+        VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                     VBE_DISPI_INDEX_BPP);
-        *pcBPP = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+        *pcBPP = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
     }
     if (pfFlags)
         *pfFlags = fFlags;
@@ -212,9 +212,9 @@ DECLHIDDEN(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight
  */
 DECLHIDDEN(void) VBoxVideoDisableVBE(void)
 {
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX,
                                 VBE_DISPI_INDEX_ENABLE);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, 0);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, 0);
 }
 
 

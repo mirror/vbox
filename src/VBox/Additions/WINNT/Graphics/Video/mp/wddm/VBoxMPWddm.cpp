@@ -738,9 +738,9 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDevice
     memset(pHwResources, 0, sizeof (*pHwResources));
     pHwResources->cbVRAM = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
 
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
-    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
-    DispiId = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
+    DispiId = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
     if (DispiId == VBE_DISPI_ID2)
     {
        LOGREL(("found the VBE card"));
@@ -753,7 +753,7 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDevice
         * Query the adapter's memory size. It's a bit of a hack, we just read
         * an ULONG from the data port without setting an index before.
         */
-       pHwResources->cbVRAM = VBoxVideoCmnPortReadUlong(VBE_DISPI_IOPORT_DATA);
+       pHwResources->cbVRAM = VBVO_PORT_READ_U32(VBE_DISPI_IOPORT_DATA);
        if (VBoxHGSMIIsSupported ())
        {
            PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;
@@ -1537,7 +1537,7 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
         if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
         {
             /* read the command offset */
-            HGSMIOFFSET offCmd = VBoxVideoCmnPortReadUlong(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port);
+            HGSMIOFFSET offCmd = VBVO_PORT_READ_U32(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port);
             if (offCmd == HGSMIOFFSET_VOID)
             {
                 WARN(("void command offset!"));
@@ -1673,7 +1673,7 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
             if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
             {
                 /* read the command offset */
-                HGSMIOFFSET offCmd = VBoxVideoCmnPortReadUlong(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port);
+                HGSMIOFFSET offCmd = VBVO_PORT_READ_U32(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port);
                 Assert(offCmd != HGSMIOFFSET_VOID);
                 if (offCmd != HGSMIOFFSET_VOID)
                 {

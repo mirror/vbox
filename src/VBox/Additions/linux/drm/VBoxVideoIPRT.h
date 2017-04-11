@@ -82,22 +82,22 @@ extern int RTASSERTVAR[1];
 /** @name Port I/O helpers
  * @{ */
 /** Write an 8-bit value to an I/O port. */
-#define VBoxVideoCmnPortWriteUchar(Port, Value) \
+#define VBVO_PORT_WRITE_U8(Port, Value) \
     outb(Value, Port)
 /** Write a 16-bit value to an I/O port. */
-#define VBoxVideoCmnPortWriteUshort(Port, Value) \
+#define VBVO_PORT_WRITE_U16(Port, Value) \
     outw(Value, Port)
 /** Write a 32-bit value to an I/O port. */
-#define VBoxVideoCmnPortWriteUlong(Port, Value) \
+#define VBVO_PORT_WRITE_U32(Port, Value) \
     outl(Value, Port)
 /** Read an 8-bit value from an I/O port. */
-#define VBoxVideoCmnPortReadUchar(Port) \
+#define VBVO_PORT_READ_U8(Port) \
     inb(Port)
 /** Read a 16-bit value from an I/O port. */
-#define VBoxVideoCmnPortReadUshort(Port) \
+#define VBVO_PORT_READ_U16(Port) \
     inw(Port)
 /** Read a 32-bit value from an I/O port. */
-#define VBoxVideoCmnPortReadUlong(Port) \
+#define VBVO_PORT_READ_U32(Port) \
     inl(Port)
 
 /** @}  */

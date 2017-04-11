@@ -46,64 +46,64 @@
 #ifdef VBOX_XPDM_MINIPORT
 
 /** Write an 8-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUchar(Port, Value) \
+# define VBVO_PORT_WRITE_U8(Port, Value) \
     VideoPortWritePortUchar((PUCHAR)Port, Value)
 /** Write a 16-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUshort(Port, Value) \
+# define VBVO_PORT_WRITE_U16(Port, Value) \
     VideoPortWritePortUshort((PUSHORT)Port, Value)
 /** Write a 32-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUlong(Port, Value) \
+# define VBVO_PORT_WRITE_U32(Port, Value) \
     VideoPortWritePortUlong((PULONG)Port, Value)
 /** Read an 8-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUchar(Port) \
+# define VBVO_PORT_READ_U8(Port) \
     VideoPortReadPortUchar((PUCHAR)Port)
 /** Read a 16-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUshort(Port) \
+# define VBVO_PORT_READ_U16(Port) \
     VideoPortReadPortUshort((PUSHORT)Port)
 /** Read a 32-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUlong(Port) \
+# define VBVO_PORT_READ_U32(Port) \
     VideoPortReadPortUlong((PULONG)Port)
     
 #elif defined(VBOX_GUESTR3XORGMOD)
 
 /** Write an 8-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUchar(Port, Value) \
+# define VBVO_PORT_WRITE_U8(Port, Value) \
     outb(Port, Value)
 /** Write a 16-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUshort(Port, Value) \
+# define VBVO_PORT_WRITE_U16(Port, Value) \
     outw(Port, Value)
 /** Write a 32-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUlong(Port, Value) \
+# define VBVO_PORT_WRITE_U32(Port, Value) \
     outl(Port, Value)
 /** Read an 8-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUchar(Port) \
+# define VBVO_PORT_READ_U8(Port) \
     inb(Port)
 /** Read a 16-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUshort(Port) \
+# define VBVO_PORT_READ_U16(Port) \
     inw(Port)
 /** Read a 32-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUlong(Port) \
+# define VBVO_PORT_READ_U32(Port) \
     inl(Port)
 
 #else  /** @todo make these explicit */
 
 /** Write an 8-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUchar(Port, Value) \
+# define VBVO_PORT_WRITE_U8(Port, Value) \
     ASMOutU8(Port, Value)
 /** Write a 16-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUshort(Port, Value) \
+# define VBVO_PORT_WRITE_U16(Port, Value) \
     ASMOutU16(Port, Value)
 /** Write a 32-bit value to an I/O port. */
-# define VBoxVideoCmnPortWriteUlong(Port, Value) \
+# define VBVO_PORT_WRITE_U32(Port, Value) \
     ASMOutU32(Port, Value)
 /** Read an 8-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUchar(Port) \
+# define VBVO_PORT_READ_U8(Port) \
     ASMInU8(Port)
 /** Read a 16-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUshort(Port) \
+# define VBVO_PORT_READ_U16(Port) \
     ASMInU16(Port)
 /** Read a 32-bit value from an I/O port. */
-# define VBoxVideoCmnPortReadUlong(Port) \
+# define VBVO_PORT_READ_U32(Port) \
     ASMInU32(Port)
 #endif
 

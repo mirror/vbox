@@ -291,10 +291,10 @@ BOOLEAN VBoxMPSetColorRegisters(PVBOXMP_DEVEXT pExt, PVIDEO_CLUT pClut, PSTATUS_
 
     for (entry=pClut->FirstEntry; entry<pClut->FirstEntry+pClut->NumEntries; ++entry)
     {
-      VBoxVideoCmnPortWriteUchar(VBE_DISPI_IOPORT_DAC_WRITE_INDEX, (UCHAR)entry);
-      VBoxVideoCmnPortWriteUchar(VBE_DISPI_IOPORT_DAC_DATA, pClut->LookupTable[entry].RgbArray.Red);
-      VBoxVideoCmnPortWriteUchar(VBE_DISPI_IOPORT_DAC_DATA, pClut->LookupTable[entry].RgbArray.Green);
-      VBoxVideoCmnPortWriteUchar(VBE_DISPI_IOPORT_DAC_DATA, pClut->LookupTable[entry].RgbArray.Blue);
+      VBVO_PORT_WRITE_U8(VBE_DISPI_IOPORT_DAC_WRITE_INDEX, (UCHAR)entry);
+      VBVO_PORT_WRITE_U8(VBE_DISPI_IOPORT_DAC_DATA, pClut->LookupTable[entry].RgbArray.Red);
+      VBVO_PORT_WRITE_U8(VBE_DISPI_IOPORT_DAC_DATA, pClut->LookupTable[entry].RgbArray.Green);
+      VBVO_PORT_WRITE_U8(VBE_DISPI_IOPORT_DAC_DATA, pClut->LookupTable[entry].RgbArray.Blue);
     }
 
     LOGF_LEAVE();
