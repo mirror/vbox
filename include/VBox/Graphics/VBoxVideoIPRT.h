@@ -18,7 +18,9 @@
 #ifndef ___VBox_VBoxVideoIPRT_h
 #define ___VBox_VBoxVideoIPRT_h
 
-#include <iprt/asm.h>
+#ifndef RT_OS_OS2
+# include <iprt/asm.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/cdefs.h>
 #include <iprt/err.h>
