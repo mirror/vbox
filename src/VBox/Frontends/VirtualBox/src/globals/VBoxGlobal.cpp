@@ -4087,6 +4087,7 @@ void VBoxGlobal::prepare()
                                                              NULL,
                                                              EOAC_NONE,
                                                              NULL);
+    NOREF(hrGUICoInitializeSecurity);
     Assert(RPC_E_TOO_LATE != hrGUICoInitializeSecurity);
     Assert(hrGUICoInitializeSecurity == S_OK);
 #endif
