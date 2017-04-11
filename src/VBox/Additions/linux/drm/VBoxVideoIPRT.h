@@ -18,7 +18,7 @@
 #ifndef ___VBox_VBoxVideoIPRT_h
 #define ___VBox_VBoxVideoIPRT_h
 
-#include <asm/cmpxchg.h>
+#include <asm/atomic.h>
 #include <asm/io.h>
 #include <iprt/cdefs.h>
 #include <iprt/list.h>
