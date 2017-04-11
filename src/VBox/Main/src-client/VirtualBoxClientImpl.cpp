@@ -298,6 +298,7 @@ HRESULT VirtualBoxClient::init()
                                                              NULL,
                                                              EOAC_NONE,
                                                              NULL);
+    NOREF(hrGUICoInitializeSecurity);
     Assert(SUCCEEDED(hrGUICoInitializeSecurity) || hrGUICoInitializeSecurity == RPC_E_TOO_LATE);
 #endif
 
