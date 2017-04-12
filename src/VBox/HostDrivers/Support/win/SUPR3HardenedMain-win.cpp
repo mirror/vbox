@@ -1637,6 +1637,28 @@ static NTSTATUS supR3HardenedCopyRedirectionResult(WCHAR *pwszPath, size_t cwcPa
 
 
 /**
+ * Helper for supR3HardenedMonitor_LdrLoadDll that compares the name part of the
+ * input path against a ASCII name string of a given length.
+ *
+ * @returns true if the name part matches
+ * @param   pPath               The LdrLoadDll input path.
+ * @param   pszName             The name to try match it with.
+ * @param   cchName             The name length.
+ */
+static bool supR3HardenedIsFilenameMatchDll(PUNICODE_STRING pPath, const char *pszName, size_t cchName)
+{
+    if (pPath->Length < cchName * 2)
+        return false;
+    PCRTUTF16 pwszTmp = &pPath->Buffer[pPath->Length / sizeof(RTUTF16) - cchName];
+    if (   pPath->Length != cchName
+        && pwszTmp[-1] != '\\'
+        && pwszTmp[-1] != '/')
+        return false;
+    return RTUtf16ICmpAscii(pwszTmp, pszName) == 0;
+}
+
+
+/**
  * Hooks that intercepts LdrLoadDll calls.
  *
  * Two purposes:
@@ -1713,22 +1735,13 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         {
             { RT_STR_TUPLE("PGHook.dll") },
         };
-
         for (unsigned i = 0; i < RT_ELEMENTS(s_aUnwantedEarlyDlls); i++)
-        {
-            if (pName->Length < s_aUnwantedEarlyDlls[i].cch * 2)
-                continue;
-            PCRTUTF16 pwszTmp = &pName->Buffer[pName->Length / sizeof(RTUTF16) - s_aUnwantedEarlyDlls[i].cch];
-            if (   pName->Length != s_aUnwantedEarlyDlls[i].cch * 2
-                && pwszTmp[-1] != '\\'
-                && pwszTmp[-1] != '/')
-                continue;
-            if (RTUtf16ICmpAscii(pwszTmp, s_aUnwantedEarlyDlls[i].psz) != 0)
-                continue;
-            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: Refusing to load '%.*ls' as it is expected to create undesirable threads that will upset our respawn checks (returning STATUS_TOO_MANY_THREADS)\n",
-                         pName->Length / sizeof(RTUTF16), pName->Buffer));
-            return STATUS_TOO_MANY_THREADS;
-        }
+            if (supR3HardenedIsFilenameMatchDll(pName, s_aUnwantedEarlyDlls[i].psz, s_aUnwantedEarlyDlls[i].cch))
+            {
+                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: Refusing to load '%.*ls' as it is expected to create undesirable threads that will upset our respawn checks (returning STATUS_TOO_MANY_THREADS)\n",
+                             pName->Length / sizeof(RTUTF16), pName->Buffer));
+                return STATUS_TOO_MANY_THREADS;
+            }
     }
 
     /*
@@ -1908,6 +1921,20 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         ResolvedName.MaximumLength = ResolvedName.Length + sizeof(WCHAR);
         pName = &ResolvedName;
     }
+
+#ifndef IN_SUP_R3_STATIC
+    /*
+     * Reject blacklisted DLLs based on input name.
+     */
+    for (unsigned i = 0; g_aSupNtViBlacklistedDlls[i].psz != NULL; i++)
+        if (supR3HardenedIsFilenameMatchDll(pName, g_aSupNtViBlacklistedDlls[i].psz, g_aSupNtViBlacklistedDlls[i].cch))
+        {
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: Refusing to load blacklisted DLL: '%.*ls'\n",
+                         pName->Length / sizeof(RTUTF16), pName->Buffer));
+            RtlRestoreLastWin32Error(dwSavedLastError);
+            return STATUS_TOO_MANY_THREADS;
+        }
+#endif
 
     bool fQuiet = false;
     if (!fSkipValidation)

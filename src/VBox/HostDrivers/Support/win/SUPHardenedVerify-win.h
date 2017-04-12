@@ -138,6 +138,9 @@ DECLHIDDEN(int)  supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 p
 #  define SUPHNTVI_F_RC_IMAGE                       RT_BIT(31)
 /** @} */
 
+/* Array in SUPHardenedVerifyImage-win.cpp */
+extern const RTSTRTUPLE g_aSupNtViBlacklistedDlls[];
+
 /**
  * Loader cache entry.
  *

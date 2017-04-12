@@ -2659,6 +2659,8 @@
 #define VERR_SUP_VP_FILE_MODE_ERROR                 (-5674)
 /** Error creating an event semaphore for used with asynchronous reads. */
 #define VERR_SUP_VP_CREATE_READ_EVT_SEM_FAILED      (-5675)
+/** Undesirable module. */
+#define VERR_SUP_VP_UNDESIRABLE_MODULE              (-5676)
 
 /** @} */
 
