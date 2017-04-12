@@ -1404,12 +1404,12 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
-    NOREF(pFsObjState); NOREF(fDir); NOREF(fRelaxed); NOREF(pszPath); NOREF(pErrInfo);
+    RT_NOREF(pFsObjState, fDir, fRelaxed, fSymlinksAllowed, pszPath, pErrInfo);
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_OS2)
     /* No hardening here - it's a single user system. */
-    NOREF(pFsObjState); NOREF(fDir); NOREF(fRelaxed); NOREF(pszPath); NOREF(pErrInfo);
+    RT_NOREF(pFsObjState, fDir, fRelaxed, fSymlinksAllowed, pszPath, pErrInfo);
     return VINF_SUCCESS;
 
 #else
