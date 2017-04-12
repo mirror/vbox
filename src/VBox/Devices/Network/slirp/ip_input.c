@@ -94,6 +94,7 @@ ip_input(PNATState pData, struct mbuf *m)
     register struct ip *ip;
     int hlen = 0;
     int mlen = 0;
+    int iplen = 0;
 
     STAM_PROFILE_START(&pData->StatIP_input, a);
 
@@ -102,26 +103,6 @@ ip_input(PNATState pData, struct mbuf *m)
     Log2(("ip_dst=%RTnaipv4(len:%d) m_len = %d\n", ip->ip_dst, RT_N2H_U16(ip->ip_len), m->m_len));
 
     ipstat.ips_total++;
-    {
-        int rc;
-        if (!(m->m_flags & M_SKIP_FIREWALL))
-        {
-            STAM_PROFILE_START(&pData->StatALIAS_input, b);
-            rc = LibAliasIn(pData->proxy_alias, mtod(m, char *), m_length(m, NULL));
-            STAM_PROFILE_STOP(&pData->StatALIAS_input, b);
-            Log2(("NAT: LibAlias return %d\n", rc));
-        }
-        else
-            m->m_flags &= ~M_SKIP_FIREWALL;
-
-        /*
-         * XXX: TODO: this is most likely a leftover spooky action at
-         * a distance from alias_dns.c host resolver code and can be
-         * g/c'ed.
-         */
-        if (m->m_len != RT_N2H_U16(ip->ip_len))
-            m->m_len = RT_N2H_U16(ip->ip_len);
-    }
 
     mlen = m->m_len;
 
@@ -157,18 +138,12 @@ ip_input(PNATState pData, struct mbuf *m)
         goto bad_free_m;
     }
 
-    /*
-     * Convert fields to host representation.
-     */
-    NTOHS(ip->ip_len);
-    if (ip->ip_len < hlen)
+    iplen = RT_N2H_U16(ip->ip_len);
+    if (iplen < hlen)
     {
         ipstat.ips_badlen++;
         goto bad_free_m;
     }
-
-    NTOHS(ip->ip_id);
-    NTOHS(ip->ip_off);
 
     /*
      * Check that the amount of data in the buffers
@@ -176,15 +151,18 @@ ip_input(PNATState pData, struct mbuf *m)
      * Trim mbufs if longer than we expect.
      * Drop packet if shorter than we expect.
      */
-    if (mlen < ip->ip_len)
+    if (mlen < iplen)
     {
         ipstat.ips_tooshort++;
         goto bad_free_m;
     }
 
     /* Should drop packet if mbuf too long? hmmm... */
-    if (mlen > ip->ip_len)
-        m_adj(m, ip->ip_len - mlen);
+    if (mlen > iplen)
+    {
+        m_adj(m, iplen - mlen);
+        mlen = m->m_len;
+    }
 
     /* source must be unicast */
     if ((ip->ip_src.s_addr & RT_N2H_U32_C(0xe0000000)) == RT_N2H_U32_C(0xe0000000))
@@ -207,6 +185,11 @@ ip_input(PNATState pData, struct mbuf *m)
     {
         if (ip->ip_ttl <= 1)
         {
+            /* icmp_error expects these in host order */
+            NTOHS(ip->ip_len);
+            NTOHS(ip->ip_id);
+            NTOHS(ip->ip_off);
+
             icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
             goto no_free_m;
         }
@@ -226,6 +209,39 @@ ip_input(PNATState pData, struct mbuf *m)
             ip->ip_sum += RT_H2N_U16_C(1 << 8);
     }
 
+    /* run it through libalias */
+    {
+        int rc;
+        if (!(m->m_flags & M_SKIP_FIREWALL))
+        {
+            STAM_PROFILE_START(&pData->StatALIAS_input, b);
+            rc = LibAliasIn(pData->proxy_alias, mtod(m, char *), mlen);
+            STAM_PROFILE_STOP(&pData->StatALIAS_input, b);
+            Log2(("NAT: LibAlias return %d\n", rc));
+        }
+        else
+            m->m_flags &= ~M_SKIP_FIREWALL;
+
+#if 0 /* disabled: no module we use does it in this direction */
+        /*
+         * XXX: spooky action at a distance - libalias may modify the
+         * packet and will update ip_len to reflect the new length.
+         */
+        if (iplen != RT_N2H_U16(ip->ip_len))
+        {
+            iplen = RT_N2H_U16(ip->ip_len);
+            m->m_len = iplen;
+            mlen = m->m_len;
+        }
+#endif
+    }
+
+    /*
+     * Convert fields to host representation.
+     */
+    NTOHS(ip->ip_len);
+    NTOHS(ip->ip_id);
+    NTOHS(ip->ip_off);
 
     /*
      * If offset or IP_MF are set, must reassemble.
