@@ -2057,7 +2057,8 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
      */
     if (   strlen(pszLocation) >= 2
         && *pszLocation == '.'
-        && pszLocation[1] == '/')
+        && (   pszLocation[1] == '/'
+            || pszLocation[1] == '\\'))
         pszLocation += 2;
 
     /* Check if the file exists. */
