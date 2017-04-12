@@ -767,8 +767,8 @@ private:
     /** Adds 'Choose Recent Medium' actions of passed @a enmRecentMediumType into passed @a pOpenMediumMenu. */
     void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType enmRecentMediumType);
 
-    /** Updates existing storage data from the cache. */
-    bool updateStorageData();
+    /** Saves existing storage data from the cache. */
+    bool saveStorageData();
     /** Removes existing storage controller described by the @a controllerCache. */
     bool removeStorageController(const UISettingsCacheMachineStorageController &controllerCache);
     /** Creates existing storage controller described by the @a controllerCache. */

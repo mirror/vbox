@@ -2381,8 +2381,8 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update storage data, update failing state: */
-    setFailed(!updateStorageData());
+    /* Update storage data and failing state: */
+    setFailed(!saveStorageData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -3960,59 +3960,41 @@ void UIMachineSettingsStorage::addRecentMediumActions(QMenu *pOpenMediumMenu, UI
     }
 }
 
-bool UIMachineSettingsStorage::updateStorageData()
+bool UIMachineSettingsStorage::saveStorageData()
 {
     /* Prepare result: */
-    bool fSuccess = m_machine.isOk();
-    if (fSuccess)
+    bool fSuccess = true;
+    /* Save storage settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Make sure machine is in valid mode & storage data was changed: */
-        if (isMachineInValidMode() && m_pCache->wasChanged())
+        /* For each controller ('removing' step): */
+        // We need to separately remove controllers first because
+        // there could be limited amount of controllers available.
+        for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
         {
-            /* For each controller (removing step): */
-            for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
-            {
-                /* Get controller cache: */
-                const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
+            /* Get controller cache: */
+            const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
 
-                /* Remove controllers marked for 'remove' and 'update' (if they can't be updated): */
-                if (controllerCache.wasRemoved() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
-                    fSuccess = removeStorageController(controllerCache);
+            /* Remove controller marked for 'remove' or 'update' (if it can't be updated): */
+            if (controllerCache.wasRemoved() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
+                fSuccess = removeStorageController(controllerCache);
+        }
 
-                else
+        /* For each controller ('creating' step): */
+        for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
+        {
+            /* Get controller cache: */
+            const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
 
-                /* Update controllers marked for 'update' (if they can be updated): */
-                if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
-                {
-                    /* For each attachment (removing step): */
-                    for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
-                    {
-                        /* Get attachment cache: */
-                        const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+            /* Create controller marked for 'create' or 'update' (if it can't be updated): */
+            if (controllerCache.wasCreated() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
+                fSuccess = createStorageController(controllerCache);
 
-                        /* Remove attachments marked for 'remove' and 'update' (if they can't be updated): */
-                        if (attachmentCache.wasRemoved() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
-                            fSuccess = removeStorageAttachment(controllerCache, attachmentCache);
-                    }
-                }
-            }
+            else
 
-            /* For each controller (creating step): */
-            for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_pCache->childCount(); ++iControllerIndex)
-            {
-                /* Get controller cache: */
-                const UISettingsCacheMachineStorageController &controllerCache = m_pCache->child(iControllerIndex);
-
-                /* Create controllers marked for 'create' or 'update' (if they can't be updated): */
-                if (controllerCache.wasCreated() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
-                    fSuccess = createStorageController(controllerCache);
-
-                else
-
-                /* Update controllers marked for 'update' (if they can be updated): */
-                if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
-                    fSuccess = updateStorageController(controllerCache);
-            }
+            /* Update controller marked for 'update' (if it can be updated): */
+            if (controllerCache.wasUpdated() && isControllerCouldBeUpdated(controllerCache))
+                fSuccess = updateStorageController(controllerCache);
         }
     }
     /* Return result: */
@@ -4022,27 +4004,26 @@ bool UIMachineSettingsStorage::updateStorageData()
 bool UIMachineSettingsStorage::removeStorageController(const UISettingsCacheMachineStorageController &controllerCache)
 {
     /* Prepare result: */
-    bool fSuccess = m_machine.isOk();
-    if (fSuccess)
+    bool fSuccess = true;
+    /* Remove controller: */
+    if (fSuccess && isMachineOffline())
     {
-        /* Get storage controller data form cache: */
-        const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
+        /* Get old controller data from the cache: */
+        const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
 
-        /* Get storage controller name: */
-        const QString strControllerName = controllerData.m_strControllerName;
+        /* Make sure controller really exists: */
+        const CStorageController &comController = m_machine.GetStorageControllerByName(oldControllerData.m_strControllerName);
+        fSuccess = m_machine.isOk() && comController.isNotNull();
 
-        /* Check that storage controller exists: */
-        const CStorageController &controller = m_machine.GetStorageControllerByName(strControllerName);
-        /* Check that machine is OK: */
-        fSuccess = m_machine.isOk();
-        /* If controller exists: */
-        if (fSuccess && !controller.isNull())
+        /* Remove controller with all the attachments at one shot: */
+        if (fSuccess)
         {
-            /*remove controller with all the attachments at one shot*/
-            m_machine.RemoveStorageController(strControllerName);
-            /* Check that machine is OK: */
+            m_machine.RemoveStorageController(oldControllerData.m_strControllerName);
             fSuccess = m_machine.isOk();
         }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageSettings(m_machine, this);
     }
     /* Return result: */
     return fSuccess;
@@ -4051,53 +4032,77 @@ bool UIMachineSettingsStorage::removeStorageController(const UISettingsCacheMach
 bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMachineStorageController &controllerCache)
 {
     /* Prepare result: */
-    bool fSuccess = m_machine.isOk();
-    if (fSuccess)
+    bool fSuccess = true;
+    /* Create controller: */
+    if (fSuccess && isMachineOffline())
     {
-        /* Get controller data form cache: */
-        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
+        /* Get new controller data from the cache: */
+        const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
 
-        /* Get storage controller attributes: */
-        const QString strControllerName = controllerData.m_strControllerName;
-        const KStorageBus enmControllerBus = controllerData.m_controllerBus;
-        const KStorageControllerType enmControllerType = controllerData.m_controllerType;
-        const bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
-        ULONG uPortCount = controllerData.m_uPortCount;
+        /* Make sure controller doesn't exist: */
+        const CMachine comMachine(m_machine);
+        CStorageController comController = comMachine.GetStorageControllerByName(newControllerData.m_strControllerName);
+        fSuccess = !comMachine.isOk() && comController.isNull();
+        AssertReturn(fSuccess, false);
 
-        /* Check that storage controller doesn't exists: */
-        CStorageController controller = m_machine.GetStorageControllerByName(strControllerName);
-        /* Check that machine is not OK: */
-        fSuccess = !m_machine.isOk();
-        /* If controller doesn't exists: */
-        if (fSuccess && controller.isNull())
+        /* Create controller: */
+        if (fSuccess)
         {
-            /* Create new storage controller: */
-            controller = m_machine.AddStorageController(strControllerName, enmControllerBus);
-            /* Check that machine is OK: */
-            fSuccess = m_machine.isOk();
-            /* If controller exists: */
-            if (fSuccess && !controller.isNull())
-            {
-                /* Set storage controller attributes: */
-                controller.SetControllerType(enmControllerType);
-                controller.SetUseHostIOCache(fUseHostIOCache);
-                if (enmControllerBus == KStorageBus_SATA || enmControllerBus == KStorageBus_SAS || enmControllerBus == KStorageBus_PCIe)
-                {
-                    uPortCount = qMax(uPortCount, controller.GetMinPortCount());
-                    uPortCount = qMin(uPortCount, controller.GetMaxPortCount());
-                    controller.SetPortCount(uPortCount);
-                }
-                /* For each storage attachment: */
-                for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
-                {
-                    /* Get storage attachment cache: */
-                    const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+            comController = m_machine.AddStorageController(newControllerData.m_strControllerName, newControllerData.m_controllerBus);
+            fSuccess = m_machine.isOk() && comController.isNotNull();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageSettings(m_machine, this);
 
-                    /* Create attachment if it was not just 'removed': */
-                    if (!attachmentCache.wasRemoved())
-                        fSuccess = createStorageAttachment(controllerCache, attachmentCache);
-                }
+        /* Save controller type: */
+        if (fSuccess)
+        {
+            comController.SetControllerType(newControllerData.m_controllerType);
+            fSuccess = comController.isOk();
+        }
+        /* Save whether controller uses host IO cache: */
+        if (fSuccess)
+        {
+            comController.SetUseHostIOCache(newControllerData.m_fUseHostIOCache);
+            fSuccess = comController.isOk();
+        }
+        /* Save controller port number: */
+        if (   fSuccess
+            && (   newControllerData.m_controllerBus == KStorageBus_SATA
+                || newControllerData.m_controllerBus == KStorageBus_SAS
+                || newControllerData.m_controllerBus == KStorageBus_PCIe))
+        {
+            ULONG uNewPortCount = newControllerData.m_uPortCount;
+            if (fSuccess)
+            {
+                uNewPortCount = qMax(uNewPortCount, comController.GetMinPortCount());
+                fSuccess = comController.isOk();
             }
+            if (fSuccess)
+            {
+                uNewPortCount = qMin(uNewPortCount, comController.GetMaxPortCount());
+                fSuccess = comController.isOk();
+            }
+            if (fSuccess)
+            {
+                comController.SetPortCount(uNewPortCount);
+                fSuccess = comController.isOk();
+            }
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageControllerSettings(comController, this);
+
+        /* For each attachment: */
+        for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+        {
+            /* Get attachment cache: */
+            const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+
+            /* Create attachment if it was not 'removed': */
+            if (!attachmentCache.wasRemoved())
+                fSuccess = createStorageAttachment(controllerCache, attachmentCache);
         }
     }
     /* Return result: */
@@ -4107,51 +4112,90 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
 bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMachineStorageController &controllerCache)
 {
     /* Prepare result: */
-    bool fSuccess = m_machine.isOk();
+    bool fSuccess = true;
+    /* Update controller: */
     if (fSuccess)
     {
-        /* Get controller data form cache: */
-        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
+        /* Get old controller data from the cache: */
+        const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
+        /* Get new controller data from the cache: */
+        const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
 
-        /* Get storage controller attributes: */
-        const QString strControllerName = controllerData.m_strControllerName;
-        const KStorageBus enmControllerBus = controllerData.m_controllerBus;
-        const KStorageControllerType enmControllerType = controllerData.m_controllerType;
-        const bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
-        ULONG uPortCount = controllerData.m_uPortCount;
+        /* Make sure controller really exists: */
+        CStorageController comController = m_machine.GetStorageControllerByName(oldControllerData.m_strControllerName);
+        fSuccess = m_machine.isOk() && comController.isNotNull();
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageSettings(m_machine, this);
 
-        /* Check that controller exists: */
-        CStorageController controller = m_machine.GetStorageControllerByName(strControllerName);
-        /* Check that machine is OK: */
-        fSuccess = m_machine.isOk();
-        /* If controller exists: */
-        if (fSuccess && !controller.isNull())
+        /* Save controller type: */
+        if (fSuccess && newControllerData.m_controllerType != oldControllerData.m_controllerType)
         {
-            /* Set storage controller attributes: */
-            controller.SetControllerType(enmControllerType);
-            controller.SetUseHostIOCache(fUseHostIOCache);
-            if (enmControllerBus == KStorageBus_SATA || enmControllerBus == KStorageBus_SAS)
+            comController.SetControllerType(newControllerData.m_controllerType);
+            fSuccess = comController.isOk();
+        }
+        /* Save whether controller uses IO cache: */
+        if (fSuccess && newControllerData.m_fUseHostIOCache != oldControllerData.m_fUseHostIOCache)
+        {
+            comController.SetUseHostIOCache(newControllerData.m_fUseHostIOCache);
+            fSuccess = comController.isOk();
+        }
+        /* Save controller port number: */
+        if (   fSuccess
+            && newControllerData.m_uPortCount != oldControllerData.m_uPortCount
+            && (   newControllerData.m_controllerBus == KStorageBus_SATA
+                || newControllerData.m_controllerBus == KStorageBus_SAS
+                || newControllerData.m_controllerBus == KStorageBus_PCIe))
+        {
+            ULONG uNewPortCount = newControllerData.m_uPortCount;
+            if (fSuccess)
             {
-                uPortCount = qMax(uPortCount, controller.GetMinPortCount());
-                uPortCount = qMin(uPortCount, controller.GetMaxPortCount());
-                controller.SetPortCount(uPortCount);
+                uNewPortCount = qMax(uNewPortCount, comController.GetMinPortCount());
+                fSuccess = comController.isOk();
             }
-            /* For each storage attachment: */
-            for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+            if (fSuccess)
             {
-                /* Get storage attachment cache: */
-                const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
-
-                /* Create attachments marked for 'create' and 'update' (if they can't be updated): */
-                if (attachmentCache.wasCreated() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
-                    fSuccess = createStorageAttachment(controllerCache, attachmentCache);
-
-                else
-
-                /* Update attachments marked for 'update' (if they can be updated): */
-                if (attachmentCache.wasUpdated() && isAttachmentCouldBeUpdated(attachmentCache))
-                    fSuccess = updateStorageAttachment(controllerCache, attachmentCache);
+                uNewPortCount = qMin(uNewPortCount, comController.GetMaxPortCount());
+                fSuccess = comController.isOk();
             }
+            if (fSuccess)
+            {
+                comController.SetPortCount(uNewPortCount);
+                fSuccess = comController.isOk();
+            }
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageControllerSettings(comController, this);
+
+        /* For each attachment ('removing' step): */
+        // We need to separately remove attachments first because
+        // there could be limited amount of attachments available.
+        for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+        {
+            /* Get attachment cache: */
+            const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+
+            /* Remove attachment marked for 'remove' or 'update' (if it can't be updated): */
+            if (attachmentCache.wasRemoved() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
+                fSuccess = removeStorageAttachment(controllerCache, attachmentCache);
+        }
+
+        /* For each attachment ('creating' step): */
+        for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
+        {
+            /* Get attachment cache: */
+            const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+
+            /* Create attachment marked for 'create' or 'update' (if it can't be updated): */
+            if (attachmentCache.wasCreated() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
+                fSuccess = createStorageAttachment(controllerCache, attachmentCache);
+
+            else
+
+            /* Update attachment marked for 'update' (if it can be updated): */
+            if (attachmentCache.wasUpdated() && isAttachmentCouldBeUpdated(attachmentCache))
+                fSuccess = updateStorageAttachment(controllerCache, attachmentCache);
         }
     }
     /* Return result: */
@@ -4162,32 +4206,32 @@ bool UIMachineSettingsStorage::removeStorageAttachment(const UISettingsCacheMach
                                                        const UISettingsCacheMachineStorageAttachment &attachmentCache)
 {
     /* Prepare result: */
-    bool fSuccess = m_machine.isOk();
+    bool fSuccess = true;
+    /* Remove attachment: */
     if (fSuccess)
     {
-        /* Get old storage controller data from the cache: */
-        const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
-        /* Get old storage attachment data from the cache: */
-        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.base();
+        /* Get old controller data from the cache: */
+        const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
+        /* Get old attachment data from the cache: */
+        const UIDataSettingsMachineStorageAttachment &oldAttachmentData = attachmentCache.base();
 
-        /* Get storage controller attributes: */
-        const QString strControllerName = controllerData.m_strControllerName;
-        /* Get storage attachment attributes: */
-        const int iAttachmentPort = attachmentData.m_iAttachmentPort;
-        const int iAttachmentDevice = attachmentData.m_iAttachmentDevice;
+        /* Make sure attachment really exists: */
+        const CMediumAttachment &comAttachment = m_machine.GetMediumAttachment(oldControllerData.m_strControllerName,
+                                                                               oldAttachmentData.m_iAttachmentPort,
+                                                                               oldAttachmentData.m_iAttachmentDevice);
+        fSuccess = m_machine.isOk() && comAttachment.isNotNull();
 
-        /* Check that storage attachment exists: */
-        const CMediumAttachment &attachment = m_machine.GetMediumAttachment(strControllerName, iAttachmentPort, iAttachmentDevice);
-        /* Check that machine is OK: */
-        fSuccess = m_machine.isOk();
-        /* If attachment exists: */
-        if (fSuccess && !attachment.isNull())
+        /* Remove attachment: */
+        if (fSuccess)
         {
-            /* Remove storage attachment: */
-            m_machine.DetachDevice(strControllerName, iAttachmentPort, iAttachmentDevice);
-            /* Check that machine is OK: */
+            m_machine.DetachDevice(oldControllerData.m_strControllerName,
+                                   oldAttachmentData.m_iAttachmentPort,
+                                   oldAttachmentData.m_iAttachmentDevice);
             fSuccess = m_machine.isOk();
         }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageSettings(m_machine, this);
     }
     /* Return result: */
     return fSuccess;
@@ -4197,86 +4241,83 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMach
                                                        const UISettingsCacheMachineStorageAttachment &attachmentCache)
 {
     /* Prepare result: */
-    bool fSuccess = m_machine.isOk();
+    bool fSuccess = true;
+    /* Create attachment: */
     if (fSuccess)
     {
-        /* Get new storage controller data from the cache: */
-        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
-        /* Get new storage attachment data from the cache: */
-        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
+        /* Get new controller data from the cache: */
+        const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
+        /* Get new attachment data from the cache: */
+        const UIDataSettingsMachineStorageAttachment &newAttachmentData = attachmentCache.data();
 
-        /* Get storage controller attributes: */
-        const QString strControllerName = controllerData.m_strControllerName;
-        const KStorageBus enmControllerBus = controllerData.m_controllerBus;
-        /* Get storage attachment attributes: */
-        const int iAttachmentPort = attachmentData.m_iAttachmentPort;
-        const int iAttachmentDevice = attachmentData.m_iAttachmentDevice;
-        const KDeviceType enmAttachmentDeviceType = attachmentData.m_attachmentType;
-        const QString strAttachmentMediumId = attachmentData.m_strAttachmentMediumId;
-        const bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
-        const bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
-        const bool fAttachmentNonRotational = attachmentData.m_fAttachmentNonRotational;
-        const bool fAttachmentHotPluggable = attachmentData.m_fAttachmentHotPluggable;
-        /* Get GUI medium object: */
-        const UIMedium vboxMedium = vboxGlobal().medium(strAttachmentMediumId);
-        /* Get COM medium object: */
-        const CMedium comMedium = vboxMedium.medium();
+        /* Make sure attachment doesn't exist: */
+        const CMachine comMachine(m_machine);
+        const CMediumAttachment &comAttachment = comMachine.GetMediumAttachment(newControllerData.m_strControllerName,
+                                                                                newAttachmentData.m_iAttachmentPort,
+                                                                                newAttachmentData.m_iAttachmentDevice);
+        fSuccess = !comMachine.isOk() && comAttachment.isNull();
+        AssertReturn(fSuccess, false);
 
-        /* Check that storage attachment doesn't exists: */
-        const CMediumAttachment &attachment = m_machine.GetMediumAttachment(strControllerName, iAttachmentPort, iAttachmentDevice);
-        /* Check that machine is not OK: */
-        fSuccess = !m_machine.isOk();
-        /* If attachment doesn't exists: */
-        if (fSuccess && attachment.isNull())
+        /* Create attachment: */
+        if (fSuccess)
         {
-            /* Create storage attachment: */
-            m_machine.AttachDevice(strControllerName, iAttachmentPort, iAttachmentDevice, enmAttachmentDeviceType, comMedium);
-            /* Check that machine is OK: */
+            const UIMedium vboxMedium = vboxGlobal().medium(newAttachmentData.m_strAttachmentMediumId);
+            const CMedium comMedium = vboxMedium.medium();
+            m_machine.AttachDevice(newControllerData.m_strControllerName,
+                                   newAttachmentData.m_iAttachmentPort,
+                                   newAttachmentData.m_iAttachmentDevice,
+                                   newAttachmentData.m_attachmentType,
+                                   comMedium);
             fSuccess = m_machine.isOk();
+        }
+        if (newAttachmentData.m_attachmentType == KDeviceType_DVD)
+        {
+            /* Save whether this is a passthrough device: */
+            if (fSuccess && isMachineOffline())
+            {
+                m_machine.PassthroughDevice(newControllerData.m_strControllerName,
+                                            newAttachmentData.m_iAttachmentPort,
+                                            newAttachmentData.m_iAttachmentDevice,
+                                            newAttachmentData.m_fAttachmentPassthrough);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save whether this is a live cd device: */
             if (fSuccess)
             {
-                if (enmAttachmentDeviceType == KDeviceType_DVD)
-                {
-                    if (fSuccess && isMachineOffline())
-                    {
-                        m_machine.PassthroughDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentPassthrough);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                    if (fSuccess && isMachineInValidMode())
-                    {
-                        m_machine.TemporaryEjectDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentTempEject);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                }
-                else if (enmAttachmentDeviceType == KDeviceType_HardDisk)
-                {
-                    if (fSuccess && isMachineOffline())
-                    {
-                        m_machine.NonRotationalDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentNonRotational);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                }
-                if ((enmControllerBus == KStorageBus_SATA) || (enmControllerBus == KStorageBus_USB))
-                {
-                    if (fSuccess && isMachineOffline())
-                    {
-                        m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                }
-            }
-            else
-            {
-                /* Show error message: */
-                msgCenter().cannotAttachDevice(m_machine, mediumTypeToLocal(enmAttachmentDeviceType),
-                                               vboxMedium.location(),
-                                               StorageSlot(enmControllerBus, iAttachmentPort, iAttachmentDevice), this);
+                m_machine.TemporaryEjectDevice(newControllerData.m_strControllerName,
+                                               newAttachmentData.m_iAttachmentPort,
+                                               newAttachmentData.m_iAttachmentDevice,
+                                               newAttachmentData.m_fAttachmentTempEject);
+                fSuccess = m_machine.isOk();
             }
         }
+        else if (newAttachmentData.m_attachmentType == KDeviceType_HardDisk)
+        {
+            /* Save whether this is a ssd device: */
+            if (fSuccess && isMachineOffline())
+            {
+                m_machine.NonRotationalDevice(newControllerData.m_strControllerName,
+                                              newAttachmentData.m_iAttachmentPort,
+                                              newAttachmentData.m_iAttachmentDevice,
+                                              newAttachmentData.m_fAttachmentNonRotational);
+                fSuccess = m_machine.isOk();
+            }
+        }
+        if (newControllerData.m_controllerBus == KStorageBus_SATA || newControllerData.m_controllerBus == KStorageBus_USB)
+        {
+            /* Save whether this device is hot-pluggable: */
+            if (fSuccess && isMachineOffline())
+            {
+                m_machine.SetHotPluggableForDevice(newControllerData.m_strControllerName,
+                                                   newAttachmentData.m_iAttachmentPort,
+                                                   newAttachmentData.m_iAttachmentDevice,
+                                                   newAttachmentData.m_fAttachmentHotPluggable);
+                fSuccess = m_machine.isOk();
+            }
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageSettings(m_machine, this);
     }
     /* Return result: */
     return fSuccess;
@@ -4286,86 +4327,84 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
                                                        const UISettingsCacheMachineStorageAttachment &attachmentCache)
 {
     /* Prepare result: */
-    bool fSuccess = m_machine.isOk();
+    bool fSuccess = true;
+    /* Update attachment: */
     if (fSuccess)
     {
-        /* Get new storage controller data from the cache: */
-        const UIDataSettingsMachineStorageController &controllerData = controllerCache.data();
-        /* Get new storage attachment data from the cache: */
-        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
+        /* Get new controller data from the cache: */
+        const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
+        /* Get new attachment data from the cache: */
+        const UIDataSettingsMachineStorageAttachment &newAttachmentData = attachmentCache.data();
 
-        /* Get storage controller attributes: */
-        const QString strControllerName = controllerData.m_strControllerName;
-        const KStorageBus enmControllerBus = controllerData.m_controllerBus;
-        /* Get storage attachment attributes: */
-        const int iAttachmentPort = attachmentData.m_iAttachmentPort;
-        const int iAttachmentDevice = attachmentData.m_iAttachmentDevice;
-        const QString strAttachmentMediumId = attachmentData.m_strAttachmentMediumId;
-        const bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
-        const bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
-        const bool fAttachmentNonRotational = attachmentData.m_fAttachmentNonRotational;
-        const bool fAttachmentHotPluggable = attachmentData.m_fAttachmentHotPluggable;
-        const KDeviceType enmAttachmentDeviceType = attachmentData.m_attachmentType;
+        /* Make sure attachment really exists: */
+        const CMediumAttachment &comAttachment = m_machine.GetMediumAttachment(newControllerData.m_strControllerName,
+                                                                               newAttachmentData.m_iAttachmentPort,
+                                                                               newAttachmentData.m_iAttachmentDevice);
+        fSuccess = m_machine.isOk() && comAttachment.isNotNull();
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageSettings(m_machine, this);
 
-        /* Check that storage attachment exists: */
-        const CMediumAttachment attachment = m_machine.GetMediumAttachment(strControllerName, iAttachmentPort, iAttachmentDevice);
-        /* Check that machine is OK: */
-        fSuccess = m_machine.isOk();
-        /* If attachment exists: */
-        if (fSuccess && !attachment.isNull())
+        /* Remount attachment: */
+        if (fSuccess)
         {
-            /* Get GUI medium object: */
-            const UIMedium vboxMedium = vboxGlobal().medium(strAttachmentMediumId);
-            /* Get COM medium object: */
+            const UIMedium vboxMedium = vboxGlobal().medium(newAttachmentData.m_strAttachmentMediumId);
             const CMedium comMedium = vboxMedium.medium();
-            /* Remount storage attachment: */
-            m_machine.MountMedium(strControllerName, iAttachmentPort, iAttachmentDevice, comMedium, true /* force? */);
-            /* Check that machine is OK: */
+            m_machine.MountMedium(newControllerData.m_strControllerName,
+                                  newAttachmentData.m_iAttachmentPort,
+                                  newAttachmentData.m_iAttachmentDevice,
+                                  comMedium,
+                                  true /* force? */);
             fSuccess = m_machine.isOk();
+        }
+        if (newAttachmentData.m_attachmentType == KDeviceType_DVD)
+        {
+            /* Save whether this is a passthrough device: */
+            if (fSuccess && isMachineOffline())
+            {
+                m_machine.PassthroughDevice(newControllerData.m_strControllerName,
+                                            newAttachmentData.m_iAttachmentPort,
+                                            newAttachmentData.m_iAttachmentDevice,
+                                            newAttachmentData.m_fAttachmentPassthrough);
+                fSuccess = m_machine.isOk();
+            }
+            /* Save whether this is a live cd device: */
             if (fSuccess)
             {
-                if (enmAttachmentDeviceType == KDeviceType_DVD)
-                {
-                    if (fSuccess && isMachineOffline())
-                    {
-                        m_machine.PassthroughDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentPassthrough);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                    if (fSuccess && isMachineInValidMode())
-                    {
-                        m_machine.TemporaryEjectDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentTempEject);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                }
-                else if (enmAttachmentDeviceType == KDeviceType_HardDisk)
-                {
-                    if (fSuccess && isMachineOffline())
-                    {
-                        m_machine.NonRotationalDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentNonRotational);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                }
-                if ((enmControllerBus == KStorageBus_SATA) || (enmControllerBus == KStorageBus_USB))
-                {
-                    if (fSuccess && isMachineOffline())
-                    {
-                        m_machine.SetHotPluggableForDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentHotPluggable);
-                        /* Check that machine is OK: */
-                        fSuccess = m_machine.isOk();
-                    }
-                }
-            }
-            else
-            {
-                /* Show error message: */
-                msgCenter().cannotAttachDevice(m_machine, mediumTypeToLocal(enmAttachmentDeviceType),
-                                               vboxMedium.location(),
-                                               StorageSlot(enmControllerBus, iAttachmentPort, iAttachmentDevice), this);
+                m_machine.TemporaryEjectDevice(newControllerData.m_strControllerName,
+                                               newAttachmentData.m_iAttachmentPort,
+                                               newAttachmentData.m_iAttachmentDevice,
+                                               newAttachmentData.m_fAttachmentTempEject);
+                fSuccess = m_machine.isOk();
             }
         }
+        else if (newAttachmentData.m_attachmentType == KDeviceType_HardDisk)
+        {
+            /* Save whether this is a ssd device: */
+            if (fSuccess && isMachineOffline())
+            {
+                m_machine.NonRotationalDevice(newControllerData.m_strControllerName,
+                                              newAttachmentData.m_iAttachmentPort,
+                                              newAttachmentData.m_iAttachmentDevice,
+                                              newAttachmentData.m_fAttachmentNonRotational);
+                fSuccess = m_machine.isOk();
+            }
+        }
+        if (newControllerData.m_controllerBus == KStorageBus_SATA || newControllerData.m_controllerBus == KStorageBus_USB)
+        {
+            /* Save whether this device is hot-pluggable: */
+            if (fSuccess && isMachineOffline())
+            {
+                m_machine.SetHotPluggableForDevice(newControllerData.m_strControllerName,
+                                                   newAttachmentData.m_iAttachmentPort,
+                                                   newAttachmentData.m_iAttachmentDevice,
+                                                   newAttachmentData.m_fAttachmentHotPluggable);
+                fSuccess = m_machine.isOk();
+            }
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveStorageSettings(m_machine, this);
     }
     /* Return result: */
     return fSuccess;
@@ -4373,14 +4412,17 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
 
 bool UIMachineSettingsStorage::isControllerCouldBeUpdated(const UISettingsCacheMachineStorageController &controllerCache) const
 {
-    /* IController interface doesn't allows to change 'name' and 'bus' attributes.
-     * But those attributes could be changed in GUI directly or indirectly.
+    /* IController interface doesn't allow to change 'bus' attribute but allows
+     * to change 'name' attribute which can conflict with another one controller.
+     * Both those attributes could be changed in GUI directly or indirectly.
      * For such cases we have to recreate IController instance,
      * for other cases we will update controller attributes only. */
     const UIDataSettingsMachineStorageController &oldControllerData = controllerCache.base();
     const UIDataSettingsMachineStorageController &newControllerData = controllerCache.data();
-    return newControllerData.m_controllerBus == oldControllerData.m_controllerBus &&
-           newControllerData.m_strControllerName == oldControllerData.m_strControllerName;
+    return true
+           && (newControllerData.m_strControllerName == oldControllerData.m_strControllerName)
+           && (newControllerData.m_controllerBus == oldControllerData.m_controllerBus)
+           ;
 }
 
 bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const
@@ -4391,16 +4433,12 @@ bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UISettingsCacheM
      * For other cases we will recreate attachment fully: */
     const UIDataSettingsMachineStorageAttachment &oldAttachmentData = attachmentCache.base();
     const UIDataSettingsMachineStorageAttachment &newAttachmentData = attachmentCache.data();
-    const KDeviceType enmInitialAttachmentDeviceType = oldAttachmentData.m_attachmentType;
-    const KDeviceType enmCurrentAttachmentDeviceType = newAttachmentData.m_attachmentType;
-    const LONG iInitialAttachmentDevice = oldAttachmentData.m_iAttachmentDevice;
-    const LONG iCurrentAttachmentDevice = newAttachmentData.m_iAttachmentDevice;
-    const LONG iInitialAttachmentPort = oldAttachmentData.m_iAttachmentPort;
-    const LONG iCurrentAttachmentPort = newAttachmentData.m_iAttachmentPort;
-    return (enmCurrentAttachmentDeviceType == enmInitialAttachmentDeviceType) &&
-           (iCurrentAttachmentDevice == iInitialAttachmentDevice) &&
-           (iCurrentAttachmentPort == iInitialAttachmentPort) &&
-           (enmCurrentAttachmentDeviceType == KDeviceType_Floppy || enmCurrentAttachmentDeviceType == KDeviceType_DVD);
+    return true
+           && (newAttachmentData.m_attachmentType == oldAttachmentData.m_attachmentType)
+           && (newAttachmentData.m_iAttachmentPort == oldAttachmentData.m_iAttachmentPort)
+           && (newAttachmentData.m_iAttachmentDevice == oldAttachmentData.m_iAttachmentDevice)
+           && (newAttachmentData.m_attachmentType == KDeviceType_Floppy || newAttachmentData.m_attachmentType == KDeviceType_DVD)
+           ;
 }
 
 # include "UIMachineSettingsStorage.moc"
