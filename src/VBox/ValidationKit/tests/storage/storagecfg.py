@@ -151,15 +151,15 @@ class StorageConfigOsSolaris(StorageConfigOs):
         """
         Creates a new storage pool with the given disks and the given RAID level.
         """
-        sZPoolRaid = None
-        if sRaidLvl == 'raid5' or sRaidLvl is None:
+        sZPoolRaid = None;
+        if len(asDisks) > 1 and (sRaidLvl == 'raid5' or sRaidLvl is None):
             sZPoolRaid = 'raidz';
 
         fRc = True;
         if sZPoolRaid is not None:
             fRc = oExec.execBinaryNoStdOut('zpool', ('create', '-f', sPool, sZPoolRaid,) + tuple(asDisks));
         else:
-            fRc = False;
+            fRc = oExec.execBinaryNoStdOut('zpool', ('create', '-f', sPool,) + tuple(asDisks));;
 
         return fRc;
 
@@ -224,7 +224,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
         """
         oDisk = None;
         sRamDiskName = 'ramdisk%u' % (self.idxRamDisk,);
-        fRc, sOut, _ = oExec.execBinary('ramdiskadm', '-a', sRamDiskName, str(cbRamDisk));
+        fRc, sOut, _ = oExec.execBinary('ramdiskadm', ('-a', sRamDiskName, str(cbRamDisk)));
         if fRc:
             self.idxRamDisk += 1;
             oDisk = StorageDisk(sOut.rstrip(), True);
