@@ -546,8 +546,8 @@ static int vbox_get_modes(struct drm_connector *connector)
      * this place in the code rather than elsewhere.
      * We need to report the flags location before reporting the IRQ
      * capability. */
-    VBoxHGSMIReportFlagsLocation(&vbox->submit_info,   vbox->vram_map_start
-                                                     + vbox->host_flags_offset);
+    VBoxHGSMIReportFlagsLocation(&vbox->submit_info, GUEST_HEAP_OFFSET(vbox) +
+                                                     HOST_FLAGS_OFFSET);
     if (vbox_connector->vbox_crtc->crtc_id == 0)
         vbox_report_caps(vbox);
     if (!vbox->initial_mode_queried) {

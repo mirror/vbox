@@ -67,16 +67,14 @@ void vbox_enable_accel(struct vbox_private *vbox)
 {
     unsigned i;
     struct VBVABUFFER *vbva;
-    uint32_t vram_map_offset = vbox->available_vram_size - vbox->vram_map_start;
 
-    if (vbox->vbva_info == NULL) {  /* Should never happen... */
+    if (!vbox->vbva_info || !vbox->vbva_buffers) { /* Should never happen... */
         printk(KERN_ERR "vboxvideo: failed to set up VBVA.\n");
         return;
     }
     for (i = 0; i < vbox->num_crtcs; ++i) {
         if (vbox->vbva_info[i].pVBVA == NULL) {
-            vbva = (struct VBVABUFFER *) (  ((uint8_t *)vbox->mapped_vram)
-                                           + vram_map_offset
+            vbva = (struct VBVABUFFER *) ((u8 *)vbox->vbva_buffers
                                            + i * VBVA_MIN_BUFFER_SIZE);
             if (!VBoxVBVAEnable(&vbox->vbva_info[i], &vbox->submit_info, vbva, i)) {
                 /* very old host or driver error. */
@@ -237,6 +235,10 @@ static void vbox_accel_fini(struct vbox_private *vbox)
         kfree(vbox->vbva_info);
         vbox->vbva_info = NULL;
     }
+    if (vbox->vbva_buffers) {
+        pci_iounmap(vbox->dev->pdev, vbox->vbva_buffers);
+        vbox->vbva_buffers = NULL;
+    }
 }
 
 static int vbox_accel_init(struct vbox_private *vbox)
@@ -250,6 +252,13 @@ static int vbox_accel_init(struct vbox_private *vbox)
 
     /* Take a command buffer for each screen from the end of usable VRAM. */
     vbox->available_vram_size -= vbox->num_crtcs * VBVA_MIN_BUFFER_SIZE;
+
+    vbox->vbva_buffers = pci_iomap_range(vbox->dev->pdev, 0,
+                                     vbox->available_vram_size,
+                                     vbox->num_crtcs * VBVA_MIN_BUFFER_SIZE);
+    if (!vbox->vbva_buffers)
+        return -ENOMEM;
+
     for (i = 0; i < vbox->num_crtcs; ++i)
         VBoxVBVASetupBufferContext(&vbox->vbva_info[i],
                                    vbox->available_vram_size + i * VBVA_MIN_BUFFER_SIZE,
@@ -302,31 +311,22 @@ static bool have_hgsmi_mode_hints(struct vbox_private *vbox)
  *  to the memory manager. */
 static int vbox_hw_init(struct vbox_private *vbox)
 {
-    uint32_t base_offset, map_start, guest_heap_offset, guest_heap_size, host_flags_offset;
-    void *guest_heap;
-
     vbox->full_vram_size = VBoxVideoGetVRAMSize();
     vbox->any_pitch = VBoxVideoAnyWidthAllowed();
     DRM_INFO("VRAM %08x\n", vbox->full_vram_size);
-    VBoxHGSMIGetBaseMappingInfo(vbox->full_vram_size, &base_offset, NULL,
-                                &guest_heap_offset, &guest_heap_size, &host_flags_offset);
-    map_start = (uint32_t)max((int)base_offset
-                              - VBOX_MAX_SCREENS * VBVA_MIN_BUFFER_SIZE, 0);
-    vbox->mapped_vram = pci_iomap_range(vbox->dev->pdev, 0, map_start,
-                                        vbox->full_vram_size - map_start);
-    if (!vbox->mapped_vram)
+
+    /* Map guest-heap at end of vram */
+    vbox->guest_heap = pci_iomap_range(vbox->dev->pdev, 0, GUEST_HEAP_OFFSET(vbox),
+                                       GUEST_HEAP_SIZE);
+    if (!vbox->guest_heap)
         return -ENOMEM;
-    vbox->vram_map_start = map_start;
-    guest_heap = ((uint8_t *)vbox->mapped_vram) + base_offset - map_start
-                   + guest_heap_offset;
-    vbox->host_flags_offset = base_offset - map_start + host_flags_offset;
-    if (RT_FAILURE(VBoxHGSMISetupGuestContext(&vbox->submit_info, guest_heap,
-                                              guest_heap_size,
-                                              base_offset + guest_heap_offset,
+
+    if (RT_FAILURE(VBoxHGSMISetupGuestContext(&vbox->submit_info, vbox->guest_heap,
+                                              GUEST_HEAP_USABLE_SIZE, GUEST_HEAP_OFFSET(vbox),
                                               &hgsmi_environ)))
         return -ENOMEM;
     /* Reduce available VRAM size to reflect the guest heap. */
-    vbox->available_vram_size = base_offset;
+    vbox->available_vram_size = GUEST_HEAP_OFFSET(vbox);
     /* Linux drm represents monitors as a 32-bit array. */
     vbox->num_crtcs = min(VBoxHGSMIGetMonitorCount(&vbox->submit_info),
                           (uint32_t)VBOX_MAX_SCREENS);
@@ -412,8 +412,8 @@ int vbox_driver_unload(struct drm_device *dev)
 
     vbox_hw_fini(vbox);
     vbox_mm_fini(vbox);
-    if (vbox->mapped_vram)
-        pci_iounmap(dev->pdev, vbox->mapped_vram);
+    if (vbox->guest_heap)
+        pci_iounmap(dev->pdev, vbox->guest_heap);
     kfree(vbox);
     dev->dev_private = NULL;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)

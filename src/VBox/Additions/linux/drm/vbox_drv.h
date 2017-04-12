@@ -89,12 +89,19 @@
 
 #define VBOX_MAX_SCREENS  32
 
+#define GUEST_HEAP_OFFSET(vbox) (vbox->full_vram_size - VBVA_ADAPTER_INFORMATION_SIZE)
+#define GUEST_HEAP_SIZE   VBVA_ADAPTER_INFORMATION_SIZE
+#define GUEST_HEAP_USABLE_SIZE (VBVA_ADAPTER_INFORMATION_SIZE - \
+                                sizeof(HGSMIHOSTFLAGS))
+#define HOST_FLAGS_OFFSET GUEST_HEAP_USABLE_SIZE
+
 struct vbox_fbdev;
 
 struct vbox_private {
     struct drm_device *dev;
 
-    uint8_t __iomem *mapped_vram;
+    u8 __iomem *guest_heap;
+    u8 __iomem *vbva_buffers;
     HGSMIGUESTCOMMANDCONTEXT submit_info;
     struct VBVABUFFERCONTEXT *vbva_info;
     bool any_pitch;
@@ -103,10 +110,6 @@ struct vbox_private {
     uint32_t full_vram_size;
     /** Amount of available VRAM, not including space used for buffers. */
     uint32_t available_vram_size;
-    /** Offset of mapped VRAM area in full VRAM. */
-    uint32_t vram_map_start;
-    /** Offset to the host flags in the VRAM. */
-    uint32_t host_flags_offset;
     /** Array of structures for receiving mode hints. */
     VBVAMODEHINT *last_mode_hints;
 
