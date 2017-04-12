@@ -403,6 +403,9 @@
 # include <iprt/nt/nt-and-windows.h>
 
 #else /* UNIXes */
+# ifdef RT_OS_DARWIN
+#  define _POSIX_C_SOURCE 1 /* pick the correct prototype for unsetenv. */
+# endif
 # include <iprt/types.h> /* stdint fun on darwin. */
 
 # include <stdio.h>
@@ -486,6 +489,43 @@ typedef DECLCALLBACK(void) FNRTLOGRELPRINTF(const char *pszFormat, ...);
 typedef FNRTLOGRELPRINTF *PFNRTLOGRELPRINTF;
 
 
+/**
+ * Descriptor of an environment variable to purge.
+ */
+typedef struct SUPENVPURGEDESC
+{
+    /** Name of the environment variable to purge. */
+    const char         *pszEnv;
+    /** The length of the variable name. */
+    uint8_t             cchEnv;
+    /** Flag whether a failure in purging the variable leads to
+     * a fatal error resulting in an process exit. */
+    bool                fPurgeErrFatal;
+} SUPENVPURGEDESC;
+/** Pointer to a environment variable purge descriptor. */
+typedef SUPENVPURGEDESC *PSUPENVPURGEDESC;
+/** Pointer to a const environment variable purge descriptor. */
+typedef const SUPENVPURGEDESC *PCSUPENVPURGEDESC;
+
+/**
+ * Descriptor of an command line argument to purge.
+ */
+typedef struct SUPARGPURGEDESC
+{
+    /** Name of the argument to purge. */
+    const char         *pszArg;
+    /** The length of the argument name. */
+    uint8_t             cchArg;
+    /** Flag whether the argument is followed by an extra argument
+     * which must be purged too */
+    bool                fTakesValue;
+} SUPARGPURGEDESC;
+/** Pointer to a environment variable purge descriptor. */
+typedef SUPARGPURGEDESC *PSUPARGPURGEDESC;
+/** Pointer to a const environment variable purge descriptor. */
+typedef const SUPARGPURGEDESC *PCSUPARGPURGEDESC;
+
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -536,6 +576,27 @@ static PFNRTLOGRELPRINTF g_pfnRTLogRelPrintf = NULL;
 static RTUTF16          g_wszStartupLogVol[16];
 #endif
 
+/** Environment variables to purge from the process because
+ * they are known to be harmful. */
+static const SUPENVPURGEDESC g_aSupEnvPurgeDescs[] =
+{
+    /* pszEnv                                       fPurgeErrFatal */
+    /* Qt related environment variables: */
+    { RT_STR_TUPLE("QT_QPA_PLATFORM_PLUGIN_PATH"),  true },
+    { RT_STR_TUPLE("QT_PLUGIN_PATH"),               true },
+    /* ALSA related environment variables: */
+    { RT_STR_TUPLE("ALSA_MIXER_SIMPLE_MODULES"),    true },
+    { RT_STR_TUPLE("LADSPA_PATH"),                  true },
+};
+
+/** Arguments to purge from the argument vector because
+ * they are known to be harmful. */
+static const SUPARGPURGEDESC g_aSupArgPurgeDescs[] =
+{
+    /* pszArg                        fTakesValue */
+    /* Qt related environment variables: */
+    { RT_STR_TUPLE("-platformpluginpath"),          true },
+};
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -2003,6 +2064,137 @@ static void supR3HardenedMainDropPrivileges(void)
 #endif /* SUP_HARDENED_SUID */
 
 /**
+ * Purge the process environment from any environment vairable which can lead
+ * to loading untrusted binaries compromising the process address space.
+ *
+ * @param   envp        The initial environment vector. (Can be NULL.)
+ */
+static void supR3HardenedMainPurgeEnvironment(char **envp)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aSupEnvPurgeDescs); i++)
+    {
+        /*
+         * Update the initial environment vector, just in case someone actually cares about it.
+         */
+        if (envp)
+        {
+            const char * const  pszEnv = g_aSupEnvPurgeDescs[i].pszEnv;
+            size_t const        cchEnv = g_aSupEnvPurgeDescs[i].cchEnv;
+            unsigned            iSrc   = 0;
+            unsigned            iDst   = 0;
+            char               *pszTmp;
+
+            while ((pszTmp = envp[iSrc]) != NULL)
+            {
+                if (   memcmp(pszTmp, pszEnv, cchEnv) != 0
+                    || (pszTmp[cchEnv] != '=' && pszTmp[cchEnv] != '\0'))
+                {
+                    if (iDst != iSrc)
+                        envp[iDst] = pszTmp;
+                    iDst++;
+                }
+                else
+                    SUP_DPRINTF(("supR3HardenedMainPurgeEnvironment: dropping envp[%d]=%s\n", iSrc, pszTmp));
+                iSrc++;
+            }
+
+            if (iDst != iSrc)
+                while (iDst <= iSrc)
+                    envp[iDst++] = NULL;
+        }
+
+        /*
+         * Remove from the process environment if present.
+         */
+#ifndef RT_OS_WINDOWS
+        const char *pszTmp = getenv(g_aSupEnvPurgeDescs[i].pszEnv);
+        if (pszTmp != NULL)
+        {
+            if (unsetenv((char *)g_aSupEnvPurgeDescs[i].pszEnv) == 0)
+                SUP_DPRINTF(("supR3HardenedMainPurgeEnvironment: dropped %s\n", pszTmp));
+            else
+                if (g_aSupEnvPurgeDescs[i].fPurgeErrFatal)
+                    supR3HardenedFatal("SUPR3HardenedMain: failed to purge %s environment variable! (errno=%d %s)\n",
+                                       g_aSupEnvPurgeDescs[i].pszEnv, errno, strerror(errno));
+                else
+                    SUP_DPRINTF(("supR3HardenedMainPurgeEnvironment: dropping %s failed! errno=%d\n", pszTmp, errno));
+        }
+#else
+        /** @todo Call NT API to do the same. */
+#endif
+    }
+}
+
+
+/**
+ * Returns the argument purge descriptor of the given argument if available.
+ *
+ * @retval 0 if it should not be purged.
+ * @retval 1 if it only the current argument should be purged.
+ * @retval 2 if the argument and the following (if present) should be purged.
+ * @param   pszArg           The argument to look for.
+ */
+static unsigned supR3HardenedMainShouldPurgeArg(const char *pszArg)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aSupArgPurgeDescs); i++)
+    {
+        size_t const cchPurge = g_aSupArgPurgeDescs[i].cchArg;
+        if (!memcmp(pszArg, g_aSupArgPurgeDescs[i].pszArg, cchPurge))
+        {
+            if (pszArg[cchPurge] == '\0')
+                return 1 + g_aSupArgPurgeDescs[i].fTakesValue;
+            if (   g_aSupArgPurgeDescs[i].fTakesValue
+                && (pszArg[cchPurge] == ':' || pszArg[cchPurge] == '='))
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+/**
+ * Purges any command line arguments considered harmful.
+ *
+ * @returns nothing.
+ * @param   cArgsOrig        The original number of arguments.
+ * @param   papszArgsOrig    The original argument vector.
+ * @param   pcArgsNew        Where to store the new number of arguments on success.
+ * @param   ppapszArgsNew    Where to store the pointer to the purged argument vector.
+ */
+static void supR3HardenedMainPurgeArgs(int cArgsOrig, char **papszArgsOrig, int *pcArgsNew, char ***ppapszArgsNew)
+{
+    int    iDst = 0;
+#ifdef RT_OS_WINDOWS
+    char **papszArgsNew = papszArgsOrig; /* We allocated this, no need to allocate again. */
+#else
+    char **papszArgsNew = (char **)malloc((cArgsOrig + 1) * sizeof(char *));
+#endif
+    if (papszArgsNew)
+    {
+        for (int iSrc = 0; iSrc < cArgsOrig; iSrc++)
+        {
+            unsigned cPurgedArgs = supR3HardenedMainShouldPurgeArg(papszArgsOrig[iSrc]);
+            if (!cPurgedArgs)
+                papszArgsNew[iDst++] = papszArgsOrig[iSrc];
+            else
+                iSrc += cPurgedArgs - 1;
+        }
+
+        papszArgsNew[iDst] = NULL; /* The array is NULL terminated, just like envp. */
+    }
+    else
+        supR3HardenedFatal("SUPR3HardenedMain: failed to allocate memory for purged command line!\n");
+    *pcArgsNew     = iDst;
+    *ppapszArgsNew = papszArgsNew;
+
+#ifdef RT_OS_WINDOWS
+    /** @todo Update command line pointers in PEB, wont really work without it. */
+#endif
+}
+
+
+/**
  * Loads the VBoxRT DLL/SO/DYLIB, hands it the open driver,
  * and calls RTR3InitEx.
  *
@@ -2367,7 +2559,14 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     supR3HardenedWinFlushLoaderCache();
     supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(g_pszSupLibHardenedProgName);
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_VERIFY_TRUST_READY;
-#endif
+#else /* !RT_OS_WINDOWS */
+# ifndef RT_OS_FREEBSD /** @todo portme */
+    /*
+     * Posix: Hook the load library interface interface.
+     */
+    supR3HardenedPosixInit();
+# endif
+#endif /* !RT_OS_WINDOWS */
 
 #ifdef SUP_HARDENED_SUID
     /*
@@ -2380,6 +2579,13 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      */
     supR3HardenedMainDropPrivileges();
 #endif
+
+    /*
+     * Purge any environment variables and command line arguments considered harmful.
+     */
+    /** @todo May need to move this to a much earlier stage on windows.  */
+    supR3HardenedMainPurgeEnvironment(envp);
+    supR3HardenedMainPurgeArgs(argc, argv, &argc, &argv);
 
     /*
      * Load the IPRT, hand the SUPLib part the open driver and

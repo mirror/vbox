@@ -415,6 +415,35 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
  endif
 endif
 
+# Things specific to the posix crowd.
+if1of ($(KBUILD_TARGET), linux darwin solaris)
+ SUPR3HardenedStatic_DEFS += \
+ 	IN_DIS \
+ 	DIS_CORE_ONLY \
+ 	LOG_DISABLED
+ SUPR3HardenedStatic_DEFS.linux += \
+ 	SUP_HARDENED_WITH_DLMOPEN
+ SUPR3HardenedStatic_DEFS.solaris += \
+ 	SUP_HARDENED_WITH_DLMOPEN
+
+ SUPR3HardenedStatic_INCS += $(VBOX_PATH_RUNTIME_SRC)/include
+
+ SUPR3HardenedStatic_SOURCES += \
+ 	posix/SUPR3HardenedMain-posix.cpp \
+	posix/SUPR3HardenedMainA-posix.asm \
+       \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg1Weak.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2Weak.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2WeakV.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/generic/RTAssertShouldPanic-generic.cpp \
+       \
+ 	../../Disassembler/DisasmCore.cpp \
+ 	../../Disassembler/DisasmTables.cpp \
+ 	../../Disassembler/DisasmTablesX64.cpp \
+ 	../../Disassembler/DisasmReg.cpp
+endif
+
 SUPR3HardenedMain.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 

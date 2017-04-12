@@ -1035,6 +1035,25 @@ static int supR3HardenedSetErrorN(int rc, PRTERRINFO pErrInfo, unsigned cMsgs, .
     return rc;
 }
 
+#ifdef RT_OS_DARWIN
+/**
+ * Copies the four messages into the error buffer and returns @a rc.
+ *
+ * @returns Returns @a rc
+ * @param   rc                  The return code.
+ * @param   pErrInfo            The error info structure.
+ * @param   pszMsg1             The first message part.
+ * @param   pszMsg2             The second message part.
+ * @param   pszMsg3             The third message part.
+ * @param   pszMsg4             The fourth message part.
+ */
+static int supR3HardenedSetError4(int rc, PRTERRINFO pErrInfo, const char *pszMsg1,
+                                  const char *pszMsg2, const char *pszMsg3, const char *pszMsg4)
+{
+    return supR3HardenedSetErrorN(rc, pErrInfo, 4, pszMsg1, pszMsg2, pszMsg3, pszMsg4);
+}
+#endif /* RT_OS_DARWIN */
+
 
 /**
  * Copies the three messages into the error buffer and returns @a rc.
@@ -1069,6 +1088,9 @@ static int supR3HardenedSetError2(int rc, PRTERRINFO pErrInfo, const char *pszMs
     return supR3HardenedSetErrorN(rc, pErrInfo, 2, pszMsg1, pszMsg2);
 }
 
+#endif /* SOME_UNUSED_FUNCTION */
+
+#ifdef RT_OS_DARWIN
 
 /**
  * Copies the error message to the error buffer and returns @a rc.
@@ -1083,7 +1105,8 @@ static int supR3HardenedSetError(int rc, PRTERRINFO pErrInfo, const char *pszMsg
     return supR3HardenedSetErrorN(rc, pErrInfo, 1, pszMsg);
 }
 
-#endif /* SOME_UNUSED_FUNCTION */
+#endif
+
 
 /**
  * Output from a successfull supR3HardenedVerifyPathSanity call.
@@ -1370,12 +1393,14 @@ static int supR3HardenedIsSameFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState1, P
  * @param   fRelaxed            Whether we can be more relaxed about this
  *                              directory (only used for grand parent
  *                              directories).
+ * @param   fSymlinksAllowed    Flag whether symlinks are allowed or not.
+ *                              If allowed the symlink object is verified not the target.
  * @param   pszPath             The path to the object. For error messages and
  *                              securing a couple of hacks.
  * @param   pErrInfo            The error info structure.
  */
 static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bool fDir, bool fRelaxed,
-                                       const char *pszPath, PRTERRINFO pErrInfo)
+                                       bool fSymlinksAllowed, const char *pszPath, PRTERRINFO pErrInfo)
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
@@ -1397,25 +1422,31 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         return supR3HardenedSetError3(VERR_SUPLIB_OWNER_NOT_ROOT, pErrInfo, "The owner is not root: '", pszPath, "'");
 
     /*
-     * The object type must be directory or file, no symbolic links or other
-     * risky stuff (sorry dude, but we're paranoid on purpose here).
+     * The object type must be directory or file. It can be a symbolic link
+     * if explicitely allowed. Otherwise this and other risky stuff is not allowed
+     * (sorry dude, but we're paranoid on purpose here).
      */
-    if (   !S_ISDIR(pFsObjState->Stat.st_mode)
-        && !S_ISREG(pFsObjState->Stat.st_mode))
+    if (   !S_ISLNK(pFsObjState->Stat.st_mode)
+        || !fSymlinksAllowed)
     {
-        if (S_ISLNK(pFsObjState->Stat.st_mode))
-            return supR3HardenedSetError3(VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED, pErrInfo,
-                                          "Symlinks are not permitted: '", pszPath, "'");
-        return supR3HardenedSetError3(VERR_SUPLIB_NOT_DIR_NOT_FILE, pErrInfo,
-                                      "Not regular file or directory: '", pszPath, "'");
-    }
-    if (fDir != !!S_ISDIR(pFsObjState->Stat.st_mode))
-    {
-        if (S_ISDIR(pFsObjState->Stat.st_mode))
-            return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
-                                          "Expected file but found directory: '", pszPath, "'");
-        return supR3HardenedSetError3(VERR_SUPLIB_IS_FILE, pErrInfo,
-                                      "Expected directory but found file: '", pszPath, "'");
+
+        if (   !S_ISDIR(pFsObjState->Stat.st_mode)
+            && !S_ISREG(pFsObjState->Stat.st_mode))
+        {
+            if (S_ISLNK(pFsObjState->Stat.st_mode))
+                return supR3HardenedSetError3(VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED, pErrInfo,
+                                              "Symlinks are not permitted: '", pszPath, "'");
+            return supR3HardenedSetError3(VERR_SUPLIB_NOT_DIR_NOT_FILE, pErrInfo,
+                                          "Not regular file or directory: '", pszPath, "'");
+        }
+        if (fDir != !!S_ISDIR(pFsObjState->Stat.st_mode))
+        {
+            if (S_ISDIR(pFsObjState->Stat.st_mode))
+                return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
+                                              "Expected file but found directory: '", pszPath, "'");
+            return supR3HardenedSetError3(VERR_SUPLIB_IS_FILE, pErrInfo,
+                                          "Expected directory but found file: '", pszPath, "'");
+        }
     }
 
     /*
@@ -1600,7 +1631,7 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
         if (RT_SUCCESS(rc))
             break;
         rc = supR3HardenedVerifyFsObject(pFsObjState, S_ISDIR(pFsObjState->Stat.st_mode), false /*fRelaxed*/,
-                                         pszDirPath, pErrInfo);
+                                         false /*fSymlinksAllowed*/, pszDirPath, pErrInfo);
         if (RT_FAILURE(rc))
             break;
 
@@ -1658,7 +1689,8 @@ DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, 
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = '\0';
         rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pErrInfo);
         if (RT_SUCCESS(rc))
-            rc = supR3HardenedVerifyFsObject(&FsObjState, true /*fDir*/, fRelaxed, Info.szPath, pErrInfo);
+            rc = supR3HardenedVerifyFsObject(&FsObjState, true /*fDir*/, fRelaxed,
+                                             false /*fSymlinksAllowed*/, Info.szPath, pErrInfo);
         if (RT_FAILURE(rc))
             return rc;
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = iComponent + 1 != cComponents ? RTPATH_SLASH : '\0';
@@ -1719,7 +1751,8 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = '\0';
         rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pErrInfo);
         if (RT_SUCCESS(rc))
-            rc = supR3HardenedVerifyFsObject(&FsObjState, !fFinal /*fDir*/, fRelaxed, Info.szPath, pErrInfo);
+            rc = supR3HardenedVerifyFsObject(&FsObjState, !fFinal /*fDir*/, fRelaxed,
+                                             false /*fSymlinksAllowed*/, Info.szPath, pErrInfo);
         if (RT_FAILURE(rc))
             return rc;
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = !fFinal ? RTPATH_SLASH : '\0';
@@ -1796,6 +1829,164 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
 
     return VINF_SUCCESS;
 }
+
+
+#ifdef RT_OS_DARWIN
+/**
+ * Verfies a file following symlinks.
+ *
+ * @returns VBox status code, error buffer filled on failure.
+ * @param   pszFilename         The file to verify.
+ * @param   hNativeFile         Handle to the file, verify that it's the same
+ *                              as we ended up with when verifying the path.
+ *                              RTHCUINTPTR_MAX means NIL here.
+ * @param   fMaybe3rdParty      Set if the file is could be a supplied by a
+ *                              third party.  Different validation rules may
+ *                              apply to 3rd party code on some platforms.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
+ *
+ * @note    This is only used on OS X for libraries loaded with dlopen() because
+ *          the frameworks use symbolic links to point to the relevant library.
+ *
+ * @sa      supR3HardenedVerifyFile
+ */
+DECLHIDDEN(int) supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, RTHCUINTPTR hNativeFile, bool fMaybe3rdParty,
+                                                      PRTERRINFO pErrInfo)
+{
+    RT_NOREF1(fMaybe3rdParty);
+
+    /*
+     * Validate the input path and parse it.
+     */
+    SUPR3HARDENEDPATHINFO Info;
+    int rc = supR3HardenedVerifyPathSanity(pszFilename, pErrInfo, &Info);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (Info.fDirSlash)
+        return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
+                                      "The file path specifies a directory: '", pszFilename, "'");
+
+    /*
+     * Verify each component from the root up.
+     */
+    uint32_t                iLoops = 0;
+    SUPR3HARDENEDFSOBJSTATE FsObjState;
+    uint32_t                iComponent = 0;
+    while (iComponent < Info.cComponents)
+    {
+        bool fFinal   = iComponent + 1 == Info.cComponents;
+        bool fRelaxed = iComponent + 2 < Info.cComponents;
+        Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = '\0';
+        rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * In case the component is a symlink expand it and start from the beginning after
+             * verifying it has the proper access rights.
+             * Furthermore only allow symlinks which don't contain any .. or . in the target
+             * (enforced by supR3HardenedVerifyPathSanity).
+             */
+            rc = supR3HardenedVerifyFsObject(&FsObjState, !fFinal /*fDir*/, fRelaxed,
+                                             true /*fSymlinksAllowed*/, Info.szPath, pErrInfo);
+            if (   RT_SUCCESS(rc)
+                && S_ISLNK(FsObjState.Stat.st_mode))
+            {
+                /* Don't loop forever. */
+                iLoops++;
+                if (iLoops < 8)
+                {
+                    /*
+                     * Construct new path by replacing the current component by the symlink value.
+                     * Note! readlink() is a weird API that doesn't necessarily indicates if the
+                     *       buffer is too small.
+                     */
+                    char   szPath[RTPATH_MAX];
+                    size_t const cchBefore = Info.aoffComponents[iComponent]; /* includes slash */
+                    size_t const cchAfter  = fFinal ? 0 : 1 /*slash*/ + Info.cch - Info.aoffComponents[iComponent + 1];
+                    if (sizeof(szPath) > cchBefore + cchAfter + 2)
+                    {
+                        ssize_t cchTarget = readlink(Info.szPath, szPath, sizeof(szPath) - 1);
+                        if (cchTarget > 0)
+                        {
+                            /* Some serious paranoia against embedded zero terminator and weird return values. */
+                            szPath[cchTarget] = '\0';
+                            size_t cchLink = strlen(szPath);
+
+                            /* Strip trailing dirslashes of non-final link. */
+                            if (!fFinal)
+                                while (cchLink > 1 and szPath[cchLink - 1] == '/')
+                                    cchLink--;
+
+                            /* Check link value sanity and buffer size. */
+                            if (cchLink == 0)
+                                return supR3HardenedSetError3(VERR_ACCESS_DENIED, pErrInfo,
+                                                              "Bad readlink return for '", Info.szPath, "'");
+                            if (szPath[0] == '/')
+                                return supR3HardenedSetError3(VERR_ACCESS_DENIED, pErrInfo,
+                                                              "Absolute symbolic link not allowed: '", szPath, "'");
+                            if (cchBefore + cchLink + cchAfter + 1 /*terminator*/ > sizeof(szPath))
+                                return supR3HardenedSetError(VERR_SUPLIB_PATH_TOO_LONG, pErrInfo,
+                                                             "Symlinks causing too long path!");
+
+                            /* Construct the new path. */
+                            if (cchBefore)
+                                memmove(&szPath[cchBefore], &szPath[0], cchLink);
+                            memcpy(&szPath[0], Info.szPath, cchBefore);
+                            if (!cchAfter)
+                                szPath[cchBefore + cchLink] = '\0';
+                            else
+                            {
+                                szPath[cchBefore + cchLink] = RTPATH_SLASH;
+                                memcpy(&szPath[cchBefore + cchLink + 1],
+                                       &Info.szPath[Info.aoffComponents[iComponent + 1]],
+                                       cchAfter); /* cchAfter includes a zero terminator */
+                            }
+
+                            /* Parse, copy and check the sanity (no '..' or '.') of the altered path. */
+                            rc = supR3HardenedVerifyPathSanity(szPath, pErrInfo, &Info);
+                            if (RT_FAILURE(rc))
+                                return rc;
+                            if (Info.fDirSlash)
+                                return supR3HardenedSetError3(VERR_SUPLIB_IS_DIRECTORY, pErrInfo,
+                                                              "The file path specifies a directory: '", szPath, "'");
+
+                            /* Restart from the current component. */
+                            continue;
+                        }
+                        int iErr = errno;
+                        supR3HardenedError(VERR_ACCESS_DENIED, false /*fFatal*/,
+                                           "supR3HardenedVerifyFileFollowSymlinks: Failed to readlink '%s': %s (%d)\n",
+                                           Info.szPath, strerror(iErr), iErr);
+                        return supR3HardenedSetError4(VERR_ACCESS_DENIED, pErrInfo,
+                                                      "readlink failed for '", Info.szPath, "': ", strerror(iErr));
+                    }
+                    return supR3HardenedSetError(VERR_SUPLIB_PATH_TOO_LONG, pErrInfo, "Path too long for symlink replacing!");
+                }
+                else
+                    return supR3HardenedSetError3(VERR_TOO_MANY_SYMLINKS, pErrInfo,
+                                                  "Too many symbolic links: '", pszFilename, "'");
+            }
+        }
+        if (RT_FAILURE(rc))
+            return rc;
+        Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = !fFinal ? RTPATH_SLASH : '\0';
+        iComponent++;
+    }
+
+    /*
+     * Verify the file handle against the last component, if specified.
+     */
+    if (hNativeFile != RTHCUINTPTR_MAX)
+    {
+        rc = supR3HardenedVerifySameFsObject(hNativeFile, &FsObjState, Info.szPath, pErrInfo);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+#endif /* RT_OS_DARWIN */
 
 
 /**
