@@ -1148,7 +1148,7 @@ DECLINLINE(uint16_t) vnetCSum16(const void *pvBuf, size_t cb)
     return ~csum;
 }
 
-DECLINLINE(void) vnetCompleteChecksum(uint8_t *pBuf, unsigned cbSize, uint16_t uStart, uint16_t uOffset)
+DECLINLINE(void) vnetCompleteChecksum(uint8_t *pBuf, size_t cbSize, uint16_t uStart, uint16_t uOffset)
 {
     *(uint16_t*)(pBuf + uStart + uOffset) = vnetCSum16(pBuf + uStart, cbSize - uStart);
 }
@@ -1211,10 +1211,13 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
             unsigned int uSize = 0;
             STAM_PROFILE_ADV_START(&pThis->StatTransmit, a);
             /* Compute total frame size. */
-            for (unsigned int i = 1; i < elem.nOut; i++)
+            for (unsigned int i = 1; i < elem.nOut && uSize < VNET_MAX_FRAME_SIZE; i++)
                 uSize += elem.aSegsOut[i].cb;
             Log5(("%s vnetTransmitPendingPackets: complete frame is %u bytes.\n", INSTANCE(pThis), uSize));
             Assert(uSize <= VNET_MAX_FRAME_SIZE);
+            /* Truncate oversized frames. */
+            if (uSize > VNET_MAX_FRAME_SIZE)
+                uSize = VNET_MAX_FRAME_SIZE;
             if (pThis->pDrv)
             {
                 VNETHDR Hdr;
@@ -1234,16 +1237,18 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pSgBuf->cSegs == 1);
+                    pSgBuf->cbUsed = uSize;
                     /* Assemble a complete frame. */
-                    for (unsigned int i = 1; i < elem.nOut; i++)
+                    for (unsigned int i = 1; i < elem.nOut && uSize > 0; i++)
                     {
+                        unsigned int cbSegment = RT_MIN(uSize, elem.aSegsOut[i].cb);
                         PDMDevHlpPhysRead(pThis->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
                                           ((uint8_t*)pSgBuf->aSegs[0].pvSeg) + uOffset,
-                                          elem.aSegsOut[i].cb);
-                        uOffset += elem.aSegsOut[i].cb;
+                                          cbSegment);
+                        uOffset += cbSegment;
+                        uSize -= cbSegment;
                     }
-                    pSgBuf->cbUsed = uSize;
-                    vnetPacketDump(pThis, (uint8_t *)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
+                    vnetPacketDump(pThis, (uint8_t *)pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, "--> Outgoing");
                     if (pGso)
                     {
                         /* Some guests (RHEL) may report HdrLen excluding transport layer header! */
@@ -1284,7 +1289,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
                         /*
                          * This is not GSO frame but checksum offloading is requested.
                          */
-                        vnetCompleteChecksum((uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize,
+                        vnetCompleteChecksum((uint8_t*)pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed,
                                              Hdr.u16CSumStart, Hdr.u16CSumOffset);
                     }
 
