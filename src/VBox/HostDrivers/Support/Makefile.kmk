@@ -31,7 +31,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Targets
 #
 LIBRARIES += SUPR3 SUPR3Static
-if   defined(VBOX_WITH_HARDENING)
+if   defined(VBOX_WITH_HARDENING) \
  && !defined(VBOX_ONLY_VALIDATIONKIT)
  LIBRARIES += SUPR3HardenedStatic
 endif
