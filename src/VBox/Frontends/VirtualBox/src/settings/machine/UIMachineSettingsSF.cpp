@@ -316,8 +316,8 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
         for (int iFolderIndex = 0; iFolderIndex < currentTypeFolders.size(); ++iFolderIndex)
         {
             /* Prepare old folder data & cache key: */
-            QString strFolderKey = QString::number(iFolderIndex);
             UIDataSettingsSharedFolder oldFolderData;
+            QString strFolderKey = QString::number(iFolderIndex);
 
             /* Check whether folder is valid:  */
             const CSharedFolder &comFolder = currentTypeFolders.at(iFolderIndex);
@@ -932,17 +932,13 @@ bool UIMachineSettingsSF::saveFoldersData()
             /* Get folder cache: */
             const UISettingsCacheSharedFolder &folderCache = m_pCache->child(iFolderIndex);
 
-            /* Check if this folder data was changed: */
-            if (folderCache.wasChanged())
-            {
-                /* If folder was removed or updated: */
-                if (folderCache.wasRemoved() || folderCache.wasUpdated())
-                    fSuccess = removeSharedFolder(folderCache);
+            /* Remove folder marked for 'remove' or 'update': */
+            if (folderCache.wasRemoved() || folderCache.wasUpdated())
+                fSuccess = removeSharedFolder(folderCache);
 
-                /* If folder was created or updated: */
-                if (folderCache.wasCreated() || folderCache.wasUpdated())
-                    fSuccess = createSharedFolder(folderCache);
-            }
+            /* Create folder marked for 'create' or 'update': */
+            if (folderCache.wasCreated() || folderCache.wasUpdated())
+                fSuccess = createSharedFolder(folderCache);
         }
     }
     /* Return result: */
