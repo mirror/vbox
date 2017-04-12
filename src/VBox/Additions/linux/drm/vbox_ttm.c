@@ -4,21 +4,8 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
- *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * General Public License (GPL) as published by the Free Software
- * Foundation, in version 2 as it comes in the "COPYING" file of the
- * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- * --------------------------------------------------------------------
- *
- * This code is based on
- * ast_ttm.c
- * with the following copyright and permission notice:
- *
+ * Copyright (C) 2013-2017 Oracle Corporation
+ * This file is based on ast_ttm.c
  * Copyright 2012 Red Hat Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -41,9 +28,9 @@
  * next paragraph) shall be included in all copies or substantial portions
  * of the Software.
  *
- */
-/*
+ *
  * Authors: Dave Airlie <airlied@redhat.com>
+ *          Michael Thayer <michael.thayer@oracle.com>
  */
 #include "vbox_drv.h"
 #include <ttm/ttm_page_alloc.h>
