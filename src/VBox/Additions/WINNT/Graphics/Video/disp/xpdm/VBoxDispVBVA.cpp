@@ -17,6 +17,7 @@
 
 #include "VBoxDisp.h"
 #include "VBoxDispMini.h"
+#include <HGSMI.h>
 #include <HGSMIChSetup.h>
 
 #ifdef VBOX_VBVA_ADJUST_RECT

@@ -72,7 +72,6 @@
 
 #include "HGSMIHost.h"
 #include <HGSMIChannels.h>
-#include <HGSMIChSetup.h>
 
 #include "../DevVGASavedState.h"
 

@@ -26,8 +26,6 @@
 #ifndef ___VBox_Graphics_HGSMIChSetup_h
 #define ___VBox_Graphics_HGSMIChSetup_h
 
-#include <HGSMI.h>
-
 /* HGSMI setup and configuration channel commands and data structures. */
 #define HGSMI_CC_HOST_FLAGS_LOCATION 0 /* Tell the host the location of HGSMIHOSTFLAGS structure,
                                         * where the host can write information about pending
