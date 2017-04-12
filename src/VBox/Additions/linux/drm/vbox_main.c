@@ -241,6 +241,11 @@ static void vbox_accel_fini(struct vbox_private *vbox)
     }
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
+# define pci_iomap_range(dev, bar, offset, maxlen) \
+    ioremap(pci_resource_start(dev, bar) + offset, maxlen)
+#endif
+
 static int vbox_accel_init(struct vbox_private *vbox)
 {
     unsigned i;
@@ -301,11 +306,6 @@ static bool have_hgsmi_mode_hints(struct vbox_private *vbox)
            && have_hints == VINF_SUCCESS
            && have_cursor == VINF_SUCCESS;
 }
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
-# define pci_iomap_range(dev, bar, offset, maxlen) \
-    ioremap(pci_resource_start(dev, bar) + offset, maxlen)
-#endif
 
 /** Set up our heaps and data exchange buffers in VRAM before handing the rest
  *  to the memory manager. */
