@@ -39,8 +39,7 @@ DLLS.win += VBoxSupLib
 ifdef VBOX_WITH_32_ON_64_MAIN_API
  LIBRARIES += SUPR3-x86
 endif
-if   !defined(VBOX_ONLY_DOCS) \
-  && !defined(VBOX_ONLY_VALIDATIONKIT)
+if   !defined(VBOX_ONLY_DOCS)
  if1of ($(VBOX_LDR_FMT), pe lx)
   LIBRARIES += SUPR0
  endif
