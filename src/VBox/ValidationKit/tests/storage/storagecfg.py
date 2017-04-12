@@ -159,7 +159,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
         if sZPoolRaid is not None:
             fRc = oExec.execBinaryNoStdOut('zpool', ('create', '-f', sPool, sZPoolRaid,) + tuple(asDisks));
         else:
-            fRc = oExec.execBinaryNoStdOut('zpool', ('create', '-f', sPool,) + tuple(asDisks));;
+            fRc = oExec.execBinaryNoStdOut('zpool', ('create', '-f', sPool,) + tuple(asDisks));
 
         return fRc;
 
