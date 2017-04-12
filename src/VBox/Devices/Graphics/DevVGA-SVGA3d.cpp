@@ -69,9 +69,27 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 
     AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
     AssertReturn(cMipLevels >= 1, VERR_INVALID_PARAMETER);
-    /* Assuming all faces have the same nr of mipmaps. */
-    AssertReturn(!(surfaceFlags & SVGA3D_SURFACE_CUBEMAP) || cMipLevels == face[0].numMipLevels * 6, VERR_INVALID_PARAMETER);
-    AssertReturn((surfaceFlags & SVGA3D_SURFACE_CUBEMAP) || cMipLevels == face[0].numMipLevels, VERR_INVALID_PARAMETER);
+
+    /* Number of faces (cFaces) is specified as the number of the first non-zero elements in the 'face' array.
+     * Since only plain surfaces (cFaces == 1) and cubemaps (cFaces == 6) are supported
+     * (see also SVGA3dCmdDefineSurface definition in svga3d_reg.h), we ignore anything else.
+     */
+    uint32_t cFaces = 0;
+    for (uint32_t i = 0; i < SVGA3D_MAX_SURFACE_FACES; ++i)
+    {
+        if (face[i].numMipLevels == 0)
+            break;
+
+        /* All SVGA3dSurfaceFace structures must have the same value of numMipLevels field */
+        AssertReturn(face[i].numMipLevels == face[0].numMipLevels, VERR_INVALID_PARAMETER);
+        ++cFaces;
+    }
+    for (uint32_t i = cFaces; i < SVGA3D_MAX_SURFACE_FACES; ++i)
+        AssertReturn(face[i].numMipLevels == 0, VERR_INVALID_PARAMETER);
+
+    /* cFaces must be 6 for a cubemap and 1 otherwise. */
+    AssertReturn(cFaces == (uint32_t)((surfaceFlags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1), VERR_INVALID_PARAMETER);
+    AssertReturn(cMipLevels == cFaces * face[0].numMipLevels, VERR_INVALID_PARAMETER);
 
     if (sid >= pState->cSurfaces)
     {
@@ -188,7 +206,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     pSurface->flags             = surfaceFlags;
     pSurface->format            = format;
     memcpy(pSurface->faces, face, sizeof(pSurface->faces));
-    pSurface->cFaces            = 1;        /* check for cube maps later */
+    pSurface->cFaces            = cFaces;
     pSurface->multiSampleCount  = multisampleCount;
     pSurface->autogenFilter     = autogenFilter;
     Assert(autogenFilter != SVGA3D_TEX_FILTER_FLATCUBIC);
@@ -225,7 +243,6 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     {
     case SVGA3D_SURFACE_CUBEMAP:
         Log(("SVGA3D_SURFACE_CUBEMAP\n"));
-        pSurface->cFaces = 6;
         break;
 
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
@@ -258,20 +275,16 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     Assert(!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface));
 
     /* Allocate buffer to hold the surface data until we can move it into a D3D object */
-    for (uint32_t iFace=0; iFace < pSurface->cFaces; iFace++)
+    for (uint32_t i = 0; i < cMipLevels; ++i)
     {
-        for (uint32_t i=0; i < pSurface->faces[iFace].numMipLevels; i++)
-        {
-            uint32_t idx = i + iFace * pSurface->faces[0].numMipLevels;
+        PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[i];
+        LogFunc(("[%d] face %d mip level %d (%d,%d,%d)\n", i, i / pSurface->faces[0].numMipLevels, i % pSurface->faces[0].numMipLevels, pMipmapLevel->size.width, pMipmapLevel->size.height, pMipmapLevel->size.depth));
+        LogFunc(("cbPitch=0x%x cbBlock=0x%x\n", pSurface->cbBlock * pMipmapLevel->size.width, pSurface->cbBlock));
 
-            Log(("vmsvga3dSurfaceDefine: face %d mip level %d (%d,%d,%d)\n", iFace, i, pSurface->pMipmapLevels[idx].size.width, pSurface->pMipmapLevels[idx].size.height, pSurface->pMipmapLevels[idx].size.depth));
-            Log(("vmsvga3dSurfaceDefine: cbPitch=%x cbBlock=%x \n", pSurface->cbBlock * pSurface->pMipmapLevels[idx].size.width, pSurface->cbBlock));
-
-            pSurface->pMipmapLevels[idx].cbSurfacePitch = pSurface->cbBlock * pSurface->pMipmapLevels[idx].size.width;
-            pSurface->pMipmapLevels[idx].cbSurface      = pSurface->pMipmapLevels[idx].cbSurfacePitch * pSurface->pMipmapLevels[idx].size.height * pSurface->pMipmapLevels[idx].size.depth;
-            pSurface->pMipmapLevels[idx].pSurfaceData   = RTMemAllocZ(pSurface->pMipmapLevels[idx].cbSurface);
-            AssertReturn(pSurface->pMipmapLevels[idx].pSurfaceData, VERR_NO_MEMORY);
-        }
+        pMipmapLevel->cbSurfacePitch = pSurface->cbBlock * pMipmapLevel->size.width;
+        pMipmapLevel->cbSurface      = pMipmapLevel->cbSurfacePitch * pMipmapLevel->size.height * pMipmapLevel->size.depth;
+        pMipmapLevel->pSurfaceData   = RTMemAllocZ(pMipmapLevel->cbSurface);
+        AssertReturn(pMipmapLevel->pSurfaceData, VERR_NO_MEMORY);
     }
     return VINF_SUCCESS;
 }
