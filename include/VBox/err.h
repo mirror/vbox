@@ -1921,12 +1921,12 @@
 /** Unable to establish trusted of VM process (5). */
 #define VERR_SUPLIB_NT_PROCESS_UNTRUSTED_5          (-3775)
 /** Unable to make text memory writeable (hardening). */
-#define VERR_SUPLIB_TEXT_NOT_WRITEABLE              (-3775)
+#define VERR_SUPLIB_TEXT_NOT_WRITEABLE              (-3776)
 /** Unable to seal text memory again to protect against write access (hardening). */
-#define VERR_SUPLIB_TEXT_NOT_SEALED                 (-3776)
+#define VERR_SUPLIB_TEXT_NOT_SEALED                 (-3777)
 /** Unexpected instruction encountered for which there is no patch strategy
  * implemented (hardening). */
-#define VERR_SUPLIB_UNEXPECTED_INSTRUCTION          (-3777)
+#define VERR_SUPLIB_UNEXPECTED_INSTRUCTION          (-3778)
 /** @} */
 
 
