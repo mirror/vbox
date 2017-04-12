@@ -850,7 +850,8 @@ static void supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
     Assert(!pSession->fInHashTable);
     Assert(!pSession->ppOsSessionPtr);
     AssertReleaseMsg(pSession->R0Process == RTR0ProcHandleSelf() || pSession->R0Process == NIL_RTR0PROCESS,
-                     ("R0Process=%p cur=%p; Process=%u curpid=%u\n", RTR0ProcHandleSelf(), RTProcSelf()));
+                     ("R0Process=%p cur=%p; curpid=%u\n",
+                      pSession->R0Process, RTR0ProcHandleSelf(), RTProcSelf()));
 
     /*
      * Remove logger instances related to this session.
