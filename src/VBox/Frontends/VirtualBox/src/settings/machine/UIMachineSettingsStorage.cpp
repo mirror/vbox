@@ -691,6 +691,7 @@ void RootItem::delChild (AbstractItem *aItem)
 ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
                                 KStorageBus aBusType, KStorageControllerType aControllerType)
     : AbstractItem (aParent)
+    , mOldCtrName (aName)
     , mCtrName (aName)
     , mCtrType (0)
     , mPortCount (0)
@@ -742,6 +743,11 @@ ControllerItem::~ControllerItem()
 KStorageBus ControllerItem::ctrBusType() const
 {
     return mCtrType->busType();
+}
+
+QString ControllerItem::oldCtrName() const
+{
+    return mOldCtrName;
 }
 
 QString ControllerItem::ctrName() const
@@ -1402,6 +1408,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             return false;
         }
 
+        case R_CtrOldName:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_ControllerItem)
+                    return static_cast <ControllerItem*> (item)->oldCtrName();
+            return QString();
+        }
         case R_CtrName:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -2180,8 +2193,9 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
     const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
     for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
     {
-        /* Prepare old controller data: */
+        /* Prepare old controller data & cache key: */
         UIDataSettingsMachineStorageController oldControllerData;
+        QString strControllerKey = QString::number(iControllerIndex);
 
         /* Check whether controller is valid: */
         const CStorageController &comController = controllers.at(iControllerIndex);
@@ -2193,6 +2207,8 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
             oldControllerData.m_controllerType = comController.GetControllerType();
             oldControllerData.m_uPortCount = comController.GetPortCount();
             oldControllerData.m_fUseHostIOCache = comController.GetUseHostIOCache();
+            /* Override controller cache key: */
+            strControllerKey = oldControllerData.m_strControllerName;
 
             /* Sort attachments before caching/fetching: */
             const CMediumAttachmentVector &attachmentVector =
@@ -2209,8 +2225,9 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
             /* For each attachment: */
             for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
             {
-                /* Prepare old attachment data: */
+                /* Prepare old attachment data & cache key: */
                 UIDataSettingsMachineStorageAttachment oldAttachmentData;
+                QString strAttachmentKey = QString::number(iAttachmentIndex);
 
                 /* Check whether attachment is valid: */
                 const CMediumAttachment &comAttachment = attachments.at(iAttachmentIndex);
@@ -2226,15 +2243,17 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     oldAttachmentData.m_fAttachmentHotPluggable = comAttachment.GetHotPluggable();
                     const CMedium comMedium = comAttachment.GetMedium();
                     oldAttachmentData.m_strAttachmentMediumId = comMedium.isNull() ? UIMedium::nullID() : comMedium.GetId();
+                    /* Override controller cache key: */
+                    strAttachmentKey = QString("%1:%2").arg(oldAttachmentData.m_iAttachmentPort).arg(oldAttachmentData.m_iAttachmentDevice);
                 }
 
                 /* Cache old attachment data: */
-                m_pCache->child(iControllerIndex).child(iAttachmentIndex).cacheInitialData(oldAttachmentData);
+                m_pCache->child(strControllerKey).child(strAttachmentKey).cacheInitialData(oldAttachmentData);
             }
         }
 
         /* Cache old controller data: */
-        m_pCache->child(iControllerIndex).cacheInitialData(oldControllerData);
+        m_pCache->child(strControllerKey).cacheInitialData(oldControllerData);
     }
 
     /* Cache old storage data: */
@@ -2317,13 +2336,14 @@ void UIMachineSettingsStorage::putToCache()
         /* Prepare new controller data & key: */
         UIDataSettingsMachineStorageController newControllerData;
 
-        /* Gather new controller data from model: */
+        /* Gather new controller data & cache key from model: */
         const QModelIndex controllerIndex = m_pModelStorage->index(iControllerIndex, 0, rootIndex);
         newControllerData.m_strControllerName = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrName).toString();
         newControllerData.m_controllerBus = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrBusType).value<KStorageBus>();
         newControllerData.m_controllerType = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrType).value<KStorageControllerType>();
         newControllerData.m_uPortCount = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrPortCount).toUInt();
         newControllerData.m_fUseHostIOCache = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrIoCache).toBool();
+        const QString strControllerKey = m_pModelStorage->data(controllerIndex, StorageModel::R_CtrOldName).toString();
 
         /* For each attachment: */
         for (int iAttachmentIndex = 0; iAttachmentIndex < m_pModelStorage->rowCount(controllerIndex); ++iAttachmentIndex)
@@ -2331,7 +2351,7 @@ void UIMachineSettingsStorage::putToCache()
             /* Prepare new attachment data & key: */
             UIDataSettingsMachineStorageAttachment newAttachmentData;
 
-            /* Gather new controller data from model: */
+            /* Gather new attachment data & cache key from model: */
             const QModelIndex attachmentIndex = m_pModelStorage->index(iAttachmentIndex, 0, controllerIndex);
             newAttachmentData.m_attachmentType = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttDevice).value<KDeviceType>();
             const StorageSlot attachmentSlot = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttSlot).value<StorageSlot>();
@@ -2342,13 +2362,14 @@ void UIMachineSettingsStorage::putToCache()
             newAttachmentData.m_fAttachmentNonRotational = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttIsNonRotational).toBool();
             newAttachmentData.m_fAttachmentHotPluggable = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttIsHotPluggable).toBool();
             newAttachmentData.m_strAttachmentMediumId = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
+            const QString strAttachmentKey = QString("%1:%2").arg(newAttachmentData.m_iAttachmentPort).arg(newAttachmentData.m_iAttachmentDevice);
 
             /* Cache new attachment data: */
-            m_pCache->child(iControllerIndex).child(iAttachmentIndex).cacheCurrentData(newAttachmentData);
+            m_pCache->child(strControllerKey).child(strAttachmentKey).cacheCurrentData(newAttachmentData);
         }
 
         /* Cache new controller data: */
-        m_pCache->child(iControllerIndex).cacheCurrentData(newControllerData);
+        m_pCache->child(strControllerKey).cacheCurrentData(newControllerData);
     }
 
     /* Cache new storage data: */
