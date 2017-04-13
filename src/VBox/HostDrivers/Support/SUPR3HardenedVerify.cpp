@@ -1474,6 +1474,13 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         /** @todo dynamically resolve the operator group? */
         bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 5 /*operator*/ || suplibHardenedStrCmp(pszPath, "/usr/pbi");
         NOREF(fRelaxed);
+#elif defined(RT_OS_SOLARIS)
+        /* HACK ALERT: Solaris has group-writable /usr/lib/iconv directory from
+           which the appropriate module is loaded.
+           By default only root and daemon are part of that group.
+           . */
+        /** @todo dynamically resolve the bin group? */
+        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 2 /*bin*/ || suplibHardenedStrCmp(pszPath, "/usr/lib/iconv");
 #else
         NOREF(fRelaxed);
         bool fBad = true;
