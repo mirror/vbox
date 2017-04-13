@@ -27,6 +27,7 @@
 # include "UIConverter.h"
 # include "UIIconPool.h"
 # include "UIMachineSettingsSystem.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -367,58 +368,8 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is in valid mode & system data was changed: */
-    if (isMachineInValidMode() && m_pCache->wasChanged())
-    {
-        /* Get old system data from the cache: */
-        const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
-        /* Get new system data from the cache: */
-        const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
-
-        /* Store new 'Motherboard' data: */
-        if (isMachineOffline() && newSystemData.m_iMemorySize != oldSystemData.m_iMemorySize)
-            m_machine.SetMemorySize(newSystemData.m_iMemorySize);
-        if (isMachineOffline() && newSystemData.m_chipsetType != oldSystemData.m_chipsetType)
-            m_machine.SetChipsetType(newSystemData.m_chipsetType);
-        if (isMachineOffline() && newSystemData.m_pointingHIDType != oldSystemData.m_pointingHIDType)
-            m_machine.SetPointingHIDType(newSystemData.m_pointingHIDType);
-        if (isMachineOffline() && newSystemData.m_fEnabledIoApic != oldSystemData.m_fEnabledIoApic)
-            m_machine.GetBIOSSettings().SetIOAPICEnabled(newSystemData.m_fEnabledIoApic);
-        if (isMachineOffline() && newSystemData.m_fEnabledEFI != oldSystemData.m_fEnabledEFI)
-            m_machine.SetFirmwareType(newSystemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
-        if (isMachineOffline() && newSystemData.m_fEnabledUTC != oldSystemData.m_fEnabledUTC)
-            m_machine.SetRTCUseUTC(newSystemData.m_fEnabledUTC);
-        if (isMachineOffline() && newSystemData.m_bootItems != oldSystemData.m_bootItems)
-        {
-            int iBootIndex = 0;
-            for (int i = 0; i < newSystemData.m_bootItems.size(); ++i)
-            {
-                if (newSystemData.m_bootItems.at(i).m_fEnabled)
-                    m_machine.SetBootOrder(++iBootIndex, newSystemData.m_bootItems.at(i).m_type);
-            }
-            for (int i = 0; i < newSystemData.m_bootItems.size(); ++i)
-            {
-                if (!newSystemData.m_bootItems.at(i).m_fEnabled)
-                    m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
-            }
-        }
-
-        /* Store new 'Processor' data: */
-        if (isMachineOffline() && newSystemData.m_cCPUCount != oldSystemData.m_cCPUCount)
-            m_machine.SetCPUCount(newSystemData.m_cCPUCount);
-        if (isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
-            m_machine.SetCPUProperty(KCPUPropertyType_PAE, newSystemData.m_fEnabledPAE);
-        if (newSystemData.m_iCPUExecCap != oldSystemData.m_iCPUExecCap)
-            m_machine.SetCPUExecutionCap(newSystemData.m_iCPUExecCap);
-
-        /* Store new 'Acceleration' data: */
-        if (isMachineOffline() && newSystemData.m_paravirtProvider != oldSystemData.m_paravirtProvider)
-            m_machine.SetParavirtProvider(newSystemData.m_paravirtProvider);
-        if (isMachineOffline() && newSystemData.m_fEnabledHwVirtEx != oldSystemData.m_fEnabledHwVirtEx)
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, newSystemData.m_fEnabledHwVirtEx);
-        if (isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
-    }
+    /* Update system data and failing state: */
+    setFailed(!saveSystemData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1092,5 +1043,179 @@ void UIMachineSettingsSystem::adjustBootOrderTWSize()
         m_pTabMotherboard->layout()->activate();
         m_pTabMotherboard->layout()->update();
     }
+}
+
+bool UIMachineSettingsSystem::saveSystemData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save general settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
+    {
+        /* Save 'Motherboard' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveMotherboardData();
+        /* Save 'Processor' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveProcessorData();
+        /* Save 'Acceleration' data from the cache: */
+        if (fSuccess)
+            fSuccess = saveAccelerationData();
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsSystem::saveMotherboardData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Motherboard' settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old system data from the cache: */
+        const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
+        /* Get new system data from the cache: */
+        const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
+
+        /* Save memory size: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_iMemorySize != oldSystemData.m_iMemorySize)
+        {
+            m_machine.SetMemorySize(newSystemData.m_iMemorySize);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save chipset type: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_chipsetType != oldSystemData.m_chipsetType)
+        {
+            m_machine.SetChipsetType(newSystemData.m_chipsetType);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save pointing HID type: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_pointingHIDType != oldSystemData.m_pointingHIDType)
+        {
+            m_machine.SetPointingHIDType(newSystemData.m_pointingHIDType);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save whether IO APIC is enabled: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledIoApic != oldSystemData.m_fEnabledIoApic)
+        {
+            m_machine.GetBIOSSettings().SetIOAPICEnabled(newSystemData.m_fEnabledIoApic);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save firware type (whether EFI is enabled): */
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledEFI != oldSystemData.m_fEnabledEFI)
+        {
+            m_machine.SetFirmwareType(newSystemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save whether UTC is enabled: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledUTC != oldSystemData.m_fEnabledUTC)
+        {
+            m_machine.SetRTCUseUTC(newSystemData.m_fEnabledUTC);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save boot items: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_bootItems != oldSystemData.m_bootItems)
+        {
+            int iBootIndex = 0;
+            for (int i = 0; fSuccess && i < newSystemData.m_bootItems.size(); ++i)
+            {
+                if (newSystemData.m_bootItems.at(i).m_fEnabled)
+                {
+                    m_machine.SetBootOrder(++iBootIndex, newSystemData.m_bootItems.at(i).m_type);
+                    fSuccess = m_machine.isOk();
+                }
+            }
+            for (int i = 0; fSuccess && i < newSystemData.m_bootItems.size(); ++i)
+            {
+                if (!newSystemData.m_bootItems.at(i).m_fEnabled)
+                {
+                    m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
+                    fSuccess = m_machine.isOk();
+                }
+            }
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveSystemSettings(m_machine, this);
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsSystem::saveProcessorData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Processor' settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old system data from the cache: */
+        const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
+        /* Get new system data from the cache: */
+        const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
+
+        /* Save CPU count: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_cCPUCount != oldSystemData.m_cCPUCount)
+        {
+            m_machine.SetCPUCount(newSystemData.m_cCPUCount);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save whether PAE is enabled: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
+        {
+            m_machine.SetCPUProperty(KCPUPropertyType_PAE, newSystemData.m_fEnabledPAE);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save CPU execution cap: */
+        if (fSuccess && newSystemData.m_iCPUExecCap != oldSystemData.m_iCPUExecCap)
+        {
+            m_machine.SetCPUExecutionCap(newSystemData.m_iCPUExecCap);
+            fSuccess = m_machine.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveSystemSettings(m_machine, this);
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsSystem::saveAccelerationData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save 'Acceleration' settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old system data from the cache: */
+        const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
+        /* Get new system data from the cache: */
+        const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
+
+        /* Save paravirtualization provider: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_paravirtProvider != oldSystemData.m_paravirtProvider)
+        {
+            m_machine.SetParavirtProvider(newSystemData.m_paravirtProvider);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save whether the hardware virtualization extension is enabled: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledHwVirtEx != oldSystemData.m_fEnabledHwVirtEx)
+        {
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, newSystemData.m_fEnabledHwVirtEx);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save whether the nested paging is enabled: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
+        {
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
+            fSuccess = m_machine.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveSystemSettings(m_machine, this);
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

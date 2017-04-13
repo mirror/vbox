@@ -133,6 +133,15 @@ private:
     /** Adjusts boot-order tree-widget size. */
     void adjustBootOrderTWSize();
 
+    /** Saves existing system data from the cache. */
+    bool saveSystemData();
+    /** Saves existing 'Motherboard' data from the cache. */
+    bool saveMotherboardData();
+    /** Saves existing 'Processor' data from the cache. */
+    bool saveProcessorData();
+    /** Saves existing 'Acceleration' data from the cache. */
+    bool saveAccelerationData();
+
     /** Holds the list of all possible boot items. */
     QList<KDeviceType>  m_possibleBootItems;
 
