@@ -426,6 +426,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_NOT_A_REPARSE_POINT: return VERR_NOT_SYMLINK;
 
         case NTE_BAD_ALGID:         return VERR_CR_PKIX_UNKNOWN_DIGEST_TYPE;
+
+        case STATUS_ELEVATION_REQUIRED: return VERR_PRIVILEGE_NOT_HELD;
     }
 
     /* unknown error. */
