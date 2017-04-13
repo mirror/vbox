@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2006-2016 Oracle Corporation
+# Copyright (C) 2006-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,7 @@
 #
 # Global Variables (config first).
 #
-MY_NFS_SERVER_IP="10.165.98.50"
+MY_NFS_SERVER_IP="10.165.98.101"
 MY_GATEWAY_IP="10.165.98.1"
 MY_NETMASK="255.255.254.0"
 MY_ETH_DEV="eth0"
