@@ -61,6 +61,9 @@
 # include "CSerialPort.h"
 # include "CSharedFolder.h"
 # include "CStorageController.h"
+# include "CUSBController.h"
+# include "CUSBDeviceFilters.h"
+# include "CUSBDeviceFilter.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -1315,6 +1318,34 @@ void UIMessageCenter::cannotSaveSystemSettings(const CMachine &comMachine, QWidg
     error(pParent, MessageType_Error,
           tr("Cannot save system settings."),
           formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveUSBSettings(const CMachine &comMachine, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save USB settings."),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotSaveUSBControllerSettings(const CUSBController &comController, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save USB controller settings."),
+          formatErrorInfo(comController));
+}
+
+void UIMessageCenter::cannotSaveUSBDeviceFiltersSettings(const CUSBDeviceFilters &comFilters, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save USB device filters settings."),
+          formatErrorInfo(comFilters));
+}
+
+void UIMessageCenter::cannotSaveUSBDeviceFilterSettings(const CUSBDeviceFilter &comFilter, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save USB device filter settings."),
+          formatErrorInfo(comFilter));
 }
 
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,

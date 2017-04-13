@@ -261,6 +261,10 @@ public:
     void cannotSaveStorageSettings(const CMachine &comMachine, QWidget *pParent = 0);
     void cannotSaveStorageControllerSettings(const CStorageController &comController, QWidget *pParent = 0);
     void cannotSaveSystemSettings(const CMachine &comMachine, QWidget *pParent = 0);
+    void cannotSaveUSBSettings(const CMachine &comMachine, QWidget *pParent = 0);
+    void cannotSaveUSBControllerSettings(const CUSBController &comController, QWidget *pParent = 0);
+    void cannotSaveUSBDeviceFiltersSettings(const CUSBDeviceFilters &comFilters, QWidget *pParent = 0);
+    void cannotSaveUSBDeviceFilterSettings(const CUSBDeviceFilter &comFilter, QWidget *pParent = 0);
     void cannotAttachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
     bool warnAboutIncorrectAddress(QWidget *pParent = 0) const;

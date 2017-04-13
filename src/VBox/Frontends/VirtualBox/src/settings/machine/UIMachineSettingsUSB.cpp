@@ -484,187 +484,8 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Make sure machine is in valid mode & USB data was changed: */
-    if (isMachineInValidMode() && m_pCache->wasChanged())
-    {
-        /* Get old USB data from the cache: */
-        const UIDataSettingsMachineUSB &oldUsbData = m_pCache->base();
-        /* Get new USB data from the cache: */
-        const UIDataSettingsMachineUSB &newUsbData = m_pCache->data();
-
-        /* Store USB data: */
-        if (isMachineOffline() && newUsbData != oldUsbData)
-        {
-            /* Removing USB controllers: */
-            if (!newUsbData.m_fUSBEnabled)
-            {
-                /* Get current USB controllers: */
-                const CUSBControllerVector &controllers = m_machine.GetUSBControllers();
-                for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
-                {
-                    /* Get current USB controller: */
-                    const CUSBController &controller = controllers.at(iControllerIndex);
-                    /* Remove current USB controller: */
-                    m_machine.RemoveUSBController(controller.GetName());
-                }
-            }
-
-            else
-
-            /* Creating/replacing USB controller: */
-            if (newUsbData.m_fUSBEnabled)
-            {
-                /* Get each controller count: */
-                const ULONG cOhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
-                const ULONG cEhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_EHCI);
-                const ULONG cXhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_XHCI);
-
-                /* For requested controller type: */
-                switch (newUsbData.m_USBControllerType)
-                {
-                    case KUSBControllerType_OHCI:
-                    {
-                        /* Remove excessive controllers: */
-                        if (cXhciCtls || cEhciCtls)
-                        {
-                            /* Get current USB controllers: */
-                            const CUSBControllerVector &controllers = m_machine.GetUSBControllers();
-                            for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
-                            {
-                                /* Get current USB controller: */
-                                const CUSBController &controller = controllers.at(iControllerIndex);
-                                const KUSBControllerType enmType = controller.GetType();
-                                /* Remove required USB controller: */
-                                if (   enmType == KUSBControllerType_XHCI
-                                    || enmType == KUSBControllerType_EHCI)
-                                    m_machine.RemoveUSBController(controller.GetName());
-                            }
-                        }
-
-                        /* Add required controller: */
-                        if (!cOhciCtls)
-                            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-
-                        break;
-                    }
-                    case KUSBControllerType_EHCI:
-                    {
-                        /* Remove excessive controllers: */
-                        if (cXhciCtls)
-                        {
-                            /* Get current USB controllers: */
-                            const CUSBControllerVector &controllers = m_machine.GetUSBControllers();
-                            for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
-                            {
-                                /* Get current USB controller: */
-                                const CUSBController &controller = controllers.at(iControllerIndex);
-                                const KUSBControllerType enmType = controller.GetType();
-                                /* Remove required USB controller: */
-                                if (enmType == KUSBControllerType_XHCI)
-                                    m_machine.RemoveUSBController(controller.GetName());
-                            }
-                        }
-
-                        /* Add required controllers: */
-                        if (!cOhciCtls)
-                            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-                        if (!cEhciCtls)
-                            m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
-
-                        break;
-                    }
-                    case KUSBControllerType_XHCI:
-                    {
-                        /* Remove excessive controllers: */
-                        if (cEhciCtls || cOhciCtls)
-                        {
-                            /* Get current USB controllers: */
-                            const CUSBControllerVector &controllers = m_machine.GetUSBControllers();
-                            for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
-                            {
-                                /* Get current USB controller: */
-                                const CUSBController &controller = controllers.at(iControllerIndex);
-                                const KUSBControllerType enmType = controller.GetType();
-                                /* Remove required USB controller: */
-                                if (   enmType == KUSBControllerType_EHCI
-                                    || enmType == KUSBControllerType_OHCI)
-                                    m_machine.RemoveUSBController(controller.GetName());
-                            }
-                        }
-
-                        /* Add required controller: */
-                        if (!cXhciCtls)
-                            m_machine.AddUSBController("xHCI", KUSBControllerType_XHCI);
-
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            }
-        }
-
-        /* Store USB filters data: */
-        CUSBDeviceFilters filtersObject = m_machine.GetUSBDeviceFilters();
-        /* Check if controller is valid: */
-        if (!filtersObject.isNull())
-        {
-            /* For each USB filter data set: */
-            int iOperationPosition = 0;
-            for (int iFilterIndex = 0; iFilterIndex < m_pCache->childCount(); ++iFilterIndex)
-            {
-                /* Check if USB filter data was changed: */
-                const UISettingsCacheMachineUSBFilter &filterCache = m_pCache->child(iFilterIndex);
-                if (filterCache.wasChanged())
-                {
-                    /* If filter was removed or updated: */
-                    if (filterCache.wasRemoved() || filterCache.wasUpdated())
-                    {
-                        /* Remove current USB filter: */
-                        filtersObject.RemoveDeviceFilter(iOperationPosition);
-                        if (filtersObject.isOk() && filterCache.wasRemoved())
-                            --iOperationPosition;
-                    }
-
-                    /* If filter was created or updated: */
-                    if (filterCache.wasCreated() || filterCache.wasUpdated())
-                    {
-                        /* Get new filter data from the cache: */
-                        const UIDataSettingsMachineUSBFilter &newFilterData = filterCache.data();
-
-                        /* Store USB filter data: */
-                        CUSBDeviceFilter filter = filtersObject.CreateDeviceFilter(newFilterData.m_strName);
-                        if (!filter.isNull())
-                        {
-                            /* Set whether filter is active: */
-                            filter.SetActive(newFilterData.m_fActive);
-                            /* Set filter Vendor ID: */
-                            filter.SetVendorId(newFilterData.m_strVendorId);
-                            /* Set filter Product ID: */
-                            filter.SetProductId(newFilterData.m_strProductId);
-                            /* Set filter revision: */
-                            filter.SetRevision(newFilterData.m_strRevision);
-                            /* Set filter manufacturer: */
-                            filter.SetManufacturer(newFilterData.m_strManufacturer);
-                            /* Set filter product: */
-                            filter.SetProduct(newFilterData.m_strProduct);
-                            /* Set filter serial number: */
-                            filter.SetSerialNumber(newFilterData.m_strSerialNumber);
-                            /* Set filter port: */
-                            filter.SetPort(newFilterData.m_strPort);
-                            /* Set filter remote mode: */
-                            filter.SetRemote(newFilterData.m_strRemote);
-
-                            /* Insert filter onto corresponding position: */
-                            filtersObject.InsertDeviceFilter(iOperationPosition, filter);
-                        }
-                    }
-                }
-                /* Advance operation position: */
-                ++iOperationPosition;
-            }
-        }
-    }
+    /* Update USB data and failing state: */
+    setFailed(!saveUSBData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1158,6 +979,335 @@ void UIMachineSettingsUSB::addUSBFilterItem(const UIDataSettingsMachineUSBFilter
             sltHandleCurrentItemChange(pItem);
         }
     }
+}
+
+bool UIMachineSettingsUSB::saveUSBData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save USB settings from the cache: */
+    if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
+    {
+        /* Get new USB data from the cache: */
+        const UIDataSettingsMachineUSB &newUsbData = m_pCache->data();
+
+        /* Save USB data: */
+        if (fSuccess && isMachineOffline())
+        {
+            /* Remove USB controllers: */
+            if (!newUsbData.m_fUSBEnabled)
+                fSuccess = removeUSBControllers();
+
+            else
+
+            /* Create/update USB controllers: */
+            if (newUsbData.m_fUSBEnabled)
+                fSuccess = createUSBControllers(newUsbData.m_USBControllerType);
+        }
+
+        /* Save USB filters data: */
+        if (fSuccess)
+        {
+            /* Make sure filters object really exists: */
+            CUSBDeviceFilters comFiltersObject = m_machine.GetUSBDeviceFilters();
+            fSuccess = m_machine.isOk() && comFiltersObject.isNotNull();
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveUSBSettings(m_machine, this);
+
+            /* For each filter data set: */
+            int iOperationPosition = 0;
+            for (int iFilterIndex = 0; fSuccess && iFilterIndex < m_pCache->childCount(); ++iFilterIndex)
+            {
+                /* Check if USB filter data was changed: */
+                const UISettingsCacheMachineUSBFilter &filterCache = m_pCache->child(iFilterIndex);
+                if (filterCache.wasChanged())
+                {
+                    /* Remove filter marked for 'remove' or 'update': */
+                    if (filterCache.wasRemoved() || filterCache.wasUpdated())
+                    {
+                        fSuccess = removeUSBFilter(comFiltersObject, iOperationPosition);
+                        if (fSuccess && filterCache.wasRemoved())
+                            --iOperationPosition;
+                    }
+
+                    /* Create filter marked for 'create' or 'update': */
+                    if (filterCache.wasCreated() || filterCache.wasUpdated())
+                        fSuccess = createUSBFilter(comFiltersObject, iOperationPosition, filterCache.data());
+                }
+                /* Advance operation position: */
+                ++iOperationPosition;
+            }
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsUSB::removeUSBControllers(const QSet<KUSBControllerType> &types /* = QSet<KUSBControllerType>() */)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Remove controllers: */
+    if (fSuccess && isMachineOffline())
+    {
+        /* Get controllers for further activities: */
+        const CUSBControllerVector &controllers = m_machine.GetUSBControllers();
+        fSuccess = m_machine.isOk();
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveUSBSettings(m_machine, this);
+
+        /* For each controller: */
+        for (int iControllerIndex = 0; fSuccess && iControllerIndex < controllers.size(); ++iControllerIndex)
+        {
+            /* Get current controller: */
+            const CUSBController &comController = controllers.at(iControllerIndex);
+
+            /* Get controller type for further activities: */
+            KUSBControllerType enmType = KUSBControllerType_Null;
+            if (fSuccess)
+            {
+                enmType = comController.GetType();
+                fSuccess = comController.isOk();
+            }
+            /* Get controller name for further activities: */
+            QString strName;
+            if (fSuccess)
+            {
+                strName = comController.GetName();
+                fSuccess = comController.isOk();
+            }
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveUSBControllerSettings(comController, this);
+
+            /* Pass only if requested types were not defined or contains the one we found: */
+            if (!types.isEmpty() && !types.contains(enmType))
+                continue;
+
+            /* Remove controller: */
+            if (fSuccess)
+            {
+                m_machine.RemoveUSBController(comController.GetName());
+                fSuccess = m_machine.isOk();
+            }
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveUSBSettings(m_machine, this);
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsUSB::createUSBControllers(KUSBControllerType enmType)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Add controllers: */
+    if (fSuccess && isMachineOffline())
+    {
+        /* Get each controller count for further activities: */
+        ULONG cOhciCtls = 0;
+        if (fSuccess)
+        {
+            cOhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
+            fSuccess = m_machine.isOk();
+        }
+        ULONG cEhciCtls = 0;
+        if (fSuccess)
+        {
+            cEhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_EHCI);
+            fSuccess = m_machine.isOk();
+        }
+        ULONG cXhciCtls = 0;
+        if (fSuccess)
+        {
+            cXhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_XHCI);
+            fSuccess = m_machine.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveUSBSettings(m_machine, this);
+
+        /* For requested controller type: */
+        switch (enmType)
+        {
+            case KUSBControllerType_OHCI:
+            {
+                /* Remove excessive controllers: */
+                if (cXhciCtls || cEhciCtls)
+                    fSuccess = removeUSBControllers(QSet<KUSBControllerType>()
+                                                    << KUSBControllerType_XHCI
+                                                    << KUSBControllerType_EHCI);
+
+                /* Add required controller: */
+                if (fSuccess && !cOhciCtls)
+                {
+                    m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotSaveUSBSettings(m_machine, this);
+
+                break;
+            }
+            case KUSBControllerType_EHCI:
+            {
+                /* Remove excessive controllers: */
+                if (cXhciCtls)
+                    fSuccess = removeUSBControllers(QSet<KUSBControllerType>()
+                                                    << KUSBControllerType_XHCI);
+
+                /* Add required controllers: */
+                if (fSuccess && !cOhciCtls)
+                {
+                    m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
+                    fSuccess = m_machine.isOk();
+                }
+                if (fSuccess && !cEhciCtls)
+                {
+                    m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotSaveUSBSettings(m_machine, this);
+
+                break;
+            }
+            case KUSBControllerType_XHCI:
+            {
+                /* Remove excessive controllers: */
+                if (cEhciCtls || cOhciCtls)
+                    fSuccess = removeUSBControllers(QSet<KUSBControllerType>()
+                                                    << KUSBControllerType_EHCI
+                                                    << KUSBControllerType_OHCI);
+
+                /* Add required controller: */
+                if (fSuccess && !cXhciCtls)
+                {
+                    m_machine.AddUSBController("xHCI", KUSBControllerType_XHCI);
+                    fSuccess = m_machine.isOk();
+                }
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotSaveUSBSettings(m_machine, this);
+
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsUSB::removeUSBFilter(CUSBDeviceFilters &comFiltersObject, int iPosition)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Remove filter: */
+    if (fSuccess)
+    {
+        /* Remove filter: */
+        comFiltersObject.RemoveDeviceFilter(iPosition);
+        fSuccess = comFiltersObject.isOk();
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveUSBDeviceFiltersSettings(comFiltersObject, this);
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMachineSettingsUSB::createUSBFilter(CUSBDeviceFilters &comFiltersObject, int iPosition, const UIDataSettingsMachineUSBFilter &filterData)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Add filter: */
+    if (fSuccess)
+    {
+        /* Create filter: */
+        CUSBDeviceFilter comFilter = comFiltersObject.CreateDeviceFilter(filterData.m_strName);
+        fSuccess = comFiltersObject.isOk() && comFilter.isNotNull();
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveUSBDeviceFiltersSettings(comFiltersObject, this);
+
+        /* Save whether filter is active: */
+        if (fSuccess)
+        {
+            comFilter.SetActive(filterData.m_fActive);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter Vendor ID: */
+        if (fSuccess)
+        {
+            comFilter.SetVendorId(filterData.m_strVendorId);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter Product ID: */
+        if (fSuccess)
+        {
+            comFilter.SetProductId(filterData.m_strProductId);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter revision: */
+        if (fSuccess)
+        {
+            comFilter.SetRevision(filterData.m_strRevision);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter manufacturer: */
+        if (fSuccess)
+        {
+            comFilter.SetManufacturer(filterData.m_strManufacturer);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter product: */
+        if (fSuccess)
+        {
+            comFilter.SetProduct(filterData.m_strProduct);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter serial number: */
+        if (fSuccess)
+        {
+            comFilter.SetSerialNumber(filterData.m_strSerialNumber);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter port: */
+        if (fSuccess)
+        {
+            comFilter.SetPort(filterData.m_strPort);
+            fSuccess = comFilter.isOk();
+        }
+        /* Save filter remote mode: */
+        if (fSuccess)
+        {
+            comFilter.SetRemote(filterData.m_strRemote);
+            fSuccess = comFilter.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveUSBDeviceFilterSettings(comFilter, this);
+
+        /* Insert filter onto corresponding position: */
+        if (fSuccess)
+        {
+            comFiltersObject.InsertDeviceFilter(iPosition, comFilter);
+            fSuccess = comFiltersObject.isOk();
+        }
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveUSBDeviceFiltersSettings(comFiltersObject, this);
+    }
+    /* Return result: */
+    return fSuccess;
 }
 
 #include "UIMachineSettingsUSB.moc"
