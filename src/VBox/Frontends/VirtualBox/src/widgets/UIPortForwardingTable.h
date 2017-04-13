@@ -61,7 +61,7 @@ public:
     PortData() : m_uValue(0) {}
     PortData(ushort uValue) : m_uValue(uValue) {}
     PortData(const PortData &other) : m_uValue(other.value()) {}
-    bool operator==(const PortData &other) { return m_uValue == other.m_uValue; }
+    bool operator==(const PortData &other) const { return m_uValue == other.m_uValue; }
     ushort value() const { return m_uValue; }
 
 private:
@@ -70,29 +70,69 @@ private:
 };
 Q_DECLARE_METATYPE(PortData);
 
-/* Port forwarding data: */
-struct UIPortForwardingData
+/** Port Forwarding Rule data structure. */
+struct UIDataPortForwardingRule
 {
-    UIPortForwardingData(const NameData &strName, KNATProtocol protocol,
-                         const IpData &strHostIP, PortData uHostPort,
-                         const IpData &strGuestIP, PortData uGuestPort)
-        : name(strName), protocol(protocol)
-        , hostIp(strHostIP), hostPort(uHostPort)
-        , guestIp(strGuestIP), guestPort(uGuestPort) {}
-    bool operator==(const UIPortForwardingData &other)
+    /** Constructs data. */
+    UIDataPortForwardingRule()
+        : name(QString())
+        , protocol(KNATProtocol_UDP)
+        , hostIp(IpData())
+        , hostPort(PortData())
+        , guestIp(IpData())
+        , guestPort(PortData())
+    {}
+
+    /** Constructs data on the basis of passed arguments.
+      * @param  strName      Brings the rule name.
+      * @param  enmProtocol  Brings the rule protocol.
+      * @param  strHostIP    Brings the rule host IP.
+      * @param  uHostPort    Brings the rule host port.
+      * @param  strGuestIP   Brings the rule guest IP.
+      * @param  uGuestPort   Brings the rule guest port. */
+    UIDataPortForwardingRule(const NameData &strName,
+                             KNATProtocol enmProtocol,
+                             const IpData &strHostIP,
+                             PortData uHostPort,
+                             const IpData &strGuestIP,
+                             PortData uGuestPort)
+        : name(strName)
+        , protocol(enmProtocol)
+        , hostIp(strHostIP)
+        , hostPort(uHostPort)
+        , guestIp(strGuestIP)
+        , guestPort(uGuestPort)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataPortForwardingRule &other) const
     {
-        return name == other.name &&
-               protocol == other.protocol &&
-               hostIp == other.hostIp &&
-               hostPort == other.hostPort &&
-               guestIp == other.guestIp &&
-               guestPort == other.guestPort;
+        return true
+               && (name == other.name)
+               && (protocol == other.protocol)
+               && (hostIp == other.hostIp)
+               && (hostPort == other.hostPort)
+               && (guestIp == other.guestIp)
+               && (guestPort == other.guestPort)
+               ;
     }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataPortForwardingRule &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataPortForwardingRule &other) const { return !equal(other); }
+
+    /** Holds the rule name. */
     NameData name;
+    /** Holds the rule protocol. */
     KNATProtocol protocol;
+    /** Holds the rule host IP. */
     IpData hostIp;
+    /** Holds the rule host port. */
     PortData hostPort;
+    /** Holds the rule guest IP. */
     IpData guestIp;
+    /** Holds the rule guest port. */
     PortData guestPort;
 };
 
@@ -119,7 +159,7 @@ struct UIPortForwardingDataUnique
 };
 
 /* Port forwarding data list: */
-typedef QList<UIPortForwardingData> UIPortForwardingDataList;
+typedef QList<UIDataPortForwardingRule> UIPortForwardingDataList;
 
 /* Port forwarding dialog: */
 class UIPortForwardingTable : public QIWithRetranslateUI<QWidget>

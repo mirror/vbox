@@ -1057,12 +1057,12 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             {
                 const QStringList redirectData = redirect.split(',');
                 AssertMsg(redirectData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
-                oldAdapterData.m_redirects << UIPortForwardingData(redirectData.at(0),
-                                                                   (KNATProtocol)redirectData.at(1).toUInt(),
-                                                                   redirectData.at(2),
-                                                                   redirectData.at(3).toUInt(),
-                                                                   redirectData.at(4),
-                                                                   redirectData.at(5).toUInt());
+                oldAdapterData.m_redirects << UIDataPortForwardingRule(redirectData.at(0),
+                                                                       (KNATProtocol)redirectData.at(1).toUInt(),
+                                                                       redirectData.at(2),
+                                                                       redirectData.at(3).toUInt(),
+                                                                       redirectData.at(4),
+                                                                       redirectData.at(5).toUInt());
             }
         }
 
@@ -1589,10 +1589,10 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
             {
                 foreach (const QString &strOldRedirect, comAdapter.GetNATEngine().GetRedirects())
                     comAdapter.GetNATEngine().RemoveRedirect(strOldRedirect.section(',', 0, 0));
-                foreach (const UIPortForwardingData &newRedirect, newAdapterData.m_redirects)
+                foreach (const UIDataPortForwardingRule &newRedirect, newAdapterData.m_redirects)
                     comAdapter.GetNATEngine().AddRedirect(newRedirect.name, newRedirect.protocol,
-                                                       newRedirect.hostIp, newRedirect.hostPort.value(),
-                                                       newRedirect.guestIp, newRedirect.guestPort.value());
+                                                          newRedirect.hostIp, newRedirect.hostPort.value(),
+                                                          newRedirect.guestIp, newRedirect.guestPort.value());
             }
 
             /* Show error message if necessary: */

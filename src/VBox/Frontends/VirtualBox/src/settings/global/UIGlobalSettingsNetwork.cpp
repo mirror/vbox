@@ -1083,12 +1083,12 @@ void UIGlobalSettingsNetwork::loadDataNetworkNAT(const CNATNetwork &network, UID
         Assert(rules.size() == 6);
         if (rules.size() != 6)
             continue;
-        data.m_ipv4rules << UIPortForwardingData(rules[0],
-                                                 gpConverter->fromInternalString<KNATProtocol>(rules[1]),
-                                                 QString(rules[2]).remove('[').remove(']'),
-                                                 rules[3].toUInt(),
-                                                 QString(rules[4]).remove('[').remove(']'),
-                                                 rules[5].toUInt());
+        data.m_ipv4rules << UIDataPortForwardingRule(rules[0],
+                                                     gpConverter->fromInternalString<KNATProtocol>(rules[1]),
+                                                     QString(rules[2]).remove('[').remove(']'),
+                                                     rules[3].toUInt(),
+                                                     QString(rules[4]).remove('[').remove(']'),
+                                                     rules[5].toUInt());
     }
 
     /* Load IPv6 rules: */
@@ -1111,12 +1111,12 @@ void UIGlobalSettingsNetwork::loadDataNetworkNAT(const CNATNetwork &network, UID
         Assert(rules.size() == 6);
         if (rules.size() != 6)
             continue;
-        data.m_ipv6rules << UIPortForwardingData(rules[0],
-                                                 gpConverter->fromInternalString<KNATProtocol>(rules[1]),
-                                                 QString(rules[2]).remove('[').remove(']'),
-                                                 rules[3].toUInt(),
-                                                 QString(rules[4]).remove('[').remove(']'),
-                                                 rules[5].toUInt());
+        data.m_ipv6rules << UIDataPortForwardingRule(rules[0],
+                                                     gpConverter->fromInternalString<KNATProtocol>(rules[1]),
+                                                     QString(rules[2]).remove('[').remove(']'),
+                                                     rules[3].toUInt(),
+                                                     QString(rules[4]).remove('[').remove(']'),
+                                                     rules[5].toUInt());
     }
 }
 
@@ -1138,7 +1138,7 @@ void UIGlobalSettingsNetwork::saveDataNetworkNAT(const UIDataSettingsGlobalNetwo
     /* Rewrite IPv4 rules: */
     foreach (const QString &strRule, network.GetPortForwardRules4())
         network.RemovePortForwardRule(false, strRule.section(':', 0, 0));
-    foreach (const UIPortForwardingData &newRule, data.m_ipv4rules)
+    foreach (const UIDataPortForwardingRule &newRule, data.m_ipv4rules)
         network.AddPortForwardRule(false,
                                    newRule.name, newRule.protocol,
                                    newRule.hostIp, newRule.hostPort.value(),
@@ -1147,7 +1147,7 @@ void UIGlobalSettingsNetwork::saveDataNetworkNAT(const UIDataSettingsGlobalNetwo
     /* Rewrite IPv6 rules: */
     foreach (const QString &strRule, network.GetPortForwardRules6())
         network.RemovePortForwardRule(true, strRule.section(':', 0, 0));
-    foreach (const UIPortForwardingData &newRule, data.m_ipv6rules)
+    foreach (const UIDataPortForwardingRule &newRule, data.m_ipv6rules)
         network.AddPortForwardRule(true,
                                    newRule.name, newRule.protocol,
                                    newRule.hostIp, newRule.hostPort.value(),

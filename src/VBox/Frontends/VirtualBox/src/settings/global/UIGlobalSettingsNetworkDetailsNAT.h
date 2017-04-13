@@ -37,8 +37,8 @@ struct UIDataSettingsGlobalNetworkNAT
         , m_fSupportsDHCP(false)
         , m_fSupportsIPv6(false)
         , m_fAdvertiseDefaultIPv6Route(false)
-        , m_ipv4rules(QList<UIPortForwardingData>())
-        , m_ipv6rules(QList<UIPortForwardingData>())
+        , m_ipv4rules(QList<UIDataPortForwardingRule>())
+        , m_ipv6rules(QList<UIDataPortForwardingRule>())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
