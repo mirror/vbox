@@ -427,6 +427,9 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
 
         case NTE_BAD_ALGID:         return VERR_CR_PKIX_UNKNOWN_DIGEST_TYPE;
 
+#ifndef STATUS_ELEVATION_REQUIRED
+# define STATUS_ELEVATION_REQUIRED 0xc000042c
+#endif
         case STATUS_ELEVATION_REQUIRED: return VERR_PRIVILEGE_NOT_HELD;
     }
 
