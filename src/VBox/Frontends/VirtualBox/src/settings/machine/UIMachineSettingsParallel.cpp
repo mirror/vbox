@@ -81,25 +81,12 @@ struct UIDataSettingsMachineParallelPort
 struct UIDataSettingsMachineParallel
 {
     /** Constructs data. */
-    UIDataSettingsMachineParallel()
-        : m_ports(QList<UIDataSettingsMachineParallelPort>())
-    {}
+    UIDataSettingsMachineParallel() {}
 
     /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsMachineParallel &other) const
-    {
-        return true
-               && (m_ports == other.m_ports)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsMachineParallel &other) const { return equal(other); }
+    bool operator==(const UIDataSettingsMachineParallel & /* other */) const { return true; }
     /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsMachineParallel &other) const { return !equal(other); }
-
-    /** Holds the port list. */
-    QList<UIDataSettingsMachineParallelPort> m_ports;
+    bool operator!=(const UIDataSettingsMachineParallel & /* other */) const { return false; }
 };
 
 
@@ -339,7 +326,7 @@ void UIMachineSettingsParallelPage::loadToCacheFrom(QVariant &data)
         }
 
         /* Cache old port data: */
-        oldParallelData.m_ports << oldPortData;
+        m_pCache->child(iSlot).cacheInitialData(oldPortData);
     }
 
     /* Cache old parallel data: */
@@ -357,13 +344,13 @@ void UIMachineSettingsParallelPage::getFromCache()
     QWidget *pLastFocusWidget = m_pTabWidget->focusProxy();
 
     /* For each port: */
-    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get port page: */
-        UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
+        UIMachineSettingsParallel *pPage = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iSlot));
 
         /* Load old port data from the cache: */
-        pPage->loadPortData(m_pCache->base().m_ports.at(iPort));
+        pPage->loadPortData(m_pCache->child(iSlot).base());
 
         /* Setup tab order: */
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
@@ -385,10 +372,10 @@ void UIMachineSettingsParallelPage::putToCache()
     UIDataSettingsMachineParallel newParallelData;
 
     /* For each port: */
-    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Getting port page: */
-        UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
+        UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iSlot));
 
         /* Prepare new port data: */
         UIDataSettingsMachineParallelPort newPortData;
@@ -397,7 +384,7 @@ void UIMachineSettingsParallelPage::putToCache()
         pTab->savePortData(newPortData);
 
         /* Cache new port data: */
-        newParallelData.m_ports << newPortData;
+        m_pCache->child(iSlot).cacheCurrentData(newPortData);
     }
 
     /* Cache new parallel data: */
@@ -495,14 +482,14 @@ void UIMachineSettingsParallelPage::retranslateUi()
 void UIMachineSettingsParallelPage::polishPage()
 {
     /* Get the count of parallel port tabs: */
-    for (int iPort = 0; iPort < m_pTabWidget->count(); ++iPort)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        m_pTabWidget->setTabEnabled(iPort,
+        m_pTabWidget->setTabEnabled(iSlot,
                                     isMachineOffline() ||
                                     (isMachineInValidMode() &&
-                                     m_pCache->base().m_ports.size() > iPort &&
-                                     m_pCache->base().m_ports.at(iPort).m_fPortEnabled));
-        UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iPort));
+                                     m_pCache->childCount() > iSlot &&
+                                     m_pCache->child(iSlot).base().m_fPortEnabled));
+        UIMachineSettingsParallel *pTab = qobject_cast<UIMachineSettingsParallel*>(m_pTabWidget->widget(iSlot));
         pTab->polishTab();
     }
 }
@@ -567,59 +554,55 @@ bool UIMachineSettingsParallelPage::saveParallelData()
     return fSuccess;
 }
 
-bool UIMachineSettingsParallelPage::savePortData(int iPort)
+bool UIMachineSettingsParallelPage::savePortData(int iSlot)
 {
     /* Prepare result: */
     bool fSuccess = true;
     /* Save adapter settings from the cache: */
-    if (fSuccess)
+    if (fSuccess && m_pCache->child(iSlot).wasChanged())
     {
         /* Get old parallel data from the cache: */
-        const UIDataSettingsMachineParallelPort &oldPortData = m_pCache->base().m_ports.at(iPort);
+        const UIDataSettingsMachineParallelPort &oldPortData = m_pCache->child(iSlot).base();
         /* Get new parallel data from the cache: */
-        const UIDataSettingsMachineParallelPort &newPortData = m_pCache->data().m_ports.at(iPort);
+        const UIDataSettingsMachineParallelPort &newPortData = m_pCache->child(iSlot).data();
 
-        /* Make sure port data was changed: */
-        if (newPortData != oldPortData)
+        /* Get parallel port for further activities: */
+        CParallelPort comPort = m_machine.GetParallelPort(iSlot);
+        fSuccess = m_machine.isOk() && comPort.isNotNull();
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveParallelSettings(m_machine, this);
+        else
         {
-            /* Get parallel port for further activities: */
-            CParallelPort comPort = m_machine.GetParallelPort(iPort);
-            fSuccess = m_machine.isOk() && comPort.isNotNull();
+            /* Save whether the port is enabled: */
+            if (fSuccess && isMachineOffline() && newPortData.m_fPortEnabled != oldPortData.m_fPortEnabled)
+            {
+                comPort.SetEnabled(newPortData.m_fPortEnabled);
+                fSuccess = comPort.isOk();
+            }
+            /* Save port IRQ: */
+            if (fSuccess && isMachineOffline() && newPortData.m_uIRQ != oldPortData.m_uIRQ)
+            {
+                comPort.SetIRQ(newPortData.m_uIRQ);
+                fSuccess = comPort.isOk();
+            }
+            /* Save port IO base: */
+            if (fSuccess && isMachineOffline() && newPortData.m_uIOBase != oldPortData.m_uIOBase)
+            {
+                comPort.SetIOBase(newPortData.m_uIOBase);
+                fSuccess = comPort.isOk();
+            }
+            /* Save port path: */
+            if (fSuccess && isMachineOffline() && newPortData.m_strPath != oldPortData.m_strPath)
+            {
+                comPort.SetPath(newPortData.m_strPath);
+                fSuccess = comPort.isOk();
+            }
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveParallelSettings(m_machine, this);
-            else
-            {
-                /* Save whether the port is enabled: */
-                if (fSuccess && isMachineOffline() && newPortData.m_fPortEnabled != oldPortData.m_fPortEnabled)
-                {
-                    comPort.SetEnabled(newPortData.m_fPortEnabled);
-                    fSuccess = comPort.isOk();
-                }
-                /* Save port IRQ: */
-                if (fSuccess && isMachineOffline() && newPortData.m_uIRQ != oldPortData.m_uIRQ)
-                {
-                    comPort.SetIRQ(newPortData.m_uIRQ);
-                    fSuccess = comPort.isOk();
-                }
-                /* Save port IO base: */
-                if (fSuccess && isMachineOffline() && newPortData.m_uIOBase != oldPortData.m_uIOBase)
-                {
-                    comPort.SetIOBase(newPortData.m_uIOBase);
-                    fSuccess = comPort.isOk();
-                }
-                /* Save port path: */
-                if (fSuccess && isMachineOffline() && newPortData.m_strPath != oldPortData.m_strPath)
-                {
-                    comPort.SetPath(newPortData.m_strPath);
-                    fSuccess = comPort.isOk();
-                }
-
-                /* Show error message if necessary: */
-                if (!fSuccess)
-                    msgCenter().cannotSaveParallelPortSettings(comPort, this);
-            }
+                msgCenter().cannotSaveParallelPortSettings(comPort, this);
         }
     }
     /* Return result: */

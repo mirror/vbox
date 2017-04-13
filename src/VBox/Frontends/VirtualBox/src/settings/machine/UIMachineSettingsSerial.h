@@ -26,7 +26,9 @@
 class QITabWidget;
 class UIMachineSettingsSerialPage;
 struct UIDataSettingsMachineSerial;
-typedef UISettingsCache<UIDataSettingsMachineSerial> UISettingsCacheMachineSerial;
+struct UIDataSettingsMachineSerialPort;
+typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineSerialPort;
+typedef UISettingsCachePool<UIDataSettingsMachineSerial, UISettingsCacheMachineSerialPort> UISettingsCacheMachineSerial;
 
 
 /** Machine settings: Serial page. */
@@ -79,7 +81,7 @@ private:
     /** Saves existing serial data from the cache. */
     bool saveSerialData();
     /** Saves existing port data from the cache. */
-    bool savePortData(int iPort);
+    bool savePortData(int iSlot);
 
     /** Holds the tab-widget instance. */
     QITabWidget *m_pTabWidget;

@@ -26,7 +26,9 @@
 class QITabWidget;
 class UIMachineSettingsParallelPage;
 struct UIDataSettingsMachineParallel;
-typedef UISettingsCache<UIDataSettingsMachineParallel> UISettingsCacheMachineParallel;
+struct UIDataSettingsMachineParallelPort;
+typedef UISettingsCache<UIDataSettingsMachineParallelPort> UISettingsCacheMachineParallelPort;
+typedef UISettingsCachePool<UIDataSettingsMachineParallel, UISettingsCacheMachineParallelPort> UISettingsCacheMachineParallel;
 
 
 /** Machine settings: Parallel page. */
@@ -79,7 +81,7 @@ private:
     /** Saves existing parallel data from the cache. */
     bool saveParallelData();
     /** Saves existing port data from the cache. */
-    bool savePortData(int iPort);
+    bool savePortData(int iSlot);
 
     /** Holds the tab-widget instance. */
     QITabWidget *m_pTabWidget;
