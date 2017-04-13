@@ -64,7 +64,7 @@ void VirtualBoxClient::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef VBOX_WITH_SDS
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
 
 HRESULT CreateVirtualBoxThroughSDS(ComPtr<IVirtualBox> &aVirtualBox)
 {
@@ -285,7 +285,7 @@ HRESULT VirtualBoxClient::isServiceDisabled(const wchar_t* wszServiceName, bool*
 HRESULT VirtualBoxClient::init()
 {
 
-#ifdef VBOX_WITH_SDS
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
     // setup COM Security to enable impersonation
     // This works for console Virtual Box clients, GUI has own security settings
     //  For GUI Virtual Box it will be second call so can return TOO_LATE error
@@ -326,8 +326,7 @@ HRESULT VirtualBoxClient::init()
         mData.m_ThreadWatcher = NIL_RTTHREAD;
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
 
-#ifdef VBOX_WITH_SDS
-        // TODO: AM create virtual box through SDS
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
         rc = CreateVirtualBoxThroughSDS(mData.m_pVirtualBox);
 #else
         rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
@@ -440,7 +439,9 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
     HRESULT hrc = isServiceDisabled(L"VBoxSDS", &bIsVBoxSDSDisabled);
     if (FAILED(hrc))
     {
-        return setError(hrcCaller, tr("Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc"), hrcCaller, hrc);
+        LogRelFunc(("Warning: Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc"), hrcCaller, hrc));
+        bIsVBoxSDSDisabled = false;
+        //return setError(hrcCaller, tr("Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc"), hrcCaller, hrc);
     }
     if (bIsVBoxSDSDisabled)
     {
@@ -627,7 +628,7 @@ void VirtualBoxClient::uninit()
 {
     LogFlowThisFunc(("\n"));
 
-#ifdef VBOX_WITH_SDS
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
     ReleaseVirtualBoxThroughSDS();
 #endif
 
