@@ -73,7 +73,6 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strNATNetworkName(QString())
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
-        , m_redirects(UIPortForwardingDataList())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -93,7 +92,6 @@ struct UIDataSettingsMachineNetworkAdapter
                && (m_strNATNetworkName == other.m_strNATNetworkName)
                && (m_strMACAddress == other.m_strMACAddress)
                && (m_fCableConnected == other.m_fCableConnected)
-               && (m_redirects == other.m_redirects)
                ;
     }
 
@@ -128,8 +126,6 @@ struct UIDataSettingsMachineNetworkAdapter
     QString                           m_strMACAddress;
     /** Holds whether the network adapter is connected. */
     bool                              m_fCableConnected;
-    /** Holds the set of network redirection rules. */
-    UIPortForwardingDataList          m_redirects;
 };
 
 
@@ -158,8 +154,8 @@ public:
     UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
 
     /* Load / Save API: */
-    void loadAdapterData(const UIDataSettingsMachineNetworkAdapter &adapterData);
-    void saveAdapterData(UIDataSettingsMachineNetworkAdapter &adapterData);
+    void getAdapterDataFromCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
+    void putAdapterDataToCache(UISettingsCacheMachineNetworkAdapter &adapterCache);
 
     /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(QList<UIValidationMessage> &messages);
@@ -273,87 +269,99 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     retranslateUi();
 }
 
-void UIMachineSettingsNetwork::loadAdapterData(const UIDataSettingsMachineNetworkAdapter &adapterData)
+void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
+    /* Get old adapter data: */
+    const UIDataSettingsMachineNetworkAdapter &oldAdapterData = adapterCache.base();
+
     /* Load slot number: */
-    m_iSlot = adapterData.m_iSlot;
+    m_iSlot = oldAdapterData.m_iSlot;
 
     /* Load adapter activity state: */
-    m_pEnableAdapterCheckBox->setChecked(adapterData.m_fAdapterEnabled);
+    m_pEnableAdapterCheckBox->setChecked(oldAdapterData.m_fAdapterEnabled);
     /* Handle adapter activity change: */
     sltHandleAdapterActivityChange();
 
     /* Load attachment type: */
-    m_pAttachmentTypeComboBox->setCurrentIndex(position(m_pAttachmentTypeComboBox, adapterData.m_attachmentType));
+    m_pAttachmentTypeComboBox->setCurrentIndex(position(m_pAttachmentTypeComboBox, oldAdapterData.m_attachmentType));
     /* Load alternative name: */
-    m_strBridgedAdapterName = wipedOutString(adapterData.m_strBridgedAdapterName);
-    m_strInternalNetworkName = wipedOutString(adapterData.m_strInternalNetworkName);
-    m_strHostInterfaceName = wipedOutString(adapterData.m_strHostInterfaceName);
-    m_strGenericDriverName = wipedOutString(adapterData.m_strGenericDriverName);
-    m_strNATNetworkName = wipedOutString(adapterData.m_strNATNetworkName);
+    m_strBridgedAdapterName = wipedOutString(oldAdapterData.m_strBridgedAdapterName);
+    m_strInternalNetworkName = wipedOutString(oldAdapterData.m_strInternalNetworkName);
+    m_strHostInterfaceName = wipedOutString(oldAdapterData.m_strHostInterfaceName);
+    m_strGenericDriverName = wipedOutString(oldAdapterData.m_strGenericDriverName);
+    m_strNATNetworkName = wipedOutString(oldAdapterData.m_strNATNetworkName);
     /* Handle attachment type change: */
     sltHandleAttachmentTypeChange();
 
     /* Load adapter type: */
-    m_pAdapterTypeCombo->setCurrentIndex(position(m_pAdapterTypeCombo, adapterData.m_adapterType));
+    m_pAdapterTypeCombo->setCurrentIndex(position(m_pAdapterTypeCombo, oldAdapterData.m_adapterType));
 
     /* Load promiscuous mode type: */
-    m_pPromiscuousModeCombo->setCurrentIndex(position(m_pPromiscuousModeCombo, adapterData.m_promiscuousMode));
+    m_pPromiscuousModeCombo->setCurrentIndex(position(m_pPromiscuousModeCombo, oldAdapterData.m_promiscuousMode));
 
     /* Other options: */
-    m_pMACEditor->setText(adapterData.m_strMACAddress);
-    m_pGenericPropertiesTextEdit->setText(adapterData.m_strGenericProperties);
-    m_pCableConnectedCheckBox->setChecked(adapterData.m_fCableConnected);
+    m_pMACEditor->setText(oldAdapterData.m_strMACAddress);
+    m_pGenericPropertiesTextEdit->setText(oldAdapterData.m_strGenericProperties);
+    m_pCableConnectedCheckBox->setChecked(oldAdapterData.m_fCableConnected);
 
     /* Load port forwarding rules: */
-    m_portForwardingRules = adapterData.m_redirects;
+    m_portForwardingRules.clear();
+    for (int i = 0; i < adapterCache.childCount(); ++i)
+        m_portForwardingRules << adapterCache.child(i).base();
 }
 
-void UIMachineSettingsNetwork::saveAdapterData(UIDataSettingsMachineNetworkAdapter &adapterData)
+void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
+    /* Prepare new adapter data: */
+    UIDataSettingsMachineNetworkAdapter newAdapterData;
+
     /* Save adapter activity state: */
-    adapterData.m_fAdapterEnabled = m_pEnableAdapterCheckBox->isChecked();
+    newAdapterData.m_fAdapterEnabled = m_pEnableAdapterCheckBox->isChecked();
 
     /* Save attachment type & alternative name: */
-    adapterData.m_attachmentType = attachmentType();
-    switch (adapterData.m_attachmentType)
+    newAdapterData.m_attachmentType = attachmentType();
+    switch (newAdapterData.m_attachmentType)
     {
         case KNetworkAttachmentType_Null:
             break;
         case KNetworkAttachmentType_NAT:
             break;
         case KNetworkAttachmentType_Bridged:
-            adapterData.m_strBridgedAdapterName = alternativeName();
+            newAdapterData.m_strBridgedAdapterName = alternativeName();
             break;
         case KNetworkAttachmentType_Internal:
-            adapterData.m_strInternalNetworkName = alternativeName();
+            newAdapterData.m_strInternalNetworkName = alternativeName();
             break;
         case KNetworkAttachmentType_HostOnly:
-            adapterData.m_strHostInterfaceName = alternativeName();
+            newAdapterData.m_strHostInterfaceName = alternativeName();
             break;
         case KNetworkAttachmentType_Generic:
-            adapterData.m_strGenericDriverName = alternativeName();
-            adapterData.m_strGenericProperties = m_pGenericPropertiesTextEdit->toPlainText();
+            newAdapterData.m_strGenericDriverName = alternativeName();
+            newAdapterData.m_strGenericProperties = m_pGenericPropertiesTextEdit->toPlainText();
             break;
         case KNetworkAttachmentType_NATNetwork:
-            adapterData.m_strNATNetworkName = alternativeName();
+            newAdapterData.m_strNATNetworkName = alternativeName();
             break;
         default:
             break;
     }
 
     /* Save adapter type: */
-    adapterData.m_adapterType = (KNetworkAdapterType)m_pAdapterTypeCombo->itemData(m_pAdapterTypeCombo->currentIndex()).toInt();
+    newAdapterData.m_adapterType = (KNetworkAdapterType)m_pAdapterTypeCombo->itemData(m_pAdapterTypeCombo->currentIndex()).toInt();
 
     /* Save promiscuous mode type: */
-    adapterData.m_promiscuousMode = (KNetworkAdapterPromiscModePolicy)m_pPromiscuousModeCombo->itemData(m_pPromiscuousModeCombo->currentIndex()).toInt();
+    newAdapterData.m_promiscuousMode = (KNetworkAdapterPromiscModePolicy)m_pPromiscuousModeCombo->itemData(m_pPromiscuousModeCombo->currentIndex()).toInt();
 
     /* Other options: */
-    adapterData.m_strMACAddress = m_pMACEditor->text().isEmpty() ? QString() : m_pMACEditor->text();
-    adapterData.m_fCableConnected = m_pCableConnectedCheckBox->isChecked();
+    newAdapterData.m_strMACAddress = m_pMACEditor->text().isEmpty() ? QString() : m_pMACEditor->text();
+    newAdapterData.m_fCableConnected = m_pCableConnectedCheckBox->isChecked();
 
     /* Save port forwarding rules: */
-    adapterData.m_redirects = m_portForwardingRules;
+    foreach (const UIDataPortForwardingRule &rule, m_portForwardingRules)
+        adapterCache.child(rule.name).cacheCurrentData(rule);
+
+    /* Cache new adapter data: */
+    adapterCache.cacheCurrentData(newAdapterData);
 }
 
 bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
@@ -604,7 +612,7 @@ void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
                                           m_pAdvancedArrow->isExpanded());
     m_pGenericPropertiesTextEdit->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
                                              m_pAdvancedArrow->isExpanded());
-    /* Update forwarding-rules button availability: */
+    /* Update forwarding rules button availability: */
     m_pPortForwardingButton->setEnabled(attachmentType() == KNetworkAttachmentType_NAT);
     /* Update alternative-name combo-box whats-this and editable state: */
     switch (attachmentType())
@@ -1053,16 +1061,21 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             oldAdapterData.m_strMACAddress = comAdapter.GetMACAddress();
             oldAdapterData.m_strGenericProperties = loadGenericProperties(comAdapter);
             oldAdapterData.m_fCableConnected = comAdapter.GetCableConnected();
-            foreach (const QString &redirect, comAdapter.GetNATEngine().GetRedirects())
+            foreach (const QString &strRedirect, comAdapter.GetNATEngine().GetRedirects())
             {
-                const QStringList redirectData = redirect.split(',');
-                AssertMsg(redirectData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
-                oldAdapterData.m_redirects << UIDataPortForwardingRule(redirectData.at(0),
-                                                                       (KNATProtocol)redirectData.at(1).toUInt(),
-                                                                       redirectData.at(2),
-                                                                       redirectData.at(3).toUInt(),
-                                                                       redirectData.at(4),
-                                                                       redirectData.at(5).toUInt());
+                /* Gather old forwarding data & cache key: */
+                const QStringList &forwardingData = strRedirect.split(',');
+                AssertMsg(forwardingData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
+                const UIDataPortForwardingRule oldForwardingData(forwardingData.at(0),
+                                                                 (KNATProtocol)forwardingData.at(1).toUInt(),
+                                                                 forwardingData.at(2),
+                                                                 forwardingData.at(3).toUInt(),
+                                                                 forwardingData.at(4),
+                                                                 forwardingData.at(5).toUInt());
+
+                const QString &strForwardingKey = forwardingData.at(0);
+                /* Cache old forwarding data: */
+                m_pCache->child(iSlot).child(strForwardingKey).cacheInitialData(oldForwardingData);
             }
         }
 
@@ -1091,7 +1104,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
 
         /* Load old adapter data from the cache: */
-        pTab->loadAdapterData(m_pCache->child(iSlot).base());
+        pTab->getAdapterDataFromCache(m_pCache->child(iSlot));
 
         /* Setup tab order: */
         pLastFocusWidget = pTab->setOrderAfter(pLastFocusWidget);
@@ -1118,14 +1131,8 @@ void UIMachineSettingsNetworkPage::putToCache()
         /* Get adapter page: */
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
 
-        /* Prepare new adapter data: */
-        UIDataSettingsMachineNetworkAdapter newAdapterData;
-
         /* Gather new adapter data: */
-        pTab->saveAdapterData(newAdapterData);
-
-        /* Cache new adapter data: */
-        m_pCache->child(iSlot).cacheCurrentData(newAdapterData);
+        pTab->putAdapterDataToCache(m_pCache->child(iSlot));
     }
 
     /* Cache new network data: */
@@ -1582,22 +1589,52 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
                 comAdapter.SetCableConnected(newAdapterData.m_fCableConnected);
                 fSuccess = comAdapter.isOk();
             }
-            /* Save adapter redirect options: */
-            if (   fSuccess && newAdapterData.m_redirects != oldAdapterData.m_redirects
-                && (   oldAdapterData.m_attachmentType == KNetworkAttachmentType_NAT
-                    || newAdapterData.m_attachmentType == KNetworkAttachmentType_NAT))
+
+            /* Get NAT engine for further activities: */
+            CNATEngine comEngine;
+            if (fSuccess)
             {
-                foreach (const QString &strOldRedirect, comAdapter.GetNATEngine().GetRedirects())
-                    comAdapter.GetNATEngine().RemoveRedirect(strOldRedirect.section(',', 0, 0));
-                foreach (const UIDataPortForwardingRule &newRedirect, newAdapterData.m_redirects)
-                    comAdapter.GetNATEngine().AddRedirect(newRedirect.name, newRedirect.protocol,
-                                                          newRedirect.hostIp, newRedirect.hostPort.value(),
-                                                          newRedirect.guestIp, newRedirect.guestPort.value());
+                comEngine = comAdapter.GetNATEngine();
+                fSuccess = comAdapter.isOk() && comEngine.isNotNull();
             }
 
             /* Show error message if necessary: */
             if (!fSuccess)
                 msgCenter().cannotSaveNetworkAdapterSettings(comAdapter, this);
+            else
+            {
+                /* Save adapter port forwarding rules: */
+                if (   oldAdapterData.m_attachmentType == KNetworkAttachmentType_NAT
+                    || newAdapterData.m_attachmentType == KNetworkAttachmentType_NAT)
+                {
+                    /* For each rule: */
+                    for (int iRule = 0; fSuccess && iRule < m_pCache->child(iSlot).childCount(); ++iRule)
+                    {
+                        /* Get rule cache: */
+                        const UISettingsCachePortForwardingRule &ruleCache = m_pCache->child(iSlot).child(iRule);
+
+                        /* Remove rule marked for 'remove' or 'update': */
+                        if (fSuccess && (ruleCache.wasRemoved() || ruleCache.wasUpdated()))
+                        {
+                            comEngine.RemoveRedirect(ruleCache.base().name);
+                            fSuccess = comEngine.isOk();
+                        }
+
+                        /* Create rule marked for 'create' or 'update': */
+                        if (fSuccess && (ruleCache.wasCreated() || ruleCache.wasUpdated()))
+                        {
+                            comEngine.AddRedirect(ruleCache.data().name, ruleCache.data().protocol,
+                                                  ruleCache.data().hostIp, ruleCache.data().hostPort.value(),
+                                                  ruleCache.data().guestIp, ruleCache.data().guestPort.value());
+                            fSuccess = comEngine.isOk();
+                        }
+
+                        /* Show error message if necessary: */
+                        if (!fSuccess)
+                            msgCenter().cannotSaveNATEngineSettings(comEngine, this);
+                    }
+                }
+            }
         }
     }
     /* Return result: */

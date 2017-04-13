@@ -27,7 +27,8 @@
 class QITabWidget;
 struct UIDataSettingsMachineNetwork;
 struct UIDataSettingsMachineNetworkAdapter;
-typedef UISettingsCache<UIDataSettingsMachineNetworkAdapter> UISettingsCacheMachineNetworkAdapter;
+typedef UISettingsCache<UIDataPortForwardingRule> UISettingsCachePortForwardingRule;
+typedef UISettingsCachePool<UIDataSettingsMachineNetworkAdapter, UISettingsCachePortForwardingRule> UISettingsCacheMachineNetworkAdapter;
 typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UISettingsCacheMachineNetworkAdapter> UISettingsCacheMachineNetwork;
 
 

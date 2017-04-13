@@ -248,6 +248,7 @@ public:
     void cannotSaveInterfaceSettings(const CMachine &comMachine, QWidget *pParent = 0);
     void cannotSaveNetworkSettings(const CMachine &comMachine, QWidget *pParent = 0);
     void cannotSaveNetworkAdapterSettings(const CNetworkAdapter &comAdapter, QWidget *pParent = 0);
+    void cannotSaveNATEngineSettings(const CNATEngine &comEngine, QWidget *pParent = 0);
     void cannotSaveParallelSettings(const CMachine &comMachine, QWidget *pParent = 0);
     void cannotSaveParallelPortSettings(const CParallelPort &comPort, QWidget *pParent = 0);
     void cannotSaveSerialSettings(const CMachine &comMachine, QWidget *pParent = 0);
