@@ -1135,6 +1135,7 @@ bool UIMachineSettingsSystem::saveMotherboardData()
                 }
             }
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveSystemSettings(m_machine, this);
@@ -1173,6 +1174,7 @@ bool UIMachineSettingsSystem::saveProcessorData()
             m_machine.SetCPUExecutionCap(newSystemData.m_iCPUExecCap);
             fSuccess = m_machine.isOk();
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveSystemSettings(m_machine, this);
@@ -1211,6 +1213,7 @@ bool UIMachineSettingsSystem::saveAccelerationData()
             m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
             fSuccess = m_machine.isOk();
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveSystemSettings(m_machine, this);

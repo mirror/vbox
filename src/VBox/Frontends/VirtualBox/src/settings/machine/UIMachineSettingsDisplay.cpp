@@ -1263,6 +1263,7 @@ bool UIMachineSettingsDisplay::saveScreenData()
             fSuccess = m_machine.isOk();
         }
 #endif
+
         /* Get machine ID for further activities: */
         QString strMachineId;
         if (fSuccess)
@@ -1270,6 +1271,7 @@ bool UIMachineSettingsDisplay::saveScreenData()
             strMachineId = m_machine.GetId();
             fSuccess = m_machine.isOk();
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveDisplaySettings(m_machine, this);
@@ -1302,45 +1304,49 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
         /* Get remote display server for further activities: */
         CVRDEServer comServer = m_machine.GetVRDEServer();
         fSuccess = m_machine.isOk() && comServer.isNotNull();
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveDisplaySettings(m_machine, this);
+        else
+        {
+            /* Save whether remote display server is enabled: */
+            if (fSuccess && newDisplayData.m_fRemoteDisplayServerEnabled != oldDisplayData.m_fRemoteDisplayServerEnabled)
+            {
+                comServer.SetEnabled(newDisplayData.m_fRemoteDisplayServerEnabled);
+                fSuccess = comServer.isOk();
+            }
+            /* Save remote display server port: */
+            if (fSuccess && newDisplayData.m_strRemoteDisplayPort != oldDisplayData.m_strRemoteDisplayPort)
+            {
+                comServer.SetVRDEProperty("TCP/Ports", newDisplayData.m_strRemoteDisplayPort);
+                fSuccess = comServer.isOk();
+            }
+            /* Save remote display server auth type: */
+            if (fSuccess && newDisplayData.m_remoteDisplayAuthType != oldDisplayData.m_remoteDisplayAuthType)
+            {
+                comServer.SetAuthType(newDisplayData.m_remoteDisplayAuthType);
+                fSuccess = comServer.isOk();
+            }
+            /* Save remote display server timeout: */
+            if (fSuccess && newDisplayData.m_uRemoteDisplayTimeout != oldDisplayData.m_uRemoteDisplayTimeout)
+            {
+                comServer.SetAuthTimeout(newDisplayData.m_uRemoteDisplayTimeout);
+                fSuccess = comServer.isOk();
+            }
+            /* Save whether remote display server allows multiple connections: */
+            if (   fSuccess
+                && (isMachineOffline() || isMachineSaved())
+                && (newDisplayData.m_fRemoteDisplayMultiConnAllowed != oldDisplayData.m_fRemoteDisplayMultiConnAllowed))
+            {
+                comServer.SetAllowMultiConnection(newDisplayData.m_fRemoteDisplayMultiConnAllowed);
+                fSuccess = comServer.isOk();
+            }
 
-        /* Save whether remote display server is enabled: */
-        if (fSuccess && newDisplayData.m_fRemoteDisplayServerEnabled != oldDisplayData.m_fRemoteDisplayServerEnabled)
-        {
-            comServer.SetEnabled(newDisplayData.m_fRemoteDisplayServerEnabled);
-            fSuccess = comServer.isOk();
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveRemoteDisplayServerSettings(comServer, this);
         }
-        /* Save remote display server port: */
-        if (fSuccess && newDisplayData.m_strRemoteDisplayPort != oldDisplayData.m_strRemoteDisplayPort)
-        {
-            comServer.SetVRDEProperty("TCP/Ports", newDisplayData.m_strRemoteDisplayPort);
-            fSuccess = comServer.isOk();
-        }
-        /* Save remote display server auth type: */
-        if (fSuccess && newDisplayData.m_remoteDisplayAuthType != oldDisplayData.m_remoteDisplayAuthType)
-        {
-            comServer.SetAuthType(newDisplayData.m_remoteDisplayAuthType);
-            fSuccess = comServer.isOk();
-        }
-        /* Save remote display server timeout: */
-        if (fSuccess && newDisplayData.m_uRemoteDisplayTimeout != oldDisplayData.m_uRemoteDisplayTimeout)
-        {
-            comServer.SetAuthTimeout(newDisplayData.m_uRemoteDisplayTimeout);
-            fSuccess = comServer.isOk();
-        }
-        /* Save whether remote display server allows multiple connections: */
-        if (   fSuccess
-            && (isMachineOffline() || isMachineSaved())
-            && (newDisplayData.m_fRemoteDisplayMultiConnAllowed != oldDisplayData.m_fRemoteDisplayMultiConnAllowed))
-        {
-            comServer.SetAllowMultiConnection(newDisplayData.m_fRemoteDisplayMultiConnAllowed);
-            fSuccess = comServer.isOk();
-        }
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveRemoteDisplayServerSettings(comServer, this);
     }
     /* Return result: */
     return fSuccess;
@@ -1475,6 +1481,7 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
                 fSuccess = m_machine.isOk();
             }
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveDisplaySettings(m_machine, this);

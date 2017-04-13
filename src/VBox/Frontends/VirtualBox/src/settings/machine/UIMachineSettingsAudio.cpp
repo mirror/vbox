@@ -269,31 +269,35 @@ bool UIMachineSettingsAudio::saveAudioData()
         /* Get audio adapter for further activities: */
         CAudioAdapter comAdapter = m_machine.GetAudioAdapter();
         fSuccess = m_machine.isOk() && comAdapter.isNotNull();
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveAudioSettings(m_machine, this);
+        else
+        {
+            /* Save whether audio is enabled: */
+            if (fSuccess && isMachineOffline() && newAudioData.m_fAudioEnabled != oldAudioData.m_fAudioEnabled)
+            {
+                comAdapter.SetEnabled(newAudioData.m_fAudioEnabled);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save audio driver type: */
+            if (fSuccess && isMachineOffline() && newAudioData.m_audioDriverType != oldAudioData.m_audioDriverType)
+            {
+                comAdapter.SetAudioDriver(newAudioData.m_audioDriverType);
+                fSuccess = comAdapter.isOk();
+            }
+            /* Save audio controller type: */
+            if (fSuccess && isMachineOffline() && newAudioData.m_audioControllerType != oldAudioData.m_audioControllerType)
+            {
+                comAdapter.SetAudioController(newAudioData.m_audioControllerType);
+                fSuccess = comAdapter.isOk();
+            }
 
-        /* Save whether audio is enabled: */
-        if (fSuccess && isMachineOffline() && newAudioData.m_fAudioEnabled != oldAudioData.m_fAudioEnabled)
-        {
-            comAdapter.SetEnabled(newAudioData.m_fAudioEnabled);
-            fSuccess = comAdapter.isOk();
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveAudioAdapterSettings(comAdapter, this);
         }
-        /* Save audio driver type: */
-        if (fSuccess && isMachineOffline() && newAudioData.m_audioDriverType != oldAudioData.m_audioDriverType)
-        {
-            comAdapter.SetAudioDriver(newAudioData.m_audioDriverType);
-            fSuccess = comAdapter.isOk();
-        }
-        /* Save audio controller type: */
-        if (fSuccess && isMachineOffline() && newAudioData.m_audioControllerType != oldAudioData.m_audioControllerType)
-        {
-            comAdapter.SetAudioController(newAudioData.m_audioControllerType);
-            fSuccess = comAdapter.isOk();
-        }
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveAudioAdapterSettings(comAdapter, this);
     }
     /* Return result: */
     return fSuccess;

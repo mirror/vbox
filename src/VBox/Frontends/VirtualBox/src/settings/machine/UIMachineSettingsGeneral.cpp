@@ -712,10 +712,11 @@ bool UIMachineSettingsGeneral::saveBasicData()
                 m_machine.SetCPUProperty(KCPUPropertyType_LongMode, comNewType.GetIs64Bit());
                 fSuccess = m_machine.isOk();
             }
-            /* Show error message if necessary: */
-            if (!fSuccess)
-                msgCenter().cannotSaveGeneralSettings(m_machine, this);
         }
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveGeneralSettings(m_machine, this);
     }
     /* Return result: */
     return fSuccess;
@@ -759,6 +760,7 @@ bool UIMachineSettingsGeneral::saveAdvancedData()
             m_machine.SetName(newGeneralData.m_strName);
             fSuccess = m_machine.isOk();
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveGeneralSettings(m_machine, this);
@@ -785,6 +787,7 @@ bool UIMachineSettingsGeneral::saveDescriptionData()
             m_machine.SetDescription(newGeneralData.m_strDescription);
             fSuccess = m_machine.isOk();
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotSaveGeneralSettings(m_machine, this);
@@ -827,11 +830,12 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                 attachments = m_machine.GetMediumAttachments();
                 fSuccess = m_machine.isOk();
             }
+
             /* Show error message if necessary: */
             if (!fSuccess)
                 msgCenter().cannotSaveGeneralSettings(m_machine, this);
 
-            /* Enumerate attachments: */
+            /* For each attachment: */
             for (int iIndex = 0; fSuccess && iIndex < attachments.size(); ++iIndex)
             {
                 /* Get current attachment: */
@@ -851,97 +855,100 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                     comMedium = comAttachment.GetMedium();
                     fSuccess = comAttachment.isOk();
                 }
+
                 /* Show error message if necessary: */
                 if (!fSuccess)
                     msgCenter().cannotSaveStorageAttachmentSettings(comAttachment, this);
-
-                /* Enumerate hard-drives only: */
-                if (enmType != KDeviceType_HardDisk)
-                    continue;
-
-                /* Get medium id for further activities: */
-                QString strMediumId;
-                if (fSuccess)
+                else
                 {
-                    strMediumId = comMedium.GetId();
-                    fSuccess = comMedium.isOk();
-                }
+                    /* Pass hard-drives only: */
+                    if (enmType != KDeviceType_HardDisk)
+                        continue;
 
-                /* Create encryption update progress: */
-                CProgress comProgress;
-                if (fSuccess)
-                {
-                    /* Cipher attribute changed? */
-                    QString strNewCipher;
-                    if (newGeneralData.m_fEncryptionCipherChanged)
+                    /* Get medium id for further activities: */
+                    QString strMediumId;
+                    if (fSuccess)
                     {
-                        strNewCipher = newGeneralData.m_fEncryptionEnabled ?
-                                       m_encryptionCiphers.at(newGeneralData.m_iEncryptionCipherIndex) : QString();
+                        strMediumId = comMedium.GetId();
+                        fSuccess = comMedium.isOk();
                     }
 
-                    /* Password attribute changed? */
-                    QString strNewPassword;
-                    QString strNewPasswordId;
-                    if (newGeneralData.m_fEncryptionPasswordChanged)
+                    /* Create encryption update progress: */
+                    CProgress comProgress;
+                    if (fSuccess)
                     {
-                        strNewPassword = newGeneralData.m_fEncryptionEnabled ?
-                                         newGeneralData.m_strEncryptionPassword : QString();
-                        strNewPasswordId = newGeneralData.m_fEncryptionEnabled ?
-                                           strMachineName : QString();
+                        /* Cipher attribute changed? */
+                        QString strNewCipher;
+                        if (newGeneralData.m_fEncryptionCipherChanged)
+                        {
+                            strNewCipher = newGeneralData.m_fEncryptionEnabled ?
+                                           m_encryptionCiphers.at(newGeneralData.m_iEncryptionCipherIndex) : QString();
+                        }
+
+                        /* Password attribute changed? */
+                        QString strNewPassword;
+                        QString strNewPasswordId;
+                        if (newGeneralData.m_fEncryptionPasswordChanged)
+                        {
+                            strNewPassword = newGeneralData.m_fEncryptionEnabled ?
+                                             newGeneralData.m_strEncryptionPassword : QString();
+                            strNewPasswordId = newGeneralData.m_fEncryptionEnabled ?
+                                               strMachineName : QString();
+                        }
+
+                        /* Get the maps of encrypted mediums and their passwords: */
+                        const EncryptedMediumMap &encryptedMedium = newGeneralData.m_encryptedMediums;
+                        const EncryptionPasswordMap &encryptionPasswords = newGeneralData.m_encryptionPasswords;
+
+                        /* Check if old password exists/provided: */
+                        const QString strOldPasswordId = encryptedMedium.key(strMediumId);
+                        const QString strOldPassword = encryptionPasswords.value(strOldPasswordId);
+
+                        /* Create encryption progress: */
+                        comProgress = comMedium.ChangeEncryption(strOldPassword,
+                                                                 strNewCipher,
+                                                                 strNewPassword,
+                                                                 strNewPasswordId);
+                        fSuccess = comMedium.isOk();
                     }
 
-                    /* Get the maps of encrypted mediums and their passwords: */
-                    const EncryptedMediumMap &encryptedMedium = newGeneralData.m_encryptedMediums;
-                    const EncryptionPasswordMap &encryptionPasswords = newGeneralData.m_encryptionPasswords;
+                    // TODO: Decide what to do with it (also below).
+                    // if (!comMedium.isOk())
+                    // {
+                    //     QMetaObject::invokeMethod(this, "sigOperationProgressError", Qt::BlockingQueuedConnection,
+                    //                               Q_ARG(QString, UIMessageCenter::formatErrorInfo(comMedium)));
+                    //     continue;
+                    // }
 
-                    /* Check if old password exists/provided: */
-                    const QString strOldPasswordId = encryptedMedium.key(strMediumId);
-                    const QString strOldPassword = encryptionPasswords.value(strOldPasswordId);
-
-                    /* Create encryption progress: */
-                    comProgress = comMedium.ChangeEncryption(strOldPassword,
-                                                             strNewCipher,
-                                                             strNewPassword,
-                                                             strNewPasswordId);
-                    fSuccess = comMedium.isOk();
-                }
-
-                // TODO: Decide what to do with it (also below).
-                // if (!comMedium.isOk())
-                // {
-                //     QMetaObject::invokeMethod(this, "sigOperationProgressError", Qt::BlockingQueuedConnection,
-                //                               Q_ARG(QString, UIMessageCenter::formatErrorInfo(comMedium)));
-                //     continue;
-                // }
-
-                /* Create encryption update progress dialog: */
-                QPointer<UIProgress> pDlg;
-                if (fSuccess)
-                {
-                    // TODO: Decide what to do with it (also above).
-                    // This dialog connected to settings serializer, not to message-center directly.
-                    // What's the better approach in that case? Probably connect everything to serializer?
-                    pDlg = new UIProgress(comProgress);
-                    connect(pDlg, SIGNAL(sigProgressChange(ulong, QString, ulong, ulong)),
-                            this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
-                            Qt::QueuedConnection);
-                    connect(pDlg, SIGNAL(sigProgressError(QString)),
-                            this, SIGNAL(sigOperationProgressError(QString)),
-                            Qt::BlockingQueuedConnection);
-                    pDlg->run(350);
-                    if (pDlg)
-                        delete pDlg;
-                    else
+                    /* Create encryption update progress dialog: */
+                    QPointer<UIProgress> pDlg;
+                    if (fSuccess)
                     {
-                        // Premature application shutdown,
-                        // exit immediately:
-                        return true;
+                        // TODO: Decide what to do with it (also above).
+                        // This dialog connected to settings serializer, not to message-center directly.
+                        // What's the better approach in that case? Probably connect everything to serializer?
+                        pDlg = new UIProgress(comProgress);
+                        connect(pDlg, SIGNAL(sigProgressChange(ulong, QString, ulong, ulong)),
+                                this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
+                                Qt::QueuedConnection);
+                        connect(pDlg, SIGNAL(sigProgressError(QString)),
+                                this, SIGNAL(sigOperationProgressError(QString)),
+                                Qt::BlockingQueuedConnection);
+                        pDlg->run(350);
+                        if (pDlg)
+                            delete pDlg;
+                        else
+                        {
+                            // Premature application shutdown,
+                            // exit immediately:
+                            return true;
+                        }
                     }
-                }
 
-                /* Show error message if necessary: */
-                if (!fSuccess)
-                    msgCenter().cannotSaveStorageMediumSettings(comMedium, this);
+                    /* Show error message if necessary: */
+                    if (!fSuccess)
+                        msgCenter().cannotSaveStorageMediumSettings(comMedium, this);
+                }
             }
         }
     }

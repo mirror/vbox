@@ -865,9 +865,11 @@ bool UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmFoldersType, CS
                 /* Load machine folders: */
                 folders = m_machine.GetSharedFolders();
                 fSuccess = m_machine.isOk();
+
                 /* Show error message if necessary: */
                 if (!fSuccess)
                     msgCenter().cannotLoadFoldersSettings(m_machine, this);
+
                 break;
             }
             case ConsoleType:
@@ -877,9 +879,11 @@ bool UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmFoldersType, CS
                 /* Load console folders: */
                 folders = m_console.GetSharedFolders();
                 fSuccess = m_console.isOk();
+
                 /* Show error message if necessary: */
                 if (!fSuccess)
                     msgCenter().cannotLoadFoldersSettings(m_console, this);
+
                 break;
             }
             default:
@@ -907,6 +911,7 @@ bool UIMachineSettingsSF::getSharedFolder(const QString &strFolderName, const CS
             strCurrentFolderName = comCurrentFolder.GetName();
             fSuccess = comCurrentFolder.isOk();
         }
+
         /* Show error message if necessary: */
         if (!fSuccess)
             msgCenter().cannotLoadFolderSettings(comCurrentFolder, this);
@@ -933,11 +938,11 @@ bool UIMachineSettingsSF::saveFoldersData()
             const UISettingsCacheSharedFolder &folderCache = m_pCache->child(iFolderIndex);
 
             /* Remove folder marked for 'remove' or 'update': */
-            if (folderCache.wasRemoved() || folderCache.wasUpdated())
+            if (fSuccess && (folderCache.wasRemoved() || folderCache.wasUpdated()))
                 fSuccess = removeSharedFolder(folderCache);
 
             /* Create folder marked for 'create' or 'update': */
-            if (folderCache.wasCreated() || folderCache.wasUpdated())
+            if (fSuccess && (folderCache.wasCreated() || folderCache.wasUpdated()))
                 fSuccess = createSharedFolder(folderCache);
         }
     }
@@ -965,10 +970,10 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
         /* Search for a folder with the same name: */
         CSharedFolder comFolder;
         if (fSuccess)
-            /* fSuccess = */ getSharedFolder(strFolderName, folders, comFolder);
+            fSuccess = getSharedFolder(strFolderName, folders, comFolder);
 
         /* Make sure such folder really exists: */
-        if (!comFolder.isNull())
+        if (fSuccess && !comFolder.isNull())
         {
             /* Remove existing folder: */
             switch (enmFoldersType)
@@ -1012,7 +1017,7 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Remove folder: */
+    /* Create folder: */
     if (fSuccess)
     {
         /* Get folder data: */
@@ -1031,10 +1036,10 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
         /* Search for a folder with the same name: */
         CSharedFolder comFolder;
         if (fSuccess)
-            /* fSuccess = */ getSharedFolder(strFolderName, folders, comFolder);
+            fSuccess = getSharedFolder(strFolderName, folders, comFolder);
 
         /* Make sure such folder doesn't exist: */
-        if (comFolder.isNull())
+        if (fSuccess && comFolder.isNull())
         {
             /* Create new folder: */
             switch (enmFoldersType)
