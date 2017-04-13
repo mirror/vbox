@@ -1346,7 +1346,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
             {
                 if (fFlags & EXECUTEPROCESSFLAG_HIDDEN)
                     uProcFlags |= RTPROC_FLAGS_HIDDEN;
-                if (!(fFlags & EXECUTEPROCESSFLAG_PROFILE))
+                if (fFlags & EXECUTEPROCESSFLAG_PROFILE)
                     uProcFlags |= RTPROC_FLAGS_PROFILE;
                 if (fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
                     uProcFlags |= RTPROC_FLAGS_UNQUOTED_ARGS;
