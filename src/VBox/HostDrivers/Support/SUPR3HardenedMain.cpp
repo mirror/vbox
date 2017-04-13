@@ -1664,8 +1664,6 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SU
         supR3HardenedMainDropPrivileges();
 #endif
 
-        suplibOsTerm(&g_SupPreInitData.Data);
-
         /*
          * Now try resolve and call the TrustedError entry point if we can
          * find it.  We'll fork before we attempt this because that way the
