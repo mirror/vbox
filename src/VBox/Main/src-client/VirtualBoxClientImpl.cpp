@@ -439,7 +439,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
     HRESULT hrc = isServiceDisabled(L"VBoxSDS", &bIsVBoxSDSDisabled);
     if (FAILED(hrc))
     {
-        LogRelFunc(("Warning: Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc"), hrcCaller, hrc));
+        LogRelFunc(("Warning: Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc", hrcCaller, hrc));
         bIsVBoxSDSDisabled = false;
         //return setError(hrcCaller, tr("Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc"), hrcCaller, hrc);
     }
