@@ -187,7 +187,7 @@ typedef struct RTVFSOPS
     DECLCALLBACKMEMBER(int, pfnOpenRoot)(void *pvThis, PRTVFSDIR phVfsDir);
 
     /**
-     * Checks whether a given range in the underlying medium
+     * Optional entry point to check whether a given range in the underlying medium
      * is in use by the virtual filesystem.
      *
      * @returns IPRT status code.
@@ -196,8 +196,7 @@ typedef struct RTVFSOPS
      * @param   cb          Number of bytes to check.
      * @param   pfUsed      Where to store whether the given range is in use.
      */
-    DECLCALLBACKMEMBER(int, pfnIsRangeInUse)(void *pvThis, RTFOFF off, size_t cb,
-                                             bool *pfUsed);
+    DECLCALLBACKMEMBER(int, pfnIsRangeInUse)(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed);
 
     /** @todo There will be more methods here to optimize opening and
      *        querying. */
@@ -548,7 +547,7 @@ typedef struct RTVFSDIROPS
      *                      (RTFS_TYPE_XXX).
      * @sa      RTFileRemove, RTDirRemove, RTSymlinkRemove.
      */
-    DECLCALLBACKMEMBER(int, pfnUnlinkEntry)(void *pvThis, const char *pszEntry, RTFMODE fType, PRTVFSDIR phVfsDir);
+    DECLCALLBACKMEMBER(int, pfnUnlinkEntry)(void *pvThis, const char *pszEntry, RTFMODE fType);
 
     /**
      * Rewind the directory stream so that the next read returns the first
