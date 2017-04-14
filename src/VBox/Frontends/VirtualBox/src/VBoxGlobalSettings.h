@@ -36,7 +36,6 @@ public:
 
 private:
 
-    QString guiFeatures;
     QString languageId;
     QString maxGuestRes;
     QString remapScancodes;
@@ -51,7 +50,6 @@ private:
 class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsData>
 {
     Q_OBJECT
-    Q_PROPERTY (QString guiFeatures READ guiFeatures WRITE setGuiFeatures)
     Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
     Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
     Q_PROPERTY (QString remapScancodes READ remapScancodes WRITE setRemapScancodes)
@@ -70,13 +68,6 @@ public:
     }
 
     // Properties
-
-    QString guiFeatures() const { return data()->guiFeatures; }
-    void setGuiFeatures (const QString &aFeatures)
-    {
-        mData()->guiFeatures = aFeatures;
-    }
-    bool isFeatureActive (const char*) const;
 
     QString languageId() const { return data()->languageId; }
     void setLanguageId (const QString &aLanguageId)

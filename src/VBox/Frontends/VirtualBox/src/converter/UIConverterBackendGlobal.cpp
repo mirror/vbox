@@ -56,6 +56,7 @@ template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<PreviewUpdateIntervalType>() { return true; }
 template<> bool canConvert<EventHandlingType>() { return true; }
+template<> bool canConvert<GUIFeatureType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
 template<> bool canConvert<WizardType>() { return true; }
@@ -1121,6 +1122,40 @@ template<> EventHandlingType fromInternalString<EventHandlingType>(const QString
         return EventHandlingType_Passive;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strEventHandlingType, Qt::CaseInsensitive)));
+}
+
+/* QString <= GUIFeatureType: */
+template<> QString toInternalString(const GUIFeatureType &guiFeatureType)
+{
+    QString strResult;
+    switch (guiFeatureType)
+    {
+        case GUIFeatureType_NoSelector:  strResult = "noSelector"; break;
+        case GUIFeatureType_NoMenuBar:   strResult = "noMenuBar"; break;
+        case GUIFeatureType_NoStatusBar: strResult = "noStatusBar"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for GUI feature type=%d", guiFeatureType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* GUIFeatureType <= QString: */
+template<> GUIFeatureType fromInternalString<GUIFeatureType>(const QString &strGuiFeatureType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<GUIFeatureType> values;
+    keys << "noSelector";  values << GUIFeatureType_NoSelector;
+    keys << "noMenuBar";   values << GUIFeatureType_NoMenuBar;
+    keys << "noStatusBar"; values << GUIFeatureType_NoStatusBar;
+    /* None type for unknown words: */
+    if (!keys.contains(strGuiFeatureType, Qt::CaseInsensitive))
+        return GUIFeatureType_None;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strGuiFeatureType, Qt::CaseInsensitive)));
 }
 
 /* QString <= GlobalSettingsPageType: */

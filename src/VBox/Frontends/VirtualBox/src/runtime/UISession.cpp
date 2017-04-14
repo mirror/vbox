@@ -1311,7 +1311,7 @@ void UISession::loadSessionSettings()
 #ifndef VBOX_WS_MAC
         /* Menu-bar options: */
         {
-            const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noMenuBar");
+            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoMenuBar);
             const bool fEnabledForMachine = gEDataManager->menuBarEnabled(strMachineID);
             const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
             QAction *pActionMenuBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings);
@@ -1325,7 +1325,7 @@ void UISession::loadSessionSettings()
 
         /* Status-bar options: */
         {
-            const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noStatusBar");
+            const bool fEnabledGlobally = !gEDataManager->guiFeatureEnabled(GUIFeatureType_NoStatusBar);
             const bool fEnabledForMachine = gEDataManager->statusBarEnabled(strMachineID);
             const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
             QAction *pActionStatusBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);

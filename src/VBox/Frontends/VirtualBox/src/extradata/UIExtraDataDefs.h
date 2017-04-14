@@ -64,6 +64,8 @@ namespace UIExtraDataDefs
 
     /** @name Settings
       * @{ */
+        /** Holds GUI feature list. */
+        extern const char* GUI_Customizations;
         /** Holds restricted Global Settings pages. */
         extern const char* GUI_RestrictedGlobalSettingsPages;
         /** Holds restricted Machine Settings pages. */
@@ -497,6 +499,16 @@ enum EventHandlingType
 {
     EventHandlingType_Active,
     EventHandlingType_Passive
+};
+
+/** Common UI: GUI feature types. */
+enum GUIFeatureType
+{
+    GUIFeatureType_None        = 0,
+    GUIFeatureType_NoSelector  = RT_BIT(0),
+    GUIFeatureType_NoMenuBar   = RT_BIT(1),
+    GUIFeatureType_NoStatusBar = RT_BIT(2),
+    GUIFeatureType_All         = 0xFF
 };
 
 /** Common UI: Global settings page types. */

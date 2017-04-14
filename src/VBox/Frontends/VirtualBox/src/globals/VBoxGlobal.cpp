@@ -4820,14 +4820,11 @@ bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName
 
 void VBoxGlobal::showUI()
 {
-    /* Load application settings: */
-    VBoxGlobalSettings appSettings = settings();
-
     /* Show Selector UI: */
     if (!isVMConsoleProcess())
     {
         /* Make sure Selector UI is permitted, quit if not: */
-        if (appSettings.isFeatureActive("noSelector"))
+        if (gEDataManager->guiFeatureEnabled(GUIFeatureType_NoSelector))
         {
             msgCenter().cannotStartSelector();
             return QApplication::quit();

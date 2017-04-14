@@ -50,7 +50,6 @@ using namespace UIExtraDataDefs;
 VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
-    guiFeatures = QString::null;
     languageId  = QString::null;
     maxGuestRes = QString::null;
     remapScancodes = QString::null;
@@ -60,7 +59,6 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
 {
-    guiFeatures = that.guiFeatures;
     languageId  = that.languageId;
     maxGuestRes = that.maxGuestRes;
     remapScancodes = that.remapScancodes;
@@ -75,8 +73,7 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
     return this == &that ||
-        (guiFeatures == that.guiFeatures &&
-         languageId  == that.languageId &&
+        (languageId  == that.languageId &&
          maxGuestRes == that.maxGuestRes &&
          remapScancodes == that.remapScancodes &&
          proxySettings == that.proxySettings &&
@@ -102,19 +99,12 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/Customizations",                        "guiFeatures",             "\\S+", true },
     { "GUI/LanguageID",                            "languageId",              gVBoxLangIDRegExp, true },
     { "GUI/MaxGuestResolution",                    "maxGuestRes",             "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
     { "GUI/RemapScancodes",                        "remapScancodes",          "(\\d+=\\d+,)*\\d+=\\d+", true },
     { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
     { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled", "true|false", true }
 };
-
-bool VBoxGlobalSettings::isFeatureActive (const char *aFeature) const
-{
-    QStringList featureList = data()->guiFeatures.split (',');
-    return featureList.contains (aFeature);
-}
 
 /**
  *  Loads the settings from the (global) extra data area of VirtualBox.

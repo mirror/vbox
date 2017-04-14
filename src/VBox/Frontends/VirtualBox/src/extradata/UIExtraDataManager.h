@@ -178,6 +178,9 @@ public:
 
     /** @name Settings
       * @{ */
+        /** Returns whether GUI @a enmFeature is enabled. */
+        bool guiFeatureEnabled(GUIFeatureType enmFeature);
+
         /** Returns restricted global settings pages. */
         QList<GlobalSettingsPageType> restrictedGlobalSettingsPages();
         /** Returns restricted machine settings pages. */
