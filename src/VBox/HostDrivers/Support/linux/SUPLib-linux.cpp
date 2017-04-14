@@ -145,8 +145,6 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINIT
 }
 
 
-#ifndef IN_SUP_HARDENED_R3
-
 int suplibOsTerm(PSUPLIBDATA pThis)
 {
     /*
@@ -162,6 +160,8 @@ int suplibOsTerm(PSUPLIBDATA pThis)
     return 0;
 }
 
+
+#ifndef IN_SUP_HARDENED_R3
 
 int suplibOsInstall(void)
 {

@@ -1657,35 +1657,40 @@ DECL_NO_RETURN(DECLHIDDEN(void)) supR3HardenedFatalMsgV(const char *pszWhere, SU
     if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
     {
 #ifdef SUP_HARDENED_SUID
-        /*
-         * Drop any root privileges we might be holding, this won't return
-         * if it fails but end up calling supR3HardenedFatal[V].
-         */
+        /* Drop any root privileges we might be holding, this won't return
+           if it fails but end up calling supR3HardenedFatal[V]. */
         supR3HardenedMainDropPrivileges();
 #endif
+        /* Close the driver, if we succeeded opening it.  Both because
+           TrustedError may be untrustworthy and because the driver deosn't
+           like us if we fork().  @bugref{8838} */
+        suplibOsTerm(&g_SupPreInitData.Data);
 
         /*
-         * Now try resolve and call the TrustedError entry point if we can
-         * find it.  We'll fork before we attempt this because that way the
-         * session management in main will see us exiting immediately (if
-         * it's involved with us).
+         * Now try resolve and call the TrustedError entry point if we can find it.
+         * Note! Loader involved, so we must guard against loader hooks calling us.
          */
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
-        int pid = fork();
-        if (pid <= 0)
-#endif
+        static volatile bool s_fRecursive = false;
+        if (!s_fRecursive)
         {
-            static volatile bool s_fRecursive = false; /* Loader hooks may cause recursion. */
-            if (!s_fRecursive)
+            s_fRecursive = true;
+
+            PFNSUPTRUSTEDERROR pfnTrustedError = supR3HardenedMainGetTrustedError(g_pszSupLibHardenedProgName);
+            if (pfnTrustedError)
             {
-                s_fRecursive = true;
-
-                PFNSUPTRUSTEDERROR pfnTrustedError = supR3HardenedMainGetTrustedError(g_pszSupLibHardenedProgName);
-                if (pfnTrustedError)
+                /* We'll fork before we make the call because that way the session management
+                   in main will see us exiting immediately (if it's involved with us) and possibly
+                   get an error back to the API / user. */
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+                int pid = fork();
+                if (pid <= 0)
+#endif
+                {
                     pfnTrustedError(pszWhere, enmWhat, rc, pszMsgFmt, va);
-
-                s_fRecursive = false;
+                }
             }
+
+            s_fRecursive = false;
         }
     }
 #if defined(RT_OS_WINDOWS)
