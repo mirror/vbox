@@ -179,7 +179,7 @@ static DECLCALLBACK(int) rtFsFatFile_Close(void *pvThis)
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
  */
-static DECLCALLBACK(int) rtFsFatFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+static DECLCALLBACK(int) rtFsFatObj_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
 
@@ -300,7 +300,7 @@ static DECLCALLBACK(int) rtFsFatFile_Tell(void *pvThis, PRTFOFF poffActual)
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
  */
-static DECLCALLBACK(int) rtFsFatFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+static DECLCALLBACK(int) rtFsFatObj_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
 {
 #if 0
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
@@ -318,8 +318,8 @@ static DECLCALLBACK(int) rtFsFatFile_SetMode(void *pvThis, RTFMODE fMode, RTFMOD
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
-static DECLCALLBACK(int) rtFsFatFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+static DECLCALLBACK(int) rtFsFatObj_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
 #if 0
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
@@ -333,7 +333,7 @@ static DECLCALLBACK(int) rtFsFatFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccess
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
  */
-static DECLCALLBACK(int) rtFsFatFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+static DECLCALLBACK(int) rtFsFatObj_SetOwner(void *pvThis, RTUID uid, RTGID gid)
 {
     RT_NOREF(pvThis, uid, gid);
     return VERR_NOT_SUPPORTED;
@@ -397,7 +397,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
             RTVFSOBJTYPE_FILE,
             "FatFile",
             rtFsFatFile_Close,
-            rtFsFatFile_QueryInfo,
+            rtFsFatObj_QueryInfo,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -416,15 +416,37 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
-        rtFsFatFile_SetMode,
-        rtFsFatFile_SetTimes,
-        rtFsFatFile_SetOwner,
+        rtFsFatObj_SetMode,
+        rtFsFatObj_SetTimes,
+        rtFsFatObj_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsFatFile_Seek,
     rtFsFatFile_QuerySize,
     RTVFSFILEOPS_VERSION
 };
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtFsFatDir_Close(void *pvThis)
+{
+    PRTFSFATDIR pThis = (PRTFSFATDIR)pvThis;
+    RT_NOREF(pThis);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnTraversalOpen}
+ */
+static DECLCALLBACK(int) rtFsFatDir_TraversalOpen(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
+                                                  PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted)
+{
+    RT_NOREF(pvThis, pszEntry, phVfsDir, phVfsSymlink, phVfsMounted);
+    return VERR_NOT_IMPLEMENTED;
+}
 
 
 /**
@@ -510,14 +532,14 @@ static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
 /**
  * FAT file operations.
  */
-DECL_HIDDEN_CONST(const RTVFSDIROPS) g_rtFsFatDirOps =
+static const RTVFSDIROPS g_rtFsFatDirOps =
 {
     { /* Obj */
         RTVFSOBJOPS_VERSION,
         RTVFSOBJTYPE_FILE,
         "FatDir",
-        rtFsFatFile_Close,
-        rtFsFatFile_QueryInfo,
+        rtFsFatDir_Close,
+        rtFsFatObj_QueryInfo,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -525,12 +547,12 @@ DECL_HIDDEN_CONST(const RTVFSDIROPS) g_rtFsFatDirOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
-        rtFsFatFile_SetMode,
-        rtFsFatFile_SetTimes,
-        rtFsFatFile_SetOwner,
+        rtFsFatObj_SetMode,
+        rtFsFatObj_SetTimes,
+        rtFsFatObj_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
-    NULL /*rtFsFatDir_TraversalOpen*/,
+    rtFsFatDir_TraversalOpen,
     rtFsFatDir_OpenFile,
     rtFsFatDir_OpenDir,
     rtFsFatDir_CreateDir,
@@ -540,5 +562,44 @@ DECL_HIDDEN_CONST(const RTVFSDIROPS) g_rtFsFatDirOps =
     rtFsFatDir_RewindDir,
     rtFsFatDir_ReadDir,
     RTVFSDIROPS_VERSION,
+};
+
+
+/**
+ * @interface_method_impl{RTVFSOPS,pfnDestroy}
+ */
+static DECLCALLBACK(void) rtFsFatVol_Destroy(void *pvThis)
+{
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOPS,pfnOpenRoo}
+ */
+static DECLCALLBACK(int) rtFsFatVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOPS,pfnIsRangeInUse}
+ */
+static DECLCALLBACK(int) rtFsFatVol_IsRangeInUse(void *pvThis, RTFOFF off, size_t cb, bool *pfUsed)
+{
+    RT_NOREF(pvThis, off, cb, pfUsed);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsFatVolOps =
+{
+    RTVFSOPS_VERSION,
+    0 /* fFeatures */,
+    "FatVol",
+    rtFsFatVol_Destroy,
+    rtFsFatVol_OpenRoot,
+    rtFsFatVol_IsRangeInUse,
+    RTVFSOPS_VERSION
 };
 
