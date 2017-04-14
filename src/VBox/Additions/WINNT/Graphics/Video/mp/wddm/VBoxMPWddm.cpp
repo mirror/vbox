@@ -2388,14 +2388,14 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
         WARN(("vboxWddmMemAllocZero failed for WDDM device structure"));
         return STATUS_NO_MEMORY;
     }
-    pCreateDevice->hDevice = pDevice;
-    if (pCreateDevice->Flags.SystemDevice)
-        pDevice->enmType = VBOXWDDM_DEVICE_TYPE_SYSTEM;
 
     pDevice->pAdapter = pDevExt;
     pDevice->hDevice = pCreateDevice->hDevice;
 
     pCreateDevice->hDevice = pDevice;
+    if (pCreateDevice->Flags.SystemDevice)
+        pDevice->enmType = VBOXWDDM_DEVICE_TYPE_SYSTEM;
+
     pCreateDevice->pInfo = NULL;
 
     LOGF(("LEAVE, context(0x%x), Status(0x%x)", hAdapter, Status));
