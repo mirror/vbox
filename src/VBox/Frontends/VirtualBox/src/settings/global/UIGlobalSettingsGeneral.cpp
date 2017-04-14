@@ -85,15 +85,15 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
     m_pCache->clear();
 
     /* Prepare old general data: */
-    UIDataSettingsGlobalGeneral oldData;
+    UIDataSettingsGlobalGeneral oldGeneralData;
 
     /* Gather old general data: */
-    oldData.m_strDefaultMachineFolder = m_properties.GetDefaultMachineFolder();
-    oldData.m_strVRDEAuthLibrary = m_properties.GetVRDEAuthLibrary();
-    oldData.m_fHostScreenSaverDisabled = m_settings.hostScreenSaverDisabled();
+    oldGeneralData.m_strDefaultMachineFolder = m_properties.GetDefaultMachineFolder();
+    oldGeneralData.m_strVRDEAuthLibrary = m_properties.GetVRDEAuthLibrary();
+    oldGeneralData.m_fHostScreenSaverDisabled = m_settings.hostScreenSaverDisabled();
 
     /* Cache old general data: */
-    m_pCache->cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldGeneralData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -102,26 +102,26 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsGeneral::getFromCache()
 {
     /* Get old general data from the cache: */
-    const UIDataSettingsGlobalGeneral &oldData = m_pCache->base();
+    const UIDataSettingsGlobalGeneral &oldGeneralData = m_pCache->base();
 
     /* Load old general data from the cache: */
-    m_pSelectorMachineFolder->setPath(oldData.m_strDefaultMachineFolder);
-    m_pSelectorVRDPLibName->setPath(oldData.m_strVRDEAuthLibrary);
-    m_pCheckBoxHostScreenSaver->setChecked(oldData.m_fHostScreenSaverDisabled);
+    m_pSelectorMachineFolder->setPath(oldGeneralData.m_strDefaultMachineFolder);
+    m_pSelectorVRDPLibName->setPath(oldGeneralData.m_strVRDEAuthLibrary);
+    m_pCheckBoxHostScreenSaver->setChecked(oldGeneralData.m_fHostScreenSaverDisabled);
 }
 
 void UIGlobalSettingsGeneral::putToCache()
 {
     /* Prepare new general data: */
-    UIDataSettingsGlobalGeneral newData = m_pCache->base();
+    UIDataSettingsGlobalGeneral newGeneralData = m_pCache->base();
 
     /* Gather new general data: */
-    newData.m_strDefaultMachineFolder = m_pSelectorMachineFolder->path();
-    newData.m_strVRDEAuthLibrary = m_pSelectorVRDPLibName->path();
-    newData.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
+    newGeneralData.m_strDefaultMachineFolder = m_pSelectorMachineFolder->path();
+    newGeneralData.m_strVRDEAuthLibrary = m_pSelectorVRDPLibName->path();
+    newGeneralData.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
 
     /* Cache new general data: */
-    m_pCache->cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newGeneralData);
 }
 
 void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)

@@ -277,7 +277,7 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     m_pCache->clear();
 
     /* Prepare old extension data: */
-    UIDataSettingsGlobalExtension oldData;
+    UIDataSettingsGlobalExtension oldExtensionData;
 
     /* Gather old extension data: */
     const CExtPackVector &packages = vboxGlobal().virtualBox().
@@ -286,11 +286,11 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     {
         UIDataSettingsGlobalExtensionItem item;
         loadData(package, item);
-        oldData.m_items << item;
+        oldExtensionData.m_items << item;
     }
 
     /* Cache old extension data: */
-    m_pCache->cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldExtensionData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -299,10 +299,10 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsExtension::getFromCache()
 {
     /* Get old extension data from the cache: */
-    const UIDataSettingsGlobalExtension &oldData = m_pCache->base();
+    const UIDataSettingsGlobalExtension &oldExtensionData = m_pCache->base();
 
     /* Load old extension data from the cache: */
-    foreach (const UIDataSettingsGlobalExtensionItem &item, oldData.m_items)
+    foreach (const UIDataSettingsGlobalExtensionItem &item, oldExtensionData.m_items)
         new UIExtensionPackageItem(m_pPackagesTree, item);
     /* If at least one item present: */
     if (m_pPackagesTree->topLevelItemCount())

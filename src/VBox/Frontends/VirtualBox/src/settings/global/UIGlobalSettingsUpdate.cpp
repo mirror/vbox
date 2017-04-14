@@ -88,17 +88,17 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
     m_pCache->clear();
 
     /* Prepare old update data: */
-    UIDataSettingsGlobalUpdate oldData;
+    UIDataSettingsGlobalUpdate oldUpdateData;
 
     /* Gather old update data: */
     const VBoxUpdateData updateData(gEDataManager->applicationUpdateData());
-    oldData.m_fCheckEnabled = !updateData.isNoNeedToCheck();
-    oldData.m_periodIndex = updateData.periodIndex();
-    oldData.m_branchIndex = updateData.branchIndex();
-    oldData.m_strDate = updateData.date();
+    oldUpdateData.m_fCheckEnabled = !updateData.isNoNeedToCheck();
+    oldUpdateData.m_periodIndex = updateData.periodIndex();
+    oldUpdateData.m_branchIndex = updateData.branchIndex();
+    oldUpdateData.m_strDate = updateData.date();
 
     /* Cache old update data: */
-    m_pCache->cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldUpdateData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -107,35 +107,35 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsUpdate::getFromCache()
 {
     /* Get old update data from the cache: */
-    const UIDataSettingsGlobalUpdate &oldData = m_pCache->base();
+    const UIDataSettingsGlobalUpdate &oldUpdateData = m_pCache->base();
 
     /* Load old update data from the cache: */
-    m_pCheckBoxUpdate->setChecked(oldData.m_fCheckEnabled);
+    m_pCheckBoxUpdate->setChecked(oldUpdateData.m_fCheckEnabled);
     if (m_pCheckBoxUpdate->isChecked())
     {
-        m_pComboBoxUpdatePeriod->setCurrentIndex(oldData.m_periodIndex);
-        if (oldData.m_branchIndex == VBoxUpdateData::BranchWithBetas)
+        m_pComboBoxUpdatePeriod->setCurrentIndex(oldUpdateData.m_periodIndex);
+        if (oldUpdateData.m_branchIndex == VBoxUpdateData::BranchWithBetas)
             m_pRadioUpdateFilterBetas->setChecked(true);
-        else if (oldData.m_branchIndex == VBoxUpdateData::BranchAllRelease)
+        else if (oldUpdateData.m_branchIndex == VBoxUpdateData::BranchAllRelease)
             m_pRadioUpdateFilterEvery->setChecked(true);
         else
             m_pRadioUpdateFilterStable->setChecked(true);
     }
-    m_pUpdateDateText->setText(oldData.m_strDate);
-    sltHandleUpdateToggle(oldData.m_fCheckEnabled);
+    m_pUpdateDateText->setText(oldUpdateData.m_strDate);
+    sltHandleUpdateToggle(oldUpdateData.m_fCheckEnabled);
 }
 
 void UIGlobalSettingsUpdate::putToCache()
 {
     /* Prepare new update data: */
-    UIDataSettingsGlobalUpdate newData = m_pCache->base();
+    UIDataSettingsGlobalUpdate newUpdateData = m_pCache->base();
 
     /* Gather new update data: */
-    newData.m_periodIndex = periodType();
-    newData.m_branchIndex = branchType();
+    newUpdateData.m_periodIndex = periodType();
+    newUpdateData.m_branchIndex = branchType();
 
     /* Cache new update data: */
-    m_pCache->cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newUpdateData);
 }
 
 void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)

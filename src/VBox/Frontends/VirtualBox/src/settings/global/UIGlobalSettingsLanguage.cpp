@@ -227,13 +227,13 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
     m_pCache->clear();
 
     /* Prepare old language data: */
-    UIDataSettingsGlobalLanguage oldData;
+    UIDataSettingsGlobalLanguage oldLanguageData;
 
     /* Gather old language data: */
-    oldData.m_strLanguageId = m_settings.languageId();
+    oldLanguageData.m_strLanguageId = m_settings.languageId();
 
     /* Cache old language data: */
-    m_pCache->cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldLanguageData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -242,25 +242,25 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsLanguage::getFromCache()
 {
     /* Get old language data from the cache: */
-    const UIDataSettingsGlobalLanguage &oldData = m_pCache->base();
+    const UIDataSettingsGlobalLanguage &oldLanguageData = m_pCache->base();
 
     /* Load old language data from the cache: */
-    reloadLanguageTree(oldData.m_strLanguageId);
+    reloadLanguageTree(oldLanguageData.m_strLanguageId);
 }
 
 void UIGlobalSettingsLanguage::putToCache()
 {
     /* Prepare new language data: */
-    UIDataSettingsGlobalLanguage newData = m_pCache->base();
+    UIDataSettingsGlobalLanguage newInputData = m_pCache->base();
 
     /* Gather new language data: */
     QTreeWidgetItem *pCurrentItem = m_pLanguageTree->currentItem();
     Assert(pCurrentItem);
     if (pCurrentItem)
-        newData.m_strLanguageId = pCurrentItem->text(1);
+        newInputData.m_strLanguageId = pCurrentItem->text(1);
 
     /* Cache new language data: */
-    m_pCache->cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newInputData);
 }
 
 void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)

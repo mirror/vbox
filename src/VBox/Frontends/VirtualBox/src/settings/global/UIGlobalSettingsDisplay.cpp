@@ -78,14 +78,14 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     m_pCache->clear();
 
     /* Prepare old display data: */
-    UIDataSettingsGlobalDisplay oldData;
+    UIDataSettingsGlobalDisplay oldDisplayData;
 
     /* Gather old display data: */
-    oldData.m_strMaxGuestResolution = m_settings.maxGuestRes();
-    oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
+    oldDisplayData.m_strMaxGuestResolution = m_settings.maxGuestRes();
+    oldDisplayData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 
     /* Cache old display data: */
-    m_pCache->cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldDisplayData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -94,16 +94,16 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsDisplay::getFromCache()
 {
     /* Get old display data from the cache: */
-    const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
+    const UIDataSettingsGlobalDisplay &oldDisplayData = m_pCache->base();
 
     /* Load old display data from the cache: */
-    if (   (oldData.m_strMaxGuestResolution.isEmpty())
-        || (oldData.m_strMaxGuestResolution == "auto"))
+    if (   (oldDisplayData.m_strMaxGuestResolution.isEmpty())
+        || (oldDisplayData.m_strMaxGuestResolution == "auto"))
     {
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("auto"));
     }
-    else if (oldData.m_strMaxGuestResolution == "any")
+    else if (oldDisplayData.m_strMaxGuestResolution == "any")
     {
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("any"));
@@ -113,42 +113,42 @@ void UIGlobalSettingsDisplay::getFromCache()
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("fixed"));
         /* Trying to parse text into 2 sections by ',' symbol: */
-        const int iWidth  = oldData.m_strMaxGuestResolution.section(',', 0, 0).toInt();
-        const int iHeight = oldData.m_strMaxGuestResolution.section(',', 1, 1).toInt();
+        const int iWidth  = oldDisplayData.m_strMaxGuestResolution.section(',', 0, 0).toInt();
+        const int iHeight = oldDisplayData.m_strMaxGuestResolution.section(',', 1, 1).toInt();
         /* And set values if they are present: */
         m_pResolutionWidthSpin->setValue(iWidth);
         m_pResolutionHeightSpin->setValue(iHeight);
     }
-    m_pCheckBoxActivateOnMouseHover->setChecked(oldData.m_fActivateHoveredMachineWindow);
+    m_pCheckBoxActivateOnMouseHover->setChecked(oldDisplayData.m_fActivateHoveredMachineWindow);
 }
 
 void UIGlobalSettingsDisplay::putToCache()
 {
     /* Prepare new display data: */
-    UIDataSettingsGlobalDisplay newData = m_pCache->base();
+    UIDataSettingsGlobalDisplay newDisplayData = m_pCache->base();
 
     /* Gather new display data: */
     if (m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "auto")
     {
         /* If resolution current combo item is "auto" => resolution set to "auto": */
-        newData.m_strMaxGuestResolution = QString();
+        newDisplayData.m_strMaxGuestResolution = QString();
     }
     else if (   m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "any"
              || m_pResolutionWidthSpin->value() == 0 || m_pResolutionHeightSpin->value() == 0)
     {
         /* Else if resolution current combo item is "any"
          * or any of the resolution field attributes is zero => resolution set to "any": */
-        newData.m_strMaxGuestResolution = "any";
+        newDisplayData.m_strMaxGuestResolution = "any";
     }
     else if (m_pResolutionWidthSpin->value() != 0 && m_pResolutionHeightSpin->value() != 0)
     {
         /* Else if both field attributes are non-zeroes => resolution set to "fixed": */
-        newData.m_strMaxGuestResolution = QString("%1,%2").arg(m_pResolutionWidthSpin->value()).arg(m_pResolutionHeightSpin->value());
+        newDisplayData.m_strMaxGuestResolution = QString("%1,%2").arg(m_pResolutionWidthSpin->value()).arg(m_pResolutionHeightSpin->value());
     }
-    newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
+    newDisplayData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
 
     /* Cache new display data: */
-    m_pCache->cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newDisplayData);
 }
 
 void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
