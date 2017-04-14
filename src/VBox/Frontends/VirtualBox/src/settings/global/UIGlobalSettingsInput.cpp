@@ -35,7 +35,6 @@
 # include "UIHotKeyEditor.h"
 # include "UIShortcutPool.h"
 # include "UIExtraDataManager.h"
-# include "VBoxGlobalSettings.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -905,7 +904,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
                                                  shortcut.sequence().toString(QKeySequence::NativeText),
                                                  shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
-    oldInputData.setAutoCapture(m_settings.autoCapture());
+    oldInputData.setAutoCapture(gEDataManager->autoCaptureEnabled());
 
     /* Cache old input data: */
     m_pCache->cacheInitialData(oldInputData);
@@ -971,7 +970,7 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
 
         /* Save other new things from the cache: */
         if (m_pCache->data().autoCapture() != m_pCache->base().autoCapture())
-            m_settings.setAutoCapture(m_pCache->data().autoCapture());
+            gEDataManager->setAutoCaptureEnabled(m_pCache->data().autoCapture());
     }
 
     /* Upload properties & settings to data: */

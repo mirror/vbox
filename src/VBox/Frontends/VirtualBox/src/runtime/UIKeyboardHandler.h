@@ -36,7 +36,6 @@
 
 /* Forward declarations: */
 class QWidget;
-class VBoxGlobalSettings;
 class UIActionPool;
 class UISession;
 class UIMachineLogic;
@@ -211,7 +210,6 @@ protected:
 
     /* Other keyboard variables: */
     int m_iKeyboardCaptureViewIndex;
-    const VBoxGlobalSettings &m_globalSettings;
 
     uint8_t m_pressedKeys[128];
     uint8_t m_pressedKeysCopy[128];

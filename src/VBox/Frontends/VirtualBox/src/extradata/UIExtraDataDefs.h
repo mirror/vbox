@@ -84,6 +84,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_Input_MachineShortcuts;
         /** Holds Runtime UI host-key combination. */
         extern const char* GUI_Input_HostKeyCombination;
+        /** Holds whether Runtime UI auto-capture is enabled. */
+        extern const char* GUI_Input_AutoCapture;
     /** @} */
 
     /** @name Settings: Storage

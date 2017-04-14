@@ -2356,7 +2356,7 @@ QString UIExtraDataManager::hostKeyCombination()
 # warning "port me!"
 #endif
     }
-    /* Return host-combo: */
+    /* Return host-key combination: */
     return strHostCombo;
 }
 
@@ -2377,6 +2377,35 @@ QStringList UIExtraDataManager::shortcutOverrides(const QString &strPoolExtraDat
     if (strPoolExtraDataID == GUI_Input_MachineShortcuts)
         return extraDataStringList(GUI_Input_MachineShortcuts);
     return QStringList();
+}
+
+bool UIExtraDataManager::autoCaptureEnabled()
+{
+    /* Prepare auto-capture flag: */
+    bool fAutoCapture = true /* indifferently */;
+    /* Acquire whether the auto-capture is restricted: */
+    QString strAutoCapture = extraDataString(GUI_Input_AutoCapture);
+    /* Invent some sane default if it's empty: */
+    if (strAutoCapture.isEmpty())
+    {
+#if defined(VBOX_WS_X11) && defined(DEBUG)
+        fAutoCapture = false;
+#else
+        fAutoCapture = true;
+#endif
+    }
+    /* 'True' unless feature restricted: */
+    else
+        fAutoCapture = !isFeatureRestricted(GUI_Input_AutoCapture);
+    /* Return auto-capture flag: */
+    return fAutoCapture;
+}
+
+void UIExtraDataManager::setAutoCaptureEnabled(bool fEnabled)
+{
+    /* Store actual feature state, whether it is "true" or "false",
+     * because absent state means default, different on various hosts: */
+    setExtraDataString(GUI_Input_AutoCapture, toFeatureState(fEnabled));
 }
 
 QString UIExtraDataManager::recentFolderForHardDrives()
@@ -4227,6 +4256,11 @@ bool UIExtraDataManager::isFeatureRestricted(const QString &strKey, const QStrin
            || strValue.compare("no", Qt::CaseInsensitive) == 0
            || strValue.compare("off", Qt::CaseInsensitive) == 0
            || strValue == "0";
+}
+
+QString UIExtraDataManager::toFeatureState(bool fState)
+{
+    return fState ? QString("true") : QString("false");
 }
 
 QString UIExtraDataManager::toFeatureAllowed(bool fAllowed)

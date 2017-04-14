@@ -50,11 +50,6 @@ using namespace UIExtraDataDefs;
 VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
-#if defined(VBOX_WS_X11) && defined(DEBUG)
-    autoCapture = false;
-#else
-    autoCapture = true;
-#endif
     guiFeatures = QString::null;
     languageId  = QString::null;
     maxGuestRes = QString::null;
@@ -65,7 +60,6 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
 {
-    autoCapture = that.autoCapture;
     guiFeatures = that.guiFeatures;
     languageId  = that.languageId;
     maxGuestRes = that.maxGuestRes;
@@ -81,8 +75,7 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
     return this == &that ||
-        (autoCapture == that.autoCapture &&
-         guiFeatures == that.guiFeatures &&
+        (guiFeatures == that.guiFeatures &&
          languageId  == that.languageId &&
          maxGuestRes == that.maxGuestRes &&
          remapScancodes == that.remapScancodes &&
@@ -109,7 +102,6 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/Input/AutoCapture",                     "autoCapture",             "true|false", true },
     { "GUI/Customizations",                        "guiFeatures",             "\\S+", true },
     { "GUI/LanguageID",                            "languageId",              gVBoxLangIDRegExp, true },
     { "GUI/MaxGuestResolution",                    "maxGuestRes",             "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },

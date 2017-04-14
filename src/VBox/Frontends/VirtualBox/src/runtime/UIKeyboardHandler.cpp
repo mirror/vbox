@@ -1543,7 +1543,6 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     : QObject(pMachineLogic)
     , m_pMachineLogic(pMachineLogic)
     , m_iKeyboardCaptureViewIndex(-1)
-    , m_globalSettings(vboxGlobal().settings())
     , m_fIsKeyboardCaptured(false)
     , m_bIsHostComboPressed(false)
     , m_bIsHostComboAlone(false)
@@ -2475,7 +2474,7 @@ void UIKeyboardHandler::setAutoCaptureDisabled(bool fIsAutoCaptureDisabled)
 
 bool UIKeyboardHandler::autoCaptureSetGlobally()
 {
-    return m_globalSettings.autoCapture() && !m_fDebuggerActive;
+    return gEDataManager->autoCaptureEnabled() && !m_fDebuggerActive;
 }
 
 bool UIKeyboardHandler::viewHasFocus(ulong uScreenId)

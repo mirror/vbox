@@ -54,6 +54,7 @@ const char* UIExtraDataDefs::GUI_ActivateHoveredMachineWindow = "GUI/ActivateHov
 const char* UIExtraDataDefs::GUI_Input_SelectorShortcuts = "GUI/Input/SelectorShortcuts";
 const char* UIExtraDataDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";
 const char* UIExtraDataDefs::GUI_Input_HostKeyCombination = "GUI/Input/HostKeyCombination";
+const char* UIExtraDataDefs::GUI_Input_AutoCapture = "GUI/Input/AutoCapture";
 
 /* Settings: Storage: */
 const char* UIExtraDataDefs::GUI_RecentFolderHD = "GUI/RecentFolderHD";

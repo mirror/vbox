@@ -166,7 +166,7 @@ bool UISession::initialize()
         return false;
 
     /* Notify user about mouse&keyboard auto-capturing: */
-    if (vboxGlobal().settings().autoCapture())
+    if (gEDataManager->autoCaptureEnabled())
         popupCenter().remindAboutAutoCapture(machineLogic()->activeMachineWindow());
 
     /* Check if we are in teleportation waiting mode.
