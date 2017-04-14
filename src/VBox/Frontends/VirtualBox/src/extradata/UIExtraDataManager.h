@@ -66,6 +66,8 @@ signals:
     void sigSelectorUIShortcutChange();
     /** Notifies about Runtime UI keyboard shortcut change. */
     void sigRuntimeUIShortcutChange();
+    /** Notifies about Runtime UI host-key combination change. */
+    void sigRuntimeUIHostKeyCombinationChange();
 
     /** Notifies about menu-bar configuration change. */
     void sigMenuBarConfigurationChange(const QString &strMachineID);
@@ -192,6 +194,11 @@ public:
 
     /** @name Settings: Keyboard
       * @{ */
+        /** Returns the Runtime UI host-key combination. */
+        QString hostKeyCombination();
+        /** Defines the Runtime UI host-key combination. */
+        void setHostKeyCombination(const QString &strHostCombo);
+
         /** Returns shortcut overrides for shortcut-pool with @a strPoolExtraDataID. */
         QStringList shortcutOverrides(const QString &strPoolExtraDataID);
     /** @} */

@@ -53,6 +53,7 @@ const char* UIExtraDataDefs::GUI_ActivateHoveredMachineWindow = "GUI/ActivateHov
 /* Settings: Keyboard: */
 const char* UIExtraDataDefs::GUI_Input_SelectorShortcuts = "GUI/Input/SelectorShortcuts";
 const char* UIExtraDataDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";
+const char* UIExtraDataDefs::GUI_Input_HostKeyCombination = "GUI/Input/HostKeyCombination";
 
 /* Settings: Storage: */
 const char* UIExtraDataDefs::GUI_RecentFolderHD = "GUI/RecentFolderHD";

@@ -433,7 +433,7 @@ void UIPopupCenter::remindAboutAutoCapture(QWidget *pParent)
                                                      "and mouse capture state.</p>") +
           QApplication::translate("UIMessageCenter", "<p>The host key is currently defined as <b>%1</b>.</p>",
                                                      "additional message box paragraph")
-                                                     .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                                                     .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
           true);
 }
 

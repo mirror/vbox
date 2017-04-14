@@ -28,7 +28,6 @@
 # include "UIDefs.h"
 # include "UIExtraDataDefs.h"
 # include "VBoxGlobalSettings.h"
-# include "UIHostComboEditor.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -51,15 +50,6 @@ using namespace UIExtraDataDefs;
 VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
-#if defined (VBOX_WS_WIN)
-    hostCombo = "163"; // VK_RCONTROL
-#elif defined (VBOX_WS_X11)
-    hostCombo = "65508"; // XK_Control_R
-#elif defined (VBOX_WS_MAC)
-    hostCombo = "55"; // QZ_LMETA
-#else
-# warning "port me!"
-#endif
 #if defined(VBOX_WS_X11) && defined(DEBUG)
     autoCapture = false;
 #else
@@ -75,7 +65,6 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
 {
-    hostCombo = that.hostCombo;
     autoCapture = that.autoCapture;
     guiFeatures = that.guiFeatures;
     languageId  = that.languageId;
@@ -92,8 +81,7 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
     return this == &that ||
-        (hostCombo == that.hostCombo &&
-         autoCapture == that.autoCapture &&
+        (autoCapture == that.autoCapture &&
          guiFeatures == that.guiFeatures &&
          languageId  == that.languageId &&
          maxGuestRes == that.maxGuestRes &&
@@ -121,7 +109,6 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/Input/HostKeyCombination",              "hostCombo",               "0|\\d*[1-9]\\d*(,\\d*[1-9]\\d*)?(,\\d*[1-9]\\d*)?", true },
     { "GUI/Input/AutoCapture",                     "autoCapture",             "true|false", true },
     { "GUI/Customizations",                        "guiFeatures",             "\\S+", true },
     { "GUI/LanguageID",                            "languageId",              gVBoxLangIDRegExp, true },
@@ -130,17 +117,6 @@ gPropertyMap[] =
     { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
     { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled", "true|false", true }
 };
-
-void VBoxGlobalSettings::setHostCombo (const QString &hostCombo)
-{
-    if (!UIHostCombo::isValidKeyCombo (hostCombo))
-    {
-        last_err = tr ("'%1' is an invalid host-combination code-sequence.").arg (hostCombo);
-        return;
-    }
-    mData()->hostCombo = hostCombo;
-    resetError();
-}
 
 bool VBoxGlobalSettings::isFeatureActive (const char *aFeature) const
 {

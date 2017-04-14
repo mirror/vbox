@@ -82,6 +82,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_Input_SelectorShortcuts;
         /** Holds Runtime UI shortcut overrides. */
         extern const char* GUI_Input_MachineShortcuts;
+        /** Holds Runtime UI host-key combination. */
+        extern const char* GUI_Input_HostKeyCombination;
     /** @} */
 
     /** @name Settings: Storage

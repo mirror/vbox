@@ -39,6 +39,7 @@
 /* GUI includes: */
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
+# include "UIHostComboEditor.h"
 # include "UIMainEventListener.h"
 # include "VBoxGlobalSettings.h"
 # include "VBoxGlobal.h"
@@ -2336,6 +2337,38 @@ void UIExtraDataManager::setActivateHoveredMachineWindow(bool fActivate)
     setExtraDataString(GUI_ActivateHoveredMachineWindow, toFeatureAllowed(fActivate));
 }
 
+QString UIExtraDataManager::hostKeyCombination()
+{
+    /* Acquire host-key combination: */
+    QString strHostCombo = extraDataString(GUI_Input_HostKeyCombination);
+    /* Invent some sane default if it's absolutely wrong or invalid: */
+    QRegularExpression reTemplate("0|[1-9]\\d*(,[1-9]\\d*)?(,[1-9]\\d*)?");
+    if (!reTemplate.match(strHostCombo).hasMatch() || !UIHostCombo::isValidKeyCombo(strHostCombo))
+    {
+#if   defined (VBOX_WS_MAC)
+        strHostCombo = "55"; // QZ_LMETA
+#elif defined (VBOX_WS_WIN)
+        strHostCombo = "163"; // VK_RCONTROL
+#elif defined (VBOX_WS_X11)
+        strHostCombo = "65508"; // XK_Control_R
+#else
+# warning "port me!"
+#endif
+    }
+    /* Return host-combo: */
+    return strHostCombo;
+}
+
+void UIExtraDataManager::setHostKeyCombination(const QString &strHostCombo)
+{
+    /* Do not save anything if it's absolutely wrong or invalid: */
+    QRegularExpression reTemplate("0|[1-9]\\d*(,[1-9]\\d*)?(,[1-9]\\d*)?");
+    if (!reTemplate.match(strHostCombo).hasMatch() || !UIHostCombo::isValidKeyCombo(strHostCombo))
+        return;
+    /* Define host-combo: */
+    setExtraDataString(GUI_Input_HostKeyCombination, strHostCombo);
+}
+
 QStringList UIExtraDataManager::shortcutOverrides(const QString &strPoolExtraDataID)
 {
     if (strPoolExtraDataID == GUI_Input_SelectorShortcuts)
@@ -3985,6 +4018,9 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
             /* Runtime UI shortcut changed? */
             else if (strKey == GUI_Input_MachineShortcuts)
                 emit sigRuntimeUIShortcutChange();
+            /* Runtime UI host-key combintation changed? */
+            else if (strKey == GUI_Input_HostKeyCombination)
+                emit sigRuntimeUIHostKeyCombinationChange();
         }
     }
     /* Machine extra-data 'change' event: */

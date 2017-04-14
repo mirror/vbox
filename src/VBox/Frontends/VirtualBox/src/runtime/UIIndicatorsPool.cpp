@@ -1004,7 +1004,7 @@ public:
     UIIndicatorKeyboardExtension()
     {
         /* Make sure host-combination label will be updated: */
-        connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
+        connect(gEDataManager, SIGNAL(sigRuntimeUIHostKeyCombinationChange()),
                 this, SLOT(sltUpdateAppearance()));
         /* Translate finally: */
         retranslateUi();
@@ -1015,7 +1015,7 @@ public slots:
     /** Update routine. */
     void sltUpdateAppearance()
     {
-        setText(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
+        setText(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination()));
     }
 
 private:

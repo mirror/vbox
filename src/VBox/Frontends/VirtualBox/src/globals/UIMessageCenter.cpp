@@ -2070,7 +2070,7 @@ bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
                          "next to the&nbsp;<img src=:/hostkey_16px.png/>&nbsp;icon. "
                          "This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.</p>") +
                       tr("<p>The host key is currently defined as <b>%1</b>.</p>", "additional message box paragraph")
-                         .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                         .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
                       "confirmInputCapture",
                       AlertButton_Ok | AlertButtonOption_Default,
                       AlertButton_Cancel | AlertButtonOption_Escape,
@@ -2090,7 +2090,7 @@ bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
                              "<p>Note that the main menu bar is hidden in full-screen mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
-                             .arg(strHotKey, UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
                           "confirmGoingFullscreen",
                           tr("Switch"));
 }
@@ -2103,7 +2103,7 @@ bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey) const
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
                              "<p>Note that the main menu bar is hidden in seamless mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
-                             .arg(strHotKey, UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
                           "confirmGoingSeamless",
                           tr("Switch"));
 }
@@ -2116,7 +2116,7 @@ bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
                              "<p>Note that the main menu bar is hidden in scaled mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
-                             .arg(strHotKey, UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
                           "confirmGoingScale",
                           tr("Switch"));
 }
