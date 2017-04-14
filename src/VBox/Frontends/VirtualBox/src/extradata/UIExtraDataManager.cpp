@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QMutex>
 # include <QMetaEnum>
+# include <QRegularExpression>
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 #  include <QMenuBar>
 #  include <QListView>
