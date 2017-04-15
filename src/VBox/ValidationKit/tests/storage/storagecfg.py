@@ -224,10 +224,10 @@ class StorageConfigOsSolaris(StorageConfigOs):
         """
         oDisk = None;
         sRamDiskName = 'ramdisk%u' % (self.idxRamDisk,);
-        fRc, sOut, _ = oExec.execBinary('ramdiskadm', ('-a', sRamDiskName, str(cbRamDisk)));
+        fRc, _ , _ = oExec.execBinary('ramdiskadm', ('-a', sRamDiskName, str(cbRamDisk)));
         if fRc:
             self.idxRamDisk += 1;
-            oDisk = StorageDisk(sOut.rstrip(), True);
+            oDisk = StorageDisk('/dev/ramdisk/%s' % (sRamDiskName, ), True);
 
         return oDisk;
 
