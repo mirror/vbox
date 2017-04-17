@@ -5323,8 +5323,8 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
              u8Vector, pCtx->cs.Sel, pCtx->rip, cbInstr, fFlags, uErr, uCr2, pVCpu->iem.s.uCurXcpt, pVCpu->iem.s.cXcptRecursions + 1, fPrevXcpt));
 
         /** @todo double and tripple faults. */
-        /** @todo When implementing #DF, the SVM nested-guest #DF intercepts needs some
-         *        care. See AMD spec. 15.12 "Exception Intercepts". */
+        /** @todo When implementing \#DF, the SVM nested-guest \#DF intercepts needs
+         *        some care. See AMD spec. 15.12 "Exception Intercepts". */
         if (pVCpu->iem.s.cXcptRecursions >= 3)
         {
 #ifdef DEBUG_bird
