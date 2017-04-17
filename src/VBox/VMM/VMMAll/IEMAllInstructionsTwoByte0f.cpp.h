@@ -889,6 +889,8 @@ FNIEMOP_DEF(iemOp_invd)
 #ifdef VBOX_WITH_NESTED_HWVIRT
     IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
     IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
+#else
+    RT_NOREF_PV(pVCpu);
 #endif
     /** @todo implement invd for the regular case (above only handles nested SVM
      *        exits). */

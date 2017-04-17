@@ -469,7 +469,7 @@ typedef IEMSELDESC *PIEMSELDESC;
 # define IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg) do { return VERR_SVM_IPE_1; } while (0)
 # define IEM_SVM_NST_GST_MSR_INTERCEPT(a_pVCpu, a_idMsr, a_fWrite)                        (VERR_SVM_IPE_1)
 
-#endif /* VBOX_WITH_NESTED_HWVIRT && !IN_RC */
+#endif /* VBOX_WITH_NESTED_HWVIRT */
 
 
 /*********************************************************************************************************************************
@@ -880,7 +880,7 @@ IEM_STATIC PIEMVERIFYEVTREC iemVerifyAllocRecord(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVerifyFakeIOPortRead(PVMCPU pVCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue);
 IEM_STATIC VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PVMCPU pVCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue);
 
-#if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(IN_RC)
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * Checks if the intercepted IO instruction causes a \#VMEXIT and handles it
  * accordingly.
@@ -929,7 +929,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
     RT_NOREF9(pVCpu, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo, cbInstr);
     return VERR_IEM_IPE_9;
 }
-#endif /* VBOX_WITH_NESTED_HWVIRT && !IN_RC */
+#endif /* VBOX_WITH_NESTED_HWVIRT */
 
 
 /**
@@ -5248,7 +5248,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
                       pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp);
 #endif
 
-#if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(IN_RC)
+#ifdef VBOX_WITH_NESTED_HWVIRT
     if (IEM_IS_SVM_ENABLED(pVCpu))
     {
         /*
@@ -5307,7 +5307,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
             IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
         }
     }
-#endif
+#endif /* VBOX_WITH_NESTED_HWVIRT */
 
     /*
      * Do recursion accounting.
@@ -12054,7 +12054,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
-#if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(IN_RC)
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /** Check and handles SVM nested-guest control & instruction intercept. */
 # define IEMOP_HLP_SVM_CTRL_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
     do \
@@ -12078,7 +12078,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 # define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2) \
     do { RT_NOREF4(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2); } while (0)
 
-#endif /* VBOX_WITH_NESTED_HWVIRT && !IN_RC */
+#endif /* VBOX_WITH_NESTED_HWVIRT */
 
 
 /**
