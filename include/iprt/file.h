@@ -693,31 +693,37 @@ RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *pfMode);
  * to IPRT compatible flags, which then can be used with RTFileOpen* APIs.
  *
  * Access modes:
- *      "r"  - Opens a file for reading.
- *      "r+" - Opens a file for reading and writing.
- *      "w"  - Opens a file for writing.
- *      "w+" - Opens a file for writing and reading.
+ *      - "r":  Opens a file for reading.
+ *      - "r+": Opens a file for reading and writing.
+ *      - "w":  Opens a file for writing.
+ *      - "w+": Opens a file for writing and reading.
  *
  * Disposition modes:
- *      "ca" - Creates a new file, always. Overwrites an existing file.
- *      "ce" - Creates a new file if it does not exist. Fail if exist.
- *      "oa" - Opens an existing file and places the file pointer at
- *             the end of the file, if opened with write access.
- *             Create the file if it does not exist.
- *      "oc" - Opens an existing file or create it if it does not exist.
- *      "oe" - Opens an existing file or fail if it does not exist.
- *      "ot" - Opens and truncate an existing file or fail if it does not exist.
+ *      - "oe", "open": Opens an existing file or fail if it does not exist.
+ *      - "oc", "open-create": Opens an existing file or create it if it does
+ *        not exist.
+ *      - "oa", "open-append": Opens an existing file and places the file
+ *        pointer at the end of the file, if opened with write access. Create
+ *        the file if it does not exist.
+ *      - "ot", "open-truncate": Opens and truncate an existing file or fail if
+ *        it does not exist.
+ *      - "ce", "create": Creates a new file if it does not exist. Fail if
+ *        exist.
+ *      - "ca", "create-replace": Creates a new file, always. Overwrites an
+ *        existing file.
  *
- * @note    Sharing modes are not implemented yet, so RTFILE_O_DENY_NONE will
- *          always be used.
+ * Sharing mode:
+ *      - "nr":     Deny read.
+ *      - "nw":     Deny write.
+ *      - "nrw":    Deny both read and write.
+ *      - "d":      Allow delete.
+ *      - "", NULL: Deny none, except delete.
  *
  * @return  IPRT status code.
- * @param   pszAccess               Access mode string to convert.
- * @param   pszDisposition          Disposition mode string to convert.
- * @param   pszSharing              Sharing mode string to convert.  Not
- *                                  implemented yet - completely ignored!
- * @param   pfMode                  Where to store the converted mode flags
- *                                  on success.
+ * @param   pszAccess       Access mode string to convert.
+ * @param   pszDisposition  Disposition mode string to convert.
+ * @param   pszSharing      Sharing mode string to convert.
+ * @param   pfMode          Where to store the converted mode flags on success.
  */
 RTDECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposition, const char *pszSharing, uint64_t *pfMode);
 
