@@ -97,6 +97,12 @@ namespace UIExtraDataDefs
         extern const char* GUI_RemapScancodes;
     /** @} */
 
+    /** @name Settings: Proxy
+      * @{ */
+        /** Holds VBox proxy settings. */
+        extern const char* GUI_ProxySettings;
+    /** @} */
+
     /** @name Settings: Storage
       * @{ */
         /** Holds recent folder for hard-drives. */

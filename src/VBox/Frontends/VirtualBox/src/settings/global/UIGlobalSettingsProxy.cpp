@@ -25,6 +25,7 @@
 /* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIGlobalSettingsProxy.h"
+# include "UIExtraDataManager.h"
 # include "VBoxUtils.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -89,7 +90,7 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     UIDataSettingsGlobalProxy oldProxyData;
 
     /* Gather old proxy data: */
-    UIProxyManager proxyManager(m_settings.proxySettings());
+    UIProxyManager proxyManager(gEDataManager->proxySettings());
     oldProxyData.m_enmProxyState = proxyManager.proxyState();
     oldProxyData.m_strProxyHost = proxyManager.proxyHost();
     oldProxyData.m_strProxyPort = proxyManager.proxyPort();
@@ -150,7 +151,7 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
         proxyManager.setProxyState(m_pCache->data().m_enmProxyState);
         proxyManager.setProxyHost(m_pCache->data().m_strProxyHost);
         proxyManager.setProxyPort(m_pCache->data().m_strProxyPort);
-        m_settings.setProxySettings(proxyManager.toString());
+        gEDataManager->setProxySettings(proxyManager.toString());
     }
 
     /* Upload properties & settings to data: */

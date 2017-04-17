@@ -30,6 +30,7 @@
 /* GUI includes: */
 # include "UINetworkReply.h"
 # include "UINetworkManager.h"
+# include "UIExtraDataManager.h"
 # ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
 #  include "VBoxGlobal.h"
 #  include "VBoxUtils.h"
@@ -386,7 +387,7 @@ int UINetworkReplyPrivateThread::applyProxyRules()
 
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
     /* Get the proxy-manager: */
-    UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
+    UIProxyManager proxyManager(gEDataManager->proxySettings());
 
     /* If the specific proxy settings are enabled, we'll use them
      * unless user disabled that functionality manually. */

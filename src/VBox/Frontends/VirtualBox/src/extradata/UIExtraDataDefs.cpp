@@ -61,6 +61,9 @@ const char* UIExtraDataDefs::GUI_Input_HostKeyCombination = "GUI/Input/HostKeyCo
 const char* UIExtraDataDefs::GUI_Input_AutoCapture = "GUI/Input/AutoCapture";
 const char* UIExtraDataDefs::GUI_RemapScancodes = "GUI/RemapScancodes";
 
+/* Settings: Proxy: */
+const char* UIExtraDataDefs::GUI_ProxySettings = "GUI/ProxySettings";
+
 /* Settings: Storage: */
 const char* UIExtraDataDefs::GUI_RecentFolderHD = "GUI/RecentFolderHD";
 const char* UIExtraDataDefs::GUI_RecentFolderCD = "GUI/RecentFolderCD";

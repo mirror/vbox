@@ -50,13 +50,11 @@ using namespace UIExtraDataDefs;
 VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
-    proxySettings = QString::null;
     hostScreenSaverDisabled = false;
 }
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
 {
-    proxySettings = that.proxySettings;
     hostScreenSaverDisabled = that.hostScreenSaverDisabled;
 }
 
@@ -67,8 +65,7 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
     return this == &that ||
-        (proxySettings == that.proxySettings &&
-         hostScreenSaverDisabled == that.hostScreenSaverDisabled
+        (hostScreenSaverDisabled == that.hostScreenSaverDisabled
         );
 }
 
@@ -87,7 +84,6 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
     { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled", "true|false", true }
 };
 

@@ -2491,6 +2491,16 @@ QString UIExtraDataManager::remappedScanCodes()
     return strRemappedScanCodes;
 }
 
+QString UIExtraDataManager::proxySettings()
+{
+    return extraDataString(GUI_ProxySettings);
+}
+
+void UIExtraDataManager::setProxySettings(const QString &strSettings)
+{
+    setExtraDataString(GUI_ProxySettings, strSettings);
+}
+
 QString UIExtraDataManager::recentFolderForHardDrives()
 {
     return extraDataString(GUI_RecentFolderHD);

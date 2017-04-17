@@ -232,6 +232,14 @@ public:
         QString remappedScanCodes();
     /** @} */
 
+    /** @name Settings: Proxy
+      * @{ */
+        /** Returns VBox proxy settings. */
+        QString proxySettings();
+        /** Defines VBox proxy @a strSettings. */
+        void setProxySettings(const QString &strSettings);
+    /** @} */
+
     /** @name Settings: Storage
       * @{ */
         /** Returns recent folder for hard-drives. */
