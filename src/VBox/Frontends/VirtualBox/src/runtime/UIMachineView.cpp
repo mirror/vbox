@@ -648,7 +648,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WS_MAC
     , m_iHostScreenNumber(0)
 #endif /* VBOX_WS_MAC */
-    , m_maxGuestSizePolicy(MaxGuestSizePolicy_Invalid)
+    , m_maxGuestSizePolicy(MaxGuestResolutionPolicy_Automatic)
     , m_u64MaxGuestSize(0)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
@@ -666,20 +666,11 @@ void UIMachineView::loadMachineViewSettings()
 {
     /* Global settings: */
     {
-        /* Remember the maximum guest size policy for telling the guest about
-         * video modes we like: */
-        QString maxGuestSize = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
-        if ((maxGuestSize == QString::null) || (maxGuestSize == "auto"))
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Automatic;
-        else if (maxGuestSize == "any")
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Any;
-        else  /** @todo Mea culpa, but what about error checking? */
-        {
-            int width  = maxGuestSize.section(',', 0, 0).toInt();
-            int height = maxGuestSize.section(',', 1, 1).toInt();
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Fixed;
-            m_fixedMaxGuestSize = QSize(width, height);
-        }
+        /* Remember the maximum guest size policy for
+         * telling the guest about video modes we like: */
+        m_maxGuestSizePolicy = gEDataManager->maxGuestResolutionPolicy();
+        if (m_maxGuestSizePolicy == MaxGuestResolutionPolicy_Fixed)
+            m_fixedMaxGuestSize = gEDataManager->maxGuestResolutionForPolicyFixed();
     }
 }
 
@@ -1013,17 +1004,13 @@ void UIMachineView::setMaxGuestSize(const QSize &minimumSizeHint /* = QSize() */
     QSize maxSize;
     switch (m_maxGuestSizePolicy)
     {
-        case MaxGuestSizePolicy_Fixed:
+        case MaxGuestResolutionPolicy_Fixed:
             maxSize = m_fixedMaxGuestSize;
             break;
-        case MaxGuestSizePolicy_Automatic:
+        case MaxGuestResolutionPolicy_Automatic:
             maxSize = calculateMaxGuestSize().expandedTo(minimumSizeHint);
             break;
-        case MaxGuestSizePolicy_Any:
-        default:
-            AssertMsg(m_maxGuestSizePolicy == MaxGuestSizePolicy_Any,
-                      ("Invalid maximum guest size policy %d!\n",
-                       m_maxGuestSizePolicy));
+        case MaxGuestResolutionPolicy_Any:
             /* (0, 0) means any of course. */
             maxSize = QSize(0, 0);
     }

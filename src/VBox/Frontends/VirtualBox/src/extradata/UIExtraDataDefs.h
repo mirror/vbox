@@ -77,6 +77,8 @@ namespace UIExtraDataDefs
 
     /** @name Settings: Display
       * @{ */
+        /** Holds maximum guest-screen resolution policy/value. */
+        extern const char* GUI_MaxGuestResolution;
         /** Holds whether hovered machine-window should be activated. */
         extern const char* GUI_ActivateHoveredMachineWindow;
     /** @} */
@@ -719,6 +721,19 @@ enum InformationElementType
     InformationElementType_NetworkStatistics
 };
 Q_DECLARE_METATYPE(InformationElementType);
+
+/** Runtime UI: Maximum guest-screen resolution policy types.
+  * @note This policy determines which guest-screen resolutions we wish to
+  *       handle. We also accept anything smaller than the current resolution. */
+enum MaxGuestResolutionPolicy
+{
+    /** Anything at all. */
+    MaxGuestResolutionPolicy_Any,
+    /** Anything up to a fixed size. */
+    MaxGuestResolutionPolicy_Fixed,
+    /** Anything up to host-screen available space. */
+    MaxGuestResolutionPolicy_Automatic
+};
 
 #endif /* !___UIExtraDataDefs_h___ */
 

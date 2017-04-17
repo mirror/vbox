@@ -24,6 +24,7 @@
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 # include <QPointer>
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+#include <QSize>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
@@ -197,6 +198,15 @@ public:
 
     /** @name Settings: Display
       * @{ */
+        /** Returns maximum guest-screen resolution policy. */
+        MaxGuestResolutionPolicy maxGuestResolutionPolicy();
+        /** Defines maximum guest-screen resolution @a enmPolicy or @a resolution itself for Fixed policy. */
+        void setMaxGuestScreenResolution(MaxGuestResolutionPolicy enmPolicy, const QSize resolution = QSize());
+        /** Returns maximum guest-screen resolution for fixed policy. */
+        QSize maxGuestResolutionForPolicyFixed();
+        /** Defines maximum guest-screen @a resolution for fixed policy. */
+        void setMaxGuestResolutionForPolicyFixed(const QSize &resolution);
+
         /** Returns whether hovered machine-window should be activated. */
         bool activateHoveredMachineWindow();
         /** Defines whether hovered machine-window should be @a fActivated. */

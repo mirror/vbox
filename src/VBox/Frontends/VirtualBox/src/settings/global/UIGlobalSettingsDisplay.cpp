@@ -31,7 +31,8 @@ struct UIDataSettingsGlobalDisplay
 {
     /** Constructs data. */
     UIDataSettingsGlobalDisplay()
-        : m_strMaxGuestResolution(QString())
+        : m_enmMaxGuestResolution(MaxGuestResolutionPolicy_Automatic)
+        , m_maxGuestResolution(QSize())
         , m_fActivateHoveredMachineWindow(false)
     {}
 
@@ -39,7 +40,8 @@ struct UIDataSettingsGlobalDisplay
     bool equal(const UIDataSettingsGlobalDisplay &other) const
     {
         return true
-               && (m_strMaxGuestResolution == other.m_strMaxGuestResolution)
+               && (m_enmMaxGuestResolution == other.m_enmMaxGuestResolution)
+               && (m_maxGuestResolution == other.m_maxGuestResolution)
                && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
                ;
     }
@@ -49,8 +51,10 @@ struct UIDataSettingsGlobalDisplay
     /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataSettingsGlobalDisplay &other) const { return !equal(other); }
 
-    /** Holds the maximum guest resolution or preset name. */
-    QString m_strMaxGuestResolution;
+    /** Holds the maximum guest-screen resolution policy. */
+    MaxGuestResolutionPolicy m_enmMaxGuestResolution;
+    /** Holds the maximum guest-screen resolution. */
+    QSize m_maxGuestResolution;
     /** Holds whether we should automatically activate machine window under the mouse cursor. */
     bool m_fActivateHoveredMachineWindow;
 };
@@ -81,7 +85,9 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     UIDataSettingsGlobalDisplay oldDisplayData;
 
     /* Gather old display data: */
-    oldDisplayData.m_strMaxGuestResolution = m_settings.maxGuestRes();
+    oldDisplayData.m_enmMaxGuestResolution = gEDataManager->maxGuestResolutionPolicy();
+    if (oldDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
+        oldDisplayData.m_maxGuestResolution = gEDataManager->maxGuestResolutionForPolicyFixed();
     oldDisplayData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 
     /* Cache old display data: */
@@ -97,27 +103,11 @@ void UIGlobalSettingsDisplay::getFromCache()
     const UIDataSettingsGlobalDisplay &oldDisplayData = m_pCache->base();
 
     /* Load old display data from the cache: */
-    if (   (oldDisplayData.m_strMaxGuestResolution.isEmpty())
-        || (oldDisplayData.m_strMaxGuestResolution == "auto"))
+    m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData((int)oldDisplayData.m_enmMaxGuestResolution));
+    if (oldDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
     {
-        /* Switch combo-box item: */
-        m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("auto"));
-    }
-    else if (oldDisplayData.m_strMaxGuestResolution == "any")
-    {
-        /* Switch combo-box item: */
-        m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("any"));
-    }
-    else
-    {
-        /* Switch combo-box item: */
-        m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("fixed"));
-        /* Trying to parse text into 2 sections by ',' symbol: */
-        const int iWidth  = oldDisplayData.m_strMaxGuestResolution.section(',', 0, 0).toInt();
-        const int iHeight = oldDisplayData.m_strMaxGuestResolution.section(',', 1, 1).toInt();
-        /* And set values if they are present: */
-        m_pResolutionWidthSpin->setValue(iWidth);
-        m_pResolutionHeightSpin->setValue(iHeight);
+        m_pResolutionWidthSpin->setValue(oldDisplayData.m_maxGuestResolution.width());
+        m_pResolutionHeightSpin->setValue(oldDisplayData.m_maxGuestResolution.height());
     }
     m_pCheckBoxActivateOnMouseHover->setChecked(oldDisplayData.m_fActivateHoveredMachineWindow);
 }
@@ -128,23 +118,9 @@ void UIGlobalSettingsDisplay::putToCache()
     UIDataSettingsGlobalDisplay newDisplayData = m_pCache->base();
 
     /* Gather new display data: */
-    if (m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "auto")
-    {
-        /* If resolution current combo item is "auto" => resolution set to "auto": */
-        newDisplayData.m_strMaxGuestResolution = QString();
-    }
-    else if (   m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "any"
-             || m_pResolutionWidthSpin->value() == 0 || m_pResolutionHeightSpin->value() == 0)
-    {
-        /* Else if resolution current combo item is "any"
-         * or any of the resolution field attributes is zero => resolution set to "any": */
-        newDisplayData.m_strMaxGuestResolution = "any";
-    }
-    else if (m_pResolutionWidthSpin->value() != 0 && m_pResolutionHeightSpin->value() != 0)
-    {
-        /* Else if both field attributes are non-zeroes => resolution set to "fixed": */
-        newDisplayData.m_strMaxGuestResolution = QString("%1,%2").arg(m_pResolutionWidthSpin->value()).arg(m_pResolutionHeightSpin->value());
-    }
+    newDisplayData.m_enmMaxGuestResolution = (MaxGuestResolutionPolicy)m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toInt();
+    if (newDisplayData.m_enmMaxGuestResolution == MaxGuestResolutionPolicy_Fixed)
+        newDisplayData.m_maxGuestResolution = QSize(m_pResolutionWidthSpin->value(), m_pResolutionHeightSpin->value());
     newDisplayData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
 
     /* Cache new display data: */
@@ -160,8 +136,9 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     if (m_pCache->wasChanged())
     {
         /* Save new display data from the cache: */
-        if (m_pCache->data().m_strMaxGuestResolution != m_pCache->base().m_strMaxGuestResolution)
-            m_settings.setMaxGuestRes(m_pCache->data().m_strMaxGuestResolution);
+        if (   m_pCache->data().m_enmMaxGuestResolution != m_pCache->base().m_enmMaxGuestResolution
+            || m_pCache->data().m_maxGuestResolution != m_pCache->base().m_maxGuestResolution)
+            gEDataManager->setMaxGuestScreenResolution(m_pCache->data().m_enmMaxGuestResolution, m_pCache->data().m_maxGuestResolution);
         if (m_pCache->data().m_fActivateHoveredMachineWindow != m_pCache->base().m_fActivateHoveredMachineWindow)
             gEDataManager->setActivateHoveredMachineWindow(m_pCache->data().m_fActivateHoveredMachineWindow);
     }
@@ -186,11 +163,9 @@ void UIGlobalSettingsDisplay::sltHandleMaximumGuestScreenSizePolicyChange()
     m_pMaxResolutionCombo->setWhatsThis(strCurrentComboItemTip);
 
     /* Get current resolution-combo item data: */
-    const QString strCurrentComboItemData = m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString();
-    /* Is our combo in state for 'fixed' resolution? */
-    const bool fCurrentResolutionStateFixed = strCurrentComboItemData == "fixed";
+    const MaxGuestResolutionPolicy enmPolicy = (MaxGuestResolutionPolicy)m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toInt();
     /* Should be combo-level widgets enabled? */
-    const bool fComboLevelWidgetsEnabled = fCurrentResolutionStateFixed;
+    const bool fComboLevelWidgetsEnabled = enmPolicy == MaxGuestResolutionPolicy_Fixed;
     /* Enable/disable combo-level widgets: */
     m_pResolutionWidthLabel->setEnabled(fComboLevelWidgetsEnabled);
     m_pResolutionWidthSpin->setEnabled(fComboLevelWidgetsEnabled);
@@ -246,16 +221,19 @@ void UIGlobalSettingsDisplay::reloadMaximumGuestScreenSizePolicyComboBox()
     m_pMaxResolutionCombo->clear();
 
     /* Create corresponding items: */
-    m_pMaxResolutionCombo->addItem(tr("Automatic", "Maximum Guest Screen Size"), "auto");
+    m_pMaxResolutionCombo->addItem(tr("Automatic", "Maximum Guest Screen Size"),
+                                   QVariant((int)MaxGuestResolutionPolicy_Automatic));
     m_pMaxResolutionCombo->setItemData(m_pMaxResolutionCombo->count() - 1,
                                        tr("Suggest a reasonable maximum screen size to the guest. "
                                           "The guest will only see this suggestion when guest additions are installed."),
                                        Qt::ToolTipRole);
-    m_pMaxResolutionCombo->addItem(tr("None", "Maximum Guest Screen Size"), "any");
+    m_pMaxResolutionCombo->addItem(tr("None", "Maximum Guest Screen Size"),
+                                   QVariant((int)MaxGuestResolutionPolicy_Any));
     m_pMaxResolutionCombo->setItemData(m_pMaxResolutionCombo->count() - 1,
                                        tr("Do not attempt to limit the size of the guest screen."),
                                        Qt::ToolTipRole);
-    m_pMaxResolutionCombo->addItem(tr("Hint", "Maximum Guest Screen Size"), "fixed");
+    m_pMaxResolutionCombo->addItem(tr("Hint", "Maximum Guest Screen Size"),
+                                   QVariant((int)MaxGuestResolutionPolicy_Fixed));
     m_pMaxResolutionCombo->setItemData(m_pMaxResolutionCombo->count() - 1,
                                        tr("Suggest a maximum screen size to the guest. "
                                           "The guest will only see this suggestion when guest additions are installed."),

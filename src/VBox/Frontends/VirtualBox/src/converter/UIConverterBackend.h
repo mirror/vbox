@@ -86,7 +86,6 @@ template<> bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>();
 #endif /* VBOX_WS_MAC */
 template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
-template<> bool canConvert<InformationElementType>();
 template<> bool canConvert<PreviewUpdateIntervalType>();
 template<> bool canConvert<EventHandlingType>();
 template<> bool canConvert<GUIFeatureType>();
@@ -102,6 +101,8 @@ template<> bool canConvert<HiDPIOptimizationType>();
 #ifndef VBOX_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>();
 #endif /* !VBOX_WS_MAC */
+template<> bool canConvert<InformationElementType>();
+template<> bool canConvert<MaxGuestResolutionPolicy>();
 
 /* Declare COM canConvert specializations: */
 template<> bool canConvert<KMachineState>();
@@ -200,6 +201,8 @@ template<> InformationElementType fromString<InformationElementType>(const QStri
 template<> QString toInternalString(const InformationElementType &informationElementType);
 template<> InformationElementType fromInternalString<InformationElementType>(const QString &strInformationElementType);
 template<> QIcon toIcon(const InformationElementType &informationElementType);
+template<> QString toInternalString(const MaxGuestResolutionPolicy &enmMaxGuestResolutionPolicy);
+template<> MaxGuestResolutionPolicy fromInternalString<MaxGuestResolutionPolicy>(const QString &strMaxGuestResolutionPolicy);
 
 /* Declare COM conversion specializations: */
 template<> QColor toColor(const KMachineState &state);

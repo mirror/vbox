@@ -51,6 +51,7 @@ const char* UIExtraDataDefs::GUI_RestrictedMachineSettingsPages = "GUI/Restricte
 const char* UIExtraDataDefs::GUI_LanguageID = "GUI/LanguageID";
 
 /* Settings: Display: */
+const char* UIExtraDataDefs::GUI_MaxGuestResolution = "GUI/MaxGuestResolution";
 const char* UIExtraDataDefs::GUI_ActivateHoveredMachineWindow = "GUI/ActivateHoveredMachineWindow";
 
 /* Settings: Keyboard: */

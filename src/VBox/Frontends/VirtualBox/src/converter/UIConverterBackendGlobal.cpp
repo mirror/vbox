@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QApplication>
 # include <QHash>
+# include <QRegularExpression>
 
 /* GUI includes: */
 # include "UIConverterBackend.h"
@@ -53,7 +54,6 @@ template<> bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>() { return
 #endif /* VBOX_WS_MAC */
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
-template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<PreviewUpdateIntervalType>() { return true; }
 template<> bool canConvert<EventHandlingType>() { return true; }
 template<> bool canConvert<GUIFeatureType>() { return true; }
@@ -69,6 +69,8 @@ template<> bool canConvert<HiDPIOptimizationType>() { return true; }
 #ifndef VBOX_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
 #endif /* !VBOX_WS_MAC */
+template<> bool canConvert<InformationElementType>() { return true; }
+template<> bool canConvert<MaxGuestResolutionPolicy>() { return true; }
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)
@@ -1801,5 +1803,42 @@ template<> QIcon toIcon(const InformationElementType &informationElementType)
         }
     }
     return QIcon();
+}
+
+/* QString <= MaxGuestResolutionPolicy: */
+template<> QString toInternalString(const MaxGuestResolutionPolicy &enmMaxGuestResolutionPolicy)
+{
+    QString strResult;
+    switch (enmMaxGuestResolutionPolicy)
+    {
+        case MaxGuestResolutionPolicy_Automatic: strResult = ""; break;
+        case MaxGuestResolutionPolicy_Any:       strResult = "any"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for max guest resolution policy=%d", enmMaxGuestResolutionPolicy));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* MaxGuestResolutionPolicy <= QString: */
+template<> MaxGuestResolutionPolicy fromInternalString<MaxGuestResolutionPolicy>(const QString &strMaxGuestResolutionPolicy)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys; QList<MaxGuestResolutionPolicy> values;
+    keys << "auto";   values << MaxGuestResolutionPolicy_Automatic;
+    /* Auto type for empty value: */
+    if (strMaxGuestResolutionPolicy.isEmpty())
+        return MaxGuestResolutionPolicy_Automatic;
+    /* Fixed type for value which can be parsed: */
+    if (QRegularExpression("[1-9]\\d*,[1-9]\\d*").match(strMaxGuestResolutionPolicy).hasMatch())
+        return MaxGuestResolutionPolicy_Fixed;
+    /* Any type for unknown words: */
+    if (!keys.contains(strMaxGuestResolutionPolicy, Qt::CaseInsensitive))
+        return MaxGuestResolutionPolicy_Any;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strMaxGuestResolutionPolicy, Qt::CaseInsensitive)));
 }
 

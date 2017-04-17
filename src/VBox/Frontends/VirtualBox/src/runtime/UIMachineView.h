@@ -80,21 +80,6 @@ signals:
 
 public:
 
-    /** Policy for determining which guest resolutions we wish to
-     * handle.  We also accept anything smaller than the current
-     * resolution. */
-    enum MaxGuestSizePolicy
-    {
-        /** Policy not set correctly. */
-        MaxGuestSizePolicy_Invalid = 0,
-        /** Anything up to a fixed size. */
-        MaxGuestSizePolicy_Fixed,
-        /** Anything up to available space on the host desktop. */
-        MaxGuestSizePolicy_Automatic,
-        /** We accept anything. */
-        MaxGuestSizePolicy_Any
-    };
-
     /* Factory function to create machine-view: */
     static UIMachineView* create(  UIMachineWindow *pMachineWindow
                                  , ulong uScreenId
@@ -405,7 +390,7 @@ protected:
 
     /** The policy for calculating the maximum guest resolution which we wish
      * to handle. */
-    MaxGuestSizePolicy m_maxGuestSizePolicy;
+    MaxGuestResolutionPolicy m_maxGuestSizePolicy;
     /** The maximum guest size for fixed size policy. */
     QSize m_fixedMaxGuestSize;
     /** Maximum guest resolution which we wish to handle.  Must be accessed

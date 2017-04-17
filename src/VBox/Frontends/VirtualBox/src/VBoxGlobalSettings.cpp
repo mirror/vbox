@@ -50,7 +50,6 @@ using namespace UIExtraDataDefs;
 VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
-    maxGuestRes = QString::null;
     remapScancodes = QString::null;
     proxySettings = QString::null;
     hostScreenSaverDisabled = false;
@@ -58,7 +57,6 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
 {
-    maxGuestRes = that.maxGuestRes;
     remapScancodes = that.remapScancodes;
     proxySettings = that.proxySettings;
     hostScreenSaverDisabled = that.hostScreenSaverDisabled;
@@ -71,8 +69,7 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
     return this == &that ||
-        (maxGuestRes == that.maxGuestRes &&
-         remapScancodes == that.remapScancodes &&
+        (remapScancodes == that.remapScancodes &&
          proxySettings == that.proxySettings &&
          hostScreenSaverDisabled == that.hostScreenSaverDisabled
         );
@@ -93,7 +90,6 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/MaxGuestResolution",                    "maxGuestRes",             "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
     { "GUI/RemapScancodes",                        "remapScancodes",          "(\\d+=\\d+,)*\\d+=\\d+", true },
     { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
     { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled", "true|false", true }
