@@ -557,6 +557,12 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     VBOXSTRICTRC rcStrict;
 
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_PUSHF))
+    {
+        Log2(("pushf: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_PUSHF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     /*
      * If we're in V8086 mode some care is required (which is why we're in
      * doing this in a C implementation).
@@ -617,6 +623,12 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
     uint32_t const  fEflOld = IEMMISC_GET_EFL(pVCpu, pCtx);
     VBOXSTRICTRC    rcStrict;
     uint32_t        fEflNew;
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_POPF))
+    {
+        Log2(("popf: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_POPF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
 
     /*
      * V8086 is special as usual.
@@ -3855,6 +3867,16 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /*
+     * The SVM nested-guest intercept for iret takes priority over all exceptions,
+     * see AMD spec. "15.9 Instruction Intercepts".
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IRET))
+    {
+        Log(("iret: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_IRET, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+    /*
      * Call a mode specific worker.
      */
     if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
@@ -4631,6 +4653,12 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!IEM_GET_CTX(pVCpu)->eflags.Bits.u1VM);
 
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_WRITES))
+    {
+        Log(("lgdt: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_GDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     /*
      * Fetch the limit and base address.
      */
@@ -4696,6 +4724,12 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!IEM_GET_CTX(pVCpu)->eflags.Bits.u1VM);
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_WRITES))
+    {
+        Log(("lidt: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_IDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
 
     /*
      * Fetch the limit and base address.
@@ -4782,6 +4816,13 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
      */
     if (!(uNewLdt & X86_SEL_MASK_OFF_RPL))
     {
+        /* Nested-guest SVM intercept. */
+        if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
+        {
+            Log(("lldt: Guest intercept -> #VMEXIT\n"));
+            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_LDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
         Log(("lldt %04x: Loading NULL selector.\n",  uNewLdt));
         if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
             CPUMSetGuestLDTR(pVCpu, uNewLdt);
@@ -4856,6 +4897,13 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
         return iemRaiseSelectorNotPresentBySelector(pVCpu, uNewLdt);
     }
 
+    /* Nested-guest SVM intercept. */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
+    {
+        Log(("lldt: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_LDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     /*
      * It checks out alright, update the registers.
      */
@@ -4906,6 +4954,11 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     {
         Log(("ltr %04x - NULL selector -> #GP(0)\n", uNewTr));
         return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TR_WRITES))
+    {
+        Log(("ltr: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_TR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     /*
@@ -5009,6 +5062,12 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!pCtx->eflags.Bits.u1VM);
 
+    if (IEM_IS_SVM_READ_CR_INTERCEPT_SET(pVCpu, iCrReg))
+    {
+        Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+        IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_READ_CR0 + iCrReg, IEMACCESSCRX_MOV_CRX, iGReg);
+    }
+
     /* read it */
     uint64_t crX;
     switch (iCrReg)
@@ -5050,12 +5109,18 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
  *
  * @param   iCrReg          The CRx register to write (valid).
  * @param   uNewCrX         The new value.
+ * @param   enmAccessCrx    The instruction that caused the CrX load.
+ * @param   iGReg           The general register in case of a 'mov CRx,GReg'
+ *                          instruction.
  */
-IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
+IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESSCRX, enmAccessCrX, uint8_t, iGReg)
 {
     PCPUMCTX        pCtx  = IEM_GET_CTX(pVCpu);
     VBOXSTRICTRC    rcStrict;
     int             rc;
+#ifndef VBOX_WITH_NESTED_HWVIRT
+    RT_NOREF2(iGReg, enmAccessCrX);
+#endif
 
     /*
      * Try store it.
@@ -5127,6 +5192,26 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /** @todo check reserved PDPTR bits as AMD states. */
 
             /*
+             * SVM nested-guest CR0 write intercepts.
+             */
+            if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, iCrReg))
+            {
+                Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR0, enmAccessCrX, iGReg);
+            }
+            if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CR0_SEL_WRITES))
+            {
+                /* 'lmsw' intercepts regardless of whether the TS/MP bits are actually toggled. */
+                if (   enmAccessCrX == IEMACCESSCRX_LMSW
+                    || (uNewCrX & ~(X86_CR0_TS | X86_CR0_MP)) != (uOldCrX & ~(X86_CR0_TS | X86_CR0_MP)))
+                {
+                    Assert(enmAccessCrX != IEMACCESSCRX_CLTS);
+                    Log(("iemCImpl_load_Cr%#x: TS/MP bit changed or lmsw instr: Guest intercept -> #VMEXIT\n", iCrReg));
+                    IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_CR0_SEL_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+                }
+            }
+
+            /*
              * Change CR0.
              */
             if (!IEM_VERIFICATION_ENABLED(pVCpu))
@@ -5185,9 +5270,16 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
          * CR2 can be changed without any restrictions.
          */
         case 2:
+        {
+            if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 2))
+            {
+                Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR2, enmAccessCrX, iGReg);
+            }
             pCtx->cr2 = uNewCrX;
             rcStrict  = VINF_SUCCESS;
             break;
+        }
 
         /*
          * CR3 is relatively simple, although AMD and Intel have different
@@ -5218,6 +5310,12 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 Log(("Automatically clearing reserved MBZ bits in CR3 load: NewCR3=%#llx ClearedBits=%#llx\n",
                      uNewCrX, uNewCrX & ~fValid));
                 uNewCrX &= fValid;
+            }
+
+            if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 3))
+            {
+                Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR3, enmAccessCrX, iGReg);
             }
 
             /** @todo If we're in PAE mode we should check the PDPTRs for
@@ -5283,6 +5381,11 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
+            if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 4))
+            {
+                Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR4, enmAccessCrX, iGReg);
+            }
 
             /*
              * Change it.
@@ -5336,6 +5439,12 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
+            if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 8))
+            {
+                Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR8, enmAccessCrX, iGReg);
+            }
+
             if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
                 APICSetTpr(pVCpu, (uint8_t)uNewCrX << 4);
             rcStrict = VINF_SUCCESS;
@@ -5378,7 +5487,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
         uNewCrX = iemGRegFetchU64(pVCpu, iGReg);
     else
         uNewCrX = iemGRegFetchU32(pVCpu, iGReg);
-    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, iCrReg, uNewCrX);
+    return IEM_CIMPL_CALL_4(iemCImpl_load_CrX, iCrReg, uNewCrX, IEMACCESSCRX_MOV_CRX, iGReg);
 }
 
 
@@ -5400,7 +5509,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lmsw, uint16_t, u16NewMsw)
      */
     uint64_t uNewCr0 = pCtx->cr0     & ~(X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
     uNewCr0 |= u16NewMsw & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
-    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0);
+    return IEM_CIMPL_CALL_4(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0, IEMACCESSCRX_LMSW, UINT8_MAX /* iGReg */);
 }
 
 
@@ -5415,7 +5524,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clts)
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     uint64_t uNewCr0 = pCtx->cr0;
     uNewCr0 &= ~X86_CR0_TS;
-    return IEM_CIMPL_CALL_2(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0);
+    return IEM_CIMPL_CALL_4(iemCImpl_load_CrX, /*cr*/ 0, uNewCr0, IEMACCESSCRX_CLTS, UINT8_MAX /* iGReg */);
 }
 
 
@@ -5475,6 +5584,17 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
             drX &= ~X86_DR7_RAZ_MASK;
             break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
+    }
+
+    /** @todo SVM nested-guest intercept for DR8-DR15? */
+    /*
+     * Check for any SVM nested-guest intercepts for the DRx read.
+     */
+    if (IEM_IS_SVM_READ_DR_INTERCEPT_SET(pVCpu, iDrReg))
+    {
+        Log(("mov r%u,dr%u: Guest intercept -> #VMEXIT\n", iGReg, iDrReg));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_READ_DR0 + (iDrReg & 0xf),
+                               IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
     }
 
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
@@ -5567,6 +5687,17 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
+    /** @todo SVM nested-guest intercept for DR8-DR15? */
+    /*
+     * Check for any SVM nested-guest intercepts for the DRx write.
+     */
+    if (IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(pVCpu, iDrReg))
+    {
+        Log2(("mov dr%u,r%u: Guest intercept -> #VMEXIT\n", iDrReg, iGReg));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_WRITE_DR0 + (iDrReg & 0xf),
+                               IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
+    }
+
     /*
      * Do the actual setting.
      */
@@ -5595,6 +5726,13 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     Assert(!IEM_GET_CTX(pVCpu)->eflags.Bits.u1VM);
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPG))
+    {
+        Log(("invlpg: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_INVLPG,
+                               IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? GCPtrPage : 0, 0 /* uExitInfo2 */);
+    }
 
     int rc = PGMInvalidatePage(pVCpu, GCPtrPage);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -5630,6 +5768,12 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSC))
+    {
+        Log(("rdtsc: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_RDTSC, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     /*
      * Do the job.
      */
@@ -5642,6 +5786,77 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements RDTSC.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+
+    /*
+     * Check preconditions.
+     */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fRdTscP)
+        return iemRaiseUndefinedOpcode(pVCpu);
+
+    if (   (pCtx->cr4 & X86_CR4_TSD)
+        && pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("rdtscp: CR4.TSD and CPL=%u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP))
+    {
+        Log(("rdtscp: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_RDTSCP, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+    /*
+     * Do the job.
+     * Query the MSR first in case of trips to ring-3.
+     */
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pCtx->rcx);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        /* Low dword of the TSC_AUX msr only. */
+        pCtx->rcx &= UINT32_C(0xffffffff);
+
+        uint64_t uTicks = TMCpuTickGet(pVCpu);
+        pCtx->rax = (uint32_t)uTicks;
+        pCtx->rdx = uTicks >> 32;
+#ifdef IEM_VERIFICATION_MODE_FULL
+        pVCpu->iem.s.fIgnoreRaxRdx = true;
+#endif
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    }
+    return rcStrict;
+}
+
+
+/**
+ * Implements RDPMC.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_rdpmc)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    if (   pVCpu->iem.s.uCpl != 0
+        && !(pCtx->cr4 & X86_CR4_PCE))
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDPMC))
+    {
+        Log(("rdpmc: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_RDPMC, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+    /** @todo Implement RDPMC for the regular guest execution case (the above only
+     *        handles nested-guest intercepts). */
+    RT_NOREF(cbInstr);
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
 
@@ -5664,7 +5879,20 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
      * Do the job.
      */
     RTUINT64U uValue;
-    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pCtx->ecx, &uValue.u);
+    VBOXSTRICTRC rcStrict;
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
+    {
+        rcStrict = IEM_SVM_NST_GST_MSR_INTERCEPT(pVCpu, pCtx->ecx, false /* fWrite */);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("IEM: SVM intercepted rdmsr(%#x) failed. rc=%Rrc\n", pCtx->ecx, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
+    rcStrict = CPUMQueryGuestMsr(pVCpu, pCtx->ecx, &uValue.u);
     if (rcStrict == VINF_SUCCESS)
     {
         pCtx->rax = uValue.s.Lo;
@@ -5717,6 +5945,18 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     uValue.s.Hi = pCtx->edx;
 
     VBOXSTRICTRC rcStrict;
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
+    {
+        rcStrict = IEM_SVM_NST_GST_MSR_INTERCEPT(pVCpu, pCtx->ecx, true /* fWrite */);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("IEM: SVM intercepted rdmsr(%#x) failed. rc=%Rrc\n", pCtx->ecx, VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
     if (!IEM_VERIFICATION_ENABLED(pVCpu))
         rcStrict = CPUMSetGuestMsr(pVCpu, pCtx->ecx, uValue.u);
     else
@@ -5773,6 +6013,23 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
     VBOXSTRICTRC rcStrict = iemHlpCheckPortIOPermission(pVCpu, pCtx, u16Port, cbReg);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+
+    /*
+     * Check SVM nested-guest IO intercept.
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    {
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_IN, cbReg, 0 /* N/A - cAddrSizeBits */,
+                                           0 /* N/A - iEffSeg */, false /* fRep */, false /* fStrIo */, cbInstr);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("iemCImpl_in: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, cbReg,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
 
     /*
      * Perform the I/O.
@@ -5845,6 +6102,23 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         return rcStrict;
 
     /*
+     * Check SVM nested-guest IO intercept.
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    {
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_OUT, cbReg, 0 /* N/A - cAddrSizeBits */,
+                                           0 /* N/A - iEffSeg */, false /* fRep */, false /* fStrIo */, cbInstr);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("iemCImpl_out: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, cbReg,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
+    /*
      * Perform the I/O.
      */
     uint32_t u32Value;
@@ -5913,13 +6187,11 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-#ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMRUN))
     {
         Log(("vmrun: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMRUN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_VMRUN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
-#endif
 
     VBOXSTRICTRC rcStrict = HMSvmVmrun(pVCpu, pCtx, GCPhysVmcb);
     /* If VMRUN execution causes a #VMEXIT, we continue executing the instruction following the VMRUN. */
@@ -5940,13 +6212,11 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-#ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMMCALL))
     {
-        Log(("vmrun: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        Log(("vmmcall: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
-#endif
 
     bool fUpdatedRipAndRF;
     VBOXSTRICTRC rcStrict = HMSvmVmmcall(pVCpu, pCtx, &fUpdatedRipAndRF);
@@ -5968,13 +6238,6 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
-#ifndef IN_RC
-    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMLOAD))
-    {
-        Log(("vmload: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMLOAD, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-    }
-#endif
 
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
@@ -5982,6 +6245,12 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     {
         Log(("vmload: VMCB physaddr (%#RGp) not valid -> #GP(0)\n", GCPhysVmcb));
         return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMLOAD))
+    {
+        Log(("vmload: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_VMLOAD, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     void *pvVmcb;
@@ -6019,13 +6288,6 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmsave);
-#ifndef IN_RC
-    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMSAVE))
-    {
-        Log(("vmsave: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMSAVE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-    }
-#endif
 
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
@@ -6033,6 +6295,12 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     {
         Log(("vmsave: VMCB physaddr (%#RGp) not valid -> #GP(0)\n", GCPhysVmcb));
         return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMSAVE))
+    {
+        Log(("vmsave: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_VMSAVE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
     void *pvVmcb;
@@ -6070,13 +6338,11 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, clgi);
-#ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CLGI))
     {
         Log(("clgi: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
-#endif
 
     pCtx->hwvirt.svm.fGif = 0;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -6091,13 +6357,11 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, stgi);
-#ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_STGI))
     {
         Log2(("stgi: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
-#endif
 
     pCtx->hwvirt.svm.fGif = 1;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -6111,23 +6375,46 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 IEM_CIMPL_DEF_0(iemCImpl_invlpga)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
-#ifndef IN_RC
-    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
-    {
-        Log2(("invlpga: Guest intercept -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVLPGA, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-    }
-#endif
-
     RTGCPTR  const GCPtrPage = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     /** @todo PGM needs virtual ASID support. */
 #if 0
     uint32_t const uAsid     = pCtx->ecx;
 #endif
+
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
+    {
+        Log2(("invlpga: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_INVLPGA, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     PGMInvalidatePage(pVCpu, GCPtrPage);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'SKINIT'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_skinit)
+{
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
+
+    uint32_t uIgnore;
+    uint32_t fFeaturesECX;
+    CPUMGetGuestCpuId(pVCpu, 0x80000001, 0, &uIgnore, &uIgnore, &fFeaturesECX, &uIgnore);
+    if (!(fFeaturesECX & X86_CPUID_AMD_FEATURE_ECX_SKINIT))
+        return iemRaiseUndefinedOpcode(pVCpu);
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SKINIT))
+    {
+        Log2(("skinit: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_SKINIT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+    RT_NOREF(cbInstr);
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT */
 
@@ -6227,6 +6514,13 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
 {
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_HLT))
+    {
+        Log2(("hlt: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_HLT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_EM_HALT;
 }
@@ -6274,6 +6568,12 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
     rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrMem, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MONITOR))
+    {
+        Log2(("monitor: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_MONITOR, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
 
     /*
      * Call EM to prepare the monitor/wait.
@@ -6333,6 +6633,21 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
     }
 
     /*
+     * Check SVM nested-guest mwait intercepts.
+     */
+    if (   IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MWAIT_ARMED)
+        && EMMonitorIsArmed(pVCpu))
+    {
+        Log2(("mwait: Guest intercept (monitor hardware armed) -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_MWAIT_ARMED, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MWAIT))
+    {
+        Log2(("mwait: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_MWAIT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+    /*
      * Call EM to prepare the monitor/wait.
      */
     VBOXSTRICTRC rcStrict = EMMonitorWaitPerform(pVCpu, uEax, uEcx);
@@ -6377,6 +6692,12 @@ IEM_CIMPL_DEF_0(iemCImpl_swapgs)
 IEM_CIMPL_DEF_0(iemCImpl_cpuid)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CPUID))
+    {
+        Log2(("cpuid: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_CPUID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
 
     CPUMGetGuestCpuId(pVCpu, pCtx->eax, pCtx->ecx, &pCtx->eax, &pCtx->ebx, &pCtx->ecx, &pCtx->edx);
     pCtx->rax &= UINT32_C(0xffffffff);
@@ -6725,6 +7046,12 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     if (pCtx->cr4 & X86_CR4_OSXSAVE)
     {
+        if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_XSETBV))
+        {
+            Log2(("xsetbv: Guest intercept -> #VMEXIT\n"));
+            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_XSETBV, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
         if (pVCpu->iem.s.uCpl == 0)
         {
             uint32_t uEcx = pCtx->ecx;

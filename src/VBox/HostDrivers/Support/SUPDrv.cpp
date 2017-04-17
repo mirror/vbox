@@ -64,7 +64,6 @@
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <VBox/vmm/hm_svm.h>
 #include <VBox/vmm/hm_vmx.h>
 
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
@@ -4144,7 +4143,7 @@ int VBOXCALL supdrvQueryVTCapsInternal(uint32_t *pfCaps)
 
                     /* Query AMD-V features. */
                     ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSvmFeatures);
-                    if (fSvmFeatures & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                    if (fSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                         *pfCaps |= SUPVTCAPS_NESTED_PAGING;
                 }
             }

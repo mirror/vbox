@@ -196,6 +196,18 @@ VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx,
 
 
 /**
+ * Checks if the monitor hardware is armed / active.
+ *
+ * @returns true if armed, false otherwise.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ */
+VMM_INT_DECL(bool) EMMonitorIsArmed(PVMCPU pVCpu)
+{
+    return RT_BOOL(pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_MONITOR_ACTIVE);
+}
+
+
+/**
  * Performs an MWAIT.
  *
  * @returns VINF_SUCCESS

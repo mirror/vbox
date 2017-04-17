@@ -1041,51 +1041,34 @@ typedef struct CPUMFEATURES
     /** Alignment padding / reserved for future use. */
     uint32_t        fPadding : 23;
 
-    /** Hardware virtualization features.
-     *
-     *  @todo r=bird: Please drop the unions and flatten this as much as possible.
-     *        Prefix the names with 'Svm' 'Vmx' if there is any confusion. Group the
-     *        flags into common and specific bunches.
-     *
-     */
-    union
-    {
-        /** SVM features.  */
-        struct
-        {
-            /** Features as reported by CPUID 0x8000000a.EDX.  */
-            union
-            {
-                struct
-                {
-                    uint32_t fNestedPaging         : 1;
-                    uint32_t fLbrVirt              : 1;
-                    uint32_t fSvmLock              : 1;
-                    uint32_t fNextRipSave          : 1;
-                    uint32_t fTscRateMsr           : 1;
-                    uint32_t fVmcbClean            : 1;
-                    uint32_t fFlusbByAsid          : 1;
-                    uint32_t fDecodeAssist         : 1;
-                    uint32_t u2Reserved0           : 2;
-                    uint32_t fPauseFilter          : 1;
-                    uint32_t u1Reserved0           : 1;
-                    uint32_t fPauseFilterThreshold : 1;
-                    uint32_t fAvic                 : 1;
-                    uint32_t u18Reserved0          : 18;
-                } n;
-                uint32_t    u;
-            } feat;
-            /** Maximum supported ASID. */
-            uint32_t        uMaxAsid;
-        } svm;
+    /** SVM: Supports Nested-paging. */
+    uint32_t        fSvmNestedPaging : 1;
+    /** SVM: Support LBR (Last Branch Record) virtualization. */
+    uint32_t        fSvmLbrVirt : 1;
+    /** SVM: Supports SVM lock. */
+    uint32_t        fSvmSvmLock : 1;
+    /** SVM: Supports Next RIP save. */
+    uint32_t        fSvmNextRipSave : 1;
+    /** SVM: Supports TSC rate MSR. */
+    uint32_t        fSvmTscRateMsr : 1;
+    /** SVM: Supports VMCB clean bits. */
+    uint32_t        fSvmVmcbClean : 1;
+    /** SVM: Supports Flush-by-ASID. */
+    uint32_t        fSvmFlusbByAsid : 1;
+    /** SVM: Supports decode assist. */
+    uint32_t        fSvmDecodeAssist : 1;
+    /** SVM: Supports Pause filter. */
+    uint32_t        fSvmPauseFilter : 1;
+    /** SVM: Supports Pause filter threshold. */
+    uint32_t        fSvmPauseFilterThreshold : 1;
+    /** SVM: Supports AVIC (Advanced Virtual Interrupt Controller). */
+    uint32_t        fSvmAvic : 1;
+    /** SVM: Padding / reserved for future features. */
+    uint32_t        fSvmPadding0 : 21;
+    /** SVM: Maximum supported ASID. */
+    uint32_t        uSvmMaxAsid;
 
-        /** VMX features. */
-        struct
-        {
-            uint32_t    uDummy1;
-            uint32_t    uDummy2;
-        } vmx;
-    } CPUM_UNION_NM(hwvirt);
+    /** @todo VMX features. */
     uint32_t        auPadding[1];
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
@@ -1395,11 +1378,12 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
  *
  * @returns true if in intercept is active, false otherwise.
  * @param   pCtx        Pointer to the context.
- * @param   enmXcpt     The exception.
+ * @param   uVector     The exception / interrupt vector.
  */
-DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCCPUMCTX pCtx, X86XCPT enmXcpt)
+DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u32InterceptXcpt & enmXcpt);
+    Assert(uVector < 32);
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u32InterceptXcpt & (UINT32_C(1) << uVector));
 }
 
 /**
@@ -1553,8 +1537,8 @@ VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestMxCsrMask(PVM pVM);
 VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
-VMMDECL(int)            CPUMGetValidateEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
-                                            uint64_t *puValidEfer);
+VMMDECL(int)            CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
+                                                    uint64_t *puValidEfer);
 
 /** @name Typical scalable bus frequency values.
  * @{ */

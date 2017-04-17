@@ -155,16 +155,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 # include "netif.h"
 #endif
 
-/* XXX Solaris: definitions in /usr/include/sys/regset.h clash with hm_svm.h */
-#undef DS
-#undef ES
-#undef CS
-#undef SS
-#undef FS
-#undef GS
-
 #include <VBox/usb.h>
-#include <VBox/vmm/hm_svm.h>
 #include <VBox/err.h>
 #include <VBox/settings.h>
 #include <VBox/sup.h>
@@ -364,7 +355,7 @@ HRESULT Host::init(VirtualBox *aParent)
                     {
                         uint32_t fSVMFeaturesEdx;
                         ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSVMFeaturesEdx);
-                        if (fSVMFeaturesEdx & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                        if (fSVMFeaturesEdx & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                             m->fNestedPagingSupported = true;
                     }
                 }

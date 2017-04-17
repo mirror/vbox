@@ -4453,7 +4453,15 @@ FNIEMOP_DEF(iemOp_nop)
     }
 
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK)
+    {
         IEMOP_MNEMONIC(pause, "pause");
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        /** @todo Pause filter count and threshold with SVM nested hardware virt. */
+        Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter);
+        Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold);
+#endif
+        IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
+    }
     else
         IEMOP_MNEMONIC(nop, "nop");
     IEM_MC_BEGIN(0, 0);
@@ -10581,6 +10589,7 @@ FNIEMOP_DEF(iemOp_int1)
     IEMOP_MNEMONIC(int1, "int1"); /* icebp */
     IEMOP_HLP_MIN_386(); /** @todo does not generate #UD on 286, or so they say... */
     /** @todo testcase! */
+    IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_ICEBP, SVM_EXIT_ICEBP, 0, 0);
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_DB, false /*fIsBpInstr*/);
 }
 

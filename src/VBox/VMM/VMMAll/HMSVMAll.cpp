@@ -175,7 +175,56 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpd
 }
 
 
+/**
+ * Converts an SVM event type to a TRPM event type.
+ *
+ * @returns The TRPM event type.
+ * @retval  TRPM_32BIT_HACK if the specified type of event isn't among the set
+ *          of recognized trap types.
+ *
+ * @param   pEvent       Pointer to the SVM event.
+ */
+VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pEvent)
+{
+    uint8_t const uType = pEvent->n.u3Type;
+    switch (uType)
+    {
+        case SVM_EVENT_EXTERNAL_IRQ:    return TRPM_HARDWARE_INT;
+        case SVM_EVENT_SOFTWARE_INT:    return TRPM_SOFTWARE_INT;
+        case SVM_EVENT_EXCEPTION:
+        case SVM_EVENT_NMI:             return TRPM_TRAP;
+        default:
+            break;
+    }
+    AssertMsgFailed(("HMSvmEventToTrpmEvent: Invalid pending-event type %#x\n", uType));
+    return TRPM_32BIT_HACK;
+}
+
+
 #ifndef IN_RC
+/**
+ * Converts an IEM exception event type to an SVM event type.
+ *
+ * @returns The SVM event type.
+ * @retval  UINT8_MAX if the specified type of event isn't among the set
+ *          of recognized IEM event types.
+ *
+ * @param   uVector         The vector of the event.
+ * @param   fIemXcptFlags   The IEM exception / interrupt flags.
+ */
+static uint8_t hmSvmEventTypeFromIemEvent(uint32_t uVector, uint32_t fIemXcptFlags)
+{
+    if (fIemXcptFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+        return SVM_EVENT_EXCEPTION;
+    if (fIemXcptFlags & IEM_XCPT_FLAGS_T_EXT_INT)
+        return uVector != X86_XCPT_NMI ? SVM_EVENT_EXTERNAL_IRQ : SVM_EVENT_NMI;
+    if (fIemXcptFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        return SVM_EVENT_SOFTWARE_INT;
+    AssertMsgFailed(("hmSvmEventTypeFromIemEvent: Invalid IEM xcpt/int. type %#x, uVector=%#x\n", fIemXcptFlags, uVector));
+    return UINT8_MAX;
+}
+
+
 /**
  * Performs the operations necessary that are part of the vmrun instruction
  * execution in the guest.
@@ -246,7 +295,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
 
             /* Nested paging. */
             if (    pVmcbCtrl->NestedPaging.n.u1NestedPaging
-                && !pVM->cpum.ro.GuestFeatures.svm.feat.n.fNestedPaging)
+                && !pVM->cpum.ro.GuestFeatures.fSvmNestedPaging)
             {
                 Log(("HMSvmVmRun: Nested paging not supported -> #VMEXIT\n"));
                 return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
@@ -254,7 +303,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
 
             /* AVIC. */
             if (    pVmcbCtrl->IntCtrl.n.u1AvicEnable
-                && !pVM->cpum.ro.GuestFeatures.svm.feat.n.fAvic)
+                && !pVM->cpum.ro.GuestFeatures.fSvmAvic)
             {
                 Log(("HMSvmVmRun: AVIC not supported -> #VMEXIT\n"));
                 return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
@@ -262,7 +311,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
 
             /* Last branch record (LBR) virtualization. */
             if (    (pVmcbCtrl->u64LBRVirt & SVM_LBR_VIRT_ENABLE)
-                && !pVM->cpum.ro.GuestFeatures.svm.feat.n.fLbrVirt)
+                && !pVM->cpum.ro.GuestFeatures.fSvmLbrVirt)
             {
                 Log(("HMSvmVmRun: LBR virtualization not supported -> #VMEXIT\n"));
                 return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
@@ -349,7 +398,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
              */
             /* EFER, CR0 and CR4. */
             uint64_t uValidEfer;
-            rc = CPUMGetValidateEfer(pVM, VmcbNstGst.u64CR0, 0 /* uOldEfer */, VmcbNstGst.u64EFER, &uValidEfer);
+            rc = CPUMQueryValidatedGuestEfer(pVM, VmcbNstGst.u64CR0, 0 /* uOldEfer */, VmcbNstGst.u64EFER, &uValidEfer);
             if (RT_FAILURE(rc))
             {
                 Log(("HMSvmVmRun: EFER invalid uOldEfer=%#RX64 uValidEfer=%#RX64 -> #VMEXIT\n", VmcbNstGst.u64EFER, uValidEfer));
@@ -591,6 +640,29 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
         pCtx->hwvirt.svm.VmcbCtrl.u64ExitCode  = uExitCode;
         pCtx->hwvirt.svm.VmcbCtrl.u64ExitInfo1 = uExitInfo1;
         pCtx->hwvirt.svm.VmcbCtrl.u64ExitInfo2 = uExitInfo2;
+
+        /*
+         * Update the exit interrupt information field if this #VMEXIT happened as a result
+         * of delivering an event.
+         */
+        {
+            uint8_t  uExitIntVector;
+            uint32_t uExitIntErr;
+            uint32_t fExitIntFlags;
+            bool const fRaisingEvent = IEMGetCurrentXcpt(pVCpu, &uExitIntVector, &fExitIntFlags, &uExitIntErr,
+                                                         NULL /* uExitIntCr2 */);
+            pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u1Valid = fRaisingEvent;
+            if (fRaisingEvent)
+            {
+                pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u8Vector = uExitIntVector;
+                pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u3Type   = hmSvmEventTypeFromIemEvent(uExitIntVector, fExitIntFlags);
+                if (fExitIntFlags & IEM_XCPT_FLAGS_ERR)
+                {
+                    pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u1ErrorCodeValid = true;
+                    pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u32ErrorCode     = uExitIntErr;
+                }
+            }
+        }
 
         /*
          * Clear event injection in the VMCB.
@@ -919,32 +991,33 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
     /*
      * Check if any IO accesses are being intercepted.
      */
-    if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT))
-    {
-        Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+    Assert(CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT));
 
-        /*
-         * The IOPM layout:
-         * Each bit represents one 8-bit port. That makes a total of 0..65535 bits or
-         * two 4K pages. However, since it's possible to do a 32-bit port IO at port
-         * 65534 (thus accessing 4 bytes), we need 3 extra bits beyond the two 4K page.
-         *
-         * For IO instructions that access more than a single byte, the permission bits
-         * for all bytes are checked; if any bit is set to 1, the IO access is intercepted.
-         */
-        uint8_t *pbIopm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
+    /*
+     * The IOPM layout:
+     * Each bit represents one 8-bit port. That makes a total of 0..65535 bits or
+     * two 4K pages.
+     *
+     * For IO instructions that access more than a single byte, the permission bits
+     * for all bytes are checked; if any bit is set to 1, the IO access is intercepted.
+     *
+     * Since it's possible to do a 32-bit IO access at port 65534 (accessing 4 bytes),
+     * we need 3 extra bits beyond the second 4K page.
+     */
+    uint8_t const *pbIopm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
 
-        uint16_t const u16Port     = pIoExitInfo->n.u16Port;
-        uint16_t const offIoBitmap = u16Port >> 3;
-        uint16_t const fSizeMask   = pIoExitInfo->n.u1OP32 ? 0xf : pIoExitInfo->n.u1OP16 ? 3 : 1;
-        uint8_t  const cShift      = u16Port - (offIoBitmap << 3);
-        uint16_t const fIopmMask   = (1 << cShift) | (fSizeMask << cShift);
+    uint16_t const u16Port   = pIoExitInfo->n.u16Port;
+    uint16_t const offIopm   = u16Port >> 3;
+    uint16_t const fSizeMask = pIoExitInfo->n.u1OP32 ? 0xf : pIoExitInfo->n.u1OP16 ? 3 : 1;
+    uint8_t  const cShift    = u16Port - (offIopm << 3);
+    uint16_t const fIopmMask = (1 << cShift) | (fSizeMask << cShift);
 
-        pbIopm += offIoBitmap;
-        uint16_t const fIopmBits = *(uint16_t *)pbIopm;
-        if (fIopmBits & fIopmMask)
-            return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_IOIO, pIoExitInfo->u, uNextRip);
-    }
+    pbIopm += offIopm;
+    uint16_t const fIopmBits = *(uint16_t *)pbIopm;
+    if (fIopmBits & fIopmMask)
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_IOIO, pIoExitInfo->u, uNextRip);
+
     return VINF_HM_INTERCEPT_NOT_ACTIVE;
 }
 
@@ -954,8 +1027,8 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
  * if the intercept is active.
  *
  * @returns Strict VBox status code.
- * @retval  VINF_SVM_INTERCEPT_NOT_ACTIVE if the intercept is not active or
- *          we're not executing a nested-guest.
+ * @retval  VINF_SVM_INTERCEPT_NOT_ACTIVE if the MSR permission bitmap does not
+ *          specify interception of the accessed MSR @a idMsr.
  * @retval  VINF_SVM_VMEXIT if the intercept is active and the \#VMEXIT occurred
  *          successfully.
  * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
@@ -972,40 +1045,39 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX 
     /*
      * Check if any MSRs are being intercepted.
      */
-    if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_MSR_PROT))
+    Assert(CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_MSR_PROT));
+    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+
+    uint64_t const uExitInfo1 = fWrite ? SVM_EXIT1_MSR_WRITE : SVM_EXIT1_MSR_READ;
+
+    /*
+     * Get the byte and bit offset of the permission bits corresponding to the MSR.
+     */
+    uint16_t offMsrpm;
+    uint32_t uMsrpmBit;
+    int rc = hmSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+    if (RT_SUCCESS(rc))
     {
-        Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
-        uint64_t const uExitInfo1 = fWrite ? SVM_EXIT1_MSR_WRITE : SVM_EXIT1_MSR_READ;
+        Assert(uMsrpmBit < 0x3fff);
+        Assert(offMsrpm < SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+        if (fWrite)
+            ++uMsrpmBit;
 
         /*
-         * Get the byte and bit offset of the permission bits corresponding to the MSR.
+         * Check if the bit is set, if so, trigger a #VMEXIT.
          */
-        uint16_t offMsrpm;
-        uint32_t uMsrpmBit;
-        int rc = hmSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
-        if (RT_SUCCESS(rc))
-        {
-            Assert(uMsrpmBit < 0x3fff);
-            Assert(offMsrpm < SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
-            if (fWrite)
-                ++uMsrpmBit;
-
-            /*
-             * Check if the bit is set, if so, trigger a #VMEXIT.
-             */
-            uint8_t *pbMsrpm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
-            pbMsrpm += offMsrpm;
-            if (ASMBitTest(pbMsrpm, uMsrpmBit))
-                return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
-        }
-        else
-        {
-            /*
-             * This shouldn't happen, but if it does, cause a #VMEXIT and let the "host" (guest hypervisor) deal with it.
-             */
-            Log(("HMSvmNstGstHandleIntercept: Invalid/out-of-range MSR %#RX32 fWrite=%RTbool\n", idMsr, fWrite));
+        uint8_t *pbMsrpm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
+        pbMsrpm += offMsrpm;
+        if (ASMBitTest(pbMsrpm, uMsrpmBit))
             return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
-        }
+    }
+    else
+    {
+        /*
+         * This shouldn't happen, but if it does, cause a #VMEXIT and let the "host" (guest hypervisor) deal with it.
+         */
+        Log(("HMSvmNstGstHandleIntercept: Invalid/out-of-range MSR %#RX32 fWrite=%RTbool\n", idMsr, fWrite));
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
     }
     return VINF_HM_INTERCEPT_NOT_ACTIVE;
 }
@@ -1067,30 +1139,4 @@ VMM_INT_DECL(int) hmSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm
     return VERR_OUT_OF_RANGE;
 }
 #endif /* !IN_RC */
-
-
-/**
- * Converts an SVM event type to a TRPM event type.
- *
- * @returns The TRPM event type.
- * @retval  TRPM_32BIT_HACK if the specified type of event isn't among the set
- *          of recognized trap types.
- *
- * @param   pEvent       Pointer to the SVM event.
- */
-VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pEvent)
-{
-    uint8_t const uType = pEvent->n.u3Type;
-    switch (uType)
-    {
-        case SVM_EVENT_EXTERNAL_IRQ:    return TRPM_HARDWARE_INT;
-        case SVM_EVENT_SOFTWARE_INT:    return TRPM_SOFTWARE_INT;
-        case SVM_EVENT_EXCEPTION:
-        case SVM_EVENT_NMI:             return TRPM_TRAP;
-        default:
-            break;
-    }
-    AssertMsgFailed(("HMSvmEventToTrpmEvent: Invalid pending-event type %#x\n", uType));
-    return TRPM_32BIT_HACK;
-}
 

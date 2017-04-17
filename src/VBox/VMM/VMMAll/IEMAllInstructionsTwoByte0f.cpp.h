@@ -34,6 +34,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_sldt)
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         IEMOP_HLP_DECODED_NL_1(OP_SLDT, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
+        IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0);
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -73,6 +74,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_sldt)
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEMOP_HLP_DECODED_NL_1(OP_SLDT, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
+        IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0);
         IEM_MC_FETCH_LDTR_U16(u16Ldtr);
         IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u16Ldtr);
         IEM_MC_ADVANCE_RIP();
@@ -92,6 +94,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_str)
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         IEMOP_HLP_DECODED_NL_1(OP_STR, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
+        IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -131,6 +134,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_str)
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEMOP_HLP_DECODED_NL_1(OP_STR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
+        IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
         IEM_MC_FETCH_TR_U16(u16Tr);
         IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u16Tr);
         IEM_MC_ADVANCE_RIP();
@@ -481,6 +485,14 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_invlpga)
     IEMOP_MNEMONIC(invlpga, "invlpga");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_invlpga);
 }
+
+
+/** Opcode 0x0f 0x01 0xde. */
+FNIEMOP_DEF(iemOp_Grp7_Amd_skinit)
+{
+    IEMOP_MNEMONIC(skinit, "skinit");
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_skinit);
+}
 #else
 /** Opcode 0x0f 0x01 0xd8. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmrun);
@@ -502,10 +514,10 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_clgi);
 
 /** Opcode 0x0f 0x01 0xdf. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
-#endif /* VBOX_WITH_NESTED_HWVIRT */
 
 /** Opcode 0x0f 0x01 0xde. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_skinit);
+#endif /* VBOX_WITH_NESTED_HWVIRT */
 
 /** Opcode 0x0f 0x01 /4. */
 FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
@@ -515,6 +527,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -561,6 +574,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
         IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEMOP_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         IEM_MC_FETCH_CR0_U16(u16Tmp);
         if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
         { /* likely */ }
@@ -635,9 +649,11 @@ FNIEMOP_DEF(iemOp_Grp7_swapgs)
 /** Opcode 0x0f 0x01 /7. */
 FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 {
-    NOREF(pVCpu);
-    IEMOP_BITCH_ABOUT_STUB();
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    IEMOP_MNEMONIC(rdtscp, "rdtscp");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    /** @todo SVM intercept removal from here. */
+    IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP, SVM_EXIT_RDTSCP, 0, 0);
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rdtscp);
 }
 
 
@@ -867,7 +883,19 @@ FNIEMOP_DEF(iemOp_sysret)
 
 
 /** Opcode 0x0f 0x08. */
-FNIEMOP_STUB(iemOp_invd);
+FNIEMOP_DEF(iemOp_invd)
+{
+    IEMOP_MNEMONIC(invd, "invd");
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
+    IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
+#endif
+    /** @todo implement invd for the regular case (above only handles nested SVM
+     *        exits). */
+    IEMOP_BITCH_ABOUT_STUB();
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+}
+
 // IEMOP_HLP_MIN_486();
 
 
@@ -879,6 +907,7 @@ FNIEMOP_DEF(iemOp_wbinvd)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0, 0);
     IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
+    IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0);
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS; /* ignore for now */
@@ -2030,7 +2059,14 @@ FNIEMOP_DEF(iemOp_rdmsr)
 
 
 /** Opcode 0x0f 0x34. */
-FNIEMOP_STUB(iemOp_rdpmc);
+FNIEMOP_DEF(iemOp_rdpmc)
+{
+    IEMOP_MNEMONIC(rdpmc, "rdpmc");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rdpmc);
+}
+
+
 /** Opcode 0x0f 0x34. */
 FNIEMOP_STUB(iemOp_sysenter);
 /** Opcode 0x0f 0x35. */
@@ -5721,7 +5757,16 @@ FNIEMOP_DEF(iemOp_pop_gs)
 
 
 /** Opcode 0x0f 0xaa. */
-FNIEMOP_STUB(iemOp_rsm);
+FNIEMOP_DEF(iemOp_rsm)
+{
+    IEMOP_MNEMONIC(rsm, "rsm");
+    IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_RSM, SVM_EXIT_RSM, 0, 0);
+    /** @todo rsm - for the regular case (above handles only the SVM nested-guest
+     *        intercept). */
+    IEMOP_BITCH_ABOUT_STUB();
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
 //IEMOP_HLP_MIN_386();
 
 

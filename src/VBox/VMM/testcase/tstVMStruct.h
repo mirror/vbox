@@ -136,6 +136,8 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.VmcbCtrl);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.HostState);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.fGif);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.cPauseFilter);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.cPauseFilterThreshold);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvMsrBitmapR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvMsrBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pvIoBitmapR0);

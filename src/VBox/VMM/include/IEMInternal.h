@@ -501,9 +501,9 @@ typedef struct IEMCPU
     uint8_t                 iEffSeg;                                                                        /* 0x2b */
 
 #else
-    /** The size of what has currently been fetched into abOpcodes. */
+    /** The size of what has currently been fetched into abOpcode. */
     uint8_t                 cbOpcode;                                                                       /*       0x08 */
-    /** The current offset into abOpcodes. */
+    /** The current offset into abOpcode. */
     uint8_t                 offOpcode;                                                                      /*       0x09 */
 
     /** The effective segment register (X86_SREG_XXX). */
@@ -950,6 +950,20 @@ typedef enum IEMTASKSWITCH
 } IEMTASKSWITCH;
 AssertCompileSize(IEMTASKSWITCH, 4);
 
+/**
+ * Possible CrX load (write) sources.
+ */
+typedef enum IEMACCESSCRX
+{
+    /** CrX access caused by 'mov crX' instruction. */
+    IEMACCESSCRX_MOV_CRX,
+    /** CrX (CR0) write caused by 'lmsw' instruction. */
+    IEMACCESSCRX_LMSW,
+    /** CrX (CR0) write caused by 'clts' instruction. */
+    IEMACCESSCRX_CLTS,
+    /** CrX (CR0) read caused by 'smsw' instruction. */
+    IEMACCESSCRX_SMSW
+} IEMACCESSCRX;
 
 /**
  * Tests if verification mode is enabled.

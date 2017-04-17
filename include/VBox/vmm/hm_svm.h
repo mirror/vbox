@@ -45,35 +45,6 @@
  * @{
  */
 
-/** @name SVM features for cpuid 0x8000000a
- * @{
- */
-/** Bit 0 - NP - Nested Paging supported. */
-#define AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING             RT_BIT(0)
-/** Bit 1 - LbrVirt - Support for saving five debug MSRs. */
-#define AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT                  RT_BIT(1)
-/** Bit 2 - SVML - SVM locking bit supported. */
-#define AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK                  RT_BIT(2)
-/** Bit 3 - NRIPS - Saving the next instruction pointer is supported. */
-#define AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE                 RT_BIT(3)
-/** Bit 4 - TscRateMsr - Support for MSR TSC ratio. */
-#define AMD_CPUID_SVM_FEATURE_EDX_TSC_RATE_MSR              RT_BIT(4)
-/** Bit 5 - VmcbClean - Support VMCB clean bits. */
-#define AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN                RT_BIT(5)
-/** Bit 6 - FlushByAsid - Indicate TLB flushing for current ASID only, and that
- *  VMCB.TLB_Control is supported. */
-#define AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID             RT_BIT(6)
-/** Bit 7 - DecodeAssist - Indicate decode assist is supported. */
-#define AMD_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST             RT_BIT(7)
-/** Bit 10 - PauseFilter - Indicates support for the PAUSE intercept filter. */
-#define AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER              RT_BIT(10)
-/** Bit 12 - PauseFilterThreshold - Indicates support for the PAUSE
- *  intercept filter cycle count threshold. */
-#define AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD    RT_BIT(12)
-/** Bit 13 - AVIC - Advanced Virtual Interrupt Controller. */
-#define AMD_CPUID_SVM_FEATURE_EDX_AVIC                      RT_BIT(13)
-/** @} */
-
 /** @name SVM generic / convenient defines.
  * @{
  */
@@ -323,6 +294,13 @@
 #define SVM_EXIT1_MSR_READ                    0x0
 /** The access was a write MSR. */
 #define SVM_EXIT1_MSR_WRITE                   0x1
+/** @} */
+
+/** @name SVMVMCB.u64ExitInfo1 for Mov CRX accesses.
+ * @{
+ */
+/** The access was via Mov CRx instruction bit number. */
+#define SVM_EXIT1_MOV_CRX_MASK                RT_BIT_64(63)
 /** @} */
 
 
@@ -600,9 +578,9 @@ typedef union
         uint32_t    u1OP8               : 1;   /**< Bit 4: 8-bit operand. */
         uint32_t    u1OP16              : 1;   /**< Bit 5: 16-bit operand. */
         uint32_t    u1OP32              : 1;   /**< Bit 6: 32-bit operand. */
-        uint32_t    u1ADDR16            : 1;   /**< Bit 7: 16-bit operand. */
-        uint32_t    u1ADDR32            : 1;   /**< Bit 8: 32-bit operand. */
-        uint32_t    u1ADDR64            : 1;   /**< Bit 9: 64-bit operand. */
+        uint32_t    u1ADDR16            : 1;   /**< Bit 7: 16-bit address size. */
+        uint32_t    u1ADDR32            : 1;   /**< Bit 8: 32-bit address size. */
+        uint32_t    u1ADDR64            : 1;   /**< Bit 9: 64-bit address size. */
         uint32_t    u3SEG               : 3;   /**< BITS 12:10: Effective segment number. Added w/ decode assist in APM v3.17. */
         uint32_t    u3Reserved          : 3;
         uint32_t    u16Port             : 16;  /**< Bits 31:16: Port number. */
@@ -614,12 +592,36 @@ typedef SVMIOIOEXITINFO *PSVMIOIOEXITINFO;
 /** Pointer to a const SVM IOIO exit info. structure. */
 typedef const SVMIOIOEXITINFO *PCSVMIOIOEXITINFO;
 
-/** @name SVMIOIOEXITINFO.u1Type
- *  @{ */
+/** 8-bit IO transfer. */
+#define SVM_IOIO_8_BIT_OP               RT_BIT_32(4)
+/** 16-bit IO transfer. */
+#define SVM_IOIO_16_BIT_OP              RT_BIT_32(5)
+/** 32-bit IO transfer. */
+#define SVM_IOIO_32_BIT_OP              RT_BIT_32(6)
+/** Mask of all possible IO transfer sizes. */
+#define SVM_IOIO_OP_SIZE_MASK           (SVM_IOIO_8_BIT_OP | SVM_IOIO_16_BIT_OP | SVM_IOIO_32_BIT_OP)
+/** 16-bit address for the IO buffer. */
+#define SVM_IOIO_16_BIT_ADDR            RT_BIT_32(7)
+/** 32-bit address for the IO buffer. */
+#define SVM_IOIO_32_BIT_ADDR            RT_BIT_32(8)
+/** 64-bit address for the IO buffer. */
+#define SVM_IOIO_64_BIT_ADDR            RT_BIT_32(9)
+/** Mask of all the IO address sizes. */
+#define SVM_IOIO_ADDR_SIZE_MASK         (SVM_IOIO_16_BIT_ADDR | SVM_IOIO_32_BIT_ADDR | SVM_IOIO_64_BIT_ADDR)
+/** Number of bits to left shift to get the IO port number. */
+#define SVM_IOIO_PORT_SHIFT             16
 /** IO write. */
 #define SVM_IOIO_WRITE                  0
 /** IO read. */
 #define SVM_IOIO_READ                   1
+/**
+ * SVM IOIO transfer type.
+ */
+typedef enum
+{
+    SVMIOIOTYPE_OUT = SVM_IOIO_WRITE,
+    SVMIOIOTYPE_IN  = SVM_IOIO_READ
+} SVMIOIOTYPE;
 /** @}*/
 
 /**

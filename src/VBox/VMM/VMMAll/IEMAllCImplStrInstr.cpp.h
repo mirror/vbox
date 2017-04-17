@@ -1217,6 +1217,23 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
             return rcStrict;
     }
 
+    /*
+     * Check SVM nested-guest IO intercept.
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    {
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, pCtx->dx, SVMIOIOTYPE_IN, OP_SIZE / 8, ADDR_SIZE, X86_SREG_ES, false /* fRep */,
+                                           true /* fStrIo */, cbInstr);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("iemCImpl_ins_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pCtx->dx, OP_SIZE / 8,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
     OP_TYPE        *puMem;
     rcStrict = iemMemMap(pVCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, pCtx->ADDR_rDI, IEM_ACCESS_DATA_W);
     if (rcStrict != VINF_SUCCESS)
@@ -1268,6 +1285,23 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
         rcStrict = iemHlpCheckPortIOPermission(pVCpu, pCtx, u16Port, OP_SIZE / 8);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
+    }
+
+    /*
+     * Check SVM nested-guest IO intercept.
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    {
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_IN, OP_SIZE / 8, ADDR_SIZE, X86_SREG_ES, true /* fRep */,
+                                           true /* fStrIo */, cbInstr);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("iemCImpl_rep_ins_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, OP_SIZE / 8,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
     }
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
@@ -1454,6 +1488,23 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
             return rcStrict;
     }
 
+    /*
+     * Check SVM nested-guest IO intercept.
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    {
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, pCtx->dx, SVMIOIOTYPE_OUT, OP_SIZE / 8, ADDR_SIZE, iEffSeg, false /* fRep */,
+                                           true /* fStrIo */, cbInstr);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("iemCImpl_outs_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", pCtx->dx, OP_SIZE / 8,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
     OP_TYPE uValue;
     rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pVCpu, &uValue, iEffSeg, pCtx->ADDR_rSI);
     if (rcStrict == VINF_SUCCESS)
@@ -1495,6 +1546,23 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
         rcStrict = iemHlpCheckPortIOPermission(pVCpu, pCtx, u16Port, OP_SIZE / 8);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
+    }
+
+    /*
+     * Check SVM nested-guest IO intercept.
+     */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
+    {
+        rcStrict = iemSvmHandleIOIntercept(pVCpu, u16Port, SVMIOIOTYPE_OUT, OP_SIZE / 8, ADDR_SIZE, iEffSeg, true /* fRep */,
+                                           true /* fStrIo */, cbInstr);
+        if (rcStrict == VINF_SVM_VMEXIT)
+            return VINF_SUCCESS;
+        if (rcStrict != VINF_HM_INTERCEPT_NOT_ACTIVE)
+        {
+            Log(("iemCImpl_rep_outs_op: iemSvmHandleIOIntercept failed (u16Port=%#x, cbReg=%u) rc=%Rrc\n", u16Port, OP_SIZE / 8,
+                 VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
     }
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;

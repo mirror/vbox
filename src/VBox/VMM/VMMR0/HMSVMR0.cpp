@@ -624,8 +624,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
-    bool const fPauseFilter          = RT_BOOL(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER);
-    bool const fPauseFilterThreshold = RT_BOOL(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
+    bool const fPauseFilter          = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER);
+    bool const fPauseFilterThreshold = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
     bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter && pVM->hm.s.svm.cPauseFilterThresholdTicks;
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -889,7 +889,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
                 pCpu->cTlbFlushes++;                /* All VCPUs that run on this host CPU must use a new VPID. */
                 fHitASIDLimit             = true;
 
-                if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
                 {
                     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
                     pCpu->fFlushAsidBeforeUse = true;
@@ -904,7 +904,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
             if (   !fHitASIDLimit
                 && pCpu->fFlushAsidBeforeUse)
             {
-                if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
                     pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
                 else
                 {
@@ -919,7 +919,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         }
         else
         {
-            if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+            if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
                 pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
             else
                 pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
@@ -3148,7 +3148,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     }
 
     /* If VMCB Clean bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
-    if (!(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
+    if (!(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 }
 
@@ -4147,7 +4147,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
  */
 DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
 {
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
     {
         PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
         Assert(pVmcb->ctrl.u64NextRIP);
@@ -4173,7 +4173,7 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t
 DECLINLINE(uint8_t) hmR0SvmGetInstrLengthHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbLikely)
 {
     Assert(cbLikely <= 15);   /* See Intel spec. 2.3.11 "AVX Instruction Length" */
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
     {
         PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
         uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pCtx->rip;
@@ -4568,7 +4568,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
             return rc;
         }
 
-        if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+        if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
         {
             rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
             if (RT_LIKELY(rc == VINF_SUCCESS))
@@ -4615,7 +4615,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
         Assert(pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_READ);
 
-        if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+        if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
         {
             rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
             if (RT_LIKELY(rc == VINF_SUCCESS))
@@ -4800,7 +4800,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     /* Don't know exactly how to detect whether u3SEG is valid, currently
                        only enabling it for Bulldozer and later with NRIP.  OS/2 broke on
                        2384 Opterons when only checking NRIP. */
-                    if (   (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+                    if (   (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
                         && pVM->cpum.ro.GuestFeatures.enmMicroarch >= kCpumMicroarch_AMD_15h_First)
                     {
                         AssertMsg(IoExitInfo.n.u3SEG == X86_SREG_DS || cbInstr > 1U + IoExitInfo.n.u1REP,

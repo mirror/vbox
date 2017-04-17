@@ -1437,7 +1437,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     uint64_t uValidatedEfer;
     uint64_t const uOldEfer = pVCpu->cpum.s.Guest.msrEFER;
-    int rc = CPUMGetValidateEfer(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.s.Guest.cr0, uOldEfer, uValue, &uValidatedEfer);
+    int rc = CPUMQueryValidatedGuestEfer(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.s.Guest.cr0, uOldEfer, uValue, &uValidatedEfer);
     if (RT_FAILURE(rc))
         return VERR_CPUM_RAISE_GP_0;
 
@@ -6113,7 +6113,7 @@ VMMDECL(uint64_t) CPUMGetGuestScalableBusFrequency(PVM pVM)
  * @param   puValidEfer     Where to store the validated EFER (only updated if
  *                          this function returns VINF_SUCCESS).
  */
-VMMDECL(int) CPUMGetValidateEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer, uint64_t *puValidEfer)
+VMMDECL(int) CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer, uint64_t *puValidEfer)
 {
     uint32_t const  fExtFeatures = pVM->cpum.s.aGuestCpuIdPatmExt[0].uEax >= 0x80000001
                                  ? pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx

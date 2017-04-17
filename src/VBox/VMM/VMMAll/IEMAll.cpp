@@ -369,7 +369,7 @@ typedef IEMSELDESC *PIEMSELDESC;
 /**
  * Check the common SVM instruction preconditions.
  */
-#define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr) \
+# define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr) \
     do { \
         if (!IEM_IS_SVM_ENABLED(a_pVCpu)) \
         { \
@@ -391,38 +391,85 @@ typedef IEMSELDESC *PIEMSELDESC;
 /**
  * Check if an SVM is enabled.
  */
-#define IEM_IS_SVM_ENABLED(a_pVCpu)                         (CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu)))
+# define IEM_IS_SVM_ENABLED(a_pVCpu)                         (CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu)))
 
 /**
  * Check if an SVM control/instruction intercept is set.
  */
-#define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_Intercept)))
+# define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_Intercept)))
 
 /**
  * Check if an SVM read CRx intercept is set.
  */
-#define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmReadCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM write CRx intercept is set.
  */
-#define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+# define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmWriteCRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
 
 /**
  * Check if an SVM read DRx intercept is set.
  */
-#define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmReadDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM write DRx intercept is set.
  */
-#define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
+# define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
 
 /**
  * Check if an SVM exception intercept is set.
  */
-#define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_enmXcpt)   (CPUMIsGuestSvmXcptInterceptSet(IEM_GET_CTX(a_pVCpu), (a_enmXcpt)))
-#endif /* VBOX_WITH_NESTED_HWVIRT */
+# define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uVector)))
+
+/**
+ * Invokes the SVM \#VMEXIT handler for the nested-guest.
+ */
+# define IEM_RETURN_SVM_NST_GST_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrictVmExit = HMSvmNstGstVmExit((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_uExitCode), (a_uExitInfo1), \
+                                                        (a_uExitInfo2)); \
+        return rcStrictVmExit == VINF_SVM_VMEXIT ? VINF_SUCCESS : rcStrictVmExit; \
+    } while (0)
+
+/**
+ * Invokes the 'MOV CRx' SVM \#VMEXIT handler after constructing the
+ * corresponding decode assist information.
+ */
+# define IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg) \
+    do \
+    { \
+        uint64_t uExitInfo1; \
+        if (   IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmDecodeAssist \
+            && (a_enmAccessCrX) == IEMACCESSCRX_MOV_CRX) \
+            uExitInfo1 = SVM_EXIT1_MOV_CRX_MASK | ((a_iGReg) & 7); \
+        else \
+            uExitInfo1 = 0; \
+        IEM_RETURN_SVM_NST_GST_VMEXIT(a_pVCpu, a_uExitCode, uExitInfo1, 0); \
+    } while (0)
+
+/**
+ * Checks and handles an SVM MSR intercept.
+ */
+# define IEM_SVM_NST_GST_MSR_INTERCEPT(a_pVCpu, a_idMsr, a_fWrite) \
+    HMSvmNstGstHandleMsrIntercept((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_idMsr), (a_fWrite))
+
+#else
+# define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr)                                    do { } while (0)
+# define IEM_IS_SVM_ENABLED(a_pVCpu)                                                      (false)
+# define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)                              (false)
+# define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                 (false)
+# define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                (false)
+# define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                 (false)
+# define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                (false)
+# define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)                                (false)
+# define IEM_RETURN_SVM_NST_GST_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)  do { return VERR_SVM_IPE_1; } while (0)
+# define IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg) do { return VERR_SVM_IPE_1; } while (0)
+# define IEM_SVM_NST_GST_MSR_INTERCEPT(a_pVCpu, a_idMsr, a_fWrite)                        (VERR_SVM_IPE_1)
+
+#endif /* VBOX_WITH_NESTED_HWVIRT && !IN_RC */
 
 
 /*********************************************************************************************************************************
@@ -833,6 +880,56 @@ IEM_STATIC PIEMVERIFYEVTREC iemVerifyAllocRecord(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVerifyFakeIOPortRead(PVMCPU pVCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue);
 IEM_STATIC VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PVMCPU pVCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue);
 
+#if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(IN_RC)
+/**
+ * Checks if the intercepted IO instruction causes a \#VMEXIT and handles it
+ * accordingly.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   u16Port         The IO port being accessed.
+ * @param   enmIoType       The type of IO access.
+ * @param   cbReg           The IO operand size in bytes.
+ * @param   cAddrSizeBits   The address size bits (for 16, 32 or 64).
+ * @param   iEffSeg         The effective segment number.
+ * @param   fRep            Whether this is a repeating IO instruction (REP prefix).
+ * @param   fStrIo          Whether this is a string IO instruction.
+ * @param   cbInstr         The length of the IO instruction in bytes.
+ *
+ * @remarks This must be called only when IO instructions are intercepted by the
+ *          nested-guest hypervisor.
+ */
+IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                                uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo, uint8_t cbInstr)
+{
+    Assert(IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT));
+    Assert(cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
+    Assert(cbReg == 1 || cbReg == 2 || cbReg == 4 || cbReg == 8);
+
+    static const uint32_t s_auIoOpSize[]   = { SVM_IOIO_32_BIT_OP, SVM_IOIO_8_BIT_OP, SVM_IOIO_16_BIT_OP, 0, SVM_IOIO_32_BIT_OP, 0, 0, 0 };
+    static const uint32_t s_auIoAddrSize[] = { 0, SVM_IOIO_16_BIT_ADDR, SVM_IOIO_32_BIT_ADDR, 0, SVM_IOIO_64_BIT_ADDR, 0, 0, 0 };
+
+    SVMIOIOEXITINFO IoExitInfo;
+    IoExitInfo.u         = s_auIoOpSize[cbReg & 7];
+    IoExitInfo.u        |= s_auIoAddrSize[(cAddrSizeBits >> 4) & 7];
+    IoExitInfo.n.u1STR   = fStrIo;
+    IoExitInfo.n.u1REP   = fRep;
+    IoExitInfo.n.u3SEG   = iEffSeg & 0x7;
+    IoExitInfo.n.u1Type  = enmIoType;
+    IoExitInfo.n.u16Port = u16Port;
+
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    return HMSvmNstGstHandleIOIntercept(pVCpu, pCtx, &IoExitInfo, pCtx->rip + cbInstr);
+}
+
+#else
+IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                                uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo, uint8_t cbInstr)
+{
+    RT_NOREF9(pVCpu, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo, cbInstr);
+    return VERR_IEM_IPE_9;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT && !IN_RC */
 
 
 /**
@@ -3125,6 +3222,12 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPU pVCpu)
  */
 IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
 {
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SHUTDOWN))
+    {
+        Log2(("shutdown: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_SHUTDOWN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     RT_NOREF_PV(pVCpu);
     /** @todo Probably need a separate error code and handling for this to
      *        distinguish it from the regular triple fault. */
@@ -3248,25 +3351,6 @@ IEM_STATIC VBOXSTRICTRC iemMiscValidateNewSS(PVMCPU pVCpu, PCCPUMCTX pCtx, RTSEL
  *
  * @{
  */
-
-/** @name IEM_XCPT_FLAGS_XXX - flags for iemRaiseXcptOrInt.
- * @{ */
-/** CPU exception. */
-#define IEM_XCPT_FLAGS_T_CPU_XCPT       RT_BIT_32(0)
-/** External interrupt (from PIC, APIC, whatever). */
-#define IEM_XCPT_FLAGS_T_EXT_INT        RT_BIT_32(1)
-/** Software interrupt (int or into, not bound).
- * Returns to the following instruction */
-#define IEM_XCPT_FLAGS_T_SOFT_INT       RT_BIT_32(2)
-/** Takes an error code. */
-#define IEM_XCPT_FLAGS_ERR              RT_BIT_32(3)
-/** Takes a CR2. */
-#define IEM_XCPT_FLAGS_CR2              RT_BIT_32(4)
-/** Generated by the breakpoint instruction. */
-#define IEM_XCPT_FLAGS_BP_INSTR         RT_BIT_32(5)
-/** Generated by a DRx instruction breakpoint and RF should be cleared. */
-#define IEM_XCPT_FLAGS_DRx_INSTR_BP     RT_BIT_32(6)
-/** @}  */
 
 
 /**
@@ -5164,6 +5248,67 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
                       pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp);
 #endif
 
+#if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(IN_RC)
+    if (IEM_IS_SVM_ENABLED(pVCpu))
+    {
+        /*
+         * Handle nested-guest SVM exception and software interrupt intercepts,
+         * see AMD spec. 15.12 "Exception Intercepts".
+         *
+         *   - NMI intercepts have their own exit code and do not cause SVM_EXIT_EXCEPTION_2 #VMEXITs.
+         *   - External interrupts and software interrupts (INTn instruction) do not check the exception intercepts
+         *     even when they use a vector in the range 0 to 31.
+         *   - ICEBP should not trigger #DB intercept, but its own intercept, so we catch it early in iemOp_int1.
+         *   - For #PF exceptions, its intercept is checked before CR2 is written by the exception.
+         */
+        /* Check NMI intercept */
+        if (   u8Vector == X86_XCPT_NMI
+            && IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_NMI))
+        {
+            Log(("iemRaiseXcptOrInt: NMI intercept -> #VMEXIT\n"));
+            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_NMI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
+        /* Check CPU exception intercepts. */
+        if (   IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, u8Vector)
+            && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT))
+        {
+            Assert(u8Vector <= 31 /* X86_XCPT_MAX */);
+            uint64_t const uExitInfo1 = fFlags & IEM_XCPT_FLAGS_ERR ? uErr : 0;
+            uint64_t const uExitInfo2 = fFlags & IEM_XCPT_FLAGS_CR2 ? uCr2 : 0;
+            if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist
+                && u8Vector == X86_XCPT_PF
+                && !(uErr & X86_TRAP_PF_ID))
+            {
+                /** @todo Nested-guest SVM - figure out fetching op-code bytes from IEM. */
+#ifdef IEM_WITH_CODE_TLB
+#else
+                uint8_t const offOpCode = pVCpu->iem.s.offOpcode;
+                uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode;
+                if (   cbCurrent > 0
+                    && cbCurrent < sizeof(pCtx->hwvirt.svm.VmcbCtrl.abInstr))
+                {
+                    Assert(cbCurrent <= sizeof(pVCpu->iem.s.abOpcode));
+                    memcpy(&pCtx->hwvirt.svm.VmcbCtrl.abInstr[0], &pVCpu->iem.s.abOpcode[offOpCode], cbCurrent);
+                }
+#endif
+            }
+            Log(("iemRaiseXcptOrInt: Xcpt intercept (u8Vector=%#x uExitInfo1=%#RX64, uExitInfo2=%#RX64 -> #VMEXIT\n", u8Vector,
+                 uExitInfo1, uExitInfo2));
+            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_EXCEPTION_0 + u8Vector, uExitInfo1, uExitInfo2);
+        }
+
+        /* Check software interrupt (INTn) intercepts. */
+        if (   IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INTN)
+            && (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT))
+        {
+            uint64_t const uExitInfo1 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? u8Vector : 0;
+            Log(("iemRaiseXcptOrInt: Software INT intercept (u8Vector=%#x) -> #VMEXIT\n", u8Vector));
+            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
+        }
+    }
+#endif
+
     /*
      * Do recursion accounting.
      */
@@ -5178,6 +5323,8 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
              u8Vector, pCtx->cs.Sel, pCtx->rip, cbInstr, fFlags, uErr, uCr2, pVCpu->iem.s.uCurXcpt, pVCpu->iem.s.cXcptRecursions + 1, fPrevXcpt));
 
         /** @todo double and tripple faults. */
+        /** @todo When implementing #DF, the SVM nested-guest #DF intercepts needs some
+         *        care. See AMD spec. 15.12 "Exception Intercepts". */
         if (pVCpu->iem.s.cXcptRecursions >= 3)
         {
 #ifdef DEBUG_bird
@@ -5193,8 +5340,10 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
         } */
     }
     pVCpu->iem.s.cXcptRecursions++;
-    pVCpu->iem.s.uCurXcpt = u8Vector;
-    pVCpu->iem.s.fCurXcpt = fFlags;
+    pVCpu->iem.s.uCurXcpt    = u8Vector;
+    pVCpu->iem.s.fCurXcpt    = fFlags;
+    pVCpu->iem.s.uCurXcptErr = uErr;
+    pVCpu->iem.s.uCurXcptCr2 = uCr2;
 
     /*
      * Extensive logging.
@@ -9668,11 +9817,18 @@ iemMemStoreDataU128AlignedSseJmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
 IEM_STATIC VBOXSTRICTRC
 iemMemStoreDataXdtr(PVMCPU pVCpu, uint16_t cbLimit, RTGCPTR GCPtrBase, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
+    VBOXSTRICTRC rcStrict;
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_READS))
+    {
+        Log(("sidt/sgdt: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_IDTR_READ, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     /*
      * The SIDT and SGDT instructions actually stores the data using two
      * independent writes.  The instructions does not respond to opsize prefixes.
      */
-    VBOXSTRICTRC rcStrict = iemMemStoreDataU16(pVCpu, iSegReg, GCPtrMem, cbLimit);
+    rcStrict = iemMemStoreDataU16(pVCpu, iSegReg, GCPtrMem, cbLimit);
     if (rcStrict == VINF_SUCCESS)
     {
         if (pVCpu->iem.s.enmCpuMode == IEMMODE_16BIT)
@@ -11755,18 +11911,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         else return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
-#if 0
-#ifdef VBOX_WITH_NESTED_HWVIRT
-/** The instruction raises an \#UD when SVM is not enabled. */
-#define IEMOP_HLP_NEEDS_SVM_ENABLED() \
-    do \
-    { \
-        if (IEM_IS_SVM_ENABLED(pVCpu)) \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
-    } while (0)
-#endif
-#endif
-
 /** The instruction is not available in 64-bit mode, throw \#UD if we're in
  * 64-bit mode. */
 #define IEMOP_HLP_NO_64BIT() \
@@ -11909,6 +12053,33 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         else \
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
+
+#if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(IN_RC)
+/** Check and handles SVM nested-guest control & instruction intercept. */
+# define IEMOP_HLP_SVM_CTRL_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+    do \
+    { \
+        if (IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
+            IEM_RETURN_SVM_NST_GST_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2); \
+    } while (0)
+
+/** Check and handle SVM nested-guest CR0 read intercept. */
+# define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2) \
+    do \
+    { \
+        if (IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)) \
+            IEM_RETURN_SVM_NST_GST_VMEXIT(a_pVCpu, SVM_EXIT_READ_CR0 + (a_uCr), a_uExitInfo1, a_uExitInfo2); \
+    } while (0)
+
+#else
+# define IEMOP_HLP_SVM_CTRL_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+    do { RT_NOREF5(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2); } while (0)
+
+# define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2) \
+    do { RT_NOREF4(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2); } while (0)
+
+#endif /* VBOX_WITH_NESTED_HWVIRT && !IN_RC */
+
 
 /**
  * Calculates the effective address of a ModR/M memory operand.
@@ -15039,20 +15210,42 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * Checks if IEM is in the process of delivering an event (interrupt or
  * exception).
  *
- * @returns true if it's raising an interrupt or exception, false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @returns true if we're in the process of raising an interrupt or exception,
+ *          false otherwise.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   puVector        Where to store the vector associated with the
+ *                          currently delivered event, optional.
+ * @param   pfFlags         Where to store th event delivery flags (see
+ *                          IEM_XCPT_FLAGS_XXX), optional.
+ * @param   puErr           Where to store the error code associated with the
+ *                          event, optional.
+ * @param   puCr2           Where to store the CR2 associated with the event,
+ *                          optional.
  */
-VMM_INT_DECL(bool) IEMIsRaisingIntOrXcpt(PVMCPU pVCpu)
+VMM_INT_DECL(bool) IEMGetCurrentXcpt(PVMCPU pVCpu, uint8_t *puVector, uint32_t *pfFlags, uint32_t *puErr, uint64_t *puCr2)
 {
-    return pVCpu->iem.s.cXcptRecursions > 0;
+    bool const fRaisingXcpt = pVCpu->iem.s.cXcptRecursions > 0;
+    if (fRaisingXcpt)
+    {
+        if (puVector)
+            *puVector = pVCpu->iem.s.uCurXcpt;
+        if (pfFlags)
+            *pfFlags = pVCpu->iem.s.fCurXcpt;
+        /* The caller should check the flags to determine if the error code & CR2 are valid for the event. */
+        if (puErr)
+            *puErr = pVCpu->iem.s.uCurXcptErr;
+        if (puCr2)
+            *puCr2 = pVCpu->iem.s.uCurXcptCr2;
+    }
+    return fRaisingXcpt;
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * Interface for HM and EM to emulate the STGI instruction.
  *
