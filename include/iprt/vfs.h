@@ -1070,7 +1070,7 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
  *
  *
  * A bit more formally:
- *      :iprtvfs:<type>(<provider>[,provider-args])[<separator><type>...]
+ *      :iprtvfs:{type}({provider}[,provider-args])[{separator}{type}...]
  *
  * The @c type refers to VFS object that should be created by the @c provider.
  * Valid types:
