@@ -827,7 +827,8 @@ VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx, uint8_t *pu8Interrupt)
 VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
                                                           uint64_t uExitInfo2)
 {
-#define HMSVM_VMEXIT_RET()    do { return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2); } while (0)
+#define HMSVM_VMEXIT() \
+
 #define HMSVM_CTRL_INTERCEPT_VMEXIT_RET(a_Intercept) \
     do { \
         if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, (a_Intercept))) \
@@ -848,41 +849,51 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX
         case SVM_EXIT_EXCEPTION_20: case SVM_EXIT_EXCEPTION_21: case SVM_EXIT_EXCEPTION_22: case SVM_EXIT_EXCEPTION_23:
         case SVM_EXIT_EXCEPTION_24: case SVM_EXIT_EXCEPTION_25: case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27:
         case SVM_EXIT_EXCEPTION_28: case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
+        {
             if (CPUMIsGuestSvmXcptInterceptSet(pCtx, (X86XCPT)(uExitCode - SVM_EXIT_EXCEPTION_0)))
-                    HMSVM_VMEXIT_RET();
+                    return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2);
                 break;
+        }
 
         case SVM_EXIT_WRITE_CR0:  case SVM_EXIT_WRITE_CR1:  case SVM_EXIT_WRITE_CR2:  case SVM_EXIT_WRITE_CR3:
         case SVM_EXIT_WRITE_CR4:  case SVM_EXIT_WRITE_CR5:  case SVM_EXIT_WRITE_CR6:  case SVM_EXIT_WRITE_CR7:
         case SVM_EXIT_WRITE_CR8:  case SVM_EXIT_WRITE_CR9:  case SVM_EXIT_WRITE_CR10: case SVM_EXIT_WRITE_CR11:
         case SVM_EXIT_WRITE_CR12: case SVM_EXIT_WRITE_CR13: case SVM_EXIT_WRITE_CR14: case SVM_EXIT_WRITE_CR15:
+        {
             if (CPUMIsGuestSvmWriteCRxInterceptSet(pCtx, uExitCode - SVM_EXIT_WRITE_CR0))
-                HMSVM_VMEXIT_RET();
+                return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2);
             break;
+        }
 
         case SVM_EXIT_READ_CR0:  case SVM_EXIT_READ_CR1:  case SVM_EXIT_READ_CR2:  case SVM_EXIT_READ_CR3:
         case SVM_EXIT_READ_CR4:  case SVM_EXIT_READ_CR5:  case SVM_EXIT_READ_CR6:  case SVM_EXIT_READ_CR7:
         case SVM_EXIT_READ_CR8:  case SVM_EXIT_READ_CR9:  case SVM_EXIT_READ_CR10: case SVM_EXIT_READ_CR11:
         case SVM_EXIT_READ_CR12: case SVM_EXIT_READ_CR13: case SVM_EXIT_READ_CR14: case SVM_EXIT_READ_CR15:
+        {
             if (CPUMIsGuestSvmReadCRxInterceptSet(pCtx, uExitCode - SVM_EXIT_READ_CR0))
-                HMSVM_VMEXIT_RET();
+                return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2);
             break;
+        }
 
         case SVM_EXIT_READ_DR0:  case SVM_EXIT_READ_DR1:  case SVM_EXIT_READ_DR2:  case SVM_EXIT_READ_DR3:
         case SVM_EXIT_READ_DR4:  case SVM_EXIT_READ_DR5:  case SVM_EXIT_READ_DR6:  case SVM_EXIT_READ_DR7:
         case SVM_EXIT_READ_DR8:  case SVM_EXIT_READ_DR9:  case SVM_EXIT_READ_DR10: case SVM_EXIT_READ_DR11:
         case SVM_EXIT_READ_DR12: case SVM_EXIT_READ_DR13: case SVM_EXIT_READ_DR14: case SVM_EXIT_READ_DR15:
+        {
             if (CPUMIsGuestSvmReadDRxInterceptSet(pCtx, uExitCode - SVM_EXIT_READ_DR0))
-                HMSVM_VMEXIT_RET();
+                return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2);
             break;
+        }
 
         case SVM_EXIT_WRITE_DR0:  case SVM_EXIT_WRITE_DR1:  case SVM_EXIT_WRITE_DR2:  case SVM_EXIT_WRITE_DR3:
         case SVM_EXIT_WRITE_DR4:  case SVM_EXIT_WRITE_DR5:  case SVM_EXIT_WRITE_DR6:  case SVM_EXIT_WRITE_DR7:
         case SVM_EXIT_WRITE_DR8:  case SVM_EXIT_WRITE_DR9:  case SVM_EXIT_WRITE_DR10: case SVM_EXIT_WRITE_DR11:
         case SVM_EXIT_WRITE_DR12: case SVM_EXIT_WRITE_DR13: case SVM_EXIT_WRITE_DR14: case SVM_EXIT_WRITE_DR15:
+        {
             if (CPUMIsGuestSvmWriteDRxInterceptSet(pCtx, uExitCode - SVM_EXIT_WRITE_DR0))
-                HMSVM_VMEXIT_RET();
+                return HMSvmNstGstVmExit(pVCpu, pCtx, uExitCode, uExitInfo1, uExitInfo2);
             break;
+        }
 
         case SVM_EXIT_INTR:                HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_INTR);
         case SVM_EXIT_NMI:                 HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_NMI);
@@ -929,21 +940,9 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX
         case SVM_EXIT_MWAIT_ARMED:         HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_MWAIT_ARMED);
         case SVM_EXIT_XSETBV:              HMSVM_CTRL_INTERCEPT_VMEXIT_RET(SVM_CTRL_INTERCEPT_XSETBV);
 
-#if 0
         case SVM_EXIT_IOIO:
-        {
-            if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT))
-            {
-                SVMIOIOEXIT IOExitInfo;
-                IOExitInfo.u = uExitInfo1;
-                const volatile void *pvIOPM = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
-                uint16_t const offIoBitmap = pVIOPM + (IOExitInfo.n.u16Port / 8);
-                uint16_t const u16Port  = IOExitInfo.n.u16Port;
-                uint8_t  const cbIoSize = IOExitInfo.n.u1OP32 ? 4 : IOExitInfo.n.u1OP16;
-            }
-            break;
-        }
-#endif
+            AssertMsgFailed(("Use HMSvmNstGstHandleMsrIntercept!\n"));
+            return VERR_SVM_IPE_1;
 
         case SVM_EXIT_MSR:
             AssertMsgFailed(("Use HMSvmNstGstHandleMsrIntercept!\n"));
@@ -956,7 +955,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX
             return VERR_SVM_IPE_1;
 
         default:
-            AssertMsgFailed(("Unsupported.\n"));
+            AssertMsgFailed(("Unsupported SVM exit code %#RX64\n", uExitCode));
             return VERR_SVM_IPE_1;
     }
 
