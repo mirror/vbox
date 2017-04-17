@@ -59,6 +59,7 @@ const char* UIExtraDataDefs::GUI_Input_SelectorShortcuts = "GUI/Input/SelectorSh
 const char* UIExtraDataDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";
 const char* UIExtraDataDefs::GUI_Input_HostKeyCombination = "GUI/Input/HostKeyCombination";
 const char* UIExtraDataDefs::GUI_Input_AutoCapture = "GUI/Input/AutoCapture";
+const char* UIExtraDataDefs::GUI_RemapScancodes = "GUI/RemapScancodes";
 
 /* Settings: Storage: */
 const char* UIExtraDataDefs::GUI_RecentFolderHD = "GUI/RecentFolderHD";

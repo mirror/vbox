@@ -227,6 +227,9 @@ public:
         bool autoCaptureEnabled();
         /** Defines whether the Runtime UI auto-capture is @a fEnabled. */
         void setAutoCaptureEnabled(bool fEnabled);
+
+        /** Returns the Runtime UI remapped scan codes. */
+        QString remappedScanCodes();
     /** @} */
 
     /** @name Settings: Storage

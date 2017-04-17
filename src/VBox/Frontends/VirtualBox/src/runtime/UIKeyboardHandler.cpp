@@ -1602,7 +1602,7 @@ void UIKeyboardHandler::loadSettings()
     /* Global settings: */
 #ifdef VBOX_WS_X11
     /* Initialize the X keyboard subsystem: */
-    initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
+    initMappedX11Keyboard(QX11Info::display(), gEDataManager->remappedScanCodes());
 #endif /* VBOX_WS_X11 */
 
     /* Extra data settings: */

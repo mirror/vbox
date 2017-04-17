@@ -93,6 +93,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_Input_HostKeyCombination;
         /** Holds whether Runtime UI auto-capture is enabled. */
         extern const char* GUI_Input_AutoCapture;
+        /** Holds Runtime UI remapped scan codes. */
+        extern const char* GUI_RemapScancodes;
     /** @} */
 
     /** @name Settings: Storage

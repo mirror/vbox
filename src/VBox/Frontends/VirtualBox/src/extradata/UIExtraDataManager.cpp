@@ -2479,6 +2479,18 @@ void UIExtraDataManager::setAutoCaptureEnabled(bool fEnabled)
     setExtraDataString(GUI_Input_AutoCapture, toFeatureState(fEnabled));
 }
 
+QString UIExtraDataManager::remappedScanCodes()
+{
+    /* Acquire remapped scan codes: */
+    QString strRemappedScanCodes = extraDataString(GUI_RemapScancodes);
+    /* Clear the record if it's absolutely wrong: */
+    QRegularExpression reTemplate("(\\d+=\\d+,)*\\d+=\\d+");
+    if (!reTemplate.match(strRemappedScanCodes).hasMatch())
+        strRemappedScanCodes.clear();
+    /* Return remapped scan codes: */
+    return strRemappedScanCodes;
+}
+
 QString UIExtraDataManager::recentFolderForHardDrives()
 {
     return extraDataString(GUI_RecentFolderHD);

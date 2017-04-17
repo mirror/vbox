@@ -31,7 +31,7 @@
 
 /* GUI includes: */
 # include "UIHostComboEditor.h"
-# include "UIExtraDataDefs.h"
+# include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "VBoxGlobal.h"
 # include "QIToolButton.h"
@@ -583,7 +583,7 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pAltGrMonitor = new WinAltGrMonitor;
 #elif defined(VBOX_WS_X11)
     /* Initialize the X keyboard subsystem: */
-    initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
+    initMappedX11Keyboard(QX11Info::display(), gEDataManager->remappedScanCodes());
 #endif /* VBOX_WS_X11 */
 }
 
