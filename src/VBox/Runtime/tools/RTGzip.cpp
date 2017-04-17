@@ -518,7 +518,10 @@ RTEXITCODE RTZipGzipCmd(unsigned cArgs, char **papszArgs)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The --suffix option specified an empty string");
                 if (!Opts.fStdOut && RTVfsChainIsSpec(ValueUnion.psz))
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Must use standard out with VFS chain specifications");
-                if (Opts.fName)
+                if (   Opts.fName
+                    && !Opts.fList
+                    && !Opts.fTest
+                    && !Opts.fDecompress)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The --name option has not yet been implemented. Use --no-name.");
                 if (Opts.fAscii)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The --ascii option has not yet been implemented.");
