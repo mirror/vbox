@@ -164,7 +164,6 @@ public:
     /* API: Global warnings: */
     void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
     void cannotLoadLanguage(const QString &strLangFile) const;
-    void cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError) const;
     void cannotSaveGlobalConfig(const CVirtualBox &vbox) const;
     void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const;
     void cannotFindMachineById(const CVirtualBox &vbox, const QString &strId) const;

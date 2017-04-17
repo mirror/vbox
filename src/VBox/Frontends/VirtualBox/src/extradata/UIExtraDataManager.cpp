@@ -42,7 +42,6 @@
 # include "UIExtraDataManager.h"
 # include "UIHostComboEditor.h"
 # include "UIMainEventListener.h"
-# include "VBoxGlobalSettings.h"
 # include "VBoxGlobal.h"
 # include "UIActionPool.h"
 # include "UIConverter.h"
@@ -237,27 +236,17 @@ void UIExtraDataEventHandler::cleanup()
     cleanupListener();
 }
 
-void UIExtraDataEventHandler::sltPreprocessExtraDataCanChange(QString strMachineID, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason)
+void UIExtraDataEventHandler::sltPreprocessExtraDataCanChange(QString strMachineID, QString strKey, QString /* strValue */, bool & /* fVeto */, QString & /* strVetoReason */)
 {
     /* Preprocess global 'extra-data can change' event: */
     if (QUuid(strMachineID).isNull())
     {
         if (strKey.startsWith("GUI/"))
         {
-            /* Try to set the global setting to check its syntax: */
-            VBoxGlobalSettings gs(false /* non-null */);
-            /* Known GUI property key? */
-            if (gs.setPublicProperty(strKey, strValue))
-            {
-                /* But invalid GUI property value? */
-                if (!gs)
-                {
-                    /* Remember veto reason: */
-                    strVetoReason = gs.lastError();
-                    /* And disallow that change: */
-                    fVeto = true;
-                }
-            }
+            /* Check whether global extra-data property can be applied: */
+            // TODO: Here can be various extra-data flags handling.
+            //       Generally we should check whether one or another flag feats some rule (like reg-exp).
+            //       For each required strValue we should set fVeto = true; and fill strVetoReason = "with some text".
         }
     }
 }
@@ -269,11 +258,11 @@ void UIExtraDataEventHandler::sltPreprocessExtraDataChange(QString strMachineID,
     {
         if (strKey.startsWith("GUI/"))
         {
-            /* Apply global property: */
-            m_mutex.lock();
-            vboxGlobal().settings().setPublicProperty(strKey, strValue);
-            m_mutex.unlock();
-            AssertMsgReturnVoid(!!vboxGlobal().settings(), ("Failed to apply global property.\n"));
+            /* Apply global extra-data property: */
+            // TODO: Here can be various extra-data flags handling.
+            //       Generally we should push one or another flag to various instances which want to handle
+            //       those flags independently from UIExtraDataManager. Remember to process each required strValue
+            //       from under the m_mutex lock (since we are in another thread) and unlock that m_mutex afterwards.
         }
     }
 
@@ -2334,6 +2323,18 @@ QList<MachineSettingsPageType> UIExtraDataManager::restrictedMachineSettingsPage
     }
     /* Return result: */
     return result;
+}
+
+bool UIExtraDataManager::hostScreenSaverDisabled()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_HostScreenSaverDisabled);
+}
+
+void UIExtraDataManager::setHostScreenSaverDisabled(bool fDisabled)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    setExtraDataString(GUI_HostScreenSaverDisabled, toFeatureAllowed(fDisabled));
 }
 
 QString UIExtraDataManager::languageId()

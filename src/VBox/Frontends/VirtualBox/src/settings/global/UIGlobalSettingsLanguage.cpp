@@ -220,7 +220,7 @@ UIGlobalSettingsLanguage::~UIGlobalSettingsLanguage()
 
 void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
@@ -235,7 +235,7 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
     /* Cache old language data: */
     m_pCache->cacheInitialData(oldLanguageData);
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 
@@ -265,7 +265,7 @@ void UIGlobalSettingsLanguage::putToCache()
 
 void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Make sure language data was changed: */
@@ -276,7 +276,7 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
             gEDataManager->setLanguageId(m_pCache->data().m_strLanguageId);
     }
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 

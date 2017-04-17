@@ -75,7 +75,7 @@ UIGlobalSettingsDisplay::~UIGlobalSettingsDisplay()
 
 void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
@@ -93,7 +93,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Cache old display data: */
     m_pCache->cacheInitialData(oldDisplayData);
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 
@@ -129,7 +129,7 @@ void UIGlobalSettingsDisplay::putToCache()
 
 void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Make sure display data was changed: */
@@ -143,7 +143,7 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
             gEDataManager->setActivateHoveredMachineWindow(m_pCache->data().m_fActivateHoveredMachineWindow);
     }
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 

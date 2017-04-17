@@ -204,12 +204,11 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
 
 void UISettingsDialogGlobal::loadOwnData()
 {
-    /* Get properties and settings: */
+    /* Get properties: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
-    UISettingsDataGlobal data(properties, settings);
+    UISettingsDataGlobal data(properties);
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
@@ -218,26 +217,21 @@ void UISettingsDialogGlobal::loadOwnData()
 
 void UISettingsDialogGlobal::saveOwnData()
 {
-    /* Get properties and settings: */
+    /* Get properties: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
-    UISettingsDataGlobal data(properties, settings);
+    UISettingsDataGlobal data(properties);
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
     UISettingsDialog::saveData(varData);
 
-    /* Get updated properties & settings: */
+    /* Get updated properties: */
     CSystemProperties newProperties = varData.value<UISettingsDataGlobal>().m_properties;
-    VBoxGlobalSettings newSettings = varData.value<UISettingsDataGlobal>().m_settings;
     /* If properties are not OK => show the error: */
     if (!newProperties.isOk())
         msgCenter().cannotSetSystemProperties(newProperties, this);
-    /* Else save the new settings if they were changed: */
-    else if (!(newSettings == settings))
-        vboxGlobal().setSettings(newSettings);
 
     /* Mark as saved: */
     sltMarkSaved();

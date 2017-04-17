@@ -47,6 +47,9 @@ const char* UIExtraDataDefs::GUI_Customizations = "GUI/Customizations";
 const char* UIExtraDataDefs::GUI_RestrictedGlobalSettingsPages = "GUI/RestrictedGlobalSettingsPages";
 const char* UIExtraDataDefs::GUI_RestrictedMachineSettingsPages = "GUI/RestrictedMachineSettingsPages";
 
+/* Settings: General: */
+const char* UIExtraDataDefs::GUI_HostScreenSaverDisabled = "GUI/HostScreenSaverDisabled";
+
 /* Settings: Language: */
 const char* UIExtraDataDefs::GUI_LanguageID = "GUI/LanguageID";
 

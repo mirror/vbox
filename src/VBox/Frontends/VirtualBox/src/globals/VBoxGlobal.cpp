@@ -340,26 +340,6 @@ MacOSXRelease VBoxGlobal::determineOsRelease()
 }
 #endif /* VBOX_WS_MAC */
 
-/**
- *  Sets the new global settings and saves them to the VirtualBox server.
- */
-bool VBoxGlobal::setSettings (VBoxGlobalSettings &gs)
-{
-    gs.save(m_vbox);
-
-    if (!m_vbox.isOk())
-    {
-        msgCenter().cannotSaveGlobalConfig(m_vbox);
-        return false;
-    }
-
-    /* We don't assign gs to our gset member here, because VBoxCallback
-     * will update gset as necessary when new settings are successfully
-     * sent to the VirtualBox server by gs.save(). */
-
-    return true;
-}
-
 QWidget* VBoxGlobal::activeMachineWindow() const
 {
     if (isVMConsoleProcess() && gpMachine && gpMachine->activeWindow())
@@ -2189,7 +2169,7 @@ static QString sLoadedLangId = gVBoxBuiltInLangName;
 
 /**
  *  Returns the loaded (active) language ID.
- *  Note that it may not match with VBoxGlobalSettings::languageId() if the
+ *  Note that it may not match with UIExtraDataManager::languageId() if the
  *  specified language cannot be loaded.
  *  If the built-in language is active, this method returns "C".
  *
@@ -4115,17 +4095,6 @@ void VBoxGlobal::prepare()
 
     /* Prepare thread-pool instance: */
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
-
-    /* create default non-null global settings */
-    gset = VBoxGlobalSettings (false);
-
-    /* try to load global settings */
-    gset.load(m_vbox);
-    if (!m_vbox.isOk() || !gset)
-    {
-        msgCenter().cannotLoadGlobalConfig(m_vbox, gset.lastError());
-        return;
-    }
 
     /* Load translation based on the user settings: */
     QString sLanguageId = gEDataManager->languageId();

@@ -188,6 +188,14 @@ public:
         QList<MachineSettingsPageType> restrictedMachineSettingsPages(const QString &strID);
     /** @} */
 
+    /** @name Settings: General
+      * @{ */
+        /** Returns whether the host screen-saver should be disabled. */
+        bool hostScreenSaverDisabled();
+        /** Defines whether the host screen-saver should be @a fDisabled. */
+        void setHostScreenSaverDisabled(bool fDisabled);
+    /** @} */
+
     /** @name Settings: Language
       * @{ */
         /** Returns the GUI language ID. */

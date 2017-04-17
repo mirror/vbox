@@ -80,7 +80,7 @@ UIGlobalSettingsProxy::~UIGlobalSettingsProxy()
 
 void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
@@ -98,7 +98,7 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     /* Cache old proxy data: */
     m_pCache->cacheInitialData(oldProxyData);
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 
@@ -140,7 +140,7 @@ void UIGlobalSettingsProxy::putToCache()
 
 void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Make sure proxy data was changed: */
@@ -154,7 +154,7 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
         gEDataManager->setProxySettings(proxyManager.toString());
     }
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 

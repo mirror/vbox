@@ -480,15 +480,6 @@ void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
              .arg(strLangFile));
 }
 
-void UIMessageCenter::cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError) const
-{
-    error(0, MessageType_Critical,
-          tr("<p>Failed to load the global GUI configuration from <b><nobr>%1</nobr></b>.</p>"
-             "<p>The application will now terminate.</p>")
-             .arg(CVirtualBox(vbox).GetSettingsFilePath()),
-          !vbox.isOk() ? formatErrorInfo(vbox) : QString("<!--EOM--><p>%1</p>").arg(vboxGlobal().emphasize(strError)));
-}
-
 void UIMessageCenter::cannotSaveGlobalConfig(const CVirtualBox &vbox) const
 {
     error(0, MessageType_Critical,

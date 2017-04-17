@@ -81,7 +81,7 @@ UIGlobalSettingsUpdate::~UIGlobalSettingsUpdate()
 
 void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
@@ -100,7 +100,7 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
     /* Cache old update data: */
     m_pCache->cacheInitialData(oldUpdateData);
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 
@@ -140,7 +140,7 @@ void UIGlobalSettingsUpdate::putToCache()
 
 void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
 {
-    /* Fetch data to properties & settings: */
+    /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Make sure update data was changed: */
@@ -151,7 +151,7 @@ void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
         gEDataManager->setApplicationUpdateData(newData.data());
     }
 
-    /* Upload properties & settings to data: */
+    /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 

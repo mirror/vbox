@@ -33,7 +33,6 @@
 /* GUI includes: */
 #include "UIDefs.h"
 #include "UIMediumDefs.h"
-#include "VBoxGlobalSettings.h"
 #ifdef VBOX_WS_X11
 # include "VBoxX11Helper.h"
 #endif /* VBOX_WS_X11 */
@@ -142,9 +141,6 @@ public:
 
     /** Returns the thread-pool instance. */
     UIThreadPool* threadPool() const { return m_pThreadPool; }
-
-    VBoxGlobalSettings &settings() { return gset; }
-    bool setSettings (VBoxGlobalSettings &gs);
 
     /** Returns currently active virtual machine window. */
     QWidget* activeMachineWindow() const;
@@ -546,8 +542,6 @@ private:
     bool m_fWrappersValid;
     /** Holds whether VBoxSVC is currently available. */
     bool m_fVBoxSVCAvailable;
-
-    VBoxGlobalSettings gset;
 
     /** Holds whether GUI is separate (from VM) process. */
     bool m_fSeparateProcess;
