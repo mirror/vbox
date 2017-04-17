@@ -36,7 +36,6 @@ public:
 
 private:
 
-    QString languageId;
     QString maxGuestRes;
     QString remapScancodes;
     QString proxySettings;
@@ -50,7 +49,6 @@ private:
 class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsData>
 {
     Q_OBJECT
-    Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
     Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
     Q_PROPERTY (QString remapScancodes READ remapScancodes WRITE setRemapScancodes)
     Q_PROPERTY (QString proxySettings READ proxySettings WRITE setProxySettings)
@@ -68,12 +66,6 @@ public:
     }
 
     // Properties
-
-    QString languageId() const { return data()->languageId; }
-    void setLanguageId (const QString &aLanguageId)
-    {
-        mData()->languageId = aLanguageId;
-    }
 
     QString maxGuestRes() const { return data()->maxGuestRes; }
     void setMaxGuestRes (const QString &aMaxGuestRes)

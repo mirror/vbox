@@ -31,9 +31,6 @@ namespace UIExtraDataDefs
 {
     /** @name General
       * @{ */
-        /** VBox language ID. */
-        extern const char* GUI_LanguageId;
-
         /** Holds event handling type. */
         extern const char* GUI_EventHandlingType;
     /** @} */
@@ -70,6 +67,12 @@ namespace UIExtraDataDefs
         extern const char* GUI_RestrictedGlobalSettingsPages;
         /** Holds restricted Machine Settings pages. */
         extern const char* GUI_RestrictedMachineSettingsPages;
+    /** @} */
+
+    /** @name Settings: Language
+      * @{ */
+        /** Holds GUI language ID. */
+        extern const char* GUI_LanguageID;
     /** @} */
 
     /** @name Settings: Display

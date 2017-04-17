@@ -1946,13 +1946,13 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 {
     return QStringList()
            << QString()
-           << GUI_LanguageId
            << GUI_EventHandlingType
            << GUI_SuppressMessages << GUI_InvertMessageOption
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
            << GUI_RestrictedGlobalSettingsPages << GUI_RestrictedMachineSettingsPages
+           << GUI_LanguageID
            << GUI_ActivateHoveredMachineWindow
            << GUI_Input_SelectorShortcuts << GUI_Input_MachineShortcuts
            << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
@@ -2334,6 +2334,18 @@ QList<MachineSettingsPageType> UIExtraDataManager::restrictedMachineSettingsPage
     }
     /* Return result: */
     return result;
+}
+
+QString UIExtraDataManager::languageId()
+{
+    /* Load language ID: */
+    return extraDataString(GUI_LanguageID);
+}
+
+void UIExtraDataManager::setLanguageId(const QString &strLanguageId)
+{
+    /* Save language ID: */
+    setExtraDataString(GUI_LanguageID, strLanguageId);
 }
 
 bool UIExtraDataManager::activateHoveredMachineWindow()
@@ -4050,7 +4062,7 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         if (strKey.startsWith("GUI/"))
         {
             /* Language changed? */
-            if (strKey == GUI_LanguageId)
+            if (strKey == GUI_LanguageID)
                 emit sigLanguageChange(extraDataString(strKey));
             /* Selector UI shortcut changed? */
             else if (strKey == GUI_Input_SelectorShortcuts)

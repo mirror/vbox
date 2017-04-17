@@ -187,6 +187,14 @@ public:
         QList<MachineSettingsPageType> restrictedMachineSettingsPages(const QString &strID);
     /** @} */
 
+    /** @name Settings: Language
+      * @{ */
+        /** Returns the GUI language ID. */
+        QString languageId();
+        /** Defines the GUI @a strLanguageId. */
+        void setLanguageId(const QString &strLanguageId);
+    /** @} */
+
     /** @name Settings: Display
       * @{ */
         /** Returns whether hovered machine-window should be activated. */

@@ -4128,7 +4128,7 @@ void VBoxGlobal::prepare()
     }
 
     /* Load translation based on the user settings: */
-    QString sLanguageId = gset.languageId();
+    QString sLanguageId = gEDataManager->languageId();
     if (!sLanguageId.isNull())
         loadLanguage (sLanguageId);
 

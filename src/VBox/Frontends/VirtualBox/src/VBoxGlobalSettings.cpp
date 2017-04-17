@@ -50,7 +50,6 @@ using namespace UIExtraDataDefs;
 VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 {
     /* default settings */
-    languageId  = QString::null;
     maxGuestRes = QString::null;
     remapScancodes = QString::null;
     proxySettings = QString::null;
@@ -59,7 +58,6 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
 {
-    languageId  = that.languageId;
     maxGuestRes = that.maxGuestRes;
     remapScancodes = that.remapScancodes;
     proxySettings = that.proxySettings;
@@ -73,8 +71,7 @@ VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
 bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) const
 {
     return this == &that ||
-        (languageId  == that.languageId &&
-         maxGuestRes == that.maxGuestRes &&
+        (maxGuestRes == that.maxGuestRes &&
          remapScancodes == that.remapScancodes &&
          proxySettings == that.proxySettings &&
          hostScreenSaverDisabled == that.hostScreenSaverDisabled
@@ -87,9 +84,6 @@ bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) con
  *  to implement implicit sharing of VirtualBox global data.
  */
 
-/* Defined in VBoxGlobal.cpp */
-extern const char *gVBoxLangIDRegExp;
-
 static struct
 {
     const char *publicName;
@@ -99,7 +93,6 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/LanguageID",                            "languageId",              gVBoxLangIDRegExp, true },
     { "GUI/MaxGuestResolution",                    "maxGuestRes",             "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
     { "GUI/RemapScancodes",                        "remapScancodes",          "(\\d+=\\d+,)*\\d+=\\d+", true },
     { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
