@@ -867,6 +867,7 @@ static DECLCALLBACK(int) rtVfsChainGunzip_Instantiate(PCRTVFSCHAINELEMENTREG pPr
 
     RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
     int rc = RTZipGzipDecompressIoStream(hVfsIosIn, 0 /*fFlags*/, &hVfsIos);
+    RTVfsObjFromIoStream(hVfsIosIn);
     if (RT_SUCCESS(rc))
     {
         *phVfsObj = RTVfsObjFromIoStream(hVfsIos);
@@ -973,6 +974,7 @@ static DECLCALLBACK(int) rtVfsChainGzip_Instantiate(PCRTVFSCHAINELEMENTREG pProv
 
     RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
     int rc = RTZipGzipCompressIoStream(hVfsIosOut, 0 /*fFlags*/, pSpec->uProvider, &hVfsIos);
+    RTVfsObjFromIoStream(hVfsIosOut);
     if (RT_SUCCESS(rc))
     {
         *phVfsObj = RTVfsObjFromIoStream(hVfsIos);
