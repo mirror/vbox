@@ -97,6 +97,24 @@ RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitCode, const char *pszFormat,
 RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
+ * Same as RTMsgError() except for always returning RTEXITCODE_FAILURE.
+ *
+ * @returns RTEXITCODE_FAILURE
+ * @param   pszFormat       The message format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(RTEXITCODE) RTMsgErrorExitFailure(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+
+/**
+ * Same as RTMsgErrorV() except for always returning RTEXITCODE_FAILURE.
+ *
+ * @returns RTEXITCODE_FAILURE
+ * @param   pszFormat       The message format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(RTEXITCODE) RTMsgErrorExitFailureV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+
+/**
  * Same as RTMsgError() except for the return value.
  *
  * @returns @a rcRet

@@ -972,25 +972,25 @@ RTDECL(int) RTVfsUtilDummyPollOne(uint32_t fEvents, RTMSINTERVAL cMillies, bool 
  * @{
  */
 
+/** Pointer to a VFS chain element registration record. */
+typedef struct RTVFSCHAINELEMENTREG *PRTVFSCHAINELEMENTREG;
+/** Pointer to a const VFS chain element registration record. */
+typedef struct RTVFSCHAINELEMENTREG const *PCRTVFSCHAINELEMENTREG;
 
 /**
- * Chain element input actions.
+ * VFS chain element argument.
  */
-typedef enum RTVFSCHAINACTION
+typedef struct RTVFSCHAINELEMENTARG
 {
-    /** Invalid action. */
-    RTVFSCHAINACTION_INVALID = 0,
-    /** No action (start of the chain). */
-    RTVFSCHAINACTION_NONE,
-    /** Passive filtering (expressed by pipe symbol). */
-    RTVFSCHAINACTION_PASSIVE,
-    /** Push filtering (expressed by redirection-out symbol). */
-    RTVFSCHAINACTION_PUSH,
-    /** The end of the valid actions. */
-    RTVFSCHAINACTION_END,
-    /** Make sure it's a 32-bit type. */
-    RTVFSCHAINACTION_32BIT_HACK = 0x7fffffff
-} RTVFSCHAINACTION;
+    /** The string argument value. */
+    char                   *psz;
+    /** The specification offset of this argument. */
+    uint16_t                offSpec;
+    /** Provider specific value. */
+    uint64_t                uProvider;
+} RTVFSCHAINELEMENTARG;
+/** Pointer to a VFS chain element argument. */
+typedef RTVFSCHAINELEMENTARG *PRTVFSCHAINELEMENTARG;
 
 
 /**
@@ -998,18 +998,25 @@ typedef enum RTVFSCHAINACTION
  */
 typedef struct RTVFSCHAINELEMSPEC
 {
-    /** The provider name. */
-    char               *pszProvider;
-    /** The input type. */
-    RTVFSOBJTYPE        enmTypeIn;
-    /** The output type. */
-    RTVFSOBJTYPE        enmTypeOut;
-    /** The action to take (or not). */
-    RTVFSCHAINACTION    enmAction;
+    /** The provider name.  */
+    char                   *pszProvider;
+    /** The input type, RTVFSOBJTYPE_INVALID if first. */
+    RTVFSOBJTYPE            enmTypeIn;
+    /** The element type. */
+    RTVFSOBJTYPE            enmType;
+    /** The input spec offset of this element. */
+    uint16_t                offSpec;
+    /** The length of the input spec. */
+    uint16_t                cchSpec;
     /** The number of arguments. */
-    uint32_t            cArgs;
+    uint32_t                cArgs;
     /** Arguments. */
-    char              **papszArgs;
+    PRTVFSCHAINELEMENTARG   paArgs;
+
+    /** The provider. */
+    PCRTVFSCHAINELEMENTREG  pProvider;
+    /** The object (with reference). */
+    RTVFSOBJ                hVfsObj;
 } RTVFSCHAINELEMSPEC;
 /** Pointer to a chain element specification. */
 typedef RTVFSCHAINELEMSPEC *PRTVFSCHAINELEMSPEC;
@@ -1022,12 +1029,16 @@ typedef RTVFSCHAINELEMSPEC const *PCRTVFSCHAINELEMSPEC;
  */
 typedef struct RTVFSCHAINSPEC
 {
-    /** The action element, UINT32_MAX if none.
-     * Currently we only support one action element (RTVFSCHAINACTION_PASSIVE
-     * is not considered). */
-    uint32_t            iActionElement;
+    /** Open directory flags (RTFILE_O_XXX). */
+    uint32_t            fOpenFile;
+    /** To be defined. */
+    uint32_t            fOpenDir;
+    /** The type desired by the caller. */
+    RTVFSOBJTYPE        enmDesiredType;
     /** The number of elements. */
     uint32_t            cElements;
+    /** Provider specific value. */
+    uint64_t            uProvider;
     /** The elements. */
     PRTVFSCHAINELEMSPEC paElements;
 } RTVFSCHAINSPEC;
@@ -1050,72 +1061,69 @@ typedef struct RTVFSCHAINELEMENTREG
     const char             *pszName;
     /** For chaining the providers. */
     RTLISTNODE              ListEntry;
+    /** Help text. */
+    const char             *pszHelp;
 
     /**
-     * Create a VFS from the given chain element specficiation.
+     * Checks the element specification.
+     *
+     * This is allowed to parse arguments and use pSpec->uProvider and
+     * pElement->paArgs[].uProvider to store information that pfnInstantiate and
+     * pfnCanReuseElement may use later on, thus avoiding duplicating work/code.
      *
      * @returns IPRT status code.
-     * @param   pSpec           The chain element specification.
-     * @param   phVfs           Where to returned the VFS handle.
+     * @param   pProviderReg    Pointer to the element provider registration.
+     * @param   pSpec           The chain specification.
+     * @param   pElement        The chain element specification to validate.
+     * @param   poffError       Where to return error offset on failure.  This is
+     *                          set to the pElement->offSpec on input, so it only
+     *                          needs to be adjusted if an argument is at fault.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenVfs)(     PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFS           phVfs);
+    DECLCALLBACKMEMBER(int, pfnValidate)(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                         PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError);
 
     /**
-     * Open a directory from the given chain element specficiation.
+     * Create a VFS object according to the element specification.
      *
      * @returns IPRT status code.
-     * @param   pSpec           The chain element specification.
-     * @param   phVfsDir        Where to returned the directory handle.
+     * @param   pProviderReg    Pointer to the element provider registration.
+     * @param   pSpec           The chain specification.
+     * @param   pElement        The chain element specification to instantiate.
+     * @param   hPrevVfsObj     Handle to the previous VFS object, NIL_RTVFSOBJ if
+     *                          first.
+     * @param   phVfsObj        Where to return the VFS object handle.
+     * @param   poffError       Where to return error offset on failure.  This is
+     *                          set to the pElement->offSpec on input, so it only
+     *                          needs to be adjusted if an argument is at fault.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenDir)(     PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFSDIR        phVfsDir);
+    DECLCALLBACKMEMBER(int, pfnInstantiate)(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                            PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                            PRTVFSOBJ phVfsObj, uint32_t *poffError);
 
     /**
-     * Open a file from the given chain element specficiation.
+     * Determins whether the element can be reused.
      *
-     * @returns IPRT status code.
-     * @param   pSpec           The chain element specification.
-     * @param   fOpen           The open flag.  Can be zero and the
-     *                          specification may modify it.
-     * @param   phVfsFile       Where to returned the file handle.
-     */
-    DECLCALLBACKMEMBER(int, pfnOpenFile)(    PCRTVFSCHAINELEMSPEC pSpec, uint32_t fOpen, PRTVFSFILE       phVfsFile);
-
-    /**
-     * Open a symlink from the given chain element specficiation.
+     * This is for handling situations accessing the same file system twice, like
+     * for both the source and destiation of a copy operation.  This allows not only
+     * sharing resources and avoid doing things twice, but also helps avoid file
+     * sharing violations and inconsistencies araising from the image being updated
+     * and read independently.
      *
-     * @returns IPRT status code.
-     * @param   pSpec           The chain element specification.
-     * @param   phVfsSym        Where to returned the symlink handle.
+     * @returns true if the element from @a pReuseSpec an be reused, false if not.
+     * @param   pProviderReg    Pointer to the element provider registration.
+     * @param   pSpec           The chain specification.
+     * @param   pElement        The chain element specification.
+     * @param   pReuseSpec      The chain specification of the existing chain.
+     * @param   pReuseElement   The chain element specification of the existing
+     *                          element that is being considered for reuse.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenSymlink)( PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFSSYMLINK    phVfsSym);
-
-    /**
-     * Open a I/O stream from the given chain element specficiation.
-     *
-     * @returns IPRT status code.
-     * @param   pSpec           The chain element specification.
-     * @param   fOpen           The open flag.  Can be zero and the
-     *                          specification may modify it.
-     * @param   phVfsIos        Where to returned the I/O stream handle.
-     */
-    DECLCALLBACKMEMBER(int, pfnOpenIoStream)(PCRTVFSCHAINELEMSPEC pSpec, uint32_t fOpen, PRTVFSIOSTREAM   phVfsIos);
-
-    /**
-     * Open a filesystem stream from the given chain element specficiation.
-     *
-     * @returns IPRT status code.
-     * @param   pSpec           The chain element specification.
-     * @param   phVfsFss        Where to returned the filesystem stream handle.
-     */
-    DECLCALLBACKMEMBER(int, pfnOpenFsStream)(PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFSFSSTREAM   phVfsFss);
+    DECLCALLBACKMEMBER(bool, pfnCanReuseElement)(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                 PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                 PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement);
 
     /** End marker (RTVFSCHAINELEMENTREG_VERSION). */
     uintptr_t               uEndMarker;
 } RTVFSCHAINELEMENTREG;
-/** Pointer to a VFS chain element registration record. */
-typedef RTVFSCHAINELEMENTREG *PRTVFSCHAINELEMENTREG;
-/** Pointer to a const VFS chain element registration record. */
-typedef RTVFSCHAINELEMENTREG const *PCRTVFSCHAINELEMENTREG;
 
 /** The VFS chain element registration record version number. */
 #define RTVFSCHAINELEMENTREG_VERSION        RT_MAKE_U32_FROM_U8(0xff, 0x7f, 1, 0)
@@ -1125,32 +1133,38 @@ typedef RTVFSCHAINELEMENTREG const *PCRTVFSCHAINELEMENTREG;
  * Parses the specification.
  *
  * @returns IPRT status code.
- * @param   pszSpec             The specification string to parse.
- * @param   fFlags              Flags, see RTVFSCHAIN_PF_XXX.
- * @param   enmLeadingAction    The only allowed leading action type.
- * @param   enmTrailingAction   The only allowed trailing action type.
- * @param   ppSpec              Where to return the pointer to the parsed
- *                              specification.  This must be freed by calling
- *                              RTVfsChainSpecFree.  Will always be set (unless
- *                              invalid parameters.)
- * @param   ppszError           On failure, this will point at the error
- *                              location in @a pszSpec.  Optional.
+ * @param   pszSpec         The specification string to parse.
+ * @param   fFlags          Flags, see RTVFSCHAIN_PF_XXX.
+ * @param   enmDesiredType  The object type the caller wants to interface with.
+ * @param   ppSpec          Where to return the pointer to the parsed
+ *                          specification.  This must be freed by calling
+ *                          RTVfsChainSpecFree.  Will always be set (unless
+ *                          invalid parameters.)
+ * @param   ppszError       On failure, this will point at the error location in
+ *                          @a pszSpec.  Optional.
  */
-RTDECL(int)             RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSCHAINACTION enmLeadingAction,
-                                            RTVFSCHAINACTION enmTrailingAction,
-                                            PRTVFSCHAINSPEC *ppSpec, const char **ppszError);
+RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTYPE enmDesiredType,
+                                PRTVFSCHAINSPEC *ppSpec, const char **ppszError);
 
 /** @name RTVfsChainSpecParse
  * @{ */
-/** No real action is permitted, i.e. only passive filtering (aka pipe).  */
-#define RTVFSCHAIN_PF_NO_REAL_ACTION            RT_BIT_32(0)
-/** The specified leading action is optional. */
-#define RTVFSCHAIN_PF_LEADING_ACTION_OPTIONAL   RT_BIT_32(1)
-/** The specified trailing action is optional. */
-#define RTVFSCHAIN_PF_TRAILING_ACTION_OPTIONAL  RT_BIT_32(2)
 /** Mask of valid flags. */
-#define RTVFSCHAIN_PF_VALID_MASK                UINT32_C(0x00000007)
+#define RTVFSCHAIN_PF_VALID_MASK                UINT32_C(0x00000000)
 /** @} */
+
+/**
+ * Checks and setups the chain.
+ *
+ * @returns IPRT status code.
+ * @param   pSpec       The parsed specification.
+ * @param   pReuseSpec  Spec to reuse if applicable. Optional.
+ * @param   phVfsObj    Where to return the VFS object.
+ * @param   poffError   Where to return the offset into the input specification
+ *                      of what's causing trouble.  Always set, unless this
+ *                      argument causes an invalid pointer error.
+ */
+RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC pReuseSpec,
+                                        PRTVFSOBJ phVfsObj, uint32_t *poffError);
 
 /**
  * Frees a parsed chain specification.
@@ -1158,7 +1172,7 @@ RTDECL(int)             RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags
  * @param   pSpec               What RTVfsChainSpecParse returned.  NULL is
  *                              quietly ignored.
  */
-RTDECL(void)            RTVfsChainSpecFree(PRTVFSCHAINSPEC pSpec);
+RTDECL(void) RTVfsChainSpecFree(PRTVFSCHAINSPEC pSpec);
 
 /**
  * Registers a chain element provider.

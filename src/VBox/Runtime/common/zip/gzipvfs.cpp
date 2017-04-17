@@ -32,6 +32,7 @@
 #include <iprt/zip.h>
 
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
 #include <iprt/poll.h>
@@ -826,4 +827,190 @@ RTDECL(int) RTZipGzipCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags,
         RTVfsIoStrmRelease(hVfsIosDst);
     return rc;
 }
+
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
+ */
+static DECLCALLBACK(int) rtVfsChainGunzip_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                                   PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg, poffError);
+
+    if (pElement->enmTypeIn == RTVFSOBJTYPE_INVALID)
+        return VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT;
+    if (pElement->cArgs != 0)
+        return VERR_VFS_CHAIN_NO_ARGS;
+    if (pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
+        return VERR_VFS_CHAIN_ONLY_IOS;
+    if (pSpec->fOpenFile & RTFILE_O_WRITE)
+        return VERR_VFS_CHAIN_READ_ONLY_IOS;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnInstantiate}
+ */
+static DECLCALLBACK(int) rtVfsChainGunzip_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                                      PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                                      PRTVFSOBJ phVfsObj, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg, pSpec, pElement, poffError);
+    AssertReturn(hPrevVfsObj != NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
+
+    RTVFSIOSTREAM hVfsIosIn = RTVfsObjToIoStream(hPrevVfsObj);
+    if (hVfsIosIn == NIL_RTVFSIOSTREAM)
+        return VERR_VFS_CHAIN_CAST_FAILED;
+
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
+    int rc = RTZipGzipDecompressIoStream(hVfsIosIn, 0 /*fFlags*/, &hVfsIos);
+    if (RT_SUCCESS(rc))
+    {
+        *phVfsObj = RTVfsObjFromIoStream(hVfsIos);
+        RTVfsIoStrmRelease(hVfsIos);
+        if (*phVfsObj != NIL_RTVFSOBJ)
+            return VINF_SUCCESS;
+        rc = VERR_VFS_CHAIN_CAST_FAILED;
+    }
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnCanReuseElement}
+ */
+static DECLCALLBACK(bool) rtVfsChainGunzip_CanReuseElement(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                           PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                           PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement)
+{
+    RT_NOREF(pProviderReg, pSpec, pElement, pReuseSpec, pReuseElement);
+    return false;
+}
+
+
+/** VFS chain element 'gunzip'. */
+static RTVFSCHAINELEMENTREG g_rtVfsChainGunzipReg =
+{
+    /* uVersion = */            RTVFSCHAINELEMENTREG_VERSION,
+    /* fReserved = */           0,
+    /* pszName = */             "gunzip",
+    /* ListEntry = */           { NULL, NULL },
+    /* pszHelp = */             "Takes an I/O stream and gunzips it. No arguments.",
+    /* pfnValidate = */         rtVfsChainGunzip_Validate,
+    /* pfnInstantiate = */      rtVfsChainGunzip_Instantiate,
+    /* pfnCanReuseElement = */  rtVfsChainGunzip_CanReuseElement,
+    /* uEndMarker = */          RTVFSCHAINELEMENTREG_VERSION
+};
+
+RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainGunzipReg, rtVfsChainGunzipReg);
+
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
+ */
+static DECLCALLBACK(int) rtVfsChainGzip_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                                 PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg);
+
+    /*
+     * Basics.
+     */
+    if (pElement->enmTypeIn == RTVFSOBJTYPE_INVALID)
+        return VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT;
+    if (pElement->cArgs > 1)
+        return VERR_VFS_CHAIN_AT_MOST_ONE_ARG;
+    if (pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
+        return VERR_VFS_CHAIN_ONLY_IOS;
+    if (pSpec->fOpenFile & RTFILE_O_READ)
+        return VERR_VFS_CHAIN_WRITE_ONLY_IOS;
+
+    /*
+     * Optional argument 1..9 indicating the compression level.
+     * We store it in pSpec->uProvider.
+     */
+    if (pElement->cArgs > 0)
+    {
+        const char *psz = pElement->paArgs[0].psz;
+        if (!*psz || !strcmp(psz, "default"))
+            pSpec->uProvider = 6;
+        else if (!strcmp(psz, "fast"))
+            pSpec->uProvider = 3;
+        else if (   RT_C_IS_DIGIT(*psz)
+                 && *psz != '0'
+                 && *RTStrStripL(psz + 1) == '\0')
+            pSpec->uProvider = *psz - '0';
+        else
+        {
+            *poffError = pElement->paArgs[0].offSpec;
+            return VERR_VFS_CHAIN_INVALID_ARGUMENT;
+        }
+    }
+    else
+        pSpec->uProvider = 6;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnInstantiate}
+ */
+static DECLCALLBACK(int) rtVfsChainGzip_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                                    PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                                    PRTVFSOBJ phVfsObj, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg, pSpec, pElement, poffError);
+    AssertReturn(hPrevVfsObj != NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
+
+    RTVFSIOSTREAM hVfsIosOut = RTVfsObjToIoStream(hPrevVfsObj);
+    if (hVfsIosOut == NIL_RTVFSIOSTREAM)
+        return VERR_VFS_CHAIN_CAST_FAILED;
+
+    RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
+    int rc = RTZipGzipCompressIoStream(hVfsIosOut, 0 /*fFlags*/, pSpec->uProvider, &hVfsIos);
+    if (RT_SUCCESS(rc))
+    {
+        *phVfsObj = RTVfsObjFromIoStream(hVfsIos);
+        RTVfsIoStrmRelease(hVfsIos);
+        if (*phVfsObj != NIL_RTVFSOBJ)
+            return VINF_SUCCESS;
+        rc = VERR_VFS_CHAIN_CAST_FAILED;
+    }
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnCanReuseElement}
+ */
+static DECLCALLBACK(bool) rtVfsChainGzip_CanReuseElement(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                         PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                         PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement)
+{
+    RT_NOREF(pProviderReg, pSpec, pElement, pReuseSpec, pReuseElement);
+    return false;
+}
+
+
+/** VFS chain element 'gzip'. */
+static RTVFSCHAINELEMENTREG g_rtVfsChainGzipReg =
+{
+    /* uVersion = */            RTVFSCHAINELEMENTREG_VERSION,
+    /* fReserved = */           0,
+    /* pszName = */             "gzip",
+    /* ListEntry = */           { NULL, NULL },
+    /* pszHelp = */             "Takes an I/O stream and gzips it.\n"
+                                "Optional argument specifying compression level: 1-9, default, fast",
+    /* pfnValidate = */         rtVfsChainGzip_Validate,
+    /* pfnInstantiate = */      rtVfsChainGzip_Instantiate,
+    /* pfnCanReuseElement = */  rtVfsChainGzip_CanReuseElement,
+    /* uEndMarker = */          RTVFSCHAINELEMENTREG_VERSION
+};
+
+RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainGzipReg, rtVfsChainGzipReg);
 

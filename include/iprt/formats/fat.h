@@ -30,7 +30,6 @@
 #include <iprt/types.h>
 #include <iprt/assert.h>
 
-#pragma pack(1)
 
 /** @name FAT Media byte values
  * @remarks This isn't as simple as it's made out to be here!
@@ -46,6 +45,7 @@
  *
  * This was the first DOS version with a BPB.
  */
+#pragma pack(1)
 typedef struct FATBPB20
 {
     /** 0x0b / 0x00: The sector size in bytes. */
@@ -65,6 +65,7 @@ typedef struct FATBPB20
     /** 0x16 / 0x0b: Number of sectors per FAT (0 for FAT32). */
     uint16_t        cSectorsPerFat;
 } FATBPB20;
+#pragma pack()
 AssertCompileSize(FATBPB20, 0xd);
 /** Pointer to a DOS 2.0 BPB. */
 typedef FATBPB20 *PFATBPB20;
@@ -75,6 +76,7 @@ typedef FATBPB20 const *PCFATBPB20;
 /**
  * The DOS 3.0 BPB changes that survived.
  */
+#pragma pack(1)
 typedef struct FATBPB30CMN
 {
     /** DOS v2.0 BPB.   */
@@ -84,11 +86,13 @@ typedef struct FATBPB30CMN
     /** 0x1a / 0x0f: Number of heads. Zero means reserved and not used. */
     uint16_t        cTracksPerCylinder;
 } FATBPB30CMN;
+#pragma pack()
 AssertCompileSize(FATBPB30CMN, 0x11);
 
 /**
  * The DOS 3.0 BPB.
  */
+#pragma pack(1)
 typedef struct FATBPB30
 {
     /** DOS v3.0 BPB bits that survived.   */
@@ -97,6 +101,7 @@ typedef struct FATBPB30
      * on unpartitioned media. */
     uint16_t        cHiddenSectors;
 } FATBPB30;
+#pragma pack()
 AssertCompileSize(FATBPB30, 0x13);
 /** Pointer to a DOS 3.0 BPB. */
 typedef FATBPB30 *PFATBPB30;
@@ -106,6 +111,7 @@ typedef FATBPB30 const *PCFATBPB30;
 /**
  * The DOS 3.0 BPB, flattened structure.
  */
+#pragma pack(1)
 typedef struct FATBPB30FLAT
 {
     /** @name New in DOS 2.0
@@ -138,6 +144,7 @@ typedef struct FATBPB30FLAT
     uint16_t        cHiddenSectors;
     /** @} */
 } FATBPB30FLAT;
+#pragma pack()
 AssertCompileSize(FATBPB30FLAT, 0x13);
 /** Pointer to a flattened DOS 3.0 BPB. */
 typedef FATBPB30FLAT *PFATBPB30FLAT;
@@ -148,6 +155,7 @@ typedef FATBPB30FLAT const *PCFATBPB30FLAT;
 /**
  * The DOS 3.2 BPB.
  */
+#pragma pack(1)
 typedef struct FATBPB32
 {
     /** DOS v3.0 BPB.   */
@@ -156,6 +164,7 @@ typedef struct FATBPB32
      * in DOS 3.31+. */
     uint16_t        cAnotherTotalSectors;
 } FATBPB32;
+#pragma pack()
 AssertCompileSize(FATBPB32, 0x15);
 /** Pointer to a DOS 3.2 BPB. */
 typedef FATBPB32 *PFATBPB32;
@@ -165,6 +174,7 @@ typedef FATBPB32 const *PCFATBPB32;
 /**
  * The DOS 3.2 BPB, flattened structure.
  */
+#pragma pack(1)
 typedef struct FATBPB32FLAT
 {
     /** @name New in DOS 2.0
@@ -203,6 +213,7 @@ typedef struct FATBPB32FLAT
     uint16_t        cAnotherTotalSectors;
     /** @} */
 } FATBPB32FLAT;
+#pragma pack()
 AssertCompileSize(FATBPB32FLAT, 0x15);
 /** Pointer to a flattened DOS 3.2 BPB. */
 typedef FATBPB32FLAT *PFATBPB32FLAT;
@@ -213,6 +224,7 @@ typedef FATBPB32FLAT const *PCFATBPB32FLAT;
 /**
  * The DOS 3.31 BPB.
  */
+#pragma pack(1)
 typedef struct FATBPB331
 {
     /** DOS v3.0 BPB bits that survived.   */
@@ -225,6 +237,7 @@ typedef struct FATBPB331
      *  FATBPB20::cTotalSectors16 is used.  Zero if 64-bit value used with FAT32. */
     uint32_t        cTotalSectors32;
 } FATBPB331;
+#pragma pack()
 AssertCompileSize(FATBPB331, 0x19);
 /** Pointer to a DOS 3.31 BPB. */
 typedef FATBPB331 *PFATBPB331;
@@ -234,6 +247,7 @@ typedef FATBPB331 const *PCFATBPB331;
 /**
  * The DOS 3.31 BPB, flattened structure.
  */
+#pragma pack(1)
 typedef struct FATBPB331FLAT
 {
     /** @name New in DOS 2.0
@@ -273,6 +287,7 @@ typedef struct FATBPB331FLAT
     uint32_t        cTotalSectors32;
     /** @} */
 } FATBPB331FLAT;
+#pragma pack()
 AssertCompileSize(FATBPB331FLAT, 0x19);
 /** Pointer to a flattened DOS 3.31 BPB. */
 typedef FATBPB331FLAT *PFATBPB331FLAT;
@@ -283,6 +298,7 @@ typedef FATBPB331FLAT *PFATBPB331FLAT;
 /**
  * Extended BIOS parameter block (EBPB).
  */
+#pragma pack(1)
 typedef struct FATEBPB
 {
     /** The BPB.  */
@@ -305,6 +321,7 @@ typedef struct FATEBPB
      * @remarks Not available with FATEBPB_SIGNATURE_OLD  */
     char            achType[8];
 } FATEBPB;
+#pragma pack()
 AssertCompileSize(FATEBPB, 0x33);
 /** Pointer to an extended BIOS parameter block. */
 typedef FATEBPB *PFATEBPB;
@@ -328,6 +345,7 @@ typedef FATEBPB const *PCFATEBPB;
 /**
  * FAT32 Extended BIOS parameter block (EBPB).
  */
+#pragma pack(1)
 typedef struct FAT32EBPB
 {
     /** The BPB.  */
@@ -375,10 +393,13 @@ typedef struct FAT32EBPB
      * @remarks Same as FATEBPB::achType. */
     union
     {
+        /** Type string variant.  */
         char        achType[8];
+        /** Total sector count if 4G or higher. */
         uint64_t    cTotalSectors64;
     } u;
 } FAT32EBPB;
+#pragma pack()
 AssertCompileSize(FAT32EBPB, 0x4f);
 /** Pointer to a FAT32 extended BIOS parameter block. */
 typedef FAT32EBPB *PFAT32EBPB;
@@ -392,6 +413,7 @@ typedef FAT32EBPB const *PCFAT32EBPB;
 /**
  * FAT boot sector layout.
  */
+#pragma pack(1)
 typedef struct FATBOOTSECTOR
 {
     /** 0x000: DOS 2.0+ jump sequence. */
@@ -416,6 +438,7 @@ typedef struct FATBOOTSECTOR
     /** 0x1fe: DOS signature (FATBOOTSECTOR_SIGNATURE). */
     uint16_t            uSignature;
 } FATBOOTSECTOR;
+#pragma pack()
 AssertCompileSize(FATBOOTSECTOR, 0x200);
 /** Pointer to a FAT boot sector. */
 typedef FATBOOTSECTOR *PFATBOOTSECTOR;
@@ -425,7 +448,38 @@ typedef FATBOOTSECTOR const *PCFATBOOTSECTOR;
 /** Boot sector signature (FATBOOTSECTOR::uSignature). */
 #define FATBOOTSECTOR_SIGNATURE     UINT16_C(0xaa55)
 
-#pragma pack()
+
+
+/**
+ * FAT32 info sector (follows the boot sector).
+ */
+typedef struct FAT32INFOSECTOR
+{
+    /** 0x000: Signature \#1 (FAT32INFOSECTOR_SIGNATURE_1). */
+    uint32_t        uSignature1;
+    /** Reserved, should be zero. */
+    uint8_t         abReserved1[0x1E0];
+    /** 0x1e4: Signature \#1 (FAT32INFOSECTOR_SIGNATURE_2). */
+    uint32_t        uSignature2;
+    /** 0x1e8: Last known number of free clusters (informational). */
+    uint32_t        cFreeClusters;
+    /** 0x1ec: Last allocated cluster number (informational).  This could be used as
+     * an allocation hint when searching for a free cluster. */
+    uint32_t        cLastAllocatedCluster;
+    /** 0x1f0: Reserved, should be zero, preserve. */
+    uint8_t         abReserved2[12];
+    /** 0x1fc: Signature \#3 (FAT32INFOSECTOR_SIGNATURE_3). */
+    uint32_t        uSignature3;
+} FAT32INFOSECTOR;
+AssertCompileSize(FAT32INFOSECTOR, 0x200);
+/** Pointer to a FAT32 info sector. */
+typedef FAT32INFOSECTOR *PFAT32INFOSECTOR;
+/** Pointer to a const FAT32 info sector. */
+typedef FAT32INFOSECTOR const *PCFAT32INFOSECTOR;
+
+#define FAT32INFOSECTOR_SIGNATURE_1     UINT32_C(0x41615252)
+#define FAT32INFOSECTOR_SIGNATURE_2     UINT32_C(0x61417272)
+#define FAT32INFOSECTOR_SIGNATURE_3     UINT32_C(0xaa550000)
 
 #endif
 

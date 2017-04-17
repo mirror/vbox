@@ -1057,15 +1057,49 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
  * VFS chains is for doing pipe like things with VFS objects from the command
  * line.  Imagine you want to cat the readme.gz of an ISO you could do
  * something like:
- *      RTCat :iprtvfs:vfs(isofs,./mycd.iso)|ios(open,readme.gz)|ios(gunzip)
+ *      RTCat :iprtvfs:file(stdfile,live.iso)|vfs(isofs)|iso(open,readme.gz)|ios(gunzip)
  * or
- *      RTCat :iprtvfs:ios(isofs,./mycd.iso,/readme.gz)|ios(gunzip)
+ *      RTCat :iprtvfs:file(stdfile,live.iso)|ios(isofs,readme.gz)|ios(gunzip)
  *
- * The "isofs", "open" and "gunzip" bits in the above examples are chain
- * element providers registered with IPRT.  See RTVFSCHAINELEMENTREG for how
- * these works.
+ * Or say you want to read the README.TXT on a floppy image:
+ *      RTCat :iprtvfs:file(stdfile,floppy.img,r)|vfs(fat)|ios(open,README.TXT)
  *
- * @{ */
+ * Or in the other direction, you want to write a STUFF.TGZ file to the above
+ * floppy image, using a lazy writer thread for compressing the data:
+ *      RTTar cf :iprtvfs:file(stdfile,floppy.img,rw)|ios(fat,STUFF.TGZ)|ios(gzip)|ios(push) .
+ *
+ *
+ * A bit more formally:
+ *      :iprtvfs:<type>(<provider>[,provider-args])[<separator><type>...]
+ *
+ * The @c type refers to VFS object that should be created by the @c provider.
+ * Valid types:
+ *      - vfs:  A virtual file system (volume).
+ *      - fss:  A file system stream (e.g. tar).
+ *      - ios:  An I/O stream.
+ *      - file: A file.
+ *      - dir:  A directory.
+ *      - sym:  A symbolic link (not sure how useful this is).
+ *
+ * The @c provider refers to registered chain element providers (see
+ * RTVFSCHAINELEMENTREG for how that works internally).  These are asked to
+ * create a VFS object of the specified type using the given arguments (if any).
+ * Default providers:
+ *      - std:      Standard file, directory and file system.
+ *      - open:     Opens a file, I/O stream or directory in a vfs or directory object.
+ *      - pull:     Read-ahead buffering thread on file or I/O stream.
+ *      - push:     Lazy-writer buffering thread on file or I/O stream.
+ *      - gzip:     Compresses an I/O stream.
+ *      - gunzip:   Decompresses an I/O stream.
+ *      - fat:      FAT file system accessor.
+ *      - isofs:    ISOFS file system accessor.
+ *
+ * As element @c separator we allow both colon (':') and the pipe character
+ * ('|'). The latter the conventional one, but since it's inconvenient on the
+ * command line, colon is provided as an alternative.
+ *
+ * @{
+ */
 
 /** The path prefix used to identify an VFS chain specification. */
 #define RTVFSCHAIN_SPEC_PREFIX   ":iprtvfs:"
@@ -1074,8 +1108,8 @@ RTDECL(int) RTVfsChainOpenVfs(      const char *pszSpec,                 PRTVFS 
 RTDECL(int) RTVfsChainOpenFsStream( const char *pszSpec,                 PRTVFSFSSTREAM  phVfsFss,  const char **ppszError);
 RTDECL(int) RTVfsChainOpenDir(      const char *pszSpec, uint64_t fOpen, PRTVFSDIR       phVfsDir,  const char **ppszError);
 RTDECL(int) RTVfsChainOpenFile(     const char *pszSpec, uint64_t fOpen, PRTVFSFILE      phVfsFile, const char **ppszError);
-RTDECL(int) RTVfsChainOpenSymlink(  const char *pszSpec,                 PRTVFSSYMLINK   phVfsSym,  const char **ppszError);
 RTDECL(int) RTVfsChainOpenIoStream( const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM  phVfsIos,  const char **ppszError);
+RTDECL(int) RTVfsChainOpenSymlink(  const char *pszSpec,                 PRTVFSSYMLINK   phVfsSym,  const char **ppszError);
 
 /**
  * Tests if the given string is a chain specification or not.
@@ -1085,7 +1119,7 @@ RTDECL(int) RTVfsChainOpenIoStream( const char *pszSpec, uint64_t fOpen, PRTVFSI
  */
 RTDECL(bool)    RTVfsChainIsSpec(const char *pszSpec);
 
-/** @}  */
+/** @} */
 
 
 /** @} */

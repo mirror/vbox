@@ -31,9 +31,11 @@
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
 
+#include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/poll.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 
 
@@ -507,4 +509,124 @@ RTDECL(int) RTVfsIoStrmOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVF
     }
     return rc;
 }
+
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
+ */
+static DECLCALLBACK(int) rtVfsChainStdFile_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                                    PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg);
+
+    /*
+     * Basic checks.
+     */
+    if (pElement->enmTypeIn != RTVFSOBJTYPE_INVALID)
+        return VERR_VFS_CHAIN_MUST_BE_FIRST_ELEMENT;
+    if (pElement->cArgs < 1)
+        return VERR_VFS_CHAIN_AT_LEAST_ONE_ARG;
+    if (pElement->cArgs > 4)
+        return VERR_VFS_CHAIN_AT_MOST_FOUR_ARGS;
+    if (!*pElement->paArgs[0].psz)
+        return VERR_VFS_CHAIN_EMPTY_ARG;
+    if (   pElement->enmType != RTVFSOBJTYPE_FILE
+        && pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
+        return VERR_VFS_CHAIN_ONLY_FILE_OR_IOS;
+
+    /*
+     * Calculate the flags, storing them in the first argument.
+     */
+    const char *pszAccess = pElement->cArgs >= 2 ? pElement->paArgs[1].psz : "";
+    if (!*pszAccess)
+        pszAccess = (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_READWRITE ? "rw"
+                  : (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ      ? "r"
+                  : (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_WRITE     ? "w"
+                  :                                                                   "rw";
+
+    const char *pszDisp = pElement->cArgs >= 3 ? pElement->paArgs[2].psz : "";
+    if (!*pszDisp)
+        pszDisp = strchr(pszAccess, 'w') != NULL ? "open-create" : "open";
+
+    const char *pszSharing = pElement->cArgs >= 4 ? pElement->paArgs[3].psz : "";
+
+    int rc = RTFileModeToFlagsEx(pszAccess, pszDisp, pszSharing, &pElement->paArgs[0].uProvider);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+
+    /*
+     * Now try figure out which argument offended us.
+     */
+    AssertReturn(pElement->cArgs > 1, VERR_VFS_CHAIN_IPE);
+    if (   pElement->cArgs == 2
+        || RT_FAILURE(RTFileModeToFlagsEx(pszAccess, "open-create", "", &pElement->paArgs[0].uProvider)))
+        *poffError = pElement->paArgs[1].offSpec;
+    else if (   pElement->cArgs == 3
+             || RT_FAILURE(RTFileModeToFlagsEx(pszAccess, pszDisp, "", &pElement->paArgs[0].uProvider)))
+        *poffError = pElement->paArgs[2].offSpec;
+    else
+        *poffError = pElement->paArgs[3].offSpec;
+    return VERR_VFS_CHAIN_INVALID_ARGUMENT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnInstantiate}
+ */
+static DECLCALLBACK(int) rtVfsChainStdFile_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                                       PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                                       PRTVFSOBJ phVfsObj, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg, pSpec, poffError);
+    AssertReturn(hPrevVfsObj == NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
+
+    RTVFSFILE hVfsFile;
+    int rc = RTVfsFileOpenNormal(pElement->paArgs[0].psz, pElement->paArgs[0].uProvider, &hVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        *phVfsObj = RTVfsObjFromFile(hVfsFile);
+        RTVfsFileRelease(hVfsFile);
+        if (*phVfsObj != NIL_RTVFSOBJ)
+            return VINF_SUCCESS;
+        rc = VERR_VFS_CHAIN_CAST_FAILED;
+    }
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnCanReuseElement}
+ */
+static DECLCALLBACK(bool) rtVfsChainStdFile_CanReuseElement(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                            PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                            PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement)
+{
+    RT_NOREF(pProviderReg, pSpec, pReuseSpec);
+    if (strcmp(pElement->paArgs[0].psz, pReuseElement->paArgs[0].psz) == 0)
+        if (pElement->paArgs[0].uProvider == pReuseElement->paArgs[0].uProvider)
+            return true;
+    return false;
+}
+
+
+/** VFS chain element 'file'. */
+static RTVFSCHAINELEMENTREG g_rtVfsChainStdFileReg =
+{
+    /* uVersion = */            RTVFSCHAINELEMENTREG_VERSION,
+    /* fReserved = */           0,
+    /* pszName = */             "stdfile",
+    /* ListEntry = */           { NULL, NULL },
+    /* pszHelp = */             "Open a real file, providing either a file or an I/O stream object. Initial element.\n"
+                                "First argument is the filename path.\n"
+                                "Second argument is access mode, optional: r, w, rw.\n"
+                                "Third argument is open disposition, optional: create, create-replace, open, open-create, open-append, open-truncate.\n"
+                                "Forth argument is file sharing, optional: nr, nw, nrw, d.",
+    /* pfnValidate = */         rtVfsChainStdFile_Validate,
+    /* pfnInstantiate = */      rtVfsChainStdFile_Instantiate,
+    /* pfnCanReuseElement = */  rtVfsChainStdFile_CanReuseElement,
+    /* uEndMarker = */          RTVFSCHAINELEMENTREG_VERSION
+};
+
+RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainStdFileReg, rtVfsChainStdFileReg);
 

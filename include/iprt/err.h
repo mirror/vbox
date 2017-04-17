@@ -1853,16 +1853,86 @@ RT_C_DECLS_END
 #define VERR_VFS_CHAIN_EXPECTED_RIGHT_PARENTHESES   (-22105)
 /** Expected a provider name. */
 #define VERR_VFS_CHAIN_EXPECTED_PROVIDER_NAME       (-22106)
-/** Expected an action (> or |). */
-#define VERR_VFS_CHAIN_EXPECTED_ACTION              (-22107)
-/** Only one action element is currently supported. */
-#define VERR_VFS_CHAIN_MULTIPLE_ACTIONS             (-22108)
-/** Expected to find a driving action (>), but there is none. */
-#define VERR_VFS_CHAIN_NO_ACTION                    (-22109)
-/** Expected pipe action. */
-#define VERR_VFS_CHAIN_EXPECTED_PIPE                (-22110)
-/** Unexpected action type. */
-#define VERR_VFS_CHAIN_UNEXPECTED_ACTION_TYPE       (-22111)
+/** Expected an element separator (| or :). */
+#define VERR_VFS_CHAIN_EXPECTED_SEPARATOR           (-22107)
+/** Leading element separator not permitted. */
+#define VERR_VFS_CHAIN_LEADING_SEPARATOR            (-22108)
+/** Trailing element separator not permitted. */
+#define VERR_VFS_CHAIN_TRAILING_SEPARATOR           (-22109)
+/** The provider is only allowed as the first element. */
+#define VERR_VFS_CHAIN_MUST_BE_FIRST_ELEMENT        (-22110)
+/** The provider cannot be the first element. */
+#define VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT      (-22111)
+/** VFS object cast failed. */
+#define VERR_VFS_CHAIN_CAST_FAILED                  (-22112)
+/** Internal error in the VFS chain code. */
+#define VERR_VFS_CHAIN_IPE                          (-22113)
+/** VFS chain element provider not found. */
+#define VERR_VFS_CHAIN_PROVIDER_NOT_FOUND           (-22114)
+/** VFS chain does not terminate with the desired object type. */
+#define VERR_VFS_CHAIN_FINAL_TYPE_MISMATCH          (-22115)
+/** VFS chain element takes no arguments.  */
+#define VERR_VFS_CHAIN_NO_ARGS                      (-22116)
+/** VFS chain element takes exactly one argument. */
+#define VERR_VFS_CHAIN_ONE_ARG                      (-22117)
+/** VFS chain element expected at most one argument.  */
+#define VERR_VFS_CHAIN_AT_MOST_ONE_ARG              (-22118)
+/** VFS chain element expected at least one argument.  */
+#define VERR_VFS_CHAIN_AT_LEAST_ONE_ARG             (-22119)
+/** VFS chain element takes exactly two arguments. */
+#define VERR_VFS_CHAIN_TWO_ARGS                     (-22120)
+/** VFS chain element expected at least two arguments.  */
+#define VERR_VFS_CHAIN_AT_LEAST_TWO_ARGS            (-22121)
+/** VFS chain element expected at most two arguments.  */
+#define VERR_VFS_CHAIN_AT_MOST_TWO_ARGS             (-22122)
+/** VFS chain element takes exactly three arguments. */
+#define VERR_VFS_CHAIN_THREE_ARGS                   (-22123)
+/** VFS chain element expected at least three arguments.  */
+#define VERR_VFS_CHAIN_AT_LEAST_THREE_ARGS          (-22124)
+/** VFS chain element expected at most three arguments.  */
+#define VERR_VFS_CHAIN_AT_MOST_THREE_ARGS           (-22125)
+/** VFS chain element takes exactly four arguments. */
+#define VERR_VFS_CHAIN_FOUR_ARGS                    (-22126)
+/** VFS chain element expected at least four arguments.  */
+#define VERR_VFS_CHAIN_AT_LEAST_FOUR_ARGS           (-22127)
+/** VFS chain element expected at most four arguments.  */
+#define VERR_VFS_CHAIN_AT_MOST_FOUR_ARGS            (-22128)
+/** VFS chain element takes exactly five arguments. */
+#define VERR_VFS_CHAIN_FIVE_ARGS                    (-22129)
+/** VFS chain element expected at least five arguments.  */
+#define VERR_VFS_CHAIN_AT_LEAST_FIVE_ARGS           (-22130)
+/** VFS chain element expected at most five arguments.  */
+#define VERR_VFS_CHAIN_AT_MOST_FIVE_ARGS            (-22131)
+/** VFS chain element takes exactly six arguments. */
+#define VERR_VFS_CHAIN_SIX_ARGS                     (-22132)
+/** VFS chain element expected at least six arguments.  */
+#define VERR_VFS_CHAIN_AT_LEAST_SIX_ARGS            (-22133)
+/** VFS chain element expected at most six arguments.  */
+#define VERR_VFS_CHAIN_AT_MOST_SIX_ARGS             (-22134)
+/** VFS chain element expected at most six arguments.  */
+#define VERR_VFS_CHAIN_TOO_FEW_ARGS                 (-22135)
+/** VFS chain element expected at most six arguments.  */
+#define VERR_VFS_CHAIN_TOO_MANY_ARGS                (-22136)
+/** VFS chain element expected non-empty argument. */
+#define VERR_VFS_CHAIN_EMPTY_ARG                    (-22137)
+/** Invalid argument to VFS chain element. */
+#define VERR_VFS_CHAIN_INVALID_ARGUMENT             (-22138)
+/** VFS chain element only provides file and I/O stream (ios) objects. */
+#define VERR_VFS_CHAIN_ONLY_FILE_OR_IOS             (-22139)
+/** VFS chain element only provides I/O stream (ios) objects. */
+#define VERR_VFS_CHAIN_ONLY_IOS                     (-22140)
+/** VFS chain element only provides directory (dir) objects. */
+#define VERR_VFS_CHAIN_ONLY_DIR                     (-22141)
+/** VFS chain element only provides file system stream (fss) objects. */
+#define VERR_VFS_CHAIN_ONLY_FSS                     (-22142)
+/** VFS chain element only provides file system (vfs) objects. */
+#define VERR_VFS_CHAIN_ONLY_VFS                     (-22143)
+/** VFS chain element only provides a read-only I/O stream, while the chain
+ * requires write access. */
+#define VERR_VFS_CHAIN_READ_ONLY_IOS                (-22144)
+/** VFS chain element only provides a read-only I/O stream, while the chain
+ * read access. */
+#define VERR_VFS_CHAIN_WRITE_ONLY_IOS               (-22145)
 /** @} */
 
 /** @name RTDvm status codes

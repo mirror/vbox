@@ -52,11 +52,13 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Init the critical section once. */
-static RTONCE       g_rtVfsChainElementInitOnce;
+static RTONCE       g_rtVfsChainElementInitOnce = RTONCE_INITIALIZER;
 /** Critical section protecting g_rtVfsChainElementProviderList. */
-static RTCRITSECT   g_rtVfsChainElementCritSect;
+static RTCRITSECTRW g_rtVfsChainElementCritSect;
 /** List of VFS chain element providers (RTVFSCHAINELEMENTREG). */
 static RTLISTANCHOR g_rtVfsChainElementProviderList;
+
+
 
 
 /**
@@ -68,7 +70,13 @@ static RTLISTANCHOR g_rtVfsChainElementProviderList;
 static DECLCALLBACK(int) rtVfsChainElementRegisterInit(void *pvUser)
 {
     NOREF(pvUser);
-    return RTCritSectInit(&g_rtVfsChainElementCritSect);
+    if (!g_rtVfsChainElementProviderList.pNext)
+        RTListInit(&g_rtVfsChainElementProviderList);
+    int rc = RTCritSectRwInit(&g_rtVfsChainElementCritSect);
+    if (RT_SUCCESS(rc))
+    {
+    }
+    return rc;
 }
 
 
@@ -83,12 +91,10 @@ RTDECL(int) RTVfsChainElementRegisterProvider(PRTVFSCHAINELEMENTREG pRegRec, boo
     AssertMsgReturn(pRegRec->uVersion   == RTVFSCHAINELEMENTREG_VERSION, ("%#x", pRegRec->uVersion),    VERR_INVALID_POINTER);
     AssertMsgReturn(pRegRec->uEndMarker == RTVFSCHAINELEMENTREG_VERSION, ("%#zx", pRegRec->uEndMarker), VERR_INVALID_POINTER);
     AssertReturn(pRegRec->fReserved == 0, VERR_INVALID_POINTER);
-    AssertPtrReturn(pRegRec->pszName, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pRegRec->pfnOpenVfs,      VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pRegRec->pfnOpenDir,      VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pRegRec->pfnOpenFile,     VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pRegRec->pfnOpenIoStream, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pRegRec->pfnOpenFsStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pRegRec->pszName,               VERR_INVALID_POINTER);
+    AssertPtrReturn(pRegRec->pfnValidate,           VERR_INVALID_POINTER);
+    AssertPtrReturn(pRegRec->pfnInstantiate,        VERR_INVALID_POINTER);
+    AssertPtrReturn(pRegRec->pfnCanReuseElement,    VERR_INVALID_POINTER);
 
     /*
      * Init and take the lock.
@@ -98,10 +104,12 @@ RTDECL(int) RTVfsChainElementRegisterProvider(PRTVFSCHAINELEMENTREG pRegRec, boo
         rc = RTOnce(&g_rtVfsChainElementInitOnce, rtVfsChainElementRegisterInit, NULL);
         if (RT_FAILURE(rc))
             return rc;
-        rc = RTCritSectEnter(&g_rtVfsChainElementCritSect);
+        rc = RTCritSectRwEnterExcl(&g_rtVfsChainElementCritSect);
         if (RT_FAILURE(rc))
             return rc;
     }
+    else if (!g_rtVfsChainElementProviderList.pNext)
+        RTListInit(&g_rtVfsChainElementProviderList);
 
     /*
      * Duplicate name?
@@ -128,7 +136,7 @@ RTDECL(int) RTVfsChainElementRegisterProvider(PRTVFSCHAINELEMENTREG pRegRec, boo
      * Leave the lock and return.
      */
     if (!fFromCtor)
-        RTCritSectLeave(&g_rtVfsChainElementCritSect);
+        RTCritSectRwLeaveExcl(&g_rtVfsChainElementCritSect);
     return rc;
 }
 
@@ -143,8 +151,10 @@ static PRTVFSCHAINSPEC rtVfsChainSpecAlloc(void)
     PRTVFSCHAINSPEC pSpec = (PRTVFSCHAINSPEC)RTMemTmpAlloc(sizeof(*pSpec));
     if (pSpec)
     {
-        pSpec->iActionElement = UINT32_MAX;
+        pSpec->fOpenFile      = 0;
+        pSpec->fOpenDir       = 0;
         pSpec->cElements      = 0;
+        pSpec->uProvider      = 0;
         pSpec->paElements     = NULL;
     }
     return pSpec;
@@ -212,7 +222,7 @@ DECLINLINE(char *) rtVfsChainSpecDupStrN(const char *psz, size_t cch, int *prc)
  * @param   prc         The status code variable to set on failure. (Leeps the
  *                      code shorter. -lazy bird)
  */
-static PRTVFSCHAINELEMSPEC rtVfsChainSpecAddElement(PRTVFSCHAINSPEC pSpec, int *prc)
+static PRTVFSCHAINELEMSPEC rtVfsChainSpecAddElement(PRTVFSCHAINSPEC pSpec, uint16_t offSpec, int *prc)
 {
     AssertPtr(pSpec);
 
@@ -239,13 +249,16 @@ static PRTVFSCHAINELEMSPEC rtVfsChainSpecAddElement(PRTVFSCHAINSPEC pSpec, int *
      */
     PRTVFSCHAINELEMSPEC pElement = &pSpec->paElements[iElement];
     pElement->pszProvider = NULL;
-    pElement->enmTypeIn   = iElement ? pSpec->paElements[iElement - 1].enmTypeOut : RTVFSOBJTYPE_INVALID;
-    pElement->enmTypeOut  = RTVFSOBJTYPE_INVALID;
-    pElement->enmAction   = RTVFSCHAINACTION_INVALID;
+    pElement->enmTypeIn   = iElement ? pSpec->paElements[iElement - 1].enmType : RTVFSOBJTYPE_INVALID;
+    pElement->enmType     = RTVFSOBJTYPE_INVALID;
+    pElement->offSpec     = offSpec;
+    pElement->cchSpec     = 0;
     pElement->cArgs       = 0;
-    pElement->papszArgs   = 0;
+    pElement->paArgs      = NULL;
+    pElement->pProvider   = NULL;
+    pElement->hVfsObj     = NIL_RTVFSOBJ;
 
-    pSpec->cElements  = iElement + 1;
+    pSpec->cElements = iElement + 1;
     return pElement;
 }
 
@@ -259,22 +272,22 @@ static PRTVFSCHAINELEMSPEC rtVfsChainSpecAddElement(PRTVFSCHAINSPEC pSpec, int *
  * @param   cch                 The length of the argument string, escape
  *                              sequences counted twice.
  */
-static int rtVfsChainSpecElementAddArg(PRTVFSCHAINELEMSPEC pElement, const char *psz, size_t cch)
+static int rtVfsChainSpecElementAddArg(PRTVFSCHAINELEMSPEC pElement, const char *psz, size_t cch, uint16_t offSpec)
 {
     uint32_t iArg = pElement->cArgs;
     if ((iArg % 32) == 0)
     {
-        char **papszNew = (char **)RTMemTmpAlloc((iArg + 32 + 1) * sizeof(papszNew[0]));
-        if (!papszNew)
+        PRTVFSCHAINELEMENTARG paNew = (PRTVFSCHAINELEMENTARG)RTMemTmpAlloc((iArg + 32) * sizeof(paNew[0]));
+        if (!paNew)
             return VERR_NO_TMP_MEMORY;
-        memcpy(papszNew, pElement->papszArgs, iArg * sizeof(papszNew[0]));
-        RTMemTmpFree(pElement->papszArgs);
-        pElement->papszArgs = papszNew;
+        memcpy(paNew, pElement->paArgs, iArg * sizeof(paNew[0]));
+        RTMemTmpFree(pElement->paArgs);
+        pElement->paArgs = paNew;
     }
 
     int rc = VINF_SUCCESS;
-    pElement->papszArgs[iArg] = rtVfsChainSpecDupStrN(psz, cch, &rc);
-    pElement->papszArgs[iArg + 1] = NULL;
+    pElement->paArgs[iArg].psz     = rtVfsChainSpecDupStrN(psz, cch, &rc);
+    pElement->paArgs[iArg].offSpec = offSpec;
     pElement->cArgs = iArg + 1;
     return rc;
 }
@@ -290,9 +303,14 @@ RTDECL(void)    RTVfsChainSpecFree(PRTVFSCHAINSPEC pSpec)
     {
         uint32_t iArg = pSpec->paElements[i].cArgs;
         while (iArg-- > 0)
-            RTMemTmpFree(pSpec->paElements[i].papszArgs[iArg]);
-        RTMemTmpFree(pSpec->paElements[i].papszArgs);
+            RTMemTmpFree(pSpec->paElements[i].paArgs[iArg].psz);
+        RTMemTmpFree(pSpec->paElements[i].paArgs);
         RTMemTmpFree(pSpec->paElements[i].pszProvider);
+        if (pSpec->paElements[i].hVfsObj != NIL_RTVFSOBJ)
+        {
+            RTVfsObjRelease(pSpec->paElements[i].hVfsObj);
+            pSpec->paElements[i].hVfsObj = NIL_RTVFSOBJ;
+        }
     }
 
     RTMemTmpFree(pSpec->paElements);
@@ -325,34 +343,9 @@ static size_t rtVfsChainSpecFindArgEnd(const char *psz)
     return off;
 }
 
-/**
- * Look for action.
- *
- * @returns Action.
- * @param   pszSpec             The current spec position.
- * @param   pcchAction          Where to return the length of the action
- *                              string.
- */
-static RTVFSCHAINACTION rtVfsChainSpecEatAction(const char *pszSpec, size_t *pcchAction)
-{
-    switch (*pszSpec)
-    {
-        case '|':
-            *pcchAction = 1;
-            return RTVFSCHAINACTION_PASSIVE;
-        case '>':
-            *pcchAction = 1;
-            return RTVFSCHAINACTION_PUSH;
-        default:
-            *pcchAction = 0;
-            return RTVFSCHAINACTION_NONE;
-    }
-}
 
-
-RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSCHAINACTION enmLeadingAction,
-                                    RTVFSCHAINACTION enmTrailingAction,
-                                    PRTVFSCHAINSPEC *ppSpec, const char **ppszError)
+RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTYPE enmDesiredType,
+                                PRTVFSCHAINSPEC *ppSpec, const char **ppszError)
 {
     AssertPtrNullReturn(ppszError, VERR_INVALID_POINTER);
     if (ppszError)
@@ -361,101 +354,79 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
     *ppSpec = NULL;
     AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~RTVFSCHAIN_PF_VALID_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn(enmLeadingAction > RTVFSCHAINACTION_INVALID && enmLeadingAction < RTVFSCHAINACTION_END, VERR_INVALID_PARAMETER);
+    AssertReturn(enmDesiredType > RTVFSOBJTYPE_INVALID && enmDesiredType < RTVFSOBJTYPE_END, VERR_INVALID_PARAMETER);
 
     /*
      * Check the start of the specification and allocate an empty return spec.
      */
     if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1))
         return VERR_VFS_CHAIN_NO_PREFIX;
-    pszSpec = RTStrStripL(pszSpec + sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1);
-    if (!*pszSpec)
+    const char *pszSrc = RTStrStripL(pszSpec + sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1);
+    if (!*pszSrc)
         return VERR_VFS_CHAIN_EMPTY;
 
     PRTVFSCHAINSPEC pSpec = rtVfsChainSpecAlloc();
     if (!pSpec)
         return VERR_NO_TMP_MEMORY;
+    pSpec->enmDesiredType = enmDesiredType;
 
     /*
      * Parse the spec one element at a time.
      */
-    int         rc     = VINF_SUCCESS;
-    const char *pszSrc = pszSpec;
+    int rc = VINF_SUCCESS;
     while (*pszSrc && RT_SUCCESS(rc))
     {
         /*
-         * Pipe or redirection action symbol, except maybe the first time.
-         * The pipe symbol may occur at the end of the spec.
+         * Digest element separator, except for the first element.
          */
-        size_t           cch;
-        RTVFSCHAINACTION enmAction = rtVfsChainSpecEatAction(pszSpec, &cch);
-        if (enmAction != RTVFSCHAINACTION_NONE)
+        if (*pszSrc == '|' || *pszSrc == ':')
         {
-            pszSrc = RTStrStripL(pszSrc + cch);
-            if (!*pszSrc)
+            if (pSpec->cElements != 0)
+                pszSrc = RTStrStripL(pszSrc + 1);
+            else
             {
-                /* Fail if the caller does not approve of a trailing pipe (all
-                   other actions non-trailing). */
-                if (   enmAction != enmTrailingAction
-                    && !(fFlags & RTVFSCHAIN_PF_TRAILING_ACTION_OPTIONAL))
-                    rc = VERR_VFS_CHAIN_EXPECTED_ELEMENT;
+                rc = VERR_VFS_CHAIN_LEADING_SEPARATOR;
                 break;
             }
-
-            /* There can only be one real action atm. */
-            if (enmAction != RTVFSCHAINACTION_PASSIVE)
-            {
-                if (pSpec->iActionElement != UINT32_MAX)
-                {
-                    rc = VERR_VFS_CHAIN_MULTIPLE_ACTIONS;
-                    break;
-                }
-                pSpec->iActionElement = pSpec->cElements;
-            }
         }
-        else if (pSpec->cElements > 0)
+        else if (pSpec->cElements != 0)
         {
-            rc = VERR_VFS_CHAIN_EXPECTED_ACTION;
-            break;
-        }
-
-        /* Check the leading action. */
-        if (   pSpec->cElements == 0
-            && enmAction != enmLeadingAction
-            && !(fFlags & RTVFSCHAIN_PF_LEADING_ACTION_OPTIONAL))
-        {
-            rc = VERR_VFS_CHAIN_UNEXPECTED_ACTION_TYPE;
+            rc = VERR_VFS_CHAIN_EXPECTED_SEPARATOR;
             break;
         }
 
         /*
          * Ok, there should be an element here so add one to the return struct.
          */
-        PRTVFSCHAINELEMSPEC pElement = rtVfsChainSpecAddElement(pSpec, &rc);
+        PRTVFSCHAINELEMSPEC pElement = rtVfsChainSpecAddElement(pSpec, (uint16_t)(pszSrc - pszSpec), &rc);
         if (!pElement)
             break;
-        pElement->enmAction = enmAction;
 
         /*
-         * First up is the VFS object type followed by a parentheses.
+         * First up is the VFS object type followed by a parentheses,
+         * or this could be the trailing action.
          */
+        size_t cch;
         if (strncmp(pszSrc, "base", cch = 4) == 0)
-            pElement->enmTypeOut = RTVFSOBJTYPE_BASE;
+            pElement->enmType = RTVFSOBJTYPE_BASE;
         else if (strncmp(pszSrc, "vfs",  cch = 3) == 0)
-            pElement->enmTypeOut = RTVFSOBJTYPE_VFS;
+            pElement->enmType = RTVFSOBJTYPE_VFS;
         else if (strncmp(pszSrc, "fss",  cch = 3) == 0)
-            pElement->enmTypeOut = RTVFSOBJTYPE_FS_STREAM;
+            pElement->enmType = RTVFSOBJTYPE_FS_STREAM;
         else if (strncmp(pszSrc, "ios",  cch = 3) == 0)
-            pElement->enmTypeOut = RTVFSOBJTYPE_IO_STREAM;
+            pElement->enmType = RTVFSOBJTYPE_IO_STREAM;
         else if (strncmp(pszSrc, "dir",  cch = 3) == 0)
-            pElement->enmTypeOut = RTVFSOBJTYPE_DIR;
+            pElement->enmType = RTVFSOBJTYPE_DIR;
         else if (strncmp(pszSrc, "file", cch = 4) == 0)
-            pElement->enmTypeOut = RTVFSOBJTYPE_FILE;
+            pElement->enmType = RTVFSOBJTYPE_FILE;
         else if (strncmp(pszSrc, "sym",  cch = 3) == 0)
-            pElement->enmTypeOut = RTVFSOBJTYPE_SYMLINK;
+            pElement->enmType = RTVFSOBJTYPE_SYMLINK;
         else
         {
-            rc = VERR_VFS_CHAIN_UNKNOWN_TYPE;
+            if (*pszSrc == '\0')
+                rc = VERR_VFS_CHAIN_TRAILING_SEPARATOR;
+            else
+                rc = VERR_VFS_CHAIN_UNKNOWN_TYPE;
             break;
         }
         pszSrc += cch;
@@ -489,9 +460,13 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
         {
             pszSrc = RTStrStripL(pszSrc + 1);
             cch = rtVfsChainSpecFindArgEnd(pszSrc);
-            rc = rtVfsChainSpecElementAddArg(pElement, pszSrc, cch);
+            rc = rtVfsChainSpecElementAddArg(pElement, pszSrc, cch, (uint16_t)(pszSrc - pszSpec));
+            if (RT_FAILURE(rc))
+                break;
             pszSrc += cch;
         }
+        if (RT_FAILURE(rc))
+            break;
 
         /* Must end with a right parentheses. */
         if (*pszSrc != ')')
@@ -499,8 +474,25 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
             rc = VERR_VFS_CHAIN_EXPECTED_RIGHT_PARENTHESES;
             break;
         }
+        pElement->cchSpec = (uint16_t)(pszSrc - pszSpec) - pElement->offSpec + 1;
+
         pszSrc = RTStrStripL(pszSrc + 1);
     }
+
+#if 1
+    RTAssertMsg2("dbg: cElements=%d rc=%Rrc\n", pSpec->cElements, rc);
+    for (uint32_t i = 0; i < pSpec->cElements; i++)
+    {
+        uint32_t const cArgs = pSpec->paElements[i].cArgs;
+        RTAssertMsg2("dbg: #%u: enmTypeIn=%d enmType=%d cArgs=%d",
+                     i, pSpec->paElements[i].enmTypeIn, pSpec->paElements[i].enmType, cArgs);
+        for (uint32_t j = 0; j < cArgs; j++)
+            RTAssertMsg2(j == 0 ? (cArgs > 1 ? " [%s" : " [%s]") : j + 1 < cArgs ? ", %s" : ", %s]",
+                         pSpec->paElements[i].paArgs[j].psz);
+        //RTAssertMsg2(" offSpec=%d cchSpec=%d", pSpec->paElements[i].offSpec, pSpec->paElements[i].cchSpec);
+        RTAssertMsg2(" spec: %.*s\n", pSpec->paElements[i].cchSpec, &pszSpec[pSpec->paElements[i].offSpec]);
+    }
+#endif
 
     /*
      * Return the chain on success; Cleanup and set the error indicator on
@@ -518,7 +510,185 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
 }
 
 
+/**
+ * Looks up @a pszProvider among the registered providers.
+ *
+ * @returns Pointer to registration record if found, NULL if not.
+ * @param   pszProvider         The provider.
+ */
+static PCRTVFSCHAINELEMENTREG rtVfsChainFindProviderLocked(const char *pszProvider)
+{
+    PCRTVFSCHAINELEMENTREG pIterator;
+    RTListForEach(&g_rtVfsChainElementProviderList, pIterator, RTVFSCHAINELEMENTREG, ListEntry)
+    {
+        if (strcmp(pIterator->pszName, pszProvider) == 0)
+            return pIterator;
+    }
+    return NULL;
+}
 
+
+/**
+ * Does reusable object type matching.
+ *
+ * @returns true if the types matches, false if not.
+ * @param   pElement        The target element specification.
+ * @param   pReuseElement   The source element specification.
+ */
+static bool rtVfsChainMatchReusableType(PRTVFSCHAINELEMSPEC pElement, PRTVFSCHAINELEMSPEC pReuseElement)
+{
+    if (pElement->enmType == pReuseElement->enmType)
+        return true;
+
+    /* File objects can always be cast to I/O streams.  */
+    if (   pElement->enmType == RTVFSOBJTYPE_IO_STREAM
+        && pReuseElement->enmType == RTVFSOBJTYPE_FILE)
+        return true;
+
+    /* I/O stream objects may be file objects. */
+    if (   pElement->enmType == RTVFSOBJTYPE_FILE
+        && pReuseElement->enmType == RTVFSOBJTYPE_IO_STREAM)
+    {
+        RTVFSFILE hVfsFile = RTVfsObjToFile(pReuseElement->hVfsObj);
+        if (hVfsFile != NIL_RTVFSFILE)
+        {
+            RTVfsFileRelease(hVfsFile);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC pReuseSpec,
+                                        PRTVFSOBJ phVfsObj, uint32_t *poffError)
+{
+    AssertPtrReturn(poffError, VERR_INVALID_POINTER);
+    *poffError = 0;
+    AssertPtrReturn(phVfsObj, VERR_INVALID_POINTER);
+    *phVfsObj = NIL_RTVFSOBJ;
+    AssertPtrReturn(pSpec, VERR_INVALID_POINTER);
+
+    /*
+     * Enter the critical section after making sure it has been initialized.
+     */
+    int rc = RTOnce(&g_rtVfsChainElementInitOnce, rtVfsChainElementRegisterInit, NULL);
+    if (RT_SUCCESS(rc))
+        rc = RTCritSectRwEnterShared(&g_rtVfsChainElementCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Resolve and check each element first.
+         */
+        for (uint32_t i = 0; i < pSpec->cElements; i++)
+        {
+            PRTVFSCHAINELEMSPEC const pElement = &pSpec->paElements[i];
+            *poffError = pElement->offSpec;
+            pElement->pProvider = rtVfsChainFindProviderLocked(pElement->pszProvider);
+            if (pElement->pProvider)
+            {
+                rc = pElement->pProvider->pfnValidate(pElement->pProvider, pSpec, pElement, poffError);
+                if (RT_SUCCESS(rc))
+                    continue;
+            }
+            else
+                rc = VERR_VFS_CHAIN_PROVIDER_NOT_FOUND;
+            break;
+        }
+
+        /*
+         * Check that the desired type is compatible with the last element.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            if (pSpec->cElements > 0) /* paranoia */
+            {
+                PRTVFSCHAINELEMSPEC const pLast = &pSpec->paElements[pSpec->cElements - 1];
+                if (   pLast->enmType == pSpec->enmDesiredType
+                    || (   pLast->enmType == RTVFSOBJTYPE_FILE
+                        && pSpec->enmDesiredType == RTVFSOBJTYPE_IO_STREAM) )
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    *poffError = pLast->offSpec;
+                    rc = VERR_VFS_CHAIN_FINAL_TYPE_MISMATCH;
+                }
+            }
+            else
+                rc = VERR_VFS_CHAIN_EMPTY;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Try construct the chain.
+             */
+            RTVFSOBJ hPrevVfsObj = NIL_RTVFSOBJ; /* No extra reference, kept in chain structure. */
+            for (uint32_t i = 0; i < pSpec->cElements; i++)
+            {
+                PRTVFSCHAINELEMSPEC const pElement = &pSpec->paElements[i];
+
+                /*
+                 * Try reuse the VFS objects at the start of the passed in reuse chain.
+                 */
+                if (!pReuseSpec)
+                { /* likely */ }
+                else
+                {
+                    if (i < pReuseSpec->cElements)
+                    {
+                        PRTVFSCHAINELEMSPEC const pReuseElement = &pReuseSpec->paElements[i];
+                        if (pReuseElement->hVfsObj != NIL_RTVFSOBJ)
+                        {
+                            if (strcmp(pElement->pszProvider, pReuseElement->pszProvider) == 0)
+                            {
+                                if (rtVfsChainMatchReusableType(pElement, pReuseElement))
+                                {
+                                    if (pElement->pProvider->pfnCanReuseElement(pElement->pProvider, pSpec, pElement,
+                                                                                pReuseSpec, pReuseElement))
+                                    {
+                                        uint32_t cRefs = RTVfsObjRetain(pReuseElement->hVfsObj);
+                                        if (cRefs != UINT32_MAX)
+                                        {
+                                            pElement->hVfsObj = hPrevVfsObj = pReuseElement->hVfsObj;
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pReuseSpec = NULL;
+                }
+
+                /*
+                 * Instantiate a new VFS object.
+                 */
+                RTVFSOBJ hVfsObj = NIL_RTVFSOBJ;
+                rc = pElement->pProvider->pfnInstantiate(pElement->pProvider, pSpec, pElement, hPrevVfsObj, &hVfsObj, poffError);
+                if (RT_FAILURE(rc))
+                    break;
+                pElement->hVfsObj = hVfsObj;
+                hPrevVfsObj = hVfsObj;
+            }
+
+            /*
+             * Add another reference to the final object and return.
+             */
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t cRefs = RTVfsObjRetain(hPrevVfsObj);
+                AssertStmt(cRefs != UINT32_MAX, rc = VERR_VFS_CHAIN_IPE);
+                *phVfsObj = hPrevVfsObj;
+            }
+        }
+
+        int rc2 = RTCritSectRwLeaveShared(&g_rtVfsChainElementCritSect);
+        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            rc = rc2;
+    }
+    return rc;
+}
 
 
 RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, bool fFromDtor)
@@ -537,7 +707,9 @@ RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, b
      * Take the lock if that's safe.
      */
     if (!fFromDtor)
-        RTCritSectEnter(&g_rtVfsChainElementCritSect);
+        RTCritSectRwEnterExcl(&g_rtVfsChainElementCritSect);
+    else if (!g_rtVfsChainElementProviderList.pNext)
+        RTListInit(&g_rtVfsChainElementProviderList);
 
     /*
      * Ok, remove it.
@@ -558,7 +730,7 @@ RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, b
      * Leave the lock and return.
      */
     if (!fFromDtor)
-        RTCritSectLeave(&g_rtVfsChainElementCritSect);
+        RTCritSectRwLeaveExcl(&g_rtVfsChainElementCritSect);
     return rc;
 }
 
@@ -592,17 +764,26 @@ RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE p
     else
     {
         PRTVFSCHAINSPEC pSpec;
-        rc = RTVfsChainSpecParse(pszSpec,
-                                   RTVFSCHAIN_PF_NO_REAL_ACTION
-                                 | RTVFSCHAIN_PF_LEADING_ACTION_OPTIONAL,
-                                 RTVFSCHAINACTION_PASSIVE,
-                                 RTVFSCHAINACTION_NONE,
-                                 &pSpec,
-                                 ppszError);
+        rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_FILE, &pSpec, ppszError);
         if (RT_SUCCESS(rc))
         {
-            /** @todo implement this when needed. */
-            rc = VERR_NOT_IMPLEMENTED;
+            pSpec->fOpenFile = fOpen;
+
+            uint32_t offError = 0;
+            RTVFSOBJ hVfsObj  = NIL_RTVFSOBJ;
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &offError);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsFile = RTVfsObjToFile(hVfsObj);
+                if (*phVfsFile)
+                    rc = VINF_SUCCESS;
+                else
+                    rc = VERR_VFS_CHAIN_CAST_FAILED;
+                RTVfsObjRelease(hVfsObj);
+            }
+            else if (ppszError)
+                *ppszError = &pszSpec[offError];
+
             RTVfsChainSpecFree(pSpec);
         }
     }
@@ -640,21 +821,32 @@ RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIO
                 RTFileClose(hFile);
         }
     }
+    /*
+     * Do the chain thing.
+     */
     else
     {
         PRTVFSCHAINSPEC pSpec;
-        rc = RTVfsChainSpecParse(pszSpec,
-                                   RTVFSCHAIN_PF_NO_REAL_ACTION
-                                 | RTVFSCHAIN_PF_LEADING_ACTION_OPTIONAL,
-                                 RTVFSCHAINACTION_PASSIVE,
-                                 RTVFSCHAINACTION_NONE,
-                                 &pSpec,
-                                 ppszError);
+        rc = RTVfsChainSpecParse(pszSpec, 0 /*fFlags*/, RTVFSOBJTYPE_IO_STREAM, &pSpec, ppszError);
         if (RT_SUCCESS(rc))
         {
+            pSpec->fOpenFile = fOpen;
 
+            uint32_t offError = 0;
+            RTVFSOBJ hVfsObj  = NIL_RTVFSOBJ;
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &offError);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsIos = RTVfsObjToIoStream(hVfsObj);
+                if (*phVfsIos)
+                    rc = VINF_SUCCESS;
+                else
+                    rc = VERR_VFS_CHAIN_CAST_FAILED;
+                RTVfsObjRelease(hVfsObj);
+            }
+            else if (ppszError)
+                *ppszError = &pszSpec[offError];
 
-            rc = VERR_NOT_IMPLEMENTED;
             RTVfsChainSpecFree(pSpec);
         }
     }

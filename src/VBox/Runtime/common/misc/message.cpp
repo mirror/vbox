@@ -137,7 +137,7 @@ RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitCode, const char *pszFormat,
     va_end(va);
     return enmExitCode;
 }
-RT_EXPORT_SYMBOL(RTMsgErrorExitV);
+RT_EXPORT_SYMBOL(RTMsgErrorExit);
 
 
 RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat, va_list va)
@@ -146,6 +146,25 @@ RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat
     return enmExitCode;
 }
 RT_EXPORT_SYMBOL(RTMsgErrorExitV);
+
+
+RTDECL(RTEXITCODE) RTMsgErrorExitFailure(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTMsgErrorV(pszFormat, va);
+    va_end(va);
+    return RTEXITCODE_FAILURE;
+}
+RT_EXPORT_SYMBOL(RTMsgErrorExitFailure);
+
+
+RTDECL(RTEXITCODE) RTMsgErrorExitFailureV(const char *pszFormat, va_list va)
+{
+    RTMsgErrorV(pszFormat, va);
+    return RTEXITCODE_FAILURE;
+}
+RT_EXPORT_SYMBOL(RTMsgErrorExitFailureV);
 
 
 RTDECL(int) RTMsgErrorRc(int rcRet, const char *pszFormat, ...)
