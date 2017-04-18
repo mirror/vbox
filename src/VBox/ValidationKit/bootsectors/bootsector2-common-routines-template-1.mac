@@ -1131,7 +1131,7 @@ BEGINPROC TMPL_NM_CMN(TestInstallTrapRecs)
         cmp     dword [sDI + BS2TRAPREC.offResumeAddend], 0xff
         je      .nok
 
-        cmp     dword [sDI + BS2TRAPREC.u8TrapNo], X86_XCPT_MAX
+        cmp     dword [sDI + BS2TRAPREC.u8TrapNo], X86_XCPT_LAST
         ja      .nok
 
         ; next.

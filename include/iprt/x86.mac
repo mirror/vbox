@@ -954,7 +954,7 @@
 %define X86_SEL_LDT             0x0004
 %define X86_SEL_RPL             0x0003
 %define X86_SEL_RPL_LDT         0x0007
-%define X86_XCPT_MAX                (X86_XCPT_SX)
+%define X86_XCPT_LAST               0x1f
 %define X86_TRAP_ERR_EXTERNAL       1
 %define X86_TRAP_ERR_IDT            2
 %define X86_TRAP_ERR_TI             4
