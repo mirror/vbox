@@ -22,6 +22,7 @@
 /* GUI includes: */
 # include "UIGlobalSettingsUpdate.h"
 # include "UIExtraDataManager.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -143,13 +144,8 @@ void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Make sure update data was changed: */
-    if (m_pCache->wasChanged())
-    {
-        /* Save new update data from the cache: */
-        const VBoxUpdateData newData(m_pCache->data().m_periodIndex, m_pCache->data().m_branchIndex);
-        gEDataManager->setApplicationUpdateData(newData.data());
-    }
+    /* Update update data and failing state: */
+    setFailed(!saveUpdateData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -248,5 +244,31 @@ VBoxUpdateData::BranchType UIGlobalSettingsUpdate::branchType() const
         return VBoxUpdateData::BranchAllRelease;
     else
         return VBoxUpdateData::BranchStable;
+}
+
+bool UIGlobalSettingsUpdate::saveUpdateData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save update settings from the cache: */
+    if (fSuccess && m_pCache->wasChanged())
+    {
+        /* Get old update data from the cache: */
+        //const UIDataSettingsGlobalUpdate &oldUpdateData = m_pCache->base();
+        /* Get new update data from the cache: */
+        const UIDataSettingsGlobalUpdate &newUpdateData = m_pCache->data();
+
+        // Here could go changes for m_properties.
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveUpdateSettings(m_properties, this);
+
+        /* Save new update data from the cache: */
+        const VBoxUpdateData newData(newUpdateData.m_periodIndex, newUpdateData.m_branchIndex);
+        gEDataManager->setApplicationUpdateData(newData.data());
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

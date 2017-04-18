@@ -85,6 +85,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Saves existing input data from the cache. */
+    bool saveInputData();
+
     /** Holds the tab-widget instance. */
     QTabWidget         *m_pTabWidget;
     /** Holds the Selector UI shortcuts filter instance. */

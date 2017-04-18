@@ -228,6 +228,12 @@ public:
     void cannotRemoveHostInterface(const CHost &host, const QString &strInterfaceName, QWidget *pParent = 0);
     void cannotRemoveHostInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent = 0);
     void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
+    void cannotSaveDisplaySettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
+    void cannotSaveGeneralSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
+    void cannotSaveInputSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
+    void cannotSaveLanguageSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
+    void cannotSaveProxySettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
+    void cannotSaveUpdateSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
 
     /* API: Machine settings warnings: */
     void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;

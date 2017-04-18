@@ -82,6 +82,9 @@ private:
     /** Returns branch type. */
     VBoxUpdateData::BranchType branchType() const;
 
+    /** Saves existing update data from the cache. */
+    bool saveUpdateData();
+
     /** Holds the last checked button reference. */
     QRadioButton *m_pLastChosenRadio;
 

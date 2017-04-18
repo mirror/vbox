@@ -22,6 +22,7 @@
 /* GUI includes: */
 # include "UIExtraDataManager.h"
 # include "UIGlobalSettingsDisplay.h"
+# include "UIMessageCenter.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -132,16 +133,8 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Make sure display data was changed: */
-    if (m_pCache->wasChanged())
-    {
-        /* Save new display data from the cache: */
-        if (   m_pCache->data().m_enmMaxGuestResolution != m_pCache->base().m_enmMaxGuestResolution
-            || m_pCache->data().m_maxGuestResolution != m_pCache->base().m_maxGuestResolution)
-            gEDataManager->setMaxGuestScreenResolution(m_pCache->data().m_enmMaxGuestResolution, m_pCache->data().m_maxGuestResolution);
-        if (m_pCache->data().m_fActivateHoveredMachineWindow != m_pCache->base().m_fActivateHoveredMachineWindow)
-            gEDataManager->setActivateHoveredMachineWindow(m_pCache->data().m_fActivateHoveredMachineWindow);
-    }
+    /* Update display data and failing state: */
+    setFailed(!saveDisplayData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -242,5 +235,36 @@ void UIGlobalSettingsDisplay::reloadMaximumGuestScreenSizePolicyComboBox()
     /* Choose previous position: */
     m_pMaxResolutionCombo->setCurrentIndex(iCurrentPosition);
     sltHandleMaximumGuestScreenSizePolicyChange();
+}
+
+bool UIGlobalSettingsDisplay::saveDisplayData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save display settings from the cache: */
+    if (fSuccess && m_pCache->wasChanged())
+    {
+        /* Get old display data from the cache: */
+        const UIDataSettingsGlobalDisplay &oldDisplayData = m_pCache->base();
+        /* Get new display data from the cache: */
+        const UIDataSettingsGlobalDisplay &newDisplayData = m_pCache->data();
+
+        // Here could go changes for m_properties.
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveDisplaySettings(m_properties, this);
+
+        /* Save maximum guest resolution policy and/or value: */
+        if (   fSuccess
+            && (   newDisplayData.m_enmMaxGuestResolution != oldDisplayData.m_enmMaxGuestResolution
+                || newDisplayData.m_maxGuestResolution != oldDisplayData.m_maxGuestResolution))
+            gEDataManager->setMaxGuestScreenResolution(newDisplayData.m_enmMaxGuestResolution, newDisplayData.m_maxGuestResolution);
+        /* Save whether hovered machine-window should be activated automatically: */
+        if (fSuccess && newDisplayData.m_fActivateHoveredMachineWindow != oldDisplayData.m_fActivateHoveredMachineWindow)
+            gEDataManager->setActivateHoveredMachineWindow(newDisplayData.m_fActivateHoveredMachineWindow);
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

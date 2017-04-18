@@ -35,6 +35,7 @@
 # include "UIHotKeyEditor.h"
 # include "UIShortcutPool.h"
 # include "UIExtraDataManager.h"
+# include "UIMessageCenter.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -946,32 +947,8 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Make sure input data was changed: */
-    if (m_pCache->wasChanged())
-    {
-        /* Save new host-combo shortcut from the cache: */
-        const UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
-        const int iHostComboItemBase = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->base().shortcuts(), fakeHostComboItem);
-        const int iHostComboItemData = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->data().shortcuts(), fakeHostComboItem);
-        const QString strHostComboBase = iHostComboItemBase != -1 ? m_pCache->base().shortcuts().at(iHostComboItemBase).currentSequence() : QString();
-        const QString strHostComboData = iHostComboItemData != -1 ? m_pCache->data().shortcuts().at(iHostComboItemData).currentSequence() : QString();
-        if (strHostComboData != strHostComboBase)
-            gEDataManager->setHostKeyCombination(strHostComboData);
-
-        /* Save other new shortcuts from the cache: */
-        QMap<QString, QString> sequencesBase;
-        QMap<QString, QString> sequencesData;
-        foreach (const UIDataShortcutRow &item, m_pCache->base().shortcuts())
-            sequencesBase.insert(item.key(), item.currentSequence());
-        foreach (const UIDataShortcutRow &item, m_pCache->data().shortcuts())
-            sequencesData.insert(item.key(), item.currentSequence());
-        if (sequencesData != sequencesBase)
-            gShortcutPool->setOverrides(sequencesData);
-
-        /* Save other new things from the cache: */
-        if (m_pCache->data().autoCapture() != m_pCache->base().autoCapture())
-            gEDataManager->setAutoCaptureEnabled(m_pCache->data().autoCapture());
-    }
+    /* Update input data and failing state: */
+    setFailed(!saveInputData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -1167,6 +1144,51 @@ void UIGlobalSettingsInput::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+bool UIGlobalSettingsInput::saveInputData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save input settings from the cache: */
+    if (fSuccess && m_pCache->wasChanged())
+    {
+        /* Get old input data from the cache: */
+        const UIDataSettingsGlobalInput &oldInputData = m_pCache->base();
+        /* Get new input data from the cache: */
+        const UIDataSettingsGlobalInput &newInputData = m_pCache->data();
+
+        // Here could go changes for m_properties.
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveInputSettings(m_properties, this);
+
+        /* Save new host-combo shortcut from the cache: */
+        const UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
+        const int iHostComboItemBase = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(oldInputData.shortcuts(), fakeHostComboItem);
+        const int iHostComboItemData = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(newInputData.shortcuts(), fakeHostComboItem);
+        const QString strHostComboBase = iHostComboItemBase != -1 ? oldInputData.shortcuts().at(iHostComboItemBase).currentSequence() : QString();
+        const QString strHostComboData = iHostComboItemData != -1 ? newInputData.shortcuts().at(iHostComboItemData).currentSequence() : QString();
+        if (strHostComboData != strHostComboBase)
+            gEDataManager->setHostKeyCombination(strHostComboData);
+
+        /* Save other new shortcuts from the cache: */
+        QMap<QString, QString> sequencesBase;
+        QMap<QString, QString> sequencesData;
+        foreach (const UIDataShortcutRow &item, oldInputData.shortcuts())
+            sequencesBase.insert(item.key(), item.currentSequence());
+        foreach (const UIDataShortcutRow &item, newInputData.shortcuts())
+            sequencesData.insert(item.key(), item.currentSequence());
+        if (sequencesData != sequencesBase)
+            gShortcutPool->setOverrides(sequencesData);
+
+        /* Save other new things from the cache: */
+        if (newInputData.autoCapture() != oldInputData.autoCapture())
+            gEDataManager->setAutoCaptureEnabled(newInputData.autoCapture());
+    }
+    /* Return result: */
+    return fSuccess;
 }
 
 # include "UIGlobalSettingsInput.moc"

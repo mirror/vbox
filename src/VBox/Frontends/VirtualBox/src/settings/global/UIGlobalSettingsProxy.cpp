@@ -26,6 +26,7 @@
 # include "QIWidgetValidator.h"
 # include "UIGlobalSettingsProxy.h"
 # include "UIExtraDataManager.h"
+# include "UIMessageCenter.h"
 # include "VBoxUtils.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -143,16 +144,8 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Make sure proxy data was changed: */
-    if (m_pCache->wasChanged())
-    {
-        /* Save new proxy data from the cache: */
-        UIProxyManager proxyManager;
-        proxyManager.setProxyState(m_pCache->data().m_enmProxyState);
-        proxyManager.setProxyHost(m_pCache->data().m_strProxyHost);
-        proxyManager.setProxyPort(m_pCache->data().m_strProxyPort);
-        gEDataManager->setProxySettings(proxyManager.toString());
-    }
+    /* Update proxy data and failing state: */
+    setFailed(!saveProxyData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -256,5 +249,34 @@ void UIGlobalSettingsProxy::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+bool UIGlobalSettingsProxy::saveProxyData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save proxy settings from the cache: */
+    if (fSuccess && m_pCache->wasChanged())
+    {
+        /* Get old proxy data from the cache: */
+        //const UIDataSettingsGlobalProxy &oldProxyData = m_pCache->base();
+        /* Get new proxy data from the cache: */
+        const UIDataSettingsGlobalProxy &newProxyData = m_pCache->data();
+
+        // Here could go changes for m_properties.
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveProxySettings(m_properties, this);
+
+        /* Save new proxy data from the cache: */
+        UIProxyManager proxyManager;
+        proxyManager.setProxyState(newProxyData.m_enmProxyState);
+        proxyManager.setProxyHost(newProxyData.m_strProxyHost);
+        proxyManager.setProxyPort(newProxyData.m_strProxyPort);
+        gEDataManager->setProxySettings(proxyManager.toString());
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

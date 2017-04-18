@@ -25,6 +25,7 @@
 /* GUI includes: */
 # include "UIGlobalSettingsGeneral.h"
 # include "UIExtraDataManager.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -130,19 +131,8 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Make sure general data was changed: */
-    if (m_pCache->wasChanged())
-    {
-        /* Save new general data from the cache: */
-        if (   m_properties.isOk()
-            && m_pCache->data().m_strDefaultMachineFolder != m_pCache->base().m_strDefaultMachineFolder)
-            m_properties.SetDefaultMachineFolder(m_pCache->data().m_strDefaultMachineFolder);
-        if (   m_properties.isOk()
-            && m_pCache->data().m_strVRDEAuthLibrary != m_pCache->base().m_strVRDEAuthLibrary)
-            m_properties.SetVRDEAuthLibrary(m_pCache->data().m_strVRDEAuthLibrary);
-        if (m_pCache->data().m_fHostScreenSaverDisabled != m_pCache->base().m_fHostScreenSaverDisabled)
-            gEDataManager->setHostScreenSaverDisabled(m_pCache->data().m_fHostScreenSaverDisabled);
-    }
+    /* Update general data and failing state: */
+    setFailed(!saveGeneralData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -189,5 +179,44 @@ void UIGlobalSettingsGeneral::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+bool UIGlobalSettingsGeneral::saveGeneralData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save general settings from the cache: */
+    if (fSuccess && m_pCache->wasChanged())
+    {
+        /* Get old general data from the cache: */
+        const UIDataSettingsGlobalGeneral &oldGeneralData = m_pCache->base();
+        /* Get new general data from the cache: */
+        const UIDataSettingsGlobalGeneral &newGeneralData = m_pCache->data();
+
+        /* Save default machine folder: */
+        if (   fSuccess
+            && newGeneralData.m_strDefaultMachineFolder != oldGeneralData.m_strDefaultMachineFolder)
+        {
+            m_properties.SetDefaultMachineFolder(newGeneralData.m_strDefaultMachineFolder);
+            fSuccess = m_properties.isOk();
+        }
+        /* Save VRDE auth library: */
+        if (   fSuccess
+            && newGeneralData.m_strVRDEAuthLibrary != oldGeneralData.m_strVRDEAuthLibrary)
+        {
+            m_properties.SetVRDEAuthLibrary(newGeneralData.m_strVRDEAuthLibrary);
+            fSuccess = m_properties.isOk();
+        }
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveGeneralSettings(m_properties, this);
+
+        /* Save new general data from the cache: */
+        if (newGeneralData.m_fHostScreenSaverDisabled != oldGeneralData.m_fHostScreenSaverDisabled)
+            gEDataManager->setHostScreenSaverDisabled(newGeneralData.m_fHostScreenSaverDisabled);
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

@@ -74,6 +74,9 @@ private:
     /** Reloads maximum guest-screen size policy combo-box. */
     void reloadMaximumGuestScreenSizePolicyComboBox();
 
+    /** Saves existing display data from the cache. */
+    bool saveDisplayData();
+
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalDisplay *m_pCache;
 };

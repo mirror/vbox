@@ -75,6 +75,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Saves existing proxy data from the cache. */
+    bool saveProxyData();
+
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalProxy *m_pCache;
 };

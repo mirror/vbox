@@ -28,6 +28,7 @@
 /* GUI includes: */
 # include "UIGlobalSettingsLanguage.h"
 # include "UIExtraDataManager.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 /* Other VBox includes: */
@@ -268,13 +269,8 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Make sure language data was changed: */
-    if (m_pCache->wasChanged())
-    {
-        /* Save new language data from the cache: */
-        if (m_pCache->data().m_strLanguageId != m_pCache->base().m_strLanguageId)
-            gEDataManager->setLanguageId(m_pCache->data().m_strLanguageId);
-    }
+    /* Update language data and failing state: */
+    setFailed(!saveLanguageData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -446,5 +442,31 @@ void UIGlobalSettingsLanguage::reloadLanguageTree(const QString &strLanguageId)
 
     m_pLanguageTree->sortItems(0, Qt::AscendingOrder);
     m_pLanguageTree->scrollToItem(pItem);
+}
+
+bool UIGlobalSettingsLanguage::saveLanguageData()
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save language settings from the cache: */
+    if (fSuccess && m_pCache->wasChanged())
+    {
+        /* Get old language data from the cache: */
+        const UIDataSettingsGlobalLanguage &oldLanguageData = m_pCache->base();
+        /* Get new language data from the cache: */
+        const UIDataSettingsGlobalLanguage &newLanguageData = m_pCache->data();
+
+        // Here could go changes for m_properties.
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveLanguageSettings(m_properties, this);
+
+        /* Save new language data from the cache: */
+        if (newLanguageData.m_strLanguageId != oldLanguageData.m_strLanguageId)
+            gEDataManager->setLanguageId(newLanguageData.m_strLanguageId);
+    }
+    /* Return result: */
+    return fSuccess;
 }
 

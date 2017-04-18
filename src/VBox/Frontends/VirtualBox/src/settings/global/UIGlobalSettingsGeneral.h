@@ -66,6 +66,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Saves existing general data from the cache. */
+    bool saveGeneralData();
+
     /** Holds the page data cache instance. */
     UISettingsCacheGlobalGeneral *m_pCache;
 };

@@ -1068,6 +1068,48 @@ void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &propert
           formatErrorInfo(properties));
 }
 
+void UIMessageCenter::cannotSaveDisplaySettings(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save display settings."),
+          formatErrorInfo(comProperties));
+}
+
+void UIMessageCenter::cannotSaveGeneralSettings(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save general settings."),
+          formatErrorInfo(comProperties));
+}
+
+void UIMessageCenter::cannotSaveInputSettings(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save input settings."),
+          formatErrorInfo(comProperties));
+}
+
+void UIMessageCenter::cannotSaveLanguageSettings(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save language settings."),
+          formatErrorInfo(comProperties));
+}
+
+void UIMessageCenter::cannotSaveProxySettings(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save proxy settings."),
+          formatErrorInfo(comProperties));
+}
+
+void UIMessageCenter::cannotSaveUpdateSettings(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save update settings."),
+          formatErrorInfo(comProperties));
+}
+
 void UIMessageCenter::warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent /* = 0*/) const
 {
     /* If IMachine::GetUSBController(), IHost::GetUSBDevices() etc. return
