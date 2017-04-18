@@ -329,6 +329,41 @@ RTDECL(uint32_t)    RTVfsDirRetain(RTVFSDIR hVfsDir);
  */
 RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir);
 
+/**
+ * Opens a directory in the specified file system.
+ *
+ * @returns IPRT status code.
+ * @param   hVfs            The VFS to open the directory within.
+ * @param   pszPath         Path to the directory, relative to the root.
+ * @param   fFlags          Reserved, MBZ.
+ * @param   phVfsDir        Where to return the directory.
+ */
+RTDECL(int) RTVfsDirOpen(RTVFS hVfs, const char *pszPath, uint32_t fFlags, PRTVFSDIR phVfsDir);
+
+/**
+ * Opens a file in or under the given directory.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsDir         The VFS directory start walking the @a pszPath
+ *                          relative to.
+ * @param   pszPath         Path to the file.
+ * @param   fOpen           RTFILE_O_XXX flags.
+ * @param   phVfsFile       Where to return the file.
+ */
+RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOpen, PRTVFSFILE phVfsFile);
+
+/**
+ * Opens a directory in or under the given directory.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsDir         The VFS directory start walking the @a pszPath
+ *                          relative to.
+ * @param   pszPath         Path to the file.
+ * @param   fFlags          Reserved, MBZ.
+ * @param   phVfsDir        Where to return the directory.
+ */
+RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFlags, PRTVFSDIR phVfsDir);
+
 /** @}  */
 
 

@@ -494,7 +494,7 @@ typedef struct RTVFSDIROPS
      * @param   phVfsDir    Where to return the handle to the opened directory.
      * @sa      RTDirOpen.
      */
-    DECLCALLBACKMEMBER(int, pfnOpenDir)(void *pvThis, const char *pszSubDir, PRTVFSDIR phVfsDir);
+    DECLCALLBACKMEMBER(int, pfnOpenDir)(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir);
 
     /**
      * Creates a new subdirectory.
@@ -1015,6 +1015,8 @@ typedef struct RTVFSCHAINELEMSPEC
 
     /** The provider. */
     PCRTVFSCHAINELEMENTREG  pProvider;
+    /** Provider specific value. */
+    uint64_t                uProvider;
     /** The object (with reference). */
     RTVFSOBJ                hVfsObj;
 } RTVFSCHAINELEMSPEC;
@@ -1030,17 +1032,15 @@ typedef RTVFSCHAINELEMSPEC const *PCRTVFSCHAINELEMSPEC;
 typedef struct RTVFSCHAINSPEC
 {
     /** Open directory flags (RTFILE_O_XXX). */
-    uint32_t            fOpenFile;
+    uint32_t                fOpenFile;
     /** To be defined. */
-    uint32_t            fOpenDir;
+    uint32_t                fOpenDir;
     /** The type desired by the caller. */
-    RTVFSOBJTYPE        enmDesiredType;
+    RTVFSOBJTYPE            enmDesiredType;
     /** The number of elements. */
-    uint32_t            cElements;
-    /** Provider specific value. */
-    uint64_t            uProvider;
+    uint32_t                cElements;
     /** The elements. */
-    PRTVFSCHAINELEMSPEC paElements;
+    PRTVFSCHAINELEMSPEC     paElements;
 } RTVFSCHAINSPEC;
 /** Pointer to a parsed VFS chain specification. */
 typedef RTVFSCHAINSPEC *PRTVFSCHAINSPEC;
@@ -1235,6 +1235,22 @@ public:
     extern void *name ## AutoRegistrationHack = \
         &Sorry_but_RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER_does_not_work_in_c_source_files
 #endif
+
+
+/**
+ * Common worker for the 'stdfile' and 'open' providers for implementing
+ * RTVFSCHAINELEMENTREG::pfnValidate.
+ *
+ * Stores the RTFILE_O_XXX flags in pSpec->uProvider.
+ *
+ * @returns IPRT status code.
+ * @param   pSpec           The chain specification.
+ * @param   pElement        The chain element specification to validate.
+ * @param   poffError       Where to return error offset on failure.  This is
+ *                          set to the pElement->offSpec on input, so it only
+ *                          needs to be adjusted if an argument is at fault.
+ */
+RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError);
 
 
 /** @}  */

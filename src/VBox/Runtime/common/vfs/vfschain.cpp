@@ -47,6 +47,11 @@
 //#include "internal/vfs.h"
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static PCRTVFSCHAINELEMENTREG rtVfsChainFindProviderLocked(const char *pszProvider);
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -57,6 +62,251 @@ static RTONCE       g_rtVfsChainElementInitOnce = RTONCE_INITIALIZER;
 static RTCRITSECTRW g_rtVfsChainElementCritSect;
 /** List of VFS chain element providers (RTVFSCHAINELEMENTREG). */
 static RTLISTANCHOR g_rtVfsChainElementProviderList;
+
+
+
+RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+{
+    if (pElement->cArgs < 1)
+        return VERR_VFS_CHAIN_AT_LEAST_ONE_ARG;
+    if (pElement->cArgs > 4)
+        return VERR_VFS_CHAIN_AT_MOST_FOUR_ARGS;
+    if (!*pElement->paArgs[0].psz)
+        return VERR_VFS_CHAIN_EMPTY_ARG;
+
+    /*
+     * Calculate the flags, storing them in the first argument.
+     */
+    const char *pszAccess = pElement->cArgs >= 2 ? pElement->paArgs[1].psz : "";
+    if (!*pszAccess)
+        pszAccess = (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_READWRITE ? "rw"
+                  : (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ      ? "r"
+                  : (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_WRITE     ? "w"
+                  :                                                                   "rw";
+
+    const char *pszDisp = pElement->cArgs >= 3 ? pElement->paArgs[2].psz : "";
+    if (!*pszDisp)
+        pszDisp = strchr(pszAccess, 'w') != NULL ? "open-create" : "open";
+
+    const char *pszSharing = pElement->cArgs >= 4 ? pElement->paArgs[3].psz : "";
+
+    int rc = RTFileModeToFlagsEx(pszAccess, pszDisp, pszSharing, &pElement->uProvider);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+
+    /*
+     * Now try figure out which argument offended us.
+     */
+    AssertReturn(pElement->cArgs > 1, VERR_VFS_CHAIN_IPE);
+    if (   pElement->cArgs == 2
+        || RT_FAILURE(RTFileModeToFlagsEx(pszAccess, "open-create", "", &pElement->uProvider)))
+        *poffError = pElement->paArgs[1].offSpec;
+    else if (   pElement->cArgs == 3
+             || RT_FAILURE(RTFileModeToFlagsEx(pszAccess, pszDisp, "", &pElement->uProvider)))
+        *poffError = pElement->paArgs[2].offSpec;
+    else
+        *poffError = pElement->paArgs[3].offSpec;
+    return VERR_VFS_CHAIN_INVALID_ARGUMENT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
+ */
+static DECLCALLBACK(int) rtVfsChainOpen_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                                 PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg);
+
+    /*
+     * Basic checks.
+     */
+    if (   pElement->enmType != RTVFSOBJTYPE_DIR
+        && pElement->enmType != RTVFSOBJTYPE_FILE
+        && pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
+        return VERR_VFS_CHAIN_ONLY_FILE_OR_IOS_OR_DIR;
+    if (   pElement->enmTypeIn != RTVFSOBJTYPE_DIR
+        && pElement->enmTypeIn != RTVFSOBJTYPE_FS_STREAM
+        && pElement->enmTypeIn != RTVFSOBJTYPE_VFS)
+    {
+        if (pElement->enmTypeIn == RTVFSOBJTYPE_INVALID)
+        {
+            /*
+             * First element: Ttransform into 'stdfile' or 'stddir' if registered.
+             */
+            const char            *pszNewProvider = pElement->enmType == RTVFSOBJTYPE_DIR ? "stddir" : "stdfile";
+            PCRTVFSCHAINELEMENTREG pNewProvider   = rtVfsChainFindProviderLocked(pszNewProvider);
+            if (pNewProvider)
+            {
+                pElement->pProvider = pNewProvider;
+                return pNewProvider->pfnValidate(pNewProvider, pSpec, pElement, poffError);
+            }
+            return VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT;
+        }
+        return VERR_VFS_CHAIN_TAKES_DIR_OR_FSS_OR_VFS;
+    }
+
+    /*
+     * Make common cause with 'stdfile' if we're opening a file or I/O stream.
+     * If the input is a FSS, we have to make sure it's a read-only operation.
+     */
+    if (   pElement->enmType != RTVFSOBJTYPE_FILE
+        && pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
+    {
+        int rc = RTVfsChainValidateOpenFileOrIoStream(pSpec, pElement, poffError);
+        if (RT_SUCCESS(rc))
+        {
+            if (pElement->enmTypeIn != RTVFSOBJTYPE_FS_STREAM)
+                return VINF_SUCCESS;
+            if (   !(pElement->uProvider & RTFILE_O_WRITE)
+                &&  (pElement->uProvider & RTFILE_O_ACTION_MASK) ==  RTFILE_O_OPEN)
+                return VINF_SUCCESS;
+            *poffError = pElement->cArgs > 1 ? pElement->paArgs[1].offSpec : pElement->offSpec;
+            return VERR_VFS_CHAIN_INVALID_ARGUMENT;
+        }
+    }
+
+    /*
+     * Directory checks.  Path argument only, optional. If not given the root directory of a VFS or the
+     */
+    if (pElement->cArgs > 1)
+        return VERR_VFS_CHAIN_AT_MOST_ONE_ARG;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnInstantiate}
+ */
+static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                                    PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                                    PRTVFSOBJ phVfsObj, uint32_t *poffError)
+{
+    RT_NOREF(pProviderReg, pSpec, pElement, poffError);
+    AssertReturn(hPrevVfsObj != NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
+
+    /*
+     * File system stream: Seek thru the stream looking for the object to open.
+     */
+    RTVFSFSSTREAM hVfsFssIn = RTVfsObjToFsStream(hPrevVfsObj);
+    if (hVfsFssIn != NIL_RTVFSFSSTREAM)
+    {
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    /*
+     * VFS: Use RTVfsFileOpen or RTVfsDirOpen.
+     */
+    RTVFS hVfsIn = RTVfsObjToVfs(hPrevVfsObj);
+    if (hVfsIn != NIL_RTVFS)
+    {
+        if (   pElement->enmType == RTVFSOBJTYPE_FILE
+            || pElement->enmType == RTVFSOBJTYPE_IO_STREAM)
+        {
+            RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+            int rc = RTVfsFileOpen(hVfsIn, pElement->paArgs[0].psz, pElement->uProvider, &hVfsFile);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                RTVfsFileRelease(hVfsFile);
+                if (*phVfsObj != NIL_RTVFSOBJ)
+                    return VINF_SUCCESS;
+                rc = VERR_VFS_CHAIN_CAST_FAILED;
+            }
+            return rc;
+        }
+        if (pElement->enmType == RTVFSOBJTYPE_DIR)
+        {
+            RTVFSDIR hVfsDir = NIL_RTVFSDIR;
+            int rc = RTVfsDirOpen(hVfsIn, pElement->paArgs[0].psz, (uint32_t)pElement->uProvider, &hVfsDir);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                RTVfsDirRelease(hVfsDir);
+                if (*phVfsObj != NIL_RTVFSOBJ)
+                    return VINF_SUCCESS;
+                rc = VERR_VFS_CHAIN_CAST_FAILED;
+            }
+            return rc;
+        }
+        return VERR_VFS_CHAIN_IPE;
+    }
+
+    /*
+     * Directory: Similar to above, just relative to a directory.
+     */
+    RTVFSDIR hVfsDirIn = RTVfsObjToDir(hPrevVfsObj);
+    if (hVfsDirIn != NIL_RTVFSDIR)
+    {
+        if (   pElement->enmType == RTVFSOBJTYPE_FILE
+            || pElement->enmType == RTVFSOBJTYPE_IO_STREAM)
+        {
+            RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+            int rc = RTVfsDirOpenFile(hVfsDirIn, pElement->paArgs[0].psz, pElement->uProvider, &hVfsFile);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                RTVfsFileRelease(hVfsFile);
+                if (*phVfsObj != NIL_RTVFSOBJ)
+                    return VINF_SUCCESS;
+                rc = VERR_VFS_CHAIN_CAST_FAILED;
+            }
+            return rc;
+        }
+        if (pElement->enmType == RTVFSOBJTYPE_DIR)
+        {
+            RTVFSDIR hVfsDir = NIL_RTVFSDIR;
+            int rc = RTVfsDirOpenDir(hVfsDirIn, pElement->paArgs[0].psz, pElement->uProvider, &hVfsDir);
+            if (RT_SUCCESS(rc))
+            {
+                *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                RTVfsDirRelease(hVfsDir);
+                if (*phVfsObj != NIL_RTVFSOBJ)
+                    return VINF_SUCCESS;
+                rc = VERR_VFS_CHAIN_CAST_FAILED;
+            }
+            return rc;
+        }
+        return VERR_VFS_CHAIN_IPE;
+    }
+
+    AssertFailed();
+    return VERR_VFS_CHAIN_CAST_FAILED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnCanReuseElement}
+ */
+static DECLCALLBACK(bool) rtVfsChainOpen_CanReuseElement(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                         PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                         PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement)
+{
+    RT_NOREF(pProviderReg, pSpec, pElement, pReuseSpec, pReuseElement);
+    return false;
+}
+
+
+/** VFS chain element 'gunzip'. */
+static RTVFSCHAINELEMENTREG g_rtVfsChainGunzipReg =
+{
+    /* uVersion = */            RTVFSCHAINELEMENTREG_VERSION,
+    /* fReserved = */           0,
+    /* pszName = */             "open",
+    /* ListEntry = */           { NULL, NULL },
+    /* pszHelp = */             "Generic VFS open, that can open files (or I/O stream) and directories in a VFS, directory or file system stream.\n"
+                                "If used as the first element in a chain, it will work like 'stdfile' or 'stddir' and work on the real file system.\n"
+                                "First argument is the filename or directory path.\n"
+                                "Second argument is access mode, files only, optional: r, w, rw.\n"
+                                "Third argument is open disposition, files only, optional: create, create-replace, open, open-create, open-append, open-truncate.\n"
+                                "Forth argument is file sharing, files only, optional: nr, nw, nrw, d.",
+    /* pfnValidate = */         rtVfsChainOpen_Validate,
+    /* pfnInstantiate = */      rtVfsChainOpen_Instantiate,
+    /* pfnCanReuseElement = */  rtVfsChainOpen_CanReuseElement,
+    /* uEndMarker = */          RTVFSCHAINELEMENTREG_VERSION
+};
+
+RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainGunzipReg, rtVfsChainGunzipReg);
 
 
 
@@ -154,7 +404,6 @@ static PRTVFSCHAINSPEC rtVfsChainSpecAlloc(void)
         pSpec->fOpenFile      = 0;
         pSpec->fOpenDir       = 0;
         pSpec->cElements      = 0;
-        pSpec->uProvider      = 0;
         pSpec->paElements     = NULL;
     }
     return pSpec;
@@ -627,6 +876,7 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
             for (uint32_t i = 0; i < pSpec->cElements; i++)
             {
                 PRTVFSCHAINELEMSPEC const pElement = &pSpec->paElements[i];
+                *poffError = pElement->offSpec;
 
                 /*
                  * Try reuse the VFS objects at the start of the passed in reuse chain.
@@ -860,4 +1110,5 @@ RTDECL(bool) RTVfsChainIsSpec(const char *pszSpec)
     return pszSpec
         && strcmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX) == 0;
 }
+
 

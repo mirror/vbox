@@ -825,15 +825,18 @@ static DECLCALLBACK(int) rtVfsChainReadAhead_Validate(PCRTVFSCHAINELEMENTREG pPr
     /*
      * Basics.
      */
-    if (pElement->enmTypeIn == RTVFSOBJTYPE_INVALID)
-        return VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT;
-    if (pElement->cArgs > 2)
-        return VERR_VFS_CHAIN_AT_MOST_TWO_ARGS;
     if (   pElement->enmType != RTVFSOBJTYPE_FILE
         && pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
         return VERR_VFS_CHAIN_ONLY_FILE_OR_IOS;
+    if (pElement->enmTypeIn == RTVFSOBJTYPE_INVALID)
+        return VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT;
+    if (   pElement->enmTypeIn != RTVFSOBJTYPE_FILE
+        && pElement->enmTypeIn != RTVFSOBJTYPE_IO_STREAM)
+        return VERR_VFS_CHAIN_TAKES_FILE_OR_IOS;
     if (pSpec->fOpenFile & RTFILE_O_WRITE)
         return VERR_VFS_CHAIN_READ_ONLY_IOS;
+    if (pElement->cArgs > 2)
+        return VERR_VFS_CHAIN_AT_MOST_TWO_ARGS;
 
     /*
      * Parse the two optional arguments.
@@ -871,7 +874,7 @@ static DECLCALLBACK(int) rtVfsChainReadAhead_Validate(PCRTVFSCHAINELEMENTREG pPr
     /*
      * Save the parsed arguments in the spec since their both optional.
      */
-    pSpec->uProvider = RT_MAKE_U64(cBuffers, cbBuffer);
+    pElement->uProvider = RT_MAKE_U64(cBuffers, cbBuffer);
 
     return VINF_SUCCESS;
 }
@@ -893,8 +896,8 @@ static DECLCALLBACK(int) rtVfsChainReadAhead_Instantiate(PCRTVFSCHAINELEMENTREG 
     if (hVfsFileIn != NIL_RTVFSFILE)
     {
         RTVFSFILE hVfsFile = NIL_RTVFSFILE;
-        rc = RTVfsCreateReadAheadForFile(hVfsFileIn, 0 /*fFlags*/, RT_LO_U32(pSpec->uProvider),
-                                         RT_HI_U32(pSpec->uProvider), &hVfsFile);
+        rc = RTVfsCreateReadAheadForFile(hVfsFileIn, 0 /*fFlags*/, RT_LO_U32(pElement->uProvider),
+                                         RT_HI_U32(pElement->uProvider), &hVfsFile);
         RTVfsFileRelease(hVfsFileIn);
         if (RT_SUCCESS(rc))
         {
@@ -911,8 +914,8 @@ static DECLCALLBACK(int) rtVfsChainReadAhead_Instantiate(PCRTVFSCHAINELEMENTREG 
         if (hVfsIosIn != NIL_RTVFSIOSTREAM)
         {
             RTVFSIOSTREAM hVfsIos = NIL_RTVFSIOSTREAM;
-            rc = RTVfsCreateReadAheadForIoStream(hVfsIosIn, 0 /*fFlags*/, RT_LO_U32(pSpec->uProvider),
-                                                 RT_HI_U32(pSpec->uProvider), &hVfsIos);
+            rc = RTVfsCreateReadAheadForIoStream(hVfsIosIn, 0 /*fFlags*/, RT_LO_U32(pElement->uProvider),
+                                                 RT_HI_U32(pElement->uProvider), &hVfsIos);
             RTVfsIoStrmRelease(hVfsIosIn);
             if (RT_SUCCESS(rc))
             {

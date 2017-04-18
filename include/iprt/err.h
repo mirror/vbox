@@ -1927,12 +1927,31 @@ RT_C_DECLS_END
 #define VERR_VFS_CHAIN_ONLY_FSS                     (-22142)
 /** VFS chain element only provides file system (vfs) objects. */
 #define VERR_VFS_CHAIN_ONLY_VFS                     (-22143)
+/** VFS chain element only provides file, I/O stream (ios), or
+ * directory (dir) objects. */
+#define VERR_VFS_CHAIN_ONLY_FILE_OR_IOS_OR_DIR      (-22144)
+/** VFS chain element takes a file object as input. */
+#define VERR_VFS_CHAIN_TAKES_FILE                   (-22145)
+/** VFS chain element takes a file or I/O stream (ios) object as input. */
+#define VERR_VFS_CHAIN_TAKES_FILE_OR_IOS            (-22146)
+/** VFS chain element takes a directory (dir) object as input. */
+#define VERR_VFS_CHAIN_TAKES_DIR                    (-22147)
+/** VFS chain element takes a file system stream (fss) object as input. */
+#define VERR_VFS_CHAIN_TAKES_FSS                    (-22148)
+/** VFS chain element takes a file system (vfs) object as input. */
+#define VERR_VFS_CHAIN_TAKES_VFS                    (-22149)
+/** VFS chain element takes a directory (dir) or file system (vfs)
+ * object as input. */
+#define VERR_VFS_CHAIN_TAKES_DIR_OR_VFS             (-22150)
+/** VFS chain element takes a directory (dir), file system stream (fss),
+ * or file system (vfs) object as input. */
+#define VERR_VFS_CHAIN_TAKES_DIR_OR_FSS_OR_VFS      (-22151)
 /** VFS chain element only provides a read-only I/O stream, while the chain
  * requires write access. */
-#define VERR_VFS_CHAIN_READ_ONLY_IOS                (-22144)
+#define VERR_VFS_CHAIN_READ_ONLY_IOS                (-22152)
 /** VFS chain element only provides a read-only I/O stream, while the chain
  * read access. */
-#define VERR_VFS_CHAIN_WRITE_ONLY_IOS               (-22145)
+#define VERR_VFS_CHAIN_WRITE_ONLY_IOS               (-22153)
 /** @} */
 
 /** @name RTDvm status codes
