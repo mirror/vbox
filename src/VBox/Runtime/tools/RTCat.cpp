@@ -130,20 +130,12 @@ static RTEXITCODE rtCmdCatOpenInput(const char *pszFile, PRTVFSIOSTREAM phVfsIos
     }
     else
     {
-        const char *pszError;
-        rc = RTVfsChainOpenIoStream(pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, phVfsIos, &pszError);
+        uint32_t        offError = 0;
+        RTERRINFOSTATIC ErrInfo;
+        rc = RTVfsChainOpenIoStream(pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                    phVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
-        {
-            if (pszError && *pszError)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                      "    '%s'\n"
-                                      "     %*s^\n",
-                                      rc, pszFile, pszError - pszFile, "");
-            return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                  "RTVfsChainOpenIoStream failed with rc=%Rrc: '%s'",
-                                  rc, pszFile);
-        }
+            return RTVfsChainMsgErrorExitFailure("RTVfsChainOpenIoStream", pszFile, rc, offError, &ErrInfo.Core);
     }
 
     return RTEXITCODE_SUCCESS;

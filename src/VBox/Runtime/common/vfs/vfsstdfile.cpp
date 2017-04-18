@@ -516,7 +516,7 @@ RTDECL(int) RTVfsIoStrmOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVF
  * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
  */
 static DECLCALLBACK(int) rtVfsChainStdFile_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
-                                                    PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+                                                    PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
     RT_NOREF(pProviderReg);
 
@@ -533,7 +533,7 @@ static DECLCALLBACK(int) rtVfsChainStdFile_Validate(PCRTVFSCHAINELEMENTREG pProv
     /*
      * Join common cause with the 'open' provider.
      */
-    return RTVfsChainValidateOpenFileOrIoStream(pSpec, pElement, poffError);
+    return RTVfsChainValidateOpenFileOrIoStream(pSpec, pElement, poffError, pErrInfo);
 }
 
 
@@ -542,9 +542,9 @@ static DECLCALLBACK(int) rtVfsChainStdFile_Validate(PCRTVFSCHAINELEMENTREG pProv
  */
 static DECLCALLBACK(int) rtVfsChainStdFile_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
                                                        PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
-                                                       PRTVFSOBJ phVfsObj, uint32_t *poffError)
+                                                       PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pProviderReg, pSpec, poffError);
+    RT_NOREF(pProviderReg, pSpec, poffError, pErrInfo);
     AssertReturn(hPrevVfsObj == NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
 
     RTVFSFILE hVfsFile;

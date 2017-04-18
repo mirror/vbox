@@ -834,9 +834,9 @@ RTDECL(int) RTZipGzipCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags,
  * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
  */
 static DECLCALLBACK(int) rtVfsChainGunzip_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
-                                                   PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+                                                   PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pProviderReg, poffError);
+    RT_NOREF(pProviderReg, poffError, pErrInfo);
 
     if (pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
         return VERR_VFS_CHAIN_ONLY_IOS;
@@ -859,9 +859,9 @@ static DECLCALLBACK(int) rtVfsChainGunzip_Validate(PCRTVFSCHAINELEMENTREG pProvi
  */
 static DECLCALLBACK(int) rtVfsChainGunzip_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
                                                       PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
-                                                      PRTVFSOBJ phVfsObj, uint32_t *poffError)
+                                                      PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pProviderReg, pSpec, pElement, poffError);
+    RT_NOREF(pProviderReg, pSpec, pElement, poffError, pErrInfo);
     AssertReturn(hPrevVfsObj != NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
 
     RTVFSIOSTREAM hVfsIosIn = RTVfsObjToIoStream(hPrevVfsObj);
@@ -917,7 +917,7 @@ RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainGunzipReg, rtVfsChainGunz
  * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
  */
 static DECLCALLBACK(int) rtVfsChainGzip_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
-                                                 PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+                                                 PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
     RT_NOREF(pProviderReg);
 
@@ -954,7 +954,7 @@ static DECLCALLBACK(int) rtVfsChainGzip_Validate(PCRTVFSCHAINELEMENTREG pProvide
         else
         {
             *poffError = pElement->paArgs[0].offSpec;
-            return VERR_VFS_CHAIN_INVALID_ARGUMENT;
+            return RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Expected compression level: 1-9, default, or fast");
         }
     }
     else
@@ -969,9 +969,9 @@ static DECLCALLBACK(int) rtVfsChainGzip_Validate(PCRTVFSCHAINELEMENTREG pProvide
  */
 static DECLCALLBACK(int) rtVfsChainGzip_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
                                                     PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
-                                                    PRTVFSOBJ phVfsObj, uint32_t *poffError)
+                                                    PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pProviderReg, pSpec, pElement, poffError);
+    RT_NOREF(pProviderReg, pSpec, pElement, poffError, pErrInfo);
     AssertReturn(hPrevVfsObj != NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
 
     RTVFSIOSTREAM hVfsIosOut = RTVfsObjToIoStream(hPrevVfsObj);

@@ -65,7 +65,8 @@ static RTLISTANCHOR g_rtVfsChainElementProviderList;
 
 
 
-RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCHAINELEMSPEC pElement,
+                                                 uint32_t *poffError, PRTERRINFO pErrInfo)
 {
     if (pElement->cArgs < 1)
         return VERR_VFS_CHAIN_AT_LEAST_ONE_ARG;
@@ -100,13 +101,24 @@ RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCH
     AssertReturn(pElement->cArgs > 1, VERR_VFS_CHAIN_IPE);
     if (   pElement->cArgs == 2
         || RT_FAILURE(RTFileModeToFlagsEx(pszAccess, "open-create", "", &pElement->uProvider)))
+    {
         *poffError = pElement->paArgs[1].offSpec;
+        rc = RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Expected valid access flags: 'r', 'rw', or 'w'");
+    }
     else if (   pElement->cArgs == 3
              || RT_FAILURE(RTFileModeToFlagsEx(pszAccess, pszDisp, "", &pElement->uProvider)))
+    {
         *poffError = pElement->paArgs[2].offSpec;
+        rc = RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT,
+                          "Expected valid open disposition: create, create-replace, open, open-create, open-append, open-truncate");
+    }
     else
+    {
         *poffError = pElement->paArgs[3].offSpec;
-    return VERR_VFS_CHAIN_INVALID_ARGUMENT;
+        rc = RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Expected valid sharing flags: nr, nw, nrw, d");
+
+    }
+    return rc;
 }
 
 
@@ -114,7 +126,7 @@ RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCH
  * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
  */
 static DECLCALLBACK(int) rtVfsChainOpen_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
-                                                 PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError)
+                                                 PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
     RT_NOREF(pProviderReg);
 
@@ -139,7 +151,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Validate(PCRTVFSCHAINELEMENTREG pProvide
             if (pNewProvider)
             {
                 pElement->pProvider = pNewProvider;
-                return pNewProvider->pfnValidate(pNewProvider, pSpec, pElement, poffError);
+                return pNewProvider->pfnValidate(pNewProvider, pSpec, pElement, poffError, pErrInfo);
             }
             return VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT;
         }
@@ -153,7 +165,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Validate(PCRTVFSCHAINELEMENTREG pProvide
     if (   pElement->enmType != RTVFSOBJTYPE_FILE
         && pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
     {
-        int rc = RTVfsChainValidateOpenFileOrIoStream(pSpec, pElement, poffError);
+        int rc = RTVfsChainValidateOpenFileOrIoStream(pSpec, pElement, poffError, pErrInfo);
         if (RT_SUCCESS(rc))
         {
             if (pElement->enmTypeIn != RTVFSOBJTYPE_FS_STREAM)
@@ -180,9 +192,9 @@ static DECLCALLBACK(int) rtVfsChainOpen_Validate(PCRTVFSCHAINELEMENTREG pProvide
  */
 static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
                                                     PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
-                                                    PRTVFSOBJ phVfsObj, uint32_t *poffError)
+                                                    PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pProviderReg, pSpec, pElement, poffError);
+    RT_NOREF(pProviderReg, pSpec, pElement, poffError, pErrInfo);
     AssertReturn(hPrevVfsObj != NIL_RTVFSOBJ, VERR_VFS_CHAIN_IPE);
 
     /*
@@ -594,11 +606,13 @@ static size_t rtVfsChainSpecFindArgEnd(const char *psz)
 
 
 RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTYPE enmDesiredType,
-                                PRTVFSCHAINSPEC *ppSpec, const char **ppszError)
+                                PRTVFSCHAINSPEC *ppSpec, uint32_t *poffError)
 {
-    AssertPtrNullReturn(ppszError, VERR_INVALID_POINTER);
-    if (ppszError)
-        *ppszError = NULL;
+    if (poffError)
+    {
+        AssertPtrReturn(poffError, VERR_INVALID_POINTER);
+        *poffError = 0;
+    }
     AssertPtrReturn(ppSpec, VERR_INVALID_POINTER);
     *ppSpec = NULL;
     AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
@@ -728,7 +742,10 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
         pszSrc = RTStrStripL(pszSrc + 1);
     }
 
-#if 1
+#if 0
+    /*
+     * Dump the chain.  Useful for debugging the above code.
+     */
     RTAssertMsg2("dbg: cElements=%d rc=%Rrc\n", pSpec->cElements, rc);
     for (uint32_t i = 0; i < pSpec->cElements; i++)
     {
@@ -738,7 +755,7 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
         for (uint32_t j = 0; j < cArgs; j++)
             RTAssertMsg2(j == 0 ? (cArgs > 1 ? " [%s" : " [%s]") : j + 1 < cArgs ? ", %s" : ", %s]",
                          pSpec->paElements[i].paArgs[j].psz);
-        //RTAssertMsg2(" offSpec=%d cchSpec=%d", pSpec->paElements[i].offSpec, pSpec->paElements[i].cchSpec);
+        RTAssertMsg2(" offSpec=%d cchSpec=%d", pSpec->paElements[i].offSpec, pSpec->paElements[i].cchSpec);
         RTAssertMsg2(" spec: %.*s\n", pSpec->paElements[i].cchSpec, &pszSpec[pSpec->paElements[i].offSpec]);
     }
 #endif
@@ -751,8 +768,8 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
         *ppSpec = pSpec;
     else
     {
-        if (ppszError)
-            *ppszError = pszSrc;
+        if (poffError)
+            *poffError = (uint32_t)(pszSrc - pszSpec);
         RTVfsChainSpecFree(pSpec);
     }
     return rc;
@@ -810,13 +827,14 @@ static bool rtVfsChainMatchReusableType(PRTVFSCHAINELEMSPEC pElement, PRTVFSCHAI
 
 
 RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC pReuseSpec,
-                                        PRTVFSOBJ phVfsObj, uint32_t *poffError)
+                                        PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
     AssertPtrReturn(poffError, VERR_INVALID_POINTER);
     *poffError = 0;
     AssertPtrReturn(phVfsObj, VERR_INVALID_POINTER);
     *phVfsObj = NIL_RTVFSOBJ;
     AssertPtrReturn(pSpec, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
 
     /*
      * Enter the critical section after making sure it has been initialized.
@@ -836,7 +854,7 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
             pElement->pProvider = rtVfsChainFindProviderLocked(pElement->pszProvider);
             if (pElement->pProvider)
             {
-                rc = pElement->pProvider->pfnValidate(pElement->pProvider, pSpec, pElement, poffError);
+                rc = pElement->pProvider->pfnValidate(pElement->pProvider, pSpec, pElement, poffError, pErrInfo);
                 if (RT_SUCCESS(rc))
                     continue;
             }
@@ -915,7 +933,8 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
                  * Instantiate a new VFS object.
                  */
                 RTVFSOBJ hVfsObj = NIL_RTVFSOBJ;
-                rc = pElement->pProvider->pfnInstantiate(pElement->pProvider, pSpec, pElement, hPrevVfsObj, &hVfsObj, poffError);
+                rc = pElement->pProvider->pfnInstantiate(pElement->pProvider, pSpec, pElement, hPrevVfsObj,
+                                                         &hVfsObj, poffError, pErrInfo);
                 if (RT_FAILURE(rc))
                     break;
                 pElement->hVfsObj = hVfsObj;
@@ -985,13 +1004,17 @@ RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, b
 }
 
 
-RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE phVfsFile, const char **ppszError)
+RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen,
+                               PRTVFSFILE phVfsFile, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
+    uint32_t offErrorIgn;
+    if (!poffError)
+        poffError = &offErrorIgn;
+    *poffError = 0;
     AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
     AssertReturn(*pszSpec != '\0', VERR_INVALID_PARAMETER);
     AssertPtrReturn(phVfsFile, VERR_INVALID_POINTER);
-    if (ppszError)
-        *ppszError = NULL;
+    AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
 
     /*
      * If it's not a VFS chain spec, treat it as a file.
@@ -1014,14 +1037,13 @@ RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE p
     else
     {
         PRTVFSCHAINSPEC pSpec;
-        rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_FILE, &pSpec, ppszError);
+        rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_FILE, &pSpec, poffError);
         if (RT_SUCCESS(rc))
         {
             pSpec->fOpenFile = fOpen;
 
-            uint32_t offError = 0;
             RTVFSOBJ hVfsObj  = NIL_RTVFSOBJ;
-            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &offError);
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, poffError, pErrInfo);
             if (RT_SUCCESS(rc))
             {
                 *phVfsFile = RTVfsObjToFile(hVfsObj);
@@ -1031,8 +1053,6 @@ RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE p
                     rc = VERR_VFS_CHAIN_CAST_FAILED;
                 RTVfsObjRelease(hVfsObj);
             }
-            else if (ppszError)
-                *ppszError = &pszSpec[offError];
 
             RTVfsChainSpecFree(pSpec);
         }
@@ -1041,14 +1061,17 @@ RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE p
 }
 
 
-RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos, const char **ppszError)
+RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen,
+                                   PRTVFSIOSTREAM phVfsIos, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
-    if (ppszError)
-        *ppszError = NULL;
-
+    uint32_t offErrorIgn;
+    if (!poffError)
+        poffError = &offErrorIgn;
+    *poffError = 0;
     AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
     AssertReturn(*pszSpec != '\0', VERR_INVALID_PARAMETER);
     AssertPtrReturn(phVfsIos, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
 
     /*
      * If it's not a VFS chain spec, treat it as a file.
@@ -1077,14 +1100,13 @@ RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIO
     else
     {
         PRTVFSCHAINSPEC pSpec;
-        rc = RTVfsChainSpecParse(pszSpec, 0 /*fFlags*/, RTVFSOBJTYPE_IO_STREAM, &pSpec, ppszError);
+        rc = RTVfsChainSpecParse(pszSpec, 0 /*fFlags*/, RTVFSOBJTYPE_IO_STREAM, &pSpec, poffError);
         if (RT_SUCCESS(rc))
         {
             pSpec->fOpenFile = fOpen;
 
-            uint32_t offError = 0;
             RTVFSOBJ hVfsObj  = NIL_RTVFSOBJ;
-            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &offError);
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, poffError, pErrInfo);
             if (RT_SUCCESS(rc))
             {
                 *phVfsIos = RTVfsObjToIoStream(hVfsObj);
@@ -1094,9 +1116,6 @@ RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIO
                     rc = VERR_VFS_CHAIN_CAST_FAILED;
                 RTVfsObjRelease(hVfsObj);
             }
-            else if (ppszError)
-                *ppszError = &pszSpec[offError];
-
             RTVfsChainSpecFree(pSpec);
         }
     }

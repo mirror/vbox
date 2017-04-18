@@ -427,6 +427,7 @@ RuntimeR3_SOURCES       = \
 	common/err/RTErrConvertToErrno.cpp \
 	common/filesystem/filesystem.cpp \
 	common/filesystem/filesystemext.cpp \
+	$(if-expr "$(USERNAME)"=="bird",common/filesystem/fatvfs.cpp) \
 	common/ldr/ldr.cpp \
 	common/ldr/ldrELF.cpp \
 	common/ldr/ldrEx.cpp \
@@ -607,6 +608,7 @@ RuntimeR3_SOURCES       = \
 	common/vfs/vfsiosmisc.cpp \
 	common/vfs/vfsmemory.cpp \
 	common/vfs/vfsmisc.cpp \
+	common/vfs/vfsmsg.cpp \
 	common/vfs/vfsreadahead.cpp \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \

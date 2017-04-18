@@ -1078,9 +1078,11 @@ typedef struct RTVFSCHAINELEMENTREG
      * @param   poffError       Where to return error offset on failure.  This is
      *                          set to the pElement->offSpec on input, so it only
      *                          needs to be adjusted if an argument is at fault.
+     * @param   pErrInfo        Where to return additional error information, if
+     *                          available.  Optional.
      */
     DECLCALLBACKMEMBER(int, pfnValidate)(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
-                                         PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError);
+                                         PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo);
 
     /**
      * Create a VFS object according to the element specification.
@@ -1095,10 +1097,12 @@ typedef struct RTVFSCHAINELEMENTREG
      * @param   poffError       Where to return error offset on failure.  This is
      *                          set to the pElement->offSpec on input, so it only
      *                          needs to be adjusted if an argument is at fault.
+     * @param   pErrInfo        Where to return additional error information, if
+     *                          available.  Optional.
      */
     DECLCALLBACKMEMBER(int, pfnInstantiate)(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
                                             PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
-                                            PRTVFSOBJ phVfsObj, uint32_t *poffError);
+                                            PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo);
 
     /**
      * Determins whether the element can be reused.
@@ -1140,11 +1144,13 @@ typedef struct RTVFSCHAINELEMENTREG
  *                          specification.  This must be freed by calling
  *                          RTVfsChainSpecFree.  Will always be set (unless
  *                          invalid parameters.)
- * @param   ppszError       On failure, this will point at the error location in
- *                          @a pszSpec.  Optional.
+ * @param   poffError       Where to return the offset into the input
+ *                          specification of what's causing trouble.  Always
+ *                          set, unless this argument causes an invalid pointer
+ *                          error.
  */
 RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTYPE enmDesiredType,
-                                PRTVFSCHAINSPEC *ppSpec, const char **ppszError);
+                                PRTVFSCHAINSPEC *ppSpec, uint32_t *poffError);
 
 /** @name RTVfsChainSpecParse
  * @{ */
@@ -1162,9 +1168,11 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
  * @param   poffError   Where to return the offset into the input specification
  *                      of what's causing trouble.  Always set, unless this
  *                      argument causes an invalid pointer error.
+ * @param   pErrInfo    Where to return additional error information, if
+ *                      available.  Optional.
  */
 RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC pReuseSpec,
-                                        PRTVFSOBJ phVfsObj, uint32_t *poffError);
+                                        PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo);
 
 /**
  * Frees a parsed chain specification.
@@ -1244,13 +1252,16 @@ public:
  * Stores the RTFILE_O_XXX flags in pSpec->uProvider.
  *
  * @returns IPRT status code.
- * @param   pSpec           The chain specification.
- * @param   pElement        The chain element specification to validate.
- * @param   poffError       Where to return error offset on failure.  This is
- *                          set to the pElement->offSpec on input, so it only
- *                          needs to be adjusted if an argument is at fault.
+ * @param   pSpec       The chain specification.
+ * @param   pElement    The chain element specification to validate.
+ * @param   poffError   Where to return error offset on failure.  This is set to
+ *                      the pElement->offSpec on input, so it only needs to be
+ *                      adjusted if an argument is at fault.
+ * @param   pErrInfo    Where to return additional error information, if
+ *                      available.  Optional.
  */
-RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError);
+RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCHAINELEMSPEC pElement,
+                                                 uint32_t *poffError, PRTERRINFO pErrInfo);
 
 
 /** @}  */

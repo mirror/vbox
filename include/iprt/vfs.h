@@ -1139,12 +1139,12 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
 /** The path prefix used to identify an VFS chain specification. */
 #define RTVFSCHAIN_SPEC_PREFIX   ":iprtvfs:"
 
-RTDECL(int) RTVfsChainOpenVfs(      const char *pszSpec,                 PRTVFS          phVfs,     const char **ppszError);
-RTDECL(int) RTVfsChainOpenFsStream( const char *pszSpec,                 PRTVFSFSSTREAM  phVfsFss,  const char **ppszError);
-RTDECL(int) RTVfsChainOpenDir(      const char *pszSpec, uint64_t fOpen, PRTVFSDIR       phVfsDir,  const char **ppszError);
-RTDECL(int) RTVfsChainOpenFile(     const char *pszSpec, uint64_t fOpen, PRTVFSFILE      phVfsFile, const char **ppszError);
-RTDECL(int) RTVfsChainOpenIoStream( const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM  phVfsIos,  const char **ppszError);
-RTDECL(int) RTVfsChainOpenSymlink(  const char *pszSpec,                 PRTVFSSYMLINK   phVfsSym,  const char **ppszError);
+RTDECL(int) RTVfsChainOpenVfs(const char *pszSpec, PRTVFS phVfs, uint32_t *poffError, PRTERRINFO pErrInfo);
+RTDECL(int) RTVfsChainOpenFsStream(const char *pszSpec, PRTVFSFSSTREAM  phVfsFss, uint32_t *poffError, PRTERRINFO pErrInfo);
+RTDECL(int) RTVfsChainOpenDir(const char *pszSpec, uint64_t fOpen, PRTVFSDIR phVfsDir, uint32_t *poffError, PRTERRINFO pErrInfo);
+RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE phVfsFile, uint32_t *poffError, PRTERRINFO pErrInfo);
+RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos, uint32_t *poffError, PRTERRINFO pErrInfo);
+RTDECL(int) RTVfsChainOpenSymlink(const char *pszSpec, PRTVFSSYMLINK phVfsSym, uint32_t *poffError, PRTERRINFO pErrInfo);
 
 /**
  * Tests if the given string is a chain specification or not.
@@ -1152,7 +1152,41 @@ RTDECL(int) RTVfsChainOpenSymlink(  const char *pszSpec,                 PRTVFSS
  * @returns true if it is, false if it isn't.
  * @param   pszSpec         The alleged chain spec.
  */
-RTDECL(bool)    RTVfsChainIsSpec(const char *pszSpec);
+RTDECL(bool) RTVfsChainIsSpec(const char *pszSpec);
+
+/**
+ * Common code for reporting errors of a RTVfsChainOpen* API.
+ *
+ * @param   pszFunction The API called.
+ * @param   pszSpec     The VFS chain specification or file path passed to the.
+ * @param   rc          The return code.
+ * @param   offError    The error offset value returned (0 if not captured).
+ * @param   pErrInfo    Additional error information.  Optional.
+ *
+ * @sa      RTVfsChainMsgErrorExitFailure
+ * @sa      RTVfsChainOpenVfs, RTVfsChainOpenFsStream, RTVfsChainOpenDir,
+ *          RTVfsChainOpenFile, RTVfsChainOpenIoStream, RTVfsChainOpenSymlink
+ */
+RTDECL(void) RTVfsChainMsgError(const char *pszFunction, const char *pszSpec, int rc, uint32_t offError, PRTERRINFO pErrInfo);
+
+/**
+ * Common code for reporting errors of a RTVfsChainOpen* API.
+ *
+ * @returns RTEXITCODE_FAILURE
+ *
+ * @param   pszFunction The API called.
+ * @param   pszSpec     The VFS chain specification or file path passed to the.
+ * @param   rc          The return code.
+ * @param   offError    The error offset value returned (0 if not captured).
+ * @param   pErrInfo    Additional error information.  Optional.
+ *
+ * @sa      RTVfsChainMsgError
+ * @sa      RTVfsChainOpenVfs, RTVfsChainOpenFsStream, RTVfsChainOpenDir,
+ *          RTVfsChainOpenFile, RTVfsChainOpenIoStream, RTVfsChainOpenSymlink
+ */
+RTDECL(RTEXITCODE) RTVfsChainMsgErrorExitFailure(const char *pszFunction, const char *pszSpec,
+                                                 int rc, uint32_t offError, PRTERRINFO pErrInfo);
+
 
 /** @} */
 

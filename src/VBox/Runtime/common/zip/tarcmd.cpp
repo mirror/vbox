@@ -194,22 +194,12 @@ static RTEXITCODE rtZipTarCmdOpenInputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTR
     if (   pOpts->pszFile
         && strcmp(pOpts->pszFile, "-") != 0)
     {
-        const char *pszError;
-        rc = RTVfsChainOpenIoStream(pOpts->pszFile,
-                                    RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN,
-                                    &hVfsIos,
-                                    &pszError);
+        uint32_t        offError = 0;
+        RTERRINFOSTATIC ErrInfo;
+        rc = RTVfsChainOpenIoStream(pOpts->pszFile, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN,
+                                    &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
-        {
-            if (pszError && *pszError)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                      "    '%s'\n"
-                                      "     %*s^\n",
-                                      rc, pOpts->pszFile, pszError - pOpts->pszFile, "");
-            return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                  "Failed with %Rrc opening the input archive '%s'", rc, pOpts->pszFile);
-        }
+            return RTVfsChainMsgErrorExitFailure("RTVfsChainOpenIoStream", pOpts->pszFile, rc, offError, &ErrInfo.Core);
     }
     else
     {

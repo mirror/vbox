@@ -70,19 +70,12 @@ static RTEXITCODE rtManifestDoVerify(const char *pszManifest, bool fStdFormat, c
     }
     else
     {
-        const char *pszError;
-        rc = RTVfsChainOpenIoStream(pszManifest, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN, &hVfsIos, &pszError);
+        uint32_t        offError = 0;
+        RTERRINFOSTATIC ErrInfo;
+        rc = RTVfsChainOpenIoStream(pszManifest, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN,
+                                    &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
-        {
-            if (pszError && *pszError)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                      "    '%s'\n"
-                                      "     %*s^\n",
-                                      rc, pszManifest, pszError - pszManifest, "");
-            return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                  "Failed with %Rrc opening the input manifest '%s'", rc, pszManifest);
-        }
+            return RTVfsChainMsgErrorExitFailure("RTVfsChainOpenIoStream", pszManifest, rc, offError, &ErrInfo.Core);
     }
 
     /*
@@ -146,17 +139,13 @@ static RTEXITCODE rtManifestDoVerify(const char *pszManifest, bool fStdFormat, c
 static int rtManifestAddFileToManifest(RTMANIFEST hManifest, const char *pszFilename, uint32_t fAttr)
 {
     RTVFSIOSTREAM   hVfsIos;
-    const char     *pszError;
-    int rc = RTVfsChainOpenIoStream(pszFilename, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN, &hVfsIos, &pszError);
+    uint32_t        offError = 0;
+    RTERRINFOSTATIC ErrInfo;
+    int rc = RTVfsChainOpenIoStream(pszFilename, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN,
+                                    &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
     {
-        if (pszError && *pszError)
-            RTMsgError("RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                       "    '%s'\n"
-                       "     %*s^\n",
-                       rc, pszFilename, pszError - pszFilename, "");
-        else
-            RTMsgError("Failed with %Rrc opening '%s'", rc, pszFilename);
+        RTVfsChainMsgError("RTVfsChainOpenIoStream", pszFilename, rc, offError, &ErrInfo.Core);
         return rc;
     }
 
@@ -200,20 +189,12 @@ static RTEXITCODE rtManifestDoCreate(const char *pszManifest, bool fStdFormat, c
     }
     else
     {
-        const char *pszError;
+        RTERRINFOSTATIC ErrInfo;
+        uint32_t        offError;
         rc = RTVfsChainOpenIoStream(pszManifest, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                    &hVfsIos, &pszError);
+                                    &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
-        {
-            if (pszError && *pszError)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                      "    '%s'\n"
-                                      "     %*s^\n",
-                                      rc, pszManifest, pszError - pszManifest, "");
-            return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                  "Failed with %Rrc opening the manifest '%s'", rc, pszManifest);
-        }
+            return RTVfsChainMsgErrorExitFailure("RTVfsChainOpenIoStream", pszManifest, rc, offError, &ErrInfo.Core);
     }
 
     /*

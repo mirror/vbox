@@ -462,9 +462,9 @@ static DECLCALLBACK(int) rtFsFatDir_OpenFile(void *pvThis, const char *pszFilena
 /**
  * @interface_method_impl{RTVFSDIROPS,pfnOpenDir}
  */
-static DECLCALLBACK(int) rtFsFatDir_OpenDir(void *pvThis, const char *pszSubDir, PRTVFSDIR phVfsDir)
+static DECLCALLBACK(int) rtFsFatDir_OpenDir(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir)
 {
-    RT_NOREF(pvThis, pszSubDir, phVfsDir);
+    RT_NOREF(pvThis, pszSubDir, fFlags, phVfsDir);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -515,6 +515,7 @@ static DECLCALLBACK(int) rtFsFatDir_UnlinkEntry(void *pvThis, const char *pszEnt
  */
 static DECLCALLBACK(int) rtFsFatDir_RewindDir(void *pvThis)
 {
+    RT_NOREF(pvThis);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -525,6 +526,7 @@ static DECLCALLBACK(int) rtFsFatDir_RewindDir(void *pvThis)
 static DECLCALLBACK(int) rtFsFatDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
                                             RTFSOBJATTRADD enmAddAttr)
 {
+    RT_NOREF(pvThis, pDirEntry, pcbDirEntry, enmAddAttr);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -570,6 +572,7 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
  */
 static DECLCALLBACK(void) rtFsFatVol_Destroy(void *pvThis)
 {
+    RT_NOREF(pvThis);
 }
 
 
@@ -578,6 +581,7 @@ static DECLCALLBACK(void) rtFsFatVol_Destroy(void *pvThis)
  */
 static DECLCALLBACK(int) rtFsFatVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
 {
+    RT_NOREF(pvThis, phVfsDir);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -602,4 +606,121 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsFatVolOps =
     rtFsFatVol_IsRangeInUse,
     RTVFSOPS_VERSION
 };
+
+
+
+RTDECL(int) RTFsFatVolOpen(RTVFSFILE hVfsFileIn, bool fReadOnly, PRTVFS phVfs, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(hVfsFileIn, fReadOnly, pErrInfo, phVfs);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
+ */
+static DECLCALLBACK(int) rtVfsChainFatVol_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
+                                                   PRTVFSCHAINELEMSPEC pElement, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pProviderReg);
+
+    /*
+     * Basic checks.
+     */
+    if (pElement->enmTypeIn != RTVFSOBJTYPE_FILE)
+        return pElement->enmTypeIn == RTVFSOBJTYPE_INVALID ? VERR_VFS_CHAIN_CANNOT_BE_FIRST_ELEMENT : VERR_VFS_CHAIN_TAKES_FILE;
+    if (   pElement->enmType != RTVFSOBJTYPE_VFS
+        && pElement->enmType != RTVFSOBJTYPE_DIR)
+        return VERR_VFS_CHAIN_ONLY_DIR_OR_VFS;
+    if (pElement->cArgs > 1)
+        return VERR_VFS_CHAIN_AT_MOST_ONE_ARG;
+
+    /*
+     * Parse the flag if present, save in pElement->uProvider.
+     */
+    bool fReadOnly = (pSpec->fOpenFile & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ;
+    if (pElement->cArgs > 0)
+    {
+        const char *psz = pElement->paArgs[0].psz;
+        if (*psz)
+        {
+            if (!strcmp(psz, "ro"))
+                fReadOnly = true;
+            else if (!strcmp(psz, "rw"))
+                fReadOnly = false;
+            else
+            {
+                *poffError = pElement->paArgs[0].offSpec;
+                return RTErrInfoSet(pErrInfo, VERR_VFS_CHAIN_INVALID_ARGUMENT, "Expected 'ro' or 'rw' as argument");
+            }
+        }
+    }
+
+    pElement->uProvider = fReadOnly;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnInstantiate}
+ */
+static DECLCALLBACK(int) rtVfsChainFatVol_Instantiate(PCRTVFSCHAINELEMENTREG pProviderReg, PCRTVFSCHAINSPEC pSpec,
+                                                      PCRTVFSCHAINELEMSPEC pElement, RTVFSOBJ hPrevVfsObj,
+                                                      PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    RT_NOREF(pProviderReg, pSpec, poffError);
+
+    int         rc;
+    RTVFSFILE   hVfsFileIn = RTVfsObjToFile(hPrevVfsObj);
+    if (hVfsFileIn != NIL_RTVFSFILE)
+    {
+        RTVFS hVfs;
+        rc = RTFsFatVolOpen(hVfsFileIn, pElement->uProvider != false, &hVfs, pErrInfo);
+        RTVfsFileRelease(hVfsFileIn);
+        if (RT_SUCCESS(rc))
+        {
+            *phVfsObj = RTVfsObjFromVfs(hVfs);
+            RTVfsRelease(hVfs);
+            if (*phVfsObj != NIL_RTVFSOBJ)
+                return VINF_SUCCESS;
+            rc = VERR_VFS_CHAIN_CAST_FAILED;
+        }
+    }
+    else
+        rc = VERR_VFS_CHAIN_CAST_FAILED;
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnCanReuseElement}
+ */
+static DECLCALLBACK(bool) rtVfsChainFatVol_CanReuseElement(PCRTVFSCHAINELEMENTREG pProviderReg,
+                                                           PCRTVFSCHAINSPEC pSpec, PCRTVFSCHAINELEMSPEC pElement,
+                                                           PCRTVFSCHAINSPEC pReuseSpec, PCRTVFSCHAINELEMSPEC pReuseElement)
+{
+    RT_NOREF(pProviderReg, pSpec, pReuseSpec);
+    if (   pElement->paArgs[0].uProvider == pReuseElement->paArgs[0].uProvider
+        || !pReuseElement->paArgs[0].uProvider)
+        return true;
+    return false;
+}
+
+
+/** VFS chain element 'file'. */
+static RTVFSCHAINELEMENTREG g_rtVfsChainFatVolReg =
+{
+    /* uVersion = */            RTVFSCHAINELEMENTREG_VERSION,
+    /* fReserved = */           0,
+    /* pszName = */             "fat",
+    /* ListEntry = */           { NULL, NULL },
+    /* pszHelp = */             "Open a FAT file system, requires a file object on the left side.\n"
+                                "First argument is an optional 'ro' (read-only) or 'rw' (read-write) flag.\n",
+    /* pfnValidate = */         rtVfsChainFatVol_Validate,
+    /* pfnInstantiate = */      rtVfsChainFatVol_Instantiate,
+    /* pfnCanReuseElement = */  rtVfsChainFatVol_CanReuseElement,
+    /* uEndMarker = */          RTVFSCHAINELEMENTREG_VERSION
+};
+
+RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(&g_rtVfsChainFatVolReg, rtVfsChainFatVolReg);
 
