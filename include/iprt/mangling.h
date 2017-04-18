@@ -914,6 +914,7 @@
 # define RTFsQuerySizes                                 RT_MANGLER(RTFsQuerySizes)
 # define RTFsQueryType                                  RT_MANGLER(RTFsQueryType)
 # define RTFsTypeName                                   RT_MANGLER(RTFsTypeName)
+# define RTFsFatVolOpen                                 RT_MANGLER(RTFsFatVolOpen)
 # define RTGetOpt                                       RT_MANGLER(RTGetOpt)
 # define RTGetOptArgvFree                               RT_MANGLER(RTGetOptArgvFree)
 # define RTGetOptArgvFromString                         RT_MANGLER(RTGetOptArgvFromString)
