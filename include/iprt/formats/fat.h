@@ -38,7 +38,24 @@
 #define FATBPB_MEDIA_FLOPPY_5_DOT_25    UINT8_C(0xed)
 #define FATBPB_MEDIA_FLOPPY_3_DOT_5     UINT8_C(0xf0)
 /* incomplete, figure out as needed... */
+
+/** Checks if @a a_bMedia is a valid media byte. */
+#define FATBPB_MEDIA_IS_VALID(a_bMedia) (   (uint8_t)(a_bMedia) >= 0xf8 \
+                                         || (uint8_t)(a_bMedia) == 0xf0 \
+                                         || (uint8_t)(a_bMedia) == 0xf4 /* obscure - msdos 2.11 */ \
+                                         || (uint8_t)(a_bMedia) == 0xf5 /* obscure - msdos 2.11 */ \
+                                         || (uint8_t)(a_bMedia) == 0xed /* obscure - tandy 2000 */ \
+                                         || (uint8_t)(a_bMedia) == 0xe5 /* obscure - tandy 2000 */ )
 /** @} */
+
+/** Checks if @a a_bFatId is a valid FAT ID byte.
+ * @todo uncertain whether 0xf4 and 0xf5 should be allowed here too. */
+#define FAT_ID_IS_VALID(a_bFatId) (   (uint8_t)(a_bFatId) >= 0xf8 \
+                                   || (uint8_t)(a_bFatId) == 0xf0 \
+                                   || (uint8_t)(a_bMedia) == 0xf4 /* obscure - msdos 2.11 */ \
+                                   || (uint8_t)(a_bMedia) == 0xf5 /* obscure - msdos 2.11 */ \
+                                   || (uint8_t)(a_bFatId) == 0xed /* obscure, tandy 2000 */ \
+                                   || (uint8_t)(a_bFatId) == 0xe5 /* obscure, tandy 2000 */ )
 
 /**
  * The DOS 2.0 BIOS parameter block (BPB).
@@ -425,7 +442,7 @@ typedef struct FATBOOTSECTOR
     union
     {
         FATBPB20        Bpb20;
-        FATBPB32FLAT    Bpb30;
+        FATBPB30FLAT    Bpb30;
         FATBPB32FLAT    Bpb32;
         FATBPB331FLAT   Bpb331;
         FATEBPB         Ebpb;
@@ -480,6 +497,126 @@ typedef FAT32INFOSECTOR const *PCFAT32INFOSECTOR;
 #define FAT32INFOSECTOR_SIGNATURE_1     UINT32_C(0x41615252)
 #define FAT32INFOSECTOR_SIGNATURE_2     UINT32_C(0x61417272)
 #define FAT32INFOSECTOR_SIGNATURE_3     UINT32_C(0xaa550000)
+
+
+/** @name Special FAT cluster numbers and limits.
+ * @{ */
+#define FAT_FIRST_DATA_CLUSTER          2                       /**< The first data cluster. */
+#define FAT_LAST_FAT12_DATA_CLUSTER     UINT32_C(0x00000ff5)    /**< The last possible data cluster for FAT12. */
+#define FAT_LAST_FAT16_DATA_CLUSTER     UINT32_C(0x0000fff5)    /**< The last possible data cluster for FAT16. */
+#define FAT_LAST_FAT32_DATA_CLUSTER     UINT32_C(0x0ffffff5)    /**< The last possible data cluster for FAT32. */
+/** @} */
+
+
+/**
+ * FAT directory entry.
+ */
+typedef struct FATDIRENTRY
+{
+    /** The directory entry name.
+     * First character serves as a flag to indicate deleted or not. */
+    char            achName[8+3];
+    /** Attributes (FAT_ATTR_XXX). */
+    uint8_t         fAttrib;
+    /** NT case flags (FATDIRENTRY_CASE_F_XXX). */
+    uint8_t         fCase;
+    /** Birth milliseconds. */
+    uint8_t         uBirthCentiseconds;
+    /** Birth time. */
+    uint16_t        uBirthTime;
+    /** Birth date. */
+    uint16_t        uBirthDate;
+    /** Access date. */
+    uint16_t        uAccessDate;
+    union
+    {
+        /** High cluster word for FAT32.   */
+        uint16_t    idxClusterHigh;
+        /** Index of extended attributes (FAT16/FAT12). */
+        uint16_t    idxEAs;
+    } u;
+    /** Modify time. */
+    uint16_t        uModifyTime;
+    /** The data cluster index. */
+    uint16_t        idxCluster;
+    /** The file size. */
+    uint32_t        cbFile;
+} FATDIRENTRY;
+AssertCompileSize(FATDIRENTRY, 0x20);
+/** Pointer to a FAT directory entry. */
+typedef FATDIRENTRY *PFATDIRENTRY;
+/** Pointer to a FAT directory entry. */
+typedef FATDIRENTRY const *PCFATDIRENTRY;
+
+
+/** @name FAT_ATTR_XXX - FATDIRENTRY::fAttrib flags.
+ * @{ */
+#define FAT_ATTR_READONLY           UINT8_C(0x01)
+#define FAT_ATTR_HIDDEN             UINT8_C(0x02)
+#define FAT_ATTR_SYSTEM             UINT8_C(0x04)
+#define FAT_ATTR_VOLUME             UINT8_C(0x08)
+#define FAT_ATTR_DIRECTORY          UINT8_C(0x10)
+#define FAT_ATTR_ARCHIVE            UINT8_C(0x20)
+#define FAT_ATTR_DEVICE             UINT8_C(0x40)
+#define FAT_ATTR_RESERVED           UINT8_C(0x80)
+/** @} */
+
+/** @name FATDIRENTRY_CASE_F_XXX - FATDIRENTRY::fCase flags.
+ * @{ */
+/** Lower cased base name (first 8 chars). */
+#define FATDIRENTRY_CASE_F_LOWER_BASE   UINT8_C(0x08)
+/** Lower cased filename extension (last 3 chars). */
+#define FATDIRENTRY_CASE_F_LOWER_EXT    UINT8_C(0x10)
+/** @} */
+
+
+/**
+ * FAT directory alias name slot.
+ */
+#pragma pack(1)
+typedef struct FATDIRNAMELOT
+{
+    /** The slot sequence number. */
+    uint8_t         idSlot;
+    /** The first 5 name chars.
+     * @remarks misaligned  */
+    RTUTF16         awcName0[5];
+    /** Attributes (FAT_ATTR_XXX). */
+    uint8_t         fAttrib;
+    /** Always zero. */
+    uint8_t         fZero;
+    /** Alias checksum. */
+    uint8_t         bChecksum;
+    /** The next 6 name chars. */
+    RTUTF16         awcName1[6];
+    /** Always zero (usually cluster entry). */
+    uint16_t        idxZero;
+    /** The next 2 name chars. */
+    RTUTF16         awcName2[2];
+} FATDIRNAMESLOT;
+#pragma pack()
+AssertCompileSize(FATDIRNAMESLOT, 0x20);
+/** Pointer to a FAT directory entry. */
+typedef FATDIRNAMESLOT *PFATDIRNAMESLOT;
+/** Pointer to a FAT directory entry. */
+typedef FATDIRNAMESLOT const *PCFATDIRNAMESLOT;
+
+
+/**
+ * FAT directory entry union.
+ */
+typedef union FATDIRENTRYUNION
+{
+    /** Regular entry view. */
+    FATDIRENTRY     Entry;
+    /** Name slot view. */
+    FATDIRNAMESLOT  Slot;
+} FATDIRENTRYUNION;
+AssertCompileSize(FATDIRENTRYUNION, 0x20);
+/** Pointer to a FAT directory entry union. */
+typedef FATDIRENTRYUNION *PFATDIRENTRYUNION;
+/** Pointer to a const FAT directory entry union. */
+typedef FATDIRENTRYUNION const *PCFATDIRENTRYUNION;
 
 #endif
 

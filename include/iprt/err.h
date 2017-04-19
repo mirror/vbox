@@ -2649,6 +2649,16 @@ RT_C_DECLS_END
 #define VERR_JSON_MALFORMED                         (-24702)
 /** @} */
 
+/** @name RTVfs status codes.
+ * @{ */
+/** Unknown file system format. */
+#define VERR_VFS_UNKNOWN_FORMAT                     (-24800)
+/** Found bogus values in the file system. */
+#define VERR_VFS_BOGUS_FORMAT                       (-24801)
+/** Found bogus offset in the file system. */
+#define VERR_VFS_BOGUS_OFFSET                       (-24802)
+/** @} */
+
 /* SED-END */
 
 /** @} */

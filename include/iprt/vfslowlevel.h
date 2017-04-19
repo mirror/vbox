@@ -159,23 +159,58 @@ DECLINLINE(void) RTVfsLockReleaseWrite(RTVFSLOCK hLock)
 /** @}  */
 
 /**
- * The VFS operations.
+ * The basis for all virtual file system objects.
  */
-typedef struct RTVFSOPS
+typedef struct RTVFSOBJOPS
 {
-    /** The structure version (RTVFSOPS_VERSION). */
+    /** The structure version (RTVFSOBJOPS_VERSION). */
     uint32_t                uVersion;
-    /** The virtual file system feature mask.  */
-    uint32_t                fFeatures;
+    /** The object type for type introspection. */
+    RTVFSOBJTYPE            enmType;
     /** The name of the operations. */
     const char             *pszName;
 
     /**
-     * Destructor.
+     * Close the object.
      *
-    * @param   pvThis      The implementation specific data.
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific file data.
      */
-    DECLCALLBACKMEMBER(void, pfnDestroy)(void *pvThis);
+    DECLCALLBACKMEMBER(int, pfnClose)(void *pvThis);
+
+    /**
+     * Get information about the file.
+     *
+     * @returns IPRT status code. See RTVfsObjQueryInfo.
+     * @retval  VERR_WRONG_TYPE if file system or file system stream.
+     * @param   pvThis      The implementation specific file data.
+     * @param   pObjInfo    Where to return the object info on success.
+     * @param   enmAddAttr  Which set of additional attributes to request.
+     * @sa      RTVfsObjQueryInfo, RTFileQueryInfo, RTPathQueryInfo
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryInfo)(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
+    /** Marks the end of the structure (RTVFSOBJOPS_VERSION). */
+    uintptr_t               uEndMarker;
+} RTVFSOBJOPS;
+/** Pointer to constant VFS object operations. */
+typedef RTVFSOBJOPS const *PCRTVFSOBJOPS;
+
+/** The RTVFSOBJOPS structure version. */
+#define RTVFSOBJOPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x1f,1,0)
+
+
+/**
+ * The VFS operations.
+ */
+typedef struct RTVFSOPS
+{
+    /** The basic object operation.  */
+    RTVFSOBJOPS             Obj;
+    /** The structure version (RTVFSOPS_VERSION). */
+    uint32_t                uVersion;
+    /** The virtual file system feature mask.  */
+    uint32_t                fFeatures;
 
     /**
      * Opens the root directory.
@@ -248,46 +283,6 @@ typedef RTVFSOPS const *PCRTVFSOPS;
  */
 RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
                      PRTVFS phVfs, void **ppvInstance);
-
-/**
- * The basis for all virtual file system objects except RTVFS.
- */
-typedef struct RTVFSOBJOPS
-{
-    /** The structure version (RTVFSOBJOPS_VERSION). */
-    uint32_t                uVersion;
-    /** The object type for type introspection. */
-    RTVFSOBJTYPE            enmType;
-    /** The name of the operations. */
-    const char             *pszName;
-
-    /**
-     * Close the object.
-     *
-     * @returns IPRT status code.
-     * @param   pvThis      The implementation specific file data.
-     */
-    DECLCALLBACKMEMBER(int, pfnClose)(void *pvThis);
-
-    /**
-     * Get information about the file.
-     *
-     * @returns IPRT status code. See RTVfsObjQueryInfo.
-     * @param   pvThis      The implementation specific file data.
-     * @param   pObjInfo    Where to return the object info on success.
-     * @param   enmAddAttr  Which set of additional attributes to request.
-     * @sa      RTVfsObjQueryInfo, RTFileQueryInfo, RTPathQueryInfo
-     */
-    DECLCALLBACKMEMBER(int, pfnQueryInfo)(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
-
-    /** Marks the end of the structure (RTVFSOBJOPS_VERSION). */
-    uintptr_t               uEndMarker;
-} RTVFSOBJOPS;
-/** Pointer to constant VFS object operations. */
-typedef RTVFSOBJOPS const *PCRTVFSOBJOPS;
-
-/** The RTVFSOBJOPS structure version. */
-#define RTVFSOBJOPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x1f,1,0)
 
 
 /**
@@ -578,6 +573,26 @@ typedef struct RTVFSDIROPS
 typedef RTVFSDIROPS const *PCRTVFSDIROPS;
 /** The RTVFSDIROPS structure version. */
 #define RTVFSDIROPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x4f,1,0)
+
+
+/**
+ * Creates a new VFS directory handle.
+ *
+ * @returns IPRT status code
+ * @param   pDirOps             The directory operations.
+ * @param   cbInstance          The size of the instance data.
+ * @param   fFlags              Reserved, MBZ.
+ * @param   hVfs                The VFS handle to associate this directory with.
+ *                              NIL_VFS is ok.
+ * @param   hLock               Handle to a custom lock to be used with the new
+ *                              object.  The reference is consumed.  NIL and
+ *                              special lock handles are fine.
+ * @param   phVfsDir            Where to return the new handle.
+ * @param   ppvInstance         Where to return the pointer to the instance data
+ *                              (size is @a cbInstance).
+ */
+RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlags, RTVFS hVfs, RTVFSLOCK hLock,
+                        PRTVFSDIR phVfsDir, void **ppvInstance);
 
 
 /**

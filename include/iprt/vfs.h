@@ -925,6 +925,57 @@ RTDECL(int)         RTVfsFileReadAt(RTVFSFILE hVfsFile, RTFOFF off, void *pvBuf,
 RTDECL(int)         RTVfsFileWrite(RTVFSFILE hVfsFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 RTDECL(int)         RTVfsFileWriteAt(RTVFSFILE hVfsFile, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
+
+/**
+ * Reads bytes from the file into a scatter buffer.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and the number of bytes read written to @a pcbRead.
+ * @retval  VINF_TRY_AGAIN if @a fBlocking is @c false, @a pcbRead is not NULL,
+ *          and no data was available. @a *pcbRead will be set to 0.
+ * @retval  VINF_EOF when trying to read __beyond__ the end of the stream and
+ *          @a pcbRead is not NULL (it will be set to the number of bytes read,
+ *          or 0 if the end of the stream was reached before this call).
+ *          When the last byte of the read request is the last byte in the
+ *          stream, this status code will not be used.  However, VINF_EOF is
+ *          returned when attempting to read 0 bytes while standing at the end
+ *          of the stream.
+ * @retval  VERR_EOF when trying to read __beyond__ the end of the stream and
+ *          @a pcbRead is NULL.
+ * @retval  VERR_ACCESS_DENIED if the stream is not readable.
+ *
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   off             Where to read at, -1 for the current position.
+ * @param   pSgBuf          Pointer to a scatter buffer descriptor.  The number
+ *                          of bytes described by the segments is what will be
+ *                          attemted read.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbRead parameter must not be NULL.
+ * @param   pcbRead         Where to always store the number of bytes actually
+ *                          read.  This can be NULL if @a fBlocking is true.
+ * @sa      RTFileSgRead, RTSocketSgRead, RTPipeRead, RTPipeReadBlocking
+ */
+RTDECL(int)         RTVfsFileSgRead(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
+
+/**
+ * Write bytes to the file from a gather buffer.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_ACCESS_DENIED if the stream is not writable.
+ *
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   off             Where to write at, -1 for the current position.
+ * @param   pSgBuf          Pointer to a gather buffer descriptor.  The number
+ *                          of bytes described by the segments is what will be
+ *                          attemted written.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbWritten parameter must not be NULL.
+ * @param   pcbWritten      Where to always store the number of bytes actually
+ *                          written.  This can be NULL if @a fBlocking is true.
+ * @sa      RTFileSgWrite, RTSocketSgWrite
+ */
+RTDECL(int)         RTVfsFileSgWrite(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);
+
 /**
  * Flush any buffered data to the file.
  *

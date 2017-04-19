@@ -81,6 +81,25 @@
         Assert((a_pSetOps)->uEndMarker == RTVFSOBJSETOPS_VERSION); \
     } while (0)
 
+/** Asserts that the VFS directory vtable is valid. */
+#define RTVFSDIR_ASSERT_OPS(pDirOps, a_enmType) \
+    do { \
+        RTVFSOBJ_ASSERT_OPS(&(pDirOps)->Obj, a_enmType); \
+        RTVFSOBJSET_ASSERT_OPS(&(pDirOps)->ObjSet, RT_OFFSETOF(RTVFSDIROPS, Obj) - RT_OFFSETOF(RTVFSDIROPS, ObjSet)); \
+        Assert((pDirOps)->uVersion == RTVFSDIROPS_VERSION); \
+        Assert(!(pDirOps)->fReserved); \
+        AssertPtr((pDirOps)->pfnTraversalOpen); \
+        AssertPtr((pDirOps)->pfnOpenFile); \
+        AssertPtr((pDirOps)->pfnOpenDir); \
+        AssertPtr((pDirOps)->pfnCreateDir); \
+        AssertPtr((pDirOps)->pfnOpenSymlink); \
+        AssertPtr((pDirOps)->pfnCreateSymlink); \
+        AssertPtr((pDirOps)->pfnUnlinkEntry); \
+        AssertPtr((pDirOps)->pfnRewindDir); \
+        AssertPtr((pDirOps)->pfnReadDir); \
+        Assert((pDirOps)->uEndMarker == RTVFSDIROPS_VERSION); \
+    } while (0)
+
 /** Asserts that the VFS I/O stream vtable is valid. */
 #define RTVFSIOSTREAM_ASSERT_OPS(pIoStreamOps, a_enmType) \
     do { \
@@ -1633,6 +1652,7 @@ RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOC
     AssertPtr(pVfsOps);
     AssertReturn(pVfsOps->uVersion   == RTVFSOPS_VERSION, VERR_VERSION_MISMATCH);
     AssertReturn(pVfsOps->uEndMarker == RTVFSOPS_VERSION, VERR_VERSION_MISMATCH);
+    RTVFSOBJ_ASSERT_OPS(&pVfsOps->Obj, RTVFSOBJTYPE_VFS);
     Assert(cbInstance > 0);
     AssertPtr(ppvInstance);
     AssertPtr(phVfs);
@@ -1646,7 +1666,7 @@ RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOC
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(&pThis->Base, NULL, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pVfsOps->Obj, hVfs, hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
     if (RT_FAILURE(rc))
     {
@@ -1659,6 +1679,7 @@ RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOC
 
     *phVfs       = pThis;
     *ppvInstance = pThis->Base.pvThis;
+
     return VINF_SUCCESS;
 }
 
@@ -1831,6 +1852,51 @@ RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVF
  *  D I R   D I R   D I R
  *
  */
+
+
+RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlags, RTVFS hVfs, RTVFSLOCK hLock,
+                        PRTVFSDIR phVfsDir, void **ppvInstance)
+{
+    /*
+     * Validate the input, be extra strict in strict builds.
+     */
+    AssertPtr(pDirOps);
+    AssertReturn(pDirOps->uVersion   == RTVFSDIROPS_VERSION, VERR_VERSION_MISMATCH);
+    AssertReturn(pDirOps->uEndMarker == RTVFSDIROPS_VERSION, VERR_VERSION_MISMATCH);
+    Assert(!pDirOps->fReserved);
+    RTVFSDIR_ASSERT_OPS(pDirOps, RTVFSOBJTYPE_DIR);
+    Assert(cbInstance > 0);
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertPtr(ppvInstance);
+    AssertPtr(phVfsDir);
+    RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);
+
+    /*
+     * Allocate the handle + instance data.
+     */
+    size_t const cbThis = RT_ALIGN_Z(sizeof(RTVFSDIRINTERNAL), RTVFS_INST_ALIGNMENT)
+                        + RT_ALIGN_Z(cbInstance, RTVFS_INST_ALIGNMENT);
+    RTVFSDIRINTERNAL *pThis = (RTVFSDIRINTERNAL *)RTMemAllocZ(cbThis);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pDirOps->Obj, hVfs, hLock,
+                                   (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    pThis->uMagic       = RTVFSDIR_MAGIC;
+    pThis->fReserved    = 0;
+    pThis->pOps         = pDirOps;
+
+    *phVfsDir    = pThis;
+    *ppvInstance = pThis->Base.pvThis;
+    return VINF_SUCCESS;
+}
+
 
 RTDECL(uint32_t) RTVfsDirRetain(RTVFSDIR hVfsDir)
 {
@@ -2797,6 +2863,32 @@ RTDECL(int)         RTVfsFileReadAt(RTVFSFILE hVfsFile, RTFOFF off, void *pvBuf,
         rc = RTVfsIoStrmReadAt(&pThis->Stream, off, pvBuf, cbToRead, true /*fBlocking*/, pcbRead);
 
     return rc;
+}
+
+
+RTDECL(int) RTVfsFileSgRead(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+{
+    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
+    if (pcbRead)
+        *pcbRead = 0;
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+
+    return RTVfsIoStrmSgRead(&pThis->Stream, off, pSgBuf, fBlocking, pcbRead);
+}
+
+
+RTDECL(int) RTVfsFileSgWrite(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
+    if (pcbWritten)
+        *pcbWritten = 0;
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+
+    return RTVfsIoStrmSgWrite(&pThis->Stream, off, pSgBuf, fBlocking, pcbWritten);
 }
 
 
