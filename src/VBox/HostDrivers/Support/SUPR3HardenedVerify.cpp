@@ -1187,16 +1187,19 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, PRTERRINFO pErrInf
         return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_SHORT, pErrInfo, "The path is too short: '", pszPath, "'");
 
     /*
-     * Check each component.  No parent references or double slashes.
+     * The root slash should be alone to avoid UNC confusion.
+     */
+    if (RTPATH_IS_SLASH(pszSrc[0]))
+        return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_CLEAN, pErrInfo,
+                                      "The path is not clean of leading double slashes: '", pszPath, "'");
+    /*
+     * Check each component.  No parent references.
      */
     pInfo->cComponents = 0;
     pInfo->fDirSlash   = false;
     while (pszSrc[0])
     {
         /* Sanity checks. */
-        if (RTPATH_IS_SLASH(pszSrc[0])) /* can be relaxed if we care. */
-            return supR3HardenedSetError3(VERR_SUPLIB_PATH_NOT_CLEAN, pErrInfo,
-                                          "The path is not clean of double slashes: '", pszPath, "'");
         if (   pszSrc[0] == '.'
             && pszSrc[1] == '.'
             && RTPATH_IS_SLASH(pszSrc[2]))
@@ -1226,6 +1229,10 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, PRTERRINFO pErrInf
                 return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_LONG, pErrInfo,
                                               "The path is too long: '", pszPath, "'");
         }
+
+        /* Skip double slashes. */
+        while (RTPATH_IS_SLASH(*pszSrc))
+            pszSrc++;
     }
 
     /* Terminate the string and enter its length. */
