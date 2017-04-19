@@ -84,7 +84,7 @@ VBoxNetLwf.sys,,,2
 
 [VBoxNetLwf.ndi.AddReg]
 HKR, Ndi, HelpText, , %VBoxNetLwf_HELP%
-HKR, Ndi,            ClsID,              0, {f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}
+;HKR, Ndi,            ClsID,              0, {f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}
 ;HKR, Ndi,            ComponentDll,        , VBoxNetLwfNobj.dll
 HKR, Ndi,            FilterClass,         , compression
 HKR, Ndi,            FilterType,   0x10001, 0x2
