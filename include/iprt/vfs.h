@@ -944,7 +944,7 @@ RTDECL(int)         RTVfsFileWriteAt(RTVFSFILE hVfsFile, RTFOFF off, const void 
  *          @a pcbRead is NULL.
  * @retval  VERR_ACCESS_DENIED if the stream is not readable.
  *
- * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   hVfsFile        The VFS file handle.
  * @param   off             Where to read at, -1 for the current position.
  * @param   pSgBuf          Pointer to a scatter buffer descriptor.  The number
  *                          of bytes described by the segments is what will be
@@ -963,7 +963,7 @@ RTDECL(int)         RTVfsFileSgRead(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pS
  * @returns IPRT status code.
  * @retval  VERR_ACCESS_DENIED if the stream is not writable.
  *
- * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   hVfsFile        The VFS file handle.
  * @param   off             Where to write at, -1 for the current position.
  * @param   pSgBuf          Pointer to a gather buffer descriptor.  The number
  *                          of bytes described by the segments is what will be
