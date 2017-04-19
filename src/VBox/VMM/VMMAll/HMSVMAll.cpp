@@ -520,7 +520,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
                 if (pEventInject->n.u3Type == SVM_EVENT_EXCEPTION)
                 {
                     if (   uVector == X86_XCPT_NMI
-                        || uVector > 31 /* X86_XCPT_MAX */)
+                        || uVector > X86_XCPT_LAST)
                     {
                         Log(("HMSvmVmRun: Invalid vector for hardware exception. uVector=%#x -> #VMEXIT\n", uVector));
                         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
@@ -782,9 +782,7 @@ VMM_INT_DECL(bool) HMSvmNstGstIsInterruptPending(PCCPUMCTX pCtx)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_APIC_INTR_MASKED_BY_TPR when an APIC interrupt is pending but
  *          can't be delivered due to TPR priority.
- * @retval  VERR_NO_DATA if there is no interrupt to be delivered (either APIC
- *          has been software-disabled since it flagged something was pending,
- *          or other reasons).
+ * @retval  VERR_NO_DATA if there is no interrupt to be delivered.
  *
  * @param   pCtx            The guest-CPU context.
  * @param   pu8Interrupt    Where to store the interrupt.

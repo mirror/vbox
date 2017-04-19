@@ -5273,7 +5273,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
         if (   IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, u8Vector)
             && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT))
         {
-            Assert(u8Vector <= 31 /* X86_XCPT_MAX */);
+            Assert(u8Vector <= X86_XCPT_LAST);
             uint64_t const uExitInfo1 = fFlags & IEM_XCPT_FLAGS_ERR ? uErr : 0;
             uint64_t const uExitInfo2 = fFlags & IEM_XCPT_FLAGS_CR2 ? uCr2 : 0;
             if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist
