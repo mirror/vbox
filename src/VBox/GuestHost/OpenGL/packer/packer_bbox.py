@@ -167,7 +167,7 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 
 
 	print("\tCR_GET_PACKER_CONTEXT(pc);")
-	print("\tunsigned char *data_ptr;")
+	print("\tunsigned char *data_ptr = NULL;")
 
 	if normalized:
 		if argtype == "Nb":

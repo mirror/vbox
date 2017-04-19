@@ -151,7 +151,7 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
         is_extended = 0
 
 
-    print("\tunsigned char *data_ptr;")
+    print("\tunsigned char *data_ptr = NULL;")
     print('\t(void) pc;')
     #if func_name == "Enable" or func_name == "Disable":
     #   print "\tCRASSERT(!pc->buffer.geometry_only); /* sanity check */"
