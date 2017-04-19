@@ -28,7 +28,9 @@ class UIItemNetworkHost;
 struct UIDataSettingsGlobalNetwork;
 struct UIDataSettingsGlobalNetworkNAT;
 struct UIDataSettingsGlobalNetworkHost;
-typedef UISettingsCache<UIDataSettingsGlobalNetwork> UISettingsCacheGlobalNetwork;
+typedef UISettingsCache<UIDataSettingsGlobalNetworkNAT> UISettingsCacheGlobalNetworkNAT;
+typedef UISettingsCache<UIDataSettingsGlobalNetworkHost> UISettingsCacheGlobalNetworkHost;
+typedef UISettingsCachePoolOfTwo<UIDataSettingsGlobalNetwork, UISettingsCacheGlobalNetworkNAT, UISettingsCacheGlobalNetworkHost> UISettingsCacheGlobalNetwork;
 
 
 /** Global settings: Network page. */
@@ -108,19 +110,22 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Saves existing network data from the cache. */
+    bool saveNetworkData();
+
     /** Uploads NAT @a network data into passed @a data storage unit. */
-    void loadDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data);
+    void loadToCacheFromNetworkNAT(const CNATNetwork &network, UISettingsCacheGlobalNetworkNAT &cache);
     /** Saves @a data to corresponding NAT network. */
-    void saveDataNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data);
+    bool saveDataNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache);
     /** Creates a new item in the NAT network tree on the basis of passed @a data, @a fChooseItem if requested. */
     void createTreeWidgetItemForNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem = false);
     /** Removes existing @a pItem from the NAT network tree. */
     void removeTreeWidgetItemOfNetworkNAT(UIItemNetworkNAT *pItem);
 
     /** Uploads host @a network data into passed @a data storage unit. */
-    void loadDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data);
+    void loadToCacheFromNetworkHost(const CHostNetworkInterface &iface, UISettingsCacheGlobalNetworkHost &cache);
     /** Saves @a data to corresponding host network. */
-    void saveDataNetworkHost(const UIDataSettingsGlobalNetworkHost &data);
+    bool saveDataNetworkHost(const UISettingsCacheGlobalNetworkHost &cache);
     /** Creates a new item in the host network tree on the basis of passed @a data, @a fChooseItem if requested. */
     void createTreeWidgetItemForNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem = false);
     /** Removes existing @a pItem from the host network tree. */

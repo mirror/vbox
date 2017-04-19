@@ -48,29 +48,12 @@
 struct UIDataSettingsGlobalNetwork
 {
     /** Constructs data. */
-    UIDataSettingsGlobalNetwork()
-        : m_networksNAT(QList<UIDataSettingsGlobalNetworkNAT>())
-        , m_networksHost(QList<UIDataSettingsGlobalNetworkHost>())
-    {}
+    UIDataSettingsGlobalNetwork() {}
 
     /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsGlobalNetwork &other) const
-    {
-        return true
-               && (m_networksNAT == other.m_networksNAT)
-               && (m_networksHost == other.m_networksHost)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsGlobalNetwork &other) const { return equal(other); }
+    bool operator==(const UIDataSettingsGlobalNetwork & /* other */) const { return true; }
     /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsGlobalNetwork &other) const { return !equal(other); }
-
-    /** Holds the NAT network data. */
-    QList<UIDataSettingsGlobalNetworkNAT> m_networksNAT;
-    /** Holds the host network data. */
-    QList<UIDataSettingsGlobalNetworkHost> m_networksHost;
+    bool operator!=(const UIDataSettingsGlobalNetwork & /* other */) const { return false; }
 };
 
 
@@ -415,18 +398,10 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 
     /* Gather old network data: */
     foreach (const CNATNetwork &network, vboxGlobal().virtualBox().GetNATNetworks())
-    {
-        UIDataSettingsGlobalNetworkNAT data;
-        loadDataNetworkNAT(network, data);
-        oldNetworkData.m_networksNAT << data;
-    }
+        loadToCacheFromNetworkNAT(network, m_pCache->child1(network.GetNetworkName()));
     foreach (const CHostNetworkInterface &iface, vboxGlobal().host().GetNetworkInterfaces())
         if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
-        {
-            UIDataSettingsGlobalNetworkHost data;
-            loadDataNetworkHost(iface, data);
-            oldNetworkData.m_networksHost << data;
-        }
+            loadToCacheFromNetworkHost(iface, m_pCache->child2(iface.GetName()));
 
     /* Cache old network data: */
     m_pCache->cacheInitialData(oldNetworkData);
@@ -437,17 +412,14 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsNetwork::getFromCache()
 {
-    /* Get old network data from the cache: */
-    const UIDataSettingsGlobalNetwork &oldNetworkData = m_pCache->base();
-
     /* Load old network data from the cache: */
-    foreach (const UIDataSettingsGlobalNetworkNAT &network, oldNetworkData.m_networksNAT)
-        createTreeWidgetItemForNetworkNAT(network);
+    for (int i = 0; i < m_pCache->childCount1(); ++i)
+        createTreeWidgetItemForNetworkNAT(m_pCache->child1(i).base());
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
     m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkNAT();
-    foreach (const UIDataSettingsGlobalNetworkHost &network, oldNetworkData.m_networksHost)
-        createTreeWidgetItemForNetworkHost(network);
+    for (int i = 0; i < m_pCache->childCount2(); ++i)
+        createTreeWidgetItemForNetworkHost(m_pCache->child2(i).base());
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
     m_pTreeNetworkHost->setCurrentItem(m_pTreeNetworkHost->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkHost();
@@ -459,20 +431,18 @@ void UIGlobalSettingsNetwork::getFromCache()
 void UIGlobalSettingsNetwork::putToCache()
 {
     /* Prepare new network data: */
-    UIDataSettingsGlobalNetwork newNetworkData = m_pCache->base();
+    UIDataSettingsGlobalNetwork newNetworkData;
 
     /* Gather new network data: */
-    newNetworkData.m_networksNAT.clear();
-    for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iNetworkIndex)
+    for (int i = 0; i < m_pTreeNetworkNAT->topLevelItemCount(); ++i)
     {
-        const UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iNetworkIndex));
-        newNetworkData.m_networksNAT << *pItem;
+        const UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(i));
+        m_pCache->child1(pItem->m_strName).cacheCurrentData(*pItem);
     }
-    newNetworkData.m_networksHost.clear();
-    for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkHost->topLevelItemCount(); ++iNetworkIndex)
+    for (int i = 0; i < m_pTreeNetworkHost->topLevelItemCount(); ++i)
     {
-        const UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(iNetworkIndex));
-        newNetworkData.m_networksHost << *pItem;
+        const UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(i));
+        m_pCache->child2(pItem->m_interface.m_strName).cacheCurrentData(*pItem);
     }
 
     /* Cache new network data: */
@@ -484,17 +454,8 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Make sure network data was changed: */
-    if (m_pCache->wasChanged())
-    {
-        /* Save new network data from the cache: */
-        if (m_pCache->data().m_networksNAT != m_pCache->base().m_networksNAT)
-            foreach (const UIDataSettingsGlobalNetworkNAT &data, m_pCache->data().m_networksNAT)
-                saveDataNetworkNAT(data);
-        if (m_pCache->data().m_networksHost != m_pCache->base().m_networksHost)
-            foreach (const UIDataSettingsGlobalNetworkHost &data, m_pCache->data().m_networksHost)
-                saveDataNetworkHost(data);
-    }
+    /* Update network data and failing state: */
+    setFailed(!saveNetworkData());
 
     /* Upload properties to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -512,9 +473,9 @@ bool UIGlobalSettingsNetwork::validate(QList<UIValidationMessage> &messages)
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(0));
 
         /* Validate items first: */
-        for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iNetworkIndex)
+        for (int i = 0; i < m_pTreeNetworkNAT->topLevelItemCount(); ++i)
         {
-            UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iNetworkIndex));
+            UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(i));
             if (!pItem->validate(message))
                 fPass = false;
         }
@@ -549,9 +510,9 @@ bool UIGlobalSettingsNetwork::validate(QList<UIValidationMessage> &messages)
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(1));
 
         /* Validate items only: */
-        for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkHost->topLevelItemCount(); ++iNetworkIndex)
+        for (int i = 0; i < m_pTreeNetworkHost->topLevelItemCount(); ++i)
         {
-            UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(iNetworkIndex));
+            UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(i));
             if (!pItem->validate(message))
                 fPass = false;
         }
@@ -646,9 +607,9 @@ void UIGlobalSettingsNetwork::sltAddNetworkNAT()
     AssertReturnVoid(!network.isNull());
 
     /* Update tree: */
-    UIDataSettingsGlobalNetworkNAT data;
-    loadDataNetworkNAT(network, data);
-    createTreeWidgetItemForNetworkNAT(data, true);
+    const QString strCacheKey = network.GetNetworkName();
+    loadToCacheFromNetworkNAT(network, m_pCache->child1(strCacheKey));
+    createTreeWidgetItemForNetworkNAT(m_pCache->child1(strCacheKey).base(), true);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
 
@@ -763,9 +724,9 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     AssertReturnVoid(!dhcp.isNull());
 
     /* Update tree: */
-    UIDataSettingsGlobalNetworkHost data;
-    loadDataNetworkHost(iface, data);
-    createTreeWidgetItemForNetworkHost(data, true);
+    const QString strCacheKey = iface.GetName();
+    loadToCacheFromNetworkHost(iface, m_pCache->child2(strCacheKey));
+    createTreeWidgetItemForNetworkHost(m_pCache->child2(strCacheKey).base(), true);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
 }
 
@@ -1026,16 +987,44 @@ void UIGlobalSettingsNetwork::cleanup()
     m_pCache = 0;
 }
 
-void UIGlobalSettingsNetwork::loadDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data)
+bool UIGlobalSettingsNetwork::saveNetworkData()
 {
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save network settings from the cache: */
+    if (fSuccess && m_pCache->wasChanged())
+    {
+        /* Save new network data from the cache: */
+        for (int i = 0; fSuccess && i < m_pCache->childCount1(); ++i)
+        {
+            const UISettingsCacheGlobalNetworkNAT &cache = m_pCache->child1(i);
+            if (cache.wasUpdated())
+                fSuccess = saveDataNetworkNAT(cache);
+        }
+        for (int i = 0; fSuccess && i < m_pCache->childCount2(); ++i)
+        {
+            const UISettingsCacheGlobalNetworkHost &cache = m_pCache->child2(i);
+            if (cache.wasUpdated())
+                fSuccess = saveDataNetworkHost(m_pCache->child2(i));
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+void UIGlobalSettingsNetwork::loadToCacheFromNetworkNAT(const CNATNetwork &network, UISettingsCacheGlobalNetworkNAT &cache)
+{
+    /* Prepare old NAT data: */
+    UIDataSettingsGlobalNetworkNAT oldNATData;
+
     /* Load NAT network settings: */
-    data.m_fEnabled = network.GetEnabled();
-    data.m_strName = network.GetNetworkName();
-    data.m_strNewName = data.m_strName;
-    data.m_strCIDR = network.GetNetwork();
-    data.m_fSupportsDHCP = network.GetNeedDhcpServer();
-    data.m_fSupportsIPv6 = network.GetIPv6Enabled();
-    data.m_fAdvertiseDefaultIPv6Route = network.GetAdvertiseDefaultIPv6RouteEnabled();
+    oldNATData.m_fEnabled = network.GetEnabled();
+    oldNATData.m_strName = network.GetNetworkName();
+    oldNATData.m_strNewName = oldNATData.m_strName;
+    oldNATData.m_strCIDR = network.GetNetwork();
+    oldNATData.m_fSupportsDHCP = network.GetNeedDhcpServer();
+    oldNATData.m_fSupportsIPv6 = network.GetIPv6Enabled();
+    oldNATData.m_fAdvertiseDefaultIPv6Route = network.GetAdvertiseDefaultIPv6RouteEnabled();
 
     /* Load IPv4 rules: */
     foreach (QString strIPv4Rule, network.GetPortForwardRules4())
@@ -1047,12 +1036,12 @@ void UIGlobalSettingsNetwork::loadDataNetworkNAT(const CNATNetwork &network, UID
         Assert(rules.size() == 6);
         if (rules.size() != 6)
             continue;
-        data.m_ipv4rules << UIDataPortForwardingRule(rules[0],
-                                                     gpConverter->fromInternalString<KNATProtocol>(rules[1]),
-                                                     QString(rules[2]).remove('[').remove(']'),
-                                                     rules[3].toUInt(),
-                                                     QString(rules[4]).remove('[').remove(']'),
-                                                     rules[5].toUInt());
+        oldNATData.m_ipv4rules << UIDataPortForwardingRule(rules[0],
+                                                           gpConverter->fromInternalString<KNATProtocol>(rules[1]),
+                                                           QString(rules[2]).remove('[').remove(']'),
+                                                           rules[3].toUInt(),
+                                                           QString(rules[4]).remove('[').remove(']'),
+                                                           rules[5].toUInt());
     }
 
     /* Load IPv6 rules: */
@@ -1075,47 +1064,142 @@ void UIGlobalSettingsNetwork::loadDataNetworkNAT(const CNATNetwork &network, UID
         Assert(rules.size() == 6);
         if (rules.size() != 6)
             continue;
-        data.m_ipv6rules << UIDataPortForwardingRule(rules[0],
-                                                     gpConverter->fromInternalString<KNATProtocol>(rules[1]),
-                                                     QString(rules[2]).remove('[').remove(']'),
-                                                     rules[3].toUInt(),
-                                                     QString(rules[4]).remove('[').remove(']'),
-                                                     rules[5].toUInt());
+        oldNATData.m_ipv6rules << UIDataPortForwardingRule(rules[0],
+                                                           gpConverter->fromInternalString<KNATProtocol>(rules[1]),
+                                                           QString(rules[2]).remove('[').remove(']'),
+                                                           rules[3].toUInt(),
+                                                           QString(rules[4]).remove('[').remove(']'),
+                                                           rules[5].toUInt());
     }
+
+    /* Cache old NAT data: */
+    cache.cacheInitialData(oldNATData);
 }
 
-void UIGlobalSettingsNetwork::saveDataNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data)
+bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache)
 {
-    /* Make sure corresponding NAT network exists: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    CNATNetwork network = vbox.FindNATNetworkByName(data.m_strName);
-    AssertReturnVoid(vbox.isOk() && !network.isNull());
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save NAT settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old NAT data from the cache: */
+        const UIDataSettingsGlobalNetworkNAT &oldNatData = cache.base();
+        /* Get new NAT data from the cache: */
+        const UIDataSettingsGlobalNetworkNAT &newNatData = cache.data();
 
-    /* Save NAT network options: */
-    network.SetEnabled(data.m_fEnabled);
-    network.SetNetworkName(data.m_strNewName);
-    network.SetNetwork(data.m_strCIDR);
-    network.SetNeedDhcpServer(data.m_fSupportsDHCP);
-    network.SetIPv6Enabled(data.m_fSupportsIPv6);
-    network.SetAdvertiseDefaultIPv6RouteEnabled(data.m_fAdvertiseDefaultIPv6Route);
+        /* Get VBox for further activities: */
+        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        /* Search for a NAT network with the same name: */
+        CNATNetwork comNetwork = comVBox.FindNATNetworkByName(newNatData.m_strName);
+        fSuccess = comVBox.isOk() && comNetwork.isNotNull();
 
-    /* Rewrite IPv4 rules: */
-    foreach (const QString &strRule, network.GetPortForwardRules4())
-        network.RemovePortForwardRule(false, strRule.section(':', 0, 0));
-    foreach (const UIDataPortForwardingRule &newRule, data.m_ipv4rules)
-        network.AddPortForwardRule(false,
-                                   newRule.name, newRule.protocol,
-                                   newRule.hostIp, newRule.hostPort.value(),
-                                   newRule.guestIp, newRule.guestPort.value());
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotLoadNetworkSettings(comVBox, this);
+        else
+        {
+            /* Save whether NAT network is enabled: */
+            if (fSuccess && newNatData.m_fEnabled != oldNatData.m_fEnabled)
+            {
+                comNetwork.SetEnabled(newNatData.m_fEnabled);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save NAT network name: */
+            if (fSuccess && newNatData.m_strNewName != oldNatData.m_strNewName)
+            {
+                comNetwork.SetNetworkName(newNatData.m_strNewName);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save NAT network CIDR: */
+            if (fSuccess && newNatData.m_strCIDR != oldNatData.m_strCIDR)
+            {
+                comNetwork.SetNetwork(newNatData.m_strCIDR);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save whether NAT network needs DHCP server: */
+            if (fSuccess && newNatData.m_fSupportsDHCP != oldNatData.m_fSupportsDHCP)
+            {
+                comNetwork.SetNeedDhcpServer(newNatData.m_fSupportsDHCP);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save whether NAT network supports IPv6: */
+            if (fSuccess && newNatData.m_fSupportsIPv6 != oldNatData.m_fSupportsIPv6)
+            {
+                comNetwork.SetIPv6Enabled(newNatData.m_fSupportsIPv6);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save whether NAT network should advertise default IPv6 route: */
+            if (fSuccess && newNatData.m_fAdvertiseDefaultIPv6Route != oldNatData.m_fAdvertiseDefaultIPv6Route)
+            {
+                comNetwork.SetAdvertiseDefaultIPv6RouteEnabled(newNatData.m_fAdvertiseDefaultIPv6Route);
+                fSuccess = comNetwork.isOk();
+            }
 
-    /* Rewrite IPv6 rules: */
-    foreach (const QString &strRule, network.GetPortForwardRules6())
-        network.RemovePortForwardRule(true, strRule.section(':', 0, 0));
-    foreach (const UIDataPortForwardingRule &newRule, data.m_ipv6rules)
-        network.AddPortForwardRule(true,
-                                   newRule.name, newRule.protocol,
-                                   newRule.hostIp, newRule.hostPort.value(),
-                                   newRule.guestIp, newRule.guestPort.value());
+            /* Get IPv4 port forwarding rules for further activities: */
+            QVector<QString> ipv4rules;
+            if (fSuccess)
+            {
+                ipv4rules = comNetwork.GetPortForwardRules4();
+                fSuccess = comNetwork.isOk();
+            }
+            /* Get IPv6 port forwarding rules for further activities: */
+            QVector<QString> ipv6rules;
+            if (fSuccess)
+            {
+                ipv6rules = comNetwork.GetPortForwardRules6();
+                fSuccess = comNetwork.isOk();
+            }
+
+            /* Save IPv4 forwarding rules: */
+            if (fSuccess && newNatData.m_ipv4rules != oldNatData.m_ipv4rules)
+            {
+                for (int i = 0; fSuccess && i < ipv4rules.size(); ++i)
+                {
+                    const QString &strOldRule = ipv4rules.at(i);
+                    comNetwork.RemovePortForwardRule(false,
+                                                     strOldRule.section(':', 0, 0));
+                    fSuccess = comNetwork.isOk();
+                }
+                for (int i = 0; fSuccess && i < newNatData.m_ipv4rules.size(); ++i)
+                {
+                    const UIDataPortForwardingRule &newRule = newNatData.m_ipv4rules.at(i);
+                    comNetwork.AddPortForwardRule(false,
+                                                  newRule.name, newRule.protocol,
+                                                  newRule.hostIp, newRule.hostPort.value(),
+                                                  newRule.guestIp, newRule.guestPort.value());
+                    fSuccess = comNetwork.isOk();
+                }
+            }
+
+            /* Save IPv6 forwarding rules: */
+            if (fSuccess && newNatData.m_ipv6rules != oldNatData.m_ipv6rules)
+            {
+                for (int i = 0; fSuccess && i < ipv6rules.size(); ++i)
+                {
+                    const QString &strOldRule = ipv6rules.at(i);
+                    comNetwork.RemovePortForwardRule(true,
+                                                     strOldRule.section(':', 0, 0));
+                    fSuccess = comNetwork.isOk();
+                }
+                for (int i = 0; fSuccess && i < newNatData.m_ipv6rules.size(); ++i)
+                {
+                    const UIDataPortForwardingRule &newRule = newNatData.m_ipv6rules.at(i);
+                    comNetwork.AddPortForwardRule(true,
+                                                  newRule.name, newRule.protocol,
+                                                  newRule.hostIp, newRule.hostPort.value(),
+                                                  newRule.guestIp, newRule.guestPort.value());
+                    fSuccess = comNetwork.isOk();
+                }
+            }
+
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveNetworkNatSettings(comNetwork, this);
+        }
+    }
+    /* Return result: */
+    return fSuccess;
 }
 
 void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem)
@@ -1136,8 +1220,11 @@ void UIGlobalSettingsNetwork::removeTreeWidgetItemOfNetworkNAT(UIItemNetworkNAT 
     delete pItem;
 }
 
-void UIGlobalSettingsNetwork::loadDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data)
+void UIGlobalSettingsNetwork::loadToCacheFromNetworkHost(const CHostNetworkInterface &iface, UISettingsCacheGlobalNetworkHost &cache)
 {
+    /* Prepare old NAT data: */
+    UIDataSettingsGlobalNetworkHost oldHostData;
+
     /* Get DHCP server (create if necessary): */
     CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
     if (dhcp.isNull())
@@ -1156,92 +1243,136 @@ void UIGlobalSettingsNetwork::loadDataNetworkHost(const CHostNetworkInterface &i
         return;
 
     /* Host interface settings: */
-    data.m_interface.m_strName = iface.GetName();
-    data.m_interface.m_fDhcpClientEnabled = iface.GetDHCPEnabled();
-    data.m_interface.m_strInterfaceAddress = iface.GetIPAddress();
-    data.m_interface.m_strInterfaceMask = iface.GetNetworkMask();
-    data.m_interface.m_fIpv6Supported = iface.GetIPV6Supported();
-    data.m_interface.m_strInterfaceAddress6 = iface.GetIPV6Address();
-    data.m_interface.m_strInterfaceMaskLength6 = QString::number(iface.GetIPV6NetworkMaskPrefixLength());
+    oldHostData.m_interface.m_strName = iface.GetName();
+    oldHostData.m_interface.m_fDhcpClientEnabled = iface.GetDHCPEnabled();
+    oldHostData.m_interface.m_strInterfaceAddress = iface.GetIPAddress();
+    oldHostData.m_interface.m_strInterfaceMask = iface.GetNetworkMask();
+    oldHostData.m_interface.m_fIpv6Supported = iface.GetIPV6Supported();
+    oldHostData.m_interface.m_strInterfaceAddress6 = iface.GetIPV6Address();
+    oldHostData.m_interface.m_strInterfaceMaskLength6 = QString::number(iface.GetIPV6NetworkMaskPrefixLength());
 
     /* DHCP server settings: */
-    data.m_dhcpserver.m_fDhcpServerEnabled = dhcp.GetEnabled();
-    data.m_dhcpserver.m_strDhcpServerAddress = dhcp.GetIPAddress();
-    data.m_dhcpserver.m_strDhcpServerMask = dhcp.GetNetworkMask();
-    data.m_dhcpserver.m_strDhcpLowerAddress = dhcp.GetLowerIP();
-    data.m_dhcpserver.m_strDhcpUpperAddress = dhcp.GetUpperIP();
+    oldHostData.m_dhcpserver.m_fDhcpServerEnabled = dhcp.GetEnabled();
+    oldHostData.m_dhcpserver.m_strDhcpServerAddress = dhcp.GetIPAddress();
+    oldHostData.m_dhcpserver.m_strDhcpServerMask = dhcp.GetNetworkMask();
+    oldHostData.m_dhcpserver.m_strDhcpLowerAddress = dhcp.GetLowerIP();
+    oldHostData.m_dhcpserver.m_strDhcpUpperAddress = dhcp.GetUpperIP();
+
+    /* Cache old NAT data: */
+    cache.cacheInitialData(oldHostData);
 }
 
-void UIGlobalSettingsNetwork::saveDataNetworkHost(const UIDataSettingsGlobalNetworkHost &data)
+bool UIGlobalSettingsNetwork::saveDataNetworkHost(const UISettingsCacheGlobalNetworkHost &cache)
 {
-    /* Make sure corresponding Host interface exists: */
-    CHost host = vboxGlobal().host();
-    CHostNetworkInterface iface = host.FindHostNetworkInterfaceByName(data.m_interface.m_strName);
-    AssertReturnVoid(host.isOk() && !iface.isNull());
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save host-only settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old host-only data from the cache: */
+        const UIDataSettingsGlobalNetworkHost &oldHostOnlyData = cache.base();
+        /* Get new host-only data from the cache: */
+        const UIDataSettingsGlobalNetworkHost &newHostOnlyData = cache.data();
 
-    /* Automatic host interface configuration: */
-    if (data.m_interface.m_fDhcpClientEnabled)
-    {
-        iface.EnableDynamicIPConfig();
-    }
-    /* Manual host interface configuration: */
-    else
-    {
-        AssertMsg(data.m_interface.m_strInterfaceAddress.trimmed().isEmpty() ||
-                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toUtf8().constData()),
-                  ("Interface IPv4 address must be empty or IPv4-valid!\n"));
-        AssertMsg(data.m_interface.m_strInterfaceMask.trimmed().isEmpty() ||
-                  RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toUtf8().constData()),
-                  ("Interface IPv4 network mask must be empty or IPv4-valid!\n"));
-        if (   (   data.m_interface.m_strInterfaceAddress.trimmed().isEmpty()
-                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceAddress.toUtf8().constData()))
-            && (   data.m_interface.m_strInterfaceMask.trimmed().isEmpty()
-                || RTNetIsIPv4AddrStr(data.m_interface.m_strInterfaceMask.toUtf8().constData())))
-            iface.EnableStaticIPConfig(data.m_interface.m_strInterfaceAddress, data.m_interface.m_strInterfaceMask);
-        if (iface.GetIPV6Supported())
+        /* Get VBox for further activities: */
+        CHost comHost = vboxGlobal().host();
+        /* Search for a host-only interface with the same name: */
+        CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(newHostOnlyData.m_interface.m_strName);
+        fSuccess = comHost.isOk() && comInterface.isNotNull();
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotLoadNetworkSettings(comHost, this);
+        else
         {
-            AssertMsg(data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty() ||
-                      RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toUtf8().constData()),
-                      ("Interface IPv6 address must be empty or IPv6-valid!\n"));
-            bool fIsMaskPrefixLengthNumber = false;
-            const int iMaskPrefixLength = data.m_interface.m_strInterfaceMaskLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
-            AssertMsg(fIsMaskPrefixLengthNumber && iMaskPrefixLength >= 0 && iMaskPrefixLength <= 128,
-                      ("Interface IPv6 network mask prefix length must be empty or IPv6-valid!\n"));
-            if (   (   data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty()
-                    || RTNetIsIPv6AddrStr(data.m_interface.m_strInterfaceAddress6.toUtf8().constData()))
-                && (   fIsMaskPrefixLengthNumber
-                    && iMaskPrefixLength >= 0
-                    && iMaskPrefixLength <= 128))
-                iface.EnableStaticIPConfigV6(data.m_interface.m_strInterfaceAddress6, data.m_interface.m_strInterfaceMaskLength6.toULong());
+            /* Automatic host interface configuration: */
+            if (   fSuccess
+                && newHostOnlyData.m_interface.m_fDhcpClientEnabled
+                && newHostOnlyData.m_interface.m_fDhcpClientEnabled != oldHostOnlyData.m_interface.m_fDhcpClientEnabled)
+            {
+                comInterface.EnableDynamicIPConfig();
+                fSuccess = comInterface.isOk();
+            }
+
+            else
+
+            /* Manual host interface configuration: */
+            if (   fSuccess
+                && !newHostOnlyData.m_interface.m_fDhcpClientEnabled)
+            {
+                if (   fSuccess
+                    && (   newHostOnlyData.m_interface.m_fDhcpClientEnabled != oldHostOnlyData.m_interface.m_fDhcpClientEnabled
+                        || newHostOnlyData.m_interface.m_strInterfaceAddress != oldHostOnlyData.m_interface.m_strInterfaceAddress
+                        || newHostOnlyData.m_interface.m_strInterfaceMask != oldHostOnlyData.m_interface.m_strInterfaceMask))
+                {
+                    comInterface.EnableStaticIPConfig(newHostOnlyData.m_interface.m_strInterfaceAddress, newHostOnlyData.m_interface.m_strInterfaceMask);
+                    fSuccess = comInterface.isOk();
+                }
+
+                if (   fSuccess
+                    && newHostOnlyData.m_interface.m_fIpv6Supported
+                    && (   newHostOnlyData.m_interface.m_fDhcpClientEnabled != oldHostOnlyData.m_interface.m_fDhcpClientEnabled
+                        || newHostOnlyData.m_interface.m_strInterfaceAddress6 != oldHostOnlyData.m_interface.m_strInterfaceAddress6
+                        || newHostOnlyData.m_interface.m_strInterfaceMaskLength6 != oldHostOnlyData.m_interface.m_strInterfaceMaskLength6))
+                {
+                    comInterface.EnableStaticIPConfigV6(newHostOnlyData.m_interface.m_strInterfaceAddress6, newHostOnlyData.m_interface.m_strInterfaceMaskLength6.toULong());
+                    fSuccess = comInterface.isOk();
+                }
+            }
+
+            /* Get network name for further activities: */
+            QString strNetworkName;
+            if (fSuccess)
+            {
+                strNetworkName = comInterface.GetNetworkName();
+                fSuccess = comInterface.isOk();
+            }
+
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                msgCenter().cannotSaveNetworkHostSettings(comInterface, this);
+            else
+            {
+                /* Get VBox for further activities: */
+                CVirtualBox comVBox = vboxGlobal().virtualBox();
+                /* Search for a DHCP server with the same name: */
+                CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
+                fSuccess = comVBox.isOk() && comServer.isNotNull();
+
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotLoadNetworkSettings(comVBox, this);
+                else
+                {
+                    /* Save whether DHCP server is enabled: */
+                    if (fSuccess && newHostOnlyData.m_dhcpserver.m_fDhcpServerEnabled != oldHostOnlyData.m_dhcpserver.m_fDhcpServerEnabled)
+                    {
+                        comServer.SetEnabled(newHostOnlyData.m_dhcpserver.m_fDhcpServerEnabled);
+                        fSuccess = comServer.isOk();
+                    }
+                    if (   fSuccess
+                        && newHostOnlyData.m_dhcpserver.m_fDhcpServerEnabled
+                        && (   newHostOnlyData.m_dhcpserver.m_strDhcpServerAddress != oldHostOnlyData.m_dhcpserver.m_strDhcpServerAddress
+                            || newHostOnlyData.m_dhcpserver.m_strDhcpServerMask != oldHostOnlyData.m_dhcpserver.m_strDhcpServerMask
+                            || newHostOnlyData.m_dhcpserver.m_strDhcpLowerAddress != oldHostOnlyData.m_dhcpserver.m_strDhcpLowerAddress
+                            || newHostOnlyData.m_dhcpserver.m_strDhcpUpperAddress != oldHostOnlyData.m_dhcpserver.m_strDhcpUpperAddress))
+                    {
+                        comServer.SetConfiguration(newHostOnlyData.m_dhcpserver.m_strDhcpServerAddress, newHostOnlyData.m_dhcpserver.m_strDhcpServerMask,
+                                                   newHostOnlyData.m_dhcpserver.m_strDhcpLowerAddress, newHostOnlyData.m_dhcpserver.m_strDhcpUpperAddress);
+                        fSuccess = comServer.isOk();
+                    }
+
+                    /* Show error message if necessary: */
+                    if (!fSuccess)
+                        msgCenter().cannotSaveDHCPServerSettings(comServer, this);
+                    // if (!comServer.isOk())
+                    //    emit sigOperationProgressError(UIMessageCenter::formatErrorInfo(comServer));
+                }
+            }
         }
     }
-
-    /* Make sure corresponding DHCP server exists: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    CDHCPServer dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
-    AssertReturnVoid(vbox.isOk() && !dhcp.isNull());
-
-    /* Save DHCP server configuration: */
-    dhcp.SetEnabled(data.m_dhcpserver.m_fDhcpServerEnabled);
-    if (data.m_dhcpserver.m_fDhcpServerEnabled)
-    {
-        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()),
-                  ("DHCP server IPv4 address must be IPv4-valid!\n"));
-        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()),
-                  ("DHCP server IPv4 network mask must be IPv4-valid!\n"));
-        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()),
-                  ("DHCP server IPv4 lower bound must be IPv4-valid!\n"));
-        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()),
-                  ("DHCP server IPv4 upper bound must be IPv4-valid!\n"));
-        if (RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()) &&
-            RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()) &&
-            RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()) &&
-            RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
-            dhcp.SetConfiguration(data.m_dhcpserver.m_strDhcpServerAddress, data.m_dhcpserver.m_strDhcpServerMask,
-                                  data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
-    }
-    if (!dhcp.isOk())
-        emit sigOperationProgressError(UIMessageCenter::formatErrorInfo(dhcp));
+    /* Return result: */
+    return fSuccess;
 }
 
 void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem)

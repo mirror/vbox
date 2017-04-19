@@ -232,6 +232,11 @@ public:
     void cannotSaveGeneralSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
     void cannotSaveInputSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
     void cannotSaveLanguageSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
+    void cannotLoadNetworkSettings(const CVirtualBox &comVBox, QWidget *pParent = 0);
+    void cannotLoadNetworkSettings(const CHost &comHost, QWidget *pParent = 0);
+    void cannotSaveNetworkNatSettings(const CNATNetwork &comNetwork, QWidget *pParent = 0);
+    void cannotSaveNetworkHostSettings(const CHostNetworkInterface &comInterface, QWidget *pParent = 0);
+    void cannotSaveDHCPServerSettings(const CDHCPServer &comServer, QWidget *pParent = 0);
     void cannotSaveProxySettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
     void cannotSaveUpdateSettings(const CSystemProperties &comProperties, QWidget *pParent = 0);
 

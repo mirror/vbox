@@ -56,6 +56,8 @@
 # endif /* VBOX_WS_WIN */
 
 /* COM includes: */
+# include "CNATNetwork.h"
+# include "CDHCPServer.h"
 # include "CAudioAdapter.h"
 # include "CNATEngine.h"
 # include "CParallelPort.h"
@@ -1094,6 +1096,41 @@ void UIMessageCenter::cannotSaveLanguageSettings(const CSystemProperties &comPro
     error(pParent, MessageType_Error,
           tr("Cannot save language settings."),
           formatErrorInfo(comProperties));
+}
+
+void UIMessageCenter::cannotLoadNetworkSettings(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot load network settings."),
+          formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotLoadNetworkSettings(const CHost &comHost, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot load network settings."),
+          formatErrorInfo(comHost));
+}
+
+void UIMessageCenter::cannotSaveNetworkNatSettings(const CNATNetwork &comNetwork, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save NAT network settings."),
+          formatErrorInfo(comNetwork));
+}
+
+void UIMessageCenter::cannotSaveNetworkHostSettings(const CHostNetworkInterface &comInterface, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save host-only network settings."),
+          formatErrorInfo(comInterface));
+}
+
+void UIMessageCenter::cannotSaveDHCPServerSettings(const CDHCPServer &comServer, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Cannot save DHCP server settings."),
+          formatErrorInfo(comServer));
 }
 
 void UIMessageCenter::cannotSaveProxySettings(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
