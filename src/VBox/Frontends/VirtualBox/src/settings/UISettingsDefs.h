@@ -65,6 +65,8 @@ public:
     const CacheData &base() const { return m_value.first; }
     /** Returns the NON-modifiable REFERENCE to the current cached data. */
     const CacheData &data() const { return m_value.second; }
+    /** Returns the modifiable REFERENCE to the initial cached data. */
+    CacheData &base() { return m_value.first; }
     /** Returns the modifiable REFERENCE to the current cached data. */
     CacheData &data() { return m_value.second; }
 
@@ -171,6 +173,111 @@ private:
 
     /** Holds the children. */
     UISettingsCacheChildMap m_children;
+};
+
+
+/** Template organizing settings object cache with 2 groups of children. */
+template <class ParentCacheData, class ChildCacheData1, class ChildCacheData2> class UISettingsCachePoolOfTwo : public UISettingsCache<ParentCacheData>
+{
+public:
+
+    /** Group 1 children map. */
+    typedef QMap<QString, ChildCacheData1> UISettingsCacheChildMap1;
+    /** Group 2 children map. */
+    typedef QMap<QString, ChildCacheData2> UISettingsCacheChildMap2;
+    /** Group 1 children map iterator. */
+    typedef QMapIterator<QString, ChildCacheData1> UISettingsCacheChildIterator1;
+    /** Group 2 children map iterator. */
+    typedef QMapIterator<QString, ChildCacheData2> UISettingsCacheChildIterator2;
+
+    /** Constructs empty cache object. */
+    UISettingsCachePoolOfTwo() : UISettingsCache<ParentCacheData>() {}
+
+    /** Returns group 1 children count. */
+    int childCount1() const { return m_children1.size(); }
+    /** Returns the modifiable REFERENCE to the group 1 child cached data. */
+    ChildCacheData1 &child1(const QString &strChildKey) { return m_children1[strChildKey]; }
+    /** Wraps method above to return the modifiable REFERENCE to the group 1 child cached data. */
+    ChildCacheData1 &child1(int iIndex) { return child1(indexToKey1(iIndex)); }
+    /** Returns the NON-modifiable COPY to the group 1 child cached data. */
+    const ChildCacheData1 child1(const QString &strChildKey) const { return m_children1[strChildKey]; }
+    /** Wraps method above to return the NON-modifiable COPY to the group 1 child cached data. */
+    const ChildCacheData1 child1(int iIndex) const { return child1(indexToKey1(iIndex)); }
+
+    /** Returns group 2 children count. */
+    int childCount2() const { return m_children2.size(); }
+    /** Returns the modifiable REFERENCE to the group 2 child cached data. */
+    ChildCacheData2 &child2(const QString &strChildKey) { return m_children2[strChildKey]; }
+    /** Wraps method above to return the modifiable REFERENCE to the group 2 child cached data. */
+    ChildCacheData2 &child2(int iIndex) { return child2(indexToKey2(iIndex)); }
+    /** Returns the NON-modifiable COPY to the group 2 child cached data. */
+    const ChildCacheData2 child2(const QString &strChildKey) const { return m_children2[strChildKey]; }
+    /** Wraps method above to return the NON-modifiable COPY to the group 2 child cached data. */
+    const ChildCacheData2 child2(int iIndex) const { return child2(indexToKey2(iIndex)); }
+
+    /** Returns whether the cache was updated.
+      * We assume that cache object was updated if current and
+      * initial data were both set and not equal to each other.
+      * Takes into account all the children of both groups. */
+    bool wasUpdated() const
+    {
+        /* First of all, cache object is considered to be updated if parent data was updated: */
+        bool fWasUpdated = UISettingsCache<ParentCacheData>::wasUpdated();
+        /* If parent data was NOT updated but also was NOT created or removed too
+         * (e.j. was NOT changed at all), we have to check children too: */
+        if (!fWasUpdated && !UISettingsCache<ParentCacheData>::wasRemoved() && !UISettingsCache<ParentCacheData>::wasCreated())
+        {
+            for (int iChildIndex = 0; !fWasUpdated && iChildIndex < childCount1(); ++iChildIndex)
+                if (child1(iChildIndex).wasChanged())
+                    fWasUpdated = true;
+            for (int iChildIndex = 0; !fWasUpdated && iChildIndex < childCount2(); ++iChildIndex)
+                if (child2(iChildIndex).wasChanged())
+                    fWasUpdated = true;
+        }
+        return fWasUpdated;
+    }
+
+    /** Resets the initial and the current one data to be both empty.
+      * Removes all the children from both groups. */
+    void clear()
+    {
+        UISettingsCache<ParentCacheData>::clear();
+        m_children1.clear();
+        m_children2.clear();
+    }
+
+private:
+
+    /** Returns QString representation of passed @a iIndex inside group 1. */
+    QString indexToKey1(int iIndex) const
+    {
+        UISettingsCacheChildIterator1 childIterator(m_children1);
+        for (int iChildIndex = 0; childIterator.hasNext(); ++iChildIndex)
+        {
+            childIterator.next();
+            if (iChildIndex == iIndex)
+                return childIterator.key();
+        }
+        return QString("%1").arg(iIndex, 8 /* up to 8 digits */, 10 /* base */, QChar('0') /* filler */);
+    }
+
+    /** Returns QString representation of passed @a iIndex inside group 2. */
+    QString indexToKey2(int iIndex) const
+    {
+        UISettingsCacheChildIterator2 childIterator(m_children2);
+        for (int iChildIndex = 0; childIterator.hasNext(); ++iChildIndex)
+        {
+            childIterator.next();
+            if (iChildIndex == iIndex)
+                return childIterator.key();
+        }
+        return QString("%1").arg(iIndex, 8 /* up to 8 digits */, 10 /* base */, QChar('0') /* filler */);
+    }
+
+    /** Holds the children of group 1. */
+    UISettingsCacheChildMap1 m_children1;
+    /** Holds the children of group 2. */
+    UISettingsCacheChildMap2 m_children2;
 };
 
 #endif /* !___UISettingsDefs_h___ */
