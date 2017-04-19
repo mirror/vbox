@@ -74,166 +74,95 @@ struct UIDataSettingsGlobalNetwork
 };
 
 
-/* Global settings / Network page / NAT network item: */
-class UIItemNetworkNAT : public QITreeWidgetItem
+/** Global settings: Network page: NAT network tree-widget item. */
+class UIItemNetworkNAT : public QITreeWidgetItem, public UIDataSettingsGlobalNetworkNAT
 {
 public:
 
-    /* Constructor: */
+    /** Constructs item. */
     UIItemNetworkNAT();
 
-    /* API: Get/return data to/form items: */
-    void fetchNetworkData(const UIDataSettingsGlobalNetworkNAT &data);
-    void uploadNetworkData(UIDataSettingsGlobalNetworkNAT &data);
+    /** Updates item fields from data. */
+    void updateFields();
+    /** Updates item data from fields. */
+    void updateData();
 
     /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(UIValidationMessage &messages);
 
-    /* API: Update stuff: */
-    void updateInfo();
-    void updateData();
+    /** Returns item name. */
+    QString name() const { return m_strName; }
+    /** Returns new item name. */
+    QString newName() const { return m_strNewName; }
 
-    /* API: Network item getters: */
-    QString name() const { return m_data.m_strName; }
-    QString newName() const { return m_data.m_strNewName; }
+protected:
 
     /** Returns default text. */
     virtual QString defaultText() const /* override */;
-
-private:
-
-    /* Variable: Network data: */
-    UIDataSettingsGlobalNetworkNAT m_data;
 };
 
 
-/* Global settings / Network page / Host network item: */
-class UIItemNetworkHost : public QITreeWidgetItem
+/** Global settings: Network page: Host network tree-widget item. */
+class UIItemNetworkHost : public QITreeWidgetItem, public UIDataSettingsGlobalNetworkHost
 {
 public:
 
-    /* Constructor: */
+    /** Constructs item. */
     UIItemNetworkHost();
 
-    /* API: Get/return data to/form items: */
-    void fetchNetworkData(const UIDataSettingsGlobalNetworkHost &data);
-    void uploadNetworkData(UIDataSettingsGlobalNetworkHost &data);
+    /** Updates item fields from data. */
+    void updateFields();
 
     /** Performs validation, updates @a messages list if something is wrong. */
     bool validate(UIValidationMessage &messages);
 
-    /* API: Update stuff: */
-    void updateInfo();
-
-    /* API: Network item getters: */
-    QString name() const { return m_data.m_interface.m_strName; }
-
-private:
-
-    /* Variable: Network data: */
-    UIDataSettingsGlobalNetworkHost m_data;
+    /** Returns item name. */
+    QString name() const { return m_interface.m_strName; }
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIItemNetworkNAT implementation.                                                                                       *
+*********************************************************************************************************************************/
 
 UIItemNetworkNAT::UIItemNetworkNAT()
     : QITreeWidgetItem()
 {
 }
 
-void UIItemNetworkNAT::fetchNetworkData(const UIDataSettingsGlobalNetworkNAT &data)
-{
-    /* Get from the cache: */
-    m_data = data;
-
-    /* Fetch info: */
-    updateInfo();
-}
-
-void UIItemNetworkNAT::uploadNetworkData(UIDataSettingsGlobalNetworkNAT &data)
-{
-    /* Put to the cache: */
-    data = m_data;
-}
-
-bool UIItemNetworkNAT::validate(UIValidationMessage &message)
-{
-    /* Pass by default: */
-    bool fPass = true;
-
-    /* NAT network name validation: */
-    bool fNameValid = true;
-    if (m_data.m_strNewName.isEmpty())
-    {
-        /* Emptiness validation: */
-        message.second << UIGlobalSettingsNetwork::tr("No new name specified for the NAT network previously called <b>%1</b>.").arg(m_data.m_strName);
-        fNameValid = false;
-        fPass = false;
-    }
-
-    /* NAT network CIDR validation: */
-    if (m_data.m_strCIDR.isEmpty())
-    {
-        /* Emptiness validation: */
-        if (fNameValid)
-            message.second << UIGlobalSettingsNetwork::tr("No CIDR specified for the NAT network <b>%1</b>.").arg(m_data.m_strNewName);
-        else
-            message.second << UIGlobalSettingsNetwork::tr("No CIDR specified for the NAT network previously called <b>%1</b>.").arg(m_data.m_strName);
-        fPass = false;
-    }
-    else
-    {
-        /* Correctness validation: */
-        RTNETADDRIPV4 network, mask;
-        int rc = RTCidrStrToIPv4(m_data.m_strCIDR.toUtf8().constData(), &network, &mask);
-        if (RT_FAILURE(rc))
-        {
-            if (fNameValid)
-                message.second << UIGlobalSettingsNetwork::tr("Invalid CIDR specified (<i>%1</i>) for the NAT network <b>%2</b>.")
-                                                              .arg(m_data.m_strCIDR, m_data.m_strNewName);
-            else
-                message.second << UIGlobalSettingsNetwork::tr("Invalid CIDR specified (<i>%1</i>) for the NAT network previously called <b>%2</b>.")
-                                                              .arg(m_data.m_strCIDR, m_data.m_strName);
-            fPass = false;
-        }
-    }
-
-    /* Return result: */
-    return fPass;
-}
-
-void UIItemNetworkNAT::updateInfo()
+void UIItemNetworkNAT::updateFields()
 {
     /* Compose item name/tool-tip: */
-    QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
-    QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    const QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    const QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
     QString strToolTip;
 
     /* Item name was not changed: */
-    setCheckState(0, m_data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
-    if (m_data.m_strNewName == m_data.m_strName)
+    setCheckState(0, m_fEnabled ? Qt::Checked : Qt::Unchecked);
+    if (m_strNewName == m_strName)
     {
         /* Just use the old one: */
-        setText(1, m_data.m_strName);
-        strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Network Name"), m_data.m_strName);
+        setText(1, m_strName);
+        strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Network Name"), m_strName);
     }
     /* If name was changed: */
     else
     {
         /* We should explain that: */
-        const QString oldName = m_data.m_strName;
-        const QString newName = m_data.m_strNewName.isEmpty() ? UIGlobalSettingsNetwork::tr("[empty]") : m_data.m_strNewName;
+        const QString oldName = m_strName;
+        const QString newName = m_strNewName.isEmpty() ? UIGlobalSettingsNetwork::tr("[empty]") : m_strNewName;
         setText(1, UIGlobalSettingsNetwork::tr("%1 (renamed from %2)").arg(newName, oldName));
-        strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Old Network Name"), m_data.m_strName);
-        strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("New Network Name"), m_data.m_strNewName);
+        strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Old Network Name"), m_strName);
+        strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("New Network Name"), m_strNewName);
     }
 
     /* Other tool-tip information: */
-    strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Network CIDR"), m_data.m_strCIDR);
+    strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Network CIDR"), m_strCIDR);
     strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Supports DHCP"),
-                                m_data.m_fSupportsDHCP ? UIGlobalSettingsNetwork::tr("yes") : UIGlobalSettingsNetwork::tr("no"));
+                                m_fSupportsDHCP ? UIGlobalSettingsNetwork::tr("yes") : UIGlobalSettingsNetwork::tr("no"));
     strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Supports IPv6"),
-                                m_data.m_fSupportsIPv6 ? UIGlobalSettingsNetwork::tr("yes") : UIGlobalSettingsNetwork::tr("no"));
-    if (m_data.m_fSupportsIPv6 && m_data.m_fAdvertiseDefaultIPv6Route)
+                                m_fSupportsIPv6 ? UIGlobalSettingsNetwork::tr("yes") : UIGlobalSettingsNetwork::tr("no"));
+    if (m_fSupportsIPv6 && m_fAdvertiseDefaultIPv6Route)
         strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("Default IPv6 route"), UIGlobalSettingsNetwork::tr("yes"));
 
     /* Assign tool-tip finally: */
@@ -243,12 +172,58 @@ void UIItemNetworkNAT::updateInfo()
 void UIItemNetworkNAT::updateData()
 {
     /* Update data: */
-    m_data.m_fEnabled = checkState(0) == Qt::Checked;
+    m_fEnabled = checkState(0) == Qt::Checked;
+}
+
+bool UIItemNetworkNAT::validate(UIValidationMessage &message)
+{
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* NAT network name validation: */
+    bool fNameValid = true;
+    if (m_strNewName.isEmpty())
+    {
+        /* Emptiness validation: */
+        message.second << UIGlobalSettingsNetwork::tr("No new name specified for the NAT network previously called <b>%1</b>.").arg(m_strName);
+        fNameValid = false;
+        fPass = false;
+    }
+
+    /* NAT network CIDR validation: */
+    if (m_strCIDR.isEmpty())
+    {
+        /* Emptiness validation: */
+        if (fNameValid)
+            message.second << UIGlobalSettingsNetwork::tr("No CIDR specified for the NAT network <b>%1</b>.").arg(m_strNewName);
+        else
+            message.second << UIGlobalSettingsNetwork::tr("No CIDR specified for the NAT network previously called <b>%1</b>.").arg(m_strName);
+        fPass = false;
+    }
+    else
+    {
+        /* Correctness validation: */
+        RTNETADDRIPV4 network, mask;
+        int rc = RTCidrStrToIPv4(m_strCIDR.toUtf8().constData(), &network, &mask);
+        if (RT_FAILURE(rc))
+        {
+            if (fNameValid)
+                message.second << UIGlobalSettingsNetwork::tr("Invalid CIDR specified (<i>%1</i>) for the NAT network <b>%2</b>.")
+                                                              .arg(m_strCIDR, m_strNewName);
+            else
+                message.second << UIGlobalSettingsNetwork::tr("Invalid CIDR specified (<i>%1</i>) for the NAT network previously called <b>%2</b>.")
+                                                              .arg(m_strCIDR, m_strName);
+            fPass = false;
+        }
+    }
+
+    /* Return result: */
+    return fPass;
 }
 
 QString UIItemNetworkNAT::defaultText() const
 {
-    return m_data.m_fEnabled ?
+    return m_fEnabled ?
            tr("%1, %2", "col.2 text, col.1 name")
              .arg(text(1))
              .arg(parentTree()->headerItem()->text(0)) :
@@ -257,24 +232,78 @@ QString UIItemNetworkNAT::defaultText() const
 }
 
 
+/*********************************************************************************************************************************
+*   Class UIItemNetworkHost implementation.                                                                                      *
+*********************************************************************************************************************************/
+
 UIItemNetworkHost::UIItemNetworkHost()
     : QITreeWidgetItem()
 {
 }
 
-void UIItemNetworkHost::fetchNetworkData(const UIDataSettingsGlobalNetworkHost &data)
+void UIItemNetworkHost::updateFields()
 {
-    /* Get from the cache: */
-    m_data = data;
+    /* Compose item name/tool-tip: */
+    setText(0, m_interface.m_strName);
+    const QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    const QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    QString strToolTip;
 
-    /* Fetch info: */
-    updateInfo();
-}
+    /* Host interface information: */
+    strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Adapter"))
+                           .arg(m_interface.m_fDhcpClientEnabled ?
+                                UIGlobalSettingsNetwork::tr("Automatically configured", "interface") :
+                                UIGlobalSettingsNetwork::tr("Manually configured", "interface"));
+    if (!m_interface.m_fDhcpClientEnabled)
+    {
+        strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv4 Address"))
+                                  .arg(m_interface.m_strInterfaceAddress.isEmpty() ?
+                                       UIGlobalSettingsNetwork::tr ("Not set", "address") :
+                                       m_interface.m_strInterfaceAddress) +
+                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv4 Network Mask"))
+                                  .arg(m_interface.m_strInterfaceMask.isEmpty() ?
+                                       UIGlobalSettingsNetwork::tr ("Not set", "mask") :
+                                       m_interface.m_strInterfaceMask);
+        if (m_interface.m_fIpv6Supported)
+        {
+            strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv6 Address"))
+                                      .arg(m_interface.m_strInterfaceAddress6.isEmpty() ?
+                                           UIGlobalSettingsNetwork::tr("Not set", "address") :
+                                           m_interface.m_strInterfaceAddress6) +
+                          strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv6 Network Mask Length"))
+                                      .arg(m_interface.m_strInterfaceMaskLength6.isEmpty() ?
+                                           UIGlobalSettingsNetwork::tr("Not set", "length") :
+                                           m_interface.m_strInterfaceMaskLength6);
+        }
+    }
 
-void UIItemNetworkHost::uploadNetworkData(UIDataSettingsGlobalNetworkHost &data)
-{
-    /* Put to the cache: */
-    data = m_data;
+    /* DHCP server information: */
+    strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("DHCP Server"))
+                           .arg(m_dhcpserver.m_fDhcpServerEnabled ?
+                                UIGlobalSettingsNetwork::tr("Enabled", "server") :
+                                UIGlobalSettingsNetwork::tr("Disabled", "server"));
+    if (m_dhcpserver.m_fDhcpServerEnabled)
+    {
+        strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("Address"))
+                                  .arg(m_dhcpserver.m_strDhcpServerAddress.isEmpty() ?
+                                       UIGlobalSettingsNetwork::tr("Not set", "address") :
+                                       m_dhcpserver.m_strDhcpServerAddress) +
+                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("Network Mask"))
+                                  .arg(m_dhcpserver.m_strDhcpServerMask.isEmpty() ?
+                                       UIGlobalSettingsNetwork::tr("Not set", "mask") :
+                                       m_dhcpserver.m_strDhcpServerMask) +
+                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("Lower Bound"))
+                                  .arg(m_dhcpserver.m_strDhcpLowerAddress.isEmpty() ?
+                                       UIGlobalSettingsNetwork::tr("Not set", "bound") :
+                                       m_dhcpserver.m_strDhcpLowerAddress) +
+                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("Upper Bound"))
+                                  .arg(m_dhcpserver.m_strDhcpUpperAddress.isEmpty() ?
+                                       UIGlobalSettingsNetwork::tr("Not set", "bound") :
+                                       m_dhcpserver.m_strDhcpUpperAddress);
+    }
+
+    /* Assign tool-tip finally: */
+    setToolTip(0, strToolTip);
 }
 
 bool UIItemNetworkHost::validate(UIValidationMessage &message)
@@ -283,33 +312,33 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
     bool fPass = true;
 
     /* Host interface validation: */
-    if (!m_data.m_interface.m_fDhcpClientEnabled)
+    if (!m_interface.m_fDhcpClientEnabled)
     {
-        if (!m_data.m_interface.m_strInterfaceAddress.trimmed().isEmpty() &&
-            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceAddress.toUtf8().constData())
-             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceAddress.toUtf8().constData())))
+        if (!m_interface.m_strInterfaceAddress.trimmed().isEmpty() &&
+            (   !RTNetIsIPv4AddrStr(m_interface.m_strInterfaceAddress.toUtf8().constData())
+             || RTNetStrIsIPv4AddrAny(m_interface.m_strInterfaceAddress.toUtf8().constData())))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv4 address.").arg(text(0));
             fPass = false;
         }
-        if (!m_data.m_interface.m_strInterfaceMask.trimmed().isEmpty() &&
-            (   !RTNetIsIPv4AddrStr(m_data.m_interface.m_strInterfaceMask.toUtf8().constData())
-             || RTNetStrIsIPv4AddrAny(m_data.m_interface.m_strInterfaceMask.toUtf8().constData())))
+        if (!m_interface.m_strInterfaceMask.trimmed().isEmpty() &&
+            (   !RTNetIsIPv4AddrStr(m_interface.m_strInterfaceMask.toUtf8().constData())
+             || RTNetStrIsIPv4AddrAny(m_interface.m_strInterfaceMask.toUtf8().constData())))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv4 network mask.").arg(text(0));
             fPass = false;
         }
-        if (m_data.m_interface.m_fIpv6Supported)
+        if (m_interface.m_fIpv6Supported)
         {
-            if (!m_data.m_interface.m_strInterfaceAddress6.trimmed().isEmpty() &&
-                (   !RTNetIsIPv6AddrStr(m_data.m_interface.m_strInterfaceAddress6.toUtf8().constData())
-                 || RTNetStrIsIPv6AddrAny(m_data.m_interface.m_strInterfaceAddress6.toUtf8().constData())))
+            if (!m_interface.m_strInterfaceAddress6.trimmed().isEmpty() &&
+                (   !RTNetIsIPv6AddrStr(m_interface.m_strInterfaceAddress6.toUtf8().constData())
+                 || RTNetStrIsIPv6AddrAny(m_interface.m_strInterfaceAddress6.toUtf8().constData())))
             {
                 message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid IPv6 address.").arg(text(0));
                 fPass = false;
             }
             bool fIsMaskPrefixLengthNumber = false;
-            const int iMaskPrefixLength = m_data.m_interface.m_strInterfaceMaskLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
+            const int iMaskPrefixLength = m_interface.m_strInterfaceMaskLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
             if (   !fIsMaskPrefixLengthNumber
                 || iMaskPrefixLength < 0
                 || iMaskPrefixLength > 128)
@@ -321,28 +350,28 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
     }
 
     /* DHCP server validation: */
-    if (m_data.m_dhcpserver.m_fDhcpServerEnabled)
+    if (m_dhcpserver.m_fDhcpServerEnabled)
     {
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server address.").arg(text(0));
             fPass = false;
         }
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_dhcpserver.m_strDhcpServerMask.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server mask.").arg(text(0));
             fPass = false;
         }
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server lower address bound.").arg(text(0));
             fPass = false;
         }
-        if (   !RTNetIsIPv4AddrStr(m_data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData())
-            || RTNetStrIsIPv4AddrAny(m_data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
+        if (   !RTNetIsIPv4AddrStr(m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData())
+            || RTNetStrIsIPv4AddrAny(m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
         {
             message.second << UIGlobalSettingsNetwork::tr("Host interface <b>%1</b> does not currently have a valid DHCP server upper address bound.").arg(text(0));
             fPass = false;
@@ -353,71 +382,10 @@ bool UIItemNetworkHost::validate(UIValidationMessage &message)
     return fPass;
 }
 
-void UIItemNetworkHost::updateInfo()
-{
-    /* Compose item name/tool-tip: */
-    setText(0, m_data.m_interface.m_strName);
-    QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
-    QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
-    QString strToolTip;
 
-    /* Host interface information: */
-    strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Adapter"))
-                           .arg(m_data.m_interface.m_fDhcpClientEnabled ?
-                                UIGlobalSettingsNetwork::tr("Automatically configured", "interface") :
-                                UIGlobalSettingsNetwork::tr("Manually configured", "interface"));
-    if (!m_data.m_interface.m_fDhcpClientEnabled)
-    {
-        strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv4 Address"))
-                                  .arg(m_data.m_interface.m_strInterfaceAddress.isEmpty() ?
-                                       UIGlobalSettingsNetwork::tr ("Not set", "address") :
-                                       m_data.m_interface.m_strInterfaceAddress) +
-                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv4 Network Mask"))
-                                  .arg(m_data.m_interface.m_strInterfaceMask.isEmpty() ?
-                                       UIGlobalSettingsNetwork::tr ("Not set", "mask") :
-                                       m_data.m_interface.m_strInterfaceMask);
-        if (m_data.m_interface.m_fIpv6Supported)
-        {
-            strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv6 Address"))
-                                      .arg(m_data.m_interface.m_strInterfaceAddress6.isEmpty() ?
-                                           UIGlobalSettingsNetwork::tr("Not set", "address") :
-                                           m_data.m_interface.m_strInterfaceAddress6) +
-                          strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv6 Network Mask Length"))
-                                      .arg(m_data.m_interface.m_strInterfaceMaskLength6.isEmpty() ?
-                                           UIGlobalSettingsNetwork::tr("Not set", "length") :
-                                           m_data.m_interface.m_strInterfaceMaskLength6);
-        }
-    }
-
-    /* DHCP server information: */
-    strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("DHCP Server"))
-                           .arg(m_data.m_dhcpserver.m_fDhcpServerEnabled ?
-                                UIGlobalSettingsNetwork::tr("Enabled", "server") :
-                                UIGlobalSettingsNetwork::tr("Disabled", "server"));
-    if (m_data.m_dhcpserver.m_fDhcpServerEnabled)
-    {
-        strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("Address"))
-                                  .arg(m_data.m_dhcpserver.m_strDhcpServerAddress.isEmpty() ?
-                                       UIGlobalSettingsNetwork::tr("Not set", "address") :
-                                       m_data.m_dhcpserver.m_strDhcpServerAddress) +
-                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("Network Mask"))
-                                  .arg(m_data.m_dhcpserver.m_strDhcpServerMask.isEmpty() ?
-                                       UIGlobalSettingsNetwork::tr("Not set", "mask") :
-                                       m_data.m_dhcpserver.m_strDhcpServerMask) +
-                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("Lower Bound"))
-                                  .arg(m_data.m_dhcpserver.m_strDhcpLowerAddress.isEmpty() ?
-                                       UIGlobalSettingsNetwork::tr("Not set", "bound") :
-                                       m_data.m_dhcpserver.m_strDhcpLowerAddress) +
-                      strSubHeader.arg(UIGlobalSettingsNetwork::tr("Upper Bound"))
-                                  .arg(m_data.m_dhcpserver.m_strDhcpUpperAddress.isEmpty() ?
-                                       UIGlobalSettingsNetwork::tr("Not set", "bound") :
-                                       m_data.m_dhcpserver.m_strDhcpUpperAddress);
-    }
-
-    /* Assign tool-tip finally: */
-    setToolTip(0, strToolTip);
-}
-
+/*********************************************************************************************************************************
+*   Class UIGlobalSettingsNetwork implementation.                                                                                *
+*********************************************************************************************************************************/
 
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     : m_pActionAddNetworkNAT(0), m_pActionEditNetworkNAT(0), m_pActionRemoveNetworkNAT(0)
@@ -474,12 +442,12 @@ void UIGlobalSettingsNetwork::getFromCache()
 
     /* Load old network data from the cache: */
     foreach (const UIDataSettingsGlobalNetworkNAT &network, oldNetworkData.m_networksNAT)
-        createTreeItemNetworkNAT(network);
+        createTreeWidgetItemForNetworkNAT(network);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
     m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkNAT();
     foreach (const UIDataSettingsGlobalNetworkHost &network, oldNetworkData.m_networksHost)
-        createTreeItemNetworkHost(network);
+        createTreeWidgetItemForNetworkHost(network);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
     m_pTreeNetworkHost->setCurrentItem(m_pTreeNetworkHost->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkHost();
@@ -497,18 +465,14 @@ void UIGlobalSettingsNetwork::putToCache()
     newNetworkData.m_networksNAT.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iNetworkIndex)
     {
-        UIDataSettingsGlobalNetworkNAT data;
-        UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iNetworkIndex));
-        pItem->uploadNetworkData(data);
-        newNetworkData.m_networksNAT << data;
+        const UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iNetworkIndex));
+        newNetworkData.m_networksNAT << *pItem;
     }
     newNetworkData.m_networksHost.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkHost->topLevelItemCount(); ++iNetworkIndex)
     {
-        UIDataSettingsGlobalNetworkHost data;
-        UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(iNetworkIndex));
-        pItem->uploadNetworkData(data);
-        newNetworkData.m_networksHost << data;
+        const UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(iNetworkIndex));
+        newNetworkData.m_networksHost << *pItem;
     }
 
     /* Cache new network data: */
@@ -684,7 +648,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkNAT()
     /* Update tree: */
     UIDataSettingsGlobalNetworkNAT data;
     loadDataNetworkNAT(network, data);
-    createTreeItemNetworkNAT(data, true);
+    createTreeWidgetItemForNetworkNAT(data, true);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
 
@@ -695,13 +659,13 @@ void UIGlobalSettingsNetwork::sltEditNetworkNAT()
     AssertMsg(pItem, ("Current item should present!\n"));
 
     /* Edit current item data: */
-    UIDataSettingsGlobalNetworkNAT data;
-    pItem->uploadNetworkData(data);
+    UIDataSettingsGlobalNetworkNAT data = *pItem;
     UIGlobalSettingsNetworkDetailsNAT details(this, data);
     if (details.exec() == QDialog::Accepted)
     {
         /* Put data back: */
-        pItem->fetchNetworkData(data);
+        pItem->UIDataSettingsGlobalNetworkNAT::operator=(data);
+        pItem->updateFields();
         sltHandleCurrentItemChangeNetworkNAT();
         /* Revalidate: */
         revalidate();
@@ -733,7 +697,7 @@ void UIGlobalSettingsNetwork::sltRemoveNetworkNAT()
         return msgCenter().cannotRemoveNATNetwork(vbox, strNetworkName, this);
 
     /* Update tree: */
-    removeTreeItemNetworkNAT(pItem);
+    removeTreeWidgetItemOfNetworkNAT(pItem);
 }
 
 void UIGlobalSettingsNetwork::sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pChangedItem)
@@ -801,7 +765,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     /* Update tree: */
     UIDataSettingsGlobalNetworkHost data;
     loadDataNetworkHost(iface, data);
-    createTreeItemNetworkHost(data, true);
+    createTreeWidgetItemForNetworkHost(data, true);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
 }
 
@@ -812,13 +776,13 @@ void UIGlobalSettingsNetwork::sltEditNetworkHost()
     AssertMsg(pItem, ("Current item should present!\n"));
 
     /* Edit current item data: */
-    UIDataSettingsGlobalNetworkHost data;
-    pItem->uploadNetworkData(data);
+    UIDataSettingsGlobalNetworkHost data = *pItem;
     UIGlobalSettingsNetworkDetailsHost details(this, data);
     if (details.exec() == QDialog::Accepted)
     {
         /* Put data back: */
-        pItem->fetchNetworkData(data);
+        pItem->UIDataSettingsGlobalNetworkHost::operator=(data);
+        pItem->updateFields();
         sltHandleCurrentItemChangeNetworkHost();
         /* Revalidate: */
         revalidate();
@@ -863,7 +827,7 @@ void UIGlobalSettingsNetwork::sltRemoveNetworkHost()
         return msgCenter().cannotRemoveHostInterface(progress, strInterfaceName, this);
 
     /* Update tree: */
-    removeTreeItemNetworkHost(pItem);
+    removeTreeWidgetItemOfNetworkHost(pItem);
 }
 
 void UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNetworkHost()
@@ -905,7 +869,7 @@ void UIGlobalSettingsNetwork::prepare()
     {
         /* Prepare 'NAT Network' tab: */
         prepareTabNAT();
-        /* Prepare 'Host-only Network' tab: */
+        /* Prepare 'Host Network' tab: */
         prepareTabHost();
         /* Prepare connections: */
         prepareConnections();
@@ -985,7 +949,7 @@ void UIGlobalSettingsNetwork::prepareTabHost()
         m_pLayoutHostOnly->setContentsMargins(0, 0, 0, 0);
 #endif
 
-        /* Host-only Network tree-widget created in the .ui file. */
+        /* Host Network tree-widget created in the .ui file. */
         AssertPtrReturnVoid(m_pTreeNetworkHost);
         {
             /* Configure tree-widget: */
@@ -993,7 +957,7 @@ void UIGlobalSettingsNetwork::prepareTabHost()
             m_pTreeNetworkHost->setContextMenuPolicy(Qt::CustomContextMenu);
         }
 
-        /* Host-only Network toolbar created in the .ui file. */
+        /* Host Network toolbar created in the .ui file. */
         AssertPtrReturnVoid(m_pToolbarNetworkHost);
         {
             /* Configure toolbar: */
@@ -1001,7 +965,7 @@ void UIGlobalSettingsNetwork::prepareTabHost()
             m_pToolbarNetworkHost->setIconSize(QSize(iIconMetric, iIconMetric));
             m_pToolbarNetworkHost->setOrientation(Qt::Vertical);
 
-            /* Create 'Add Host-only Network' action: */
+            /* Create 'Add Host Network' action: */
             m_pActionAddNetworkHost = m_pToolbarNetworkHost->addAction(UIIconPool::iconSet(":/add_host_iface_16px.png",
                                                                                            ":/add_host_iface_disabled_16px.png"),
                                                                        QString(), this, SLOT(sltAddNetworkHost()));
@@ -1011,7 +975,7 @@ void UIGlobalSettingsNetwork::prepareTabHost()
                 m_pActionAddNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
             }
 
-            /* Create 'Edit Host-only Network' action: */
+            /* Create 'Edit Host Network' action: */
             m_pActionEditNetworkHost = m_pToolbarNetworkHost->addAction(UIIconPool::iconSet(":/edit_host_iface_16px.png",
                                                                                             ":/edit_host_iface_disabled_16px.png"),
                                                                         QString(), this, SLOT(sltEditNetworkHost()));
@@ -1021,7 +985,7 @@ void UIGlobalSettingsNetwork::prepareTabHost()
                 m_pActionEditNetworkHost->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
             }
 
-            /* Create 'Remove Host-only Network' action: */
+            /* Create 'Remove Host Network' action: */
             m_pActionRemoveNetworkHost = m_pToolbarNetworkHost->addAction(UIIconPool::iconSet(":/remove_host_iface_16px.png",
                                                                                               ":/remove_host_iface_disabled_16px.png"),
                                                                           QString(), this, SLOT(sltRemoveNetworkHost()));
@@ -1046,7 +1010,7 @@ void UIGlobalSettingsNetwork::prepareConnections()
     connect(m_pTreeNetworkNAT, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
             this, SLOT(sltHandleItemChangeNetworkNAT(QTreeWidgetItem *)));
 
-    /* Configure 'Host-only Network' connections: */
+    /* Configure 'Host Network' connections: */
     connect(m_pTreeNetworkHost, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
             this, SLOT(sltHandleCurrentItemChangeNetworkHost()));
     connect(m_pTreeNetworkHost, SIGNAL(customContextMenuRequested(const QPoint &)),
@@ -1154,18 +1118,19 @@ void UIGlobalSettingsNetwork::saveDataNetworkNAT(const UIDataSettingsGlobalNetwo
                                    newRule.guestIp, newRule.guestPort.value());
 }
 
-void UIGlobalSettingsNetwork::createTreeItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem)
+void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem)
 {
     /* Add new item to the tree: */
     UIItemNetworkNAT *pItem = new UIItemNetworkNAT;
-    pItem->fetchNetworkData(data);
+    pItem->UIDataSettingsGlobalNetworkNAT::operator=(data);
+    pItem->updateFields();
     m_pTreeNetworkNAT->addTopLevelItem(pItem);
     /* And choose it as current if necessary: */
     if (fChooseItem)
         m_pTreeNetworkNAT->setCurrentItem(pItem);
 }
 
-void UIGlobalSettingsNetwork::removeTreeItemNetworkNAT(UIItemNetworkNAT *pItem)
+void UIGlobalSettingsNetwork::removeTreeWidgetItemOfNetworkNAT(UIItemNetworkNAT *pItem)
 {
     /* Delete passed item: */
     delete pItem;
@@ -1279,18 +1244,19 @@ void UIGlobalSettingsNetwork::saveDataNetworkHost(const UIDataSettingsGlobalNetw
         emit sigOperationProgressError(UIMessageCenter::formatErrorInfo(dhcp));
 }
 
-void UIGlobalSettingsNetwork::createTreeItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem)
+void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem)
 {
     /* Add new item to the tree: */
     UIItemNetworkHost *pItem = new UIItemNetworkHost;
-    pItem->fetchNetworkData(data);
+    pItem->UIDataSettingsGlobalNetworkHost::operator=(data);
+    pItem->updateFields();
     m_pTreeNetworkHost->addTopLevelItem(pItem);
     /* And choose it as current if necessary: */
     if (fChooseItem)
         m_pTreeNetworkHost->setCurrentItem(pItem);
 }
 
-void UIGlobalSettingsNetwork::removeTreeItemNetworkHost(UIItemNetworkHost *pItem)
+void UIGlobalSettingsNetwork::removeTreeWidgetItemOfNetworkHost(UIItemNetworkHost *pItem)
 {
     /* Delete passed item: */
     delete pItem;
