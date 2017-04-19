@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,12 +19,13 @@
 #define ___UISettingsDefs_h___
 
 /* Qt includes: */
-#include <QString>
-#include <QPair>
 #include <QMap>
+#include <QPair>
+#include <QString>
 
 /* COM includes: */
 #include "COMEnums.h"
+
 
 /** Settings configuration namespace. */
 namespace UISettingsDefs
@@ -48,96 +49,94 @@ namespace UISettingsDefs
     ConfigurationAccessLevel configurationAccessLevel(KSessionState sessionState, KMachineState machineState);
 }
 
-/* Template to operate settings cache item: */
+
+/** Template organizing settings object cache: */
 template <class CacheData> class UISettingsCache
 {
 public:
 
-    /* Creates empty cache item: */
+    /** Constructs empty object cache. */
     UISettingsCache() { m_value = qMakePair(CacheData(), CacheData()); }
 
+    /** Destructs cache object. */
     virtual ~UISettingsCache() { /* Makes MSC happy */ }
 
-    /* Returns the NON-modifiable REFERENCE to the initial cached data: */
-    const CacheData& base() const { return m_value.first; }
-    /* Returns the NON-modifiable REFERENCE to the current cached data: */
-    const CacheData& data() const { return m_value.second; }
-    /* Returns the modifiable REFERENCE to the current cached data: */
+    /** Returns the NON-modifiable REFERENCE to the initial cached data. */
+    const CacheData &base() const { return m_value.first; }
+    /** Returns the NON-modifiable REFERENCE to the current cached data. */
+    const CacheData &data() const { return m_value.second; }
+    /** Returns the modifiable REFERENCE to the current cached data. */
     CacheData &data() { return m_value.second; }
 
-    /* We assume that old cache item was removed if
-     * initial data was set but current data was NOT set.
-     * Returns 'true' if that cache item was removed: */
+    /** Returns whether the cached object was removed.
+      * We assume that cached object was removed if
+      * initial data was set but current data was NOT set. */
     virtual bool wasRemoved() const { return base() != CacheData() && data() == CacheData(); }
 
-    /* We assume that new cache item was created if
-     * initial data was NOT set but current data was set.
-     * Returns 'true' if that cache item was created: */
+    /** Returns whether the cached object was created.
+      * We assume that cached object was created if
+      * initial data was NOT set but current data was set. */
     virtual bool wasCreated() const { return base() == CacheData() && data() != CacheData(); }
 
-    /* We assume that old cache item was updated if
-     * current and initial data were both set and not equal to each other.
-     * Returns 'true' if that cache item was updated: */
+    /** Returns whether the cached object was updated.
+      * We assume that cached object was updated if
+      * current and initial data were both set and not equal to each other. */
     virtual bool wasUpdated() const { return base() != CacheData() && data() != CacheData() && data() != base(); }
 
-    /* We assume that old cache item was actually changed if
-     * 1. this item was removed or
-     * 2. this item was created or
-     * 3. this item was updated.
-     * Returns 'true' if that cache item was actually changed: */
+    /** Returns whether the cached object was changed.
+      * We assume that cached object was changed if
+      * it was 1. removed, 2. created or 3. updated. */
     virtual bool wasChanged() const { return wasRemoved() || wasCreated() || wasUpdated(); }
 
-    /* Set initial cache item data: */
+    /** Defines initial cached object data. */
     void cacheInitialData(const CacheData &initialData) { m_value.first = initialData; }
-    /* Set current cache item data: */
+    /** Defines current cached object data: */
     void cacheCurrentData(const CacheData &currentData) { m_value.second = currentData; }
 
-    /* Reset the initial and the current data to be both empty: */
+    /** Resets the initial and the current object data to be both empty. */
     void clear() { m_value.first = CacheData(); m_value.second = CacheData(); }
 
 private:
 
-    /* Data: */
+    /** Holds the cached object data. */
     QPair<CacheData, CacheData> m_value;
 };
 
-/* Template to operate settings cache item with children: */
+
+/** Template organizing settings object cache with children. */
 template <class ParentCacheData, class ChildCacheData> class UISettingsCachePool : public UISettingsCache<ParentCacheData>
 {
 public:
 
-    /* Typedefs: */
+    /** Children map. */
     typedef QMap<QString, ChildCacheData> UISettingsCacheChildMap;
+    /** Children map iterator. */
     typedef QMapIterator<QString, ChildCacheData> UISettingsCacheChildIterator;
 
-    /* Creates empty cache item: */
+    /** Constructs empty object cache. */
     UISettingsCachePool() : UISettingsCache<ParentCacheData>() {}
 
-    /* Returns the modifiable REFERENCE to the particular child cached data.
-     * If child with such key or index is NOT present,
-     * both those methods will create the new one to return: */
+    /** Returns children count. */
+    int childCount() const { return m_children.size(); }
+    /** Returns the modifiable REFERENCE to the child cached data. */
     ChildCacheData& child(const QString &strChildKey) { return m_children[strChildKey]; }
+    /** Wraps method above to return the modifiable REFERENCE to the child cached data. */
     ChildCacheData& child(int iIndex) { return child(indexToKey(iIndex)); }
-
-    /* Returns the NON-modifiable COPY to the particular child cached data.
-     * If child with such key or index is NOT present,
-     * both those methods will create the new one to return: */
+    /** Returns the NON-modifiable COPY to the child cached data. */
     const ChildCacheData child(const QString &strChildKey) const { return m_children[strChildKey]; }
+    /** Wraps method above to return the NON-modifiable COPY to the child cached data. */
     const ChildCacheData child(int iIndex) const { return child(indexToKey(iIndex)); }
 
-    /* Children count: */
-    int childCount() const { return m_children.size(); }
-
-    /* We assume that old cache item was updated if
-     * current and initial data were both set and not equal to each other.
-     * Takes into account all the children.
-     * Returns 'true' if that cache item was updated: */
+    /** Returns whether the cache was updated.
+      * We assume that cache object was updated if current and
+      * initial data were both set and not equal to each other.
+      * Takes into account all the children. */
     bool wasUpdated() const
     {
-        /* First of all, cache item is considered to be updated if parent data was updated: */
+        /* First of all, cache object is considered to be updated if parent data was updated: */
         bool fWasUpdated = UISettingsCache<ParentCacheData>::wasUpdated();
-        /* If parent data was NOT updated but also was NOT created or removed too (e.j. was NOT changed at all),
-         * we have to check children too: */
+        /* If parent data was NOT updated but also was NOT created or removed too
+         * (e.j. was NOT changed at all), we have to check children too: */
         if (!fWasUpdated && !UISettingsCache<ParentCacheData>::wasRemoved() && !UISettingsCache<ParentCacheData>::wasCreated())
         {
             for (int iChildIndex = 0; !fWasUpdated && iChildIndex < childCount(); ++iChildIndex)
@@ -147,8 +146,8 @@ public:
         return fWasUpdated;
     }
 
-    /* Reset the initial and the current data to be both empty.
-     * Removes all the children: */
+    /** Resets the initial and the current one data to be both empty.
+      * Removes all the children. */
     void clear()
     {
         UISettingsCache<ParentCacheData>::clear();
@@ -157,6 +156,7 @@ public:
 
 private:
 
+    /** Returns QString representation of passed @a iIndex. */
     QString indexToKey(int iIndex) const
     {
         UISettingsCacheChildIterator childIterator(m_children);
@@ -169,8 +169,9 @@ private:
         return QString("%1").arg(iIndex, 8 /* up to 8 digits */, 10 /* base */, QChar('0') /* filler */);
     }
 
-    /* Children: */
+    /** Holds the children. */
     UISettingsCacheChildMap m_children;
 };
 
 #endif /* !___UISettingsDefs_h___ */
+
