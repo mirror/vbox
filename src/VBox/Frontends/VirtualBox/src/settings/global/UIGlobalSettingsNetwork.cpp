@@ -78,10 +78,26 @@ public:
     /** Returns new item name. */
     QString newName() const { return m_strNewName; }
 
+    /** Returns IPv4 port forwarding rules. */
+    const UIPortForwardingDataList &ipv4rules() const { return m_ipv4rules; }
+    /** Defines IPv4 port forwarding rules. */
+    void setIpv4rules(const UIPortForwardingDataList &ipv4rules) { m_ipv4rules = ipv4rules; }
+    /** Returns IPv6 port forwarding rules. */
+    const UIPortForwardingDataList &ipv6rules() const { return m_ipv6rules; }
+    /** Defines IPv6 port forwarding rules. */
+    void setIpv6rules(const UIPortForwardingDataList &ipv6rules) { m_ipv6rules = ipv6rules; }
+
 protected:
 
     /** Returns default text. */
     virtual QString defaultText() const /* override */;
+
+private:
+
+    /** Holds IPv4 port forwarding rules. */
+    UIPortForwardingDataList m_ipv4rules;
+    /** Holds IPv6 port forwarding rules. */
+    UIPortForwardingDataList m_ipv6rules;
 };
 
 
@@ -414,12 +430,12 @@ void UIGlobalSettingsNetwork::getFromCache()
 {
     /* Load old network data from the cache: */
     for (int i = 0; i < m_pCache->childCount1(); ++i)
-        createTreeWidgetItemForNetworkNAT(m_pCache->child1(i).base());
+        createTreeWidgetItemForNetworkNAT(m_pCache->child1(i));
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
     m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkNAT();
     for (int i = 0; i < m_pCache->childCount2(); ++i)
-        createTreeWidgetItemForNetworkHost(m_pCache->child2(i).base());
+        createTreeWidgetItemForNetworkHost(m_pCache->child2(i));
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
     m_pTreeNetworkHost->setCurrentItem(m_pTreeNetworkHost->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkHost();
@@ -438,6 +454,10 @@ void UIGlobalSettingsNetwork::putToCache()
     {
         const UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(i));
         m_pCache->child1(pItem->m_strName).cacheCurrentData(*pItem);
+        foreach (const UIDataPortForwardingRule &rule, pItem->ipv4rules())
+            m_pCache->child1(pItem->m_strName).child1(rule.name).cacheCurrentData(rule);
+        foreach (const UIDataPortForwardingRule &rule, pItem->ipv6rules())
+            m_pCache->child1(pItem->m_strName).child2(rule.name).cacheCurrentData(rule);
     }
     for (int i = 0; i < m_pTreeNetworkHost->topLevelItemCount(); ++i)
     {
@@ -609,7 +629,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkNAT()
     /* Update tree: */
     const QString strCacheKey = network.GetNetworkName();
     loadToCacheFromNetworkNAT(network, m_pCache->child1(strCacheKey));
-    createTreeWidgetItemForNetworkNAT(m_pCache->child1(strCacheKey).base(), true);
+    createTreeWidgetItemForNetworkNAT(m_pCache->child1(strCacheKey), true);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
 
@@ -621,11 +641,15 @@ void UIGlobalSettingsNetwork::sltEditNetworkNAT()
 
     /* Edit current item data: */
     UIDataSettingsGlobalNetworkNAT data = *pItem;
-    UIGlobalSettingsNetworkDetailsNAT details(this, data);
+    UIPortForwardingDataList ipv4rules = pItem->ipv4rules();
+    UIPortForwardingDataList ipv6rules = pItem->ipv6rules();
+    UIGlobalSettingsNetworkDetailsNAT details(this, data, ipv4rules, ipv6rules);
     if (details.exec() == QDialog::Accepted)
     {
         /* Put data back: */
         pItem->UIDataSettingsGlobalNetworkNAT::operator=(data);
+        pItem->setIpv4rules(ipv4rules);
+        pItem->setIpv6rules(ipv6rules);
         pItem->updateFields();
         sltHandleCurrentItemChangeNetworkNAT();
         /* Revalidate: */
@@ -726,7 +750,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     /* Update tree: */
     const QString strCacheKey = iface.GetName();
     loadToCacheFromNetworkHost(iface, m_pCache->child2(strCacheKey));
-    createTreeWidgetItemForNetworkHost(m_pCache->child2(strCacheKey).base(), true);
+    createTreeWidgetItemForNetworkHost(m_pCache->child2(strCacheKey), true);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
 }
 
@@ -1036,12 +1060,12 @@ void UIGlobalSettingsNetwork::loadToCacheFromNetworkNAT(const CNATNetwork &netwo
         Assert(rules.size() == 6);
         if (rules.size() != 6)
             continue;
-        oldNATData.m_ipv4rules << UIDataPortForwardingRule(rules[0],
-                                                           gpConverter->fromInternalString<KNATProtocol>(rules[1]),
-                                                           QString(rules[2]).remove('[').remove(']'),
-                                                           rules[3].toUInt(),
-                                                           QString(rules[4]).remove('[').remove(']'),
-                                                           rules[5].toUInt());
+        cache.child1(rules.at(0)).cacheInitialData(UIDataPortForwardingRule(rules.at(0),
+                                                                            gpConverter->fromInternalString<KNATProtocol>(rules.at(1)),
+                                                                            QString(rules.at(2)).remove('[').remove(']'),
+                                                                            rules.at(3).toUInt(),
+                                                                            QString(rules.at(4)).remove('[').remove(']'),
+                                                                            rules.at(5).toUInt()));
     }
 
     /* Load IPv6 rules: */
@@ -1064,12 +1088,12 @@ void UIGlobalSettingsNetwork::loadToCacheFromNetworkNAT(const CNATNetwork &netwo
         Assert(rules.size() == 6);
         if (rules.size() != 6)
             continue;
-        oldNATData.m_ipv6rules << UIDataPortForwardingRule(rules[0],
-                                                           gpConverter->fromInternalString<KNATProtocol>(rules[1]),
-                                                           QString(rules[2]).remove('[').remove(']'),
-                                                           rules[3].toUInt(),
-                                                           QString(rules[4]).remove('[').remove(']'),
-                                                           rules[5].toUInt());
+        cache.child2(rules.at(0)).cacheInitialData(UIDataPortForwardingRule(rules.at(0),
+                                                                            gpConverter->fromInternalString<KNATProtocol>(rules.at(1)),
+                                                                            QString(rules.at(2)).remove('[').remove(']'),
+                                                                            rules.at(3).toUInt(),
+                                                                            QString(rules.at(4)).remove('[').remove(']'),
+                                                                            rules.at(5).toUInt()));
     }
 
     /* Cache old NAT data: */
@@ -1152,43 +1176,61 @@ bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetw
             }
 
             /* Save IPv4 forwarding rules: */
-            if (fSuccess && newNatData.m_ipv4rules != oldNatData.m_ipv4rules)
+            for (int i = 0; fSuccess && i < cache.childCount1(); ++i)
             {
-                for (int i = 0; fSuccess && i < ipv4rules.size(); ++i)
+                /* Get rule cache: */
+                const UISettingsCachePortForwardingRule &ruleCache = cache.child1(i);
+
+                /* Remove rule marked for 'remove' or 'update': */
+                if (ruleCache.wasRemoved() || ruleCache.wasUpdated())
                 {
-                    const QString &strOldRule = ipv4rules.at(i);
                     comNetwork.RemovePortForwardRule(false,
-                                                     strOldRule.section(':', 0, 0));
+                                                     ruleCache.base().name);
                     fSuccess = comNetwork.isOk();
                 }
-                for (int i = 0; fSuccess && i < newNatData.m_ipv4rules.size(); ++i)
+            }
+            for (int i = 0; fSuccess && i < cache.childCount1(); ++i)
+            {
+                /* Get rule cache: */
+                const UISettingsCachePortForwardingRule &ruleCache = cache.child1(i);
+
+                /* Create rule marked for 'create' or 'update': */
+                if (ruleCache.wasCreated() || ruleCache.wasUpdated())
                 {
-                    const UIDataPortForwardingRule &newRule = newNatData.m_ipv4rules.at(i);
                     comNetwork.AddPortForwardRule(false,
-                                                  newRule.name, newRule.protocol,
-                                                  newRule.hostIp, newRule.hostPort.value(),
-                                                  newRule.guestIp, newRule.guestPort.value());
+                                                  ruleCache.data().name, ruleCache.data().protocol,
+                                                  ruleCache.data().hostIp, ruleCache.data().hostPort.value(),
+                                                  ruleCache.data().guestIp, ruleCache.data().guestPort.value());
                     fSuccess = comNetwork.isOk();
                 }
             }
 
             /* Save IPv6 forwarding rules: */
-            if (fSuccess && newNatData.m_ipv6rules != oldNatData.m_ipv6rules)
+            for (int i = 0; fSuccess && i < cache.childCount2(); ++i)
             {
-                for (int i = 0; fSuccess && i < ipv6rules.size(); ++i)
+                /* Get rule cache: */
+                const UISettingsCachePortForwardingRule &ruleCache = cache.child2(i);
+
+                /* Remove rule marked for 'remove' or 'update': */
+                if (ruleCache.wasRemoved() || ruleCache.wasUpdated())
                 {
-                    const QString &strOldRule = ipv6rules.at(i);
                     comNetwork.RemovePortForwardRule(true,
-                                                     strOldRule.section(':', 0, 0));
+                                                     ruleCache.base().name);
                     fSuccess = comNetwork.isOk();
                 }
-                for (int i = 0; fSuccess && i < newNatData.m_ipv6rules.size(); ++i)
+            }
+            for (int i = 0; fSuccess && i < cache.childCount2(); ++i)
+            {
+                /* Get rule cache: */
+                const UISettingsCachePortForwardingRule &ruleCache = cache.child2(i);
+
+                /* Create rule marked for 'create' or 'update': */
+                if (ruleCache.wasCreated() || ruleCache.wasUpdated())
                 {
-                    const UIDataPortForwardingRule &newRule = newNatData.m_ipv6rules.at(i);
                     comNetwork.AddPortForwardRule(true,
-                                                  newRule.name, newRule.protocol,
-                                                  newRule.hostIp, newRule.hostPort.value(),
-                                                  newRule.guestIp, newRule.guestPort.value());
+                                                  ruleCache.data().name, ruleCache.data().protocol,
+                                                  ruleCache.data().hostIp, ruleCache.data().hostPort.value(),
+                                                  ruleCache.data().guestIp, ruleCache.data().guestPort.value());
                     fSuccess = comNetwork.isOk();
                 }
             }
@@ -1202,11 +1244,19 @@ bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetw
     return fSuccess;
 }
 
-void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem)
+void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache, bool fChooseItem)
 {
     /* Add new item to the tree: */
     UIItemNetworkNAT *pItem = new UIItemNetworkNAT;
-    pItem->UIDataSettingsGlobalNetworkNAT::operator=(data);
+    pItem->UIDataSettingsGlobalNetworkNAT::operator=(cache.base());
+    UIPortForwardingDataList ipv4rules;
+    UIPortForwardingDataList ipv6rules;
+    for (int i = 0; i < cache.childCount1(); ++i)
+        ipv4rules << cache.child1(i).base();
+    for (int i = 0; i < cache.childCount2(); ++i)
+        ipv6rules << cache.child2(i).base();
+    pItem->setIpv4rules(ipv4rules);
+    pItem->setIpv6rules(ipv6rules);
     pItem->updateFields();
     m_pTreeNetworkNAT->addTopLevelItem(pItem);
     /* And choose it as current if necessary: */
@@ -1375,11 +1425,11 @@ bool UIGlobalSettingsNetwork::saveDataNetworkHost(const UISettingsCacheGlobalNet
     return fSuccess;
 }
 
-void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem)
+void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkHost(const UISettingsCacheGlobalNetworkHost &cache, bool fChooseItem)
 {
     /* Add new item to the tree: */
     UIItemNetworkHost *pItem = new UIItemNetworkHost;
-    pItem->UIDataSettingsGlobalNetworkHost::operator=(data);
+    pItem->UIDataSettingsGlobalNetworkHost::operator=(cache.base());
     pItem->updateFields();
     m_pTreeNetworkHost->addTopLevelItem(pItem);
     /* And choose it as current if necessary: */

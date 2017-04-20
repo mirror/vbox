@@ -30,9 +30,14 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataSettingsGlobalNetworkNAT &data)
+UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent,
+                                                                     UIDataSettingsGlobalNetworkNAT &data,
+                                                                     UIPortForwardingDataList &ipv4rules,
+                                                                     UIPortForwardingDataList &ipv6rules)
     : QIWithRetranslateUI2<QIDialog>(pParent)
     , m_data(data)
+    , m_ipv4rules(ipv4rules)
+    , m_ipv6rules(ipv6rules)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsNetworkDetailsNAT::setupUi(this);
@@ -70,11 +75,11 @@ void UIGlobalSettingsNetworkDetailsNAT::polishEvent(QShowEvent *pEvent)
 void UIGlobalSettingsNetworkDetailsNAT::sltEditPortForwarding()
 {
     /* Open dialog to edit port-forwarding rules: */
-    UIGlobalSettingsPortForwardingDlg dlg(this, m_data.m_ipv4rules, m_data.m_ipv6rules);
+    UIGlobalSettingsPortForwardingDlg dlg(this, m_ipv4rules, m_ipv6rules);
     if (dlg.exec() == QDialog::Accepted)
     {
-        m_data.m_ipv4rules = dlg.ipv4rules();
-        m_data.m_ipv6rules = dlg.ipv6rules();
+        m_ipv4rules = dlg.ipv4rules();
+        m_ipv6rules = dlg.ipv6rules();
     }
 }
 

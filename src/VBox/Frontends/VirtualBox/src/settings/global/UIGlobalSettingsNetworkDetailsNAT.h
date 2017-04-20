@@ -37,8 +37,6 @@ struct UIDataSettingsGlobalNetworkNAT
         , m_fSupportsDHCP(false)
         , m_fSupportsIPv6(false)
         , m_fAdvertiseDefaultIPv6Route(false)
-        , m_ipv4rules(QList<UIDataPortForwardingRule>())
-        , m_ipv6rules(QList<UIDataPortForwardingRule>())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -52,8 +50,6 @@ struct UIDataSettingsGlobalNetworkNAT
                && (m_fSupportsDHCP == other.m_fSupportsDHCP)
                && (m_fSupportsIPv6 == other.m_fSupportsIPv6)
                && (m_fAdvertiseDefaultIPv6Route == other.m_fAdvertiseDefaultIPv6Route)
-               && (m_ipv4rules == other.m_ipv4rules)
-               && (m_ipv6rules == other.m_ipv6rules)
                ;
     }
 
@@ -76,10 +72,6 @@ struct UIDataSettingsGlobalNetworkNAT
     bool m_fSupportsIPv6;
     /** Holds whether this network advertised as default IPv6 route. */
     bool m_fAdvertiseDefaultIPv6Route;
-    /** Holds IPv4 port forwarding rules. */
-    UIPortForwardingDataList m_ipv4rules;
-    /** Holds IPv6 port forwarding rules. */
-    UIPortForwardingDataList m_ipv6rules;
 };
 
 
@@ -91,7 +83,7 @@ class UIGlobalSettingsNetworkDetailsNAT : public QIWithRetranslateUI2<QIDialog>,
 public:
 
     /* Constructor: */
-    UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataSettingsGlobalNetworkNAT &data);
+    UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataSettingsGlobalNetworkNAT &data, UIPortForwardingDataList &ipv4rules, UIPortForwardingDataList &ipv6rules);
 
 protected:
 
@@ -117,6 +109,11 @@ private:
 
     /* Variable: External data reference: */
     UIDataSettingsGlobalNetworkNAT &m_data;
+
+    /** Holds IPv4 port forwarding rules. */
+    UIPortForwardingDataList &m_ipv4rules;
+    /** Holds IPv6 port forwarding rules. */
+    UIPortForwardingDataList &m_ipv6rules;
 };
 
 #endif /* __UIGlobalSettingsNetworkDetailsNAT_h__ */
