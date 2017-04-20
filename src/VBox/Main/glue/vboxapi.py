@@ -669,6 +669,8 @@ class PlatformMSCOM(PlatformBase):
             if h is not None:
                 CloseHandle(h)
         self.handles = None
+        del self.oClient
+        oClient = None
         pythoncom.CoUninitialize()
         pass
 
