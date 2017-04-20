@@ -248,6 +248,7 @@ VBox-python-glue_SOURCES = \
 VBox-python-glue_CLEAN = \
 	$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
 
+ ## @todo $(call KB_FN_AUTO_CMD_DEPS,$$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py) - need to fix the double expansion here
 $$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py:  \
 		$(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl \
 		$(VBOX_XIDL_FILE) \
@@ -646,7 +647,7 @@ OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
 #
-# Generate some event stuff for VBoxSVC and VBoxC.
+# Generate some event stuff for VBoxSVC and VBoxC.       $(MAKEFILE
 #
 $(VBOX_AUTOGEN_EVENT_H): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
@@ -939,6 +940,7 @@ src-client/ConsoleImpl.cpp_DEFS = \
 src-client/win/VBoxC.rc_DEPS = $(VBoxC_0_OUTDIR)/VBoxC.rgs $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
 VBoxC_CLEAN.win  += $(VBoxC_0_OUTDIR)/VBoxC.rgs
 
+ ## @todo $(call KB_FN_AUTO_CMD_DEPS,$$(VBoxC_0_OUTDIR)/VBoxC.rgs) - need to fix the double expansion here
 $$(VBoxC_0_OUTDIR)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(VBOX_XSLTPROC) --stringparam Application VirtualBox --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
 
@@ -997,6 +999,7 @@ endif
  	$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs \
  	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb
 
+ ## @todo $(call KB_FN_AUTO_CMD_DEPS,$$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs) - need to fix the double expansion here
  $$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs: \
  		$(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl \
 		$(VBOX_XIDL_FILE) | $$(dir $$@)
@@ -1205,26 +1208,35 @@ include $(FILE_KBUILD_SUB_FOOTER)
 ## @todo this hack ain't cutting it any longer. (the file name is abspath'ed since ages now.)
 glue/xpcom/helpers.cpp: $(VBOX_IDL_TYPELIB.XPCOM)
 
+$(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_FILE.XPCOM),$(PATH_OUT)/VBOX_IDL_FILE.XPCOM.vbox-dep)
 $(VBOX_IDL_FILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
-	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_FILE.XPCOM.vbox-dep)
+	$(call MSG_TOOL,xsltproc,VBoxSVC,$(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl,$@)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(VBOX_XIDL_FILE)
 
+$(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_TYPELIB.XPCOM),$(PATH_OUT)/VBOX_IDL_TYPELIB.XPCOM.vbox-dep)
 $(VBOX_IDL_TYPELIB.XPCOM): $(VBOX_IDL_FILE.XPCOM) |  $$(dir $$@) $(VBOX_XPIDL)
-	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
-	$(QUIET)$(VBOX_XPIDL_ENV)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_TYPELIB.XPCOM.vbox-dep)
+	$(call MSG_TOOL,xpidl,VBoxSVC,$(VBOX_IDL_FILE.XPCOM),$@)
+	$(QUIET)$(VBOX_XPIDL_ENV)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $(VBOX_IDL_FILE.XPCOM)
 	$(CHMOD) 0644 $@
 ## @todo ^^^^^^^^^^^^ fix horrible hack
 
+$(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_HEADER.XPCOM),$(PATH_OUT)/VBOX_IDL_HEADER.XPCOM.vbox-dep)
 $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
-	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
-	$(QUIET)$(VBOX_XPIDL_ENV)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_HEADER.XPCOM.vbox-dep)
+	$(call MSG_TOOL,xpidl,VBoxSVC,$(VBOX_IDL_FILE.XPCOM),$@)
+	$(QUIET)$(VBOX_XPIDL_ENV)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $(VBOX_IDL_FILE.XPCOM)
 
+$(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_FILE.MSCOM),$(PATH_OUT)/VBOX_IDL_FILE.MSCOM.vbox-dep)
 $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_FILE.MSCOM.vbox-dep)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
 		$(if $(VBOX_WITH_MIDL_PROXY_STUB),-stringparam g_fGenProxy yes,) \
 		$(if $(VBOX_WITH_SDS),-stringparam g_fVBoxWithSDS yes,) \
-		$< $(VBOX_XIDL_FILE)
+		$(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE)
+
 
 # Aliases for testing purposes.
 ifdef VBOX_WITH_XPCOM
@@ -1367,11 +1379,13 @@ VBoxJMscom-inst-jar_CLEAN = \
 	)
 VBoxJMscom-inst-jar_BLDDIRS += $(VBOX_JMSCOM_GEN)/java
 
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_JMSCOM_GEN)/jmscomglue.list)
 $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
 		$(VBOX_FILESPLIT) \
 		| $(VBOX_JMSCOM_GEN)/java/
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_L1,Generating Java MSCOM glue files from XIDL)
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JMSCOM_GEN)/java/*.java)
 	$(QUIET)$(VBOX_XSLTPROC) \
@@ -1379,10 +1393,11 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 		--stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
 		--stringparam G_vboxGlueStyle mscom \
 		--stringparam G_vboxDirPrefix "" \
-		-o $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
+		-o $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java
 	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
 
+## @todo $(call KB_FN_AUTO_CMD_DEPS,$(VBOX_JMSCOM_JAR)) - need to fix the double expansion here
 $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
 	$(call MSG_TOOL,javac,$(notdir $@),jmscomglue.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JMSCOM_JDEST)
@@ -1413,20 +1428,23 @@ javagluesample_SOURCES = \
 #
 
 # Generate a make include file which lists the wrapper header and source files.
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxAPIWrap_VBOX_KMK_FILE).ts)
 $(VBoxAPIWrap_VBOX_KMK_FILE).ts \
 +| $(VBoxAPIWrap_VBOX_KMK_FILE): \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server-filelist.xsl \
 		$(VBOX_PATH_MAIN_SRC)/Makefile.kmk
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
-        $(if $(VBOX_WITH_SDS),-stringparam g_fVBoxWithSDS yes,) \
-		-o $@ $(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server-filelist.xsl $<
+		$(if $(VBOX_WITH_SDS),-stringparam g_fVBoxWithSDS yes,) \
+		-o $@ $(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server-filelist.xsl $(VBOX_XIDL_FILE)
 	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_VBOX_KMK_FILE)
 
 # Generate the header files for the wrappers.
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers)
 $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
 +| $(VBOX_MAIN_APIWRAPPER_GEN_HDRS): \
 		$(VBOX_XIDL_FILE) \
@@ -1434,14 +1452,16 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
 		$(VBoxAPIWrap_VBOX_XSLT) \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_L1,Generating C++ Server API wrapper header files from XIDL)
 	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_HDRS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "headers" \
-		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
 # Generate the DTrace probes for the wrappers and combine them with handcoded probes.
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts)
 $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 +| $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d: \
 		$(VBOX_XIDL_FILE) \
@@ -1449,11 +1469,12 @@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 		$(VBoxAPIWrap_VBOX_XSLT) \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_L1,Generating DTrace Provider for the VBox API (from XIDL))
 	$(QUIET)$(RM) -f -- "$@" "$@.tmp"
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "dtrace-probes" \
-		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $<
+		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(SED) -e '' -o "$@.tmp" \
 		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d" \
 		"$@" \
@@ -1462,6 +1483,7 @@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d"
 
 # Generate the wrapper source files - split in two due to long processing time
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even)
 $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even \
 +| $(VBOX_MAIN_APIWRAPPER_GEN_SRCS_EVEN): \
 		$(VBOX_XIDL_FILE) \
@@ -1469,14 +1491,16 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even \
 		$(VBoxAPIWrap_VBOX_XSLT) \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL - part 1)
 	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_SRCS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp))
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "sources" \
 		--param reminder 0 \
-		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd)
 $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd \
 +| $(VBOX_MAIN_APIWRAPPER_GEN_SRCS_ODD): \
 		$(VBOX_XIDL_FILE) \
@@ -1484,12 +1508,13 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd \
 		$(VBoxAPIWrap_VBOX_XSLT) \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL - part 2)
 	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_SRCS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp))
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "sources" \
 		--param reminder 1 \
-		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_XIDL_FILE)
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
 testapiwrappers:: \
