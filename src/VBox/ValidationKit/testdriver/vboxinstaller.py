@@ -840,7 +840,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
              or sProdName.startswith('Sun VirtualBox'):
                 asProdCodes.append([sProdCode, sProdName]);
 
-        # Before we start uninstalling anything, just ruthlessly kill any
+        # Before we start uninstalling anything, just ruthlessly kill any cdb,
         # msiexec, drvinst and some rundll process we might find hanging around.
         if self._isProcessPresent('rundll32'):
             cTimes = 0;
@@ -875,6 +875,16 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 cKilled = self._killProcessesByName('msiexec', 'MSI driver installation');
                 if cKilled > 0:
                     time.sleep(16); # fudge.
+
+        # cdb.exe sometimes stays running (from utils.getProcessInfo), blocking
+        # the scratch directory. No idea why.
+        if self._isProcessPresent('cdb'):
+            cTimes = 0;
+            while cTimes < 3:
+                cKilled = self._killProcessesByName('cdb', 'cdb.exe from getProcessInfo');
+                if cKilled <= 0:
+                    break;
+                time.sleep(2); # fudge.
 
         # Do the uninstalling.
         fRc = True;
