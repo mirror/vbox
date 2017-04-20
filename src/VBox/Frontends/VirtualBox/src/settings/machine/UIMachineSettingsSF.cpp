@@ -868,7 +868,7 @@ bool UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmFoldersType, CS
 
                 /* Show error message if necessary: */
                 if (!fSuccess)
-                    msgCenter().cannotLoadFoldersSettings(m_machine, this);
+                    notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
 
                 break;
             }
@@ -882,7 +882,7 @@ bool UIMachineSettingsSF::getSharedFolders(UISharedFolderType enmFoldersType, CS
 
                 /* Show error message if necessary: */
                 if (!fSuccess)
-                    msgCenter().cannotLoadFoldersSettings(m_console, this);
+                    notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_console));
 
                 break;
             }
@@ -914,7 +914,7 @@ bool UIMachineSettingsSF::getSharedFolder(const QString &strFolderName, const CS
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotLoadFolderSettings(comCurrentFolder, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comCurrentFolder));
 
         /* If that's the folder we are looking for => take it: */
         if (fSuccess && strCurrentFolderName == strFolderName)
@@ -987,7 +987,7 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
                     if (!fSuccess)
                     {
                         /* Show error message: */
-                        msgCenter().cannotSaveFoldersSettings(m_machine, this);
+                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
                     }
                     break;
                 }
@@ -1000,7 +1000,7 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
                     if (!fSuccess)
                     {
                         /* Show error message: */
-                        msgCenter().cannotSaveFoldersSettings(m_console, this);
+                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_console));
                     }
                     break;
                 }
@@ -1053,7 +1053,7 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
                     if (!fSuccess)
                     {
                         /* Show error message: */
-                        msgCenter().cannotSaveFoldersSettings(m_machine, this);
+                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
                     }
                     break;
                 }
@@ -1066,7 +1066,7 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
                     if (!fSuccess)
                     {
                         /* Show error message: */
-                        msgCenter().cannotSaveFoldersSettings(m_console, this);
+                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_console));
                     }
                     break;
                 }

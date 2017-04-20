@@ -258,12 +258,6 @@ bool UIGlobalSettingsUpdate::saveUpdateData()
         /* Get new update data from the cache: */
         const UIDataSettingsGlobalUpdate &newUpdateData = m_pCache->data();
 
-        // Here could go changes for m_properties.
-
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveUpdateSettings(m_properties, this);
-
         /* Save new update data from the cache: */
         const VBoxUpdateData newData(newUpdateData.m_periodIndex, newUpdateData.m_branchIndex);
         gEDataManager->setApplicationUpdateData(newData.data());

@@ -40,6 +40,14 @@ UISettingsPage::UISettingsPage(UISettingsPageType pageType)
 {
 }
 
+void UISettingsPage::notifyOperationProgressError(const QString &strErrorInfo)
+{
+    QMetaObject::invokeMethod(this,
+                              "sigOperationProgressError",
+                              Qt::BlockingQueuedConnection,
+                              Q_ARG(QString, strErrorInfo));
+}
+
 void UISettingsPage::setValidator(UIPageValidator *pValidator)
 {
     /* Make sure validator is not yet assigned: */

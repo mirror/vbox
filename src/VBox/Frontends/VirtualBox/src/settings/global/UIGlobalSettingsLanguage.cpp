@@ -456,12 +456,6 @@ bool UIGlobalSettingsLanguage::saveLanguageData()
         /* Get new language data from the cache: */
         const UIDataSettingsGlobalLanguage &newLanguageData = m_pCache->data();
 
-        // Here could go changes for m_properties.
-
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveLanguageSettings(m_properties, this);
-
         /* Save new language data from the cache: */
         if (newLanguageData.m_strLanguageId != oldLanguageData.m_strLanguageId)
             gEDataManager->setLanguageId(newLanguageData.m_strLanguageId);

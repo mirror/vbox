@@ -1138,7 +1138,7 @@ bool UIMachineSettingsSystem::saveMotherboardData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveSystemSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -1177,7 +1177,7 @@ bool UIMachineSettingsSystem::saveProcessorData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveSystemSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -1216,7 +1216,7 @@ bool UIMachineSettingsSystem::saveAccelerationData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveSystemSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;

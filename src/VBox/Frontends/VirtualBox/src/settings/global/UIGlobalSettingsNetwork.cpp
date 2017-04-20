@@ -1120,7 +1120,7 @@ bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetw
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotLoadNetworkSettings(comVBox, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comVBox));
         else
         {
             /* Save whether NAT network is enabled: */
@@ -1237,7 +1237,7 @@ bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetw
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveNetworkNatSettings(comNetwork, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comNetwork));
         }
     }
     /* Return result: */
@@ -1332,7 +1332,7 @@ bool UIGlobalSettingsNetwork::saveDataNetworkHost(const UISettingsCacheGlobalNet
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotLoadNetworkSettings(comHost, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comHost));
         else
         {
             /* Automatic host interface configuration: */
@@ -1380,7 +1380,7 @@ bool UIGlobalSettingsNetwork::saveDataNetworkHost(const UISettingsCacheGlobalNet
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveNetworkHostSettings(comInterface, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comInterface));
             else
             {
                 /* Get VBox for further activities: */
@@ -1391,7 +1391,7 @@ bool UIGlobalSettingsNetwork::saveDataNetworkHost(const UISettingsCacheGlobalNet
 
                 /* Show error message if necessary: */
                 if (!fSuccess)
-                    msgCenter().cannotLoadNetworkSettings(comVBox, this);
+                    notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comVBox));
                 else
                 {
                     /* Save whether DHCP server is enabled: */
@@ -1414,9 +1414,7 @@ bool UIGlobalSettingsNetwork::saveDataNetworkHost(const UISettingsCacheGlobalNet
 
                     /* Show error message if necessary: */
                     if (!fSuccess)
-                        msgCenter().cannotSaveDHCPServerSettings(comServer, this);
-                    // if (!comServer.isOk())
-                    //    emit sigOperationProgressError(UIMessageCenter::formatErrorInfo(comServer));
+                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comServer));
                 }
             }
         }

@@ -4025,7 +4025,7 @@ bool UIMachineSettingsStorage::removeStorageController(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveStorageSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -4057,7 +4057,7 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveStorageSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             /* Save controller type: */
@@ -4098,7 +4098,7 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveStorageControllerSettings(comController, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comController));
 
             /* For each attachment: */
             for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
@@ -4134,7 +4134,7 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveStorageSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             /* Save controller type: */
@@ -4176,7 +4176,7 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveStorageControllerSettings(comController, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comController));
 
             /* For each attachment ('removing' step): */
             // We need to separately remove attachments first because
@@ -4244,7 +4244,7 @@ bool UIMachineSettingsStorage::removeStorageAttachment(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveStorageSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -4334,7 +4334,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveStorageSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -4422,7 +4422,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveStorageSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;

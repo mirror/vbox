@@ -572,7 +572,7 @@ bool UIMachineSettingsParallelPage::savePortData(int iSlot)
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveParallelSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             /* Save whether the port is enabled: */
@@ -602,7 +602,7 @@ bool UIMachineSettingsParallelPage::savePortData(int iSlot)
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveParallelPortSettings(comPort, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comPort));
         }
     }
     /* Return result: */

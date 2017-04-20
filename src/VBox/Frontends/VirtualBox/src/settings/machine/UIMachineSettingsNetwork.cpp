@@ -1498,7 +1498,7 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveNetworkSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             /* Save whether the adapter is enabled: */
@@ -1600,7 +1600,7 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveNetworkAdapterSettings(comAdapter, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comAdapter));
             else
             {
                 /* Save adapter port forwarding rules: */
@@ -1637,7 +1637,7 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 
                     /* Show error message if necessary: */
                     if (!fSuccess)
-                        msgCenter().cannotSaveNATEngineSettings(comEngine, this);
+                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comEngine));
                 }
             }
         }

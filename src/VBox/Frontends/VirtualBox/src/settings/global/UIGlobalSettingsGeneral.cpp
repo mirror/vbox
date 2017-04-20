@@ -210,7 +210,7 @@ bool UIGlobalSettingsGeneral::saveGeneralData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveGeneralSettings(m_properties, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_properties));
 
         /* Save new general data from the cache: */
         if (newGeneralData.m_fHostScreenSaverDisabled != oldGeneralData.m_fHostScreenSaverDisabled)

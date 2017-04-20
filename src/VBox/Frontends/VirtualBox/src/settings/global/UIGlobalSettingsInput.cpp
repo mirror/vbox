@@ -1158,12 +1158,6 @@ bool UIGlobalSettingsInput::saveInputData()
         /* Get new input data from the cache: */
         const UIDataSettingsGlobalInput &newInputData = m_pCache->data();
 
-        // Here could go changes for m_properties.
-
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveInputSettings(m_properties, this);
-
         /* Save new host-combo shortcut from the cache: */
         const UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
         const int iHostComboItemBase = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(oldInputData.shortcuts(), fakeHostComboItem);

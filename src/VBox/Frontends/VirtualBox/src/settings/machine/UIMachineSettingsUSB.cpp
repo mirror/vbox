@@ -1014,7 +1014,7 @@ bool UIMachineSettingsUSB::saveUSBData()
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveUSBSettings(m_machine, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
             else
             {
                 /* For each filter data set: */
@@ -1059,7 +1059,7 @@ bool UIMachineSettingsUSB::removeUSBControllers(const QSet<KUSBControllerType> &
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveUSBSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
 
         /* For each controller: */
         for (int iControllerIndex = 0; fSuccess && iControllerIndex < controllers.size(); ++iControllerIndex)
@@ -1084,7 +1084,7 @@ bool UIMachineSettingsUSB::removeUSBControllers(const QSet<KUSBControllerType> &
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveUSBControllerSettings(comController, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comController));
             else
             {
                 /* Pass only if requested types were not defined or contains the one we found: */
@@ -1100,7 +1100,7 @@ bool UIMachineSettingsUSB::removeUSBControllers(const QSet<KUSBControllerType> &
 
                 /* Show error message if necessary: */
                 if (!fSuccess)
-                    msgCenter().cannotSaveUSBSettings(m_machine, this);
+                    notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
             }
         }
     }
@@ -1137,7 +1137,7 @@ bool UIMachineSettingsUSB::createUSBControllers(KUSBControllerType enmType)
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveUSBSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             /* For requested controller type: */
@@ -1159,7 +1159,7 @@ bool UIMachineSettingsUSB::createUSBControllers(KUSBControllerType enmType)
 
                         /* Show error message if necessary: */
                         if (!fSuccess)
-                            msgCenter().cannotSaveUSBSettings(m_machine, this);
+                            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
                     }
 
                     break;
@@ -1187,7 +1187,7 @@ bool UIMachineSettingsUSB::createUSBControllers(KUSBControllerType enmType)
 
                         /* Show error message if necessary: */
                         if (!fSuccess)
-                            msgCenter().cannotSaveUSBSettings(m_machine, this);
+                            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
                     }
 
                     break;
@@ -1208,7 +1208,7 @@ bool UIMachineSettingsUSB::createUSBControllers(KUSBControllerType enmType)
 
                         /* Show error message if necessary: */
                         if (!fSuccess)
-                            msgCenter().cannotSaveUSBSettings(m_machine, this);
+                            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
                     }
 
                     break;
@@ -1235,7 +1235,7 @@ bool UIMachineSettingsUSB::removeUSBFilter(CUSBDeviceFilters &comFiltersObject, 
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveUSBDeviceFiltersSettings(comFiltersObject, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comFiltersObject));
     }
     /* Return result: */
     return fSuccess;
@@ -1254,7 +1254,7 @@ bool UIMachineSettingsUSB::createUSBFilter(CUSBDeviceFilters &comFiltersObject, 
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveUSBDeviceFiltersSettings(comFiltersObject, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comFiltersObject));
         else
         {
             /* Save whether filter is active: */
@@ -1314,7 +1314,7 @@ bool UIMachineSettingsUSB::createUSBFilter(CUSBDeviceFilters &comFiltersObject, 
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveUSBDeviceFilterSettings(comFilter, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comFilter));
             else
             {
                 /* Insert filter onto corresponding position: */
@@ -1323,7 +1323,7 @@ bool UIMachineSettingsUSB::createUSBFilter(CUSBDeviceFilters &comFiltersObject, 
 
                 /* Show error message if necessary: */
                 if (!fSuccess)
-                    msgCenter().cannotSaveUSBDeviceFiltersSettings(comFiltersObject, this);
+                    notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comFiltersObject));
             }
         }
     }

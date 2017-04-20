@@ -263,12 +263,6 @@ bool UIGlobalSettingsProxy::saveProxyData()
         /* Get new proxy data from the cache: */
         const UIDataSettingsGlobalProxy &newProxyData = m_pCache->data();
 
-        // Here could go changes for m_properties.
-
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveProxySettings(m_properties, this);
-
         /* Save new proxy data from the cache: */
         UIProxyManager proxyManager;
         proxyManager.setProxyState(newProxyData.m_enmProxyState);

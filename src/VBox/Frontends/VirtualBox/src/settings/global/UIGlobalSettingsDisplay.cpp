@@ -249,12 +249,6 @@ bool UIGlobalSettingsDisplay::saveDisplayData()
         /* Get new display data from the cache: */
         const UIDataSettingsGlobalDisplay &newDisplayData = m_pCache->data();
 
-        // Here could go changes for m_properties.
-
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveDisplaySettings(m_properties, this);
-
         /* Save maximum guest resolution policy and/or value: */
         if (   fSuccess
             && (   newDisplayData.m_enmMaxGuestResolution != oldDisplayData.m_enmMaxGuestResolution

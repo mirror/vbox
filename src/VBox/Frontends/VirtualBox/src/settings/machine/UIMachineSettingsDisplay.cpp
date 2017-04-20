@@ -1274,7 +1274,7 @@ bool UIMachineSettingsDisplay::saveScreenData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveDisplaySettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
 
         /* Save guest-screen scale-factor: */
         if (fSuccess && newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
@@ -1307,7 +1307,7 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveDisplaySettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             /* Save whether remote display server is enabled: */
@@ -1345,7 +1345,7 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveRemoteDisplayServerSettings(comServer, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comServer));
         }
     }
     /* Return result: */
@@ -1484,7 +1484,7 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveDisplaySettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;

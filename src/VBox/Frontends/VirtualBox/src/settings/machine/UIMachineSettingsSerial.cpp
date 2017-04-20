@@ -629,7 +629,7 @@ bool UIMachineSettingsSerialPage::savePortData(int iSlot)
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveSerialSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             // This *must* be first.
@@ -687,7 +687,7 @@ bool UIMachineSettingsSerialPage::savePortData(int iSlot)
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveSerialPortSettings(comPort, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comPort));
         }
     }
     /* Return result: */

@@ -106,6 +106,10 @@ public:
       * this task COULD be performed in other than the GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) = 0;
 
+    /** Notifies listeners about particular COM error.
+      * @param  strErrorInfo  Brings the details of the error happened. */
+    void notifyOperationProgressError(const QString &strErrorInfo);
+
     /* Validation stuff: */
     void setValidator(UIPageValidator *pValidator);
     void setValidatorBlocked(bool fIsValidatorBlocked) { m_fIsValidatorBlocked = fIsValidatorBlocked; }

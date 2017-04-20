@@ -272,7 +272,7 @@ bool UIMachineSettingsAudio::saveAudioData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveAudioSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
         else
         {
             /* Save whether audio is enabled: */
@@ -296,7 +296,7 @@ bool UIMachineSettingsAudio::saveAudioData()
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveAudioAdapterSettings(comAdapter, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comAdapter));
         }
     }
     /* Return result: */

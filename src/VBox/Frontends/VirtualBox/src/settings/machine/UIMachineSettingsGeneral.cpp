@@ -716,7 +716,7 @@ bool UIMachineSettingsGeneral::saveBasicData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveGeneralSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -763,7 +763,7 @@ bool UIMachineSettingsGeneral::saveAdvancedData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveGeneralSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -790,7 +790,7 @@ bool UIMachineSettingsGeneral::saveDescriptionData()
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveGeneralSettings(m_machine, this);
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;
@@ -833,7 +833,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
 
             /* Show error message if necessary: */
             if (!fSuccess)
-                msgCenter().cannotSaveGeneralSettings(m_machine, this);
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(m_machine));
 
             /* For each attachment: */
             for (int iIndex = 0; fSuccess && iIndex < attachments.size(); ++iIndex)
@@ -858,7 +858,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
 
                 /* Show error message if necessary: */
                 if (!fSuccess)
-                    msgCenter().cannotSaveStorageAttachmentSettings(comAttachment, this);
+                    notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comAttachment));
                 else
                 {
                     /* Pass hard-drives only: */
@@ -912,21 +912,10 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                         fSuccess = comMedium.isOk();
                     }
 
-                    // TODO: Decide what to do with it (also below).
-                    // if (!comMedium.isOk())
-                    // {
-                    //     QMetaObject::invokeMethod(this, "sigOperationProgressError", Qt::BlockingQueuedConnection,
-                    //                               Q_ARG(QString, UIMessageCenter::formatErrorInfo(comMedium)));
-                    //     continue;
-                    // }
-
                     /* Create encryption update progress dialog: */
                     QPointer<UIProgress> pDlg;
                     if (fSuccess)
                     {
-                        // TODO: Decide what to do with it (also above).
-                        // This dialog connected to settings serializer, not to message-center directly.
-                        // What's the better approach in that case? Probably connect everything to serializer?
                         pDlg = new UIProgress(comProgress);
                         connect(pDlg, SIGNAL(sigProgressChange(ulong, QString, ulong, ulong)),
                                 this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
@@ -947,7 +936,7 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
 
                     /* Show error message if necessary: */
                     if (!fSuccess)
-                        msgCenter().cannotSaveStorageMediumSettings(comMedium, this);
+                        notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comMedium));
                 }
             }
         }
