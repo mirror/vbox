@@ -71,8 +71,8 @@ private:
 #endif
 
 #ifdef VBOX_WITH_SDS
-    DWORD getServiceAccount(const wchar_t* wszServiceName, wchar_t* wszAccountName, size_t cbAccountNameSize);
-    HRESULT isServiceDisabled(const wchar_t* wszServiceName, bool* pOutIsDisabled);
+    int     getServiceAccount(const wchar_t *pwszServiceName, wchar_t *pwszAccountName, size_t cwcAccountName);
+    HRESULT isServiceDisabled(const wchar_t *pwszServiceName, bool *pfOutIsDisabled);
 #endif
 
     static DECLCALLBACK(int) SVCWatcherThread(RTTHREAD ThreadSelf, void *pvUser);

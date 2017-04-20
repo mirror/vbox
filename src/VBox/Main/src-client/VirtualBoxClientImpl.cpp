@@ -69,134 +69,115 @@ void VirtualBoxClient::FinalRelease()
 HRESULT CreateVirtualBoxThroughSDS(ComPtr<IVirtualBox> &aVirtualBox)
 {
     ComPtr<IVirtualBoxSDS> aVirtualBoxSDS;
+    HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
+                                   NULL,                /* no aggregation */
+                                   CLSCTX_LOCAL_SERVER, /* the object lives in the current process */
+                                   IID_IVirtualBoxSDS,  /* IID of the interface */
+                                   (void **)aVirtualBoxSDS.asOutParam());
+    AssertComRCReturn(hrc, hrc);
 
-    HRESULT rc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
-                                  NULL,                /* no aggregation */
-                                  CLSCTX_LOCAL_SERVER, /* the object lives in the current process */
-                                  IID_IVirtualBoxSDS,  /* IID of the interface */
-                                  (void **)aVirtualBoxSDS.asOutParam());
-    if (FAILED(rc))
-    {
-        Assert(SUCCEEDED(rc));
-        return rc;
-    }
+    hrc = aVirtualBoxSDS->get_VirtualBox(aVirtualBox.asOutParam());
+    AssertComRC(hrc);
 
-    rc = aVirtualBoxSDS->get_VirtualBox(aVirtualBox.asOutParam());
-    if (FAILED(rc))
-        Assert(SUCCEEDED(rc));
-
-    return rc;
+    return hrc;
 }
 
 HRESULT ReleaseVirtualBoxThroughSDS()
 {
     ComPtr<IVirtualBoxSDS> aVirtualBoxSDS;
-
-    HRESULT rc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
-                                  NULL,                /* no aggregation */
-                                  CLSCTX_LOCAL_SERVER, /* the object lives in the current process */
-                                  IID_IVirtualBoxSDS,  /* IID of the interface */
-                                  (void **)aVirtualBoxSDS.asOutParam());
-    if (FAILED(rc))
+    HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
+                                   NULL,                /* no aggregation */
+                                   CLSCTX_LOCAL_SERVER, /* the object lives in the current process */
+                                   IID_IVirtualBoxSDS,  /* IID of the interface */
+                                   (void **)aVirtualBoxSDS.asOutParam());
+    AssertComRC(hrc);
+    if (SUCCEEDED(hrc))
     {
-        LogRel(("ReleaseVirtualBox - instantiation of IVirtualBoxSDS failed, %x\n", rc));
-        Assert(SUCCEEDED(rc));
-        return rc;
+        hrc = aVirtualBoxSDS->ReleaseVirtualBox();
+        AssertComRC(hrc);
+        if (FAILED(hrc))
+            LogRel(("DeregisterVirtualBox() failed, %Rhrc\n", hrc));
     }
-
-    rc = aVirtualBoxSDS->ReleaseVirtualBox();
-    if (FAILED(rc))
-    {
-        LogRel(("DeregisterVirtualBox() failed, %x\n", rc));
-        Assert(SUCCEEDED(rc));
-    }
-    return rc;
+    else
+        LogRel(("ReleaseVirtualBox - instantiation of IVirtualBoxSDS failed, %Rhrc\n", hrc));
+    return hrc;
 }
 
 
-DWORD VirtualBoxClient::getServiceAccount(
-    const wchar_t* wszServiceName, 
-    wchar_t* wszAccountName, 
-    size_t cbAccountNameSize
-    )
+int VirtualBoxClient::getServiceAccount(const wchar_t *pwszServiceName, wchar_t *pwszAccountName, size_t cwcAccountName)
 {
-    SC_HANDLE schSCManager;
-    SC_HANDLE schService;
-    LPQUERY_SERVICE_CONFIG pSc = NULL;
-    DWORD dwBytesNeeded;
-    int dwError;
+    AssertPtr(pwszServiceName);
+    AssertPtr(pwszAccountName);
+    Assert(cwcAccountName);
+    *pwszAccountName = '\0';
 
-    Assert(wszServiceName);
-    Assert(wszAccountName);
-    Assert(cbAccountNameSize);
+    int vrc;
 
     // Get a handle to the SCM database. 
-    schSCManager = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS);
-    if (NULL == schSCManager)
+    SC_HANDLE hSCManager = OpenSCManagerW(NULL /*pwszMachineName*/, NULL /*pwszDatabaseName*/, SC_MANAGER_ALL_ACCESS);
+    if (hSCManager != NULL)
     {
-        dwError = GetLastError();
-        LogRel(("Error: could not open SCM: %Rhrc\n"));
-        return RTErrConvertFromWin32(dwError);
-    }
-
-    // Get a handle to the service.
-    schService = OpenService(schSCManager, wszServiceName, SERVICE_QUERY_CONFIG);
-    if (schService == NULL)
-    {
-        dwError = GetLastError();
-        CloseServiceHandle(schSCManager);
-        LogRel(("Error: Could not open service: %Rwc\n", dwError));
-        return RTErrConvertFromWin32(dwError);
-    }
-
-    // Get the configuration information.
-    if (!QueryServiceConfig(schService, NULL, 0, &dwBytesNeeded))
-    {
-        dwError = GetLastError();
-        if (ERROR_INSUFFICIENT_BUFFER == dwError)
+        SC_HANDLE hService = OpenServiceW(hSCManager, pwszServiceName, SERVICE_QUERY_CONFIG);
+        if (hService != NULL)
         {
-            pSc = (LPQUERY_SERVICE_CONFIG)malloc(dwBytesNeeded);
-            if (!pSc)
+            DWORD cbNeeded = sizeof(QUERY_SERVICE_CONFIGW) + 256;
+            if (!QueryServiceConfigW(hService, NULL, 0, &cbNeeded))
             {
-                LogRel(("Error: allocating memory for service config, %Rwc\n", dwError));
-                CloseServiceHandle(schSCManager);
-                CloseServiceHandle(schService);
-                return RTErrConvertFromWin32(dwError);
+                Assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
+                LPQUERY_SERVICE_CONFIGW pSc = (LPQUERY_SERVICE_CONFIGW)RTMemTmpAllocZ(cbNeeded);
+                if (pSc)
+                {
+                    DWORD cbNeeded2 = 0;
+                    if (QueryServiceConfigW(hService, pSc, cbNeeded, &cbNeeded2))
+                    {
+                        vrc = RTUtf16Copy(pwszAccountName, cwcAccountName, pSc->lpServiceStartName);
+                        if (RT_FAILURE(vrc))
+                            LogRel(("Error: SDS service name is too long (%Rrc): %ls\n", vrc, pSc->lpServiceStartName));
+                    }
+                    else
+                    {
+                        int dwError = GetLastError();
+                        vrc = RTErrConvertFromWin32(dwError);
+                        LogRel(("Error: Failed querying service config: %Rwc (%u) -> %Rrc; cbNeeded=%d cbNeeded2=%d\n",
+                                dwError, dwError, vrc, cbNeeded, cbNeeded2));
+                    }
+                    RTMemTmpFree(pSc);
+                }
+                else
+                {
+                    LogRel(("Error: Failed allocating %#x bytes of memory for service config!\n", cbNeeded));
+                    vrc = VERR_NO_TMP_MEMORY;
+                }
             }
-            if (!QueryServiceConfig(schService, pSc, dwBytesNeeded, &dwBytesNeeded))
+            else
             {
-                dwError = GetLastError();
-                LogRel(("Error: error in querying service config, %Rwc\n", dwError));
-                free(pSc);
-                CloseServiceHandle(schService);
-                CloseServiceHandle(schSCManager);
-                return RTErrConvertFromWin32(dwError);
+                AssertLogRelMsgFailed(("Error: QueryServiceConfigW returns success with zero buffer!\n"));
+                vrc = VERR_IPE_UNEXPECTED_STATUS;
             }
+            CloseServiceHandle(hService);
         }
+        else
+        {
+            int dwError = GetLastError();
+            vrc = RTErrConvertFromWin32(dwError);
+            LogRel(("Error: Could not open service: %Rwc (%u) -> %Rrc\n", dwError, dwError, vrc));
+        }
+        CloseServiceHandle(hSCManager);
     }
-
-    dwError = RTUtf16Copy((RTUTF16*)wszAccountName, cbAccountNameSize / sizeof(RTUTF16), 
-        (RTUTF16*)pSc->lpServiceStartName);
-    if (RT_FAILURE(dwError))
+    else
     {
-        LogRel(("Error: cannot copy account name to destination, %Rrc\n", dwError));
-        free(pSc);
-        CloseServiceHandle(schService);
-        CloseServiceHandle(schSCManager);
-        return RTErrConvertFromWin32(dwError);
+        int dwError = GetLastError();
+        vrc = RTErrConvertFromWin32(dwError);
+        LogRel(("Error: Could not open SCM: %Rwc (%u) -> %Rrc\n", dwError, dwError, vrc));
     }
-
-    free(pSc);
-    CloseServiceHandle(schService);
-    CloseServiceHandle(schSCManager);
-    return VINF_SUCCESS;
+    return vrc;
 }
 
 
-HRESULT VirtualBoxClient::isServiceDisabled(const wchar_t* wszServiceName, bool* pOutIsDisabled)
+HRESULT VirtualBoxClient::isServiceDisabled(const wchar_t *pwszServiceName, bool* pOutIsDisabled)
 {
     Assert(pOutIsDisabled);
-    Assert(wszServiceName);
+    Assert(pwszServiceName);
     ComPtr<IWbemLocator> aLocator;
     ComPtr<IWbemServices> aService;
 
@@ -228,7 +209,7 @@ HRESULT VirtualBoxClient::isServiceDisabled(const wchar_t* wszServiceName, bool*
     ComPtr<IEnumWbemClassObject> aEnumerator;
     hr = aService->ExecQuery(
         com::Bstr("WQL").raw(),
-        com::BstrFmt("SELECT * FROM Win32_Service WHERE Name='%ls'", wszServiceName).raw(),
+        com::BstrFmt("SELECT * FROM Win32_Service WHERE Name='%ls'", pwszServiceName).raw(),
         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
         NULL,
         aEnumerator.asOutParam());
@@ -411,7 +392,7 @@ HRESULT VirtualBoxClient::init()
  */
 HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT hrcCaller)
 {
-     /*
+    /*
      * First step is to try get an IUnknown interface of the VirtualBox object.
      *
      * This will succeed even when oleaut32.msm (see @bugref{8016}, @ticketref{12087})
@@ -420,34 +401,36 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
      */
     IUnknown *pUnknown = NULL;
 
-#ifdef VBOX_WITH_SDS
+# ifdef VBOX_WITH_SDS
     // Check the VBOXSDS service running account name is SYSTEM
     wchar_t wszBuffer[256];
-    int dwError = getServiceAccount(L"VBoxSDS", wszBuffer, sizeof(wszBuffer));
-    if(RT_FAILURE(dwError))
-        return setError(hrcCaller, tr("Failed to instantiate CLSID_VirtualBox using VBoxSDS: The VBoxSDS is unavailable: %Rwc"), dwError);
+    int vrc = getServiceAccount(L"VBoxSDS", wszBuffer, RT_ELEMENTS(wszBuffer));
+    if (RT_FAILURE(vrc))
+        return setError(hrcCaller,
+                        tr("Failed to instantiate CLSID_VirtualBox using VBoxSDS: The VBoxSDS is unavailable: %Rrc"), vrc);
 
-    LogRelFunc(("VBoxSDS service is running under '%ls' account.\n", wszBuffer));
+    LogRelFunc(("VBoxSDS service is running under the '%ls' account.\n", wszBuffer));
 
-    if(RTUtf16Cmp(L"LocalSystem", wszBuffer) != 0)
+    if (RTUtf16Cmp(wszBuffer, L"LocalSystem") != 0)
         return setError(hrcCaller, 
-            tr("VBoxSDS should be run under SYSTEM account, but it started under '%ls' account:\n"
-                "Change VBoxSDS Windows Service Logon parameters in Service Control Manager. \n%Rhrc"
-               ), wszBuffer, hrcCaller);
+                        tr("VBoxSDS should be run under SYSTEM account, but it started under '%ls' account:\n"
+                           "Change VBoxSDS Windows Service Logon parameters in Service Control Manager. \n%Rhrc"),
+                        wszBuffer, hrcCaller);
 
-    bool bIsVBoxSDSDisabled = false;
-    HRESULT hrc = isServiceDisabled(L"VBoxSDS", &bIsVBoxSDSDisabled);
+    bool fIsVBoxSDSDisabled = false;
+    HRESULT hrc = isServiceDisabled(L"VBoxSDS", &fIsVBoxSDSDisabled);
     if (FAILED(hrc))
     {
         LogRelFunc(("Warning: Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc", hrcCaller, hrc));
-        bIsVBoxSDSDisabled = false;
+        fIsVBoxSDSDisabled = false;
         //return setError(hrcCaller, tr("Failed to get information about VBoxSDS using WMI:: %Rhrc & %Rhrc"), hrcCaller, hrc);
     }
-    if (bIsVBoxSDSDisabled)
+    if (fIsVBoxSDSDisabled)
     {
-        return setError(hrcCaller, tr("Completely failed to instantiate CLSID_VirtualBox using VBoxSDS: "
-            "VBoxSDS windows service disabled.\n"
-            "Enable VBoxSDS Windows Service using Windows Service Management Console.\n %Rhrc"), hrcCaller);
+        return setError(hrcCaller,
+                        tr("Completely failed to instantiate CLSID_VirtualBox using VBoxSDS: "
+                           "VBoxSDS windows service disabled.\n"
+                           "Enable VBoxSDS Windows Service using Windows Service Management Console.\n %Rhrc"), hrcCaller);
     }
 
     // Check the VBoxSDS windows service is enabled
@@ -467,7 +450,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
             return setError(hrcCaller, tr("Completely failed to instantiate CLSID_VirtualBox using VBoxSDS: %Rhrc"), hrcCaller);
         return setError(hrcCaller, tr("Completely failed to instantiate CLSID_VirtualBox using VBoxSDS: %Rhrc & %Rhrc"), hrcCaller, hrc);
     }
-#else
+# else
     HRESULT hrc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_LOCAL_SERVER, IID_IUnknown, (void **)&pUnknown);
     if (FAILED(hrc))
     {
@@ -475,7 +458,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
             return setError(hrcCaller, tr("Completely failed to instantiate CLSID_VirtualBox: %Rhrc"), hrcCaller);
         return setError(hrcCaller, tr("Completely failed to instantiate CLSID_VirtualBox: %Rhrc & %Rhrc"), hrcCaller, hrc);
     }
-#endif
+# endif
 
     /*
      * Try query the IVirtualBox interface (should fail), if it succeed we return
