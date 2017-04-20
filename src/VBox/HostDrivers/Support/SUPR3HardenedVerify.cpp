@@ -1466,14 +1466,14 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
     if (   (pFsObjState->Stat.st_mode & S_IWGRP)
         && pFsObjState->Stat.st_gid != 0)
     {
-#ifdef RT_OS_DARWIN
+# ifdef RT_OS_DARWIN
         /* HACK ALERT: On Darwin /Applications is root:admin with admin having
            full access. So, to work around we relax the hardening a bit and
            permit grand parents and beyond to be group writable by admin. */
         /** @todo dynamically resolve the admin group? */
         bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/ || suplibHardenedStrCmp(pszPath, "/Applications");
 
-#elif defined(RT_OS_FREEBSD)
+# elif defined(RT_OS_FREEBSD)
         /* HACK ALERT: PC-BSD 9 has group-writable /usr/pib directory which is
            similar to /Applications on OS X (see above).
            On FreeBSD root is normally the only member of this group, on
@@ -1481,17 +1481,17 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         /** @todo dynamically resolve the operator group? */
         bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 5 /*operator*/ || suplibHardenedStrCmp(pszPath, "/usr/pbi");
         NOREF(fRelaxed);
-#elif defined(RT_OS_SOLARIS)
+# elif defined(RT_OS_SOLARIS)
         /* HACK ALERT: Solaris has group-writable /usr/lib/iconv directory from
            which the appropriate module is loaded.
            By default only root and daemon are part of that group.
            . */
         /** @todo dynamically resolve the bin group? */
         bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 2 /*bin*/ || suplibHardenedStrCmp(pszPath, "/usr/lib/iconv");
-#else
+# else
         NOREF(fRelaxed);
         bool fBad = true;
-#endif
+# endif
         if (fBad)
             return supR3HardenedSetError3(VERR_SUPLIB_WRITE_NON_SYS_GROUP, pErrInfo,
                                           "An unknown (and thus untrusted) group has write access to '", pszPath,
