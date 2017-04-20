@@ -438,21 +438,19 @@ class PlatformMSCOM(PlatformBase):
 
         self.winerror = winerror
 
-        # Setup client impersonation in COM calls
+        # Setup client impersonation in COM calls.
         try:
             pythoncom.CoInitializeSecurity(None, 
-                                       None, 
-                                       None, 
-                                       pythoncom.RPC_C_AUTHN_LEVEL_DEFAULT, 
-                                       pythoncom.RPC_C_IMP_LEVEL_IMPERSONATE, 
-                                       None, 
-                                       pythoncom.EOAC_NONE,
-                                       None)
+                                           None,
+                                           None,
+                                           pythoncom.RPC_C_AUTHN_LEVEL_DEFAULT,
+                                           pythoncom.RPC_C_IMP_LEVEL_IMPERSONATE,
+                                           None,
+                                           pythoncom.EOAC_NONE,
+                                           None)
         except:
             # handle RPC_E_TOO_LATE (repeat call of CoInitializeSecurity)
             print("Warning: CoInitializeSecurity was already called")
-            pass
-        
 
         pid = GetCurrentProcess()
         self.tid = GetCurrentThreadId()
@@ -481,9 +479,7 @@ class PlatformMSCOM(PlatformBase):
         win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
         win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBoxClient')
 
-        # instance of client used to support lifetime of VBoxSDS
-        self.client = None
-
+        self.oClient = None     ##< instance of client used to support lifetime of VBoxSDS
         self.oIntCv = threading.Condition()
         self.fInterrupted = False
 
@@ -524,14 +520,13 @@ class PlatformMSCOM(PlatformBase):
         return win32com.client.Dispatch("VirtualBox.Session")
 
     def getVirtualBox(self):
-        import win32com
-        from win32com.client import Dispatch
-        # Caching self.client is the trick for SDS
-        # It's allows to keep the VBoxSDS in the memory 
-        # until the end of PlatformMSCOM lifetme
-        if self.client is None:
-            self.client = win32com.client.Dispatch("VirtualBox.VirtualBoxClient")
-        return self.client.virtualBox
+        # Caching self.oClient is the trick for SDS. It allows to keep the
+        # VBoxSDS in the memory  until the end of PlatformMSCOM lifetme.
+        if self.oClient is None:
+            import win32com
+            from win32com.client import Dispatch
+            self.oClient = win32com.client.Dispatch("VirtualBox.VirtualBoxClient")
+        return self.oClient.virtualBox
 
     def getType(self):
         return 'MSCOM'
