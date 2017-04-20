@@ -307,7 +307,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 sBase = sBase.lower();
                 if sBase in [ 'vboxsvc', 'virtualbox', 'virtualboxvm', 'vboxheadless', 'vboxmanage', 'vboxsdl', 'vboxwebsrv',
                               'vboxautostart', 'vboxballoonctrl', 'vboxbfe', 'vboxextpackhelperapp', 'vboxnetdhcp',
-                              'vboxnetadpctl', 'vboxtestogl', 'vboxtunctl', 'vboxvmmpreload', 'vboxxpcomipcd', 'vmCreator', ]:
+                              'vboxnetadpctl', 'vboxtestogl', 'vboxtunctl', 'vboxvmmpreload', 'vboxxpcomipcd', 'vmCreator', 'vboxsds' ]:
                     aoTodo.append(oProcess);
                 if sBase.startswith('virtualbox-') and sBase.endswith('-multiarch.exe'):
                     aoTodo.append(oProcess);
