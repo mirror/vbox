@@ -297,7 +297,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxLicenseViewer.h \
 	src/VBoxSnapshotDetailsDlg.h \
 	src/VBoxTakeSnapshotDlg.h \
-	src/UIVMInfoDialog.h \
 	src/UIVMLogViewer.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
@@ -593,7 +592,6 @@ VirtualBox_SOURCES = \
 	src/VBoxLicenseViewer.cpp \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
-	src/UIVMInfoDialog.cpp \
 	src/UIVMLogViewer.cpp \
 	src/converter/UIConverter.cpp \
 	src/converter/UIConverterBackendCOM.cpp \

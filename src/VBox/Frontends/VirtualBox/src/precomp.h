@@ -591,7 +591,6 @@
 #endif
 #include "UIVMCloseDialog.h"
 #include "UIDesktopPane.h"
-#include "UIVMInfoDialog.h"
 #include "UIVMItem.h"
 #include "UIVMLogViewer.h"
 #include "UIVirtualBoxEventHandler.h"
