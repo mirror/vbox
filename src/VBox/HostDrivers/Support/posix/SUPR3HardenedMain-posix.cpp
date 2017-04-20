@@ -189,7 +189,7 @@ DECLASM(bool) supR3HardenedPosixMonitor_VerifyLibrary(const char *pszFilename)
     if (   pszFilename
         && strchr(pszFilename, '/') != NULL)
     {
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
         int rc = supR3HardenedVerifyFileFollowSymlinks(pszFilename, RTHCUINTPTR_MAX, true /* fMaybe3rdParty */,
                                                        NULL /* pErrInfo */);
 #else

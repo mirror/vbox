@@ -448,7 +448,7 @@ DECLHIDDEN(int)     supR3HardenedVerifyFixedFile(const char *pszFilename, bool f
 DECLHIDDEN(int)     supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
 DECLHIDDEN(int)     supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNativeFile, bool fMaybe3rdParty,
                                             PRTERRINFO pErrInfo);
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 DECLHIDDEN(int)     supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, RTHCUINTPTR hNativeFile, bool fMaybe3rdParty,
                                                           PRTERRINFO pErrInfo);
 #endif

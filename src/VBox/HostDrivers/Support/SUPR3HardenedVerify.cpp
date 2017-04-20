@@ -1035,7 +1035,8 @@ static int supR3HardenedSetErrorN(int rc, PRTERRINFO pErrInfo, unsigned cMsgs, .
     return rc;
 }
 
-#ifdef RT_OS_DARWIN
+
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 /**
  * Copies the four messages into the error buffer and returns @a rc.
  *
@@ -1052,7 +1053,7 @@ static int supR3HardenedSetError4(int rc, PRTERRINFO pErrInfo, const char *pszMs
 {
     return supR3HardenedSetErrorN(rc, pErrInfo, 4, pszMsg1, pszMsg2, pszMsg3, pszMsg4);
 }
-#endif /* RT_OS_DARWIN */
+#endif
 
 
 /**
@@ -1071,8 +1072,8 @@ static int supR3HardenedSetError3(int rc, PRTERRINFO pErrInfo, const char *pszMs
     return supR3HardenedSetErrorN(rc, pErrInfo, 3, pszMsg1, pszMsg2, pszMsg3);
 }
 
-#ifdef SOME_UNUSED_FUNCTION
 
+#ifdef SOME_UNUSED_FUNCTION
 /**
  * Copies the two messages into the error buffer and returns @a rc.
  *
@@ -1087,11 +1088,10 @@ static int supR3HardenedSetError2(int rc, PRTERRINFO pErrInfo, const char *pszMs
 {
     return supR3HardenedSetErrorN(rc, pErrInfo, 2, pszMsg1, pszMsg2);
 }
+#endif
 
-#endif /* SOME_UNUSED_FUNCTION */
 
-#ifdef RT_OS_DARWIN
-
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 /**
  * Copies the error message to the error buffer and returns @a rc.
  *
@@ -1104,7 +1104,6 @@ static int supR3HardenedSetError(int rc, PRTERRINFO pErrInfo, const char *pszMsg
 {
     return supR3HardenedSetErrorN(rc, pErrInfo, 1, pszMsg);
 }
-
 #endif
 
 
@@ -1500,8 +1499,18 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
 
     /*
      * World must not have write access.  There is no relaxing this rule.
+     * Linux exception: Symbolic links are always give permission 0777, there
+     *                  is no lchmod or lchown APIs.  The permissions on parent
+     *                  directory that contains the symbolic link is what is
+     *                  decising wrt to modifying it.  (Caller is expected not
+     *                  to allow symbolic links in the first path component.)
      */
-    if (pFsObjState->Stat.st_mode & S_IWOTH)
+    if (   (pFsObjState->Stat.st_mode & S_IWOTH)
+# ifdef RT_OS_LINUX
+        && (   !S_ISLNK(pFsObjState->Stat.st_mode)
+            || !fSymlinksAllowed /* paranoia */)
+# endif
+       )
         return supR3HardenedSetError3(VERR_SUPLIB_WORLD_WRITABLE, pErrInfo,
                                       "World writable: '", pszPath, "'");
 
@@ -1845,7 +1854,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
 }
 
 
-#ifdef RT_OS_DARWIN
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 /**
  * Verfies a file following symlinks.
  *
@@ -2000,7 +2009,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, R
 
     return VINF_SUCCESS;
 }
-#endif /* RT_OS_DARWIN */
+#endif /* RT_OS_DARWIN || RT_OS_LINUX */
 
 
 /**
