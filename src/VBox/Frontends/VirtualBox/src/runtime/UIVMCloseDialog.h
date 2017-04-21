@@ -43,6 +43,9 @@ public:
     /* API: Validation stuff: */
     bool isValid() const { return m_fValid; }
 
+    /* API: Pixmap stuff: */
+    void setPixmap(const QPixmap &pixmap);
+
 private slots:
 
     /* Handler: Update stuff: */
@@ -52,9 +55,6 @@ private slots:
     void accept();
 
 private:
-
-    /* API: Pixmap stuff: */
-    void setPixmap(const QPixmap &pixmap);
 
     /* API: Detach-button stuff: */
     void setDetachButtonEnabled(bool fEnabled);

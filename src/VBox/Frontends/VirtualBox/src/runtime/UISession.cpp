@@ -1289,13 +1289,36 @@ void UISession::loadSessionSettings()
         const QString strMachineID = vboxGlobal().managedVMUuid();
 
 #ifndef VBOX_WS_MAC
-        /* Load/prepare user's machine-window icon: */
-        QIcon icon;
-        foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
-            if (!strIconName.isEmpty() && QFile::exists(strIconName))
-                icon.addFile(strIconName);
-        if (!icon.isNull())
-            m_pMachineWindowIcon = new QIcon(icon);
+        /* Check whether we have overriding machine-window icon: */
+        {
+            /* Prepare null icon: */
+            QIcon icon;
+
+            /* 1. Load icon from IMachine extra-data: */
+            if (icon.isNull())
+                foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
+                    if (!strIconName.isEmpty() && QFile::exists(strIconName))
+                        icon.addFile(strIconName);
+
+            /* 2. Load icon from IMachine interface: */
+            if (icon.isNull())
+            {
+                const QVector<BYTE> byteVector = machine().GetIcon();
+                const QByteArray byteArray = QByteArray::fromRawData(reinterpret_cast<const char*>(byteVector.constData()), byteVector.size());
+                const QImage image = QImage::fromData(byteArray);
+                if (!image.isNull())
+                {
+                    QPixmap pixmap = QPixmap::fromImage(image);
+                    const int iMinimumLength = qMin(pixmap.width(), pixmap.height());
+                    pixmap = pixmap.scaled(QSize(iMinimumLength, iMinimumLength), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                    icon.addPixmap(pixmap);
+                }
+            }
+
+            /* Finally, store the icon dynamically if overriden: */
+            if (!icon.isNull())
+                m_pMachineWindowIcon = new QIcon(icon);
+        }
 
         /* Load user's machine-window name postfix: */
         m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(strMachineID);

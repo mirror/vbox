@@ -69,6 +69,16 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &machine,
     retranslateUi();
 }
 
+void UIVMCloseDialog::setPixmap(const QPixmap &pixmap)
+{
+    /* Make sure pixmap is valid: */
+    if (pixmap.isNull())
+        return;
+
+    /* Assign new pixmap: */
+    m_pIcon->setPixmap(pixmap);
+}
+
 void UIVMCloseDialog::sltUpdateWidgetAvailability()
 {
     /* Discard option should be enabled only on power-off action: */
@@ -102,16 +112,6 @@ void UIVMCloseDialog::accept()
 
     /* Hide the dialog: */
     hide();
-}
-
-void UIVMCloseDialog::setPixmap(const QPixmap &pixmap)
-{
-    /* Make sure pixmap is valid: */
-    if (pixmap.isNull())
-        return;
-
-    /* Assign new pixmap: */
-    m_pIcon->setPixmap(pixmap);
 }
 
 void UIVMCloseDialog::setDetachButtonEnabled(bool fEnabled)
