@@ -343,17 +343,20 @@ $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / descriptio
 #
 # Generate macro template for IEM instruction statistics.
 #
+$(call KB_FN_DO_PASS0_ON_TARGET,VBoxVMM) # Set VBoxVMM_0_OUTDIR
 VBoxVMM_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
 VBoxVMM_CLEAN         += \
 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
-$$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
-+| $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h: \
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts)
+$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
++| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h: \
 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions.cpp.h \
 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsOneByte.cpp.h \
 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsTwoByte0f.cpp.h \
 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap1.cpp.h
-	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,$<)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,VMMAll/IEMAllInstructions*.cpp.h)
 	$(QUIET)$(RM) -f -- "$@.tmp" "$@.tmp" "$@.sorted"
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
 	$(QUIET)$(SED) \
@@ -393,7 +396,7 @@ $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 	$(QUIET)$(RM) -f -- "$@.tmp" "$@.sorted"
 	$(QUIET)$(CP) -v -f --changed -- "$@" "$(patsubst %.ts,%,$@)"
 
-foobar: $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
+foobar: $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
 
 if "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  #
@@ -442,22 +445,25 @@ if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
  VMMRCImp_TEMPLATE = VBoxRc
  VMMRCImp_SOURCES = $(VMMRCImp_0_OUTDIR)/VMMRC.def
  VMMRCImp_CLEAN   = $(VMMRCImp_0_OUTDIR)/VMMRC.def
+ $(call KB_FN_DO_PASS0_ON_TARGET,VMMRCImp)
 
- $$(VMMRCImp_0_OUTDIR)/VMMRC.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def | $$(dir $$@)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VMMRCImp_0_OUTDIR)/VMMRC.def)
+ $(VMMRCImp_0_OUTDIR)/VMMRC.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
  ifeq ($(VBOX_LDR_FMT32),lx)
 	$(SED) \
 		-e '/not-os2/d' \
 		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
 		-e 's/[ \t]DATA[ \t]*/ /' \
 		--output $@ \
-		$<
+		$(PATH_SUB_CURRENT)/VMMRC/VMMRC.def
 	$(APPEND) "$@" ""
 	$(APPEND) "$@" "    ___ehInit"
  else
 	$(SED) \
 		-e '/not-win/d' \
 		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
-		--output $@ $<
+		--output $@ $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def
  endif
 
 endif # RC && (pe || lx)
@@ -474,22 +480,25 @@ if1of ($(VBOX_LDR_FMT), pe lx)
  ifeq ($(KBUILD_TARGET),win) # Experiment: Let's see how blunt the ones messing our NULL_THUNK_DATA entries on W10 are.
   VMMR0Imp_POST_CMDS = $(KLIBTWEAKER_EXT) --clear-timestamps --fill-null_thunk_data $(out)
  endif
+ $(call KB_FN_DO_PASS0_ON_TARGET,VMMR0Imp)
 
- $$(VMMR0Imp_0_OUTDIR)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $$(dir $$@)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VMMR0Imp_0_OUTDIR)/VMMR0.def)
+ $(VMMR0Imp_0_OUTDIR)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
  ifeq ($(VBOX_LDR_FMT),lx)
 	$(SED) \
 		-e '/not-os2/d' \
 		-e '/not-amd64/d' \
 		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
 		-e 's/[ \t]DATA[ \t]*/ /'  \
-		--output $@ $<
+		--output $@ $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def
 	$(APPEND) "$@" ""
 	$(APPEND) "$@" "    ___ehInit"
  else
 	$(SED) \
 		-e '/not-win/d' \
 		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
-		--output $@ $<
+		--output $@ $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def
  endif
 endif # R0: pe + lx
 
@@ -509,8 +518,12 @@ ifneq ($(VBOX_LIB_VMM_LAZY),$(LIB_VMM))
  VMMR3LazyImp_INST     = $(INST_LIB)
  VMMR3LazyImp_SOURCES  = $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm
  VMMR3LazyImp_CLEAN    = $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm
- $$(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
-	$(VBOX_DEF_2_LAZY_LOAD) --output $@ --library VBoxVMM $<
+ $(call KB_FN_DO_PASS0_ON_TARGET,VMMR3LazyImp)
+
+ $(call KB_FN_AUTO_CMD_DEPS,$(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm)
+ $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(VBOX_DEF_2_LAZY_LOAD) --output $@ --library VBoxVMM $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def
 endif
 
 
@@ -852,15 +865,18 @@ if !defined(VBOX_ONLY_EXTPACKS) \
  	$(VMMLibDTrace_0_OUTDIR)/cpumctx.d \
  	$(VMMLibDTrace_0_OUTDIR)/cpum.d \
  	$(VMMLibDTrace_0_OUTDIR)/CPUMInternal.d \
- 	$(VMMLibDTrace_0_OUTDIR)/x86.d \
+ 	$(VMMLibDTrace_0_OUTDIR)/x86.d
+ $(call KB_FN_DO_PASS0_ON_TARGET,VMMLibDTrace)
 
 
  ##
  # Turn the header $2 into the DTrace library script $1.
  #
  define def_vmm_lib_dtrace_preprocess
-  $$$$(VMMLibDTrace_0_OUTDIR)/$1: $2 $$(VBOX_VBOXCPP) | $$$$(dir $$$$@)
-	$$(QUIET)$$(call MSG_GENERATE,VMMLibDTrace,$$@,$$<)
+  $$(call KB_FN_AUTO_CMD_DEPS,$$(VMMLibDTrace_0_OUTDIR)/$1)
+  $$(VMMLibDTrace_0_OUTDIR)/$1: $2 $$(VBOX_VBOXCPP) | $$$$(dir $$$$@)
+	$$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$$(QUIET)$$(call MSG_GENERATE,VMMLibDTrace,$$@,$2)
 	$$(QUIET)$(VBOX_VBOXCPP) -d \
 		-D VBOX_FOR_DTRACE_LIB \
 		-D VBOX_FOR_DTRACE_LIB_$(toupper $(KBUILD_TARGET_ARCH)) \
@@ -880,7 +896,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
 			$$(VMM_COMMON_DEFS) \
 			$$(ARCH_BITS_DEFS)\
 		   ,-D '$$(def)') \
-		$$< \
+		$2 \
 		$$@
 	$$(QUIET)$$(CHMOD) 644 $$@
  endef
@@ -964,8 +980,9 @@ if1of ($(SYSMODS),VMMRC)
  test-undef-rc:: $(PATH_TARGET)/undef-rc.run
  OTHERS      += $(PATH_TARGET)/undef-rc.run
  CLEANS      += $(PATH_TARGET)/undef-rc.run
- $(PATH_TARGET)/undef-rc.run: \
-		$$(VMMRC_1_TARGET)
+ $(call KB_FN_AUTO_CMD_DEPS,$(PATH_TARGET)/undef-rc.run)
+ $(PATH_TARGET)/undef-rc.run: $$(VMMRC_1_TARGET)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
  ifn1of ($(KBUILD_TARGET), linux solaris)
  else
 	$(call MSG_L1,VMM: Testing for undefined symbols in VMMRC using nm...)
