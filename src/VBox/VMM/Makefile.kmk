@@ -448,7 +448,7 @@ if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
  $(call KB_FN_DO_PASS0_ON_TARGET,VMMRCImp)
 
  $(call KB_FN_AUTO_CMD_DEPS,$(VMMRCImp_0_OUTDIR)/VMMRC.def)
- $(VMMRCImp_0_OUTDIR)/VMMRC.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def | $$(dir $$@)
+ $(VMMRCImp_0_OUTDIR)/VMMRC.def: $(VMMRCImp_DEFPATH)/VMMRC/VMMRC.def | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
  ifeq ($(VBOX_LDR_FMT32),lx)
 	$(SED) \
@@ -456,14 +456,14 @@ if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
 		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
 		-e 's/[ \t]DATA[ \t]*/ /' \
 		--output $@ \
-		$(PATH_SUB_CURRENT)/VMMRC/VMMRC.def
+		$(VMMRCImp_DEFPATH)/VMMRC/VMMRC.def
 	$(APPEND) "$@" ""
 	$(APPEND) "$@" "    ___ehInit"
  else
 	$(SED) \
 		-e '/not-win/d' \
 		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
-		--output $@ $(PATH_SUB_CURRENT)/VMMRC/VMMRC.def
+		--output $@ $(VMMRCImp_DEFPATH)/VMMRC/VMMRC.def
  endif
 
 endif # RC && (pe || lx)
@@ -483,7 +483,7 @@ if1of ($(VBOX_LDR_FMT), pe lx)
  $(call KB_FN_DO_PASS0_ON_TARGET,VMMR0Imp)
 
  $(call KB_FN_AUTO_CMD_DEPS,$(VMMR0Imp_0_OUTDIR)/VMMR0.def)
- $(VMMR0Imp_0_OUTDIR)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $$(dir $$@)
+ $(VMMR0Imp_0_OUTDIR)/VMMR0.def: $(VMMR0Imp_DEFPATH)/VMMR0/VMMR0.def | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
  ifeq ($(VBOX_LDR_FMT),lx)
 	$(SED) \
@@ -491,14 +491,14 @@ if1of ($(VBOX_LDR_FMT), pe lx)
 		-e '/not-amd64/d' \
 		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
 		-e 's/[ \t]DATA[ \t]*/ /'  \
-		--output $@ $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def
+		--output $@ $(VMMR0Imp_DEFPATH)/VMMR0/VMMR0.def
 	$(APPEND) "$@" ""
 	$(APPEND) "$@" "    ___ehInit"
  else
 	$(SED) \
 		-e '/not-win/d' \
 		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
-		--output $@ $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def
+		--output $@ $(VMMR0Imp_DEFPATH)/VMMR0/VMMR0.def
  endif
 endif # R0: pe + lx
 
