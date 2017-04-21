@@ -135,12 +135,14 @@ endif # xpcom
 # Strip documentation from source XIDL so that we don't get a full
 # recompile every time a comma in the documentation is changed.
 #
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_XIDL_FILE).ts)
 $(VBOX_XIDL_FILE).ts +| $(VBOX_XIDL_FILE): \
 		$(VBOX_XIDL_FILE_SRC) \
 		$(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl \
 		| $$(dir $$@)
-# 	$(CP) -fv $< $(VBOX_XIDL_FILE).ts
-	$(QUIET)$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).ts $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $<
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+# 	$(CP) -fv $(VBOX_XIDL_FILE_SRC) $(VBOX_XIDL_FILE).ts
+	$(QUIET)$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).ts $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $(VBOX_XIDL_FILE_SRC)
 	$(QUIET)$(CP) --changed -fv $(VBOX_XIDL_FILE).ts $(VBOX_XIDL_FILE)
 
 OTHER_CLEAN += $(VBOX_XIDL_FILE) $(VBOX_XIDL_FILE).ts
@@ -239,23 +241,23 @@ VBox-main-xidl_MODE = a+r,u+w
 VBox-main-xidl_SOURCES = $(VBOX_XIDL_FILE_SRC)
 
 ifdef VBOX_WITH_PYTHON
-INSTALLS += VBox-python-glue
-VBox-python-glue_INST = $(INST_SDK)installer/vboxapi/
-VBox-python-glue_MODE = a+r,u+w
-VBox-python-glue_SOURCES = \
-	glue/vboxapi.py=>__init__.py \
-	$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
-VBox-python-glue_CLEAN = \
-	$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
-
- ## @todo $(call KB_FN_AUTO_CMD_DEPS,$$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py) - need to fix the double expansion here
-$$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py:  \
+ INSTALLS += VBox-python-glue
+ VBox-python-glue_INST = $(INST_SDK)installer/vboxapi/
+ VBox-python-glue_MODE = a+r,u+w
+ VBox-python-glue_SOURCES = \
+ 	glue/vboxapi.py=>__init__.py \
+ 	$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
+ VBox-python-glue_CLEAN = \
+ 	$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBox-python-glue)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py)
+ $(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py:  \
 		$(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,xsltproc,Python constants,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
-
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl $(VBOX_XIDL_FILE)
 endif # VBOX_WITH_PYTHON
 
 ifndef VBOX_ONLY_SDK # Note this goes on for *very* long
@@ -273,42 +275,52 @@ testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 # VBoxSDS executable
 #
 if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += VBoxSDS
-VBoxSDS_TEMPLATE = VBOXMAINEXE
-VBoxSDS_DEFS = \
-VBoxSDS_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
-VBoxSDS_DEFS.win += _WIN32_WINNT=0x0510
-VBoxSDS_INCS = \
-	include \
-	$(VBoxSDS_0_OUTDIR) \
-	$(VBOX_MAIN_APIWRAPPER_INCS)
-VBoxSDS_INCS.win = \
-	$(VBoxCOM_0_OUTDIR)
-VBoxSDS_LIBS += \
-	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
-VBoxSDS_INTERMEDIATES = \
-	$(VBOX_MAIN_PREREQS) \
-	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
-VBoxSDS_SOURCES = \
-	src-all/Global.cpp \
-	src-all/AutoCaller.cpp \
-	src-all/VirtualBoxBase.cpp \
-	src-all/VirtualBoxErrorInfoImpl.cpp \
-	src-global/VirtualBoxSDSImpl.cpp
-VBoxSDS_SOURCES.win = \
-	src-global/win/VBoxSDS.cpp \
-	src-global/win/VBoxSDS.rc
+ PROGRAMS += VBoxSDS
+ VBoxSDS_TEMPLATE = VBOXMAINEXE
+ VBoxSDS_DEFS = \
+ VBoxSDS_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
+ VBoxSDS_DEFS.win += _WIN32_WINNT=0x0510
+ VBoxSDS_INCS = \
+ 	include \
+ 	$(VBoxSDS_0_OUTDIR) \
+ 	$(VBOX_MAIN_APIWRAPPER_INCS)
+ VBoxSDS_INCS.win = \
+ 	$(VBoxCOM_0_OUTDIR)
+ VBoxSDS_LIBS += \
+ 	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
+ VBoxSDS_INTERMEDIATES = \
+ 	$(VBOX_MAIN_PREREQS) \
+ 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+ VBoxSDS_SOURCES = \
+ 	src-all/Global.cpp \
+ 	src-all/AutoCaller.cpp \
+ 	src-all/VirtualBoxBase.cpp \
+ 	src-all/VirtualBoxErrorInfoImpl.cpp \
+ 	src-global/VirtualBoxSDSImpl.cpp
+ VBoxSDS_SOURCES.win = \
+ 	src-global/win/VBoxSDS.cpp \
+ 	src-global/win/VBoxSDS.rc
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBoxSDS) # Sets VBoxSDS_0_OUTDIR
 
-src-global/win/VBoxSDS.rc_INCS  = $(VBoxSDS_0_OUTDIR)
-src-global/win/VBoxSDS.rc_DEPS  = $(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc
-src-global/win/VBoxSDS.rc_CLEAN = $(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc
+ src-global/win/VBoxSDS.rc_INCS  = $(VBoxSDS_0_OUTDIR)
+ src-global/win/VBoxSDS.rc_DEPS  = $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc #$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs
+ src-global/win/VBoxSDS.rc_CLEAN = $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc #$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs
 
-$$(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc)
+ $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc: $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
-$$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
-	$(VBOX_XSLTPROC) --stringparam Application "VirtualBox System" --stringparam Module VBoxSDS -o $@ $< $(VBOX_XIDL_FILE)
-
+# $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs)
+# $(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+#	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+#	$(VBOX_XSLTPROC) \
+#		--stringparam Application "VirtualBox System" \
+#		--stringparam Module VBoxSDS \
+#		-o $@ \
+#		$(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl \
+#		$(VBOX_XIDL_FILE)
+#
 endif #if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
 
 #
@@ -581,14 +593,18 @@ ifdef VBOX_WITH_HOSTNETIF_API
  endif
 endif
 
+$(call KB_FN_DO_PASS0_ON_TARGET,VBoxSVC) # Sets VBoxSVC_0_OUTDIR
+
 ifdef VBOX_WITH_MAIN_USB_ID_DATABASE  # Generate a database of USB vendor IDs and device IDs.
  VBoxSVC_DEFS    += VBOX_WITH_MAIN_USB_ID_DATABASE
  VBoxSVC_SOURCES += $(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp
  VBoxSVC_CLEAN   += $(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp
 
- $$(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp:  $$(USBIdDatabaseGenerator_1_TARGET) \
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp)
+ $(VBoxSVC_0_OUTDIR)/USBIdDatabase.cpp:  $$(USBIdDatabaseGenerator_1_TARGET) \
  		$(PATH_SUB_CURRENT)/src-server/usb.ids $(PATH_SUB_CURRENT)/src-server/custom.ids | $$(dir $$@)
-	$(call MSG_GENERATE,USBIdDatabase,$@,$<)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_GENERATE,USBIdDatabase,$@,$(USBIdDatabaseGenerator_1_TARGET))
 	$(QUIET)$(USBIdDatabaseGenerator_1_TARGET) -o "$@" $(filter %.ids,$^)
 
  BLDPROGS += USBIdDatabaseGenerator
@@ -601,14 +617,23 @@ endif
 src-server/win/VBoxSVC.rc_INCS  = $(VBoxSVC_0_OUTDIR)
 src-server/win/VBoxSVC.rc_DEPS  = $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
 src-server/win/VBoxSVC.rc_CLEAN = $(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc
-$$(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$(@D))
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc)
+$(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc: $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 ifndef VBOX_WITH_MIDL_PROXY_STUB
-src-server/win/VBoxSVC.rc_DEPS  += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
-src-server/win/VBoxSVC.rc_CLEAN += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
-$$(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
-	$(VBOX_XSLTPROC) --stringparam Application VirtualBox --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
+ src-server/win/VBoxSVC.rc_DEPS  += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
+ src-server/win/VBoxSVC.rc_CLEAN += $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs)
+ $(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(VBOX_XSLTPROC) \
+		--stringparam Application VirtualBox \
+		--stringparam Module VBoxSVC \
+		-o $@ \
+		$(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl \
+		$(VBOX_XIDL_FILE)
 endif
 
 ## @todo r=klaus unfortunately we don't have xmllint everywhere, would be
@@ -647,7 +672,7 @@ OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
 #
-# Generate some event stuff for VBoxSVC and VBoxC.       $(MAKEFILE
+# Generate some event stuff for VBoxSVC and VBoxC.
 #
 $(VBOX_AUTOGEN_EVENT_H): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
@@ -924,10 +949,14 @@ ifndef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
 	src-all/AuthLibrary.cpp
 endif
 
+$(call KB_FN_DO_PASS0_ON_TARGET,VBoxC) # Sets VBoxC_0_OUTDIR
+
 ifeq ($(KBUILD_TARGET),darwin)
-VBoxC_ORDERDEPS += $(VBoxC_0_OUTDIR)/VBoxC.def
-VBoxC_CLEAN     += $(VBoxC_0_OUTDIR)/VBoxC.def
-$$(VBoxC_0_OUTDIR)/VBoxC.def: $(MAKEFILE_CURRENT)
+ VBoxC_ORDERDEPS += $(VBoxC_0_OUTDIR)/VBoxC.def
+ VBoxC_CLEAN     += $(VBoxC_0_OUTDIR)/VBoxC.def
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxC_0_OUTDIR)/VBoxC.def)
+ $(VBoxC_0_OUTDIR)/VBoxC.def:
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(RM) -f $@
 	$(APPEND) $@ _NSGetModule
 	$(APPEND) $@ _VBoxDriversRegister
@@ -938,11 +967,16 @@ src-client/ConsoleImpl.cpp_DEFS = \
 
 
 src-client/win/VBoxC.rc_DEPS = $(VBoxC_0_OUTDIR)/VBoxC.rgs $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
-VBoxC_CLEAN.win  += $(VBoxC_0_OUTDIR)/VBoxC.rgs
-
- ## @todo $(call KB_FN_AUTO_CMD_DEPS,$$(VBoxC_0_OUTDIR)/VBoxC.rgs) - need to fix the double expansion here
-$$(VBoxC_0_OUTDIR)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
-	$(VBOX_XSLTPROC) --stringparam Application VirtualBox --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
+VBoxC_CLEAN.win             += $(VBoxC_0_OUTDIR)/VBoxC.rgs
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxC_0_OUTDIR)/VBoxC.rgs)
+$(VBoxC_0_OUTDIR)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(VBOX_XSLTPROC) \
+		--stringparam Application VirtualBox \
+		--stringparam Module VBoxC \
+		-o $@ \
+		$(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl \
+		$(VBOX_XIDL_FILE)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API
  #
@@ -995,16 +1029,23 @@ endif
     $(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/WbemUuid.Lib
  VBoxClient-x86_CLEAN.win += $(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBoxClient-x86) # Sets VBoxClient-x86_0_OUTDIR
+
  src-client/win/VBoxClient-x86.rc_DEPS = \
  	$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs \
  	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb
 
- ## @todo $(call KB_FN_AUTO_CMD_DEPS,$$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs) - need to fix the double expansion here
- $$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs: \
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs)
+ $(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs: \
  		$(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl \
 		$(VBOX_XIDL_FILE) | $$(dir $$@)
-	$(VBOX_XSLTPROC) --stringparam Application VirtualBox --stringparam Module VBoxC -o $@ $< $(VBOX_XIDL_FILE)
-
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(VBOX_XSLTPROC) \
+		--stringparam Application VirtualBox \
+		--stringparam Module VBoxC \
+		-o $@ \
+		$(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl \
+		$(VBOX_XIDL_FILE)
 endif
 
 
@@ -1274,10 +1315,12 @@ endef
 #       The output is different and hopefully more efficient, at least memory wise (using more helpers in OLE32).
 # Note! We're checking for win.amd64 below when setting the target because of the SDK build which happens on linux.amd64
 #       but with a 32-bit Wine.
-$(if $(VBOX_WITH_MIDL_PROXY_STUB),$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c +,) \
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c)
 $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
+$(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_WIN_MIDL) /nologo /W4 \
 		/env $(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" ,amd64,win32) \
 		/robust /protocol all /target $(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),NT61,NT51) \
@@ -1285,7 +1328,7 @@ $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
-		$(call VBOX_FN_MAKE_WIN_PATH,$<)
+		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox_p.c)
@@ -1295,11 +1338,13 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB)
 # -Vista AMD64 SP1 and Windows Server 2008 AMD64 seems to have some objections as well, but it seemed
 #  that using an older MIDL compiler (v7.00.0499 instead of v7.00.0555) helps. But the W2K3 fix also works.
 # To avoid 32-bit vs. 64-bit differences, we do the same for 32-bit windows versions.
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c)
 $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c\
 + $(VBoxCOM_0_OUTDIR)/legacy/dlldata.c \
 + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h \
 + $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_WIN_MIDL) /nologo /W4 \
 		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" \
 		,/env amd64 /x64 /target NT50 /robust \
@@ -1308,7 +1353,7 @@ $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
-		$(call VBOX_FN_MAKE_WIN_PATH,$<)
+		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c)
@@ -1316,10 +1361,12 @@ endif
 
 # The XP targetted 32-bit proxy stub works with all versions of windows (the
 # issues leading to the VBoxProxyStubLegacy.dll are only on 64-bit windows).
-$(if $(VBOX_WITH_MIDL_PROXY_STUB),$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c +,) \
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
 $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
+$(if $(VBOX_WITH_MIDL_PROXY_STUB), + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c + $(VBoxCOM-x86_0_OUTDIR)/dlldata.c,) \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h \
 + $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_WIN_MIDL) /nologo /W4 \
 		/env win32 /target NT51 /robust /protocol all  \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)) \
@@ -1327,7 +1374,7 @@ $(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
 		/I idl \
-		$(call VBOX_FN_MAKE_WIN_PATH,$<)
+		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c)
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c)
@@ -1352,35 +1399,36 @@ VBoxC_VBOX_TRANSLATIONS = \
 
 ifdef VBOX_WITH_JMSCOM
 
-#
-# Java glue JAR files
-#
-VBOX_JMSCOM_JAR     = $(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar
-VBOX_JMSCOM_TARGET := $(PATH_TARGET)/vboxjmscom-gen
-VBOX_JMSCOM_GEN     = $(VBOX_JMSCOM_TARGET)/jmscomgen
-VBOX_JMSCOM_JDEST  := $(VBOX_JMSCOM_TARGET)/jdest
-VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
-VBOX_JACOB_DIR     := $(PATH_ROOT)/src/libs/jacob-1.17
+ #
+ # Java glue JAR files
+ #
+ VBOX_JMSCOM_JAR     = $(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar
+ VBOX_JMSCOM_TARGET := $(PATH_TARGET)/vboxjmscom-gen
+ VBOX_JMSCOM_GEN     = $(VBOX_JMSCOM_TARGET)/jmscomgen
+ VBOX_JMSCOM_JDEST  := $(VBOX_JMSCOM_TARGET)/jdest
+ VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
+ VBOX_JACOB_DIR     := $(PATH_ROOT)/src/libs/jacob-1.17
 
-INSTALLS += VBoxJMscom-inst-jar
-VBoxJMscom-inst-jar_INST = $(INST_SDK)bindings/mscom/java/
-VBoxJMscom-inst-jar_MODE = a+r,u+w
-VBoxJMscom-inst-jar_SOURCES = \
-	$(VBOX_JMSCOM_JAR)
-VBoxJMscom-inst-jar_CLEAN = \
-	$(VBOX_JMSCOM_JAR) \
-	$(VBOX_JMSCOM_GEN)/jmscomglue.list \
-	$(wildcard \
-		$(VBOX_JMSCOM_GEN)/java/*.java \
-		$(VBOX_JMSCOM_JDEST)/*.class \
-		$(VBOX_JMSCOM_JDEST)/*/*.class \
-		$(VBOX_JMSCOM_JDEST)/*/*/*.class \
-		$(VBOX_JMSCOM_JDEST)/*/*/*/*.class \
-	)
-VBoxJMscom-inst-jar_BLDDIRS += $(VBOX_JMSCOM_GEN)/java
+ INSTALLS += VBoxJMscom-inst-jar
+ VBoxJMscom-inst-jar_INST = $(INST_SDK)bindings/mscom/java/
+ VBoxJMscom-inst-jar_MODE = a+r,u+w
+ VBoxJMscom-inst-jar_SOURCES = \
+ 	$(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar
+ VBoxJMscom-inst-jar_CLEAN = \
+ 	$(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar \
+ 	$(VBOX_JMSCOM_GEN)/jmscomglue.list \
+ 	$(wildcard \
+ 		$(VBOX_JMSCOM_GEN)/java/*.java \
+ 		$(VBOX_JMSCOM_JDEST)/*.class \
+ 		$(VBOX_JMSCOM_JDEST)/*/*.class \
+ 		$(VBOX_JMSCOM_JDEST)/*/*/*.class \
+ 		$(VBOX_JMSCOM_JDEST)/*/*/*/*.class \
+ 	)
+ VBoxJMscom-inst-jar_BLDDIRS += $(VBOX_JMSCOM_GEN)/java
+ $(call KB_FN_DO_PASS0_ON_TARGET,VBoxJMscom-inst-jar) # Sets VBoxJMscom-inst-jar_0_OUTDIR
 
-$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_JMSCOM_GEN)/jmscomglue.list)
-$(VBOX_JMSCOM_GEN)/jmscomglue.list: \
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBOX_JMSCOM_GEN)/jmscomglue.list)
+ $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
 		$(VBOX_FILESPLIT) \
@@ -1397,8 +1445,9 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java
 	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
 
-## @todo $(call KB_FN_AUTO_CMD_DEPS,$(VBOX_JMSCOM_JAR)) - need to fix the double expansion here
-$$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
+ $(call KB_FN_AUTO_CMD_DEPS,$(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar)
+ $(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar: $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_TOOL,javac,$(notdir $@),jmscomglue.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JMSCOM_JDEST)
 	$(QUIET)$(MKDIR) -p $(VBOX_JMSCOM_JDEST)
@@ -1408,8 +1457,7 @@ $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(QUIET)$(VBOX_JAR) cf $@ -C $(VBOX_JMSCOM_JDEST) .
 
-## @todo compile TestVBox.java (see below) to have sanity checking
-
+ ## @todo compile TestVBox.java (see below) to have sanity checking
 endif # VBOX_WITH_JMSCOM
 
 #
