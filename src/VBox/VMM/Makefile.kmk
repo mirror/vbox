@@ -521,9 +521,9 @@ ifneq ($(VBOX_LIB_VMM_LAZY),$(LIB_VMM))
  $(call KB_FN_DO_PASS0_ON_TARGET,VMMR3LazyImp)
 
  $(call KB_FN_AUTO_CMD_DEPS,$(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm)
- $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+ $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(VMMR3LazyImp_DEFPATH)/VMMR3/VMMR3.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
-	$(VBOX_DEF_2_LAZY_LOAD) --output $@ --library VBoxVMM $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def
+	$(VBOX_DEF_2_LAZY_LOAD) --output $@ --library VBoxVMM $(VMMR3LazyImp_DEFPATH)/VMMR3/VMMR3.def
 endif
 
 
