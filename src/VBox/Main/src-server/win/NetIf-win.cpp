@@ -1804,7 +1804,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     for (int tries = 0; tries < 3 && dwRc == ERROR_BUFFER_OVERFLOW; ++tries)
     {
         /* Get more memory and try again. */
-        free(pAddresses);
+        RTMemFree(pAddresses);
         pAddresses = (PIP_ADAPTER_ADDRESSES)RTMemAlloc(uBufLen);
         if (!pAddresses)
             return HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
