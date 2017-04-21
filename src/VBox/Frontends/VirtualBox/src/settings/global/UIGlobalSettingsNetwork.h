@@ -115,14 +115,25 @@ private:
     /** Saves existing network data from the cache. */
     bool saveNetworkData();
 
-    /** Uploads NAT @a network data into passed @a data storage unit. */
+    /** Uploads NAT @a network data into passed @a cache storage unit. */
     void loadToCacheFromNetworkNAT(const CNATNetwork &network, UISettingsCacheGlobalNetworkNAT &cache);
-    /** Saves @a data to corresponding NAT network. */
-    bool saveDataNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache);
-    /** Creates a new item in the NAT network tree on the basis of passed @a data, @a fChooseItem if requested. */
-    void createTreeWidgetItemForNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache, bool fChooseItem = false);
+    /** Removes corresponding NAT network on the basis of @a cache. */
+    bool removeNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache);
+    /** Creates corresponding NAT network on the basis of @a cache. */
+    bool createNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache);
+    /** Updates @a cache of corresponding NAT network. */
+    bool updateNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache);
+    /** Creates a new item in the NAT network tree on the basis of passed @a cache. */
+    void createTreeWidgetItemForNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache);
+    /** Creates a new item in the NAT network tree on the basis of passed @a data, @a ipv4rules, @a ipv6rules, @a fChooseItem if requested. */
+    void createTreeWidgetItemForNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data,
+                                           const UIPortForwardingDataList &ipv4rules,
+                                           const UIPortForwardingDataList &ipv6rules,
+                                           bool fChooseItem = false);
     /** Removes existing @a pItem from the NAT network tree. */
     void removeTreeWidgetItemOfNetworkNAT(UIItemNetworkNAT *pItem);
+    /** Returns whether the NAT network described by the @a cache could be updated or recreated otherwise. */
+    bool isNetworkCouldBeUpdated(const UISettingsCacheGlobalNetworkNAT &cache) const;
 
     /** Uploads host @a network data into passed @a data storage unit. */
     void loadToCacheFromNetworkHost(const CHostNetworkInterface &iface, UISettingsCacheGlobalNetworkHost &cache);

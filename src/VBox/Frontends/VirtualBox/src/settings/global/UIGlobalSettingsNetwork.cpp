@@ -598,38 +598,40 @@ void UIGlobalSettingsNetwork::retranslateUi()
 
 void UIGlobalSettingsNetwork::sltAddNetworkNAT()
 {
-    /* Prepare useful variables: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
-    /* Compose a pool of busy names: */
-    QList<QString> names;
-    for (int iItemIndex = 0; iItemIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iItemIndex)
-    {
-        UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iItemIndex));
-        if (!names.contains(pItem->name()))
-            names << pItem->name();
-    }
-    /* Search for the name with maximum index: */
-    int iMaximumIndex = -1;
+    /* Compose a set of busy names: */
+    QSet<QString> names;
+    for (int i = 0; i < m_pTreeNetworkNAT->topLevelItemCount(); ++i)
+        names << static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(i))->name();
+    /* Compose a map of busy indexes: */
+    QMap<int, bool> presence;
     const QString strNameTemplate("NatNetwork%1");
+    const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
     foreach (const QString &strName, names)
-    {
-        const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
         if (regExp.indexIn(strName) != -1)
-            iMaximumIndex = qMax(iMaximumIndex, regExp.cap(1).toInt());
-    }
+            presence[regExp.cap(1).toInt()] = true;
+    /* Search for a minimum index: */
+    int iMinimumIndex = 0;
+    for (int i = 0; !presence.isEmpty() && i <= presence.lastKey() + 1; ++i)
+        if (!presence.contains(i))
+        {
+            iMinimumIndex = i;
+            break;
+        }
 
-    /* Create NAT network: */
-    const QString strIndex(iMaximumIndex == -1 ? QString() : QString::number(iMaximumIndex + 1));
-    const CNATNetwork network = vbox.CreateNATNetwork(strNameTemplate.arg(strIndex));
-    if (!vbox.isOk())
-        return msgCenter().cannotCreateNATNetwork(vbox, this);
-    AssertReturnVoid(!network.isNull());
+    /* Compose resulting index and name: */
+    const QString strNetworkIndex(iMinimumIndex == 0 ? QString() : QString::number(iMinimumIndex));
+    const QString strNetworkName = strNameTemplate.arg(strNetworkIndex);
 
-    /* Update tree: */
-    const QString strCacheKey = network.GetNetworkName();
-    loadToCacheFromNetworkNAT(network, m_pCache->child1(strCacheKey));
-    createTreeWidgetItemForNetworkNAT(m_pCache->child1(strCacheKey), true);
+    /* Compose new item data: */
+    UIDataSettingsGlobalNetworkNAT data;
+    data.m_fEnabled = true;
+    data.m_strName = strNetworkName;
+    data.m_strNewName = strNetworkName;
+    data.m_strCIDR = "10.0.2.0/24";
+    data.m_fSupportsDHCP = true;
+
+    /* Create tree-widget item: */
+    createTreeWidgetItemForNetworkNAT(data, UIPortForwardingDataList(), UIPortForwardingDataList(), true);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
 
@@ -637,7 +639,7 @@ void UIGlobalSettingsNetwork::sltEditNetworkNAT()
 {
     /* Get network item: */
     UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
-    AssertMsg(pItem, ("Current item should present!\n"));
+    AssertPtrReturnVoid(pItem);
 
     /* Edit current item data: */
     UIDataSettingsGlobalNetworkNAT data = *pItem;
@@ -661,27 +663,13 @@ void UIGlobalSettingsNetwork::sltRemoveNetworkNAT()
 {
     /* Get network item: */
     UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->currentItem());
-    AssertMsg(pItem, ("Current item should present!\n"));
-    /* Get network name: */
-    const QString strNetworkName(pItem->name());
+    AssertPtrReturnVoid(pItem);
 
-    /* Confirm NAT network removal: */
-    if (!msgCenter().confirmNATNetworkRemoval(strNetworkName, this))
+    /* Confirm network removal: */
+    if (!msgCenter().confirmNATNetworkRemoval(pItem->name(), this))
         return;
 
-    /* Prepare useful variables: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-
-    /* Find corresponding interface: */
-    const CNATNetwork &network = vbox.FindNATNetworkByName(strNetworkName);
-    AssertReturnVoid(vbox.isOk() && !network.isNull());
-
-    /* Remove NAT network: */
-    vbox.RemoveNATNetwork(network);
-    if (!vbox.isOk())
-        return msgCenter().cannotRemoveNATNetwork(vbox, strNetworkName, this);
-
-    /* Update tree: */
+    /* Remove tree-widget item: */
     removeTreeWidgetItemOfNetworkNAT(pItem);
 }
 
@@ -1018,13 +1006,36 @@ bool UIGlobalSettingsNetwork::saveNetworkData()
     /* Save network settings from the cache: */
     if (fSuccess && m_pCache->wasChanged())
     {
-        /* Save new network data from the cache: */
+        /* For each NAT network ('removing' step): */
+        // We need to separately remove NAT networks first because
+        // there could be name collisions with the existing NAT networks.
         for (int i = 0; fSuccess && i < m_pCache->childCount1(); ++i)
         {
+            /* Get NAT network cache: */
             const UISettingsCacheGlobalNetworkNAT &cache = m_pCache->child1(i);
-            if (cache.wasUpdated())
-                fSuccess = saveDataNetworkNAT(cache);
+
+            /* Remove NAT network marked for 'remove' or 'update' (if it can't be updated): */
+            if (cache.wasRemoved() || (cache.wasUpdated() && !isNetworkCouldBeUpdated(cache)))
+                fSuccess = removeNetworkNAT(cache);
         }
+        /* For each NAT network ('creating' step): */
+        for (int i = 0; fSuccess && i < m_pCache->childCount1(); ++i)
+        {
+            /* Get NAT network cache: */
+            const UISettingsCacheGlobalNetworkNAT &cache = m_pCache->child1(i);
+
+            /* Create NAT network marked for 'create' or 'update' (if it can't be updated): */
+            if (cache.wasCreated() || (cache.wasUpdated() && !isNetworkCouldBeUpdated(cache)))
+                fSuccess = createNetworkNAT(cache);
+
+            else
+
+            /* Update NAT network marked for 'update' (if it can be updated): */
+            if (cache.wasUpdated() && isNetworkCouldBeUpdated(cache))
+                fSuccess = updateNetworkNAT(cache);
+        }
+
+        /* For each Host network ('updating' step): */
         for (int i = 0; fSuccess && i < m_pCache->childCount2(); ++i)
         {
             const UISettingsCacheGlobalNetworkHost &cache = m_pCache->child2(i);
@@ -1100,7 +1111,143 @@ void UIGlobalSettingsNetwork::loadToCacheFromNetworkNAT(const CNATNetwork &netwo
     cache.cacheInitialData(oldNATData);
 }
 
-bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache)
+bool UIGlobalSettingsNetwork::removeNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save NAT settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old NAT data from the cache: */
+        const UIDataSettingsGlobalNetworkNAT &oldNatData = cache.base();
+        /* Get new NAT data from the cache: */
+        //const UIDataSettingsGlobalNetworkNAT &newNatData = cache.data();
+
+        /* Get VBox for further activities: */
+        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        /* Search for a NAT network with required name: */
+        CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldNatData.m_strName);
+        fSuccess = comVBox.isOk() && comNetwork.isNotNull();
+
+        /* Remove NAT network: */
+        if (fSuccess)
+        {
+            comVBox.RemoveNATNetwork(comNetwork);
+            fSuccess = comVBox.isOk();
+        }
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comVBox));
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIGlobalSettingsNetwork::createNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache)
+{
+    /* Prepare result: */
+    bool fSuccess = true;
+    /* Save NAT settings from the cache: */
+    if (fSuccess)
+    {
+        /* Get old NAT data from the cache: */
+        //const UIDataSettingsGlobalNetworkNAT &oldNatData = cache.base();
+        /* Get new NAT data from the cache: */
+        const UIDataSettingsGlobalNetworkNAT &newNatData = cache.data();
+
+        /* Get VBox for further activities: */
+        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        /* Create NAT network with required name: */
+        CNATNetwork comNetwork = comVBox.CreateNATNetwork(newNatData.m_strNewName);
+        fSuccess = comVBox.isOk() && comNetwork.isNotNull();
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comVBox));
+        else
+        {
+            /* Save whether NAT network is enabled: */
+            if (fSuccess)
+            {
+                comNetwork.SetEnabled(newNatData.m_fEnabled);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save NAT network name: */
+            if (fSuccess)
+            {
+                comNetwork.SetNetworkName(newNatData.m_strNewName);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save NAT network CIDR: */
+            if (fSuccess)
+            {
+                comNetwork.SetNetwork(newNatData.m_strCIDR);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save whether NAT network needs DHCP server: */
+            if (fSuccess)
+            {
+                comNetwork.SetNeedDhcpServer(newNatData.m_fSupportsDHCP);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save whether NAT network supports IPv6: */
+            if (fSuccess)
+            {
+                comNetwork.SetIPv6Enabled(newNatData.m_fSupportsIPv6);
+                fSuccess = comNetwork.isOk();
+            }
+            /* Save whether NAT network should advertise default IPv6 route: */
+            if (fSuccess)
+            {
+                comNetwork.SetAdvertiseDefaultIPv6RouteEnabled(newNatData.m_fAdvertiseDefaultIPv6Route);
+                fSuccess = comNetwork.isOk();
+            }
+
+            /* Save IPv4 forwarding rules: */
+            for (int i = 0; fSuccess && i < cache.childCount1(); ++i)
+            {
+                /* Get rule cache: */
+                const UISettingsCachePortForwardingRule &ruleCache = cache.child1(i);
+
+                /* Create rule not marked for 'remove': */
+                if (!ruleCache.wasRemoved())
+                {
+                    comNetwork.AddPortForwardRule(false,
+                                                  ruleCache.data().name, ruleCache.data().protocol,
+                                                  ruleCache.data().hostIp, ruleCache.data().hostPort.value(),
+                                                  ruleCache.data().guestIp, ruleCache.data().guestPort.value());
+                    fSuccess = comNetwork.isOk();
+                }
+            }
+
+            /* Save IPv6 forwarding rules: */
+            for (int i = 0; fSuccess && i < cache.childCount2(); ++i)
+            {
+                /* Get rule cache: */
+                const UISettingsCachePortForwardingRule &ruleCache = cache.child2(i);
+
+                /* Create rule not marked for 'remove': */
+                if (!ruleCache.wasRemoved())
+                {
+                    comNetwork.AddPortForwardRule(true,
+                                                  ruleCache.data().name, ruleCache.data().protocol,
+                                                  ruleCache.data().hostIp, ruleCache.data().hostPort.value(),
+                                                  ruleCache.data().guestIp, ruleCache.data().guestPort.value());
+                    fSuccess = comNetwork.isOk();
+                }
+            }
+
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                notifyOperationProgressError(UIMessageCenter::formatErrorInfo(comNetwork));
+        }
+    }
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIGlobalSettingsNetwork::updateNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache)
 {
     /* Prepare result: */
     bool fSuccess = true;
@@ -1114,8 +1261,8 @@ bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetw
 
         /* Get VBox for further activities: */
         CVirtualBox comVBox = vboxGlobal().virtualBox();
-        /* Search for a NAT network with the same name: */
-        CNATNetwork comNetwork = comVBox.FindNATNetworkByName(newNatData.m_strName);
+        /* Search for a NAT network with required name: */
+        CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldNatData.m_strName);
         fSuccess = comVBox.isOk() && comNetwork.isNotNull();
 
         /* Show error message if necessary: */
@@ -1157,21 +1304,6 @@ bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetw
             if (fSuccess && newNatData.m_fAdvertiseDefaultIPv6Route != oldNatData.m_fAdvertiseDefaultIPv6Route)
             {
                 comNetwork.SetAdvertiseDefaultIPv6RouteEnabled(newNatData.m_fAdvertiseDefaultIPv6Route);
-                fSuccess = comNetwork.isOk();
-            }
-
-            /* Get IPv4 port forwarding rules for further activities: */
-            QVector<QString> ipv4rules;
-            if (fSuccess)
-            {
-                ipv4rules = comNetwork.GetPortForwardRules4();
-                fSuccess = comNetwork.isOk();
-            }
-            /* Get IPv6 port forwarding rules for further activities: */
-            QVector<QString> ipv6rules;
-            if (fSuccess)
-            {
-                ipv6rules = comNetwork.GetPortForwardRules6();
                 fSuccess = comNetwork.isOk();
             }
 
@@ -1244,21 +1376,42 @@ bool UIGlobalSettingsNetwork::saveDataNetworkNAT(const UISettingsCacheGlobalNetw
     return fSuccess;
 }
 
-void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache, bool fChooseItem)
+void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkNAT(const UISettingsCacheGlobalNetworkNAT &cache)
 {
-    /* Add new item to the tree: */
-    UIItemNetworkNAT *pItem = new UIItemNetworkNAT;
-    pItem->UIDataSettingsGlobalNetworkNAT::operator=(cache.base());
+    /* Get old NAT data: */
+    const UIDataSettingsGlobalNetworkNAT oldNATData = cache.base();
+
+    /* Load old port forwarding rules: */
     UIPortForwardingDataList ipv4rules;
     UIPortForwardingDataList ipv6rules;
     for (int i = 0; i < cache.childCount1(); ++i)
         ipv4rules << cache.child1(i).base();
     for (int i = 0; i < cache.childCount2(); ++i)
         ipv6rules << cache.child2(i).base();
-    pItem->setIpv4rules(ipv4rules);
-    pItem->setIpv6rules(ipv6rules);
-    pItem->updateFields();
-    m_pTreeNetworkNAT->addTopLevelItem(pItem);
+
+    /* Pass to wrapper below: */
+    createTreeWidgetItemForNetworkNAT(oldNATData, ipv4rules, ipv6rules, false /* choose item? */);
+}
+
+void UIGlobalSettingsNetwork::createTreeWidgetItemForNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data,
+                                                                const UIPortForwardingDataList &ipv4rules,
+                                                                const UIPortForwardingDataList &ipv6rules,
+                                                                bool fChooseItem /* = false */)
+{
+    /* Create tree-widget item: */
+    UIItemNetworkNAT *pItem = new UIItemNetworkNAT;
+    AssertPtrReturnVoid(pItem);
+    {
+        /* Configure item: */
+        pItem->UIDataSettingsGlobalNetworkNAT::operator=(data);
+        pItem->setIpv4rules(ipv4rules);
+        pItem->setIpv6rules(ipv6rules);
+        pItem->updateFields();
+
+        /* Add item to the tree-widget: */
+        m_pTreeNetworkNAT->addTopLevelItem(pItem);
+    }
+
     /* And choose it as current if necessary: */
     if (fChooseItem)
         m_pTreeNetworkNAT->setCurrentItem(pItem);
@@ -1268,6 +1421,20 @@ void UIGlobalSettingsNetwork::removeTreeWidgetItemOfNetworkNAT(UIItemNetworkNAT 
 {
     /* Delete passed item: */
     delete pItem;
+}
+
+bool UIGlobalSettingsNetwork::isNetworkCouldBeUpdated(const UISettingsCacheGlobalNetworkNAT &cache) const
+{
+    /* INATNetwork interface allows to set 'name' attribute
+     * which can conflict with another one NAT network name.
+     * This attribute could be changed in GUI directly or indirectly.
+     * For such cases we have to recreate INATNetwork instance,
+     * for other cases we will update NAT network attributes only. */
+    const UIDataSettingsGlobalNetworkNAT &oldNATData = cache.base();
+    const UIDataSettingsGlobalNetworkNAT &newNATData = cache.data();
+    return true
+           && (newNATData.m_strNewName == oldNATData.m_strNewName)
+           ;
 }
 
 void UIGlobalSettingsNetwork::loadToCacheFromNetworkHost(const CHostNetworkInterface &iface, UISettingsCacheGlobalNetworkHost &cache)
