@@ -124,9 +124,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         pVCpu->iem.s.pStatsRC = MMHyperR3ToR0(pVM, pVCpu->iem.s.pStatsCCR3);
 # define IEM_DO_INSTR_STAT(a_Name, a_szDesc) \
             STAMR3RegisterF(pVM, &pVCpu->iem.s.pStatsCCR3->a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
-                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-RZ/" #a_Name, idCpu); \
+                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/r0-rc-Instr/" #a_Name, idCpu); \
             STAMR3RegisterF(pVM, &pVCpu->iem.s.pStatsR3->a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
-                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-R3/" #a_Name, idCpu);
+                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/r3-Instr/" #a_Name, idCpu);
 # include "IEMInstructionStatisticsTmpl.h"
 # undef IEM_DO_INSTR_STAT
 #endif
