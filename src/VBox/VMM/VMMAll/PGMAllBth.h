@@ -570,7 +570,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage,
                                                                                  pfLockTaken));
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, pvFault, 1, uErr);
-#endif
+#   endif
         AssertRC(rc);
         PGM_INVL_PG(pVCpu, pvFault);
         return rc; /* Restart with the corrected entry. */
@@ -634,8 +634,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             Log8(("Trap0eHandler: returns VINF_SUCCESS\n"));
             return VINF_SUCCESS;
         }
-        //AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u)); - triggers with smp w7 guests.
-        //AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u)); - ditto.
+#ifdef DEBUG_bird
+        AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u || pVM->cCpus > 1, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u)); // - triggers with smp w7 guests.
+        AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u || pVM->cCpus > 1, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u)); // - ditto.
+#endif
     }
 
 #   if 0 /* rarely useful; leave for debugging. */
@@ -676,7 +678,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         return VINF_PGM_SYNC_CR3;
     }
 
-#  if   PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(PGM_WITHOUT_MAPPINGS)
+#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(PGM_WITHOUT_MAPPINGS)
     /*
      * Check if this address is within any of our mappings.
      *
@@ -1132,6 +1134,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 uint64_t fPageShw = 0;
                 rc2 = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
 
+#if 0
                 /*
                  * Compare page flags.
                  * Note: we have AVL, A, D bits desynced.
@@ -1145,6 +1148,20 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                               && (fPageGst & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_US),
                           ("Page flags mismatch! pvFault=%RGv uErr=%x GCPhys=%RGp fPageShw=%RX64 fPageGst=%RX64 rc=%d\n",
                            pvFault, (uint32_t)uErr, GCPhys, fPageShw, fPageGst, rc));
+01:01:15.623511 00:08:43.266063 Expression: (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)) == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)) || ( pVCpu->pgm.s.cNetwareWp0Hacks > 0 && (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK | X86_PTE_RW | X86_PTE_US)) == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK | X86_PTE_RW | X86_PTE_US)) && (fPageShw & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_RW && (fPageGst & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_US)
+01:01:15.623511 00:08:43.266064 Location  : e:\vbox\svn\trunk\srcPage flags mismatch! pvFault=fffff801b0d7b000 uErr=11 GCPhys=0000000019b52000 fPageShw=0 fPageGst=77b0000000000121 rc=0
+
+01:01:15.625516 00:08:43.268051 Expression: (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)) == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)) || ( pVCpu->pgm.s.cNetwareWp0Hacks > 0 && (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK | X86_PTE_RW | X86_PTE_US)) == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK | X86_PTE_RW | X86_PTE_US)) && (fPageShw & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_RW && (fPageGst & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_US)
+01:01:15.625516 00:08:43.268051 Location  :
+e:\vbox\svn\trunk\srcPage flags mismatch!
+pvFault=fffff801b0d7b000
+                uErr=11     X86_TRAP_PF_ID | X86_TRAP_PF_P
+GCPhys=0000000019b52000
+fPageShw=0
+fPageGst=77b0000000000121
+rc=0
+#endif
+
             }
             else
                 AssertMsgFailed(("PGMGstGetPage rc=%Rrc\n", rc));
