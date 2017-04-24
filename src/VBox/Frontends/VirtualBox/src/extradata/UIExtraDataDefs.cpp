@@ -94,8 +94,8 @@ const char* UIExtraDataDefs::GUI_HideDetails = "GUI/HideDetails";
 const char* UIExtraDataDefs::GUI_PreventReconfiguration = "GUI/PreventReconfiguration";
 const char* UIExtraDataDefs::GUI_PreventSnapshotOperations = "GUI/PreventSnapshotOperations";
 const char* UIExtraDataDefs::GUI_FirstRun = "GUI/FirstRun";
-#ifndef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_MachineWindowIcons = "GUI/MachineWindowIcons";
+#ifndef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_MachineWindowNamePostfix = "GUI/MachineWindowNamePostfix";
 #endif /* !VBOX_WS_MAC */
 const char* UIExtraDataDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";

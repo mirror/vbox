@@ -1289,12 +1289,10 @@ void UISession::loadSessionSettings()
         /* Prepare machine-window icon: */
         {
             QIcon icon;
-#ifndef VBOX_WS_MAC
             /* Load user machine-window icon: */
             foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
                 if (!strIconName.isEmpty() && QFile::exists(strIconName))
                     icon.addFile(strIconName);
-#endif
             /* Use the OS type icon if user one was not set: */
             if (icon.isNull())
                 icon = vboxGlobal().vmGuestOSTypeIcon(machine().GetOSTypeId());

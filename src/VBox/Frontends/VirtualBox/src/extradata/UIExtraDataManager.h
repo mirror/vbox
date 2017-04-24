@@ -349,9 +349,9 @@ public:
         /** Returns whether this machine is fFirstTimeStarted. */
         void setMachineFirstTimeStarted(bool fFirstTimeStarted, const QString &strID);
 
-#ifndef VBOX_WS_MAC
         /** Except Mac OS X: Returns redefined machine-window icon names. */
         QStringList machineWindowIconNames(const QString &strID);
+#ifndef VBOX_WS_MAC
         /** Except Mac OS X: Returns redefined machine-window name postfix. */
         QString machineWindowNamePostfix(const QString &strID);
 #endif /* !VBOX_WS_MAC */

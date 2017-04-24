@@ -164,9 +164,9 @@ namespace UIExtraDataDefs
         extern const char* GUI_PreventSnapshotOperations;
         /** Holds whether this machine is first time started. */
         extern const char* GUI_FirstRun;
-#ifndef VBOX_WS_MAC
         /** Except Mac OS X: Holds redefined machine-window icon names. */
         extern const char* GUI_MachineWindowIcons;
+#ifndef VBOX_WS_MAC
         /** Except Mac OS X: Holds redefined machine-window name postfix. */
         extern const char* GUI_MachineWindowNamePostfix;
 #endif /* !VBOX_WS_MAC */
