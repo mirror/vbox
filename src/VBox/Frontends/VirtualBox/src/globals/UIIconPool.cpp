@@ -21,11 +21,17 @@
 
 /* Qt includes: */
 # include <QApplication>
+# include <QFile>
 # include <QStyle>
 # include <QWidget>
 
 /* GUI includes: */
 # include "UIIconPool.h"
+# include "UIExtraDataManager.h"
+
+/* COM includes: */
+# include "COMEnums.h"
+# include "CMachine.h"
 
 /* Other VBox includes: */
 # include <iprt/assert.h>
@@ -352,6 +358,91 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("MacOS1011_64",    ":/os_macosx_64.png");
     m_guestOSTypeIconNames.insert("JRockitVE",       ":/os_jrockitve.png");
     m_guestOSTypeIconNames.insert("VBoxBS_64",       ":/os_other_64.png");
+}
+
+QIcon UIIconPoolGeneral::userMachineIcon(const CMachine &comMachine) const
+{
+    /* Get machine ID: */
+    const QString strMachineId = comMachine.GetId();
+    AssertReturn(comMachine.isOk(), QPixmap());
+
+    /* Prepare icon: */
+    QIcon icon;
+
+    /* 1. First, load icon from IMachine extra-data: */
+    if (icon.isNull())
+        foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineId))
+            if (!strIconName.isEmpty() && QFile::exists(strIconName))
+                icon.addFile(strIconName);
+
+    /* 2. Otherwise, load icon from IMachine interface itself: */
+    if (icon.isNull())
+    {
+        const QVector<BYTE> byteVector = comMachine.GetIcon();
+        AssertReturn(comMachine.isOk(), QPixmap());
+        const QByteArray byteArray = QByteArray::fromRawData(reinterpret_cast<const char*>(byteVector.constData()), byteVector.size());
+        const QImage image = QImage::fromData(byteArray);
+        if (!image.isNull())
+        {
+            QPixmap pixmap = QPixmap::fromImage(image);
+            const int iMinimumLength = qMin(pixmap.width(), pixmap.height());
+            if (pixmap.width() != iMinimumLength || pixmap.height() != iMinimumLength)
+                pixmap = pixmap.scaled(QSize(iMinimumLength, iMinimumLength), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            icon.addPixmap(pixmap);
+        }
+    }
+
+    /* Return icon: */
+    return icon;
+}
+
+QPixmap UIIconPoolGeneral::userMachinePixmap(const CMachine &comMachine, const QSize &size) const
+{
+    /* Acquire icon: */
+    const QIcon icon = userMachineIcon(comMachine);
+
+    /* Prepare pixmap: */
+    QPixmap pixmap;
+
+    /* Check whether we have valid icon: */
+    if (!icon.isNull())
+    {
+        /* Get pixmap of requested size: */
+        pixmap = icon.pixmap(size);
+        /* And even scale it if size is not valid: */
+        if (pixmap.size() != size)
+            pixmap = pixmap.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+
+    /* Return pixmap: */
+    return pixmap;
+}
+
+QPixmap UIIconPoolGeneral::userMachinePixmapDefault(const CMachine &comMachine, QSize *pLogicalSize /* = 0 */) const
+{
+    /* Acquire icon: */
+    const QIcon icon = userMachineIcon(comMachine);
+
+    /* Prepare pixmap: */
+    QPixmap pixmap;
+
+    /* Check whether we have valid icon: */
+    if (!icon.isNull())
+    {
+        /* Determine desired icon size: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+        const QSize iconSize = QSize(iIconMetric, iIconMetric);
+
+        /* Pass up logical size if necessary: */
+        if (pLogicalSize)
+            *pLogicalSize = iconSize;
+
+        /* Get pixmap of requested size: */
+        pixmap = icon.pixmap(iconSize);
+    }
+
+    /* Return pixmap: */
+    return pixmap;
 }
 
 QIcon UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID) const

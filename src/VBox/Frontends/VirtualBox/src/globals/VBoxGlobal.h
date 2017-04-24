@@ -221,6 +221,14 @@ public:
     QList <CGuestOSType> vmGuestOSFamilyList() const;
     QList <CGuestOSType> vmGuestOSTypeList (const QString &aFamilyId) const;
 
+    /** Returns icon defined for a passed @a comMachine. */
+    QIcon vmUserIcon(const CMachine &comMachine) const;
+    /** Returns pixmap of a passed @a size defined for a passed @a comMachine. */
+    QPixmap vmUserPixmap(const CMachine &comMachine, const QSize &size) const;
+    /** Returns pixmap defined for a passed @a comMachine.
+      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
+    QPixmap vmUserPixmapDefault(const CMachine &comMachine, QSize *pLogicalSize = 0) const;
+
     /** Returns pixmap corresponding to passed @a strOSTypeID. */
     QIcon vmGuestOSTypeIcon(const QString &strOSTypeID) const;
     /** Returns pixmap corresponding to passed @a strOSTypeID and @a size. */

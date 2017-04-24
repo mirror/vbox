@@ -23,6 +23,9 @@
 #include <QPixmap>
 #include <QHash>
 
+/* Forward declarations: */
+class CMachine;
+
 
 /** Interface which provides GUI with static API
   * allowing to dynamically compose icons at runtime. */
@@ -102,6 +105,14 @@ public:
 
     /** General icon-pool constructor. */
     UIIconPoolGeneral();
+
+    /** Returns icon defined for a passed @a comMachine. */
+    QIcon userMachineIcon(const CMachine &comMachine) const;
+    /** Returns pixmap of a passed @a size defined for a passed @a comMachine. */
+    QPixmap userMachinePixmap(const CMachine &comMachine, const QSize &size) const;
+    /** Returns pixmap defined for a passed @a comMachine.
+      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
+    QPixmap userMachinePixmapDefault(const CMachine &comMachine, QSize *pLogicalSize = 0) const;
 
     /** Returns icon corresponding to passed @a strOSTypeID. */
     QIcon guestOSTypeIcon(const QString &strOSTypeID) const;

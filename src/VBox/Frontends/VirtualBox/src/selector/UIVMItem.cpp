@@ -236,7 +236,9 @@ bool UIVMItem::recache()
         m_strOSTypeId = m_machine.GetOSTypeId();
         m_cSnaphot = m_machine.GetSnapshotCount();
 
-        m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
+        m_pixmap = vboxGlobal().vmUserPixmapDefault(m_machine, &m_logicalPixmapSize);
+        if (m_pixmap.isNull())
+            m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
 
         if (   m_machineState == KMachineState_PoweredOff
             || m_machineState == KMachineState_Saved

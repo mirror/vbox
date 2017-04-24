@@ -1276,7 +1276,9 @@ void UIMachineLogic::prepareDock()
 # endif /* QT_VERSION >= 0x050000 */
 
     /* Now the dock icon preview: */
-    const QPixmap pixmap = vboxGlobal().vmGuestOSTypePixmap(guest().GetOSTypeId(), QSize(42, 42));
+    QPixmap pixmap = vboxGlobal().vmUserPixmap(machine(), QSize(42, 42));
+    if (pixmap.isNull())
+        pixmap = vboxGlobal().vmGuestOSTypePixmap(guest().GetOSTypeId(), QSize(42, 42));
     m_pDockIconPreview = new UIDockIconPreview(uisession(), pixmap);
 
     /* Should the dock-icon be updated at runtime? */
