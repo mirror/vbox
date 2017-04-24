@@ -645,8 +645,8 @@ int suplibOsTerm(PSUPLIBDATA pThis)
      */
     if (pThis->hDevice != NULL)
     {
-        if (!NtClose((HANDLE)pThis->hDevice))
-            AssertFailed();
+        NTSTATUS rcNt = NtClose((HANDLE)pThis->hDevice);
+        Assert(NT_SUCCESS(rcNt));
         pThis->hDevice = NIL_RTFILE; /* yes, that's right */
     }
 
