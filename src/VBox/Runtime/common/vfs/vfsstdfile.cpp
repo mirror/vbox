@@ -529,7 +529,6 @@ static DECLCALLBACK(int) rtVfsChainStdFile_Validate(PCRTVFSCHAINELEMENTREG pProv
         && pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
         return VERR_VFS_CHAIN_ONLY_FILE_OR_IOS;
 
-
     /*
      * Join common cause with the 'open' provider.
      */

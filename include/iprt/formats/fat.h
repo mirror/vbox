@@ -559,6 +559,7 @@ typedef FATDIRENTRY const *PCFATDIRENTRY;
 #define FAT_ATTR_ARCHIVE            UINT8_C(0x20)
 #define FAT_ATTR_DEVICE             UINT8_C(0x40)
 #define FAT_ATTR_RESERVED           UINT8_C(0x80)
+#define FAT_ATTR_NAME_SLOT          UINT8_C(0x0f) /**< Special attribute value for FATDIRNAMESLOT. */
 /** @} */
 
 /** @name FATDIRENTRY_CASE_F_XXX - FATDIRENTRY::fCase flags.
@@ -569,12 +570,28 @@ typedef FATDIRENTRY const *PCFATDIRENTRY;
 #define FATDIRENTRY_CASE_F_LOWER_EXT    UINT8_C(0x10)
 /** @} */
 
+/** @name FATDIRENTRY_CASE_F_XXX - FATDIRENTRY::fCase flags.
+ * @{ */
+/** Deleted entry. */
+#define FATDIRENTRY_CH0_DELETED         UINT8_C(0xe5)
+/** End of used directory entries (MS-DOS 1.25+, PC-DOS 2.0+). */
+#define FATDIRENTRY_CH0_END_OF_DIR      UINT8_C(0x00)
+/** The special dot or dot-dot dir aliases (MS-DOS 1.40+, PC-DOS 2.0+).
+ * @remarks 0x2e is the ascii table entry of the '.' character.  */
+#define FATDIRENTRY_CH0_DOT_ALIAS       UINT8_C(0x2e)
+/** Escaped 0xe5 leadcharacter (DOS 3.0+). */
+#define FATDIRENTRY_CH0_ESC_E5          UINT8_C(0x05)
+/** @} */
+
 
 /**
  * FAT directory alias name slot.
+ *
+ * Each slot holds 13 UTF-16 (/ UCS-2) characters, so it takes 20 slots to cover
+ * a 255 character long name.
  */
 #pragma pack(1)
-typedef struct FATDIRNAMELOT
+typedef struct FATDIRNAMESLOT
 {
     /** The slot sequence number. */
     uint8_t         idSlot;

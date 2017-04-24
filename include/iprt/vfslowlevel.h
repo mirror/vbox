@@ -454,6 +454,7 @@ typedef struct RTVFSDIROPS
      *
      * @returns IPRT status code.
      * @retval  VERR_PATH_NOT_FOUND if @a pszEntry was not found.
+     * @retval  VERR_NOT_A_DIRECTORY if @a pszEntry isn't a directory or symlink.
      * @param   pvThis          The implementation specific directory data.
      * @param   pszEntry        The name of the directory entry to remove.
      * @param   phVfsDir        If not NULL and it is a directory, open it and

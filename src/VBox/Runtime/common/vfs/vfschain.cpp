@@ -162,8 +162,8 @@ static DECLCALLBACK(int) rtVfsChainOpen_Validate(PCRTVFSCHAINELEMENTREG pProvide
      * Make common cause with 'stdfile' if we're opening a file or I/O stream.
      * If the input is a FSS, we have to make sure it's a read-only operation.
      */
-    if (   pElement->enmType != RTVFSOBJTYPE_FILE
-        && pElement->enmType != RTVFSOBJTYPE_IO_STREAM)
+    if (   pElement->enmType == RTVFSOBJTYPE_FILE
+        || pElement->enmType == RTVFSOBJTYPE_IO_STREAM)
     {
         int rc = RTVfsChainValidateOpenFileOrIoStream(pSpec, pElement, poffError, pErrInfo);
         if (RT_SUCCESS(rc))
