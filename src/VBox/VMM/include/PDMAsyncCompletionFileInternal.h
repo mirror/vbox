@@ -483,6 +483,8 @@ typedef struct PDMACTASKFILE
     PDMACTASKFILETRANSFER                enmTransferType;
     /** Start offset */
     RTFOFF                               Off;
+    /** Amount of data transfered so far. */
+    size_t                               cbTransfered;
     /** Data segment. */
     RTSGSEG                              DataSeg;
     /** When non-zero the segment uses a bounce buffer because the provided buffer

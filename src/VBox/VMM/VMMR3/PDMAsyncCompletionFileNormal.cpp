@@ -1464,9 +1464,11 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
              * but to get the cause of the error (disk full, file too big, I/O error, ...)
              * the transfer needs to be continued.
              */
-            if (RT_UNLIKELY(   cbTransfered < pTask->DataSeg.cbSeg
+            pTask->cbTransfered += cbTransfered;
+
+            if (RT_UNLIKELY(   pTask->cbTransfered < pTask->DataSeg.cbSeg
                             || (   pTask->cbBounceBuffer
-                                && cbTransfered < pTask->cbBounceBuffer)))
+                                && pTask->cbTransfered < pTask->cbBounceBuffer)))
             {
                 RTFOFF offStart;
                 size_t cbToTransfer;
@@ -1479,16 +1481,16 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                 if (pTask->cbBounceBuffer)
                 {
                     AssertPtr(pTask->pvBounceBuffer);
-                    offStart     = (pTask->Off & ~((RTFOFF)512-1)) + cbTransfered;
-                    cbToTransfer = pTask->cbBounceBuffer - cbTransfered;
-                    pbBuf        = (uint8_t *)pTask->pvBounceBuffer + cbTransfered;
+                    offStart     = (pTask->Off & ~((RTFOFF)512-1)) + pTask->cbTransfered;
+                    cbToTransfer = pTask->cbBounceBuffer - pTask->cbTransfered;
+                    pbBuf        = (uint8_t *)pTask->pvBounceBuffer + pTask->cbTransfered;
                 }
                 else
                 {
                     Assert(!pTask->pvBounceBuffer);
-                    offStart     = pTask->Off + cbTransfered;
-                    cbToTransfer = pTask->DataSeg.cbSeg - cbTransfered;
-                    pbBuf        = (uint8_t *)pTask->DataSeg.pvSeg + cbTransfered;
+                    offStart     = pTask->Off + pTask->cbTransfered;
+                    cbToTransfer = pTask->DataSeg.cbSeg - pTask->cbTransfered;
+                    pbBuf        = (uint8_t *)pTask->DataSeg.pvSeg + pTask->cbTransfered;
                 }
 
                 if (pTask->fPrefetch || pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
@@ -1523,6 +1525,8 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                 pTask->fPrefetch = false;
                 RTFOFF offStart = pTask->Off & ~(RTFOFF)(512-1);
                 size_t cbToTransfer = RT_ALIGN_Z(pTask->DataSeg.cbSeg + (pTask->Off - offStart), 512);
+
+                pTask->cbTransfered = 0;
 
                 /* Grow the file if needed. */
                 if (RT_UNLIKELY((uint64_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
