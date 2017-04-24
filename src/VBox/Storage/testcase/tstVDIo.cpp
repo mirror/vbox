@@ -2919,6 +2919,7 @@ static void tstVDIoRunBuiltinTests(void)
 
         AssertPtr(pszScript);
         tstVDIoScriptExec(g_aVDIoTests[i].pszName, pszScript);
+        RTStrFree(pszScript);
     }
 #endif
 }
