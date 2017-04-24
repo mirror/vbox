@@ -956,9 +956,7 @@ UISession::UISession(UIMachine *pMachine)
     /* Common variables: */
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(KMachineState_Null)
-#ifndef VBOX_WS_MAC
     , m_pMachineWindowIcon(0)
-#endif /* !VBOX_WS_MAC */
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef VBOX_WS_WIN
     , m_alphaCursor(0)
@@ -1288,18 +1286,29 @@ void UISession::loadSessionSettings()
         /* Get machine ID: */
         const QString strMachineID = vboxGlobal().managedVMUuid();
 
+        /* Prepare machine-window icon: */
+        {
+            QIcon icon;
 #ifndef VBOX_WS_MAC
-        /* Load/prepare user's machine-window icon: */
-        QIcon icon;
-        foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
-            if (!strIconName.isEmpty() && QFile::exists(strIconName))
-                icon.addFile(strIconName);
-        if (!icon.isNull())
+            /* Load user machine-window icon: */
+            foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
+                if (!strIconName.isEmpty() && QFile::exists(strIconName))
+                    icon.addFile(strIconName);
+#endif
+            /* Use the OS type icon if user one was not set: */
+            if (icon.isNull())
+                icon = vboxGlobal().vmGuestOSTypeIcon(machine().GetOSTypeId());
+            /* Use the default icon if nothing else works: */
+            if (icon.isNull())
+                icon = QIcon(":/VirtualBox_48px.png");
+            /* Store the icon dynamically: */
             m_pMachineWindowIcon = new QIcon(icon);
+        }
 
+#ifndef VBOX_WS_MAC
         /* Load user's machine-window name postfix: */
         m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(strMachineID);
-#endif /* !VBOX_WS_MAC */
+#endif
 
         /* Is there should be First RUN Wizard? */
         m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(strMachineID);
@@ -1367,11 +1376,9 @@ void UISession::saveSessionSettings()
             gEDataManager->setGuestScreenAutoResizeEnabled(pGuestAutoresizeSwitch->isChecked(), vboxGlobal().managedVMUuid());
         }
 
-#ifndef VBOX_WS_MAC
-        /* Cleanup user's machine-window icon: */
+        /* Cleanup machine-window icon: */
         delete m_pMachineWindowIcon;
         m_pMachineWindowIcon = 0;
-#endif /* !VBOX_WS_MAC */
     }
 }
 

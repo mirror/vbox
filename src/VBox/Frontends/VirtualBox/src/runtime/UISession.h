@@ -127,15 +127,15 @@ public:
     WId mainMachineWindowId() const;
     QCursor cursor() const { return m_cursor; }
 
-#ifndef VBOX_WS_MAC
     /** @name Branding stuff.
      ** @{ */
-    /** Returns redefined machine-window icon. */
-    QIcon* machineWindowIcon() const { return m_pMachineWindowIcon; }
+    /** Returns the cached machine-window icon. */
+    QIcon *machineWindowIcon() const { return m_pMachineWindowIcon; }
+#ifndef VBOX_WS_MAC
     /** Returns redefined machine-window name postfix. */
     QString machineWindowNamePostfix() const { return m_strMachineWindowNamePostfix; }
+#endif
     /** @} */
-#endif /* !VBOX_WS_MAC */
 
     /** @name Host-screen configuration variables.
      ** @{ */
@@ -458,15 +458,15 @@ private:
     KMachineState m_machineState;
     QCursor m_cursor;
 
-#ifndef VBOX_WS_MAC
     /** @name Branding variables.
      ** @{ */
-    /** Holds redefined machine-window icon. */
+    /** Holds the cached machine-window icon. */
     QIcon *m_pMachineWindowIcon;
+#ifndef VBOX_WS_MAC
     /** Holds redefined machine-window name postfix. */
     QString m_strMachineWindowNamePostfix;
+#endif
     /** @} */
-#endif /* !VBOX_WS_MAC */
 
     /** @name Visual-state configuration variables.
      ** @{ */

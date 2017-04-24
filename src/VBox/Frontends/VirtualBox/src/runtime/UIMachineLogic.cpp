@@ -1553,8 +1553,8 @@ void UIMachineLogic::sltTakeSnapshot()
     windowManager().registerNewParent(pDlg, pDlgParent);
 
     /* Assign corresponding icon: */
-    const QPixmap pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(guest().GetOSTypeId());
-    pDlg->mLbIcon->setPixmap(pixmap);
+    if (uisession() && uisession()->machineWindowIcon())
+        pDlg->mLbIcon->setPixmap(uisession()->machineWindowIcon()->pixmap(QSize(32, 32)));
 
     /* Search for the max available filter index: */
     QString strNameTemplate = VBoxTakeSnapshotDlg::tr("Snapshot %1");

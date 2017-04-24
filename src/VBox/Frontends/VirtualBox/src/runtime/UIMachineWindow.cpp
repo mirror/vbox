@@ -181,18 +181,10 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     , m_pRightSpacer(0)
 {
 #ifndef VBOX_WS_MAC
-    /* On Mac OS X window icon referenced in info.plist is used. */
-
-    /* Set default window icon (will be changed to VM-specific icon little bit later): */
-    setWindowIcon(QIcon(":/VirtualBox_48px.png"));
-
-    /* Set redefined machine-window icon if any: */
-    QIcon *pMachineWidnowIcon = uisession()->machineWindowIcon();
-    if (pMachineWidnowIcon)
-        setWindowIcon(*pMachineWidnowIcon);
-    /* Or set default machine-window icon: */
-    else
-        setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(machine().GetOSTypeId()));
+    /* Set machine-window icon if any: */
+    // On macOS window icon is referenced in info.plist.
+    if (uisession() && uisession()->machineWindowIcon())
+        setWindowIcon(*uisession()->machineWindowIcon());
 #endif /* !VBOX_WS_MAC */
 }
 
@@ -345,6 +337,9 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machine(),
                                                                   console().GetGuestEnteredACPIMode(),
                                                                   restrictedCloseActions);
+        /* Configure close-dialog: */
+        if (uisession() && uisession()->machineWindowIcon())
+            pCloseDlg->setPixmap(uisession()->machineWindowIcon()->pixmap(QSize(32, 32)));
 
         /* Make sure close-dialog is valid: */
         if (pCloseDlg->isValid())
