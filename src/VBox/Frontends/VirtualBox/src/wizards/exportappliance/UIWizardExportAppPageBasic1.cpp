@@ -55,7 +55,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
         const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
         if (machine.GetAccessible())
         {
-            pixIcon = vboxGlobal().vmGuestOSTypePixmapDefault(machine.GetOSTypeId()).scaled(iIconMetric, iIconMetric, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            pixIcon = vboxGlobal().vmGuestOSTypePixmapDefault(machine.GetOSTypeId());
             strName = machine.GetName();
             strUuid = machine.GetId();
             fEnabled = machine.GetSessionState() == KSessionState_Unlocked;

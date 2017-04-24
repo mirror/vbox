@@ -516,13 +516,8 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     default: break;
                 }
             }
-            else if (iColumn == ApplianceViewSection_ConfigValue &&
-                     m_enmVSDType == KVirtualSystemDescriptionType_OS)
-            {
-                const QStyle *pStyle = QApplication::style();
-                const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-                value = vboxGlobal().vmGuestOSTypePixmapDefault(m_strConfigValue).scaledToHeight(iIconMetric, Qt::SmoothTransformation);
-            }
+            else if (iColumn == ApplianceViewSection_ConfigValue && m_enmVSDType == KVirtualSystemDescriptionType_OS)
+                value = vboxGlobal().vmGuestOSTypeIcon(m_strConfigValue);
             break;
         }
         case Qt::FontRole:
