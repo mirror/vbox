@@ -75,7 +75,11 @@ void main()
     close("dest", "single", true);
     close("dest", "single", true);
     close("dest", "single", true);
+    close("dest", "single", true);
+    close("dest", "single", true);
 
+    close("source", "single", true);
+    close("source", "single", true);
     close("source", "single", true);
     close("source", "single", true);
     close("source", "single", true);

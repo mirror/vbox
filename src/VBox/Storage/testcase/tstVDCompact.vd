@@ -67,6 +67,8 @@ void tstSnapshotCompact(string strMsg, string strBackend)
     compact("disk", 1);
 
     close("disk", "single", true);
+    close("disk", "single", true);
+    close("disk", "single", true);
     destroydisk("disk");
 }
 
