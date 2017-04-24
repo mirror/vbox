@@ -21,6 +21,7 @@
 /* Qt includes: */
 #include <QDateTime>
 #include <QMimeData>
+#include <QPixmap>
 
 /* GUI includes: */
 #include "UISettingsDefs.h"
@@ -96,6 +97,8 @@ private:
     CVirtualBoxErrorInfo m_accessError;
 
     QString m_strName;
+    QPixmap m_pixmap;
+    QSize m_logicalPixmapSize;
     QString m_strSnapshotName;
     QDateTime m_lastStateChange;
     KMachineState m_machineState;
