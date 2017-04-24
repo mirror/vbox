@@ -154,8 +154,8 @@ UIVMItem::~UIVMItem()
 
 QPixmap UIVMItem::osPixmap(QSize *pLogicalSize /* = 0 */) const
 {
-    return m_fAccessible ? vboxGlobal().vmGuestOSTypeIcon(m_strOSTypeId, pLogicalSize) :
-                           vboxGlobal().vmGuestOSTypeIcon("Other", pLogicalSize);
+    return m_fAccessible ? vboxGlobal().vmGuestOSTypePixmapDefault(m_strOSTypeId, pLogicalSize) :
+                           vboxGlobal().vmGuestOSTypePixmapDefault("Other", pLogicalSize);
 }
 
 QString UIVMItem::machineStateName() const

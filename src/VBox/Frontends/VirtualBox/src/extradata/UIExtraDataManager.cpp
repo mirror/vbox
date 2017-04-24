@@ -411,7 +411,7 @@ void UIChooserPaneDelegate::fetchPixmapInfo(const QModelIndex &index, QPixmap &p
 {
     /* If proper machine ID passed => return corresponding pixmap/size: */
     if (index.data(Field_ID).toString() != UIExtraDataManager::GlobalID)
-        pixmap = vboxGlobal().vmGuestOSTypeIcon(index.data(Field_OsTypeID).toString(), &pixmapSize);
+        pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(index.data(Field_OsTypeID).toString(), &pixmapSize);
     else
     {
         /* For global ID we return static pixmap/size: */

@@ -221,14 +221,13 @@ public:
     QList <CGuestOSType> vmGuestOSFamilyList() const;
     QList <CGuestOSType> vmGuestOSTypeList (const QString &aFamilyId) const;
 
+    /** Returns pixmap corresponding to passed @a strOSTypeID. */
+    QIcon vmGuestOSTypeIcon(const QString &strOSTypeID) const;
+    /** Returns pixmap corresponding to passed @a strOSTypeID and @a size. */
+    QPixmap vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const;
     /** Returns pixmap corresponding to passed @a strOSTypeID.
       * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
-    QPixmap vmGuestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
-
-    /** Returns pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
-    QPixmap vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &physicalSize) const;
-    /** Returns HiDPI pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
-    QPixmap vmGuestOSTypePixmapHiDPI(const QString &strOSTypeID, const QSize &physicalSize) const;
+    QPixmap vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
 
     CGuestOSType vmGuestOSType (const QString &aTypeId,
                                 const QString &aFamilyId = QString::null) const;

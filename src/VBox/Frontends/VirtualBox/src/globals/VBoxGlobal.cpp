@@ -557,19 +557,19 @@ QList<CGuestOSType> VBoxGlobal::vmGuestOSTypeList(const QString &aFamilyId) cons
            m_guestOSTypes[m_guestOSFamilyIDs.indexOf(aFamilyId)] : QList<CGuestOSType>();
 }
 
-QPixmap VBoxGlobal::vmGuestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const
+QIcon VBoxGlobal::vmGuestOSTypeIcon(const QString &strOSTypeID) const
 {
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
+    /* Prepare fallback icon: */
+    static QIcon nullIcon;
 
     /* Make sure general icon-pool initialized: */
-    AssertReturn(m_pIconPool, nullPixmap);
+    AssertReturn(m_pIconPool, nullIcon);
 
     /* Redirect to general icon-pool: */
-    return m_pIconPool->guestOSTypeIcon(strOSTypeID, pLogicalSize);
+    return m_pIconPool->guestOSTypeIcon(strOSTypeID);
 }
 
-QPixmap VBoxGlobal::vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &physicalSize) const
+QPixmap VBoxGlobal::vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const
 {
     /* Prepare fallback pixmap: */
     static QPixmap nullPixmap;
@@ -578,10 +578,10 @@ QPixmap VBoxGlobal::vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize 
     AssertReturn(m_pIconPool, nullPixmap);
 
     /* Redirect to general icon-pool: */
-    return m_pIconPool->guestOSTypePixmap(strOSTypeID, physicalSize);
+    return m_pIconPool->guestOSTypePixmap(strOSTypeID, size);
 }
 
-QPixmap VBoxGlobal::vmGuestOSTypePixmapHiDPI(const QString &strOSTypeID, const QSize &physicalSize) const
+QPixmap VBoxGlobal::vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const
 {
     /* Prepare fallback pixmap: */
     static QPixmap nullPixmap;
@@ -590,7 +590,7 @@ QPixmap VBoxGlobal::vmGuestOSTypePixmapHiDPI(const QString &strOSTypeID, const Q
     AssertReturn(m_pIconPool, nullPixmap);
 
     /* Redirect to general icon-pool: */
-    return m_pIconPool->guestOSTypePixmapHiDPI(strOSTypeID, physicalSize);
+    return m_pIconPool->guestOSTypePixmapDefault(strOSTypeID, pLogicalSize);
 }
 
 /**

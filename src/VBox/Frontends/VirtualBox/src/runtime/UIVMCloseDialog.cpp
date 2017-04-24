@@ -317,7 +317,7 @@ void UIVMCloseDialog::configure()
     KMachineState machineState = m_machine.GetState();
 
     /* Assign pixmap: */
-    setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_machine.GetOSTypeId()));
+    setPixmap(vboxGlobal().vmGuestOSTypePixmapDefault(m_machine.GetOSTypeId()));
 
     /* Check which close-actions are resticted: */
     bool fIsDetachAllowed = vboxGlobal().isSeparateProcess() && !(m_restictedCloseActions & MachineCloseAction_Detach);

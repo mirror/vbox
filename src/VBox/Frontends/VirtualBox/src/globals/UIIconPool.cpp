@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,8 +21,8 @@
 
 /* Qt includes: */
 # include <QApplication>
-# include <QWidget>
 # include <QStyle>
+# include <QWidget>
 
 /* GUI includes: */
 # include "UIIconPool.h"
@@ -354,10 +354,10 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("VBoxBS_64",       ":/os_other_64.png");
 }
 
-QPixmap UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const
+QIcon UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID) const
 {
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
+    /* Prepare fallback icon: */
+    static QPixmap nullIcon;
 
     /* If we do NOT have that 'guest OS type' icon cached already: */
     if (!m_guestOSTypeIcons.contains(strOSTypeID))
@@ -367,93 +367,65 @@ QPixmap UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID, QSize *pL
             m_guestOSTypeIcons[strOSTypeID] = iconSet(m_guestOSTypeIconNames[strOSTypeID]);
         /* Assign fallback icon if we do NOT have that 'guest OS type' known: */
         else
-            m_guestOSTypeIcons[strOSTypeID] = iconSet(nullPixmap);
+            m_guestOSTypeIcons[strOSTypeID] = iconSet(nullIcon);
     }
 
     /* Retrieve corresponding icon: */
     const QIcon &icon = m_guestOSTypeIcons[strOSTypeID];
     AssertMsgReturn(!icon.isNull(),
                     ("Undefined icon for type '%s'.", strOSTypeID.toLatin1().constData()),
-                    nullPixmap);
+                    nullIcon);
 
-    /* Retrieve available sizes for that icon: */
-    const QList<QSize> availableSizes = icon.availableSizes();
-    AssertMsgReturn(!availableSizes.isEmpty(),
-                    ("Undefined icon for type '%s'.", strOSTypeID.toLatin1().constData()),
-                    nullPixmap);
-
-    /* Determine desired icon size: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_LargeIconSize);
-    const QSize iconSize = QSize(iIconMetric, iIconMetric);
-
-    /* Pass up logical size if necessary: */
-    if (pLogicalSize)
-        *pLogicalSize = iconSize;
-
-    /* Return pixmap of first available size: */
-    return icon.pixmap(iconSize);
+    /* Return icon: */
+    return icon;
 }
 
-QPixmap UIIconPoolGeneral::guestOSTypePixmap(const QString &strOSTypeID, const QSize &physicalSize) const
+QPixmap UIIconPoolGeneral::guestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const
 {
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
+    /* Acquire icon: */
+    const QIcon icon = guestOSTypeIcon(strOSTypeID);
 
-    /* If we do NOT have that 'guest OS type' pixmap cached already: */
-    if (!m_guestOSTypePixmaps.contains(strOSTypeID))
+    /* Prepare pixmap: */
+    QPixmap pixmap;
+
+    /* Check whether we have valid icon: */
+    if (!icon.isNull())
     {
-        /* Compose proper pixmap if we have that 'guest OS type' known: */
-        if (m_guestOSTypeIconNames.contains(strOSTypeID))
-            m_guestOSTypePixmaps[strOSTypeID] = QPixmap(m_guestOSTypeIconNames[strOSTypeID]);
-        /* Assign fallback pixmap if we do NOT have that 'guest OS type' known: */
-        else
-            m_guestOSTypePixmaps[strOSTypeID] = nullPixmap;
+        /* Get pixmap of requested size: */
+        pixmap = icon.pixmap(size);
+        /* And even scale it if size is not valid: */
+        if (pixmap.size() != size)
+            pixmap = pixmap.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     }
 
-    /* Retrieve corresponding pixmap: */
-    const QPixmap &pixmap = m_guestOSTypePixmaps.value(strOSTypeID);
-    AssertMsgReturn(!pixmap.isNull(),
-                    ("Undefined pixmap for type '%s'.", strOSTypeID.toLatin1().constData()),
-                    nullPixmap);
-
-    /* Return pixmap of the requested size: */
-    return pixmap.size() == physicalSize ? pixmap : pixmap.scaled(physicalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    /* Return pixmap: */
+    return pixmap;
 }
 
-QPixmap UIIconPoolGeneral::guestOSTypePixmapHiDPI(const QString &strOSTypeID, const QSize &physicalSize) const
+QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const
 {
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
+    /* Acquire icon: */
+    const QIcon icon = guestOSTypeIcon(strOSTypeID);
 
-    /* If we do NOT have that 'guest OS type' pixmap cached already: */
-    if (!m_guestOSTypePixmapsHiDPI.contains(strOSTypeID))
+    /* Prepare pixmap: */
+    QPixmap pixmap;
+
+    /* Check whether we have valid icon: */
+    if (!icon.isNull())
     {
-        /* Compose proper pixmap if we have that 'guest OS type' known: */
-        if (m_guestOSTypeIconNames.contains(strOSTypeID))
-        {
-            /* Get name: */
-            const QString strName =  m_guestOSTypeIconNames.value(strOSTypeID);
-            /* Parse name to prefix and suffix: */
-            const QString strPrefix = strName.section('.', 0, -2);
-            const QString strSuffix = strName.section('.', -1, -1);
-            /* Prepare HiDPI pixmap on the basis of values above: */
-            const QPixmap pixmapHiDPI(strPrefix + "_hidpi." + strSuffix);
-            /* Remember HiDPI pixmap: */
-            m_guestOSTypePixmapsHiDPI[strOSTypeID] = pixmapHiDPI;
-        }
-        /* Assign fallback pixmap if we do NOT have that 'guest OS type' known: */
-        else
-            m_guestOSTypePixmapsHiDPI[strOSTypeID] = nullPixmap;
+        /* Determine desired icon size: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+        const QSize iconSize = QSize(iIconMetric, iIconMetric);
+
+        /* Pass up logical size if necessary: */
+        if (pLogicalSize)
+            *pLogicalSize = iconSize;
+
+        /* Get pixmap of requested size: */
+        pixmap = icon.pixmap(iconSize);
     }
 
-    /* Retrieve corresponding pixmap: */
-    const QPixmap &pixmap = m_guestOSTypePixmapsHiDPI.value(strOSTypeID);
-    AssertMsgReturn(!pixmap.isNull(),
-                    ("Undefined pixmap for type '%s'.", strOSTypeID.toLatin1().constData()),
-                    nullPixmap);
-
-    /* Return pixmap of the requested size: */
-    return pixmap.size() == physicalSize ? pixmap : pixmap.scaled(physicalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    /* Return pixmap: */
+    return pixmap;
 }
 

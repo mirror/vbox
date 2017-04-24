@@ -57,7 +57,7 @@ void VBoxOSTypeSelectorButton::setOSTypeId (const QString& aOSTypeId)
     CGuestOSType type = vboxGlobal().vmGuestOSType (aOSTypeId);
     /* Looks ugly on the Mac */
 #ifndef VBOX_WS_MAC
-    setIcon (vboxGlobal().vmGuestOSTypeIcon (type.GetId()));
+    setIcon (vboxGlobal().vmGuestOSTypePixmapDefault (type.GetId()));
 #endif /* VBOX_WS_MAC */
     setText (type.GetDescription());
 }
@@ -83,7 +83,7 @@ void VBoxOSTypeSelectorButton::populateMenu()
         QList <CGuestOSType> types = vboxGlobal().vmGuestOSTypeList (family.GetFamilyId());
         foreach (const CGuestOSType& type, types)
         {
-            QAction *a = subMenu->addAction (vboxGlobal().vmGuestOSTypeIcon (type.GetId()), type.GetDescription());
+            QAction *a = subMenu->addAction (vboxGlobal().vmGuestOSTypePixmapDefault (type.GetId()), type.GetDescription());
             connect(a, SIGNAL (triggered()),
                     mSignalMapper, SLOT(map()));
             mSignalMapper->setMapping (a, type.GetId());

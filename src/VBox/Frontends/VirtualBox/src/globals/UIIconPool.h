@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 #include <QIcon>
 #include <QPixmap>
 #include <QHash>
+
 
 /** Interface which provides GUI with static API
   * allowing to dynamically compose icons at runtime. */
@@ -102,14 +103,13 @@ public:
     /** General icon-pool constructor. */
     UIIconPoolGeneral();
 
+    /** Returns icon corresponding to passed @a strOSTypeID. */
+    QIcon guestOSTypeIcon(const QString &strOSTypeID) const;
+    /** Returns pixmap corresponding to passed @a strOSTypeID and @a size. */
+    QPixmap guestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const;
     /** Returns pixmap corresponding to passed @a strOSTypeID.
       * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
-    QPixmap guestOSTypeIcon(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
-
-    /** Returns pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
-    QPixmap guestOSTypePixmap(const QString &strOSTypeID, const QSize &physicalSize) const;
-    /** Returns HiDPI pixmap corresponding to passed @a strOSTypeID and @a physicalSize. */
-    QPixmap guestOSTypePixmapHiDPI(const QString &strOSTypeID, const QSize &physicalSize) const;
+    QPixmap guestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
 
 private:
 
@@ -117,10 +117,6 @@ private:
     QHash<QString, QString> m_guestOSTypeIconNames;
     /** Guest OS type icons cache. */
     mutable QHash<QString, QIcon> m_guestOSTypeIcons;
-    /** Holds the guest OS type pixmaps cache. */
-    mutable QHash<QString, QPixmap> m_guestOSTypePixmaps;
-    /** Holds the guest OS type HiDPI pixmaps cache. */
-    mutable QHash<QString, QPixmap> m_guestOSTypePixmapsHiDPI;
 };
 
 #endif /* !___UIIconPool_h___ */

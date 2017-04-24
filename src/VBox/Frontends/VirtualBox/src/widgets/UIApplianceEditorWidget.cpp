@@ -521,7 +521,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
             {
                 const QStyle *pStyle = QApplication::style();
                 const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-                value = vboxGlobal().vmGuestOSTypeIcon(m_strConfigValue).scaledToHeight(iIconMetric, Qt::SmoothTransformation);
+                value = vboxGlobal().vmGuestOSTypePixmapDefault(m_strConfigValue).scaledToHeight(iIconMetric, Qt::SmoothTransformation);
             }
             break;
         }

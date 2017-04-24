@@ -902,7 +902,8 @@ bool UISnapshotPane::takeSnapshot()
             windowManager().registerNewParent(pDlg, pDlgParent);
 
             // TODO: Assign corresponding icon through sub-dialog API: */
-            pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_comMachine.GetOSTypeId()));
+            const QPixmap pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_comMachine.GetOSTypeId());
+            pDlg->mLbIcon->setPixmap(pixmap);
 
             /* Search for the max available snapshot index: */
             int iMaxSnapShotIndex = 0;
