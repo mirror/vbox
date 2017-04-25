@@ -237,7 +237,8 @@ struc CPUMCPU
     .Guest.hwvirt.svm.fGif                      resb    1
     .Guest.hwvirt.svm.cPauseFilter              resw    1
     .Guest.hwvirt.svm.cPauseFilterThreshold     resw    1
-    .Guest.hwvirt.svm.abPadding0                resb    3
+    .Guest.hwvirt.svm.fInterceptEvents          resb    1
+    .Guest.hwvirt.svm.abPadding0                resb    2
     .Guest.hwvirt.svm.pvMsrBitmapR0             RTR0PTR_RES 1
     .Guest.hwvirt.svm.pvMsrBitmapR3             RTR3PTR_RES 1
     .Guest.hwvirt.svm.pvIoBitmapR0              RTR0PTR_RES 1
@@ -516,7 +517,8 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.fGif                      resb    1
     .Hyper.hwvirt.svm.cPauseFilter              resw    1
     .Hyper.hwvirt.svm.cPauseFilterThreshold     resw    1
-    .Hyper.hwvirt.svm.abPadding0                resb    3
+    .Hyper.hwvirt.svm.fInterceptEvents          resb    1
+    .Hyper.hwvirt.svm.abPadding0                resb    2
     .Hyper.hwvirt.svm.pvMsrBitmapR0             RTR0PTR_RES 1
     .Hyper.hwvirt.svm.pvMsrBitmapR3             RTR3PTR_RES 1
     .Hyper.hwvirt.svm.pvIoBitmapR0              RTR0PTR_RES 1

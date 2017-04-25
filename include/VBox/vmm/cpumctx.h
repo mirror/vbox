@@ -488,8 +488,10 @@ typedef struct CPUMCTX
                 uint16_t            cPauseFilter;
                 /** 1187 - Pause filter count. */
                 uint16_t            cPauseFilterThreshold;
-                /** 1189 - Padding. */
-                uint8_t             abPadding0[3];
+                /** 1189 - Whether the injected event is subject to event intercepts. */
+                uint8_t             fInterceptEvents;
+                /** 1190 - Padding. */
+                uint8_t             abPadding0[2];
                 /** 1192 - MSR permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvMsrBitmapR0;
                 /** 1200 / 1196 - MSR permission bitmap - R3 ptr. */
@@ -577,6 +579,7 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,      
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,                  1184);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,          1185);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilterThreshold, 1187);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fInterceptEvents,      1189);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,         1192);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3,         HC_ARCH_BITS == 64 ? 1200 : 1196);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,          HC_ARCH_BITS == 64 ? 1208 : 1200);
