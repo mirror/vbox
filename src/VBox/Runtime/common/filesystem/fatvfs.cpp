@@ -414,8 +414,11 @@ AssertCompileSize(g_awchFatCp437Chars, 256*2);
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static int rtFsFatFile_FlushMetaData(PRTFSFATFILE pThis);
 static void rtFsFatDir_AddOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild);
 static void rtFsFatDir_RemoveOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild);
+static int  rtFsFatDir_GetEntryForUpdate(PRTFSFATDIR pThis, uint32_t offEntryInDir, PFATDIRENTRY *ppDirEntry, uint32_t *puWriteLock);
+static int  rtFsFatDir_PutEntryAfterUpdate(PRTFSFATDIR pThis, PFATDIRENTRY pDirEntry, uint32_t uWriteLock);
 static int  rtFsFatDir_Flush(PRTFSFATDIR pThis);
 static int  rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIRENTRY pDirEntry, uint32_t offEntryInDir,
                            uint32_t idxCluster, uint64_t offDisk, uint32_t cbDir, PRTVFSDIR phVfsDir, PRTFSFATDIR *ppDir);
@@ -807,6 +810,11 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
     AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
 
+    /* Special case for empty files. */
+    if (idxCluster == 0)
+        return VINF_SUCCESS;
+
+    /* Work cluster by cluster. */
     uint8_t const *pbFat = pFatCache->aEntries[0].pbData;
     for (;;)
     {
@@ -881,6 +889,100 @@ static int rtFsFatClusterMap_ReadClusterChain(PRTFSFATVOL pThis, uint32_t idxFir
         case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_Fat32_ReadClusterChain(pThis->pFatCache, pThis, idxFirstCluster, pChain);
         default:
             AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+    }
+}
+
+
+/** Sets a FAT12 cluster value. */
+static int rtFsFatClusterMap_SetCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
+                                          uint32_t idxCluster, uint32_t uValue)
+{
+    /* ASSUME that for FAT12 we cache the whole FAT in a single entry.  That
+       way we don't need to deal with entries in different sectors and whatnot.  */
+    AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
+    AssertReturn(uValue < 0x1000, VERR_INTERNAL_ERROR_2);
+
+    /* Make the change. */
+    uint8_t *pbFat  = pFatCache->aEntries[0].pbData;
+    uint32_t offFat = idxCluster * 3 / 2;
+    if (idxCluster & 1)
+    {
+        pbFat[offFat]     = (0x0f | pbFat[offFat]) | ((uValue & 0xf) << 4);
+        pbFat[offFat + 1] = (uint8_t)(uValue >> 4);
+    }
+    else
+    {
+        pbFat[offFat]     = (uint8_t)uValue;
+        pbFat[offFat + 1] = (0xf0 | pbFat[offFat + 1]) | ((uValue >> 8) | 0xf);
+    }
+
+    /* Update the dirty bits. */
+    pFatCache->aEntries[0].bmDirty |= RT_BIT_64(offFat >> pFatCache->cDirtyShift);
+    pFatCache->aEntries[0].bmDirty |= RT_BIT_64((offFat + 1) >> pFatCache->cDirtyShift);
+
+    return VINF_SUCCESS;
+}
+
+
+/** Sets a FAT16 cluster value. */
+static int rtFsFatClusterMap_SetCluster16(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
+                                          uint32_t idxCluster, uint32_t uValue)
+{
+    AssertReturn(uValue < 0x10000, VERR_INTERNAL_ERROR_2);
+    RT_NOREF(pFatCache, pVol, idxCluster, uValue);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** Sets a FAT32 cluster value. */
+static int rtFsFatClusterMap_SetCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol,
+                                          uint32_t idxCluster, uint32_t uValue)
+{
+    AssertReturn(uValue < 0x10000000, VERR_INTERNAL_ERROR_2);
+    RT_NOREF(pFatCache, pVol, idxCluster, uValue);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Marks the cluster @a idxCluster as the end of the cluster chain.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The FAT volume instance.
+ * @param   idxCluster      The cluster to end the chain with.
+ */
+static int rtFsFatClusterMap_SetEndOfChain(PRTFSFATVOL pThis, uint32_t idxCluster)
+{
+    AssertReturn(idxCluster >= FAT_FIRST_DATA_CLUSTER, VERR_VFS_BOGUS_OFFSET);
+    AssertReturn(idxCluster < pThis->cClusters, VERR_VFS_BOGUS_OFFSET);
+    switch (pThis->enmFatType)
+    {
+        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_SetCluster12(pThis->pFatCache, pThis, idxCluster, FAT_FIRST_FAT12_EOC);
+        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_SetCluster16(pThis->pFatCache, pThis, idxCluster, FAT_FIRST_FAT16_EOC);
+        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_SetCluster32(pThis->pFatCache, pThis, idxCluster, FAT_FIRST_FAT32_EOC);
+        default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+    }
+}
+
+
+/**
+ * Marks the cluster @a idxCluster as free.
+ * @returns IPRT status code
+ * @param   pThis           The FAT volume instance.
+ * @param   idxCluster      The cluster to free.
+ */
+static int rtFsFatClusterMap_FreeCluster(PRTFSFATVOL pThis, uint32_t idxCluster)
+{
+    AssertReturn(idxCluster >= FAT_FIRST_DATA_CLUSTER, VERR_VFS_BOGUS_OFFSET);
+    AssertReturn(idxCluster < pThis->cClusters, VERR_VFS_BOGUS_OFFSET);
+    switch (pThis->enmFatType)
+    {
+        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_SetCluster12(pThis->pFatCache, pThis, idxCluster, 0);
+        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_SetCluster16(pThis->pFatCache, pThis, idxCluster, 0);
+        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_SetCluster32(pThis->pFatCache, pThis, idxCluster, 0);
+        default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
 }
 
@@ -994,7 +1096,9 @@ static int rtFsFatObj_Close(PRTFSFATOBJ pObj)
 static DECLCALLBACK(int) rtFsFatFile_Close(void *pvThis)
 {
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-    return rtFsFatObj_Close(&pThis->Core);
+    int rc1 = rtFsFatFile_FlushMetaData(pThis);
+    int rc2 = rtFsFatObj_Close(&pThis->Core);
+    return RT_FAILURE(rc1) ? rc1 : rc2;
 }
 
 
@@ -1070,7 +1174,7 @@ static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
     }
 
     /*
-     * Do the reading cluster by cluster (converge clusters later).
+     * Do the reading cluster by cluster.
      */
     int      rc         = VINF_SUCCESS;
     uint32_t cbFileLeft = pThis->Core.cbObject - (uint32_t)off;
@@ -1107,10 +1211,80 @@ static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
             rc = pcbRead ? VINF_EOF : VERR_EOF;
         break;
     }
+
+    /* Update the offset and return. */
     pThis->offFile = off;
     if (pcbRead)
         *pcbRead = cbRead;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Changes the size of a file or directory FAT object.
+ *
+ * @returns IPRT status code
+ * @param   pObj        The common object.
+ * @param   cbFile      The new file size.
+ */
+static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
+{
+    AssertReturn((pObj->cbObject >> pObj->Clusters.cClusterByteShift) == pObj->Clusters.cClusters, VERR_INTERNAL_ERROR_3);
+
+    /*
+     * Do nothing if the size didn't change.
+     */
+    if (pObj->cbObject == cbFile)
+        return VINF_SUCCESS;
+
+    /*
+     * We need to at least update the directory entry, but quite likely allocate
+     * or release clusters.
+     */
+    int rc;
+    uint32_t const cClustersNew = (cbFile + pObj->Clusters.cbCluster - 1) >> pObj->Clusters.cClusterByteShift;
+    AssertReturn(pObj->pParentDir, VERR_INTERNAL_ERROR_2);
+    if (pObj->Clusters.cClusters == cClustersNew)
+    {
+        pObj->cbObject = cbFile;
+        rc = VINF_SUCCESS;
+    }
+    else if (pObj->cbObject < cbFile)
+    {
+        AssertFailed();
+    }
+    else
+    {
+        /* Free clusters we don't need any more. */
+        rc = rtFsFatClusterMap_SetEndOfChain(pObj->pVol, rtFsFatChain_GetCluster(&pObj->Clusters, cClustersNew - 1));
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t iClusterToFree = cClustersNew;
+            while (iClusterToFree < pObj->Clusters.cClusters && RT_SUCCESS(rc))
+            {
+                rc = rtFsFatClusterMap_FreeCluster(pObj->pVol, rtFsFatChain_GetCluster(&pObj->Clusters, iClusterToFree));
+                iClusterToFree++;
+            }
+
+            /* Update the chain structure. */
+            pObj->Clusters.cClusters = cClustersNew;
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Update the directory entry.
+         */
+        uint32_t     uWriteLock;
+        PFATDIRENTRY pDirEntry;
+        rc = rtFsFatDir_GetEntryForUpdate(pObj->pParentDir, pObj->offEntryInDir, &pDirEntry, &uWriteLock);
+        if (RT_SUCCESS(rc))
+        {
+            pDirEntry->cbFile = cbFile;
+            rc = rtFsFatDir_PutEntryAfterUpdate(pObj->pParentDir, pDirEntry, uWriteLock);
+        }
+    }
+    return rc;
 }
 
 
@@ -1120,17 +1294,84 @@ static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
 static DECLCALLBACK(int) rtFsFatFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-    RT_NOREF(pThis, off, pSgBuf, fBlocking, pcbWritten);
-    return VERR_NOT_IMPLEMENTED;
+    AssertReturn(pSgBuf->cSegs != 0, VERR_INTERNAL_ERROR_3);
+    RT_NOREF(fBlocking);
+
+    if (off == -1)
+        off = pThis->offFile;
+
+    /*
+     * Do the reading cluster by cluster.
+     */
+    int            rc         = VINF_SUCCESS;
+    uint32_t       cbWritten  = 0;
+    uint32_t       cbLeft     = pSgBuf->paSegs[0].cbSeg;
+    uint8_t const *pbSrc      = (uint8_t const *)pSgBuf->paSegs[0].pvSeg;
+    while (cbLeft > 0)
+    {
+        /* Figure out how much we can write.  Checking for max file size and such. */
+        uint32_t cbToWrite = pThis->Core.Clusters.cbCluster - ((uint32_t)off & (pThis->Core.Clusters.cbCluster - 1));
+        if (cbToWrite > cbLeft)
+            cbToWrite = cbLeft;
+        uint64_t offNew = (uint64_t)off + cbToWrite;
+        if (offNew < _4G)
+        { /*likely*/ }
+        else if ((uint64_t)off < _4G - 1U)
+            cbToWrite = _4G - 1U - off;
+        else
+        {
+            rc = VERR_FILE_TOO_BIG;
+            break;
+        }
+
+        /* Grow the file? */
+        if ((uint32_t)offNew > pThis->Core.cbObject)
+        {
+            rc = rtFsFatObj_SetSize(&pThis->Core, (uint32_t)offNew);
+            if (RT_SUCCESS(rc))
+            { /* likely */}
+            else
+                break;
+        }
+
+        /* Figure the disk offset. */
+        uint64_t offDisk = rtFsFatChain_FileOffsetToDiskOff(&pThis->Core.Clusters, (uint32_t)off, pThis->Core.pVol);
+        if (offDisk != UINT64_MAX)
+        {
+            rc = RTVfsFileWriteAt(pThis->Core.pVol->hVfsBacking, offDisk, pbSrc, cbToWrite, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                off         += cbToWrite;
+                pbSrc       += cbToWrite;
+                cbWritten   += cbToWrite;
+                cbLeft      -= cbToWrite;
+            }
+            else
+                break;
+        }
+        else
+        {
+            rc = VERR_VFS_BOGUS_OFFSET;
+            break;
+        }
+    }
+
+    /* Update the offset and return. */
+    pThis->offFile = off;
+    if (pcbWritten)
+        *pcbWritten = cbWritten;
+    return VINF_SUCCESS;
 }
 
 
 /**
- * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ * Flushes file meta data.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The file.
  */
-static DECLCALLBACK(int) rtFsFatFile_Flush(void *pvThis)
+static int rtFsFatFile_FlushMetaData(PRTFSFATFILE pThis)
 {
-    PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
     int rc = VINF_SUCCESS;
     if (pThis->fMaybeDirtyFat)
         rc = rtFsFatClusterMap_Flush(pThis->Core.pVol);
@@ -1140,11 +1381,18 @@ static DECLCALLBACK(int) rtFsFatFile_Flush(void *pvThis)
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
     }
-
-    int rc2 = RTVfsFileFlush(pThis->Core.pVol->hVfsBacking);
-    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-        rc = rc2;
     return rc;
+}
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ */
+static DECLCALLBACK(int) rtFsFatFile_Flush(void *pvThis)
+{
+    PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
+    int rc1 = rtFsFatFile_FlushMetaData(pThis);
+    int rc2 = RTVfsFileFlush(pThis->Core.pVol->hVfsBacking);
+    return RT_FAILURE(rc1) ? rc1 : rc2;
 }
 
 
@@ -1357,7 +1605,15 @@ static int rtFsFatFile_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIREN
              * our directory entry.
              */
             rtFsFatDir_AddOpenChild(pParentDir, &pNewFile->Core);
-            return VINF_SUCCESS;
+
+            /*
+             * Should we truncate the file or anything of that sort?
+             */
+            if (   (fOpen & RTFILE_O_TRUNCATE)
+                || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                rc = rtFsFatObj_SetSize(&pNewFile->Core, 0);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
         }
 
         RTVfsFileRelease(*phVfsFile);
@@ -1369,13 +1625,38 @@ static int rtFsFatFile_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIREN
 
 
 
+/**
+ * Flush directory changes when having a fully buffered directory.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The directory.
+ */
 static int rtFsFatDir_FlushFullyBuffered(PRTFSFATDIR pThis)
 {
     Assert(pThis->fFullyBuffered);
-    return VINF_SUCCESS;
+    uint32_t const  cbSector    = pThis->Core.pVol->cbSector;
+    RTVFSFILE const hVfsBacking = pThis->Core.pVol->hVfsBacking;
+    int             rc          = VINF_SUCCESS;
+    for (uint32_t i = 0; i < pThis->u.Full.cSectors; i++)
+        if (pThis->u.Full.pbDirtySectors[i])
+        {
+            int rc2 = RTVfsFileWriteAt(hVfsBacking, pThis->offEntriesOnDisk + i * cbSector,
+                                       (uint8_t *)pThis->paEntries + i * cbSector, cbSector, NULL);
+            if (RT_SUCCESS(rc2))
+                pThis->u.Full.pbDirtySectors[i] = false;
+            else if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+    return rc;
 }
 
 
+/**
+ * Flush directory changes when using simple buffering.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The directory.
+ */
 static int rtFsFatDir_FlushSimple(PRTFSFATDIR pThis)
 {
     Assert(!pThis->fFullyBuffered);
@@ -1395,6 +1676,12 @@ static int rtFsFatDir_FlushSimple(PRTFSFATDIR pThis)
 }
 
 
+/**
+ * Flush directory changes.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The directory.
+ */
 static int rtFsFatDir_Flush(PRTFSFATDIR pThis)
 {
     if (pThis->fFullyBuffered)
@@ -1403,18 +1690,15 @@ static int rtFsFatDir_Flush(PRTFSFATDIR pThis)
 }
 
 
-static void rtFsFatDir_ReleaseBufferAfterReading(PRTFSFATDIR pThis, uint32_t uBufferReadLock)
-{
-    RT_NOREF(pThis, uBufferReadLock);
-}
-
-
 /**
  * Gets one or more entires at @a offEntryInDir.
+ *
+ * Common worker for rtFsFatDir_GetEntriesAt and rtFsFatDir_GetEntryForUpdate
  *
  * @returns IPRT status code.
  * @param   pThis               The directory.
  * @param   offEntryInDir       The directory offset in bytes.
+ * @param   fForUpdate          Whether it's for updating.
  * @param   ppaEntries          Where to return pointer to the entry at
  *                              @a offEntryInDir.
  * @param   pcEntries           Where to return the number of entries
@@ -1423,10 +1707,10 @@ static void rtFsFatDir_ReleaseBufferAfterReading(PRTFSFATDIR pThis, uint32_t uBu
  *                              Call rtFsFatDir_ReleaseBufferAfterReading when
  *                              done.
  */
-static int rtFsFatDir_GetEntriesAt(PRTFSFATDIR pThis, uint32_t offEntryInDir,
-                                   PCFATDIRENTRYUNION *ppaEntries, uint32_t *pcEntries, uint32_t *puBufferReadLock)
+static int rtFsFatDir_GetEntriesAtCommon(PRTFSFATDIR pThis, uint32_t offEntryInDir, bool fForUpdate,
+                                         PFATDIRENTRYUNION *ppaEntries, uint32_t *pcEntries, uint32_t *puLock)
 {
-    *puBufferReadLock = UINT32_MAX;
+    *puLock = UINT32_MAX;
 
     int rc;
     Assert(RT_ALIGN_32(offEntryInDir, sizeof(FATDIRENTRY)) == offEntryInDir);
@@ -1439,9 +1723,9 @@ static int rtFsFatDir_GetEntriesAt(PRTFSFATDIR pThis, uint32_t offEntryInDir,
             /*
              * Fully buffered: Return pointer to all the entires starting at offEntryInDir.
              */
-            *ppaEntries       = &pThis->paEntries[idxEntryInDir];
-            *pcEntries        = pThis->cEntries - idxEntryInDir;
-            *puBufferReadLock = 1;
+            *ppaEntries = &pThis->paEntries[idxEntryInDir];
+            *pcEntries  = pThis->cEntries - idxEntryInDir;
+            *puLock     = !fForUpdate ? 1 : UINT32_C(0x80000001);
             rc = VINF_SUCCESS;
         }
         else
@@ -1453,9 +1737,9 @@ static int rtFsFatDir_GetEntriesAt(PRTFSFATDIR pThis, uint32_t offEntryInDir,
             uint32_t    off  = offEntryInDir - pThis->u.Simple.offInDir;
             if (off < pVol->cbSector)
             {
-                *ppaEntries       = &pThis->paEntries[off / sizeof(FATDIRENTRY)];
-                *pcEntries        = (pVol->cbSector - off) / sizeof(FATDIRENTRY);
-                *puBufferReadLock = 1;
+                *ppaEntries = &pThis->paEntries[off / sizeof(FATDIRENTRY)];
+                *pcEntries  = (pVol->cbSector - off) / sizeof(FATDIRENTRY);
+                *puLock     = !fForUpdate ? 1 : UINT32_C(0x80000001);
                 rc = VINF_SUCCESS;
             }
             else
@@ -1479,9 +1763,9 @@ static int rtFsFatDir_GetEntriesAt(PRTFSFATDIR pThis, uint32_t offEntryInDir,
                                          pThis->paEntries, pVol->cbSector, NULL);
                     if (RT_SUCCESS(rc))
                     {
-                        *ppaEntries       = &pThis->paEntries[off / sizeof(FATDIRENTRY)];
-                        *pcEntries        = (pVol->cbSector - off) / sizeof(FATDIRENTRY);
-                        *puBufferReadLock = 1;
+                        *ppaEntries = &pThis->paEntries[off / sizeof(FATDIRENTRY)];
+                        *pcEntries  = (pVol->cbSector - off) / sizeof(FATDIRENTRY);
+                        *puLock     = !fForUpdate ? 1 : UINT32_C(0x80000001);
                         rc = VINF_SUCCESS;
                     }
                     else
@@ -1496,6 +1780,79 @@ static int rtFsFatDir_GetEntriesAt(PRTFSFATDIR pThis, uint32_t offEntryInDir,
     else
         rc = VERR_FILE_NOT_FOUND;
     return rc;
+}
+
+
+/**
+ * Puts back a directory entry after updating it, releasing the write lock and
+ * marking it dirty.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The directory.
+ * @param   pDirEntry       The directory entry.
+ * @param   uWriteLock      The write lock.
+ */
+static int rtFsFatDir_PutEntryAfterUpdate(PRTFSFATDIR pThis, PFATDIRENTRY pDirEntry, uint32_t uWriteLock)
+{
+    Assert(uWriteLock == UINT32_C(0x80000001));
+    if (pThis->fFullyBuffered)
+    {
+        uint32_t idxSector = ((uintptr_t)pDirEntry - (uintptr_t)pThis->paEntries) / pThis->Core.pVol->cbSector;
+        pThis->u.Full.pbDirtySectors[idxSector] = true;
+    }
+    else
+        pThis->u.Simple.fDirty = true;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the pointer to the given directory entry for the purpose of updating it.
+ *
+ * Call rtFsFatDir_PutEntryAfterUpdate afterwards.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The directory.
+ * @param   offEntryInDir   The byte offset of the directory entry, within the
+ *                          directory.
+ * @param   ppDirEntry      Where to return the pointer to the directory entry.
+ * @param   puWriteLock     Where to return the write lock.
+ */
+static int rtFsFatDir_GetEntryForUpdate(PRTFSFATDIR pThis, uint32_t offEntryInDir, PFATDIRENTRY *ppDirEntry,
+                                        uint32_t *puWriteLock)
+{
+    uint32_t cEntriesIgn;
+    return rtFsFatDir_GetEntriesAtCommon(pThis, offEntryInDir, true /*fForUpdate*/, (PFATDIRENTRYUNION *)ppDirEntry,
+                                         &cEntriesIgn, puWriteLock);
+}
+
+
+static void rtFsFatDir_ReleaseBufferAfterReading(PRTFSFATDIR pThis, uint32_t uBufferReadLock)
+{
+    RT_NOREF(pThis, uBufferReadLock);
+    Assert(uBufferReadLock == 1);
+}
+
+
+/**
+ * Gets one or more entires at @a offEntryInDir.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The directory.
+ * @param   offEntryInDir       The directory offset in bytes.
+ * @param   ppaEntries          Where to return pointer to the entry at
+ *                              @a offEntryInDir.
+ * @param   pcEntries           Where to return the number of entries
+ *                              @a *ppaEntries points to.
+ * @param   puBufferReadLock    Where to return the buffer read lock handle.
+ *                              Call rtFsFatDir_ReleaseBufferAfterReading when
+ *                              done.
+ */
+static int rtFsFatDir_GetEntriesAt(PRTFSFATDIR pThis, uint32_t offEntryInDir,
+                                   PCFATDIRENTRYUNION *ppaEntries, uint32_t *pcEntries, uint32_t *puBufferReadLock)
+{
+    return rtFsFatDir_GetEntriesAtCommon(pThis, offEntryInDir, false /*fForUpdate*/, (PFATDIRENTRYUNION *)ppaEntries,
+                                         pcEntries, puBufferReadLock);
 }
 
 
