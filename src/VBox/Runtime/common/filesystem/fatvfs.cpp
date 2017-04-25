@@ -67,6 +67,9 @@
 typedef struct RTFSFATDIR *PRTFSFATDIR;
 
 
+/** The number of entire in a chain part. */
+#define RTFSFATCHAINPART_ENTRIES (256U - 4U)
+
 /**
  * A part of the cluster chain covering up to 252 clusters.
  */
@@ -75,11 +78,12 @@ typedef struct RTFSFATCHAINPART
     /** List entry. */
     RTLISTNODE  ListEntry;
     /** Chain entries. */
-    uint32_t    aEntries[256 - 4];
+    uint32_t    aEntries[RTFSFATCHAINPART_ENTRIES];
 } RTFSFATCHAINPART;
 AssertCompile(sizeof(RTFSFATCHAINPART) <= _1K);
 typedef RTFSFATCHAINPART *PRTFSFATCHAINPART;
 typedef RTFSFATCHAINPART const *PCRTFSFATCHAINPART;
+
 
 /**
  * A FAT cluster chain.
@@ -466,7 +470,7 @@ static void rtFsFatChain_InitEmpty(PRTFSFATCHAIN pChain, PRTFSFATVOL pVol)
 static int rtFsFatChain_Append(PRTFSFATCHAIN pChain, uint32_t idxCluster)
 {
     PRTFSFATCHAINPART pPart;
-    uint32_t idxLast = pChain->cClusters % RT_ELEMENTS(pPart->aEntries);
+    uint32_t idxLast = pChain->cClusters % RTFSFATCHAINPART_ENTRIES;
     if (idxLast != 0)
         pPart = RTListGetLast(&pChain->ListParts, RTFSFATCHAINPART, ListEntry);
     else
@@ -499,9 +503,9 @@ static uint64_t rtFsFatChain_FileOffsetToDiskOff(PCRTFSFATCHAIN pChain, uint32_t
     if (idxCluster < pChain->cClusters)
     {
         PRTFSFATCHAINPART pPart = RTListGetFirst(&pChain->ListParts, RTFSFATCHAINPART, ListEntry);
-        while (idxCluster >= RT_ELEMENTS(pPart->aEntries))
+        while (idxCluster >= RTFSFATCHAINPART_ENTRIES)
         {
-            idxCluster -= RT_ELEMENTS(pPart->aEntries);
+            idxCluster -= RTFSFATCHAINPART_ENTRIES;
             pPart = RTListGetNext(&pChain->ListParts, pPart, RTFSFATCHAINPART, ListEntry);
         }
         return pVol->offFirstCluster
@@ -528,7 +532,7 @@ static bool rtFsFatChain_IsContiguous(PCRTFSFATCHAIN pChain)
     uint32_t            cLeft   = pChain->cClusters;
     for (;;)
     {
-        uint32_t const cInPart = RT_MIN(cLeft, RT_ELEMENTS(pPart->aEntries));
+        uint32_t const cInPart = RT_MIN(cLeft, RTFSFATCHAINPART_ENTRIES);
         for (uint32_t iPart = 0; iPart < cInPart; iPart++)
             if (pPart->aEntries[iPart] == idxNext)
                 idxNext++;
@@ -542,6 +546,71 @@ static bool rtFsFatChain_IsContiguous(PCRTFSFATCHAIN pChain)
 }
 
 
+/**
+ * Gets a cluster array index.
+ *
+ * This works the chain thing as an indexed array.
+ *
+ * @returns The cluster number, UINT32_MAX if out of bounds.
+ * @param   pChain              The chain.
+ * @param   idx                 The index.
+ */
+static uint32_t rtFsFatChain_GetClusterByIndex(PCRTFSFATCHAIN pChain, uint32_t idx)
+{
+    if (idx < pChain->cClusters)
+    {
+        /*
+         * In the first part?
+         */
+        PRTFSFATCHAINPART pPart;
+        if (idx < RTFSFATCHAINPART_ENTRIES)
+        {
+            pPart = RTListGetFirst(&pChain->ListParts, RTFSFATCHAINPART, ListEntry);
+            return pPart->aEntries[idx];
+        }
+
+        /*
+         * In the last part?
+         */
+        uint32_t cParts    = (pChain->cClusters + RTFSFATCHAINPART_ENTRIES - 1) / RTFSFATCHAINPART_ENTRIES;
+        uint32_t idxPart   = idx / RTFSFATCHAINPART_ENTRIES;
+        uint32_t idxInPart = idx % RTFSFATCHAINPART_ENTRIES;
+        if (idxPart + 1 == cParts)
+            pPart = RTListGetLast(&pChain->ListParts, RTFSFATCHAINPART, ListEntry);
+        else
+        {
+            /*
+             * No, do linear search from the start, skipping the first part.
+             */
+            pPart = RTListGetFirst(&pChain->ListParts, RTFSFATCHAINPART, ListEntry);
+            while (idxPart-- > 1)
+                pPart = RTListGetNext(&pChain->ListParts, pPart, RTFSFATCHAINPART, ListEntry);
+        }
+
+        return pPart->aEntries[idxInPart];
+    }
+    return UINT32_MAX;
+}
+
+#ifdef RT_STRICT
+/**
+ * Assert chain consistency.
+ */
+static bool rtFsFatChain_AssertValid(PCRTFSFATCHAIN pChain)
+{
+    bool                fRc = true;
+    uint32_t            cParts = 0;
+    PRTFSFATCHAINPART   pPart;
+    RTListForEach(&pChain->ListParts, pPart, RTFSFATCHAINPART, ListEntry)
+        cParts++;
+
+    uint32_t cExpected = (pChain->cClusters + RTFSFATCHAINPART_ENTRIES - 1) / RTFSFATCHAINPART_ENTRIES;
+    AssertMsgStmt(cExpected == cParts, ("cExpected=%#x cParts=%#x\n", cExpected, cParts), fRc = false);
+    AssertMsgStmt(pChain->cbChain == (pChain->cClusters << pChain->cClusterByteShift),
+                  ("cExpected=%#x cParts=%#x\n", cExpected, cParts), fRc = false);
+    return fRc;
+}
+#endif /* RT_STRICT */
 
 /**
  * Creates a cache for the file allocation table (cluster map).
@@ -956,7 +1025,8 @@ static int rtFsFatClusterMap_SetCluster32(PRTFSFATCLUSTERMAPCACHE pFatCache, PRT
 static int rtFsFatClusterMap_SetEndOfChain(PRTFSFATVOL pThis, uint32_t idxCluster)
 {
     AssertReturn(idxCluster >= FAT_FIRST_DATA_CLUSTER, VERR_VFS_BOGUS_OFFSET);
-    AssertReturn(idxCluster < pThis->cClusters, VERR_VFS_BOGUS_OFFSET);
+    AssertMsgReturn(idxCluster < pThis->cClusters, ("idxCluster=%#x cClusters=%#x\n", idxCluster, pThis->cClusters),
+                    VERR_VFS_BOGUS_OFFSET);
     switch (pThis->enmFatType)
     {
         case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_SetCluster12(pThis->pFatCache, pThis, idxCluster, FAT_FIRST_FAT12_EOC);
@@ -1229,7 +1299,8 @@ static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
  */
 static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
 {
-    AssertReturn((pObj->cbObject >> pObj->Clusters.cClusterByteShift) == pObj->Clusters.cClusters, VERR_INTERNAL_ERROR_3);
+    AssertReturn(   ((pObj->cbObject + pObj->Clusters.cbCluster - 1) >> pObj->Clusters.cClusterByteShift)
+                 == pObj->Clusters.cClusters, VERR_INTERNAL_ERROR_3);
 
     /*
      * Do nothing if the size didn't change.
@@ -1241,13 +1312,12 @@ static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
      * We need to at least update the directory entry, but quite likely allocate
      * or release clusters.
      */
-    int rc;
+    int rc = VINF_SUCCESS;
     uint32_t const cClustersNew = (cbFile + pObj->Clusters.cbCluster - 1) >> pObj->Clusters.cClusterByteShift;
     AssertReturn(pObj->pParentDir, VERR_INTERNAL_ERROR_2);
     if (pObj->Clusters.cClusters == cClustersNew)
     {
         pObj->cbObject = cbFile;
-        rc = VINF_SUCCESS;
     }
     else if (pObj->cbObject < cbFile)
     {
@@ -1256,18 +1326,26 @@ static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
     else
     {
         /* Free clusters we don't need any more. */
-        rc = rtFsFatClusterMap_SetEndOfChain(pObj->pVol, rtFsFatChain_GetCluster(&pObj->Clusters, cClustersNew - 1));
+        if (cClustersNew > 0)
+            rc = rtFsFatClusterMap_SetEndOfChain(pObj->pVol, rtFsFatChain_GetClusterByIndex(&pObj->Clusters, cClustersNew - 1));
         if (RT_SUCCESS(rc))
         {
             uint32_t iClusterToFree = cClustersNew;
             while (iClusterToFree < pObj->Clusters.cClusters && RT_SUCCESS(rc))
             {
-                rc = rtFsFatClusterMap_FreeCluster(pObj->pVol, rtFsFatChain_GetCluster(&pObj->Clusters, iClusterToFree));
+                rc = rtFsFatClusterMap_FreeCluster(pObj->pVol, rtFsFatChain_GetClusterByIndex(&pObj->Clusters, iClusterToFree));
                 iClusterToFree++;
             }
 
             /* Update the chain structure. */
+            uint32_t cOldParts = (pObj->Clusters.cClusters + RTFSFATCHAINPART_ENTRIES - 1) / RTFSFATCHAINPART_ENTRIES;
+            uint32_t cNewParts = (cClustersNew             + RTFSFATCHAINPART_ENTRIES - 1) / RTFSFATCHAINPART_ENTRIES;
+            Assert(cOldParts >= cNewParts);
+            while (cOldParts-- > cNewParts)
+                RTMemFree(RTListRemoveLast(&pObj->Clusters.ListParts, RTFSFATCHAINPART, ListEntry));
             pObj->Clusters.cClusters = cClustersNew;
+            pObj->Clusters.cbChain   = pObj->Clusters.cClusters << pObj->Clusters.cClusterByteShift;
+            Assert(rtFsFatChain_AssertValid(&pObj->Clusters));
         }
     }
     if (RT_SUCCESS(rc))
@@ -1281,6 +1359,14 @@ static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
         if (RT_SUCCESS(rc))
         {
             pDirEntry->cbFile = cbFile;
+            /** @todo figure out if setting the cluster to 0 is the right way to deal
+             *        with empty files... */
+            if (cClustersNew == 0)
+            {
+                pDirEntry->idxCluster = 0;
+                if (pObj->pVol->enmFatType >= RTFSFATTYPE_FAT32)
+                    pDirEntry->u.idxClusterHigh = 0;
+            }
             rc = rtFsFatDir_PutEntryAfterUpdate(pObj->pParentDir, pDirEntry, uWriteLock);
         }
     }
@@ -2603,7 +2689,7 @@ static int rtFsFatVolTryInitDos1x(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBootSector
                              "No DOS v1.0 bootsector either - invalid jmp: %.3Rhxs", pBootSector->abJmp);
     uint32_t const offJump      = 2 + pBootSector->abJmp[1];
     uint32_t const offFirstZero = 2 /*jmp */ + 3 * 2 /* words */ + 9 /* date string */;
-    Assert(offFirstZero >= RT_OFFSETOF(FATBOOTSECTOR, Bpb));
+    Assert(offFirstZero >= RT_UOFFSETOF(FATBOOTSECTOR, Bpb));
     uint32_t const cbZeroPad    = RT_MIN(offJump - offFirstZero,
                                          sizeof(pBootSector->Bpb.Bpb20) - (offFirstZero - RT_OFFSETOF(FATBOOTSECTOR, Bpb)));
 
