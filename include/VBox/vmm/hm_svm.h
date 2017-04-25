@@ -598,6 +598,8 @@ typedef const SVMIOIOEXITINFO *PCSVMIOIOEXITINFO;
 #define SVM_IOIO_16_BIT_OP              RT_BIT_32(5)
 /** 32-bit IO transfer. */
 #define SVM_IOIO_32_BIT_OP              RT_BIT_32(6)
+/** Number of bits to shift right to get the operand sizes. */
+#define SVM_IOIO_OP_SIZE_SHIFT          4
 /** Mask of all possible IO transfer sizes. */
 #define SVM_IOIO_OP_SIZE_MASK           (SVM_IOIO_8_BIT_OP | SVM_IOIO_16_BIT_OP | SVM_IOIO_32_BIT_OP)
 /** 16-bit address for the IO buffer. */
@@ -608,7 +610,7 @@ typedef const SVMIOIOEXITINFO *PCSVMIOIOEXITINFO;
 #define SVM_IOIO_64_BIT_ADDR            RT_BIT_32(9)
 /** Mask of all the IO address sizes. */
 #define SVM_IOIO_ADDR_SIZE_MASK         (SVM_IOIO_16_BIT_ADDR | SVM_IOIO_32_BIT_ADDR | SVM_IOIO_64_BIT_ADDR)
-/** Number of bits to left shift to get the IO port number. */
+/** Number of bits to shift right to get the IO port number. */
 #define SVM_IOIO_PORT_SHIFT             16
 /** IO write. */
 #define SVM_IOIO_WRITE                  0
