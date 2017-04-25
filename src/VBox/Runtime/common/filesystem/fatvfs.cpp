@@ -136,6 +136,10 @@ typedef struct RTFSFATFILE
     RTFSFATOBJ      Core;
     /** The current file offset. */
     uint32_t        offFile;
+    /** Set if we've maybe dirtied the FAT. */
+    bool            fMaybeDirtyFat;
+    /** Set if we've maybe dirtied the directory entry. */
+    bool            fMaybeDirtyDirEnt;
 } RTFSFATFILE;
 typedef RTFSFATFILE *PRTFSFATFILE;
 
@@ -412,6 +416,7 @@ AssertCompileSize(g_awchFatCp437Chars, 256*2);
 *********************************************************************************************************************************/
 static void rtFsFatDir_AddOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild);
 static void rtFsFatDir_RemoveOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild);
+static int  rtFsFatDir_Flush(PRTFSFATDIR pThis);
 static int  rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIRENTRY pDirEntry, uint32_t offEntryInDir,
                            uint32_t idxCluster, uint64_t offDisk, uint32_t cbDir, PRTVFSDIR phVfsDir, PRTFSFATDIR *ppDir);
 
@@ -483,8 +488,9 @@ static int rtFsFatChain_Append(PRTFSFATCHAIN pChain, uint32_t idxCluster)
  * @returns Disk offset. UINT64_MAX if invalid file offset.
  * @param   pChain              The chain.
  * @param   offFile             The file offset.
+ * @param   pVol                The volume.
  */
-static uint64_t rtFsFatChain_FileOffsetToDiskOff(PCRTFSFATCHAIN pChain, uint32_t offFile)
+static uint64_t rtFsFatChain_FileOffsetToDiskOff(PCRTFSFATCHAIN pChain, uint32_t offFile, PCRTFSFATVOL pVol)
 {
     uint32_t idxCluster = offFile >> pChain->cClusterByteShift;
     if (idxCluster < pChain->cClusters)
@@ -495,7 +501,9 @@ static uint64_t rtFsFatChain_FileOffsetToDiskOff(PCRTFSFATCHAIN pChain, uint32_t
             idxCluster -= RT_ELEMENTS(pPart->aEntries);
             pPart = RTListGetNext(&pChain->ListParts, pPart, RTFSFATCHAINPART, ListEntry);
         }
-        return pPart->aEntries[idxCluster] + (offFile & ~(pChain->cbCluster - 1));
+        return pVol->offFirstCluster
+             + ((uint64_t)(pPart->aEntries[idxCluster] - FAT_FIRST_DATA_CLUSTER) << pChain->cClusterByteShift)
+             + (offFile & (pChain->cbCluster - 1));
     }
     return UINT64_MAX;
 }
@@ -736,6 +744,7 @@ static int rtFsFatClusterMap_Flush(PRTFSFATVOL pThis)
 }
 
 
+#if 0 /* unused */
 /**
  * Flushes out all dirty lines in the file allocation table (cluster map) cache.
  *
@@ -749,6 +758,7 @@ static int rtFsFatClusterMap_FlushEntry(PRTFSFATVOL pThis, uint32_t iEntry)
 {
     return rtFsFatClusterMap_FlushWorker(pThis, iEntry, iEntry);
 }
+#endif
 
 
 /**
@@ -801,7 +811,6 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     for (;;)
     {
         /* Validate the cluster, checking for end of file. */
-RTAssertMsg2("idxCluster=%#x cClusters=%#x\n", idxCluster, pVol->cClusters);
         if (   idxCluster >= pVol->cClusters
             || idxCluster <  FAT_FIRST_DATA_CLUSTER)
         {
@@ -817,7 +826,7 @@ RTAssertMsg2("idxCluster=%#x cClusters=%#x\n", idxCluster, pVol->cClusters);
 
         /* Next cluster. */
         bool     fOdd   = idxCluster & 1;
-        uint32_t offFat = idxCluster * 2 / 3;
+        uint32_t offFat = idxCluster * 3 / 2;
         idxCluster = RT_MAKE_U16(pbFat[offFat], pbFat[offFat + 1]);
         if (fOdd)
             idxCluster >>= 4;
@@ -1042,8 +1051,66 @@ static DECLCALLBACK(int) rtFsFatObj_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-    RT_NOREF(pThis, off, pSgBuf, fBlocking, pcbRead);
-    return VERR_NOT_IMPLEMENTED;
+    AssertReturn(pSgBuf->cSegs != 0, VERR_INTERNAL_ERROR_3);
+    RT_NOREF(fBlocking);
+
+    /*
+     * Check for EOF.
+     */
+    if (off == -1)
+        off = pThis->offFile;
+    if ((uint64_t)off >= pThis->Core.cbObject)
+    {
+        if (pcbRead)
+        {
+            *pcbRead = 0;
+            return VINF_EOF;
+        }
+        return VERR_EOF;
+    }
+
+    /*
+     * Do the reading cluster by cluster (converge clusters later).
+     */
+    int      rc         = VINF_SUCCESS;
+    uint32_t cbFileLeft = pThis->Core.cbObject - (uint32_t)off;
+    uint32_t cbRead     = 0;
+    uint32_t cbLeft     = pSgBuf->paSegs[0].cbSeg;
+    uint8_t *pbDst      = (uint8_t *)pSgBuf->paSegs[0].pvSeg;
+    while (cbLeft > 0)
+    {
+        if (cbFileLeft > 0)
+        {
+            uint64_t offDisk = rtFsFatChain_FileOffsetToDiskOff(&pThis->Core.Clusters, (uint32_t)off, pThis->Core.pVol);
+            if (offDisk != UINT64_MAX)
+            {
+                uint32_t cbToRead = pThis->Core.Clusters.cbCluster - ((uint32_t)off & (pThis->Core.Clusters.cbCluster - 1));
+                if (cbToRead > cbLeft)
+                    cbToRead = cbLeft;
+                if (cbToRead > cbFileLeft)
+                    cbToRead = cbFileLeft;
+                rc = RTVfsFileReadAt(pThis->Core.pVol->hVfsBacking, offDisk, pbDst, cbToRead, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    off         += cbToRead;
+                    pbDst       += cbToRead;
+                    cbRead      += cbToRead;
+                    cbFileLeft  -= cbToRead;
+                    cbLeft      -= cbToRead;
+                    continue;
+                }
+            }
+            else
+                rc = VERR_VFS_BOGUS_OFFSET;
+        }
+        else
+            rc = pcbRead ? VINF_EOF : VERR_EOF;
+        break;
+    }
+    pThis->offFile = off;
+    if (pcbRead)
+        *pcbRead = cbRead;
+    return VINF_SUCCESS;
 }
 
 
@@ -1064,8 +1131,20 @@ static DECLCALLBACK(int) rtFsFatFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF p
 static DECLCALLBACK(int) rtFsFatFile_Flush(void *pvThis)
 {
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-    RT_NOREF(pThis);
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    if (pThis->fMaybeDirtyFat)
+        rc = rtFsFatClusterMap_Flush(pThis->Core.pVol);
+    if (pThis->fMaybeDirtyDirEnt)
+    {
+        int rc2 = rtFsFatDir_Flush(pThis->Core.pParentDir);
+        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    int rc2 = RTVfsFileFlush(pThis->Core.pVol->hVfsBacking);
+    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+        rc = rc2;
+    return rc;
 }
 
 
@@ -1214,7 +1293,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
-        0,
+        RTVFSIOSTREAMOPS_FEAT_NO_SG,
         rtFsFatFile_Read,
         rtFsFatFile_Write,
         rtFsFatFile_Flush,
@@ -1267,7 +1346,9 @@ static int rtFsFatFile_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIREN
          * Initialize it all so rtFsFatFile_Close doesn't trip up in anyway.
          */
         rtFsFatObj_InitFromDirEntry(&pNewFile->Core, pDirEntry, offEntryInDir, pThis);
-        pNewFile->offFile = 0;
+        pNewFile->offFile           = 0;
+        pNewFile->fMaybeDirtyFat    = false;
+        pNewFile->fMaybeDirtyDirEnt = false;
         rc = rtFsFatClusterMap_ReadClusterChain(pThis, RTFSFAT_GET_CLUSTER(pDirEntry, pThis), &pNewFile->Core.Clusters);
         if (RT_SUCCESS(rc))
         {
@@ -1392,7 +1473,8 @@ static int rtFsFatDir_GetEntriesAt(PRTFSFATDIR pThis, uint32_t offEntryInDir,
                 {
                     off                      =  offEntryInDir &  (pVol->cbSector - 1);
                     pThis->u.Simple.offInDir = (offEntryInDir & ~(pVol->cbSector - 1));
-                    pThis->offEntriesOnDisk  = rtFsFatChain_FileOffsetToDiskOff(&pThis->Core.Clusters, pThis->u.Simple.offInDir);
+                    pThis->offEntriesOnDisk  = rtFsFatChain_FileOffsetToDiskOff(&pThis->Core.Clusters, pThis->u.Simple.offInDir,
+                                                                                pThis->Core.pVol);
                     rc = RTVfsFileReadAt(pThis->Core.pVol->hVfsBacking, pThis->offEntriesOnDisk,
                                          pThis->paEntries, pVol->cbSector, NULL);
                     if (RT_SUCCESS(rc))
@@ -1514,7 +1596,7 @@ static bool rtFsFatDir_StringTo8Dot3(char *pszName8Dot3, const char *pszName)
                     Assert(offDst == 8 + 3);
                     pszName8Dot3[offDst] = '\0';
 
-                    if (pszName8Dot3[0] == FATDIRENTRY_CH0_DELETED)
+                    if ((uint8_t)pszName8Dot3[0] == FATDIRENTRY_CH0_DELETED)
                         pszName8Dot3[0] = FATDIRENTRY_CH0_ESC_E5;
                     return true;
                 }
@@ -1574,7 +1656,7 @@ static int rtFsFatDir_FindEntry(PRTFSFATDIR pThis, const char *pszEntry, uint32_
          */
         for (uint32_t iEntry = 0; iEntry < cEntries; iEntry++, offEntryInDir += sizeof(FATDIRENTRY))
         {
-            switch (paEntries[iEntry].Entry.achName[0])
+            switch ((uint8_t)paEntries[iEntry].Entry.achName[0])
             {
                 default:
                     break;
