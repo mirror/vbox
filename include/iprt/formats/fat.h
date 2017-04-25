@@ -505,6 +505,10 @@ typedef FAT32INFOSECTOR const *PCFAT32INFOSECTOR;
 #define FAT_LAST_FAT12_DATA_CLUSTER     UINT32_C(0x00000ff5)    /**< The last possible data cluster for FAT12. */
 #define FAT_LAST_FAT16_DATA_CLUSTER     UINT32_C(0x0000fff5)    /**< The last possible data cluster for FAT16. */
 #define FAT_LAST_FAT32_DATA_CLUSTER     UINT32_C(0x0ffffff5)    /**< The last possible data cluster for FAT32. */
+
+#define FAT_FIRST_FAT12_EOC             UINT32_C(0x00000ff8)    /**< The first end-of-file-cluster number for FAT12. */
+#define FAT_FIRST_FAT16_EOC             UINT32_C(0x0000fff8)    /**< The first end-of-file-cluster number for FAT16. */
+#define FAT_FIRST_FAT32_EOC             UINT32_C(0x0ffffff8)    /**< The first end-of-file-cluster number for FAT32. */
 /** @} */
 
 
@@ -520,13 +524,13 @@ typedef struct FATDIRENTRY
     uint8_t         fAttrib;
     /** NT case flags (FATDIRENTRY_CASE_F_XXX). */
     uint8_t         fCase;
-    /** Birth milliseconds. */
+    /** Birth milliseconds (DOS 7.0+ w/VFAT). */
     uint8_t         uBirthCentiseconds;
-    /** Birth time. */
+    /** Birth time (DOS 7.0+ w/VFAT). */
     uint16_t        uBirthTime;
-    /** Birth date. */
+    /** Birth date (DOS 7.0+ w/VFAT). */
     uint16_t        uBirthDate;
-    /** Access date. */
+    /** Access date (DOS 7.0+ w/ACCDATA in Config.sys). */
     uint16_t        uAccessDate;
     union
     {
@@ -535,14 +539,27 @@ typedef struct FATDIRENTRY
         /** Index of extended attributes (FAT16/FAT12). */
         uint16_t    idxEAs;
     } u;
-    /** Modify time. */
+    /** Modify time (PC-DOS 1.1+, MS-DOS 1.20+).  */
     uint16_t        uModifyTime;
+    /** Modify date. */
+    uint16_t        uModifyDate;
     /** The data cluster index. */
     uint16_t        idxCluster;
     /** The file size. */
     uint32_t        cbFile;
 } FATDIRENTRY;
 AssertCompileSize(FATDIRENTRY, 0x20);
+AssertCompileMemberOffset(FATDIRENTRY, fAttrib, 0x0b);
+AssertCompileMemberOffset(FATDIRENTRY, fCase, 0x0c);
+AssertCompileMemberOffset(FATDIRENTRY, uBirthCentiseconds, 0x0d);
+AssertCompileMemberOffset(FATDIRENTRY, uBirthTime, 0x0e);
+AssertCompileMemberOffset(FATDIRENTRY, uBirthDate, 0x10);
+AssertCompileMemberOffset(FATDIRENTRY, uAccessDate, 0x12);
+AssertCompileMemberOffset(FATDIRENTRY, u, 0x14);
+AssertCompileMemberOffset(FATDIRENTRY, uModifyTime, 0x16);
+AssertCompileMemberOffset(FATDIRENTRY, uModifyDate, 0x18);
+AssertCompileMemberOffset(FATDIRENTRY, idxCluster, 0x1a);
+AssertCompileMemberOffset(FATDIRENTRY, cbFile, 0x1c);
 /** Pointer to a FAT directory entry. */
 typedef FATDIRENTRY *PFATDIRENTRY;
 /** Pointer to a FAT directory entry. */

@@ -290,6 +290,14 @@ typedef struct RTFSFATVOL
     uint64_t        cbBacking;
     /** Byte offset of the bootsector relative to the start of the file. */
     uint64_t        offBootSector;
+    /** The UTC offset in nanoseconds to use for this file system (FAT traditionally
+     * stores timestamps in local time).
+     * @remarks This may need improving later. */
+    int64_t         offNanoUTC;
+    /** The UTC offset in minutes to use for this file system (FAT traditionally
+     * stores timestamps in local time).
+     * @remarks This may need improving later. */
+    int32_t         offMinUTC;
     /** Set if read-only mode. */
     bool            fReadOnly;
     /** Media byte. */
@@ -365,6 +373,8 @@ typedef struct RTFSFATVOL
 } RTFSFATVOL;
 /** Pointer to a FAT volume (VFS instance data). */
 typedef RTFSFATVOL *PRTFSFATVOL;
+/** Pointer to a const FAT volume (VFS instance data). */
+typedef RTFSFATVOL const *PCRTFSFATVOL;
 
 
 
@@ -401,6 +411,7 @@ AssertCompileSize(g_awchFatCp437Chars, 256*2);
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static void rtFsFatDir_AddOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild);
+static void rtFsFatDir_RemoveOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild);
 static int  rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIRENTRY pDirEntry, uint32_t offEntryInDir,
                            uint32_t idxCluster, uint64_t offDisk, uint32_t cbDir, PRTVFSDIR phVfsDir, PRTFSFATDIR *ppDir);
 
@@ -434,6 +445,33 @@ static void rtFsFatChain_InitEmpty(PRTFSFATCHAIN pChain, PRTFSFATVOL pVol)
     pChain->cbChain             = 0;
     pChain->cClusters           = 0;
     RTListInit(&pChain->ListParts);
+}
+
+
+/**
+ * Appends a cluster to a cluster chain.
+ *
+ * @returns IPRT status code.
+ * @param   pChain              The chain.
+ * @param   idxCluster          The cluster to append.
+ */
+static int rtFsFatChain_Append(PRTFSFATCHAIN pChain, uint32_t idxCluster)
+{
+    PRTFSFATCHAINPART pPart;
+    uint32_t idxLast = pChain->cClusters % RT_ELEMENTS(pPart->aEntries);
+    if (idxLast != 0)
+        pPart = RTListGetLast(&pChain->ListParts, RTFSFATCHAINPART, ListEntry);
+    else
+    {
+        pPart = (PRTFSFATCHAINPART)RTMemAllocZ(sizeof(*pPart));
+        if (!pPart)
+            return VERR_NO_MEMORY;
+        RTListAppend(&pChain->ListParts, &pPart->ListEntry);
+    }
+    pPart->aEntries[idxLast] = idxCluster;
+    pChain->cClusters++;
+    pChain->cbChain += pChain->cbCluster;
+    return VINF_SUCCESS;
 }
 
 
@@ -748,6 +786,70 @@ static int rtFsFatClusterMap_Destroy(PRTFSFATVOL pThis)
 
 
 /**
+ * Worker for rtFsFatClusterMap_ReadClusterChain handling FAT12.
+ */
+static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol, uint32_t idxCluster,
+                                                    PRTFSFATCHAIN pChain)
+{
+    /* ASSUME that for FAT12 we cache the whole FAT in a single entry.  That
+       way we don't need to deal with entries in different sectors and whatnot.  */
+    AssertReturn(pFatCache->cEntries == 1, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->cbEntry == pVol->cbFat, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pFatCache->aEntries[0].offFat == 0, VERR_INTERNAL_ERROR_4);
+
+    uint8_t const *pbFat = pFatCache->aEntries[0].pbData;
+    for (;;)
+    {
+        /* Validate the cluster, checking for end of file. */
+RTAssertMsg2("idxCluster=%#x cClusters=%#x\n", idxCluster, pVol->cClusters);
+        if (   idxCluster >= pVol->cClusters
+            || idxCluster <  FAT_FIRST_DATA_CLUSTER)
+        {
+            if (idxCluster >= FAT_FIRST_FAT12_EOC)
+                return VINF_SUCCESS;
+            return VERR_VFS_BOGUS_OFFSET;
+        }
+
+        /* Add cluster to chain.  */
+        int rc = rtFsFatChain_Append(pChain, idxCluster);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* Next cluster. */
+        bool     fOdd   = idxCluster & 1;
+        uint32_t offFat = idxCluster * 2 / 3;
+        idxCluster = RT_MAKE_U16(pbFat[offFat], pbFat[offFat + 1]);
+        if (fOdd)
+            idxCluster >>= 4;
+        else
+            idxCluster &= 0x0fff;
+    }
+}
+
+
+/**
+ * Worker for rtFsFatClusterMap_ReadClusterChain handling FAT16.
+ */
+static int rtFsFatClusterMap_Fat16_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol, uint32_t idxCluster,
+                                                    PRTFSFATCHAIN pChain)
+{
+    RT_NOREF(pFatCache, pVol, idxCluster, pChain);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Worker for rtFsFatClusterMap_ReadClusterChain handling FAT32.
+ */
+static int rtFsFatClusterMap_Fat32_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFatCache, PRTFSFATVOL pVol, uint32_t idxCluster,
+                                                    PRTFSFATCHAIN pChain)
+{
+    RT_NOREF(pFatCache, pVol, idxCluster, pChain);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
  * Reads a cluster chain into memory
  *
  * @returns IPRT status code.
@@ -763,27 +865,41 @@ static int rtFsFatClusterMap_ReadClusterChain(PRTFSFATVOL pThis, uint32_t idxFir
     pChain->cClusters           = 0;
     pChain->cbChain             = 0;
     RTListInit(&pChain->ListParts);
-
-    if (   idxFirstCluster >= pThis->cClusters
-        && idxFirstCluster >= FAT_FIRST_DATA_CLUSTER)
-        return VERR_VFS_BOGUS_OFFSET;
-
-    return VERR_NOT_IMPLEMENTED;
+    switch (pThis->enmFatType)
+    {
+        case RTFSFATTYPE_FAT12: return rtFsFatClusterMap_Fat12_ReadClusterChain(pThis->pFatCache, pThis, idxFirstCluster, pChain);
+        case RTFSFATTYPE_FAT16: return rtFsFatClusterMap_Fat16_ReadClusterChain(pThis->pFatCache, pThis, idxFirstCluster, pChain);
+        case RTFSFATTYPE_FAT32: return rtFsFatClusterMap_Fat32_ReadClusterChain(pThis->pFatCache, pThis, idxFirstCluster, pChain);
+        default:
+            AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+    }
 }
 
 
-static void rtFsFatDosDateTimeToSpec(PRTTIMESPEC pTimeSpec, uint16_t uDate, uint16_t uTime, uint8_t cCentiseconds)
+/**
+ * Converts a FAT timestamp into an IPRT timesspec.
+ *
+ * @param   pTimeSpec       Where to return the IRPT time.
+ * @param   uDate           The date part of the FAT timestamp.
+ * @param   uTime           The time part of the FAT timestamp.
+ * @param   cCentiseconds   Centiseconds part if applicable (0 otherwise).
+ * @param   pVol            The volume.
+ */
+static void rtFsFatDosDateTimeToSpec(PRTTIMESPEC pTimeSpec, uint16_t uDate, uint16_t uTime,
+                                     uint8_t cCentiseconds, PCRTFSFATVOL pVol)
 {
     RTTIME Time;
-    Time.offUTC     = 0;
-    Time.i32Year    = 1980 + (uDate >> 9);
-    Time.u8Month    = ((uDate >> 5) & 0xf);
-    Time.u8WeekDay  = UINT8_MAX;
-    Time.u16YearDay = UINT16_MAX;
-    Time.u8MonthDay = RT_MAX(uDate & 0x1f, 1);
-    Time.u8Hour     = uTime >> 11;
-    Time.u8Minute   = (uTime >> 5) & 0x3f;
-    Time.u8Second   = (uTime & 0x1f) << 1;
+    Time.fFlags         = RTTIME_FLAGS_TYPE_UTC;
+    Time.offUTC         = 0;
+    Time.i32Year        = 1980 + (uDate >> 9);
+    Time.u8Month        = RT_MAX((uDate >> 5) & 0xf, 1);
+    Time.u8MonthDay     = RT_MAX(uDate & 0x1f, 1);
+    Time.u8WeekDay      = UINT8_MAX;
+    Time.u16YearDay     = 0;
+    Time.u8Hour         = uTime >> 11;
+    Time.u8Minute       = (uTime >> 5) & 0x3f;
+    Time.u8Second       = (uTime & 0x1f) << 1;
+    Time.u32Nanosecond  = 0;
     if (cCentiseconds > 0 && cCentiseconds < 200) /* screw complicated stuff for now. */
     {
         if (cCentiseconds >= 100)
@@ -795,29 +911,52 @@ static void rtFsFatDosDateTimeToSpec(PRTTIMESPEC pTimeSpec, uint16_t uDate, uint
     }
 
     RTTimeImplode(pTimeSpec, RTTimeNormalize(&Time));
+    RTTimeSpecAddNano(pTimeSpec, pVol->offNanoUTC);
 }
 
 
-static void rtFsFatObj_InitFromDirEntry(PRTFSFATOBJ pObj, PCFATDIRENTRY pDirEntry, uint32_t offEntryInDir, PRTFSFATVOL pThis)
+/**
+ * Initialization of a RTFSFATOBJ structure from a FAT directory entry.
+ *
+ * @note    The RTFSFATOBJ::pParentDir and RTFSFATOBJ::Clusters members are
+ *          properly initialized elsewhere.
+ *
+ * @param   pObj            The structure to initialize.
+ * @param   pParentDir      The parent directory.
+ * @param   offEntryInDir   The offset in the parent directory.
+ * @param   pVol            The volume.
+ */
+static void rtFsFatObj_InitFromDirEntry(PRTFSFATOBJ pObj, PCFATDIRENTRY pDirEntry, uint32_t offEntryInDir, PRTFSFATVOL pVol)
 {
     RTListInit(&pObj->Entry);
     pObj->pParentDir    = NULL;
-    pObj->pVol          = pThis;
+    pObj->pVol          = pVol;
     pObj->offEntryInDir = offEntryInDir;
     pObj->fAttrib       = ((RTFMODE)pDirEntry->fAttrib << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_OS2;
     pObj->cbObject      = pDirEntry->cbFile;
-    rtFsFatDosDateTimeToSpec(&pObj->ModificationTime, pDirEntry->uAccessDate, pDirEntry->uModifyTime, 0);
-    rtFsFatDosDateTimeToSpec(&pObj->BirthTime, pDirEntry->uBirthDate, pDirEntry->uBirthTime, pDirEntry->uBirthCentiseconds);
-    rtFsFatDosDateTimeToSpec(&pObj->AccessTime, pDirEntry->uAccessDate, 0, 0);
+    rtFsFatDosDateTimeToSpec(&pObj->ModificationTime, pDirEntry->uModifyDate, pDirEntry->uModifyTime, 0, pVol);
+    rtFsFatDosDateTimeToSpec(&pObj->BirthTime, pDirEntry->uBirthDate, pDirEntry->uBirthTime, pDirEntry->uBirthCentiseconds, pVol);
+    rtFsFatDosDateTimeToSpec(&pObj->AccessTime, pDirEntry->uAccessDate, 0, 0, pVol);
 }
 
 
-static void rtFsFatObj_InitDummy(PRTFSFATOBJ pObj, uint32_t offEntryInDir, uint32_t cbObject, RTFMODE fAttrib, PRTFSFATVOL pThis)
+/**
+ * Dummy initialization of a RTFSFATOBJ structure.
+ *
+ * @note    The RTFSFATOBJ::pParentDir and RTFSFATOBJ::Clusters members are
+ *          properly initialized elsewhere.
+ *
+ * @param   pObj            The structure to initialize.
+ * @param   cbObject        The object size.
+ * @param   fAttrib         The attributes.
+ * @param   pVol            The volume.
+ */
+static void rtFsFatObj_InitDummy(PRTFSFATOBJ pObj, uint32_t cbObject, RTFMODE fAttrib, PRTFSFATVOL pVol)
 {
     RTListInit(&pObj->Entry);
     pObj->pParentDir    = NULL;
-    pObj->pVol          = pThis;
-    pObj->offEntryInDir = offEntryInDir;
+    pObj->pVol          = pVol;
+    pObj->offEntryInDir = UINT32_MAX;
     pObj->fAttrib       = fAttrib;
     pObj->cbObject      = cbObject;
     RTTimeSpecSetDosSeconds(&pObj->AccessTime, 0);
@@ -827,13 +966,26 @@ static void rtFsFatObj_InitDummy(PRTFSFATOBJ pObj, uint32_t offEntryInDir, uint3
 
 
 /**
+ * Worker for rtFsFatFile_Close and rtFsFatDir_Close that does common work.
+ *
+ * @returns IPRT status code.
+ * @param   pObj            The common object structure.
+ */
+static int rtFsFatObj_Close(PRTFSFATOBJ pObj)
+{
+    if (pObj->pParentDir)
+        rtFsFatDir_RemoveOpenChild(pObj->pParentDir, pObj);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{RTVFSOBJOPS,pfnClose}
  */
 static DECLCALLBACK(int) rtFsFatFile_Close(void *pvThis)
 {
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
-    RT_NOREF(pThis);
-    return VERR_NOT_IMPLEMENTED;
+    return rtFsFatObj_Close(&pThis->Core);
 }
 
 
@@ -1468,14 +1620,18 @@ static int rtFsFatDir_FindEntry(PRTFSFATDIR pThis, const char *pszEntry, uint32_
 static DECLCALLBACK(int) rtFsFatDir_Close(void *pvThis)
 {
     PRTFSFATDIR pThis = (PRTFSFATDIR)pvThis;
+    int rc;
     if (pThis->paEntries)
     {
-        /** @todo flush */
-
+        rc = rtFsFatDir_Flush(pThis);
         RTMemFree(pThis->paEntries);
         pThis->paEntries = NULL;
     }
-    return VINF_SUCCESS;
+    else
+        rc = VINF_SUCCESS;
+
+    rtFsFatObj_Close(&pThis->Core);
+    return rc;
 }
 
 
@@ -1793,7 +1949,7 @@ static int rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIRENT
         if (pDirEntry)
             rtFsFatObj_InitFromDirEntry(&pNewDir->Core, pDirEntry, offEntryInDir, pThis);
         else
-            rtFsFatObj_InitDummy(&pNewDir->Core, offEntryInDir, cbDir, RTFS_DOS_DIRECTORY, pThis);
+            rtFsFatObj_InitDummy(&pNewDir->Core, cbDir, RTFS_DOS_DIRECTORY, pThis);
 
         pNewDir->hVfsSelf           = *phVfsDir;
         pNewDir->cEntries           = cbDir / sizeof(FATDIRENTRY);
@@ -2542,6 +2698,8 @@ static int rtFsFatVolTryInit(PRTFSFATVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     pThis->hVfsBacking          = hVfsBacking; /* Caller referenced it for us, we consume it; rtFsFatVol_Destroy releases it. */
     pThis->cbBacking            = 0;
     pThis->offBootSector        = offBootSector;
+    pThis->offNanoUTC           = RTTimeLocalDeltaNano();
+    pThis->offMinUTC            = pThis->offNanoUTC / RT_NS_1MIN;
     pThis->fReadOnly            = fReadOnly;
     pThis->cReservedSectors     = 1;
 
