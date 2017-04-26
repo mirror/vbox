@@ -985,7 +985,7 @@ bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *
                           false /* ok button by default? */);
 }
 
-bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
 {
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Deleting this host-only network will remove "
@@ -1018,49 +1018,50 @@ void UIMessageCenter::cannotRemoveNATNetwork(const CVirtualBox &vbox, const QStr
           formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotCreateDHCPServer(const CVirtualBox &vbox, QWidget *pParent /* = 0*/)
+void UIMessageCenter::cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create DHCP server."),
-          formatErrorInfo(vbox));
-}
-
-void UIMessageCenter::cannotRemoveDHCPServer(const CVirtualBox &vbox, const QString &strInterfaceName, QWidget *pParent /* = 0*/)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove DHCP server for network interface <b>%1</b>.")
+          tr("Failed to create a DHCP server for the network interface <b>%1</b>.")
              .arg(strInterfaceName),
-          formatErrorInfo(vbox));
+          formatErrorInfo(comVBox));
 }
 
-void UIMessageCenter::cannotCreateHostInterface(const CHost &host, QWidget *pParent /* = 0*/)
+void UIMessageCenter::cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the host network interface."),
-          formatErrorInfo(host));
+          tr("Failed to remove the DHCP server for the network interface <b>%1</b>.")
+             .arg(strInterfaceName),
+          formatErrorInfo(comVBox));
 }
 
-void UIMessageCenter::cannotCreateHostInterface(const CProgress &progress, QWidget *pParent /* = 0*/)
+void UIMessageCenter::cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the host network interface."),
-          formatErrorInfo(progress));
+          tr("Failed to create a host network interface."),
+          formatErrorInfo(comHost));
 }
 
-void UIMessageCenter::cannotRemoveHostInterface(const CHost &host, const QString &strInterfaceName, QWidget *pParent /* = 0*/)
+void UIMessageCenter::cannotCreateHostNetworkInterface(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create a host network interface."),
+          formatErrorInfo(comProgress));
+}
+
+void UIMessageCenter::cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to remove the host network interface <b>%1</b>.")
              .arg(strInterfaceName),
-          formatErrorInfo(host));
+          formatErrorInfo(comHost));
 }
 
-void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent /* = 0*/)
+void UIMessageCenter::cannotRemoveHostNetworkInterface(const CProgress &comProgress, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to remove the host network interface <b>%1</b>.")
              .arg(strInterfaceName),
-          formatErrorInfo(progress));
+          formatErrorInfo(comProgress));
 }
 
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const

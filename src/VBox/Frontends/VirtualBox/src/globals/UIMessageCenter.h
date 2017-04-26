@@ -221,12 +221,12 @@ public:
     bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
     void cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent = 0);
     void cannotRemoveNATNetwork(const CVirtualBox &vbox, const QString &strNetworkName, QWidget *pParent = 0);
-    void cannotCreateDHCPServer(const CVirtualBox &vbox, QWidget *pParent = 0);
-    void cannotRemoveDHCPServer(const CVirtualBox &vbox, const QString &strInterfaceName, QWidget *pParent = 0);
-    void cannotCreateHostInterface(const CHost &host, QWidget *pParent = 0);
-    void cannotCreateHostInterface(const CProgress &progress, QWidget *pParent = 0);
-    void cannotRemoveHostInterface(const CHost &host, const QString &strInterfaceName, QWidget *pParent = 0);
-    void cannotRemoveHostInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent = 0);
+    void cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent = 0) const;
+    void cannotCreateHostNetworkInterface(const CProgress &comProgress, QWidget *pParent = 0) const;
+    void cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotRemoveHostNetworkInterface(const CProgress &comProgress, const QString &strInterfaceName, QWidget *pParent = 0) const;
     void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
 
     /* API: Machine settings warnings: */

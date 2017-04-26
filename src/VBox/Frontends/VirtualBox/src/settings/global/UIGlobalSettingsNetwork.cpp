@@ -719,10 +719,10 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     CHostNetworkInterface iface;
     CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
     if (!host.isOk())
-        return msgCenter().cannotCreateHostInterface(host, this);
+        return msgCenter().cannotCreateHostNetworkInterface(host, this);
     msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/progress_network_interface_90px.png", this, 0);
     if (!progress.isOk() || progress.GetResultCode() != 0)
-        return msgCenter().cannotCreateHostInterface(progress, this);
+        return msgCenter().cannotCreateHostNetworkInterface(progress, this);
 
     /* Make sure DHCP server is created too: */
     CDHCPServer dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
@@ -730,7 +730,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     {
         vbox.CreateDHCPServer(iface.GetNetworkName());
         if (!vbox.isOk())
-            return msgCenter().cannotCreateDHCPServer(vbox, this);
+            return msgCenter().cannotCreateDHCPServer(vbox, iface.GetNetworkName(), this);
         dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
     }
     AssertReturnVoid(!dhcp.isNull());
@@ -794,10 +794,10 @@ void UIGlobalSettingsNetwork::sltRemoveNetworkHost()
     /* Remove interface finally: */
     CProgress progress = host.RemoveHostOnlyNetworkInterface(iface.GetId());
     if (!host.isOk())
-        return msgCenter().cannotRemoveHostInterface(host, strInterfaceName, this);
+        return msgCenter().cannotRemoveHostNetworkInterface(host, strInterfaceName, this);
     msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/progress_network_interface_90px.png", this, 0);
     if (!progress.isOk() || progress.GetResultCode() != 0)
-        return msgCenter().cannotRemoveHostInterface(progress, strInterfaceName, this);
+        return msgCenter().cannotRemoveHostNetworkInterface(progress, strInterfaceName, this);
 
     /* Update tree: */
     removeTreeWidgetItemOfNetworkHost(pItem);
@@ -1450,7 +1450,7 @@ void UIGlobalSettingsNetwork::loadToCacheFromNetworkHost(const CHostNetworkInter
         vbox.CreateDHCPServer(iface.GetNetworkName());
         if (!vbox.isOk())
         {
-            msgCenter().cannotCreateDHCPServer(vbox, this);
+            msgCenter().cannotCreateDHCPServer(vbox, iface.GetNetworkName(), this);
             return;
         }
         dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
