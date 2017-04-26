@@ -83,6 +83,8 @@
         <file alias="refresh_warning_16px_hidpi.png">images/hidpi/refresh_warning_16px_hidpi.png</file>
         <file alias="remove_host_iface_16px_hidpi.png">images/hidpi/remove_host_iface_16px_hidpi.png</file>
         <file alias="remove_host_iface_disabled_16px_hidpi.png">images/hidpi/remove_host_iface_disabled_16px_hidpi.png</file>
+        <file alias="remove_host_iface_22px_hidpi.png">images/hidpi/remove_host_iface_22px_hidpi.png</file>
+        <file alias="remove_host_iface_disabled_22px_hidpi.png">images/hidpi/remove_host_iface_disabled_22px_hidpi.png</file>
         <file alias="reset_warnings_16px_hidpi.png">images/hidpi/reset_warnings_16px_hidpi.png</file>
         <file alias="restore_16px_hidpi.png">images/hidpi/restore_16px_hidpi.png</file>
         <file alias="sata_16px_hidpi.png">images/hidpi/sata_16px_hidpi.png</file>

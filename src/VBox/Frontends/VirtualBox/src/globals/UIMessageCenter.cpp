@@ -985,24 +985,6 @@ bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *
                           false /* ok button by default? */);
 }
 
-bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Deleting this host-only network will remove "
-                             "the host-only interface this network is based on. Do you want to "
-                             "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
-                             "<p><b>Note:</b> this interface may be in use by one or more "
-                             "virtual network adapters belonging to one of your VMs. "
-                             "After it is removed, these adapters will no longer be usable until "
-                             "you correct their settings by either choosing a different interface "
-                             "name or a different adapter attachment type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
 void UIMessageCenter::cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent /* = 0*/)
 {
     error(pParent, MessageType_Error,
@@ -1016,52 +998,6 @@ void UIMessageCenter::cannotRemoveNATNetwork(const CVirtualBox &vbox, const QStr
           tr("Failed to remove NAT network <b>%1</b>.")
              .arg(strNetworkName),
           formatErrorInfo(vbox));
-}
-
-void UIMessageCenter::cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a DHCP server for the network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove the DHCP server for the network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a host network interface."),
-          formatErrorInfo(comHost));
-}
-
-void UIMessageCenter::cannotCreateHostNetworkInterface(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a host network interface."),
-          formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove the host network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          formatErrorInfo(comHost));
-}
-
-void UIMessageCenter::cannotRemoveHostNetworkInterface(const CProgress &comProgress, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove the host network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          formatErrorInfo(comProgress));
 }
 
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const
@@ -1458,6 +1394,113 @@ void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult 
     /* Show the error: */
     error(pParent, MessageType_Error,
           tr("Failed to close the disk image file <nobr><b>%1</b></nobr>.").arg(medium.location()), formatErrorInfo(rc));
+}
+
+bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Deleting this host-only network will remove "
+                             "the host-only interface this network is based on. Do you want to "
+                             "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
+                             "<p><b>Note:</b> this interface may be in use by one or more "
+                             "virtual network adapters belonging to one of your VMs. "
+                             "After it is removed, these adapters will no longer be usable until "
+                             "you correct their settings by either choosing a different interface "
+                             "name or a different adapter attachment type.</p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+void UIMessageCenter::cannotAcquireHostNetworkInterfaces(const CHost &comHost, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire host network interfaces."),
+          formatErrorInfo(comHost));
+}
+
+void UIMessageCenter::cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Unable to find the host network interface <b>%1</b>.")
+             .arg(strInterfaceName),
+          formatErrorInfo(comHost));
+}
+
+void UIMessageCenter::cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create a host network interface."),
+          formatErrorInfo(comHost));
+}
+
+void UIMessageCenter::cannotCreateHostNetworkInterface(const CProgress &progress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create a host network interface."),
+          formatErrorInfo(progress));
+}
+
+void UIMessageCenter::cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove the host network interface <b>%1</b>.")
+             .arg(strInterfaceName),
+          formatErrorInfo(comHost));
+}
+
+void UIMessageCenter::cannotRemoveHostNetworkInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove the host network interface <b>%1</b>.")
+             .arg(strInterfaceName),
+          formatErrorInfo(progress));
+}
+
+void UIMessageCenter::cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire host network interface parameter."),
+          formatErrorInfo(comInterface));
+}
+
+void UIMessageCenter::cannotSaveHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save host network interface parameter."),
+          formatErrorInfo(comInterface));
+}
+
+void UIMessageCenter::cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create a DHCP server for the network interface <b>%1</b>.")
+             .arg(strInterfaceName),
+          formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove the DHCP server for the network interface <b>%1</b>.")
+             .arg(strInterfaceName),
+          formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotAcquireDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire DHCP server parameter."),
+          formatErrorInfo(comServer));
+}
+
+void UIMessageCenter::cannotSaveDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save DHCP server parameter."),
+          formatErrorInfo(comServer));
 }
 
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const

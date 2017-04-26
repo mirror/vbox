@@ -33,6 +33,7 @@ enum UIActionIndexST
     /* 'File' menu actions: */
     UIActionIndexST_M_File = UIActionIndex_Max + 1,
     UIActionIndexST_M_File_S_ShowVirtualMediumManager,
+    UIActionIndexST_M_File_S_ShowHostNetworkManager,
     UIActionIndexST_M_File_S_ImportAppliance,
     UIActionIndexST_M_File_S_ExportAppliance,
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI

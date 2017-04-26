@@ -218,15 +218,8 @@ public:
 
     /* API: Global settings warnings: */
     bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
-    bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
     void cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent = 0);
     void cannotRemoveNATNetwork(const CVirtualBox &vbox, const QString &strNetworkName, QWidget *pParent = 0);
-    void cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent = 0) const;
-    void cannotCreateHostNetworkInterface(const CProgress &comProgress, QWidget *pParent = 0) const;
-    void cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotRemoveHostNetworkInterface(const CProgress &comProgress, const QString &strInterfaceName, QWidget *pParent = 0) const;
     void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
 
     /* API: Machine settings warnings: */
@@ -257,6 +250,21 @@ public:
     bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0) const;
     void cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent = 0) const;
     void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
+
+    /* API: Host Network Manager warnings: */
+    bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
+    void cannotAcquireHostNetworkInterfaces(const CHost &comHost, QWidget *pParent = 0) const;
+    void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent = 0) const;
+    void cannotCreateHostNetworkInterface(const CProgress &progress, QWidget *pParent = 0) const;
+    void cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotRemoveHostNetworkInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent = 0) const;
+    void cannotSaveHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent = 0) const;
+    void cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
+    void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
+    void cannotSaveDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
 
     /* API: Wizards warnings: */
     bool confirmHardDisklessMachine(QWidget *pParent = 0) const;

@@ -74,6 +74,8 @@
         <file alias="refresh_warning_16px.png">images/refresh_warning_16px.png</file>
         <file alias="remove_host_iface_16px.png">images/remove_host_iface_16px.png</file>
         <file alias="remove_host_iface_disabled_16px.png">images/remove_host_iface_disabled_16px.png</file>
+        <file alias="remove_host_iface_22px.png">images/remove_host_iface_22px.png</file>
+        <file alias="remove_host_iface_disabled_22px.png">images/remove_host_iface_disabled_22px.png</file>
         <file alias="reset_warnings_16px.png">images/reset_warnings_16px.png</file>
         <file alias="restore_16px.png">images/restore_16px.png</file>
         <file alias="sata_16px.png">images/sata_16px.png</file>

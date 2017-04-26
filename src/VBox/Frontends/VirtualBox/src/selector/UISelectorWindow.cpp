@@ -49,6 +49,7 @@
 # include "UIWizardImportApp.h"
 # include "UIDesktopPane.h"
 # include "UIVirtualBoxEventHandler.h"
+# include "UIHostNetworkManager.h"
 # include "UIMediumManager.h"
 # include "UIMedium.h"
 # include "UIMessageCenter.h"
@@ -423,6 +424,12 @@ void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
 {
     /* Show modeless Virtual Medium Manager: */
     UIMediumManager::showModeless(this);
+}
+
+void UISelectorWindow::sltOpenHostNetworkManagerWindow()
+{
+    /* Show modeless Host Network Manager: */
+    UIHostNetworkManager::showModeless(this);
 }
 
 void UISelectorWindow::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -1370,6 +1377,8 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+    /* 'Show Host Network Manager' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1387,6 +1396,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 #  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
 #  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
     addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
@@ -1411,6 +1421,8 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
     /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
+    /* 'Show Host Network Manager' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
@@ -1812,6 +1824,7 @@ void UISelectorWindow::prepareConnections()
 
     /* 'File' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), SIGNAL(triggered()), this, SLOT(sltOpenVirtualMediumManagerWindow()));
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager), SIGNAL(triggered()), this, SLOT(sltOpenHostNetworkManagerWindow()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenImportApplianceWizard()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenExportApplianceWizard()));
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI

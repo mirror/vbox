@@ -123,6 +123,8 @@ private slots:
       * @{ */
         /** Handles call to open Virtual Medium Manager window. */
         void sltOpenVirtualMediumManagerWindow();
+        /** Handles call to open Host Network Manager window. */
+        void sltOpenHostNetworkManagerWindow();
         /** Handles call to open Import Appliance wizard.
           * @param strFileName can bring the name of file to import appliance from. */
         void sltOpenImportApplianceWizard(const QString &strFileName = QString());

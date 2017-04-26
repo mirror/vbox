@@ -2,6 +2,8 @@
     <qresource prefix="/">
         <file alias="add_host_iface_16px_hidpi.png">images/hidpi/add_host_iface_16px_hidpi.png</file>
         <file alias="add_host_iface_disabled_16px_hidpi.png">images/hidpi/add_host_iface_disabled_16px_hidpi.png</file>
+        <file alias="add_host_iface_22px_hidpi.png">images/hidpi/add_host_iface_22px_hidpi.png</file>
+        <file alias="add_host_iface_disabled_22px_hidpi.png">images/hidpi/add_host_iface_disabled_22px_hidpi.png</file>
         <file alias="adjust_win_size_16px_hidpi.png">images/hidpi/adjust_win_size_16px_hidpi.png</file>
         <file alias="adjust_win_size_disabled_16px_hidpi.png">images/hidpi/adjust_win_size_disabled_16px_hidpi.png</file>
         <file alias="arrow_down_10px_hidpi.png">images/hidpi/arrow_down_10px_hidpi.png</file>
@@ -83,6 +85,8 @@
         <file alias="edataman_32px_hidpi.png">images/hidpi/edataman_32px_hidpi.png</file>
         <file alias="edit_host_iface_16px_hidpi.png">images/hidpi/edit_host_iface_16px_hidpi.png</file>
         <file alias="edit_host_iface_disabled_16px_hidpi.png">images/hidpi/edit_host_iface_disabled_16px_hidpi.png</file>
+        <file alias="edit_host_iface_22px_hidpi.png">images/hidpi/edit_host_iface_22px_hidpi.png</file>
+        <file alias="edit_host_iface_disabled_22px_hidpi.png">images/hidpi/edit_host_iface_disabled_22px_hidpi.png</file>
         <file alias="eraser_16px_hidpi.png">images/hidpi/eraser_16px_hidpi.png</file>
         <file alias="exit_16px_hidpi.png">images/hidpi/exit_16px_hidpi.png</file>
         <file alias="expanding_collapsing_16px_hidpi.png">images/hidpi/expanding_collapsing_16px_hidpi.png</file>
@@ -164,6 +168,8 @@
         <file alias="help_16px_hidpi.png">images/hidpi/help_16px_hidpi.png</file>
         <file alias="help_button_normal_mac_22px_hidpi.png">images/hidpi/help_button_normal_mac_22px_hidpi.png</file>
         <file alias="help_button_pressed_mac_22px_hidpi.png">images/hidpi/help_button_pressed_mac_22px_hidpi.png</file>
+        <file alias="host_iface_manager_16px_hidpi.png">images/hidpi/host_iface_manager_16px_hidpi.png</file>
+        <file alias="host_iface_manager_32px_hidpi.png">images/hidpi/host_iface_manager_32px_hidpi.png</file>
         <file alias="hostkey_16px_hidpi.png">images/hidpi/hostkey_16px_hidpi.png</file>
         <file alias="hostkey_24px_hidpi.png">images/hidpi/hostkey_24px_hidpi.png</file>
         <file alias="hostkey_32px_hidpi.png">images/hidpi/hostkey_32px_hidpi.png</file>
