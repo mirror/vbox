@@ -57,13 +57,13 @@ protected:
     }
 };
 
-class UIActionSimpleMediumManagerDialog : public UIActionSimple
+class UIActionSimpleVirtualMediumManagerDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleMediumManagerDialog(UIActionPool *pParent)
+    UIActionSimpleVirtualMediumManagerDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/diskimage_16px.png") {}
 
 protected:
@@ -1033,7 +1033,7 @@ void UIActionPoolSelector::preparePool()
 {
     /* 'File' actions: */
     m_pool[UIActionIndexST_M_File] = new UIActionMenuFile(this);
-    m_pool[UIActionIndexST_M_File_S_ShowMediumManager] = new UIActionSimpleMediumManagerDialog(this);
+    m_pool[UIActionIndexST_M_File_S_ShowVirtualMediumManager] = new UIActionSimpleVirtualMediumManagerDialog(this);
     m_pool[UIActionIndexST_M_File_S_ImportAppliance] = new UIActionSimpleImportApplianceWizard(this);
     m_pool[UIActionIndexST_M_File_S_ExportAppliance] = new UIActionSimpleExportApplianceWizard(this);
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI

@@ -419,9 +419,9 @@ void UISelectorWindow::sltHandleSnapshotChange(QString strID)
         updateSnapshots(pItem, pItem->machine());
 }
 
-void UISelectorWindow::sltOpenMediaManagerWindow()
+void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
 {
-    /* Show modeless Virtual Media Manager: */
+    /* Show modeless Virtual Medium Manager: */
     UIMediumManager::showModeless(this);
 }
 
@@ -1368,8 +1368,8 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     /* 'Show Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-    /* 'Show Media Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
+    /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
 
 #else /* !VBOX_WS_MAC */
 
@@ -1386,7 +1386,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 #  ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 #  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
+    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
 #  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
     addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
@@ -1409,8 +1409,8 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     /* 'Extra-data Manager' action goes to 'File' menu for Debug build: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-    /* 'Show Media Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
+    /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Access Manager' action goes to 'File' menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
@@ -1811,7 +1811,7 @@ void UISelectorWindow::prepareConnections()
     connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorWindowContextMenu(const QPoint&)));
 
     /* 'File' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager), SIGNAL(triggered()), this, SLOT(sltOpenMediaManagerWindow()));
+    connect(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager), SIGNAL(triggered()), this, SLOT(sltOpenVirtualMediumManagerWindow()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenImportApplianceWizard()));
     connect(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance), SIGNAL(triggered()), this, SLOT(sltOpenExportApplianceWizard()));
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
