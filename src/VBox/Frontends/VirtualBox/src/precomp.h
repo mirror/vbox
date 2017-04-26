@@ -342,7 +342,7 @@
 #include "CBIOSSettings.h"
 //#include "CCanShowWindowEvent.h" - only used once
 #include "CConsole.h"
-//#include "CDHCPServer.h" - only used once
+#include "CDHCPServer.h"
 #include "CDisplay.h"
 #include "CDisplaySourceBitmap.h"
 #include "CDnDSource.h"
