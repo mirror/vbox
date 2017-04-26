@@ -30,6 +30,33 @@
 #include <VBoxVideoVBE.h>
 #include <VBoxVideoIPRT.h>
 
+/**
+ * Initialise the host context structure.
+ *
+ * @param  pCtx               the context structure to initialise
+ * @param  pvBaseMapping      where the basic HGSMI structures are mapped at
+ * @param  offHostFlags       the offset of the host flags into the basic HGSMI
+ *                            structures
+ * @param  pvHostAreaMapping  where the area for the host heap is mapped at
+ * @param  offVRAMHostArea    offset of the host heap area into VRAM
+ * @param  cbHostArea         size in bytes of the host heap area
+ */
+DECLHIDDEN(void) VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
+                                           void *pvBaseMapping,
+                                           uint32_t offHostFlags,
+                                           void *pvHostAreaMapping,
+                                           uint32_t offVRAMHostArea,
+                                           uint32_t cbHostArea)
+{
+    uint8_t *pu8HostFlags = ((uint8_t *)pvBaseMapping) + offHostFlags;
+    pCtx->pfHostFlags = (HGSMIHOSTFLAGS *)pu8HostFlags;
+    /** @todo should we really be using a fixed ISA port value here? */
+    pCtx->port        = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+    HGSMIAreaInitialize(&pCtx->areaCtx, pvHostAreaMapping, cbHostArea,
+                         offVRAMHostArea);
+}
+
+
 /** Send completion notification to the host for the command located at offset
  * @a offt into the host command buffer. */
 static void HGSMINotifyHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx, HGSMIOFFSET offt)
@@ -102,17 +129,32 @@ DECLHIDDEN(void) VBoxHGSMIProcessHostQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 }
 
 
-/** Detect whether HGSMI is supported by the host. */
-DECLHIDDEN(bool) VBoxHGSMIIsSupported(void)
+/**
+ * Set up the HGSMI guest-to-host command context.
+ * @returns iprt status value
+ * @param  pCtx                    the context to set up
+ * @param  pvGuestHeapMemory       a pointer to the mapped backing memory for
+ *                                 the guest heap
+ * @param  cbGuestHeapMemory       the size of the backing memory area
+ * @param  offVRAMGuestHeapMemory  the offset of the memory pointed to by
+ *                                 @a pvGuestHeapMemory within the video RAM
+ * @param  pEnv                    HGSMI environment.
+ */
+DECLHIDDEN(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                           void *pvGuestHeapMemory,
+                                           uint32_t cbGuestHeapMemory,
+                                           uint32_t offVRAMGuestHeapMemory,
+                                           const HGSMIENV *pEnv)
 {
-    uint16_t DispiId;
-
-    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
-    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_HGSMI);
-
-    DispiId = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
-
-    return (DispiId == VBE_DISPI_ID_HGSMI);
+    /** @todo should we be using a fixed ISA port value here? */
+    pCtx->port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+#ifdef VBOX_WDDM_MINIPORT
+    return VBoxSHGSMIInit(&pCtx->heapCtx, pvGuestHeapMemory,
+                          cbGuestHeapMemory, offVRAMGuestHeapMemory, pEnv);
+#else
+    return HGSMIHeapSetup(&pCtx->heapCtx, pvGuestHeapMemory,
+                          cbGuestHeapMemory, offVRAMGuestHeapMemory, pEnv);
+#endif
 }
 
 
@@ -179,6 +221,20 @@ DECLHIDDEN(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     }
 
     return VERR_INVALID_PARAMETER;
+}
+
+
+/** Detect whether HGSMI is supported by the host. */
+DECLHIDDEN(bool) VBoxHGSMIIsSupported(void)
+{
+    uint16_t DispiId;
+
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_HGSMI);
+
+    DispiId = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
+
+    return (DispiId == VBE_DISPI_ID_HGSMI);
 }
 
 
@@ -345,35 +401,6 @@ DECLHIDDEN(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
 
 
 /**
- * Set up the HGSMI guest-to-host command context.
- * @returns iprt status value
- * @param  pCtx                    the context to set up
- * @param  pvGuestHeapMemory       a pointer to the mapped backing memory for
- *                                 the guest heap
- * @param  cbGuestHeapMemory       the size of the backing memory area
- * @param  offVRAMGuestHeapMemory  the offset of the memory pointed to by
- *                                 @a pvGuestHeapMemory within the video RAM
- * @param  pEnv                    HGSMI environment.
- */
-DECLHIDDEN(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                           void *pvGuestHeapMemory,
-                                           uint32_t cbGuestHeapMemory,
-                                           uint32_t offVRAMGuestHeapMemory,
-                                           const HGSMIENV *pEnv)
-{
-    /** @todo should we be using a fixed ISA port value here? */
-    pCtx->port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
-#ifdef VBOX_WDDM_MINIPORT
-    return VBoxSHGSMIInit(&pCtx->heapCtx, pvGuestHeapMemory,
-                          cbGuestHeapMemory, offVRAMGuestHeapMemory, pEnv);
-#else
-    return HGSMIHeapSetup(&pCtx->heapCtx, pvGuestHeapMemory,
-                          cbGuestHeapMemory, offVRAMGuestHeapMemory, pEnv);
-#endif
-}
-
-
-/**
  * Get the information needed to map the area used by the host to send back
  * requests.
  *
@@ -417,33 +444,6 @@ DECLHIDDEN(void) VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     *poffVRAMHostArea = offVRAMHostArea;
     // LogFunc(("offVRAMHostArea = 0x%08X, cbHostArea = 0x%08X\n",
     //          offVRAMHostArea, cbHostArea));
-}
-
-
-/**
- * Initialise the host context structure.
- *
- * @param  pCtx               the context structure to initialise
- * @param  pvBaseMapping      where the basic HGSMI structures are mapped at
- * @param  offHostFlags       the offset of the host flags into the basic HGSMI
- *                            structures
- * @param  pvHostAreaMapping  where the area for the host heap is mapped at
- * @param  offVRAMHostArea    offset of the host heap area into VRAM
- * @param  cbHostArea         size in bytes of the host heap area
- */
-DECLHIDDEN(void) VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                           void *pvBaseMapping,
-                                           uint32_t offHostFlags,
-                                           void *pvHostAreaMapping,
-                                           uint32_t offVRAMHostArea,
-                                           uint32_t cbHostArea)
-{
-    uint8_t *pu8HostFlags = ((uint8_t *)pvBaseMapping) + offHostFlags;
-    pCtx->pfHostFlags = (HGSMIHOSTFLAGS *)pu8HostFlags;
-    /** @todo should we really be using a fixed ISA port value here? */
-    pCtx->port        = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-    HGSMIAreaInitialize(&pCtx->areaCtx, pvHostAreaMapping, cbHostArea,
-                         offVRAMHostArea);
 }
 
 
