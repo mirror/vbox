@@ -519,7 +519,7 @@ typedef struct FATDIRENTRY
 {
     /** The directory entry name.
      * First character serves as a flag to indicate deleted or not. */
-    char            achName[8+3];
+    uint8_t         achName[8+3];
     /** Attributes (FAT_ATTR_XXX). */
     uint8_t         fAttrib;
     /** NT case flags (FATDIRENTRY_CASE_F_XXX). */
@@ -587,7 +587,7 @@ typedef FATDIRENTRY const *PCFATDIRENTRY;
 #define FATDIRENTRY_CASE_F_LOWER_EXT    UINT8_C(0x10)
 /** @} */
 
-/** @name FATDIRENTRY_CASE_F_XXX - FATDIRENTRY::fCase flags.
+/** @name FATDIRENTRY_CH0_XXX - FATDIRENTRY::achName[0]
  * @{ */
 /** Deleted entry. */
 #define FATDIRENTRY_CH0_DELETED         UINT8_C(0xe5)
@@ -634,6 +634,18 @@ AssertCompileSize(FATDIRNAMESLOT, 0x20);
 typedef FATDIRNAMESLOT *PFATDIRNAMESLOT;
 /** Pointer to a FAT directory entry. */
 typedef FATDIRNAMESLOT const *PCFATDIRNAMESLOT;
+
+/** Slot ID flag indicating that it's the first slot. */
+#define FATDIRNAMESLOT_FIRST_SLOT_FLAG  UINT8_C(0x40)
+/** Highest slot ID recognized.  This allows for 260 characters, however many
+ * implementation limits it to 255 or 250. */
+#define FATDIRNAMESLOT_HIGHEST_SLOT_ID  UINT8_C(0x14)
+/** Max number of slots recognized.  (This is the same as the higest slot ID
+ * because the 0 isn't a valid ID.) */
+#define FATDIRNAMESLOT_MAX_SLOTS        FATDIRNAMESLOT_HIGHEST_SLOT_ID
+/** Number of UTF-16 units per slot. */
+#define FATDIRNAMESLOT_CHARS_PER_SLOT   (5 + 6 + 2)
+
 
 
 /**
