@@ -103,7 +103,7 @@ protected:
 
     QKeySequence defaultShortcut(UIActionPoolType) const
     {
-        return QKeySequence("Ctrl+T");
+        return QKeySequence("Ctrl+W");
     }
 
     void retranslateUi()
