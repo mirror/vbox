@@ -6506,7 +6506,7 @@ FNIEMOP_DEF(iemOp_retf)
 FNIEMOP_DEF(iemOp_int3)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_BP, true /*fIsBpInstr*/);
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_BP, IEMINT_INT3);
 }
 
 
@@ -6517,7 +6517,7 @@ FNIEMOP_DEF(iemOp_int_Ib)
 {
     uint8_t u8Int; IEM_OPCODE_GET_NEXT_U8(&u8Int);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, u8Int, false /*fIsBpInstr*/);
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, u8Int, IEMINT_INTN);
 }
 
 
@@ -6530,9 +6530,9 @@ FNIEMOP_DEF(iemOp_into)
     IEMOP_HLP_NO_64BIT();
 
     IEM_MC_BEGIN(2, 0);
-    IEM_MC_ARG_CONST(uint8_t,   u8Int,      /*=*/ X86_XCPT_OF, 0);
-    IEM_MC_ARG_CONST(bool,      fIsBpInstr, /*=*/ false, 1);
-    IEM_MC_CALL_CIMPL_2(iemCImpl_int, u8Int, fIsBpInstr);
+    IEM_MC_ARG_CONST(uint8_t,   u8Int,  /*=*/ X86_XCPT_OF, 0);
+    IEM_MC_ARG_CONST(IEMINT,    enmInt, /*=*/ IEMINT_INTO, 1);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_int, u8Int, enmInt);
     IEM_MC_END();
     return VINF_SUCCESS;
 }
@@ -10589,8 +10589,7 @@ FNIEMOP_DEF(iemOp_int1)
     IEMOP_MNEMONIC(int1, "int1"); /* icebp */
     IEMOP_HLP_MIN_386(); /** @todo does not generate #UD on 286, or so they say... */
     /** @todo testcase! */
-    IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_ICEBP, SVM_EXIT_ICEBP, 0, 0);
-    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_DB, false /*fIsBpInstr*/);
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_DB, IEMINT_INT1);
 }
 
 

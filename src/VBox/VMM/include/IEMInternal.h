@@ -139,6 +139,23 @@ AssertCompileSize(IEMBRANCH, 4);
 
 
 /**
+ * INT instruction types.
+ */
+typedef enum IEMINT
+{
+    /** INT n instruction (opcode 0xcd imm). */
+    IEMINT_INTN  = 0,
+    /** Single byte INT3 instruction (opcode 0xcc). */
+    IEMINT_INT3  = IEM_XCPT_FLAGS_BP_INSTR,
+    /** Single byte INTO instruction (opcode 0xce). */
+    IEMINT_INTO  = IEM_XCPT_FLAGS_OF_INSTR,
+    /** Single byte INT1 (ICEBP) instruction (opcode 0xf1). */
+    IEMINT_INT1 = IEM_XCPT_FLAGS_ICEBP_INSTR
+} IEMINT;
+AssertCompileSize(IEMINT, 4);
+
+
+/**
  * A FPU result.
  */
 typedef struct IEMFPURESULT

@@ -215,6 +215,16 @@ typedef union IEMSELDESC
 /** Pointer to a selector descriptor table entry. */
 typedef IEMSELDESC *PIEMSELDESC;
 
+/**
+ * CPU exception classes.
+ */
+typedef enum IEMXCPTCLASS
+{
+    IEMXCPTCLASS_BENIGN,
+    IEMXCPTCLASS_CONTRIBUTORY,
+    IEMXCPTCLASS_PAGE_FAULT
+} IEMXCPTCLASS;
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -3211,10 +3221,126 @@ DECLINLINE(uint64_t) iemOpcodeGetNextU64Jmp(PVMCPU pVCpu)
  * @{
  */
 
-/* Currently used only with nested hw.virt. */
-#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
- * Initiates a CPU shutdown sequence.
+ * Gets the exception class for the specified exception vector.
+ *  
+ * @returns The class of the specified exception.
+ * @param   uVector       The exception vector. 
+ */
+IEM_STATIC IEMXCPTCLASS iemGetXcptClass(uint8_t uVector)
+{
+    Assert(uVector <= X86_XCPT_LAST);
+    switch (uVector)
+    {
+        case X86_XCPT_DE:
+        case X86_XCPT_TS:
+        case X86_XCPT_NP:
+        case X86_XCPT_SS:
+        case X86_XCPT_GP:
+        case X86_XCPT_SX:   /* AMD only */
+            return IEMXCPTCLASS_CONTRIBUTORY;
+
+        case X86_XCPT_PF:
+        case X86_XCPT_VE:   /* Intel only */
+            return IEMXCPTCLASS_PAGE_FAULT;
+    }
+    return IEMXCPTCLASS_BENIGN;
+}
+
+
+/**
+ * Evaluates how to handle an exception caused during delivery of another event
+ * (exception / interrupt).
+ *  
+ * @returns How to handle the recursive exception. 
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
+ * @param   fPrevFlags          The flags of the previous event.
+ * @param   uPrevVector         The vector of the previous event.
+ * @param   fCurFlags           The flags of the current exception.
+ * @param   uCurVector          The vector of the current exception.
+ * @param   pfXcptRaiseInfo     Where to store additional information about the
+ *                              exception condition. Optional.
+ */
+VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrevFlags, uint8_t uPrevVector, uint32_t fCurFlags,
+                                                    uint8_t uCurVector, PIEMXCPTRAISEINFO pfXcptRaiseInfo)
+{
+    /*
+     * Only CPU exceptions can be raised while delivering other events, software interrupt
+     * (INTn/INT3/INTO/ICEBP) generated exceptions cannot occur as the current (second) exception.
+     */
+    AssertReturn(fCurFlags & IEM_XCPT_FLAGS_T_CPU_XCPT, IEMXCPTRAISE_INVALID);
+    Assert(pVCpu);
+
+    IEMXCPTRAISE     enmRaise   = IEMXCPTRAISE_CURRENT_XCPT;
+    IEMXCPTRAISEINFO fRaiseInfo = IEMXCPTRAISEINFO_NONE;
+    if (fPrevFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+    {
+        IEMXCPTCLASS enmPrevXcptClass = iemGetXcptClass(uPrevVector);
+        if (enmPrevXcptClass != IEMXCPTCLASS_BENIGN)
+        {
+            IEMXCPTCLASS enmCurXcptClass  = iemGetXcptClass(uCurVector);
+            if (   enmPrevXcptClass == IEMXCPTCLASS_PAGE_FAULT
+                && (   enmCurXcptClass == IEMXCPTCLASS_PAGE_FAULT
+                    || enmCurXcptClass == IEMXCPTCLASS_CONTRIBUTORY))
+            {
+                enmRaise = IEMXCPTRAISE_DOUBLE_FAULT;
+                if (enmCurXcptClass == IEMXCPTCLASS_PAGE_FAULT)
+                    fRaiseInfo = IEMXCPTRAISEINFO_PF_PF;
+                else
+                    fRaiseInfo = IEMXCPTRAISEINFO_PF_CONTRIBUTORY_XCPT;
+                Log2(("IEMEvaluateRecursiveXcpt: Vectoring page fault. uPrevVector=%#x uCurVector=%#x uCr2=%#RX64\n", uPrevVector,
+                      uCurVector, IEM_GET_CTX(pVCpu)->cr2));
+            }
+            else if (   enmPrevXcptClass == IEMXCPTCLASS_CONTRIBUTORY
+                     && enmCurXcptClass  == IEMXCPTCLASS_CONTRIBUTORY)
+            {
+                enmRaise = IEMXCPTRAISE_DOUBLE_FAULT;
+                Log2(("IEMEvaluateRecursiveXcpt: uPrevVector=%u uCurVector=%u -> #DF\n", uPrevVector, uCurVector));
+            }
+            else if (   uPrevVector == X86_XCPT_DF
+                     && (   enmCurXcptClass == IEMXCPTCLASS_CONTRIBUTORY
+                         || enmCurXcptClass == IEMXCPTCLASS_PAGE_FAULT))
+            {
+                enmRaise = IEMXCPTRAISE_TRIPLE_FAULT;
+                Log2(("IEMEvaluateRecursiveXcpt: #DF handler raised a %#x exception -> triple fault\n", uCurVector));
+            }
+        }
+        else
+        {
+            if (   uPrevVector == X86_XCPT_NMI
+                && uCurVector  == X86_XCPT_PF)
+            {
+                fRaiseInfo = IEMXCPTRAISEINFO_NMI_PF;
+                Log2(("IEMEvaluateRecursiveXcpt: NMI delivery caused a page fault\n"));
+            }
+            else if (   uPrevVector == X86_XCPT_AC
+                     && uCurVector  == X86_XCPT_AC)
+            {
+                enmRaise   = IEMXCPTRAISE_CPU_HANG;
+                fRaiseInfo = IEMXCPTRAISEINFO_AC_AC;
+                Log2(("IEMEvaluateRecursiveXcpt: Recursive #AC - Bad guest\n"));
+            }
+        }
+    }
+    else if (fPrevFlags & IEM_XCPT_FLAGS_T_EXT_INT)
+    {
+        fRaiseInfo = IEMXCPTRAISEINFO_EXT_INT_XCPT;
+        if (uCurVector == X86_XCPT_PF)
+            fRaiseInfo |= IEMXCPTRAISEINFO_EXT_INT_PF;
+    }
+    else
+        fRaiseInfo = IEMXCPTRAISEINFO_SOFT_INT_XCPT;
+
+    if (pfXcptRaiseInfo)
+        *pfXcptRaiseInfo = fRaiseInfo;
+    return enmRaise; 
+}
+
+
+/**
+ * Enters the CPU shutdown state initiated by a triple fault or other
+ * unrecoverable conditions.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the
@@ -3229,9 +3355,85 @@ IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
     }
 
     RT_NOREF_PV(pVCpu);
-    /** @todo Probably need a separate error code and handling for this to
-     *        distinguish it from the regular triple fault. */
     return VINF_EM_TRIPLE_FAULT;
+}
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+IEM_STATIC VBOXSTRICTRC iemHandleSvmNstGstEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t u8Vector, uint32_t fFlags,
+                                                         uint32_t uErr, uint64_t uCr2)
+{
+    Assert(IEM_IS_SVM_ENABLED(pVCpu));
+
+    /*
+     * Handle nested-guest SVM exception and software interrupt intercepts,
+     * see AMD spec. 15.12 "Exception Intercepts".
+     *
+     *   - NMI intercepts have their own exit code and do not cause SVM_EXIT_EXCEPTION_2 #VMEXITs.
+     *   - External interrupts and software interrupts (INTn instruction) do not check the exception intercepts
+     *     even when they use a vector in the range 0 to 31.
+     *   - ICEBP should not trigger #DB intercept, but its own intercept.
+     *   - For #PF exceptions, its intercept is checked before CR2 is written by the exception.
+     */
+    /* Check NMI intercept */
+    if (   u8Vector == X86_XCPT_NMI
+        && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+        && IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_NMI))
+    {
+        Log2(("iemHandleSvmNstGstEventIntercept: NMI intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_NMI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+    /* Check ICEBP intercept. */
+    if (   (fFlags & IEM_XCPT_FLAGS_ICEBP_INSTR)
+        && IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_ICEBP))
+    {
+        Log2(("iemHandleSvmNstGstEventIntercept: ICEBP intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_ICEBP, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+    /* Check CPU exception intercepts. */
+    if (   (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+        && IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, u8Vector))
+    {
+        Assert(u8Vector <= X86_XCPT_LAST);
+        uint64_t const uExitInfo1 = fFlags & IEM_XCPT_FLAGS_ERR ? uErr : 0;
+        uint64_t const uExitInfo2 = fFlags & IEM_XCPT_FLAGS_CR2 ? uCr2 : 0;
+        if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist
+            && u8Vector == X86_XCPT_PF
+            && !(uErr & X86_TRAP_PF_ID))
+        {
+            /** @todo Nested-guest SVM - figure out fetching op-code bytes from IEM. */
+#ifdef IEM_WITH_CODE_TLB
+#else
+            uint8_t const offOpCode = pVCpu->iem.s.offOpcode;
+            uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode;
+            if (   cbCurrent > 0
+                && cbCurrent < sizeof(pCtx->hwvirt.svm.VmcbCtrl.abInstr))
+            {
+                Assert(cbCurrent <= sizeof(pVCpu->iem.s.abOpcode));
+                memcpy(&pCtx->hwvirt.svm.VmcbCtrl.abInstr[0], &pVCpu->iem.s.abOpcode[offOpCode], cbCurrent);
+            }
+#endif
+        }
+        Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept. u8Vector=%#x uExitInfo1=%#RX64, uExitInfo2=%#RX64 -> #VMEXIT\n",
+             u8Vector, uExitInfo1, uExitInfo2));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_EXCEPTION_0 + u8Vector, uExitInfo1, uExitInfo2);
+    }
+
+    /* Check software interrupt (INTn) intercepts. */
+    if (   (fFlags & (  IEM_XCPT_FLAGS_T_SOFT_INT
+                      | IEM_XCPT_FLAGS_BP_INSTR
+                      | IEM_XCPT_FLAGS_ICEBP_INSTR
+                      | IEM_XCPT_FLAGS_OF_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
+        && IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INTN))
+    {
+        uint64_t const uExitInfo1 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? u8Vector : 0;
+        Log2(("iemHandleSvmNstGstEventIntercept: Software INT intercept (u8Vector=%#x) -> #VMEXIT\n", u8Vector));
+        IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
+    }
+
+    return VINF_HM_INTERCEPT_NOT_ACTIVE;
 }
 #endif
 
@@ -5252,59 +5454,21 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
     if (IEM_IS_SVM_ENABLED(pVCpu))
     {
         /*
-         * Handle nested-guest SVM exception and software interrupt intercepts,
-         * see AMD spec. 15.12 "Exception Intercepts".
-         *
-         *   - NMI intercepts have their own exit code and do not cause SVM_EXIT_EXCEPTION_2 #VMEXITs.
-         *   - External interrupts and software interrupts (INTn instruction) do not check the exception intercepts
-         *     even when they use a vector in the range 0 to 31.
-         *   - ICEBP should not trigger #DB intercept, but its own intercept, so we catch it early in iemOp_int1.
-         *   - For #PF exceptions, its intercept is checked before CR2 is written by the exception.
+         * If the event is being injected as part of VMRUN, it isn't subject to event
+         * intercepts in the nested-guest. However, secondary exceptions that occur
+         * during injection of any event -are- subject to exception intercepts.
+         * See AMD spec. 15.20 "Event Injection".
          */
-        /* Check NMI intercept */
-        if (   u8Vector == X86_XCPT_NMI
-            && IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_NMI))
+        if (!pCtx->hwvirt.svm.fInterceptEvents)
+            pCtx->hwvirt.svm.fInterceptEvents = 1;
+        else
         {
-            Log(("iemRaiseXcptOrInt: NMI intercept -> #VMEXIT\n"));
-            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_NMI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-        }
-
-        /* Check CPU exception intercepts. */
-        if (   IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, u8Vector)
-            && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT))
-        {
-            Assert(u8Vector <= X86_XCPT_LAST);
-            uint64_t const uExitInfo1 = fFlags & IEM_XCPT_FLAGS_ERR ? uErr : 0;
-            uint64_t const uExitInfo2 = fFlags & IEM_XCPT_FLAGS_CR2 ? uCr2 : 0;
-            if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist
-                && u8Vector == X86_XCPT_PF
-                && !(uErr & X86_TRAP_PF_ID))
-            {
-                /** @todo Nested-guest SVM - figure out fetching op-code bytes from IEM. */
-#ifdef IEM_WITH_CODE_TLB
-#else
-                uint8_t const offOpCode = pVCpu->iem.s.offOpcode;
-                uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode;
-                if (   cbCurrent > 0
-                    && cbCurrent < sizeof(pCtx->hwvirt.svm.VmcbCtrl.abInstr))
-                {
-                    Assert(cbCurrent <= sizeof(pVCpu->iem.s.abOpcode));
-                    memcpy(&pCtx->hwvirt.svm.VmcbCtrl.abInstr[0], &pVCpu->iem.s.abOpcode[offOpCode], cbCurrent);
-                }
-#endif
-            }
-            Log(("iemRaiseXcptOrInt: Xcpt intercept (u8Vector=%#x uExitInfo1=%#RX64, uExitInfo2=%#RX64 -> #VMEXIT\n", u8Vector,
-                 uExitInfo1, uExitInfo2));
-            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_EXCEPTION_0 + u8Vector, uExitInfo1, uExitInfo2);
-        }
-
-        /* Check software interrupt (INTn) intercepts. */
-        if (   IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INTN)
-            && (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT))
-        {
-            uint64_t const uExitInfo1 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssist ? u8Vector : 0;
-            Log(("iemRaiseXcptOrInt: Software INT intercept (u8Vector=%#x) -> #VMEXIT\n", u8Vector));
-            IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
+            /*
+             * Check and handle if the event being raised is intercepted.
+             */
+            VBOXSTRICTRC rcStrict0 = iemHandleSvmNstGstEventIntercept(pVCpu, pCtx, u8Vector, fFlags, uErr, uCr2);
+            if (rcStrict0 != VINF_HM_INTERCEPT_NOT_ACTIVE)
+                return rcStrict0;
         }
     }
 #endif /* VBOX_WITH_NESTED_HWVIRT */
@@ -5320,11 +5484,9 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
     else
     {
         Log(("iemRaiseXcptOrInt: %#x at %04x:%RGv cbInstr=%#x fFlags=%#x uErr=%#x uCr2=%llx; prev=%#x depth=%d flags=%#x\n",
-             u8Vector, pCtx->cs.Sel, pCtx->rip, cbInstr, fFlags, uErr, uCr2, pVCpu->iem.s.uCurXcpt, pVCpu->iem.s.cXcptRecursions + 1, fPrevXcpt));
+             u8Vector, pCtx->cs.Sel, pCtx->rip, cbInstr, fFlags, uErr, uCr2, pVCpu->iem.s.uCurXcpt,
+             pVCpu->iem.s.cXcptRecursions + 1, fPrevXcpt));
 
-        /** @todo double and tripple faults. */
-        /** @todo When implementing \#DF, the SVM nested-guest \#DF intercepts needs
-         *        some care. See AMD spec. 15.12 "Exception Intercepts". */
         if (pVCpu->iem.s.cXcptRecursions >= 3)
         {
 #ifdef DEBUG_bird
@@ -5333,12 +5495,59 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
             IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Too many fault nestings.\n"));
         }
 
-        /** @todo set X86_TRAP_ERR_EXTERNAL when appropriate.
-        if (fPrevXcpt & IEM_XCPT_FLAGS_T_EXT_INT)
+        /*
+         * Evaluate the sequence of recurring events.
+         */
+        IEMXCPTRAISE enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fPrevXcpt, uPrevXcpt, fFlags, u8Vector,
+                                                         NULL /* pXcptRaiseInfo */);
+        if (enmRaise == IEMXCPTRAISE_CURRENT_XCPT)
+        { /* likely */ }
+        else if (enmRaise == IEMXCPTRAISE_DOUBLE_FAULT)
         {
-        ....
-        } */
+            fFlags   = IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR;
+            u8Vector = X86_XCPT_DF;
+            uErr     = 0;
+            /* SVM nested-guest #DF intercepts need to be checked now. See AMD spec. 15.12 "Exception Intercepts". */
+            if (IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, X86_XCPT_DF))
+                IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_EXCEPTION_0 + X86_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+        else if (enmRaise == IEMXCPTRAISE_TRIPLE_FAULT)
+        {
+            Log2(("iemRaiseXcptOrInt: raising triple fault. uPrevXcpt=%#x\n", uPrevXcpt));
+            return iemInitiateCpuShutdown(pVCpu);
+        }
+        else if (enmRaise == IEMXCPTRAISE_CPU_HANG)
+        {
+            /* If a nested-guest enters an endless CPU loop condition, we'll emulate it; otherwise guru. */
+            Log2(("iemRaiseXcptOrInt: CPU hang condition detected\n"));
+            if (!CPUMIsGuestInNestedHwVirtMode(pCtx))
+                return VERR_EM_GUEST_CPU_HANG;
+        }
+        else
+        {
+            AssertMsgFailed(("Unexpected condition! enmRaise=%#x uPrevXcpt=%#x fPrevXcpt=%#x, u8Vector=%#x fFlags=%#x\n",
+                             enmRaise, uPrevXcpt, fPrevXcpt, u8Vector, fFlags));
+            return VERR_IEM_IPE_9;
+        }
+
+        /*
+         * The 'EXT' bit is set when an exception occurs during deliver of an external
+         * event (such as an interrupt or earlier exception), see Intel spec. 6.13
+         * "Error Code".
+         *
+         * For exceptions generated by software interrupts and INTO, INT3 instructions,
+         * the 'EXT' bit will not be set, see Intel Instruction reference for INT n.
+         */
+        /** @todo Would INT1/ICEBP raised \#DB set the 'EXT' bit or not? Testcase... */
+        if (   (fPrevXcpt & (IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_T_EXT_INT))
+            && (fFlags & IEM_XCPT_FLAGS_ERR)
+            && u8Vector != X86_XCPT_PF
+            && u8Vector != X86_XCPT_DF)
+        {
+            uErr |= X86_TRAP_ERR_EXTERNAL;
+        }
     }
+
     pVCpu->iem.s.cXcptRecursions++;
     pVCpu->iem.s.uCurXcpt    = u8Vector;
     pVCpu->iem.s.fCurXcpt    = fFlags;
@@ -15222,6 +15431,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
  *                          event, optional.
  * @param   puCr2           Where to store the CR2 associated with the event,
  *                          optional.
+ * @remarks The caller should check the flags to determine if the error code and
+ *          CR2 are valid for the event.
  */
 VMM_INT_DECL(bool) IEMGetCurrentXcpt(PVMCPU pVCpu, uint8_t *puVector, uint32_t *pfFlags, uint32_t *puErr, uint64_t *puCr2)
 {
@@ -15232,7 +15443,6 @@ VMM_INT_DECL(bool) IEMGetCurrentXcpt(PVMCPU pVCpu, uint8_t *puVector, uint32_t *
             *puVector = pVCpu->iem.s.uCurXcpt;
         if (pfFlags)
             *pfFlags = pVCpu->iem.s.fCurXcpt;
-        /* The caller should check the flags to determine if the error code & CR2 are valid for the event. */
         if (puErr)
             *puErr = pVCpu->iem.s.uCurXcptErr;
         if (puCr2)

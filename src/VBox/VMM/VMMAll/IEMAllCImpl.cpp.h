@@ -2861,15 +2861,15 @@ IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
  * Implements int3 and int XX.
  *
  * @param   u8Int       The interrupt vector number.
- * @param   fIsBpInstr  Is it the breakpoint instruction.
+ * @param   enmInt      The int instruction type.
  */
-IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, bool, fIsBpInstr)
+IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, IEMINT, enmInt)
 {
     Assert(pVCpu->iem.s.cXcptRecursions == 0);
     return iemRaiseXcptOrInt(pVCpu,
                              cbInstr,
                              u8Int,
-                             (fIsBpInstr ? IEM_XCPT_FLAGS_BP_INSTR : 0) | IEM_XCPT_FLAGS_T_SOFT_INT,
+                             IEM_XCPT_FLAGS_T_SOFT_INT | enmInt,
                              0,
                              0);
 }
