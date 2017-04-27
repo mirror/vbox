@@ -1748,8 +1748,12 @@ static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
 static DECLCALLBACK(int) rtFsFatFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTFSFATFILE pThis = (PRTFSFATFILE)pvThis;
+    PRTFSFATVOL  pVol  = pThis->Core.pVol;
     AssertReturn(pSgBuf->cSegs != 0, VERR_INTERNAL_ERROR_3);
     RT_NOREF(fBlocking);
+
+    if (pVol->fReadOnly)
+        return VERR_WRITE_PROTECT;
 
     if (off == -1)
         off = pThis->offFile;
@@ -1789,10 +1793,10 @@ static DECLCALLBACK(int) rtFsFatFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF p
         }
 
         /* Figure the disk offset. */
-        uint64_t offDisk = rtFsFatChain_FileOffsetToDiskOff(&pThis->Core.Clusters, (uint32_t)off, pThis->Core.pVol);
+        uint64_t offDisk = rtFsFatChain_FileOffsetToDiskOff(&pThis->Core.Clusters, (uint32_t)off, pVol);
         if (offDisk != UINT64_MAX)
         {
-            rc = RTVfsFileWriteAt(pThis->Core.pVol->hVfsBacking, offDisk, pbSrc, cbToWrite, NULL);
+            rc = RTVfsFileWriteAt(pVol->hVfsBacking, offDisk, pbSrc, cbToWrite, NULL);
             if (RT_SUCCESS(rc))
             {
                 off         += cbToWrite;
@@ -2649,6 +2653,13 @@ static int rtFsFatDir_MaybeCreateLongNameAndShortAlias(PRTFSFATDIR pThis, const 
 static int rtFsFatChain_FindFreeEntries(PRTFSFATDIR pThis, uint32_t cEntriesNeeded,
                                         uint32_t *poffEntryInDir, uint32_t *pcFreeTail)
 {
+    /* First try make gcc happy. */
+    *pcFreeTail     = 0;
+    *poffEntryInDir = UINT32_MAX;
+
+    /*
+     * Scan the whole directory, buffer by buffer.
+     */
     uint32_t            offStartFreeEntries = UINT32_MAX;
     uint32_t            cFreeEntries        = 0;
     uint32_t            offEntryInDir       = 0;
@@ -2712,9 +2723,7 @@ static int rtFsFatChain_FindFreeEntries(PRTFSFATDIR pThis, uint32_t cEntriesNeed
         }
         rtFsFatDir_ReleaseBufferAfterReading(pThis, uBufferLock);
     }
-
-    *pcFreeTail     = cFreeEntries;
-    *poffEntryInDir = UINT32_MAX;
+    *pcFreeTail = cFreeEntries;
     return VERR_DISK_FULL;
 }
 
@@ -2848,6 +2857,8 @@ static int rtFsFatDir_CreateEntry(PRTFSFATDIR pThis, const char *pszEntry, uint8
 {
     PRTFSFATVOL pVol = pThis->Core.pVol;
     *poffEntryInDir = UINT32_MAX;
+    if (pVol->fReadOnly)
+        return VERR_WRITE_PROTECT;
 
     /*
      * Create the directory entries on the stack.
