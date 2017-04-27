@@ -37,6 +37,7 @@
 #include <iprt/file.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/poll.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
@@ -70,6 +71,10 @@
  * @param   a_bValue        The value to rotate.
  */
 #define RTFSFAT_ROT_R1_U8(a_bValue) (((a_bValue) >> 1) | (uint8_t)((a_bValue) << 7))
+
+
+/** Maximum number of characters we will create in a long file name. */
+#define RTFSFAT_MAX_LFN_CHARS   255
 
 
 /*********************************************************************************************************************************
@@ -2343,7 +2348,7 @@ static uint16_t rtFsFatUnicodeCodepointToUpperCodepage(RTUNICP uc)
  *
  * @returns true if 8.3 formattable name, false if not.
  * @param   pszName8Dot3    Where to return the 8-dot-3 name when returning
- *                          @c true.  Filled with zero on false.  12+1 bytes.
+ *                          @c true.  Filled with zero on false.  8+3+1 bytes.
  * @param   pszName         The filename to convert.
  */
 static bool rtFsFatDir_StringTo8Dot3(char *pszName8Dot3, const char *pszName)
@@ -2433,6 +2438,7 @@ static uint8_t rtFsFatDir_CalcChecksum(PCFATDIRENTRY pDirEntry)
  * Locates a directory entry in a directory.
  *
  * @returns IPRT status code.
+ * @retval  VERR_FILE_NOT_FOUND if not found.
  * @param   pThis           The directory to search.
  * @param   pszEntry        The entry to look for.
  * @param   poffEntryInDir  Where to return the offset of the directory
@@ -2450,7 +2456,7 @@ static int rtFsFatDir_FindEntry(PRTFSFATDIR pThis, const char *pszEntry, uint32_
     /*
      * Turn pszEntry into a 8.3 filename, if possible.
      */
-    char    szName8Dot3[12+1];
+    char    szName8Dot3[8+3+1];
     bool    fIs8Dot3Name = rtFsFatDir_StringTo8Dot3(szName8Dot3, pszEntry);
 
     /*
@@ -2607,6 +2613,179 @@ static uint8_t rtFsFatDir_CalcCaseFlags(const char *pszName)
 
 
 /**
+ * Checks if we need to generate a long name for @a pszEntry.
+ *
+ * @returns true if we need to, false if we don't.
+ * @param   pszEntry        The UTF-8 directory entry entry name.
+ * @param   fIs8Dot3Name    Whether we've managed to create a 8-dot-3 name.
+ * @param   pDirEntry       The directory entry with the 8-dot-3 name when
+ *                          fIs8Dot3Name is set.
+ */
+static bool rtFsFatDir_NeedLongName(const char *pszEntry, bool fIs8Dot3Name, PCFATDIRENTRY pDirEntry)
+{
+    if (!fIs8Dot3Name)
+        return true;
+
+    /** @todo check case here. */
+    RT_NOREF(pszEntry, pDirEntry);
+    return false;
+}
+
+
+/**
+ * Checks if the given long name is valid for a long file name or not.
+ *
+ * Encoding, length and character set limitations are checked.
+ *
+ * @returns IRPT status code.
+ * @param   pwszEntry       The long filename.
+ * @param   cwc             The length of the filename in UTF-16 chars.
+ */
+static int rtFsFatDir_ValidateLongName(PCRTUTF16 pwszEntry, size_t cwc)
+{
+    if (cwc <= RTFSFAT_MAX_LFN_CHARS)
+    {
+        RT_NOREF(pwszEntry);
+        /** @todo check for invalid characters. */
+        return VINF_SUCCESS;
+    }
+    return VERR_FILENAME_TOO_LONG;
+}
+
+
+static void rtFsFatDir_CopyShortName(char *pszDst, uint32_t cchDst, const char *pszSrc, size_t cchSrc, char chPad)
+{
+    /* Copy from source. */
+    if (cchSrc > 0)
+    {
+        const char *pszSrcEnd = &pszSrc[cchSrc];
+        while (cchDst > 0 && pszSrc != pszSrcEnd)
+        {
+            RTUNICP uc;
+            int rc = RTStrGetCpEx(&pszSrc, &uc);
+            if (RT_SUCCESS(rc))
+            {
+                if (uc < 128)
+                {
+                    if (g_awchFatCp437Chars[uc] != uc)
+                    {
+                        if (uc)
+                        {
+                            uc = RTUniCpToUpper(uc);
+                            if (g_awchFatCp437Chars[uc] != uc)
+                                uc = '_';
+                        }
+                        else
+                            break;
+                    }
+                }
+                else
+                    uc = '_';
+            }
+            else
+                uc = '_';
+
+            *pszDst++ = (char)uc;
+            cchDst--;
+        }
+    }
+
+    /* Pad the remaining space. */
+    while (cchDst-- > 0)
+        *pszDst++ = chPad;
+}
+
+
+/**
+ * Generates a short filename.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The directory.
+ * @param   pszEntry        The long name (UTF-8).
+ * @param   pDirEntry       Where to put the short name.
+ */
+static int rtFsFatDir_GenerateShortName(PRTFSFATDIR pThis, const char *pszEntry, PFATDIRENTRY pDirEntry)
+{
+    FATDIRENTRY DirEntryIgn;
+    bool        fLongIgn;
+    uint32_t    offEntryInDirIgn;
+
+    /* Do some input parsing. */
+    const char  *pszExt      = RTPathSuffix(pszEntry);
+    size_t const cchBasename = pszExt ? pszExt - pszEntry : strlen(pszEntry);
+    size_t const cchExt      = pszExt ? strlen(++pszExt)  : 0;
+
+    /* Fill in the extension first. It stays the same. */
+    char szShortName[8+3+1];
+    rtFsFatDir_CopyShortName(&szShortName[8], 3, pszExt, cchExt, ' ');
+    szShortName[8+3] = '\0';
+
+    /*
+     * First try single digit 1..9.
+     */
+    rtFsFatDir_CopyShortName(szShortName, 6, pszEntry, cchBasename, '_');
+    szShortName[6] = '~';
+    for (uint32_t iLastDigit = 1; iLastDigit < 10; iLastDigit++)
+    {
+        szShortName[7] = iLastDigit + '0';
+        int rc = rtFsFatDir_FindEntry(pThis, szShortName, &offEntryInDirIgn, &fLongIgn, &DirEntryIgn);
+        if (rc == VERR_FILE_NOT_FOUND)
+        {
+            memcpy(pDirEntry->achName, szShortName, sizeof(pDirEntry->achName));
+            return VINF_SUCCESS;
+        }
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * First try two digits 10..99.
+     */
+    szShortName[5] = '~';
+    for (uint32_t iFirstDigit = 1; iFirstDigit < 10; iFirstDigit++)
+        for (uint32_t iLastDigit = 0; iLastDigit < 10; iLastDigit++)
+        {
+            szShortName[6] = iFirstDigit + '0';
+            szShortName[7] = iLastDigit  + '0';
+            int rc = rtFsFatDir_FindEntry(pThis, szShortName, &offEntryInDirIgn, &fLongIgn, &DirEntryIgn);
+            if (rc == VERR_FILE_NOT_FOUND)
+            {
+                memcpy(pDirEntry->achName, szShortName, sizeof(pDirEntry->achName));
+                return VINF_SUCCESS;
+            }
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+    /*
+     * Okay, do random numbers then.
+     */
+    szShortName[2] = '~';
+    for (uint32_t i = 0; i < 8192; i++)
+    {
+        char    szHex[68];
+        ssize_t cchHex = RTStrFormatU32(szHex, sizeof(szHex), RTRandU32(), 16, 5, 0, RTSTR_F_CAPITAL | RTSTR_F_WIDTH);
+        AssertReturn(cchHex >= 5, VERR_NET_NOT_UNIQUE_NAME);
+        szShortName[7] = szHex[cchHex];
+        szShortName[6] = szHex[cchHex - 1];
+        szShortName[5] = szHex[cchHex - 2];
+        szShortName[4] = szHex[cchHex - 3];
+        szShortName[3] = szHex[cchHex - 4];
+        int rc = rtFsFatDir_FindEntry(pThis, szShortName, &offEntryInDirIgn, &fLongIgn, &DirEntryIgn);
+        if (rc == VERR_FILE_NOT_FOUND)
+        {
+            memcpy(pDirEntry->achName, szShortName, sizeof(pDirEntry->achName));
+            return VINF_SUCCESS;
+        }
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VERR_NET_NOT_UNIQUE_NAME;
+}
+
+
+/**
  * Considers whether we need to create a long name or not.
  *
  * If a long name is needed and the name wasn't 8-dot-3 compatible, a 8-dot-3
@@ -2625,13 +2804,69 @@ static int rtFsFatDir_MaybeCreateLongNameAndShortAlias(PRTFSFATDIR pThis, const 
                                                        PFATDIRENTRY pDirEntry, PFATDIRNAMESLOT paSlots, uint32_t *pcSlots)
 {
     RT_NOREF(pThis, pDirEntry, paSlots, pszEntry);
-    if (fIs8Dot3Name)
+
+    /*
+     * If we don't need to create a long name, return immediately.
+     */
+    if (!rtFsFatDir_NeedLongName(pszEntry, fIs8Dot3Name, pDirEntry))
     {
         *pcSlots = 0;
         return VINF_SUCCESS;
     }
+
+    /*
+     * Convert the name to UTF-16 and figure it's length (this validates the
+     * input encoding).  Then do long name validation (length, charset limitation).
+     */
+    RTUTF16     wszEntry[FATDIRNAMESLOT_MAX_SLOTS * FATDIRNAMESLOT_CHARS_PER_SLOT + 4];
+    PRTUTF16    pwszEntry = wszEntry;
+    size_t      cwcEntry;
+    int rc = RTStrToUtf16Ex(pszEntry, RTSTR_MAX, &pwszEntry, RT_ELEMENTS(wszEntry), &cwcEntry);
+    if (RT_SUCCESS(rc))
+        rc = rtFsFatDir_ValidateLongName(pwszEntry, cwcEntry);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Generate a short name if we need to.
+         */
+        if (!fIs8Dot3Name)
+            rc = rtFsFatDir_GenerateShortName(pThis, pszEntry, pDirEntry);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Fill in the long name slots.  First we pad the wszEntry with 0xffff
+             * until it is a multiple of of the slot count.  That way we can copy
+             * the name straight into the entry without constaints.
+             */
+            memset(&wszEntry[cwcEntry + 1], 0xff,
+                   RT_MIN(sizeof(wszEntry) - (cwcEntry + 1) * sizeof(RTUTF16), FATDIRNAMESLOT_CHARS_PER_SLOT));
+
+            uint8_t const   bChecksum = rtFsFatDir_CalcChecksum(pDirEntry);
+            size_t const    cSlots    = (cwcEntry + FATDIRNAMESLOT_CHARS_PER_SLOT - 1) / FATDIRNAMESLOT_CHARS_PER_SLOT;
+            size_t          iSlot     = cSlots;
+            PCRTUTF16       pwszSrc   = wszEntry;
+            while (iSlot-- > 0)
+            {
+                memcpy(paSlots[iSlot].awcName0, pwszSrc, sizeof(paSlots[iSlot].awcName0));
+                pwszSrc += RT_ELEMENTS(paSlots[iSlot].awcName0);
+                memcpy(paSlots[iSlot].awcName1, pwszSrc, sizeof(paSlots[iSlot].awcName1));
+                pwszSrc += RT_ELEMENTS(paSlots[iSlot].awcName1);
+                memcpy(paSlots[iSlot].awcName2, pwszSrc, sizeof(paSlots[iSlot].awcName2));
+                pwszSrc += RT_ELEMENTS(paSlots[iSlot].awcName2);
+
+                paSlots[iSlot].idSlot    = (uint8_t)(cSlots - iSlot);
+                paSlots[iSlot].fAttrib   = FAT_ATTR_NAME_SLOT;
+                paSlots[iSlot].fZero     = 0;
+                paSlots[iSlot].idxZero   = 0;
+                paSlots[iSlot].bChecksum = bChecksum;
+            }
+            paSlots[0].idSlot |= FATDIRNAMESLOT_FIRST_SLOT_FLAG;
+            *pcSlots = (uint32_t)cSlots;
+            return VINF_SUCCESS;
+        }
+    }
     *pcSlots = UINT32_MAX;
-    return VERR_INVALID_NAME;
+    return rc;
 }
 
 
@@ -2879,6 +3114,7 @@ static int rtFsFatDir_CreateEntry(PRTFSFATDIR pThis, const char *pszEntry, uint8
      */
     uint32_t        cSlots = UINT32_MAX;
     FATDIRNAMESLOT  aSlots[FATDIRNAMESLOT_MAX_SLOTS];
+    AssertCompile(RTFSFAT_MAX_LFN_CHARS < RT_ELEMENTS(aSlots) * FATDIRNAMESLOT_CHARS_PER_SLOT);
     int rc = rtFsFatDir_MaybeCreateLongNameAndShortAlias(pThis, pszEntry, fIs8Dot3Name, pDirEntry, aSlots, &cSlots);
     if (RT_SUCCESS(rc))
     {
