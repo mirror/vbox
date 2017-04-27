@@ -29,63 +29,11 @@
 #ifndef ___VBox_Graphics_VBoxVideoGuest_h___
 #define ___VBox_Graphics_VBoxVideoGuest_h___
 
-#include <HGSMI.h>
-#include <HGSMIChSetup.h>
+#include <HGSMIBuffers.h>
 #include <VBoxVideo.h>
 #include <VBoxVideoIPRT.h>
 
-#ifdef VBOX_WDDM_MINIPORT
-# include "wddm/VBoxMPShgsmi.h"
- typedef VBOXSHGSMI HGSMIGUESTCMDHEAP;
-# define HGSMIGUESTCMDHEAP_GET(_p) (&(_p)->Heap)
-#else
- typedef HGSMIHEAP HGSMIGUESTCMDHEAP;
-# define HGSMIGUESTCMDHEAP_GET(_p) (_p)
-#endif
-
 RT_C_DECLS_BEGIN
-
-/**
- * Structure grouping the context needed for submitting commands to the host
- * via HGSMI
- */
-typedef struct HGSMIGUESTCOMMANDCONTEXT
-{
-    /** Information about the memory heap located in VRAM from which data
-     * structures to be sent to the host are allocated. */
-    HGSMIGUESTCMDHEAP heapCtx;
-    /** The I/O port used for submitting commands to the host by writing their
-     * offsets into the heap. */
-    RTIOPORT port;
-} HGSMIGUESTCOMMANDCONTEXT, *PHGSMIGUESTCOMMANDCONTEXT;
-
-
-/**
- * Structure grouping the context needed for receiving commands from the host
- * via HGSMI
- */
-typedef struct HGSMIHOSTCOMMANDCONTEXT
-{
-    /** Information about the memory area located in VRAM in which the host
-     * places data structures to be read by the guest. */
-    HGSMIAREA areaCtx;
-    /** Convenience structure used for matching host commands to handlers. */
-    /** @todo handlers are registered individually in code rather than just
-     * passing a static structure in order to gain extra flexibility.  There is
-     * currently no expected usage case for this though.  Is the additional
-     * complexity really justified? */
-    HGSMICHANNELINFO channels;
-    /** Flag to indicate that one thread is currently processing the command
-     * queue. */
-    volatile bool fHostCmdProcessing;
-    /* Pointer to the VRAM location where the HGSMI host flags are kept. */
-    volatile HGSMIHOSTFLAGS *pfHostFlags;
-    /** The I/O port used for receiving commands from the host as offsets into
-     * the memory area and sending back confirmations (command completion,
-     * IRQ acknowlegement). */
-    RTIOPORT port;
-} HGSMIHOSTCOMMANDCONTEXT, *PHGSMIHOSTCOMMANDCONTEXT;
-
 
 /**
  * Structure grouping the context needed for sending graphics acceleration
@@ -111,24 +59,7 @@ typedef struct VBVABUFFERCONTEXT
 /** @name Base HGSMI APIs
  * @{ */
 
-/** Acknowlege an IRQ. */
-DECLINLINE(void) VBoxHGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx)
-{
-    VBVO_PORT_WRITE_U32(pCtx->port, HGSMIOFFSET_VOID);
-}
-
-DECLHIDDEN(void)     VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                              void *pvMem);
-DECLHIDDEN(void)     VBoxHGSMIProcessHostQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx);
 DECLHIDDEN(bool)     VBoxHGSMIIsSupported(void);
-DECLHIDDEN(void *)   VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                          HGSMISIZE cbData,
-                                          uint8_t u8Ch,
-                                          uint16_t u16Op);
-DECLHIDDEN(void)     VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         void *pvBuffer);
-DECLHIDDEN(int)      VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                           void *pvBuffer);
 DECLHIDDEN(void)     VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
                                                  uint32_t *poffVRAMBaseMapping,
                                                  uint32_t *pcbMapping,
@@ -139,23 +70,11 @@ DECLHIDDEN(int)      VBoxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx
                                                   HGSMIOFFSET offLocation);
 DECLHIDDEN(int)      VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                            uint32_t fCaps);
-/** @todo we should provide a cleanup function too as part of the API */
-DECLHIDDEN(int)      VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                                void *pvGuestHeapMemory,
-                                                uint32_t cbGuestHeapMemory,
-                                                uint32_t offVRAMGuestHeapMemory,
-                                                const HGSMIENV *pEnv);
 DECLHIDDEN(void)     VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                                  uint32_t cbVRAM,
                                                  uint32_t offVRAMBaseMapping,
                                                  uint32_t *poffVRAMHostArea,
                                                  uint32_t *pcbHostArea);
-DECLHIDDEN(void)     VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                               void *pvBaseMapping,
-                                               uint32_t offHostFlags,
-                                               void *pvHostAreaMapping,
-                                               uint32_t offVRAMHostArea,
-                                               uint32_t cbHostArea);
 DECLHIDDEN(int)      VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                               HGSMIOFFSET offVRAMFlagsLocation,
                                               uint32_t fCaps,

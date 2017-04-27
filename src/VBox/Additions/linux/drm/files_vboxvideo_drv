@@ -28,6 +28,7 @@ FILES_VBOXVIDEO_DRM_NOBIN=" \
     ${PATH_ROOT}/include/VBox/Graphics/VBoxVideo.h=>include/VBoxVideo.h \
     ${PATH_ROOT}/include/VBox/Graphics/VBoxVideoGuest.h=>include/VBoxVideoGuest.h \
     ${PATH_ROOT}/include/VBox/Graphics/HGSMI.h=>include/HGSMI.h \
+    ${PATH_ROOT}/include/VBox/Graphics/HGSMIBuffers.h=>include/HGSMIBuffers.h \
     ${PATH_ROOT}/include/VBox/Graphics/HGSMIChannels.h=>include/HGSMIChannels.h \
     ${PATH_ROOT}/include/VBox/Graphics/HGSMIChSetup.h=>include/HGSMIChSetup.h \
     ${PATH_ROOT}/include/VBox/Graphics/HGSMIDefs.h=>include/HGSMIDefs.h \
