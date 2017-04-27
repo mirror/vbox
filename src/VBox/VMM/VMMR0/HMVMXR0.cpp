@@ -5733,6 +5733,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu)
 }
 
 
+#if 0
 /**
  * Determines if an exception is a contributory exception.
  *
@@ -5758,7 +5759,7 @@ DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
     }
     return false;
 }
-
+#endif
 
 /**
  * Sets an event as a pending event to be injected into the guest.
