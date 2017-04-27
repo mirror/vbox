@@ -3270,7 +3270,7 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
      * (INTn/INT3/INTO/ICEBP) generated exceptions cannot occur as the current (second) exception.
      */
     AssertReturn(fCurFlags & IEM_XCPT_FLAGS_T_CPU_XCPT, IEMXCPTRAISE_INVALID);
-    Assert(pVCpu); RT_NOREF_PV(pVCpu);
+    Assert(pVCpu); RT_NOREF(pVCpu);
 
     IEMXCPTRAISE     enmRaise   = IEMXCPTRAISE_CURRENT_XCPT;
     IEMXCPTRAISEINFO fRaiseInfo = IEMXCPTRAISEINFO_NONE;
@@ -3354,7 +3354,7 @@ IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
         IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_SHUTDOWN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    RT_NOREF_PV(pVCpu);
+    RT_NOREF(pVCpu);
     return VINF_EM_TRIPLE_FAULT;
 }
 
