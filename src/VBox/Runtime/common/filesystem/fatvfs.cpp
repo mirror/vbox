@@ -4245,8 +4245,11 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
                         VERR_INVALID_PARAMETER);
     AssertMsgReturn(cSectorsPerCluster == 0 || (cSectorsPerCluster <= 128 && RT_IS_POWER_OF_TWO(cSectorsPerCluster)),
                     ("cSectorsPerCluster=%#x\n", cSectorsPerCluster), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(bMedia == 0 || (FAT_ID_IS_VALID(bMedia) && FATBPB_MEDIA_IS_VALID(bMedia)),
-                    ("bMedia=%#x\n"), VERR_INVALID_PARAMETER);
+    if (bMedia != 0)
+    {
+        AssertMsgReturn(FAT_ID_IS_VALID(bMedia),       ("bMedia=%#x\n"), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(FATBPB_MEDIA_IS_VALID(bMedia), ("bMedia=%#x\n"), VERR_INVALID_PARAMETER);
+    }
     AssertReturn(!(fFlags & ~RTFSFATVOL_FMT_F_VALID_MASK), VERR_INVALID_FLAGS);
     AssertReturn(enmFatType >= RTFSFATTYPE_INVALID && enmFatType < RTFSFATTYPE_END, VERR_INVALID_PARAMETER);
 
