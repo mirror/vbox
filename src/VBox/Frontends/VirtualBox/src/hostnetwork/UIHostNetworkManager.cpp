@@ -48,6 +48,16 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Tree-widget column tags. */
+enum
+{
+    Column_Name,
+    Column_IPv4,
+    Column_IPv6,
+    Column_Max,
+};
+
+
 /** Host Network Manager: Tree-widget item. */
 class UIItemHostNetwork : public QITreeWidgetItem, public UIDataHostNetwork
 {
@@ -58,6 +68,11 @@ public:
 
     /** Returns item name. */
     QString name() const { return m_interface.m_strName; }
+
+private:
+
+    /** Returns CIDR for a passed @a strMask. */
+    static int maskToCidr(const QString &strMask);
 };
 
 
@@ -67,8 +82,13 @@ public:
 
 void UIItemHostNetwork::updateFields()
 {
-    /* Compose item name/tool-tip: */
-    setText(0, m_interface.m_strName);
+    /* Compose item fields: */
+    setText(Column_Name, m_interface.m_strName);
+    setText(Column_IPv4, QString("%1/%2").arg(m_interface.m_strInterfaceAddress).arg(maskToCidr(m_interface.m_strInterfaceMask)));
+    setText(Column_IPv6, !m_interface.m_fIpv6Supported ? QString() :
+                         QString("%1/%2").arg(m_interface.m_strInterfaceAddress6).arg(maskToCidr(m_interface.m_strInterfaceMaskLength6)));
+
+    /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
     const QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
     const QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
@@ -123,7 +143,38 @@ void UIItemHostNetwork::updateFields()
     }
 
     /* Assign tool-tip finally: */
-    setToolTip(0, strTable.arg(strToolTip));
+    setToolTip(Column_Name, strTable.arg(strToolTip));
+}
+
+/* static */
+int UIItemHostNetwork::maskToCidr(const QString &strMask)
+{
+    /* Parse passed mask: */
+    QList<int> address;
+    foreach (const QString &strValue, strMask.split('.'))
+        address << strValue.toInt();
+
+    /* Calculate CIDR: */
+    int iCidr = 0;
+    for (int i = 0; i < 4 || i < address.size(); ++i)
+    {
+        switch(address.at(i))
+        {
+            case 0x80: iCidr += 1; break;
+            case 0xC0: iCidr += 2; break;
+            case 0xE0: iCidr += 3; break;
+            case 0xF0: iCidr += 4; break;
+            case 0xF8: iCidr += 5; break;
+            case 0xFC: iCidr += 6; break;
+            case 0xFE: iCidr += 7; break;
+            case 0xFF: iCidr += 8; break;
+            /* Return CIDR prematurelly: */
+            default: return iCidr;
+        }
+    }
+
+    /* Return CIDR: */
+    return iCidr;
 }
 
 
@@ -213,6 +264,31 @@ void UIHostNetworkManager::retranslateUi()
     if (m_pToolBar)
         m_pToolBar->updateLayout();
 #endif
+
+    /* Translate tree-widget: */
+    const QStringList fields = QStringList()
+                               << tr("Name")
+                               << tr("IPv4 address/mask")
+                               << tr("IPv6 address/mask");
+    m_pTreeWidget->setHeaderLabels(fields);
+}
+
+void UIHostNetworkManager::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QMainWindow>::resizeEvent(pEvent);
+
+    /* Adjust tree-widget: */
+    sltAdjustTreeWidget();
+}
+
+void UIHostNetworkManager::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QMainWindow>::showEvent(pEvent);
+
+    /* Adjust tree-widget: */
+    sltAdjustTreeWidget();
 }
 
 void UIHostNetworkManager::sltAddHostNetwork()
@@ -263,8 +339,8 @@ void UIHostNetworkManager::sltAddHostNetwork()
             loadHostNetwork(comInterface, data);
             createItemForNetworkHost(data, true);
 
-            /* Sort list by the 1st column: */
-            m_pTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+            /* Adjust tree-widget: */
+            sltAdjustTreeWidget();
         }
     }
 }
@@ -358,6 +434,9 @@ void UIHostNetworkManager::sltEditHostNetwork()
         UIDataHostNetwork data;
         loadHostNetwork(comInterface, data);
         updateItemForNetworkHost(data, true, pItem);
+
+        /* Adjust tree-widget: */
+        sltAdjustTreeWidget();
     }
 }
 
@@ -432,10 +511,34 @@ void UIHostNetworkManager::sltRemoveHostNetwork()
                 {
                     /* Remove interface from the tree: */
                     delete pItem;
+
+                    /* Adjust tree-widget: */
+                    sltAdjustTreeWidget();
                 }
             }
         }
     }
+}
+
+void UIHostNetworkManager::sltAdjustTreeWidget()
+{
+    /* Get the tree-widget abstract interface: */
+    QAbstractItemView *pItemView = m_pTreeWidget;
+    /* Get the tree-widget header-view: */
+    QHeaderView *pItemHeader = m_pTreeWidget->header();
+
+    /* Calculate the total tree-widget width: */
+    const int iTotal = m_pTreeWidget->viewport()->width();
+    /* Look for a minimum width hints for non-important columns: */
+    const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(Column_IPv4), pItemHeader->sectionSizeHint(Column_IPv4));
+    const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(Column_IPv6), pItemHeader->sectionSizeHint(Column_IPv6));
+    /* Propose suitable width hints for non-important columns: */
+    const int iWidth1 = iMinWidth1 < iTotal / Column_Max ? iMinWidth1 : iTotal / Column_Max;
+    const int iWidth2 = iMinWidth2 < iTotal / Column_Max ? iMinWidth2 : iTotal / Column_Max;
+    /* Apply the proposal: */
+    m_pTreeWidget->setColumnWidth(Column_IPv4, iWidth1);
+    m_pTreeWidget->setColumnWidth(Column_IPv6, iWidth2);
+    m_pTreeWidget->setColumnWidth(Column_Name, iTotal - iWidth1 - iWidth2);
 }
 
 void UIHostNetworkManager::sltHandleCurrentItemChange()
@@ -630,12 +733,13 @@ void UIHostNetworkManager::prepareTreeWidget()
     AssertPtrReturnVoid(m_pTreeWidget);
     {
         /* Configure tree-widget: */
-        m_pTreeWidget->header()->hide();
         m_pTreeWidget->setRootIsDecorated(false);
         m_pTreeWidget->setAlternatingRowColors(true);
         m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pTreeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        m_pTreeWidget->sortItems(0, Qt::AscendingOrder);
+        m_pTreeWidget->setColumnCount(Column_Max);
+        m_pTreeWidget->setSortingEnabled(true);
+        m_pTreeWidget->sortByColumn(Column_Name, Qt::AscendingOrder);
         connect(m_pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
                 this, SLOT(sltHandleCurrentItemChange()));
         connect(m_pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
@@ -706,11 +810,12 @@ void UIHostNetworkManager::loadHostNetworks()
                 createItemForNetworkHost(data, false);
             }
 
-        /* Sort list by the 1st column: */
-        m_pTreeWidget->sortByColumn(0, Qt::AscendingOrder);
         /* Choose the 1st item as current initially: */
         m_pTreeWidget->setCurrentItem(m_pTreeWidget->topLevelItem(0));
         sltHandleCurrentItemChange();
+
+        /* Adjust tree-widget: */
+        sltAdjustTreeWidget();
     }
 }
 

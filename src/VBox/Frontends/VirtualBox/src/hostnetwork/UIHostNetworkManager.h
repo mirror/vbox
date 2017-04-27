@@ -53,8 +53,17 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    /** @name Event-handling stuff.
+     * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+
+        /** Handles resize @a pEvent. */
+        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
+        /** Handles show @a pEvent. */
+        virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** @} */
 
 private slots:
 
@@ -70,9 +79,12 @@ private slots:
 
     /** @name Tree-widget stuff.
      * @{ */
-        /** Handles host network tree current item change. */
+        /** Handles command to adjust tree-widget. */
+        void sltAdjustTreeWidget();
+
+        /** Handles tree-widget current item change. */
         void sltHandleCurrentItemChange();
-        /** Handles context menu request for @a position of host network tree. */
+        /** Handles context menu request for tree-widget @a position. */
         void sltHandleContextMenuRequest(const QPoint &position);
     /** @} */
 
