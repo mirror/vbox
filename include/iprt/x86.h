@@ -769,6 +769,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD    RT_BIT(12)
 /** Bit 13 - AVIC - Advanced Virtual Interrupt Controller. */
 #define X86_CPUID_SVM_FEATURE_EDX_AVIC                      RT_BIT(13)
+/** Bit 15 - V_VMSAVE_VMLOAD - Supports virtualized VMSAVE/VMLOAD. */
+#define X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD        RT_BIT(15)
+/** Bit 16 - V_VMSAVE_VMLOAD - Supports virtualized GIF. */
+#define X86_CPUID_SVM_FEATURE_EDX_VGIF                      RT_BIT(16)
 /** @} */
 
 
