@@ -25,6 +25,7 @@
 #include <iprt/initterm.h>
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
+#include <iprt/fsvfs.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -36,7 +37,14 @@
 #include <iprt/filesystem.h>
 #include <iprt/vfs.h>
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static const char *g_pszProgName = "";
+
+
+
 static void printUsage(PRTSTREAM pStrm)
 {
     RTStrmPrintf(pStrm,
@@ -74,6 +82,14 @@ static void printUsage(PRTSTREAM pStrm)
                  "                [--format VDI|VMDK|VHD] (default: VDI)\n"
                  "                [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                  "                [--dataalignment <alignment in bytes>]\n"
+                 "\n"
+                 "   createfloppy --filename <filename>\n"
+                 "                [--size <size in bytes>]\n"
+                 "                [--root-dir-entries <value>]\n"
+                 "                [--sector-size <bytes>]\n"
+                 "                [--heads <value>]\n"
+                 "                [--sectors-per-track <count>]\n"
+                 "                [--media-byte <byte>]\n"
                  "\n"
                  "   repair       --filename <filename>\n"
                  "                [--dry-run]\n"
@@ -1907,6 +1923,87 @@ static int handleClearComment(HandlerArg *a)
 }
 
 
+static int handleCreateFloppy(HandlerArg *a)
+{
+    const char *pszFilename         = NULL;
+    uint64_t    cbFloppy            = 1474560;
+    uint16_t    cbSector            = 0;
+    uint8_t     cHeads              = 0;
+    uint8_t     cSectorsPerCluster  = 0;
+    uint8_t     cSectorsPerTrack    = 0;
+    uint16_t    cRootDirEntries     = 0;
+    uint8_t     bMedia              = 0;
+
+    /* Parse the command line. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--sectors-per-cluster",  'c', RTGETOPT_REQ_UINT8  },
+        { "--filename",             'f', RTGETOPT_REQ_STRING },
+        { "--heads",                'h', RTGETOPT_REQ_UINT8  },
+        { "--media-byte",           'm', RTGETOPT_REQ_UINT8  },
+        { "--root-dir-entries",     'r', RTGETOPT_REQ_UINT16 },
+        { "--size",                 's', RTGETOPT_REQ_UINT64 },
+        { "--sector-size",          'S', RTGETOPT_REQ_UINT16 },
+        { "--sectors-per-track",    't', RTGETOPT_REQ_UINT8  },
+    };
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'c': cSectorsPerCluster = ValueUnion.u8; break;
+            case 'f': pszFilename        = ValueUnion.psz; break;
+            case 'h': cHeads             = ValueUnion.u8; break;
+            case 'm': bMedia             = ValueUnion.u8; break;
+            case 'r': cRootDirEntries    = ValueUnion.u16; break;
+            case 's': cbFloppy           = ValueUnion.u64; break;
+            case 'S': cbSector           = ValueUnion.u16; break;
+            case 't': cSectorsPerTrack   = ValueUnion.u8; break;
+
+            default:
+                ch = RTGetOptPrintError(ch, &ValueUnion);
+                printUsage(g_pStdErr);
+                return ch;
+        }
+    }
+
+    /* Check for mandatory parameters. */
+    if (!pszFilename)
+        return errorSyntax("Mandatory --filename option missing\n");
+
+    /*
+     * Do the job.
+     */
+    uint32_t        offError;
+    RTERRINFOSTATIC ErrInfo;
+    RTVFSFILE       hVfsFile;
+    int rc = RTVfsChainOpenFile(pszFilename,
+                                 RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_ALL
+                                | (0770 << RTFILE_O_CREATE_MODE_SHIFT),
+                                 &hVfsFile, &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFsFatVolFormat(hVfsFile, 0, cbFloppy, RTFSFATVOL_FMT_F_FULL, cbSector, cSectorsPerCluster, RTFSFATTYPE_INVALID,
+                              cHeads, cSectorsPerTrack, bMedia, 0 /*cHiddenSectors*/, cRootDirEntries,
+                              RTErrInfoInitStatic(&ErrInfo));
+        RTVfsFileRelease(hVfsFile);
+        if (RT_SUCCESS(rc))
+            return RTEXITCODE_SUCCESS;
+
+        if (RTErrInfoIsSet(&ErrInfo.Core))
+            errorRuntime("Error %Rrc formatting floppy '%s': %s", rc, pszFilename, ErrInfo.Core.pszMsg);
+        else
+            errorRuntime("Error formatting floppy '%s': %Rrc", pszFilename, rc);
+    }
+    else
+        RTVfsChainMsgError("RTVfsChainOpenFile", pszFilename, rc, offError, &ErrInfo.Core);
+    return RTEXITCODE_FAILURE;
+}
+
+
 static int handleClearResize(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
@@ -2068,6 +2165,7 @@ int main(int argc, char *argv[])
         { "compact",      handleCompact      },
         { "createcache",  handleCreateCache  },
         { "createbase",   handleCreateBase   },
+        { "createfloppy", handleCreateFloppy },
         { "repair",       handleRepair       },
         { "clearcomment", handleClearComment },
         { "resize",       handleClearResize  },
