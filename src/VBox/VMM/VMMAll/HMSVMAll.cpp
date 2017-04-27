@@ -215,11 +215,22 @@ VMM_INT_DECL(TRPMEVENT) hmSvmEventToTrpmEventType(PCSVMEVENT pEvent)
 static uint8_t hmSvmEventTypeFromIemEvent(uint32_t uVector, uint32_t fIemXcptFlags)
 {
     if (fIemXcptFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+    {
+        if (uVector != X86_XCPT_NMI)
+            return SVM_EVENT_EXCEPTION;
+        return SVM_EVENT_NMI;
+    }
+
+    /* See AMD spec. Table 15-1. "Guest Exception or Interrupt Types". */
+    if (fIemXcptFlags & (IEM_XCPT_FLAGS_BP_INSTR | IEM_XCPT_FLAGS_ICEBP_INSTR | IEM_XCPT_FLAGS_OF_INSTR))
         return SVM_EVENT_EXCEPTION;
+
     if (fIemXcptFlags & IEM_XCPT_FLAGS_T_EXT_INT)
-        return uVector != X86_XCPT_NMI ? SVM_EVENT_EXTERNAL_IRQ : SVM_EVENT_NMI;
+        return SVM_EVENT_EXTERNAL_IRQ;
+
     if (fIemXcptFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
         return SVM_EVENT_SOFTWARE_INT;
+
     AssertMsgFailed(("hmSvmEventTypeFromIemEvent: Invalid IEM xcpt/int. type %#x, uVector=%#x\n", fIemXcptFlags, uVector));
     return UINT8_MAX;
 }
@@ -505,6 +516,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
              * Event injection.
              */
             PCSVMEVENT pEventInject = &pVmcbCtrl->EventInject;
+            pCtx->hwvirt.svm.fInterceptEvents = !pEventInject->n.u1Valid;
             if (pEventInject->n.u1Valid)
             {
                 uint8_t   const uVector    = pEventInject->n.u8Vector;
@@ -587,8 +599,6 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
     if (   CPUMIsGuestInNestedHwVirtMode(pCtx)
         || uExitCode == SVM_EXIT_INVALID)
     {
-        RT_NOREF(pVCpu);
-
         /*
          * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
          */
@@ -999,17 +1009,18 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
      * Since it's possible to do a 32-bit IO access at port 65534 (accessing 4 bytes),
      * we need 3 extra bits beyond the second 4K page.
      */
+    static const uint16_t s_auSizeMasks[] = { 0, 1, 3, 0, 0xf, 0, 0, 0 };
     uint8_t const *pbIopm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
 
     uint16_t const u16Port   = pIoExitInfo->n.u16Port;
     uint16_t const offIopm   = u16Port >> 3;
-    uint16_t const fSizeMask = pIoExitInfo->n.u1OP32 ? 0xf : pIoExitInfo->n.u1OP16 ? 3 : 1;
+    uint16_t const fSizeMask = s_auSizeMasks[(pIoExitInfo->u >> SVM_IOIO_OP_SIZE_SHIFT) & 7];
     uint8_t  const cShift    = u16Port - (offIopm << 3);
     uint16_t const fIopmMask = (1 << cShift) | (fSizeMask << cShift);
 
     pbIopm += offIopm;
-    uint16_t const fIopmBits = *(uint16_t *)pbIopm;
-    if (fIopmBits & fIopmMask)
+    uint16_t const u16Iopm = *(uint16_t *)pbIopm;
+    if (u16Iopm & fIopmMask)
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_IOIO, pIoExitInfo->u, uNextRip);
 
     return VINF_HM_INTERCEPT_NOT_ACTIVE;
