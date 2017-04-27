@@ -2566,6 +2566,84 @@ static int rtFsFatDir_FindEntry(PRTFSFATDIR pThis, const char *pszEntry, uint32_
             else
                 cwcName = 0;
         }
+
+        rtFsFatDir_ReleaseBufferAfterReading(pThis, uBufferLock);
+    }
+
+    return VERR_FILE_NOT_FOUND;
+}
+
+
+/**
+ * Watered down version of rtFsFatDir_FindEntry that is used by the short name
+ * generator to check for duplicates.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_FILE_NOT_FOUND if not found.
+ * @retval  VINF_SUCCESS if found.
+ * @param   pThis           The directory to search.
+ * @param   pszEntry        The entry to look for.
+ */
+static int rtFsFatDir_FindEntryShort(PRTFSFATDIR pThis, const char *pszName8Dot3)
+{
+    Assert(strlen(pszName8Dot3) == 8+3);
+
+    /*
+     * Scan the directory buffer by buffer.
+     */
+    uint32_t            offEntryInDir   = 0;
+    uint32_t const      cbDir           = pThis->Core.cbObject;
+    Assert(RT_ALIGN_32(cbDir, sizeof(FATDIRENTRY)) == cbDir);
+
+    while (offEntryInDir < cbDir)
+    {
+        /* Get chunk of entries starting at offEntryInDir. */
+        uint32_t            uBufferLock = UINT32_MAX;
+        uint32_t            cEntries    = 0;
+        PCFATDIRENTRYUNION  paEntries   = NULL;
+        int rc = rtFsFatDir_GetEntriesAt(pThis, offEntryInDir, &paEntries, &cEntries, &uBufferLock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /*
+         * Now work thru each of the entries.
+         */
+        for (uint32_t iEntry = 0; iEntry < cEntries; iEntry++, offEntryInDir += sizeof(FATDIRENTRY))
+        {
+            switch ((uint8_t)paEntries[iEntry].Entry.achName[0])
+            {
+                default:
+                    break;
+                case FATDIRENTRY_CH0_DELETED:
+                    continue;
+                case FATDIRENTRY_CH0_END_OF_DIR:
+                    if (pThis->Core.pVol->enmBpbVersion >= RTFSFATBPBVER_DOS_2_0)
+                    {
+                        rtFsFatDir_ReleaseBufferAfterReading(pThis, uBufferLock);
+                        return VERR_FILE_NOT_FOUND;
+                    }
+                    break; /* Technically a valid entry before DOS 2.0, or so some claim. */
+            }
+
+            /*
+             * Skip long filename slots.
+             */
+            if (   paEntries[iEntry].Slot.fAttrib == FAT_ATTR_NAME_SLOT
+                && paEntries[iEntry].Slot.idxZero == 0
+                && paEntries[iEntry].Slot.fZero   == 0
+                && (paEntries[iEntry].Slot.idSlot & ~FATDIRNAMESLOT_FIRST_SLOT_FLAG) <= FATDIRNAMESLOT_HIGHEST_SLOT_ID
+                && (paEntries[iEntry].Slot.idSlot & ~FATDIRNAMESLOT_FIRST_SLOT_FLAG) != 0)
+            { /* skipped */ }
+            /*
+             * Regular directory entry. Do the matching, first 8.3 then long name.
+             */
+            else if (memcmp(paEntries[iEntry].Entry.achName, pszName8Dot3, sizeof(paEntries[iEntry].Entry.achName)) == 0)
+            {
+                rtFsFatDir_ReleaseBufferAfterReading(pThis, uBufferLock);
+                return VINF_SUCCESS;
+            }
+        }
+
         rtFsFatDir_ReleaseBufferAfterReading(pThis, uBufferLock);
     }
 
@@ -2627,12 +2705,51 @@ static uint8_t rtFsFatDir_CalcCaseFlags(const char *pszName)
  */
 static bool rtFsFatDir_NeedLongName(const char *pszEntry, bool fIs8Dot3Name, PCFATDIRENTRY pDirEntry)
 {
+    /*
+     * Check the easy ways out first.
+     */
+
+    /* If we couldn't make a straight 8-dot-3 name out of it, the we
+       must do the long name thing.  No question. */
     if (!fIs8Dot3Name)
         return true;
 
-    /** @todo check case here. */
-    RT_NOREF(pszEntry, pDirEntry);
-    return false;
+    /* If both lower case flags are set, then the whole name must be
+       lowercased, so we won't need a long entry. */
+    if (pDirEntry->fCase == (FATDIRENTRY_CASE_F_LOWER_BASE | FATDIRENTRY_CASE_F_LOWER_EXT))
+        return false;
+
+    /*
+     * Okay, check out the whole string then, part by part.  (This is code
+     * similar to rtFsFatDir_CalcCaseFlags.)
+     */
+    uint8_t fCurrent = pDirEntry->fCase & FATDIRENTRY_CASE_F_LOWER_BASE;
+    for (;;)
+    {
+        RTUNICP uc;
+        int rc = RTStrGetCpEx(&pszEntry, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            if (uc != 0)
+            {
+                if (uc != '.')
+                {
+                    if (   fCurrent
+                        || !RTUniCpIsLower(uc))
+                    { /* okay */ }
+                    else
+                        return true;
+                }
+                else
+                    fCurrent = pDirEntry->fCase & FATDIRENTRY_CASE_F_LOWER_EXT;
+            }
+            /* It checked out to the end, so we don't need a long name. */
+            else
+                return false;
+        }
+        else
+            return true;
+    }
 }
 
 
@@ -2735,10 +2852,6 @@ static void rtFsFatDir_CopyShortName(char *pszDst, uint32_t cchDst, const char *
  */
 static int rtFsFatDir_GenerateShortName(PRTFSFATDIR pThis, const char *pszEntry, PFATDIRENTRY pDirEntry)
 {
-    FATDIRENTRY DirEntryIgn;
-    bool        fLongIgn;
-    uint32_t    offEntryInDirIgn;
-
     /* Do some input parsing. */
     const char  *pszExt      = RTPathSuffix(pszEntry);
     size_t const cchBasename = pszExt ? pszExt - pszEntry : strlen(pszEntry);
@@ -2757,7 +2870,7 @@ static int rtFsFatDir_GenerateShortName(PRTFSFATDIR pThis, const char *pszEntry,
     for (uint32_t iLastDigit = 1; iLastDigit < 10; iLastDigit++)
     {
         szShortName[7] = iLastDigit + '0';
-        int rc = rtFsFatDir_FindEntry(pThis, szShortName, &offEntryInDirIgn, &fLongIgn, &DirEntryIgn);
+        int rc = rtFsFatDir_FindEntryShort(pThis, szShortName);
         if (rc == VERR_FILE_NOT_FOUND)
         {
             memcpy(pDirEntry->achName, szShortName, sizeof(pDirEntry->achName));
@@ -2776,7 +2889,7 @@ static int rtFsFatDir_GenerateShortName(PRTFSFATDIR pThis, const char *pszEntry,
         {
             szShortName[6] = iFirstDigit + '0';
             szShortName[7] = iLastDigit  + '0';
-            int rc = rtFsFatDir_FindEntry(pThis, szShortName, &offEntryInDirIgn, &fLongIgn, &DirEntryIgn);
+            int rc = rtFsFatDir_FindEntryShort(pThis, szShortName);
             if (rc == VERR_FILE_NOT_FOUND)
             {
                 memcpy(pDirEntry->achName, szShortName, sizeof(pDirEntry->achName));
@@ -2793,14 +2906,14 @@ static int rtFsFatDir_GenerateShortName(PRTFSFATDIR pThis, const char *pszEntry,
     for (uint32_t i = 0; i < 8192; i++)
     {
         char    szHex[68];
-        ssize_t cchHex = RTStrFormatU32(szHex, sizeof(szHex), RTRandU32(), 16, 5, 0, RTSTR_F_CAPITAL | RTSTR_F_WIDTH);
+        ssize_t cchHex = RTStrFormatU32(szHex, sizeof(szHex), RTRandU32(), 16, 5, 0, RTSTR_F_CAPITAL | RTSTR_F_WIDTH | RTSTR_F_ZEROPAD);
         AssertReturn(cchHex >= 5, VERR_NET_NOT_UNIQUE_NAME);
-        szShortName[7] = szHex[cchHex];
-        szShortName[6] = szHex[cchHex - 1];
-        szShortName[5] = szHex[cchHex - 2];
-        szShortName[4] = szHex[cchHex - 3];
-        szShortName[3] = szHex[cchHex - 4];
-        int rc = rtFsFatDir_FindEntry(pThis, szShortName, &offEntryInDirIgn, &fLongIgn, &DirEntryIgn);
+        szShortName[7] = szHex[cchHex - 1];
+        szShortName[6] = szHex[cchHex - 2];
+        szShortName[5] = szHex[cchHex - 3];
+        szShortName[4] = szHex[cchHex - 4];
+        szShortName[3] = szHex[cchHex - 5];
+        int rc = rtFsFatDir_FindEntryShort(pThis, szShortName);
         if (rc == VERR_FILE_NOT_FOUND)
         {
             memcpy(pDirEntry->achName, szShortName, sizeof(pDirEntry->achName));
