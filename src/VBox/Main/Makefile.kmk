@@ -475,10 +475,12 @@ VBoxSVC_SOURCES = \
 	src-server/StorageControllerImpl.cpp \
 	src-server/SystemPropertiesImpl.cpp \
 	src-server/TokenImpl.cpp \
-	src-server/$(if $(VBOX_WITH_UNATTENDED),UnattendedImpl.cpp,) \
-	src-server/$(if $(VBOX_WITH_UNATTENDED),UnattendedInstaller.cpp,) \
-	src-server/$(if $(VBOX_WITH_UNATTENDED),UnattendedScript.cpp,) \
-	src-server/$(if $(VBOX_WITH_UNATTENDED),UnattendedHelper.cpp,) \
+	$(if $(VBOX_WITH_UNATTENDED), \
+	src-server/UnattendedImpl.cpp, \
+	src-server/UnattendedInstaller.cpp \
+	src-server/UnattendedScript.cpp \
+	src-server/UnattendedHelper.cpp \
+	,) \
 	src-server/USBControllerImpl.cpp \
 	src-server/USBDeviceFiltersImpl.cpp \
 	src-server/VFSExplorerImpl.cpp \
