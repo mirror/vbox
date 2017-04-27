@@ -2227,6 +2227,7 @@ static int rtFsFatDir_GetEntriesAtCommon(PRTFSFATDIR pThis, uint32_t offEntryInD
 static int rtFsFatDir_PutEntryAfterUpdate(PRTFSFATDIR pThis, PFATDIRENTRY pDirEntry, uint32_t uWriteLock)
 {
     Assert(uWriteLock == UINT32_C(0x80000001));
+    RT_NOREF(uWriteLock);
     if (pThis->fFullyBuffered)
     {
         uint32_t idxSector = ((uintptr_t)pDirEntry - (uintptr_t)pThis->paEntries) / pThis->Core.pVol->cbSector;
@@ -3387,7 +3388,7 @@ static DECLCALLBACK(int) rtFsFatVol_Close(void *pvThis)
     {
         Assert(RTListIsEmpty(&pThis->pRootDir->OpenChildren));
         uint32_t cRefs = RTVfsDirRelease(pThis->hVfsRootDir);
-        Assert(cRefs == 0);
+        Assert(cRefs == 0); NOREF(cRefs);
         pThis->hVfsRootDir = NIL_RTVFSDIR;
         pThis->pRootDir    = NULL;
     }
