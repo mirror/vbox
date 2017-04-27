@@ -2043,8 +2043,11 @@ static DECLCALLBACK(size_t) stamR3SnapshotOutput(void *pvArg, const char *pach, 
     /*
      * Copy the chars to the buffer and terminate it.
      */
-    memcpy(pThis->psz, pach, cch);
-    pThis->psz += cch;
+    if (cch)
+    {
+        memcpy(pThis->psz, pach, cch);
+        pThis->psz += cch;
+    }
     *pThis->psz = '\0';
     return cch;
 }
