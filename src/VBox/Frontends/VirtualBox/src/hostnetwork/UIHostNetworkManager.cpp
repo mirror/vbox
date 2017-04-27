@@ -85,11 +85,11 @@ void UIItemHostNetwork::updateFields()
 {
     /* Compose item fields: */
     setText(Column_Name, m_interface.m_strName);
-    setText(Column_IPv4, QString("%1/%2").arg(m_interface.m_strInterfaceAddress).arg(maskToCidr(m_interface.m_strInterfaceMask)));
-    setText(Column_IPv6, !m_interface.m_fIpv6Supported ? QString() :
-                         QString("%1/%2").arg(m_interface.m_strInterfaceAddress6).arg(maskToCidr(m_interface.m_strInterfaceMaskLength6)));
+    setText(Column_IPv4, QString("%1/%2").arg(m_interface.m_strAddress).arg(maskToCidr(m_interface.m_strMask)));
+    setText(Column_IPv6, !m_interface.m_fSupportedIPv6 ? QString() :
+                         QString("%1/%2").arg(m_interface.m_strAddress6).arg(maskToCidr(m_interface.m_strMaskLength6)));
     setText(Column_DHCP, UIHostNetworkManager::tr("Enable", "DHCP Server"));
-    setCheckState(Column_DHCP, m_dhcpserver.m_fDhcpServerEnabled ? Qt::Checked : Qt::Unchecked);
+    setCheckState(Column_DHCP, m_dhcpserver.m_fEnabled ? Qt::Checked : Qt::Unchecked);
 
     /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
@@ -101,48 +101,48 @@ void UIItemHostNetwork::updateFields()
     strToolTip += strHeader.arg(UIHostNetworkManager::tr("Adapter"))
                            .arg(UIHostNetworkManager::tr("Manually configured", "interface"));
     strToolTip += strSubHeader.arg(UIHostNetworkManager::tr("IPv4 Address"))
-                              .arg(m_interface.m_strInterfaceAddress.isEmpty() ?
+                              .arg(m_interface.m_strAddress.isEmpty() ?
                                    UIHostNetworkManager::tr ("Not set", "address") :
-                                   m_interface.m_strInterfaceAddress) +
+                                   m_interface.m_strAddress) +
                   strSubHeader.arg(UIHostNetworkManager::tr("IPv4 Network Mask"))
-                              .arg(m_interface.m_strInterfaceMask.isEmpty() ?
+                              .arg(m_interface.m_strMask.isEmpty() ?
                                    UIHostNetworkManager::tr ("Not set", "mask") :
-                                   m_interface.m_strInterfaceMask);
-    if (m_interface.m_fIpv6Supported)
+                                   m_interface.m_strMask);
+    if (m_interface.m_fSupportedIPv6)
     {
         strToolTip += strSubHeader.arg(UIHostNetworkManager::tr("IPv6 Address"))
-                                  .arg(m_interface.m_strInterfaceAddress6.isEmpty() ?
+                                  .arg(m_interface.m_strAddress6.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "address") :
-                                       m_interface.m_strInterfaceAddress6) +
+                                       m_interface.m_strAddress6) +
                       strSubHeader.arg(UIHostNetworkManager::tr("IPv6 Network Mask Length"))
-                                  .arg(m_interface.m_strInterfaceMaskLength6.isEmpty() ?
+                                  .arg(m_interface.m_strMaskLength6.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "length") :
-                                       m_interface.m_strInterfaceMaskLength6);
+                                       m_interface.m_strMaskLength6);
     }
 
     /* DHCP server information: */
     strToolTip += strHeader.arg(UIHostNetworkManager::tr("DHCP Server"))
-                           .arg(m_dhcpserver.m_fDhcpServerEnabled ?
+                           .arg(m_dhcpserver.m_fEnabled ?
                                 UIHostNetworkManager::tr("Enabled", "server") :
                                 UIHostNetworkManager::tr("Disabled", "server"));
-    if (m_dhcpserver.m_fDhcpServerEnabled)
+    if (m_dhcpserver.m_fEnabled)
     {
         strToolTip += strSubHeader.arg(UIHostNetworkManager::tr("Address"))
-                                  .arg(m_dhcpserver.m_strDhcpServerAddress.isEmpty() ?
+                                  .arg(m_dhcpserver.m_strAddress.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "address") :
-                                       m_dhcpserver.m_strDhcpServerAddress) +
+                                       m_dhcpserver.m_strAddress) +
                       strSubHeader.arg(UIHostNetworkManager::tr("Network Mask"))
-                                  .arg(m_dhcpserver.m_strDhcpServerMask.isEmpty() ?
+                                  .arg(m_dhcpserver.m_strMask.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "mask") :
-                                       m_dhcpserver.m_strDhcpServerMask) +
+                                       m_dhcpserver.m_strMask) +
                       strSubHeader.arg(UIHostNetworkManager::tr("Lower Bound"))
-                                  .arg(m_dhcpserver.m_strDhcpLowerAddress.isEmpty() ?
+                                  .arg(m_dhcpserver.m_strLowerAddress.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "bound") :
-                                       m_dhcpserver.m_strDhcpLowerAddress) +
+                                       m_dhcpserver.m_strLowerAddress) +
                       strSubHeader.arg(UIHostNetworkManager::tr("Upper Bound"))
-                                  .arg(m_dhcpserver.m_strDhcpUpperAddress.isEmpty() ?
+                                  .arg(m_dhcpserver.m_strUpperAddress.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "bound") :
-                                       m_dhcpserver.m_strDhcpUpperAddress);
+                                       m_dhcpserver.m_strUpperAddress);
     }
 
     /* Assign tool-tip finally: */
@@ -377,15 +377,15 @@ void UIHostNetworkManager::sltEditHostNetwork()
     {
         /* Save IPv4 interface configuration: */
         if (   comInterface.isOk()
-            && (   newData.m_interface.m_strInterfaceAddress != oldData.m_interface.m_strInterfaceAddress
-                || newData.m_interface.m_strInterfaceMask != oldData.m_interface.m_strInterfaceMask))
-            comInterface.EnableStaticIPConfig(newData.m_interface.m_strInterfaceAddress, newData.m_interface.m_strInterfaceMask);
+            && (   newData.m_interface.m_strAddress != oldData.m_interface.m_strAddress
+                || newData.m_interface.m_strMask != oldData.m_interface.m_strMask))
+            comInterface.EnableStaticIPConfig(newData.m_interface.m_strAddress, newData.m_interface.m_strMask);
         /* Save IPv6 interface configuration: */
         if (   comInterface.isOk()
-            && newData.m_interface.m_fIpv6Supported
-            && (   newData.m_interface.m_strInterfaceAddress6 != oldData.m_interface.m_strInterfaceAddress6
-                || newData.m_interface.m_strInterfaceMaskLength6 != oldData.m_interface.m_strInterfaceMaskLength6))
-            comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strInterfaceAddress6, newData.m_interface.m_strInterfaceMaskLength6.toULong());
+            && newData.m_interface.m_fSupportedIPv6
+            && (   newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
+                || newData.m_interface.m_strMaskLength6 != oldData.m_interface.m_strMaskLength6))
+            comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strMaskLength6.toULong());
 
         /* Show error message if necessary: */
         if (!comInterface.isOk())
@@ -415,17 +415,17 @@ void UIHostNetworkManager::sltEditHostNetwork()
                 {
                     /* Save whether DHCP server is enabled: */
                     if (   comServer.isOk()
-                        && newData.m_dhcpserver.m_fDhcpServerEnabled != oldData.m_dhcpserver.m_fDhcpServerEnabled)
-                        comServer.SetEnabled(newData.m_dhcpserver.m_fDhcpServerEnabled);
+                        && newData.m_dhcpserver.m_fEnabled != oldData.m_dhcpserver.m_fEnabled)
+                        comServer.SetEnabled(newData.m_dhcpserver.m_fEnabled);
                     /* Save DHCP server configuration: */
                     if (   comServer.isOk()
-                        && newData.m_dhcpserver.m_fDhcpServerEnabled
-                        && (   newData.m_dhcpserver.m_strDhcpServerAddress != oldData.m_dhcpserver.m_strDhcpServerAddress
-                            || newData.m_dhcpserver.m_strDhcpServerMask != oldData.m_dhcpserver.m_strDhcpServerMask
-                            || newData.m_dhcpserver.m_strDhcpLowerAddress != oldData.m_dhcpserver.m_strDhcpLowerAddress
-                            || newData.m_dhcpserver.m_strDhcpUpperAddress != oldData.m_dhcpserver.m_strDhcpUpperAddress))
-                        comServer.SetConfiguration(newData.m_dhcpserver.m_strDhcpServerAddress, newData.m_dhcpserver.m_strDhcpServerMask,
-                                                   newData.m_dhcpserver.m_strDhcpLowerAddress, newData.m_dhcpserver.m_strDhcpUpperAddress);
+                        && newData.m_dhcpserver.m_fEnabled
+                        && (   newData.m_dhcpserver.m_strAddress != oldData.m_dhcpserver.m_strAddress
+                            || newData.m_dhcpserver.m_strMask != oldData.m_dhcpserver.m_strMask
+                            || newData.m_dhcpserver.m_strLowerAddress != oldData.m_dhcpserver.m_strLowerAddress
+                            || newData.m_dhcpserver.m_strUpperAddress != oldData.m_dhcpserver.m_strUpperAddress))
+                        comServer.SetConfiguration(newData.m_dhcpserver.m_strAddress, newData.m_dhcpserver.m_strMask,
+                                                   newData.m_dhcpserver.m_strLowerAddress, newData.m_dhcpserver.m_strUpperAddress);
 
                     /* Show error message if necessary: */
                     if (!comServer.isOk())
@@ -558,9 +558,9 @@ void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
     UIDataHostNetwork data = *pChangedItem;
 
     /* Make sure dhcp server status changed: */
-    if (   (   data.m_dhcpserver.m_fDhcpServerEnabled
+    if (   (   data.m_dhcpserver.m_fEnabled
             && pChangedItem->checkState(Column_DHCP) == Qt::Checked)
-        || (   !data.m_dhcpserver.m_fDhcpServerEnabled
+        || (   !data.m_dhcpserver.m_fEnabled
             && pChangedItem->checkState(Column_DHCP) == Qt::Unchecked))
         return;
 
@@ -579,14 +579,14 @@ void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
     {
         /* Save whether DHCP server is enabled: */
         if (comServer.isOk())
-            comServer.SetEnabled(!data.m_dhcpserver.m_fDhcpServerEnabled);
+            comServer.SetEnabled(!data.m_dhcpserver.m_fEnabled);
 
         /* Show error message if necessary: */
         if (!comServer.isOk())
             msgCenter().cannotSaveDHCPServerParameter(comServer, this);
         {
             /* Manually toggle the DHCP server status: */
-            data.m_dhcpserver.m_fDhcpServerEnabled = !data.m_dhcpserver.m_fDhcpServerEnabled;
+            data.m_dhcpserver.m_fEnabled = !data.m_dhcpserver.m_fEnabled;
 
             /* Update interface in the tree: */
             updateItemForNetworkHost(data, true, pChangedItem);
@@ -883,15 +883,15 @@ void UIHostNetworkManager::loadHostNetwork(const CHostNetworkInterface &comInter
     if (comInterface.isOk())
         data.m_interface.m_strName = comInterface.GetName();
     if (comInterface.isOk())
-        data.m_interface.m_strInterfaceAddress = comInterface.GetIPAddress();
+        data.m_interface.m_strAddress = comInterface.GetIPAddress();
     if (comInterface.isOk())
-        data.m_interface.m_strInterfaceMask = comInterface.GetNetworkMask();
+        data.m_interface.m_strMask = comInterface.GetNetworkMask();
     if (comInterface.isOk())
-        data.m_interface.m_fIpv6Supported = comInterface.GetIPV6Supported();
+        data.m_interface.m_fSupportedIPv6 = comInterface.GetIPV6Supported();
     if (comInterface.isOk())
-        data.m_interface.m_strInterfaceAddress6 = comInterface.GetIPV6Address();
+        data.m_interface.m_strAddress6 = comInterface.GetIPV6Address();
     if (comInterface.isOk())
-        data.m_interface.m_strInterfaceMaskLength6 = QString::number(comInterface.GetIPV6NetworkMaskPrefixLength());
+        data.m_interface.m_strMaskLength6 = QString::number(comInterface.GetIPV6NetworkMaskPrefixLength());
 
     /* Get host interface network name for further activities: */
     QString strNetworkName;
@@ -917,15 +917,15 @@ void UIHostNetworkManager::loadHostNetwork(const CHostNetworkInterface &comInter
     {
         /* Gather DHCP server settings: */
         if (comServer.isOk())
-            data.m_dhcpserver.m_fDhcpServerEnabled = comServer.GetEnabled();
+            data.m_dhcpserver.m_fEnabled = comServer.GetEnabled();
         if (comServer.isOk())
-            data.m_dhcpserver.m_strDhcpServerAddress = comServer.GetIPAddress();
+            data.m_dhcpserver.m_strAddress = comServer.GetIPAddress();
         if (comServer.isOk())
-            data.m_dhcpserver.m_strDhcpServerMask = comServer.GetNetworkMask();
+            data.m_dhcpserver.m_strMask = comServer.GetNetworkMask();
         if (comServer.isOk())
-            data.m_dhcpserver.m_strDhcpLowerAddress = comServer.GetLowerIP();
+            data.m_dhcpserver.m_strLowerAddress = comServer.GetLowerIP();
         if (comServer.isOk())
-            data.m_dhcpserver.m_strDhcpUpperAddress = comServer.GetUpperIP();
+            data.m_dhcpserver.m_strUpperAddress = comServer.GetUpperIP();
 
         /* Show error message if necessary: */
         if (!comServer.isOk())

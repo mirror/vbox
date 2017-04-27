@@ -35,11 +35,11 @@ struct UIDataHostNetworkInterface
     /** Constructs data. */
     UIDataHostNetworkInterface()
         : m_strName(QString())
-        , m_strInterfaceAddress(QString())
-        , m_strInterfaceMask(QString())
-        , m_fIpv6Supported(false)
-        , m_strInterfaceAddress6(QString())
-        , m_strInterfaceMaskLength6(QString())
+        , m_strAddress(QString())
+        , m_strMask(QString())
+        , m_fSupportedIPv6(false)
+        , m_strAddress6(QString())
+        , m_strMaskLength6(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -47,11 +47,11 @@ struct UIDataHostNetworkInterface
     {
         return true
                && (m_strName == other.m_strName)
-               && (m_strInterfaceAddress == other.m_strInterfaceAddress)
-               && (m_strInterfaceMask == other.m_strInterfaceMask)
-               && (m_fIpv6Supported == other.m_fIpv6Supported)
-               && (m_strInterfaceAddress6 == other.m_strInterfaceAddress6)
-               && (m_strInterfaceMaskLength6 == other.m_strInterfaceMaskLength6)
+               && (m_strAddress == other.m_strAddress)
+               && (m_strMask == other.m_strMask)
+               && (m_fSupportedIPv6 == other.m_fSupportedIPv6)
+               && (m_strAddress6 == other.m_strAddress6)
+               && (m_strMaskLength6 == other.m_strMaskLength6)
                ;
     }
 
@@ -60,18 +60,18 @@ struct UIDataHostNetworkInterface
     /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataHostNetworkInterface &other) const { return !equal(other); }
 
-    /** Holds host interface name. */
+    /** Holds interface name. */
     QString m_strName;
     /** Holds IPv4 interface address. */
-    QString m_strInterfaceAddress;
+    QString m_strAddress;
     /** Holds IPv4 interface mask. */
-    QString m_strInterfaceMask;
+    QString m_strMask;
     /** Holds whether IPv6 protocol supported. */
-    bool m_fIpv6Supported;
+    bool m_fSupportedIPv6;
     /** Holds IPv6 interface address. */
-    QString m_strInterfaceAddress6;
+    QString m_strAddress6;
     /** Holds IPv6 interface mask length. */
-    QString m_strInterfaceMaskLength6;
+    QString m_strMaskLength6;
 };
 
 
@@ -80,22 +80,22 @@ struct UIDataDHCPServer
 {
     /** Constructs data. */
     UIDataDHCPServer()
-        : m_fDhcpServerEnabled(false)
-        , m_strDhcpServerAddress(QString())
-        , m_strDhcpServerMask(QString())
-        , m_strDhcpLowerAddress(QString())
-        , m_strDhcpUpperAddress(QString())
+        : m_fEnabled(false)
+        , m_strAddress(QString())
+        , m_strMask(QString())
+        , m_strLowerAddress(QString())
+        , m_strUpperAddress(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataDHCPServer &other) const
     {
         return true
-               && (m_fDhcpServerEnabled == other.m_fDhcpServerEnabled)
-               && (m_strDhcpServerAddress == other.m_strDhcpServerAddress)
-               && (m_strDhcpServerMask == other.m_strDhcpServerMask)
-               && (m_strDhcpLowerAddress == other.m_strDhcpLowerAddress)
-               && (m_strDhcpUpperAddress == other.m_strDhcpUpperAddress)
+               && (m_fEnabled == other.m_fEnabled)
+               && (m_strAddress == other.m_strAddress)
+               && (m_strMask == other.m_strMask)
+               && (m_strLowerAddress == other.m_strLowerAddress)
+               && (m_strUpperAddress == other.m_strUpperAddress)
                ;
     }
 
@@ -105,15 +105,15 @@ struct UIDataDHCPServer
     bool operator!=(const UIDataDHCPServer &other) const { return !equal(other); }
 
     /** Holds whether DHCP server enabled. */
-    bool m_fDhcpServerEnabled;
+    bool m_fEnabled;
     /** Holds DHCP server address. */
-    QString m_strDhcpServerAddress;
+    QString m_strAddress;
     /** Holds DHCP server mask. */
-    QString m_strDhcpServerMask;
+    QString m_strMask;
     /** Holds DHCP server lower address. */
-    QString m_strDhcpLowerAddress;
+    QString m_strLowerAddress;
     /** Holds DHCP server upper address. */
-    QString m_strDhcpUpperAddress;
+    QString m_strUpperAddress;
 };
 
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2016 Oracle Corporation
+ * Copyright (C) 2009-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -359,33 +359,33 @@ void UIHostNetworkDetailsDialog::load()
     loadDataForInterface();
 
     /* Load 'DHCP server' data: */
-    m_pCheckBoxDHCP->setChecked(m_data.m_dhcpserver.m_fDhcpServerEnabled);
+    m_pCheckBoxDHCP->setChecked(m_data.m_dhcpserver.m_fEnabled);
     loadDataForDHCPServer();
 }
 
 void UIHostNetworkDetailsDialog::loadDataForInterface()
 {
-    /* IPv4 fields: */
-    m_pEditorIPv4->setText(m_data.m_interface.m_strInterfaceAddress);
-    m_pEditorNMv4->setText(m_data.m_interface.m_strInterfaceMask);
+    /* Load IPv4 interface fields: */
+    m_pEditorIPv4->setText(m_data.m_interface.m_strAddress);
+    m_pEditorNMv4->setText(m_data.m_interface.m_strMask);
 
-    /* IPv6 fields: */
-    const bool fIsIpv6Supported = m_data.m_interface.m_fIpv6Supported;
+    /* Toggle IPv6 interface fields availability: */
+    const bool fIsIpv6Supported = m_data.m_interface.m_fSupportedIPv6;
     m_pLabelIPv6->setEnabled(fIsIpv6Supported);
     m_pLabelNMv6->setEnabled(fIsIpv6Supported);
     m_pEditorIPv6->setEnabled(fIsIpv6Supported);
     m_pEditorNMv6->setEnabled(fIsIpv6Supported);
     if (fIsIpv6Supported)
     {
-        /* Load old values: */
-        m_pEditorIPv6->setText(m_data.m_interface.m_strInterfaceAddress6);
-        m_pEditorNMv6->setText(m_data.m_interface.m_strInterfaceMaskLength6);
+        /* Load IPv6 interface fields: */
+        m_pEditorIPv6->setText(m_data.m_interface.m_strAddress6);
+        m_pEditorNMv6->setText(m_data.m_interface.m_strMaskLength6);
     }
 }
 
 void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
 {
-    /* DHCP server fields: */
+    /* Toggle DHCP server fields availability: */
     const bool fIsManual = m_pCheckBoxDHCP->isChecked();
     m_pLabelDHCPAddress->setEnabled(fIsManual);
     m_pLabelDHCPMask->setEnabled(fIsManual);
@@ -397,32 +397,32 @@ void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
     m_pEditorDHCPUpperAddress->setEnabled(fIsManual);
     if (fIsManual)
     {
-        /* Load old values: */
-        m_pEditorDHCPAddress->setText(m_data.m_dhcpserver.m_strDhcpServerAddress);
-        m_pEditorDHCPMask->setText(m_data.m_dhcpserver.m_strDhcpServerMask);
-        m_pEditorDHCPLowerAddress->setText(m_data.m_dhcpserver.m_strDhcpLowerAddress);
-        m_pEditorDHCPUpperAddress->setText(m_data.m_dhcpserver.m_strDhcpUpperAddress);
+        /* Load DHCP server fields: */
+        m_pEditorDHCPAddress->setText(m_data.m_dhcpserver.m_strAddress);
+        m_pEditorDHCPMask->setText(m_data.m_dhcpserver.m_strMask);
+        m_pEditorDHCPLowerAddress->setText(m_data.m_dhcpserver.m_strLowerAddress);
+        m_pEditorDHCPUpperAddress->setText(m_data.m_dhcpserver.m_strUpperAddress);
 
         /* Invent default values where necessary: */
-        const quint32 uAddr = ipv4FromQStringToQuint32(m_data.m_interface.m_strInterfaceAddress);
-        const quint32 uMask = ipv4FromQStringToQuint32(m_data.m_interface.m_strInterfaceMask);
+        const quint32 uAddr = ipv4FromQStringToQuint32(m_data.m_interface.m_strAddress);
+        const quint32 uMask = ipv4FromQStringToQuint32(m_data.m_interface.m_strMask);
         const quint32 uProp = uAddr & uMask;
         const QString strMask = ipv4FromQuint32ToQString(uMask);
         const QString strProp = ipv4FromQuint32ToQString(uProp);
         //printf("Proposal is = %s x %s\n",
         //       strProp.toUtf8().constData(),
         //       strMask.toUtf8().constData());
-        if (   m_data.m_dhcpserver.m_strDhcpServerAddress.isEmpty()
-            || m_data.m_dhcpserver.m_strDhcpServerAddress == "0.0.0.0")
+        if (   m_data.m_dhcpserver.m_strAddress.isEmpty()
+            || m_data.m_dhcpserver.m_strAddress == "0.0.0.0")
             m_pEditorDHCPAddress->setText(strProp);
-        if (   m_data.m_dhcpserver.m_strDhcpServerMask.isEmpty()
-            || m_data.m_dhcpserver.m_strDhcpServerMask == "0.0.0.0")
+        if (   m_data.m_dhcpserver.m_strMask.isEmpty()
+            || m_data.m_dhcpserver.m_strMask == "0.0.0.0")
             m_pEditorDHCPMask->setText(strMask);
-        if (   m_data.m_dhcpserver.m_strDhcpLowerAddress.isEmpty()
-            || m_data.m_dhcpserver.m_strDhcpLowerAddress == "0.0.0.0")
+        if (   m_data.m_dhcpserver.m_strLowerAddress.isEmpty()
+            || m_data.m_dhcpserver.m_strLowerAddress == "0.0.0.0")
             m_pEditorDHCPLowerAddress->setText(strProp);
-        if (   m_data.m_dhcpserver.m_strDhcpUpperAddress.isEmpty()
-            || m_data.m_dhcpserver.m_strDhcpUpperAddress == "0.0.0.0")
+        if (   m_data.m_dhcpserver.m_strUpperAddress.isEmpty()
+            || m_data.m_dhcpserver.m_strUpperAddress == "0.0.0.0")
             m_pEditorDHCPUpperAddress->setText(strProp);
     }
     else
@@ -436,23 +436,23 @@ void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
 
 void UIHostNetworkDetailsDialog::save()
 {
-    /* Interface data: */
-    m_data.m_interface.m_strInterfaceAddress = m_pEditorIPv4->text();
-    m_data.m_interface.m_strInterfaceMask = m_pEditorNMv4->text();
-    if (m_data.m_interface.m_fIpv6Supported)
+    /* Save interface data: */
+    m_data.m_interface.m_strAddress = m_pEditorIPv4->text();
+    m_data.m_interface.m_strMask = m_pEditorNMv4->text();
+    if (m_data.m_interface.m_fSupportedIPv6)
     {
-        m_data.m_interface.m_strInterfaceAddress6 = m_pEditorIPv6->text();
-        m_data.m_interface.m_strInterfaceMaskLength6 = m_pEditorNMv6->text();
+        m_data.m_interface.m_strAddress6 = m_pEditorIPv6->text();
+        m_data.m_interface.m_strMaskLength6 = m_pEditorNMv6->text();
     }
 
-    /* Server data: */
-    m_data.m_dhcpserver.m_fDhcpServerEnabled = m_pCheckBoxDHCP->isChecked();
-    if (m_data.m_dhcpserver.m_fDhcpServerEnabled)
+    /* Save DHCP server data: */
+    m_data.m_dhcpserver.m_fEnabled = m_pCheckBoxDHCP->isChecked();
+    if (m_data.m_dhcpserver.m_fEnabled)
     {
-        m_data.m_dhcpserver.m_strDhcpServerAddress = m_pEditorDHCPAddress->text();
-        m_data.m_dhcpserver.m_strDhcpServerMask = m_pEditorDHCPMask->text();
-        m_data.m_dhcpserver.m_strDhcpLowerAddress = m_pEditorDHCPLowerAddress->text();
-        m_data.m_dhcpserver.m_strDhcpUpperAddress = m_pEditorDHCPUpperAddress->text();
+        m_data.m_dhcpserver.m_strAddress = m_pEditorDHCPAddress->text();
+        m_data.m_dhcpserver.m_strMask = m_pEditorDHCPMask->text();
+        m_data.m_dhcpserver.m_strLowerAddress = m_pEditorDHCPLowerAddress->text();
+        m_data.m_dhcpserver.m_strUpperAddress = m_pEditorDHCPUpperAddress->text();
     }
 }
 
