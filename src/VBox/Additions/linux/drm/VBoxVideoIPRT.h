@@ -73,12 +73,12 @@
 /** @name VirtualBox assertions
  * @{ */
 
-#define Assert(a) WARN_ON(a)
-#define AssertPtr(a) WARN_ON(!(a))
-#define AssertReturnVoid(a) do { if (WARN_ON(!(a))) return; } while(0)
-#define AssertRC(a) WARN_ON(RT_FAILURE(a))
+#define Assert(a) WARN_ON_ONCE(!(a))
+#define AssertPtr(a) WARN_ON_ONCE(!(a))
+#define AssertReturnVoid(a) do { if (WARN_ON_ONCE(!(a))) return; } while(0)
+#define AssertRC(a) WARN_ON_ONCE(RT_FAILURE(a))
 #define AssertPtrNullReturnVoid(a) do {} while(0)
-#define AssertPtrReturnVoid(a) do { if (WARN_ON(!(a))) return; } while(0)
+#define AssertPtrReturnVoid(a) do { if (WARN_ON_ONCE(!(a))) return; } while(0)
 
 extern int RTASSERTVAR[1];
 #define AssertCompile(expr) \
