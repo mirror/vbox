@@ -50,6 +50,7 @@
 # define HMVMX_ALWAYS_SWAP_FPU_STATE
 # define HMVMX_ALWAYS_FLUSH_TLB
 # define HMVMX_ALWAYS_SWAP_EFER
+# define HMVMX_USE_IEM_EVENT_REFLECTION
 #endif
 
 
@@ -5733,80 +5734,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu)
 }
 
 
-#if 0
-/**
- * Determines if an exception is a contributory exception.
- *
- * Contributory exceptions are ones which can cause double-faults unless the
- * original exception was a benign exception. Page-fault is intentionally not
- * included here as it's a conditional contributory exception.
- *
- * @returns true if the exception is contributory, false otherwise.
- * @param   uVector     The exception vector.
- */
-DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
-{
-    switch (uVector)
-    {
-        case X86_XCPT_GP:
-        case X86_XCPT_SS:
-        case X86_XCPT_NP:
-        case X86_XCPT_TS:
-        case X86_XCPT_DE:
-            return true;
-        default:
-            break;
-    }
-    return false;
-}
-#endif
-
-/**
- * Sets an event as a pending event to be injected into the guest.
- *
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   u32IntInfo          The VM-entry interruption-information field.
- * @param   cbInstr             The VM-entry instruction length in bytes (for software
- *                              interrupts, exceptions and privileged software
- *                              exceptions).
- * @param   u32ErrCode          The VM-entry exception error code.
- * @param   GCPtrFaultAddress   The fault-address (CR2) in case it's a
- *                              page-fault.
- *
- * @remarks Statistics counter assumes this is a guest event being injected or
- *          re-injected into the guest, i.e. 'StatInjectPendingReflect' is
- *          always incremented.
- */
-DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint32_t cbInstr, uint32_t u32ErrCode,
-                                        RTGCUINTPTR GCPtrFaultAddress)
-{
-    Assert(!pVCpu->hm.s.Event.fPending);
-    pVCpu->hm.s.Event.fPending          = true;
-    pVCpu->hm.s.Event.u64IntInfo        = u32IntInfo;
-    pVCpu->hm.s.Event.u32ErrCode        = u32ErrCode;
-    pVCpu->hm.s.Event.cbInstr           = cbInstr;
-    pVCpu->hm.s.Event.GCPtrFaultAddress = GCPtrFaultAddress;
-}
-
-
-/**
- * Sets a double-fault (\#DF) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
- *                          out-of-sync. Make sure to update the required fields
- *                          before using them.
- */
-DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
-{
-    NOREF(pMixedCtx);
-    uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
-    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo,  0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
-}
-
-
+#ifdef HMVMX_USE_IEM_EVENT_REFLECTION
 /**
  * Gets the IEM exception flags for the specified vector and IDT vectoring /
  * VM-exit interruption info type.
@@ -5856,6 +5784,80 @@ static uint32_t hmR0VmxGetIemXcptFlags(uint8_t uVector, uint32_t uVmxVectorType)
     return fIemXcptFlags;
 }
 
+#else
+/**
+ * Determines if an exception is a contributory exception.
+ *
+ * Contributory exceptions are ones which can cause double-faults unless the
+ * original exception was a benign exception. Page-fault is intentionally not
+ * included here as it's a conditional contributory exception.
+ *
+ * @returns true if the exception is contributory, false otherwise.
+ * @param   uVector     The exception vector.
+ */
+DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
+{
+    switch (uVector)
+    {
+        case X86_XCPT_GP:
+        case X86_XCPT_SS:
+        case X86_XCPT_NP:
+        case X86_XCPT_TS:
+        case X86_XCPT_DE:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+#endif /* HMVMX_USE_IEM_EVENT_REFLECTION */
+
+
+/**
+ * Sets an event as a pending event to be injected into the guest.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   u32IntInfo          The VM-entry interruption-information field.
+ * @param   cbInstr             The VM-entry instruction length in bytes (for software
+ *                              interrupts, exceptions and privileged software
+ *                              exceptions).
+ * @param   u32ErrCode          The VM-entry exception error code.
+ * @param   GCPtrFaultAddress   The fault-address (CR2) in case it's a
+ *                              page-fault.
+ *
+ * @remarks Statistics counter assumes this is a guest event being injected or
+ *          re-injected into the guest, i.e. 'StatInjectPendingReflect' is
+ *          always incremented.
+ */
+DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint32_t cbInstr, uint32_t u32ErrCode,
+                                        RTGCUINTPTR GCPtrFaultAddress)
+{
+    Assert(!pVCpu->hm.s.Event.fPending);
+    pVCpu->hm.s.Event.fPending          = true;
+    pVCpu->hm.s.Event.u64IntInfo        = u32IntInfo;
+    pVCpu->hm.s.Event.u32ErrCode        = u32ErrCode;
+    pVCpu->hm.s.Event.cbInstr           = cbInstr;
+    pVCpu->hm.s.Event.GCPtrFaultAddress = GCPtrFaultAddress;
+}
+
+
+/**
+ * Sets a double-fault (\#DF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ */
+DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    NOREF(pMixedCtx);
+    uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo,  0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+}
+
 
 /**
  * Handle a condition that occurred while delivering an event through the guest
@@ -5888,7 +5890,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
     {
         uint32_t const uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
         uint32_t const uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
-#if 1
+#ifdef HMVMX_USE_IEM_EVENT_REFLECTION
         /* See Intel spec. 30.7.1.1 "Reflecting Exceptions to Guest Software". */
         IEMXCPTRAISE     enmRaise;
         IEMXCPTRAISEINFO fRaiseInfo;
@@ -6177,7 +6179,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
                 Assert(rcStrict == VINF_SUCCESS);
                 break;
         }
-#endif
+#endif /* HMVMX_USE_IEM_EVENT_REFLECTION */
     }
     else if (   VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntInfo)
              && VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
