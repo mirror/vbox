@@ -5877,7 +5877,7 @@ static uint32_t hmR0VmxGetIemXcptFlags(uint8_t uVector, uint32_t uVmxVectorType)
  */
 static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
-    uint32_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo);
+    uint32_t const uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo);
 
     int rc2 = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);       AssertRCReturn(rc2, rc2);
     rc2     = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);            AssertRCReturn(rc2, rc2);
@@ -5885,8 +5885,8 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
     {
-        uint32_t uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-        uint32_t uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
+        uint32_t const uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
+        uint32_t const uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
 #if 1
         /* See Intel spec. 30.7.1.1 "Reflecting Exceptions to Guest Software". */
         IEMXCPTRAISE     enmRaise;
@@ -11574,6 +11574,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
             else if (   uVector != X86_XCPT_PF
                      && uVector != X86_XCPT_AC)
             {
+                /** @todo Why do we need to fallback to the interpreter here?  */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
                 rc = VERR_EM_INTERPRETER;
                 break;
