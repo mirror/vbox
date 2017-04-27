@@ -26,6 +26,7 @@
 
 /* Forward declarations: */
 class CHostNetworkInterface;
+class QTreeWidgetItem;
 class QIDialogButtonBox;
 class QITreeWidget;
 class UIItemHostNetwork;
@@ -82,6 +83,8 @@ private slots:
         /** Handles command to adjust tree-widget. */
         void sltAdjustTreeWidget();
 
+        /** Handles tree-widget @a pItem change. */
+        void sltHandleItemChange(QTreeWidgetItem *pItem);
         /** Handles tree-widget current item change. */
         void sltHandleCurrentItemChange();
         /** Handles context menu request for tree-widget @a position. */

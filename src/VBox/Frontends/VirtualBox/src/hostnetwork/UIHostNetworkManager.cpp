@@ -54,6 +54,7 @@ enum
     Column_Name,
     Column_IPv4,
     Column_IPv6,
+    Column_DHCP,
     Column_Max,
 };
 
@@ -87,6 +88,8 @@ void UIItemHostNetwork::updateFields()
     setText(Column_IPv4, QString("%1/%2").arg(m_interface.m_strInterfaceAddress).arg(maskToCidr(m_interface.m_strInterfaceMask)));
     setText(Column_IPv6, !m_interface.m_fIpv6Supported ? QString() :
                          QString("%1/%2").arg(m_interface.m_strInterfaceAddress6).arg(maskToCidr(m_interface.m_strInterfaceMaskLength6)));
+    setText(Column_DHCP, UIHostNetworkManager::tr("Enable", "DHCP Server"));
+    setCheckState(Column_DHCP, m_dhcpserver.m_fDhcpServerEnabled ? Qt::Checked : Qt::Unchecked);
 
     /* Compose item tool-tip: */
     const QString strTable("<table cellspacing=5>%1</table>");
@@ -268,8 +271,9 @@ void UIHostNetworkManager::retranslateUi()
     /* Translate tree-widget: */
     const QStringList fields = QStringList()
                                << tr("Name")
-                               << tr("IPv4 address/mask")
-                               << tr("IPv6 address/mask");
+                               << tr("IPv4 Address/Mask")
+                               << tr("IPv6 Address/Mask")
+                               << tr("DHCP Server");
     m_pTreeWidget->setHeaderLabels(fields);
 }
 
@@ -532,13 +536,65 @@ void UIHostNetworkManager::sltAdjustTreeWidget()
     /* Look for a minimum width hints for non-important columns: */
     const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(Column_IPv4), pItemHeader->sectionSizeHint(Column_IPv4));
     const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(Column_IPv6), pItemHeader->sectionSizeHint(Column_IPv6));
+    const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(Column_DHCP), pItemHeader->sectionSizeHint(Column_DHCP));
     /* Propose suitable width hints for non-important columns: */
     const int iWidth1 = iMinWidth1 < iTotal / Column_Max ? iMinWidth1 : iTotal / Column_Max;
     const int iWidth2 = iMinWidth2 < iTotal / Column_Max ? iMinWidth2 : iTotal / Column_Max;
+    const int iWidth3 = iMinWidth3 < iTotal / Column_Max ? iMinWidth3 : iTotal / Column_Max;
     /* Apply the proposal: */
     m_pTreeWidget->setColumnWidth(Column_IPv4, iWidth1);
     m_pTreeWidget->setColumnWidth(Column_IPv6, iWidth2);
-    m_pTreeWidget->setColumnWidth(Column_Name, iTotal - iWidth1 - iWidth2);
+    m_pTreeWidget->setColumnWidth(Column_DHCP, iWidth3);
+    m_pTreeWidget->setColumnWidth(Column_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
+}
+
+void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
+{
+    /* Get network item: */
+    UIItemHostNetwork *pChangedItem = static_cast<UIItemHostNetwork*>(pItem);
+    AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
+
+    /* Get item data: */
+    UIDataHostNetwork data = *pChangedItem;
+
+    /* Make sure dhcp server status changed: */
+    if (   (   data.m_dhcpserver.m_fDhcpServerEnabled
+            && pChangedItem->checkState(Column_DHCP) == Qt::Checked)
+        || (   !data.m_dhcpserver.m_fDhcpServerEnabled
+            && pChangedItem->checkState(Column_DHCP) == Qt::Unchecked))
+        return;
+
+    /* Get VBox for further activities: */
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* Find corresponding DHCP server (create if necessary): */
+    CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(data.m_interface.m_strName);
+    if (!comVBox.isOk() || comServer.isNull())
+        comServer = comVBox.CreateDHCPServer(data.m_interface.m_strName);
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk() || comServer.isNull())
+        msgCenter().cannotCreateDHCPServer(comVBox, data.m_interface.m_strName, this);
+    else
+    {
+        /* Save whether DHCP server is enabled: */
+        if (comServer.isOk())
+            comServer.SetEnabled(!data.m_dhcpserver.m_fDhcpServerEnabled);
+
+        /* Show error message if necessary: */
+        if (!comServer.isOk())
+            msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+        {
+            /* Manually toggle the DHCP server status: */
+            data.m_dhcpserver.m_fDhcpServerEnabled = !data.m_dhcpserver.m_fDhcpServerEnabled;
+
+            /* Update interface in the tree: */
+            updateItemForNetworkHost(data, true, pChangedItem);
+
+            /* Adjust tree-widget: */
+            sltAdjustTreeWidget();
+        }
+    }
 }
 
 void UIHostNetworkManager::sltHandleCurrentItemChange()
@@ -746,6 +802,8 @@ void UIHostNetworkManager::prepareTreeWidget()
                 this, SLOT(sltEditHostNetwork()));
         connect(m_pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint &)),
                 this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
+        connect(m_pTreeWidget, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
+                this, SLOT(sltHandleItemChange(QTreeWidgetItem *)));
         /* Add tree-widget into layout: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
         pMainLayout->addWidget(m_pTreeWidget);
