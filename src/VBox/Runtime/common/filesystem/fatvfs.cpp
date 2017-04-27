@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
-#include <iprt/fs.h>
+#include <iprt/fsvfs.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -38,12 +38,14 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/poll.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/sg.h>
 #include <iprt/thread.h>
 #include <iprt/uni.h>
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
+#include <iprt/zero.h>
 #include <iprt/formats/fat.h>
 
 
@@ -262,19 +264,6 @@ typedef struct RTFSFATCLUSTERMAPCACHE
 } RTFSFATCLUSTERMAPCACHE;
 /** Pointer to a FAT linear metadata cache. */
 typedef RTFSFATCLUSTERMAPCACHE *PRTFSFATCLUSTERMAPCACHE;
-
-
-/**
- * FAT type (format).
- */
-typedef enum RTFSFATTYPE
-{
-    RTFSFATTYPE_INVALID = 0,
-    RTFSFATTYPE_FAT12,
-    RTFSFATTYPE_FAT16,
-    RTFSFATTYPE_FAT32,
-    RTFSFATTYPE_END
-} RTFSFATTYPE;
 
 
 /**
@@ -3604,12 +3593,12 @@ static int rtFsFatVolTryInitDos2PlusBpb(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBoot
         return RTErrInfoSet(pErrInfo, VERR_VFS_BOGUS_FORMAT,  "Bogus FAT12/16 total size, root dir, or fat size");
     pThis->cClusters = (pThis->cbTotalSize - cbSystemStuff) / pThis->cbCluster;
 
-    if (pThis->cClusters >= FAT_LAST_FAT16_DATA_CLUSTER)
+    if (pThis->cClusters >= FAT_MAX_FAT16_DATA_CLUSTERS)
     {
-        pThis->cClusters  = FAT_LAST_FAT16_DATA_CLUSTER + 1;
+        pThis->cClusters  = FAT_MAX_FAT16_DATA_CLUSTERS;
         pThis->enmFatType = RTFSFATTYPE_FAT16;
     }
-    else if (pThis->cClusters > FAT_LAST_FAT12_DATA_CLUSTER)
+    else if (pThis->cClusters >= FAT_MIN_FAT16_DATA_CLUSTERS)
         pThis->enmFatType = RTFSFATTYPE_FAT16;
     else
         pThis->enmFatType = RTFSFATTYPE_FAT12; /** @todo Not sure if this is entirely the right way to go about it... */
@@ -3719,7 +3708,7 @@ static int rtFsFatVolTryInitDos2PlusFat32(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBo
     {
         uint64_t cbFat = pBootSector->Bpb.Fat32Ebpb.cSectorsPerFat32 * (uint64_t)pThis->cbSector;
         if (   cbFat == 0
-            || cbFat >= (FAT_LAST_FAT32_DATA_CLUSTER + 1) * 4 + pThis->cbSector * 16)
+            || cbFat >= FAT_MAX_FAT32_TOTAL_CLUSTERS * 4 + pThis->cbSector * 16)
             return RTErrInfoSetF(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                  "Bogus 32-bit FAT size: %#RX32", pBootSector->Bpb.Fat32Ebpb.cSectorsPerFat32);
         pThis->cbFat = (uint32_t)cbFat;
@@ -3740,12 +3729,12 @@ static int rtFsFatVolTryInitDos2PlusFat32(PRTFSFATVOL pThis, PCFATBOOTSECTOR pBo
                              pThis->cFats, pThis->cbFat, pThis->cbTotalSize);
 
     uint64_t cClusters = (pThis->cbTotalSize - (pThis->offFirstCluster - pThis->offBootSector)) / pThis->cbCluster;
-    if (cClusters <= FAT_LAST_FAT32_DATA_CLUSTER)
+    if (cClusters <= FAT_MAX_FAT32_DATA_CLUSTERS)
         pThis->cClusters = (uint32_t)cClusters;
     else
-        pThis->cClusters = FAT_LAST_FAT32_DATA_CLUSTER + 1;
-    if (pThis->cClusters > pThis->cbFat / 4)
-        pThis->cClusters = pThis->cbFat / 4;
+        pThis->cClusters = FAT_MAX_FAT32_DATA_CLUSTERS;
+    if (pThis->cClusters > (pThis->cbFat / 4 - FAT_FIRST_DATA_CLUSTER))
+        pThis->cClusters = (pThis->cbFat / 4 - FAT_FIRST_DATA_CLUSTER);
 
     /*
      * Root dir cluster.
@@ -4138,6 +4127,17 @@ static int rtFsFatVolTryInit(PRTFSFATVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
 }
 
 
+/**
+ * Opens a FAT file system volume.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFileIn      The file or device backing the volume.
+ * @param   fReadOnly       Whether to mount it read-only.
+ * @param   offBootSector   The offset of the boot sector relative to the start
+ *                          of @a hVfsFileIn.  Pass 0 for floppies.
+ * @param   phVfs           Where to return the virtual file system handle.
+ * @param   pErrInfo        Where to return additional error information.
+ */
 RTDECL(int) RTFsFatVolOpen(RTVFSFILE hVfsFileIn, bool fReadOnly, uint64_t offBootSector, PRTVFS phVfs, PRTERRINFO pErrInfo)
 {
     /*
@@ -4166,6 +4166,505 @@ RTDECL(int) RTFsFatVolOpen(RTVFSFILE hVfsFileIn, bool fReadOnly, uint64_t offBoo
     else
         RTVfsFileRelease(hVfsFileIn);
     return rc;
+}
+
+
+
+
+/**
+ * Fills a range in the file with zeros in the most efficient manner.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFile            The file to write to.
+ * @param   off                 Where to start filling with zeros.
+ * @param   cbZeros             How many zero blocks to write.
+ */
+static int rtFsFatVolWriteZeros(RTVFSFILE hVfsFile, uint64_t off, uint32_t cbZeros)
+{
+    while (cbZeros > 0)
+    {
+        uint32_t cbToWrite = sizeof(g_abRTZero64K);
+        if (cbToWrite > cbZeros)
+            cbToWrite = cbZeros;
+        int rc = RTVfsFileWriteAt(hVfsFile, off, g_abRTZero64K, cbToWrite, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+        off     += cbToWrite;
+        cbZeros -= cbToWrite;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Formats a FAT volume.
+ *
+ * @returns IRPT status code.
+ * @param   hVfsFile            The volume file.
+ * @param   offVol              The offset into @a hVfsFile of the file.
+ *                              Typically 0.
+ * @param   cbVol               The size of the volume.  Pass 0 if the rest of
+ *                              hVfsFile should be used.
+ * @param   fFlags              See RTFSFATVOL_FMT_F_XXX.
+ * @param   cbSector            The logical sector size.  Must be power of two.
+ *                              Optional, pass zero to use 512.
+ * @param   cSectorsPerCluster  Number of sectors per cluster.  Power of two.
+ *                              Optional, pass zero to auto detect.
+ * @param   enmFatType          The FAT type (12, 16, 32) to use.
+ *                              Optional, pass RTFSFATTYPE_INVALID for default.
+ * @param   cHeads              The number of heads to report in the BPB.
+ *                              Optional, pass zero to auto detect.
+ * @param   cSectorsPerTrack    The number of sectors per track to put in the
+ *                              BPB. Optional, pass zero to auto detect.
+ * @param   bMedia              The media byte value and FAT ID to use.
+ *                              Optional, pass zero to auto detect.
+ * @param   cRootDirEntries     Number of root directory entries.
+ *                              Optional, pass zero to auto detect.
+ * @param   cHiddenSectors      Number of hidden sectors.  Pass 0 for
+ *                              unpartitioned media.
+ * @param   pErrInfo            Additional error information, maybe.  Optional.
+ */
+RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol, uint32_t fFlags, uint16_t cbSector,
+                             uint16_t cSectorsPerCluster, RTFSFATTYPE enmFatType, uint32_t cHeads, uint32_t cSectorsPerTrack,
+                             uint8_t bMedia, uint16_t cRootDirEntries, uint32_t cHiddenSectors, PRTERRINFO pErrInfo)
+{
+    int         rc;
+    uint32_t    cFats = 2;
+
+    /*
+     * Validate input.
+     */
+    if (!cbSector)
+        cbSector = 512;
+    else
+        AssertMsgReturn(   cbSector == 128
+                        || cbSector == 512
+                        || cbSector == 1024
+                        || cbSector == 4096,
+                        ("cbSector=%#x\n", cbSector),
+                        VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cSectorsPerCluster == 0 || (cSectorsPerCluster <= 128 && RT_IS_POWER_OF_TWO(cSectorsPerCluster)),
+                    ("cSectorsPerCluster=%#x\n", cSectorsPerCluster), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(bMedia == 0 || (FAT_ID_IS_VALID(bMedia) && FATBPB_MEDIA_IS_VALID(bMedia)),
+                    ("bMedia=%#x\n"), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTFSFATVOL_FMT_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(enmFatType >= RTFSFATTYPE_INVALID && enmFatType < RTFSFATTYPE_END, VERR_INVALID_PARAMETER);
+
+    if (!cbVol)
+    {
+        uint64_t cbFile;
+        rc = RTVfsFileGetSize(hVfsFile, &cbFile);
+        AssertRCReturn(rc, rc);
+        AssertMsgReturn(cbFile > offVol, ("cbFile=%#RX64 offVol=%#RX64\n", cbFile, offVol), VERR_INVALID_PARAMETER);
+        cbVol = cbFile - offVol;
+    }
+    uint64_t const cSectorsInVol = cbVol / cbSector;
+
+    /*
+     * Guess defaults if necessary.
+     */
+    if (!cSectorsPerCluster || !cHeads || !cSectorsPerTrack || !bMedia || !cRootDirEntries)
+    {
+        static struct
+        {
+            uint64_t    cbVol;
+            uint8_t     bMedia;
+            uint8_t     cHeads;
+            uint8_t     cSectorsPerTrack;
+            uint8_t     cSectorsPerCluster;
+            uint16_t    cRootDirEntries;
+        } s_aDefaults[] =
+        {
+            /*                  cbVol, bMedia,              cHeads, cSectorsPTrk, cSectorsPClstr, cRootDirEntries */
+            {                 163840,    0xfe, /* cyl:   40,*/   1,          8,                1,           64 },
+            {                 184320,    0xfc, /* cyl:   40,*/   1,          9,                2,           64 },
+            {                 327680,    0xff, /* cyl:   40,*/   2,          8,                2,          112 },
+            {                 368640,    0xfd, /* cyl:   40,*/   2,          9,                2,          112 },
+            {                 737280,    0xf9, /* cyl:   80,*/   2,          9,                2,          112 },
+            {                1228800,    0xf9, /* cyl:   80,*/   2,         15,                2,          112 },
+            {                1474560,    0xf0, /* cyl:   80,*/   2,         18,                1,          224 },
+            {                2949120,    0xf0, /* cyl:   80,*/   2,         36,                2,          224 },
+            {              528482304,    0xf8, /* cyl: 1024,*/  16,         63,                0,          512 }, // 504MB limit
+            {   UINT64_C(7927234560),    0xf8, /* cyl: 1024,*/ 240,         63,                0,          512 }, // 7.3GB limit
+            {   UINT64_C(8422686720),    0xf8, /* cyl: 1024,*/ 255,         63,                0,          512 }, // 7.84GB limit
+
+        };
+        uint32_t iDefault = 0;
+        while (   iDefault < RT_ELEMENTS(s_aDefaults) - 1U
+               && cbVol > s_aDefaults[iDefault].cbVol)
+            iDefault++;
+        if (!cHeads)
+            cHeads              = s_aDefaults[iDefault].cHeads;
+        if (!cSectorsPerTrack)
+            cSectorsPerTrack    = s_aDefaults[iDefault].cSectorsPerTrack;
+        if (!bMedia)
+            bMedia              = s_aDefaults[iDefault].bMedia;
+        if (!cRootDirEntries)
+            cRootDirEntries     = s_aDefaults[iDefault].cRootDirEntries;
+        if (!cSectorsPerCluster)
+        {
+            cSectorsPerCluster  = s_aDefaults[iDefault].cSectorsPerCluster;
+            if (!cSectorsPerCluster)
+            {
+                uint32_t cbFat12Overhead = cbSector  /* boot sector */
+                                         + RT_ALIGN_32(FAT_MAX_FAT12_TOTAL_CLUSTERS * 3 / 2, cbSector) * cFats /* FATs */
+                                         + RT_ALIGN_32(cRootDirEntries * sizeof(FATDIRENTRY), cbSector) /* root dir */;
+                uint32_t cbFat16Overhead = cbSector  /* boot sector */
+                                         + RT_ALIGN_32(FAT_MAX_FAT16_TOTAL_CLUSTERS * 2, cbSector) * cFats /* FATs */
+                                         + RT_ALIGN_32(cRootDirEntries * sizeof(FATDIRENTRY), cbSector) /* root dir */;
+
+                if (   enmFatType == RTFSFATTYPE_FAT12
+                    || cbVol <= cbFat12Overhead + FAT_MAX_FAT12_DATA_CLUSTERS * 4 * cbSector)
+                {
+                    enmFatType = RTFSFATTYPE_FAT12;
+                    cSectorsPerCluster = 1;
+                    while (   cSectorsPerCluster < 128
+                           &&   cSectorsInVol
+                              >   cbFat12Overhead / cbSector
+                                + (uint32_t)cSectorsPerCluster * FAT_MAX_FAT12_DATA_CLUSTERS
+                                + cSectorsPerCluster - 1)
+                        cSectorsPerCluster <<= 1;
+                }
+                else if (   enmFatType == RTFSFATTYPE_FAT16
+                         || cbVol <= cbFat16Overhead + FAT_MAX_FAT16_DATA_CLUSTERS * 128 * cbSector)
+                {
+                    enmFatType = RTFSFATTYPE_FAT16;
+                    cSectorsPerCluster = 1;
+                    while (   cSectorsPerCluster < 128
+                           &&   cSectorsInVol
+                              >   cbFat12Overhead / cbSector
+                                + (uint32_t)cSectorsPerCluster * FAT_MAX_FAT16_DATA_CLUSTERS
+                                + cSectorsPerCluster - 1)
+                        cSectorsPerCluster <<= 1;
+                }
+                else
+                {
+                    /* The target here is keeping the FAT size below 8MB.  Seems windows
+                       likes a minimum 4KB cluster size as wells as a max of 32KB (googling). */
+                    enmFatType = RTFSFATTYPE_FAT32;
+                    uint32_t cbFat32Overhead = cbSector * 32 /* boot sector, info sector, boot sector copies, reserved sectors */
+                                             + _8M * cFats;
+                    if (cbSector >= _4K)
+                        cSectorsPerCluster = 1;
+                    else
+                        cSectorsPerCluster = _4K / cbSector;
+                    while (   cSectorsPerCluster < 128
+                           && cSectorsPerCluster * cbSector < _32K
+                           && cSectorsInVol > cbFat32Overhead / cbSector + (uint64_t)cSectorsPerCluster * _2M)
+                        cSectorsPerCluster <<= 1;
+                }
+            }
+        }
+    }
+    Assert(cSectorsPerCluster);
+    Assert(cRootDirEntries);
+    uint32_t       cbRootDir    = RT_ALIGN_32(cRootDirEntries * sizeof(FATDIRENTRY), cbSector);
+    uint32_t const cbCluster    = cSectorsPerCluster * cbSector;
+
+    /*
+     * If we haven't figured out the FAT type yet, do so.
+     * The file system code determins the FAT based on cluster counts,
+     * so we must do so here too.
+     */
+    if (enmFatType == RTFSFATTYPE_INVALID)
+    {
+        uint32_t cbFat12Overhead = cbSector  /* boot sector */
+                                 + RT_ALIGN_32(FAT_MAX_FAT12_TOTAL_CLUSTERS * 3 / 2, cbSector) * cFats /* FATs */
+                                 + RT_ALIGN_32(cRootDirEntries * sizeof(FATDIRENTRY), cbSector) /* root dir */;
+        if (   cbVol <= cbFat12Overhead + cbCluster
+            || (cbVol - cbFat12Overhead) / cbCluster <= FAT_MAX_FAT12_DATA_CLUSTERS)
+            enmFatType = RTFSFATTYPE_FAT12;
+        else
+        {
+            uint32_t cbFat16Overhead = cbSector  /* boot sector */
+                                     + RT_ALIGN_32(FAT_MAX_FAT16_TOTAL_CLUSTERS * 2, cbSector) * cFats /* FATs */
+                                     + cbRootDir;
+            if (   cbVol <= cbFat16Overhead + cbCluster
+                || (cbVol - cbFat16Overhead) / cbCluster <= FAT_MAX_FAT16_DATA_CLUSTERS)
+                enmFatType = RTFSFATTYPE_FAT16;
+            else
+                enmFatType = RTFSFATTYPE_FAT32;
+        }
+    }
+    if (enmFatType == RTFSFATTYPE_FAT32)
+        cbRootDir = cbCluster;
+
+    /*
+     * Calculate the FAT size and number of data cluster.
+     *
+     * Since the FAT size depends on how many data clusters there are, we start
+     * with a minimum FAT size and maximum clust count, then recalucate it. The
+     * result isn't necessarily stable, so we will only retry stabalizing the
+     * result a few times.
+     */
+    uint32_t cbReservedFixed = enmFatType == RTFSFATTYPE_FAT32 ? 32 * cbSector : cbSector + cbRootDir;
+    uint32_t cbFat           = cbSector;
+    if (cbReservedFixed + cbFat * cFats >= cbVol)
+        return RTErrInfoSetF(pErrInfo, VERR_DISK_FULL, "volume is too small (cbVol=%#RX64 rsvd=%#x cbFat=%#x cFat=%#x)",
+                             cbVol, cbReservedFixed, cbFat, cFats);
+    uint32_t cMaxClusters    = enmFatType == RTFSFATTYPE_FAT12 ? FAT_MAX_FAT12_DATA_CLUSTERS
+                             : enmFatType == RTFSFATTYPE_FAT16 ? FAT_MAX_FAT16_DATA_CLUSTERS
+                             :                                   FAT_MAX_FAT12_DATA_CLUSTERS;
+    uint32_t cClusters       = (uint32_t)RT_MIN((cbVol - cbReservedFixed - cbFat * cFats) / cbCluster, cMaxClusters);
+    uint32_t cPrevClusters;
+    uint32_t cTries          = 4;
+    do
+    {
+        cPrevClusters = cClusters;
+        switch (enmFatType)
+        {
+            case RTFSFATTYPE_FAT12:
+                cbFat = (uint32_t)RT_MIN(FAT_MAX_FAT12_TOTAL_CLUSTERS, cClusters) * 3 / 2;
+                break;
+            case RTFSFATTYPE_FAT16:
+                cbFat = (uint32_t)RT_MIN(FAT_MAX_FAT16_TOTAL_CLUSTERS, cClusters) * 2;
+                break;
+            case RTFSFATTYPE_FAT32:
+                cbFat = (uint32_t)RT_MIN(FAT_MAX_FAT32_TOTAL_CLUSTERS, cClusters) * 4;
+                cbFat = RT_ALIGN_32(cbFat, _4K);
+                break;
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+        }
+        cbFat = RT_ALIGN_32(cbFat, cbSector);
+        if (cbReservedFixed + cbFat * cFats >= cbVol)
+            return RTErrInfoSetF(pErrInfo, VERR_DISK_FULL, "volume is too small (cbVol=%#RX64 rsvd=%#x cbFat=%#x cFat=%#x)",
+                                 cbVol, cbReservedFixed, cbFat, cFats);
+        cClusters = (uint32_t)RT_MIN((cbVol - cbReservedFixed - cbFat * cFats) / cbCluster, cMaxClusters);
+    } while (   cClusters != cPrevClusters
+             && cTries-- > 0);
+    uint64_t const cTotalSectors = cClusters * (uint64_t)cSectorsPerCluster + (cbReservedFixed + cbFat * cFats) / cbSector;
+
+    /*
+     * Check that the file system type and cluster count matches up.  If they
+     * don't the type will be misdetected.
+     *
+     * Note! These assertions could trigger if the above calculations are wrong.
+     */
+    switch (enmFatType)
+    {
+        case RTFSFATTYPE_FAT12:
+            AssertMsgReturn(cClusters >= FAT_MIN_FAT12_DATA_CLUSTERS && cClusters <= FAT_MAX_FAT12_DATA_CLUSTERS,
+                            ("cClusters=%#x\n", cClusters), VERR_OUT_OF_RANGE);
+            break;
+        case RTFSFATTYPE_FAT16:
+            AssertMsgReturn(cClusters >= FAT_MIN_FAT16_DATA_CLUSTERS && cClusters <= FAT_MAX_FAT16_DATA_CLUSTERS,
+                            ("cClusters=%#x\n", cClusters), VERR_OUT_OF_RANGE);
+            break;
+        case RTFSFATTYPE_FAT32:
+            AssertMsgReturn(cClusters >= FAT_MIN_FAT32_DATA_CLUSTERS && cClusters <= FAT_MAX_FAT32_DATA_CLUSTERS,
+                            ("cClusters=%#x\n", cClusters), VERR_OUT_OF_RANGE);
+        default:
+            AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+    }
+
+    /*
+     * Okay, create the boot sector.
+     */
+    size_t   cbBuf = RT_MAX(RT_MAX(_64K, cbCluster), cbSector * 2U);
+    uint8_t *pbBuf = (uint8_t *)RTMemTmpAllocZ(cbBuf);
+    AssertReturn(pbBuf, VERR_NO_TMP_MEMORY);
+
+    const char *pszLastOp = "boot sector";
+    PFATBOOTSECTOR pBootSector = (PFATBOOTSECTOR)pbBuf;
+    pBootSector->abJmp[0] = 0xeb;
+    pBootSector->abJmp[1] = RT_UOFFSETOF(FATBOOTSECTOR, Bpb)
+                          + (enmFatType == RTFSFATTYPE_FAT32 ? sizeof(FAT32EBPB) : sizeof(FATEBPB)) - 2;
+    pBootSector->abJmp[2] = 0x90;
+    memcpy(pBootSector->achOemName, enmFatType == RTFSFATTYPE_FAT32 ? "FAT32   " : "IPRT 6.2", sizeof(pBootSector->achOemName));
+    pBootSector->Bpb.Bpb331.cbSector            = (uint16_t)cbSector;
+    pBootSector->Bpb.Bpb331.cSectorsPerCluster  = (uint8_t)cSectorsPerCluster;
+    pBootSector->Bpb.Bpb331.cReservedSectors    = enmFatType == RTFSFATTYPE_FAT32 ? cbReservedFixed / cbSector : 1;
+    pBootSector->Bpb.Bpb331.cFats               = (uint8_t)cFats;
+    pBootSector->Bpb.Bpb331.cMaxRootDirEntries  = enmFatType == RTFSFATTYPE_FAT32 ?  0 : cRootDirEntries;
+    pBootSector->Bpb.Bpb331.cTotalSectors16     = cTotalSectors <= UINT16_MAX     ? (uint16_t)cTotalSectors : 0;
+    pBootSector->Bpb.Bpb331.bMedia              = bMedia;
+    pBootSector->Bpb.Bpb331.cSectorsPerFat      = enmFatType == RTFSFATTYPE_FAT32 ?  0 : cbFat / cbSector;
+    pBootSector->Bpb.Bpb331.cSectorsPerTrack    = cSectorsPerTrack;
+    pBootSector->Bpb.Bpb331.cTracksPerCylinder  = cHeads;
+    pBootSector->Bpb.Bpb331.cHiddenSectors      = cHiddenSectors;
+    pBootSector->Bpb.Bpb331.cTotalSectors32     = cTotalSectors <= UINT32_MAX     ? (uint32_t)cTotalSectors : 0;
+    if (enmFatType != RTFSFATTYPE_FAT32)
+    {
+        pBootSector->Bpb.Ebpb.bInt13Drive       = 0;
+        pBootSector->Bpb.Ebpb.bReserved         = 0;
+        pBootSector->Bpb.Ebpb.bExtSignature     = FATEBPB_SIGNATURE;
+        pBootSector->Bpb.Ebpb.uSerialNumber     = RTRandU32();
+        memset(pBootSector->Bpb.Ebpb.achLabel, ' ',  sizeof(pBootSector->Bpb.Ebpb.achLabel));
+        memcpy(pBootSector->Bpb.Ebpb.achType, enmFatType == RTFSFATTYPE_FAT12 ? "FAT12   " : "FAT16   ",
+               sizeof(pBootSector->Bpb.Ebpb.achType));
+    }
+    else
+    {
+        pBootSector->Bpb.Fat32Ebpb.cSectorsPerFat32         = cbFat / cbSector;
+        pBootSector->Bpb.Fat32Ebpb.fFlags                   = 0;
+        pBootSector->Bpb.Fat32Ebpb.uVersion                 = FAT32EBPB_VERSION_0_0;
+        pBootSector->Bpb.Fat32Ebpb.uRootDirCluster          = FAT_FIRST_DATA_CLUSTER;
+        pBootSector->Bpb.Fat32Ebpb.uInfoSectorNo            = 1;
+        pBootSector->Bpb.Fat32Ebpb.uBootSectorCopySectorNo  = 6;
+        RT_ZERO(pBootSector->Bpb.Fat32Ebpb.abReserved);
+
+        pBootSector->Bpb.Fat32Ebpb.bInt13Drive   = 0;
+        pBootSector->Bpb.Fat32Ebpb.bReserved     = 0;
+        pBootSector->Bpb.Fat32Ebpb.bExtSignature = FATEBPB_SIGNATURE;
+        pBootSector->Bpb.Fat32Ebpb.uSerialNumber = RTRandU32();
+        memset(pBootSector->Bpb.Fat32Ebpb.achLabel, ' ',  sizeof(pBootSector->Bpb.Fat32Ebpb.achLabel));
+        if (cTotalSectors > UINT32_MAX)
+            pBootSector->Bpb.Fat32Ebpb.u.cTotalSectors64 = cTotalSectors;
+        else
+            memcpy(pBootSector->Bpb.Fat32Ebpb.u.achType, "FAT32   ", sizeof(pBootSector->Bpb.Fat32Ebpb.u.achType));
+    }
+    pbBuf[pBootSector->abJmp[1] + 2 + 0] = 0xcd; /* int 19h */
+    pbBuf[pBootSector->abJmp[1] + 2 + 1] = 0x19;
+    pbBuf[pBootSector->abJmp[1] + 2 + 2] = 0xcc; /* int3 */
+    pbBuf[pBootSector->abJmp[1] + 2 + 3] = 0xcc;
+
+    pBootSector->uSignature = FATBOOTSECTOR_SIGNATURE;
+    if (cbSector != sizeof(*pBootSector))
+        *(uint16_t *)&pbBuf[cbSector - 2] = FATBOOTSECTOR_SIGNATURE; /** @todo figure out how disks with non-512 byte sectors work! */
+
+    rc = RTVfsFileWriteAt(hVfsFile, offVol, pBootSector, cbSector, NULL);
+    uint32_t const offFirstFat = pBootSector->Bpb.Bpb331.cReservedSectors * cbSector;
+
+    /*
+     * Write the FAT32 info sector, 3 boot sector copies, and zero fill
+     * the other reserved sectors.
+     */
+    if (RT_SUCCESS(rc) && enmFatType == RTFSFATTYPE_FAT32)
+    {
+        pszLastOp = "fat32 info sector";
+        PFAT32INFOSECTOR pInfoSector = (PFAT32INFOSECTOR)&pbBuf[cbSector]; /* preserve the boot sector. */
+        RT_ZERO(*pInfoSector);
+        pInfoSector->uSignature1           = FAT32INFOSECTOR_SIGNATURE_1;
+        pInfoSector->uSignature2           = FAT32INFOSECTOR_SIGNATURE_2;
+        pInfoSector->uSignature3           = FAT32INFOSECTOR_SIGNATURE_3;
+        pInfoSector->cFreeClusters         = cClusters - 1; /* ASSUMES 1 cluster for the root dir. */
+        pInfoSector->cLastAllocatedCluster = FAT_FIRST_DATA_CLUSTER;
+        rc = RTVfsFileWriteAt(hVfsFile, offVol + cbSector, pInfoSector, cbSector, NULL);
+
+        uint32_t iSector = 2;
+        if (RT_SUCCESS(rc))
+        {
+            pszLastOp = "fat32 unused reserved sectors";
+            rc = rtFsFatVolWriteZeros(hVfsFile, offVol + iSector * cbSector,
+                                      (pBootSector->Bpb.Fat32Ebpb.uBootSectorCopySectorNo - iSector) * cbSector);
+            iSector = pBootSector->Bpb.Fat32Ebpb.uBootSectorCopySectorNo;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            pszLastOp = "boot sector copy";
+            for (uint32_t i = 0; i < 3 && RT_SUCCESS(rc); i++, iSector++)
+                rc = RTVfsFileWriteAt(hVfsFile, offVol + iSector * cbSector, pBootSector, cbSector, NULL);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            pszLastOp = "fat32 unused reserved sectors";
+            rc = rtFsFatVolWriteZeros(hVfsFile, offVol + iSector * cbSector,
+                                      (pBootSector->Bpb.Bpb331.cReservedSectors - iSector) * cbSector);
+        }
+    }
+
+    /*
+     * The FATs.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        pszLastOp = "fat";
+        pBootSector = NULL; /* invalid  */
+        RT_BZERO(pbBuf, cbSector);
+        switch (enmFatType)
+        {
+            case RTFSFATTYPE_FAT32:
+                pbBuf[11] = 0x0f;       /* EOC for root dir*/
+                pbBuf[10] = 0xff;
+                pbBuf[9]  = 0xff;
+                pbBuf[8]  = 0xff;
+                pbBuf[7]  = 0x0f;       /* Formatter's EOC, followed by signed extend FAT ID. */
+                pbBuf[6]  = 0xff;
+                pbBuf[5]  = 0xff;
+                pbBuf[4]  = 0xff;
+                /* fall thru */
+            case RTFSFATTYPE_FAT16:
+                pbBuf[3]  = 0xff;
+                /* fall thru */
+            case RTFSFATTYPE_FAT12:
+                pbBuf[2]  = 0xff;
+                pbBuf[1]  = 0xff;
+                pbBuf[0]  = bMedia;     /* FAT ID */
+                break;
+            default: AssertFailed();
+        }
+        for (uint32_t iFatCopy = 0; iFatCopy < cFats && RT_SUCCESS(rc); iFatCopy++)
+        {
+            rc = RTVfsFileWriteAt(hVfsFile, offVol + offFirstFat + cbFat * iFatCopy, pbBuf, cbSector, NULL);
+            if (RT_SUCCESS(rc) && cbFat > cbSector)
+                rc = rtFsFatVolWriteZeros(hVfsFile, offVol + offFirstFat + cbFat * iFatCopy + cbSector, cbFat - cbSector);
+        }
+    }
+
+    /*
+     * The root directory.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo any mandatory directory entries we need to fill in here? */
+        pszLastOp = "root dir";
+        rc = rtFsFatVolWriteZeros(hVfsFile, offVol + offFirstFat + cbFat * cFats, cbRootDir);
+    }
+
+    /*
+     * If long format, fill the rest of the disk with 0xf6.
+     */
+    AssertCompile(RTFSFATVOL_FMT_F_QUICK != 0);
+    if (RT_SUCCESS(rc) && !(fFlags & RTFSFATVOL_FMT_F_QUICK))
+    {
+        pszLastOp = "formatting data clusters";
+        uint64_t offCur = offFirstFat + cbFat * cFats + cbRootDir;
+        uint64_t cbLeft = cTotalSectors * cbSector;
+        if (cbLeft > offCur)
+        {
+            cbLeft -= offCur;
+            offCur += offVol;
+
+            memset(pbBuf, 0xf6, cbBuf);
+            while (cbLeft > 0)
+            {
+                size_t cbToWrite = cbLeft >= cbBuf ? cbBuf : (size_t)cbLeft;
+                rc = RTVfsFileWriteAt(hVfsFile, offCur, pbBuf, cbToWrite, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    offCur += cbToWrite;
+                    cbLeft -= cbToWrite;
+                }
+                else
+                    break;
+            }
+        }
+    }
+
+    /*
+     * Done.
+     */
+    RTMemTmpFree(pbBuf);
+    if (RT_SUCCESS(rc))
+        return rc;
+    return RTErrInfoSet(pErrInfo, rc, pszLastOp);
+}
+
+
+/**
+ * Formats a 1.44MB floppy image.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFile            The image.
+ */
+RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick)
+{
+    return RTFsFatVolFormat(hVfsFile, 0 /*offVol*/, 1474560, fQuick ? RTFSFATVOL_FMT_F_QUICK : RTFSFATVOL_FMT_F_FULL,
+                            512 /*cbSector*/, 2 /*cSectorsPerCluster*/, RTFSFATTYPE_FAT12, 2 /*cHeads*/,  18 /*cSectors*/,
+                            0xf0 /*bMedia*/, 0 /*cHiddenSectors*/, 224 /*cRootDirEntries*/, NULL /*pErrInfo*/);
 }
 
 

@@ -52,8 +52,8 @@
  * @todo uncertain whether 0xf4 and 0xf5 should be allowed here too. */
 #define FAT_ID_IS_VALID(a_bFatId) (   (uint8_t)(a_bFatId) >= 0xf8 \
                                    || (uint8_t)(a_bFatId) == 0xf0 \
-                                   || (uint8_t)(a_bMedia) == 0xf4 /* obscure - msdos 2.11 */ \
-                                   || (uint8_t)(a_bMedia) == 0xf5 /* obscure - msdos 2.11 */ \
+                                   || (uint8_t)(a_bFatId) == 0xf4 /* obscure - msdos 2.11 */ \
+                                   || (uint8_t)(a_bFatId) == 0xf5 /* obscure - msdos 2.11 */ \
                                    || (uint8_t)(a_bFatId) == 0xed /* obscure, tandy 2000 */ \
                                    || (uint8_t)(a_bFatId) == 0xe5 /* obscure, tandy 2000 */ )
 
@@ -502,9 +502,22 @@ typedef FAT32INFOSECTOR const *PCFAT32INFOSECTOR;
 /** @name Special FAT cluster numbers and limits.
  * @{ */
 #define FAT_FIRST_DATA_CLUSTER          2                       /**< The first data cluster. */
+
+#define FAT_MAX_FAT12_TOTAL_CLUSTERS    UINT32_C(0x00000ff6)    /**< Maximum number of clusters in a 12-bit FAT . */
+#define FAT_MAX_FAT16_TOTAL_CLUSTERS    UINT32_C(0x0000fff6)    /**< Maximum number of clusters in a 16-bit FAT . */
+#define FAT_MAX_FAT32_TOTAL_CLUSTERS    UINT32_C(0x0ffffff6)    /**< Maximum number of clusters in a 32-bit FAT . */
+
 #define FAT_LAST_FAT12_DATA_CLUSTER     UINT32_C(0x00000ff5)    /**< The last possible data cluster for FAT12. */
 #define FAT_LAST_FAT16_DATA_CLUSTER     UINT32_C(0x0000fff5)    /**< The last possible data cluster for FAT16. */
 #define FAT_LAST_FAT32_DATA_CLUSTER     UINT32_C(0x0ffffff5)    /**< The last possible data cluster for FAT32. */
+
+#define FAT_MAX_FAT12_DATA_CLUSTERS     UINT32_C(0x00000ff4)    /**< Maximum number of data clusters for FAT12. */
+#define FAT_MAX_FAT16_DATA_CLUSTERS     UINT32_C(0x0000fff4)    /**< Maximum number of data clusters for FAT16. */
+#define FAT_MAX_FAT32_DATA_CLUSTERS     UINT32_C(0x0ffffff4)    /**< Maximum number of data clusters for FAT32. */
+
+#define FAT_MIN_FAT12_DATA_CLUSTERS     UINT32_C(0x00000001)    /**< Maximum number of data clusters for FAT12. */
+#define FAT_MIN_FAT16_DATA_CLUSTERS     UINT32_C(0x00000ff5)    /**< Maximum number of data clusters for FAT16. */
+#define FAT_MIN_FAT32_DATA_CLUSTERS     UINT32_C(0x0000fff5)    /**< Maximum number of data clusters for FAT32. */
 
 #define FAT_FIRST_FAT12_EOC             UINT32_C(0x00000ff8)    /**< The first end-of-file-cluster number for FAT12. */
 #define FAT_FIRST_FAT16_EOC             UINT32_C(0x0000fff8)    /**< The first end-of-file-cluster number for FAT16. */
