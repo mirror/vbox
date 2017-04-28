@@ -213,49 +213,49 @@ private:
         /** Holds the external data reference. */
         UIDataHostNetwork &m_data;
         /** Holds the tab-widget. */
-        QITabWidget *m_pTabWidget;
+        QITabWidget       *m_pTabWidget;
     /** @} */
 
     /** @name Interface variables.
      * @{ */
         /** Holds the IPv4 address label. */
-        QLabel      *m_pLabelIPv4;
+        QLabel     *m_pLabelIPv4;
         /** Holds the IPv4 address editor. */
-        QILineEdit  *m_pEditorIPv4;
+        QILineEdit *m_pEditorIPv4;
         /** Holds the IPv4 network mask label. */
-        QLabel      *m_pLabelNMv4;
+        QLabel     *m_pLabelNMv4;
         /** Holds the IPv4 network mask editor. */
-        QILineEdit  *m_pEditorNMv4;
+        QILineEdit *m_pEditorNMv4;
         /** Holds the IPv6 address label. */
-        QLabel      *m_pLabelIPv6;
+        QLabel     *m_pLabelIPv6;
         /** Holds the IPv6 address editor. */
-        QILineEdit  *m_pEditorIPv6;
+        QILineEdit *m_pEditorIPv6;
         /** Holds the IPv6 network mask label. */
-        QLabel      *m_pLabelNMv6;
+        QLabel     *m_pLabelNMv6;
         /** Holds the IPv6 network mask editor. */
-        QILineEdit  *m_pEditorNMv6;
+        QILineEdit *m_pEditorNMv6;
     /** @} */
 
     /** @name DHCP server variables.
      * @{ */
         /** Holds the DHCP server status chack-box. */
-        QCheckBox   *m_pCheckBoxDHCP;
+        QCheckBox  *m_pCheckBoxDHCP;
         /** Holds the DHCP address label. */
-        QLabel      *m_pLabelDHCPAddress;
+        QLabel     *m_pLabelDHCPAddress;
         /** Holds the DHCP address editor. */
-        QILineEdit  *m_pEditorDHCPAddress;
+        QILineEdit *m_pEditorDHCPAddress;
         /** Holds the DHCP network mask label. */
-        QLabel      *m_pLabelDHCPMask;
+        QLabel     *m_pLabelDHCPMask;
         /** Holds the DHCP network mask editor. */
-        QILineEdit  *m_pEditorDHCPMask;
+        QILineEdit *m_pEditorDHCPMask;
         /** Holds the DHCP lower address label. */
-        QLabel      *m_pLabelDHCPLowerAddress;
+        QLabel     *m_pLabelDHCPLowerAddress;
         /** Holds the DHCP lower address editor. */
-        QILineEdit  *m_pEditorDHCPLowerAddress;
+        QILineEdit *m_pEditorDHCPLowerAddress;
         /** Holds the DHCP upper address label. */
-        QLabel      *m_pLabelDHCPUpperAddress;
+        QLabel     *m_pLabelDHCPUpperAddress;
         /** Holds the DHCP upper address editor. */
-        QILineEdit  *m_pEditorDHCPUpperAddress;
+        QILineEdit *m_pEditorDHCPUpperAddress;
     /** @} */
 };
 

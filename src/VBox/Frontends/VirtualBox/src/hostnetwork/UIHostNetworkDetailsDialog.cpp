@@ -237,7 +237,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             AssertPtrReturnVoid(m_pCheckBoxDHCP);
             {
                 /* Configure check-box: */
-                connect(m_pCheckBoxDHCP, SIGNAL(stateChanged(int)), this, SLOT(sltDhcpServerStatusChanged()));
+                connect(m_pCheckBoxDHCP, &QCheckBox::stateChanged,
+                        this, &UIHostNetworkDetailsDialog::sltDhcpServerStatusChanged);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 3);
             }
@@ -346,8 +347,10 @@ void UIHostNetworkDetailsDialog::prepareButtonBox()
     {
         /* Configure button-box: */
         pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-        connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-        connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+        connect(pButtonBox, &QIDialogButtonBox::accepted,
+                this, &UIHostNetworkDetailsDialog::accept);
+        connect(pButtonBox, &QIDialogButtonBox::rejected,
+                this, &UIHostNetworkDetailsDialog::reject);
         /* Add button-box into layout: */
         layout()->addWidget(pButtonBox);
     }

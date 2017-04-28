@@ -699,7 +699,7 @@ void UIHostNetworkManager::prepareActions()
                                                       ":/add_host_iface_16px.png",
                                                       ":/add_host_iface_disabled_22px.png",
                                                       ":/add_host_iface_disabled_16px.png"));
-        connect(m_pActionAdd, SIGNAL(triggered()), this, SLOT(sltAddHostNetwork()));
+        connect(m_pActionAdd, &QAction::triggered, this, &UIHostNetworkManager::sltAddHostNetwork);
     }
 
     /* Create 'Remove' action: */
@@ -712,7 +712,7 @@ void UIHostNetworkManager::prepareActions()
                                                          ":/remove_host_iface_16px.png",
                                                          ":/remove_host_iface_disabled_22px.png",
                                                          ":/remove_host_iface_disabled_16px.png"));
-        connect(m_pActionRemove, SIGNAL(triggered()), this, SLOT(sltRemoveHostNetwork()));
+        connect(m_pActionRemove, &QAction::triggered, this, &UIHostNetworkManager::sltRemoveHostNetwork);
     }
 
     /* Create 'Edit' action: */
@@ -725,7 +725,7 @@ void UIHostNetworkManager::prepareActions()
                                                        ":/edit_host_iface_16px.png",
                                                        ":/edit_host_iface_disabled_22px.png",
                                                        ":/edit_host_iface_disabled_16px.png"));
-        connect(m_pActionEdit, SIGNAL(triggered()), this, SLOT(sltEditHostNetwork()));
+        connect(m_pActionEdit, &QAction::triggered, this, &UIHostNetworkManager::sltEditHostNetwork);
     }
 
     /* Prepare menu-bar: */
@@ -823,14 +823,14 @@ void UIHostNetworkManager::prepareTreeWidget()
         m_pTreeWidget->setColumnCount(Column_Max);
         m_pTreeWidget->setSortingEnabled(true);
         m_pTreeWidget->sortByColumn(Column_Name, Qt::AscendingOrder);
-        connect(m_pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
-                this, SLOT(sltHandleCurrentItemChange()));
-        connect(m_pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-                this, SLOT(sltEditHostNetwork()));
-        connect(m_pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint &)),
-                this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
-        connect(m_pTreeWidget, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
-                this, SLOT(sltHandleItemChange(QTreeWidgetItem *)));
+        connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
+                this, &UIHostNetworkManager::sltHandleCurrentItemChange);
+        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
+                this, &UIHostNetworkManager::sltEditHostNetwork);
+        connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
+                this, &UIHostNetworkManager::sltHandleContextMenuRequest);
+        connect(m_pTreeWidget, &QITreeWidget::itemChanged,
+                this, &UIHostNetworkManager::sltHandleItemChange);
         /* Add tree-widget into layout: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
         pMainLayout->addWidget(m_pTreeWidget);
@@ -846,8 +846,8 @@ void UIHostNetworkManager::prepareButtonBox()
         /* Configure button-box: */
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-        connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(close()));
+        connect(m_pButtonBox, &QIDialogButtonBox::helpRequested, &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIHostNetworkManager::close);
         /* Add button-box into layout: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
         pMainLayout->addWidget(m_pButtonBox);
