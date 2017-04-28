@@ -391,12 +391,10 @@ void UIHostNetworkDetailsDialog::loadDataForInterface()
     m_pLabelNMv6->setEnabled(fIsIpv6Supported);
     m_pEditorIPv6->setEnabled(fIsIpv6Supported);
     m_pEditorNMv6->setEnabled(fIsIpv6Supported);
-    if (fIsIpv6Supported)
-    {
-        /* Load IPv6 interface fields: */
-        m_pEditorIPv6->setText(m_data.m_interface.m_strAddress6);
-        m_pEditorNMv6->setText(m_data.m_interface.m_strMaskLength6);
-    }
+
+    /* Load IPv6 interface fields: */
+    m_pEditorIPv6->setText(m_data.m_interface.m_strAddress6);
+    m_pEditorNMv6->setText(m_data.m_interface.m_strMaskLength6);
 }
 
 void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
@@ -411,43 +409,34 @@ void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
     m_pEditorDHCPMask->setEnabled(fIsDHCPServerEnabled);
     m_pEditorDHCPLowerAddress->setEnabled(fIsDHCPServerEnabled);
     m_pEditorDHCPUpperAddress->setEnabled(fIsDHCPServerEnabled);
-    if (fIsDHCPServerEnabled)
-    {
-        /* Load DHCP server fields: */
-        m_pEditorDHCPAddress->setText(m_data.m_dhcpserver.m_strAddress);
-        m_pEditorDHCPMask->setText(m_data.m_dhcpserver.m_strMask);
-        m_pEditorDHCPLowerAddress->setText(m_data.m_dhcpserver.m_strLowerAddress);
-        m_pEditorDHCPUpperAddress->setText(m_data.m_dhcpserver.m_strUpperAddress);
 
-        /* Invent default values where necessary: */
-        const quint32 uAddr = ipv4FromQStringToQuint32(m_data.m_interface.m_strAddress);
-        const quint32 uMask = ipv4FromQStringToQuint32(m_data.m_interface.m_strMask);
-        const quint32 uProp = uAddr & uMask;
-        const QString strMask = ipv4FromQuint32ToQString(uMask);
-        const QString strProp = ipv4FromQuint32ToQString(uProp);
-        //printf("Proposal is = %s x %s\n",
-        //       strProp.toUtf8().constData(),
-        //       strMask.toUtf8().constData());
-        if (   m_data.m_dhcpserver.m_strAddress.isEmpty()
-            || m_data.m_dhcpserver.m_strAddress == "0.0.0.0")
-            m_pEditorDHCPAddress->setText(strProp);
-        if (   m_data.m_dhcpserver.m_strMask.isEmpty()
-            || m_data.m_dhcpserver.m_strMask == "0.0.0.0")
-            m_pEditorDHCPMask->setText(strMask);
-        if (   m_data.m_dhcpserver.m_strLowerAddress.isEmpty()
-            || m_data.m_dhcpserver.m_strLowerAddress == "0.0.0.0")
-            m_pEditorDHCPLowerAddress->setText(strProp);
-        if (   m_data.m_dhcpserver.m_strUpperAddress.isEmpty()
-            || m_data.m_dhcpserver.m_strUpperAddress == "0.0.0.0")
-            m_pEditorDHCPUpperAddress->setText(strProp);
-    }
-    else
-    {
-        m_pEditorDHCPAddress->clear();
-        m_pEditorDHCPMask->clear();
-        m_pEditorDHCPLowerAddress->clear();
-        m_pEditorDHCPUpperAddress->clear();
-    }
+    /* Load DHCP server fields: */
+    m_pEditorDHCPAddress->setText(m_data.m_dhcpserver.m_strAddress);
+    m_pEditorDHCPMask->setText(m_data.m_dhcpserver.m_strMask);
+    m_pEditorDHCPLowerAddress->setText(m_data.m_dhcpserver.m_strLowerAddress);
+    m_pEditorDHCPUpperAddress->setText(m_data.m_dhcpserver.m_strUpperAddress);
+
+    /* Invent default values where necessary: */
+    const quint32 uAddr = ipv4FromQStringToQuint32(m_data.m_interface.m_strAddress);
+    const quint32 uMask = ipv4FromQStringToQuint32(m_data.m_interface.m_strMask);
+    const quint32 uProp = uAddr & uMask;
+    const QString strMask = ipv4FromQuint32ToQString(uMask);
+    const QString strProp = ipv4FromQuint32ToQString(uProp);
+    //printf("Proposal is = %s x %s\n",
+    //       strProp.toUtf8().constData(),
+    //       strMask.toUtf8().constData());
+    if (   m_data.m_dhcpserver.m_strAddress.isEmpty()
+        || m_data.m_dhcpserver.m_strAddress == "0.0.0.0")
+        m_pEditorDHCPAddress->setText(strProp);
+    if (   m_data.m_dhcpserver.m_strMask.isEmpty()
+        || m_data.m_dhcpserver.m_strMask == "0.0.0.0")
+        m_pEditorDHCPMask->setText(strMask);
+    if (   m_data.m_dhcpserver.m_strLowerAddress.isEmpty()
+        || m_data.m_dhcpserver.m_strLowerAddress == "0.0.0.0")
+        m_pEditorDHCPLowerAddress->setText(strProp);
+    if (   m_data.m_dhcpserver.m_strUpperAddress.isEmpty()
+        || m_data.m_dhcpserver.m_strUpperAddress == "0.0.0.0")
+        m_pEditorDHCPUpperAddress->setText(strProp);
 }
 
 void UIHostNetworkDetailsDialog::save()
