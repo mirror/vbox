@@ -25,7 +25,6 @@
 # include <QRegExpValidator>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
 # include "QILineEdit.h"
 # include "UIGlobalSettingsNetwork.h"
 # include "UIHostNetworkDetailsDialog.h"
@@ -34,9 +33,8 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent, UIDataHostNetwork &data)
-    : QIWithRetranslateUI2<QIDialog>(pParent)
-    , m_data(data)
+UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI2<QWidget>(pParent)
     , m_pTabWidget(0)
     , m_pLabelIPv4(0), m_pEditorIPv4(0), m_pLabelNMv4(0), m_pEditorNMv4(0)
     , m_pLabelIPv6(0), m_pEditorIPv6(0), m_pLabelNMv6(0), m_pEditorNMv6(0)
@@ -47,11 +45,56 @@ UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent, UIDataH
     prepare();
 }
 
+void UIHostNetworkDetailsDialog::setData(const UIDataHostNetwork &data)
+{
+    /* Save old data: */
+    m_oldData = data;
+
+    /* Invent default old values if current old values are invalid: */
+    const quint32 uAddr = ipv4FromQStringToQuint32(m_oldData.m_interface.m_strAddress);
+    const quint32 uMask = ipv4FromQStringToQuint32(m_oldData.m_interface.m_strMask);
+    const quint32 uProp = uAddr & uMask;
+    const QString strMask = ipv4FromQuint32ToQString(uMask);
+    const QString strProp = ipv4FromQuint32ToQString(uProp);
+//    printf("Proposal is = %s x %s\n",
+//           strProp.toUtf8().constData(),
+//           strMask.toUtf8().constData());
+    if (   m_oldData.m_dhcpserver.m_strAddress.isEmpty()
+        || m_oldData.m_dhcpserver.m_strAddress == "0.0.0.0")
+        m_oldData.m_dhcpserver.m_strAddress = strProp;
+    if (   m_oldData.m_dhcpserver.m_strMask.isEmpty()
+        || m_oldData.m_dhcpserver.m_strMask == "0.0.0.0")
+        m_oldData.m_dhcpserver.m_strMask = strMask;
+    if (   m_oldData.m_dhcpserver.m_strLowerAddress.isEmpty()
+        || m_oldData.m_dhcpserver.m_strLowerAddress == "0.0.0.0")
+        m_oldData.m_dhcpserver.m_strLowerAddress = strProp;
+    if (   m_oldData.m_dhcpserver.m_strUpperAddress.isEmpty()
+        || m_oldData.m_dhcpserver.m_strUpperAddress == "0.0.0.0")
+        m_oldData.m_dhcpserver.m_strUpperAddress = strProp;
+
+    /* Copy old data to new one: */
+    m_newData = m_oldData;
+
+    /* Load 'Interface' data: */
+    loadDataForInterface();
+    /* Load 'DHCP server' data: */
+    loadDataForDHCPServer();
+}
+
+void UIHostNetworkDetailsDialog::clearData()
+{
+    /* Reset old/new data: */
+    m_oldData = UIDataHostNetwork();
+    m_newData = m_oldData;
+
+    /* Load 'Interface' data: */
+    loadDataForInterface();
+    /* Load 'DHCP server' data: */
+    loadDataForDHCPServer();
+}
+
 void UIHostNetworkDetailsDialog::retranslateUi()
 {
-    /* Translate this: */
-    setWindowTitle(tr("Host Network Details"));
-
     /* Translate tab-widget: */
     m_pTabWidget->setTabText(0, tr("&Adapter"));
     m_pTabWidget->setTabText(1, tr("&DHCP Server"));
@@ -79,15 +122,6 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pEditorDHCPUpperAddress->setToolTip(tr("Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
 }
 
-void UIHostNetworkDetailsDialog::accept()
-{
-    /* Save before accept: */
-    save();
-
-    /* Call to base-class: */
-    QIDialog::accept();
-}
-
 void UIHostNetworkDetailsDialog::prepare()
 {
     /* Prepare this: */
@@ -95,24 +129,18 @@ void UIHostNetworkDetailsDialog::prepare()
 
     /* Apply language settings: */
     retranslateUi();
-
-    /* Load: */
-    load();
 }
 
 void UIHostNetworkDetailsDialog::prepareThis()
 {
-    /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/edit_host_iface_22px.png", ":/edit_host_iface_16px.png"));
-
     /* Create layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     AssertPtrReturnVoid(pLayout);
     {
+        /* Configure layout: */
+        pLayout->setContentsMargins(0, 0, 0, 0);
         /* Prepare tab-widget: */
         prepareTabWidget();
-        /* Prepare button-box: */
-        prepareButtonBox();
     }
 }
 
@@ -160,6 +188,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
             {
                 /* Configure editor: */
                 m_pLabelIPv4->setBuddy(m_pEditorIPv4);
+                connect(m_pEditorIPv4, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedIPv4);
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pEditorIPv4, 0, 1);
             }
@@ -178,6 +208,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
             {
                 /* Configure editor: */
                 m_pLabelNMv4->setBuddy(m_pEditorNMv4);
+                connect(m_pEditorNMv4, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedNMv4);
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pEditorNMv4, 1, 1);
             }
@@ -196,7 +228,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
             {
                 /* Configure editor: */
                 m_pLabelIPv6->setBuddy(m_pEditorIPv6);
-                m_pEditorIPv6->setFixedWidthByText(QString().fill('X', 32) + QString().fill(':', 7));
+                connect(m_pEditorIPv6, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedIPv6);
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pEditorIPv6, 2, 1);
             }
@@ -215,6 +248,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
             {
                 /* Configure editor: */
                 m_pLabelNMv6->setBuddy(m_pEditorNMv6);
+                connect(m_pEditorNMv6, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedNMv6);
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pEditorNMv6, 3, 1);
             }
@@ -251,7 +286,7 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             {
                 /* Configure check-box: */
                 connect(m_pCheckBoxDHCP, &QCheckBox::stateChanged,
-                        this, &UIHostNetworkDetailsDialog::sltDhcpServerStatusChanged);
+                        this, &UIHostNetworkDetailsDialog::sltStatusChangedServer);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 2);
             }
@@ -270,6 +305,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             {
                 /* Configure editor: */
                 m_pLabelDHCPAddress->setBuddy(m_pEditorDHCPAddress);
+                connect(m_pEditorDHCPAddress, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedAddress);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pEditorDHCPAddress, 1, 2);
             }
@@ -288,6 +325,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             {
                 /* Configure editor: */
                 m_pLabelDHCPMask->setBuddy(m_pEditorDHCPMask);
+                connect(m_pEditorDHCPMask, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedMask);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pEditorDHCPMask, 2, 2);
             }
@@ -306,6 +345,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             {
                 /* Configure editor: */
                 m_pLabelDHCPLowerAddress->setBuddy(m_pEditorDHCPLowerAddress);
+                connect(m_pEditorDHCPLowerAddress, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedLowerAddress);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pEditorDHCPLowerAddress, 3, 2);
             }
@@ -324,6 +365,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             {
                 /* Configure editor: */
                 m_pLabelDHCPUpperAddress->setBuddy(m_pEditorDHCPUpperAddress);
+                connect(m_pEditorDHCPUpperAddress, &QLineEdit::textChanged,
+                        this, &UIHostNetworkDetailsDialog::sltTextChangedUpperAddress);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pEditorDHCPUpperAddress, 4, 2);
             }
@@ -352,55 +395,28 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
     }
 }
 
-void UIHostNetworkDetailsDialog::prepareButtonBox()
-{
-    /* Create dialog button-box: */
-    QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
-    AssertPtrReturnVoid(pButtonBox);
-    {
-        /* Configure button-box: */
-        pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-        connect(pButtonBox, &QIDialogButtonBox::accepted,
-                this, &UIHostNetworkDetailsDialog::accept);
-        connect(pButtonBox, &QIDialogButtonBox::rejected,
-                this, &UIHostNetworkDetailsDialog::reject);
-        /* Add button-box into layout: */
-        layout()->addWidget(pButtonBox);
-    }
-}
-
-void UIHostNetworkDetailsDialog::load()
-{
-    /* Load 'Interface' data: */
-    loadDataForInterface();
-
-    /* Load 'DHCP server' data: */
-    m_pCheckBoxDHCP->setChecked(m_data.m_dhcpserver.m_fEnabled);
-    loadDataForDHCPServer();
-}
-
 void UIHostNetworkDetailsDialog::loadDataForInterface()
 {
     /* Load IPv4 interface fields: */
-    m_pEditorIPv4->setText(m_data.m_interface.m_strAddress);
-    m_pEditorNMv4->setText(m_data.m_interface.m_strMask);
+    m_pEditorIPv4->setText(m_newData.m_interface.m_strAddress);
+    m_pEditorNMv4->setText(m_newData.m_interface.m_strMask);
 
     /* Toggle IPv6 interface fields availability: */
-    const bool fIsIpv6Supported = m_data.m_interface.m_fSupportedIPv6;
+    const bool fIsIpv6Supported = m_newData.m_interface.m_fSupportedIPv6;
     m_pLabelIPv6->setEnabled(fIsIpv6Supported);
     m_pLabelNMv6->setEnabled(fIsIpv6Supported);
     m_pEditorIPv6->setEnabled(fIsIpv6Supported);
     m_pEditorNMv6->setEnabled(fIsIpv6Supported);
 
     /* Load IPv6 interface fields: */
-    m_pEditorIPv6->setText(m_data.m_interface.m_strAddress6);
-    m_pEditorNMv6->setText(m_data.m_interface.m_strMaskLength6);
+    m_pEditorIPv6->setText(m_newData.m_interface.m_strAddress6);
+    m_pEditorNMv6->setText(m_newData.m_interface.m_strMaskLength6);
 }
 
 void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
 {
     /* Toggle DHCP server fields availability: */
-    const bool fIsDHCPServerEnabled = m_data.m_dhcpserver.m_fEnabled;
+    const bool fIsDHCPServerEnabled = m_newData.m_dhcpserver.m_fEnabled;
     m_pLabelDHCPAddress->setEnabled(fIsDHCPServerEnabled);
     m_pLabelDHCPMask->setEnabled(fIsDHCPServerEnabled);
     m_pLabelDHCPLowerAddress->setEnabled(fIsDHCPServerEnabled);
@@ -411,54 +427,28 @@ void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
     m_pEditorDHCPUpperAddress->setEnabled(fIsDHCPServerEnabled);
 
     /* Load DHCP server fields: */
-    m_pEditorDHCPAddress->setText(m_data.m_dhcpserver.m_strAddress);
-    m_pEditorDHCPMask->setText(m_data.m_dhcpserver.m_strMask);
-    m_pEditorDHCPLowerAddress->setText(m_data.m_dhcpserver.m_strLowerAddress);
-    m_pEditorDHCPUpperAddress->setText(m_data.m_dhcpserver.m_strUpperAddress);
-
-    /* Invent default values where necessary: */
-    const quint32 uAddr = ipv4FromQStringToQuint32(m_data.m_interface.m_strAddress);
-    const quint32 uMask = ipv4FromQStringToQuint32(m_data.m_interface.m_strMask);
-    const quint32 uProp = uAddr & uMask;
-    const QString strMask = ipv4FromQuint32ToQString(uMask);
-    const QString strProp = ipv4FromQuint32ToQString(uProp);
-    //printf("Proposal is = %s x %s\n",
-    //       strProp.toUtf8().constData(),
-    //       strMask.toUtf8().constData());
-    if (   m_data.m_dhcpserver.m_strAddress.isEmpty()
-        || m_data.m_dhcpserver.m_strAddress == "0.0.0.0")
-        m_pEditorDHCPAddress->setText(strProp);
-    if (   m_data.m_dhcpserver.m_strMask.isEmpty()
-        || m_data.m_dhcpserver.m_strMask == "0.0.0.0")
-        m_pEditorDHCPMask->setText(strMask);
-    if (   m_data.m_dhcpserver.m_strLowerAddress.isEmpty()
-        || m_data.m_dhcpserver.m_strLowerAddress == "0.0.0.0")
-        m_pEditorDHCPLowerAddress->setText(strProp);
-    if (   m_data.m_dhcpserver.m_strUpperAddress.isEmpty()
-        || m_data.m_dhcpserver.m_strUpperAddress == "0.0.0.0")
-        m_pEditorDHCPUpperAddress->setText(strProp);
+    m_pCheckBoxDHCP->setChecked(fIsDHCPServerEnabled);
+    m_pEditorDHCPAddress->setText(m_newData.m_dhcpserver.m_strAddress);
+    m_pEditorDHCPMask->setText(m_newData.m_dhcpserver.m_strMask);
+    m_pEditorDHCPLowerAddress->setText(m_newData.m_dhcpserver.m_strLowerAddress);
+    m_pEditorDHCPUpperAddress->setText(m_newData.m_dhcpserver.m_strUpperAddress);
 }
 
-void UIHostNetworkDetailsDialog::save()
+void UIHostNetworkDetailsDialog::notify()
 {
-    /* Save interface data: */
-    m_data.m_interface.m_strAddress = m_pEditorIPv4->text();
-    m_data.m_interface.m_strMask = m_pEditorNMv4->text();
-    if (m_data.m_interface.m_fSupportedIPv6)
-    {
-        m_data.m_interface.m_strAddress6 = m_pEditorIPv6->text();
-        m_data.m_interface.m_strMaskLength6 = m_pEditorNMv6->text();
-    }
+//    if (m_oldData != m_newData)
+//        printf("Interface: %s, %s, %s, %s;  DHCP server: %d, %s, %s, %s, %s\n",
+//               m_newData.m_interface.m_strAddress.toUtf8().constData(),
+//               m_newData.m_interface.m_strMask.toUtf8().constData(),
+//               m_newData.m_interface.m_strAddress6.toUtf8().constData(),
+//               m_newData.m_interface.m_strMaskLength6.toUtf8().constData(),
+//               (int)m_newData.m_dhcpserver.m_fEnabled,
+//               m_newData.m_dhcpserver.m_strAddress.toUtf8().constData(),
+//               m_newData.m_dhcpserver.m_strMask.toUtf8().constData(),
+//               m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData(),
+//               m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData());
 
-    /* Save DHCP server data: */
-    m_data.m_dhcpserver.m_fEnabled = m_pCheckBoxDHCP->isChecked();
-    if (m_data.m_dhcpserver.m_fEnabled)
-    {
-        m_data.m_dhcpserver.m_strAddress = m_pEditorDHCPAddress->text();
-        m_data.m_dhcpserver.m_strMask = m_pEditorDHCPMask->text();
-        m_data.m_dhcpserver.m_strLowerAddress = m_pEditorDHCPLowerAddress->text();
-        m_data.m_dhcpserver.m_strUpperAddress = m_pEditorDHCPUpperAddress->text();
-    }
+    emit sigDataChanged(m_oldData != m_newData);
 }
 
 /* static */

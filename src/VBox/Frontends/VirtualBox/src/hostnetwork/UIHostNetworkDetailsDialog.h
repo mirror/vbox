@@ -18,8 +18,10 @@
 #ifndef __UIHostNetworkDetailsDialog_h__
 #define __UIHostNetworkDetailsDialog_h__
 
+/* Qt includes: */
+#include <QWidget>
+
 /* GUI includes: */
-#include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
@@ -147,15 +149,27 @@ struct UIDataHostNetwork
 };
 
 
-/** Host Network Manager: Host network details dialog. */
-class UIHostNetworkDetailsDialog : public QIWithRetranslateUI2<QIDialog>
+/** Host Network Manager: Host network details widget. */
+class UIHostNetworkDetailsDialog : public QIWithRetranslateUI2<QWidget>
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about data changed and whether it @a fDiffers. */
+    void sigDataChanged(bool fDiffers);
 
 public:
 
     /** Constructs host network details dialog for the passed @a pParent and @a data. */
-    UIHostNetworkDetailsDialog(QWidget *pParent, UIDataHostNetwork &data);
+    UIHostNetworkDetailsDialog(QWidget *pParent = 0);
+
+    /** Returns the host network data. */
+    const UIDataHostNetwork &data() const { return m_newData; }
+    /** Defines the host network @a data. */
+    void setData(const UIDataHostNetwork &data);
+    /** Clears the host network data. */
+    void clearData();
 
 protected:
 
@@ -164,11 +178,28 @@ protected:
 
 private slots:
 
-    /** Handles DHCP server status change. */
-    void sltDhcpServerStatusChanged() { loadDataForDHCPServer(); }
+    /** @name Change handling stuff.
+     * @{ */
+        /** Handles interface IPv4 text change. */
+        void sltTextChangedIPv4(const QString &strText) { m_newData.m_interface.m_strAddress = strText; notify(); }
+        /** Handles interface NMv4 text change. */
+        void sltTextChangedNMv4(const QString &strText) { m_newData.m_interface.m_strMask = strText; notify(); }
+        /** Handles interface IPv6 text change. */
+        void sltTextChangedIPv6(const QString &strText) { m_newData.m_interface.m_strAddress6 = strText; notify(); }
+        /** Handles interface NMv6 text change. */
+        void sltTextChangedNMv6(const QString &strText) { m_newData.m_interface.m_strMaskLength6 = strText; notify(); }
 
-    /** Accepts dialog changes. */
-    void accept();
+        /** Handles DHCP server status change. */
+        void sltStatusChangedServer(int iChecked) { m_newData.m_dhcpserver.m_fEnabled = (bool)iChecked; loadDataForDHCPServer(); notify(); }
+        /** Handles DHCP server address text change. */
+        void sltTextChangedAddress(const QString &strText) { m_newData.m_dhcpserver.m_strAddress = strText; notify(); }
+        /** Handles DHCP server mask text change. */
+        void sltTextChangedMask(const QString &strText)  { m_newData.m_dhcpserver.m_strMask = strText; notify(); }
+        /** Handles DHCP server lower address text change. */
+        void sltTextChangedLowerAddress(const QString &strText)  { m_newData.m_dhcpserver.m_strLowerAddress = strText; notify(); }
+        /** Handles DHCP server upper address text change. */
+        void sltTextChangedUpperAddress(const QString &strText)  { m_newData.m_dhcpserver.m_strUpperAddress = strText; notify(); }
+    /** @} */
 
 private:
 
@@ -184,20 +215,20 @@ private:
         void prepareTabInterface();
         /** Prepares 'DHCP server' tab. */
         void prepareTabDHCPServer();
-        /** Prepares button-box. */
-        void prepareButtonBox();
     /** @} */
 
-    /** @name Loading/saving stuff.
+    /** @name Loading stuff.
      * @{ */
-        /** Loads data. */
-        void load();
         /** Loads interface data. */
         void loadDataForInterface();
         /** Loads server data. */
         void loadDataForDHCPServer();
-        /** Saves data. */
-        void save();
+    /** @} */
+
+    /** @name Change handling stuff.
+     * @{ */
+        /** Notifies listeners about data changed or not. */
+        void notify();
     /** @} */
 
     /** @name Helpers.
@@ -210,8 +241,10 @@ private:
 
     /** @name General variables.
      * @{ */
-        /** Holds the external data reference. */
-        UIDataHostNetwork &m_data;
+        /** Holds the old data copy. */
+        UIDataHostNetwork  m_oldData;
+        /** Holds the new data copy. */
+        UIDataHostNetwork  m_newData;
         /** Holds the tab-widget. */
         QITabWidget       *m_pTabWidget;
     /** @} */

@@ -26,9 +26,12 @@
 
 /* Forward declarations: */
 class CHostNetworkInterface;
+class QAbstractButton;
+class QSplitter;
 class QTreeWidgetItem;
 class QIDialogButtonBox;
 class QITreeWidget;
+class UIHostNetworkDetailsDialog;
 class UIItemHostNetwork;
 class UIToolBar;
 struct UIDataHostNetwork;
@@ -78,6 +81,12 @@ private slots:
         void sltEditHostNetwork();
     /** @} */
 
+    /** @name Button-box stuff.
+     * @{ */
+        /** Handles button-box @a pButton click. */
+        void sltHandleButtonClicked(QAbstractButton *pButton);
+    /** @} */
+
     /** @name Tree-widget stuff.
      * @{ */
         /** Handles command to adjust tree-widget. */
@@ -107,8 +116,12 @@ private:
         void prepareCentralWidget();
         /** Prepares tool-bar. */
         void prepareToolBar();
+        /** Prepares splitter. */
+        void prepareSplitter();
         /** Prepares tree-widget. */
         void prepareTreeWidget();
+        /** Prepares details-widget. */
+        void prepareDetailsWidget();
         /** Prepares button-box. */
         void prepareButtonBox();
 
@@ -157,10 +170,14 @@ private:
         QAction   *m_pActionEdit;
     /** @} */
 
-    /** @name Tree-widget variables.
+    /** @name Splitter variables.
      * @{ */
+        /** Holds the splitter instance. */
+        QSplitter    *m_pSplitter;
         /** Holds the tree-widget instance. */
         QITreeWidget *m_pTreeWidget;
+        /** Holds the details-widget instance. */
+        UIHostNetworkDetailsDialog *m_pDetailsWidget;
     /** @} */
 
     /** @name Button-box variables.
