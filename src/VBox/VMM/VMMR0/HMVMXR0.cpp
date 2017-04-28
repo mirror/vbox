@@ -6001,7 +6001,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
             {
                 /*
                  * Determing a vectoring double #PF condition. Used later, when PGM evaluates the
-                 * second #PF as a guest #PF (and not a nested #PF) and needs to be converted into a #DF.
+                 * second #PF as a guest #PF (and not a shadow #PF) and needs to be converted into a #DF.
                  */
                 if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
                 {
