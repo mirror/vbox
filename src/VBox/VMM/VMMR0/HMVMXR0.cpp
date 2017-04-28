@@ -40,6 +40,7 @@
 #include "HMVMXR0.h"
 #include "dtrace/VBoxVMM.h"
 
+#define HMVMX_USE_IEM_EVENT_REFLECTION
 #ifdef DEBUG_ramshankar
 # define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
 # define HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE
@@ -50,7 +51,6 @@
 # define HMVMX_ALWAYS_SWAP_FPU_STATE
 # define HMVMX_ALWAYS_FLUSH_TLB
 # define HMVMX_ALWAYS_SWAP_EFER
-# define HMVMX_USE_IEM_EVENT_REFLECTION
 #endif
 
 
