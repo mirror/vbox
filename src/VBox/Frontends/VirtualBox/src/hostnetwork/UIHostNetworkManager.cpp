@@ -564,35 +564,54 @@ void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
             && pChangedItem->checkState(Column_DHCP) == Qt::Unchecked))
         return;
 
-    /* Get VBox for further activities: */
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    /* Get host for further activities: */
+    CHost comHost = vboxGlobal().host();
 
-    /* Find corresponding DHCP server (create if necessary): */
-    CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(data.m_interface.m_strName);
-    if (!comVBox.isOk() || comServer.isNull())
-        comServer = comVBox.CreateDHCPServer(data.m_interface.m_strName);
+    /* Find corresponding interface: */
+    CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(data.m_interface.m_strName);
 
     /* Show error message if necessary: */
-    if (!comVBox.isOk() || comServer.isNull())
-        msgCenter().cannotCreateDHCPServer(comVBox, data.m_interface.m_strName, this);
+    if (!comHost.isOk() || comInterface.isNull())
+        msgCenter().cannotFindHostNetworkInterface(comHost, data.m_interface.m_strName, this);
     else
     {
-        /* Save whether DHCP server is enabled: */
-        if (comServer.isOk())
-            comServer.SetEnabled(!data.m_dhcpserver.m_fEnabled);
+        /* Get network name for further activities: */
+        const QString strNetworkName = comInterface.GetNetworkName();
 
         /* Show error message if necessary: */
-        if (!comServer.isOk())
-            msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+        if (!comInterface.isOk())
+            msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
+        else
         {
-            /* Manually toggle the DHCP server status: */
-            data.m_dhcpserver.m_fEnabled = !data.m_dhcpserver.m_fEnabled;
+            /* Get VBox for further activities: */
+            CVirtualBox comVBox = vboxGlobal().virtualBox();
 
-            /* Update interface in the tree: */
-            updateItemForNetworkHost(data, true, pChangedItem);
+            /* Find corresponding DHCP server (create if necessary): */
+            CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
+            if (!comVBox.isOk() || comServer.isNull())
+                comServer = comVBox.CreateDHCPServer(strNetworkName);
 
-            /* Adjust tree-widget: */
-            sltAdjustTreeWidget();
+            /* Show error message if necessary: */
+            if (!comVBox.isOk() || comServer.isNull())
+                msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
+            else
+            {
+                /* Save whether DHCP server is enabled: */
+                if (comServer.isOk())
+                    comServer.SetEnabled(!data.m_dhcpserver.m_fEnabled);
+
+                /* Show error message if necessary: */
+                if (!comServer.isOk())
+                    msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+                {
+                    /* Update interface in the tree: */
+                    loadHostNetwork(comInterface, data);
+                    updateItemForNetworkHost(data, true, pChangedItem);
+
+                    /* Adjust tree-widget: */
+                    sltAdjustTreeWidget();
+                }
+            }
         }
     }
 }
