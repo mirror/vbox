@@ -97,8 +97,8 @@
  * @param   type    The return type of the function declaration.
  */
 #if defined(IN_DIS)
-#  define DISDECL(type)     DECLHIDDEN(type) VBOXCALL
 # ifdef IN_DIS_STATIC
+#  define DISDECL(type)     DECLHIDDEN(type) VBOXCALL
 # else
 #  define DISDECL(type)     DECLEXPORT(type) VBOXCALL
 # endif
