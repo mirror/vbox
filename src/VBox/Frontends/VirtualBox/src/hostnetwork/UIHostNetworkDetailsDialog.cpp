@@ -37,6 +37,11 @@
 UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent, UIDataHostNetwork &data)
     : QIWithRetranslateUI2<QIDialog>(pParent)
     , m_data(data)
+    , m_pTabWidget(0)
+    , m_pLabelIPv4(0), m_pEditorIPv4(0), m_pLabelNMv4(0), m_pEditorNMv4(0)
+    , m_pLabelIPv6(0), m_pEditorIPv6(0), m_pLabelNMv6(0), m_pEditorNMv6(0)
+    , m_pCheckBoxDHCP(0) , m_pLabelDHCPAddress(0), m_pEditorDHCPAddress(0), m_pLabelDHCPMask(0), m_pEditorDHCPMask(0)
+    , m_pLabelDHCPLowerAddress(0), m_pEditorDHCPLowerAddress(0), m_pLabelDHCPUpperAddress(0), m_pEditorDHCPUpperAddress(0)
 {
     /* Prepare: */
     prepare();
@@ -136,6 +141,10 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
         QGridLayout *pLayoutInterface = new QGridLayout(pTabInterface);
         AssertPtrReturnVoid(pLayoutInterface);
         {
+#ifdef VBOX_WS_MAC
+            /* Configure layout: */
+            pLayoutInterface->setContentsMargins(10, 10, 10, 10);
+#endif
             /* Create IPv4 address label: */
             m_pLabelIPv4 = new QLabel;
             AssertPtrReturnVoid(m_pLabelIPv4);
@@ -232,6 +241,10 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
         QGridLayout *pLayoutDHCPServer = new QGridLayout(pTabDHCPServer);
         AssertPtrReturnVoid(pLayoutDHCPServer);
         {
+#ifdef VBOX_WS_MAC
+            /* Configure layout: */
+            pLayoutDHCPServer->setContentsMargins(10, 10, 10, 10);
+#endif
             /* Create DHCP server status check-box: */
             m_pCheckBoxDHCP = new QCheckBox;
             AssertPtrReturnVoid(m_pCheckBoxDHCP);
@@ -240,7 +253,7 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 connect(m_pCheckBoxDHCP, &QCheckBox::stateChanged,
                         this, &UIHostNetworkDetailsDialog::sltDhcpServerStatusChanged);
                 /* Add into layout: */
-                pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 3);
+                pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 2);
             }
             /* Create DHCP address label: */
             m_pLabelDHCPAddress = new QLabel;
@@ -389,16 +402,16 @@ void UIHostNetworkDetailsDialog::loadDataForInterface()
 void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
 {
     /* Toggle DHCP server fields availability: */
-    const bool fIsManual = m_pCheckBoxDHCP->isChecked();
-    m_pLabelDHCPAddress->setEnabled(fIsManual);
-    m_pLabelDHCPMask->setEnabled(fIsManual);
-    m_pLabelDHCPLowerAddress->setEnabled(fIsManual);
-    m_pLabelDHCPUpperAddress->setEnabled(fIsManual);
-    m_pEditorDHCPAddress->setEnabled(fIsManual);
-    m_pEditorDHCPMask->setEnabled(fIsManual);
-    m_pEditorDHCPLowerAddress->setEnabled(fIsManual);
-    m_pEditorDHCPUpperAddress->setEnabled(fIsManual);
-    if (fIsManual)
+    const bool fIsDHCPServerEnabled = m_data.m_dhcpserver.m_fEnabled;
+    m_pLabelDHCPAddress->setEnabled(fIsDHCPServerEnabled);
+    m_pLabelDHCPMask->setEnabled(fIsDHCPServerEnabled);
+    m_pLabelDHCPLowerAddress->setEnabled(fIsDHCPServerEnabled);
+    m_pLabelDHCPUpperAddress->setEnabled(fIsDHCPServerEnabled);
+    m_pEditorDHCPAddress->setEnabled(fIsDHCPServerEnabled);
+    m_pEditorDHCPMask->setEnabled(fIsDHCPServerEnabled);
+    m_pEditorDHCPLowerAddress->setEnabled(fIsDHCPServerEnabled);
+    m_pEditorDHCPUpperAddress->setEnabled(fIsDHCPServerEnabled);
+    if (fIsDHCPServerEnabled)
     {
         /* Load DHCP server fields: */
         m_pEditorDHCPAddress->setText(m_data.m_dhcpserver.m_strAddress);
