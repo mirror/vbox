@@ -207,8 +207,8 @@ SUPR3HardenedStatic_SOURCES.win = \
 	win/SUPR3HardenedMain-win.cpp \
 	win/SUPR3HardenedMainA-win.asm \
 	win/SUPR3HardenedMainImports-win.cpp \
-       win/SUPHardenedVerifyProcess-win.cpp \
-       win/SUPHardenedVerifyImage-win.cpp \
+	win/SUPHardenedVerifyProcess-win.cpp \
+	win/SUPHardenedVerifyImage-win.cpp \
 	$(VBOX_SUP_WIN_CERTS_FILE)
 SUPR3HardenedStatic_SOURCES.x86 += \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asm/ASMMemFirstMismatchingU8.asm
@@ -218,10 +218,10 @@ SUPR3HardenedStatic_SOURCES.amd64 += \
 
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of this move up.
  SUPR3HardenedStatic_DEFS += \
-  	IN_RT \
  	IN_RT_R3 \
  	IN_RT_STATIC \
  	IN_DIS \
+	IN_DIS_STATIC \
  	DIS_CORE_ONLY \
   	IPRT_NO_CRT \
  	RT_WITH_NOCRT_ALIASES \
@@ -420,6 +420,7 @@ endif
 if1of ($(KBUILD_TARGET), linux darwin solaris)
  SUPR3HardenedStatic_DEFS += \
  	IN_DIS \
+	IN_DIS_STATIC \
  	DIS_CORE_ONLY \
  	LOG_DISABLED
  SUPR3HardenedStatic_DEFS.linux += \
