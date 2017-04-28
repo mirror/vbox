@@ -5904,6 +5904,20 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
                       ("hmR0VmxCheckExitDueToEventDelivery: Unexpected VM-exit interruption info. type %#x!\n", uExitVectorType));
             enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fIdtVectorFlags, uIdtVector, fExitVectorFlags, uExitVector,
                                                 &fRaiseInfo);
+
+            if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_XCPT | IEMXCPTRAISEINFO_NMI_XCPT))
+            {
+                /*
+                 * For some reason we go back to the interpreter if delivery of an external interrupt or
+                 * NMI causes an exception, see hmR0VmxExitXcptOrNmi. As long as we go back to the interpret
+                 * we need to keep the previous (first) event pending, hence this hack.
+                 */
+                enmRaise = IEMXCPTRAISE_PREV_EVENT;
+
+                /* Determine a vectoring #PF condition, see comment in hmR0VmxExitXcptPF(). */
+                if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
+                    pVmxTransient->fVectoringPF = true;
+            }
         }
         else
         {
@@ -5940,7 +5954,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS)
             && uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI
             && (   enmRaise   == IEMXCPTRAISE_PREV_EVENT
-                || fRaiseInfo == IEMXCPTRAISEINFO_NMI_PF)
+                || (fRaiseInfo & IEMXCPTRAISEINFO_NMI_PF))
             && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
         {
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
@@ -5949,23 +5963,9 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
         switch (enmRaise)
         {
             case IEMXCPTRAISE_CURRENT_XCPT:
-            {
-                /*
-                 * Determine a vectoring #PF condition, see comment in hmR0VmxExitXcptPF().
-                 */
-                if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
-                    pVmxTransient->fVectoringPF = true;
-
-                /*
-                 * Determing a vectoring double #PF condition. Used later, when PGM evaluates the
-                 * second #PF as a guest #PF (and not a nested #PF) and needs to be converted into a #DF.
-                 */
-                if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
-                    pVmxTransient->fVectoringDoublePF = true;
-
+            case IEMXCPTRAISE_REEXEC_INSTR:
                 Assert(rcStrict == VINF_SUCCESS);
                 break;
-            }
 
             case IEMXCPTRAISE_PREV_EVENT:
             {
@@ -5999,12 +5999,25 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
 
             case IEMXCPTRAISE_DOUBLE_FAULT:
             {
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
-                hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
-
-                Log4(("IDT: vcpu[%RU32] Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->idCpu,
-                      pVCpu->hm.s.Event.u64IntInfo, uIdtVector, uExitVector));
-                rcStrict = VINF_HM_DOUBLE_FAULT;
+                /*
+                 * Determing a vectoring double #PF condition. Used later, when PGM evaluates the
+                 * second #PF as a guest #PF (and not a nested #PF) and needs to be converted into a #DF.
+                 */
+                if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
+                {
+                    pVmxTransient->fVectoringDoublePF = true;
+                    Log4(("IDT: vcpu[%RU32] Vectoring double #PF %#RX64 cr2=%#RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo,
+                          pMixedCtx->cr2));
+                    rcStrict = VINF_SUCCESS;
+                }
+                else
+                {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                    hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
+                    Log4(("IDT: vcpu[%RU32] Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->idCpu,
+                          pVCpu->hm.s.Event.u64IntInfo, uIdtVector, uExitVector));
+                    rcStrict = VINF_HM_DOUBLE_FAULT;
+                }
                 break;
             }
 
@@ -6022,10 +6035,6 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
                 rcStrict = VERR_EM_GUEST_CPU_HANG;
                 break;
             }
-
-            case IEMXCPTRAISE_REEXEC_INSTR:
-                Assert(rcStrict == VINF_SUCCESS);
-                break;
 
             default:
             {
