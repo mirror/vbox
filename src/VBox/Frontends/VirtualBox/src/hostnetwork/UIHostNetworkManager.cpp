@@ -28,9 +28,9 @@
 # include "QIDialogButtonBox.h"
 # include "QITreeWidget.h"
 # include "UIIconPool.h"
-# include "UIMessageCenter.h"
 # include "UIHostNetworkDetailsDialog.h"
 # include "UIHostNetworkManager.h"
+# include "UIMessageCenter.h"
 # include "UIToolBar.h"
 # ifdef VBOX_WS_MAC
 #  include "UIWindowMenuManager.h"
@@ -194,8 +194,8 @@ UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
     , m_pToolBar(0)
     , m_pMenu(0)
     , m_pActionAdd(0)
-    , m_pActionEdit(0)
     , m_pActionRemove(0)
+    , m_pActionEdit(0)
     , m_pTreeWidget(0)
     , m_pButtonBox(0)
 {
@@ -244,17 +244,17 @@ void UIHostNetworkManager::retranslateUi()
         m_pActionAdd->setToolTip(tr("Create Host-only Network (%1)").arg(m_pActionAdd->shortcut().toString()));
         m_pActionAdd->setStatusTip(tr("Creates new host-only network."));
     }
-    if (m_pActionEdit)
-    {
-        m_pActionEdit->setText(tr("&Modify..."));
-        m_pActionEdit->setToolTip(tr("Modify Host-only Network (%1)").arg(m_pActionEdit->shortcut().toString()));
-        m_pActionEdit->setStatusTip(tr("Modifies selected host-only network."));
-    }
     if (m_pActionRemove)
     {
         m_pActionRemove->setText(tr("&Remove..."));
         m_pActionRemove->setToolTip(tr("Remove Host-only Network (%1)").arg(m_pActionRemove->shortcut().toString()));
         m_pActionRemove->setStatusTip(tr("Removes selected host-only network."));
+    }
+    if (m_pActionEdit)
+    {
+        m_pActionEdit->setText(tr("&Modify..."));
+        m_pActionEdit->setToolTip(tr("Modify Host-only Network (%1)").arg(m_pActionEdit->shortcut().toString()));
+        m_pActionEdit->setStatusTip(tr("Modifies selected host-only network."));
     }
 
     /* Adjust tool-bar: */
@@ -345,6 +345,86 @@ void UIHostNetworkManager::sltAddHostNetwork()
 
             /* Adjust tree-widget: */
             sltAdjustTreeWidget();
+        }
+    }
+}
+
+void UIHostNetworkManager::sltRemoveHostNetwork()
+{
+    /* Get network item: */
+    UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
+    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+    /* Get interface name: */
+    const QString strInterfaceName(pItem->name());
+
+    /* Confirm host network removal: */
+    if (!msgCenter().confirmHostOnlyInterfaceRemoval(strInterfaceName, this))
+        return;
+
+    /* Get host for further activities: */
+    CHost comHost = vboxGlobal().host();
+
+    /* Find corresponding interface: */
+    const CHostNetworkInterface &comInterface = comHost.FindHostNetworkInterfaceByName(strInterfaceName);
+
+    /* Show error message if necessary: */
+    if (!comHost.isOk() || comInterface.isNull())
+        msgCenter().cannotFindHostNetworkInterface(comHost, strInterfaceName, this);
+    else
+    {
+        /* Get network name for further activities: */
+        QString strNetworkName;
+        if (comInterface.isOk())
+            strNetworkName = comInterface.GetNetworkName();
+        /* Get interface id for further activities: */
+        QString strInterfaceId;
+        if (comInterface.isOk())
+            strInterfaceId = comInterface.GetId();
+
+        /* Show error message if necessary: */
+        if (!comInterface.isOk())
+            msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
+        else
+        {
+            /* Get VBox for further activities: */
+            CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+            /* Find corresponding DHCP server: */
+            const CDHCPServer &comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
+            if (comVBox.isOk() && comServer.isNotNull())
+            {
+                /* Remove server if any: */
+                comVBox.RemoveDHCPServer(comServer);
+
+                /* Show error message if necessary: */
+                if (!comVBox.isOk())
+                    msgCenter().cannotRemoveDHCPServer(comVBox, strInterfaceName, this);
+            }
+
+            /* Remove interface finally: */
+            CProgress progress = comHost.RemoveHostOnlyNetworkInterface(strInterfaceId);
+
+            /* Show error message if necessary: */
+            if (!comHost.isOk() || progress.isNull())
+                msgCenter().cannotRemoveHostNetworkInterface(comHost, strInterfaceName, this);
+            else
+            {
+                /* Show interface removal progress: */
+                msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/progress_network_interface_90px.png", this, 0);
+
+                /* Show error message if necessary: */
+                if (!progress.isOk() || progress.GetResultCode() != 0)
+                    return msgCenter().cannotRemoveHostNetworkInterface(progress, strInterfaceName, this);
+                else
+                {
+                    /* Remove interface from the tree: */
+                    delete pItem;
+
+                    /* Adjust tree-widget: */
+                    sltAdjustTreeWidget();
+                }
+            }
         }
     }
 }
@@ -441,86 +521,6 @@ void UIHostNetworkManager::sltEditHostNetwork()
 
         /* Adjust tree-widget: */
         sltAdjustTreeWidget();
-    }
-}
-
-void UIHostNetworkManager::sltRemoveHostNetwork()
-{
-    /* Get network item: */
-    UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
-    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
-
-    /* Get interface name: */
-    const QString strInterfaceName(pItem->name());
-
-    /* Confirm host network removal: */
-    if (!msgCenter().confirmHostOnlyInterfaceRemoval(strInterfaceName, this))
-        return;
-
-    /* Get host for further activities: */
-    CHost comHost = vboxGlobal().host();
-
-    /* Find corresponding interface: */
-    const CHostNetworkInterface &comInterface = comHost.FindHostNetworkInterfaceByName(strInterfaceName);
-
-    /* Show error message if necessary: */
-    if (!comHost.isOk() || comInterface.isNull())
-        msgCenter().cannotFindHostNetworkInterface(comHost, strInterfaceName, this);
-    else
-    {
-        /* Get network name for further activities: */
-        QString strNetworkName;
-        if (comInterface.isOk())
-            strNetworkName = comInterface.GetNetworkName();
-        /* Get interface id for further activities: */
-        QString strInterfaceId;
-        if (comInterface.isOk())
-            strInterfaceId = comInterface.GetId();
-
-        /* Show error message if necessary: */
-        if (!comInterface.isOk())
-            msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
-        else
-        {
-            /* Get VBox for further activities: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
-
-            /* Find corresponding DHCP server: */
-            const CDHCPServer &comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
-            if (comVBox.isOk() && comServer.isNotNull())
-            {
-                /* Remove server if any: */
-                comVBox.RemoveDHCPServer(comServer);
-
-                /* Show error message if necessary: */
-                if (!comVBox.isOk())
-                    msgCenter().cannotRemoveDHCPServer(comVBox, strInterfaceName, this);
-            }
-
-            /* Remove interface finally: */
-            CProgress progress = comHost.RemoveHostOnlyNetworkInterface(strInterfaceId);
-
-            /* Show error message if necessary: */
-            if (!comHost.isOk() || progress.isNull())
-                msgCenter().cannotRemoveHostNetworkInterface(comHost, strInterfaceName, this);
-            else
-            {
-                /* Show interface removal progress: */
-                msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/progress_network_interface_90px.png", this, 0);
-
-                /* Show error message if necessary: */
-                if (!progress.isOk() || progress.GetResultCode() != 0)
-                    return msgCenter().cannotRemoveHostNetworkInterface(progress, strInterfaceName, this);
-                else
-                {
-                    /* Remove interface from the tree: */
-                    delete pItem;
-
-                    /* Adjust tree-widget: */
-                    sltAdjustTreeWidget();
-                }
-            }
-        }
     }
 }
 
@@ -632,8 +632,8 @@ void UIHostNetworkManager::sltHandleContextMenuRequest(const QPoint &pos)
     QMenu menu;
     if (m_pTreeWidget->itemAt(pos))
     {
-        menu.addAction(m_pActionEdit);
         menu.addAction(m_pActionRemove);
+        menu.addAction(m_pActionEdit);
     }
     else
     {
@@ -694,19 +694,6 @@ void UIHostNetworkManager::prepareActions()
         connect(m_pActionAdd, SIGNAL(triggered()), this, SLOT(sltAddHostNetwork()));
     }
 
-    /* Create 'Edit' action: */
-    m_pActionEdit = new QAction(this);
-    AssertPtrReturnVoid(m_pActionEdit);
-    {
-        /* Configure 'Edit' action: */
-        m_pActionEdit->setShortcut(QKeySequence("Ctrl+Space"));
-        m_pActionEdit->setIcon(UIIconPool::iconSetFull(":/edit_host_iface_22px.png",
-                                                       ":/edit_host_iface_16px.png",
-                                                       ":/edit_host_iface_disabled_22px.png",
-                                                       ":/edit_host_iface_disabled_16px.png"));
-        connect(m_pActionEdit, SIGNAL(triggered()), this, SLOT(sltEditHostNetwork()));
-    }
-
     /* Create 'Remove' action: */
     m_pActionRemove = new QAction(this);
     AssertPtrReturnVoid(m_pActionRemove);
@@ -718,6 +705,19 @@ void UIHostNetworkManager::prepareActions()
                                                          ":/remove_host_iface_disabled_22px.png",
                                                          ":/remove_host_iface_disabled_16px.png"));
         connect(m_pActionRemove, SIGNAL(triggered()), this, SLOT(sltRemoveHostNetwork()));
+    }
+
+    /* Create 'Edit' action: */
+    m_pActionEdit = new QAction(this);
+    AssertPtrReturnVoid(m_pActionEdit);
+    {
+        /* Configure 'Edit' action: */
+        m_pActionEdit->setShortcut(QKeySequence("Ctrl+Space"));
+        m_pActionEdit->setIcon(UIIconPool::iconSetFull(":/edit_host_iface_22px.png",
+                                                       ":/edit_host_iface_16px.png",
+                                                       ":/edit_host_iface_disabled_22px.png",
+                                                       ":/edit_host_iface_disabled_16px.png"));
+        connect(m_pActionEdit, SIGNAL(triggered()), this, SLOT(sltEditHostNetwork()));
     }
 
     /* Prepare menu-bar: */
@@ -732,8 +732,8 @@ void UIHostNetworkManager::prepareMenuBar()
     {
         /* Configure 'File' menu: */
         m_pMenu->addAction(m_pActionAdd);
-        m_pMenu->addAction(m_pActionEdit);
         m_pMenu->addAction(m_pActionRemove);
+        m_pMenu->addAction(m_pActionEdit);
     }
 
 #ifdef VBOX_WS_MAC
@@ -779,10 +779,10 @@ void UIHostNetworkManager::prepareToolBar()
         /* Add tool-bar actions: */
         if (m_pActionAdd)
             m_pToolBar->addAction(m_pActionAdd);
-        if (m_pActionEdit)
-            m_pToolBar->addAction(m_pActionEdit);
         if (m_pActionRemove)
             m_pToolBar->addAction(m_pActionRemove);
+        if (m_pActionEdit)
+            m_pToolBar->addAction(m_pActionEdit);
         /* Integrate tool-bar into dialog: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
 #ifdef VBOX_WS_MAC

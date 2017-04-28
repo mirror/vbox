@@ -72,10 +72,10 @@ private slots:
      * @{ */
         /** Handles command to add host network. */
         void sltAddHostNetwork();
-        /** Handles command to edit host network. */
-        void sltEditHostNetwork();
         /** Handles command to remove host network. */
         void sltRemoveHostNetwork();
+        /** Handles command to edit host network. */
+        void sltEditHostNetwork();
     /** @} */
 
     /** @name Tree-widget stuff.
@@ -151,10 +151,10 @@ private:
         QMenu     *m_pMenu;
         /** Holds the Add action instance. */
         QAction   *m_pActionAdd;
-        /** Holds the Edit action instance. */
-        QAction   *m_pActionEdit;
         /** Holds the Remove action instance. */
         QAction   *m_pActionRemove;
+        /** Holds the Edit action instance. */
+        QAction   *m_pActionEdit;
     /** @} */
 
     /** @name Tree-widget variables.
