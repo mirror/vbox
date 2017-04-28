@@ -3285,10 +3285,8 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
                     || enmCurXcptClass == IEMXCPTCLASS_CONTRIBUTORY))
             {
                 enmRaise = IEMXCPTRAISE_DOUBLE_FAULT;
-                if (enmCurXcptClass == IEMXCPTCLASS_PAGE_FAULT)
-                    fRaiseInfo = IEMXCPTRAISEINFO_PF_PF;
-                else
-                    fRaiseInfo = IEMXCPTRAISEINFO_PF_CONTRIBUTORY_XCPT;
+                fRaiseInfo = enmCurXcptClass == IEMXCPTCLASS_PAGE_FAULT ? IEMXCPTRAISEINFO_PF_PF
+                                                                        : IEMXCPTRAISEINFO_PF_CONTRIBUTORY_XCPT;
                 Log2(("IEMEvaluateRecursiveXcpt: Vectoring page fault. uPrevVector=%#x uCurVector=%#x uCr2=%#RX64\n", uPrevVector,
                       uCurVector, IEM_GET_CTX(pVCpu)->cr2));
             }
@@ -3308,11 +3306,14 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
         }
         else
         {
-            if (   uPrevVector == X86_XCPT_NMI
-                && uCurVector  == X86_XCPT_PF)
+            if (uPrevVector == X86_XCPT_NMI)
             {
-                fRaiseInfo = IEMXCPTRAISEINFO_NMI_PF;
-                Log2(("IEMEvaluateRecursiveXcpt: NMI delivery caused a page fault\n"));
+                fRaiseInfo = IEMXCPTRAISEINFO_NMI_XCPT;
+                if (uCurVector  == X86_XCPT_PF)
+                {
+                    fRaiseInfo |= IEMXCPTRAISEINFO_NMI_PF;
+                    Log2(("IEMEvaluateRecursiveXcpt: NMI delivery caused a page fault\n"));
+                }
             }
             else if (   uPrevVector == X86_XCPT_AC
                      && uCurVector  == X86_XCPT_AC)

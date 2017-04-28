@@ -63,10 +63,12 @@ typedef IEMXCPTRAISEINFO *PIEMXCPTRAISEINFO;
 #define IEMXCPTRAISEINFO_EXT_INT_PF              RT_BIT_32(5)
 /** Delivery of an external interrupt caused a \#PF. */
 #define IEMXCPTRAISEINFO_SOFT_INT_XCPT           RT_BIT_32(6)
+/** Delivery of an NMI caused an exception. */
+#define IEMXCPTRAISEINFO_NMI_XCPT                RT_BIT_32(7)
 /** Delivery of an NMI caused a \#PF. */
-#define IEMXCPTRAISEINFO_NMI_PF                  RT_BIT_32(7)
+#define IEMXCPTRAISEINFO_NMI_PF                  RT_BIT_32(8)
 /** Can re-execute the instruction at CS:RIP. */
-#define IEMXCPTRAISEINFO_CAN_REEXEC_INSTR        RT_BIT_32(8)
+#define IEMXCPTRAISEINFO_CAN_REEXEC_INSTR        RT_BIT_32(9)
 /** @} */
 
 
