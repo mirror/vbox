@@ -520,6 +520,9 @@ void UIHostNetworkManager::sltEditHostNetwork()
         loadHostNetwork(comInterface, data);
         updateItemForNetworkHost(data, true, pItem);
 
+        /* Make sure current item fetched: */
+        sltHandleCurrentItemChange();
+
         /* Adjust tree-widget: */
         sltAdjustTreeWidget();
     }
@@ -556,12 +559,12 @@ void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
     AssertMsgReturnVoid(pChangedItem, ("Changed item must not be null!\n"));
 
     /* Get item data: */
-    UIDataHostNetwork data = *pChangedItem;
+    UIDataHostNetwork oldData = *pChangedItem;
 
     /* Make sure dhcp server status changed: */
-    if (   (   data.m_dhcpserver.m_fEnabled
+    if (   (   oldData.m_dhcpserver.m_fEnabled
             && pChangedItem->checkState(Column_DHCP) == Qt::Checked)
-        || (   !data.m_dhcpserver.m_fEnabled
+        || (   !oldData.m_dhcpserver.m_fEnabled
             && pChangedItem->checkState(Column_DHCP) == Qt::Unchecked))
         return;
 
@@ -569,11 +572,11 @@ void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
     CHost comHost = vboxGlobal().host();
 
     /* Find corresponding interface: */
-    CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(data.m_interface.m_strName);
+    CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
 
     /* Show error message if necessary: */
     if (!comHost.isOk() || comInterface.isNull())
-        msgCenter().cannotFindHostNetworkInterface(comHost, data.m_interface.m_strName, this);
+        msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
     else
     {
         /* Get network name for further activities: */
@@ -599,15 +602,19 @@ void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
             {
                 /* Save whether DHCP server is enabled: */
                 if (comServer.isOk())
-                    comServer.SetEnabled(!data.m_dhcpserver.m_fEnabled);
+                    comServer.SetEnabled(!oldData.m_dhcpserver.m_fEnabled);
 
                 /* Show error message if necessary: */
                 if (!comServer.isOk())
                     msgCenter().cannotSaveDHCPServerParameter(comServer, this);
                 {
                     /* Update interface in the tree: */
+                    UIDataHostNetwork data;
                     loadHostNetwork(comInterface, data);
                     updateItemForNetworkHost(data, true, pChangedItem);
+
+                    /* Make sure current item fetched: */
+                    sltHandleCurrentItemChange();
 
                     /* Adjust tree-widget: */
                     sltAdjustTreeWidget();
