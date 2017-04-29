@@ -197,7 +197,7 @@ UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
     , m_pMenu(0)
     , m_pActionAdd(0)
     , m_pActionRemove(0)
-    , m_pActionEdit(0)
+    , m_pActionDetails(0)
     , m_pSplitter(0)
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
@@ -254,11 +254,11 @@ void UIHostNetworkManager::retranslateUi()
         m_pActionRemove->setToolTip(tr("Remove Host-only Network (%1)").arg(m_pActionRemove->shortcut().toString()));
         m_pActionRemove->setStatusTip(tr("Removes selected host-only network."));
     }
-    if (m_pActionEdit)
+    if (m_pActionDetails)
     {
-        m_pActionEdit->setText(tr("&Modify..."));
-        m_pActionEdit->setToolTip(tr("Modify Host-only Network (%1)").arg(m_pActionEdit->shortcut().toString()));
-        m_pActionEdit->setStatusTip(tr("Modifies selected host-only network."));
+        m_pActionDetails->setText(tr("&Details..."));
+        m_pActionDetails->setToolTip(tr("Open Host-only Network Details (%1)").arg(m_pActionDetails->shortcut().toString()));
+        m_pActionDetails->setStatusTip(tr("Opens pane with the selected host-only network details."));
     }
 
     /* Adjust tool-bar: */
@@ -433,19 +433,15 @@ void UIHostNetworkManager::sltRemoveHostNetwork()
     }
 }
 
-void UIHostNetworkManager::sltEditHostNetwork()
+void UIHostNetworkManager::sltShowHostNetworkDetails(bool fShow)
 {
-    /* Open details area: */
-    const QList<int> sizes = m_pSplitter->sizes();
-    AssertReturnVoid(sizes.size() >= 2);
-    if (sizes.at(1) == 0)
+    /* Show/hide details area: */
+    if (fShow)
     {
         m_pSplitter->setSizes(QList<int>() << m_pSplitter->height() << 1);
         m_pButtonBox->button(QDialogButtonBox::Apply)->show();
     }
     else
-    /* Close details area: */
-    if (sizes.at(1) > 0)
     {
         m_pSplitter->setSizes(QList<int>() << m_pSplitter->height() << 0);
         m_pButtonBox->button(QDialogButtonBox::Apply)->hide();
@@ -655,7 +651,7 @@ void UIHostNetworkManager::sltHandleCurrentItemChange()
 
     /* Update actions availability: */
     m_pActionRemove->setEnabled(pItem);
-    m_pActionEdit->setEnabled(pItem);
+    m_pActionDetails->setEnabled(pItem);
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -676,7 +672,7 @@ void UIHostNetworkManager::sltHandleContextMenuRequest(const QPoint &pos)
     if (m_pTreeWidget->itemAt(pos))
     {
         menu.addAction(m_pActionRemove);
-        menu.addAction(m_pActionEdit);
+        menu.addAction(m_pActionDetails);
     }
     else
     {
@@ -750,17 +746,18 @@ void UIHostNetworkManager::prepareActions()
         connect(m_pActionRemove, &QAction::triggered, this, &UIHostNetworkManager::sltRemoveHostNetwork);
     }
 
-    /* Create 'Edit' action: */
-    m_pActionEdit = new QAction(this);
-    AssertPtrReturnVoid(m_pActionEdit);
+    /* Create 'Details' action: */
+    m_pActionDetails = new QAction(this);
+    AssertPtrReturnVoid(m_pActionDetails);
     {
-        /* Configure 'Edit' action: */
-        m_pActionEdit->setShortcut(QKeySequence("Ctrl+Space"));
-        m_pActionEdit->setIcon(UIIconPool::iconSetFull(":/edit_host_iface_22px.png",
-                                                       ":/edit_host_iface_16px.png",
-                                                       ":/edit_host_iface_disabled_22px.png",
-                                                       ":/edit_host_iface_disabled_16px.png"));
-        connect(m_pActionEdit, &QAction::triggered, this, &UIHostNetworkManager::sltEditHostNetwork);
+        /* Configure 'Details' action: */
+        m_pActionDetails->setCheckable(true);
+        m_pActionDetails->setShortcut(QKeySequence("Ctrl+Space"));
+        m_pActionDetails->setIcon(UIIconPool::iconSetFull(":/edit_host_iface_22px.png",
+                                                          ":/edit_host_iface_16px.png",
+                                                          ":/edit_host_iface_disabled_22px.png",
+                                                          ":/edit_host_iface_disabled_16px.png"));
+        connect(m_pActionDetails, &QAction::toggled, this, &UIHostNetworkManager::sltShowHostNetworkDetails);
     }
 
     /* Prepare menu-bar: */
@@ -776,7 +773,7 @@ void UIHostNetworkManager::prepareMenuBar()
         /* Configure 'File' menu: */
         m_pMenu->addAction(m_pActionAdd);
         m_pMenu->addAction(m_pActionRemove);
-        m_pMenu->addAction(m_pActionEdit);
+        m_pMenu->addAction(m_pActionDetails);
     }
 
 #ifdef VBOX_WS_MAC
@@ -824,8 +821,8 @@ void UIHostNetworkManager::prepareToolBar()
             m_pToolBar->addAction(m_pActionAdd);
         if (m_pActionRemove)
             m_pToolBar->addAction(m_pActionRemove);
-        if (m_pActionEdit)
-            m_pToolBar->addAction(m_pActionEdit);
+        if (m_pActionDetails)
+            m_pToolBar->addAction(m_pActionDetails);
         /* Integrate tool-bar into dialog: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
 #ifdef VBOX_WS_MAC
@@ -880,12 +877,12 @@ void UIHostNetworkManager::prepareTreeWidget()
         m_pTreeWidget->sortByColumn(Column_Name, Qt::AscendingOrder);
         connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
                 this, &UIHostNetworkManager::sltHandleCurrentItemChange);
-        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
-                this, &UIHostNetworkManager::sltEditHostNetwork);
         connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
                 this, &UIHostNetworkManager::sltHandleContextMenuRequest);
         connect(m_pTreeWidget, &QITreeWidget::itemChanged,
                 this, &UIHostNetworkManager::sltHandleItemChange);
+        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
+                m_pActionDetails, &QAction::setChecked);
         /* Add tree-widget into splitter: */
         m_pSplitter->addWidget(m_pTreeWidget);
     }

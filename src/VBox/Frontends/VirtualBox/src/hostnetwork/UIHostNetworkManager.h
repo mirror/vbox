@@ -77,8 +77,8 @@ private slots:
         void sltAddHostNetwork();
         /** Handles command to remove host network. */
         void sltRemoveHostNetwork();
-        /** Handles command to edit host network. */
-        void sltEditHostNetwork();
+        /** Handles command to @a fShow host network details. */
+        void sltShowHostNetworkDetails(bool fShow);
     /** @} */
 
     /** @name Button-box stuff.
@@ -166,8 +166,8 @@ private:
         QAction   *m_pActionAdd;
         /** Holds the Remove action instance. */
         QAction   *m_pActionRemove;
-        /** Holds the Edit action instance. */
-        QAction   *m_pActionEdit;
+        /** Holds the Details action instance. */
+        QAction   *m_pActionDetails;
     /** @} */
 
     /** @name Splitter variables.
