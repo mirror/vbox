@@ -31,6 +31,12 @@
 #include <iprt/assert.h>
 
 
+/** @defgroup grp_rt_formats_fat    File Allocation Table (FAT) structures and definitions
+ * @ingroup grp_rt_formats
+ * @{
+ */
+
+
 /** @name FAT Media byte values
  * @remarks This isn't as simple as it's made out to be here!
  * @{ */
@@ -676,6 +682,8 @@ AssertCompileSize(FATDIRENTRYUNION, 0x20);
 typedef FATDIRENTRYUNION *PFATDIRENTRYUNION;
 /** Pointer to a const FAT directory entry union. */
 typedef FATDIRENTRYUNION const *PCFATDIRENTRYUNION;
+
+/** @} */
 
 #endif
 
