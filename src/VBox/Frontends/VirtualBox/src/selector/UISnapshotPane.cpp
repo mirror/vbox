@@ -561,13 +561,13 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     pLayout->setContentsMargins(0, 0, 0, 0);
 
     /* Determine icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
+    const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
 
     /* Create tool-bar: */
     UIToolBar *pToolBar = new UIToolBar(this);
     pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-    pToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
+    pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    pToolBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     /* Add actions into tool-bar: */
     pToolBar->addAction(m_pActionTakeSnapshot);
     pToolBar->addSeparator();
@@ -668,11 +668,17 @@ void UISnapshotPane::retranslateUi()
     m_pSnapshotTree->setWhatsThis(tr("Contains snapshot tree of current virtual machine"));
 
     /* Translate actions names: */
-    m_pActionTakeSnapshot->setText(tr("Take &Snapshot"));
-    m_pActionRestoreSnapshot->setText(tr("&Restore Snapshot"));
-    m_pActionDeleteSnapshot->setText(tr("&Delete Snapshot"));
-    m_pActionShowSnapshotDetails->setText(tr("S&how Details"));
+    m_pActionTakeSnapshot->setText(tr("&Take..."));
+    m_pActionRestoreSnapshot->setText(tr("&Restore"));
+    m_pActionDeleteSnapshot->setText(tr("&Delete"));
+    m_pActionShowSnapshotDetails->setText(tr("D&etails..."));
     m_pActionCloneSnapshot->setText(tr("&Clone..."));
+    /* Translate actions tool-tips: */
+    m_pActionTakeSnapshot->setToolTip(tr("Take Snapshot (%1)").arg(m_pActionTakeSnapshot->shortcut().toString()));
+    m_pActionRestoreSnapshot->setToolTip(tr("Restore Snapshot (%1)").arg(m_pActionRestoreSnapshot->shortcut().toString()));
+    m_pActionDeleteSnapshot->setToolTip(tr("Delete Snapshot (%1)").arg(m_pActionDeleteSnapshot->shortcut().toString()));
+    m_pActionShowSnapshotDetails->setToolTip(tr("Show Snapshot Details (%1)").arg(m_pActionShowSnapshotDetails->shortcut().toString()));
+    m_pActionCloneSnapshot->setToolTip(tr("Clone Virtual Machine (%1)").arg(m_pActionCloneSnapshot->shortcut().toString()));
     /* Translate actions status-tips: */
     m_pActionTakeSnapshot->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
     m_pActionRestoreSnapshot->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
