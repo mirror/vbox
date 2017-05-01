@@ -669,7 +669,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
             /* Group 3 */
 
             /*
-             * Base name printing.
+             * Base name printing, big endian UTF-16.
              */
             case 'b':
             {
@@ -698,6 +698,56 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
 
                         return pfnOutput(pvArgOutput, pszLastSep, psz - pszLastSep);
                     }
+
+                    /* %lRbs */
+                    case 's':
+                        if (chArgSize == 'l')
+                        {
+                            /* utf-16BE -> utf-8 */
+                            int         cchStr;
+                            PCRTUTF16   pwszStr = va_arg(*pArgs, PRTUTF16);
+
+                            if (RT_VALID_PTR(pwszStr))
+                            {
+                                cchStr = 0;
+                                while (cchStr < cchPrecision && pwszStr[cchStr] != '\0')
+                                    cchStr++;
+                            }
+                            else
+                            {
+                                static RTUTF16  s_wszBigNull[] =
+                                {
+                                    RT_H2BE_U16_C((uint16_t)'<'), RT_H2BE_U16_C((uint16_t)'N'), RT_H2BE_U16_C((uint16_t)'U'),
+                                    RT_H2BE_U16_C((uint16_t)'L'), RT_H2BE_U16_C((uint16_t)'L'), RT_H2BE_U16_C((uint16_t)'>'), '\0'
+                                };
+                                pwszStr = s_wszBigNull;
+                                cchStr  = RT_ELEMENTS(s_wszBigNull) - 1;
+                            }
+
+                            cch = 0;
+                            if (!(fFlags & RTSTR_F_LEFT))
+                                while (--cchWidth >= cchStr)
+                                    cch += pfnOutput(pvArgOutput, " ", 1);
+                            cchWidth -= cchStr;
+                            while (cchStr-- > 0)
+                            {
+/** @todo \#ifndef IN_RC*/
+#ifdef IN_RING3
+                                RTUNICP Cp = 0;
+                                RTUtf16BigGetCpEx(&pwszStr, &Cp);
+                                char *pszEnd = RTStrPutCp(szBuf, Cp);
+                                *pszEnd = '\0';
+                                cch += pfnOutput(pvArgOutput, szBuf, pszEnd - szBuf);
+#else
+                                char ch = (char)(*pwszStr++ >> 8);
+                                cch += pfnOutput(pvArgOutput, &ch, 1);
+#endif
+                            }
+                            while (--cchWidth >= 0)
+                                cch += pfnOutput(pvArgOutput, " ", 1);
+                            return cch;
+                        }
+                    /* fall thru */
 
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));

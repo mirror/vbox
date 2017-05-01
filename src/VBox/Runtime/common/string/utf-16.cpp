@@ -32,7 +32,8 @@
 #include "internal/iprt.h"
 
 #include <iprt/uni.h>
-#include <iprt/alloc.h>
+#include <iprt/asm.h>
+#include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include "internal/string.h"
@@ -708,6 +709,51 @@ RTDECL(int) RTUtf16GetCpExInternal(PCRTUTF16 *ppwsz, PRTUNICP pCp)
         if (wc < 0xdc00)
         {
             const RTUTF16 wc2 = (*ppwsz)[1];
+            if (wc2 >= 0xdc00 && wc2 <= 0xdfff)
+            {
+                RTUNICP uc = 0x10000 + (((wc & 0x3ff) << 10) | (wc2 & 0x3ff));
+                *pCp = uc;
+                (*ppwsz) += 2;
+                return VINF_SUCCESS;
+            }
+
+            RTStrAssertMsgFailed(("wc=%#08x wc2=%#08x - invalid 2nd char in surrogate pair\n", wc, wc2));
+        }
+        else
+            RTStrAssertMsgFailed(("wc=%#08x - invalid surrogate pair order\n", wc));
+        rc = VERR_INVALID_UTF16_ENCODING;
+    }
+    else
+    {
+        RTStrAssertMsgFailed(("wc=%#08x - endian indicator\n", wc));
+        rc = VERR_CODE_POINT_ENDIAN_INDICATOR;
+    }
+    *pCp = RTUNICP_INVALID;
+    (*ppwsz)++;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTUtf16GetCpExInternal);
+
+
+RTDECL(int) RTUtf16BigGetCpExInternal(PCRTUTF16 *ppwsz, PRTUNICP pCp)
+{
+    const RTUTF16 wc = RT_BE2H_U16(**ppwsz);
+
+    /* simple */
+    if (wc < 0xd800 || (wc > 0xdfff && wc < 0xfffe))
+    {
+        (*ppwsz)++;
+        *pCp = wc;
+        return VINF_SUCCESS;
+    }
+
+    int rc;
+    if (wc < 0xfffe)
+    {
+        /* surrogate pair */
+        if (wc < 0xdc00)
+        {
+            const RTUTF16 wc2 = RT_BE2H_U16((*ppwsz)[1]);
             if (wc2 >= 0xdc00 && wc2 <= 0xdfff)
             {
                 RTUNICP uc = 0x10000 + (((wc & 0x3ff) << 10) | (wc2 & 0x3ff));

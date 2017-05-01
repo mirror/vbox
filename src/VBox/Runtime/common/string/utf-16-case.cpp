@@ -33,6 +33,7 @@
 
 #include <iprt/uni.h>
 #include <iprt/alloc.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include "internal/string.h"
@@ -105,6 +106,77 @@ RTDECL(int) RTUtf16ICmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
 RT_EXPORT_SYMBOL(RTUtf16ICmp);
 
 
+RTDECL(int) RTUtf16BigICmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2)
+{
+    if (pwsz1 == pwsz2)
+        return 0;
+    if (!pwsz1)
+        return -1;
+    if (!pwsz2)
+        return 1;
+
+    PCRTUTF16 pwsz1Start = pwsz1; /* keep it around in case we have to backtrack on a surrogate pair */
+    for (;;)
+    {
+        register RTUTF16  wc1 = *pwsz1;
+        register RTUTF16  wc2 = *pwsz2;
+        register int     iDiff = wc1 - wc2;
+        if (iDiff)
+        {
+            /* unless they are *both* surrogate pairs, there is no chance they'll be identical. */
+            wc1 = RT_BE2H_U16(wc1);
+            wc2 = RT_BE2H_U16(wc2);
+            if (    wc1 < 0xd800
+                ||  wc2 < 0xd800
+                ||  wc1 > 0xdfff
+                ||  wc2 > 0xdfff)
+            {
+                /* simple UCS-2 char */
+                iDiff = RTUniCpToUpper(wc1) - RTUniCpToUpper(wc2);
+                if (iDiff)
+                    iDiff = RTUniCpToLower(wc1) - RTUniCpToLower(wc2);
+            }
+            else
+            {
+                /* a damned pair */
+                RTUNICP uc1;
+                RTUNICP uc2;
+                if (wc1 >= 0xdc00)
+                {
+                    if (pwsz1Start == pwsz1)
+                        return iDiff;
+                    uc1 = RT_BE2H_U16(pwsz1[-1]);
+                    if (uc1 < 0xd800 || uc1 >= 0xdc00)
+                        return iDiff;
+                    uc1 = 0x10000 + (((uc1                    & 0x3ff) << 10) | (wc1 & 0x3ff));
+                    uc2 = 0x10000 + (((RT_BE2H_U16(pwsz2[-1]) & 0x3ff) << 10) | (wc2 & 0x3ff));
+                }
+                else
+                {
+                    RTUTF16 wcTmp = *++pwsz1;
+                    uc1 = RT_BE2H_U16(wcTmp);
+                    if (uc1 < 0xdc00 || uc1 >= 0xe000)
+                        return iDiff;
+                    uc1 = 0x10000 + (((wc1 & 0x3ff) << 10) | (uc1                & 0x3ff));
+                    wcTmp = *++pwsz2;
+                    uc2 = 0x10000 + (((wc2 & 0x3ff) << 10) | (RT_BE2H_U16(wcTmp) & 0x3ff));
+                }
+                iDiff = RTUniCpToUpper(uc1) - RTUniCpToUpper(uc2);
+                if (iDiff)
+                    iDiff = RTUniCpToLower(uc1) - RTUniCpToLower(uc2); /* serious paranoia! */
+            }
+            if (iDiff)
+                return iDiff;
+        }
+        if (!wc1)
+            return 0;
+        pwsz1++;
+        pwsz2++;
+    }
+}
+RT_EXPORT_SYMBOL(RTUtf16BigICmp);
+
+
 RTDECL(int) RTUtf16ICmpUtf8(PCRTUTF16 pwsz1, const char *psz2)
 {
     /*
@@ -142,6 +214,156 @@ RTDECL(int) RTUtf16ICmpUtf8(PCRTUTF16 pwsz1, const char *psz2)
     }
 }
 RT_EXPORT_SYMBOL(RTUtf16CmpIUtf8);
+
+
+RTDECL(int) RTUtf16NICmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2, size_t cwcMax)
+{
+    if (pwsz1 == pwsz2)
+        return 0;
+    if (!pwsz1)
+        return -1;
+    if (!pwsz2)
+        return 1;
+
+    PCRTUTF16 pwsz1Start = pwsz1; /* keep it around in case we have to backtrack on a surrogate pair */
+    while (cwcMax-- > 0)
+    {
+        register RTUTF16  wc1 = *pwsz1;
+        register RTUTF16  wc2 = *pwsz2;
+        register int     iDiff = wc1 - wc2;
+        if (iDiff)
+        {
+            /* unless they are *both* surrogate pairs, there is no chance they'll be identical. */
+            if (    wc1 < 0xd800
+                ||  wc2 < 0xd800
+                ||  wc1 > 0xdfff
+                ||  wc2 > 0xdfff)
+            {
+                /* simple UCS-2 char */
+                iDiff = RTUniCpToUpper(wc1) - RTUniCpToUpper(wc2);
+                if (iDiff)
+                    iDiff = RTUniCpToLower(wc1) - RTUniCpToLower(wc2);
+            }
+            else
+            {
+                /* a damned pair */
+                RTUNICP uc1;
+                RTUNICP uc2;
+                if (wc1 >= 0xdc00)
+                {
+                    if (pwsz1Start == pwsz1)
+                        return iDiff;
+                    uc1 = pwsz1[-1];
+                    if (uc1 < 0xd800 || uc1 >= 0xdc00)
+                        return iDiff;
+                    uc1 = 0x10000 + (((uc1       & 0x3ff) << 10) | (wc1 & 0x3ff));
+                    uc2 = 0x10000 + (((pwsz2[-1] & 0x3ff) << 10) | (wc2 & 0x3ff));
+                }
+                else if (cwcMax-- > 0)
+                {
+                    uc1 = *++pwsz1;
+                    if (uc1 < 0xdc00 || uc1 >= 0xe000)
+                        return iDiff;
+                    uc1 = 0x10000 + (((wc1 & 0x3ff) << 10) | (uc1      & 0x3ff));
+                    uc2 = 0x10000 + (((wc2 & 0x3ff) << 10) | (*++pwsz2 & 0x3ff));
+                }
+                else
+                {
+                    iDiff = wc1 - wc2;
+                    return iDiff;
+                }
+                iDiff = RTUniCpToUpper(uc1) - RTUniCpToUpper(uc2);
+                if (iDiff)
+                    iDiff = RTUniCpToLower(uc1) - RTUniCpToLower(uc2); /* serious paranoia! */
+            }
+            if (iDiff)
+                return iDiff;
+        }
+        if (!wc1)
+            return 0;
+        pwsz1++;
+        pwsz2++;
+    }
+    return 0;
+}
+RT_EXPORT_SYMBOL(RTUtf16NICmp);
+
+
+RTDECL(int) RTUtf16BigNICmp(register PCRTUTF16 pwsz1, register PCRTUTF16 pwsz2, size_t cwcMax)
+{
+    if (pwsz1 == pwsz2)
+        return 0;
+    if (!pwsz1)
+        return -1;
+    if (!pwsz2)
+        return 1;
+
+    PCRTUTF16 pwsz1Start = pwsz1; /* keep it around in case we have to backtrack on a surrogate pair */
+    while (cwcMax-- > 0)
+    {
+        register RTUTF16  wc1 = *pwsz1;
+        register RTUTF16  wc2 = *pwsz2;
+        register int     iDiff = wc1 - wc2;
+        if (iDiff)
+        {
+            /* unless they are *both* surrogate pairs, there is no chance they'll be identical. */
+            wc1 = RT_BE2H_U16(wc1);
+            wc2 = RT_BE2H_U16(wc2);
+            if (    wc1 < 0xd800
+                ||  wc2 < 0xd800
+                ||  wc1 > 0xdfff
+                ||  wc2 > 0xdfff)
+            {
+                /* simple UCS-2 char */
+                iDiff = RTUniCpToUpper(wc1) - RTUniCpToUpper(wc2);
+                if (iDiff)
+                    iDiff = RTUniCpToLower(wc1) - RTUniCpToLower(wc2);
+            }
+            else
+            {
+                /* a damned pair */
+                RTUNICP uc1;
+                RTUNICP uc2;
+                if (wc1 >= 0xdc00)
+                {
+                    if (pwsz1Start == pwsz1)
+                        return iDiff;
+                    uc1 = RT_BE2H_U16(pwsz1[-1]);
+                    if (uc1 < 0xd800 || uc1 >= 0xdc00)
+                        return iDiff;
+                    uc1 = 0x10000 + (((uc1                    & 0x3ff) << 10) | (wc1 & 0x3ff));
+                    uc2 = 0x10000 + (((RT_BE2H_U16(pwsz2[-1]) & 0x3ff) << 10) | (wc2 & 0x3ff));
+                }
+                else if (cwcMax > 0)
+                {
+                    RTUTF16 wcTmp = *++pwsz1;
+                    uc1 = RT_BE2H_U16(wcTmp);
+                    if (uc1 < 0xdc00 || uc1 >= 0xe000)
+                        return iDiff;
+                    uc1 = 0x10000 + (((wc1 & 0x3ff) << 10) | (uc1                & 0x3ff));
+                    wcTmp = *++pwsz2;
+                    uc2 = 0x10000 + (((wc2 & 0x3ff) << 10) | (RT_BE2H_U16(wcTmp) & 0x3ff));
+                }
+                else
+                {
+                    iDiff = wc1 - wc2;
+                    return iDiff;
+                }
+                iDiff = RTUniCpToUpper(uc1) - RTUniCpToUpper(uc2);
+                if (iDiff)
+                    iDiff = RTUniCpToLower(uc1) - RTUniCpToLower(uc2); /* serious paranoia! */
+            }
+            if (iDiff)
+                return iDiff;
+        }
+        if (!wc1)
+            return 0;
+        pwsz1++;
+        pwsz2++;
+    }
+    return 0;
+}
+RT_EXPORT_SYMBOL(RTUtf16BigNICmp);
 
 
 RTDECL(PRTUTF16) RTUtf16ToLower(PRTUTF16 pwsz)

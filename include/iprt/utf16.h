@@ -432,6 +432,22 @@ RTDECL(int) RTUtf16CmpUtf8(PCRTUTF16 pwsz1, const char *psz2);
 RTDECL(int) RTUtf16ICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2);
 
 /**
+ * Performs a case insensitive string compare between two big endian UTF-16
+ * strings.
+ *
+ * This is a simplified compare, as only the simplified lower/upper case folding
+ * specified by the unicode specs are used. It does not consider character pairs
+ * as they are used in some languages, just simple upper & lower case compares.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   pwsz1       First big endian UTF-16 string. Null is allowed.
+ * @param   pwsz2       Second big endian  UTF-16 string. Null is allowed.
+ */
+RTDECL(int) RTUtf16BigICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2);
+
+/**
  * Performs a case insensitive string compare between an UTF-16 string and a
  * UTF-8 string.
  *
@@ -474,6 +490,40 @@ RTDECL(int) RTUtf16ICmpAscii(PCRTUTF16 pwsz1, const char *psz2);
  * @param   pwsz2       Second UTF-16 string. Null is allowed.
  */
 RTDECL(int) RTUtf16LocaleICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2);
+
+/**
+ * Performs a case insensitive string compare between two UTF-16 strings,
+ * stopping after N characters.
+ *
+ * This is a simplified compare, as only the simplified lower/upper case folding
+ * specified by the unicode specs are used. It does not consider character pairs
+ * as they are used in some languages, just simple upper & lower case compares.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   pwsz1       First UTF-16 string. Null is allowed.
+ * @param   pwsz2       Second UTF-16 string. Null is allowed.
+ * @param   cwcMax      Maximum number of characters to compare.
+ */
+RTDECL(int) RTUtf16NICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2, size_t cwcMax);
+
+/**
+ * Performs a case insensitive string compare between two big endian UTF-16
+ * strings, stopping after N characters.
+ *
+ * This is a simplified compare, as only the simplified lower/upper case folding
+ * specified by the unicode specs are used. It does not consider character pairs
+ * as they are used in some languages, just simple upper & lower case compares.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   pwsz1       First big endian UTF-16 string. Null is allowed.
+ * @param   pwsz2       Second big endian UTF-16 string. Null is allowed.
+ * @param   cwcMax      Maximum number of characters to compare.
+ */
+RTDECL(int) RTUtf16BigNICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2, size_t cwcMax);
 
 /**
  * Folds a UTF-16 string to lowercase.
@@ -807,6 +857,19 @@ RTDECL(RTUNICP) RTUtf16GetCpInternal(PCRTUTF16 pwsz);
 RTDECL(int) RTUtf16GetCpExInternal(PCRTUTF16 *ppwsz, PRTUNICP pCp);
 
 /**
+ * Get the unicode code point at the given string position, big endian.
+ *
+ * @returns iprt status code.
+ * @param   ppwsz       Pointer to the string pointer. This will be updated to
+ *                      point to the char following the current code point.
+ * @param   pCp         Where to store the code point.
+ *                      RTUNICP_INVALID is stored here on failure.
+ *
+ * @remark  This is an internal worker for RTUtf16BigGetCpEx().
+ */
+RTDECL(int) RTUtf16BigGetCpExInternal(PCRTUTF16 *ppwsz, PRTUNICP pCp);
+
+/**
  * Put the unicode code point at the given string position
  * and return the pointer to the char following it.
  *
@@ -864,6 +927,36 @@ DECLINLINE(int) RTUtf16GetCpEx(PCRTUTF16 *ppwsz, PRTUNICP pCp)
         return VINF_SUCCESS;
     }
     return RTUtf16GetCpExInternal(ppwsz, pCp);
+}
+
+/**
+ * Get the unicode code point at the given string position, big endian version.
+ *
+ * @returns iprt status code.
+ * @param   ppwsz       Pointer to the string pointer. This will be updated to
+ *                      point to the char following the current code point.
+ * @param   pCp         Where to store the code point.
+ *                      RTUNICP_INVALID is stored here on failure.
+ *
+ * @remark  We optimize this operation by using an inline function for
+ *          everything which isn't a surrogate pair or and endian indicator.
+ */
+DECLINLINE(int) RTUtf16BigGetCpEx(PCRTUTF16 *ppwsz, PRTUNICP pCp)
+{
+#ifdef RT_BIG_ENDIAN
+    return RTUtf16GetCpEx(ppwsz, pCp);
+#else
+# ifdef ___iprt_asm_h
+    const RTUTF16 wc = RT_BE2H_U16(**ppwsz);
+    if (wc < 0xd800 || (wc > 0xdfff && wc < 0xfffe))
+    {
+        (*ppwsz)++;
+        *pCp = wc;
+        return VINF_SUCCESS;
+    }
+# endif
+    return RTUtf16BigGetCpExInternal(ppwsz, pCp);
+#endif
 }
 
 /**
