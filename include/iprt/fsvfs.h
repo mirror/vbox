@@ -117,6 +117,29 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
  */
 RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick);
 
+
+/** @name RTFSISO9660_F_XXX - ISO 9660 mount flags.
+ * @{ */
+/** Do not use the joliet part. */
+#define RTFSISO9660_F_NO_JOLIET     RT_BIT_32(0)
+/** Do not use the rock ridge extensions if present. */
+#define RTFSISO9660_F_NO_ROCK       RT_BIT_32(0)
+/** Valid ISO 9660 mount option mask.   */
+#define RTFSISO9660_F_VALID_MASK    UINT32_C(0x00000003)
+/** @}  */
+
+/**
+ * Opens an ISO 9660 file system volume.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFileIn      The file or device backing the volume.
+ * @param   fFlags          RTFSISO9660_F_XXX.
+ * @param   phVfs           Where to return the virtual file system handle.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+RTDECL(int) RTFsIso9660VolOpen(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
+
+
 /** @} */
 
 RT_C_DECLS_END

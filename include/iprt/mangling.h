@@ -917,6 +917,7 @@
 # define RTFsFatVolOpen                                 RT_MANGLER(RTFsFatVolOpen)
 # define RTFsFatVolFormat                               RT_MANGLER(RTFsFatVolFormat)
 # define RTFsFatVolFormat144                            RT_MANGLER(RTFsFatVolFormat144)
+# define RTFsIso9660VolOpen                             RT_MANGLER(RTFsIso9660VolOpen)
 # define RTGetOpt                                       RT_MANGLER(RTGetOpt)
 # define RTGetOptArgvFree                               RT_MANGLER(RTGetOptArgvFree)
 # define RTGetOptArgvFromString                         RT_MANGLER(RTGetOptArgvFromString)

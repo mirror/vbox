@@ -40,6 +40,14 @@
 /** The (default) logical sectors size of ISO 9660. */
 #define ISO9660_SECTOR_SIZE                 2048
 
+/** Accessor for ISO9660U16 and ISO9660U32 that retrievs the member value for
+ *  the host endianess. */
+#ifdef RT_BIG_ENDIAN
+# define ISO9660_GET_ENDIAN(a_pInt) ((a_pInt)->be)
+#else
+# define ISO9660_GET_ENDIAN(a_pInt) ((a_pInt)->le)
+#endif
+
 
 /**
  * ISO 9660 16-bit unsigned integer type.
@@ -99,8 +107,8 @@ typedef struct ISO9660TIMESTAMP
     char                achSecond[2];
     /** 0x0e: Hundreth of second (00-99). */
     char                achCentisecond[2];
-    /** 0x10: The UCT (GMT) offset in 15 min units. */
-    int8_t              offUct;
+    /** 0x10: The UTC (GMT) offset in 15 min units. */
+    int8_t              offUtc;
 } ISO9660TIMESTAMP;
 AssertCompileSize(ISO9660TIMESTAMP, 17);
 /** Pointer to an ISO 9660 timestamp. */
@@ -114,19 +122,19 @@ typedef ISO9660TIMESTAMP const *PCISO9660TIMESTAMP;
 typedef struct ISO9660RECTIMESTAMP
 {
     /** 0: Years since 1900. */
-    uint8_t             uYear;
+    uint8_t             bYear;
     /** 1: Month of year (1-12). */
-    uint8_t             uMonth;
+    uint8_t             bMonth;
     /** 2: Day of month (1-31). */
-    uint8_t             uDay;
+    uint8_t             bDay;
     /** 3: Hour of day (0-23). */
-    uint8_t             uHour;
+    uint8_t             bHour;
     /** 4: Minute of hour (0-59). */
-    uint8_t             uMinute;
+    uint8_t             bMinute;
     /** 5: Second of minute (0-59). */
-    uint8_t             uSecond;
-    /** 6: The UCT (GMT) offset in 15 min units. */
-    int8_t              offUct;
+    uint8_t             bSecond;
+    /** 6: The UTC (GMT) offset in 15 min units. */
+    int8_t              offUtc;
 } ISO9660RECTIMESTAMP;
 AssertCompileSize(ISO9660RECTIMESTAMP, 7);
 /** Pointer to an ISO 9660 record timestamp. */
@@ -177,6 +185,10 @@ AssertCompileMemberOffset(ISO9660DIRREC, RecTime,       0x12);
 AssertCompileMemberOffset(ISO9660DIRREC, fFileFlags,    0x19);
 AssertCompileMemberOffset(ISO9660DIRREC, bFileIdLength, 0x20);
 AssertCompileMemberOffset(ISO9660DIRREC, achFileId,     0x21);
+/** Pointer to an ISO 9660 directory record. */
+typedef ISO9660DIRREC *PISO9660DIRREC;
+/** Pointer to a const ISO 9660 directory record. */
+typedef ISO9660DIRREC const *PCISO9660DIRREC;
 
 /** @name ISO9660_FILE_FLAGS_XXX
  * @{ */
@@ -277,7 +289,7 @@ AssertCompileMemberOffset(ISO9660EXATTRREC, cbAppUse, 0x0f6);
 
 /** @name ISO9660_PERM_XXX - ISO9660EXATTRREC::fPermissions
  * @{ */
-/** @todo figure out this wird permsission stuff...   */
+/** @todo figure out this wird permission stuff...   */
 /** @} */
 
 
@@ -304,10 +316,13 @@ typedef ISO9660VOLDESCHDR const *PCISO9660VOLDESCHDR;
  * @{ */
 /** See ISO9660BOOTRECORD. */
 #define ISO9660VOLDESC_TYPE_BOOT_RECORD     UINT8_C(0x00)
+/** See ISO9660PRIMARYVOLDESC. */
 #define ISO9660VOLDESC_TYPE_PRIMARY         UINT8_C(0x01)
+/** See ISO9660SUPVOLDESC. */
 #define ISO9660VOLDESC_TYPE_SUPPLEMENTARY   UINT8_C(0x02)
+/** See ISO9660VOLPARTDESC. */
 #define ISO9660VOLDESC_TYPE_PARTITION       UINT8_C(0x03)
-/** Terminates the volume descriptor set.  Has no data (zeros). */
+/** Terminates the volume descriptor set.  Has no data (zeros), version is 1. */
 #define ISO9660VOLDESC_TYPE_TERMINATOR      UINT8_C(0xff)
 /** @} */
 
@@ -369,21 +384,21 @@ typedef struct ISO9660PRIMARYVOLDESC
     ISO9660U32          VolumeSpaceSize;
     /** 0x058: Unused field(s), zero filled. */
     uint8_t             abUnused89[32];
-    /** 0x078: The volume set size ??in bytes?? */
-    ISO9660U16          cbVolumeSet;
+    /** 0x078: The number of volumes in the volume set. */
+    ISO9660U16          cVolumesInSet;
     /** 0x07c: Volume sequence number. */
     ISO9660U16          VolumeSeqNo;
     /** 0x080: Logical block size in bytes. */
     ISO9660U16          cbLogicalBlock;
     /** 0x084: Path table size. */
     ISO9660U32          cbPathTable;
-    /** 0x08c: Type L path table location (block offset). */
+    /** 0x08c: Type L(ittle endian) path table location (block offset). */
     ISO9660U32LE        offTypeLPathTable;
-    /** 0x090: Optional type L path table location (block offset). */
+    /** 0x090: Optional type L(ittle endian) path table location (block offset). */
     ISO9660U32LE        offOptionalTypeLPathTable;
-    /** 0x094: Type M path table location (block offset). */
+    /** 0x094: Type M (big endian) path table location (block offset). */
     ISO9660U32BE        offTypeMPathTable;
-    /** 0x098: Optional type M path table location (block offset). */
+    /** 0x098: Optional type M (big endian) path table location (block offset). */
     ISO9660U32BE        offOptionalTypeMPathTable;
     /** 0x09c: Directory entry for the root directory (union). */
     union
@@ -423,7 +438,7 @@ typedef struct ISO9660PRIMARYVOLDESC
      * If not specified, info can be used immediately. */
     ISO9660TIMESTAMP    EffectiveTime;
     /** 0x371: File structure version (ISO9660_FILE_STRUCTURE_VERSION). */
-    uint8_t             uFileStructureVersion;
+    uint8_t             bFileStructureVersion;
     /** 0x372: Reserve for future, MBZ. */
     uint8_t             bReserved883;
     /** 0x373: Reserve for future, MBZ. */
@@ -439,8 +454,8 @@ typedef ISO9660PRIMARYVOLDESC const *PCISO9660PRIMARYVOLDESC;
 
 /** The value of ISO9660PRIMARYVOLDESC::Hdr.uDescVersion. */
 #define ISO9660PRIMARYVOLDESC_VERSION           UINT8_C(1)
-/** The value of ISO9660PRIMARYVOLDESC::uFileStructureVersion and
- *  ISO9660SUPVOLDESC::uFileStructureVersion. */
+/** The value of ISO9660PRIMARYVOLDESC::bFileStructureVersion and
+ *  ISO9660SUPVOLDESC::bFileStructureVersion. */
 #define ISO9660_FILE_STRUCTURE_VERSION          UINT8_C(1)
 
 
@@ -474,27 +489,28 @@ typedef struct ISO9660SUPVOLDESC
     /** 0x058: Escape sequences.
      * Complicated stuff, see ISO 2022 and ECMA-35.
      * @note This is reserved in the primary volume descriptor. */
-    uint8_t             achEscapeSequences[32];
-    /** 0x078: The volume set size ??in bytes?? */
-    ISO9660U16          cbVolumeSet;
+    uint8_t             abEscapeSequences[32];
+    /** 0x078: The number of volumes in the volume set. */
+    ISO9660U16          cVolumesInSet;
     /** 0x07c: Volume sequence number. */
     ISO9660U16          VolumeSeqNo;
     /** 0x080: Logical block size in bytes. */
     ISO9660U16          cbLogicalBlock;
     /** 0x084: Path table size. */
     ISO9660U32          cbPathTable;
-    /** 0x08c: Type L path table location (block offset). */
+    /** 0x08c: Type L(ittle endian) path table location (block offset). */
     ISO9660U32LE        offTypeLPathTable;
-    /** 0x090: Optional type L path table location (block offset). */
+    /** 0x090: Optional type L(ittle endian) path table location (block offset). */
     ISO9660U32LE        offOptionalTypeLPathTable;
-    /** 0x094: Type M path table location (block offset). */
+    /** 0x094: Type M (big endian) path table location (block offset). */
     ISO9660U32BE        offTypeMPathTable;
-    /** 0x098: Optional type M path table location (block offset). */
+    /** 0x098: Optional type M (big endian) path table location (block offset). */
     ISO9660U32BE        offOptionalTypeMPathTable;
     /** 0x09c: Directory entry for the root directory (union). */
     union
     {
         uint8_t         ab[34];
+        ISO9660DIRREC   DirRec;
     }                   RootDir;
     /** 0x0be: Volume set identifier (d1-characters).
      * @note Character set differs from primary description. */
@@ -535,7 +551,7 @@ typedef struct ISO9660SUPVOLDESC
      * If not specified, info can be used immediately. */
     ISO9660TIMESTAMP    EffectiveTime;
     /** 0x371: File structure version (ISO9660_FILE_STRUCTURE_VERSION). */
-    uint8_t             uFileStructureVersion;
+    uint8_t             bFileStructureVersion;
     /** 0x372: Reserve for future, MBZ. */
     uint8_t             bReserved883;
     /** 0x373: Reserve for future, MBZ. */
@@ -588,6 +604,23 @@ typedef ISO9660VOLPARTDESC *PISO9660VOLPARTDESC;
 typedef ISO9660VOLPARTDESC const *PCISO9660VOLPARTDESC;
 /** The value of ISO9660VOLPARTDESC::Hdr.uDescVersion. */
 #define ISO9660VOLPARTDESC_VERSION               UINT8_C(1)
+
+
+
+/** @name Joliet escape sequence identifiers.
+ *
+ * These bytes appears in the supplementary volume descriptor field
+ * abEscapeSequences.  The ISO9660SUPVOLDESC_VOL_F_ESC_NOT_REG flags will not
+ * be set.
+ *
+ * @{ */
+#define ISO9660_JOLIET_ESC_SEQ_0            UINT8_C(0x25)   /**< First escape sequence byte.*/
+#define ISO9660_JOLIET_ESC_SEQ_1            UINT8_C(0x2f)   /**< Second escape sequence byte.*/
+#define ISO9660_JOLIET_ESC_SEQ_2_LEVEL_1    UINT8_C(0x40)   /**< Third escape sequence byte: level 1 */
+#define ISO9660_JOLIET_ESC_SEQ_2_LEVEL_2    UINT8_C(0x43)   /**< Third escape sequence byte: level 2 */
+#define ISO9660_JOLIET_ESC_SEQ_2_LEVEL_3    UINT8_C(0x45)   /**< Third escape sequence byte: level 3 */
+/** @} */
+
 
 /** @} */
 

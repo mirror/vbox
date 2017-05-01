@@ -2657,6 +2657,8 @@ RT_C_DECLS_END
 #define VERR_VFS_BOGUS_FORMAT                       (-24801)
 /** Found bogus offset in the file system. */
 #define VERR_VFS_BOGUS_OFFSET                       (-24802)
+/** Unsupported file system format. */
+#define VERR_VFS_UNSUPPORTED_FORMAT                 (-24803)
 /** @} */
 
 /* SED-END */
