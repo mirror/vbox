@@ -1383,6 +1383,8 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *      - \%Rbn             - Prints the base name.  For dropping the path in
  *                            order to save space when printing a path name.
  *
+ *      - \%lRbs            - Same as \%ls except inlut is big endian UTF-16.
+ *
  * On other platforms, \%Rw? simply prints the argument in a form of 0xXXXXXXXX.
  *
  *
