@@ -739,8 +739,8 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 *pszEnd = '\0';
                                 cch += pfnOutput(pvArgOutput, szBuf, pszEnd - szBuf);
 #else
-                                char ch = (char)(*pwszStr++ >> 8);
-                                cch += pfnOutput(pvArgOutput, &ch, 1);
+                                szBuf[0] = (char)(*pwszStr++ >> 8);
+                                cch += pfnOutput(pvArgOutput, szBuf, 1);
 #endif
                             }
                             while (--cchWidth >= 0)
