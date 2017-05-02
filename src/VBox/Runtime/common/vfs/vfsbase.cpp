@@ -1692,7 +1692,9 @@ RTDECL(uint32_t) RTVfsRetain(RTVFS hVfs)
     RTVFSINTERNAL *pThis = hVfs;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFS_MAGIC, UINT32_MAX);
-    return rtVfsObjRetain(&pThis->Base);
+    uint32_t cRefs = rtVfsObjRetain(&pThis->Base);
+    LogFlow(("RTVfsRetain(%p/%p) -> %d\n", pThis, pThis->Base.pvThis, cRefs));
+    return cRefs;
 }
 
 
@@ -1703,7 +1705,12 @@ RTDECL(uint32_t) RTVfsRelease(RTVFS hVfs)
         return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFS_MAGIC, UINT32_MAX);
-    return rtVfsObjRelease(&pThis->Base);
+#ifdef LOG_ENABLED
+    void *pvThis = pThis->Base.pvThis;
+#endif
+    uint32_t cRefs = rtVfsObjRelease(&pThis->Base);
+    Log(("RTVfsRelease(%p/%p) -> %d\n", pThis, pvThis, cRefs));
+    return cRefs;
 }
 
 
