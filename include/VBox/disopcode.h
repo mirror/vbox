@@ -1070,6 +1070,7 @@ enum OP_PARM
 #define OP_PARM_MbRO            OP_PARM_Mb              /**< Annotates read only memory byte operand. */
 #define OP_PARM_MdRO            OP_PARM_Md              /**< Annotates read only memory byte operand. */
 #define OP_PARM_MdWO            OP_PARM_Md              /**< Annotates write only memory byte operand. */
+#define OP_PARM_MqWO            OP_PARM_Mq              /**< Annotates write only memory quad word operand. */
 #define OP_PARM_MRO             OP_PARM_M               /**< Annotates read only memory of variable operand size (xrstor). */
 #define OP_PARM_MRW             OP_PARM_M               /**< Annotates read-write memory of variable operand size (xsave). */
 

@@ -1155,7 +1155,7 @@ FNIEMOP_DEF(iemOp_movss_Vss_Wss)
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
  */
-FNIEMOP_DEF(iemOp_movsd_Vx_Wsd)
+FNIEMOP_DEF(iemOp_movsd_Vsd_Wsd)
 {
     IEMOP_MNEMONIC2(RM, MOVSD, movsd, VsdZxReg, Wsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -1641,8 +1641,53 @@ FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
 }
 
 
-/** Opcode      0x0f 0x13 - vmovlps Mq, Vq */
-FNIEMOP_STUB(iemOp_movlps_Mq_Vq);
+/**
+ * @opdone
+ * @opcode      0x13
+ * @opcodesub   !11 mr/reg
+ * @oppfx       none
+ * @opcpuid     sse
+ * @opgroup     og_sse_simdfp_datamove
+ * @opxcpttype  5
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
+FNIEMOP_DEF(iemOp_movlps_Mq_Vq)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_MNEMONIC2(MR_MEM, MOVLPS, movlps, MqWO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+        IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+
+    /**
+     * @opdone
+     * @opmnemonic  ud0f13m3
+     * @opcode      0x13
+     * @opcodesub   11 mr/reg
+     * @oppfx       none
+     * @opunused    immediate
+     * @opcpuid     sse
+     * @optest      ->
+     */
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
 
 /** Opcode 0x66 0x0f 0x13 - vmovlpd Mq, Vq */
 FNIEMOP_DEF(iemOp_movlpd_Mq_Vq)
@@ -8423,7 +8468,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x0e */  IEMOP_X4(iemOp_femms),
     /* 0x0f */  IEMOP_X4(iemOp_3Dnow),
 
-    /* 0x10 */  iemOp_movups_Vps_Wps,       iemOp_movupd_Vpd_Wpd,      iemOp_movss_Vss_Wss,        iemOp_movsd_Vx_Wsd,
+    /* 0x10 */  iemOp_movups_Vps_Wps,       iemOp_movupd_Vpd_Wpd,      iemOp_movss_Vss_Wss,        iemOp_movsd_Vsd_Wsd,
     /* 0x11 */  iemOp_movups_Wps_Vps,       iemOp_movupd_Wpd_Vpd,      iemOp_movss_Wss_Vss,        iemOp_movsd_Wsd_Vsd,
     /* 0x12 */  iemOp_movlps_Vq_Mq__movhlps, iemOp_movlpd_Vq_Mq,       iemOp_movsldup_Vdq_Wdq,     iemOp_movddup_Vdq_Wdq,
     /* 0x13 */  iemOp_movlps_Mq_Vq,         iemOp_movlpd_Mq_Vq,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,

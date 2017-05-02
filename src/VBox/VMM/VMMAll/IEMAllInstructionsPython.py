@@ -232,6 +232,7 @@ g_kdOpTypes = {
     'MdRO': ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'MdWO': ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'Mq':   ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
+    'MqWO': ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
     'MRO':  ( 'IDX_UseModRM',       'rm',     '%M',   'M',      ),
     'MRW':  ( 'IDX_UseModRM',       'rm',     '%M',   'M',      ),
 
