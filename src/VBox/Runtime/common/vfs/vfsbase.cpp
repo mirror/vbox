@@ -366,6 +366,20 @@ RTDECL(uint32_t) RTVfsLockRetain(RTVFSLOCK hLock)
 }
 
 
+RTDECL(uint32_t) RTVfsLockRetainDebug(RTVFSLOCK hLock, RT_SRC_POS_DECL)
+{
+    RTVFSLOCKINTERNAL *pThis = hLock;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p %d\n", cRefs, pThis, pThis->enmType));
+    LogFlow(("RTVfsLockRetainDebug(%p) -> %d;  caller: %s %s(%u)\n", hLock, cRefs, pszFunction, pszFile, iLine));
+    RT_SRC_POS_NOREF();
+    return cRefs;
+}
+
+
 /**
  * Destroys a VFS lock handle.
  *
@@ -782,7 +796,26 @@ DECLINLINE(uint32_t) rtVfsObjRetain(RTVFSOBJINTERNAL *pThis)
     return cRefs;
 }
 
+/**
+ * Internal object retainer that asserts sanity in strict builds.
+ *
+ * @returns The new reference count.
+ * @param   pThis               The base object handle data.
+ */
+DECLINLINE(uint32_t) rtVfsObjRetainDebug(RTVFSOBJINTERNAL *pThis, const char *pszApi, RT_SRC_POS_DECL)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M,
+              ("%#x %p ops=%p %s (%d)\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType));
+    LogFlow(("%s(%p/%p) -> %2d;  caller: %s %s(%s) \n", pszApi, pThis, pThis->pvThis, cRefs, pszFunction, pszFile, iLine));
+    RT_SRC_POS_NOREF(); RT_NOREF(pszApi);
+    return cRefs;
+}
 
+
+#ifdef DEBUG
+# undef RTVfsObjRetain
+#endif
 RTDECL(uint32_t) RTVfsObjRetain(RTVFSOBJ hVfsObj)
 {
     RTVFSOBJINTERNAL *pThis = hVfsObj;
@@ -790,6 +823,19 @@ RTDECL(uint32_t) RTVfsObjRetain(RTVFSOBJ hVfsObj)
     AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, UINT32_MAX);
 
     return rtVfsObjRetain(pThis);
+}
+#ifdef DEBUG
+# define RTVfsObjRetain(hVfsObj)    RTVfsObjRetainDebug(hVfsObj, RT_SRC_POS)
+#endif
+
+
+RTDECL(uint32_t) RTVfsObjRetainDebug(RTVFSOBJ hVfsObj, RT_SRC_POS_DECL)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, UINT32_MAX);
+
+    return rtVfsObjRetainDebug(pThis, "RTVfsObjRetainDebug", RT_SRC_POS_ARGS);
 }
 
 
@@ -901,6 +947,7 @@ RTDECL(RTVFS)           RTVfsObjToVfs(RTVFSOBJ hVfsObj)
         if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
         {
             rtVfsObjRetainVoid(pThis);
+            LogFlow(("RTVfsObjToVfs(%p) -> %p\n", pThis, RT_FROM_MEMBER(pThis, RTVFSINTERNAL, Base)));
             return RT_FROM_MEMBER(pThis, RTVFSINTERNAL, Base);
         }
     }
@@ -1008,6 +1055,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromVfs(RTVFS hVfs)
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
 
         rtVfsObjRetainVoid(pThis);
+        LogFlow(("RTVfsObjFromVfs(%p) -> %p\n", hVfs, pThis));
         return pThis;
     }
     return NIL_RTVFSOBJ;
@@ -1686,7 +1734,9 @@ RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOC
     return VINF_SUCCESS;
 }
 
-
+#ifdef DEBUG
+# undef RTVfsRetain
+#endif
 RTDECL(uint32_t) RTVfsRetain(RTVFS hVfs)
 {
     RTVFSINTERNAL *pThis = hVfs;
@@ -1695,6 +1745,19 @@ RTDECL(uint32_t) RTVfsRetain(RTVFS hVfs)
     uint32_t cRefs = rtVfsObjRetain(&pThis->Base);
     LogFlow(("RTVfsRetain(%p/%p) -> %d\n", pThis, pThis->Base.pvThis, cRefs));
     return cRefs;
+}
+#ifdef DEBUG
+# define RTVfsRetain(hVfs)          RTVfsRetainDebug(hVfs, RT_SRC_POS)
+#endif
+
+
+RTDECL(uint32_t) RTVfsRetainDebug(RTVFS hVfs, RT_SRC_POS_DECL)
+{
+    RTVFSINTERNAL *pThis = hVfs;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFS_MAGIC, UINT32_MAX);
+    RT_SRC_POS_NOREF();
+    return rtVfsObjRetainDebug(&pThis->Base, "RTVfsRetainDebug", RT_SRC_POS_ARGS);
 }
 
 
@@ -1805,12 +1868,27 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
 }
 
 
+#ifdef DEBUG
+# undef RTVfsFsStrmRetain
+#endif
 RTDECL(uint32_t)    RTVfsFsStrmRetain(RTVFSFSSTREAM hVfsFss)
 {
     RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, UINT32_MAX);
     return rtVfsObjRetain(&pThis->Base);
+}
+#ifdef DEBUG
+# define RTVfsFsStrmRetain(hVfsFss) RTVfsFsStrmRetainDebug(hVfsFss, RT_SRC_POS)
+#endif
+
+
+RTDECL(uint32_t)    RTVfsFsStrmRetainDebug(RTVFSFSSTREAM hVfsFss, RT_SRC_POS_DECL)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, UINT32_MAX);
+    return rtVfsObjRetainDebug(&pThis->Base, "RTVfsFsStrmRetain", RT_SRC_POS_ARGS);
 }
 
 
@@ -1908,6 +1986,9 @@ RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlag
 }
 
 
+#ifdef DEBUG
+# undef RTVfsDirRetain
+#endif
 RTDECL(uint32_t) RTVfsDirRetain(RTVFSDIR hVfsDir)
 {
     RTVFSDIRINTERNAL *pThis = hVfsDir;
@@ -1916,6 +1997,18 @@ RTDECL(uint32_t) RTVfsDirRetain(RTVFSDIR hVfsDir)
     uint32_t cRefs = rtVfsObjRetain(&pThis->Base);
     LogFlow(("RTVfsDirRetain(%p/%p) -> %#x\n", pThis, pThis->Base.pvThis, cRefs));
     return cRefs;
+}
+#ifdef DEBUG
+# define RTVfsDirRetain(hVfsDir)    RTVfsDirRetainDebug(hVfsDir, RT_SRC_POS)
+#endif
+
+
+RTDECL(uint32_t) RTVfsDirRetainDebug(RTVFSDIR hVfsDir, RT_SRC_POS_DECL)
+{
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, UINT32_MAX);
+    return rtVfsObjRetainDebug(&pThis->Base, "RTVfsDirRetain", RT_SRC_POS_ARGS);
 }
 
 
@@ -2148,6 +2241,15 @@ RTDECL(uint32_t)    RTVfsSymlinkRetain(RTVFSSYMLINK hVfsSym)
 }
 
 
+RTDECL(uint32_t)    RTVfsSymlinkRetainDebug(RTVFSSYMLINK hVfsSym, RT_SRC_POS_DECL)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, UINT32_MAX);
+    return rtVfsObjRetainDebug(&pThis->Base, "RTVfsSymlinkRetainDebug", RT_SRC_POS_ARGS);
+}
+
+
 RTDECL(uint32_t)    RTVfsSymlinkRelease(RTVFSSYMLINK hVfsSym)
 {
     RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
@@ -2295,12 +2397,27 @@ RTDECL(void *) RTVfsIoStreamToPrivate(RTVFSIOSTREAM hVfsIos, PCRTVFSIOSTREAMOPS 
 }
 
 
+#ifdef DEBUG
+# undef RTVfsIoStrmRetain
+#endif
 RTDECL(uint32_t)    RTVfsIoStrmRetain(RTVFSIOSTREAM hVfsIos)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, UINT32_MAX);
     return rtVfsObjRetain(&pThis->Base);
+}
+#ifdef DEBUG
+# define RTVfsIoStrmRetain(hVfsIos) RTVfsIoStrmRetainDebug(hVfsIos, RT_SRC_POS)
+#endif
+
+
+RTDECL(uint32_t)    RTVfsIoStrmRetainDebug(RTVFSIOSTREAM hVfsIos, RT_SRC_POS_DECL)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, UINT32_MAX);
+    return rtVfsObjRetainDebug(&pThis->Base, "RTVfsIoStrmRetainDebug", RT_SRC_POS_ARGS);
 }
 
 
@@ -2785,12 +2902,27 @@ RTDECL(int) RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint64_t fOpen, P
 }
 
 
+#ifdef DEBUG
+# undef RTVfsFileRetain
+#endif
 RTDECL(uint32_t)    RTVfsFileRetain(RTVFSFILE hVfsFile)
 {
     RTVFSFILEINTERNAL *pThis = hVfsFile;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, UINT32_MAX);
     return rtVfsObjRetain(&pThis->Stream.Base);
+}
+#ifdef DEBUG
+# define RTVfsFileRetain(hVfsFile)  RTVfsFileRetainDebug(hVfsFile, RT_SRC_POS)
+#endif
+
+
+RTDECL(uint32_t)    RTVfsFileRetainDebug(RTVFSFILE hVfsFile, RT_SRC_POS_DECL)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, UINT32_MAX);
+    return rtVfsObjRetainDebug(&pThis->Stream.Base, "RTVFsFileRetainDebug", RT_SRC_POS_ARGS);
 }
 
 

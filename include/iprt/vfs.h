@@ -109,8 +109,9 @@ typedef RTVFSOBJTYPE *PRTVFSOBJTYPE;
  *                      reference by calling RTVfsRelease.
  */
 RTDECL(int)         RTVfsCreate(const char *pszName, uint32_t fFlags, PRTVFS phVfs);
-RTDECL(uint32_t)    RTVfsRetain(RTVFS phVfs);
-RTDECL(uint32_t)    RTVfsRelease(RTVFS phVfs);
+RTDECL(uint32_t)    RTVfsRetain(RTVFS hVfs);
+RTDECL(uint32_t)    RTVfsRetainDebug(RTVFS hVfs, RT_SRC_POS_DECL);
+RTDECL(uint32_t)    RTVfsRelease(RTVFS hVfs);
 RTDECL(int)         RTVfsAttach(RTVFS hVfs, const char *pszMountPoint, uint32_t fFlags, RTVFS hVfsAttach);
 RTDECL(int)         RTVfsDetach(RTVFS hVfs, const char *pszMountPoint, RTVFS hVfsToDetach, PRTVFS *phVfsDetached);
 RTDECL(uint32_t)    RTVfsGetAttachmentCount(RTVFS hVfs);
@@ -140,6 +141,7 @@ RTDECL(int)         RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb,
  * @param   hVfsObj         The VFS base object handle.
  */
 RTDECL(uint32_t)        RTVfsObjRetain(RTVFSOBJ hVfsObj);
+RTDECL(uint32_t)        RTVfsObjRetainDebug(RTVFSOBJ hVfsObj, RT_SRC_POS_DECL);
 
 /**
  * Releases a reference to the VFS base handle.
@@ -274,6 +276,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym);
  */
 
 RTDECL(uint32_t)    RTVfsFsStrmRetain(RTVFSFSSTREAM hVfsFss);
+RTDECL(uint32_t)    RTVfsFsStrmRetainDebug(RTVFSFSSTREAM hVfsFss, RT_SRC_POS_DECL);
 RTDECL(uint32_t)    RTVfsFsStrmRelease(RTVFSFSSTREAM hVfsFss);
 RTDECL(int)         RTVfsFsStrmQueryInfo(RTVFSFSSTREAM hVfsFss, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
 
@@ -320,6 +323,7 @@ RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVF
  * @param   hVfsDir         The VFS directory handle.
  */
 RTDECL(uint32_t)    RTVfsDirRetain(RTVFSDIR hVfsDir);
+RTDECL(uint32_t)    RTVfsDirRetainDebug(RTVFSDIR hVfsDir, RT_SRC_POS_DECL);
 
 /**
  * Releases a reference to the VFS directory handle.
@@ -389,6 +393,7 @@ RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFla
  * @param   hVfsSym         The VFS symbolic link handle.
  */
 RTDECL(uint32_t)    RTVfsSymlinkRetain(RTVFSSYMLINK hVfsSym);
+RTDECL(uint32_t)    RTVfsSymlinkRetainDebug(RTVFSSYMLINK hVfsSym, RT_SRC_POS_DECL);
 
 /**
  * Releases a reference to the VFS symbolic link handle.
@@ -542,6 +547,7 @@ RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint64_t 
  * @param   hVfsIos         The VFS I/O stream handle.
  */
 RTDECL(uint32_t)    RTVfsIoStrmRetain(RTVFSIOSTREAM hVfsIos);
+RTDECL(uint32_t)    RTVfsIoStrmRetainDebug(RTVFSIOSTREAM hVfsIos, RT_SRC_POS_DECL);
 
 /**
  * Releases a reference to the VFS I/O stream handle.
@@ -856,6 +862,7 @@ RTDECL(RTVFSIOSTREAM) RTVfsFileToIoStream(RTVFSFILE hVfsFile);
  * @param   hVfsFile        The VFS file handle.
  */
 RTDECL(uint32_t)    RTVfsFileRetain(RTVFSFILE hVfsFile);
+RTDECL(uint32_t)    RTVfsFileRetainDebug(RTVFSFILE hVfsFile, RT_SRC_POS_DECL);
 
 /**
  * Releases a reference to the VFS file handle.
@@ -1031,6 +1038,23 @@ RTDECL(RTFOFF)      RTVfsFileGetMaxSize(RTVFSFILE hVfsFile);
 RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
 
 /** @} */
+
+
+#ifdef DEBUG
+# undef RTVfsRetain
+# define RTVfsRetain(hVfs)          RTVfsRetainDebug(hVfs, RT_SRC_POS)
+# undef RTVfsObjRetain
+# define RTVfsObjRetain(hVfsObj)    RTVfsObjRetainDebug(hVfsObj, RT_SRC_POS)
+# undef RTVfsDirRetain
+# define RTVfsDirRetain(hVfsDir)    RTVfsDirRetainDebug(hVfsDir, RT_SRC_POS)
+# undef RTVfsFileRetain
+# define RTVfsFileRetain(hVfsFile)  RTVfsFileRetainDebug(hVfsFile, RT_SRC_POS)
+# undef RTVfsIoStrmRetain
+# define RTVfsIoStrmRetain(hVfsIos) RTVfsIoStrmRetainDebug(hVfsIos, RT_SRC_POS)
+# undef RTVfsFsStrmRetain
+# define RTVfsFsStrmRetain(hVfsFss) RTVfsFsStrmRetainDebug(hVfsFss, RT_SRC_POS)
+#endif
+
 
 
 /** @defgroup grp_vfs_misc          VFS Miscellaneous
