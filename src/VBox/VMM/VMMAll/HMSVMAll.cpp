@@ -764,13 +764,13 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
  * @returns VBox status code.
  * @retval  true if there's a pending interrupt, false otherwise.
  *
- * @param   pCtx            The guest-CPU context.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        The guest-CPU context.
  */
-VMM_INT_DECL(bool) HMSvmNstGstIsInterruptPending(PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) HMSvmNstGstCanTakeInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
-    if (!CPUMIsGuestInNestedHwVirtMode(pCtx))
-        return false;
+    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
 
     X86RFLAGS RFlags;
     if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
@@ -781,36 +781,29 @@ VMM_INT_DECL(bool) HMSvmNstGstIsInterruptPending(PCCPUMCTX pCtx)
     if (!RFlags.Bits.u1IF)
         return false;
 
-    return RT_BOOL(pVmcbCtrl->IntCtrl.n.u1VIrqPending);
+    if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
+        &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
+        return false;
+
+    /* Paranoia. */
+    Assert(RT_BOOL(pCtx->hwvirt.svm.fGif));
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+    Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST));
+    RT_NOREF(pVCpu);
+    return true;
 }
 
 
 /**
  * Gets the pending nested-guest interrupt.
  *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_APIC_INTR_MASKED_BY_TPR when an APIC interrupt is pending but
- *          can't be delivered due to TPR priority.
- * @retval  VERR_NO_DATA if there is no interrupt to be delivered.
- *
+ * @returns The nested-guest interrupt to inject.
  * @param   pCtx            The guest-CPU context.
- * @param   pu8Interrupt    Where to store the interrupt.
  */
-VMM_INT_DECL(int) HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx, uint8_t *pu8Interrupt)
+VMM_INT_DECL(uint8_t) HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx)
 {
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
-    /** @todo remove later, paranoia for now. */
-#ifdef DEBUG_ramshankar
-    Assert(HMSvmNstGstIsInterruptPending(pCtx));
-#endif
-
-    *pu8Interrupt = pVmcbCtrl->IntCtrl.n.u8VIntrVector;
-    if (   pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
-        || pVmcbCtrl->IntCtrl.n.u4VIntrPrio > pVmcbCtrl->IntCtrl.n.u8VTPR)
-        return VINF_SUCCESS;
-
-    return VERR_APIC_INTR_MASKED_BY_TPR;
+    return pVmcbCtrl->IntCtrl.n.u8VIntrVector;
 }
 
 
