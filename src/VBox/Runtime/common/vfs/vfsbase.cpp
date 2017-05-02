@@ -28,12 +28,14 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_FS
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
 
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -1904,7 +1906,9 @@ RTDECL(uint32_t) RTVfsDirRetain(RTVFSDIR hVfsDir)
     RTVFSDIRINTERNAL *pThis = hVfsDir;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, UINT32_MAX);
-    return rtVfsObjRetain(&pThis->Base);
+    uint32_t cRefs = rtVfsObjRetain(&pThis->Base);
+    LogFlow(("RTVfsDirRetain(%p/%p) -> %#x\n", pThis, pThis->Base.pvThis));
+    return cRefs;
 }
 
 
@@ -1915,7 +1919,12 @@ RTDECL(uint32_t) RTVfsDirRelease(RTVFSDIR hVfsDir)
         return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, UINT32_MAX);
-    return rtVfsObjRelease(&pThis->Base);
+#ifdef LOG_ENABLED
+    void *pvThis = pThis->Base.pvThis;
+#endif
+    uint32_t cRefs = rtVfsObjRelease(&pThis->Base);
+    LogFlow(("RTVfsDirRelease(%p/%p) -> %#x\n", pThis, pvThis));
+    return cRefs;
 }
 
 

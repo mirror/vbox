@@ -290,6 +290,7 @@ static int rtFsIso9660Obj_Close(PRTFSISO9660OBJ pObj)
 static DECLCALLBACK(int) rtFsIso9660File_Close(void *pvThis)
 {
     PRTFSISO9660FILE pThis = (PRTFSISO9660FILE)pvThis;
+    LogFlow(("rtFsIso9660File_Close(%p)\n", pThis));
     return rtFsIso9660Obj_Close(&pThis->Core);
 }
 
@@ -776,6 +777,7 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIR pThis, const char *pszEntry,
 static DECLCALLBACK(int) rtFsIso9660Dir_Close(void *pvThis)
 {
     PRTFSISO9660DIR pThis = (PRTFSISO9660DIR)pvThis;
+    LogFlow(("rtFsIso9660Dir_Close(%p)\n", pThis));
     if (pThis->pbDir)
     {
         RTMemFree(pThis->pbDir);
@@ -1034,14 +1036,19 @@ static void rtFsIso9660Dir_AddOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ pC
         Assert(cRefs != UINT32_MAX); NOREF(cRefs);
 
         /* Root also retains the whole file system. */
-        if (!pDir->Core.pParentDir)
+        if (pDir->Core.pVol->pRootDir == pDir)
         {
             Assert(pDir->Core.pVol);
             Assert(pDir->Core.pVol == pChild->pVol);
             cRefs = RTVfsRetain(pDir->Core.pVol->hVfsSelf);
             Assert(cRefs != UINT32_MAX); NOREF(cRefs);
+            LogFlow(("rtFsIso9660Dir_AddOpenChild(%p,%p) retains volume (%d)\n", pDir, pChild, cRefs));
         }
+        else
+            LogFlow(("rtFsIso9660Dir_AddOpenChild(%p,%p) retains parent only (%d)\n", pDir, pChild, cRefs));
     }
+    else
+        LogFlow(("rtFsIso9660Dir_AddOpenChild(%p,%p) retains nothing\n", pDir, pChild));
     RTListAppend(&pDir->OpenChildren, &pChild->Entry);
     pChild->pParentDir = pDir;
 }
@@ -1067,21 +1074,28 @@ static void rtFsIso9660Dir_RemoveOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ
     /* Final child? If so, release directory. */
     if (RTListIsEmpty(&pDir->OpenChildren))
     {
+        bool const fIsRootDir = pDir->Core.pVol->pRootDir == pDir;
+
         uint32_t cRefs = RTVfsDirRelease(pDir->hVfsSelf);
         Assert(cRefs != UINT32_MAX); NOREF(cRefs);
 
         /* Root directory releases the file system as well.  Since the volume
            holds a reference to the root directory, it will remain valid after
            the above release. */
-        if (!pDir->Core.pParentDir)
+        if (fIsRootDir)
         {
             Assert(cRefs > 0);
             Assert(pDir->Core.pVol);
             Assert(pDir->Core.pVol == pChild->pVol);
-            cRefs = RTVfsRetain(pDir->Core.pVol->hVfsSelf);
+            cRefs = RTVfsRelease(pDir->Core.pVol->hVfsSelf);
             Assert(cRefs != UINT32_MAX); NOREF(cRefs);
+            LogFlow(("rtFsIso9660Dir_RemoveOpenChild(%p,%p) releases volume (%d)\n", pDir, pChild, cRefs));
         }
+        else
+            LogFlow(("rtFsIso9660Dir_RemoveOpenChild(%p,%p) releases parent only (%d)\n", pDir, pChild, cRefs));
     }
+    else
+        LogFlow(("rtFsIso9660Dir_RemoveOpenChild(%p,%p) releases nothing\n", pDir, pChild));
 }
 
 
@@ -1226,6 +1240,7 @@ static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIR pParentDir
 static DECLCALLBACK(int) rtFsIso9660Vol_Close(void *pvThis)
 {
     PRTFSISO9660VOL pThis = (PRTFSISO9660VOL)pvThis;
+    LogFlow(("rtFsIso9660Vol_Close(%p)\n", pThis));
 
     if (pThis->hVfsRootDir != NIL_RTVFSDIR)
     {
@@ -1263,6 +1278,7 @@ static DECLCALLBACK(int) rtFsIso9660Vol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDi
     if (cRefs != UINT32_MAX)
     {
         *phVfsDir = pThis->hVfsRootDir;
+        LogFlow(("rtFsIso9660Vol_OpenRoot -> %p\n", *phVfsDir));
         return VINF_SUCCESS;
     }
     return VERR_INTERNAL_ERROR_5;
@@ -1616,7 +1632,7 @@ static int rtFsIso9660VolHandleSupplementaryVolDesc(PRTFSISO9660VOL pThis, PCISO
  * @param   pThis           The FAT VFS instance to initialize.
  * @param   hVfsSelf        The FAT VFS handle (no reference consumed).
  * @param   hVfsBacking     The file backing the alleged FAT file system.
- *                          Reference is consumed (via rtFsIso9660Vol_Destroy).
+ *                          Reference is consumed (via rtFsIso9660Vol_Close).
  * @param   fFlags          Flags, MBZ.
  * @param   pErrInfo        Where to return additional error info.  Can be NULL.
  */

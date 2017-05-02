@@ -3568,7 +3568,7 @@ static void rtFsFatDir_AddOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild)
         Assert(cRefs != UINT32_MAX); NOREF(cRefs);
 
         /* Root also retains the whole file system. */
-        if (!pDir->Core.pParentDir)
+        if (pDir->Core.pVol->pRootDir == pDir)
         {
             Assert(pDir->Core.pVol);
             Assert(pDir->Core.pVol == pChild->pVol);
@@ -3601,18 +3601,20 @@ static void rtFsFatDir_RemoveOpenChild(PRTFSFATDIR pDir, PRTFSFATOBJ pChild)
     /* Final child? If so, release directory. */
     if (RTListIsEmpty(&pDir->OpenChildren))
     {
+        bool const fIsRootDir = pDir->Core.pVol->pRootDir == pDir;
+
         uint32_t cRefs = RTVfsDirRelease(pDir->hVfsSelf);
         Assert(cRefs != UINT32_MAX); NOREF(cRefs);
 
         /* Root directory releases the file system as well.  Since the volume
            holds a reference to the root directory, it will remain valid after
            the above release. */
-        if (!pDir->Core.pParentDir)
+        if (fIsRootDir)
         {
             Assert(cRefs > 0);
             Assert(pDir->Core.pVol);
             Assert(pDir->Core.pVol == pChild->pVol);
-            cRefs = RTVfsRetain(pDir->Core.pVol->hVfsSelf);
+            cRefs = RTVfsRelease(pDir->Core.pVol->hVfsSelf);
             Assert(cRefs != UINT32_MAX); NOREF(cRefs);
         }
     }
