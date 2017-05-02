@@ -208,7 +208,7 @@
 #define RTTRACEBUF_MAGIC_DEAD           UINT32_C(0x19500121)
 /** The value of RTVFSOBJINTERNAL::u32Magic. (Yasunari Kawabata) */
 #define RTVFSOBJ_MAGIC                  UINT32_C(0x18990614)
-/** The value of RTVFSOBJINTERNAL::u32Magic arter close. */
+/** The value of RTVFSOBJINTERNAL::u32Magic after close. */
 #define RTVFSOBJ_MAGIC_DEAD             UINT32_C(0x19720416)
 /** The value of RTVFSINTERNAL::u32Magic. (Sir Kingsley William Amis) */
 #define RTVFS_MAGIC                     UINT32_C(0x19220416)

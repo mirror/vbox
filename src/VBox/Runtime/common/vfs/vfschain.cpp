@@ -217,6 +217,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProv
         {
             RTVFSFILE hVfsFile = NIL_RTVFSFILE;
             int rc = RTVfsFileOpen(hVfsIn, pElement->paArgs[0].psz, pElement->uProvider, &hVfsFile);
+            RTVfsRelease(hVfsIn);
             if (RT_SUCCESS(rc))
             {
                 *phVfsObj = RTVfsObjFromFile(hVfsFile);
@@ -231,6 +232,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProv
         {
             RTVFSDIR hVfsDir = NIL_RTVFSDIR;
             int rc = RTVfsDirOpen(hVfsIn, pElement->paArgs[0].psz, (uint32_t)pElement->uProvider, &hVfsDir);
+            RTVfsRelease(hVfsIn);
             if (RT_SUCCESS(rc))
             {
                 *phVfsObj = RTVfsObjFromDir(hVfsDir);
@@ -241,6 +243,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProv
             }
             return rc;
         }
+        RTVfsRelease(hVfsIn);
         return VERR_VFS_CHAIN_IPE;
     }
 
@@ -255,6 +258,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProv
         {
             RTVFSFILE hVfsFile = NIL_RTVFSFILE;
             int rc = RTVfsDirOpenFile(hVfsDirIn, pElement->paArgs[0].psz, pElement->uProvider, &hVfsFile);
+            RTVfsDirRelease(hVfsDirIn);
             if (RT_SUCCESS(rc))
             {
                 *phVfsObj = RTVfsObjFromFile(hVfsFile);
@@ -269,6 +273,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProv
         {
             RTVFSDIR hVfsDir = NIL_RTVFSDIR;
             int rc = RTVfsDirOpenDir(hVfsDirIn, pElement->paArgs[0].psz, pElement->uProvider, &hVfsDir);
+            RTVfsDirRelease(hVfsDirIn);
             if (RT_SUCCESS(rc))
             {
                 *phVfsObj = RTVfsObjFromDir(hVfsDir);
@@ -279,6 +284,7 @@ static DECLCALLBACK(int) rtVfsChainOpen_Instantiate(PCRTVFSCHAINELEMENTREG pProv
             }
             return rc;
         }
+        RTVfsDirRelease(hVfsDirIn);
         return VERR_VFS_CHAIN_IPE;
     }
 

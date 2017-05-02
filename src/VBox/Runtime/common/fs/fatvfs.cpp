@@ -28,6 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_FS
 #include "internal/iprt.h"
 #include <iprt/fsvfs.h>
 
@@ -36,6 +37,7 @@
 #include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/poll.h>
@@ -3650,8 +3652,8 @@ static int rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIRENT
         *ppDir = NULL;
 
     PRTFSFATDIR pNewDir;
-    int rc = RTVfsNewDir(&g_rtFsFatDirOps, sizeof(*pNewDir), 0 /*fFlags*/, pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/,
-                         phVfsDir, (void **)&pNewDir);
+    int rc = RTVfsNewDir(&g_rtFsFatDirOps, sizeof(*pNewDir), pParentDir ? 0 : RTVFSDIR_F_NO_VFS_REF,
+                         pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/, phVfsDir, (void **)&pNewDir);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -3771,6 +3773,7 @@ static int rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIRENT
 static DECLCALLBACK(int) rtFsFatVol_Close(void *pvThis)
 {
     PRTFSFATVOL pThis = (PRTFSFATVOL)pvThis;
+    LogFlow(("rtFsFatVol_Close(%p)\n", pThis));
     int rc = rtFsFatClusterMap_Destroy(pThis);
 
     if (pThis->hVfsRootDir != NIL_RTVFSDIR)

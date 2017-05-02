@@ -917,8 +917,7 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSubDir);
 static DECLCALLBACK(int) rtFsIso9660Dir_CreateDir(void *pvThis, const char *pszSubDir, RTFMODE fMode, PRTVFSDIR phVfsDir)
 {
     RT_NOREF(pvThis, pszSubDir, fMode, phVfsDir);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSubDir);
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_WRITE_PROTECT;
 }
 
 
@@ -940,8 +939,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_CreateSymlink(void *pvThis, const char *
                                                   RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink)
 {
     RT_NOREF(pvThis, pszSymlink, pszTarget, enmType, phVfsSymlink);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
-    return VERR_NOT_SUPPORTED;
+    return VERR_WRITE_PROTECT;
 }
 
 
@@ -951,8 +949,7 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
 static DECLCALLBACK(int) rtFsIso9660Dir_UnlinkEntry(void *pvThis, const char *pszEntry, RTFMODE fType)
 {
     RT_NOREF(pvThis, pszEntry, fType);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszEntry);
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_WRITE_PROTECT;
 }
 
 
@@ -971,7 +968,7 @@ RTAssertMsg2("%s\n", __FUNCTION__);
  * @interface_method_impl{RTVFSDIROPS,pfnReadDir}
  */
 static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
-                                            RTFSOBJATTRADD enmAddAttr)
+                                                RTFSOBJATTRADD enmAddAttr)
 {
     RT_NOREF(pvThis, pDirEntry, pcbDirEntry, enmAddAttr);
 RTAssertMsg2("%s\n", __FUNCTION__);
@@ -1189,8 +1186,8 @@ static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIR pParentDir
         *ppDir = NULL;
 
     PRTFSISO9660DIR pNewDir;
-    int rc = RTVfsNewDir(&g_rtFsIso9660DirOps, sizeof(*pNewDir), 0 /*fFlags*/, pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/,
-                         phVfsDir, (void **)&pNewDir);
+    int rc = RTVfsNewDir(&g_rtFsIso9660DirOps, sizeof(*pNewDir), pParentDir ? 0 : RTVFSDIR_F_NO_VFS_REF,
+                         pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/, phVfsDir, (void **)&pNewDir);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1240,7 +1237,7 @@ static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIR pParentDir
 static DECLCALLBACK(int) rtFsIso9660Vol_Close(void *pvThis)
 {
     PRTFSISO9660VOL pThis = (PRTFSISO9660VOL)pvThis;
-    LogFlow(("rtFsIso9660Vol_Close(%p)\n", pThis));
+    Log(("rtFsIso9660Vol_Close(%p)\n", pThis));
 
     if (pThis->hVfsRootDir != NIL_RTVFSDIR)
     {

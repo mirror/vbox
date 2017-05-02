@@ -582,7 +582,7 @@ typedef RTVFSDIROPS const *PCRTVFSDIROPS;
  * @returns IPRT status code
  * @param   pDirOps             The directory operations.
  * @param   cbInstance          The size of the instance data.
- * @param   fFlags              Reserved, MBZ.
+ * @param   fFlags              RTVFSDIR_F_XXX
  * @param   hVfs                The VFS handle to associate this directory with.
  *                              NIL_VFS is ok.
  * @param   hLock               Handle to a custom lock to be used with the new
@@ -594,6 +594,13 @@ typedef RTVFSDIROPS const *PCRTVFSDIROPS;
  */
 RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlags, RTVFS hVfs, RTVFSLOCK hLock,
                         PRTVFSDIR phVfsDir, void **ppvInstance);
+
+/** @name RTVFSDIR_F_XXX
+ * @{ */
+/** Don't reference the @a hVfs parameter passed to RTVfsNewDir.
+ * This is a permanent root directory hack. */
+#define RTVFSDIR_F_NO_VFS_REF   RT_BIT_32(0)
+/** @} */
 
 
 /**

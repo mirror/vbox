@@ -179,7 +179,10 @@ typedef struct RTVFSLOCKINTERNAL
 typedef struct RTVFSOBJINTERNAL
 {
     /** The VFS magic (RTVFSOBJ_MAGIC). */
-    uint32_t                uMagic;
+    uint32_t                uMagic : 31;
+    /** Set if we've got no VFS reference but still got a valid hVfs.
+     * This is hack for permanent root directory objects. */
+    uint32_t                fNoVfsRef : 1;
     /** The number of references to this VFS object. */
     uint32_t volatile       cRefs;
     /** Pointer to the instance data. */
@@ -187,7 +190,7 @@ typedef struct RTVFSOBJINTERNAL
     /** The vtable. */
     PCRTVFSOBJOPS           pOps;
     /** The lock protecting all access to the VFS.
-     * Only valid RTVFS_C_THREAD_SAFE is set, otherwise it is NIL_RTVFSLOCK. */
+     * Only valid if RTVFS_C_THREAD_SAFE is set, otherwise it is NIL_RTVFSLOCK. */
     RTVFSLOCK               hLock;
     /** Reference back to the VFS containing this object. */
     RTVFS                   hVfs;
@@ -341,6 +344,12 @@ typedef struct RTVFSSOCKETINTERNAL
 } RTVFSSOCKETINTERNAL;
 
 #endif /* later */
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+DECLINLINE(uint32_t) rtVfsObjRelease(RTVFSOBJINTERNAL *pThis);
 
 
 
@@ -660,12 +669,14 @@ RTDECL(void) RTVfsLockReleaseWriteSlow(RTVFSLOCK hLock)
  * Internal object retainer that asserts sanity in strict builds.
  *
  * @param   pThis               The base object handle data.
+ * @param   pszCaller           Where we're called from.
  */
-DECLINLINE(void) rtVfsObjRetainVoid(RTVFSOBJINTERNAL *pThis)
+DECLINLINE(void) rtVfsObjRetainVoid(RTVFSOBJINTERNAL *pThis, const char *pszCaller)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+LogFlow(("rtVfsObjRetainVoid(%p/%p) -> %d;  caller=%s\n", pThis, pThis->pvThis, cRefs, pszCaller)); RT_NOREF(pszCaller);
     AssertMsg(cRefs > 1 && cRefs < _1M,
-              ("%#x %p ops=%p %s (%d)\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType));
+              ("%#x %p ops=%p %s (%d); caller=%s\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType, pszCaller));
     NOREF(cRefs);
 }
 
@@ -677,10 +688,13 @@ DECLINLINE(void) rtVfsObjRetainVoid(RTVFSOBJINTERNAL *pThis)
  * @param   pThis               Pointer to the base object part.
  * @param   pObjOps             The base object vtable.
  * @param   hVfs                The VFS handle to associate with.
+ * @param   fNoVfsRef           If set, do not retain an additional reference to
+ *                              @a hVfs.  Permanent root dir hack.
  * @param   hLock               The lock handle, pseudo handle or nil.
  * @param   pvThis              Pointer to the private data.
  */
-static int rtVfsObjInitNewObject(RTVFSOBJINTERNAL *pThis, PCRTVFSOBJOPS pObjOps, RTVFS hVfs, RTVFSLOCK hLock, void *pvThis)
+static int rtVfsObjInitNewObject(RTVFSOBJINTERNAL *pThis, PCRTVFSOBJOPS pObjOps, RTVFS hVfs, bool fNoVfsRef,
+                                 RTVFSLOCK hLock, void *pvThis)
 {
     /*
      * Deal with the lock first as that's the most complicated matter.
@@ -731,14 +745,15 @@ static int rtVfsObjInitNewObject(RTVFSOBJINTERNAL *pThis, PCRTVFSOBJOPS pObjOps,
     /*
      * Do the actual initializing.
      */
-    pThis->uMagic  = RTVFSOBJ_MAGIC;
-    pThis->pvThis  = pvThis;
-    pThis->pOps    = pObjOps;
-    pThis->cRefs   = 1;
-    pThis->hVfs    = hVfs;
-    pThis->hLock   = hLock;
-    if (hVfs != NIL_RTVFS)
-        rtVfsObjRetainVoid(&hVfs->Base);
+    pThis->uMagic       = RTVFSOBJ_MAGIC;
+    pThis->fNoVfsRef    = fNoVfsRef;
+    pThis->pvThis       = pvThis;
+    pThis->pOps         = pObjOps;
+    pThis->cRefs        = 1;
+    pThis->hVfs         = hVfs;
+    pThis->hLock        = hLock;
+    if (hVfs != NIL_RTVFS && !fNoVfsRef)
+        rtVfsObjRetainVoid(&hVfs->Base, "rtVfsObjInitNewObject");
 
     return VINF_SUCCESS;
 }
@@ -768,7 +783,7 @@ RTDECL(int) RTVfsNewBaseObj(PCRTVFSOBJOPS pObjOps, size_t cbInstance, RTVFS hVfs
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(pThis, pObjOps, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(pThis, pObjOps, hVfs, false /*fNoVfsRef*/, hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
     if (RT_FAILURE(rc))
     {
@@ -791,6 +806,7 @@ RTDECL(int) RTVfsNewBaseObj(PCRTVFSOBJOPS pObjOps, size_t cbInstance, RTVFS hVfs
 DECLINLINE(uint32_t) rtVfsObjRetain(RTVFSOBJINTERNAL *pThis)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+LogFlow(("rtVfsObjRetain(%p/%p) -> %d\n", pThis, pThis->pvThis, cRefs));
     AssertMsg(cRefs > 1 && cRefs < _1M,
               ("%#x %p ops=%p %s (%d)\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType));
     return cRefs;
@@ -897,7 +913,7 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
             break;
         /* no default as we want gcc warnings. */
     }
-    ASMAtomicWriteU32(&pThis->uMagic, RTVFSOBJ_MAGIC_DEAD);
+    pThis->uMagic = RTVFSOBJ_MAGIC_DEAD;
     RTVfsLockReleaseWrite(pThis->hLock);
 
     /*
@@ -905,6 +921,12 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
      */
     int rc = pThis->pOps->pfnClose(pThis->pvThis);
     AssertRC(rc);
+    if (pThis->hVfs != NIL_RTVFS)
+    {
+        if (!pThis->fNoVfsRef)
+            rtVfsObjRelease(&pThis->hVfs->Base);
+        pThis->hVfs = NIL_RTVFS;
+    }
     RTMemFree(pvToFree);
 }
 
@@ -919,6 +941,7 @@ DECLINLINE(uint32_t) rtVfsObjRelease(RTVFSOBJINTERNAL *pThis)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     AssertMsg(cRefs < _1M, ("%#x %p ops=%p %s (%d)\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType));
+    LogFlow(("rtVfsObjRelease(%p/%p) -> %d\n", pThis, pThis->pvThis, cRefs));
     if (cRefs == 0)
         rtVfsObjDestroy(pThis);
     return cRefs;
@@ -946,7 +969,7 @@ RTDECL(RTVFS)           RTVfsObjToVfs(RTVFSOBJ hVfsObj)
 
         if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
         {
-            rtVfsObjRetainVoid(pThis);
+            rtVfsObjRetainVoid(pThis, "RTVfsObjToVfs");
             LogFlow(("RTVfsObjToVfs(%p) -> %p\n", pThis, RT_FROM_MEMBER(pThis, RTVFSINTERNAL, Base)));
             return RT_FROM_MEMBER(pThis, RTVFSINTERNAL, Base);
         }
@@ -965,7 +988,7 @@ RTDECL(RTVFSFSSTREAM)   RTVfsObjToFsStream(RTVFSOBJ hVfsObj)
 
         if (pThis->pOps->enmType == RTVFSOBJTYPE_FS_STREAM)
         {
-            rtVfsObjRetainVoid(pThis);
+            rtVfsObjRetainVoid(pThis, "RTVfsObjToFsStream");
             return RT_FROM_MEMBER(pThis, RTVFSFSSTREAMINTERNAL, Base);
         }
     }
@@ -983,7 +1006,7 @@ RTDECL(RTVFSDIR)        RTVfsObjToDir(RTVFSOBJ hVfsObj)
 
         if (pThis->pOps->enmType == RTVFSOBJTYPE_DIR)
         {
-            rtVfsObjRetainVoid(pThis);
+            rtVfsObjRetainVoid(pThis, "RTVfsObjToDir");
             return RT_FROM_MEMBER(pThis, RTVFSDIRINTERNAL, Base);
         }
     }
@@ -1002,7 +1025,7 @@ RTDECL(RTVFSIOSTREAM)   RTVfsObjToIoStream(RTVFSOBJ hVfsObj)
         if (   pThis->pOps->enmType == RTVFSOBJTYPE_IO_STREAM
             || pThis->pOps->enmType == RTVFSOBJTYPE_FILE)
         {
-            rtVfsObjRetainVoid(pThis);
+            rtVfsObjRetainVoid(pThis, "RTVfsObjToIoStream");
             return RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base);
         }
     }
@@ -1020,7 +1043,7 @@ RTDECL(RTVFSFILE)       RTVfsObjToFile(RTVFSOBJ hVfsObj)
 
         if (pThis->pOps->enmType == RTVFSOBJTYPE_FILE)
         {
-            rtVfsObjRetainVoid(pThis);
+            rtVfsObjRetainVoid(pThis, "RTVfsObjToFile");
             return RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream.Base);
         }
     }
@@ -1038,7 +1061,7 @@ RTDECL(RTVFSSYMLINK)    RTVfsObjToSymlink(RTVFSOBJ hVfsObj)
 
         if (pThis->pOps->enmType == RTVFSOBJTYPE_SYMLINK)
         {
-            rtVfsObjRetainVoid(pThis);
+            rtVfsObjRetainVoid(pThis, "RTVfsObjToSymlink");
             return RT_FROM_MEMBER(pThis, RTVFSSYMLINKINTERNAL, Base);
         }
     }
@@ -1054,7 +1077,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromVfs(RTVFS hVfs)
         AssertPtrReturn(pThis, NIL_RTVFSOBJ);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
 
-        rtVfsObjRetainVoid(pThis);
+        rtVfsObjRetainVoid(pThis, "RTVfsObjFromVfs");
         LogFlow(("RTVfsObjFromVfs(%p) -> %p\n", hVfs, pThis));
         return pThis;
     }
@@ -1070,7 +1093,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromFsStream(RTVFSFSSTREAM hVfsFss)
         AssertPtrReturn(pThis, NIL_RTVFSOBJ);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
 
-        rtVfsObjRetainVoid(pThis);
+        rtVfsObjRetainVoid(pThis, "RTVfsObjFromFsStream");
         return pThis;
     }
     return NIL_RTVFSOBJ;
@@ -1085,7 +1108,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromDir(RTVFSDIR hVfsDir)
         AssertPtrReturn(pThis, NIL_RTVFSOBJ);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
 
-        rtVfsObjRetainVoid(pThis);
+        rtVfsObjRetainVoid(pThis, "RTVfsObjFromDir");
         return pThis;
     }
     return NIL_RTVFSOBJ;
@@ -1100,7 +1123,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromIoStream(RTVFSIOSTREAM hVfsIos)
         AssertPtrReturn(pThis, NIL_RTVFSOBJ);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
 
-        rtVfsObjRetainVoid(pThis);
+        rtVfsObjRetainVoid(pThis, "RTVfsObjFromIoStream");
         return pThis;
     }
     return NIL_RTVFSOBJ;
@@ -1115,7 +1138,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromFile(RTVFSFILE hVfsFile)
         AssertPtrReturn(pThis, NIL_RTVFSOBJ);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
 
-        rtVfsObjRetainVoid(pThis);
+        rtVfsObjRetainVoid(pThis, "RTVfsObjFromFile");
         return pThis;
     }
     return NIL_RTVFSOBJ;
@@ -1130,7 +1153,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym)
         AssertPtrReturn(pThis, NIL_RTVFSOBJ);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
 
-        rtVfsObjRetainVoid(pThis);
+        rtVfsObjRetainVoid(pThis, "RTVfsObjFromSymlink");
         return pThis;
     }
     return NIL_RTVFSOBJ;
@@ -1717,7 +1740,7 @@ RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOC
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(&pThis->Base, &pVfsOps->Obj, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pVfsOps->Obj, hVfs, false /*fNoVfsRef*/, hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
     if (RT_FAILURE(rc))
     {
@@ -1731,6 +1754,7 @@ RTDECL(int) RTVfsNew(PCRTVFSOPS pVfsOps, size_t cbInstance, RTVFS hVfs, RTVFSLOC
     *phVfs       = pThis;
     *ppvInstance = pThis->Base.pvThis;
 
+    LogFlow(("RTVfsNew -> VINF_SUCCESS; hVfs=%p pvThis=%p\n", pThis, pThis->Base.pvThis));
     return VINF_SUCCESS;
 }
 
@@ -1849,7 +1873,7 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(&pThis->Base, &pFsStreamOps->Obj, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pFsStreamOps->Obj, hVfs, false /*fNoVfsRef*/, hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
 
     if (RT_FAILURE(rc))
@@ -1954,7 +1978,7 @@ RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlag
     Assert(!pDirOps->fReserved);
     RTVFSDIR_ASSERT_OPS(pDirOps, RTVFSOBJTYPE_DIR);
     Assert(cbInstance > 0);
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTVFSDIR_F_NO_VFS_REF), VERR_INVALID_FLAGS);
     AssertPtr(ppvInstance);
     AssertPtr(phVfsDir);
     RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);
@@ -1968,7 +1992,7 @@ RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlag
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(&pThis->Base, &pDirOps->Obj, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pDirOps->Obj, hVfs, RT_BOOL(fFlags & RTVFSDIR_F_NO_VFS_REF), hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
     if (RT_FAILURE(rc))
     {
@@ -2215,7 +2239,7 @@ RTDECL(int) RTVfsNewSymlink(PCRTVFSSYMLINKOPS pSymlinkOps, size_t cbInstance, RT
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(&pThis->Base, &pSymlinkOps->Obj, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pSymlinkOps->Obj, hVfs, false /*fNoVfsRef*/, hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
     if (RT_FAILURE(rc))
     {
@@ -2368,7 +2392,7 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(&pThis->Base, &pIoStreamOps->Obj, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pIoStreamOps->Obj, hVfs, false /*fNoVfsRef*/, hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
     if (RT_FAILURE(rc))
     {
@@ -2440,7 +2464,7 @@ RTDECL(RTVFSFILE)   RTVfsIoStrmToFile(RTVFSIOSTREAM hVfsIos)
 
     if (pThis->pOps->Obj.enmType == RTVFSOBJTYPE_FILE)
     {
-        rtVfsObjRetainVoid(&pThis->Base);
+        rtVfsObjRetainVoid(&pThis->Base, "RTVfsIoStrmToFile");
         return RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream);
     }
 
@@ -2824,7 +2848,7 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = rtVfsObjInitNewObject(&pThis->Stream.Base, &pFileOps->Stream.Obj, hVfs, hLock,
+    int rc = rtVfsObjInitNewObject(&pThis->Stream.Base, &pFileOps->Stream.Obj, hVfs, false /*fNoVfsRef*/, hLock,
                                    (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
     if (RT_FAILURE(rc))
     {
@@ -2943,7 +2967,7 @@ RTDECL(RTVFSIOSTREAM) RTVfsFileToIoStream(RTVFSFILE hVfsFile)
     AssertPtrReturn(pThis, NIL_RTVFSIOSTREAM);
     AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, NIL_RTVFSIOSTREAM);
 
-    rtVfsObjRetainVoid(&pThis->Stream.Base);
+    rtVfsObjRetainVoid(&pThis->Stream.Base, "RTVfsFileToIoStream");
     return &pThis->Stream;
 }
 
