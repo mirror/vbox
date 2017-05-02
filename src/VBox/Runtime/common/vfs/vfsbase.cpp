@@ -1907,7 +1907,7 @@ RTDECL(uint32_t) RTVfsDirRetain(RTVFSDIR hVfsDir)
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, UINT32_MAX);
     uint32_t cRefs = rtVfsObjRetain(&pThis->Base);
-    LogFlow(("RTVfsDirRetain(%p/%p) -> %#x\n", pThis, pThis->Base.pvThis));
+    LogFlow(("RTVfsDirRetain(%p/%p) -> %#x\n", pThis, pThis->Base.pvThis, cRefs));
     return cRefs;
 }
 
@@ -1923,7 +1923,7 @@ RTDECL(uint32_t) RTVfsDirRelease(RTVFSDIR hVfsDir)
     void *pvThis = pThis->Base.pvThis;
 #endif
     uint32_t cRefs = rtVfsObjRelease(&pThis->Base);
-    LogFlow(("RTVfsDirRelease(%p/%p) -> %#x\n", pThis, pvThis));
+    LogFlow(("RTVfsDirRelease(%p/%p) -> %#x\n", pThis, pvThis, cRefs));
     return cRefs;
 }
 
