@@ -1049,7 +1049,6 @@ FNIEMOP_DEF(iemOp_movups_Vps_Wps)
  * @opxcpttype  4UA
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
- * @oponlytest
  */
 FNIEMOP_DEF(iemOp_movupd_Vpd_Wpd)
 {

@@ -242,6 +242,7 @@ g_kdOpTypes = {
     'Vss':  ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
     'VssZxReg': ( 'IDX_UseModRM',   'reg',    '%Vss', 'Vss',     ),
     'Vsd':  ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
+    'VsdZxReg': ( 'IDX_UseModRM',   'reg',    '%Vsd', 'Vsd',     ),
     'Vps':  ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
     'Vpd':  ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     ),
     'Vq':   ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      ),
