@@ -306,6 +306,8 @@ class Bs3Cg1Instruction(object):
         if oInstr.fUnused:
             if oInstr.sInvalidStyle == 'immediate' and oInstr.sSubOpcode:
                 self.sEncoding += '_MOD_EQ_3' if oInstr.sSubOpcode == '11 mr/reg' else '_MOD_NE_3';
+            elif oInstr.sInvalidStyle == 'intel-modrm':
+                self.sEncoding = 'BS3CG1ENC_MODRM_Gv_Ev';
 
         self.asFlags            = [];
         if 'invalid_64' in oInstr.dHints:

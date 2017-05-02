@@ -1642,7 +1642,6 @@ FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
 
 
 /**
- * @opdone
  * @opcode      0x13
  * @opcodesub   !11 mr/reg
  * @oppfx       none
@@ -1689,35 +1688,23 @@ FNIEMOP_DEF(iemOp_movlps_Mq_Vq)
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
-/** Opcode 0x66 0x0f 0x13 - vmovlpd Mq, Vq */
+
+/**
+ * @opcode      0x13
+ * @opcodesub   !11 mr/reg
+ * @oppfx       0x66
+ * @opcpuid     sse
+ * @opgroup     og_sse_simdfp_datamove
+ * @opxcpttype  5
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
 FNIEMOP_DEF(iemOp_movlpd_Mq_Vq)
 {
-    IEMOP_MNEMONIC(movlpd_Mq_Vq, "movlpd Mq,Vq");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-#if 0
-        /*
-         * Register, register.
-         */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(0, 1);
-        IEM_MC_LOCAL(uint64_t,                  uSrc);
-        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-        IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-        IEM_MC_STORE_XREG_U64((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, uSrc);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-#else
-        return IEMOP_RAISE_INVALID_OPCODE();
-#endif
-    }
-    else
-    {
-        /*
-         * Memory, register.
-         */
+        IEMOP_MNEMONIC2(MR_MEM, MOVLPD, movlpd, MqWO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -1732,38 +1719,140 @@ FNIEMOP_DEF(iemOp_movlpd_Mq_Vq)
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
+        return VINF_SUCCESS;
     }
-    return VINF_SUCCESS;
+
+    /**
+     * @opdone
+     * @opmnemonic  ud660f13m3
+     * @opcode      0x13
+     * @opcodesub   11 mr/reg
+     * @oppfx       0x66
+     * @opunused    immediate
+     * @opcpuid     sse
+     * @optest      ->
+     */
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
 
-/*  Opcode 0xf3 0x0f 0x13 - invalid */
-/*  Opcode 0xf2 0x0f 0x13 - invalid */
+
+/**
+ * @opmnemonic  udf30f13
+ * @opcode      0x13
+ * @oppfx       0xf3
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
+
+/**
+ * @opmnemonic  udf20f13
+ * @opcode      0x13
+ * @oppfx       0xf2
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
 
 /** Opcode      0x0f 0x14 - unpcklps Vx, Wx*/
 FNIEMOP_STUB(iemOp_unpcklps_Vx_Wx);
 /** Opcode 0x66 0x0f 0x14 - unpcklpd Vx, Wx   */
 FNIEMOP_STUB(iemOp_unpcklpd_Vx_Wx);
-/*  Opcode 0xf3 0x0f 0x14 - invalid */
-/*  Opcode 0xf2 0x0f 0x14 - invalid */
+
+/**
+ * @opdone
+ * @opmnemonic  udf30f14
+ * @opcode      0x14
+ * @oppfx       0xf3
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
+
+/**
+ * @opmnemonic  udf20f14
+ * @opcode      0x14
+ * @oppfx       0xf2
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
+
 /** Opcode      0x0f 0x15 - unpckhps Vx, Wx   */
 FNIEMOP_STUB(iemOp_unpckhps_Vx_Wx);
 /** Opcode 0x66 0x0f 0x15 - unpckhpd Vx, Wx   */
 FNIEMOP_STUB(iemOp_unpckhpd_Vx_Wx);
 /*  Opcode 0xf3 0x0f 0x15 - invalid */
 /*  Opcode 0xf2 0x0f 0x15 - invalid */
+
+/**
+ * @opdone
+ * @opmnemonic  udf30f15
+ * @opcode      0x15
+ * @oppfx       0xf3
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
+
+/**
+ * @opmnemonic  udf20f15
+ * @opcode      0x15
+ * @oppfx       0xf2
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
+
 /** Opcode      0x0f 0x16 - movhpsv1 Vdq, Mq movlhps Vdq, Uq   */
 FNIEMOP_STUB(iemOp_movhpsv1_Vdq_Mq__movlhps_Vdq_Uq);  //NEXT
 /** Opcode 0x66 0x0f 0x16 - movhpdv1 Vdq, Mq   */
 FNIEMOP_STUB(iemOp_movhpdv1_Vdq_Mq);  //NEXT
 /** Opcode 0xf3 0x0f 0x16 - movshdup Vx, Wx   */
 FNIEMOP_STUB(iemOp_movshdup_Vx_Wx); //NEXT
-/*  Opcode 0xf2 0x0f 0x16 - invalid */
+
+/**
+ * @opdone
+ * @opmnemonic  udf30f16
+ * @opcode      0x16
+ * @oppfx       0xf2
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
+
 /** Opcode      0x0f 0x17 - movhpsv1 Mq, Vq   */
 FNIEMOP_STUB(iemOp_movhpsv1_Mq_Vq);  //NEXT
 /** Opcode 0x66 0x0f 0x17 - movhpdv1 Mq, Vq   */
 FNIEMOP_STUB(iemOp_movhpdv1_Mq_Vq);  //NEXT
-/*  Opcode 0xf3 0x0f 0x17 - invalid */
-/*  Opcode 0xf2 0x0f 0x17 - invalid */
+
+/**
+ * @opdone
+ * @opmnemonic  udf30f17
+ * @opcode      0x17
+ * @oppfx       0xf3
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
+
+/**
+ * @opmnemonic  udf20f17
+ * @opcode      0x17
+ * @oppfx       0xf2
+ * @opunused    intel-modrm
+ * @opcpuid     sse
+ * @optest      ->
+ * @opdone
+ */
 
 
 /** Opcode 0x0f 0x18. */
