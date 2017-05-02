@@ -40,6 +40,7 @@
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
 # define HMSVM_ALWAYS_TRAP_TASK_SWITCH
+# define HMSVM_USE_IEM_EVENT_REFLECTION
 #endif
 
 
@@ -3924,7 +3925,57 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
 }
 
+#ifdef HMSVM_USE_IEM_EVENT_REFLECTION
+/**
+ * Gets the IEM exception flags for the specified SVM event.
+ *
+ * @returns The IEM exception flags.
+ * @param   pEvent      Pointer to the SVM event.
+ *
+ * @remarks This function currently only constructs flags required for
+ *          IEMEvaluateRecursiveXcpt and not the complete flags (e.g. error-code
+ *          and CR2 aspects of an exception are not included).
+ */
+static uint32_t hmR0SvmGetIemXcptFlags(PCSVMEVENT pEvent)
+{
+    uint8_t const uEventType = pEvent->n.u3Type;
+    uint32_t      fIemXcptFlags;
+    switch (uEventType)
+    {
+        case SVM_EVENT_EXCEPTION:
+            if (pEvent->n.u8Vector == X86_XCPT_BP)
+            {
+                fIemXcptFlags = IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR;
+                break;
+            }
+            if (pEvent->n.u8Vector == X86_XCPT_OF)
+            {
+                fIemXcptFlags = IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_OF_INSTR;
+                break;
+            }
+            /** @todo How do we distinguish ICEBP \#DB from the regular one? */
+            /* fall thru */
+        case SVM_EVENT_NMI:
+            fIemXcptFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
+            break;
 
+        case SVM_EVENT_EXTERNAL_IRQ:
+            fIemXcptFlags = IEM_XCPT_FLAGS_T_EXT_INT;
+            break;
+
+        case SVM_EVENT_SOFTWARE_INT:
+            fIemXcptFlags = IEM_XCPT_FLAGS_T_SOFT_INT;
+            break;
+
+        default:
+            fIemXcptFlags = 0;
+            AssertMsgFailed(("Unexpected event type! uEventType=%#x uVector=%#x", uEventType, pEvent->n.u8Vector));
+            break;
+    }
+    return fIemXcptFlags;
+}
+
+#else
 /**
  * Determines if an exception is a contributory exception.
  *
@@ -3950,6 +4001,7 @@ DECLINLINE(bool) hmR0SvmIsContributoryXcpt(const uint32_t uVector)
     }
     return false;
 }
+#endif /* HMSVM_USE_IEM_EVENT_REFLECTION */
 
 
 /**
@@ -3982,6 +4034,89 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
      * that was trying to be delivered to the guest which caused a #VMEXIT which was intercepted (Exit vector). */
     if (pVmcb->ctrl.ExitIntInfo.n.u1Valid)
     {
+#ifdef HMSVM_USE_IEM_EVENT_REFLECTION
+        IEMXCPTRAISE     enmRaise;
+        IEMXCPTRAISEINFO fRaiseInfo;
+        bool             fReflectingNmi = false;
+        bool const       fExitIsHwXcpt  = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31;
+        if (fExitIsHwXcpt)
+        {
+            uint8_t  const uIdtVector       = pVmcb->ctrl.ExitIntInfo.n.u8Vector;
+            uint8_t  const uExitVector      = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
+            uint32_t const fIdtVectorFlags  = hmR0SvmGetIemXcptFlags(&pVmcb->ctrl.ExitIntInfo);
+            uint32_t const fExitVectorFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
+            enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fIdtVectorFlags, uIdtVector, fExitVectorFlags, uExitVector, &fRaiseInfo);
+
+            if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
+            {
+                if (fRaiseInfo & IEMXCPTRAISEINFO_NMI_XCPT)
+                    fReflectingNmi = true;
+                pSvmTransient->fVectoringPF = true;
+            }
+            else if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
+                pSvmTransient->fVectoringDoublePF = true;
+        }
+        else
+        {
+            /*
+             * If event delivery caused an #VMEXIT that is not an exception (e.g. #NPF) then reflect the original
+             * exception to the guest after handling the #VMEXIT.
+             */
+            enmRaise   = IEMXCPTRAISE_PREV_EVENT;
+            fRaiseInfo = IEMXCPTRAISEINFO_NONE;
+        }
+
+        switch (enmRaise)
+        {
+            case IEMXCPTRAISE_CURRENT_XCPT:
+            case IEMXCPTRAISE_PREV_EVENT:
+            {
+                /* For software interrupts, we shall re-execute the instruction. */
+                if (!(fRaiseInfo & IEMXCPTRAISEINFO_SOFT_INT_XCPT))
+                {
+                    /* If we are re-injecting the NMI, clear NMI blocking. */
+                    if (fReflectingNmi)
+                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
+                    Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                    hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, 0 /* GCPtrFaultAddress */);
+
+                    /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF. See hmR0SvmExitXcptPF(). */
+                    Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32\n", pVmcb->ctrl.ExitIntInfo.u,
+                          !!pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid, pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
+                }
+                break;
+            }
+
+            case IEMXCPTRAISE_DOUBLE_FAULT:
+            {
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                hmR0SvmSetPendingXcptDF(pVCpu);
+                rc = VINF_HM_DOUBLE_FAULT;
+                break;
+            }
+
+            case IEMXCPTRAISE_TRIPLE_FAULT:
+            {
+                rc = VINF_EM_RESET;
+                break;
+            }
+
+            case IEMXCPTRAISE_CPU_HANG:
+            {
+                rc = VERR_EM_GUEST_CPU_HANG;
+                break;
+            }
+
+            default:
+            {
+                AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", rc));
+                rc = VERR_SVM_IPE_2;
+                break;
+            }
+        }
+#else
         uint8_t uIdtVector  = pVmcb->ctrl.ExitIntInfo.n.u8Vector;
 
         typedef enum
@@ -4113,6 +4248,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 Assert(rc == VINF_SUCCESS);
                 break;
         }
+#endif  /* HMSVM_USE_IEM_EVENT_REFLECTION */
     }
     Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET || rc == VERR_EM_GUEST_CPU_HANG);
     NOREF(pCtx);
