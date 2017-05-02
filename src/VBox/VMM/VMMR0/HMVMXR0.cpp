@@ -5742,6 +5742,10 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu)
  * @returns The IEM exception flags.
  * @param   uVector         The event vector.
  * @param   uVmxVectorType  The VMX event type.
+ *
+ * @remarks This function currently only constructs flags required for
+ *          IEMEvaluateRecursiveXcpt and not the complete flags (e.g, error-code
+ *          and CR2 aspects of an exception are not included).
  */
 static uint32_t hmR0VmxGetIemXcptFlags(uint8_t uVector, uint32_t uVmxVectorType)
 {
