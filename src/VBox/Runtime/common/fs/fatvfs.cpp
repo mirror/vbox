@@ -51,6 +51,8 @@
 #include <iprt/zero.h>
 #include <iprt/formats/fat.h>
 
+#include "internal/fs.h"
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -1457,6 +1459,7 @@ static void rtFsFatObj_InitFromDirEntry(PRTFSFATOBJ pObj, PCFATDIRENTRY pDirEntr
     pObj->pVol              = pVol;
     pObj->offEntryInDir     = offEntryInDir;
     pObj->fAttrib           = ((RTFMODE)pDirEntry->fAttrib << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_OS2;
+    pObj->fAttrib           = rtFsModeFromDos(pObj->fAttrib, (char *)&pDirEntry->achName[0], sizeof(pDirEntry->achName), 0);
     pObj->cbObject          = pDirEntry->cbFile;
     pObj->fMaybeDirtyFat    = false;
     pObj->fMaybeDirtyDirEnt = false;
@@ -3480,11 +3483,52 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
 
 
 /**
+ * @interface_method_impl{RTVFSDIROPS,pfnQueryEntryInfo}
+ */
+static DECLCALLBACK(int) rtFsFatDir_QueryEntryInfo(void *pvThis, const char *pszEntry,
+                                                   PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    /*
+     * Try locate the entry.
+     */
+    PRTFSFATDIR pThis = (PRTFSFATDIR)pvThis;
+    uint32_t    offEntryInDir;
+    bool        fLong;
+    FATDIRENTRY DirEntry;
+    int rc = rtFsFatDir_FindEntry(pThis, pszEntry, &offEntryInDir, &fLong, &DirEntry);
+    Log2(("rtFsFatDir_QueryEntryInfo: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * To avoid duplicating code in rtFsFatObj_InitFromDirRec and
+         * rtFsFatObj_QueryInfo, we create a dummy RTFSFATOBJ on the stack.
+         */
+        RTFSFATOBJ TmpObj;
+        RT_ZERO(TmpObj);
+        rtFsFatObj_InitFromDirEntry(&TmpObj, &DirEntry, offEntryInDir, pThis->Core.pVol);
+        rc = rtFsFatObj_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
+    }
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{RTVFSDIROPS,pfnUnlinkEntry}
  */
 static DECLCALLBACK(int) rtFsFatDir_UnlinkEntry(void *pvThis, const char *pszEntry, RTFMODE fType)
 {
     RT_NOREF(pvThis, pszEntry, fType);
+RTAssertMsg2("%s: %s\n", __FUNCTION__, pszEntry);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSDIROPS,pfnRenameEntry}
+ */
+static DECLCALLBACK(int) rtFsFatDir_RenameEntry(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName)
+{
+    RT_NOREF(pvThis, pszEntry, fType, pszNewName);
 RTAssertMsg2("%s: %s\n", __FUNCTION__, pszEntry);
     return VERR_NOT_IMPLEMENTED;
 }
@@ -3542,7 +3586,9 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
     rtFsFatDir_CreateDir,
     rtFsFatDir_OpenSymlink,
     rtFsFatDir_CreateSymlink,
+    rtFsFatDir_QueryEntryInfo,
     rtFsFatDir_UnlinkEntry,
+    rtFsFatDir_RenameEntry,
     rtFsFatDir_RewindDir,
     rtFsFatDir_ReadDir,
     RTVFSDIROPS_VERSION,
@@ -3663,7 +3709,7 @@ static int rtFsFatDir_New(PRTFSFATVOL pThis, PRTFSFATDIR pParentDir, PCFATDIRENT
         if (pDirEntry)
             rtFsFatObj_InitFromDirEntry(&pNewDir->Core, pDirEntry, offEntryInDir, pThis);
         else
-            rtFsFatObj_InitDummy(&pNewDir->Core, cbDir, RTFS_DOS_DIRECTORY, pThis);
+            rtFsFatObj_InitDummy(&pNewDir->Core, cbDir, RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | RTFS_UNIX_ALL_PERMS, pThis);
 
         pNewDir->hVfsSelf           = *phVfsDir;
         pNewDir->cEntries           = cbDir / sizeof(FATDIRENTRY);

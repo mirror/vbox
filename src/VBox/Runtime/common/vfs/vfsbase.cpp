@@ -1428,12 +1428,11 @@ static int rtVfsTraverseHandleSymlink(PRTVFSPARSEDPATH pPath, uint16_t *piCompon
  * @param   pThis           The VFS.
  * @param   pPath           The parsed path.  This may be changed as symbolic
  *                          links are processed during the path traversal.
- * @param   fFollowSymlink  Whether to follow the final component if it is a
- *                          symbolic link.
+ * @param   fFlags          RTPATH_F_XXX.
  * @param   ppVfsParentDir  Where to return the parent directory handle
  *                          (referenced).
  */
-static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pPath, bool fFollowSymlink,
+static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pPath, uint32_t fFlags,
                                     RTVFSDIRINTERNAL **ppVfsParentDir)
 {
     /*
@@ -1446,6 +1445,7 @@ static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pP
     AssertPtr(ppVfsParentDir);
     *ppVfsParentDir = NULL;
     AssertReturn(pPath->cComponents > 0, VERR_INTERNAL_ERROR_3);
+    Assert(RTPATH_F_IS_VALID(fFlags, 0));
 
     /*
      * Start with the pThis directory.
@@ -1466,7 +1466,7 @@ static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pP
          * Are we done yet?
          */
         bool fFinal = iComponent + 1 >= pPath->cComponents;
-        if (fFinal && !fFollowSymlink)
+        if (fFinal && (fFlags & RTPATH_F_ON_LINK))
         {
             *ppVfsParentDir = pCurDir;
             return VINF_SUCCESS;
@@ -1538,6 +1538,11 @@ static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pP
              */
             AssertPtr(hSymlink);
             Assert(hSymlink->uMagic == RTVFSSYMLINK_MAGIC);
+            if (fFlags & RTPATH_F_NO_SYMLINKS)
+            {
+                rc = VERR_SYMLINK_NOT_ALLOWED;
+                break;
+            }
             cLinks++;
             if (cLinks >= RTVFS_MAX_LINKS)
             {
@@ -1595,13 +1600,11 @@ static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pP
  * @param   pThis           The VFS.
  * @param   pPath           The parsed path.  This may be changed as symbolic
  *                          links are processed during the path traversal.
- * @param   fFollowSymlink  Whether to follow the final component if it is a
- *                          symbolic link.
+ * @param   fFlags          RTPATH_F_XXX.
  * @param   ppVfsParentDir  Where to return the parent directory handle
  *                          (referenced).
  */
-static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, bool fFollowSymlink,
-                                 RTVFSDIRINTERNAL **ppVfsParentDir)
+static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, uint32_t fFlags, RTVFSDIRINTERNAL **ppVfsParentDir)
 {
     /*
      * Assert sanity.
@@ -1613,6 +1616,7 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
     AssertPtr(ppVfsParentDir);
     *ppVfsParentDir = NULL;
     AssertReturn(pPath->cComponents > 0, VERR_INTERNAL_ERROR_3);
+    Assert(RTPATH_F_IS_VALID(fFlags, 0));
 
     /*
      * Open the root directory and join paths with the directory traversal.
@@ -1624,7 +1628,7 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
     RTVfsLockReleaseRead(pThis->Base.hLock);
     if (RT_SUCCESS(rc))
     {
-        rc = rtVfsDirTraverseToParent(pRootDir, pPath, fFollowSymlink, ppVfsParentDir);
+        rc = rtVfsDirTraverseToParent(pRootDir, pPath, fFlags, ppVfsParentDir);
         RTVfsDirRelease(pRootDir);
     }
     return rc;
@@ -1815,6 +1819,67 @@ RTDECL(int) RTVfsOpenRoot(RTVFS hVfs, PRTVFSDIR phDir)
     int rc = pThis->pOps->pfnOpenRoot(pThis->Base.pvThis, phDir);
     RTVfsLockReleaseRead(pThis->Base.hLock);
 
+    return rc;
+}
+
+
+RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr, uint32_t fFlags)
+{
+    RTVFSINTERNAL *pThis = hVfs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
+    AssertReturn(enmAddAttr >= RTFSOBJATTRADD_NOTHING &&  enmAddAttr <= RTFSOBJATTRADD_LAST, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
+
+    /*
+     * Parse the path, assume current directory is root since we've got no
+     * caller context here.  Then traverse to the parent directory.
+     */
+    PRTVFSPARSEDPATH pPath;
+    int rc = RTVfsParsePathA(pszPath, "/", &pPath);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFSDIRINTERNAL *pVfsParentDir;
+        if (pPath->cComponents > 0)
+        {
+            rc = rtVfsTraverseToParent(pThis, pPath, fFlags, &pVfsParentDir);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Call the query method on the parent directory.
+                 */
+                /** @todo race condition here :/ */
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+                RTVfsLockAcquireRead(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnQueryEntryInfo(pVfsParentDir->Base.pvThis, pszEntryName, pObjInfo, enmAddAttr);
+                RTVfsLockReleaseRead(pVfsParentDir->Base.hLock);
+
+                RTVfsDirRelease(pVfsParentDir);
+            }
+        }
+        /*
+         * The path boils down to '.', open the root dir and query its info.
+         */
+        else
+        {
+            RTVfsLockAcquireRead(pThis->Base.hLock);
+            RTVFSDIR hRootDir = NIL_RTVFSDIR;
+            rc = pThis->pOps->pfnOpenRoot(pThis->Base.pvThis, &hRootDir);
+            RTVfsLockReleaseRead(pThis->Base.hLock);
+            if (RT_SUCCESS(rc))
+            {
+                RTVfsLockAcquireRead(hRootDir->Base.hLock);
+                rc = hRootDir->Base.pOps->pfnQueryInfo(hRootDir->Base.pvThis, pObjInfo, enmAddAttr);
+                RTVfsLockReleaseRead(hRootDir->Base.hLock);
+                RTVfsDirRelease(hRootDir);
+            }
+        }
+
+        RTVfsParsePathFree(pPath);
+    }
     return rc;
 }
 
@@ -2072,28 +2137,40 @@ RTDECL(int) RTVfsDirOpen(RTVFS hVfs, const char *pszPath, uint32_t fFlags, PRTVF
     int rc = RTVfsParsePathA(pszPath, "/", &pPath);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Tranverse the path, resolving the parent node and any symlinks
-         * in the final element, and ask the directory to open the subdir.
-         */
-        RTVFSDIRINTERNAL *pVfsParentDir;
-        rc = rtVfsTraverseToParent(pThis, pPath, true /*fFollowSymlink*/, &pVfsParentDir);
-        if (RT_SUCCESS(rc))
+        if (pPath->cComponents > 0)
         {
-            const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
-
-            /** @todo there is a symlink creation race here. */
-            RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
-            rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, fFlags, phVfsDir);
-            RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
-
-            RTVfsDirRelease(pVfsParentDir);
-
+            /*
+             * Tranverse the path, resolving the parent node and any symlinks
+             * in the final element, and ask the directory to open the subdir.
+             */
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsTraverseToParent(pThis, pPath, RTPATH_F_FOLLOW_LINK, &pVfsParentDir);
             if (RT_SUCCESS(rc))
             {
-                AssertPtr(*phVfsDir);
-                Assert((*phVfsDir)->uMagic == RTVFSDIR_MAGIC);
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+
+                /** @todo there is a symlink creation race here. */
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, fFlags, phVfsDir);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+
+                RTVfsDirRelease(pVfsParentDir);
+
+                if (RT_SUCCESS(rc))
+                {
+                    AssertPtr(*phVfsDir);
+                    Assert((*phVfsDir)->uMagic == RTVFSDIR_MAGIC);
+                }
             }
+        }
+        /*
+         * If the path boils down to '.' return the root directory.
+         */
+        else
+        {
+            RTVfsLockAcquireRead(pThis->Base.hLock);
+            rc = pThis->pOps->pfnOpenRoot(pThis->Base.pvThis, phVfsDir);
+            RTVfsLockReleaseRead(pThis->Base.hLock);
         }
         RTVfsParsePathFree(pPath);
     }
@@ -2120,28 +2197,42 @@ RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFla
     int rc = RTVfsParsePathA(pszPath, "/", &pPath);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Tranverse the path, resolving the parent node and any symlinks
-         * in the final element, and ask the directory to open the subdir.
-         */
-        RTVFSDIRINTERNAL *pVfsParentDir;
-        rc = rtVfsDirTraverseToParent(pThis, pPath, true /*fFollowSymlink*/, &pVfsParentDir);
-        if (RT_SUCCESS(rc))
+        if (pPath->cComponents > 0)
         {
-            const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
-
-            /** @todo there is a symlink creation race here. */
-            RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
-            rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, fFlags, phVfsDir);
-            RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
-
-            RTVfsDirRelease(pVfsParentDir);
-
+            /*
+             * Tranverse the path, resolving the parent node and any symlinks
+             * in the final element, and ask the directory to open the subdir.
+             */
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsDirTraverseToParent(pThis, pPath, RTPATH_F_FOLLOW_LINK, &pVfsParentDir);
             if (RT_SUCCESS(rc))
             {
-                AssertPtr(*phVfsDir);
-                Assert((*phVfsDir)->uMagic == RTVFSDIR_MAGIC);
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+
+                /** @todo there is a symlink creation race here. */
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnOpenDir(pVfsParentDir->Base.pvThis, pszEntryName, fFlags, phVfsDir);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
+
+                RTVfsDirRelease(pVfsParentDir);
+
+                if (RT_SUCCESS(rc))
+                {
+                    AssertPtr(*phVfsDir);
+                    Assert((*phVfsDir)->uMagic == RTVFSDIR_MAGIC);
+                }
             }
+        }
+        /*
+         * The path boils down to '.', call pfnOpenDir on pThis with '.' as input.
+         * The caller may wish for a new directory instance to enumerate the entries
+         * in parallel or some such thing.
+         */
+        else
+        {
+            RTVfsLockAcquireWrite(pThis->Base.hLock);
+            rc = pThis->pOps->pfnOpenDir(pThis->Base.pvThis, ".", fFlags, phVfsDir);
+            RTVfsLockReleaseWrite(pThis->Base.hLock);
         }
         RTVfsParsePathFree(pPath);
     }
@@ -2172,14 +2263,15 @@ RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOp
     rc = RTVfsParsePathA(pszPath, "/", &pPath);
     if (RT_SUCCESS(rc))
     {
-        if (!pPath->fDirSlash)
+        if (   !pPath->fDirSlash
+            && pPath->cComponents > 0)
         {
             /*
              * Tranverse the path, resolving the parent node and any symlinks
              * in the final element, and ask the directory to open the file.
              */
             RTVFSDIRINTERNAL *pVfsParentDir;
-            rc = rtVfsDirTraverseToParent(pThis, pPath, true /*fFollowSymlink*/, &pVfsParentDir);
+            rc = rtVfsDirTraverseToParent(pThis, pPath, RTPATH_F_FOLLOW_LINK, &pVfsParentDir);
             if (RT_SUCCESS(rc))
             {
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
@@ -2199,9 +2291,99 @@ RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOp
             }
         }
         else
-            rc = VERR_INVALID_PARAMETER;
+            rc = VERR_NOT_A_FILE;
         RTVfsParsePathFree(pPath);
     }
+    return rc;
+}
+
+
+RTDECL(int) RTVfsDirQueryPathInfo(RTVFSDIR hVfsDir, const char *pszPath, PRTFSOBJINFO pObjInfo,
+                                  RTFSOBJATTRADD enmAddAttr, uint32_t fFlags)
+{
+    /*
+     * Validate input.
+     */
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
+    AssertReturn(enmAddAttr >= RTFSOBJATTRADD_NOTHING &&  enmAddAttr <= RTFSOBJATTRADD_LAST, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
+
+    /*
+     * Parse the path, assume current directory is root since we've got no
+     * caller context here.  Then traverse to the parent directory.
+     */
+    PRTVFSPARSEDPATH pPath;
+    int rc = RTVfsParsePathA(pszPath, "/", &pPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (pPath->cComponents > 0)
+        {
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsDirTraverseToParent(pThis, pPath, fFlags, &pVfsParentDir);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Call the query method on the parent directory.
+                 */
+                /** @todo symlink race condition here :/ */
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+                RTVfsLockAcquireRead(pVfsParentDir->Base.hLock);
+                rc = pVfsParentDir->pOps->pfnQueryEntryInfo(pVfsParentDir->Base.pvThis, pszEntryName, pObjInfo, enmAddAttr);
+                RTVfsLockReleaseRead(pVfsParentDir->Base.hLock);
+
+                RTVfsDirRelease(pVfsParentDir);
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+        }
+        /*
+         * The path boils down to '.' so just query the directory.
+         */
+        else
+        {
+            RTVfsLockAcquireRead(pThis->Base.hLock);
+            rc = pThis->Base.pOps->pfnQueryInfo(pThis->Base.pvThis, pObjInfo, enmAddAttr);
+            RTVfsLockReleaseRead(pThis->Base.hLock);
+        }
+        RTVfsParsePathFree(pPath);
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTVfsDirReadEx(RTVFSDIR hVfsDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr)
+{
+    /*
+     * Validate input.
+     */
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pDirEntry, VERR_INVALID_POINTER);
+    AssertReturn(enmAddAttr >= RTFSOBJATTRADD_NOTHING && enmAddAttr <= RTFSOBJATTRADD_LAST, VERR_INVALID_PARAMETER);
+
+    size_t cbDirEntry = sizeof(*pDirEntry);
+    if (!pcbDirEntry)
+        pcbDirEntry = &cbDirEntry;
+    else
+    {
+        cbDirEntry = *pcbDirEntry;
+        AssertMsgReturn(cbDirEntry >= RT_UOFFSETOF(RTDIRENTRYEX, szName[2]),
+                        ("Invalid *pcbDirEntry=%d (min %d)\n", *pcbDirEntry, RT_OFFSETOF(RTDIRENTRYEX, szName[2])),
+                        VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Call the directory method.
+     */
+    RTVfsLockAcquireRead(pThis->Base.hLock);
+    int rc = pThis->pOps->pfnReadDir(pThis->Base.pvThis, pDirEntry, pcbDirEntry, enmAddAttr);
+    RTVfsLockReleaseRead(pThis->Base.hLock);
     return rc;
 }
 
@@ -2892,14 +3074,15 @@ RTDECL(int) RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint64_t fOpen, P
     rc = RTVfsParsePathA(pszFilename, "/", &pPath);
     if (RT_SUCCESS(rc))
     {
-        if (!pPath->fDirSlash)
+        if (   !pPath->fDirSlash
+            && pPath->cComponents > 0)
         {
             /*
              * Tranverse the path, resolving the parent node and any symlinks
              * in the final element, and ask the directory to open the file.
              */
             RTVFSDIRINTERNAL *pVfsParentDir;
-            rc = rtVfsTraverseToParent(pThis, pPath, true /*fFollowSymlink*/, &pVfsParentDir);
+            rc = rtVfsTraverseToParent(pThis, pPath, RTPATH_F_FOLLOW_LINK, &pVfsParentDir);
             if (RT_SUCCESS(rc))
             {
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
@@ -2919,7 +3102,7 @@ RTDECL(int) RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint64_t fOpen, P
             }
         }
         else
-            rc = VERR_INVALID_PARAMETER;
+            rc = VERR_NOT_A_FILE;
         RTVfsParsePathFree(pPath);
     }
     return rc;

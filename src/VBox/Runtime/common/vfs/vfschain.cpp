@@ -429,7 +429,26 @@ static PRTVFSCHAINSPEC rtVfsChainSpecAlloc(void)
 
 
 /**
- * Duplicate a spec string.
+ * Checks if @a ch is a character that can be escaped.
+ *
+ * @returns true / false.
+ * @param   ch          The character to consider.
+ */
+DECLINLINE(bool) rtVfsChainSpecIsEscapableChar(char ch)
+{
+    return ch == '('
+        || ch == ')'
+        || ch == '{'
+        || ch == '}'
+        || ch == '\\'
+        || ch == ','
+        || ch == '|'
+        || ch == ':';
+}
+
+
+/**
+ * Duplicate a spec string after unescaping it.
  *
  * This differs from RTStrDupN in that it uses RTMemTmpAlloc instead of
  * RTMemAlloc.
@@ -461,7 +480,7 @@ DECLINLINE(char *) rtVfsChainSpecDupStrN(const char *psz, size_t cch, int *prc)
                 if (ch == '\\' && cch > 0)
                 {
                     char ch2 = psz[2];
-                    if (ch2 == '(' || ch2 == ')' || ch2 == '\\' || ch2 == ',')
+                    if (rtVfsChainSpecIsEscapableChar(ch2))
                     {
                         psz++;
                         cch--;
@@ -588,6 +607,47 @@ RTDECL(void)    RTVfsChainSpecFree(PRTVFSCHAINSPEC pSpec)
 
 
 /**
+ * Checks if @a psz is pointing to the final element specification.
+ *
+ * @returns true / false.
+ * @param   psz         Start of an element or path.
+ * @param   pcch        Where to return the length.
+ */
+static bool rtVfsChainSpecIsFinalElement(const char *psz, size_t *pcch)
+{
+    size_t off = 0;
+    char   ch;
+    while ((ch = psz[off]) != '\0')
+    {
+        if (ch == '|' || ch == ':')
+            return false;
+        if (   ch == '\\'
+            && rtVfsChainSpecIsEscapableChar(psz[off + 1]))
+            off++;
+        off++;
+    }
+    *pcch = off;
+    return off > 0;
+}
+
+
+/**
+ * Makes the final path element.
+ * @returns IPRT status code
+ * @param   pElement    The element.
+ * @param   pszPath     The path.
+ * @param   cchPath     The path length.
+ */
+static int rtVfsChainSpecMakeFinalPathElement(PRTVFSCHAINELEMSPEC pElement, const char *pszPath, size_t cchPath)
+{
+    pElement->pszProvider = NULL;
+    pElement->enmType     = RTVFSOBJTYPE_END;
+    pElement->cchSpec     = (uint16_t)cchPath;
+    return rtVfsChainSpecElementAddArg(pElement, pszPath, cchPath, pElement->offSpec);
+}
+
+
+/**
  * Finds the end of the argument string.
  *
  * @returns The offset of the end character relative to @a psz.
@@ -595,16 +655,15 @@ RTDECL(void)    RTVfsChainSpecFree(PRTVFSCHAINSPEC pSpec)
  */
 static size_t rtVfsChainSpecFindArgEnd(const char *psz)
 {
-    char ch;
     size_t off = 0;
+    char   ch;
     while (  (ch = psz[off]) != '\0'
            && ch != ','
            && ch != ')'
-           && ch != '(')
+           && ch != '}')
     {
-        /* check for escape sequences. */
         if (   ch == '\\'
-            && (psz[off+1] == '(' || psz[off+1] == ')' || psz[off+1] == '\\' || psz[off+1] == ','))
+            && rtVfsChainSpecIsEscapableChar(psz[off+1]))
             off++;
         off++;
     }
@@ -673,8 +732,9 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
             break;
 
         /*
-         * First up is the VFS object type followed by a parentheses,
-         * or this could be the trailing action.
+         * First up is the VFS object type followed by a parenthesis/curly, or
+         * this could be the trailing action.  Alternatively, we could have a
+         * final path-only element here.
          */
         size_t cch;
         if (strncmp(pszSrc, "base", cch = 4) == 0)
@@ -693,21 +753,27 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
             pElement->enmType = RTVFSOBJTYPE_SYMLINK;
         else
         {
-            if (*pszSrc == '\0')
+            if (rtVfsChainSpecIsFinalElement(pszSrc, &cch))
+                rc = rtVfsChainSpecMakeFinalPathElement(pElement, pszSrc, cch);
+            else if (*pszSrc == '\0')
                 rc = VERR_VFS_CHAIN_TRAILING_SEPARATOR;
             else
                 rc = VERR_VFS_CHAIN_UNKNOWN_TYPE;
             break;
         }
-        pszSrc += cch;
 
-        /* Check and skip the parentheses. */
-        if (*pszSrc != '(')
+        /* Check and skip past the parenthesis/curly.  If not there, we might
+           have a final path element at our hands. */
+        char const chOpenParen = pszSrc[cch];
+        if (chOpenParen != '(' && chOpenParen != '{')
         {
-            rc = VERR_VFS_CHAIN_EXPECTED_LEFT_PARENTHESES;
+            if (rtVfsChainSpecIsFinalElement(pszSrc, &cch))
+                rc = rtVfsChainSpecMakeFinalPathElement(pElement, pszSrc, cch);
+            else
+                rc = VERR_VFS_CHAIN_EXPECTED_LEFT_PARENTHESES;
             break;
         }
-        pszSrc = RTStrStripL(pszSrc + 1);
+        pszSrc = RTStrStripL(pszSrc + cch + 1);
 
         /*
          * The name of the element provider.
@@ -738,8 +804,8 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
         if (RT_FAILURE(rc))
             break;
 
-        /* Must end with a right parentheses. */
-        if (*pszSrc != ')')
+        /* Must end with a right parentheses/curly. */
+        if (*pszSrc != (chOpenParen == '(' ? ')' : '}'))
         {
             rc = VERR_VFS_CHAIN_EXPECTED_RIGHT_PARENTHESES;
             break;
@@ -834,14 +900,36 @@ static bool rtVfsChainMatchReusableType(PRTVFSCHAINELEMSPEC pElement, PRTVFSCHAI
 
 
 RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC pReuseSpec,
-                                        PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo)
+                                        PRTVFSOBJ phVfsObj, const char **ppszFinalPath, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
     AssertPtrReturn(poffError, VERR_INVALID_POINTER);
     *poffError = 0;
     AssertPtrReturn(phVfsObj, VERR_INVALID_POINTER);
     *phVfsObj = NIL_RTVFSOBJ;
+    AssertPtrReturn(ppszFinalPath, VERR_INVALID_POINTER);
+    *ppszFinalPath = NULL;
     AssertPtrReturn(pSpec, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
+
+    /*
+     * Check for final path-only component as we will not touch it yet.
+     */
+    uint32_t cElements = pSpec->cElements;
+    if (cElements > 0)
+    {
+        if (pSpec->paElements[pSpec->cElements - 1].enmType == RTVFSOBJTYPE_END)
+        {
+            if (cElements > 1)
+                cElements--;
+            else
+            {
+                *ppszFinalPath = pSpec->paElements[0].paArgs[0].psz;
+                return VERR_VFS_CHAIN_PATH_ONLY;
+            }
+        }
+    }
+    else
+        return VERR_VFS_CHAIN_EMPTY;
 
     /*
      * Enter the critical section after making sure it has been initialized.
@@ -854,7 +942,7 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
         /*
          * Resolve and check each element first.
          */
-        for (uint32_t i = 0; i < pSpec->cElements; i++)
+        for (uint32_t i = 0; i < cElements; i++)
         {
             PRTVFSCHAINELEMSPEC const pElement = &pSpec->paElements[i];
             *poffError = pElement->offSpec;
@@ -875,10 +963,11 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
          */
         if (RT_SUCCESS(rc))
         {
-            if (pSpec->cElements > 0) /* paranoia */
+            PRTVFSCHAINELEMSPEC const pLast = &pSpec->paElements[cElements - 1];
+            if (cElements == pSpec->cElements)
             {
-                PRTVFSCHAINELEMSPEC const pLast = &pSpec->paElements[pSpec->cElements - 1];
                 if (   pLast->enmType == pSpec->enmDesiredType
+                    || pSpec->enmDesiredType == RTVFSOBJTYPE_BASE
                     || (   pLast->enmType == RTVFSOBJTYPE_FILE
                         && pSpec->enmDesiredType == RTVFSOBJTYPE_IO_STREAM) )
                     rc = VINF_SUCCESS;
@@ -888,8 +977,16 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
                     rc = VERR_VFS_CHAIN_FINAL_TYPE_MISMATCH;
                 }
             }
+            /* Ends with a path-only element, so check the type of the element preceding it. */
+            else if (   pLast->enmType == RTVFSOBJTYPE_DIR
+                     || pLast->enmType == RTVFSOBJTYPE_VFS
+                     || pLast->enmType == RTVFSOBJTYPE_FS_STREAM)
+                rc = VINF_SUCCESS;
             else
-                rc = VERR_VFS_CHAIN_EMPTY;
+            {
+                *poffError = pLast->offSpec;
+                rc = VERR_VFS_CHAIN_TYPE_MISMATCH_PATH_ONLY;
+            }
         }
 
         if (RT_SUCCESS(rc))
@@ -898,7 +995,7 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
              * Try construct the chain.
              */
             RTVFSOBJ hPrevVfsObj = NIL_RTVFSOBJ; /* No extra reference, kept in chain structure. */
-            for (uint32_t i = 0; i < pSpec->cElements; i++)
+            for (uint32_t i = 0; i < cElements; i++)
             {
                 PRTVFSCHAINELEMSPEC const pElement = &pSpec->paElements[i];
                 *poffError = pElement->offSpec;
@@ -955,7 +1052,8 @@ RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC 
             {
                 uint32_t cRefs = RTVfsObjRetain(hPrevVfsObj);
                 AssertStmt(cRefs != UINT32_MAX, rc = VERR_VFS_CHAIN_IPE);
-                *phVfsObj = hPrevVfsObj;
+                *phVfsObj      = hPrevVfsObj;
+                *ppszFinalPath = cElements == pSpec->cElements ? NULL : pSpec->paElements[cElements].paArgs[0].psz;
             }
         }
 
@@ -1011,6 +1109,92 @@ RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, b
 }
 
 
+RTDECL(int) RTVfsChainOpenDir(const char *pszSpec, uint32_t fOpen,
+                              PRTVFSDIR phVfsDir, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    uint32_t offErrorIgn;
+    if (!poffError)
+        poffError = &offErrorIgn;
+    *poffError = 0;
+    AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
+    AssertReturn(*pszSpec != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phVfsDir, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
+
+    /*
+     * Try for a VFS chain first, falling back on regular file system stuff if it's just a path.
+     */
+    int rc;
+    PRTVFSCHAINSPEC pSpec = NULL;
+    if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1) == 0)
+    {
+        rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_DIR, &pSpec, poffError);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        Assert(pSpec->cElements > 0);
+        if (   pSpec->cElements > 1
+            || pSpec->paElements[0].enmType != RTVFSOBJTYPE_END)
+        {
+
+            const char *pszFinal = NULL;
+            RTVFSOBJ    hVfsObj  = NIL_RTVFSOBJ;
+            pSpec->fOpenFile = fOpen;
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &pszFinal, poffError, pErrInfo);
+            if (RT_SUCCESS(rc))
+            {
+                if (!pszFinal)
+                {
+                    /* Try convert it to a file object and we're done. */
+                    *phVfsDir = RTVfsObjToDir(hVfsObj);
+                    if (*phVfsDir)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = VERR_VFS_CHAIN_CAST_FAILED;
+                }
+                else
+                {
+                    /*
+                     * Do a file open with the final path on the returned object.
+                     */
+                    RTVFS           hVfs    = RTVfsObjToVfs(hVfsObj);
+                    RTVFSDIR        hVfsDir = RTVfsObjToDir(hVfsObj);
+                    RTVFSFSSTREAM   hVfsFss = RTVfsObjToFsStream(hVfsObj);
+                    if (hVfs != NIL_RTVFS)
+                        rc = RTVfsDirOpen(hVfs, pszFinal, fOpen, phVfsDir);
+                    else if (hVfsDir != NIL_RTVFSDIR)
+                        rc = RTVfsDirOpenDir(hVfsDir, pszFinal, fOpen, phVfsDir);
+                    else if (hVfsFss != NIL_RTVFSFSSTREAM)
+                        rc = VERR_NOT_IMPLEMENTED;
+                    else
+                        rc = VERR_VFS_CHAIN_TYPE_MISMATCH_PATH_ONLY;
+                    RTVfsRelease(hVfs);
+                    RTVfsDirRelease(hVfsDir);
+                    RTVfsFsStrmRelease(hVfsFss);
+                }
+                RTVfsObjRelease(hVfsObj);
+            }
+
+            RTVfsChainSpecFree(pSpec);
+            return rc;
+        }
+
+        /* Only a path element. */
+        pszSpec = pSpec->paElements[0].paArgs[0].psz;
+    }
+
+    /*
+     * Path to regular file system.
+     */
+    /** @todo implement system specific standard VFS directory class. */
+    rc = VERR_NOT_IMPLEMENTED;
+
+    RTVfsChainSpecFree(pSpec);
+    return rc;
+
+}
+
+
 RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen,
                                PRTVFSFILE phVfsFile, uint32_t *poffError, PRTERRINFO pErrInfo)
 {
@@ -1024,46 +1208,83 @@ RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen,
     AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
 
     /*
-     * If it's not a VFS chain spec, treat it as a file.
+     * Try for a VFS chain first, falling back on regular file system stuff if it's just a path.
      */
     int rc;
-    if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1))
+    PRTVFSCHAINSPEC pSpec = NULL;
+    if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1) == 0)
     {
-        RTFILE hFile;
-        rc = RTFileOpen(&hFile, pszSpec, fOpen);
-        if (RT_SUCCESS(rc))
-        {
-            RTVFSFILE hVfsFile;
-            rc = RTVfsFileFromRTFile(hFile, fOpen, false /*fLeaveOpen*/, &hVfsFile);
-            if (RT_SUCCESS(rc))
-                *phVfsFile = hVfsFile;
-            else
-                RTFileClose(hFile);
-        }
-    }
-    else
-    {
-        PRTVFSCHAINSPEC pSpec;
         rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_FILE, &pSpec, poffError);
-        if (RT_SUCCESS(rc))
-        {
-            pSpec->fOpenFile = fOpen;
+        if (RT_FAILURE(rc))
+            return rc;
 
-            RTVFSOBJ hVfsObj  = NIL_RTVFSOBJ;
-            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, poffError, pErrInfo);
+        Assert(pSpec->cElements > 0);
+        if (   pSpec->cElements > 1
+            || pSpec->paElements[0].enmType != RTVFSOBJTYPE_END)
+        {
+
+            const char *pszFinal = NULL;
+            RTVFSOBJ    hVfsObj  = NIL_RTVFSOBJ;
+            pSpec->fOpenFile = fOpen;
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &pszFinal, poffError, pErrInfo);
             if (RT_SUCCESS(rc))
             {
-                *phVfsFile = RTVfsObjToFile(hVfsObj);
-                if (*phVfsFile)
-                    rc = VINF_SUCCESS;
+                if (!pszFinal)
+                {
+                    /* Try convert it to a file object and we're done. */
+                    *phVfsFile = RTVfsObjToFile(hVfsObj);
+                    if (*phVfsFile)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = VERR_VFS_CHAIN_CAST_FAILED;
+                }
                 else
-                    rc = VERR_VFS_CHAIN_CAST_FAILED;
+                {
+                    /*
+                     * Do a file open with the final path on the returned object.
+                     */
+                    RTVFS           hVfs    = RTVfsObjToVfs(hVfsObj);
+                    RTVFSDIR        hVfsDir = RTVfsObjToDir(hVfsObj);
+                    RTVFSFSSTREAM   hVfsFss = RTVfsObjToFsStream(hVfsObj);
+                    if (hVfs != NIL_RTVFS)
+                        rc = RTVfsFileOpen(hVfs, pszFinal, fOpen, phVfsFile);
+                    else if (hVfsDir != NIL_RTVFSDIR)
+                        rc = RTVfsDirOpenFile(hVfsDir, pszFinal, fOpen, phVfsFile);
+                    else if (hVfsFss != NIL_RTVFSFSSTREAM)
+                        rc = VERR_NOT_IMPLEMENTED;
+                    else
+                        rc = VERR_VFS_CHAIN_TYPE_MISMATCH_PATH_ONLY;
+                    RTVfsRelease(hVfs);
+                    RTVfsDirRelease(hVfsDir);
+                    RTVfsFsStrmRelease(hVfsFss);
+                }
                 RTVfsObjRelease(hVfsObj);
             }
 
             RTVfsChainSpecFree(pSpec);
+            return rc;
         }
+
+        /* Only a path element. */
+        pszSpec = pSpec->paElements[0].paArgs[0].psz;
     }
+
+    /*
+     * Path to regular file system.
+     */
+    RTFILE hFile;
+    rc = RTFileOpen(&hFile, pszSpec, fOpen);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFSFILE hVfsFile;
+        rc = RTVfsFileFromRTFile(hFile, fOpen, false /*fLeaveOpen*/, &hVfsFile);
+        if (RT_SUCCESS(rc))
+            *phVfsFile = hVfsFile;
+        else
+            RTFileClose(hFile);
+    }
+
+    RTVfsChainSpecFree(pSpec);
     return rc;
 }
 
@@ -1081,54 +1302,185 @@ RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen,
     AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
 
     /*
-     * If it's not a VFS chain spec, treat it as a file.
+     * Try for a VFS chain first, falling back on regular file system stuff if it's just a path.
      */
     int rc;
-    if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1))
+    PRTVFSCHAINSPEC pSpec = NULL;
+    if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1) == 0)
     {
-        RTFILE hFile;
-        rc = RTFileOpen(&hFile, pszSpec, fOpen);
-        if (RT_SUCCESS(rc))
-        {
-            RTVFSFILE hVfsFile;
-            rc = RTVfsFileFromRTFile(hFile, fOpen, false /*fLeaveOpen*/, &hVfsFile);
-            if (RT_SUCCESS(rc))
-            {
-                *phVfsIos = RTVfsFileToIoStream(hVfsFile);
-                RTVfsFileRelease(hVfsFile);
-            }
-            else
-                RTFileClose(hFile);
-        }
-    }
-    /*
-     * Do the chain thing.
-     */
-    else
-    {
-        PRTVFSCHAINSPEC pSpec;
-        rc = RTVfsChainSpecParse(pszSpec, 0 /*fFlags*/, RTVFSOBJTYPE_IO_STREAM, &pSpec, poffError);
-        if (RT_SUCCESS(rc))
-        {
-            pSpec->fOpenFile = fOpen;
+        rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_IO_STREAM, &pSpec, poffError);
+        if (RT_FAILURE(rc))
+            return rc;
 
-            RTVFSOBJ hVfsObj  = NIL_RTVFSOBJ;
-            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, poffError, pErrInfo);
+        Assert(pSpec->cElements > 0);
+        if (   pSpec->cElements > 1
+            || pSpec->paElements[0].enmType != RTVFSOBJTYPE_END)
+        {
+
+            const char *pszFinal = NULL;
+            RTVFSOBJ    hVfsObj  = NIL_RTVFSOBJ;
+            pSpec->fOpenFile = fOpen;
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &pszFinal, poffError, pErrInfo);
             if (RT_SUCCESS(rc))
             {
-                *phVfsIos = RTVfsObjToIoStream(hVfsObj);
-                if (*phVfsIos)
-                    rc = VINF_SUCCESS;
+                if (!pszFinal)
+                {
+                    /* Try convert it to an I/O object and we're done. */
+                    *phVfsIos = RTVfsObjToIoStream(hVfsObj);
+                    if (*phVfsIos)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = VERR_VFS_CHAIN_CAST_FAILED;
+                }
                 else
-                    rc = VERR_VFS_CHAIN_CAST_FAILED;
+                {
+                    /*
+                     * Do a file open with the final path on the returned object.
+                     */
+                    RTVFS           hVfs    = RTVfsObjToVfs(hVfsObj);
+                    RTVFSDIR        hVfsDir = RTVfsObjToDir(hVfsObj);
+                    RTVFSFSSTREAM   hVfsFss = RTVfsObjToFsStream(hVfsObj);
+                    RTVFSFILE       hVfsFile = NIL_RTVFSFILE;
+                    if (hVfs != NIL_RTVFS)
+                        rc = RTVfsFileOpen(hVfs, pszFinal, fOpen, &hVfsFile);
+                    else if (hVfsDir != NIL_RTVFSDIR)
+                        rc = RTVfsDirOpenFile(hVfsDir, pszFinal, fOpen, &hVfsFile);
+                    else if (hVfsFss != NIL_RTVFSFSSTREAM)
+                        rc = VERR_NOT_IMPLEMENTED;
+                    else
+                        rc = VERR_VFS_CHAIN_TYPE_MISMATCH_PATH_ONLY;
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phVfsIos = RTVfsFileToIoStream(hVfsFile);
+                        if (*phVfsIos)
+                            rc = VINF_SUCCESS;
+                        else
+                            rc = VERR_VFS_CHAIN_CAST_FAILED;
+                        RTVfsFileRelease(hVfsFile);
+                    }
+                    RTVfsRelease(hVfs);
+                    RTVfsDirRelease(hVfsDir);
+                    RTVfsFsStrmRelease(hVfsFss);
+                }
                 RTVfsObjRelease(hVfsObj);
             }
+
             RTVfsChainSpecFree(pSpec);
+            return rc;
         }
+
+        /* Only a path element. */
+        pszSpec = pSpec->paElements[0].paArgs[0].psz;
     }
+
+    /*
+     * Path to regular file system.
+     */
+    RTFILE hFile;
+    rc = RTFileOpen(&hFile, pszSpec, fOpen);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFSFILE hVfsFile;
+        rc = RTVfsFileFromRTFile(hFile, fOpen, false /*fLeaveOpen*/, &hVfsFile);
+        if (RT_SUCCESS(rc))
+        {
+            *phVfsIos = RTVfsFileToIoStream(hVfsFile);
+            RTVfsFileRelease(hVfsFile);
+        }
+        else
+            RTFileClose(hFile);
+    }
+
+    RTVfsChainSpecFree(pSpec);
     return rc;
 }
 
+
+/**
+ * The equivalent of RTPathQueryInfoEx
+ */
+RTDECL(int) RTVfsChainQueryInfo(const char *pszSpec, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs,
+                                uint32_t fFlags, uint32_t *poffError, PRTERRINFO pErrInfo)
+{
+    uint32_t offErrorIgn;
+    if (!poffError)
+        poffError = &offErrorIgn;
+    *poffError = 0;
+    AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
+    AssertReturn(*pszSpec != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
+    AssertReturn(enmAdditionalAttribs >= RTFSOBJATTRADD_NOTHING && enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,
+                 VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pErrInfo, VERR_INVALID_POINTER);
+
+    /*
+     * Try for a VFS chain first, falling back on regular file system stuff if it's just a path.
+     */
+    int rc;
+    PRTVFSCHAINSPEC pSpec = NULL;
+    if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1) == 0)
+    {
+        rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_BASE, &pSpec, poffError);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        Assert(pSpec->cElements > 0);
+        if (   pSpec->cElements > 1
+            || pSpec->paElements[0].enmType != RTVFSOBJTYPE_END)
+        {
+
+            const char *pszFinal = NULL;
+            RTVFSOBJ    hVfsObj  = NIL_RTVFSOBJ;
+            pSpec->fOpenFile = RTFILE_O_READ | RTFILE_O_OPEN;
+            rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &pszFinal, poffError, pErrInfo);
+            if (RT_SUCCESS(rc))
+            {
+                if (!pszFinal)
+                {
+                    /*
+                     * Do the job on the final object.
+                     */
+                    rc = RTVfsObjQueryInfo(hVfsObj, pObjInfo, enmAdditionalAttribs);
+                }
+                else
+                {
+                    /*
+                     * Do a path query operation on the penultimate object.
+                     */
+                    RTVFS           hVfs    = RTVfsObjToVfs(hVfsObj);
+                    RTVFSDIR        hVfsDir = RTVfsObjToDir(hVfsObj);
+                    RTVFSFSSTREAM   hVfsFss = RTVfsObjToFsStream(hVfsObj);
+                    if (hVfs != NIL_RTVFS)
+                        rc = RTVfsQueryPathInfo(hVfs, pszFinal, pObjInfo, enmAdditionalAttribs, fFlags);
+                    else if (hVfsDir != NIL_RTVFSDIR)
+                        rc = RTVfsDirQueryPathInfo(hVfsDir, pszFinal, pObjInfo, enmAdditionalAttribs, fFlags);
+                    else if (hVfsFss != NIL_RTVFSFSSTREAM)
+                        rc = VERR_NOT_SUPPORTED;
+                    else
+                        rc = VERR_VFS_CHAIN_TYPE_MISMATCH_PATH_ONLY;
+                    RTVfsRelease(hVfs);
+                    RTVfsDirRelease(hVfsDir);
+                    RTVfsFsStrmRelease(hVfsFss);
+                }
+                RTVfsObjRelease(hVfsObj);
+            }
+
+            RTVfsChainSpecFree(pSpec);
+            return rc;
+        }
+
+        /* Only a path element. */
+        pszSpec = pSpec->paElements[0].paArgs[0].psz;
+    }
+
+    /*
+     * Path to regular file system.
+     */
+    rc = RTPathQueryInfoEx(pszSpec, pObjInfo, enmAdditionalAttribs, fFlags);
+
+    RTVfsChainSpecFree(pSpec);
+    return rc;
+}
 
 
 RTDECL(bool) RTVfsChainIsSpec(const char *pszSpec)

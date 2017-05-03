@@ -1082,6 +1082,8 @@ RT_C_DECLS_END
 #define VERR_NS_SYMLINK_SET_TIME            (-157)
 /** The OS does not support changing the owner of a symbolic link. */
 #define VERR_NS_SYMLINK_CHANGE_OWNER        (-158)
+/** Symbolic link not allowed. */
+#define VERR_SYMLINK_NOT_ALLOWED            (-159)
 /** @} */
 
 
@@ -1955,6 +1957,12 @@ RT_C_DECLS_END
 /** VFS chain element only provides a read-only I/O stream, while the chain
  * read access. */
 #define VERR_VFS_CHAIN_WRITE_ONLY_IOS               (-22154)
+/** VFS chain only has a single element and it is just a path, need to be
+ * treated as a normal file system request. */
+#define VERR_VFS_CHAIN_PATH_ONLY                    (-22155)
+/** VFS chain element preceding the final path needs to be a directory, file
+ * system or file system stream. */
+#define VERR_VFS_CHAIN_TYPE_MISMATCH_PATH_ONLY      (-22156)
 /** @} */
 
 /** @name RTDvm status codes

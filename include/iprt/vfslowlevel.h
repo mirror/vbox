@@ -533,6 +533,20 @@ typedef struct RTVFSDIROPS
                                               RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink);
 
     /**
+     * Query information about an entry.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific directory data.
+     * @param   pszEntry    The name of the directory entry to remove.
+     * @param   pObjInfo    Where to return the info on success.
+     * @param   enmAddAttr  Which set of additional attributes to request.
+     *
+     * @sa      RTPathQueryInfo, RTVFSOBJOPS::pfnQueryInfo
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryEntryInfo)(void *pvThis, const char *pszEntry,
+                                               PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
+    /**
      * Removes a directory entry.
      *
      * @returns IPRT status code.
@@ -544,6 +558,20 @@ typedef struct RTVFSDIROPS
      * @sa      RTFileRemove, RTDirRemove, RTSymlinkRemove.
      */
     DECLCALLBACKMEMBER(int, pfnUnlinkEntry)(void *pvThis, const char *pszEntry, RTFMODE fType);
+
+    /**
+     * Renames a directory entry.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific directory data.
+     * @param   pszEntry    The name of the directory entry to rename.
+     * @param   fType       If non-zero, this restricts the type of the entry to
+     *                      the object type indicated by the mask
+     *                      (RTFS_TYPE_XXX).
+     * @param   pszNewName  The new entry name.
+     * @sa      RTPathRename
+     */
+    DECLCALLBACKMEMBER(int, pfnRenameEntry)(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName);
 
     /**
      * Rewind the directory stream so that the next read returns the first
@@ -1021,11 +1049,13 @@ typedef RTVFSCHAINELEMENTARG *PRTVFSCHAINELEMENTARG;
  */
 typedef struct RTVFSCHAINELEMSPEC
 {
-    /** The provider name.  */
+    /** The provider name.
+     * This can be NULL if this is the final component and it's just a path. */
     char                   *pszProvider;
     /** The input type, RTVFSOBJTYPE_INVALID if first. */
     RTVFSOBJTYPE            enmTypeIn;
-    /** The element type. */
+    /** The element type.
+     *  RTVFSOBJTYPE_END if this is the final component and it's just a path. */
     RTVFSOBJTYPE            enmType;
     /** The input spec offset of this element. */
     uint16_t                offSpec;
@@ -1185,17 +1215,24 @@ RTDECL(int) RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSOBJTY
  * Checks and setups the chain.
  *
  * @returns IPRT status code.
- * @param   pSpec       The parsed specification.
- * @param   pReuseSpec  Spec to reuse if applicable. Optional.
- * @param   phVfsObj    Where to return the VFS object.
- * @param   poffError   Where to return the offset into the input specification
- *                      of what's causing trouble.  Always set, unless this
- *                      argument causes an invalid pointer error.
- * @param   pErrInfo    Where to return additional error information, if
- *                      available.  Optional.
+ * @param   pSpec           The parsed specification.
+ * @param   pReuseSpec      Spec to reuse if applicable. Optional.
+ * @param   phVfsObj        Where to return the VFS object.
+ * @param   ppszFinalPath   Where to return the pointer to the final path if
+ *                          applicable.  The caller needs to check whether this
+ *                          is NULL or a path, in the former case nothing more
+ *                          needs doing, whereas in the latter the caller must
+ *                          perform the desired operation(s) on *phVfsObj using
+ *                          the final path.
+ * @param   poffError       Where to return the offset into the input
+ *                          specification of what's causing trouble.  Always
+ *                          set, unless this argument causes an invalid pointer
+ *                          error.
+ * @param   pErrInfo        Where to return additional error information, if
+ *                          available.  Optional.
  */
 RTDECL(int) RTVfsChainSpecCheckAndSetup(PRTVFSCHAINSPEC pSpec, PCRTVFSCHAINSPEC pReuseSpec,
-                                        PRTVFSOBJ phVfsObj, uint32_t *poffError, PRTERRINFO pErrInfo);
+                                        PRTVFSOBJ phVfsObj, const char **ppszFinalPath, uint32_t *poffError, PRTERRINFO pErrInfo);
 
 /**
  * Frees a parsed chain specification.

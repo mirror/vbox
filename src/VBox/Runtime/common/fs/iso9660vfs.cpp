@@ -936,10 +936,41 @@ RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSymlink);
  * @interface_method_impl{RTVFSDIROPS,pfnCreateSymlink}
  */
 static DECLCALLBACK(int) rtFsIso9660Dir_CreateSymlink(void *pvThis, const char *pszSymlink, const char *pszTarget,
-                                                  RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink)
+                                                      RTSYMLINKTYPE enmType, PRTVFSSYMLINK phVfsSymlink)
 {
     RT_NOREF(pvThis, pszSymlink, pszTarget, enmType, phVfsSymlink);
     return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSDIROPS,pfnQueryEntryInfo}
+ */
+static DECLCALLBACK(int) rtFsIso9660Dir_QueryEntryInfo(void *pvThis, const char *pszEntry,
+                                                       PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    /*
+     * Try locate the entry.
+     */
+    PRTFSISO9660DIR pThis = (PRTFSISO9660DIR)pvThis;
+    PCISO9660DIRREC pDirRec;
+    uint64_t        offDirRec;
+    uint32_t        cDirRecs;
+    RTFMODE         fMode;
+    int rc = rtFsIso9660Dir_FindEntry(pThis, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+    Log2(("rtFsIso9660Dir_QueryEntryInfo: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * To avoid duplicating code in rtFsIso9660Obj_InitFromDirRec and
+         * rtFsIso9660Obj_QueryInfo, we create a dummy RTFSISO9660OBJ on the stack.
+         */
+        RTFSISO9660OBJ TmpObj;
+        RT_ZERO(TmpObj);
+        rtFsIso9660Obj_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, pThis->Core.pVol);
+        rc = rtFsIso9660Obj_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
+    }
+    return rc;
 }
 
 
@@ -949,6 +980,16 @@ static DECLCALLBACK(int) rtFsIso9660Dir_CreateSymlink(void *pvThis, const char *
 static DECLCALLBACK(int) rtFsIso9660Dir_UnlinkEntry(void *pvThis, const char *pszEntry, RTFMODE fType)
 {
     RT_NOREF(pvThis, pszEntry, fType);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSDIROPS,pfnRenameEntry}
+ */
+static DECLCALLBACK(int) rtFsIso9660Dir_RenameEntry(void *pvThis, const char *pszEntry, RTFMODE fType, const char *pszNewName)
+{
+    RT_NOREF(pvThis, pszEntry, fType, pszNewName);
     return VERR_WRITE_PROTECT;
 }
 
@@ -1005,7 +1046,9 @@ static const RTVFSDIROPS g_rtFsIso9660DirOps =
     rtFsIso9660Dir_CreateDir,
     rtFsIso9660Dir_OpenSymlink,
     rtFsIso9660Dir_CreateSymlink,
+    rtFsIso9660Dir_QueryEntryInfo,
     rtFsIso9660Dir_UnlinkEntry,
+    rtFsIso9660Dir_RenameEntry,
     rtFsIso9660Dir_RewindDir,
     rtFsIso9660Dir_ReadDir,
     RTVFSDIROPS_VERSION,

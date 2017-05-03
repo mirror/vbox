@@ -119,6 +119,21 @@ RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *ph
                                        char *pszMountPoint, size_t cbMountPoint);
 
 /**
+ * Queries information about a object in the virtual filesystem.
+ *
+ * @returns IPRT Status code.
+ * @param   hVfs        VFS handle.
+ *                      relative to.
+ * @param   pszPath     Path to the object, relative to the VFS root.
+ * @param   pObjInfo    Where to return info.
+ * @param   enmAddAttr  What to return.
+ * @param   fFlags      RTPATH_F_XXX.
+ * @sa      RTPathQueryInfoEx, RTVfsDirQueryPathInfo, RTVfsObjQueryInfo
+ */
+RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pObjInfo,
+                               RTFSOBJATTRADD enmAddAttr, uint32_t fFlags);
+
+/**
  * Checks whether a given range is in use by the virtual filesystem.
  *
  * @returns IPRT status code.
@@ -127,8 +142,7 @@ RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *ph
  * @param   cb          Number of bytes to check.
  * @param   pfUsed      Where to store the result.
  */
-RTDECL(int)         RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb,
-                                      bool *pfUsed);
+RTDECL(int) RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed);
 
 /** @defgroup grp_vfs_obj           VFS Base Object API
  * @{
@@ -367,6 +381,52 @@ RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOp
  * @param   phVfsDir        Where to return the directory.
  */
 RTDECL(int) RTVfsDirOpenDir(RTVFSDIR hVfsDir, const char *pszPath, uint32_t fFlags, PRTVFSDIR phVfsDir);
+
+/**
+ * Queries information about a object in or under the given directory.
+ *
+ * @returns IPRT Status code.
+ * @param   hVfsDir         The VFS directory start walking the @a pszPath
+ *                          relative to.
+ * @param   pszPath         Path to the object.
+ * @param   pObjInfo        Where to return info.
+ * @param   enmAddAttr      What to return.
+ * @param   fFlags          RTPATH_F_XXX.
+ * @sa      RTPathQueryInfoEx, RTVfsQueryPathInfo, RTVfsObjQueryInfo
+ */
+RTDECL(int) RTVfsDirQueryPathInfo(RTVFSDIR hVfsDir, const char *pszPath, PRTFSOBJINFO pObjInfo,
+                                  RTFSOBJATTRADD enmAddAttr, uint32_t fFlags);
+
+/**
+ * Reads the next entry in the directory returning extended information.
+ *
+ * @returns VINF_SUCCESS and data in pDirEntry on success.
+ * @returns VERR_NO_MORE_FILES when the end of the directory has been reached.
+ * @returns VERR_BUFFER_OVERFLOW if the buffer is too small to contain the filename. If
+ *          pcbDirEntry is specified it will be updated with the required buffer size.
+ * @returns suitable iprt status code on other errors.
+ *
+ * @param   hVfsDir         The VFS directory.
+ * @param   pDirEntry       Where to store the information about the next
+ *                          directory entry on success.
+ * @param   pcbDirEntry     Optional parameter used for variable buffer size.
+ *
+ *                          On input the variable pointed to contains the size of the pDirEntry
+ *                          structure. This must be at least OFFSET(RTDIRENTRYEX, szName[2]) bytes.
+ *
+ *                          On successful output the field is updated to
+ *                          OFFSET(RTDIRENTRYEX, szName[pDirEntry->cbName + 1]).
+ *
+ *                          When the data doesn't fit in the buffer and VERR_BUFFER_OVERFLOW is
+ *                          returned, this field contains the required buffer size.
+ *
+ *                          The value is unchanged in all other cases.
+ * @param   enmAddAttr      Which set of additional attributes to request.
+ *                          Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
+ *
+ * @sa      RTDirReadEx
+ */
+RTDECL(int) RTVfsDirReadEx(RTVFSDIR hVfsDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr);
 
 /** @}  */
 
@@ -1173,6 +1233,8 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
  *
  * Or say you want to read the README.TXT on a floppy image:
  *      RTCat :iprtvfs:file(stdfile,floppy.img,r)|vfs(fat)|ios(open,README.TXT)
+ * or
+ *      RTCat :iprtvfs:file(stdfile,floppy.img,r)|vfs(fat)|README.TXT
  *
  * Or in the other direction, you want to write a STUFF.TGZ file to the above
  * floppy image, using a lazy writer thread for compressing the data:
@@ -1180,7 +1242,7 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
  *
  *
  * A bit more formally:
- *      :iprtvfs:{type}({provider}[,provider-args])[{separator}{type}...]
+ *      :iprtvfs:{type}({provider}[,provider-args])[{separator}{type}...][{separator}{path}]
  *
  * The @c type refers to VFS object that should be created by the @c provider.
  * Valid types:
@@ -1208,6 +1270,11 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
  * ('|'). The latter the conventional one, but since it's inconvenient on the
  * command line, colon is provided as an alternative.
  *
+ * In the final element we allow a simple @a path to be specified instead of the
+ * type-provider-arguments stuff.  The previous object must be a directory, file
+ * system or file system stream.  The application will determin exactly which
+ * operation or operations which will be performed.
+ *
  * @{
  */
 
@@ -1216,10 +1283,13 @@ RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uin
 
 RTDECL(int) RTVfsChainOpenVfs(const char *pszSpec, PRTVFS phVfs, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenFsStream(const char *pszSpec, PRTVFSFSSTREAM  phVfsFss, uint32_t *poffError, PRTERRINFO pErrInfo);
-RTDECL(int) RTVfsChainOpenDir(const char *pszSpec, uint64_t fOpen, PRTVFSDIR phVfsDir, uint32_t *poffError, PRTERRINFO pErrInfo);
+RTDECL(int) RTVfsChainOpenDir(const char *pszSpec, uint32_t fOpen, PRTVFSDIR phVfsDir, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE phVfsFile, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos, uint32_t *poffError, PRTERRINFO pErrInfo);
 RTDECL(int) RTVfsChainOpenSymlink(const char *pszSpec, PRTVFSSYMLINK phVfsSym, uint32_t *poffError, PRTERRINFO pErrInfo);
+
+RTDECL(int) RTVfsChainQueryInfo(const char *pszSpec, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs,
+                                uint32_t fFlags, uint32_t *poffError, PRTERRINFO pErrInfo);
 
 /**
  * Tests if the given string is a chain specification or not.
