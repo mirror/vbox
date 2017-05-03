@@ -2306,6 +2306,7 @@
 # define RTVfsDirOpenDir                                RT_MANGLER(RTVfsDirOpenDir)
 # define RTVfsDirOpenFile                               RT_MANGLER(RTVfsDirOpenFile)
 # define RTVfsDirQueryPathInfo                          RT_MANGLER(RTVfsDirQueryPathInfo)
+# define RTVfsDirReadEx                                 RT_MANGLER(RTVfsDirReadEx)
 # define RTVfsFileFlush                                 RT_MANGLER(RTVfsFileFlush)
 # define RTVfsFileFromBuffer                            RT_MANGLER(RTVfsFileFromBuffer)
 # define RTVfsFileFromRTFile                            RT_MANGLER(RTVfsFileFromRTFile)
