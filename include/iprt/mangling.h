@@ -2292,6 +2292,7 @@
 # define RTVfsChainIsSpec                               RT_MANGLER(RTVfsChainIsSpec)
 # define RTVfsChainMsgError                             RT_MANGLER(RTVfsChainMsgError)
 # define RTVfsChainMsgErrorExitFailure                  RT_MANGLER(RTVfsChainMsgErrorExitFailure)
+# define RTVfsChainOpenDir                              RT_MANGLER(RTVfsChainOpenDir)
 # define RTVfsChainOpenFile                             RT_MANGLER(RTVfsChainOpenFile)
 # define RTVfsChainOpenIoStream                         RT_MANGLER(RTVfsChainOpenIoStream)
 # define RTVfsChainQueryInfo                            RT_MANGLER(RTVfsChainQueryInfo)
