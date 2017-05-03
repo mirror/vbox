@@ -409,6 +409,7 @@ Qt::WindowFlags UIMiniToolBar::defaultWindowFlags(GeometryType geometryType)
         // By nor less strange reason, frameless full-screen *tool* windows
         // respects such relationship, so we are doing what WM want.
         case X11WMType_GNOMEShell:
+        case X11WMType_KWin:
         case X11WMType_Metacity:
         case X11WMType_Mutter:
             return geometryType == GeometryType_Full ?
