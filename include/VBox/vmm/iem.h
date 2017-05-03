@@ -59,9 +59,9 @@ typedef IEMXCPTRAISEINFO *PIEMXCPTRAISEINFO;
 #define IEMXCPTRAISEINFO_PF_CONTRIBUTORY_XCPT    RT_BIT_32(3)
 /** Delivery of an external interrupt caused an exception. */
 #define IEMXCPTRAISEINFO_EXT_INT_XCPT            RT_BIT_32(4)
-/** Delivery of an software interrupt caused an exception. */
+/** Delivery of an external interrupt caused an \#PF. */
 #define IEMXCPTRAISEINFO_EXT_INT_PF              RT_BIT_32(5)
-/** Delivery of an external interrupt caused a \#PF. */
+/** Delivery of a software interrupt caused an exception. */
 #define IEMXCPTRAISEINFO_SOFT_INT_XCPT           RT_BIT_32(6)
 /** Delivery of an NMI caused an exception. */
 #define IEMXCPTRAISEINFO_NMI_XCPT                RT_BIT_32(7)
