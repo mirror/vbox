@@ -56,7 +56,7 @@ typedef struct RTFSISO9660VOL *PRTFSISO9660VOL;
 typedef struct RTFSISO9660VOL const *PCRTFSISO9660VOL;
 
 /** Pointer to a ISO 9660 directory instance. */
-typedef struct RTFSISO9660DIR *PRTFSISO9660DIR;
+typedef struct RTFSISO9660DIRSHRD *PRTFSISO9660DIRSHRD;
 
 
 
@@ -77,14 +77,16 @@ typedef RTFSISO9660EXTENT const *PCRTFSISO9660EXTENT;
 
 
 /**
- * ISO 9660 file system object (common part to files and dirs).
+ * ISO 9660 file system object, shared part.
  */
-typedef struct RTFSISO9660OBJ
+typedef struct RTFSISO9660CORE
 {
-    /** The parent directory keeps a list of open objects (RTFSISO9660OBJ). */
+    /** The parent directory keeps a list of open objects (RTFSISO9660CORE). */
     RTLISTNODE          Entry;
+    /** Reference counter.   */
+    uint32_t volatile   cRefs;
     /** The parent directory (not released till all children are close). */
-    PRTFSISO9660DIR     pParentDir;
+    PRTFSISO9660DIRSHRD     pParentDir;
     /** The byte offset of the first directory record. */
     uint64_t            offDirRec;
     /** Attributes. */
@@ -107,45 +109,65 @@ typedef struct RTFSISO9660OBJ
     RTFSISO9660EXTENT   FirstExtent;
     /** Array of additional extents. */
     PRTFSISO9660EXTENT  paExtents;
-} RTFSISO9660OBJ;
-typedef RTFSISO9660OBJ *PRTFSISO9660OBJ;
+} RTFSISO9660CORE;
+typedef RTFSISO9660CORE *PRTFSISO9660CORE;
 
 /**
- * ISO 9660 file.
+ * ISO 9660 file, shared data.
  */
-typedef struct RTFSISO9660FILE
+typedef struct RTFSISO9660FILESHRD
 {
     /** Core ISO9660 object info.  */
-    RTFSISO9660OBJ      Core;
-    /** The current file offset. */
-    uint64_t            offFile;
-} RTFSISO9660FILE;
+    RTFSISO9660CORE     Core;
+} RTFSISO9660FILESHRD;
 /** Pointer to a ISO 9660 file object. */
-typedef RTFSISO9660FILE *PRTFSISO9660FILE;
+typedef RTFSISO9660FILESHRD *PRTFSISO9660FILESHRD;
 
 
 /**
- * ISO 9660 directory.
+ * ISO 9660 directory, shared data.
  *
  * We will always read in the whole directory just to keep things really simple.
  */
-typedef struct RTFSISO9660DIR
+typedef struct RTFSISO9660DIRSHRD
 {
     /** Core ISO 9660 object info.  */
-    RTFSISO9660OBJ      Core;
-    /** The VFS handle for this directory (for reference counting). */
-    RTVFSDIR            hVfsSelf;
-    /** Open child objects (RTFSISO9660OBJ). */
+    RTFSISO9660CORE     Core;
+    /** Open child objects (RTFSISO9660CORE). */
     RTLISTNODE          OpenChildren;
 
     /** Pointer to the directory content. */
     uint8_t            *pbDir;
     /** The size of the directory content (duplicate of Core.cbObject). */
     uint32_t            cbDir;
-} RTFSISO9660DIR;
+} RTFSISO9660DIRSHRD;
 /** Pointer to a ISO 9660 directory instance. */
-typedef RTFSISO9660DIR *PRTFSISO9660DIR;
+typedef RTFSISO9660DIRSHRD *PRTFSISO9660DIRSHRD;
 
+
+/**
+ * Private data for a VFS file object.
+ */
+typedef struct RTFSISO9660FILEOBJ
+{
+    /** Pointer to the shared data. */
+    PRTFSISO9660FILESHRD    pShared;
+    /** The current file offset. */
+    uint64_t                offFile;
+} RTFSISO9660FILEOBJ;
+typedef RTFSISO9660FILEOBJ *PRTFSISO9660FILEOBJ;
+
+/**
+ * Private data for a VFS directory object.
+ */
+typedef struct RTFSISO9660DIROBJ
+{
+    /** Pointer to the shared data. */
+    PRTFSISO9660DIRSHRD     pShared;
+    /** The current directory offset. */
+    uint32_t                offDir;
+} RTFSISO9660DIROBJ;
+typedef RTFSISO9660DIROBJ *PRTFSISO9660DIROBJ;
 
 
 /**
@@ -154,32 +176,30 @@ typedef RTFSISO9660DIR *PRTFSISO9660DIR;
 typedef struct RTFSISO9660VOL
 {
     /** Handle to itself. */
-    RTVFS           hVfsSelf;
+    RTVFS                   hVfsSelf;
     /** The file, partition, or whatever backing the ISO 9660 volume. */
-    RTVFSFILE       hVfsBacking;
+    RTVFSFILE               hVfsBacking;
     /** The size of the backing thingy. */
-    uint64_t        cbBacking;
+    uint64_t                cbBacking;
     /** Flags. */
-    uint32_t        fFlags;
+    uint32_t                fFlags;
     /** The sector size (in bytes). */
-    uint32_t        cbSector;
+    uint32_t                cbSector;
     /** The size of a logical block in bytes. */
-    uint32_t        cbBlock;
+    uint32_t                cbBlock;
     /** The primary volume space size in blocks. */
-    uint32_t        cBlocksInPrimaryVolumeSpace;
+    uint32_t                cBlocksInPrimaryVolumeSpace;
     /** The primary volume space size in bytes. */
-    uint64_t        cbPrimaryVolumeSpace;
+    uint64_t                cbPrimaryVolumeSpace;
     /** The number of volumes in the set. */
-    uint32_t        cVolumesInSet;
+    uint32_t                cVolumesInSet;
     /** The primary volume sequence ID. */
-    uint32_t        idPrimaryVol;
+    uint32_t                idPrimaryVol;
     /** Set if using UTF16-2 (joliet). */
-    bool            fIsUtf16;
+    bool                    fIsUtf16;
 
-    /** The root directory handle. */
-    RTVFSDIR        hVfsRootDir;
-    /** The root directory instance data. */
-    PRTFSISO9660DIR pRootDir;
+    /** The root directory shared data. */
+    PRTFSISO9660DIRSHRD     pRootDir;
 } RTFSISO9660VOL;
 
 
@@ -192,10 +212,11 @@ typedef struct RTFSISO9660VOL
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void rtFsIso9660Dir_AddOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ pChild);
-static void rtFsIso9660Dir_RemoveOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ pChild);
-static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIR pParentDir, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                               uint64_t offDirRec, PRTVFSDIR phVfsDir, PRTFSISO9660DIR *ppDir);
+static void rtFsIso9660DirShrd_AddOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild);
+static void rtFsIso9660DirShrd_RemoveOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild);
+static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
+                               uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir);
+static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, uint64_t offDirRec);
 
 
 
@@ -228,87 +249,55 @@ static void rtFsIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIME
 
 
 /**
- * Initialization of a RTFSISO9660OBJ structure from a directory record.
+ * Initialization of a RTFSISO9660CORE structure from a directory record.
  *
- * @note    The RTFSISO9660OBJ::pParentDir and RTFSISO9660OBJ::Clusters members are
+ * @note    The RTFSISO9660CORE::pParentDir and RTFSISO9660CORE::Clusters members are
  *          properly initialized elsewhere.
  *
- * @param   pObj            The structure to initialize.
+ * @param   pCore           The structure to initialize.
  * @param   pDirRec         The primary directory record.
  * @param   cDirRecs        Number of directory records.
  * @param   offDirRec       The offset of the primary directory record.
  * @param   pVol            The volume.
  */
-static void rtFsIso9660Obj_InitFromDirRec(PRTFSISO9660OBJ pObj, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                                          uint64_t offDirRec, PRTFSISO9660VOL pVol)
+static void rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
+                                           uint64_t offDirRec, PRTFSISO9660VOL pVol)
 {
     Assert(cDirRecs == 1); RT_NOREF(cDirRecs);
 
-    RTListInit(&pObj->Entry);
-    pObj->pParentDir           = NULL;
-    pObj->pVol                 = pVol;
-    pObj->offDirRec            = offDirRec;
-    pObj->fAttrib              = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY
-                               ? RTFS_DOS_DIRECTORY | RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
+    RTListInit(&pCore->Entry);
+    pCore->cRefs                = 1;
+    pCore->pParentDir           = NULL;
+    pCore->pVol                 = pVol;
+    pCore->offDirRec            = offDirRec;
+    pCore->fAttrib              = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY
+                                ? RTFS_DOS_DIRECTORY | RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
     if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_HIDDEN)
-        pObj->fAttrib |= RTFS_DOS_HIDDEN;
-    pObj->cbObject             = ISO9660_GET_ENDIAN(&pDirRec->cbData);
-    pObj->cExtents             = 1;
-    pObj->FirstExtent.cbExtent = pObj->cbObject;
-    pObj->FirstExtent.offDisk  = ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)pVol->cbBlock;
+        pCore->fAttrib |= RTFS_DOS_HIDDEN;
+    pCore->cbObject             = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+    pCore->cExtents             = 1;
+    pCore->FirstExtent.cbExtent = pCore->cbObject;
+    pCore->FirstExtent.offDisk  = ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)pVol->cbBlock;
 
-    rtFsIso9660DateTime2TimeSpec(&pObj->ModificationTime, &pDirRec->RecTime);
-    pObj->BirthTime  = pObj->ModificationTime;
-    pObj->AccessTime = pObj->ModificationTime;
-    pObj->ChangeTime = pObj->ModificationTime;
-}
-
-
-
-/**
- * Worker for rtFsIso9660File_Close and rtFsIso9660Dir_Close that does common work.
- *
- * @returns IPRT status code.
- * @param   pObj            The common object structure.
- */
-static int rtFsIso9660Obj_Close(PRTFSISO9660OBJ pObj)
-{
-    if (pObj->pParentDir)
-        rtFsIso9660Dir_RemoveOpenChild(pObj->pParentDir, pObj);
-    if (pObj->paExtents)
-    {
-        RTMemFree(pObj->paExtents);
-        pObj->paExtents = NULL;
-    }
-    return VINF_SUCCESS;
+    rtFsIso9660DateTime2TimeSpec(&pCore->ModificationTime, &pDirRec->RecTime);
+    pCore->BirthTime  = pCore->ModificationTime;
+    pCore->AccessTime = pCore->ModificationTime;
+    pCore->ChangeTime = pCore->ModificationTime;
 }
 
 
 /**
- * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ * Worker for rtFsIso9660File_QueryInfo and rtFsIso9660Dir_QueryInfo.
  */
-static DECLCALLBACK(int) rtFsIso9660File_Close(void *pvThis)
+static int rtFsIso9660Core_QueryInfo(PRTFSISO9660CORE pCore, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
-    PRTFSISO9660FILE pThis = (PRTFSISO9660FILE)pvThis;
-    LogFlow(("rtFsIso9660File_Close(%p)\n", pThis));
-    return rtFsIso9660Obj_Close(&pThis->Core);
-}
-
-
-/**
- * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
- */
-static DECLCALLBACK(int) rtFsIso9660Obj_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
-{
-    PRTFSISO9660OBJ pThis = (PRTFSISO9660OBJ)pvThis;
-
-    pObjInfo->cbObject              = pThis->cbObject;
-    pObjInfo->cbAllocated           = RT_ALIGN_64(pThis->cbObject, pThis->pVol->cbBlock);
-    pObjInfo->AccessTime            = pThis->AccessTime;
-    pObjInfo->ModificationTime      = pThis->ModificationTime;
-    pObjInfo->ChangeTime            = pThis->ChangeTime;
-    pObjInfo->BirthTime             = pThis->BirthTime;
-    pObjInfo->Attr.fMode            = pThis->fAttrib;
+    pObjInfo->cbObject              = pCore->cbObject;
+    pObjInfo->cbAllocated           = RT_ALIGN_64(pCore->cbObject, pCore->pVol->cbBlock);
+    pObjInfo->AccessTime            = pCore->AccessTime;
+    pObjInfo->ModificationTime      = pCore->ModificationTime;
+    pObjInfo->ChangeTime            = pCore->ChangeTime;
+    pObjInfo->BirthTime             = pCore->BirthTime;
+    pObjInfo->Attr.fMode            = pCore->fAttrib;
     pObjInfo->Attr.enmAdditional    = enmAddAttr;
 
     switch (enmAddAttr)
@@ -343,11 +332,62 @@ static DECLCALLBACK(int) rtFsIso9660Obj_QueryInfo(void *pvThis, PRTFSOBJINFO pOb
 
 
 /**
+ * Worker for rtFsIso9660File_Close and rtFsIso9660Dir_Close that does common work.
+ *
+ * @param   pCore           The common shared structure.
+ */
+static void rtFsIso9660Core_Destroy(PRTFSISO9660CORE pCore)
+{
+    if (pCore->pParentDir)
+        rtFsIso9660DirShrd_RemoveOpenChild(pCore->pParentDir, pCore);
+    if (pCore->paExtents)
+    {
+        RTMemFree(pCore->paExtents);
+        pCore->paExtents = NULL;
+    }
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtFsIso9660File_Close(void *pvThis)
+{
+    PRTFSISO9660FILEOBJ  pThis   = (PRTFSISO9660FILEOBJ)pvThis;
+    LogFlow(("rtFsIso9660File_Close(%p/%p)\n", pThis, pThis->pShared));
+
+    PRTFSISO9660FILESHRD pShared = pThis->pShared;
+    pThis->pShared = NULL;
+    if (pShared)
+    {
+        if (ASMAtomicDecU32(&pShared->Core.cRefs) == 0)
+        {
+            LogFlow(("rtFsIso9660File_Close: Destroying shared structure %p\n", pShared));
+            rtFsIso9660Core_Destroy(&pShared->Core);
+            RTMemFree(pShared);
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtFsIso9660File_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
+    return rtFsIso9660Core_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
+}
+
+
+/**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
 static DECLCALLBACK(int) rtFsIso9660File_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
-    PRTFSISO9660FILE pThis = (PRTFSISO9660FILE)pvThis;
+    PRTFSISO9660FILEOBJ  pThis   = (PRTFSISO9660FILEOBJ)pvThis;
+    PRTFSISO9660FILESHRD pShared = pThis->pShared;
     AssertReturn(pSgBuf->cSegs != 0, VERR_INTERNAL_ERROR_3);
     RT_NOREF(fBlocking);
 
@@ -356,7 +396,7 @@ static DECLCALLBACK(int) rtFsIso9660File_Read(void *pvThis, RTFOFF off, PCRTSGBU
      */
     if (off == -1)
         off = pThis->offFile;
-    if ((uint64_t)off >= pThis->Core.cbObject)
+    if ((uint64_t)off >= pShared->Core.cbObject)
     {
         if (pcbRead)
         {
@@ -372,17 +412,17 @@ static DECLCALLBACK(int) rtFsIso9660File_Read(void *pvThis, RTFOFF off, PCRTSGBU
      */
     int      rc         = VINF_SUCCESS;
     size_t   cbRead     = 0;
-    uint64_t cbFileLeft = pThis->Core.cbObject - (uint64_t)off;
+    uint64_t cbFileLeft = pShared->Core.cbObject - (uint64_t)off;
     size_t   cbLeft     = pSgBuf->paSegs[0].cbSeg;
     uint8_t *pbDst      = (uint8_t *)pSgBuf->paSegs[0].pvSeg;
-    if (pThis->Core.cExtents == 1)
+    if (pShared->Core.cExtents == 1)
     {
         if (cbLeft > 0)
         {
             size_t cbToRead = cbLeft;
             if (cbToRead > cbFileLeft)
                 cbToRead = (size_t)cbFileLeft;
-            rc = RTVfsFileReadAt(pThis->Core.pVol->hVfsBacking, pThis->Core.FirstExtent.offDisk + off, pbDst, cbToRead, NULL);
+            rc = RTVfsFileReadAt(pShared->Core.pVol->hVfsBacking, pShared->Core.FirstExtent.offDisk + off, pbDst, cbToRead, NULL);
             if (RT_SUCCESS(rc))
             {
                 off         += cbToRead;
@@ -465,7 +505,7 @@ static DECLCALLBACK(int) rtFsIso9660File_PollOne(void *pvThis, uint32_t fEvents,
  */
 static DECLCALLBACK(int) rtFsIso9660File_Tell(void *pvThis, PRTFOFF poffActual)
 {
-    PRTFSISO9660FILE pThis = (PRTFSISO9660FILE)pvThis;
+    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
     *poffActual = pThis->offFile;
     return VINF_SUCCESS;
 }
@@ -474,7 +514,7 @@ static DECLCALLBACK(int) rtFsIso9660File_Tell(void *pvThis, PRTFOFF poffActual)
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
  */
-static DECLCALLBACK(int) rtFsIso9660Obj_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+static DECLCALLBACK(int) rtFsIso9660File_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
 {
     RT_NOREF(pvThis, fMode, fMask);
     return VERR_WRITE_PROTECT;
@@ -484,7 +524,7 @@ static DECLCALLBACK(int) rtFsIso9660Obj_SetMode(void *pvThis, RTFMODE fMode, RTF
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
-static DECLCALLBACK(int) rtFsIso9660Obj_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+static DECLCALLBACK(int) rtFsIso9660File_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                                                  PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
@@ -495,7 +535,7 @@ static DECLCALLBACK(int) rtFsIso9660Obj_SetTimes(void *pvThis, PCRTTIMESPEC pAcc
 /**
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
  */
-static DECLCALLBACK(int) rtFsIso9660Obj_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+static DECLCALLBACK(int) rtFsIso9660File_SetOwner(void *pvThis, RTUID uid, RTGID gid)
 {
     RT_NOREF(pvThis, uid, gid);
     return VERR_WRITE_PROTECT;
@@ -507,7 +547,7 @@ static DECLCALLBACK(int) rtFsIso9660Obj_SetOwner(void *pvThis, RTUID uid, RTGID 
  */
 static DECLCALLBACK(int) rtFsIso9660File_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
 {
-    PRTFSISO9660FILE pThis = (PRTFSISO9660FILE)pvThis;
+    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
     RTFOFF offNew;
     switch (uMethod)
     {
@@ -515,7 +555,7 @@ static DECLCALLBACK(int) rtFsIso9660File_Seek(void *pvThis, RTFOFF offSeek, unsi
             offNew = offSeek;
             break;
         case RTFILE_SEEK_END:
-            offNew = (RTFOFF)pThis->Core.cbObject + offSeek;
+            offNew = (RTFOFF)pThis->pShared->Core.cbObject + offSeek;
             break;
         case RTFILE_SEEK_CURRENT:
             offNew = (RTFOFF)pThis->offFile + offSeek;
@@ -542,8 +582,8 @@ static DECLCALLBACK(int) rtFsIso9660File_Seek(void *pvThis, RTFOFF offSeek, unsi
  */
 static DECLCALLBACK(int) rtFsIso9660File_QuerySize(void *pvThis, uint64_t *pcbFile)
 {
-    PRTFSISO9660FILE pThis = (PRTFSISO9660FILE)pvThis;
-    *pcbFile = pThis->Core.cbObject;
+    PRTFSISO9660FILEOBJ pThis = (PRTFSISO9660FILEOBJ)pvThis;
+    *pcbFile = pThis->pShared->Core.cbObject;
     return VINF_SUCCESS;
 }
 
@@ -551,7 +591,7 @@ static DECLCALLBACK(int) rtFsIso9660File_QuerySize(void *pvThis, uint64_t *pcbFi
 /**
  * FAT file operations.
  */
-DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIso9660FileOps =
+DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIos9660FileOps =
 {
     { /* Stream */
         { /* Obj */
@@ -559,7 +599,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIso9660FileOps =
             RTVFSOBJTYPE_FILE,
             "FatFile",
             rtFsIso9660File_Close,
-            rtFsIso9660Obj_QueryInfo,
+            rtFsIso9660File_QueryInfo,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -578,9 +618,9 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIso9660FileOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
-        rtFsIso9660Obj_SetMode,
-        rtFsIso9660Obj_SetTimes,
-        rtFsIso9660Obj_SetOwner,
+        rtFsIso9660File_SetMode,
+        rtFsIso9660File_SetTimes,
+        rtFsIso9660File_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsIso9660File_Seek,
@@ -594,7 +634,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIso9660FileOps =
  *
  * @returns IPRT status code.
  * @param   pThis           The FAT volume instance.
- * @param   pParentDir      The parent directory.
+ * @param   pParentDir      The parent directory (shared part).
  * @param   pDirRec         The directory record.
  * @param   cDirRecs        Number of directory records if more than one.
  * @param   offDirRec       The byte offset of the directory record.
@@ -603,30 +643,43 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIso9660FileOps =
  * @param   fOpen           RTFILE_O_XXX flags.
  * @param   phVfsFile       Where to return the file handle.
  */
-static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIR pParentDir, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                                uint64_t offDirRec, uint64_t fOpen, PRTVFSFILE phVfsFile)
+static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
+                               uint64_t offDirRec, uint64_t fOpen, PRTVFSFILE phVfsFile)
 {
     AssertPtr(pParentDir);
 
-    PRTFSISO9660FILE pNewFile;
-    int rc = RTVfsNewFile(&g_rtFsIso9660FileOps, sizeof(*pNewFile), fOpen, pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/,
+    /*
+     * Create a VFS object.
+     */
+    PRTFSISO9660FILEOBJ pNewFile;
+    int rc = RTVfsNewFile(&g_rtFsIos9660FileOps, sizeof(*pNewFile), fOpen, pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/,
                           phVfsFile, (void **)&pNewFile);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Initialize it all so rtFsIso9660File_Close doesn't trip up in anyway.
+         * Look for existing shared object, create a new one if necessary.
          */
-        rtFsIso9660Obj_InitFromDirRec(&pNewFile->Core, pDirRec, cDirRecs, offDirRec, pThis);
-        pNewFile->offFile = 0;
+        PRTFSISO9660FILESHRD pShared = (PRTFSISO9660FILESHRD)rtFsIso9660Dir_LookupShared(pParentDir, offDirRec);
+        if (!pShared)
+        {
+            pShared = (PRTFSISO9660FILESHRD)RTMemAllocZ(sizeof(*pShared));
+            if (pShared)
+            {
+                /*
+                 * Initialize it all so rtFsIso9660File_Close doesn't trip up in anyway.
+                 */
+                rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, pThis);
+                rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
+            }
+        }
+        if (pShared)
+        {
+            pNewFile->offFile = 0;
+            pNewFile->pShared = pShared;
+            return VINF_SUCCESS;
+        }
 
-        /*
-         * Link into parent directory so we can use it to update
-         * our directory entry.
-         */
-        rtFsIso9660Dir_AddOpenChild(pParentDir, &pNewFile->Core);
-
-        return VINF_SUCCESS;
-
+        rc = VERR_NO_MEMORY;
     }
     *phVfsFile = NIL_RTVFSFILE;
     return rc;
@@ -652,6 +705,28 @@ static int rtFsIso9660_StrToUtf16BigEndian(const char *pszString, size_t cchStri
 }
 
 
+/**
+ * Looks up the shared structure for a child.
+ *
+ * @returns Referenced pointer to the shared structure, NULL if not found.
+ * @param   pThis           The directory.
+ * @param   offDirRec       The directory record offset of the child.
+ */
+static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, uint64_t offDirRec)
+{
+    PRTFSISO9660CORE pCur;
+    RTListForEach(&pThis->OpenChildren, pCur, RTFSISO9660CORE, Entry)
+    {
+        if (pCur->offDirRec == offDirRec)
+        {
+            uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
+            Assert(cRefs > 1);
+            return pCur;
+        }
+    }
+    return NULL;
+}
+
 
 /**
  * Locates a directory entry in a directory.
@@ -668,8 +743,8 @@ static int rtFsIso9660_StrToUtf16BigEndian(const char *pszString, size_t cchStri
  *                          related to this entry.
  * @param   pfMode          Where to return the file type, rock ridge adjusted.
  */
-static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIR pThis, const char *pszEntry, uint64_t *poffDirRec, PCISO9660DIRREC *ppDirRec,
-                                    uint32_t *pcDirRecs, PRTFMODE pfMode)
+static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEntry,
+                                    uint64_t *poffDirRec, PCISO9660DIRREC *ppDirRec, uint32_t *pcDirRecs, PRTFMODE pfMode)
 {
     /* Set return values. */
     *poffDirRec = UINT64_MAX;
@@ -772,18 +847,96 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIR pThis, const char *pszEntry,
 
 
 /**
+ * Releases a reference to a shared directory structure.
+ *
+ * @param   pShared             The shared directory structure.
+ */
+static void rtFsIso9660DirShrd_Release(PRTFSISO9660DIRSHRD pShared)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pShared->Core.cRefs);
+    Assert(cRefs < UINT32_MAX / 2);
+    if (cRefs == 0)
+    {
+        LogFlow(("rtFsIso9660DirShrd_Release: Destroying shared structure %p\n", pShared));
+        Assert(pShared->Core.cRefs == 0);
+        if (pShared->pbDir)
+        {
+            RTMemFree(pShared->pbDir);
+            pShared->pbDir = NULL;
+        }
+        rtFsIso9660Core_Destroy(&pShared->Core);
+        RTMemFree(pShared);
+    }
+}
+
+
+/**
+ * Retains a reference to a shared directory structure.
+ *
+ * @param   pShared             The shared directory structure.
+ */
+static void rtFsIso9660DirShrd_Retain(PRTFSISO9660DIRSHRD pShared)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pShared->Core.cRefs);
+    Assert(cRefs > 1); NOREF(cRefs);
+}
+
+
+
+/**
  * @interface_method_impl{RTVFSOBJOPS,pfnClose}
  */
 static DECLCALLBACK(int) rtFsIso9660Dir_Close(void *pvThis)
 {
-    PRTFSISO9660DIR pThis = (PRTFSISO9660DIR)pvThis;
-    LogFlow(("rtFsIso9660Dir_Close(%p)\n", pThis));
-    if (pThis->pbDir)
-    {
-        RTMemFree(pThis->pbDir);
-        pThis->pbDir = NULL;
-    }
-    return rtFsIso9660Obj_Close(&pThis->Core);
+    PRTFSISO9660DIROBJ pThis = (PRTFSISO9660DIROBJ)pvThis;
+    LogFlow(("rtFsIso9660Dir_Close(%p/%p)\n", pThis, pThis->pShared));
+
+    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    pThis->pShared = NULL;
+    if (pShared)
+        rtFsIso9660DirShrd_Release(pShared);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtFsIso9660Dir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTFSISO9660DIROBJ pThis = (PRTFSISO9660DIROBJ)pvThis;
+    return rtFsIso9660Core_QueryInfo(&pThis->pShared->Core, pObjInfo, enmAddAttr);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) rtFsIso9660Dir_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    RT_NOREF(pvThis, fMode, fMask);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) rtFsIso9660Dir_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) rtFsIso9660Dir_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    RT_NOREF(pvThis, uid, gid);
+    return VERR_WRITE_PROTECT;
 }
 
 
@@ -807,19 +960,20 @@ static DECLCALLBACK(int) rtFsIso9660Dir_TraversalOpen(void *pvThis, const char *
         if (phVfsDir)
             *phVfsDir = NIL_RTVFSDIR;
 
-        PRTFSISO9660DIR pThis = (PRTFSISO9660DIR)pvThis;
-        PCISO9660DIRREC pDirRec;
-        uint64_t        offDirRec;
-        uint32_t        cDirRecs;
-        RTFMODE         fMode;
-        rc = rtFsIso9660Dir_FindEntry(pThis, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+        PRTFSISO9660DIROBJ  pThis = (PRTFSISO9660DIROBJ)pvThis;
+        PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+        PCISO9660DIRREC     pDirRec;
+        uint64_t            offDirRec;
+        uint32_t            cDirRecs;
+        RTFMODE             fMode;
+        rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode);
         Log2(("rtFsIso9660Dir_TraversalOpen: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
         if (RT_SUCCESS(rc))
         {
             switch (fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
-                    rc = rtFsIso9660Dir_New(pThis->Core.pVol, pThis, pDirRec, cDirRecs, offDirRec, phVfsDir, NULL /*ppDir*/);
+                    rc = rtFsIso9660Dir_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
                     break;
 
                 case RTFS_TYPE_SYMLINK:
@@ -852,7 +1006,8 @@ static DECLCALLBACK(int) rtFsIso9660Dir_TraversalOpen(void *pvThis, const char *
  */
 static DECLCALLBACK(int) rtFsIso9660Dir_OpenFile(void *pvThis, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile)
 {
-    PRTFSISO9660DIR pThis = (PRTFSISO9660DIR)pvThis;
+    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
+    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
 
     /*
      * We cannot create or replace anything, just open stuff.
@@ -868,14 +1023,14 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenFile(void *pvThis, const char *pszFi
     uint64_t        offDirRec;
     uint32_t        cDirRecs;
     RTFMODE         fMode;
-    int rc = rtFsIso9660Dir_FindEntry(pThis, pszFilename, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+    int rc = rtFsIso9660Dir_FindEntry(pShared, pszFilename, &offDirRec, &pDirRec, &cDirRecs, &fMode);
     Log2(("rtFsIso9660Dir_OpenFile: FindEntry(,%s,) -> %Rrc\n", pszFilename, rc));
     if (RT_SUCCESS(rc))
     {
         switch (fMode & RTFS_TYPE_MASK)
         {
             case RTFS_TYPE_FILE:
-                rc = rtFsIso9660File_New(pThis->Core.pVol, pThis, pDirRec, cDirRecs, offDirRec, fOpen, phVfsFile);
+                rc = rtFsIso9660File_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, fOpen, phVfsFile);
                 break;
 
             case RTFS_TYPE_SYMLINK:
@@ -952,23 +1107,24 @@ static DECLCALLBACK(int) rtFsIso9660Dir_QueryEntryInfo(void *pvThis, const char 
     /*
      * Try locate the entry.
      */
-    PRTFSISO9660DIR pThis = (PRTFSISO9660DIR)pvThis;
-    PCISO9660DIRREC pDirRec;
-    uint64_t        offDirRec;
-    uint32_t        cDirRecs;
-    RTFMODE         fMode;
-    int rc = rtFsIso9660Dir_FindEntry(pThis, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
+    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    PCISO9660DIRREC     pDirRec;
+    uint64_t            offDirRec;
+    uint32_t            cDirRecs;
+    RTFMODE             fMode;
+    int rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode);
     Log2(("rtFsIso9660Dir_QueryEntryInfo: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
     if (RT_SUCCESS(rc))
     {
         /*
-         * To avoid duplicating code in rtFsIso9660Obj_InitFromDirRec and
-         * rtFsIso9660Obj_QueryInfo, we create a dummy RTFSISO9660OBJ on the stack.
+         * To avoid duplicating code in rtFsIso9660Core_InitFromDirRec and
+         * rtFsIso9660Core_QueryInfo, we create a dummy RTFSISO9660CORE on the stack.
          */
-        RTFSISO9660OBJ TmpObj;
+        RTFSISO9660CORE TmpObj;
         RT_ZERO(TmpObj);
-        rtFsIso9660Obj_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, pThis->Core.pVol);
-        rc = rtFsIso9660Obj_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
+        rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, pShared->Core.pVol);
+        rc = rtFsIso9660Core_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
     }
     return rc;
 }
@@ -1027,7 +1183,7 @@ static const RTVFSDIROPS g_rtFsIso9660DirOps =
         RTVFSOBJTYPE_DIR,
         "ISO 9660 Dir",
         rtFsIso9660Dir_Close,
-        rtFsIso9660Obj_QueryInfo,
+        rtFsIso9660Dir_QueryInfo,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -1035,9 +1191,9 @@ static const RTVFSDIROPS g_rtFsIso9660DirOps =
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
         RT_OFFSETOF(RTVFSDIROPS, Obj) - RT_OFFSETOF(RTVFSDIROPS, ObjSet),
-        rtFsIso9660Obj_SetMode,
-        rtFsIso9660Obj_SetTimes,
-        rtFsIso9660Obj_SetOwner,
+        rtFsIso9660File_SetMode,
+        rtFsIso9660File_SetTimes,
+        rtFsIso9660File_SetOwner,
         RTVFSOBJSETOPS_VERSION
     },
     rtFsIso9660Dir_TraversalOpen,
@@ -1056,7 +1212,7 @@ static const RTVFSDIROPS g_rtFsIso9660DirOps =
 
 
 /**
- * Adds an open child to the parent directory.
+ * Adds an open child to the parent directory's shared structure.
  *
  * Maintains an additional reference to the parent dir to prevent it from going
  * away.  If @a pDir is the root directory, it also ensures the volume is
@@ -1064,31 +1220,12 @@ static const RTVFSDIROPS g_rtFsIso9660DirOps =
  *
  * @param   pDir        The directory.
  * @param   pChild      The child being opened.
- * @sa      rtFsIso9660Dir_RemoveOpenChild
+ * @sa      rtFsIso9660DirShrd_RemoveOpenChild
  */
-static void rtFsIso9660Dir_AddOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ pChild)
+static void rtFsIso9660DirShrd_AddOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild)
 {
-    /* First child that gets opened retains the parent directory.  This is
-       released by the final open child. */
-    if (RTListIsEmpty(&pDir->OpenChildren))
-    {
-        uint32_t cRefs = RTVfsDirRetain(pDir->hVfsSelf);
-        Assert(cRefs != UINT32_MAX); NOREF(cRefs);
+    rtFsIso9660DirShrd_Retain(pDir);
 
-        /* Root also retains the whole file system. */
-        if (pDir->Core.pVol->pRootDir == pDir)
-        {
-            Assert(pDir->Core.pVol);
-            Assert(pDir->Core.pVol == pChild->pVol);
-            cRefs = RTVfsRetain(pDir->Core.pVol->hVfsSelf);
-            Assert(cRefs != UINT32_MAX); NOREF(cRefs);
-            LogFlow(("rtFsIso9660Dir_AddOpenChild(%p,%p) retains volume (%d)\n", pDir, pChild, cRefs));
-        }
-        else
-            LogFlow(("rtFsIso9660Dir_AddOpenChild(%p,%p) retains parent only (%d)\n", pDir, pChild, cRefs));
-    }
-    else
-        LogFlow(("rtFsIso9660Dir_AddOpenChild(%p,%p) retains nothing\n", pDir, pChild));
     RTListAppend(&pDir->OpenChildren, &pChild->Entry);
     pChild->pParentDir = pDir;
 }
@@ -1103,39 +1240,15 @@ static void rtFsIso9660Dir_AddOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ pC
  * @remarks This is the very last thing you do as it may cause a few other
  *          objects to be released recursively (parent dir and the volume).
  *
- * @sa      rtFsIso9660Dir_AddOpenChild
+ * @sa      rtFsIso9660DirShrd_AddOpenChild
  */
-static void rtFsIso9660Dir_RemoveOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ pChild)
+static void rtFsIso9660DirShrd_RemoveOpenChild(PRTFSISO9660DIRSHRD pDir, PRTFSISO9660CORE pChild)
 {
     AssertReturnVoid(pChild->pParentDir == pDir);
     RTListNodeRemove(&pChild->Entry);
     pChild->pParentDir = NULL;
 
-    /* Final child? If so, release directory. */
-    if (RTListIsEmpty(&pDir->OpenChildren))
-    {
-        bool const fIsRootDir = pDir->Core.pVol->pRootDir == pDir;
-
-        uint32_t cRefs = RTVfsDirRelease(pDir->hVfsSelf);
-        Assert(cRefs != UINT32_MAX); NOREF(cRefs);
-
-        /* Root directory releases the file system as well.  Since the volume
-           holds a reference to the root directory, it will remain valid after
-           the above release. */
-        if (fIsRootDir)
-        {
-            Assert(cRefs > 0);
-            Assert(pDir->Core.pVol);
-            Assert(pDir->Core.pVol == pChild->pVol);
-            cRefs = RTVfsRelease(pDir->Core.pVol->hVfsSelf);
-            Assert(cRefs != UINT32_MAX); NOREF(cRefs);
-            LogFlow(("rtFsIso9660Dir_RemoveOpenChild(%p,%p) releases volume (%d)\n", pDir, pChild, cRefs));
-        }
-        else
-            LogFlow(("rtFsIso9660Dir_RemoveOpenChild(%p,%p) releases parent only (%d)\n", pDir, pChild, cRefs));
-    }
-    else
-        LogFlow(("rtFsIso9660Dir_RemoveOpenChild(%p,%p) releases nothing\n", pDir, pChild));
+    rtFsIso9660DirShrd_Release(pDir);
 }
 
 
@@ -1143,7 +1256,7 @@ static void rtFsIso9660Dir_RemoveOpenChild(PRTFSISO9660DIR pDir, PRTFSISO9660OBJ
 /**
  * Logs the content of a directory.
  */
-static void rtFsIso9660Dir_LogContent(PRTFSISO9660DIR pThis)
+static void rtFsIso9660DirShrd_LogContent(PRTFSISO9660DIRSHRD pThis)
 {
     if (LogIs2Enabled())
     {
@@ -1210,7 +1323,94 @@ static void rtFsIso9660Dir_LogContent(PRTFSISO9660DIR pThis)
 
 
 /**
- * Instantiates a new directory.
+ * Instantiates a new shared directory structure.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The FAT volume instance.
+ * @param   pParentDir      The parent directory.  This is NULL for the root
+ *                          directory.
+ * @param   pDirRec         The directory record.
+ * @param   cDirRecs        Number of directory records if more than one.
+ * @param   offDirRec       The byte offset of the directory record.
+ * @param   ppShared        Where to return the shared directory structure.
+ */
+static int  rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
+                                   uint32_t cDirRecs, uint64_t offDirRec, PRTFSISO9660DIRSHRD *ppShared)
+{
+    /*
+     * Allocate a new structure and initialize it.
+     */
+    int rc = VERR_NO_MEMORY;
+    PRTFSISO9660DIRSHRD pShared = (PRTFSISO9660DIRSHRD)RTMemAllocZ(sizeof(*pShared));
+    if (pShared)
+    {
+        rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, pThis);
+        RTListInit(&pShared->OpenChildren);
+        pShared->cbDir              = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+        pShared->pbDir              = (uint8_t *)RTMemAllocZ(pShared->cbDir + 256);
+        if (pShared->pbDir)
+        {
+            rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
+            if (RT_SUCCESS(rc))
+            {
+#ifdef LOG_ENABLED
+                rtFsIso9660DirShrd_LogContent(pShared);
+#endif
+
+                /*
+                 * Link into parent directory so we can use it to update
+                 * our directory entry.
+                 */
+                if (pParentDir)
+                    rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                *ppShared = pShared;
+                return VINF_SUCCESS;
+            }
+        }
+    }
+    *ppShared = NULL;
+    return rc;
+}
+
+
+/**
+ * Instantiates a new directory with a shared structure presupplied.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The FAT volume instance.
+ * @param   pShared         Referenced pointer to the shared structure.  The
+ *                          reference is always CONSUMED.
+ * @param   phVfsDir        Where to return the directory handle.
+ */
+static int rtFsIso9660Dir_NewWithShared(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pShared, PRTVFSDIR phVfsDir)
+{
+    /*
+     * Create VFS object around the shared structure.
+     */
+    PRTFSISO9660DIROBJ pNewDir;
+    int rc = RTVfsNewDir(&g_rtFsIso9660DirOps, sizeof(*pNewDir), 0 /*fFlags*/, pThis->hVfsSelf,
+                         NIL_RTVFSLOCK /*use volume lock*/, phVfsDir, (void **)&pNewDir);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Look for existing shared object, create a new one if necessary.
+         * We CONSUME a reference to pShared here.
+         */
+        pNewDir->offDir  = 0;
+        pNewDir->pShared = pShared;
+        return VINF_SUCCESS;
+    }
+
+    rtFsIso9660DirShrd_Release(pShared);
+    *phVfsDir = NIL_RTVFSDIR;
+    return rc;
+}
+
+
+
+/**
+ * Instantiates a new directory VFS instance, creating the shared structure as
+ * necessary.
  *
  * @returns IPRT status code.
  * @param   pThis           The FAT volume instance.
@@ -1220,57 +1420,26 @@ static void rtFsIso9660Dir_LogContent(PRTFSISO9660DIR pThis)
  * @param   cDirRecs        Number of directory records if more than one.
  * @param   offDirRec       The byte offset of the directory record.
  * @param   phVfsDir        Where to return the directory handle.
- * @param   ppDir           Where to return the FAT directory instance data.
  */
-static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIR pParentDir, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                               uint64_t offDirRec, PRTVFSDIR phVfsDir, PRTFSISO9660DIR *ppDir)
+static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
+                               uint32_t cDirRecs, uint64_t offDirRec, PRTVFSDIR phVfsDir)
 {
-    if (ppDir)
-        *ppDir = NULL;
-
-    PRTFSISO9660DIR pNewDir;
-    int rc = RTVfsNewDir(&g_rtFsIso9660DirOps, sizeof(*pNewDir), pParentDir ? 0 : RTVFSDIR_F_NO_VFS_REF,
-                         pThis->hVfsSelf, NIL_RTVFSLOCK /*use volume lock*/, phVfsDir, (void **)&pNewDir);
-    if (RT_SUCCESS(rc))
+    /*
+     * Look for existing shared object, create a new one if necessary.
+     */
+    int                 rc      = VINF_SUCCESS;
+    PRTFSISO9660DIRSHRD pShared = (PRTFSISO9660DIRSHRD)rtFsIso9660Dir_LookupShared(pParentDir, offDirRec);
+    if (!pShared)
     {
-        /*
-         * Initialize it all so rtFsIso9660Dir_Close doesn't trip up in anyway.
-         */
-        rtFsIso9660Obj_InitFromDirRec(&pNewDir->Core, pDirRec, cDirRecs, offDirRec, pThis);
-        RTListInit(&pNewDir->OpenChildren);
-        pNewDir->hVfsSelf           = *phVfsDir;
-        pNewDir->cbDir              = ISO9660_GET_ENDIAN(&pDirRec->cbData);
-        pNewDir->pbDir              = (uint8_t *)RTMemAllocZ(pNewDir->cbDir + 256);
-        if (pNewDir->pbDir)
+        rc = rtFsIso9660DirShrd_New(pThis, pParentDir, pDirRec, cDirRecs, offDirRec, &pShared);
+        if (RT_FAILURE(rc))
         {
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, pNewDir->Core.FirstExtent.offDisk, pNewDir->pbDir, pNewDir->cbDir, NULL);
-            if (RT_SUCCESS(rc))
-            {
-#ifdef LOG_ENABLED
-                rtFsIso9660Dir_LogContent(pNewDir);
-#endif
-
-                /*
-                 * Link into parent directory so we can use it to update
-                 * our directory entry.
-                 */
-                if (pParentDir)
-                    rtFsIso9660Dir_AddOpenChild(pParentDir, &pNewDir->Core);
-                if (ppDir)
-                    *ppDir = pNewDir;
-                return VINF_SUCCESS;
-            }
+            *phVfsDir = NIL_RTVFSDIR;
+            return rc;
         }
-        else
-            rc = VERR_NO_MEMORY;
-        RTVfsDirRelease(*phVfsDir);
     }
-    *phVfsDir = NIL_RTVFSDIR;
-    if (ppDir)
-        *ppDir = NULL;
-    return rc;
+    return rtFsIso9660Dir_NewWithShared(pThis, pShared, phVfsDir);
 }
-
 
 
 
@@ -1282,13 +1451,12 @@ static DECLCALLBACK(int) rtFsIso9660Vol_Close(void *pvThis)
     PRTFSISO9660VOL pThis = (PRTFSISO9660VOL)pvThis;
     Log(("rtFsIso9660Vol_Close(%p)\n", pThis));
 
-    if (pThis->hVfsRootDir != NIL_RTVFSDIR)
+    if (pThis->pRootDir)
     {
         Assert(RTListIsEmpty(&pThis->pRootDir->OpenChildren));
-        uint32_t cRefs = RTVfsDirRelease(pThis->hVfsRootDir);
-        Assert(cRefs == 0); NOREF(cRefs);
-        pThis->hVfsRootDir = NIL_RTVFSDIR;
-        pThis->pRootDir    = NULL;
+        Assert(pThis->pRootDir->Core.cRefs == 1);
+        rtFsIso9660DirShrd_Release(pThis->pRootDir);
+        pThis->pRootDir = NULL;
     }
 
     RTVfsFileRelease(pThis->hVfsBacking);
@@ -1314,14 +1482,9 @@ static DECLCALLBACK(int) rtFsIso9660Vol_QueryInfo(void *pvThis, PRTFSOBJINFO pOb
 static DECLCALLBACK(int) rtFsIso9660Vol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
 {
     PRTFSISO9660VOL pThis = (PRTFSISO9660VOL)pvThis;
-    uint32_t cRefs = RTVfsDirRetain(pThis->hVfsRootDir);
-    if (cRefs != UINT32_MAX)
-    {
-        *phVfsDir = pThis->hVfsRootDir;
-        LogFlow(("rtFsIso9660Vol_OpenRoot -> %p\n", *phVfsDir));
-        return VINF_SUCCESS;
-    }
-    return VERR_INTERNAL_ERROR_5;
+
+    rtFsIso9660DirShrd_Retain(pThis->pRootDir); /* consumed by the next call */
+    return rtFsIso9660Dir_NewWithShared(pThis, pThis->pRootDir, phVfsDir);
 }
 
 
@@ -1694,7 +1857,6 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
     pThis->cVolumesInSet                = 0;
     pThis->idPrimaryVol                 = UINT32_MAX;
     pThis->fIsUtf16                     = false;
-    pThis->hVfsRootDir                  = NIL_RTVFSDIR;
     pThis->pRootDir                     = NULL;
 
     /*
@@ -1812,9 +1974,9 @@ static int rtFsIso9660VolTryInit(PRTFSISO9660VOL pThis, RTVFS hVfsSelf, RTVFSFIL
     if (bJolietUcs2Level != 0)
     {
         pThis->fIsUtf16 = true;
-        return rtFsIso9660Dir_New(pThis, NULL, &JolietRootDir, 1, offJolietRootDirRec, &pThis->hVfsRootDir, &pThis->pRootDir);
+        return rtFsIso9660DirShrd_New(pThis, NULL, &JolietRootDir, 1, offJolietRootDirRec, &pThis->pRootDir);
     }
-    return rtFsIso9660Dir_New(pThis, NULL, &RootDir, 1, offRootDirRec, &pThis->hVfsRootDir, &pThis->pRootDir);
+    return rtFsIso9660DirShrd_New(pThis, NULL, &RootDir, 1, offRootDirRec, &pThis->pRootDir);
 }
 
 
