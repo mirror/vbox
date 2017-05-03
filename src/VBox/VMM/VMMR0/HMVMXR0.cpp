@@ -5780,6 +5780,10 @@ static uint32_t hmR0VmxGetIemXcptFlags(uint8_t uVector, uint32_t uVmxVectorType)
             break;
         }
 
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:
+            fIemXcptFlags = IEM_XCPT_FLAGS_T_SOFT_INT;
+            break;
+
         default:
             fIemXcptFlags = 0;
             AssertMsgFailed(("Unexpected vector type! uVmxVectorType=%#x uVector=%#x", uVmxVectorType, uVector));
