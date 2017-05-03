@@ -3943,6 +3943,10 @@ static uint32_t hmR0SvmGetIemXcptFlags(PCSVMEVENT pEvent)
     switch (uEventType)
     {
         case SVM_EVENT_EXCEPTION:
+            /*
+             * Only INT3 and INTO instructions can raise #BP and #OF exceptions.
+             * See AMD spec. Table 8-1. "Interrupt Vector Source and Cause".
+             */
             if (pEvent->n.u8Vector == X86_XCPT_BP)
             {
                 fIemXcptFlags = IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR;
@@ -4037,7 +4041,6 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 #ifdef HMSVM_USE_IEM_EVENT_REFLECTION
         IEMXCPTRAISE     enmRaise;
         IEMXCPTRAISEINFO fRaiseInfo;
-        bool             fReflectingNmi = false;
         bool const       fExitIsHwXcpt  = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31;
         if (fExitIsHwXcpt)
         {
@@ -4046,15 +4049,6 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             uint32_t const fIdtVectorFlags  = hmR0SvmGetIemXcptFlags(&pVmcb->ctrl.ExitIntInfo);
             uint32_t const fExitVectorFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
             enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fIdtVectorFlags, uIdtVector, fExitVectorFlags, uExitVector, &fRaiseInfo);
-
-            if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
-            {
-                if (fRaiseInfo & IEMXCPTRAISEINFO_NMI_XCPT)
-                    fReflectingNmi = true;
-                pSvmTransient->fVectoringPF = true;
-            }
-            else if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
-                pSvmTransient->fVectoringDoublePF = true;
         }
         else
         {
@@ -4074,9 +4068,14 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 /* For software interrupts, we shall re-execute the instruction. */
                 if (!(fRaiseInfo & IEMXCPTRAISEINFO_SOFT_INT_XCPT))
                 {
-                    /* If we are re-injecting the NMI, clear NMI blocking. */
-                    if (fReflectingNmi)
-                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                    /* Determine a vectoring #PF condition, see comment in hmR0SvmExitXcptPF(). */
+                    if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
+                    {
+                        pSvmTransient->fVectoringPF = true;
+                        /* If we are re-injecting the NMI, clear NMI blocking. */
+                        if (fRaiseInfo & IEMXCPTRAISEINFO_NMI_XCPT)
+                            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                    }
 
                     Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
@@ -4091,9 +4090,21 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 
             case IEMXCPTRAISE_DOUBLE_FAULT:
             {
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
-                hmR0SvmSetPendingXcptDF(pVCpu);
-                rc = VINF_HM_DOUBLE_FAULT;
+                /*
+                 * Determing a vectoring double #PF condition. Used later, when PGM evaluates the
+                 * second #PF as a guest #PF (and not a shadow #PF) and needs to be converted into a #DF.
+                 */
+                if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
+                {
+                    pSvmTransient->fVectoringDoublePF = true;
+                    Assert(rc == VINF_SUCCESS);
+                }
+                else
+                {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                    hmR0SvmSetPendingXcptDF(pVCpu);
+                    rc = VINF_HM_DOUBLE_FAULT;
+                }
                 break;
             }
 
