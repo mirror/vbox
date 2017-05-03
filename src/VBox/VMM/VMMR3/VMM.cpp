@@ -1481,6 +1481,9 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 
     Log(("vmmR3SendInitIpi for VCPU %d\n", idCpu));
 
+    /** @todo Figure out how to handle a nested-guest intercepts here for INIT
+     *  IPI (e.g. SVM_EXIT_INIT). */
+
     PGMR3ResetCpu(pVM, pVCpu);
     PDMR3ResetCpu(pVCpu);   /* Only clears pending interrupts force flags */
     APICR3InitIpi(pVCpu);
