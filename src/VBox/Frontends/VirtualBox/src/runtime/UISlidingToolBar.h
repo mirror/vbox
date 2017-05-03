@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2016 Oracle Corporation
+ * Copyright (C) 2014-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,8 +22,6 @@
 #include <QWidget>
 
 /* Forward declarations: */
-class QMdiArea;
-class QMdiSubWindow;
 class QHBoxLayout;
 class UIAnimation;
 
@@ -98,13 +96,13 @@ private:
     virtual bool event(QEvent *pEvent);
 #endif /* VBOX_WS_MAC */
 
-    /** Defines mdi-sub-window geometry. */
+    /** Defines sub-window geometry. */
     void setWidgetGeometry(const QRect &rect);
-    /** Returns mdi-sub-window geometry. */
+    /** Returns sub-window geometry. */
     QRect widgetGeometry() const;
-    /** Returns mdi-sub-window start-geometry. */
+    /** Returns sub-window start-geometry. */
     QRect startWidgetGeometry() const { return m_startWidgetGeometry; }
-    /** Returns mdi-sub-window final-geometry. */
+    /** Returns sub-window final-geometry. */
     QRect finalWidgetGeometry() const { return m_finalWidgetGeometry; }
 
     /** @name Geometry
@@ -123,9 +121,9 @@ private:
         UIAnimation *m_pAnimation;
         /** Holds whether window is expanded. */
         bool m_fExpanded;
-        /** Holds mdi-sub-window start-geometry. */
+        /** Holds sub-window start-geometry. */
         QRect m_startWidgetGeometry;
-        /** Holds mdi-sub-window final-geometry. */
+        /** Holds sub-window final-geometry. */
         QRect m_finalWidgetGeometry;
     /** @} */
 
@@ -133,12 +131,10 @@ private:
       * @{ */
         /** Holds the main-layout instance. */
         QHBoxLayout *m_pMainLayout;
-        /** Holds the mdi-area instance. */
-        QMdiArea *m_pMdiArea;
+        /** Holds the area instance. */
+        QWidget *m_pArea;
         /** Holds the child-widget reference. */
         QWidget *m_pWidget;
-        /** Holds the child-widget wrapper instance. */
-        QMdiSubWindow *m_pEmbeddedWidget;
     /** @} */
 };
 

@@ -22,8 +22,6 @@
 /* Qt includes: */
 # include <QApplication>
 # include <QTimer>
-# include <QMdiArea>
-# include <QMdiSubWindow>
 # include <QLabel>
 # include <QMenu>
 # include <QToolButton>
@@ -346,9 +344,6 @@ void UIMiniToolBarPrivate::prepare()
 #else /* !VBOX_WS_X11 */
     m_spacings << widgetForAction(addWidget(new QWidget));
 #endif /* !VBOX_WS_X11 */
-
-    /* Resize to sizehint: */
-    resize(sizeHint());
 }
 
 void UIMiniToolBarPrivate::rebuildShape()
@@ -438,9 +433,8 @@ UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
     , m_alignment(alignment)
     , m_fAutoHide(fAutoHide)
     /* Variables: Contents stuff: */
-    , m_pMdiArea(0)
+    , m_pArea(0)
     , m_pToolbar(0)
-    , m_pEmbeddedToolbar(0)
     /* Variables: Hover stuff: */
     , m_fHovered(false)
     , m_pHoverEnterTimer(0)
@@ -519,16 +513,16 @@ void UIMiniToolBar::addMenus(const QList<QMenu*> &menus)
 
 void UIMiniToolBar::adjustGeometry()
 {
-    /* Resize embedded-toolbar to minimum size: */
-    m_pEmbeddedToolbar->resize(m_pEmbeddedToolbar->sizeHint());
+    /* Resize toolbar to minimum size: */
+    m_pToolbar->resize(m_pToolbar->sizeHint());
 
-    /* Calculate embedded-toolbar position: */
+    /* Calculate toolbar position: */
     int iX = 0, iY = 0;
-    iX = width() / 2 - m_pEmbeddedToolbar->width() / 2;
+    iX = width() / 2 - m_pToolbar->width() / 2;
     switch (m_alignment)
     {
         case Qt::AlignTop:    iY = 0; break;
-        case Qt::AlignBottom: iY = height() - m_pEmbeddedToolbar->height(); break;
+        case Qt::AlignBottom: iY = height() - m_pToolbar->height(); break;
         default: break;
     }
 
@@ -536,20 +530,20 @@ void UIMiniToolBar::adjustGeometry()
     m_shownToolbarPosition = QPoint(iX, iY);
     switch (m_alignment)
     {
-        case Qt::AlignTop:    m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pEmbeddedToolbar->height() - 3); break;
-        case Qt::AlignBottom: m_hiddenToolbarPosition = m_shownToolbarPosition + QPoint(0, m_pEmbeddedToolbar->height() - 3); break;
+        case Qt::AlignTop:    m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pToolbar->height() - 3); break;
+        case Qt::AlignBottom: m_hiddenToolbarPosition = m_shownToolbarPosition + QPoint(0, m_pToolbar->height() - 3); break;
     }
     m_pAnimation->update();
 
-    /* Update embedded-toolbar geometry if known: */
+    /* Update toolbar geometry if known: */
     if (property("AnimationState").toString() == "Final")
-        m_pEmbeddedToolbar->move(m_shownToolbarPosition);
+        m_pToolbar->move(m_shownToolbarPosition);
     else
-        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
+        m_pToolbar->move(m_hiddenToolbarPosition);
 
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     /* Adjust window mask: */
-    setMask(m_pEmbeddedToolbar->geometry());
+    setMask(m_pToolbar->geometry());
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
@@ -838,24 +832,21 @@ void UIMiniToolBar::prepare()
     /* Make sure we have no focus: */
     setFocusPolicy(Qt::NoFocus);
 
-    /* Prepare mdi-area: */
-    m_pMdiArea = new QMdiArea;
+    /* Prepare area: */
+    m_pArea = new QWidget;
     {
-        /* Allow any MDI area size: */
-        m_pMdiArea->setMinimumSize(QSize(1, 1));
+        /* Allow any area size: */
+        m_pArea->setMinimumSize(QSize(1, 1));
         /* Configure own background: */
-        QPalette pal = m_pMdiArea->palette();
+        QPalette pal = m_pArea->palette();
         pal.setColor(QPalette::Window, QColor(Qt::transparent));
-        m_pMdiArea->setPalette(pal);
-        /* Configure viewport background: */
-        m_pMdiArea->setBackground(QColor(Qt::transparent));
-        /* Layout mdi-area according parent-widget: */
+        m_pArea->setPalette(pal);
+        /* Layout area according parent-widget: */
         QVBoxLayout *pMainLayout = new QVBoxLayout(this);
         pMainLayout->setContentsMargins(0, 0, 0, 0);
-        pMainLayout->addWidget(m_pMdiArea);
+        pMainLayout->addWidget(m_pArea);
         /* Make sure we have no focus: */
-        m_pMdiArea->setFocusPolicy(Qt::NoFocus);
-        m_pMdiArea->viewport()->setFocusPolicy(Qt::NoFocus);
+        m_pArea->setFocusPolicy(Qt::NoFocus);
     }
 
     /* Prepare mini-toolbar: */
@@ -876,10 +867,10 @@ void UIMiniToolBar::prepare()
         connect(m_pToolbar, SIGNAL(sigMinimizeAction()), this, SIGNAL(sigMinimizeAction()));
         connect(m_pToolbar, SIGNAL(sigExitAction()), this, SIGNAL(sigExitAction()));
         connect(m_pToolbar, SIGNAL(sigCloseAction()), this, SIGNAL(sigCloseAction()));
-        /* Add child to mdi-area: */
-        m_pEmbeddedToolbar = m_pMdiArea->addSubWindow(m_pToolbar, Qt::Window | Qt::FramelessWindowHint);
+        /* Add child to area: */
+        m_pToolbar->setParent(m_pArea);
         /* Make sure we have no focus: */
-        m_pEmbeddedToolbar->setFocusPolicy(Qt::NoFocus);
+        m_pToolbar->setFocusPolicy(Qt::NoFocus);
     }
 
     /* Prepare hover-enter/leave timers: */
@@ -921,13 +912,13 @@ void UIMiniToolBar::cleanup()
     if (m_pHoverLeaveTimer && m_pHoverLeaveTimer->isActive())
         m_pHoverLeaveTimer->stop();
 
-    /* Destroy animation before mdi-toolbar: */
+    /* Destroy animation before toolbar: */
     delete m_pAnimation;
     m_pAnimation = 0;
 
-    /* Destroy mdi-toolbar after animation: */
-    delete m_pEmbeddedToolbar;
-    m_pEmbeddedToolbar = 0;
+    /* Destroy toolbar after animation: */
+    delete m_pToolbar;
+    m_pToolbar = 0;
 }
 
 void UIMiniToolBar::enterEvent(QEvent*)
@@ -1120,20 +1111,20 @@ void UIMiniToolBar::simulateToolbarAutoHiding()
 void UIMiniToolBar::setToolbarPosition(QPoint point)
 {
     /* Update position: */
-    AssertPtrReturnVoid(m_pEmbeddedToolbar);
-    m_pEmbeddedToolbar->move(point);
+    AssertPtrReturnVoid(m_pToolbar);
+    m_pToolbar->move(point);
 
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     /* Update window mask: */
-    setMask(m_pEmbeddedToolbar->geometry());
+    setMask(m_pToolbar->geometry());
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 }
 
 QPoint UIMiniToolBar::toolbarPosition() const
 {
     /* Return position: */
-    AssertPtrReturn(m_pEmbeddedToolbar, QPoint());
-    return m_pEmbeddedToolbar->pos();
+    AssertPtrReturn(m_pToolbar, QPoint());
+    return m_pToolbar->pos();
 }
 
 bool UIMiniToolBar::isParentMinimized() const

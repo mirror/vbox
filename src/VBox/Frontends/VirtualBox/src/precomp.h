@@ -108,8 +108,6 @@
 #endif
 #include <QMainWindow>
 #include <QMap>
-#include <QMdiArea>
-#include <QMdiSubWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>

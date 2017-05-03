@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2016 Oracle Corporation
+ * Copyright (C) 2014-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,9 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QMdiSubWindow>
 # include <QHBoxLayout>
-# include <QMdiArea>
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -44,9 +42,8 @@ UISlidingToolBar::UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidge
     , m_pAnimation(0)
     , m_fExpanded(false)
     , m_pMainLayout(0)
-    , m_pMdiArea(0)
+    , m_pArea(0)
     , m_pWidget(pChildWidget)
-    , m_pEmbeddedWidget(0)
 {
     /* Prepare: */
     prepare();
@@ -101,17 +98,16 @@ void UISlidingToolBar::prepareContents()
         /* Configure main-layout: */
         m_pMainLayout->setContentsMargins(0, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
-        /* Create mdi-area: */
-        m_pMdiArea = new QMdiArea;
-        AssertPtrReturnVoid(m_pMdiArea);
+        /* Create area: */
+        m_pArea = new QWidget;
+        AssertPtrReturnVoid(m_pArea);
         {
-            /* Configure mdi-area: */
-            m_pMdiArea->setAcceptDrops(true);
-            m_pMdiArea->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-            QPalette pal1 = m_pMdiArea->palette();
+            /* Configure area: */
+            m_pArea->setAcceptDrops(true);
+            m_pArea->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+            QPalette pal1 = m_pArea->palette();
             pal1.setColor(QPalette::Window, QColor(Qt::transparent));
-            m_pMdiArea->setPalette(pal1);
-            m_pMdiArea->setBackground(QColor(Qt::transparent));
+            m_pArea->setPalette(pal1);
             /* Make sure valid child-widget passed: */
             AssertPtrReturnVoid(m_pWidget);
             {
@@ -120,35 +116,34 @@ void UISlidingToolBar::prepareContents()
                 pal2.setColor(QPalette::Window, palette().color(QPalette::Window));
                 m_pWidget->setPalette(pal2);
                 connect(m_pWidget, SIGNAL(sigCancelClicked()), this, SLOT(close()));
-                /* Add child-widget into mdi-area: */
-                m_pEmbeddedWidget = m_pMdiArea->addSubWindow(m_pWidget, Qt::Window | Qt::FramelessWindowHint);
-                AssertPtrReturnVoid(m_pEmbeddedWidget);
+                /* Add child-widget into area: */
+                m_pWidget->setParent(m_pArea);
             }
-            /* Add mdi-area into main-layout: */
-            m_pMainLayout->addWidget(m_pMdiArea);
+            /* Add area into main-layout: */
+            m_pMainLayout->addWidget(m_pArea);
         }
     }
 }
 
 void UISlidingToolBar::prepareGeometry()
 {
-    /* Prepare geometry based on parent and mdi-sub-window size-hints,
-     * But move mdi-sub-window to initial position: */
-    const QSize sh = m_pEmbeddedWidget->sizeHint();
+    /* Prepare geometry based on parent and sub-window size-hints,
+     * But move sub-window to initial position: */
+    const QSize sh = m_pWidget->sizeHint();
     switch (m_position)
     {
         case Position_Top:
         {
             VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
                                                   qMax(m_parentRect.width(), sh.width()), sh.height());
-            m_pEmbeddedWidget->setGeometry(0, -sh.height(), qMax(width(), sh.width()), sh.height());
+            m_pWidget->setGeometry(0, -sh.height(), qMax(width(), sh.width()), sh.height());
             break;
         }
         case Position_Bottom:
         {
             VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
                                                   qMax(m_parentRect.width(), sh.width()), sh.height());
-            m_pEmbeddedWidget->setGeometry(0,  sh.height(), qMax(width(), sh.width()), sh.height());
+            m_pWidget->setGeometry(0,  sh.height(), qMax(width(), sh.width()), sh.height());
             break;
         }
     }
@@ -157,7 +152,7 @@ void UISlidingToolBar::prepareGeometry()
     if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
-        setMask(m_pEmbeddedWidget->geometry());
+        setMask(m_pWidget->geometry());
     }
 #endif /* VBOX_WS_X11 */
 
@@ -176,7 +171,7 @@ void UISlidingToolBar::prepareGeometry()
 
 void UISlidingToolBar::prepareAnimation()
 {
-    /* Prepare mdi-sub-window geometry animation itself: */
+    /* Prepare sub-window geometry animation itself: */
     connect(this, SIGNAL(sigShown()), this, SIGNAL(sigExpand()), Qt::QueuedConnection);
     m_pAnimation = UIAnimation::installPropertyAnimation(this,
                                                          "widgetGeometry",
@@ -190,8 +185,8 @@ void UISlidingToolBar::prepareAnimation()
 
 void UISlidingToolBar::adjustGeometry()
 {
-    /* Adjust geometry based on parent and mdi-sub-window size-hints: */
-    const QSize sh = m_pEmbeddedWidget->sizeHint();
+    /* Adjust geometry based on parent and sub-window size-hints: */
+    const QSize sh = m_pWidget->sizeHint();
     switch (m_position)
     {
         case Position_Top:
@@ -207,14 +202,14 @@ void UISlidingToolBar::adjustGeometry()
             break;
         }
     }
-    /* And move mdi-sub-window to corresponding position: */
-    m_pEmbeddedWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
+    /* And move sub-window to corresponding position: */
+    m_pWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
 
 #ifdef VBOX_WS_X11
     if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
-        setMask(m_pEmbeddedWidget->geometry());
+        setMask(m_pWidget->geometry());
     }
 #endif /* VBOX_WS_X11 */
 
@@ -230,8 +225,8 @@ void UISlidingToolBar::updateAnimation()
     if (!m_pAnimation)
         return;
 
-    /* Recalculate mdi-sub-window geometry animation boundaries based on size-hint: */
-    const QSize sh = m_pEmbeddedWidget->sizeHint();
+    /* Recalculate sub-window geometry animation boundaries based on size-hint: */
+    const QSize sh = m_pWidget->sizeHint();
     switch (m_position)
     {
         case Position_Top:    m_startWidgetGeometry = QRect(0, -sh.height(), qMax(width(), sh.width()), sh.height()); break;
@@ -299,21 +294,21 @@ bool UISlidingToolBar::event(QEvent *pEvent)
 
 void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
 {
-    /* Apply mdi-sub-window geometry: */
-    m_pEmbeddedWidget->setGeometry(rect);
+    /* Apply sub-window geometry: */
+    m_pWidget->setGeometry(rect);
 
 #ifdef VBOX_WS_X11
     if (!vboxGlobal().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
-        setMask(m_pEmbeddedWidget->geometry());
+        setMask(m_pWidget->geometry());
     }
 #endif /* VBOX_WS_X11 */
 }
 
 QRect UISlidingToolBar::widgetGeometry() const
 {
-    /* Return mdi-sub-window geometry: */
-    return m_pEmbeddedWidget->geometry();
+    /* Return sub-window geometry: */
+    return m_pWidget->geometry();
 }
 
