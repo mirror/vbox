@@ -35,12 +35,12 @@
 #include "HMSVMR0.h"
 #include "dtrace/VBoxVMM.h"
 
-# define HMSVM_USE_IEM_EVENT_REFLECTION
 #ifdef DEBUG_ramshankar
 # define HMSVM_SYNC_FULL_GUEST_STATE
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
 # define HMSVM_ALWAYS_TRAP_TASK_SWITCH
+# define HMSVM_USE_IEM_EVENT_REFLECTION
 #endif
 
 
