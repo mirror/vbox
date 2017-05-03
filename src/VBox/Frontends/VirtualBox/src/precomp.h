@@ -483,7 +483,6 @@
 #include "UIGlobalSettingsInput.h"
 #include "UIGlobalSettingsLanguage.h"
 #include "UIGlobalSettingsNetwork.h"
-#include "UIGlobalSettingsNetworkDetailsHost.h"
 #include "UIGlobalSettingsNetworkDetailsNAT.h"
 #include "UIGlobalSettingsPortForwardingDlg.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER

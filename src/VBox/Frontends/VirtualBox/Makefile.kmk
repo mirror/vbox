@@ -412,7 +412,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/global/UIGlobalSettingsDisplay.h \
 	src/settings/global/UIGlobalSettingsNetwork.h \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.h \
-	src/settings/global/UIGlobalSettingsNetworkDetailsHost.h \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.h \
 	src/settings/machine/UIMachineSettingsAudio.h \
 	src/settings/machine/UIMachineSettingsDisplay.h \
@@ -718,7 +717,6 @@ VirtualBox_SOURCES = \
 	src/settings/global/UIGlobalSettingsDisplay.cpp \
 	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.cpp \
-	src/settings/global/UIGlobalSettingsNetworkDetailsHost.cpp \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp \
 	src/settings/machine/UIMachineSettingsAudio.cpp \
 	src/settings/machine/UIMachineSettingsDisplay.cpp \

@@ -32,7 +32,6 @@ FORMS = \
     src/settings/global/UIGlobalSettingsDisplay.ui \
     src/settings/global/UIGlobalSettingsNetwork.ui \
     src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui \
-    src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui \
     src/settings/global/UIGlobalSettingsExtension.ui \
     src/settings/global/UIGlobalSettingsProxy.ui \
     src/settings/machine/UIMachineSettingsGeneral.ui \

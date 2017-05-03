@@ -22,13 +22,18 @@
 /* Qt includes: */
 # include <QCheckBox>
 # include <QLabel>
+# include <QStyleOption>
 # include <QRegExpValidator>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "QILineEdit.h"
-# include "UIGlobalSettingsNetwork.h"
+# include "QITabWidget.h"
 # include "UIHostNetworkDetailsDialog.h"
 # include "UIIconPool.h"
+
+/* Other VBox includes: */
+# include "iprt/assert.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
