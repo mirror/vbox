@@ -603,11 +603,11 @@ static unsigned int     MyPassExecuteCallback(void)
                             State.fMaybeNull ? "_maybe_null" : "", State.iFmt, State.iArgs);
 
                     unsigned cCallArgs = gimple_call_num_args(hStmt);
-                    if (cCallArgs > State.iFmt)
+                    if (cCallArgs >= State.iFmt)
                         MyCheckFormatRecursive(&State, gimple_call_arg(hStmt, State.iFmt - 1));
                     else
                         error_at(gimple_location(hStmt),
-                                 "Call has only %d arguments; %s() format string is argument #%u, thus missing\n",
+                                 "Call has only %d arguments; %s() format string is argument #%u (1-based), thus missing\n",
                                  cCallArgs, DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",State.iFmt);
                 }
             }
