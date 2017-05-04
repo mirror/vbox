@@ -904,15 +904,16 @@ class TestBoxScript(object):
         #
         # Parse arguments.
         #
+        sDefShareType = 'nfs' utils.getHostOs() == 'solaris' else 'cifs';
         if utils.getHostOs() in ('win', 'os2'):
-            sDefTestRsrc = 'T:';
-            sDefBuilds   = 'U:';
+            sDefTestRsrc  = 'T:';
+            sDefBuilds    = 'U:';
         elif utils.getHostOs() == 'darwin':
-            sDefTestRsrc = '/Volumes/testrsrc';
-            sDefBuilds   = '/Volumes/builds';
+            sDefTestRsrc  = '/Volumes/testrsrc';
+            sDefBuilds    = '/Volumes/builds';
         else:
-            sDefTestRsrc = '/mnt/testrsrc';
-            sDefBuilds   = '/mnt/builds';
+            sDefTestRsrc  = '/mnt/testrsrc';
+            sDefBuilds    = '/mnt/builds';
 
         class MyOptionParser(OptionParser):
             """ We need to override the exit code on --help, error and so on. """
@@ -929,8 +930,8 @@ class TestBoxScript(object):
                               dest=sPrefix + 'Path',         metavar='<abs-path>', default=sDefault,
                               help='Where ' + sDesc + ' can be found');
             parser.add_option('--' + sLower + '-server-type',
-                              dest=sPrefix + 'ServerType',   metavar='<nfs|cifs>', default=None,
-                              help='The type of server, cifs or nfs. If empty (default), we won\'t try mount anything.');
+                              dest=sPrefix + 'ServerType',   metavar='<nfs|cifs>', default=sDefShareType,
+                              help='The type of server, cifs (default) or nfs. If empty, we won\'t try mount anything.');
             parser.add_option('--' + sLower + '-server-name',
                               dest=sPrefix + 'ServerName',   metavar='<server>',
                               default='vboxstor.de.oracle.com' if sLower == 'builds' else 'teststor.de.oracle.com',

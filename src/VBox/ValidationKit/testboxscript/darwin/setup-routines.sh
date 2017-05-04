@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -27,32 +27,6 @@
 MY_CONFIG_FILE=/Library/LaunchDaemons/org.virtualbox.testboxscript.plist
 
 ##
-# Checks for a boolean option pair --$2/--no-$2 in the XMLARGS variable,
-# storing the result in the TESTBOXSCRIPT_XXX variable $1.
-darwin_check_for_option_bool() {
-    MY_TMP=`echo "${XMLARGS}" | sed -ne 's|^.*<string>--'"$2"'</string>.*$|yes|p'`
-    if [ -n "${MY_TMP}" ]; then
-        eval $1="yes";
-    fi
-    MY_TMP=`echo "${XMLARGS}" | sed -ne 's|^.*<string>--no-'"$2"'</string>.*$|yes|p'`
-    if [ -n "${MY_TMP}" ]; then
-        eval $1="no";
-    fi
-    return 0;
-}
-
-##
-# Checks for an option $2 taking an argument, storing the result in the
-# TESTBOXSCRIPT_XXX variable $1.
-darwin_check_for_option_arg() {
-    MY_TMP=`echo "${XMLARGS}" | sed -ne 's|^.*<string>--'"$2"'</string> *<string>\([^<>]*\)</string>.*$|\1|p'`
-    if [ -n "${MY_TMP}" ]; then
-        eval $1="\"${MY_TMP}\"";
-    fi
-    return 0;
-}
-
-##
 # Loads config values from the current installation.
 #
 os_load_config() {
@@ -73,34 +47,14 @@ os_load_config() {
                   -e 's/  */ /g' \
                   -e 's|\(</[[:alnum:]]*>\)<|\1 <|g' \
                   -e 's|^.*ProgramArguments</key> *<array> *\(.*\)</array>.*$|\1|'`;
-
-        darwin_check_for_option_arg  TESTBOXSCRIPT_SYSTEM_UUID      system-uuid
-        darwin_check_for_option_arg  TESTBOXSCRIPT_SCRATCH_ROOT     scratch-root
-        darwin_check_for_option_arg  TESTBOXSCRIPT_TEST_MANAGER     test-manager
-        darwin_check_for_option_bool TESTBOXSCRIPT_HWVIRT           hwvirt
-        darwin_check_for_option_bool TESTBOXSCRIPT_NESTED_PAGING    nested-paging
-        darwin_check_for_option_bool TESTBOXSCRIPT_IOMMU            io-mmu
-        darwin_check_for_option_arg  TESTBOXSCRIPT_BUILDS_PATH      builds-path
-        darwin_check_for_option_arg  TESTBOXSCRIPT_BUILDS_TYPE      builds-server-type
-        darwin_check_for_option_arg  TESTBOXSCRIPT_BUILDS_NAME      builds-server-name
-        darwin_check_for_option_arg  TESTBOXSCRIPT_BUILDS_SHARE     builds-server-share
-        darwin_check_for_option_arg  TESTBOXSCRIPT_BUILDS_USER      builds-server-user
-        darwin_check_for_option_arg  TESTBOXSCRIPT_BUILDS_PASSWD    builds-server-passwd
-        darwin_check_for_option_arg  TESTBOXSCRIPT_TESTRSRC_PATH    testrsrc-path
-        darwin_check_for_option_arg  TESTBOXSCRIPT_TESTRSRC_TYPE    testrsrc-server-type
-        darwin_check_for_option_arg  TESTBOXSCRIPT_TESTRSRC_NAME    testrsrc-server-name
-        darwin_check_for_option_arg  TESTBOXSCRIPT_TESTRSRC_SHARE   testrsrc-server-share
-        darwin_check_for_option_arg  TESTBOXSCRIPT_TESTRSRC_USER    testrsrc-server-user
-        darwin_check_for_option_arg  TESTBOXSCRIPT_TESTRSRC_PASSWD  testrsrc-server-passwd
-
-        ## @TODO darwin_check_for_option_arg  TESTBOXSCRIPT_PYTHON           python
+        eval common_testboxscript_args_to_config `echo "${XMLARGS}" | sed -e "s/<string>/'/g" -e "s/<\/string>/'/g" `;
     fi
 }
 
 ##
 # Adds an argument ($1) to MY_ARGV (XML plist format).
 #
-darwin_add_args() {
+os_add_args() {
     while [ $# -gt 0 ];
     do
         case "$1" in
@@ -120,34 +74,10 @@ darwin_add_args() {
 }
 
 os_install_service() {
+    # Calc the command line.
     MY_ARGV=""
-    if [ -n "${TESTBOXSCRIPT_PYTHON}" ]; then
-        darwin_add_args "${TESTBOXSCRIPT_PYTHON}"
-    fi
-    darwin_add_args "${TESTBOXSCRIPT_DIR}/testboxscript/testboxscript.py"
+    common_compile_testboxscript_command_line
 
-    if [ "${TESTBOXSCRIPT_HWVIRT}"        = "yes" ]; then darwin_add_args "--hwvirt"; fi
-    if [ "${TESTBOXSCRIPT_HWVIRT}"        = "no"  ]; then darwin_add_args "--no-hwvirt"; fi
-    if [ "${TESTBOXSCRIPT_NESTED_PAGING}" = "yes" ]; then darwin_add_args "--nested-paging"; fi
-    if [ "${TESTBOXSCRIPT_NESTED_PAGING}" = "no"  ]; then darwin_add_args "--no-nested-paging"; fi
-    if [ "${TESTBOXSCRIPT_IOMMU}"         = "yes" ]; then darwin_add_args "--io-mmu"; fi
-    if [ "${TESTBOXSCRIPT_IOMMU}"         = "no"  ]; then darwin_add_args "--no-io-mmu"; fi
-    if [ -n "${TESTBOXSCRIPT_SYSTEM_UUID}"   ]; then darwin_add_args "--system-uuid" "${TESTBOXSCRIPT_SYSTEM_UUID}"; fi
-    if [ -n "${TESTBOXSCRIPT_TEST_MANAGER}"  ]; then darwin_add_args "--test-manager" "${TESTBOXSCRIPT_TEST_MANAGER}"; fi
-    if [ -n "${TESTBOXSCRIPT_SCRATCH_ROOT}"  ]; then darwin_add_args "--scratch-root" "${TESTBOXSCRIPT_SCRATCH_ROOT}"; fi
-
-    if [ -n "${TESTBOXSCRIPT_BUILDS_PATH}"   ]; then darwin_add_args "--builds-path"            "${TESTBOXSCRIPT_BUILDS_PATH}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_TYPE}"   ]; then darwin_add_args "--builds-server-type"     "${TESTBOXSCRIPT_BUILDS_TYPE}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_NAME}"   ]; then darwin_add_args "--builds-server-name"     "${TESTBOXSCRIPT_BUILDS_NAME}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_SHARE}"  ]; then darwin_add_args "--builds-server-share"    "${TESTBOXSCRIPT_BUILDS_SHARE}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_USER}"   ]; then darwin_add_args "--builds-server-user"     "${TESTBOXSCRIPT_BUILDS_USER}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_PASSWD}" ]; then darwin_add_args "--builds-server-passwd"   "${TESTBOXSCRIPT_BUILDS_PASSWD}"; fi
-    if [ -n "${TESTBOXSCRIPT_TESTRSRC_PATH}" ]; then darwin_add_args "--testrsrc-path"          "${TESTBOXSCRIPT_PATH_TESTRSRC}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_TYPE}"   ]; then darwin_add_args "--testrsrc-server-type"   "${TESTBOXSCRIPT_TESTRSRC_TYPE}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_NAME}"   ]; then darwin_add_args "--testrsrc-server-name"   "${TESTBOXSCRIPT_TESTRSRC_NAME}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_SHARE}"  ]; then darwin_add_args "--testrsrc-server-share"  "${TESTBOXSCRIPT_TESTRSRC_SHARE}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_USER}"   ]; then darwin_add_args "--testrsrc-server-user"   "${TESTBOXSCRIPT_TESTRSRC_USER}"; fi
-    if [ -n "${TESTBOXSCRIPT_BUILDS_PASSWD}" ]; then darwin_add_args "--testrsrc-server-passwd" "${TESTBOXSCRIPT_TESTRSRC_PASSWD}"; fi
 
     # Note! It's not possible to use screen 4.0.3 with the launchd due to buggy
     #       "setsid off" handling (and possible other things).
@@ -176,7 +106,7 @@ EOF
 }
 
 os_enable_service() {
-    launchctl load "${MY_CONFIG_FILE}"
+    launchctl load -w "${MY_CONFIG_FILE}"
     return 0;
 }
 

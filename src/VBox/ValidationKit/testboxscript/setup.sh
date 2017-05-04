@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2006-2015 Oracle Corporation
+# Copyright (C) 2006-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -333,6 +333,124 @@ check_proxy_config() {
     fi
 }
 
+##
+# Parses the testboxscript.py invocation, setting TESTBOXSCRIPT_xxx config
+# variables accordingly.  Both darwin and solaris uses this.
+common_testboxscript_args_to_config()
+{
+    MY_ARG=0
+    while [ $# -gt 0 ];
+    do
+        case "$1" in
+            # boolean
+            "--hwvirt")                 TESTBOXSCRIPT_HWVIRT="yes";;
+            "--no-hwvirt")              TESTBOXSCRIPT_HWVIRT="no";;
+            "--nested-paging")          TESTBOXSCRIPT_NESTED_PAGING="yes";;
+            "--no-nested-paging")       TESTBOXSCRIPT_NESTED_PAGING="no";;
+            "--io-mmu")                 TESTBOXSCRIPT_IOMMU="yes";;
+            "--no-io-mmu")              TESTBOXSCRIPT_IOMMU="no";;
+            # optios taking values.
+            "--system-uuid")            TESTBOXSCRIPT_SYSTEM_UUID="$2"; shift;;
+            "--scratch-root")           TESTBOXSCRIPT_SCRATCH_ROOT="$2"; shift;;
+            "--test-manager")           TESTBOXSCRIPT_TEST_MANAGER="$2"; shift;;
+            "--builds-path")            TESTBOXSCRIPT_BUILDS_PATH="$2"; shift;;
+            "--builds-server-type")     TESTBOXSCRIPT_BUILDS_TYPE="$2"; shift;;
+            "--builds-server-name")     TESTBOXSCRIPT_BUILDS_NAME="$2"; shift;;
+            "--builds-server-share")    TESTBOXSCRIPT_BUILDS_SHARE="$2"; shift;;
+            "--builds-server-user")     TESTBOXSCRIPT_BUILDS_USER="$2"; shift;;
+            "--builds-server-passwd")   TESTBOXSCRIPT_BUILDS_PASSWD="$2"; shift;;
+            "--testrsrc-path")          TESTBOXSCRIPT_TESTRSRC_PATH="$2"; shift;;
+            "--testrsrc-server-type")   TESTBOXSCRIPT_TESTRSRC_TYPE="$2"; shift;;
+            "--testrsrc-server-name")   TESTBOXSCRIPT_TESTRSRC_NAME="$2"; shift;;
+            "--testrsrc-server-share")  TESTBOXSCRIPT_TESTRSRC_SHARE="$2"; shift;;
+            "--testrsrc-server-user")   TESTBOXSCRIPT_TESTRSRC_USER="$2"; shift;;
+            "--testrsrc-server-passwd") TESTBOXSCRIPT_TESTRSRC_PASSWD="$2"; shift;;
+            "--putenv")
+                ## @todo remove any existing variable or we'll end up with a pretty long number of putenv statements on solaris.
+                TESTBOXSCRIPT_ENVVARS+=("$2");
+                shift;;
+            --*)
+                echo "error: Unknown option '$1' in existing config"
+                exit 1
+                ;;
+
+            # Non-option bits.
+            *.py) ;; # ignored, should be the script.
+
+            *)  if [ ${MY_ARG} -ne 0 ]; then
+                    echo "error: unknown non-option '$1' in existing config"
+                    exit 1
+                fi
+                TESTBOXSCRIPT_PYTHON="$1"
+                ;;
+        esac
+        shift
+        MY_ARG=$((${MY_ARG} + 1))
+    done
+}
+
+##
+# Used by common_compile_testboxscript_command_line, please override.
+#
+os_add_args() {
+    echo "os_add_args is not implemented" 2>&1
+    exit 1
+}
+
+##
+# Compiles the testboxscript.py command line given the current
+# configuration and defaults.
+#
+# This is used by solaris and darwin.
+#
+# The os_add_args function will be called several with one or two arguments
+# each time.  The caller must override it.
+#
+common_compile_testboxscript_command_line() {
+    if [ -n "${TESTBOXSCRIPT_PYTHON}" ]; then
+        os_add_args "${TESTBOXSCRIPT_PYTHON}"
+    fi
+    os_add_args "${TESTBOXSCRIPT_DIR}/testboxscript/testboxscript.py"
+
+    for var in ${TESTBOXSCRIPT_CFG_NAMES};
+    do
+        varcfg=TESTBOXSCRIPT_${var}
+        vardef=TESTBOXSCRIPT_DEFAULT_${var}
+        if [ "${!varcfg}" != "${!vardef}"  -a  "${var}" != "PYTHON" ]; then # PYTHON handled above.
+            my_opt=TESTBOXSCRIPT_OPT_${var}
+            if [ -n "${!my_opt}" ]; then
+                if [ "${!my_opt}"  != "--skip" ]; then
+                    os_add_args "${!my_opt}" "${!varcfg}"
+                fi
+            else
+                my_opt_yes=${my_opt}_YES
+                my_opt_no=${my_opt}_NO
+                if [ -n "${!my_opt_yes}" -a -n "${!my_opt_no}" ]; then
+                    if [ "${!varcfg}" = "yes" ]; then
+                        os_add_args "${!my_opt_yes}";
+                    else
+                        if [ "${!varcfg}" != "no" ]; then
+                            echo "internal option misconfig: var=${var} not a yes/no value: ${!varcfg}";
+                            exit 1;
+                        fi
+                        os_add_args "${!my_opt_yes}";
+                    fi
+                else
+                    echo "internal option misconfig: var=${var} my_opt_yes=${my_opt_yes}=${!my_opt_yes} my_opt_no=${my_opt_no}=${!my_opt_no}"
+                    exit 1;
+                fi
+            fi
+        fi
+    done
+
+    i=0
+    while [ "${i}" -lt "${#TESTBOXSCRIPT_ENVVARS[@]}" ];
+    do
+        os_add_args "--putenv" "${TESTBOXSCRIPT_ENVVARS[${i}]}"
+        i=$((${i} + 1))
+    done
+}
+
 
 #
 #
@@ -360,37 +478,91 @@ HOST_ARCH=${RETVAL}
 #
 # Config.
 #
-TESTBOXSCRIPT_PYTHON=""
-TESTBOXSCRIPT_USER=""
-TESTBOXSCRIPT_HWVIRT=""
-TESTBOXSCRIPT_IOMMU=""
-TESTBOXSCRIPT_NESTED_PAGING=""
-TESTBOXSCRIPT_SYSTEM_UUID=""
-TESTBOXSCRIPT_PATH_TESTRSRC=""
-TESTBOXSCRIPT_TEST_MANAGER=""
-TESTBOXSCRIPT_SCRATCH_ROOT=""
-TESTBOXSCRIPT_BUILDS_PATH=""
-TESTBOXSCRIPT_BUILDS_TYPE="cifs"
-TESTBOXSCRIPT_BUILDS_NAME="vboxstor.de.oracle.com"
-TESTBOXSCRIPT_BUILDS_SHARE="builds"
-TESTBOXSCRIPT_BUILDS_USER="guestr"
-TESTBOXSCRIPT_BUILDS_PASSWD="guestr"
-TESTBOXSCRIPT_TESTRSRC_PATH=""
-TESTBOXSCRIPT_TESTRSRC_TYPE="cifs"
-TESTBOXSCRIPT_TESTRSRC_NAME="teststor.de.oracle.com"
-TESTBOXSCRIPT_TESTRSRC_SHARE="testrsrc"
-TESTBOXSCRIPT_TESTRSRC_USER="guestr"
-TESTBOXSCRIPT_TESTRSRC_PASSWD="guestr"
+TESTBOXSCRIPT_CFG_NAMES="DIR PYTHON USER HWVIRT IOMMU NESTED_PAGING SYSTEM_UUID PATH_TESTRSRC TEST_MANAGER SCRATCH_ROOT"
+TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES}   BUILDS_PATH   BUILDS_TYPE   BUILDS_NAME   BUILDS_SHARE   BUILDS_USER   BUILDS_PASSWD"
+TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES} TESTRSRC_PATH TESTRSRC_TYPE TESTRSRC_NAME TESTRSRC_SHARE TESTRSRC_USER TESTRSRC_PASSWD"
+
+# testboxscript.py option to config mappings.
+TESTBOXSCRIPT_OPT_DIR="--skip"
+TESTBOXSCRIPT_OPT_PYTHON="--skip"
+TESTBOXSCRIPT_OPT_USER="--skip"
+TESTBOXSCRIPT_OPT_HWVIRT_YES="--hwvirt"
+TESTBOXSCRIPT_OPT_HWVIRT_NO="--no-hwvirt"
+TESTBOXSCRIPT_OPT_NESTED_PAGING_YES="--nested-paging"
+TESTBOXSCRIPT_OPT_NESTED_PAGING_NO="--no-nested-paging"
+TESTBOXSCRIPT_OPT_IOMMU_YES="--io-mmu"
+TESTBOXSCRIPT_OPT_IOMMU_NO="--no-io-mmu"
+TESTBOXSCRIPT_OPT_SYSTEM_UUID="--system-uuid"
+TESTBOXSCRIPT_OPT_TEST_MANAGER="--test-manager"
+TESTBOXSCRIPT_OPT_SCRATCH_ROOT="--scratch-root"
+TESTBOXSCRIPT_OPT_BUILDS_PATH="--builds-path"
+TESTBOXSCRIPT_OPT_BUILDS_TYPE="--builds-server-type"
+TESTBOXSCRIPT_OPT_BUILDS_NAME="--builds-server-name"
+TESTBOXSCRIPT_OPT_BUILDS_SHARE="--builds-server-share"
+TESTBOXSCRIPT_OPT_BUILDS_USER="--builds-server-user"
+TESTBOXSCRIPT_OPT_BUILDS_PASSWD="--builds-server-passwd"
+TESTBOXSCRIPT_OPT_PATH_TESTRSRC="--testrsrc-path"
+TESTBOXSCRIPT_OPT_TESTRSRC_TYPE="--testrsrc-server-type"
+TESTBOXSCRIPT_OPT_TESTRSRC_NAME="--testrsrc-server-name"
+TESTBOXSCRIPT_OPT_TESTRSRC_SHARE="--testrsrc-server-share"
+TESTBOXSCRIPT_OPT_TESTRSRC_USER="--testrsrc-server-user"
+TESTBOXSCRIPT_OPT_TESTRSRC_PASSWD="--testrsrc-server-passwd"
+
+# Defaults:
+TESTBOXSCRIPT_DEFAULT_DIR="there-is-no-default-for-this-value"
+TESTBOXSCRIPT_DEFAULT_PYTHON=""
+TESTBOXSCRIPT_DEFAULT_USER="vbox"
+TESTBOXSCRIPT_DEFAULT_HWVIRT=""
+TESTBOXSCRIPT_DEFAULT_IOMMU=""
+TESTBOXSCRIPT_DEFAULT_NESTED_PAGING=""
+TESTBOXSCRIPT_DEFAULT_SYSTEM_UUID=""
+TESTBOXSCRIPT_DEFAULT_PATH_TESTRSRC=""
+TESTBOXSCRIPT_DEFAULT_TEST_MANAGER=""
+TESTBOXSCRIPT_DEFAULT_SCRATCH_ROOT=""
+TESTBOXSCRIPT_DEFAULT_BUILDS_PATH=""
+TESTBOXSCRIPT_DEFAULT_BUILDS_TYPE="cifs"
+TESTBOXSCRIPT_DEFAULT_BUILDS_NAME="vboxstor.de.oracle.com"
+TESTBOXSCRIPT_DEFAULT_BUILDS_SHARE="builds"
+TESTBOXSCRIPT_DEFAULT_BUILDS_USER="guestr"
+TESTBOXSCRIPT_DEFAULT_BUILDS_PASSWD="guestr"
+TESTBOXSCRIPT_DEFAULT_TESTRSRC_PATH=""
+TESTBOXSCRIPT_DEFAULT_TESTRSRC_TYPE="cifs"
+TESTBOXSCRIPT_DEFAULT_TESTRSRC_NAME="teststor.de.oracle.com"
+TESTBOXSCRIPT_DEFAULT_TESTRSRC_SHARE="testrsrc"
+TESTBOXSCRIPT_DEFAULT_TESTRSRC_USER="guestr"
+TESTBOXSCRIPT_DEFAULT_TESTRSRC_PASSWD="guestr"
+
+# Set config values to defaults.
+for var in ${TESTBOXSCRIPT_CFG_NAMES}
+do
+    defvar=TESTBOXSCRIPT_DEFAULT_${var}
+    eval TESTBOXSCRIPT_${var}="${!defvar}"
+done
 declare -a TESTBOXSCRIPT_ENVVARS
 
 # Load old config values (platform specific).
 os_load_config
 
-# Set defaults.
+
+#
+# Config tweaks.
+#
+
+# The USER must be a non-empty value for the successful execution of this script.
 if [ -z "${TESTBOXSCRIPT_USER}" ]; then
-    TESTBOXSCRIPT_USER=vbox;
+    TESTBOXSCRIPT_USER=${TESTBOXSCRIPT_DEFAULT_USER};
 fi;
+
+# The DIR must be according to the setup.sh location.
 TESTBOXSCRIPT_DIR=`dirname "${DIR}"`
+
+# Storage server replacement trick.
+if [ "${TESTBOXSCRIPT_BUILDS_NAME}" = "solserv.de.oracle.com" ]; then
+    TESTBOXSCRIPT_BUILDS_NAME=${TESTBOXSCRIPT_DEFAULT_BUILDS_NAME}
+fi
+if [ "${TESTBOXSCRIPT_TESTRSRC_NAME}" = "solserv.de.oracle.com" ]; then
+    TESTBOXSCRIPT_TESTRSRC_NAME=${TESTBOXSCRIPT_DEFAULT_TESTRSRC_NAME}
+fi
 
 
 #
