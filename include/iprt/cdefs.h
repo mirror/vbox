@@ -2303,7 +2303,8 @@
  */
 #if RT_MSC_PREREQ(RT_MSC_VER_VS2005) /** @todo Probably much much earlier. */ \
  || (defined(__cplusplus) && RT_GNUC_PREREQ(6, 1)) \
- || defined(__WATCOMC__) /* openwatcom 1.9 supports it, we don't care about older atm. */
+ || defined(__WATCOMC__) /* openwatcom 1.9 supports it, we don't care about older atm. */ \
+ || RT_CLANG_PREREQ_EX(3, 4, 0) /* Only tested clang v3.4, support is probably older. */
 # define RT_FLEXIBLE_ARRAY
 # if defined(__cplusplus) && defined(_MSC_VER)
 #  pragma warning(disable:4200) /* -wd4200 does not work with VS2010 */
