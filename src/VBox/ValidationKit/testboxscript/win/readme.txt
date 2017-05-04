@@ -36,7 +36,7 @@ Preparations:
    passing the password as an argument to "NET USE" (don't ask why!).
 
 6b. While in the group policy editor, make sure that  "Computer Configuration"
-   -> "Windows Settings" -> "Security Settings" -> "Local Policies"
+   -> "Windows Settings" -> "Security Settings" [ -> "Local Policies" ]
    -> "Account Policy" -> "Password must meet complexity requirements" is
    disabled so the vbox account can be created later one.
 
@@ -111,18 +111,26 @@ Preparations:
 
 21. Activate windows. "https://linserv.de.oracle.com/vbox/wiki/MSDN Volume License Keys"
 
-22. Disable loading CONIME. Set "HKEY_CURRENT_USER\Console\LoadConIme" to 0.
-
-23. Windows 2012 R2: If you experience mouse pointer problems connecting with rdesktop,
+22. Windows 2012 R2: If you experience mouse pointer problems connecting with rdesktop,
     open the mouse pointer settings and disable mouse pointer shadow.
 
-The install:
+23. Enable RDP access by opening "System Properties" and selecting "Allow
+    remote connections to this computer" in the "Remote" tab.  Ensure that
+    "Allow connections only from computers running Remote Desktop with Network
+    Level Authentication" is not checked or rdesktop can't access it.
 
-23. Unzip (/ copy) the content of the testboxscript-*.zip to C:\testboxscript.
+23b. While you're in "System Properties", in the "Hardware" tab, button
+    "Driver Signing" tell it to ignore logo testing requirements.
 
-24. Copy C:\testboxscript\testboxscript\win\autoexec-testbox.cmd to C:\.
+The install (as user vbox):
 
-25. Create a shortcut to C:\autoexec-testbox.cmd and drag it into
+24. Disable loading CONIME. Set "HKEY_CURRENT_USER\Console\LoadConIme" to 0.
+
+25. Unzip (/ copy) the content of the testboxscript-*.zip to C:\testboxscript.
+
+26. Copy C:\testboxscript\testboxscript\win\autoexec-testbox.cmd to C:\.
+
+27. Create a shortcut to C:\autoexec-testbox.cmd and drag it into
     "Start" -> "All Programs" -> "Startup".
 
     W10: Find startup folder by hitting Win+R and entering "shell:startup".
@@ -130,13 +138,8 @@ The install:
          \HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\SecurityLayer
          Change DWORD Hex '2' -> '1'
 
-26. If this is an Intel box and the CPU is capable of Nested Paging, edit C:\autoexec-testbox.cmd
+28. If this is an Intel box and the CPU is capable of Nested Paging, edit C:\autoexec-testbox.cmd
     and append '--nested-paging'
-
-27. Enable RDP access by opening "System Properties" and selecting "Allow
-    remote connections to this computer" in the "Remote" tab.  Ensure that
-    "Allow connections only from computers running Remote Desktop with Network
-    Level Authentication" is not checked or rdesktop can't access it.
 
 
 That's currently it.
