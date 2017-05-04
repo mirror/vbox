@@ -1921,8 +1921,65 @@ FNIEMOP_DEF(iemOp_movhpd_Vdq_Mq)
 }
 
 
-/** Opcode 0xf3 0x0f 0x16 - movshdup Vx, Wx   */
-FNIEMOP_STUB(iemOp_movshdup_Vx_Wx); //NEXT
+/**
+ * @opcode      0x16
+ * @oppfx       0xf3
+ * @opcpuid     sse3
+ * @opgroup     og_sse3_pcksclr_datamove
+ * @opxcpttype  4
+ * @optest      op1=-1 op2=0x00000002dddddddd00000001eeeeeeee ->
+ *              op1=0x00000002000000020000000100000001
+ * @oponly
+ */
+FNIEMOP_DEF(iemOp_movshdup_Vdq_Wdq)
+{
+    IEMOP_MNEMONIC2(RM, MOVSHDUP, movshdup, Vdq, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG(PCRTUINT128U,                puSrc, 1);
+
+        IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+
+        IEM_MC_REF_XREG_U128_CONST(puSrc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+        IEM_MC_REF_XREG_U128(puDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_movshdup, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(2, 2);
+        IEM_MC_LOCAL(RTUINT128U,                uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+        IEM_MC_ARG(PRTUINT128U,                 puDst, 0);
+        IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+
+        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_REF_XREG_U128(puDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_movshdup, puDst, puSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
 
 /**
  * @opdone
@@ -8670,7 +8727,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x13 */  iemOp_movlps_Mq_Vq,         iemOp_movlpd_Mq_Vq,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x14 */  iemOp_unpcklps_Vx_Wx,       iemOp_unpcklpd_Vx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x15 */  iemOp_unpckhps_Vx_Wx,       iemOp_unpckhpd_Vx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x16 */  iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq, iemOp_movhpd_Vdq_Mq, iemOp_movshdup_Vx_Wx,     iemOp_InvalidNeedRM,
+    /* 0x16 */  iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq, iemOp_movhpd_Vdq_Mq, iemOp_movshdup_Vdq_Wdq,   iemOp_InvalidNeedRM,
     /* 0x17 */  iemOp_movhps_Mq_Vq,         iemOp_movhpd_Mq_Vq,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x18 */  IEMOP_X4(iemOp_prefetch_Grp16),
     /* 0x19 */  IEMOP_X4(iemOp_nop_Ev),
