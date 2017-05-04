@@ -74,7 +74,7 @@ os_install_service() {
 }
 
 os_enable_service() {
-    stop_init_script testboxscript-service
+    start_init_script testboxscript-service
     return 0;
 }
 
