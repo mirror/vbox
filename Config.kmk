@@ -2785,6 +2785,11 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
 VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
 
+ifdef VBOX_WITH_NEW_XCODE
+ VBOX_GCC_PEDANTIC_CXX     += -Wno-c99-extensions
+ VBOX_GCC_NON_PEDANTIC_CXX += -Wno-c99-extensions
+endif
+
 # The address sanitiser library intercepts dlopen() and breaks RPATH $ORIGIN,
 # so we need to link it statically.
 ifdef VBOX_WITH_GCC_SANITIZER
