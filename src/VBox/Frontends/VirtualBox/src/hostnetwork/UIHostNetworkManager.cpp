@@ -552,11 +552,13 @@ void UIHostNetworkManager::sltHandleButtonClicked(QAbstractButton *pButton)
 
         /* Find corresponding interface again (if necessary): */
         if (!comInterface.isOk())
+        {
             comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
 
-        /* Show error message if necessary: */
-        if (!comHost.isOk() || comInterface.isNull())
-            msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
+            /* Show error message if necessary: */
+            if (!comHost.isOk() || comInterface.isNull())
+                msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
+        }
 
         /* If interface is Ok now: */
         if (comInterface.isNotNull() && comInterface.isOk())
