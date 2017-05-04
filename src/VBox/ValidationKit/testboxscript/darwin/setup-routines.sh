@@ -216,7 +216,7 @@ Additional things to do:"
              $ systemsetup -setremotelogin on
          b) 'Remote Management, tick all the checkboxes in the sheet dialog.
             Open the 'Computer Settings' and check 'Show Remote Management
-            status in nmenu bar', 'Anyone may request permission to control
+            status in menu bar', 'Anyone may request permission to control
             screen' and 'VNC viewers may control screen with password'. Set the
             VNC password to 'password'.
     4. Make sure the proxy is configured correctly for your network by going to
