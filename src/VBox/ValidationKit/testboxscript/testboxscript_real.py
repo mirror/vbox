@@ -904,7 +904,7 @@ class TestBoxScript(object):
         #
         # Parse arguments.
         #
-        sDefShareType = 'nfs' utils.getHostOs() == 'solaris' else 'cifs';
+        sDefShareType = 'nfs' if utils.getHostOs() == 'solaris' else 'cifs';
         if utils.getHostOs() in ('win', 'os2'):
             sDefTestRsrc  = 'T:';
             sDefBuilds    = 'U:';
