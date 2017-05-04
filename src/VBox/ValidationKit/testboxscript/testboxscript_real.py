@@ -933,7 +933,7 @@ class TestBoxScript(object):
                               help='The type of server, cifs or nfs. If empty (default), we won\'t try mount anything.');
             parser.add_option('--' + sLower + '-server-name',
                               dest=sPrefix + 'ServerName',   metavar='<server>',
-                              default='solserv.de.oracle.com' if sLower == 'builds' else 'teststor.de.oracle.com',
+                              default='vboxstor.de.oracle.com' if sLower == 'builds' else 'teststor.de.oracle.com',
                               help='The name of the server with the builds.');
             parser.add_option('--' + sLower + '-server-share',
                               dest=sPrefix + 'ServerShare',  metavar='<share>',    default=sLower,
