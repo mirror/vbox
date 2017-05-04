@@ -565,13 +565,13 @@ static unsigned int     MyPassExecuteCallback(void)
                     dprintf("     hFn is decl: %s %s:%d\n",
                             DECL_NAME(hFn) ? IDENTIFIER_POINTER(DECL_NAME(hFn)) : "<unamed>",
                             DECL_SOURCE_FILE(hFn), DECL_SOURCE_LINE(hFn));
+#endif
                 tree const hFnDecl = gimple_call_fndecl(hStmt);
                 if (hFnDecl)
                     dprintf("     hFnDecl=%p %s(%d) %s type=%p %s:%d\n",
                             hFnDecl, tree_code_name[TREE_CODE(hFnDecl)], TREE_CODE(hFnDecl),
                             DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
                             TREE_TYPE(hFnDecl), DECL_SOURCE_FILE(hFnDecl), DECL_SOURCE_LINE(hFnDecl));
-#endif
                 tree const hFnType = gimple_call_fntype(hStmt);
                 if (hFnType == NULL_TREE)
                     error_at(gimple_location(hStmt), "Failed to resolve function type [fn=%s]\n",
