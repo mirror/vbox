@@ -2011,6 +2011,28 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MqWO_Vq(PBS3CG1ST
 }
 
 
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MqWO_VqHi(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    unsigned off;
+    if (iEncoding == 0)
+    {
+        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM2_HI;
+        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+        off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 2 /*iReg*/, 8, 0, BS3CG1OPLOC_MEM_RW);
+    }
+    else if (iEncoding == 1)
+    {
+        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM3_HI;
+        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+        off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, 3 /*iReg*/, 8, 1 /*cbMissalign*/, BS3CG1OPLOC_MEM_RW);
+    }
+    else
+        return 0;
+    pThis->cbCurInstr = off;
+    return iEncoding + 1;
+}
+
+
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_FIXED(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2222,6 +2244,8 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
             return Bs3Cg1EncodeNext_BS3CG1ENC_VEX_MODRM_MdWO(pThis, iEncoding);
         case BS3CG1ENC_MODRM_MqWO_Vq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MqWO_Vq(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_MqWO_VqHi:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MqWO_VqHi(pThis, iEncoding);
 
         case BS3CG1ENC_FIXED:
             return Bs3Cg1EncodeNext_BS3CG1ENC_FIXED(pThis, iEncoding);
@@ -2424,6 +2448,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_MqWO_Vq:
+        case BS3CG1ENC_MODRM_MqWO_VqHi:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 8;
