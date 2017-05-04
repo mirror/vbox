@@ -27,6 +27,7 @@
 /* Forward declarations: */
 class QCheckBox;
 class QLabel;
+class QRadioButton;
 class QILineEdit;
 class QITabWidget;
 
@@ -37,6 +38,7 @@ struct UIDataHostNetworkInterface
     /** Constructs data. */
     UIDataHostNetworkInterface()
         : m_strName(QString())
+        , m_fDHCPEnabled(false)
         , m_strAddress(QString())
         , m_strMask(QString())
         , m_fSupportedIPv6(false)
@@ -49,6 +51,7 @@ struct UIDataHostNetworkInterface
     {
         return true
                && (m_strName == other.m_strName)
+               && (m_fDHCPEnabled == other.m_fDHCPEnabled)
                && (m_strAddress == other.m_strAddress)
                && (m_strMask == other.m_strMask)
                && (m_fSupportedIPv6 == other.m_fSupportedIPv6)
@@ -64,6 +67,8 @@ struct UIDataHostNetworkInterface
 
     /** Holds interface name. */
     QString m_strName;
+    /** Holds whether DHCP is enabled for that interface. */
+    bool m_fDHCPEnabled;
     /** Holds IPv4 interface address. */
     QString m_strAddress;
     /** Holds IPv4 interface mask. */
@@ -180,6 +185,10 @@ private slots:
 
     /** @name Change handling stuff.
      * @{ */
+        /** Handles interface automatic configuration choice change. */
+        void sltToggledButtonAutomatic(bool fChecked) { m_newData.m_interface.m_fDHCPEnabled = fChecked; loadDataForInterface(); notify(); }
+        /** Handles interface manual configuration choice change. */
+        void sltToggledButtonManual(bool fChecked) { m_newData.m_interface.m_fDHCPEnabled = !fChecked; loadDataForInterface(); notify(); }
         /** Handles interface IPv4 text change. */
         void sltTextChangedIPv4(const QString &strText) { m_newData.m_interface.m_strAddress = strText; notify(); }
         /** Handles interface NMv4 text change. */
@@ -251,22 +260,26 @@ private:
 
     /** @name Interface variables.
      * @{ */
+        /** Holds the automatic interface configuration button. */
+        QRadioButton *m_pButtonAutomatic;
+        /** Holds the manual interface configuration button. */
+        QRadioButton *m_pButtonManual;
         /** Holds the IPv4 address label. */
-        QLabel     *m_pLabelIPv4;
+        QLabel       *m_pLabelIPv4;
         /** Holds the IPv4 address editor. */
-        QILineEdit *m_pEditorIPv4;
+        QILineEdit   *m_pEditorIPv4;
         /** Holds the IPv4 network mask label. */
-        QLabel     *m_pLabelNMv4;
+        QLabel       *m_pLabelNMv4;
         /** Holds the IPv4 network mask editor. */
-        QILineEdit *m_pEditorNMv4;
+        QILineEdit   *m_pEditorNMv4;
         /** Holds the IPv6 address label. */
-        QLabel     *m_pLabelIPv6;
+        QLabel       *m_pLabelIPv6;
         /** Holds the IPv6 address editor. */
-        QILineEdit *m_pEditorIPv6;
+        QILineEdit   *m_pEditorIPv6;
         /** Holds the IPv6 network mask label. */
-        QLabel     *m_pLabelNMv6;
+        QLabel       *m_pLabelNMv6;
         /** Holds the IPv6 network mask editor. */
-        QILineEdit *m_pEditorNMv6;
+        QILineEdit   *m_pEditorNMv6;
     /** @} */
 
     /** @name DHCP server variables.

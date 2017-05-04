@@ -22,8 +22,9 @@
 /* Qt includes: */
 # include <QCheckBox>
 # include <QLabel>
-# include <QStyleOption>
+# include <QRadioButton>
 # include <QRegExpValidator>
+# include <QStyleOption>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -41,6 +42,7 @@
 UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QWidget>(pParent)
     , m_pTabWidget(0)
+    , m_pButtonAutomatic(0), m_pButtonManual(0)
     , m_pLabelIPv4(0), m_pEditorIPv4(0), m_pLabelNMv4(0), m_pEditorNMv4(0)
     , m_pLabelIPv6(0), m_pEditorIPv6(0), m_pLabelNMv6(0), m_pEditorNMv6(0)
     , m_pCheckBoxDHCP(0) , m_pLabelDHCPAddress(0), m_pEditorDHCPAddress(0), m_pLabelDHCPMask(0), m_pEditorDHCPMask(0)
@@ -105,6 +107,8 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pTabWidget->setTabText(1, tr("&DHCP Server"));
 
     /* Translate 'Interface' tab content: */
+    m_pButtonAutomatic->setText(tr("Configure Adapter &Automatically"));
+    m_pButtonManual->setText(tr("Configure Adapter &Manually"));
     m_pLabelIPv4->setText(tr("&IPv4 Address:"));
     m_pEditorIPv4->setToolTip(tr("Holds the host IPv4 address for this adapter."));
     m_pLabelNMv4->setText(tr("IPv4 Network &Mask:"));
@@ -178,6 +182,26 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
             /* Configure layout: */
             pLayoutInterface->setContentsMargins(10, 10, 10, 10);
 #endif
+            /* Create automatic interface configuration radio-button: */
+            m_pButtonAutomatic = new QRadioButton;
+            AssertPtrReturnVoid(m_pButtonAutomatic);
+            {
+                /* Configure radio-button: */
+                connect(m_pButtonAutomatic, &QRadioButton::toggled,
+                        this, &UIHostNetworkDetailsDialog::sltToggledButtonAutomatic);
+                /* Add into layout: */
+                pLayoutInterface->addWidget(m_pButtonAutomatic, 0, 0, 1, 3);
+            }
+            /* Create manual interface configuration radio-button: */
+            m_pButtonManual = new QRadioButton;
+            AssertPtrReturnVoid(m_pButtonManual);
+            {
+                /* Configure radio-button: */
+                connect(m_pButtonManual, &QRadioButton::toggled,
+                        this, &UIHostNetworkDetailsDialog::sltToggledButtonManual);
+                /* Add into layout: */
+                pLayoutInterface->addWidget(m_pButtonManual, 1, 0, 1, 3);
+            }
             /* Create IPv4 address label: */
             m_pLabelIPv4 = new QLabel;
             AssertPtrReturnVoid(m_pLabelIPv4);
@@ -185,7 +209,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Configure label: */
                 m_pLabelIPv4->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pLabelIPv4, 0, 0);
+                pLayoutInterface->addWidget(m_pLabelIPv4, 2, 1);
             }
             /* Create IPv4 address editor: */
             m_pEditorIPv4 = new QILineEdit;
@@ -196,7 +220,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 connect(m_pEditorIPv4, &QLineEdit::textChanged,
                         this, &UIHostNetworkDetailsDialog::sltTextChangedIPv4);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorIPv4, 0, 1);
+                pLayoutInterface->addWidget(m_pEditorIPv4, 2, 2);
             }
             /* Create IPv4 network mask label: */
             m_pLabelNMv4 = new QLabel;
@@ -205,7 +229,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Configure label: */
                 m_pLabelNMv4->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pLabelNMv4, 1, 0);
+                pLayoutInterface->addWidget(m_pLabelNMv4, 3, 1);
             }
             /* Create IPv4 network mask editor: */
             m_pEditorNMv4 = new QILineEdit;
@@ -216,7 +240,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 connect(m_pEditorNMv4, &QLineEdit::textChanged,
                         this, &UIHostNetworkDetailsDialog::sltTextChangedNMv4);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorNMv4, 1, 1);
+                pLayoutInterface->addWidget(m_pEditorNMv4, 3, 2);
             }
             /* Create IPv6 address label: */
             m_pLabelIPv6 = new QLabel;
@@ -225,7 +249,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Configure label: */
                 m_pLabelIPv6->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pLabelIPv6, 2, 0);
+                pLayoutInterface->addWidget(m_pLabelIPv6, 4, 1);
             }
             /* Create IPv6 address editor: */
             m_pEditorIPv6 = new QILineEdit;
@@ -236,7 +260,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 connect(m_pEditorIPv6, &QLineEdit::textChanged,
                         this, &UIHostNetworkDetailsDialog::sltTextChangedIPv6);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorIPv6, 2, 1);
+                pLayoutInterface->addWidget(m_pEditorIPv6, 4, 2);
             }
             /* Create IPv6 network mask label: */
             m_pLabelNMv6 = new QLabel;
@@ -245,7 +269,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Configure label: */
                 m_pLabelNMv6->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pLabelNMv6, 3, 0);
+                pLayoutInterface->addWidget(m_pLabelNMv6, 5, 1);
             }
             /* Create IPv6 network mask editor: */
             m_pEditorNMv6 = new QILineEdit;
@@ -256,14 +280,26 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 connect(m_pEditorNMv6, &QLineEdit::textChanged,
                         this, &UIHostNetworkDetailsDialog::sltTextChangedNMv6);
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorNMv6, 3, 1);
+                pLayoutInterface->addWidget(m_pEditorNMv6, 5, 2);
             }
-            /* Create stretch: */
-            QSpacerItem *pSpacer1 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+            /* Create indent: */
+            QStyleOption options;
+            options.initFrom(m_pButtonManual);
+            const int iWidth = m_pButtonManual->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pButtonManual) +
+                               m_pButtonManual->style()->pixelMetric(QStyle::PM_RadioButtonLabelSpacing, &options, m_pButtonManual) -
+                               pLayoutInterface->spacing() - 1;
+            QSpacerItem *pSpacer1 = new QSpacerItem(iWidth, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
             AssertPtrReturnVoid(pSpacer1);
             {
                 /* Add into layout: */
-                pLayoutInterface->addItem(pSpacer1, 4, 0, 1, 2);
+                pLayoutInterface->addItem(pSpacer1, 2, 0, 4);
+            }
+            /* Create stretch: */
+            QSpacerItem *pSpacer2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+            AssertPtrReturnVoid(pSpacer2);
+            {
+                /* Add into layout: */
+                pLayoutInterface->addItem(pSpacer2, 6, 0, 1, 3);
             }
         }
         /* Add to tab-widget: */
@@ -378,21 +414,21 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             /* Create indent: */
             QStyleOption options;
             options.initFrom(m_pCheckBoxDHCP);
-            const int iWidth2 = m_pCheckBoxDHCP->style()->pixelMetric(QStyle::PM_IndicatorWidth, &options, m_pCheckBoxDHCP) +
-                                m_pCheckBoxDHCP->style()->pixelMetric(QStyle::PM_CheckBoxLabelSpacing, &options, m_pCheckBoxDHCP) -
-                                pLayoutDHCPServer->spacing() - 1;
-            QSpacerItem *pSpacer2 = new QSpacerItem(iWidth2, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
+            const int iWidth = m_pCheckBoxDHCP->style()->pixelMetric(QStyle::PM_IndicatorWidth, &options, m_pCheckBoxDHCP) +
+                               m_pCheckBoxDHCP->style()->pixelMetric(QStyle::PM_CheckBoxLabelSpacing, &options, m_pCheckBoxDHCP) -
+                               pLayoutDHCPServer->spacing() - 1;
+            QSpacerItem *pSpacer1 = new QSpacerItem(iWidth, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
+            AssertPtrReturnVoid(pSpacer1);
+            {
+                /* Add into layout: */
+                pLayoutDHCPServer->addItem(pSpacer1, 1, 0, 4);
+            }
+            /* Create stretch: */
+            QSpacerItem *pSpacer2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
             AssertPtrReturnVoid(pSpacer2);
             {
                 /* Add into layout: */
-                pLayoutDHCPServer->addItem(pSpacer2, 1, 0, 4);
-            }
-            /* Create stretch: */
-            QSpacerItem *pSpacer3 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-            AssertPtrReturnVoid(pSpacer3);
-            {
-                /* Add into layout: */
-                pLayoutDHCPServer->addItem(pSpacer3, 5, 0, 1, 3);
+                pLayoutDHCPServer->addItem(pSpacer2, 5, 0, 1, 3);
             }
         }
         /* Add to tab-widget: */
@@ -402,16 +438,25 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
 
 void UIHostNetworkDetailsDialog::loadDataForInterface()
 {
+    /* Toggle IPv4 & IPv6 interface fields availability: */
+    const bool fIsInterfaceConfigurable = !m_newData.m_interface.m_fDHCPEnabled;
+    m_pLabelIPv4->setEnabled(fIsInterfaceConfigurable);
+    m_pLabelNMv4->setEnabled(fIsInterfaceConfigurable);
+    m_pEditorIPv4->setEnabled(fIsInterfaceConfigurable);
+    m_pEditorNMv4->setEnabled(fIsInterfaceConfigurable);
+
     /* Load IPv4 interface fields: */
+    m_pButtonAutomatic->setChecked(!fIsInterfaceConfigurable);
+    m_pButtonManual->setChecked(fIsInterfaceConfigurable);
     m_pEditorIPv4->setText(m_newData.m_interface.m_strAddress);
     m_pEditorNMv4->setText(m_newData.m_interface.m_strMask);
 
     /* Toggle IPv6 interface fields availability: */
-    const bool fIsIpv6Supported = m_newData.m_interface.m_fSupportedIPv6;
-    m_pLabelIPv6->setEnabled(fIsIpv6Supported);
-    m_pLabelNMv6->setEnabled(fIsIpv6Supported);
-    m_pEditorIPv6->setEnabled(fIsIpv6Supported);
-    m_pEditorNMv6->setEnabled(fIsIpv6Supported);
+    const bool fIsIpv6Configurable = fIsInterfaceConfigurable && m_newData.m_interface.m_fSupportedIPv6;
+    m_pLabelIPv6->setEnabled(fIsIpv6Configurable);
+    m_pLabelNMv6->setEnabled(fIsIpv6Configurable);
+    m_pEditorIPv6->setEnabled(fIsIpv6Configurable);
+    m_pEditorNMv6->setEnabled(fIsIpv6Configurable);
 
     /* Load IPv6 interface fields: */
     m_pEditorIPv6->setText(m_newData.m_interface.m_strAddress6);

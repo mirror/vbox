@@ -101,7 +101,9 @@ void UIItemHostNetwork::updateFields()
 
     /* Interface information: */
     strToolTip += strHeader.arg(UIHostNetworkManager::tr("Adapter"))
-                           .arg(UIHostNetworkManager::tr("Manually configured", "interface"));
+                           .arg(m_interface.m_fDHCPEnabled ?
+                                UIHostNetworkManager::tr("Automatically configured", "interface") :
+                                UIHostNetworkManager::tr("Manually configured", "interface"));
     strToolTip += strSubHeader.arg(UIHostNetworkManager::tr("IPv4 Address"))
                               .arg(m_interface.m_strAddress.isEmpty() ?
                                    UIHostNetworkManager::tr ("Not set", "address") :
@@ -476,17 +478,30 @@ void UIHostNetworkManager::sltHandleButtonClicked(QAbstractButton *pButton)
         msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
     else
     {
-        /* Save IPv4 interface configuration: */
-        if (   comInterface.isOk()
-            && (   newData.m_interface.m_strAddress != oldData.m_interface.m_strAddress
-                || newData.m_interface.m_strMask != oldData.m_interface.m_strMask))
-            comInterface.EnableStaticIPConfig(newData.m_interface.m_strAddress, newData.m_interface.m_strMask);
-        /* Save IPv6 interface configuration: */
-        if (   comInterface.isOk()
-            && newData.m_interface.m_fSupportedIPv6
-            && (   newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
-                || newData.m_interface.m_strMaskLength6 != oldData.m_interface.m_strMaskLength6))
-            comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strMaskLength6.toULong());
+        /* Save automatic interface configuration: */
+        if (newData.m_interface.m_fDHCPEnabled)
+        {
+            if (   comInterface.isOk()
+                && !oldData.m_interface.m_fDHCPEnabled)
+                comInterface.EnableDynamicIPConfig();
+        }
+        /* Save manual interface configuration: */
+        else
+        {
+            /* Save IPv4 interface configuration: */
+            if (   comInterface.isOk()
+                && (   oldData.m_interface.m_fDHCPEnabled
+                    || newData.m_interface.m_strAddress != oldData.m_interface.m_strAddress
+                    || newData.m_interface.m_strMask != oldData.m_interface.m_strMask))
+                comInterface.EnableStaticIPConfig(newData.m_interface.m_strAddress, newData.m_interface.m_strMask);
+            /* Save IPv6 interface configuration: */
+            if (   comInterface.isOk()
+                && newData.m_interface.m_fSupportedIPv6
+                && (   oldData.m_interface.m_fDHCPEnabled
+                    || newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
+                    || newData.m_interface.m_strMaskLength6 != oldData.m_interface.m_strMaskLength6))
+                comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strMaskLength6.toULong());
+        }
 
         /* Show error message if necessary: */
         if (!comInterface.isOk())
@@ -974,6 +989,8 @@ void UIHostNetworkManager::loadHostNetwork(const CHostNetworkInterface &comInter
     /* Gather interface settings: */
     if (comInterface.isOk())
         data.m_interface.m_strName = comInterface.GetName();
+    if (comInterface.isOk())
+        data.m_interface.m_fDHCPEnabled = comInterface.GetDHCPEnabled();
     if (comInterface.isOk())
         data.m_interface.m_strAddress = comInterface.GetIPAddress();
     if (comInterface.isOk())
