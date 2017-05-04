@@ -793,7 +793,7 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
      */
     uint32_t        offEntryInDir   = 0;
     uint32_t const  cbDir           = pThis->Core.cbObject;
-    while (offEntryInDir + RT_OFFSETOF(ISO9660DIRREC, achFileId) <= cbDir)
+    while (offEntryInDir + RT_UOFFSETOF(ISO9660DIRREC, achFileId) <= cbDir)
     {
         PCISO9660DIRREC pDirRec = (PCISO9660DIRREC)&pThis->pbDir[offEntryInDir];
 
@@ -1222,9 +1222,9 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
             if (   pDirRec->bFileIdLength == 1
                 && pDirRec->achFileId[0]  == '\0')
             {
-                if (*pcbDirEntry < RT_OFFSETOF(RTDIRENTRYEX, szName) + 2)
+                if (*pcbDirEntry < RT_UOFFSETOF(RTDIRENTRYEX, szName) + 2)
                 {
-                    *pcbDirEntry = RT_OFFSETOF(RTDIRENTRYEX, szName) + 2;
+                    *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + 2;
                     return VERR_BUFFER_OVERFLOW;
                 }
                 pDirEntry->cbName    = 1;
@@ -1232,11 +1232,11 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                 pDirEntry->szName[1] = '\0';
             }
             else if (   pDirRec->bFileIdLength == 1
-                     && pDirRec->achFileId[0]  == '\0')
+                     && pDirRec->achFileId[0]  == '\1')
             {
-                if (*pcbDirEntry < RT_OFFSETOF(RTDIRENTRYEX, szName) + 3)
+                if (*pcbDirEntry < RT_UOFFSETOF(RTDIRENTRYEX, szName) + 3)
                 {
-                    *pcbDirEntry = RT_OFFSETOF(RTDIRENTRYEX, szName) + 3;
+                    *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + 3;
                     return VERR_BUFFER_OVERFLOW;
                 }
                 pDirEntry->cbName    = 2;
@@ -1249,40 +1249,42 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                 /* UTF-16BE -> UTF-8 conversion is a bit tedious since we don't have the necessary IPRT APIs yet. */
                 PCRTUTF16 pwcSrc    = (PCRTUTF16)&pDirRec->achFileId[0];
                 PCRTUTF16 pwcSrcEnd = &pwcSrc[pDirRec->bFileIdLength / sizeof(RTUTF16)];
-                size_t    cbDst     = *pcbDirEntry - RT_OFFSETOF(RTDIRENTRYEX, szName);
-                char     *pszDst    = pDirEntry->szName;
+                size_t    cbDst     = *pcbDirEntry - RT_UOFFSETOF(RTDIRENTRYEX, szName);
+                size_t    offDst    = 0;
                 while ((uintptr_t)pwcSrc < (uintptr_t)pwcSrcEnd)
                 {
                     RTUNICP uc;
                     int rc = RTUtf16BigGetCpEx(&pwcSrc, &uc);
                     if (RT_FAILURE(rc))
                         uc = '?';
+                    else if (!uc)
+                        break;
                     size_t cchCp = RTStrCpSize(uc);
-                    if (cchCp < cbDst)
+                    if (offDst + cchCp < cbDst)
                     {
-                        cbDst -= cchCp;
-                        pszDst = RTStrPutCp(pszDst, uc);
+                        RTStrPutCp(&pDirEntry->szName[offDst], uc);
+                        offDst += cchCp;
                     }
                     else
                     {
                         /* Buffer overflow.  Figure out how much we really need. */
-                        size_t off = pszDst - &pDirEntry->szName[0];
-                        off += cchCp;
+                        offDst += cchCp;
                         while ((uintptr_t)pwcSrc < (uintptr_t)pwcSrcEnd)
                         {
                             RTUtf16BigGetCpEx(&pwcSrc, &uc);
-                            off += RTStrCpSize(uc);
+                            offDst += RTStrCpSize(uc);
                         }
-                        *pcbDirEntry = RT_OFFSETOF(RTDIRENTRYEX, szName) + off + 1;
+                        *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + offDst + 1;
                         return VERR_BUFFER_OVERFLOW;
                     }
                 }
-                *pszDst = '\0';
+                pDirEntry->szName[offDst] = '\0';
+                pDirEntry->cbName = (uint16_t)offDst;
             }
             else
             {
                 /* This is supposed to be upper case ASCII, however, purge the encoding anyway. */
-                size_t cbNeeded = RT_OFFSETOF(RTDIRENTRYEX, szName) + pDirRec->bFileIdLength + 1;
+                size_t cbNeeded = RT_UOFFSETOF(RTDIRENTRYEX, szName) + pDirRec->bFileIdLength + 1;
                 if (*pcbDirEntry < cbNeeded)
                 {
                     *pcbDirEntry = cbNeeded;
