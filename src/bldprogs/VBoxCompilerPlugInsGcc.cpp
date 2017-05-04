@@ -602,7 +602,7 @@ static unsigned int     MyPassExecuteCallback(void)
                             DECL_NAME(hFnDecl) ? IDENTIFIER_POINTER(DECL_NAME(hFnDecl)) : "<unamed>",
                             State.fMaybeNull ? "_maybe_null" : "", State.iFmt, State.iArgs);
 
-                    unsigned cCallArgs = gimple_call_num_arg(hStmt)
+                    unsigned cCallArgs = gimple_call_num_args(hStmt);
                     if (cCallArgs > State.iFmt)
                         MyCheckFormatRecursive(&State, gimple_call_arg(hStmt, State.iFmt - 1));
                     else
