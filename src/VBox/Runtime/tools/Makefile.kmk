@@ -44,10 +44,15 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
  && !defined(VBOX_ONLY_VALIDATIONKIT)
 
- # RTManifest is a tool for creating and verifying manifest files.
+ # RTCat is a tool for displaying files.
  PROGRAMS += RTCat
  RTCat_TEMPLATE = VBoxR3Tool
  RTCat_SOURCES = RTCat.cpp
+
+ # RTLs is a tool for listing file information.
+ PROGRAMS += RTLs
+ RTLs_TEMPLATE = VBoxR3Tool
+ RTLs_SOURCES = RTLs.cpp
 
  # RTRm is a tool for removing files and directories.
  PROGRAMS += RTRm
