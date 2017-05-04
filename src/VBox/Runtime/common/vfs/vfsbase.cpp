@@ -1488,7 +1488,8 @@ static int rtVfsDirTraverseToParent(RTVFSDIRINTERNAL *pThis, PRTVFSPARSEDPATH pP
             RTVfsLockReleaseRead(pCurDir->Base.hLock);
             *pszEntryEnd = '\0';
             if (   rc == VERR_PATH_NOT_FOUND
-                || rc == VERR_NOT_A_DIRECTORY)
+                || rc == VERR_NOT_A_DIRECTORY
+                || rc == VERR_NOT_SYMLINK)
                 rc = VINF_SUCCESS;
             if (RT_FAILURE(rc))
                 break;

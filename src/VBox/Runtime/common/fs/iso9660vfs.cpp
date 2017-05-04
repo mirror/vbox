@@ -720,7 +720,7 @@ static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, u
         if (pCur->offDirRec == offDirRec)
         {
             uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
-            Assert(cRefs > 1);
+            Assert(cRefs > 1); RT_NOREF(cRefs);
             return pCur;
         }
     }
@@ -973,7 +973,10 @@ static DECLCALLBACK(int) rtFsIso9660Dir_TraversalOpen(void *pvThis, const char *
             switch (fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
-                    rc = rtFsIso9660Dir_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
+                    if (phVfsDir)
+                        rc = rtFsIso9660Dir_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
+                    else
+                        rc = VERR_NOT_SYMLINK;
                     break;
 
                 case RTFS_TYPE_SYMLINK:
@@ -1060,9 +1063,43 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenFile(void *pvThis, const char *pszFi
  */
 static DECLCALLBACK(int) rtFsIso9660Dir_OpenDir(void *pvThis, const char *pszSubDir, uint32_t fFlags, PRTVFSDIR phVfsDir)
 {
-    RT_NOREF(pvThis, pszSubDir, fFlags, phVfsDir);
-RTAssertMsg2("%s: %s\n", __FUNCTION__, pszSubDir);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
+    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+
+    /*
+     * Try open file.
+     */
+    PCISO9660DIRREC pDirRec;
+    uint64_t        offDirRec;
+    uint32_t        cDirRecs;
+    RTFMODE         fMode;
+    int rc = rtFsIso9660Dir_FindEntry(pShared, pszSubDir, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+    Log2(("rtFsIso9660Dir_OpenDir: FindEntry(,%s,) -> %Rrc\n", pszSubDir, rc));
+    if (RT_SUCCESS(rc))
+    {
+        switch (fMode & RTFS_TYPE_MASK)
+        {
+            case RTFS_TYPE_DIRECTORY:
+                rc = rtFsIso9660Dir_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, phVfsDir);
+                break;
+
+            case RTFS_TYPE_FILE:
+            case RTFS_TYPE_SYMLINK:
+            case RTFS_TYPE_DEV_BLOCK:
+            case RTFS_TYPE_DEV_CHAR:
+            case RTFS_TYPE_FIFO:
+            case RTFS_TYPE_SOCKET:
+            case RTFS_TYPE_WHITEOUT:
+                rc = VERR_NOT_A_DIRECTORY;
+                break;
+
+            default:
+                rc = VERR_PATH_NOT_FOUND;
+                break;
+        }
+    }
+    return rc;
 }
 
 
@@ -1167,9 +1204,118 @@ static DECLCALLBACK(int) rtFsIso9660Dir_RewindDir(void *pvThis)
 static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
                                                 RTFSOBJATTRADD enmAddAttr)
 {
-    //PRTFSISO9660DIROBJ pThis = (PRTFSISO9660DIROBJ)pvThis;
-    RT_NOREF(pvThis, pDirEntry, pcbDirEntry, enmAddAttr);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFSISO9660DIROBJ  pThis   = (PRTFSISO9660DIROBJ)pvThis;
+    PRTFSISO9660DIRSHRD pShared = pThis->pShared;
+
+    while (pThis->offDir + RT_UOFFSETOF(ISO9660DIRREC, achFileId) <= pShared->cbDir)
+    {
+        PCISO9660DIRREC pDirRec = (PCISO9660DIRREC)&pShared->pbDir[pThis->offDir];
+
+        /* If null length, skip to the next sector. */
+        if (pDirRec->cbDirRec == 0)
+            pThis->offDir = (pThis->offDir + pShared->Core.pVol->cbSector) & ~(pShared->Core.pVol->cbSector - 1U);
+        else
+        {
+            /*
+             * Do names first as they may cause overflows.
+             */
+            if (   pDirRec->bFileIdLength == 1
+                && pDirRec->achFileId[0]  == '\0')
+            {
+                if (*pcbDirEntry < RT_OFFSETOF(RTDIRENTRYEX, szName) + 2)
+                {
+                    *pcbDirEntry = RT_OFFSETOF(RTDIRENTRYEX, szName) + 2;
+                    return VERR_BUFFER_OVERFLOW;
+                }
+                pDirEntry->cbName    = 1;
+                pDirEntry->szName[0] = '.';
+                pDirEntry->szName[1] = '\0';
+            }
+            else if (   pDirRec->bFileIdLength == 1
+                     && pDirRec->achFileId[0]  == '\0')
+            {
+                if (*pcbDirEntry < RT_OFFSETOF(RTDIRENTRYEX, szName) + 3)
+                {
+                    *pcbDirEntry = RT_OFFSETOF(RTDIRENTRYEX, szName) + 3;
+                    return VERR_BUFFER_OVERFLOW;
+                }
+                pDirEntry->cbName    = 2;
+                pDirEntry->szName[0] = '.';
+                pDirEntry->szName[1] = '.';
+                pDirEntry->szName[2] = '\0';
+            }
+            else if (pShared->Core.pVol->fIsUtf16)
+            {
+                /* UTF-16BE -> UTF-8 conversion is a bit tedious since we don't have the necessary IPRT APIs yet. */
+                PCRTUTF16 pwcSrc    = (PCRTUTF16)&pDirRec->achFileId[0];
+                PCRTUTF16 pwcSrcEnd = &pwcSrc[pDirRec->bFileIdLength / sizeof(RTUTF16)];
+                size_t    cbDst     = *pcbDirEntry - RT_OFFSETOF(RTDIRENTRYEX, szName);
+                char     *pszDst    = pDirEntry->szName;
+                while ((uintptr_t)pwcSrc < (uintptr_t)pwcSrcEnd)
+                {
+                    RTUNICP uc;
+                    int rc = RTUtf16BigGetCpEx(&pwcSrc, &uc);
+                    if (RT_FAILURE(rc))
+                        uc = '?';
+                    size_t cchCp = RTStrCpSize(uc);
+                    if (cchCp < cbDst)
+                    {
+                        cbDst -= cchCp;
+                        pszDst = RTStrPutCp(pszDst, uc);
+                    }
+                    else
+                    {
+                        /* Buffer overflow.  Figure out how much we really need. */
+                        size_t off = pszDst - &pDirEntry->szName[0];
+                        off += cchCp;
+                        while ((uintptr_t)pwcSrc < (uintptr_t)pwcSrcEnd)
+                        {
+                            RTUtf16BigGetCpEx(&pwcSrc, &uc);
+                            off += RTStrCpSize(uc);
+                        }
+                        *pcbDirEntry = RT_OFFSETOF(RTDIRENTRYEX, szName) + off + 1;
+                        return VERR_BUFFER_OVERFLOW;
+                    }
+                }
+                *pszDst = '\0';
+            }
+            else
+            {
+                /* This is supposed to be upper case ASCII, however, purge the encoding anyway. */
+                size_t cbNeeded = RT_OFFSETOF(RTDIRENTRYEX, szName) + pDirRec->bFileIdLength + 1;
+                if (*pcbDirEntry < cbNeeded)
+                {
+                    *pcbDirEntry = cbNeeded;
+                    return VERR_BUFFER_OVERFLOW;
+                }
+                pDirEntry->cbName = pDirRec->bFileIdLength;
+                memcpy(pDirEntry->szName, pDirRec->achFileId, pDirRec->bFileIdLength);
+                RTStrPurgeEncoding(pDirEntry->szName);
+
+                /** @todo check for rock ridge names here.   */
+            }
+            pDirEntry->cwcShortName    = 0;
+            pDirEntry->wszShortName[0] = '\0';
+
+            /*
+             * To avoid duplicating code in rtFsIso9660Core_InitFromDirRec and
+             * rtFsIso9660Core_QueryInfo, we create a dummy RTFSISO9660CORE on the stack.
+             */
+            RTFSISO9660CORE TmpObj;
+            RT_ZERO(TmpObj);
+            rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, 1/*cDirRecs*/, /** @todo multi-extent stuff */
+                                           pThis->offDir + pShared->Core.FirstExtent.offDisk, pShared->Core.pVol);
+            int rc = rtFsIso9660Core_QueryInfo(&TmpObj, &pDirEntry->Info, enmAddAttr);
+
+            /*
+             * Update the location and return.
+             */
+            pThis->offDir += pDirRec->cbDirRec;
+            return rc;
+        }
+    }
+
+    return VERR_NO_MORE_FILES;
 }
 
 
