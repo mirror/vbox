@@ -575,6 +575,6 @@ int main(int argc, char *argv[])
 
     printf ("\ntstCollector FINISHED.\n");
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
