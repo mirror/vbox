@@ -247,7 +247,8 @@ g_kdOpTypes = {
     'Vps':  ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
     'Vpd':  ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     ),
     'Vq':   ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      ),
-    'Vdq':  ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     ),
+    'Vdq':  ( 'IDX_UseModRM',       'reg',    '%Vdq', 'Vdq',     ),
+    'VqHi': ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
 
     # Immediate values.
     'Ib':   ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.

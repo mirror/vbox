@@ -182,6 +182,7 @@ enum OPCODES
     OP_MOVHLPS = OP_MOVLPS, /**< @todo OP_MOVHLPS */
     OP_UNPCKLPS,
     OP_MOVHPS,
+    OP_MOVLHPS = OP_MOVHPS, /**< @todo OP_MOVLHPS */
     OP_UNPCKHPS,
     OP_PREFETCH_GRP16,
     OP_MOV_CR,
@@ -1063,10 +1064,11 @@ enum OP_PARM
 
 /* For making IEM / bs3-cpu-generated-1 happy: */
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
-#define OP_PARM_UqHi            OP_PARM_Uq
+#define OP_PARM_UqHi            (OP_PARM_U+OP_PARM_dq)
 #define OP_PARM_WqZxReg         OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */
 #define OP_PARM_VssZxReg        OP_PARM_Vss             /**< Annotates that register targets get their upper bits cleared. */
 #define OP_PARM_VsdZxReg        OP_PARM_Vsd             /**< Annotates that register targets get their upper bits cleared. */
+#define OP_PARM_VqHi            OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
 #define OP_PARM_MbRO            OP_PARM_Mb              /**< Annotates read only memory byte operand. */
 #define OP_PARM_MdRO            OP_PARM_Md              /**< Annotates read only memory byte operand. */
 #define OP_PARM_MdWO            OP_PARM_Md              /**< Annotates write only memory byte operand. */

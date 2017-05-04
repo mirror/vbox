@@ -1810,10 +1810,71 @@ FNIEMOP_STUB(iemOp_unpckhpd_Vx_Wx);
  * @opdone
  */
 
-/** Opcode      0x0f 0x16 - movhpsv1 Vdq, Mq movlhps Vdq, Uq   */
-FNIEMOP_STUB(iemOp_movhpsv1_Vdq_Mq__movlhps_Vdq_Uq);  //NEXT
+FNIEMOP_DEF(iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /**
+         * @opcode      0x16
+         * @opcodesub   11 mr/reg
+         * @oppfx       none
+         * @opcpuid     sse
+         * @opgroup     og_sse_simdfp_datamove
+         * @opxcpttype  5
+         * @optest      op1=1 op2=2 -> op1=2
+         * @optest      op1=0 op2=-42 -> op1=-42
+         */
+        IEMOP_MNEMONIC2(RM_REG, MOVLHPS, movlhps, VqHi, Uq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_FETCH_XREG_U64(uSrc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+        IEM_MC_STORE_XREG_HI_U64(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /**
+         * @opdone
+         * @opcode      0x16
+         * @opcodesub   !11 mr/reg
+         * @oppfx       none
+         * @opcpuid     sse
+         * @opgroup     og_sse_simdfp_datamove
+         * @opxcpttype  5
+         * @optest      op1=1 op2=2 -> op1=2
+         * @optest      op1=0 op2=-42 -> op1=-42
+         * @opfunction  iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq
+         */
+        IEMOP_MNEMONIC2(RM_MEM, MOVHPS, movhps, VqHi, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+
+        IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_STORE_XREG_HI_U64(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
 /** Opcode 0x66 0x0f 0x16 - movhpdv1 Vdq, Mq   */
-FNIEMOP_STUB(iemOp_movhpdv1_Vdq_Mq);  //NEXT
+FNIEMOP_STUB(iemOp_movhpd_Vdq_Mq);  //NEXT
 /** Opcode 0xf3 0x0f 0x16 - movshdup Vx, Wx   */
 FNIEMOP_STUB(iemOp_movshdup_Vx_Wx); //NEXT
 
@@ -1829,9 +1890,9 @@ FNIEMOP_STUB(iemOp_movshdup_Vx_Wx); //NEXT
  */
 
 /** Opcode      0x0f 0x17 - movhpsv1 Mq, Vq   */
-FNIEMOP_STUB(iemOp_movhpsv1_Mq_Vq);  //NEXT
+FNIEMOP_STUB(iemOp_movhps_Mq_Vq);  //NEXT
 /** Opcode 0x66 0x0f 0x17 - movhpdv1 Mq, Vq   */
-FNIEMOP_STUB(iemOp_movhpdv1_Mq_Vq);  //NEXT
+FNIEMOP_STUB(iemOp_movhpd_Mq_Vq);  //NEXT
 
 /**
  * @opdone
@@ -8557,14 +8618,14 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x0e */  IEMOP_X4(iemOp_femms),
     /* 0x0f */  IEMOP_X4(iemOp_3Dnow),
 
-    /* 0x10 */  iemOp_movups_Vps_Wps,       iemOp_movupd_Vpd_Wpd,      iemOp_movss_Vss_Wss,        iemOp_movsd_Vsd_Wsd,
-    /* 0x11 */  iemOp_movups_Wps_Vps,       iemOp_movupd_Wpd_Vpd,      iemOp_movss_Wss_Vss,        iemOp_movsd_Wsd_Vsd,
-    /* 0x12 */  iemOp_movlps_Vq_Mq__movhlps, iemOp_movlpd_Vq_Mq,       iemOp_movsldup_Vdq_Wdq,     iemOp_movddup_Vdq_Wdq,
-    /* 0x13 */  iemOp_movlps_Mq_Vq,         iemOp_movlpd_Mq_Vq,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x14 */  iemOp_unpcklps_Vx_Wx,       iemOp_unpcklpd_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x15 */  iemOp_unpckhps_Vx_Wx,       iemOp_unpckhpd_Vx_Wx,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x16 */  iemOp_movhpsv1_Vdq_Mq__movlhps_Vdq_Uq,  iemOp_movhpdv1_Vdq_Mq, iemOp_movshdup_Vx_Wx, iemOp_InvalidNeedRM,
-    /* 0x17 */  iemOp_movhpsv1_Mq_Vq,       iemOp_movhpdv1_Mq_Vq,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x10 */  iemOp_movups_Vps_Wps,       iemOp_movupd_Vpd_Wpd,       iemOp_movss_Vss_Wss,        iemOp_movsd_Vsd_Wsd,
+    /* 0x11 */  iemOp_movups_Wps_Vps,       iemOp_movupd_Wpd_Vpd,       iemOp_movss_Wss_Vss,        iemOp_movsd_Wsd_Vsd,
+    /* 0x12 */  iemOp_movlps_Vq_Mq__movhlps, iemOp_movlpd_Vq_Mq,        iemOp_movsldup_Vdq_Wdq,     iemOp_movddup_Vdq_Wdq,
+    /* 0x13 */  iemOp_movlps_Mq_Vq,         iemOp_movlpd_Mq_Vq,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x14 */  iemOp_unpcklps_Vx_Wx,       iemOp_unpcklpd_Vx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x15 */  iemOp_unpckhps_Vx_Wx,       iemOp_unpckhpd_Vx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0x16 */  iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq, iemOp_movhpd_Vdq_Mq, iemOp_movshdup_Vx_Wx,     iemOp_InvalidNeedRM,
+    /* 0x17 */  iemOp_movhps_Mq_Vq,         iemOp_movhpd_Mq_Vq,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x18 */  IEMOP_X4(iemOp_prefetch_Grp16),
     /* 0x19 */  IEMOP_X4(iemOp_nop_Ev),
     /* 0x1a */  IEMOP_X4(iemOp_nop_Ev),
