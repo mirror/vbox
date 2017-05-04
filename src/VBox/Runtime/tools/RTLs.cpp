@@ -1142,7 +1142,7 @@ static RTEXITCODE rtCmdLsProcessDirectory(PRTCMDLSOPTS pOpts, RTVFSDIR hVfsDir, 
                 rcExit = RTMsgErrorExitFailure("Out of memory (direntry buffer)");
             }
             else if (rc != VERR_NO_MORE_FILES)
-                rcExit = RTMsgErrorExitFailure("RTVfsDirReadEx failed: %Rrc\n");
+                rcExit = RTMsgErrorExitFailure("RTVfsDirReadEx failed: %Rrc\n", rc);
             break;
         }
 
