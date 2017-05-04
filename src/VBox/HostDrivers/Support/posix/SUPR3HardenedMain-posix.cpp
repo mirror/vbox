@@ -341,6 +341,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
      * Patch 64-bit hosts.
      */
     uint32_t cRipRelMovs = 0;
+    uint32_t cRelCalls = 0;
 
     /* Just use the disassembler to skip 12 bytes or more, we might need to
        rewrite mov instructions using RIP relative addressing. */
@@ -349,7 +350,8 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
         cbInstr = 1;
         int rc = DISInstr(pbTarget + offJmpBack, DISCPUMODE_64BIT, &Dis, &cbInstr);
         if (   RT_FAILURE(rc)
-            || (Dis.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW)
+            || (   Dis.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW
+                && Dis.pCurInstr->uOpcode != OP_CALL)
             || (   Dis.ModRM.Bits.Mod == 0
                 && Dis.ModRM.Bits.Rm  == 5 /* wrt RIP */
                 && Dis.pCurInstr->uOpcode != OP_MOV))
@@ -357,15 +359,22 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
 
         if (Dis.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */)
             cRipRelMovs++;
+        if (   Dis.pCurInstr->uOpcode == OP_CALL
+            && (Dis.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW))
+            cRelCalls++;
 
         offJmpBack += cbInstr;
         cbPatchMem += cbInstr;
     }
 
+    /*
+     * Each relative call requires 7 extra bytes as it is converted to an absolute one
+     * using two instructions (mov raw, qword + call rax). */
+    cbPatchMem += cRelCalls * 7;
     cbPatchMem += 14; /* jmp qword [$+8 wrt RIP] + 8 byte address to jump to. */
     cbPatchMem = RT_ALIGN_32(cbPatchMem, 8);
 
-    /* Allocate suitable exectuable memory available. */
+    /* Allocate suitable executable memory available. */
     bool fConvRipRelMovs = false;
     uint8_t *pbPatchMem = supR3HardenedMainPosixExecMemAlloc(cbPatchMem, pbTarget, cRipRelMovs > 0);
     if (!pbPatchMem)
@@ -396,7 +405,8 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
         cbInstr = 1;
         int rc = DISInstr(pbTarget + offInsn, DISCPUMODE_64BIT, &Dis, &cbInstr);
         if (   RT_FAILURE(rc)
-            || (Dis.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW))
+            || (   Dis.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW
+                && Dis.pCurInstr->uOpcode != OP_CALL))
             return VERR_SUPLIB_UNEXPECTED_INSTRUCTION;
 
         if (   Dis.ModRM.Bits.Mod == 0
@@ -438,6 +448,20 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
                 *(int32_t *)pbPatchMem = (int32_t)iDispNew;
                 pbPatchMem   += sizeof(int32_t);
             }
+        }
+        else if (   Dis.pCurInstr->uOpcode == OP_CALL
+                 && (Dis.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW))
+        {
+            /* Convert to absolute call. */
+            uintptr_t uAddr = (uintptr_t)&pbTarget[offInsn + cbInstr] + (intptr_t)Dis.Param1.uValue;
+
+            *pbPatchMem++ = 0x48;
+            *pbPatchMem++ = 0xb8;
+            *(uint64_t *)pbPatchMem = uAddr;
+            pbPatchMem   += sizeof(uint64_t);
+
+            *pbPatchMem++ = 0xff; /* call rax */
+            *pbPatchMem++ = 0xd0;
         }
         else
         {
