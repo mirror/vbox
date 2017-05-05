@@ -1582,7 +1582,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_WqZxReg_Vq(PBS3CG
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Pq_Uq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Pq_WO_Uq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1606,7 +1606,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Pq_Uq(PBS3CG1STAT
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_UqHi(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_WO_UqHi(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1698,7 +1698,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqHi_Mq(PBS3CG1ST
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_Wdq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_WO_Wdq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1820,7 +1820,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_Wsd__OR_
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_Nq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_WO_Nq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1887,7 +1887,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(PBS3CG1STAT
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MbRO(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Mb_RO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1904,7 +1904,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MbRO(PBS3CG1STATE
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdRO(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Md_RO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1921,7 +1921,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdRO(PBS3CG1STATE
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdWO(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Md_WO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -2252,54 +2252,54 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
         case BS3CG1ENC_MODRM_Ev_Gv:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ev__OR__BS3CG1ENC_MODRM_Ev_Gv(pThis, iEncoding);
 
-        case BS3CG1ENC_MODRM_Wss_Vss:
+        case BS3CG1ENC_MODRM_Wss_WO_Vss:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wss_Vss(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_Wsd_Vsd:
+        case BS3CG1ENC_MODRM_Wsd_WO_Vsd:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wsd_Vsd(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_Wps_Vps:
-        case BS3CG1ENC_MODRM_Wpd_Vpd:
+        case BS3CG1ENC_MODRM_Wps_WO_Vps:
+        case BS3CG1ENC_MODRM_Wpd_WO_Vpd:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Wps_Vps__OR__BS3CG1ENC_MODRM_Wpd_Vpd(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_WqZxReg_Vq:
+        case BS3CG1ENC_MODRM_WqZxReg_WO_Vq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_WqZxReg_Vq(pThis, iEncoding);
 
-        case BS3CG1ENC_MODRM_Pq_Uq:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Pq_Uq(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_Pq_WO_Uq:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Pq_WO_Uq(pThis, iEncoding);
 
-        case BS3CG1ENC_MODRM_Vq_UqHi:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_UqHi(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_Vq_Mq:
+        case BS3CG1ENC_MODRM_Vq_WO_UqHi:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_WO_UqHi(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_Vq_WO_Mq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_Mq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VqHi_Uq:
+        case BS3CG1ENC_MODRM_VqHi_WO_Uq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqHi_Uq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VqHi_Mq:
+        case BS3CG1ENC_MODRM_VqHi_WO_Mq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqHi_Mq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_Vdq_Wdq:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_Wdq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_Vpd_Wpd:
-        case BS3CG1ENC_MODRM_Vps_Wps:
+        case BS3CG1ENC_MODRM_Vdq_WO_Wdq:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vdq_WO_Wdq(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_Vpd_WO_Wpd:
+        case BS3CG1ENC_MODRM_Vps_WO_Wps:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vps_Wps__OR__BS3CG1ENC_MODRM_Vpd_Wpd(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VssZxReg_Wss:
+        case BS3CG1ENC_MODRM_VssZxReg_WO_Wss:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_Wss(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VsdZxReg_Wsd:
-        case BS3CG1ENC_MODRM_VqZxReg_Wq:
+        case BS3CG1ENC_MODRM_VsdZxReg_WO_Wsd:
+        case BS3CG1ENC_MODRM_VqZxReg_WO_Wq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_Wsd__OR__MODRM_VqZxReg_Wq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VqZxReg_Nq:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_Nq(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_VqZxReg_WO_Nq:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_WO_Nq(pThis, iEncoding);
 
         case BS3CG1ENC_MODRM_Gv_Ma:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(pThis, iEncoding);
 
-        case BS3CG1ENC_MODRM_MbRO:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MbRO(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_MdRO:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdRO(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_MdWO:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MdWO(pThis, iEncoding);
-        case BS3CG1ENC_VEX_MODRM_MdWO:
+        case BS3CG1ENC_MODRM_Mb_RO:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Mb_RO(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_Md_RO:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Md_RO(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_Md_WO:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Md_WO(pThis, iEncoding);
+        case BS3CG1ENC_VEX_MODRM_Md_WO:
             return Bs3Cg1EncodeNext_BS3CG1ENC_VEX_MODRM_MdWO(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_MqWO_Vq:
+        case BS3CG1ENC_MODRM_Mq_WO_Vq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MqWO_Vq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_MqWO_VqHi:
+        case BS3CG1ENC_MODRM_Mq_WO_VqHi:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_MqWO_VqHi(pThis, iEncoding);
 
         case BS3CG1ENC_FIXED:
@@ -2397,7 +2397,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].idxField    = BS3CG1DST_INVALID;
             break;
 
-        case BS3CG1ENC_MODRM_Wss_Vss:
+        case BS3CG1ENC_MODRM_Wss_WO_Vss:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 4;
@@ -2406,8 +2406,8 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Wsd_Vsd:
-        case BS3CG1ENC_MODRM_WqZxReg_Vq:
+        case BS3CG1ENC_MODRM_Wsd_WO_Vsd:
+        case BS3CG1ENC_MODRM_WqZxReg_WO_Vq:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 8;
@@ -2416,8 +2416,8 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Wps_Vps:
-        case BS3CG1ENC_MODRM_Wpd_Vpd:
+        case BS3CG1ENC_MODRM_Wps_WO_Vps:
+        case BS3CG1ENC_MODRM_Wpd_WO_Vpd:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 16;
@@ -2426,7 +2426,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Vdq_Wdq:
+        case BS3CG1ENC_MODRM_Vdq_WO_Wdq:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 16;
@@ -2435,8 +2435,8 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Vpd_Wpd:
-        case BS3CG1ENC_MODRM_Vps_Wps:
+        case BS3CG1ENC_MODRM_Vpd_WO_Wpd:
+        case BS3CG1ENC_MODRM_Vps_WO_Wps:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 16;
@@ -2445,9 +2445,9 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Pq_Uq:
-        case BS3CG1ENC_MODRM_Vq_UqHi:
-        case BS3CG1ENC_MODRM_VqHi_Uq:
+        case BS3CG1ENC_MODRM_Pq_WO_Uq:
+        case BS3CG1ENC_MODRM_Vq_WO_UqHi:
+        case BS3CG1ENC_MODRM_VqHi_WO_Uq:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 8;
@@ -2456,8 +2456,8 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Vq_Mq:
-        case BS3CG1ENC_MODRM_VqHi_Mq:
+        case BS3CG1ENC_MODRM_Vq_WO_Mq:
+        case BS3CG1ENC_MODRM_VqHi_WO_Mq:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 8;
@@ -2466,7 +2466,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_MEM;
             break;
 
-        case BS3CG1ENC_MODRM_VssZxReg_Wss:
+        case BS3CG1ENC_MODRM_VssZxReg_WO_Wss:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 4;
@@ -2475,9 +2475,9 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_VsdZxReg_Wsd:
-        case BS3CG1ENC_MODRM_VqZxReg_Wq:
-        case BS3CG1ENC_MODRM_VqZxReg_Nq:
+        case BS3CG1ENC_MODRM_VsdZxReg_WO_Wsd:
+        case BS3CG1ENC_MODRM_VqZxReg_WO_Wq:
+        case BS3CG1ENC_MODRM_VqZxReg_WO_Nq:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 8;
@@ -2486,27 +2486,27 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_MbRO:
+        case BS3CG1ENC_MODRM_Mb_RO:
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 1;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM;
             break;
 
-        case BS3CG1ENC_MODRM_MdRO:
+        case BS3CG1ENC_MODRM_Md_RO:
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 4;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM;
             break;
 
-        case BS3CG1ENC_MODRM_MdWO:
-        case BS3CG1ENC_VEX_MODRM_MdWO:
+        case BS3CG1ENC_MODRM_Md_WO:
+        case BS3CG1ENC_VEX_MODRM_Md_WO:
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 4;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM_RW;
             break;
 
-        case BS3CG1ENC_MODRM_MqWO_Vq:
-        case BS3CG1ENC_MODRM_MqWO_VqHi:
+        case BS3CG1ENC_MODRM_Mq_WO_Vq:
+        case BS3CG1ENC_MODRM_Mq_WO_VqHi:
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 8;

@@ -559,6 +559,7 @@ endef
 #       -q                     Quiet, no logos or stuff.
 #       -0                     Use 8086 instruction set (16-bit only).
 #       -3                     Use 386 instruction set (16-bit only).
+#       -e<num>                Stop after <num> errors.
 #       -wx                    Maxium warning level.
 #       -zl                    Don't emit default library information.
 #       -zdp                   DS pegged to BS3DATA16_GROUP/DGROUP.
@@ -602,9 +603,9 @@ TEMPLATE_VBoxBS3KitImg_ARTOOL       = OPENWATCOM-16
 TEMPLATE_VBoxBS3KitImg_CTOOL        = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CXXTOOL      = Bs3Ow16
 TEMPLATE_VBoxBS3KitImg_CFLAGS       = $(if $(BS3KIT_SEGNM_DATA16),-nd=$(BS3KIT_SEGNM_DATA16),) \
-	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -ml $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -oh -d+
+	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -e125 -wx -zl -zdp -zu -ml $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -oh -d+
 TEMPLATE_VBoxBS3KitImg_CXXFLAGS     = $(if $(BS3KIT_SEGNM_DATA16),-nd=$(BS3KIT_SEGNM_DATA16),) \
-	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -wx -zl -zdp -zu -ml $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -oh -d+
+	-nt=BS3TEXT16 -nc=$(BS3KIT_CLASS_CODE16) -ecc -q -0 -e125 -wx -zl -zdp -zu -ml $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -oh -d+
 TEMPLATE_VBoxBS3KitImg_CDEFS        = ARCH_BITS=16 RT_ARCH_X86
 
 TEMPLATE_VBoxBS3KitImg_TOOL         = $(NO_SUCH_VARIABLE)
@@ -771,9 +772,9 @@ TEMPLATE_VBoxBS3KitImg32_ARTOOL       = OPENWATCOM
 TEMPLATE_VBoxBS3KitImg32_CTOOL        = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CXXTOOL      = Bs3Ow32
 TEMPLATE_VBoxBS3KitImg32_CFLAGS       = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -e125 -wx -zl -mf $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_CXXFLAGS     = \
-	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -wx -zl -mf $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
+	-nt=BS3TEXT32 -nd=BS3DATA32 -nc=BS3CLASS32CODE -ecc -q -e125 -wx -zl -mf $(BS3_OW_DBG_OPT) -s -oa -ob -of -oi -ol -or -os -d+
 TEMPLATE_VBoxBS3KitImg32_INCS         = $(VBOX_PATH_BS3KIT_SRC) .
 TEMPLATE_VBoxBS3KitImg32_LDTOOL       = VBoxBsUnusedLd
 

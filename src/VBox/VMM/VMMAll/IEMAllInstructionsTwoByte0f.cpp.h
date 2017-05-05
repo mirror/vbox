@@ -1000,7 +1000,7 @@ FNIEMOP_DEF(iemOp_3Dnow)
  */
 FNIEMOP_DEF(iemOp_movups_Vps_Wps)
 {
-    IEMOP_MNEMONIC2(RM, MOVUPS, movups, Vps, Wps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVUPS, movups, Vps_WO, Wps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1052,7 +1052,7 @@ FNIEMOP_DEF(iemOp_movups_Vps_Wps)
  */
 FNIEMOP_DEF(iemOp_movupd_Vpd_Wpd)
 {
-    IEMOP_MNEMONIC2(RM, MOVUPD, movupd, Vpd, Wpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVUPD, movupd, Vpd_WO, Wpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1103,7 +1103,7 @@ FNIEMOP_DEF(iemOp_movupd_Vpd_Wpd)
  */
 FNIEMOP_DEF(iemOp_movss_Vss_Wss)
 {
-    IEMOP_MNEMONIC2(RM, MOVSS, movss, VssZxReg, Wss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVSS, movss, VssZxReg_WO, Wss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1157,7 +1157,7 @@ FNIEMOP_DEF(iemOp_movss_Vss_Wss)
  */
 FNIEMOP_DEF(iemOp_movsd_Vsd_Wsd)
 {
-    IEMOP_MNEMONIC2(RM, MOVSD, movsd, VsdZxReg, Wsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVSD, movsd, VsdZxReg_WO, Wsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1211,7 +1211,7 @@ FNIEMOP_DEF(iemOp_movsd_Vsd_Wsd)
  */
 FNIEMOP_DEF(iemOp_movups_Wps_Vps)
 {
-    IEMOP_MNEMONIC2(MR, MOVUPS, movups, Wps, Vps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(MR, MOVUPS, movups, Wps_WO, Vps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1262,7 +1262,7 @@ FNIEMOP_DEF(iemOp_movups_Wps_Vps)
  */
 FNIEMOP_DEF(iemOp_movupd_Wpd_Vpd)
 {
-    IEMOP_MNEMONIC2(MR, MOVUPD, movupd, Wpd, Vpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(MR, MOVUPD, movupd, Wpd_WO, Vpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1313,7 +1313,7 @@ FNIEMOP_DEF(iemOp_movupd_Wpd_Vpd)
  */
 FNIEMOP_DEF(iemOp_movss_Wss_Vss)
 {
-    IEMOP_MNEMONIC2(MR, MOVSS, movss, Wss, Vss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(MR, MOVSS, movss, Wss_WO, Vss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1367,7 +1367,7 @@ FNIEMOP_DEF(iemOp_movss_Wss_Vss)
  */
 FNIEMOP_DEF(iemOp_movsd_Wsd_Vsd)
 {
-    IEMOP_MNEMONIC2(MR, MOVSD, movsd, Wsd, Vsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(MR, MOVSD, movsd, Wsd_WO, Vsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1425,7 +1425,7 @@ FNIEMOP_DEF(iemOp_movlps_Vq_Mq__movhlps)
          * @optest      op1=1 op2=2 -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(RM_REG, MOVHLPS, movhlps, Vq, UqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_REG, MOVHLPS, movhlps, Vq_WO, UqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
@@ -1453,7 +1453,7 @@ FNIEMOP_DEF(iemOp_movlps_Vq_Mq__movhlps)
          * @optest      op1=0 op2=-42 -> op1=-42
          * @opfunction  iemOp_movlps_Vq_Mq__vmovhlps
          */
-        IEMOP_MNEMONIC2(RM_MEM, MOVLPS, movlps, Vq, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_MEM, MOVLPS, movlps, Vq_WO, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -1489,7 +1489,7 @@ FNIEMOP_DEF(iemOp_movlpd_Vq_Mq)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC2(RM_MEM, MOVLPD, movlpd, Vq, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_MEM, MOVLPD, movlpd, Vq_WO, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -1533,7 +1533,7 @@ FNIEMOP_DEF(iemOp_movlpd_Vq_Mq)
  */
 FNIEMOP_DEF(iemOp_movsldup_Vdq_Wdq)
 {
-    IEMOP_MNEMONIC2(RM, MOVSLDUP, movsldup, Vdq, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVSLDUP, movsldup, Vdq_WO, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1593,7 +1593,7 @@ FNIEMOP_DEF(iemOp_movsldup_Vdq_Wdq)
  */
 FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
 {
-    IEMOP_MNEMONIC2(RM, MOVDDUP, movddup, Vdq, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVDDUP, movddup, Vdq_WO, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -1656,7 +1656,7 @@ FNIEMOP_DEF(iemOp_movlps_Mq_Vq)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC2(MR_MEM, MOVLPS, movlps, MqWO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(MR_MEM, MOVLPS, movlps, Mq_WO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -1704,7 +1704,7 @@ FNIEMOP_DEF(iemOp_movlpd_Mq_Vq)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC2(MR_MEM, MOVLPD, movlpd, MqWO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(MR_MEM, MOVLPD, movlpd, Mq_WO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -1825,7 +1825,7 @@ FNIEMOP_DEF(iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq)
          * @optest      op1=1 op2=2 -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
          */
-        IEMOP_MNEMONIC2(RM_REG, MOVLHPS, movlhps, VqHi, Uq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_REG, MOVLHPS, movlhps, VqHi_WO, Uq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
@@ -1853,7 +1853,7 @@ FNIEMOP_DEF(iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq)
          * @optest      op1=0 op2=-42 -> op1=-42
          * @opfunction  iemOp_movhps_Vdq_Mq__movlhps_Vdq_Uq
          */
-        IEMOP_MNEMONIC2(RM_MEM, MOVHPS, movhps, VqHi, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_MEM, MOVHPS, movhps, VqHi_WO, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -1889,7 +1889,7 @@ FNIEMOP_DEF(iemOp_movhpd_Vdq_Mq)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC2(RM_MEM, MOVHPD, movhpd, VqHi, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_MEM, MOVHPD, movhpd, VqHi_WO, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -1932,7 +1932,7 @@ FNIEMOP_DEF(iemOp_movhpd_Vdq_Mq)
  */
 FNIEMOP_DEF(iemOp_movshdup_Vdq_Wdq)
 {
-    IEMOP_MNEMONIC2(RM, MOVSHDUP, movshdup, Vdq, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVSHDUP, movshdup, Vdq_WO, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -2007,7 +2007,7 @@ FNIEMOP_DEF(iemOp_movhps_Mq_Vq)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC2(MR_MEM, MOVHPS, movhps, MqWO, VqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(MR_MEM, MOVHPS, movhps, Mq_WO, VqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -2055,7 +2055,7 @@ FNIEMOP_DEF(iemOp_movhpd_Mq_Vq)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC2(MR_MEM, MOVHPD, movhpd, MqWO, VqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(MR_MEM, MOVHPD, movhpd, Mq_WO, VqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -4324,7 +4324,7 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Vy)
  */
 FNIEMOP_DEF(iemOp_movq_Vq_Wq)
 {
-    IEMOP_MNEMONIC2(RM, MOVQ, movq, VqZxReg, Wq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(RM, MOVQ, movq, VqZxReg_WO, Wq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -6452,7 +6452,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr, uint8_t, bRm)
 {
-    IEMOP_MNEMONIC1(M_MEM, LDMXCSR, ldmxcsr, MdRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC1(M_MEM, LDMXCSR, ldmxcsr, Md_RO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse)
         return IEMOP_RAISE_INVALID_OPCODE();
 
@@ -6489,7 +6489,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_ldmxcsr, uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
 {
-    IEMOP_MNEMONIC1(M_MEM, STMXCSR, stmxcsr, MdWO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC1(M_MEM, STMXCSR, stmxcsr, Md_WO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse)
         return IEMOP_RAISE_INVALID_OPCODE();
 
@@ -6516,7 +6516,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOp_Grp15_xsave,    uint8_t, bRm)
 {
-    IEMOP_MNEMONIC1(M_MEM, XSAVE, xsave, MRW, DISOPTYPE_HARMLESS, 0);
+    IEMOP_MNEMONIC1(M_MEM, XSAVE, xsave, M_RW, DISOPTYPE_HARMLESS, 0);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXSaveRstor)
         return IEMOP_RAISE_INVALID_OPCODE();
 
@@ -6544,7 +6544,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_xsave,    uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOp_Grp15_xrstor,   uint8_t, bRm)
 {
-    IEMOP_MNEMONIC1(M_MEM, XRSTOR, xrstor, MRO, DISOPTYPE_HARMLESS, 0);
+    IEMOP_MNEMONIC1(M_MEM, XRSTOR, xrstor, M_RO, DISOPTYPE_HARMLESS, 0);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXSaveRstor)
         return IEMOP_RAISE_INVALID_OPCODE();
 
@@ -6574,7 +6574,7 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
  */
 FNIEMOP_DEF_1(iemOp_Grp15_clflush,  uint8_t, bRm)
 {
-    IEMOP_MNEMONIC1(M_MEM, CLFLUSH, clflush, MbRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC1(M_MEM, CLFLUSH, clflush, Mb_RO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fClFlush)
         return FNIEMOP_CALL_1(iemOp_InvalidWithRMAllNeeded, bRm);
 
@@ -6599,7 +6599,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_clflush,  uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOp_Grp15_clflushopt,  uint8_t, bRm)
 {
-    IEMOP_MNEMONIC1(M_MEM, CLFLUSHOPT, clflushopt, MbRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC1(M_MEM, CLFLUSHOPT, clflushopt, Mb_RO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fClFlushOpt)
         return FNIEMOP_CALL_1(iemOp_InvalidWithRMAllNeeded, bRm);
 
@@ -8340,7 +8340,7 @@ FNIEMOP_STUB(iemOp_pmullw_Vx_Wx);
  */
 FNIEMOP_DEF(iemOp_movq_Wq_Vq)
 {
-    IEMOP_MNEMONIC2(MR, MOVQ, movq, WqZxReg, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(MR, MOVQ, movq, WqZxReg_WO, Vq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -8401,7 +8401,7 @@ FNIEMOP_DEF(iemOp_movq2dq_Vdq_Nq)
         /*
          * Register, register.
          */
-        IEMOP_MNEMONIC2(RM_REG, MOVQ2DQ, movq2dq, VqZxReg, Nq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_REG, MOVQ2DQ, movq2dq, VqZxReg_WO, Nq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
@@ -8453,7 +8453,7 @@ FNIEMOP_DEF(iemOp_movdq2q_Pq_Uq)
         /*
          * Register, register.
          */
-        IEMOP_MNEMONIC2(RM_REG, MOVDQ2Q, movdq2q, Pq, Uq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_REG, MOVDQ2Q, movdq2q, Pq_WO, Uq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
         IEM_MC_LOCAL(uint64_t,                  uSrc);

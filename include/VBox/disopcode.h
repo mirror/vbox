@@ -1063,20 +1063,32 @@ enum OP_PARM
 #define OP_PARM_Lx              (OP_PARM_L+OP_PARM_x)
 
 /* For making IEM / bs3-cpu-generated-1 happy: */
+#define OP_PARM_M_RO            OP_PARM_M               /**< Annotates read only memory of variable operand size (xrstor). */
+#define OP_PARM_M_RW            OP_PARM_M               /**< Annotates read-write memory of variable operand size (xsave). */
+#define OP_PARM_Mb_RO           OP_PARM_Mb              /**< Annotates read only memory byte operand. */
+#define OP_PARM_Md_RO           OP_PARM_Md              /**< Annotates read only memory byte operand. */
+#define OP_PARM_Md_WO           OP_PARM_Md              /**< Annotates write only memory byte operand. */
+#define OP_PARM_Mq_WO           OP_PARM_Mq              /**< Annotates write only memory quad word operand. */
+#define OP_PARM_Pq_WO           OP_PARM_Pq              /**< Annotates write only operand. */
+#define OP_PARM_Nq              OP_PARM_Qq              /**< Missing 'N' class (MMX reg selected by modrm.mem) in disasm. */
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
 #define OP_PARM_UqHi            (OP_PARM_U+OP_PARM_dq)
-#define OP_PARM_WqZxReg         OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */
-#define OP_PARM_VssZxReg        OP_PARM_Vss             /**< Annotates that register targets get their upper bits cleared. */
-#define OP_PARM_VsdZxReg        OP_PARM_Vsd             /**< Annotates that register targets get their upper bits cleared. */
+#define OP_PARM_Vdq_WO          OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
+#define OP_PARM_Vpd_WO          OP_PARM_Vpd             /**< Annotates write only operand. */
+#define OP_PARM_Vps_WO          OP_PARM_Vps             /**< Annotates write only operand. */
+#define OP_PARM_Vq_WO           OP_PARM_Vq              /**< Annotates write only operand. */
 #define OP_PARM_VqHi            OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
-#define OP_PARM_VqZxReg         OP_PARM_Vq              /**< Annotates that register targets get their upper bits cleared */
-#define OP_PARM_MbRO            OP_PARM_Mb              /**< Annotates read only memory byte operand. */
-#define OP_PARM_MdRO            OP_PARM_Md              /**< Annotates read only memory byte operand. */
-#define OP_PARM_MdWO            OP_PARM_Md              /**< Annotates write only memory byte operand. */
-#define OP_PARM_MqWO            OP_PARM_Mq              /**< Annotates write only memory quad word operand. */
-#define OP_PARM_MRO             OP_PARM_M               /**< Annotates read only memory of variable operand size (xrstor). */
-#define OP_PARM_MRW             OP_PARM_M               /**< Annotates read-write memory of variable operand size (xsave). */
-#define OP_PARM_Nq              OP_PARM_Qq              /**< Missing 'N' class (MMX reg selected by modrm.mem) in disasm. */
+#define OP_PARM_VqHi_WO         OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are written. */
+#define OP_PARM_VqZxReg_WO      OP_PARM_Vq              /**< Annotates that register targets get their upper bits cleared */
+#define OP_PARM_VsdZxReg_WO     OP_PARM_Vsd             /**< Annotates that register targets get their upper bits cleared. */
+#define OP_PARM_VsdZxReg_WO     OP_PARM_Vsd             /**< Annotates that register targets get their upper bits cleared. */
+#define OP_PARM_VssZxReg_WO     OP_PARM_Vss             /**< Annotates that register targets get their upper bits cleared. */
+#define OP_PARM_Wpd_WO          OP_PARM_Wpd             /**< Annotates write only operand. */
+#define OP_PARM_Wps_WO          OP_PARM_Wps             /**< Annotates write only operand. */
+#define OP_PARM_WqZxReg_WO      OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */
+#define OP_PARM_Wss_WO          OP_PARM_Wss             /**< Annotates write only operand. */
+#define OP_PARM_Wsd_WO          OP_PARM_Wsd             /**< Annotates write only operand. */
+
 
 /** @} */
 
