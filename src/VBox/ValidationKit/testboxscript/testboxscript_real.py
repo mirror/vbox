@@ -259,7 +259,7 @@ class TestBoxScript(object):
             return True;
 
         # Test if already mounted.
-        sTestFile = os.path.join(sMountPoint + os.path.sep, sShare + '.txt');
+        sTestFile = os.path.join(sMountPoint + os.path.sep, sShare + '-new.txt');
         if os.path.isfile(sTestFile):
             return True;
 
