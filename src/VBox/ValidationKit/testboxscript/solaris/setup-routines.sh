@@ -117,20 +117,29 @@ os_load_config() {
         XMLARGS=`"${MY_SVCCFG}" "export" "${MY_SVC_FMRI}" \
                  | ${MY_TR} '\n' ' ' \
                 `;
-        XMLARGS=`echo "${XMLARGS} " \
-                 | ${MY_SED} \
-                   -e 's/>  */> /g' \
-                   -e 's/  *\/>/ \/>/g' \
-                   -e "s/^.*<exec_method \([^>]*\)name='start'\([^>]*\)>.*\$/\1 \2/" \
-                   -e "s/^.*exec='\([^']*\)'.*\$/\1/" \
-                   -e 's/&quot;/"/g' \
-                   -e 's/&lt;/</g' \
-                   -e 's/&gt;/>/g' \
-                   -e 's/&amp;/&/g' \
-                 | ${MY_SED} \
-                   -e 's/^.*testboxscript -d -m *//' \
-                `;
-        eval common_testboxscript_args_to_config ${XMLARGS}
+        case "${XMLARGS}" in 
+            *exec_method*)
+                XMLARGS=`echo "${XMLARGS} " \
+                         | ${MY_SED} \
+                           -e 's/>  */> /g' \
+                           -e 's/  *\/>/ \/>/g' \
+                           -e "s/^.*<exec_method \([^>]*\)name='start'\([^>]*\)>.*\$/\1 \2/" \
+                           -e "s/^.*exec='\([^']*\)'.*\$/\1/" \
+                           -e 's/&quot;/"/g' \
+                           -e 's/&lt;/</g' \
+                           -e 's/&gt;/>/g' \
+                           -e 's/&amp;/&/g' \
+                         | ${MY_SED} \
+                           -e 's/^.*testboxscript -d -m *//' \
+                        `;
+                eval common_testboxscript_args_to_config ${XMLARGS}
+                ;;
+            *)
+                echo "error: ${MY_SVCCFG}" "export" "${MY_SVC_FMRI} contains no exec_method element." >&2
+                echo "       Please delete the service manually and restart setup.sh" >&2
+                exit 2
+                ;;
+        esac
     fi
 }
 
