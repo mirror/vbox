@@ -1766,7 +1766,8 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_Wss(PBS3
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_Wsd(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_Wsd__OR__MODRM_VqZxReg_Wq(PBS3CG1STATE pThis,
+                                                                                                  unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -2229,7 +2230,8 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
         case BS3CG1ENC_MODRM_VssZxReg_Wss:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_Wss(pThis, iEncoding);
         case BS3CG1ENC_MODRM_VsdZxReg_Wsd:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_Wsd(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_VqZxReg_Wq:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_Wsd__OR__MODRM_VqZxReg_Wq(pThis, iEncoding);
 
         case BS3CG1ENC_MODRM_Gv_Ma:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(pThis, iEncoding);
@@ -2420,6 +2422,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_VsdZxReg_Wsd:
+        case BS3CG1ENC_MODRM_VqZxReg_Wq:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 8;

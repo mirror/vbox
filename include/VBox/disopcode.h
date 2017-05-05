@@ -1069,6 +1069,7 @@ enum OP_PARM
 #define OP_PARM_VssZxReg        OP_PARM_Vss             /**< Annotates that register targets get their upper bits cleared. */
 #define OP_PARM_VsdZxReg        OP_PARM_Vsd             /**< Annotates that register targets get their upper bits cleared. */
 #define OP_PARM_VqHi            OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
+#define OP_PARM_VqZxReg         OP_PARM_Vq              /**< Annotates that register targets get their upper bits cleared */
 #define OP_PARM_MbRO            OP_PARM_Mb              /**< Annotates read only memory byte operand. */
 #define OP_PARM_MdRO            OP_PARM_Md              /**< Annotates read only memory byte operand. */
 #define OP_PARM_MdWO            OP_PARM_Md              /**< Annotates write only memory byte operand. */

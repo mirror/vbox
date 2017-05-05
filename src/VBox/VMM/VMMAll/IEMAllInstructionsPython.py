@@ -220,6 +220,7 @@ g_kdOpTypes = {
     'Wps':  ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',     ),
     'Wpd':  ( 'IDX_UseModRM',       'rm',     '%Wpd', 'Wpd',     ),
     'Wdq':  ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     ),
+    'Wq':   ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
     'WqZxReg': ( 'IDX_UseModRM',    'rm',     '%Wq',  'Wq',      ),
 
     # ModR/M.rm - register only.
@@ -249,6 +250,7 @@ g_kdOpTypes = {
     'Vq':   ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      ),
     'Vdq':  ( 'IDX_UseModRM',       'reg',    '%Vdq', 'Vdq',     ),
     'VqHi': ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
+    'VqZxReg': ( 'IDX_UseModRM',    'reg',    '%Vq',  'VqZx',   ),
 
     # Immediate values.
     'Ib':   ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.
