@@ -1848,7 +1848,7 @@ FNIEMOP_DEF(iemOp_popa__mvex)
 /**
  * @opcode      0x62
  * @opmnemonic  bound
- * @op1         Gv
+ * @op1         Gv_RO
  * @op2         Ma
  * @opmincpu    80186
  * @ophints     harmless invalid_64
@@ -1910,7 +1910,7 @@ FNIEMOP_DEF(iemOp_bound_Gv_Ma__evex)
     uint8_t bRm;
     if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
     {
-        IEMOP_MNEMONIC2(RM_MEM, BOUND, bound, Gv, Ma, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC2(RM_MEM, BOUND, bound, Gv_RO, Ma, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEMOP_HLP_MIN_186();
         IEM_OPCODE_GET_NEXT_U8(&bRm);
         if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))

@@ -1063,6 +1063,7 @@ enum OP_PARM
 #define OP_PARM_Lx              (OP_PARM_L+OP_PARM_x)
 
 /* For making IEM / bs3-cpu-generated-1 happy: */
+#define OP_PARM_Gv_RO           OP_PARM_Gv              /**< Annotates read only first operand (default is readwrite). */
 #define OP_PARM_M_RO            OP_PARM_M               /**< Annotates read only memory of variable operand size (xrstor). */
 #define OP_PARM_M_RW            OP_PARM_M               /**< Annotates read-write memory of variable operand size (xsave). */
 #define OP_PARM_Mb_RO           OP_PARM_Mb              /**< Annotates read only memory byte operand. */

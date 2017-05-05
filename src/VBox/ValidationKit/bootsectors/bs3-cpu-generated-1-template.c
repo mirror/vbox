@@ -1847,7 +1847,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_WO_Nq(PBS
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_RO_Ma(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     unsigned cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
@@ -2289,8 +2289,8 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
         case BS3CG1ENC_MODRM_VqZxReg_WO_Nq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_WO_Nq(pThis, iEncoding);
 
-        case BS3CG1ENC_MODRM_Gv_Ma:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_Ma(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_Gv_RO_Ma:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_RO_Ma(pThis, iEncoding);
 
         case BS3CG1ENC_MODRM_Mb_RO:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Mb_RO(pThis, iEncoding);
@@ -2389,7 +2389,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Gv_Ma:
+        case BS3CG1ENC_MODRM_Gv_RO_Ma:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->cbOperand         = 2;
@@ -2565,7 +2565,7 @@ static BS3CG1ENC Bs3Cg1CalcNoneIntelInvalidEncoding(BS3CG1ENC enmEncoding)
     switch (enmEncoding)
     {
         case BS3CG1ENC_MODRM_Gb_Eb:
-        case BS3CG1ENC_MODRM_Gv_Ma:
+        case BS3CG1ENC_MODRM_Gv_RO_Ma:
         case BS3CG1ENC_FIXED:
             return BS3CG1ENC_FIXED;
         default:
