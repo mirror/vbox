@@ -35,6 +35,7 @@
 
 /* Other VBox includes: */
 # include "iprt/assert.h"
+# include "iprt/cidr.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -42,11 +43,17 @@
 UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QWidget>(pParent)
     , m_pTabWidget(0)
-    , m_pButtonAutomatic(0), m_pButtonManual(0)
-    , m_pLabelIPv4(0), m_pEditorIPv4(0), m_pLabelNMv4(0), m_pEditorNMv4(0)
-    , m_pLabelIPv6(0), m_pEditorIPv6(0), m_pLabelNMv6(0), m_pEditorNMv6(0)
-    , m_pCheckBoxDHCP(0) , m_pLabelDHCPAddress(0), m_pEditorDHCPAddress(0), m_pLabelDHCPMask(0), m_pEditorDHCPMask(0)
-    , m_pLabelDHCPLowerAddress(0), m_pEditorDHCPLowerAddress(0), m_pLabelDHCPUpperAddress(0), m_pEditorDHCPUpperAddress(0)
+    , m_pButtonAutomatic(0), m_pErrorPaneAutomatic(0)
+    , m_pButtonManual(0)
+    , m_pLabelIPv4(0), m_pEditorIPv4(0), m_pErrorPaneIPv4(0)
+    , m_pLabelNMv4(0), m_pEditorNMv4(0), m_pErrorPaneNMv4(0)
+    , m_pLabelIPv6(0), m_pEditorIPv6(0), m_pErrorPaneIPv6(0)
+    , m_pLabelNMv6(0), m_pEditorNMv6(0), m_pErrorPaneNMv6(0)
+    , m_pCheckBoxDHCP(0)
+    , m_pLabelDHCPAddress(0), m_pEditorDHCPAddress(0), m_pErrorPaneDHCPAddress(0)
+    , m_pLabelDHCPMask(0), m_pEditorDHCPMask(0), m_pErrorPaneDHCPMask(0)
+    , m_pLabelDHCPLowerAddress(0), m_pEditorDHCPLowerAddress(0), m_pErrorPaneDHCPLowerAddress(0)
+    , m_pLabelDHCPUpperAddress(0), m_pEditorDHCPUpperAddress(0), m_pErrorPaneDHCPUpperAddress(0)
 {
     /* Prepare: */
     prepare();
@@ -129,6 +136,89 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pEditorDHCPLowerAddress->setToolTip(tr("Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
     m_pLabelDHCPUpperAddress->setText(tr("&Upper Address Bound:"));
     m_pEditorDHCPUpperAddress->setToolTip(tr("Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
+
+    /* Retranslate validation: */
+    retranslateValidation();
+}
+
+void UIHostNetworkDetailsDialog::sltToggledButtonAutomatic(bool fChecked)
+{
+    m_newData.m_interface.m_fDHCPEnabled = fChecked;
+    loadDataForInterface();
+    revalidate();
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltToggledButtonManual(bool fChecked)
+{
+    m_newData.m_interface.m_fDHCPEnabled = !fChecked;
+    loadDataForInterface();
+    revalidate();
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedIPv4(const QString &strText)
+{
+    m_newData.m_interface.m_strAddress = strText;
+    revalidate(m_pErrorPaneIPv4);
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedNMv4(const QString &strText)
+{
+    m_newData.m_interface.m_strMask = strText;
+    revalidate(m_pErrorPaneNMv4);
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedIPv6(const QString &strText)
+{
+    m_newData.m_interface.m_strAddress6 = strText;
+    revalidate(m_pErrorPaneIPv6);
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedNMv6(const QString &strText)
+{
+    m_newData.m_interface.m_strMaskLength6 = strText;
+    revalidate(m_pErrorPaneNMv6);
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltStatusChangedServer(int iChecked)
+{
+    m_newData.m_dhcpserver.m_fEnabled = (bool)iChecked;
+    loadDataForDHCPServer();
+    revalidate();
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedAddress(const QString &strText)
+{
+    m_newData.m_dhcpserver.m_strAddress = strText;
+    revalidate(m_pErrorPaneDHCPAddress);
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedMask(const QString &strText)
+{
+    m_newData.m_dhcpserver.m_strMask = strText;
+    revalidate(m_pErrorPaneDHCPMask);
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedLowerAddress(const QString &strText)
+{
+    m_newData.m_dhcpserver.m_strLowerAddress = strText;
+    revalidate(m_pErrorPaneDHCPLowerAddress);
+    notify();
+}
+
+void UIHostNetworkDetailsDialog::sltTextChangedUpperAddress(const QString &strText)
+{
+    m_newData.m_dhcpserver.m_strUpperAddress = strText;
+    revalidate(m_pErrorPaneDHCPUpperAddress);
+    notify();
 }
 
 void UIHostNetworkDetailsDialog::prepare()
@@ -182,16 +272,38 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
             /* Configure layout: */
             pLayoutInterface->setContentsMargins(10, 10, 10, 10);
 #endif
-            /* Create automatic interface configuration radio-button: */
-            m_pButtonAutomatic = new QRadioButton;
-            AssertPtrReturnVoid(m_pButtonAutomatic);
+
+            /* Create automatic interface configuration layout: */
+            QHBoxLayout *pLayoutAutomatic = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutAutomatic);
             {
-                /* Configure radio-button: */
-                connect(m_pButtonAutomatic, &QRadioButton::toggled,
-                        this, &UIHostNetworkDetailsDialog::sltToggledButtonAutomatic);
+                /* Configure layout: */
+                pLayoutAutomatic->setContentsMargins(0, 0, 0, 0);
+                /* Create automatic interface configuration radio-button: */
+                m_pButtonAutomatic = new QRadioButton;
+                AssertPtrReturnVoid(m_pButtonAutomatic);
+                {
+                    /* Configure radio-button: */
+                    connect(m_pButtonAutomatic, &QRadioButton::toggled,
+                            this, &UIHostNetworkDetailsDialog::sltToggledButtonAutomatic);
+                    /* Add into layout: */
+                    pLayoutAutomatic->addWidget(m_pButtonAutomatic);
+                }
+                /* Create automatic interface configuration error pane: */
+                m_pErrorPaneAutomatic = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneAutomatic);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneAutomatic->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+                    m_pErrorPaneAutomatic->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+                    m_pErrorPaneAutomatic->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutAutomatic->addWidget(m_pErrorPaneAutomatic);
+                }
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pButtonAutomatic, 0, 0, 1, 3);
+                pLayoutInterface->addLayout(pLayoutAutomatic, 0, 0, 1, 3);
             }
+
             /* Create manual interface configuration radio-button: */
             m_pButtonManual = new QRadioButton;
             AssertPtrReturnVoid(m_pButtonManual);
@@ -202,6 +314,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pButtonManual, 1, 0, 1, 3);
             }
+
             /* Create IPv4 address label: */
             m_pLabelIPv4 = new QLabel;
             AssertPtrReturnVoid(m_pLabelIPv4);
@@ -211,18 +324,38 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelIPv4, 2, 1);
             }
-            /* Create IPv4 address editor: */
-            m_pEditorIPv4 = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorIPv4);
+            /* Create IPv4 layout: */
+            QHBoxLayout *pLayoutIPv4 = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutIPv4);
             {
-                /* Configure editor: */
-                m_pLabelIPv4->setBuddy(m_pEditorIPv4);
-                connect(m_pEditorIPv4, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedIPv4);
+                /* Configure layout: */
+                pLayoutIPv4->setContentsMargins(0, 0, 0, 0);
+                /* Create IPv4 address editor: */
+                m_pEditorIPv4 = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorIPv4);
+                {
+                    /* Configure editor: */
+                    m_pLabelIPv4->setBuddy(m_pEditorIPv4);
+                    connect(m_pEditorIPv4, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedIPv4);
+                    /* Add into layout: */
+                    pLayoutIPv4->addWidget(m_pEditorIPv4);
+                }
+                /* Create IPv4 error pane: */
+                m_pErrorPaneIPv4 = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneIPv4);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneIPv4->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneIPv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutIPv4->addWidget(m_pErrorPaneIPv4);
+                }
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorIPv4, 2, 2);
+                pLayoutInterface->addLayout(pLayoutIPv4, 2, 2);
             }
-            /* Create IPv4 network mask label: */
+
+            /* Create NMv4 network mask label: */
             m_pLabelNMv4 = new QLabel;
             AssertPtrReturnVoid(m_pLabelNMv4);
             {
@@ -231,17 +364,37 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelNMv4, 3, 1);
             }
-            /* Create IPv4 network mask editor: */
-            m_pEditorNMv4 = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorNMv4);
+            /* Create NMv4 layout: */
+            QHBoxLayout *pLayoutNMv4 = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutNMv4);
             {
-                /* Configure editor: */
-                m_pLabelNMv4->setBuddy(m_pEditorNMv4);
-                connect(m_pEditorNMv4, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedNMv4);
+                /* Configure layout: */
+                pLayoutNMv4->setContentsMargins(0, 0, 0, 0);
+                /* Create NMv4 network mask editor: */
+                m_pEditorNMv4 = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorNMv4);
+                {
+                    /* Configure editor: */
+                    m_pLabelNMv4->setBuddy(m_pEditorNMv4);
+                    connect(m_pEditorNMv4, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedNMv4);
+                    /* Add into layout: */
+                    pLayoutNMv4->addWidget(m_pEditorNMv4);
+                }
+                /* Create NMv4 error pane: */
+                m_pErrorPaneNMv4 = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneNMv4);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneNMv4->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneNMv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutNMv4->addWidget(m_pErrorPaneNMv4);
+                }
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorNMv4, 3, 2);
+                pLayoutInterface->addLayout(pLayoutNMv4, 3, 2);
             }
+
             /* Create IPv6 address label: */
             m_pLabelIPv6 = new QLabel;
             AssertPtrReturnVoid(m_pLabelIPv6);
@@ -251,18 +404,38 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelIPv6, 4, 1);
             }
-            /* Create IPv6 address editor: */
-            m_pEditorIPv6 = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorIPv6);
+            /* Create IPv6 layout: */
+            QHBoxLayout *pLayoutIPv6 = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutIPv6);
             {
-                /* Configure editor: */
-                m_pLabelIPv6->setBuddy(m_pEditorIPv6);
-                connect(m_pEditorIPv6, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedIPv6);
+                /* Configure layout: */
+                pLayoutIPv6->setContentsMargins(0, 0, 0, 0);
+                /* Create IPv6 address editor: */
+                m_pEditorIPv6 = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorIPv6);
+                {
+                    /* Configure editor: */
+                    m_pLabelIPv6->setBuddy(m_pEditorIPv6);
+                    connect(m_pEditorIPv6, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedIPv6);
+                    /* Add into layout: */
+                    pLayoutIPv6->addWidget(m_pEditorIPv6);
+                }
+                /* Create IPv4 error pane: */
+                m_pErrorPaneIPv6 = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneIPv6);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneIPv6->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneIPv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutIPv6->addWidget(m_pErrorPaneIPv6);
+                }
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorIPv6, 4, 2);
+                pLayoutInterface->addLayout(pLayoutIPv6, 4, 2);
             }
-            /* Create IPv6 network mask label: */
+
+            /* Create NMv6 network mask label: */
             m_pLabelNMv6 = new QLabel;
             AssertPtrReturnVoid(m_pLabelNMv6);
             {
@@ -271,17 +444,37 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Add into layout: */
                 pLayoutInterface->addWidget(m_pLabelNMv6, 5, 1);
             }
-            /* Create IPv6 network mask editor: */
-            m_pEditorNMv6 = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorNMv6);
+            /* Create NMv6 layout: */
+            QHBoxLayout *pLayoutNMv6 = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutNMv6);
             {
-                /* Configure editor: */
-                m_pLabelNMv6->setBuddy(m_pEditorNMv6);
-                connect(m_pEditorNMv6, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedNMv6);
+                /* Configure layout: */
+                pLayoutNMv6->setContentsMargins(0, 0, 0, 0);
+                /* Create NMv6 network mask editor: */
+                m_pEditorNMv6 = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorNMv6);
+                {
+                    /* Configure editor: */
+                    m_pLabelNMv6->setBuddy(m_pEditorNMv6);
+                    connect(m_pEditorNMv6, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedNMv6);
+                    /* Add into layout: */
+                    pLayoutNMv6->addWidget(m_pEditorNMv6);
+                }
+                /* Create NMv6 error pane: */
+                m_pErrorPaneNMv6 = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneNMv6);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneNMv6->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneNMv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutNMv6->addWidget(m_pErrorPaneNMv6);
+                }
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pEditorNMv6, 5, 2);
+                pLayoutInterface->addLayout(pLayoutNMv6, 5, 2);
             }
+
             /* Create indent: */
             QStyleOption options;
             options.initFrom(m_pButtonManual);
@@ -321,6 +514,7 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             /* Configure layout: */
             pLayoutDHCPServer->setContentsMargins(10, 10, 10, 10);
 #endif
+
             /* Create DHCP server status check-box: */
             m_pCheckBoxDHCP = new QCheckBox;
             AssertPtrReturnVoid(m_pCheckBoxDHCP);
@@ -331,6 +525,7 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 2);
             }
+
             /* Create DHCP address label: */
             m_pLabelDHCPAddress = new QLabel;
             AssertPtrReturnVoid(m_pLabelDHCPAddress);
@@ -340,17 +535,37 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPAddress, 1, 1);
             }
-            /* Create DHCP address editor: */
-            m_pEditorDHCPAddress = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorDHCPAddress);
+            /* Create DHCP address layout: */
+            QHBoxLayout *pLayoutDHCPAddress = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutDHCPAddress);
             {
-                /* Configure editor: */
-                m_pLabelDHCPAddress->setBuddy(m_pEditorDHCPAddress);
-                connect(m_pEditorDHCPAddress, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedAddress);
+                /* Configure layout: */
+                pLayoutDHCPAddress->setContentsMargins(0, 0, 0, 0);
+                /* Create DHCP address editor: */
+                m_pEditorDHCPAddress = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorDHCPAddress);
+                {
+                    /* Configure editor: */
+                    m_pLabelDHCPAddress->setBuddy(m_pEditorDHCPAddress);
+                    connect(m_pEditorDHCPAddress, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedAddress);
+                    /* Add into layout: */
+                    pLayoutDHCPAddress->addWidget(m_pEditorDHCPAddress);
+                }
+                /* Create DHCP address error pane: */
+                m_pErrorPaneDHCPAddress = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneDHCPAddress);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneDHCPAddress->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneDHCPAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutDHCPAddress->addWidget(m_pErrorPaneDHCPAddress);
+                }
                 /* Add into layout: */
-                pLayoutDHCPServer->addWidget(m_pEditorDHCPAddress, 1, 2);
+                pLayoutDHCPServer->addLayout(pLayoutDHCPAddress, 1, 2);
             }
+
             /* Create DHCP network mask label: */
             m_pLabelDHCPMask = new QLabel;
             AssertPtrReturnVoid(m_pLabelDHCPMask);
@@ -360,17 +575,37 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPMask, 2, 1);
             }
-            /* Create DHCP network mask editor: */
-            m_pEditorDHCPMask = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorDHCPMask);
+            /* Create DHCP mask layout: */
+            QHBoxLayout *pLayoutDHCPMask = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutDHCPMask);
             {
-                /* Configure editor: */
-                m_pLabelDHCPMask->setBuddy(m_pEditorDHCPMask);
-                connect(m_pEditorDHCPMask, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedMask);
+                /* Configure layout: */
+                pLayoutDHCPMask->setContentsMargins(0, 0, 0, 0);
+                /* Create DHCP network mask editor: */
+                m_pEditorDHCPMask = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorDHCPMask);
+                {
+                    /* Configure editor: */
+                    m_pLabelDHCPMask->setBuddy(m_pEditorDHCPMask);
+                    connect(m_pEditorDHCPMask, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedMask);
+                    /* Add into layout: */
+                    pLayoutDHCPMask->addWidget(m_pEditorDHCPMask);
+                }
+                /* Create DHCP mask error pane: */
+                m_pErrorPaneDHCPMask = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneDHCPMask);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneDHCPMask->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneDHCPMask->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutDHCPMask->addWidget(m_pErrorPaneDHCPMask);
+                }
                 /* Add into layout: */
-                pLayoutDHCPServer->addWidget(m_pEditorDHCPMask, 2, 2);
+                pLayoutDHCPServer->addLayout(pLayoutDHCPMask, 2, 2);
             }
+
             /* Create DHCP lower address label: */
             m_pLabelDHCPLowerAddress = new QLabel;
             AssertPtrReturnVoid(m_pLabelDHCPLowerAddress);
@@ -380,17 +615,37 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPLowerAddress, 3, 1);
             }
-            /* Create DHCP lower address editor: */
-            m_pEditorDHCPLowerAddress = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorDHCPLowerAddress);
+            /* Create DHCP lower address layout: */
+            QHBoxLayout *pLayoutDHCPLowerAddress = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutDHCPLowerAddress);
             {
-                /* Configure editor: */
-                m_pLabelDHCPLowerAddress->setBuddy(m_pEditorDHCPLowerAddress);
-                connect(m_pEditorDHCPLowerAddress, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedLowerAddress);
+                /* Configure layout: */
+                pLayoutDHCPLowerAddress->setContentsMargins(0, 0, 0, 0);
+                /* Create DHCP lower address editor: */
+                m_pEditorDHCPLowerAddress = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorDHCPLowerAddress);
+                {
+                    /* Configure editor: */
+                    m_pLabelDHCPLowerAddress->setBuddy(m_pEditorDHCPLowerAddress);
+                    connect(m_pEditorDHCPLowerAddress, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedLowerAddress);
+                    /* Add into layout: */
+                    pLayoutDHCPLowerAddress->addWidget(m_pEditorDHCPLowerAddress);
+                }
+                /* Create DHCP lower address error pane: */
+                m_pErrorPaneDHCPLowerAddress = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneDHCPLowerAddress);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneDHCPLowerAddress->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneDHCPLowerAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutDHCPLowerAddress->addWidget(m_pErrorPaneDHCPLowerAddress);
+                }
                 /* Add into layout: */
-                pLayoutDHCPServer->addWidget(m_pEditorDHCPLowerAddress, 3, 2);
+                pLayoutDHCPServer->addLayout(pLayoutDHCPLowerAddress, 3, 2);
             }
+
             /* Create DHCP upper address label: */
             m_pLabelDHCPUpperAddress = new QLabel;
             AssertPtrReturnVoid(m_pLabelDHCPUpperAddress);
@@ -400,17 +655,37 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPUpperAddress, 4, 1);
             }
-            /* Create DHCP upper address editor: */
-            m_pEditorDHCPUpperAddress = new QILineEdit;
-            AssertPtrReturnVoid(m_pEditorDHCPUpperAddress);
+            /* Create DHCP upper address layout: */
+            QHBoxLayout *pLayoutDHCPUpperAddress = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutDHCPUpperAddress);
             {
-                /* Configure editor: */
-                m_pLabelDHCPUpperAddress->setBuddy(m_pEditorDHCPUpperAddress);
-                connect(m_pEditorDHCPUpperAddress, &QLineEdit::textChanged,
-                        this, &UIHostNetworkDetailsDialog::sltTextChangedUpperAddress);
+                /* Configure layout: */
+                pLayoutDHCPUpperAddress->setContentsMargins(0, 0, 0, 0);
+                /* Create DHCP upper address editor: */
+                m_pEditorDHCPUpperAddress = new QILineEdit;
+                AssertPtrReturnVoid(m_pEditorDHCPUpperAddress);
+                {
+                    /* Configure editor: */
+                    m_pLabelDHCPUpperAddress->setBuddy(m_pEditorDHCPUpperAddress);
+                    connect(m_pEditorDHCPUpperAddress, &QLineEdit::textChanged,
+                            this, &UIHostNetworkDetailsDialog::sltTextChangedUpperAddress);
+                    /* Add into layout: */
+                    pLayoutDHCPUpperAddress->addWidget(m_pEditorDHCPUpperAddress);
+                }
+                /* Create DHCP upper address error pane: */
+                m_pErrorPaneDHCPUpperAddress = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneDHCPUpperAddress);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneDHCPUpperAddress->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneDHCPUpperAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutDHCPUpperAddress->addWidget(m_pErrorPaneDHCPUpperAddress);
+                }
                 /* Add into layout: */
-                pLayoutDHCPServer->addWidget(m_pEditorDHCPUpperAddress, 4, 2);
+                pLayoutDHCPServer->addLayout(pLayoutDHCPUpperAddress, 4, 2);
             }
+
             /* Create indent: */
             QStyleOption options;
             options.initFrom(m_pCheckBoxDHCP);
@@ -482,6 +757,120 @@ void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
     m_pEditorDHCPMask->setText(m_newData.m_dhcpserver.m_strMask);
     m_pEditorDHCPLowerAddress->setText(m_newData.m_dhcpserver.m_strLowerAddress);
     m_pEditorDHCPUpperAddress->setText(m_newData.m_dhcpserver.m_strUpperAddress);
+}
+
+void UIHostNetworkDetailsDialog::revalidate(QWidget *pWidget /* = 0 */)
+{
+    /* Validate 'Interface' tab content: */
+    if (!pWidget || pWidget == m_pErrorPaneAutomatic)
+    {
+        const bool fError =    m_newData.m_interface.m_fDHCPEnabled
+                            && !m_newData.m_dhcpserver.m_fEnabled;
+        m_pErrorPaneAutomatic->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneIPv4)
+    {
+        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
+                            && !m_newData.m_interface.m_strAddress.trimmed().isEmpty()
+                            && (   !RTNetIsIPv4AddrStr(m_newData.m_interface.m_strAddress.toUtf8().constData())
+                                || RTNetStrIsIPv4AddrAny(m_newData.m_interface.m_strAddress.toUtf8().constData()));
+        m_pErrorPaneIPv4->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneNMv4)
+    {
+        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
+                            && !m_newData.m_interface.m_strMask.trimmed().isEmpty()
+                            && (   !RTNetIsIPv4AddrStr(m_newData.m_interface.m_strMask.toUtf8().constData())
+                                || RTNetStrIsIPv4AddrAny(m_newData.m_interface.m_strMask.toUtf8().constData()));
+        m_pErrorPaneNMv4->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneIPv6)
+    {
+        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
+                            && m_newData.m_interface.m_fSupportedIPv6
+                            && !m_newData.m_interface.m_strAddress6.trimmed().isEmpty()
+                            && (   !RTNetIsIPv6AddrStr(m_newData.m_interface.m_strAddress6.toUtf8().constData())
+                                || RTNetStrIsIPv6AddrAny(m_newData.m_interface.m_strAddress6.toUtf8().constData()));
+        m_pErrorPaneIPv6->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneNMv6)
+    {
+        bool fIsMaskPrefixLengthNumber = false;
+        const int iMaskPrefixLength = m_newData.m_interface.m_strMaskLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
+        const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
+                            && m_newData.m_interface.m_fSupportedIPv6
+                            && (   !fIsMaskPrefixLengthNumber
+                                || iMaskPrefixLength < 0
+                                || iMaskPrefixLength > 128);
+        m_pErrorPaneNMv6->setVisible(fError);
+    }
+
+    /* Validate 'DHCP server' tab content: */
+    if (!pWidget || pWidget == m_pErrorPaneDHCPAddress)
+    {
+        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
+                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strAddress.toUtf8().constData())
+                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strAddress.toUtf8().constData()));
+        m_pErrorPaneDHCPAddress->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneDHCPMask)
+    {
+        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
+                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strMask.toUtf8().constData())
+                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strMask.toUtf8().constData()));
+        m_pErrorPaneDHCPMask->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneDHCPLowerAddress)
+    {
+        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
+                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData())
+                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData()));
+        m_pErrorPaneDHCPLowerAddress->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneDHCPUpperAddress)
+    {
+        const bool fError =    m_newData.m_dhcpserver.m_fEnabled
+                            && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData())
+                                || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData()));
+        m_pErrorPaneDHCPUpperAddress->setVisible(fError);
+    }
+
+    /* Retranslate validation: */
+    retranslateValidation(pWidget);
+}
+
+void UIHostNetworkDetailsDialog::retranslateValidation(QWidget *pWidget /* = 0 */)
+{
+    /* Translate 'Interface' tab content: */
+    if (!pWidget || pWidget == m_pErrorPaneAutomatic)
+        m_pErrorPaneAutomatic->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> is set to obtain address automatically "
+                                             "but its DHCP server is not enabled.").arg(m_newData.m_interface.m_strName));
+    if (!pWidget || pWidget == m_pErrorPaneIPv4)
+        m_pErrorPaneIPv4->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                        "IPv4 address.").arg(m_newData.m_interface.m_strName));
+    if (!pWidget || pWidget == m_pErrorPaneNMv4)
+        m_pErrorPaneNMv4->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                        "IPv4 network mask.").arg(m_newData.m_interface.m_strName));
+    if (!pWidget || pWidget == m_pErrorPaneIPv6)
+        m_pErrorPaneIPv6->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                        "IPv6 address.").arg(m_newData.m_interface.m_strName));
+    if (!pWidget || pWidget == m_pErrorPaneNMv6)
+        m_pErrorPaneNMv6->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                        "IPv6 network mask prefix length.").arg(m_newData.m_interface.m_strName));
+
+    /* Translate 'DHCP server' tab content: */
+    if (!pWidget || pWidget == m_pErrorPaneDHCPAddress)
+        m_pErrorPaneDHCPAddress->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                               "DHCP server address.").arg(m_newData.m_interface.m_strName));
+    if (!pWidget || pWidget == m_pErrorPaneDHCPMask)
+        m_pErrorPaneDHCPMask->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                            "DHCP server mask.").arg(m_newData.m_interface.m_strName));
+    if (!pWidget || pWidget == m_pErrorPaneDHCPLowerAddress)
+        m_pErrorPaneDHCPLowerAddress->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                                    "DHCP server lower address bound.").arg(m_newData.m_interface.m_strName));
+    if (!pWidget || pWidget == m_pErrorPaneDHCPUpperAddress)
+        m_pErrorPaneDHCPUpperAddress->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
+                                                    "DHCP server upper address bound.").arg(m_newData.m_interface.m_strName));
 }
 
 void UIHostNetworkDetailsDialog::notify()

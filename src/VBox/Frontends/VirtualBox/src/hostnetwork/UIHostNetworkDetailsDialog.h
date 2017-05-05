@@ -186,28 +186,28 @@ private slots:
     /** @name Change handling stuff.
      * @{ */
         /** Handles interface automatic configuration choice change. */
-        void sltToggledButtonAutomatic(bool fChecked) { m_newData.m_interface.m_fDHCPEnabled = fChecked; loadDataForInterface(); notify(); }
+        void sltToggledButtonAutomatic(bool fChecked);
         /** Handles interface manual configuration choice change. */
-        void sltToggledButtonManual(bool fChecked) { m_newData.m_interface.m_fDHCPEnabled = !fChecked; loadDataForInterface(); notify(); }
+        void sltToggledButtonManual(bool fChecked);
         /** Handles interface IPv4 text change. */
-        void sltTextChangedIPv4(const QString &strText) { m_newData.m_interface.m_strAddress = strText; notify(); }
+        void sltTextChangedIPv4(const QString &strText);
         /** Handles interface NMv4 text change. */
-        void sltTextChangedNMv4(const QString &strText) { m_newData.m_interface.m_strMask = strText; notify(); }
+        void sltTextChangedNMv4(const QString &strText);
         /** Handles interface IPv6 text change. */
-        void sltTextChangedIPv6(const QString &strText) { m_newData.m_interface.m_strAddress6 = strText; notify(); }
+        void sltTextChangedIPv6(const QString &strText);
         /** Handles interface NMv6 text change. */
-        void sltTextChangedNMv6(const QString &strText) { m_newData.m_interface.m_strMaskLength6 = strText; notify(); }
+        void sltTextChangedNMv6(const QString &strText);
 
         /** Handles DHCP server status change. */
-        void sltStatusChangedServer(int iChecked) { m_newData.m_dhcpserver.m_fEnabled = (bool)iChecked; loadDataForDHCPServer(); notify(); }
+        void sltStatusChangedServer(int iChecked);
         /** Handles DHCP server address text change. */
-        void sltTextChangedAddress(const QString &strText) { m_newData.m_dhcpserver.m_strAddress = strText; notify(); }
+        void sltTextChangedAddress(const QString &strText);
         /** Handles DHCP server mask text change. */
-        void sltTextChangedMask(const QString &strText)  { m_newData.m_dhcpserver.m_strMask = strText; notify(); }
+        void sltTextChangedMask(const QString &strText);
         /** Handles DHCP server lower address text change. */
-        void sltTextChangedLowerAddress(const QString &strText)  { m_newData.m_dhcpserver.m_strLowerAddress = strText; notify(); }
+        void sltTextChangedLowerAddress(const QString &strText);
         /** Handles DHCP server upper address text change. */
-        void sltTextChangedUpperAddress(const QString &strText)  { m_newData.m_dhcpserver.m_strUpperAddress = strText; notify(); }
+        void sltTextChangedUpperAddress(const QString &strText);
     /** @} */
 
 private:
@@ -236,6 +236,10 @@ private:
 
     /** @name Change handling stuff.
      * @{ */
+        /** Revalidates changes for passed @a pWidget. */
+        void revalidate(QWidget *pWidget = 0);
+        /** Retranslates validation for passed @a pWidget. */
+        void retranslateValidation(QWidget *pWidget = 0);
         /** Notifies listeners about data changed or not. */
         void notify();
     /** @} */
@@ -262,46 +266,73 @@ private:
      * @{ */
         /** Holds the automatic interface configuration button. */
         QRadioButton *m_pButtonAutomatic;
+        /** Holds the automatic interface configuration error pane. */
+        QLabel       *m_pErrorPaneAutomatic;
+
         /** Holds the manual interface configuration button. */
         QRadioButton *m_pButtonManual;
+
         /** Holds the IPv4 address label. */
         QLabel       *m_pLabelIPv4;
         /** Holds the IPv4 address editor. */
         QILineEdit   *m_pEditorIPv4;
+        /** Holds the IPv4 address error pane. */
+        QLabel       *m_pErrorPaneIPv4;
+
         /** Holds the IPv4 network mask label. */
         QLabel       *m_pLabelNMv4;
         /** Holds the IPv4 network mask editor. */
         QILineEdit   *m_pEditorNMv4;
+        /** Holds the IPv4 network mask error pane. */
+        QLabel       *m_pErrorPaneNMv4;
+
         /** Holds the IPv6 address label. */
         QLabel       *m_pLabelIPv6;
         /** Holds the IPv6 address editor. */
         QILineEdit   *m_pEditorIPv6;
+        /** Holds the IPv6 address error pane. */
+        QLabel       *m_pErrorPaneIPv6;
+
         /** Holds the IPv6 network mask label. */
         QLabel       *m_pLabelNMv6;
         /** Holds the IPv6 network mask editor. */
         QILineEdit   *m_pEditorNMv6;
+        /** Holds the IPv6 network mask error pane. */
+        QLabel       *m_pErrorPaneNMv6;
     /** @} */
 
     /** @name DHCP server variables.
      * @{ */
         /** Holds the DHCP server status chack-box. */
         QCheckBox  *m_pCheckBoxDHCP;
+
         /** Holds the DHCP address label. */
         QLabel     *m_pLabelDHCPAddress;
         /** Holds the DHCP address editor. */
         QILineEdit *m_pEditorDHCPAddress;
+        /** Holds the DHCP address error pane. */
+        QLabel     *m_pErrorPaneDHCPAddress;
+
         /** Holds the DHCP network mask label. */
         QLabel     *m_pLabelDHCPMask;
         /** Holds the DHCP network mask editor. */
         QILineEdit *m_pEditorDHCPMask;
+        /** Holds the DHCP network mask error pane. */
+        QLabel     *m_pErrorPaneDHCPMask;
+
         /** Holds the DHCP lower address label. */
         QLabel     *m_pLabelDHCPLowerAddress;
         /** Holds the DHCP lower address editor. */
         QILineEdit *m_pEditorDHCPLowerAddress;
+        /** Holds the DHCP lower address error pane. */
+        QLabel     *m_pErrorPaneDHCPLowerAddress;
+
         /** Holds the DHCP upper address label. */
         QLabel     *m_pLabelDHCPUpperAddress;
         /** Holds the DHCP upper address editor. */
         QILineEdit *m_pEditorDHCPUpperAddress;
+        /** Holds the DHCP upper address error pane. */
+        QLabel     *m_pErrorPaneDHCPUpperAddress;
     /** @} */
 };
 
