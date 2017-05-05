@@ -307,7 +307,14 @@ class Bs3Cg1Instruction(object):
             if oInstr.sInvalidStyle == 'immediate' and oInstr.sSubOpcode:
                 self.sEncoding += '_MOD_EQ_3' if oInstr.sSubOpcode == '11 mr/reg' else '_MOD_NE_3';
             elif oInstr.sInvalidStyle == 'intel-modrm':
-                self.sEncoding = 'BS3CG1ENC_MODRM_Gv_Ev';
+                if oInstr.sSubOpcode is None:
+                    self.sEncoding = 'BS3CG1ENC_MODRM_Gv_Ev';
+                elif oInstr.sSubOpcode == '11 mr/reg':
+                    self.sEncoding = 'BS3CG1ENC_MODRM_MOD_EQ_3';
+                elif oInstr.sSubOpcode == '!11 mr/reg':
+                    self.sEncoding = 'BS3CG1ENC_MODRM_MOD_NE_3';
+                else:
+                    raise Exception('Unhandled sSubOpcode=%s for sInvalidStyle=%s' % (oInstr.sSubOpcode, oInstr.sInvalidStyle));
 
         self.asFlags            = [];
         if 'invalid_64' in oInstr.dHints:
