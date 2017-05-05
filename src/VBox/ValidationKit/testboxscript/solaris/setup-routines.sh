@@ -130,7 +130,7 @@ os_load_config() {
                  | ${MY_SED} \
                    -e 's/^.*testboxscript -d -m *//' \
                 `;
-        eval common_testboxscript_args_to_config `echo "${XMLARGS}" | sed -e "s/<string>/'/g" -e "s/<\/string>/'/g" `;
+        eval common_testboxscript_args_to_config ${XMLARGS}
     fi
 }
 
