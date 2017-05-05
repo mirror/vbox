@@ -1764,7 +1764,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vps_WO_Wps__OR__B
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_WO_Wss(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZx_WO_Wss(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -1793,7 +1793,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_WO_Wss(P
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_WO_Wsd__OR__MODRM_VqZxReg_WO_Wq(PBS3CG1STATE pThis,
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZx_WO_Wsd__OR__MODRM_VqZx_WO_Wq(PBS3CG1STATE pThis,
                                                                                                   unsigned iEncoding)
 {
     unsigned off;
@@ -1823,7 +1823,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_WO_Wsd__
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_WO_Nq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZx_WO_Nq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding == 0)
@@ -2281,13 +2281,13 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
         case BS3CG1ENC_MODRM_Vpd_WO_Wpd:
         case BS3CG1ENC_MODRM_Vps_WO_Wps:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vps_WO_Wps__OR__BS3CG1ENC_MODRM_Vpd_WO_Wpd(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VssZxReg_WO_Wss:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZxReg_WO_Wss(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VsdZxReg_WO_Wsd:
-        case BS3CG1ENC_MODRM_VqZxReg_WO_Wq:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZxReg_WO_Wsd__OR__MODRM_VqZxReg_WO_Wq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VqZxReg_WO_Nq:
-            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZxReg_WO_Nq(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_VssZx_WO_Wss:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VssZx_WO_Wss(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_VsdZx_WO_Wsd:
+        case BS3CG1ENC_MODRM_VqZx_WO_Wq:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VsdZx_WO_Wsd__OR__MODRM_VqZx_WO_Wq(pThis, iEncoding);
+        case BS3CG1ENC_MODRM_VqZx_WO_Nq:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_VqZx_WO_Nq(pThis, iEncoding);
 
         case BS3CG1ENC_MODRM_Gv_RO_Ma:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Gv_RO_Ma(pThis, iEncoding);
@@ -2469,7 +2469,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_MEM;
             break;
 
-        case BS3CG1ENC_MODRM_VssZxReg_WO_Wss:
+        case BS3CG1ENC_MODRM_VssZx_WO_Wss:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 4;
@@ -2478,9 +2478,9 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_VsdZxReg_WO_Wsd:
-        case BS3CG1ENC_MODRM_VqZxReg_WO_Wq:
-        case BS3CG1ENC_MODRM_VqZxReg_WO_Nq:
+        case BS3CG1ENC_MODRM_VsdZx_WO_Wsd:
+        case BS3CG1ENC_MODRM_VqZx_WO_Wq:
+        case BS3CG1ENC_MODRM_VqZx_WO_Nq:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 8;

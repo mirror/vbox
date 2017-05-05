@@ -1080,10 +1080,9 @@ enum OP_PARM
 #define OP_PARM_Vq_WO           OP_PARM_Vq              /**< Annotates write only operand. */
 #define OP_PARM_VqHi            OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
 #define OP_PARM_VqHi_WO         OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are written. */
-#define OP_PARM_VqZxReg_WO      OP_PARM_Vq              /**< Annotates that register targets get their upper bits cleared */
-#define OP_PARM_VsdZxReg_WO     OP_PARM_Vsd             /**< Annotates that register targets get their upper bits cleared. */
-#define OP_PARM_VsdZxReg_WO     OP_PARM_Vsd             /**< Annotates that register targets get their upper bits cleared. */
-#define OP_PARM_VssZxReg_WO     OP_PARM_Vss             /**< Annotates that register targets get their upper bits cleared. */
+#define OP_PARM_VqZx_WO         OP_PARM_Vq              /**< Annotates that the registers get their upper bits cleared */
+#define OP_PARM_VsdZx_WO        OP_PARM_Vsd             /**< Annotates that the registers get their upper bits cleared. */
+#define OP_PARM_VssZx_WO        OP_PARM_Vss             /**< Annotates that the registers get their upper bits cleared. */
 #define OP_PARM_Wpd_WO          OP_PARM_Wpd             /**< Annotates write only operand. */
 #define OP_PARM_Wps_WO          OP_PARM_Wps             /**< Annotates write only operand. */
 #define OP_PARM_WqZxReg_WO      OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */

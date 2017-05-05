@@ -250,9 +250,9 @@ g_kdOpTypes = {
     'Gv_RO':        ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
     'Pq_WO':        ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
     'Vss':          ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
-    'VssZxReg_WO':  ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
+    'VssZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
     'Vsd':          ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
-    'VsdZxReg_WO':  ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
+    'VsdZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
     'Vps':          ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
     'Vps_WO':       ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
     'Vpd':          ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     ),
@@ -262,7 +262,7 @@ g_kdOpTypes = {
     'Vdq_WO':       ( 'IDX_UseModRM',       'reg',    '%Vdq', 'Vdq',     ),
     'VqHi':         ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
     'VqHi_WO':      ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
-    'VqZxReg_WO':   ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    ),
+    'VqZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    ),
 
     # Immediate values.
     'Ib':           ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instrs.
