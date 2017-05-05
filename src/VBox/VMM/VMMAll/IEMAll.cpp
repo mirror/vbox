@@ -11147,11 +11147,15 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     do { (a_u64Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx; } while (0)
 #define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg) \
     do { (a_u32Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].au32[0]; } while (0)
-#define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) \
-    do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx = (a_u64Value); } while (0)
-#define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) \
-    do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); } while (0)
-#define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg)         \
+#define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) do { \
+        IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx = (a_u64Value); \
+        IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
+    } while (0)
+#define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) do { \
+        IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); \
+        IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].au32[2] = 0xffff; \
+    } while (0)
+#define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg) /** @todo need to set high word to 0xffff on commit (see IEM_MC_STORE_MREG_U64) */ \
         (a_pu64Dst) = (&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx)
 #define IEM_MC_REF_MREG_U64_CONST(a_pu64Dst, a_iMReg) \
         (a_pu64Dst) = ((uint64_t const *)&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx)

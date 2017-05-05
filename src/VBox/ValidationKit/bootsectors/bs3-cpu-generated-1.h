@@ -54,6 +54,7 @@ typedef enum BS3CG1OP
     BS3CG1OP_Gb,
     BS3CG1OP_Gv,
     BS3CG1OP_Nq,
+    BS3CG1OP_Pq,
     BS3CG1OP_Uq,
     BS3CG1OP_UqHi,
     BS3CG1OP_Vss,
@@ -107,6 +108,7 @@ typedef enum BS3CG1ENC
     BS3CG1ENC_MODRM_Gb_Eb,
     BS3CG1ENC_MODRM_Gv_Ev,
     BS3CG1ENC_MODRM_Gv_Ma, /**< bound instruction */
+    BS3CG1ENC_MODRM_Pq_Uq,
     BS3CG1ENC_MODRM_Vq_UqHi,
     BS3CG1ENC_MODRM_Vq_Mq,
     BS3CG1ENC_MODRM_VqHi_Uq,

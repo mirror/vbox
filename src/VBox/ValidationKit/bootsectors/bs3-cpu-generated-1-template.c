@@ -1582,6 +1582,30 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_WqZxReg_Vq(PBS3CG
 }
 
 
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Pq_Uq(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    unsigned off;
+    if (iEncoding == 0)
+    {
+        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+        pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+        pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_XMM0_LO;
+        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_MM1;
+    }
+    else if (iEncoding == 1)
+    {
+        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+        pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 6, 2);
+        pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_XMM2_LO;
+        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_MM6;
+    }
+    else
+        return 0;
+    pThis->cbCurInstr = off;
+    return iEncoding + 1;
+}
+
+
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_UqHi(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2238,6 +2262,9 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
         case BS3CG1ENC_MODRM_WqZxReg_Vq:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_WqZxReg_Vq(pThis, iEncoding);
 
+        case BS3CG1ENC_MODRM_Pq_Uq:
+            return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Pq_Uq(pThis, iEncoding);
+
         case BS3CG1ENC_MODRM_Vq_UqHi:
             return Bs3Cg1EncodeNext_BS3CG1ENC_MODRM_Vq_UqHi(pThis, iEncoding);
         case BS3CG1ENC_MODRM_Vq_Mq:
@@ -2418,6 +2445,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
+        case BS3CG1ENC_MODRM_Pq_Uq:
         case BS3CG1ENC_MODRM_Vq_UqHi:
         case BS3CG1ENC_MODRM_VqHi_Uq:
             pThis->iRmOp             = 1;
@@ -3118,6 +3146,9 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                 case 8:
                     if ((unsigned)(idxField - BS3CG1DST_XMM0_LO_ZX) <= (unsigned)(BS3CG1DST_XMM15_LO_ZX - BS3CG1DST_XMM0_LO_ZX))
                         PtrField.pu64[1] = 0;
+                    else if ((unsigned)(idxField - BS3CG1DST_MM0) <= (unsigned)(BS3CG1DST_MM7 - BS3CG1DST_MM0))
+                        PtrField.pu32[2] = 0xffff; /* observed on skylake */
+
                     switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
                     {
                         case BS3CG1_CTXOP_ASSIGN:   *PtrField.pu64  =  (uint64_t)uValue; break;
