@@ -366,8 +366,19 @@ common_testboxscript_args_to_config()
             "--testrsrc-server-user")   TESTBOXSCRIPT_TESTRSRC_USER="$2"; shift;;
             "--testrsrc-server-passwd") TESTBOXSCRIPT_TESTRSRC_PASSWD="$2"; shift;;
             "--putenv")
-                ## @todo remove any existing variable or we'll end up with a pretty long number of putenv statements on solaris.
-                TESTBOXSCRIPT_ENVVARS+=("$2");
+                MY_FOUND=no
+                MY_VAR=`echo $2 | sed -e 's/=.*$//' `
+                for i in ${!TESTBOXSCRIPT_ENVVARS[@]};
+                do
+                    MY_CURVAR=`echo "${TESTBOXSCRIPT_ENVVARS[i]}" | sed -e 's/=.*$//' `
+                    if [ -n "${MY_CURVAR}" -a  "${MY_CURVAR}" = "${MY_VAR}" ]; then
+                        TESTBOXSCRIPT_ENVVARS[$i]="$2"
+                        MY_FOUND=yes
+                    fi
+                done
+                if [ "${MY_FOUND}" = "no" ]; then
+                    TESTBOXSCRIPT_ENVVARS=( "${TESTBOXSCRIPT_ENVVARS[@]}" "$2" );
+                fi
                 shift;;
             --*)
                 echo "error: Unknown option '$1' in existing config"
