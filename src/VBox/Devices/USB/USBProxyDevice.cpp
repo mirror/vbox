@@ -1058,6 +1058,15 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     else
         AssertRCReturn(rc, rc);
 
+    bool fEditAudioSyncEp;
+    rc = CFGMR3QueryBool(pCfg, "EditAudioSyncEp", &fEditAudioSyncEp);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        rc = CFGMR3QueryBool(pCfgGlobalDev, "EditAudioSyncEp", &fEditAudioSyncEp);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        fEditAudioSyncEp = true;    /* NB: On by default! */
+    else
+        AssertRCReturn(rc, rc);
+
     /*
      * If we're masking interfaces, edit the descriptors.
      */
@@ -1111,6 +1120,45 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
         fEdited = true;
     }
 
+
+    /*
+     * Turn asynchronous audio endpoints into synchronous ones, see @bugref{8769}
+     */
+    if (fEditAudioSyncEp)
+    {
+        PVUSBDESCCONFIGEX paCfgs = pThis->paCfgDescs;
+        for (unsigned iCfg = 0; iCfg < pThis->DevDesc.bNumConfigurations; iCfg++)
+        {
+            PVUSBINTERFACE paIfs = (PVUSBINTERFACE)paCfgs[iCfg].paIfs;
+            for (unsigned iIf = 0; iIf < paCfgs[iCfg].Core.bNumInterfaces; iIf++)
+                for (uint32_t iAlt = 0; iAlt < paIfs[iIf].cSettings; iAlt++)
+                {
+                    /* If not an audio class interface, skip. */
+                    if (paIfs[iIf].paSettings[iAlt].Core.bInterfaceClass != 1)
+                        continue;
+
+                    /* If not a streaming interface, skip. */
+                    if (paIfs[iIf].paSettings[iAlt].Core.bInterfaceSubClass != 2)
+                        continue;
+
+                    PVUSBDESCENDPOINTEX paEps = (PVUSBDESCENDPOINTEX)paIfs[iIf].paSettings[iAlt].paEndpoints;
+                    for (unsigned iEp = 0; iEp < paIfs[iIf].paSettings[iAlt].Core.bNumEndpoints; iEp++)
+                    {
+                        /* isoch/asynch/data*/
+                        if ((paEps[iEp].Core.bmAttributes == 5) && (paEps[iEp].Core.bLength == 9))
+                        {
+                            uint8_t *pbExtra = (uint8_t *)paEps[iEp].pvMore;    /* unconst*/
+                            Log(("usb-proxy: pProxyDev=%s async audio with bmAttr=%02X [%02X, %02X] on EP %02X\n",
+                                 pUsbIns->pszName, paEps[iEp].Core.bmAttributes, pbExtra[0], pbExtra[1], paEps[iEp].Core.bEndpointAddress));
+                            paEps[iEp].Core.bmAttributes = 0xD; /* isoch/synch/data*/
+                            pbExtra[1] = 0; /* Clear bSynchAddress. */
+                            fEdited = true;
+                            LogRel(("VUSB: Modified '%s' async audio endpoint 0x%02x\n", pUsbIns->pszName, paEps[iEp].Core.bEndpointAddress));
+                        }
+                    }
+                }
+        }
+    }
 
     /*
      * Init the PDM/VUSB descriptor cache.
