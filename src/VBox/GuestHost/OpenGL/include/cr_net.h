@@ -9,8 +9,12 @@
 
 #ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
+# ifndef VBOX
 #pragma warning( push, 3 ) /* shut up about warnings in YOUR OWN HEADER FILES!!! */
 #include <winsock.h>
+# else
+# include <iprt/win/winsock.h>
+# endif /* VBOX */
 #endif
 
 #include <stdio.h>

@@ -249,7 +249,8 @@ static int32_t crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(CRTextureState *t,
 static int32_t crStateStencilBufferStack_v_33(CRStencilBufferStack *s, PSSMHANDLE pSSM)
 {
     CRStencilBufferStack_v_33 stackV33;
-    int32_t rc = SSMR3GetMem(pSSM, &stackV33, sizeof (stackV33));
+    int32_t rc = SSMR3GetMem(pSSM, &stackV33, sizeof(stackV33));
+    AssertLogRelReturn(rc, rc);
 
     s->stencilTest = stackV33.stencilTest;
     s->stencilTwoSideEXT = GL_FALSE;
@@ -464,7 +465,7 @@ static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
                     {
                         GLint curTex;
                         diff_api.GetIntegerv(getEnum, &curTex);
-                        if (curTex != pTexture->hwid)
+                        if ((GLuint)curTex != pTexture->hwid)
                         {
                             crWarning("texture not bound properly: expected %d, but was %d. Texture state data: target(0x%x), id(%d), w(%d), h(%d)",
                                     pTexture->hwid, curTex,
@@ -1100,7 +1101,7 @@ static CRGLSLShader* crStateLoadGLSLShader(PSSMHANDLE pSSM)
 
 static void crStateSaveGLSLShaderKeyCB(unsigned long key, void *data1, void *data2)
 {
-    CRGLSLShader *pShader = (CRGLSLShader*) data1;
+    //CRGLSLShader *pShader = (CRGLSLShader*) data1;
     PSSMHANDLE pSSM = (PSSMHANDLE) data2;
     int32_t rc;
 
@@ -1447,7 +1448,7 @@ static int32_t crStateLoadKeys(CRHashTable *pHash, PSSMHANDLE pSSM, uint32_t u32
         {
             for (i = u32Key; i < u32Count + u32Key; ++i)
             {
-                GLboolean fIsNew = crHashtableAllocRegisterKey(pHash, i);
+                GLboolean fIsNew = crHashtableAllocRegisterKey(pHash, i); NOREF(fIsNew);
 #if 0 //def DEBUG_misha
                 CRASSERT(fIsNew);
 #endif

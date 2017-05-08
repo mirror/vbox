@@ -15,6 +15,7 @@
 
 #if defined(WINDOWS)
 # include <float.h>
+# undef isnan /* _MSC_VER 12.0+ defines this is a complicated macro */
 # define isnan(x) _isnan(x)
 #endif
 
