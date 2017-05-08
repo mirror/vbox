@@ -1336,6 +1336,8 @@ VBOX_WITH_DTRACE := $(if-expr defined(VBOX_WITH_DTRACE_R0) || defined(VBOX_WITH_
 # kSubmit / kWorker is only available on windows.
 ifdef VBOX_USE_KSUBMIT
  ifeq ($(KBUILD_HOST),win)
+  #TOOL_VCC120AMD64_USE_KSUBMIT := 1
+  #TOOL_VCC120X86_USE_KSUBMIT   := 1
   TOOL_VCC100AMD64_USE_KSUBMIT := 1
   TOOL_VCC100X86_USE_KSUBMIT   := 1
   TOOL_OPENWATCOM_USE_KSUBMIT  := 1
@@ -1514,7 +1516,7 @@ endif
 #
 ifndef VBOX_VCC_TOOL_STEM
  VBOX_VCC_TOOL_STEM := VCC100
-else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110)
+else ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
  $(error VBox: VBOX_VCC_TOOL_STEM='$(VBOX_VCC_TOOL_STEM)' is not supported, only VCC100 and VCC110 is)
 endif
 ifndef VBOX_VCC_TOOL
@@ -1617,7 +1619,7 @@ USES += dtrace
 #
 # Decide which Windows DDK to use by default.
 #
-ifeq ($(VBOX_VCC_TOOL_STEM),VCC110)
+if1of ($(VBOX_VCC_TOOL_STEM), VCC110)
  VBOX_WINDDK         ?= WINDDK80
 else
  VBOX_WINDDK         ?= WINDDK71
@@ -1643,7 +1645,7 @@ endif
 #
 # Decide which Windows SDK to use by default.
 #
-ifeq ($(VBOX_VCC_TOOL_STEM),VCC110)
+if1of ($(VBOX_VCC_TOOL_STEM), VCC110)
  VBOX_WINPSDK ?= WINPSDK80
 else
  VBOX_WINPSDK ?= WINPSDK71
@@ -2856,6 +2858,12 @@ endif
 VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
 	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571 -wd4324 -wd4505 \
 	-wd4263 -wd4264 -wd4738 -wd4200
+if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+ #    -wd4350: behavior change: 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc(const std::_Wrap_alloc<std::allocator<char>> &) throw()' called instead of 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc<std::_Wrap_alloc<std::allocator<char>>>(_Other &) throw()'
+ #    -wd4435: iprt/cpp/xml.h(185) : warning C4435: 'xml::Input' : Object layout under /vd2 will change due to virtual base 'xml::Stream'
+ VBOX_VCC_WARN_ALL += -wd4350 -wd4435
+endif
+
 #ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
 # VBOX_VCC_WARN_ALL +=
 #endif
@@ -5915,6 +5923,10 @@ ifdef VBOX_WITH_QTGUI
   #    -wd4121: UIActionPool.h(393) : warning C4121: 'UIActionPool::PointerToFunction' : alignment of a member was sensitive to packing
   #    -wd4718: qmap.h(222) : warning C4718: 'QMapNode<enum DetailsElementType,bool>::destroySubTree' : recursive call has no side effects, deleting
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 -wd4350 -wd4371 -wd4121 -wd4718 $(VBOX_VCC_WERR)
+  if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+   #   -wd4619: qvectro.h(305 : warning C4619: #pragma warning : there is no warning number '4345'
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4619
+  endif
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt = $(NO_SUCH_VARIABLE)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \
@@ -6419,6 +6431,10 @@ TEMPLATE_VBoxGuestR3Exe_EXTENDS_BY = appending
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxGuestR3Exe_CFLAGS      += $(VBOX_VCC_WERR)
  TEMPLATE_VBoxGuestR3Exe_CXXFLAGS    += $(VBOX_VCC_WERR)
+ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+  # VBoxDrvInst.cpp(520) : warning C4313: 'wprintf'  : '%d' in format string conflicts with argument 1 of type 'const TCHAR *' [false positive - buggy compiler?]
+  TEMPLATE_VBoxGuestR3Exe_CXXFLAGS   += -wd4313
+ endif
  TEMPLATE_VBoxGuestR3Exe_LDFLAGS     += $(VBOX_VCC_LD_WERR)
 else ifndef VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE
  TEMPLATE_VBoxGuestR3Exe_CFLAGS      += $(VBOX_GCC_WERR)
@@ -6647,6 +6663,26 @@ ifeq ($(KBUILD_TARGET),darwin)
  TEMPLATE_VBOXCROGLR3HOSTDLL_CFLAGS          = $(TEMPLATE_VBOXR3NP_CFLAGS) -Wno-deprecated-declarations
  TEMPLATE_VBOXCROGLR3HOSTDLL_CXXFLAGS        = $(TEMPLATE_VBOXR3NP_CXXFLAGS) -Wno-deprecated-declarations
  TEMPLATE_VBOXCROGLR3HOSTDLL_OBJCFLAGS       = $(TEMPLATE_VBOXR3NP_OBJCFLAGS) -Wno-deprecated-declarations
+else ifeq ($(KBUILD_TARGET),win)
+ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+  #   -wd4255: cr_spu.h(146) : warning C4255: 'wglGetCurrentContextFunc_t' : no function prototype given: converting '()' to '(void)'
+  #   -wd4296: udptcpip.c(662) : warning C4296: '>=' : expression is always true
+  #   -wd4245: udptcpip.c(174) : warning C4245: '=' : conversion from 'int' to 'CRSocket', signed/unsigned mismatch
+  #   -wd4668: tcpip.c(961) : warning C4668: 'CRAPPFAKER_SHOULD_DIE' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+  #   -wd4005: v7.1\include\sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition
+  #   -wd4057: state_lists.c(196) : warning C4057: 'function' : 'GLint *' differs in indirection to slightly different base types from 'GLenum *'
+  #   -wd4389: renderspu.c(750) : warning C4389: '!=' : signed/unsigned mismatch
+  #   -wd4054: renderspu_wgl.c(281) : warning C4054: 'type cast' : from function pointer 'HWND (__cdecl *)()' to data pointer 'void *'
+  #   -wd4055: renderspu.c(1553) : warning C4055: 'type cast' : from data pointer 'const GLvoid *' to function pointer 'PFNVCRSERVER_CLIENT_CALLOUT'
+  #   -wd4312: renderspu_wgl.c(1420) : warning C4312: 'type cast' : conversion from 'GLint' to 'HDC' of greater size [TODO: check this one out]
+  #   -wd4189: server_config.c(111) : warning C4189: 'my_rank' : local variable is initialized but not referenced
+  #   -wd4100: vboxhgcm.c(1365) : warning C4100: 'conn' : unreferenced formal parameter
+  TEMPLATE_VBOXCROGLR3HOSTDLL_CFLAGS         = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3HOSTDLL_EXTENDS)_CFLAGS) \
+  	-wd4255 -wd4296 -wd4245 -wd4668 -wd4005 -wd4057 -wd4389 -wd4054 -wd4055 -wd4312 -wd4189 -wd4100
+  TEMPLATE_VBOXCROGLR3HOSTDLL_CXXFLAGS       = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3HOSTDLL_EXTENDS)_CXXFLAGS) \
+  	-wd4245 -wd4389 -wd4189 -wd4100
+ endif
+
 endif
 
 #
@@ -6673,7 +6709,23 @@ TEMPLATE_VBOXCROGLR3GUESTDLL_DEFS.darwin      = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR
 TEMPLATE_VBOXCROGLR3GUESTDLL_DEFS.freebsd     = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_DEFS.freebsd) FreeBSD=1 _GNU_SOURCE
 TEMPLATE_VBOXCROGLR3GUESTDLL_INCS             = $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES) $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_INCS)
 TEMPLATE_VBOXCROGLR3GUESTDLL_SDKS.darwin      = DARWIN-OPENGL $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_SDKS)
-ifneq ($(KBUILD_TARGET),win)
+ifeq ($(KBUILD_TARGET),win)
+ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+  #   -wd4255: cr_spu.h(146) : warning C4255: 'wglGetCurrentContextFunc_t' : no function prototype given: converting '()' to '(void)'
+  #   -wd4296: udptcpip.c(662) : warning C4296: '>=' : expression is always true
+  #   -wd4245: udptcpip.c(174) : warning C4245: '=' : conversion from 'int' to 'CRSocket', signed/unsigned mismatch
+  #   -wd4668: tcpip.c(961) : warning C4668: 'CRAPPFAKER_SHOULD_DIE' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+  #   -wd4005: v7.1\include\sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition
+  #   -wd4057: state_lists.c(196) : warning C4057: 'function' : 'GLint *' differs in indirection to slightly different base types from 'GLenum *'
+  #   -wd4311: wgl.c(183) : warning C4311: 'type cast' : pointer truncation from 'HGLRC' to 'unsigned long' [TODO: fix source code]
+  #   -wd4312: wgl.c(218) : warning C4312: 'type cast' : conversion from 'unsigned long' to 'HGLRC' of greater size [TODO: fix source code]
+  #   -wd4054: feedbackspu.c(530) : warning C4054: 'type cast' : from function pointer 'SPUGenericFunction' to data pointer 'void *'
+  #   -wd4189: load.c(1273) : warning C4189: 'pContextRecord' : local variable is initialized but not referenced
+  #   -wd4100: vboxhgcm.c(1365) : warning C4100: 'conn' : unreferenced formal parameter
+  TEMPLATE_VBOXCROGLR3GUESTDLL_CFLAGS         = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_CFLAGS) \
+  	-wd4255 -wd4296 -wd4245 -wd4668 -wd4005 -wd4057 -wd4311 -wd4312 -wd4054 -wd4189 -wd4100
+ endif
+else
  TEMPLATE_VBOXCROGLR3GUESTDLL_CFLAGS          = $(filter-out -pedantic, $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_CFLAGS)) \
  	$(if-expr !defined(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),$(VBOX_GCC_Wno-overlength-strings),)
  TEMPLATE_VBOXCROGLR3GUESTDLL_CXXFLAGS        = $(filter-out -pedantic, $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_CXXFLAGS))
