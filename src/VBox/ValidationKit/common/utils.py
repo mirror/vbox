@@ -242,6 +242,20 @@ def getHostOsVersion():
         oOsVersion = OSVersionInfoEx()
         rc = ctypes.windll.Ntdll.RtlGetVersion(ctypes.byref(oOsVersion))
         if rc == 0:
+            # Python platform.release() is not reliable for newer server releases
+            if oOsVersion.wProductType != 1:
+                if oOsVersion.dwMajorVersion == 10 and oOsVersion.dwMinorVersion == 0:
+                    sVersion = '2016Server';
+                elif oOsVersion.dwMajorVersion == 6 and oOsVersion.dwMinorVersion == 3:
+                    sVersion = '2012ServerR2';
+                elif oOsVersion.dwMajorVersion == 6 and oOsVersion.dwMinorVersion == 2:
+                    sVersion = '2012Server';
+                elif oOsVersion.dwMajorVersion == 6 and oOsVersion.dwMinorVersion == 1:
+                    sVersion = '2008ServerR2';
+                elif oOsVersion.dwMajorVersion == 6 and oOsVersion.dwMinorVersion == 0:
+                    sVersion = '2008Server';
+                elif oOsVersion.dwMajorVersion == 5 and oOsVersion.dwMinorVersion == 2:
+                    sVersion = '2003Server';
             sVersion += ' build ' + str(oOsVersion.dwBuildNumber)
             if oOsVersion.wServicePackMajor:
                 sVersion += ' SP' + str(oOsVersion.wServicePackMajor)
