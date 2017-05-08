@@ -170,7 +170,7 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
 
     CRASSERT(stub.contextTable);
 
-    sprintf(dpyName, "%d", hdc);
+    sprintf(dpyName, "%p", hdc);
 #ifndef VBOX_CROGL_USE_VBITS_SUPERSET
     if (stub.haveNativeOpenGL)
         desiredVisual |= ComputeVisBits( hdc );

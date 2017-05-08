@@ -955,7 +955,7 @@ IUnknown* vboxD3DIfCreateSharedPrimary(PVBOXWDDMDISP_ALLOCATION pAlloc)
                     }
                 }
 
-                pAlloc->hSharedHandle = (HANDLE)usedHostId;
+                pAlloc->hSharedHandle = (HANDLE)(uintptr_t)usedHostId;
 
                 hr = VBoxD3DIfCreateForRc(pRc);
                 if (!SUCCEEDED(hr))

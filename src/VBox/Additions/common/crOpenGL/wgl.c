@@ -367,7 +367,7 @@ DECLEXPORT(HGLRC) WINAPI VBoxCreateContext( HDC hdc, struct VBOXUHGSMI *pHgsmi )
     if (dpyName)
     {
         crMemset(dpyName, 0, MAX_DPY_NAME);
-        sprintf(dpyName, "%d", hdc);
+        sprintf(dpyName, "%p", hdc);
     }
 #ifndef VBOX_CROGL_USE_VBITS_SUPERSET
     if (stub.haveNativeOpenGL)

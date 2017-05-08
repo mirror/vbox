@@ -51,6 +51,11 @@ TEMPLATE_VBoxGuestWineDLL_DEFS.x86 = __i386__
 #  -wd4267: 'function' : conversion from 'size_t' to 'GLsizei', possible loss of data
 TEMPLATE_VBoxGuestWineDLL_CFLAGS = $(filter-out -WX,$(TEMPLATE_VBoxGuestR3Dll_CFLAGS)) \
 	-wd4100  -wd4204 -wd4245 -wd4305 -wd4018 -wd4389 -wd4221 -wd4334 -wd4267
+if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+  # -wd4005: v7.1\include\sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition
+  # -wd4133: swapchain.c(384) : warning C4133: 'function' : incompatible types - from 'IDirect3DSwapChain9 *' to 'IDirect3DSwapChain9Ex *'
+ TEMPLATE_VBoxGuestWineDLL_CFLAGS += -wd4005 -wd4133
+endif
 
 #
 # Template for building the D3D[89] stuff.
@@ -64,6 +69,9 @@ TEMPLATE_VBoxGuestWineD3DxDLL_DEFS.x86   = __i386__
 #TEMPLATE_VBoxGuestWineD3DxDLL_INCS.x86   = vbox/libWineStub/include
 TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = VBOX_WINE_WITH_IPRT
 TEMPLATE_VBoxGuestWineD3DxDLL_CFLAGS = -wd4100  -wd4204 -wd4245 -wd4305
+if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+ TEMPLATE_VBoxGuestWineD3DxDLL_CFLAGS += -wd4005
+endif
 TEMPLATE_VBoxGuestWineD3DxDLL_LIBS = \
  	$(VBOX_LIB_IPRT_GUEST_R3) \
  	$(VBOX_LIB_VBGL_R3)
