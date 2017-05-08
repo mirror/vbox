@@ -291,6 +291,10 @@ ifdef VBOX_GSOAP_INSTALLED
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4668 # preprocessor / windows.h
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4211 # nonstandard extension used: redefined extern to static
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4310 # cast truncates constant value
+   if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
+    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4056 # v2.8.36/stdsoap2.cpp(14008) : warning C4056: overflow in floating-point constant arithmetic
+    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4756 # v2.8.36/stdsoap2.cpp(14008) : warning C4756: overflow in constant arithmetic
+   endif
   endif
 
   ifdef VBOX_SOAP_PRECOMPILED_HEADER

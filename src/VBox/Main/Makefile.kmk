@@ -1303,6 +1303,9 @@ define def_VBoxMainDisableMscWarnings
 	$(QUIET)$(APPEND) -nt "$1" \
 		'#pragma warning(push) /* -Wall and windows.h */' \
 		'#pragma warning(disable:4668 4255)' \
+		'#if _MSC_VER >= 1800 /* RT_MSC_VER_VC120 */' \
+		'# pragma warning(disable:4005)' \
+		'#endif' \
                ''
 	$(QUIET)$(CAT_EXT) "$1.tmp" >> "$1"
 	$(QUIET)$(APPEND) -n "$1" \
