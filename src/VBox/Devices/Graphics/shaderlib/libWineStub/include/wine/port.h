@@ -266,10 +266,12 @@ pid_t gettid(void);
 #endif /* HAVE_GETTID */
 
 #ifndef HAVE_ISINF
+# undef isinf /* VBox: _MSC_VER >= RT_MSC_VER_VC120 has complicated macro implementation in math.h */
 int isinf(double x);
 #endif
 
 #ifndef HAVE_ISNAN
+# undef isnan /* VBox: _MSC_VER >= RT_MSC_VER_VC120 has complicated macro implementation in math.h */
 int isnan(double x);
 #endif
 

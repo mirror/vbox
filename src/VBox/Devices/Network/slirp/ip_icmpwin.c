@@ -380,7 +380,7 @@ icmpwin_pong(struct pong *pong)
 
         reqsize = reply->DataSize;
         if (   (reply->Options.Flags & IP_FLAG_DF) != 0
-            && sizeof(struct ip) + sizeof(struct icmp_echo) + reqsize > if_mtu)
+            && sizeof(struct ip) + sizeof(struct icmp_echo) + reqsize > (size_t)if_mtu)
             return;
 
         m = icmpwin_get_mbuf(pData, reqsize);

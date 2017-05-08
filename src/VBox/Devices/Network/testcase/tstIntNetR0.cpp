@@ -100,7 +100,7 @@ static RTTEST           g_hTest      = NIL_RTTEST;
 /** The size (in bytes) of the large transfer tests. */
 static uint32_t         g_cbTransfer = _1M * 384;
 /** Fake session handle. */
-const PSUPDRVSESSION    g_pSession   = (PSUPDRVSESSION)0xdeadface;
+const PSUPDRVSESSION    g_pSession   = (PSUPDRVSESSION)(uintptr_t)0xdeadface;
 
 
 INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType,

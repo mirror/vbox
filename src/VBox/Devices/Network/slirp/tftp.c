@@ -728,7 +728,7 @@ DECLINLINE(void) tftpProcessRRQ(PNATState pData, PCTFTPIPHDR pTftpIpHeader, int 
     /* We assume that file name should finish with '\0' and shouldn't bigger
      *  than buffer for name storage.
      */
-    AssertReturnVoid(   cbFileName < cbPayload
+    AssertReturnVoid(   (ssize_t)cbFileName < cbPayload
                      && cbFileName < TFTP_FILENAME_MAX /* current limit in tftp session handle */
                      && cbFileName);
 
