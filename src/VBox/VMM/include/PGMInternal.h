@@ -909,22 +909,22 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @{ */
 /** The zero page.
  * This is a per-VM page that's never ever mapped writable. */
-#define PGM_PAGE_STATE_ZERO             0
+#define PGM_PAGE_STATE_ZERO             0U
 /** A allocated page.
  * This is a per-VM page allocated from the page pool (or wherever
  * we get MMIO2 pages from if the type is MMIO2).
  */
-#define PGM_PAGE_STATE_ALLOCATED        1
+#define PGM_PAGE_STATE_ALLOCATED        1U
 /** A allocated page that's being monitored for writes.
  * The shadow page table mappings are read-only. When a write occurs, the
  * fWrittenTo member is set, the page remapped as read-write and the state
  * moved back to allocated. */
-#define PGM_PAGE_STATE_WRITE_MONITORED  2
+#define PGM_PAGE_STATE_WRITE_MONITORED  2U
 /** The page is shared, aka. copy-on-write.
  * This is a page that's shared with other VMs. */
-#define PGM_PAGE_STATE_SHARED           3
+#define PGM_PAGE_STATE_SHARED           3U
 /** The page is ballooned, so no longer available for this VM. */
-#define PGM_PAGE_STATE_BALLOONED        4
+#define PGM_PAGE_STATE_BALLOONED        4U
 /** @} */
 
 
