@@ -368,9 +368,10 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
     }
 
     /*
-     * Each relative call requires 9 extra bytes as it is converted to an absolute one
-     * using two instructions (push rax + mov rax, qword + call rax + pop rax). */
-    cbPatchMem += cRelCalls * 9;
+     * Each relative call requires extra bytes as it is converted to two push imm32
+     * + a jmp qword [$+8 wrt RIP] to avoid clobbering registers.
+     */
+    cbPatchMem += cRelCalls * RT_ALIGN_32(2 * 5 + 6 + 8, 8);
     cbPatchMem += 14; /* jmp qword [$+8 wrt RIP] + 8 byte address to jump to. */
     cbPatchMem = RT_ALIGN_32(cbPatchMem, 8);
 
@@ -452,18 +453,29 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
         else if (   Dis.pCurInstr->uOpcode == OP_CALL
                  && (Dis.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW))
         {
-            /* Convert to absolute call. */
+            /* Convert to absolute jump. */
             uintptr_t uAddr = (uintptr_t)&pbTarget[offInsn + cbInstr] + (intptr_t)Dis.Param1.uValue;
 
-            *pbPatchMem++ = 0x50; /* push rax */
-            *pbPatchMem++ = 0x48; /* mov rax, qword */
-            *pbPatchMem++ = 0xb8;
-            *(uint64_t *)pbPatchMem = uAddr;
-            pbPatchMem   += sizeof(uint64_t);
+            /* Skip the first two push instructions till the return address is known. */
+            uint8_t *pbPatchMemPush = pbPatchMem;
+            pbPatchMem += 2 * 5;
 
-            *pbPatchMem++ = 0xff; /* call rax */
-            *pbPatchMem++ = 0xd0;
-            *pbPatchMem++ = 0x58; /* pop rax */
+            *pbPatchMem++ = 0xff; /* jmp qword [$+8 wrt RIP] */
+            *pbPatchMem++ = 0x25;
+            *(uint32_t *)pbPatchMem = (uint32_t)(RT_ALIGN_PT(pbPatchMem + 4, 8, uint8_t *) - (pbPatchMem + 4));
+            pbPatchMem = RT_ALIGN_PT(pbPatchMem + 4, 8, uint8_t *);
+            *(uint64_t *)pbPatchMem = uAddr;
+            pbPatchMem += sizeof(uint64_t);
+
+            /* Create two pushes now which will put the return address onto the stack. */
+            uintptr_t uAddrReturn = (uintptr_t)pbPatchMem;
+            *pbPatchMemPush++ = 0x68; /* push imm32 */
+            *(uint32_t *)pbPatchMemPush = (uint32_t)uAddrReturn;
+            pbPatchMemPush   += sizeof(uint32_t);
+
+            *pbPatchMemPush++ = 0x68; /* push imm32 */
+            *(uint32_t *)pbPatchMemPush = (uint32_t)(uAddrReturn >> 32);
+            pbPatchMemPush   += sizeof(uint32_t);
         }
         else
         {
