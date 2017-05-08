@@ -52,6 +52,7 @@ r3_only_hdrs := \
 	VBox/vmm/uvm.h \
 	VBox/vscsi.h \
 	$(wildcard VBox/ExtPack/*.h ) \
+	$(wildcard iprt/win/*.h ) \
 	iprt/alloca.h \
 	iprt/tcp.h \
 	iprt/localipc.h \

@@ -32,6 +32,9 @@
 /*# pragma warning(disable:4163)*/
 # pragma warning(disable:4668) /* warning C4668: 'WHEA_DOWNLEVEL_TYPE_NAMES' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 # pragma warning(disable:4255) /* warning C4255: 'ObGetFilterVersion' : no function prototype given: converting '()' to '(void)' */
+# if _MSC_VER >= 1800 /*RT_MSC_VER_VC120*/
+#  pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
+# endif
 #endif
 
 #include <d3d8.h>

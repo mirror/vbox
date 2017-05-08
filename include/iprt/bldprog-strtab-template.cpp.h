@@ -891,7 +891,6 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
         {
 # ifdef BLDPROG_STRTAB_PURE_ASCII
             abort();
-            fprintf(pOut, "\\x%02x", (unsigned)uch);
 # else
             RTUNICP uc = RTStrGetCp((const char *)psz);
             psz += RTStrCpSize(uc);

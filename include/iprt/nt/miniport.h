@@ -32,6 +32,9 @@
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable:4668) /* basetsd.h(114) : warning C4668: '__midl' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+# if _MSC_VER >= 1800 /*RT_MSC_VER_VC120*/
+#  pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
+# endif
 #endif
 
 RT_C_DECLS_BEGIN

@@ -196,6 +196,10 @@
 # endif
 # pragma warning(disable: 4668)
 # pragma warning(disable: 4255) /* warning C4255: 'ObGetFilterVersion' : no function prototype given: converting '()' to '(void)' */
+# if _MSC_VER >= 1800 /*RT_MSC_VER_VC120*/
+#  pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
+#  pragma warning(disable:4471) /* wdm.h(11057) : warning C4471: '_POOL_TYPE' : a forward declaration of an unscoped enumeration must have an underlying type (int assumed) */
+# endif
 
 # include <ntifs.h>
 # include <wdm.h>

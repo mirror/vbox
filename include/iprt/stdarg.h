@@ -46,9 +46,12 @@
 #endif
 
 /*
- * MSC doesn't implement va_copy.
+ * Older MSC versions doesn't implement va_copy.  Newer (12.0+?) ones does
+ * implement it like below, but for now it's easier to continue like for the
+ * older ones so we can more easily handle R0, RC and other weird contexts.
  */
-#ifndef va_copy
+#if !defined(va_copy) || defined(_MSC_VER)
+# undef  va_copy
 # define va_copy(dst, src) do { (dst) = (src); } while (0) /** @todo check AMD64 */
 #endif
 

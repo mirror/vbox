@@ -30,6 +30,9 @@
 #pragma warning(push)
 #pragma warning(disable:4668) /* warning C4668: 'USE_SP_ALTPLATFORM_INFO_V1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 #pragma warning(disable:4255) /* warning C4255: 'I_RpcMgmtEnableDedicatedThreadPool' : no function prototype given: converting '()' to '(void)' */
+#if _MSC_VER >= 1800 /*RT_MSC_VER_VC120*/
+# pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
+#endif
 #include <shlwapi.h>
 
 #pragma warning(pop)

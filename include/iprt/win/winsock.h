@@ -42,7 +42,7 @@
 # endif
 #endif
 
-#include <winsock2.h>
+#include <winsock.h>
 
 #ifdef _MSC_VER
 # pragma warning(pop)
