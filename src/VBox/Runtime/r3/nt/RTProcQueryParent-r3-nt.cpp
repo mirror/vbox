@@ -53,7 +53,7 @@ RTR3DECL(int) RTProcQueryParent(RTPROCESS hProcess, PRTPROCESS phParent)
     else
     {
         CLIENT_ID ClientId;
-        ClientId.UniqueProcess = (HANDLE)hProcess;
+        ClientId.UniqueProcess = (HANDLE)(uintptr_t)hProcess;
         ClientId.UniqueThread  = NULL;
 
         OBJECT_ATTRIBUTES ObjAttrs;

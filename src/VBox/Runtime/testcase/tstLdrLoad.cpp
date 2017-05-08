@@ -49,7 +49,7 @@ int main(int argc, char **argv)
      */
     for (int i = 1; i < argc; i++)
     {
-        RTLDRMOD hLdrMod = (RTLDRMOD)0xbaadffaa;
+        RTLDRMOD hLdrMod = (RTLDRMOD)(uintptr_t)0xbaadffaa;
         int rc = RTLdrLoad(argv[i], &hLdrMod);
         if (RT_SUCCESS(rc))
         {
