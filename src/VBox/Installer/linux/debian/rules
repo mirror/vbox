@@ -94,7 +94,9 @@ ifneq ($(MAKECMDGOALS),clean)
  endif
 endif
 
+# Depend on Qt 5.6 or later otherwise we use Qt 5.3.2 from Debian 8.
 cfg_flags := $(if $(NOQT),--disable-qt,) \
+	     $(if $(NOQT),,--with-qt5-major=5 --with-qt-minor=6) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \

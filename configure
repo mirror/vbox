@@ -158,6 +158,8 @@ QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr /usr/local"
 QT4DIR_PKGCONFIG=1
 QT5DIR="/usr/lib/qt5 /usr/share/qt5 /usr/lib64/qt5 /usr /usr/local"
 QT5DIR_PKGCONFIG=1
+QT5MAJ=5
+QT5MIN=3
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
@@ -1647,7 +1649,9 @@ check_qt5()
 #include <QtGlobal>
 extern "C" int main(void)
 {
-#if QT_VERSION >= 0x050302
+EOF
+  echo "#if QT_VERSION >= $(($QT5MAJ*65536+$QT5MIN*256))" >> $ODIR.tmp_src.cc
+  cat >> $ODIR.tmp_src.cc << EOF
   return 0;
 #else
   return 1;
@@ -1739,11 +1743,15 @@ EOF
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x050302
+EOF
+  echo "#if QT_VERSION >= $(($QT5MAJ*65536+$QT5MIN*256))" >> $ODIR.tmp_src.cc
+    cat >> $ODIR.tmp_src.cc << EOF
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 5.3.2 or higher\n");
+EOF
+echo "  printf(\", expected version $QT5MAJ.$QT5MIN or higher\\\\n\");" >> $ODIR.tmp_src.cc
+    cat >> $ODIR.tmp_src.cc << EOF
   return 1;
 #endif
 }
@@ -2621,6 +2629,12 @@ for option in "$@"; do
       [ $WITH_QT4 -eq 1 ] && QT4DIR_PKGCONFIG=0
       [ $WITH_QT5 -eq 1 ] && QT5DIR=`echo $option | cut -d'=' -f2`
       [ $WITH_QT5 -eq 1 ] && QT5DIR_PKGCONFIG=0
+      ;;
+    --with-qt5-minor=*)
+      QT5MIN=`echo $option | cut -d'=' -f2`
+      ;;
+    --with-qt5-major=*)
+      QT5MAJ=`echo $option | cut -d'=' -f2`
       ;;
     --with-openssl-dir=*)
       OPENSSLDIR=`echo $option | cut -d'=' -f2`
