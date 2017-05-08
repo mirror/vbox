@@ -512,18 +512,15 @@ int main()
     CHECK42("%RTproc", (RTPROCESS)0xffffff, "00ffffff");
     CHECK42("%RTproc", (RTPROCESS)0x43455443, "43455443");
 
-    if (sizeof(RTUINTPTR) == 8)
-    {
-        CHECK42("%RTptr", (RTUINTPTR)0, "0000000000000000");
-        CHECK42("%RTptr", ~(RTUINTPTR)0, "ffffffffffffffff");
-        CHECK42("%RTptr", (RTUINTPTR)0x84342134, "0000000084342134");
-    }
-    else
-    {
-        CHECK42("%RTptr", (RTUINTPTR)0, "00000000");
-        CHECK42("%RTptr", ~(RTUINTPTR)0, "ffffffff");
-        CHECK42("%RTptr", (RTUINTPTR)0x84342134, "84342134");
-    }
+#if (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
+    CHECK42("%RTptr", (RTUINTPTR)0, "0000000000000000");
+    CHECK42("%RTptr", ~(RTUINTPTR)0, "ffffffffffffffff");
+    CHECK42("%RTptr", (RTUINTPTR)(uintptr_t)0x84342134, "0000000084342134");
+#else
+    CHECK42("%RTptr", (RTUINTPTR)0, "00000000");
+    CHECK42("%RTptr", ~(RTUINTPTR)0, "ffffffff");
+    CHECK42("%RTptr", (RTUINTPTR)(uintptr_t)0x84342134, "84342134");
+#endif
 
 #if ARCH_BITS == 64
     AssertCompileSize(RTCCUINTREG, 8);
@@ -543,32 +540,26 @@ int main()
     CHECK42("%RTsel", (RTSEL)0x543, "0543");
     CHECK42("%RTsel", (RTSEL)0xf8f8, "f8f8");
 
-    if (sizeof(RTSEMEVENT) == 8)
-    {
-        CHECK42("%RTsem", (RTSEMEVENT)0, "0000000000000000");
-        CHECK42("%RTsem", (RTSEMEVENT)(uintptr_t)0x23484342134ULL, "0000023484342134");
-    }
-    else
-    {
-        CHECK42("%RTsem", (RTSEMEVENT)0, "00000000");
-        CHECK42("%RTsem", (RTSEMEVENT)(uintptr_t)0x84342134, "84342134");
-    }
+#if ARCH_BITS == 64
+    CHECK42("%RTsem", (RTSEMEVENT)0, "0000000000000000");
+    CHECK42("%RTsem", (RTSEMEVENT)(uintptr_t)0x23484342134ULL, "0000023484342134");
+#else
+    CHECK42("%RTsem", (RTSEMEVENT)0, "00000000");
+    CHECK42("%RTsem", (RTSEMEVENT)(uintptr_t)0x84342134, "84342134");
+#endif
 
     CHECK42("%RTsock", (RTSOCKET)(uintptr_t)12234, "12234");
     CHECK42("%RTsock", (RTSOCKET)(uintptr_t)584854543, "584854543");
 
-    if (sizeof(RTTHREAD) == 8)
-    {
-        CHECK42("%RTthrd", (RTTHREAD)0, "0000000000000000");
-        CHECK42("%RTthrd", (RTTHREAD)~(uintptr_t)0, "ffffffffffffffff");
-        CHECK42("%RTthrd", (RTTHREAD)(uintptr_t)0x63484342134ULL, "0000063484342134");
-    }
-    else
-    {
-        CHECK42("%RTthrd", (RTTHREAD)0, "00000000");
-        CHECK42("%RTthrd", (RTTHREAD)~(uintptr_t)0, "ffffffff");
-        CHECK42("%RTthrd", (RTTHREAD)(uintptr_t)0x54342134, "54342134");
-    }
+#if ARCH_BITS == 64
+    CHECK42("%RTthrd", (RTTHREAD)0, "0000000000000000");
+    CHECK42("%RTthrd", (RTTHREAD)~(uintptr_t)0, "ffffffffffffffff");
+    CHECK42("%RTthrd", (RTTHREAD)(uintptr_t)0x63484342134ULL, "0000063484342134");
+#else
+    CHECK42("%RTthrd", (RTTHREAD)0, "00000000");
+    CHECK42("%RTthrd", (RTTHREAD)~(uintptr_t)0, "ffffffff");
+    CHECK42("%RTthrd", (RTTHREAD)(uintptr_t)0x54342134, "54342134");
+#endif
 
     CHECK42("%RTuid", (RTUID)-2, "-2");
     CHECK42("%RTuid", (RTUID)90344, "90344");
