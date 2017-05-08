@@ -86,6 +86,9 @@
 /** The max path length acceptable for a trusted path. */
 #define SUPR3HARDENED_MAX_PATH      260U
 
+/** Enable to resolve symlinks using realpath() instead of cooking our own stuff. */
+#define SUP_HARDENED_VERIFY_FOLLOW_SYMLINKS_USE_REALPATH 1
+
 #ifdef RT_OS_SOLARIS
 # define dirfd(d) ((d)->d_fd)
 #endif
@@ -1091,7 +1094,8 @@ static int supR3HardenedSetError2(int rc, PRTERRINFO pErrInfo, const char *pszMs
 #endif
 
 
-#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
+#ifndef SUP_HARDENED_VERIFY_FOLLOW_SYMLINKS_USE_REALPATH
+# if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 /**
  * Copies the error message to the error buffer and returns @a rc.
  *
@@ -1104,6 +1108,7 @@ static int supR3HardenedSetError(int rc, PRTERRINFO pErrInfo, const char *pszMsg
 {
     return supR3HardenedSetErrorN(rc, pErrInfo, 1, pszMsg);
 }
+# endif
 #endif
 
 
@@ -1893,7 +1898,9 @@ DECLHIDDEN(int) supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, R
     /*
      * Verify each component from the root up.
      */
+#ifndef SUP_HARDENED_VERIFY_FOLLOW_SYMLINKS_USE_REALPATH
     uint32_t                iLoops = 0;
+#endif
     SUPR3HARDENEDFSOBJSTATE FsObjState;
     uint32_t                iComponent = 0;
     while (iComponent < Info.cComponents)
@@ -1915,6 +1922,24 @@ DECLHIDDEN(int) supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, R
             if (   RT_SUCCESS(rc)
                 && S_ISLNK(FsObjState.Stat.st_mode))
             {
+#if SUP_HARDENED_VERIFY_FOLLOW_SYMLINKS_USE_REALPATH /* Another approach using realpath() and verifying the result when encountering a symlink. */
+                char *pszFilenameResolved = realpath(pszFilename, NULL);
+                if (pszFilenameResolved)
+                {
+                    rc = supR3HardenedVerifyFile(pszFilenameResolved, hNativeFile, fMaybe3rdParty, pErrInfo);
+                    free(pszFilenameResolved);
+                    return rc;
+                }
+                else
+                {
+                    int iErr = errno;
+                    supR3HardenedError(VERR_ACCESS_DENIED, false /*fFatal*/,
+                                       "supR3HardenedVerifyFileFollowSymlinks: Failed to resolve the real path '%s': %s (%d)\n",
+                                       pszFilename, strerror(iErr), iErr);
+                    return supR3HardenedSetError4(VERR_ACCESS_DENIED, pErrInfo,
+                                                  "realpath failed for '", pszFilename, "': ", strerror(iErr));
+                }
+#else
                 /* Don't loop forever. */
                 iLoops++;
                 if (iLoops < 8)
@@ -1989,6 +2014,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFileFollowSymlinks(const char *pszFilename, R
                 else
                     return supR3HardenedSetError3(VERR_TOO_MANY_SYMLINKS, pErrInfo,
                                                   "Too many symbolic links: '", pszFilename, "'");
+#endif
             }
         }
         if (RT_FAILURE(rc))
