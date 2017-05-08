@@ -210,9 +210,9 @@ class TestResultDataEx(TestResultData):
 
     def getListOfFailures(self):
         """
-        Get a list of test results insances actually contributing to cErrors.
+        Get a list of test results instances actually contributing to cErrors.
 
-        Returns a list of TestResultDataEx insance from this tree. (shared!)
+        Returns a list of TestResultDataEx instance from this tree. (shared!)
         """
         # Check each child (if any).
         aoRet = [];

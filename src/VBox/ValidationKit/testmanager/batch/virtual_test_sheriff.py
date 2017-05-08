@@ -469,6 +469,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Host_Modprobe_Failed                      = ( 'Host',              'Modprobe failed' );
+    ktReason_Host_Install_Hang                         = ( 'Host',              'Install hang' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
     ktReason_Panic_BootManagerC000000F                 = ( 'Panic',             'Hardware Changed' );
@@ -615,7 +616,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         return False;
 
     @staticmethod
-    def findAndReturnResetOfLine(sHaystack, sNeedle):
+    def findAndReturnRestOfLine(sHaystack, sNeedle):
         """
         Looks for sNeedle in sHaystack.
         Returns The text following the needle up to the end of the line.
@@ -633,14 +634,14 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         return sHaystack[off:offEol]
 
     @staticmethod
-    def findInAnyAndReturnResetOfLine(asHaystacks, sNeedle):
+    def findInAnyAndReturnRestOfLine(asHaystacks, sNeedle):
         """
         Looks for sNeedle in zeroe or more haystacks (asHaystack).
         Returns The text following the first needed found up to the end of the line.
         Returns None if not found.
         """
         for sHaystack in asHaystacks:
-            sRet = VirtualTestSheriff.findAndReturnResetOfLine(sHaystack, sNeedle);
+            sRet = VirtualTestSheriff.findAndReturnRestOfLine(sHaystack, sNeedle);
             if sRet is not None:
                 return sRet;
         return None;
@@ -672,7 +673,10 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         We lump the two together since the installation typically also performs
         an uninstall first and will be seeing similar issues to the uninstall.
         """
-        _ = fInstall;
+
+        if fInstall and oFailedResult.enmStatus == TestSetData.ksTestStatus_TimedOut:
+            oCaseFile.noteReasonForId(self.ktReason_Host_Install_Hang, oFailedResult.idTestResult)
+            return True;
 
         atSimple = self.katSimpleInstallUninstallMainLogReasons;
         if oCaseFile.oTestBox.sOs in self.kdatSimpleInstallUninstallMainLogReasonsPerOs:
@@ -839,7 +843,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
         ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' ),
-        ( True,  ktReason_Host_Modprobe_Failed,	                    'Kernel driver not installed' )
+        ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' )
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
@@ -926,8 +930,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             #
             # Look for BSODs. Some stupid stupid inconsistencies in reason and log messages here, so don't try prettify this.
             #
-            sDetails = self.findInAnyAndReturnResetOfLine([ sVMLog, sResultLog ],
-                                                          'GIM: HyperV: Guest indicates a fatal condition! P0=');
+            sDetails = self.findInAnyAndReturnRestOfLine([ sVMLog, sResultLog ],
+                                                         'GIM: HyperV: Guest indicates a fatal condition! P0=');
             if sDetails is not None:
                 # P0=%#RX64 P1=%#RX64 P2=%#RX64 P3=%#RX64 P4=%#RX64 "
                 sKey = sDetails.split(' ', 1)[0];
