@@ -1958,7 +1958,7 @@ static int32_t crVBoxServerLoadMurals(CR_SERVER_LOADSTATE_READER *pReader, uint3
                  * the mural memory is zero-initialized initially, so we can be sure the padding is zeroed */
                 rc = crServerLsrDataGetMem(pReader, &LaBuf, sizeof (LaBuf));
                 AssertLogRelRCReturn(rc, rc);
-                if (LaBuf.apv[0] != NULL && LaBuf.apv[0] != ((void*)1))
+                if (LaBuf.apv[0] != NULL && LaBuf.apv[0] != ((void *)(uintptr_t)1))
                     break;
 
                 /* check that the pointers are either valid or NULL */
@@ -3240,7 +3240,7 @@ static int crVBoxCrConnectEx(VBOXCMDVBVA_3DCTL_CONNECT *pConnect, uint32_t u32Cl
     if (u32ClientId == CRHTABLE_HANDLE_INVALID)
     {
         /* allocate client id */
-        u32ClientId =  CrHTablePut(&cr_server.clientTable, (void*)1);
+        u32ClientId =  CrHTablePut(&cr_server.clientTable, (void *)(uintptr_t)1);
         if (u32ClientId == CRHTABLE_HANDLE_INVALID)
         {
             WARN(("CrHTablePut failed"));
