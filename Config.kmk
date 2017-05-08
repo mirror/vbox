@@ -6674,11 +6674,12 @@ else ifeq ($(KBUILD_TARGET),win)
  #   -wd4054: renderspu_wgl.c(281) : warning C4054: 'type cast' : from function pointer 'HWND (__cdecl *)()' to data pointer 'void *'
  #   -wd4055: renderspu.c(1553) : warning C4055: 'type cast' : from data pointer 'const GLvoid *' to function pointer 'PFNVCRSERVER_CLIENT_CALLOUT'
  #   -wd4312: renderspu_wgl.c(1420) : warning C4312: 'type cast' : conversion from 'GLint' to 'HDC' of greater size [TODO: check this one out]
+ #   -wd4306: renderspu_wgl.c(1420) : warning C4306: 'type cast' : conversion from 'GLint' to 'HDC' of greater size [TODO: check this one out]
  #   -wd4189: server_config.c(111) : warning C4189: 'my_rank' : local variable is initialized but not referenced
  #   -wd4100: vboxhgcm.c(1365) : warning C4100: 'conn' : unreferenced formal parameter
- TEMPLATE_VBOXCROGLR3HOSTDLL_CFLAGS         = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3HOSTDLL_EXTENDS)_CFLAGS) \
- 	-wd4255 -wd4296 -wd4245 -wd4668 -wd4005 -wd4057 -wd4389 -wd4054 -wd4055 -wd4312 -wd4189 -wd4100
- TEMPLATE_VBOXCROGLR3HOSTDLL_CXXFLAGS       = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3HOSTDLL_EXTENDS)_CXXFLAGS) \
+ TEMPLATE_VBOXCROGLR3HOSTDLL_CFLAGS          = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3HOSTDLL_EXTENDS)_CFLAGS) \
+ 	-wd4255 -wd4296 -wd4245 -wd4668 -wd4005 -wd4057 -wd4389 -wd4054 -wd4055 -wd4312 -wd4306 -wd4189 -wd4100
+ TEMPLATE_VBOXCROGLR3HOSTDLL_CXXFLAGS        = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3HOSTDLL_EXTENDS)_CXXFLAGS) \
  	-wd4245 -wd4389 -wd4189 -wd4100
 endif
 
@@ -6715,11 +6716,13 @@ ifeq ($(KBUILD_TARGET),win)
  #   -wd4057: state_lists.c(196) : warning C4057: 'function' : 'GLint *' differs in indirection to slightly different base types from 'GLenum *'
  #   -wd4311: wgl.c(183) : warning C4311: 'type cast' : pointer truncation from 'HGLRC' to 'unsigned long' [TODO: fix source code]
  #   -wd4312: wgl.c(218) : warning C4312: 'type cast' : conversion from 'unsigned long' to 'HGLRC' of greater size [TODO: fix source code]
+ #   -wd4305: icd_drv.c(325) : warning C4305: 'type cast' : truncation from 'HGLRC' to 'unsigned long'
+ #   -wd4306: icd_drv.c(191) : warning C4306: 'type cast' : conversion from 'unsigned long' to 'HGLRC' of greater size
  #   -wd4054: feedbackspu.c(530) : warning C4054: 'type cast' : from function pointer 'SPUGenericFunction' to data pointer 'void *'
  #   -wd4189: load.c(1273) : warning C4189: 'pContextRecord' : local variable is initialized but not referenced
  #   -wd4100: vboxhgcm.c(1365) : warning C4100: 'conn' : unreferenced formal parameter
  TEMPLATE_VBOXCROGLR3GUESTDLL_CFLAGS         = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_CFLAGS) \
- 	-wd4255 -wd4296 -wd4245 -wd4668 -wd4005 -wd4057 -wd4311 -wd4312 -wd4054 -wd4189 -wd4100
+ 	-wd4255 -wd4296 -wd4245 -wd4668 -wd4005 -wd4057 -wd4311 -wd4312 -wd4305 -wd4306 -wd4054 -wd4189 -wd4100
 else
  TEMPLATE_VBOXCROGLR3GUESTDLL_CFLAGS          = $(filter-out -pedantic, $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_CFLAGS)) \
  	$(if-expr !defined(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),$(VBOX_GCC_Wno-overlength-strings),)
