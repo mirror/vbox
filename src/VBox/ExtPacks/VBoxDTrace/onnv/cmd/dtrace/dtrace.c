@@ -516,7 +516,7 @@ etcsystem_prune(void)
 	    O_WRONLY | O_CREAT | O_EXCL, sbuf.st_mode)) == -1)
 		fatal("failed to create %s", tmpname);
 
-	if (write(fd, buf, strlen(buf)) < strlen(buf)) {
+	if (write(fd, buf, strlen(buf)) < (ssize_t/*vbox*/)strlen(buf)) {
 		(void) unlink(tmpname);
 		fatal("failed to write to %s", tmpname);
 	}

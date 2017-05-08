@@ -352,7 +352,7 @@ dt_idcook_args(dt_node_t *dnp, dt_ident_t *idp, int argc, dt_node_t *ap)
 		    dtrace_desc2str(yypcb->pcb_pdesc, n1, sizeof (n1)));
 	}
 
-	if (ap->dn_value >= prp->pr_argc) {
+	if (ap->dn_value >= VBDTCAST(uintmax_t)prp->pr_argc) {
 		xyerror(D_ARGS_IDX, "index %lld is out of range for %s %s[ ]\n",
 		    (longlong_t)ap->dn_value, dtrace_desc2str(yypcb->pcb_pdesc,
 		    n1, sizeof (n1)), idp->di_name);

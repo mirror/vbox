@@ -1281,8 +1281,8 @@ dt_compile_agg(dtrace_hdl_t *dtp, dt_node_t *dnp, dtrace_stmtdesc_t *sdp)
 			 * mismatch.
 			 */
 			int obaseval = DTRACE_LQUANTIZE_BASE(oarg);
-			int onlevels = DTRACE_LQUANTIZE_LEVELS(oarg);
-			int ostep = DTRACE_LQUANTIZE_STEP(oarg);
+			VBDTTYPE(unsigned,int) onlevels = DTRACE_LQUANTIZE_LEVELS(oarg);
+			VBDTTYPE(unsigned,int) ostep = DTRACE_LQUANTIZE_STEP(oarg);
 
 			if (obaseval != baseval) {
 				dnerror(dnp, D_LQUANT_MATCHBASE, "lquantize( ) "

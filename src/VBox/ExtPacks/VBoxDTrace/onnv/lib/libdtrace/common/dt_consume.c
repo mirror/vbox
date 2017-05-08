@@ -315,7 +315,7 @@ dt_sqrt_128(uint64_t *square)
 	uint64_t next_pair[2];
 	uint64_t next_try[2];
 	uint64_t bit_pairs, pair_shift;
-	int i;
+	VBDTTYPE(uint64_t,int) i;
 
 	bit_pairs = dt_nbits_128(square) / 2;
 	pair_shift = bit_pairs * 2;

@@ -66,7 +66,7 @@ static int dt_keypos;
 static void
 dt_aggregate_count(int64_t *existing, int64_t *new, size_t size)
 {
-	int i;
+	VBDTTYPE(size_t,int) i;
 
 	for (i = 0; i < size / sizeof (int64_t); i++)
 		existing[i] = existing[i] + new[i];
@@ -1707,8 +1707,8 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 	 */
 	bundle = (dt_ahashent_t ***)sorted;
 
-	for (i = 1, start = 0; i <= nentries; i++) {
-		if (i < nentries &&
+	for (i = 1, start = 0; (size_t/*vbox*/)i <= nentries; i++) {
+		if ((size_t/*vbox*/)i < nentries &&
 		    dt_aggregate_keycmp(&sorted[i], &sorted[i - 1]) == 0)
 			continue;
 
@@ -1716,7 +1716,7 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 		 * We have a bundle boundary.  Everything from start to
 		 * (i - 1) belongs in one bundle.
 		 */
-		assert(i - start <= naggvars);
+		assert((size_t/*vbox*/)i - start <= (size_t/*vbox*/)naggvars);
 		bundlesize = (naggvars + 2) * sizeof (dt_ahashent_t *);
 
 		if ((nbundle = dt_zalloc(dtp, bundlesize)) == NULL) {
@@ -1786,7 +1786,7 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 	 */
 	data = alloca((naggvars + 1) * sizeof (dtrace_aggdata_t *));
 
-	for (i = 0; i < nbundles; i++) {
+	for (i = 0; (size_t/*vbox*/)i < nbundles; i++) {
 		for (j = 0; j < naggvars; j++)
 			data[j + 1] = NULL;
 
@@ -1817,7 +1817,7 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 
 	rval = 0;
 out:
-	for (i = 0; i < nbundles; i++)
+	for (i = 0; (size_t/*vbox*/)i < nbundles; i++)
 		dt_free(dtp, bundle[i]);
 
 	if (zaggdata != NULL) {
