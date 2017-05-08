@@ -399,7 +399,9 @@ static const char *paravirtProviderToString(ParavirtProvider_T provider, VMINFO_
 #if defined(_MSC_VER)
 # pragma optimize("g", off)
 # pragma warning(push)
-# pragma warning(disable: 4748)
+# if _MSC_VER < RT_MSC_VER_VC120
+#  pragma warning(disable: 4748)
+# endif
 #endif
 
 HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
