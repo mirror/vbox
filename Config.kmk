@@ -2512,8 +2512,8 @@ else
  # The reason for this hack is that the windows kmk_ash cannot deal with $((1+1)).
  # Some versions of gcc (e.g. openSUSE11) return only major.minor on `gcc -dumpversion`.
  # gcc-5 of openSUSE42.1 only returns the major version on `gcc -dumpversion`!
- VBOX_GCC_VERSION = $(shell \
-    $(1) -dumpversion | $(SED_EXT) 's|\([0-9]\)\.\{0,1\}\([0-9]\{0,1\}\)\.\{0,1\}\([0-9]\{0,1\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, $$(firstword \2 0)), $$(firstword \3 0))|' )
+ VBOX_GCC_VERSION = $(shell ($(1) -dumpfullversion 2>/dev/null || $(1) -dumpversion) | \
+    $(SED_EXT) 's|\([0-9]\)\.\{0,1\}\([0-9]\{0,1\}\)\.\{0,1\}\([0-9]\{0,1\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, $$(firstword \2 0)), $$(firstword \3 0))|' )
 endif
 
 # Find MinGW cross compilers for EFI on non-windows systems. We need to probe
