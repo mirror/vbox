@@ -468,6 +468,7 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
             pbPatchMem += sizeof(uint64_t);
 
             /* Push the return address onto stack. Difficult on amd64 without clobbering registers... */
+            uintptr_t uAddrReturn = (uintptr_t)pbPatchMem;
             *pbPatchMemPush++ = 0x66; /* operand size 64-bit => 16-bit */
             *pbPatchMemPush++ = 0x68; /* push imm16 */
             *(uint16_t *)pbPatchMemPush = (uAddrReturn >> 48) & 0xffff;
