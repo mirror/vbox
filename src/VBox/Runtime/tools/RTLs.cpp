@@ -465,7 +465,7 @@ static void rtCmdLsSortCollections(PRTCMDLSOPTS pOpts)
         case RTCMDLSSORT_NONE:
             pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstUnsorted      : NULL;
             break;
-        default: AssertFailed();
+        default: AssertFailed(); /* fall thru */
         case RTCMDLSSORT_NAME:
             pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstName          : rtCmdLsEntryCmpName;
             break;
@@ -481,7 +481,7 @@ static void rtCmdLsSortCollections(PRTCMDLSOPTS pOpts)
         case RTCMDLSSORT_TIME:
             switch (pOpts->enmTime)
             {
-                default: AssertFailed();
+                default: AssertFailed(); /* fall thru */
                 case RTCMDLSTIME_MTIME: pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstMTime : rtCmdLsEntryCmpMTime; break;
                 case RTCMDLSTIME_BTIME: pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstBTime : rtCmdLsEntryCmpBTime; break;
                 case RTCMDLSTIME_CTIME: pfnCmp = pOpts->fGroupDirectoriesFirst ? rtCmdLsEntryCmpDirFirstCTime : rtCmdLsEntryCmpCTime; break;
@@ -754,7 +754,7 @@ static RTEXITCODE rtCmdLsDisplayCollectionInLongFormat(PRTCMDLSOPTS pOpts, PRTCM
     size_t offTime;
     switch (pOpts->enmTime)
     {
-        default: AssertFailed();
+        default: AssertFailed(); /* fall thru */
         case RTCMDLSTIME_MTIME: offTime = RT_OFFSETOF(RTCMDLSENTRY, Info.ModificationTime); break;
         case RTCMDLSTIME_BTIME: offTime = RT_OFFSETOF(RTCMDLSENTRY, Info.BirthTime); break;
         case RTCMDLSTIME_CTIME: offTime = RT_OFFSETOF(RTCMDLSENTRY, Info.ChangeTime); break;
