@@ -625,8 +625,8 @@ VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
     {
         CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
         uint64_t u64TS = RTTimeProgramStartNanoTS();
-        CPUMPushHyper(pVCpu, (uint32_t)(u64TS >> 32));    /* Param 4: The program startup TS - Hi. */
-        CPUMPushHyper(pVCpu, (uint32_t)u64TS);            /* Param 4: The program startup TS - Lo. */
+        CPUMPushHyper(pVCpu, RT_HI_U32(u64TS));           /* Param 4: The program startup TS - Hi. */
+        CPUMPushHyper(pVCpu, RT_LO_U32(u64TS));           /* Param 4: The program startup TS - Lo. */
         CPUMPushHyper(pVCpu, vmmGetBuildType());          /* Param 3: Version argument. */
         CPUMPushHyper(pVCpu, VMMGetSvnRev());             /* Param 2: Version argument. */
         CPUMPushHyper(pVCpu, VMMRC_DO_VMMRC_INIT);        /* Param 1: Operation. */

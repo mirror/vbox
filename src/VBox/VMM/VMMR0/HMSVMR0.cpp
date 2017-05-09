@@ -983,10 +983,10 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
     uint32_t aParam[8];
-    aParam[0] = (uint32_t)(HCPhysVmcbHost);             /* Param 1: HCPhysVmcbHost - Lo. */
-    aParam[1] = (uint32_t)(HCPhysVmcbHost >> 32);       /* Param 1: HCPhysVmcbHost - Hi. */
-    aParam[2] = (uint32_t)(HCPhysVmcb);                 /* Param 2: HCPhysVmcb - Lo. */
-    aParam[3] = (uint32_t)(HCPhysVmcb >> 32);           /* Param 2: HCPhysVmcb - Hi. */
+    aParam[0] = RT_LO_U32(HCPhysVmcbHost);              /* Param 1: HCPhysVmcbHost - Lo. */
+    aParam[1] = RT_HI_U32(HCPhysVmcbHost);              /* Param 1: HCPhysVmcbHost - Hi. */
+    aParam[2] = RT_LO_U32(HCPhysVmcb);                  /* Param 2: HCPhysVmcb - Lo. */
+    aParam[3] = RT_HI_U32(HCPhysVmcb);                  /* Param 2: HCPhysVmcb - Hi. */
     aParam[4] = VM_RC_ADDR(pVM, pVM);
     aParam[5] = 0;
     aParam[6] = VM_RC_ADDR(pVM, pVCpu);

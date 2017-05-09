@@ -1316,8 +1316,8 @@ VMM_INT_DECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
     uint64_t uTicks = TMCpuTickGet(pVCpu);
 
     /* Same behaviour in 32 & 64 bits mode */
-    pRegFrame->rax = (uint32_t)uTicks;
-    pRegFrame->rdx = (uTicks >> 32ULL);
+    pRegFrame->rax = RT_LO_U32(uTicks);
+    pRegFrame->rdx = RT_HI_U32(uTicks);
 #ifdef VBOX_COMPARE_IEM_AND_EM
     g_fIgnoreRaxRdx = true;
 #endif
@@ -1352,8 +1352,8 @@ VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     uint64_t uTicks = TMCpuTickGet(pVCpu);
 
     /* Same behaviour in 32 & 64 bits mode */
-    pCtx->rax = (uint32_t)uTicks;
-    pCtx->rdx = (uTicks >> 32ULL);
+    pCtx->rax = RT_LO_U32(uTicks);
+    pCtx->rdx = RT_HI_U32(uTicks);
 #ifdef VBOX_COMPARE_IEM_AND_EM
     g_fIgnoreRaxRdx = true;
 #endif
@@ -1579,8 +1579,8 @@ VMM_INT_DECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
         Assert(rcStrict == VERR_CPUM_RAISE_GP_0 || rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_CPUM_R3_MSR_READ);
         return VERR_EM_INTERPRETER;
     }
-    pRegFrame->rax = (uint32_t) uValue;
-    pRegFrame->rdx = (uint32_t)(uValue >> 32);
+    pRegFrame->rax = RT_LO_U32(uValue);
+    pRegFrame->rdx = RT_HI_U32(uValue);
     LogFlow(("EMInterpretRdmsr %s (%x) -> %RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, uValue));
     return VINF_SUCCESS;
 }

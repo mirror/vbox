@@ -5398,10 +5398,10 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 #endif
 
     uint32_t aParam[10];
-    aParam[0] = (uint32_t)(HCPhysCpuPage);                              /* Param 1: VMXON physical address - Lo. */
-    aParam[1] = (uint32_t)(HCPhysCpuPage >> 32);                        /* Param 1: VMXON physical address - Hi. */
-    aParam[2] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVmcs);                 /* Param 2: VMCS physical address - Lo. */
-    aParam[3] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVmcs >> 32);           /* Param 2: VMCS physical address - Hi. */
+    aParam[0] = RT_LO_U32(HCPhysCpuPage);                               /* Param 1: VMXON physical address - Lo. */
+    aParam[1] = RT_HI_U32(HCPhysCpuPage);                               /* Param 1: VMXON physical address - Hi. */
+    aParam[2] = RT_LO_U32(pVCpu->hm.s.vmx.HCPhysVmcs);                  /* Param 2: VMCS physical address - Lo. */
+    aParam[3] = RT_HI_U32(pVCpu->hm.s.vmx.HCPhysVmcs);                  /* Param 2: VMCS physical address - Hi. */
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VMCSCache);
     aParam[5] = 0;
     aParam[6] = VM_RC_ADDR(pVM, pVM);
@@ -5582,8 +5582,8 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS64_HOST_EFER_FULL:
         case VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL:
         {
-            rc  = VMXWriteVmcs32(idxField, u64Val);
-            rc |= VMXWriteVmcs32(idxField + 1, (uint32_t)(u64Val >> 32));
+            rc  = VMXWriteVmcs32(idxField,     RT_LO_U32(u64Val));
+            rc |= VMXWriteVmcs32(idxField + 1, RT_HI_U32(u64Val));
             break;
         }
 
@@ -5608,10 +5608,10 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS_GUEST_SYSENTER_ESP:
         case VMX_VMCS_GUEST_SYSENTER_EIP:
         {
-            if (!(u64Val >> 32))
+            if (!(RT_HI_U32(u64Val)))
             {
                 /* If this field is 64-bit, VT-x will zero out the top bits. */
-                rc = VMXWriteVmcs32(idxField, (uint32_t)u64Val);
+                rc = VMXWriteVmcs32(idxField, RT_LO_U32(u64Val));
             }
             else
             {

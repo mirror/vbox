@@ -112,7 +112,7 @@ static int vmmR3ReportMsrRange(PVM pVM, uint32_t uMsr, uint64_t cMsrs, PRTSTREAM
                         RTStrmPrintf(pReportStrm,
                                      "    MVO(%#010llx, \"MSR\", UINT64_C(%#018llx)),\n", paResults[i].uMsr, paResults[i].uValue);
                     RTPrintf("%#010llx = %#010x`%08x\n", paResults[i].uMsr,
-                             (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
+                             RT_HI_U32(paResults[i].uValue), RT_LO_U32(paResults[i].uValue));
                 }
                 cMsrsFound++;
                 uLastMsr = paResults[i].uMsr;
