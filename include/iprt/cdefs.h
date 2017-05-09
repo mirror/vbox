@@ -1093,14 +1093,12 @@
  *          Do NOT use this for the actual throwing of exceptions!
  */
 #ifdef RT_EXCEPTIONS_ENABLED
-# ifdef _MSC_VER
-#  if _MSC_VER >= 1310
+# if RT_MSC_PREREQ(RT_MSC_VER_VC71)
 #   define RT_THROW(type)
-#  else
-#   define RT_THROW(type)       throw(type)
-#  endif
+# elif RT_GNUC_PREREQ(7, 0)
+#   define RT_THROW(type)
 # else
-#  define RT_THROW(type)        throw(type)
+#   define RT_THROW(type)       throw(type)
 # endif
 #else
 # define RT_THROW(type)
