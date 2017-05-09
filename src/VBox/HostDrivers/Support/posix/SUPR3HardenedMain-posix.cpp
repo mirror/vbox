@@ -368,10 +368,10 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
     }
 
     /*
-     * Each relative call requires extra bytes as it is converted to two push imm32
+     * Each relative call requires extra bytes as it is converted to a push imm64
      * + a jmp qword [$+8 wrt RIP] to avoid clobbering registers.
      */
-    cbPatchMem += cRelCalls * RT_ALIGN_32(2 * 5 + 6 + 8, 8);
+    cbPatchMem += cRelCalls * RT_ALIGN_32(9 + 6 + 8, 8);
     cbPatchMem += 14; /* jmp qword [$+8 wrt RIP] + 8 byte address to jump to. */
     cbPatchMem = RT_ALIGN_32(cbPatchMem, 8);
 
@@ -456,9 +456,9 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
             /* Convert to absolute jump. */
             uintptr_t uAddr = (uintptr_t)&pbTarget[offInsn + cbInstr] + (intptr_t)Dis.Param1.uValue;
 
-            /* Skip the first two push instructions till the return address is known. */
+            /* Skip the initial push instructions till the return address is known. */
             uint8_t *pbPatchMemPush = pbPatchMem;
-            pbPatchMem += 2 * 5;
+            pbPatchMem += 9;
 
             *pbPatchMem++ = 0xff; /* jmp qword [$+8 wrt RIP] */
             *pbPatchMem++ = 0x25;
@@ -467,15 +467,10 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
             *(uint64_t *)pbPatchMem = uAddr;
             pbPatchMem += sizeof(uint64_t);
 
-            /* Create two pushes now which will put the return address onto the stack. */
+            /* Push the return address onto the stack. */
             uintptr_t uAddrReturn = (uintptr_t)pbPatchMem;
-            *pbPatchMemPush++ = 0x68; /* push imm32 */
-            *(uint32_t *)pbPatchMemPush = (uint32_t)(uAddrReturn >> 32);
-            pbPatchMemPush   += sizeof(uint32_t);
-
-            *pbPatchMemPush++ = 0x68; /* push imm32 */
-            *(uint32_t *)pbPatchMemPush = (uint32_t)uAddrReturn;
-            pbPatchMemPush   += sizeof(uint32_t);
+            *pbPatchMemPush++ = 0x68; /* push imm64 */
+            *(uint64_t *)pbPatchMemPush = uAddrReturn;
         }
         else
         {
