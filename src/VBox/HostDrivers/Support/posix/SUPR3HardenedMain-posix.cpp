@@ -368,10 +368,10 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
     }
 
     /*
-     * Each relative call requires extra bytes as it is converted to a push imm64
+     * Each relative call requires extra bytes as it is converted to four push imm16
      * + a jmp qword [$+8 wrt RIP] to avoid clobbering registers.
      */
-    cbPatchMem += cRelCalls * RT_ALIGN_32(9 + 6 + 8, 8);
+    cbPatchMem += cRelCalls * RT_ALIGN_32(4 * 4 + 6 + 8, 8);
     cbPatchMem += 14; /* jmp qword [$+8 wrt RIP] + 8 byte address to jump to. */
     cbPatchMem = RT_ALIGN_32(cbPatchMem, 8);
 
@@ -456,9 +456,9 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
             /* Convert to absolute jump. */
             uintptr_t uAddr = (uintptr_t)&pbTarget[offInsn + cbInstr] + (intptr_t)Dis.Param1.uValue;
 
-            /* Skip the initial push instructions till the return address is known. */
+            /* Skip the push instructions till the return address is known. */
             uint8_t *pbPatchMemPush = pbPatchMem;
-            pbPatchMem += 9;
+            pbPatchMem += 4 * 4;
 
             *pbPatchMem++ = 0xff; /* jmp qword [$+8 wrt RIP] */
             *pbPatchMem++ = 0x25;
@@ -467,10 +467,22 @@ static int supR3HardenedMainPosixHookOne(const char *pszSymbol, PFNRT pfnHook, P
             *(uint64_t *)pbPatchMem = uAddr;
             pbPatchMem += sizeof(uint64_t);
 
-            /* Push the return address onto the stack. */
-            uintptr_t uAddrReturn = (uintptr_t)pbPatchMem;
-            *pbPatchMemPush++ = 0x68; /* push imm64 */
-            *(uint64_t *)pbPatchMemPush = uAddrReturn;
+            /* Push the return address onto stack. Difficult on amd64 without clobbering registers... */
+            *pbPatchMemPush++ = 0x66; /* operand size 64-bit => 16-bit */
+            *pbPatchMemPush++ = 0x68; /* push imm16 */
+            *(uint16_t *)pbPatchMemPush = (uAddrReturn >> 48) & 0xffff;
+            pbPatchMemPush += sizeof(uint16_t);
+            *pbPatchMemPush++ = 0x66; /* operand size 64-bit => 16-bit */
+            *pbPatchMemPush++ = 0x68; /* push imm16 */
+            *(uint16_t *)pbPatchMemPush = (uAddrReturn >> 32) & 0xffff;
+            pbPatchMemPush += sizeof(uint16_t);
+            *pbPatchMemPush++ = 0x66; /* operand size 64-bit => 16-bit */
+            *pbPatchMemPush++ = 0x68; /* push imm16 */
+            *(uint16_t *)pbPatchMemPush = (uAddrReturn >> 16) & 0xffff;
+            pbPatchMemPush += sizeof(uint16_t);
+            *pbPatchMemPush++ = 0x66; /* operand size 64-bit => 16-bit */
+            *pbPatchMemPush++ = 0x68; /* push imm16 */
+            *(uint16_t *)pbPatchMemPush =  uAddrReturn        & 0xffff;
         }
         else
         {
