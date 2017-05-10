@@ -1041,6 +1041,7 @@ DECLHIDDEN(void) suplibHardenedPrintFV(const char *pszFormat, va_list va)
                             break;
                         case 'X':
                             fFlags |= RTSTR_F_CAPITAL;
+                            /* fall thru */
                         case 'x':
                             uBase = 16;
                             break;
