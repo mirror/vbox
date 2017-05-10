@@ -2444,7 +2444,7 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
         && uVector     == X86_XCPT_PF)
     {
         TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
-        Assert(pVCpu->hm.s.Event.GCPtrFaultAddress == CPUMGetGuestCR2(pVCpu));
+        AssertRelease(pVCpu->hm.s.Event.GCPtrFaultAddress == CPUMGetGuestCR2(pVCpu));
     }
     else if (uVectorType == SVM_EVENT_SOFTWARE_INT)
     {
