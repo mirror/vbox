@@ -643,6 +643,7 @@ VirtualBox_SOURCES = \
 	src/globals/VBoxGlobal.cpp \
 	src/hostnetwork/UIHostNetworkDetailsDialog.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
+	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumEnumerator.cpp \
