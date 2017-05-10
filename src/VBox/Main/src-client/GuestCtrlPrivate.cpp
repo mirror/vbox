@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -715,6 +715,21 @@ int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
     return registerWaitEvent(uSessionID, uObjectID, eventTypesEmpty, ppEvent);
 }
 
+/**
+ * Registers (creates) a new wait event based on a given session and object ID.
+ *
+ * From those IDs an unique context ID (CID) will be built, which only can be
+ * around once at a time.
+ *
+ * @returns IPRT status code. VERR_ALREADY_EXISTS if an event with the given session
+ *          and object ID already has been registered.
+ *
+ * @param   uSessionID              Session ID to register wait event for.
+ * @param   uObjectID               Object ID to register wait event for.
+ * @param   lstEvents               List of events to register the wait event for.
+ * @param   ppEvent                 Pointer to registered (created) wait event on success.
+ *                                  Must be destroyed with unregisterWaitEvent().
+ */
 int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
                                  const GuestEventTypes &lstEvents,
                                  GuestWaitEvent **ppEvent)
@@ -741,16 +756,34 @@ int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
             for (GuestEventTypes::const_iterator itEvents = lstEvents.begin();
                  itEvents != lstEvents.end(); ++itEvents)
             {
-                mWaitEventGroups[(*itEvents)].insert(
-                   std::pair<uint32_t, GuestWaitEvent*>(uContextID, pEvent));
-                /** @todo Check for key collision. */
+                /* Check if the event group already has an event with the same
+                 * context ID in it (collision). */
+                GuestWaitEvents eventGroup = mWaitEventGroups[(*itEvents)];
+                if (eventGroup.find(uContextID) == eventGroup.end())
+                {
+                    /* No, insert. */
+                    mWaitEventGroups[(*itEvents)].insert(std::pair<uint32_t, GuestWaitEvent *>(uContextID, pEvent));
+                }
+                else
+                {
+                    rc = VERR_ALREADY_EXISTS;
+                    break;
+                }
             }
 
-            /* Register event in regular event list. */
-            /** @todo Check for key collisions. */
-            mWaitEvents[uContextID] = pEvent;
+            if (RT_SUCCESS(rc))
+            {
+                /* Register event in regular event list. */
+                if (mWaitEvents.find(uContextID) == mWaitEvents.end())
+                {
+                    mWaitEvents[uContextID] = pEvent;
+                }
+                else
+                    rc  = VERR_ALREADY_EXISTS;
+            }
 
-            *ppEvent = pEvent;
+            if (RT_SUCCESS(rc))
+                *ppEvent = pEvent;
         }
         catch(std::bad_alloc &)
         {
@@ -859,57 +892,91 @@ int GuestBase::signalWaitEventInternalEx(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     /* pPayload is optional. */
 
-    int rc2;
-    GuestWaitEvents::iterator itEvent = mWaitEvents.find(pCbCtx->uContextID);
-    if (itEvent != mWaitEvents.end())
+    int rc2 = RTCritSectEnter(&mWaitEventCritSect);
+    if (RT_SUCCESS(rc2))
     {
-        LogFlowThisFunc(("Signalling event=%p (CID %RU32, rc=%Rrc, guestRc=%Rrc, pPayload=%p) ...\n",
-                         itEvent->second, itEvent->first, rc, guestRc, pPayload));
-        GuestWaitEvent *pEvent = itEvent->second;
-        AssertPtr(pEvent);
-        rc2 = pEvent->SignalInternal(rc, guestRc, pPayload);
+        GuestWaitEvents::iterator itEvent = mWaitEvents.find(pCbCtx->uContextID);
+        if (itEvent != mWaitEvents.end())
+        {
+            LogFlowThisFunc(("Signalling event=%p (CID %RU32, rc=%Rrc, guestRc=%Rrc, pPayload=%p) ...\n",
+                             itEvent->second, itEvent->first, rc, guestRc, pPayload));
+            GuestWaitEvent *pEvent = itEvent->second;
+            AssertPtr(pEvent);
+            rc2 = pEvent->SignalInternal(rc, guestRc, pPayload);
+        }
+        else
+            rc2 = VERR_NOT_FOUND;
+
+        int rc3 = RTCritSectLeave(&mWaitEventCritSect);
+        if (RT_SUCCESS(rc2))
+            rc2 = rc3;
     }
-    else
-        rc2 = VERR_NOT_FOUND;
 
     return rc2;
 }
 
-void GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
+/**
+ * Unregisters (deletes) a wait event.
+ *
+ * After successful unregistration the event will not be valid anymore.
+ *
+ * @returns IPRT status code.
+ * @param   pEvent                  Event to unregister (delete).
+ */
+int GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
 {
     if (!pEvent) /* Nothing to unregister. */
-        return;
+        return VINF_SUCCESS;
 
     int rc = RTCritSectEnter(&mWaitEventCritSect);
     if (RT_SUCCESS(rc))
     {
         LogFlowThisFunc(("pEvent=%p\n", pEvent));
 
-        const GuestEventTypes lstTypes = pEvent->Types();
-        for (GuestEventTypes::const_iterator itEvents = lstTypes.begin();
-             itEvents != lstTypes.end(); ++itEvents)
+        try
         {
-            /** @todo Slow O(n) lookup. Optimize this. */
-            GuestWaitEvents::iterator itCurEvent = mWaitEventGroups[(*itEvents)].begin();
-            while (itCurEvent != mWaitEventGroups[(*itEvents)].end())
+            /* Remove the event from all event type groups. */
+            const GuestEventTypes lstTypes = pEvent->Types();
+            for (GuestEventTypes::const_iterator itType = lstTypes.begin();
+                 itType != lstTypes.end(); ++itType)
             {
-                if (itCurEvent->second == pEvent)
+                /** @todo Slow O(n) lookup. Optimize this. */
+                GuestWaitEvents::iterator itCurEvent = mWaitEventGroups[(*itType)].begin();
+                while (itCurEvent != mWaitEventGroups[(*itType)].end())
                 {
-                    mWaitEventGroups[(*itEvents)].erase(itCurEvent++);
-                    break;
+                    if (itCurEvent->second == pEvent)
+                    {
+                        mWaitEventGroups[(*itType)].erase(itCurEvent++);
+                        break;
+                    }
+                    else
+                        ++itCurEvent;
                 }
-                else
-                    ++itCurEvent;
             }
-        }
 
-        delete pEvent;
-        pEvent = NULL;
+            /* Remove the event from the general event list as well. */
+            GuestWaitEvents::iterator itEvent = mWaitEvents.find(pEvent->ContextID());
+
+            Assert(itEvent != mWaitEvents.end());
+            Assert(itEvent->second == pEvent);
+
+            mWaitEvents.erase(itEvent);
+
+            delete pEvent;
+            pEvent = NULL;
+        }
+        catch (const std::exception &ex)
+        {
+            NOREF(ex);
+            AssertFailedStmt(rc = VERR_NOT_FOUND);
+        }
 
         int rc2 = RTCritSectLeave(&mWaitEventCritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+    return rc;
 }
 
 /**
