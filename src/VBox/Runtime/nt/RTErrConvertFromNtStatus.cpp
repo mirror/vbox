@@ -32,6 +32,7 @@
 typedef long NTSTATUS;                  /** @todo figure out which headers to include to get this one typedef... */
 
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/assert.h>
 
 

@@ -34,8 +34,8 @@
 #undef RT_MAX
 
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
 
 
 RTDECL(int)  RTErrConvertFromOS2(unsigned uNativeCode)

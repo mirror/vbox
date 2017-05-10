@@ -30,9 +30,9 @@
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
 
-#include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
+#include <iprt/assert.h>
 
 
 RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)

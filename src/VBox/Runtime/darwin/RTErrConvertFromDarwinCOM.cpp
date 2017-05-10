@@ -31,6 +31,7 @@
 #include <IOKit/IOCFPlugIn.h>
 
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/assert.h>
 
 
