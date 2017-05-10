@@ -434,9 +434,7 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
     }
 
     /* unknown error. */
-#ifndef DEBUG_dmik
-    AssertMsgFailed(("Unhandled error %u\n", uNativeCode));
-#endif
+    AssertLogRelMsgFailed(("Unhandled error %u\n", uNativeCode));
     return VERR_UNRESOLVED_ERROR;
 }
 

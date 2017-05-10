@@ -228,6 +228,7 @@ DECLHIDDEN(int) rtSocketResolverError(void)
             return VERR_TRY_AGAIN;
 
         default:
+            AssertLogRelMsgFailed(("Unhandled error %u\n", h_errno));
             return VERR_UNRESOLVED_ERROR;
     }
 #endif

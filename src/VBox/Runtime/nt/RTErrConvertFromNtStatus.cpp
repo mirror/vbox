@@ -82,7 +82,7 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
     }
 
     /* unknown error. */
-    AssertMsgFailed(("Unhandled error %#lx (%lu)\n", lNativeCode, lNativeCode));
+    AssertLogRelMsgFailed(("Unhandled error %#lx (%lu)\n", lNativeCode, lNativeCode));
     return VERR_UNRESOLVED_ERROR;
 }
 

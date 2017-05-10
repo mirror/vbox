@@ -171,7 +171,7 @@ RTDECL(int)  RTErrConvertFromOS2(unsigned uNativeCode)
     }
 
     /* unknown error. */
-    AssertMsgFailed(("Unhandled error %u\n", uNativeCode));
+    AssertLogRelMsgFailed(("Unhandled error %u\n", uNativeCode));
     return VERR_UNRESOLVED_ERROR;
 }
 

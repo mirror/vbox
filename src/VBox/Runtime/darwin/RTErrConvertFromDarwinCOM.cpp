@@ -57,7 +57,7 @@ RTDECL(int) RTErrConvertFromDarwinCOM(int32_t iNativeCode)
     }
 
     /* unknown error. */
-    AssertMsgFailed(("Unhandled error %#x\n", iNativeCode));
+    AssertLogRelMsgFailed(("Unhandled error %#x\n", iNativeCode));
     return VERR_UNRESOLVED_ERROR;
 }
 
