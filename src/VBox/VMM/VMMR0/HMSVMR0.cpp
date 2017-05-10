@@ -4042,9 +4042,9 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         IEMXCPTRAISE     enmRaise;
         IEMXCPTRAISEINFO fRaiseInfo;
         bool const       fExitIsHwXcpt  = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31;
+        uint8_t const    uIdtVector     = pVmcb->ctrl.ExitIntInfo.n.u8Vector;
         if (fExitIsHwXcpt)
         {
-            uint8_t  const uIdtVector       = pVmcb->ctrl.ExitIntInfo.n.u8Vector;
             uint8_t  const uExitVector      = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
             uint32_t const fIdtVectorFlags  = hmR0SvmGetIemXcptFlags(&pVmcb->ctrl.ExitIntInfo);
             uint32_t const fExitVectorFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
@@ -4068,6 +4068,8 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 /* For software interrupts, we shall re-execute the instruction. */
                 if (!(fRaiseInfo & IEMXCPTRAISEINFO_SOFT_INT_XCPT))
                 {
+                    RTGCUINTPTR GCPtrFaultAddress = 0;
+
                     /* Determine a vectoring #PF condition, see comment in hmR0SvmExitXcptPF(). */
                     if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
                     {
@@ -4075,15 +4077,21 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                         /* If we are re-injecting the NMI, clear NMI blocking. */
                         if (fRaiseInfo & IEMXCPTRAISEINFO_NMI_XCPT)
                             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                    } else if (uIdtVector == X86_XCPT_PF) {
+                        /* If the previous exception was a #PF, we need to recover the CR2 value.
+                         * This can't happen with shadow paging.
+                         */
+                        GCPtrFaultAddress = pCtx->cr2;
                     }
 
                     Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
-                    hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, 0 /* GCPtrFaultAddress */);
+                    hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, GCPtrFaultAddress);
 
+                    /** @todo r=michaln: The comment makes no sense with nested paging on! */
                     /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF. See hmR0SvmExitXcptPF(). */
-                    Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32\n", pVmcb->ctrl.ExitIntInfo.u,
-                          !!pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid, pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
+                    Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32 GCPtrFaultAddress=%#RX64\n", pVmcb->ctrl.ExitIntInfo.u,
+                          !!pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid, pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode, GCPtrFaultAddress));
                 }
                 break;
             }
