@@ -434,7 +434,12 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
     }
 
     /* unknown error. */
+#ifndef IN_SUP_HARDENED_R3
     AssertLogRelMsgFailed(("Unhandled error %u\n", uNativeCode));
+#else
+    /* hardened main has no LogRel */
+    AssertMsgFailed(("Unhandled error %u\n", uNativeCode));
+#endif
     return VERR_UNRESOLVED_ERROR;
 }
 

@@ -83,7 +83,12 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
     }
 
     /* unknown error. */
+#ifndef IN_SUP_HARDENED_R3
     AssertLogRelMsgFailed(("Unhandled error %#lx (%lu)\n", lNativeCode, lNativeCode));
+#else
+    /* hardened main has no LogRel */
+    AssertMsgFailed(("Unhandled error %#lx (%lu)\n", lNativeCode, lNativeCode));
+#endif
     return VERR_UNRESOLVED_ERROR;
 }
 
