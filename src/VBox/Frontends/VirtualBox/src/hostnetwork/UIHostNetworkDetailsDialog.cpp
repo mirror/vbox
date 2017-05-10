@@ -64,29 +64,6 @@ void UIHostNetworkDetailsDialog::setData(const UIDataHostNetwork &data)
 {
     /* Save old data: */
     m_oldData = data;
-
-    /* Invent default old values if current old values are invalid: */
-    const quint32 uAddr = ipv4FromQStringToQuint32(m_oldData.m_interface.m_strAddress);
-    const quint32 uMask = ipv4FromQStringToQuint32(m_oldData.m_interface.m_strMask);
-    const quint32 uProp = uAddr & uMask;
-    const QString strMask = ipv4FromQuint32ToQString(uMask);
-    const QString strProp = ipv4FromQuint32ToQString(uProp);
-//    printf("Proposal is = %s x %s\n",
-//           strProp.toUtf8().constData(),
-//           strMask.toUtf8().constData());
-    if (   m_oldData.m_dhcpserver.m_strAddress.isEmpty()
-        || m_oldData.m_dhcpserver.m_strAddress == "0.0.0.0")
-        m_oldData.m_dhcpserver.m_strAddress = strProp;
-    if (   m_oldData.m_dhcpserver.m_strMask.isEmpty()
-        || m_oldData.m_dhcpserver.m_strMask == "0.0.0.0")
-        m_oldData.m_dhcpserver.m_strMask = strMask;
-    if (   m_oldData.m_dhcpserver.m_strLowerAddress.isEmpty()
-        || m_oldData.m_dhcpserver.m_strLowerAddress == "0.0.0.0")
-        m_oldData.m_dhcpserver.m_strLowerAddress = strProp;
-    if (   m_oldData.m_dhcpserver.m_strUpperAddress.isEmpty()
-        || m_oldData.m_dhcpserver.m_strUpperAddress == "0.0.0.0")
-        m_oldData.m_dhcpserver.m_strUpperAddress = strProp;
-
     /* Copy old data to new one: */
     m_newData = m_oldData;
 
@@ -758,6 +735,26 @@ void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
     m_pEditorDHCPMask->setText(m_newData.m_dhcpserver.m_strMask);
     m_pEditorDHCPLowerAddress->setText(m_newData.m_dhcpserver.m_strLowerAddress);
     m_pEditorDHCPUpperAddress->setText(m_newData.m_dhcpserver.m_strUpperAddress);
+
+    /* Invent default values if server was enabled
+     * but at least one current value is invalid: */
+    if (   fIsDHCPServerEnabled
+        && (   m_pEditorDHCPAddress->text().isEmpty()
+            || m_pEditorDHCPAddress->text() == "0.0.0.0"
+            || m_pEditorDHCPMask->text().isEmpty()
+            || m_pEditorDHCPMask->text() == "0.0.0.0"
+            || m_pEditorDHCPLowerAddress->text().isEmpty()
+            || m_pEditorDHCPLowerAddress->text() == "0.0.0.0"
+            || m_pEditorDHCPUpperAddress->text().isEmpty()
+            || m_pEditorDHCPUpperAddress->text() == "0.0.0.0"))
+    {
+        const QStringList &proposal = makeDhcpServerProposal(m_oldData.m_interface.m_strAddress,
+                                                             m_oldData.m_interface.m_strMask);
+        m_pEditorDHCPAddress->setText(proposal.at(0));
+        m_pEditorDHCPMask->setText(proposal.at(1));
+        m_pEditorDHCPLowerAddress->setText(proposal.at(2));
+        m_pEditorDHCPUpperAddress->setText(proposal.at(3));
+    }
 }
 
 void UIHostNetworkDetailsDialog::revalidate(QWidget *pWidget /* = 0 */)
