@@ -915,8 +915,8 @@ class TestVmManager(object):
                          sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
-        oTestVm = TestVm(oSet, 'tst-win8', sHd = '4.2/win8-32/t-win8.vdi',
-                         sKind = 'Windows8', acCpusSup = range(1, 33), fIoApic = True);
+        oTestVm = TestVm(oSet, 'tst-win8-64', sHd = '4.2/win8-64/t-win8-64.vdi',
+                         sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
         return oSet;
@@ -1006,8 +1006,8 @@ class TestVmManager(object):
                          sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
-        oTestVm = TestVm(oSet, 'tst-win8', sHd = '4.2/win8-32/t-win8.vdi',
-                         sKind = 'Windows8', acCpusSup = range(1, 33), fIoApic = True);
+        oTestVm = TestVm(oSet, 'tst-win8-64', sHd = '4.2/win8-64/t-win8-64.vdi',
+                         sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
         return oSet;
