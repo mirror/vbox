@@ -275,50 +275,56 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
         /*
          * Parse and copy the string over.
          */
-        RTUNICP Cp;
+        RTUNICP uc;
         if ((fFlags & RTGETOPTARGV_CNV_QUOTE_MASK) == RTGETOPTARGV_CNV_QUOTE_BOURNE_SH)
         {
             /*
              * Bourne shell style.
              */
-            RTUNICP CpQuote = 0;
+            RTUNICP ucQuote = 0;
             for (;;)
             {
-                rc = RTStrGetCpEx(&pszSrc, &Cp);
-                if (RT_FAILURE(rc) || !Cp)
+                rc = RTStrGetCpEx(&pszSrc, &uc);
+                if (RT_FAILURE(rc) || !uc)
                     break;
-                if (!CpQuote)
+                if (!ucQuote)
                 {
-                    if (Cp == '"' || Cp == '\'')
-                        CpQuote = Cp;
-                    else if (rtGetOptIsCpInSet(Cp, pszSeparators, cchSeparators))
+                    if (uc == '"' || uc == '\'')
+                        ucQuote = uc;
+                    else if (rtGetOptIsCpInSet(uc, pszSeparators, cchSeparators))
                         break;
-                    else if (Cp != '\\')
-                        pszDst = RTStrPutCp(pszDst, Cp);
+                    else if (uc != '\\')
+                        pszDst = RTStrPutCp(pszDst, uc);
                     else
                     {
                         /* escaped char */
-                        rc = RTStrGetCpEx(&pszSrc, &Cp);
-                        if (RT_FAILURE(rc) || !Cp)
+                        rc = RTStrGetCpEx(&pszSrc, &uc);
+                        if (RT_FAILURE(rc) || !uc)
                             break;
-                        pszDst = RTStrPutCp(pszDst, Cp);
+                        pszDst = RTStrPutCp(pszDst, uc);
                     }
                 }
-                else if (CpQuote != Cp)
+                else if (ucQuote != uc)
                 {
-                    if (Cp != '\\' || CpQuote == '\'')
-                        pszDst = RTStrPutCp(pszDst, Cp);
+                    if (uc != '\\' || ucQuote == '\'')
+                        pszDst = RTStrPutCp(pszDst, uc);
                     else
                     {
                         /* escaped char */
-                        rc = RTStrGetCpEx(&pszSrc, &Cp);
-                        if (RT_FAILURE(rc) || !Cp)
+                        rc = RTStrGetCpEx(&pszSrc, &uc);
+                        if (RT_FAILURE(rc) || !uc)
                             break;
-                        pszDst = RTStrPutCp(pszDst, Cp);
+                        if (   uc != '"'
+                            && uc != '\\'
+                            && uc != '`'
+                            && uc != '$'
+                            && uc != '\n')
+                            pszDst = RTStrPutCp(pszDst, ucQuote);
+                        pszDst = RTStrPutCp(pszDst, uc);
                     }
                 }
                 else
-                    CpQuote = 0;
+                    ucQuote = 0;
             }
         }
         else
@@ -330,10 +336,10 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
             bool fInQuote = false;
             for (;;)
             {
-                rc = RTStrGetCpEx(&pszSrc, &Cp);
-                if (RT_FAILURE(rc) || !Cp)
+                rc = RTStrGetCpEx(&pszSrc, &uc);
+                if (RT_FAILURE(rc) || !uc)
                     break;
-                if (Cp == '"')
+                if (uc == '"')
                 {
                     /* Two double quotes insides a quoted string in an escape
                        sequence and we output one double quote char.
@@ -348,10 +354,10 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
                         pszSrc++;
                     }
                 }
-                else if (!fInQuote && rtGetOptIsCpInSet(Cp, pszSeparators, cchSeparators))
+                else if (!fInQuote && rtGetOptIsCpInSet(uc, pszSeparators, cchSeparators))
                     break;
-                else if (Cp != '\\')
-                    pszDst = RTStrPutCp(pszDst, Cp);
+                else if (uc != '\\')
+                    pszDst = RTStrPutCp(pszDst, uc);
                 else
                 {
                     /* A backslash sequence is only relevant if followed by
@@ -386,7 +392,7 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
         }
 
         *pszDst++ = '\0';
-        if (RT_FAILURE(rc) || !Cp)
+        if (RT_FAILURE(rc) || !uc)
             break;
     }
 
