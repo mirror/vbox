@@ -31,6 +31,7 @@
 # include "UIIconPool.h"
 # include "UIHostNetworkDetailsDialog.h"
 # include "UIHostNetworkManager.h"
+# include "UIHostNetworkUtils.h"
 # include "UIMessageCenter.h"
 # include "UIToolBar.h"
 # ifdef VBOX_WS_MAC
@@ -652,6 +653,18 @@ void UIHostNetworkManager::sltHandleItemChange(QTreeWidgetItem *pItem)
                 /* Save whether DHCP server is enabled: */
                 if (comServer.isOk())
                     comServer.SetEnabled(!oldData.m_dhcpserver.m_fEnabled);
+                /* Save default DHCP server configuration if current is invalid: */
+                if (   comServer.isOk()
+                    && !oldData.m_dhcpserver.m_fEnabled
+                    && (   oldData.m_dhcpserver.m_strAddress == "0.0.0.0"
+                        || oldData.m_dhcpserver.m_strMask == "0.0.0.0"
+                        || oldData.m_dhcpserver.m_strLowerAddress == "0.0.0.0"
+                        || oldData.m_dhcpserver.m_strUpperAddress == "0.0.0.0"))
+                {
+                    const QStringList &proposal = makeDhcpServerProposal(oldData.m_interface.m_strAddress,
+                                                                         oldData.m_interface.m_strMask);
+                    comServer.SetConfiguration(proposal.at(0), proposal.at(1), proposal.at(2), proposal.at(3));
+                }
 
                 /* Show error message if necessary: */
                 if (!comServer.isOk())
