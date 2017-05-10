@@ -1429,7 +1429,7 @@ class UsbGadget(object):
 
             if self.oUtsSession is not None:
                 fDone = self.oUtsSession.waitForTask(30*1000);
-                print 'connect: waitForTask -> %s, result %s' % (fDone, self.oUtsSession.getResult());
+                reporter.log('connect: waitForTask -> %s, result %s' % (fDone, self.oUtsSession.getResult()));
                 if fDone is True and self.oUtsSession.isSuccess():
                     # Parse the reply.
                     _, _, abPayload = self.oUtsSession.getLastReply();
