@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIHostNetworkDetailsDialog_h__
-#define __UIHostNetworkDetailsDialog_h__
+#ifndef ___UIHostNetworkDetailsDialog_h___
+#define ___UIHostNetworkDetailsDialog_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -244,14 +244,6 @@ private:
         void notify();
     /** @} */
 
-    /** @name Helpers.
-     * @{ */
-        /** Converts IPv4 address from QString to quint32. */
-        static quint32 ipv4FromQStringToQuint32(const QString &strAddress);
-        /** Converts IPv4 address from quint32 to QString. */
-        static QString ipv4FromQuint32ToQString(quint32 uAddress);
-    /** @} */
-
     /** @name General variables.
      * @{ */
         /** Holds the old data copy. */
@@ -336,5 +328,5 @@ private:
     /** @} */
 };
 
-#endif /* __UIHostNetworkDetailsDialog_h__ */
+#endif /* !___UIHostNetworkDetailsDialog_h___ */
 

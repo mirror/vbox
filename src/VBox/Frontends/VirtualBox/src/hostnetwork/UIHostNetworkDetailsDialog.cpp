@@ -31,6 +31,7 @@
 # include "QILineEdit.h"
 # include "QITabWidget.h"
 # include "UIHostNetworkDetailsDialog.h"
+# include "UIHostNetworkUtils.h"
 # include "UIIconPool.h"
 
 /* Other VBox includes: */
@@ -888,33 +889,5 @@ void UIHostNetworkDetailsDialog::notify()
 //               m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData());
 
     emit sigDataChanged(m_oldData != m_newData);
-}
-
-/* static */
-quint32 UIHostNetworkDetailsDialog::ipv4FromQStringToQuint32(const QString &strAddress)
-{
-    quint32 uAddress = 0;
-    foreach (const QString &strPart, strAddress.split('.'))
-    {
-        uAddress = uAddress << 8;
-        bool fOk = false;
-        uint uPart = strPart.toUInt(&fOk);
-        if (fOk)
-            uAddress += uPart;
-    }
-    return uAddress;
-}
-
-/* static */
-QString UIHostNetworkDetailsDialog::ipv4FromQuint32ToQString(quint32 uAddress)
-{
-    QStringList address;
-    while (uAddress)
-    {
-        uint uPart = uAddress & 0xFF;
-        address.prepend(QString::number(uPart));
-        uAddress = uAddress >> 8;
-    }
-    return address.join('.');
 }
 
