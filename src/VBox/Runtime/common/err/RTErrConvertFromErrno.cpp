@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/errno.h>
+#include <iprt/log.h>
 
 
 RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
