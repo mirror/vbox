@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2007-2016 Oracle Corporation
+; Copyright (C) 2007-2017 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -43,9 +43,10 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode, BS3_PBC_NEAR ; won't need this outside the s
         push    xBP
         mov     xBP, xSP
         push    xAX
+        push    xCX
+        push    xDX
+TONLY16 push    xBX
 %if BS3_MODE_IS_64BIT_CODE(TMPL_MODE)
-        push    rcx
-        push    rdx
         push    r8
         push    r9
 %endif
@@ -251,9 +252,10 @@ BS3_PROC_BEGIN_MODE Bs3EnteredMode, BS3_PBC_NEAR ; won't need this outside the s
 %if TMPL_BITS == 64
         pop     r9
         pop     r8
-        pop     rdx
-        pop     rcx
 %endif
+TONLY16 pop     xBX
+        pop     xDX
+        pop     xCX
         pop     xAX
 %ifdef BS3_STRICT
         cmp     xBP, xSP
