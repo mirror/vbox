@@ -2073,14 +2073,12 @@ HRESULT Console::setUseHostClipboard(BOOL aUseHostClipboard)
 
 HRESULT Console::powerUp(ComPtr<IProgress> &aProgress)
 {
-    i_powerUp(aProgress.asOutParam(), false /* aPaused */);
-    return S_OK;
+    return i_powerUp(aProgress.asOutParam(), false /* aPaused */);
 }
 
 HRESULT Console::powerUpPaused(ComPtr<IProgress> &aProgress)
 {
-    i_powerUp(aProgress.asOutParam(), true /* aPaused */);
-    return S_OK;
+    return i_powerUp(aProgress.asOutParam(), true /* aPaused */);
 }
 
 HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
