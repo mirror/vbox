@@ -1523,7 +1523,21 @@ ifndef VBOX_VCC_TOOL
  VBOX_VCC_TOOL := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
 endif
 
+#
+# Decide which Visual C++ compiler version we're using for newer stuff.
+#
+ifndef VBOX_NEWER_VCC_TOOL_STEM
+ VBOX_NEWER_VCC_TOOL_STEM := VCC120
+else ifn1of ($(VBOX_NEWER_VCC_TOOL_STEM), VCC120)
+ $(error VBox: VBOX_NEWER_VCC_TOOL_STEM='$(VBOX_NEWER_VCC_TOOL_STEM)' is not supported, only VCC120 is)
+endif
+ifndef VBOX_NEWER_VCC_TOOL
+ VBOX_NEWER_VCC_TOOL := $(VBOX_NEWER_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
+endif
 
+#
+# Default too nonsense.
+#
 ## @todo Remove the default tool crap here!
 TOOL = $(VBOX_GCC_TOOL)
 TOOL.win.x86 = $(VBOX_VCC_TOOL_STEM)X86
@@ -2862,12 +2876,17 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  #    -wd4350: behavior change: 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc(const std::_Wrap_alloc<std::allocator<char>> &) throw()' called instead of 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc<std::_Wrap_alloc<std::allocator<char>>>(_Other &) throw()'
  #    -wd4435: iprt/cpp/xml.h(185) : warning C4435: 'xml::Input' : Object layout under /vd2 will change due to virtual base 'xml::Stream'
  VBOX_VCC_WARN_ALL += -wd4350 -wd4435
+ VBOX_VCC120_WARN_ALL ?= $(VBOX_VCC_WARN_ALL)
+endif
+VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+ifndef VBOX_NEWER_VCC_WARN_ALL
+ if "$(VBOX_VCC_TOOL_STEM)" < "VCC120"
+  VBOX_NEWER_VCC_WARN_ALL := $(VBOX_VCC_WARN_ALL) -wd4350 -wd4435
+ else
+  VBOX_NEWER_VCC_WARN_ALL := $(VBOX_VCC_WARN_ALL)
+ endif
 endif
 
-#ifndef VBOX_WITH_MASOCHISTIC_WARNINGS
-# VBOX_VCC_WARN_ALL +=
-#endif
-VBOX_VCC_WARN_ALL += -wd4242 -wd4244
 
 # Disable pedantic warnings for NP/NonPedantic templates.
 #      -wd4131: 'bi_flush' : uses old-style declarator
@@ -2887,6 +2906,7 @@ VBOX_VCC_WARN_ALL += -wd4242 -wd4244
 #      -wd4295: 'vendor_string' : array is too small to include a terminating null character
 VBOX_VCC_NON_PEDANTIC = -wd4131 -wd4255 -wd4668 -wd4100 -wd4189 -wd4132 -wd4152 -wd4702 -wd4057 -wd4296 -wd4389 -wd4018 -wd4245 \
 	-wd4267 -wd4295
+VBOX_NEWER_VCC_NON_PEDANTIC = $(VBOX_VCC_NON_PEDANTIC)
 
 ifeq ($(KBUILD_TARGET),win)
  VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -wd4100
@@ -6479,6 +6499,24 @@ ifeq ($(KBUILD_TARGET),win)
 else ifndef VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE
  TEMPLATE_VBoxGuestR3Dll_CFLAGS      += $(VBOX_GCC_WERR)
  TEMPLATE_VBoxGuestR3Dll_CXXFLAGS    += $(VBOX_GCC_WERR)
+endif
+
+#
+# Template for building normal R3 (dynamic) libraries for the guest additions with Visual C++ 2013 or later, strict.
+#
+TEMPLATE_NewerVccVBoxGuestR3Dll          = VBoxGuestR3Dll with the newer Visual C++ version (2013 or later).
+TEMPLATE_NewerVccVBoxGuestR3Dll_EXTENDS  = VBoxGuestR3Dll
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86    = $(VBOX_NEWER_VCC_TOOL_STEM)X86
+ TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64  = $(VBOX_NEWER_VCC_TOOL_STEM)AMD64
+ TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS        = \
+ 	$(filter-out $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR), $(TEMPLATE_VBoxGuestR3Dll_CXXFLAGS)) \
+	$(VBOX_NEWER_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ TEMPLATE_NewerVccVBoxGuestR3Dll_CFLAGS          = $(TEMPLATE_NewerVccVBoxGuestR3Dll_CXXFLAGS)
+ TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.x86        = \
+ 	$(subst $(PATH_TOOL_$(TEMPLATE_VBoxGuestR3Dll_TOOL.win.x86)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.x86)_LIB), $(TEMPLATE_VBoxGuestR3Dll_LIBS.x86))
+ TEMPLATE_NewerVccVBoxGuestR3Dll_LIBS.amd64      = \
+ 	$(subst $(PATH_TOOL_$(TEMPLATE_VBoxGuestR3Dll_TOOL.win.amd64)_LIB),$(PATH_TOOL_$(TEMPLATE_NewerVccVBoxGuestR3Dll_TOOL.win.amd64)_LIB), $(TEMPLATE_VBoxGuestR3Dll_LIBS.amd64))
 endif
 
 #
