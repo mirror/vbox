@@ -160,14 +160,17 @@ RTDECL(ssize_t) RTStrFormatU128(char *pszBuf, size_t cbBuf, PCRTUINT128U pu128, 
         fFlags |= RTSTR_F_SPECIAL;
     fFlags &= ~RTSTR_F_BIT_MASK;
 
-    char szTmp[64+32];
-    size_t cchFirst  = RTStrFormatNumber(szTmp, pu128->s.Hi, 16, 0, 0, fFlags | RTSTR_F_64BIT);
-    size_t cchSecond = RTStrFormatNumber(&szTmp[cchFirst], pu128->s.Lo, 16, 8, 0,
-                                         (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
-    int rc = RTStrCopy(pszBuf, cbBuf, szTmp);
-    if (RT_FAILURE(rc))
-        return rc;
-    return cchFirst + cchSecond;
+    char szTmp[64+32+32+32];
+    char *pszTmp = cbBuf >= sizeof(szTmp) ? pszBuf : szTmp;
+    size_t cchResult = RTStrFormatNumber(pszTmp, pu128->QWords.qw1, 16, 0, 0, fFlags | RTSTR_F_64BIT);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu128->QWords.qw0, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    if (pszTmp == pszBuf)
+        return cchResult;
+    int rc = RTStrCopy(pszBuf, cbBuf, pszTmp);
+    if (RT_SUCCESS(rc))
+        return cchResult;
+    return rc;
 }
 
 
@@ -181,7 +184,7 @@ RTDECL(ssize_t) RTStrFormatU256(char *pszBuf, size_t cbBuf, PCRTUINT256U pu256, 
 
     char szTmp[64+32+32+32];
     char *pszTmp = cbBuf >= sizeof(szTmp) ? pszBuf : szTmp;
-    size_t cchResult = RTStrFormatNumber(szTmp, pu256->QWords.qw3, 16, 0, 0, fFlags | RTSTR_F_64BIT);
+    size_t cchResult = RTStrFormatNumber(pszTmp, pu256->QWords.qw3, 16, 0, 0, fFlags | RTSTR_F_64BIT);
     cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu256->QWords.qw2, 16, 8, 0,
                                    (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
     cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu256->QWords.qw1, 16, 8, 0,
@@ -207,7 +210,7 @@ RTDECL(ssize_t) RTStrFormatU512(char *pszBuf, size_t cbBuf, PCRTUINT512U pu512, 
 
     char szTmp[64+32+32+32 + 32+32+32+32];
     char *pszTmp = cbBuf >= sizeof(szTmp) ? pszBuf : szTmp;
-    size_t cchResult = RTStrFormatNumber(szTmp, pu512->QWords.qw7, 16, 0, 0, fFlags | RTSTR_F_64BIT);
+    size_t cchResult = RTStrFormatNumber(pszTmp, pu512->QWords.qw7, 16, 0, 0, fFlags | RTSTR_F_64BIT);
     cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw6, 16, 8, 0,
                                    (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
     cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw5, 16, 8, 0,
