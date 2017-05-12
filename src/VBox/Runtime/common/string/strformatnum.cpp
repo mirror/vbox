@@ -171,6 +171,66 @@ RTDECL(ssize_t) RTStrFormatU128(char *pszBuf, size_t cbBuf, PCRTUINT128U pu128, 
 }
 
 
+RTDECL(ssize_t) RTStrFormatU256(char *pszBuf, size_t cbBuf, PCRTUINT256U pu256, unsigned int uiBase,
+                                signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
+{
+    NOREF(cchWidth); NOREF(cchPrecision);
+    if (uiBase != 16)
+        fFlags |= RTSTR_F_SPECIAL;
+    fFlags &= ~RTSTR_F_BIT_MASK;
+
+    char szTmp[64+32+32+32];
+    char *pszTmp = cbBuf >= sizeof(szTmp) ? pszBuf : szTmp;
+    size_t cchResult = RTStrFormatNumber(szTmp, pu256->QWords.qw3, 16, 0, 0, fFlags | RTSTR_F_64BIT);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu256->QWords.qw2, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu256->QWords.qw1, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu256->QWords.qw0, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    if (pszTmp == pszBuf)
+        return cchResult;
+    int rc = RTStrCopy(pszBuf, cbBuf, pszTmp);
+    if (RT_SUCCESS(rc))
+        return cchResult;
+    return rc;
+}
+
+
+RTDECL(ssize_t) RTStrFormatU512(char *pszBuf, size_t cbBuf, PCRTUINT512U pu512, unsigned int uiBase,
+                                signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
+{
+    NOREF(cchWidth); NOREF(cchPrecision);
+    if (uiBase != 16)
+        fFlags |= RTSTR_F_SPECIAL;
+    fFlags &= ~RTSTR_F_BIT_MASK;
+
+    char szTmp[64+32+32+32 + 32+32+32+32];
+    char *pszTmp = cbBuf >= sizeof(szTmp) ? pszBuf : szTmp;
+    size_t cchResult = RTStrFormatNumber(szTmp, pu512->QWords.qw7, 16, 0, 0, fFlags | RTSTR_F_64BIT);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw6, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw5, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw4, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw3, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw2, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw1, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    cchResult += RTStrFormatNumber(&pszTmp[cchResult], pu512->QWords.qw0, 16, 8, 0,
+                                   (fFlags | RTSTR_F_64BIT | RTSTR_F_ZEROPAD) & ~RTSTR_F_SPECIAL);
+    if (pszTmp == pszBuf)
+        return cchResult;
+    int rc = RTStrCopy(pszBuf, cbBuf, pszTmp);
+    if (RT_SUCCESS(rc))
+        return cchResult;
+    return rc;
+}
+
+
 RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80Value, signed int cchWidth,
                                  signed int cchPrecision, uint32_t fFlags)
 {

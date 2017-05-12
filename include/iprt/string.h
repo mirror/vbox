@@ -1602,9 +1602,46 @@ RTDECL(ssize_t) RTStrFormatU64(char *pszBuf, size_t cbBuf, uint64_t u64Value, un
  * @param   cchWidth        Width.
  * @param   cchPrecision    Precision.
  * @param   fFlags          Flags, RTSTR_F_XXX.
+ * @remarks The current implementation is limited to base 16 and doesn't do
+ *          width or precision and probably ignores few flags too.
  */
 RTDECL(ssize_t) RTStrFormatU128(char *pszBuf, size_t cbBuf, PCRTUINT128U pu128Value, unsigned int uiBase,
                                 signed int cchWidth, signed int cchPrecision, uint32_t fFlags);
+
+/**
+ * Formats an unsigned 256-bit number.
+ *
+ * @returns The length of the formatted number or VERR_BUFFER_OVERFLOW.
+ * @param   pszBuf          The output buffer.
+ * @param   cbBuf           The size of the output buffer.
+ * @param   pu256Value      The value to format.
+ * @param   uiBase          Number representation base.
+ * @param   cchWidth        Width.
+ * @param   cchPrecision    Precision.
+ * @param   fFlags          Flags, RTSTR_F_XXX.
+ * @remarks The current implementation is limited to base 16 and doesn't do
+ *          width or precision and probably ignores few flags too.
+ */
+RTDECL(ssize_t) RTStrFormatU256(char *pszBuf, size_t cbBuf, PCRTUINT256U pu256Value, unsigned int uiBase,
+                                signed int cchWidth, signed int cchPrecision, uint32_t fFlags);
+
+/**
+ * Formats an unsigned 512-bit number.
+ *
+ * @returns The length of the formatted number or VERR_BUFFER_OVERFLOW.
+ * @param   pszBuf          The output buffer.
+ * @param   cbBuf           The size of the output buffer.
+ * @param   pu512Value      The value to format.
+ * @param   uiBase          Number representation base.
+ * @param   cchWidth        Width.
+ * @param   cchPrecision    Precision.
+ * @param   fFlags          Flags, RTSTR_F_XXX.
+ * @remarks The current implementation is limited to base 16 and doesn't do
+ *          width or precision and probably ignores few flags too.
+ */
+RTDECL(ssize_t) RTStrFormatU512(char *pszBuf, size_t cbBuf, PCRTUINT512U pu512Value, unsigned int uiBase,
+                                signed int cchWidth, signed int cchPrecision, uint32_t fFlags);
+
 
 /**
  * Formats an 80-bit extended floating point number.
