@@ -65,7 +65,9 @@ ENDPROC   CPUMR0RegisterVCpuThread
 ;
 ; @uses nothing (well, maybe cr0)
 ;
+ %ifndef RT_ASM_WITH_SEH64 ; workaround for yasm 1.3.0 bug (error: prologue -1 bytes, must be <256)
 ALIGNCODE(16)
+ %endif
 BEGINPROC CPUMR0TouchHostFpu
         push    xBP
         SEH64_PUSH_xBP
@@ -87,7 +89,15 @@ ENDPROC   CPUMR0TouchHostFpu
 ; @returns  VINF_SUCCESS (0) or VINF_CPUM_HOST_CR0_MODIFIED. (EAX)
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
+; @remarks  64-bit Windows drivers shouldn't use AVX registers without saving+loading:
+;               https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
+;           However the compiler docs have different idea:
+;               https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+;           We'll go with the former for now.
+;
+%ifndef RT_ASM_WITH_SEH64 ; workaround for yasm 1.3.0 bug (error: prologue -1 bytes, must be <256)
 ALIGNCODE(16)
+%endif
 BEGINPROC cpumR0SaveHostRestoreGuestFPUState
         push    xBP
         SEH64_PUSH_xBP
@@ -134,6 +144,7 @@ SEH64_END_PROLOGUE
 %ifdef VBOX_WITH_KERNEL_USING_XMM
         ; If we didn't save the host state, we must save the non-volatile XMM registers.
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+        stmxcsr [pXState + X86FXSTATE.MXCSR]
         movdqa  [pXState + X86FXSTATE.xmm6 ], xmm6
         movdqa  [pXState + X86FXSTATE.xmm7 ], xmm7
         movdqa  [pXState + X86FXSTATE.xmm8 ], xmm8
@@ -165,6 +176,7 @@ SEH64_END_PROLOGUE
         movdqa  xmm13, [pXState + X86FXSTATE.xmm13]
         movdqa  xmm14, [pXState + X86FXSTATE.xmm14]
         movdqa  xmm15, [pXState + X86FXSTATE.xmm15]
+        ldmxcsr        [pXState + X86FXSTATE.MXCSR]
 %endif
 
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_SINCE_REM | CPUM_USED_FPU_HOST)
@@ -186,7 +198,15 @@ ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 ;
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
+; @remarks  64-bit Windows drivers shouldn't use AVX registers without saving+loading:
+;               https://msdn.microsoft.com/en-us/library/windows/hardware/ff545910%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
+;           However the compiler docs have different idea:
+;               https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+;           We'll go with the former for now.
+;
+%ifndef RT_ASM_WITH_SEH64 ; workaround for yasm 1.3.0 bug (error: prologue -1 bytes, must be <256)
 ALIGNCODE(16)
+%endif
 BEGINPROC cpumR0SaveGuestRestoreHostFPUState
         push    xBP
         SEH64_PUSH_xBP
@@ -221,6 +241,7 @@ SEH64_END_PROLOGUE
         ; them while saving the guest state (we've gotta do this anyway).
         ;
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+        stmxcsr [pXState + X86FXSTATE.MXCSR]
         movdqa  [pXState + X86FXSTATE.xmm6], xmm6
         movdqa  [pXState + X86FXSTATE.xmm7], xmm7
         movdqa  [pXState + X86FXSTATE.xmm8], xmm8
@@ -258,6 +279,7 @@ SEH64_END_PROLOGUE
         movdqa  xmm13, [pXState + X86FXSTATE.xmm13]
         movdqa  xmm14, [pXState + X86FXSTATE.xmm14]
         movdqa  xmm15, [pXState + X86FXSTATE.xmm15]
+        ldmxcsr        [pXState + X86FXSTATE.MXCSR]
  %endif
         CPUMR0_SAVE_GUEST
 
@@ -292,7 +314,9 @@ ENDPROC   cpumR0SaveGuestRestoreHostFPUState
 ;
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
+  %ifndef RT_ASM_WITH_SEH64 ; workaround for yasm 1.3.0 bug (error: prologue -1 bytes, must be <256)
 ALIGNCODE(16)
+  %endif
 BEGINPROC cpumR0RestoreHostFPUState
         ;
         ; Prologue - xAX+xDX must be free for XSAVE/XRSTOR input.

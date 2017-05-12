@@ -558,6 +558,7 @@ DECLASM(void)       cpumR0RestoreHostFPUState(PCPUMCPU pCPUM);
 DECLASM(int)        cpumRZSaveHostFPUState(PCPUMCPU pCPUM);
 DECLASM(void)       cpumRZSaveGuestFpuState(PCPUMCPU pCPUM, bool fLeaveFpuAccessible);
 DECLASM(void)       cpumRZSaveGuestSseRegisters(PCPUMCPU pCPUM);
+DECLASM(void)       cpumRZSaveGuestAvxRegisters(PCPUMCPU pCPUM);
 # endif
 
 RT_C_DECLS_END

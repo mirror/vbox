@@ -1673,6 +1673,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu);
 VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPU pVCpu);
 VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForChange(PVMCPU pVCpu);
 VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPU pVCpu);
 /** @} */
 
 
