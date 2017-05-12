@@ -259,7 +259,11 @@ typedef _Bool bool;
 typedef _Bool bool;
 #  endif
 # else
+#  if RT_MSC_PREREQ(RT_MSC_VER_VC120)
+#   include <stdbool.h>
+#  else
 typedef unsigned char bool;
+#  endif
 # endif
 # ifndef true
 #  define true  (1)
