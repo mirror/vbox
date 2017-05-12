@@ -551,6 +551,12 @@ DECLINLINE(void) dbgfR3RegValClear(PDBGFREGVAL pValue)
 {
     pValue->au64[0] = 0;
     pValue->au64[1] = 0;
+    pValue->au64[2] = 0;
+    pValue->au64[3] = 0;
+    pValue->au64[4] = 0;
+    pValue->au64[5] = 0;
+    pValue->au64[6] = 0;
+    pValue->au64[7] = 0;
 }
 
 
@@ -647,6 +653,8 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
                 case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.u8; return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.u8; return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_U128:   pValue->u128.s.Lo = InVal.u8; return VINF_DBGF_ZERO_EXTENDED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256.Words.w0 = InVal.u8; return VINF_DBGF_ZERO_EXTENDED_REGISTER;
+                case DBGFREGVALTYPE_U512:   pValue->u512.Words.w0 = InVal.u8; return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU64(pValue, InVal.u8); return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_DTR:                                  return VERR_DBGF_UNSUPPORTED_CAST;
 
@@ -665,6 +673,8 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
                 case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.u16;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.u16;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_U128:   pValue->u128.s.Lo = InVal.u16;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256.Words.w0 = InVal.u16;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
+                case DBGFREGVALTYPE_U512:   pValue->u512.Words.w0 = InVal.u16;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU64(pValue, InVal.u16); return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_DTR:                                    return VERR_DBGF_UNSUPPORTED_CAST;
 
@@ -683,6 +693,8 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
                 case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.u32;  return VINF_SUCCESS;
                 case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.u32;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_U128:   pValue->u128.s.Lo = InVal.u32;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256.DWords.dw0 = InVal.u32;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
+                case DBGFREGVALTYPE_U512:   pValue->u512.DWords.dw0 = InVal.u32;  return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU64(pValue, InVal.u32); return VINF_DBGF_ZERO_EXTENDED_REGISTER;
                 case DBGFREGVALTYPE_DTR:                                    return VERR_DBGF_UNSUPPORTED_CAST;
 
@@ -701,6 +713,8 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
                 case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.u64;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.u64;  return VINF_SUCCESS;
                 case DBGFREGVALTYPE_U128:   pValue->u128.s.Lo = InVal.u64;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256.QWords.qw0 = InVal.u64;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U512:   pValue->u512.QWords.qw0 = InVal.u64;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU64(pValue, InVal.u64); return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_DTR:                                    return VERR_DBGF_UNSUPPORTED_CAST;
 
@@ -719,8 +733,50 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
                 case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.u128.s.Lo;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.u128.s.Lo;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U128:   pValue->u128      = InVal.u128;       return VINF_SUCCESS;
+                case DBGFREGVALTYPE_U256:   pValue->u256.DQWords.dqw0 = InVal.u128; return VINF_SUCCESS;
+                case DBGFREGVALTYPE_U512:   pValue->u512.DQWords.dqw0 = InVal.u128; return VINF_SUCCESS;
                 case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU128(pValue, InVal.u128); return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_DTR:                                          return VERR_DBGF_UNSUPPORTED_CAST;
+
+                case DBGFREGVALTYPE_32BIT_HACK:
+                case DBGFREGVALTYPE_END:
+                case DBGFREGVALTYPE_INVALID:
+                    break;
+            }
+            break;
+
+        case DBGFREGVALTYPE_U256:
+            switch (enmToType)
+            {
+                case DBGFREGVALTYPE_U8:     pValue->u8        = InVal.u256.Words.w0;        return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U16:    pValue->u16       = InVal.u256.Words.w0;        return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.u256.DWords.dw0;      return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.u256.QWords.qw0;      return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U128:   pValue->u128      = InVal.u256.DQWords.dqw0;    return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256      = InVal.u256;                 return VINF_SUCCESS;
+                case DBGFREGVALTYPE_U512:   pValue->u512.OWords.ow0 = InVal.u256;           return VINF_SUCCESS;
+                case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU128(pValue, InVal.u256.DQWords.dqw0); return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_DTR:                                                    return VERR_DBGF_UNSUPPORTED_CAST;
+
+                case DBGFREGVALTYPE_32BIT_HACK:
+                case DBGFREGVALTYPE_END:
+                case DBGFREGVALTYPE_INVALID:
+                    break;
+            }
+            break;
+
+        case DBGFREGVALTYPE_U512:
+            switch (enmToType)
+            {
+                case DBGFREGVALTYPE_U8:     pValue->u8        = InVal.u512.Words.w0;        return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U16:    pValue->u16       = InVal.u512.Words.w0;        return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.u512.DWords.dw0;      return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.u512.QWords.qw0;      return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U128:   pValue->u128      = InVal.u512.DQWords.dqw0;    return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256      = InVal.u512.OWords.ow0;      return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U512:   pValue->u512      = InVal.u512;                 return VINF_SUCCESS;
+                case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU128(pValue, InVal.u512.DQWords.dqw0); return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_DTR:                                                    return VERR_DBGF_UNSUPPORTED_CAST;
 
                 case DBGFREGVALTYPE_32BIT_HACK:
                 case DBGFREGVALTYPE_END:
@@ -737,6 +793,8 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
                 case DBGFREGVALTYPE_U32:    pValue->u32       = (uint32_t)dbgfR3RegValR80GetU64(&InVal);  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U64:    pValue->u64       = (uint64_t)dbgfR3RegValR80GetU64(&InVal);  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U128:   pValue->u128      = dbgfR3RegValR80GetU128(&InVal);           return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256.DQWords.dqw0 = dbgfR3RegValR80GetU128(&InVal);   return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U512:   pValue->u512.DQWords.dqw0 = dbgfR3RegValR80GetU128(&InVal);   return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_R80:    pValue->r80       = InVal.r80;          return VINF_SUCCESS;
                 case DBGFREGVALTYPE_DTR:                                            return VERR_DBGF_UNSUPPORTED_CAST;
 
@@ -755,6 +813,8 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
                 case DBGFREGVALTYPE_U32:    pValue->u32       = InVal.dtr.u64Base;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U64:    pValue->u64       = InVal.dtr.u64Base;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_U128:   pValue->u128.s.Lo = InVal.dtr.u64Base;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U256:   pValue->u256.QWords.qw0 = InVal.dtr.u64Base;  return VINF_DBGF_TRUNCATED_REGISTER;
+                case DBGFREGVALTYPE_U512:   pValue->u512.QWords.qw0 = InVal.dtr.u64Base;  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_R80:    dbgfR3RegValR80SetU64(pValue, InVal.dtr.u64Base);  return VINF_DBGF_TRUNCATED_REGISTER;
                 case DBGFREGVALTYPE_DTR:    pValue->dtr       = InVal.dtr;          return VINF_SUCCESS;
 
@@ -2004,6 +2064,24 @@ VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, P
                     Mask.u128.s.Lo = UINT64_MAX;
                     Mask.u128.s.Hi = UINT64_MAX;
                     break;
+                case DBGFREGVALTYPE_U256:
+                    Value.u256 = pValue->u256;
+                    Mask.u256.QWords.qw0 = UINT64_MAX;
+                    Mask.u256.QWords.qw1 = UINT64_MAX;
+                    Mask.u256.QWords.qw2 = UINT64_MAX;
+                    Mask.u256.QWords.qw3 = UINT64_MAX;
+                    break;
+                case DBGFREGVALTYPE_U512:
+                    Value.u512 = pValue->u512;
+                    Mask.u512.QWords.qw0 = UINT64_MAX;
+                    Mask.u512.QWords.qw1 = UINT64_MAX;
+                    Mask.u512.QWords.qw2 = UINT64_MAX;
+                    Mask.u512.QWords.qw3 = UINT64_MAX;
+                    Mask.u512.QWords.qw4 = UINT64_MAX;
+                    Mask.u512.QWords.qw5 = UINT64_MAX;
+                    Mask.u512.QWords.qw6 = UINT64_MAX;
+                    Mask.u512.QWords.qw7 = UINT64_MAX;
+                    break;
                 case DBGFREGVALTYPE_R80:
 #ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
                     Value.r80Ex.lrd = pValue->r80Ex.lrd;
@@ -2039,8 +2117,12 @@ VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, P
                     enmRegType = DBGFREGVALTYPE_U32;
                 else if (cBits <= 64)
                     enmRegType = DBGFREGVALTYPE_U64;
-                else
+                else if (cBits <= 128)
                     enmRegType = DBGFREGVALTYPE_U128;
+                else if (cBits <= 256)
+                    enmRegType = DBGFREGVALTYPE_U256;
+                else
+                    enmRegType = DBGFREGVALTYPE_U512;
             }
             else if (pLookupRec->pAlias)
             {
@@ -2141,6 +2223,10 @@ DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszBuf, size_t cbBuf, PCDBGFRE
             return RTStrFormatU64(pszBuf, cbBuf, pValue->u64, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_U128:
             return RTStrFormatU128(pszBuf, cbBuf, &pValue->u128, uBase, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_U256:
+            return RTStrFormatU256(pszBuf, cbBuf, &pValue->u256, uBase, cchWidth, cchPrecision, fFlags);
+        case DBGFREGVALTYPE_U512:
+            return RTStrFormatU512(pszBuf, cbBuf, &pValue->u512, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_R80:
             return RTStrFormatR80u2(pszBuf, cbBuf, &pValue->r80Ex, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_DTR:
@@ -2223,11 +2309,13 @@ VMMR3DECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL
     int cchWidth = 0;
     switch (enmType)
     {
-        case DBGFREGVALTYPE_U8:     cchWidth = 2  + fSpecial*2; break;
-        case DBGFREGVALTYPE_U16:    cchWidth = 4  + fSpecial*2; break;
-        case DBGFREGVALTYPE_U32:    cchWidth = 8  + fSpecial*2; break;
-        case DBGFREGVALTYPE_U64:    cchWidth = 16 + fSpecial*2; break;
-        case DBGFREGVALTYPE_U128:   cchWidth = 32 + fSpecial*2; break;
+        case DBGFREGVALTYPE_U8:     cchWidth = 2   + fSpecial*2; break;
+        case DBGFREGVALTYPE_U16:    cchWidth = 4   + fSpecial*2; break;
+        case DBGFREGVALTYPE_U32:    cchWidth = 8   + fSpecial*2; break;
+        case DBGFREGVALTYPE_U64:    cchWidth = 16  + fSpecial*2; break;
+        case DBGFREGVALTYPE_U128:   cchWidth = 32  + fSpecial*2; break;
+        case DBGFREGVALTYPE_U256:   cchWidth = 64  + fSpecial*2; break;
+        case DBGFREGVALTYPE_U512:   cchWidth = 128 + fSpecial*2; break;
         case DBGFREGVALTYPE_R80:    cchWidth = 0; break;
         case DBGFREGVALTYPE_DTR:    cchWidth = 16+1+4 + fSpecial*2; break;
 

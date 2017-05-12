@@ -50,6 +50,8 @@ static DECLCALLBACK(int) cpumR3RegGet_Generic(void *pvUser, PCDBGFREGDESC pDesc,
         case DBGFREGVALTYPE_U32:       pValue->u32  = *(uint32_t const *)pv; return VINF_SUCCESS;
         case DBGFREGVALTYPE_U64:       pValue->u64  = *(uint64_t const *)pv; return VINF_SUCCESS;
         case DBGFREGVALTYPE_U128:      pValue->u128 = *(PCRTUINT128U    )pv; return VINF_SUCCESS;
+        case DBGFREGVALTYPE_U256:      pValue->u256 = *(PCRTUINT256U    )pv; return VINF_SUCCESS;
+        case DBGFREGVALTYPE_U512:      pValue->u512 = *(PCRTUINT512U    )pv; return VINF_SUCCESS;
         default:
             AssertMsgFailedReturn(("%d %s\n", pDesc->enmType, pDesc->pszName), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
@@ -341,6 +343,50 @@ static DECLCALLBACK(int) cpumR3RegSet_Dummy(void *pvUser, PCDBGFREGDESC pDesc, P
     return VERR_DBGF_READ_ONLY_REGISTER;
 }
 
+
+/**
+ * @interface_method_impl{DBGFREGDESC,pfnGet}
+ */
+static DECLCALLBACK(int) cpumR3RegGet_ymm(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
+{
+    PVMCPU      pVCpu   = (PVMCPU)pvUser;
+    uint32_t    iReg    = pDesc->offRegister;
+
+    Assert(pDesc->enmType == DBGFREGVALTYPE_U256);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    if (iReg < 16)
+    {
+        pValue->u256.DQWords.dqw0 = pVCpu->cpum.s.Guest.pXStateR3->x87.aXMM[iReg].uXmm;
+        pValue->u256.DQWords.dqw1 = pVCpu->cpum.s.Guest.pXStateR3->u.YmmHi.aYmmHi[iReg].uXmm;
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * @interface_method_impl{DBGFREGDESC,pfnSet}
+ */
+static DECLCALLBACK(int) cpumR3RegSet_ymm(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
+{
+    PVMCPU      pVCpu = (PVMCPU)pvUser;
+    uint32_t    iReg  = pDesc->offRegister;
+
+    Assert(pDesc->enmType == DBGFREGVALTYPE_U256);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    if (iReg < 16)
+    {
+        RTUINT128U Val;
+        RTUInt128AssignAnd(&pVCpu->cpum.s.Guest.pXStateR3->x87.aXMM[iReg].uXmm,
+                           RTUInt128AssignBitwiseNot(RTUInt128Assign(&Val, &pfMask->u256.DQWords.dqw0)));
+        RTUInt128AssignOr(&pVCpu->cpum.s.Guest.pXStateR3->u.YmmHi.aYmmHi[iReg].uXmm,
+                          RTUInt128AssignAnd(RTUInt128Assign(&Val, &pValue->u128), &pfMask->u128));
+
+    }
+    return VERR_NOT_IMPLEMENTED;
+}
 
 
 /*
@@ -948,6 +994,46 @@ static DBGFREGSUBFIELD const g_aCpumRegFields_xmmN[] =
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
+#if 0 /* needs special accessor, too lazy for that now. */
+/** Sub-fields for the YMM registers. */
+static DBGFREGSUBFIELD const g_aCpumRegFields_ymmN[] =
+{
+    DBGFREGSUBFIELD_RW("r0",       0,     32,  0),
+    DBGFREGSUBFIELD_RW("r0.man",   0+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r0.exp",   0+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r0.sig",   0+31,   1,  0),
+    DBGFREGSUBFIELD_RW("r1",      32,     32,  0),
+    DBGFREGSUBFIELD_RW("r1.man",  32+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r1.exp",  32+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r1.sig",  32+31,   1,  0),
+    DBGFREGSUBFIELD_RW("r2",      64,     32,  0),
+    DBGFREGSUBFIELD_RW("r2.man",  64+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r2.exp",  64+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r2.sig",  64+31,   1,  0),
+    DBGFREGSUBFIELD_RW("r3",      96,     32,  0),
+    DBGFREGSUBFIELD_RW("r3.man",  96+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r3.exp",  96+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r3.sig",  96+31,   1,  0),
+    DBGFREGSUBFIELD_RW("r4",     128,     32,  0),
+    DBGFREGSUBFIELD_RW("r4.man", 128+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r4.exp", 128+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r4.sig", 128+31,   1,  0),
+    DBGFREGSUBFIELD_RW("r5",     160,     32,  0),
+    DBGFREGSUBFIELD_RW("r5.man", 160+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r5.exp", 160+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r5.sig", 160+31,   1,  0),
+    DBGFREGSUBFIELD_RW("r6",     192,     32,  0),
+    DBGFREGSUBFIELD_RW("r6.man", 192+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r6.exp", 192+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r6.sig", 192+31,   1,  0),
+    DBGFREGSUBFIELD_RW("r7",     224,     32,  0),
+    DBGFREGSUBFIELD_RW("r7.man", 224+ 0,  23,  0),
+    DBGFREGSUBFIELD_RW("r7.exp", 224+23,   8,  0),
+    DBGFREGSUBFIELD_RW("r7.sig", 224+31,   1,  0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+#endif
+
 /** Sub-fields for the CR0 register. */
 static DBGFREGSUBFIELD const g_aCpumRegFields_cr0[] =
 {
@@ -1110,10 +1196,14 @@ static DBGFREGSUBFIELD const g_aCpumRegFields_sf_mask[] =
     CPU_REG_RW_AS(#LName "_lim",    UName##_LIMIT,  U32, LName.u32Limit,        cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,                       NULL                )
 
 #define CPU_REG_MM(n) \
-    CPU_REG_XS_RW_AS("mm" #n,       MM##n,          U64, x87.aRegs[n].mmx, cpumR3RegGet_XStateGeneric, cpumR3RegSet_XStateGeneric, NULL,                       g_aCpumRegFields_mmN)
+    CPU_REG_XS_RW_AS("mm" #n,       MM##n,          U64, x87.aRegs[n].mmx, cpumR3RegGet_XStateGeneric, cpumR3RegSet_XStateGeneric, NULL,                g_aCpumRegFields_mmN)
 
 #define CPU_REG_XMM(n) \
-    CPU_REG_XS_RW_AS("xmm" #n,      XMM##n,         U128, x87.aXMM[n].xmm, cpumR3RegGet_XStateGeneric, cpumR3RegSet_XStateGeneric, NULL,                       g_aCpumRegFields_xmmN)
+    CPU_REG_XS_RW_AS("xmm" #n,      XMM##n,         U128, x87.aXMM[n].xmm, cpumR3RegGet_XStateGeneric, cpumR3RegSet_XStateGeneric, NULL,                g_aCpumRegFields_xmmN)
+
+#define CPU_REG_YMM(n) \
+    { "ymm" #n, DBGFREG_YMM##n, DBGFREGVALTYPE_U256, 0 /*fFlags*/, n,   cpumR3RegGet_ymm, cpumR3RegSet_ymm, NULL /*paAliases*/, NULL /*paSubFields*/ }
+
 /** @} */
 
 
@@ -1201,6 +1291,22 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
     CPU_REG_XMM(13),
     CPU_REG_XMM(14),
     CPU_REG_XMM(15),
+    CPU_REG_YMM(0),
+    CPU_REG_YMM(1),
+    CPU_REG_YMM(2),
+    CPU_REG_YMM(3),
+    CPU_REG_YMM(4),
+    CPU_REG_YMM(5),
+    CPU_REG_YMM(6),
+    CPU_REG_YMM(7),
+    CPU_REG_YMM(8),
+    CPU_REG_YMM(9),
+    CPU_REG_YMM(10),
+    CPU_REG_YMM(11),
+    CPU_REG_YMM(12),
+    CPU_REG_YMM(13),
+    CPU_REG_YMM(14),
+    CPU_REG_YMM(15),
     CPU_REG_RW_AS("gdtr_base",      GDTR_BASE,      U64, gdtr.pGdt,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
     CPU_REG_RW_AS("gdtr_lim",       GDTR_LIMIT,     U16, gdtr.cbGdt,            cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
     CPU_REG_RW_AS("idtr_base",      IDTR_BASE,      U64, idtr.pIdt,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
@@ -1329,6 +1435,22 @@ static DBGFREGDESC const g_aCpumRegHyperDescs[] =
     CPU_REG_DUMMY("xmm13",          XMM13,          U128),
     CPU_REG_DUMMY("xmm14",          XMM14,          U128),
     CPU_REG_DUMMY("xmm15",          XMM15,          U128),
+    CPU_REG_DUMMY("ymm0",           YMM0,           U256),
+    CPU_REG_DUMMY("ymm1",           YMM1,           U256),
+    CPU_REG_DUMMY("ymm2",           YMM2,           U256),
+    CPU_REG_DUMMY("ymm3",           YMM3,           U256),
+    CPU_REG_DUMMY("ymm4",           YMM4,           U256),
+    CPU_REG_DUMMY("ymm5",           YMM5,           U256),
+    CPU_REG_DUMMY("ymm6",           YMM6,           U256),
+    CPU_REG_DUMMY("ymm7",           YMM7,           U256),
+    CPU_REG_DUMMY("ymm8",           YMM8,           U256),
+    CPU_REG_DUMMY("ymm9",           YMM9,           U256),
+    CPU_REG_DUMMY("ymm10",          YMM10,          U256),
+    CPU_REG_DUMMY("ymm11",          YMM11,          U256),
+    CPU_REG_DUMMY("ymm12",          YMM12,          U256),
+    CPU_REG_DUMMY("ymm13",          YMM13,          U256),
+    CPU_REG_DUMMY("ymm14",          YMM14,          U256),
+    CPU_REG_DUMMY("ymm15",          YMM15,          U256),
     CPU_REG_RW_AS("gdtr_base",      GDTR_BASE,      U64, gdtr.pGdt,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
     CPU_REG_RW_AS("gdtr_lim",       GDTR_LIMIT,     U16, gdtr.cbGdt,            cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
     CPU_REG_RW_AS("idtr_base",      IDTR_BASE,      U64, idtr.pIdt,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),

@@ -1681,6 +1681,24 @@ typedef enum DBGFREG
     DBGFREG_XMM15,
     /** @todo add XMM aliases. */
 
+    /* AVX: */
+    DBGFREG_YMM0,
+    DBGFREG_YMM1,
+    DBGFREG_YMM2,
+    DBGFREG_YMM3,
+    DBGFREG_YMM4,
+    DBGFREG_YMM5,
+    DBGFREG_YMM6,
+    DBGFREG_YMM7,
+    DBGFREG_YMM8,
+    DBGFREG_YMM9,
+    DBGFREG_YMM10,
+    DBGFREG_YMM11,
+    DBGFREG_YMM12,
+    DBGFREG_YMM13,
+    DBGFREG_YMM14,
+    DBGFREG_YMM15,
+
     /* System registers: */
     DBGFREG_GDTR_BASE,
     DBGFREG_GDTR_LIMIT,
@@ -1763,6 +1781,10 @@ typedef enum DBGFREGVALTYPE
     DBGFREGVALTYPE_U64,
     /** Unsigned 128-bit register value. */
     DBGFREGVALTYPE_U128,
+    /** Unsigned 256-bit register value. */
+    DBGFREGVALTYPE_U256,
+    /** Unsigned 512-bit register value. */
+    DBGFREGVALTYPE_U512,
     /** Long double register value. */
     DBGFREGVALTYPE_R80,
     /** Descriptor table register value. */
@@ -1780,16 +1802,18 @@ typedef DBGFREGVALTYPE *PDBGFREGVALTYPE;
  */
 typedef union DBGFREGVAL
 {
-    uint64_t    au64[2];        /**< The 64-bit array view. First because of the initializer. */
-    uint32_t    au32[4];        /**< The 32-bit array view. */
-    uint16_t    au16[8];        /**< The 16-bit array view. */
-    uint8_t     au8[16];        /**< The 8-bit array view. */
+    uint64_t    au64[8];        /**< The 64-bit array view. First because of the initializer. */
+    uint32_t    au32[16];       /**< The 32-bit array view. */
+    uint16_t    au16[32];       /**< The 16-bit array view. */
+    uint8_t     au8[64];        /**< The 8-bit array view. */
 
     uint8_t     u8;             /**< The 8-bit view. */
     uint16_t    u16;            /**< The 16-bit view. */
     uint32_t    u32;            /**< The 32-bit view. */
     uint64_t    u64;            /**< The 64-bit view. */
     RTUINT128U  u128;           /**< The 128-bit view. */
+    RTUINT256U  u256;           /**< The 256-bit view. */
+    RTUINT512U  u512;           /**< The 512-bit view. */
     RTFLOAT80U  r80;            /**< The 80-bit floating point view. */
     RTFLOAT80U2 r80Ex;          /**< The 80-bit floating point view v2. */
     /** GDTR or LDTR (DBGFREGVALTYPE_DTR). */
@@ -1800,8 +1824,6 @@ typedef union DBGFREGVAL
         /** The table limit (length minus 1). */
         uint32_t u32Limit;
     }           dtr;
-
-    RTUINT128U  u;
 } DBGFREGVAL;
 /** Pointer to a generic register value type. */
 typedef DBGFREGVAL *PDBGFREGVAL;
@@ -1809,9 +1831,9 @@ typedef DBGFREGVAL *PDBGFREGVAL;
 typedef DBGFREGVAL const *PCDBGFREGVAL;
 
 /** Initialize a DBGFREGVAL variable to all zeros.  */
-#define DBGFREGVAL_INITIALIZE_ZERO { { 0, 0 } }
+#define DBGFREGVAL_INITIALIZE_ZERO { { 0, 0, 0, 0, 0, 0, 0, 0 } }
 /** Initialize a DBGFREGVAL variable to all bits set .  */
-#define DBGFREGVAL_INITIALIZE_FFFF { { UINT64_MAX, UINT64_MAX } }
+#define DBGFREGVAL_INITIALIZE_FFFF { { UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX } }
 
 
 VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial);
