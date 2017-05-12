@@ -9927,10 +9927,8 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             // in the saved state file path, replace the old directory with the new directory
             if (RTPathStartsWith(mSSData->strStateFilePath.c_str(), configDir.c_str()))
             {
-                // do not change newConfigDir!
-                Utf8Str strAppend = mSSData->strStateFilePath.c_str() + configDir.length();
-                mSSData->strStateFilePath = newConfigDir;
-                mSSData->strStateFilePath.append(strAppend);
+                Utf8Str strStateFileName = mSSData->strStateFilePath.c_str() + configDir.length();
+                mSSData->strStateFilePath = newConfigDir + strStateFileName;
             }
 
             // and do the same thing for the saved state file paths of all the online snapshots
