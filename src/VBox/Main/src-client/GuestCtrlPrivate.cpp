@@ -853,7 +853,10 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
                     }
 
                     /* Remove the event from the passed-in event group. */
+                    GuestWaitEvents::iterator itEventsNext = itEvents;
+                    ++itEventsNext;
                     itGroup->second.erase(itEvents);
+                    itEvents = itEventsNext;
                 }
                 else
                     ++itEvents;
