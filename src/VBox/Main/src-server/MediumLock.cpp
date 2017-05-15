@@ -326,10 +326,9 @@ HRESULT MediumLockListMap::Clear()
          )
     {
         MediumLockList *pMediumLockList = it->second;
-        // need an incremented iterator as otherwise erasing invalidates it
-        mMediumLocks.erase(it++);
         delete pMediumLockList;
     }
+    mMediumLocks.clear();
     return rc;
 }
 
