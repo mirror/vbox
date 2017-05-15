@@ -323,7 +323,7 @@ HRESULT MediumLockListMap::Clear()
     HRESULT rc = Unlock();
     for (MediumLockListMap::Base::iterator it = mMediumLocks.begin();
          it != mMediumLocks.end();
-         )
+         ++it)
     {
         MediumLockList *pMediumLockList = it->second;
         delete pMediumLockList;
