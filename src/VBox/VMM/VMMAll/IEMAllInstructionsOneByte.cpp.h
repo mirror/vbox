@@ -4356,7 +4356,7 @@ FNIEMOP_DEF(iemOp_Grp1A__xop)
             pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
             pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
             pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
-            pVCpu->iem.s.uVex3rdReg = (~bXop2 >> 3) & 0xf;
+            pVCpu->iem.s.uVex3rdReg = (~bXop2 >> 3) & (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? 0xf : 0x7);
             pVCpu->iem.s.uVexLength = (bXop2 >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bXop2 & 0x3;
 
@@ -6231,7 +6231,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
             pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
             pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
             pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
-            pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
+            pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? 0xf : 0x7);
             pVCpu->iem.s.uVexLength = (bVex2 >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bVex2 & 0x3;
 

@@ -11381,40 +11381,71 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     } while (0)
 
 #define IEM_MC_INT_CLEAR_ZMM_256_UP(a_pXState, a_iXRegDst) do { /* For AVX512 and AVX1024 support. */ } while (0)
-#define IEM_MC_STORE_YREG_U128_ZX(a_iYRegDst, a_u128Src) \
-    do { PX86XSAVEAREA pXStateTmp = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
-         uintptr_t const iYRegDstTmp = (a_iYRegDst); \
+#define IEM_MC_STORE_YREG_U32_ZX_VLMAX(a_iYRegDst, a_u32Src) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au32[0]       = (a_u32Src); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au32[1]       = 0; \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+    } while (0)
+#define IEM_MC_STORE_YREG_U64_ZX_VLMAX(a_iYRegDst, a_u64Src) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[0]       = (a_u64Src); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+    } while (0)
+#define IEM_MC_STORE_YREG_U128_ZX_VLMAX(a_iYRegDst, a_u128Src) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[0]       = (a_u128Src).au64[0]; \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = (a_u128Src).au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
     } while (0)
-#define IEM_MC_STORE_YREG_U256_ZX(a_iYRegDst, a_u256Src) \
-    do { PX86XSAVEAREA pXStateTmp = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
-         uintptr_t const iYRegDstTmp = (a_iYRegDst); \
+#define IEM_MC_STORE_YREG_U256_ZX_VLMAX(a_iYRegDst, a_u256Src) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[0]       = (a_u256Src).au64[0]; \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = (a_u256Src).au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = (a_u256Src).au64[2]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_u256Src).au64[3]; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
     } while (0)
-#define IEM_MC_COPY_YREG_U256_ZX(a_iYRegDst, a_iYRegSrc) \
-    do { PX86XSAVEAREA pXStateTmp = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
-         uintptr_t const iYRegDstTmp = (a_iYRegDst); \
-         uintptr_t const iYRegSrcTmp = (a_iYRegSrc); \
+#define IEM_MC_COPY_YREG_U256_ZX_VLMAX(a_iYRegDst, a_iYRegSrc) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[0]       = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[0]; \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = pXStateTmp->u.YmmHi.aYmmHi[iYRegSrcTmp].au64[0]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = pXStateTmp->u.YmmHi.aYmmHi[iYRegSrcTmp].au64[1]; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
     } while (0)
-#define IEM_MC_COPY_YREG_U128_ZX(a_iYRegDst, a_iYRegSrc) \
-    do { PX86XSAVEAREA pXStateTmp = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
-         uintptr_t const iYRegDstTmp = (a_iYRegDst); \
-         uintptr_t const iYRegSrcTmp = (a_iYRegSrc); \
+#define IEM_MC_COPY_YREG_U128_ZX_VLMAX(a_iYRegDst, a_iYRegSrc) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[0]       = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[0]; \
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[1]; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+    } while (0)
+#define IEM_MC_COPY2_YREG_U32_U96_ZX_VLMAX(a_iYRegDst, a_iYRegSrc32, a_iYRegSrcHx) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         uintptr_t const iYRegSrc32Tmp  = (a_iYRegSrc32); \
+         uintptr_t const iYRegSrcHxTmp  = (a_iYRegSrcHx); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au32[0]       = pXStateTmp->x87.aXMM[iYRegSrc32Tmp].au32[0]; \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au32[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au32[1]; \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \

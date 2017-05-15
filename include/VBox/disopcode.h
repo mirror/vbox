@@ -745,6 +745,7 @@ enum OPCODES
     OP_VSTMXCSR,
     OP_VMOVUPS,
     OP_VMOVUPD,
+    OP_VMOVSS,
 /** @} */
 /** @name VT-x instructions
  * @{ */
@@ -1066,6 +1067,8 @@ enum OP_PARM
 
 /* For making IEM / bs3-cpu-generated-1 happy: */
 #define OP_PARM_Gv_RO           OP_PARM_Gv              /**< Annotates read only first operand (default is readwrite). */
+#define OP_PARM_HdqCss          OP_PARM_Hx              /**< Hdq register complements (high) a ss specifier (low). */
+#define OP_PARM_HdqCsd          OP_PARM_Hx              /**< Hdq register complements (high) a sd specifier (low). */
 #define OP_PARM_M_RO            OP_PARM_M               /**< Annotates read only memory of variable operand size (xrstor). */
 #define OP_PARM_M_RW            OP_PARM_M               /**< Annotates read-write memory of variable operand size (xsave). */
 #define OP_PARM_Mb_RO           OP_PARM_Mb              /**< Annotates read only memory byte operand. */
@@ -1085,6 +1088,7 @@ enum OP_PARM
 #define OP_PARM_VqZx_WO         OP_PARM_Vq              /**< Annotates that the registers get their upper bits cleared */
 #define OP_PARM_VsdZx_WO        OP_PARM_Vsd             /**< Annotates that the registers get their upper bits cleared. */
 #define OP_PARM_VssZx_WO        OP_PARM_Vss             /**< Annotates that the registers get their upper bits cleared. */
+#define OP_PARM_Vss_WO          OP_PARM_Vss             /**< Annotates write only operand. */
 #define OP_PARM_Wpd_WO          OP_PARM_Wpd             /**< Annotates write only operand. */
 #define OP_PARM_Wps_WO          OP_PARM_Wps             /**< Annotates write only operand. */
 #define OP_PARM_WqZxReg_WO      OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */

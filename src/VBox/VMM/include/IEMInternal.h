@@ -912,6 +912,7 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEMOPFORM_VEX_RM_REG        (IEMOPFORM_VEX_RM | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m (memory)   */
 #define IEMOPFORM_VEX_RM_MEM        (IEMOPFORM_VEX_RM | IEMOPFORM_NOT_MOD3)
+#define IEMOPFORM_VEX_XM            IEMOPFORM_VEX_RM_MEM
 /** VEX+ModR/M: r/m, reg */
 #define IEMOPFORM_VEX_MR        5
 /** VEX+ModR/M: r/m (register), reg */

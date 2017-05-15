@@ -250,8 +250,10 @@ g_kdOpTypes = {
     'Gv_RO':        ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
     'Pq_WO':        ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
     'Vss':          ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
+    'Vss_WO':       ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
     'VssZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
     'Vsd':          ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
+    'Vsd_WO':       ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
     'VsdZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
     'Vps':          ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
     'Vps_WO':       ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
@@ -263,6 +265,10 @@ g_kdOpTypes = {
     'VqHi':         ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
     'VqHi_WO':      ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
     'VqZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    ),
+
+    # VEX.vvvv
+    'HdqCss':       ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HdqCss',  ),
+    'HdqCsd':       ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HdqCsd',  ),
 
     # Immediate values.
     'Ib':           ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instrs.
@@ -320,6 +326,7 @@ g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]
     'VEX_RM':       ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
     'VEX_RM_REG':   ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
     'VEX_RM_MEM':   ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
+    'VEX_XM':       ( 'VEX.ModR/M', [ 'reg', 'rm' ], ), # same as VEX_RM_MEM
     'VEX_MR':       ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
     'VEX_MR_REG':   ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
     'VEX_MR_MEM':   ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
