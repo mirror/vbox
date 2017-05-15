@@ -93,6 +93,7 @@ private:
         }
 
         ComPtr<IVirtualBox> m_pVirtualBox;
+        ComPtr<IToken> m_pToken;
         const ComObjPtr<EventSource> m_pEventSource;
 
         RTTHREAD m_ThreadWatcher;

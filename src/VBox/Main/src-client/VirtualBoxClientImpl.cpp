@@ -66,7 +66,7 @@ void VirtualBoxClient::FinalRelease()
 
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
 
-HRESULT CreateVirtualBoxThroughSDS(ComPtr<IVirtualBox> &aVirtualBox)
+HRESULT CreateVirtualBoxThroughSDS(ComPtr<IVirtualBox> &aVirtualBox, ComPtr<IToken> &aToken)
 {
     ComPtr<IVirtualBoxSDS> aVirtualBoxSDS;
     HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
@@ -76,30 +76,9 @@ HRESULT CreateVirtualBoxThroughSDS(ComPtr<IVirtualBox> &aVirtualBox)
                                    (void **)aVirtualBoxSDS.asOutParam());
     AssertComRCReturn(hrc, hrc);
 
-    hrc = aVirtualBoxSDS->get_VirtualBox(aVirtualBox.asOutParam());
+    hrc = aVirtualBoxSDS->GetVirtualBox(aVirtualBox.asOutParam(), aToken.asOutParam());
     AssertComRC(hrc);
 
-    return hrc;
-}
-
-HRESULT ReleaseVirtualBoxThroughSDS()
-{
-    ComPtr<IVirtualBoxSDS> aVirtualBoxSDS;
-    HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, /* the VirtualBoxSDS object */
-                                   NULL,                /* no aggregation */
-                                   CLSCTX_LOCAL_SERVER, /* the object lives in the current process */
-                                   IID_IVirtualBoxSDS,  /* IID of the interface */
-                                   (void **)aVirtualBoxSDS.asOutParam());
-    AssertComRC(hrc);
-    if (SUCCEEDED(hrc))
-    {
-        hrc = aVirtualBoxSDS->ReleaseVirtualBox();
-        AssertComRC(hrc);
-        if (FAILED(hrc))
-            LogRel(("DeregisterVirtualBox() failed, %Rhrc\n", hrc));
-    }
-    else
-        LogRel(("ReleaseVirtualBox - instantiation of IVirtualBoxSDS failed, %Rhrc\n", hrc));
     return hrc;
 }
 
@@ -308,7 +287,7 @@ HRESULT VirtualBoxClient::init()
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
 
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
-        rc = CreateVirtualBoxThroughSDS(mData.m_pVirtualBox);
+        rc = CreateVirtualBoxThroughSDS(mData.m_pVirtualBox, mData.m_pToken);
 #else
         rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
 #endif
@@ -435,7 +414,8 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
 
     // Check the VBoxSDS windows service is enabled
     ComPtr<IVirtualBox> aVirtualBox;
-    hrc = CreateVirtualBoxThroughSDS(aVirtualBox);
+    ComPtr<IToken> aToken;
+    hrc = CreateVirtualBoxThroughSDS(aVirtualBox, aToken);
     if (FAILED(hrc))
     {
         if (hrc == hrcCaller)
@@ -611,10 +591,6 @@ void VirtualBoxClient::uninit()
 {
     LogFlowThisFunc(("\n"));
 
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
-    ReleaseVirtualBoxThroughSDS();
-#endif
-
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
@@ -632,6 +608,7 @@ void VirtualBoxClient::uninit()
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
     }
 
+    mData.m_pToken.setNull();
     mData.m_pVirtualBox.setNull();
 
     ASMAtomicDecU32(&g_cInstances);
@@ -765,7 +742,12 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                  * restart attempts in some wedged config can cause high CPU
                  * and disk load. */
                 ComPtr<IVirtualBox> pVirtualBox;
+                ComPtr<IToken> pToken;
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
+                rc = CreateVirtualBoxThroughSDS(pVirtualBox, pToken);
+#else
                 rc = pVirtualBox.createLocalObject(CLSID_VirtualBox);
+#endif
                 if (FAILED(rc))
                     cMillies = 3 * VBOXCLIENT_DEFAULT_INTERVAL;
                 else
@@ -776,6 +758,7 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                         /* Update the VirtualBox reference, there's a working
                          * VBoxSVC again from now on. */
                         pThis->mData.m_pVirtualBox = pVirtualBox;
+                        pThis->mData.m_pToken = pToken;
                     }
                     fireVBoxSVCAvailabilityChangedEvent(pThis->mData.m_pEventSource, TRUE);
                     cMillies = VBOXCLIENT_DEFAULT_INTERVAL;

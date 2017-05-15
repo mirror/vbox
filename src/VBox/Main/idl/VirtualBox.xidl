@@ -23905,27 +23905,29 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="suppress"
     reservedMethods="4" reservedAttributes="8"
     >
-    <desc>
-      The IVirtualBoxSDS interface represents the system-wide directory service
-      helper.
-
-      It exists only on Windows host, and its purpose is to work around design
-      flaws in Microsoft's (D)COM, in particular the local server instantiation
-      behavior.
-    </desc>
-
-    <attribute name="virtualBox" type="IVirtualBox" readonly="yes">
       <desc>
-        Reference to the server-side API root object.
+          The IVirtualBoxSDS interface represents the system-wide directory service
+          helper.
+
+          It exists only on Windows host, and its purpose is to work around design
+          flaws in Microsoft's (D)COM, in particular the local server instantiation
+          behavior.
       </desc>
-    </attribute>
-
-      <method name="releaseVirtualBox">
-          <desc>
-              Client informs that it releases it's VirtualBox reference
-          </desc>
+      
+      <method name="getVirtualBox" >
+       <param name="result" type="IVirtualBox" dir="out" >
+        <desc>
+          Reference to the server-side API root object.
+        </desc>
+      </param>
+      <param name="token" type="IToken" dir="out">
+        <desc>
+          Reference to the token object given to client and linked with IVirtualBox.
+          Client should keep it till the end.
+        </desc>
+      </param>
       </method>
-
+        
   </interface>
 </if>
 

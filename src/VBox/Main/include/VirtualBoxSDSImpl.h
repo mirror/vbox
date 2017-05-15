@@ -19,10 +19,57 @@
 #define ____H_VIRTUALBOXSDSIMPL
 
 #include "VirtualBoxSDSWrap.h"
+#include "TokenWrap.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"
 #endif
+
+ /**
+ * The MediumLockToken class automates cleanup of a Medium lock.
+ */
+class ATL_NO_VTABLE VirtualBoxToken :
+    public TokenWrap
+{
+public:
+
+    DECLARE_EMPTY_CTOR_DTOR(VirtualBoxToken)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    // public initializer/uninitializer for internal purposes only
+    HRESULT init(const std::wstring& wstrUserName);
+    void uninit();
+
+    /**
+    * Fabrique method to create and initialize COM token object.
+    *
+    * @param aToken         Pointer to result Token COM object.
+    * @param wstrUserName   User name of client for that we create the token
+    */
+    static HRESULT CreateToken(ComPtr<IToken>& aToken, const std::wstring& wstrUserName);
+
+    // Trace COM reference counting in debug mode
+#ifdef RT_STRICT
+    virtual ULONG InternalAddRef();
+    virtual ULONG InternalRelease();
+#endif
+    
+private:
+
+    // wrapped IToken methods
+    HRESULT abandon(AutoCaller &aAutoCaller);
+    HRESULT dummy();
+
+    // data
+    struct Data
+    {
+        std::wstring wstrUserName;
+    };
+
+    Data m;
+};
 
 class ATL_NO_VTABLE VirtualBoxSDS :
     public VirtualBoxSDSWrap
@@ -60,12 +107,7 @@ private:
     *    It impersonates client and returns his VirtualBox instance
     *    either from cahce or makes new one.
     */
-    HRESULT getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox);
-
-    /**
-    *  Should be called by client to deregister it from VBoxSDS when client beign finished
-    */
-    HRESULT releaseVirtualBox();
+    HRESULT getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox, ComPtr<IToken> &aToken);
 
     // Wrapped IVirtualBoxSDS methods
 
@@ -91,6 +133,7 @@ private:
     // data fields
     class VirtualBoxCache;
     static VirtualBoxCache m_cache;
+    friend VirtualBoxToken;
 };
 
 
