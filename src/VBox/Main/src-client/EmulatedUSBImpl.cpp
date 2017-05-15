@@ -391,13 +391,16 @@ void EmulatedUSB::uninit()
     m.pConsole.setNull();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    WebcamsMap::iterator it = m.webcams.begin();
-    while (it != m.webcams.end())
+    for (WebcamsMap::iterator it = m.webcams.begin(); it != m.webcams.end(); ++it)
     {
         EUSBWEBCAM *p = it->second;
-        m.webcams.erase(it++);
-        p->Release();
+        if (p)
+        {
+            it->second = NULL;
+            p->Release();
+        }
     }
+    m.webcams.clear();
     alock.release();
 
     /* Enclose the state transition Ready->InUninit->NotReady */
