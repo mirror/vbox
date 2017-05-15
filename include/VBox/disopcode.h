@@ -744,6 +744,7 @@ enum OPCODES
     OP_VLDMXCSR,
     OP_VSTMXCSR,
     OP_VMOVUPS,
+    OP_VMOVUPD,
 /** @} */
 /** @name VT-x instructions
  * @{ */

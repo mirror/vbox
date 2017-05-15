@@ -2143,7 +2143,7 @@ DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, u
 }
 
 
-static unsigned Bs3Cg1EncodeNext_VEX_MODRM_Vps_WO_Wps(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned Bs3Cg1EncodeNext_VEX_MODRM_Vps_WO_Wps__OR__VEX_MODRM_Vpd_WO_Wpd(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     /* 128-bit wide stuff goes first, then we'll update the operand widths afterwards. */
@@ -2577,7 +2577,8 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
          */
 #ifdef BS3CG1_WITH_VEX
         case BS3CG1ENC_VEX_MODRM_Vps_WO_Wps:
-            return Bs3Cg1EncodeNext_VEX_MODRM_Vps_WO_Wps(pThis, iEncoding);
+        case BS3CG1ENC_VEX_MODRM_Vpd_WO_Wpd:
+            return Bs3Cg1EncodeNext_VEX_MODRM_Vps_WO_Wps__OR__VEX_MODRM_Vpd_WO_Wpd(pThis, iEncoding);
 
         case BS3CG1ENC_VEX_MODRM_Md_WO:
             return Bs3Cg1EncodeNext_VEX_MODRM_Md_WO(pThis, iEncoding);
@@ -2815,6 +2816,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 #ifdef BS3CG1_WITH_VEX
 
         case BS3CG1ENC_VEX_MODRM_Vps_WO_Wps:
+        case BS3CG1ENC_VEX_MODRM_Vpd_WO_Wpd:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 16;
