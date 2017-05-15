@@ -853,10 +853,10 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
                     }
 
                     /* Remove the event from the passed-in event group. */
-                    itGroup->second.erase(itEvents++);
+                    itEvents = itGroup->second.erase(itEvents);
                 }
                 else
-                    ++itEvents;
+                    itEvents++;
 #ifdef DEBUG
                 cEvents++;
 #endif
@@ -946,11 +946,11 @@ int GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
                 {
                     if (itCurEvent->second == pEvent)
                     {
-                        mWaitEventGroups[(*itType)].erase(itCurEvent++);
+                        itCurEvent = mWaitEventGroups[(*itType)].erase(itCurEvent);
                         break;
                     }
                     else
-                        ++itCurEvent;
+                        itCurEvent++;
                 }
             }
 
