@@ -4353,9 +4353,9 @@ FNIEMOP_DEF(iemOp_Grp1A__xop)
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_XOP;
             if (bXop2 & 0x80 /* XOP.W */)
                 pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
-            pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
-            pVCpu->iem.s.uRexIndex  = ~bRm >> (6 - 3);
-            pVCpu->iem.s.uRexB      = ~bRm >> (5 - 3);
+            pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
+            pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
+            pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
             pVCpu->iem.s.uVex3rdReg = (~bXop2 >> 3) & 0xf;
             pVCpu->iem.s.uVexLength = (bXop2 >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bXop2 & 0x3;
@@ -6221,16 +6221,16 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex3)
         IEMOP_MNEMONIC(vex3_prefix, "vex3");
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
         {
-            /* Note! The real mode, v8086 mode and invalid prefix checks are
-                     done once the instruction is fully decoded. */
+            /* Note! The real mode, v8086 mode and invalid prefix checks are done once
+                     the instruction is fully decoded.  Even when XCR0=3 and CR4.OSXSAVE=0. */
             uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
             if (bVex2 & 0x80 /* VEX.W */)
                 pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
-            pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
-            pVCpu->iem.s.uRexIndex  = ~bRm >> (6 - 3);
-            pVCpu->iem.s.uRexB      = ~bRm >> (5 - 3);
+            pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
+            pVCpu->iem.s.uRexIndex  = (~bRm >> (6 - 3)) & 0x8;
+            pVCpu->iem.s.uRexB      = (~bRm >> (5 - 3)) & 0x8;
             pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
             pVCpu->iem.s.uVexLength = (bVex2 >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bVex2 & 0x3;
@@ -6293,11 +6293,11 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex2)
         IEMOP_MNEMONIC(vex2_prefix, "vex2");
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
         {
-            /* Note! The real mode, v8086 mode and invalid prefix checks are
-                     done once the instruction is fully decoded. */
+            /* Note! The real mode, v8086 mode and invalid prefix checks are done once
+                     the instruction is fully decoded.  Even when XCR0=3 and CR4.OSXSAVE=0. */
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
-            pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
+            pVCpu->iem.s.uRexReg    = (~bRm >> (7 - 3)) & 0x8;
             pVCpu->iem.s.uVex3rdReg = (~bRm >> 3) & 0xf;
             pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bRm & 0x3;
