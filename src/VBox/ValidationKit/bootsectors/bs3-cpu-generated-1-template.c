@@ -3740,7 +3740,10 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                         }
                     }
                     else if (idxField < BS3CG1DST_END)
+                    {
+                        fZxVlMax = false;
                         break;
+                    }
                     return Bs3TestFailedF("Malformed context instruction: idxField=%d", idxField);
                 }
                 /* fall thru */
