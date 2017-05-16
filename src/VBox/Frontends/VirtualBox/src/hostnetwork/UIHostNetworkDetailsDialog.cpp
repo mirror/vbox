@@ -45,7 +45,7 @@ UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent /* = 0 *
     : QIWithRetranslateUI2<QWidget>(pParent)
     , m_pTabWidget(0)
     , m_pButtonAutomatic(0), m_pErrorPaneAutomatic(0)
-    , m_pButtonManual(0)
+    , m_pButtonManual(0), m_pErrorPaneManual(0)
     , m_pLabelIPv4(0), m_pEditorIPv4(0), m_pErrorPaneIPv4(0)
     , m_pLabelNMv4(0), m_pEditorNMv4(0), m_pErrorPaneNMv4(0)
     , m_pLabelIPv6(0), m_pEditorIPv6(0), m_pErrorPaneIPv6(0)
@@ -282,15 +282,35 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 pLayoutInterface->addLayout(pLayoutAutomatic, 0, 0, 1, 3);
             }
 
-            /* Create manual interface configuration radio-button: */
-            m_pButtonManual = new QRadioButton;
-            AssertPtrReturnVoid(m_pButtonManual);
+            /* Create manual interface configuration layout: */
+            QHBoxLayout *pLayoutManual = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutManual);
             {
-                /* Configure radio-button: */
-                connect(m_pButtonManual, &QRadioButton::toggled,
-                        this, &UIHostNetworkDetailsDialog::sltToggledButtonManual);
+                /* Configure layout: */
+                pLayoutManual->setContentsMargins(0, 0, 0, 0);
+                /* Create manual interface configuration radio-button: */
+                m_pButtonManual = new QRadioButton;
+                AssertPtrReturnVoid(m_pButtonManual);
+                {
+                    /* Configure radio-button: */
+                    connect(m_pButtonManual, &QRadioButton::toggled,
+                            this, &UIHostNetworkDetailsDialog::sltToggledButtonManual);
+                    /* Add into layout: */
+                    pLayoutManual->addWidget(m_pButtonManual);
+                }
+                /* Create manual interface configuration error pane: */
+                m_pErrorPaneManual = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneManual);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneManual->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+                    m_pErrorPaneManual->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+                    m_pErrorPaneManual->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    /* Add into layout: */
+                    pLayoutManual->addWidget(m_pErrorPaneManual);
+                }
                 /* Add into layout: */
-                pLayoutInterface->addWidget(m_pButtonManual, 1, 0, 1, 3);
+                pLayoutInterface->addLayout(pLayoutManual, 1, 0, 1, 3);
             }
 
             /* Create IPv4 address label: */
@@ -765,6 +785,11 @@ void UIHostNetworkDetailsDialog::revalidate(QWidget *pWidget /* = 0 */)
         const bool fError =    m_newData.m_interface.m_fDHCPEnabled
                             && !m_newData.m_dhcpserver.m_fEnabled;
         m_pErrorPaneAutomatic->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneManual)
+    {
+        const bool fError = false;
+        m_pErrorPaneManual->setVisible(fError);
     }
     if (!pWidget || pWidget == m_pErrorPaneIPv4)
     {

@@ -263,6 +263,8 @@ private:
 
         /** Holds the manual interface configuration button. */
         QRadioButton *m_pButtonManual;
+        /** Holds the manual interface configuration error pane. */
+        QLabel       *m_pErrorPaneManual;
 
         /** Holds the IPv4 address label. */
         QLabel       *m_pLabelIPv4;
