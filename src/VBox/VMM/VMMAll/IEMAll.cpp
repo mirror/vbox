@@ -10182,6 +10182,118 @@ iemMemStoreDataU128AlignedSseJmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
 
 
 /**
+ * Stores a data dqword.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   pu256Value          Pointer to the value to store.
+ */
+IEM_STATIC VBOXSTRICTRC iemMemStoreDataU256(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value)
+{
+    /* The lazy approach for now... */
+    PRTUINT256U pu256Dst;
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu256Dst, sizeof(*pu256Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+    if (rc == VINF_SUCCESS)
+    {
+        pu256Dst->au64[0] = pu256Value->au64[0];
+        pu256Dst->au64[1] = pu256Value->au64[1];
+        pu256Dst->au64[2] = pu256Value->au64[2];
+        pu256Dst->au64[3] = pu256Value->au64[3];
+        rc = iemMemCommitAndUnmap(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+    }
+    return rc;
+}
+
+
+#ifdef IEM_WITH_SETJMP
+/**
+ * Stores a data dqword, longjmp on error.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   pu256Value          Pointer to the value to store.
+ */
+IEM_STATIC void iemMemStoreDataU256Jmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value)
+{
+    /* The lazy approach for now... */
+    PRTUINT256U pu256Dst = (PRTUINT256U)iemMemMapJmp(pVCpu, sizeof(*pu256Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+    pu256Dst->au64[0] = pu256Value->au64[0];
+    pu256Dst->au64[1] = pu256Value->au64[1];
+    pu256Dst->au64[2] = pu256Value->au64[2];
+    pu256Dst->au64[3] = pu256Value->au64[3];
+    iemMemCommitAndUnmapJmp(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+}
+#endif
+
+
+/**
+ * Stores a data dqword, AVX aligned.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   pu256Value          Pointer to the value to store.
+ */
+IEM_STATIC VBOXSTRICTRC iemMemStoreDataU256AlignedAvx(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value)
+{
+    /* The lazy approach for now... */
+    if (GCPtrMem & 31)
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+    PRTUINT256U pu256Dst;
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pu256Dst, sizeof(*pu256Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+    if (rc == VINF_SUCCESS)
+    {
+        pu256Dst->au64[0] = pu256Value->au64[0];
+        pu256Dst->au64[1] = pu256Value->au64[1];
+        pu256Dst->au64[2] = pu256Value->au64[2];
+        pu256Dst->au64[3] = pu256Value->au64[3];
+        rc = iemMemCommitAndUnmap(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+    }
+    return rc;
+}
+
+
+#ifdef IEM_WITH_SETJMP
+/**
+ * Stores a data dqword, AVX aligned.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   pu256Value          Pointer to the value to store.
+ */
+DECL_NO_INLINE(IEM_STATIC, void)
+iemMemStoreDataU256AlignedAvxJmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value)
+{
+    /* The lazy approach for now... */
+    if ((GCPtrMem & 31) == 0)
+    {
+        PRTUINT256U pu256Dst = (PRTUINT256U)iemMemMapJmp(pVCpu, sizeof(*pu256Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+        pu256Dst->au64[0] = pu256Value->au64[0];
+        pu256Dst->au64[1] = pu256Value->au64[1];
+        pu256Dst->au64[2] = pu256Value->au64[2];
+        pu256Dst->au64[3] = pu256Value->au64[3];
+        iemMemCommitAndUnmapJmp(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+        return;
+    }
+
+    VBOXSTRICTRC rcStrict = iemRaiseGeneralProtectionFault0(pVCpu);
+    longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
+}
+#endif
+
+
+/**
  * Stores a descriptor register (sgdt, sidt).
  *
  * @returns Strict VBox status code.
@@ -11380,6 +11492,26 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
             = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aXMM[(a_iXRegSrc)].au64[1]; \
     } while (0)
 
+#define IEM_MC_FETCH_YREG_U64(a_u64Dst, a_iYRegSrc) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
+         (a_u64Dst).au64[0] = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[0]; \
+    } while (0)
+#define IEM_MC_FETCH_YREG_U128(a_u128Dst, a_iYRegSrc) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
+         (a_u128Dst).au64[0] = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[0]; \
+         (a_u128Dst).au64[1] = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[1]; \
+    } while (0)
+#define IEM_MC_FETCH_YREG_U256(a_u256Dst, a_iYRegSrc) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegSrcTmp    = (a_iYRegSrc); \
+         (a_u256Dst).au64[0] = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[0]; \
+         (a_u256Dst).au64[1] = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[1]; \
+         (a_u256Dst).au64[2] = pXStateTmp->u.YmmHi.aYmmHi[iYRegSrcTmp].au64[0]; \
+         (a_u256Dst).au64[3] = pXStateTmp->u.YmmHi.aYmmHi[iYRegSrcTmp].au64[1]; \
+    } while (0)
+
 #define IEM_MC_INT_CLEAR_ZMM_256_UP(a_pXState, a_iXRegDst) do { /* For AVX512 and AVX1024 support. */ } while (0)
 #define IEM_MC_STORE_YREG_U32_ZX_VLMAX(a_iYRegDst, a_u32Src) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11418,6 +11550,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_u256Src).au64[3]; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
     } while (0)
+
 #define IEM_MC_COPY_YREG_U256_ZX_VLMAX(a_iYRegDst, a_iYRegSrc) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
          uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
@@ -11438,6 +11571,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
     } while (0)
+
 #define IEM_MC_MERGE_YREG_U32_U96_ZX_VLMAX(a_iYRegDst, a_iYRegSrc32, a_iYRegSrcHx) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
          uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
@@ -11743,6 +11877,18 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     iemMemStoreDataU128Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value))
 # define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Value) \
     iemMemStoreDataU128AlignedSseJmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value))
+#endif
+
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_STORE_MEM_U256(a_iSeg, a_GCPtrMem, a_u256Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU256(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u256Value)))
+# define IEM_MC_STORE_MEM_U256_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u256Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU256AlignedSse(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u256Value)))
+#else
+# define IEM_MC_STORE_MEM_U256(a_iSeg, a_GCPtrMem, a_u256Value) \
+    iemMemStoreDataU256Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u256Value))
+# define IEM_MC_STORE_MEM_U256_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u256Value) \
+    iemMemStoreDataU256AlignedSseJmp(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u256Value))
 #endif
 
 

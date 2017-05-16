@@ -238,6 +238,7 @@ g_kdOpTypes = {
     # ModR/M.rm - memory only.
     'Ma':           ( 'IDX_UseModRM',       'rm',     '%Ma',  'Ma',      ), ##< Only used by BOUND.
     'Mb_RO':        ( 'IDX_UseModRM',       'rm',     '%Mb',  'Mb',      ),
+    'Md':           ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'Md_RO':        ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'Md_WO':        ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
     'Mq':           ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
