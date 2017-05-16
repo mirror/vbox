@@ -1148,6 +1148,9 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
                         if ((paEps[iEp].Core.bmAttributes == 5) && (paEps[iEp].Core.bLength == 9))
                         {
                             uint8_t *pbExtra = (uint8_t *)paEps[iEp].pvMore;    /* unconst*/
+                            if (pbExtra[1] == 0)
+                                continue;   /* If bSynchAddress is zero, leave the descriptor alone. */
+
                             Log(("usb-proxy: pProxyDev=%s async audio with bmAttr=%02X [%02X, %02X] on EP %02X\n",
                                  pUsbIns->pszName, paEps[iEp].Core.bmAttributes, pbExtra[0], pbExtra[1], paEps[iEp].Core.bEndpointAddress));
                             paEps[iEp].Core.bmAttributes = 0xD; /* isoch/synch/data*/
