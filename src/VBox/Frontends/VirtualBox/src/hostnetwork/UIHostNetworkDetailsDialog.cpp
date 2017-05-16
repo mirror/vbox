@@ -280,6 +280,9 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 }
                 /* Add into layout: */
                 pLayoutInterface->addLayout(pLayoutAutomatic, 0, 0, 1, 3);
+#ifdef VBOX_WS_MAC
+                pLayoutInterface->setRowMinimumHeight(0, 22);
+#endif
             }
 
             /* Create manual interface configuration layout: */
@@ -311,6 +314,9 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 }
                 /* Add into layout: */
                 pLayoutInterface->addLayout(pLayoutManual, 1, 0, 1, 3);
+#ifdef VBOX_WS_MAC
+                pLayoutInterface->setRowMinimumHeight(1, 22);
+#endif
             }
 
             /* Create IPv4 address label: */
@@ -522,6 +528,9 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                         this, &UIHostNetworkDetailsDialog::sltStatusChangedServer);
                 /* Add into layout: */
                 pLayoutDHCPServer->addWidget(m_pCheckBoxDHCP, 0, 0, 1, 2);
+#ifdef VBOX_WS_MAC
+                pLayoutDHCPServer->setRowMinimumHeight(0, 22);
+#endif
             }
 
             /* Create DHCP address label: */
