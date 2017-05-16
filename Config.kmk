@@ -7215,7 +7215,6 @@ up2 update2::
 st stat status:
 	$(SVN) status
 
-quick:
-	$(MAKE) VBOX_QUICK=1
+
 
 
