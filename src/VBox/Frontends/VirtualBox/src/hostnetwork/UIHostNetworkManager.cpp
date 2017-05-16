@@ -200,6 +200,7 @@ UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
     , m_pActionAdd(0)
     , m_pActionRemove(0)
     , m_pActionDetails(0)
+    , m_pActionCommit(0)
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
     , m_pButtonBox(0)
@@ -240,7 +241,7 @@ void UIHostNetworkManager::retranslateUi()
 
     /* Translate menu: */
     if (m_pMenu)
-        m_pMenu->setTitle(QApplication::translate("UIActionPool", "&File"));
+        m_pMenu->setTitle(QApplication::translate("UIActionPool", "&Network"));
 
     /* Translate actions: */
     if (m_pActionAdd)
@@ -260,6 +261,12 @@ void UIHostNetworkManager::retranslateUi()
         m_pActionDetails->setText(tr("&Details..."));
         m_pActionDetails->setToolTip(tr("Open Host-only Network Details (%1)").arg(m_pActionDetails->shortcut().toString()));
         m_pActionDetails->setStatusTip(tr("Opens pane with the selected host-only network details."));
+    }
+    if (m_pActionCommit)
+    {
+        m_pActionCommit->setText(tr("&Apply..."));
+        m_pActionCommit->setToolTip(tr("Apply Changes in Host-only Network Details (%1)").arg(m_pActionCommit->shortcut().toString()));
+        m_pActionCommit->setStatusTip(tr("Applies changes in host-only network details pane."));
     }
 
     /* Adjust tool-bar: */
@@ -434,21 +441,17 @@ void UIHostNetworkManager::sltRemoveHostNetwork()
     }
 }
 
-void UIHostNetworkManager::sltShowHostNetworkDetails(bool fShow)
+void UIHostNetworkManager::sltToggleHostNetworkDetailsVisibility(bool fShow)
 {
     /* Show/hide details area and Apply button: */
     m_pDetailsWidget->setVisible(fShow);
-    m_pButtonBox->button(QDialogButtonBox::Apply)->setVisible(fShow);
+    m_pActionCommit->setVisible(fShow);
 }
 
-void UIHostNetworkManager::sltHandleButtonClicked(QAbstractButton *pButton)
+void UIHostNetworkManager::sltApplyHostNetworkDetailsChanges()
 {
-    /* Handle known button (Apply) only: */
-    if (pButton != m_pButtonBox->button(QDialogButtonBox::Apply))
-        return;
-
     /* Disable button first of all: */
-    m_pButtonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
+    m_pActionCommit->setEnabled(false);
 
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
@@ -684,6 +687,7 @@ void UIHostNetworkManager::sltHandleCurrentItemChange()
     /* Update actions availability: */
     m_pActionRemove->setEnabled(pItem);
     m_pActionDetails->setEnabled(pItem);
+    m_pActionCommit->setEnabled(false);
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -692,7 +696,7 @@ void UIHostNetworkManager::sltHandleCurrentItemChange()
     {
         /* Otherwise => clear details and close the area: */
         m_pDetailsWidget->clearData();
-        sltShowHostNetworkDetails(false);
+        sltToggleHostNetworkDetailsVisibility(false);
     }
 }
 
@@ -788,7 +792,22 @@ void UIHostNetworkManager::prepareActions()
                                                           ":/edit_host_iface_16px.png",
                                                           ":/edit_host_iface_disabled_22px.png",
                                                           ":/edit_host_iface_disabled_16px.png"));
-        connect(m_pActionDetails, &QAction::toggled, this, &UIHostNetworkManager::sltShowHostNetworkDetails);
+        connect(m_pActionDetails, &QAction::toggled, this, &UIHostNetworkManager::sltToggleHostNetworkDetailsVisibility);
+    }
+
+    /* Create 'Apply' action: */
+    m_pActionCommit = new QAction(this);
+    AssertPtrReturnVoid(m_pActionCommit);
+    {
+        /* Configure 'Apply' action: */
+        m_pActionCommit->setVisible(false);
+        m_pActionCommit->setShortcut(QKeySequence("Ctrl+Return"));
+        m_pActionCommit->setIcon(UIIconPool::iconSetFull(":/edit_host_iface_22px.png",
+                                                         ":/edit_host_iface_16px.png",
+                                                         ":/edit_host_iface_disabled_22px.png",
+                                                         ":/edit_host_iface_disabled_16px.png"));
+        connect(m_pActionDetails, &QAction::toggled, m_pActionCommit, &QAction::setVisible);
+        connect(m_pActionCommit, &QAction::triggered, this, &UIHostNetworkManager::sltApplyHostNetworkDetailsChanges);
     }
 
     /* Prepare menu-bar: */
@@ -797,14 +816,15 @@ void UIHostNetworkManager::prepareActions()
 
 void UIHostNetworkManager::prepareMenuBar()
 {
-    /* Create 'File' menu: */
+    /* Create 'Network' menu: */
     m_pMenu = menuBar()->addMenu(QString());
     AssertPtrReturnVoid(m_pMenu);
     {
-        /* Configure 'File' menu: */
+        /* Configure menu: */
         m_pMenu->addAction(m_pActionAdd);
         m_pMenu->addAction(m_pActionRemove);
         m_pMenu->addAction(m_pActionDetails);
+        m_pMenu->addAction(m_pActionCommit);
     }
 
 #ifdef VBOX_WS_MAC
@@ -853,8 +873,12 @@ void UIHostNetworkManager::prepareToolBar()
             m_pToolBar->addAction(m_pActionAdd);
         if (m_pActionRemove)
             m_pToolBar->addAction(m_pActionRemove);
+        if ((m_pActionAdd || m_pActionRemove) && (m_pActionDetails || m_pActionCommit))
+            m_pToolBar->addSeparator();
         if (m_pActionDetails)
             m_pToolBar->addAction(m_pActionDetails);
+        if (m_pActionCommit)
+            m_pToolBar->addAction(m_pActionCommit);
         /* Integrate tool-bar into dialog: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
 #ifdef VBOX_WS_MAC
@@ -911,6 +935,8 @@ void UIHostNetworkManager::prepareDetailsWidget()
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
+                m_pActionCommit, &QAction::setEnabled);
 
         /* Add into layout: */
         centralWidget()->layout()->addWidget(m_pDetailsWidget);
@@ -924,15 +950,11 @@ void UIHostNetworkManager::prepareButtonBox()
     AssertPtrReturnVoid(m_pButtonBox);
     {
         /* Configure button-box: */
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Close | QDialogButtonBox::Apply);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Close);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        m_pButtonBox->button(QDialogButtonBox::Apply)->hide();
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIHostNetworkManager::close);
-        connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIHostNetworkManager::sltHandleButtonClicked);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
-                m_pButtonBox->button(QDialogButtonBox::Apply), &QWidget::setEnabled);
 
-        /* Add button-box into layout: */
+        /* Add into layout: */
         centralWidget()->layout()->addWidget(m_pButtonBox);
     }
 }

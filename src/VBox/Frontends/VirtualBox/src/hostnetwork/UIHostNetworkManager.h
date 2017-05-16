@@ -76,14 +76,10 @@ private slots:
         void sltAddHostNetwork();
         /** Handles command to remove host network. */
         void sltRemoveHostNetwork();
-        /** Handles command to @a fShow host network details. */
-        void sltShowHostNetworkDetails(bool fShow);
-    /** @} */
-
-    /** @name Button-box stuff.
-     * @{ */
-        /** Handles button-box @a pButton click. */
-        void sltHandleButtonClicked(QAbstractButton *pButton);
+        /** Handles command to make host network details @a fVisible. */
+        void sltToggleHostNetworkDetailsVisibility(bool fVisible);
+        /** Handles command to apply host network details changes. */
+        void sltApplyHostNetworkDetailsChanges();
     /** @} */
 
     /** @name Tree-widget stuff.
@@ -165,6 +161,8 @@ private:
         QAction   *m_pActionRemove;
         /** Holds the Details action instance. */
         QAction   *m_pActionDetails;
+        /** Holds the Commit action instance. */
+        QAction   *m_pActionCommit;
     /** @} */
 
     /** @name Splitter variables.
