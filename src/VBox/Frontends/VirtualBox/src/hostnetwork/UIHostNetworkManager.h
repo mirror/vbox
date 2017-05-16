@@ -27,7 +27,6 @@
 /* Forward declarations: */
 class CHostNetworkInterface;
 class QAbstractButton;
-class QSplitter;
 class QTreeWidgetItem;
 class QIDialogButtonBox;
 class QITreeWidget;
@@ -116,8 +115,6 @@ private:
         void prepareCentralWidget();
         /** Prepares tool-bar. */
         void prepareToolBar();
-        /** Prepares splitter. */
-        void prepareSplitter();
         /** Prepares tree-widget. */
         void prepareTreeWidget();
         /** Prepares details-widget. */
@@ -172,8 +169,6 @@ private:
 
     /** @name Splitter variables.
      * @{ */
-        /** Holds the splitter instance. */
-        QSplitter    *m_pSplitter;
         /** Holds the tree-widget instance. */
         QITreeWidget *m_pTreeWidget;
         /** Holds the details-widget instance. */

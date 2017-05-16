@@ -23,7 +23,6 @@
 # include <QHeaderView>
 # include <QMenuBar>
 # include <QPushButton>
-# include <QSplitter>
 
 /* GUI includes: */
 # include "QIDialogButtonBox.h"
@@ -201,7 +200,6 @@ UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
     , m_pActionAdd(0)
     , m_pActionRemove(0)
     , m_pActionDetails(0)
-    , m_pSplitter(0)
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
     , m_pButtonBox(0)
@@ -438,17 +436,9 @@ void UIHostNetworkManager::sltRemoveHostNetwork()
 
 void UIHostNetworkManager::sltShowHostNetworkDetails(bool fShow)
 {
-    /* Show/hide details area: */
-    if (fShow)
-    {
-        m_pSplitter->setSizes(QList<int>() << m_pSplitter->height() << 1);
-        m_pButtonBox->button(QDialogButtonBox::Apply)->show();
-    }
-    else
-    {
-        m_pSplitter->setSizes(QList<int>() << m_pSplitter->height() << 0);
-        m_pButtonBox->button(QDialogButtonBox::Apply)->hide();
-    }
+    /* Show/hide details area and Apply button: */
+    m_pDetailsWidget->setVisible(fShow);
+    m_pButtonBox->button(QDialogButtonBox::Apply)->setVisible(fShow);
 }
 
 void UIHostNetworkManager::sltHandleButtonClicked(QAbstractButton *pButton)
@@ -702,8 +692,7 @@ void UIHostNetworkManager::sltHandleCurrentItemChange()
     {
         /* Otherwise => clear details and close the area: */
         m_pDetailsWidget->clearData();
-        m_pSplitter->setSizes(QList<int>() << m_pSplitter->height() << 0);
-        m_pButtonBox->button(QDialogButtonBox::Apply)->hide();
+        sltShowHostNetworkDetails(false);
     }
 }
 
@@ -838,8 +827,10 @@ void UIHostNetworkManager::prepareCentralWidget()
         {
             /* Prepare tool-bar: */
             prepareToolBar();
-            /* Prepare splitter: */
-            prepareSplitter();
+            /* Prepare tree-widget: */
+            prepareTreeWidget();
+            /* Prepare details-widget: */
+            prepareDetailsWidget();
             /* Prepare button-box: */
             prepareButtonBox();
         }
@@ -857,7 +848,6 @@ void UIHostNetworkManager::prepareToolBar()
         const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        m_pToolBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         /* Add tool-bar actions: */
         if (m_pActionAdd)
             m_pToolBar->addAction(m_pActionAdd);
@@ -883,26 +873,6 @@ void UIHostNetworkManager::prepareToolBar()
     }
 }
 
-void UIHostNetworkManager::prepareSplitter()
-{
-    /* Create splitter: */
-    m_pSplitter = new QSplitter;
-    AssertPtrReturnVoid(m_pSplitter);
-    {
-        /* Prepare tree-widget: */
-        prepareTreeWidget();
-        /* Prepare details-widget: */
-        prepareDetailsWidget();
-        /* Configure splitter: */
-        m_pSplitter->setSizes(QList<int>() << m_pSplitter->height() << 0);
-        m_pSplitter->setOrientation(Qt::Vertical);
-        m_pSplitter->setCollapsible(0, false);
-        /* Add splitter into layout: */
-        QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
-        pMainLayout->addWidget(m_pSplitter);
-    }
-}
-
 void UIHostNetworkManager::prepareTreeWidget()
 {
     /* Create tree-widget: */
@@ -917,6 +887,7 @@ void UIHostNetworkManager::prepareTreeWidget()
         m_pTreeWidget->setColumnCount(Column_Max);
         m_pTreeWidget->setSortingEnabled(true);
         m_pTreeWidget->sortByColumn(Column_Name, Qt::AscendingOrder);
+        m_pTreeWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
         connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
                 this, &UIHostNetworkManager::sltHandleCurrentItemChange);
         connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested,
@@ -925,8 +896,9 @@ void UIHostNetworkManager::prepareTreeWidget()
                 this, &UIHostNetworkManager::sltHandleItemChange);
         connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
                 m_pActionDetails, &QAction::setChecked);
-        /* Add tree-widget into splitter: */
-        m_pSplitter->addWidget(m_pTreeWidget);
+
+        /* Add into layout: */
+        centralWidget()->layout()->addWidget(m_pTreeWidget);
     }
 }
 
@@ -936,8 +908,12 @@ void UIHostNetworkManager::prepareDetailsWidget()
     m_pDetailsWidget = new UIHostNetworkDetailsDialog;
     AssertPtrReturnVoid(m_pDetailsWidget);
     {
-        /* Add details-widget into splitter: */
-        m_pSplitter->addWidget(m_pDetailsWidget);
+        /* Configure details-widget: */
+        m_pDetailsWidget->setVisible(false);
+        m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+
+        /* Add into layout: */
+        centralWidget()->layout()->addWidget(m_pDetailsWidget);
     }
 }
 
@@ -955,9 +931,9 @@ void UIHostNetworkManager::prepareButtonBox()
         connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIHostNetworkManager::sltHandleButtonClicked);
         connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
                 m_pButtonBox->button(QDialogButtonBox::Apply), &QWidget::setEnabled);
+
         /* Add button-box into layout: */
-        QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
-        pMainLayout->addWidget(m_pButtonBox);
+        centralWidget()->layout()->addWidget(m_pButtonBox);
     }
 }
 
