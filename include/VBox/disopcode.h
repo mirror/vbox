@@ -1082,6 +1082,7 @@ enum OP_PARM
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
 #define OP_PARM_UqHi            (OP_PARM_U+OP_PARM_dq)
 #define OP_PARM_Uss             (OP_PARM_U+OP_PARM_ss)
+#define OP_PARM_Uss_WO          OP_PARM_Uss             /**< Annotates write only operand. */
 #define OP_PARM_Usd             (OP_PARM_U+OP_PARM_sd)
 #define OP_PARM_Vdq_WO          OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
 #define OP_PARM_Vpd_WO          OP_PARM_Vpd             /**< Annotates write only operand. */
