@@ -916,13 +916,11 @@ VBOX_WITH_STRICT_LOCKS = 1
 # VirtualBox object client and VBoxSVC that fixes problem
 # when multiple VBoxSVC starts for the same user
 # it is enabled for windows build only
-ifdef VBOX_WITH_SDS
- ifneq  ($(KBUILD_TARGET),win)
+ifeq  ($(KBUILD_TARGET),win)
+  VBOX_WITH_SDS = 1
+else
   VBOX_WITH_SDS = 
- endif
 endif
-# disabled by default
-VBOX_WITH_SDS =
 
 
 #
