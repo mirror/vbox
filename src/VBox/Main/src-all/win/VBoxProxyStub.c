@@ -39,6 +39,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/utf16.h>
 
 
 /*********************************************************************************************************************************
@@ -2280,6 +2281,191 @@ HRESULT STDAPICALLTYPE DllUnregisterServer(void)
 }
 
 
+BOOL IsInstalledWindowsService(const WCHAR* wszServiceName)
+{
+    BOOL bResult = FALSE;
+    SC_HANDLE hSCM;
+    SC_HANDLE hService;
+
+    hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+
+    if (hSCM != NULL)
+    {
+        hService = OpenService(hSCM, wszServiceName, SERVICE_QUERY_CONFIG);
+        if (hService != NULL)
+        {
+            bResult = TRUE;
+            CloseServiceHandle(hService);
+        }
+        CloseServiceHandle(hSCM);
+    }
+    return bResult;
+}
+
+
+BOOL InstallWindowsService(const WCHAR* wszVBoxDir,
+    const WCHAR* wszServiceModule,
+    const WCHAR* wszServiceName,
+    const WCHAR* wszServiceDisplayName,
+    const WCHAR* wszServiceDescription
+)
+{
+    #define QUOTES_SPACE 2
+
+    WCHAR szFilePath[MAX_PATH + QUOTES_SPACE];
+    size_t dirLen;
+    size_t moduleLen;
+    SC_HANDLE hSCM;
+    SC_HANDLE hService;
+    SERVICE_DESCRIPTION sd;
+
+    if (IsInstalledWindowsService(wszServiceName))
+        return TRUE;
+
+    // Make the executable file path
+    dirLen = RTUtf16Len(wszVBoxDir);
+    moduleLen = RTUtf16Len(wszServiceModule);
+
+    if (dirLen + moduleLen >= MAX_PATH + QUOTES_SPACE ||
+        !RT_SUCCESS(RTUtf16Copy(szFilePath + 1, MAX_PATH + QUOTES_SPACE - 1, wszVBoxDir)) ||
+        !RT_SUCCESS(RTUtf16Copy(szFilePath + dirLen + 1, MAX_PATH + QUOTES_SPACE - dirLen - 1, wszServiceModule)))
+    {
+        LogWarnFunc(("Error: The path to a windows service module is too long\n"));
+        return FALSE;
+    }
+
+    // Quote the FilePath before calling CreateService
+    szFilePath[0] = L'\"';
+    szFilePath[dirLen + moduleLen + 1] = L'\"';
+    szFilePath[dirLen + moduleLen + 2] = 0;
+
+    hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (hSCM == NULL)
+    {
+        LogWarnFunc(("Error: Could not open Service Manager\n"));
+        Assert(0);
+        return FALSE;
+    }
+
+    hService = CreateService(
+        hSCM, wszServiceName, wszServiceDisplayName,
+        SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
+        SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
+        szFilePath, NULL, NULL, L"RPCSS\0", NULL, NULL);
+
+    if (hService == NULL)
+    {
+        CloseServiceHandle(hSCM);
+        LogWarnFunc(("Error: Could not start service\n"));
+        Assert(0);
+        return FALSE;
+    }
+
+    sd.lpDescription = (LPWSTR)wszServiceDescription;
+    if (!ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &sd))
+    {
+        LogWarnFunc(("Error: could not set service description. code: %x\n",
+            GetLastError()));
+        Assert(0);
+    }
+
+    CloseServiceHandle(hService);
+    CloseServiceHandle(hSCM);
+    return TRUE;
+}
+
+BOOL UninstallWindowsService(const WCHAR* wszServiceName)
+{
+    SC_HANDLE hSCM;
+    SC_HANDLE hService;
+    SERVICE_STATUS status;
+    BOOL bRet;
+    BOOL bDelete;
+
+    if (!IsInstalledWindowsService(wszServiceName))
+        return TRUE;
+
+    hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+
+    if (hSCM == NULL)
+    {
+        LogWarnFunc(("Error: Could not open Service Manager\n"));
+        Assert(0);
+        return FALSE;
+    }
+
+    hService = OpenService(hSCM, wszServiceName, SERVICE_STOP | DELETE);
+
+    if (hService == NULL)
+    {
+        CloseServiceHandle(hSCM);
+        hSCM = NULL;
+        LogWarnFunc(("Error: Could not open service\n"));
+        Assert(0);
+        return FALSE;
+    }
+
+    bRet = ControlService(hService, SERVICE_CONTROL_STOP, &status);
+    if (!bRet)
+    {
+        DWORD dwError = GetLastError();
+        if (!((dwError == ERROR_SERVICE_NOT_ACTIVE) ||
+            (dwError == ERROR_SERVICE_CANNOT_ACCEPT_CTRL
+                && status.dwCurrentState == SERVICE_STOP_PENDING)))
+        {
+            CloseServiceHandle(hSCM);
+            hSCM = NULL;
+            LogWarnFunc(("Could not stop service\n"));
+            Assert(0);
+        }
+    }
+
+    bDelete = DeleteService(hService);
+    CloseServiceHandle(hService);
+    CloseServiceHandle(hSCM);
+
+    if (!bDelete)
+    {
+        LogWarnFunc(("Error: Could not delete service\n"));
+        Assert(0);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
+static void vbpsUpdateVBoxSDSWindowsService(VBPSREGSTATE* pState, const WCHAR* wszVBoxDir)
+{
+    const WCHAR* wszModuleName =            L"VBoxSDS.exe";
+    const WCHAR* wszServiceName =           L"VBoxSDS";
+    const WCHAR* wszServiceDisplayName =    L"VirtualBox system service";
+    const WCHAR* wszServiceDescription =    L"Used as a COM server for VirtualBox API.";
+
+    if (pState->fUpdate)
+    {
+        if (!InstallWindowsService(wszVBoxDir,
+            wszModuleName,
+            wszServiceName,
+            wszServiceDisplayName,
+            wszServiceDescription))
+        {
+            LogWarnFunc(("Error: Windows service '%ls' cannot be registered\n", wszServiceName));
+            pState->rc = E_FAIL;
+        }
+    }
+    else if(pState->fDelete)
+    {
+        if (!UninstallWindowsService(wszServiceName))
+        {
+            LogWarnFunc(("Error: Windows service '%ls' cannot be unregistered\n", wszServiceName));
+            pState->rc = E_FAIL;
+        }
+    }
+}
+
+
+
 /**
  * Gently update the COM registrations for VirtualBox.
  *
@@ -2315,6 +2501,10 @@ DECLEXPORT(uint32_t) VbpsUpdateRegistrations(void)
     rc = vbpsRegInit(&State, HKEY_CLASSES_ROOT, NULL, false /*fDelete*/, true /*fUpdate*/, 0);
     if (rc == ERROR_SUCCESS && !vbpsIsUpToDate(&State))
     {
+
+#ifdef VBOX_WITH_SDS
+        vbpsUpdateVBoxSDSWindowsService(&State, wszVBoxDir);
+#endif
         vbpsUpdateTypeLibRegistration(&State, wszVBoxDir, fIs32On64);
         vbpsUpdateProxyStubRegistration(&State, wszVBoxDir, fIs32On64);
         vbpsUpdateInterfaceRegistrations(&State);
@@ -2335,6 +2525,9 @@ DECLEXPORT(uint32_t) VbpsUpdateRegistrations(void)
                          !fIs32On64 ? KEY_WOW64_32KEY : KEY_WOW64_64KEY);
         if (rc == ERROR_SUCCESS && !vbpsIsUpToDate(&State))
         {
+#ifdef VBOX_WITH_SDS
+            vbpsUpdateVBoxSDSWindowsService(&State, wszVBoxDir);
+#endif
             vbpsUpdateTypeLibRegistration(&State, wszVBoxDir, !fIs32On64);
             vbpsUpdateProxyStubRegistration(&State, wszVBoxDir, !fIs32On64);
             vbpsUpdateInterfaceRegistrations(&State);
