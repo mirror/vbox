@@ -36,23 +36,23 @@ class UIToolBar;
 struct UIDataHostNetwork;
 
 
-/** Host Network Manager dialog. */
-class UIHostNetworkManager : public QIWithRetranslateUI<QMainWindow>
+/** Host Network Manager widget. */
+class UIHostNetworkManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
-    /** Constructs Host Network Manager dialog.
-      * @param  pCenterWidget  Brings the pseudo-parent widget to center according to. */
-    UIHostNetworkManager(QWidget *pCenterWidget);
-    /** Destructs Host Network Manager dialog. */
-    ~UIHostNetworkManager();
-
 public:
 
-    /** Returns Host Network Manager singleton instance. */
-    static UIHostNetworkManager *instance();
-    /** Shows Host Network Manager singleton instance, creates new if necessary. */
-    static void showModeless(QWidget *pCenterWidget);
+    /** Constructs Host Network Manager widget. */
+    UIHostNetworkManagerWidget(QWidget *pParent = 0);
+
+    /** Returns the menu. */
+    QMenu *menu() const { return m_pMenu; }
+
+#ifdef VBOX_WS_MAC
+    /** Returns the toolbar. */
+    UIToolBar *toolbar() const { return m_pToolBar; }
+#endif
 
 protected:
 
@@ -105,23 +105,16 @@ private:
         void prepareThis();
         /** Prepares actions. */
         void prepareActions();
-        /** Prepares menu-bar. */
-        void prepareMenuBar();
-        /** Prepares central-widget. */
-        void prepareCentralWidget();
+        /** Prepares menu. */
+        void prepareMenu();
+        /** Prepares widgets. */
+        void prepareWidgets();
         /** Prepares tool-bar. */
         void prepareToolBar();
         /** Prepares tree-widget. */
         void prepareTreeWidget();
         /** Prepares details-widget. */
         void prepareDetailsWidget();
-        /** Prepares button-box. */
-        void prepareButtonBox();
-
-        /** Cleanup menu-bar. */
-        void cleanupMenuBar();
-        /** Cleanups all. */
-        void cleanup();
     /** @} */
 
     /** @name Loading stuff.
@@ -138,15 +131,6 @@ private:
         void createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem);
         /** Updates the passed tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem);
-    /** @} */
-
-    /** @name General variables.
-     * @{ */
-        /** Holds the Host Network Manager singleton instance. */
-        static UIHostNetworkManager *s_pInstance;
-
-        /** Widget to center UIMediumManager according. */
-        QWidget *m_pPseudoParentWidget;
     /** @} */
 
     /** @name Tool-bar and menu variables.
@@ -171,6 +155,74 @@ private:
         QITreeWidget *m_pTreeWidget;
         /** Holds the details-widget instance. */
         UIHostNetworkDetailsDialog *m_pDetailsWidget;
+    /** @} */
+};
+
+
+/** Host Network Manager dialog. */
+class UIHostNetworkManager : public QIWithRetranslateUI<QMainWindow>
+{
+    Q_OBJECT;
+
+    /** Constructs Host Network Manager dialog.
+      * @param  pCenterWidget  Brings the pseudo-parent widget to center according to. */
+    UIHostNetworkManager(QWidget *pCenterWidget);
+    /** Destructs Host Network Manager dialog. */
+    ~UIHostNetworkManager();
+
+public:
+
+    /** Returns Host Network Manager singleton instance. */
+    static UIHostNetworkManager *instance();
+    /** Shows Host Network Manager singleton instance, creates new if necessary. */
+    static void showModeless(QWidget *pCenterWidget);
+
+protected:
+
+    /** @name Event-handling stuff.
+     * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+    /** @} */
+
+private:
+
+    /** @name Prepare/cleanup cascade.
+     * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares this. */
+        void prepareThis();
+        /** Prepares central-widget. */
+        void prepareCentralWidget();
+        /** Prepares widget. */
+        void prepareWidget();
+        /** Prepares button-box. */
+        void prepareButtonBox();
+        /** Prepares menu-bar. */
+        void prepareMenuBar();
+        /** Prepares toolbar. */
+        void prepareToolBar();
+
+        /** Cleanup menu-bar. */
+        void cleanupMenuBar();
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
+
+    /** @name General variables.
+     * @{ */
+        /** Holds the Host Network Manager singleton instance. */
+        static UIHostNetworkManager *s_pInstance;
+
+        /** Widget to center UIMediumManager according. */
+        QWidget *m_pPseudoParentWidget;
+    /** @} */
+
+    /** @name Widget variables.
+     * @{ */
+        /** Holds the widget instance. */
+        UIHostNetworkManagerWidget *m_pWidget;
     /** @} */
 
     /** @name Button-box variables.
