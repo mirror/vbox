@@ -3329,6 +3329,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_VEX_MODRM_Wps_WO_Vps:
+        case BS3CG1ENC_VEX_MODRM_Wpd_WO_Vpd:
             pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip;
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
