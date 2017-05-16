@@ -184,7 +184,7 @@ protected:
 private slots:
 
     /** @name Change handling stuff.
-     * @{ */
+      * @{ */
         /** Handles interface automatic configuration choice change. */
         void sltToggledButtonAutomatic(bool fChecked);
         /** Handles interface manual configuration choice change. */
@@ -213,7 +213,7 @@ private slots:
 private:
 
     /** @name Prepare/cleanup cascade.
-     * @{ */
+      * @{ */
         /** Prepares all. */
         void prepare();
         /** Prepares this. */
@@ -227,7 +227,7 @@ private:
     /** @} */
 
     /** @name Loading stuff.
-     * @{ */
+      * @{ */
         /** Loads interface data. */
         void loadDataForInterface();
         /** Loads server data. */
@@ -235,7 +235,7 @@ private:
     /** @} */
 
     /** @name Change handling stuff.
-     * @{ */
+      * @{ */
         /** Revalidates changes for passed @a pWidget. */
         void revalidate(QWidget *pWidget = 0);
         /** Retranslates validation for passed @a pWidget. */
@@ -245,7 +245,7 @@ private:
     /** @} */
 
     /** @name General variables.
-     * @{ */
+      * @{ */
         /** Holds the old data copy. */
         UIDataHostNetwork  m_oldData;
         /** Holds the new data copy. */
@@ -255,7 +255,7 @@ private:
     /** @} */
 
     /** @name Interface variables.
-     * @{ */
+      * @{ */
         /** Holds the automatic interface configuration button. */
         QRadioButton *m_pButtonAutomatic;
         /** Holds the automatic interface configuration error pane. */
@@ -296,7 +296,7 @@ private:
     /** @} */
 
     /** @name DHCP server variables.
-     * @{ */
+      * @{ */
         /** Holds the DHCP server status chack-box. */
         QCheckBox  *m_pCheckBoxDHCP;
 

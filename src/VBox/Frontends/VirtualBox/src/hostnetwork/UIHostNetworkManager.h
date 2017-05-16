@@ -57,7 +57,7 @@ public:
 protected:
 
     /** @name Event-handling stuff.
-     * @{ */
+      * @{ */
         /** Handles translation event. */
         virtual void retranslateUi() /* override */;
 
@@ -71,7 +71,7 @@ protected:
 private slots:
 
     /** @name Menu/action stuff.
-     * @{ */
+      * @{ */
         /** Handles command to add host network. */
         void sltAddHostNetwork();
         /** Handles command to remove host network. */
@@ -83,7 +83,7 @@ private slots:
     /** @} */
 
     /** @name Tree-widget stuff.
-     * @{ */
+      * @{ */
         /** Handles command to adjust tree-widget. */
         void sltAdjustTreeWidget();
 
@@ -98,7 +98,7 @@ private slots:
 private:
 
     /** @name Prepare/cleanup cascade.
-     * @{ */
+      * @{ */
         /** Prepares all. */
         void prepare();
         /** Prepares this. */
@@ -109,7 +109,7 @@ private:
         void prepareMenu();
         /** Prepares widgets. */
         void prepareWidgets();
-        /** Prepares tool-bar. */
+        /** Prepares toolbar. */
         void prepareToolBar();
         /** Prepares tree-widget. */
         void prepareTreeWidget();
@@ -118,7 +118,7 @@ private:
     /** @} */
 
     /** @name Loading stuff.
-     * @{ */
+      * @{ */
         /** Loads host networks. */
         void loadHostNetworks();
         /** Loads host @a comInterface data to passed @a data container. */
@@ -126,16 +126,16 @@ private:
     /** @} */
 
     /** @name Tree-widget stuff.
-     * @{ */
+      * @{ */
         /** Creates a new tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem);
         /** Updates the passed tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem);
     /** @} */
 
-    /** @name Tool-bar and menu variables.
-     * @{ */
-        /** Holds the tool-bar instance. */
+    /** @name Toolbar and menu variables.
+      * @{ */
+        /** Holds the toolbar instance. */
         UIToolBar *m_pToolBar;
         /** Holds menu-bar menu object instance. */
         QMenu     *m_pMenu;
@@ -150,7 +150,7 @@ private:
     /** @} */
 
     /** @name Splitter variables.
-     * @{ */
+      * @{ */
         /** Holds the tree-widget instance. */
         QITreeWidget *m_pTreeWidget;
         /** Holds the details-widget instance. */
@@ -180,7 +180,7 @@ public:
 protected:
 
     /** @name Event-handling stuff.
-     * @{ */
+      * @{ */
         /** Handles translation event. */
         virtual void retranslateUi() /* override */;
     /** @} */
@@ -188,7 +188,7 @@ protected:
 private:
 
     /** @name Prepare/cleanup cascade.
-     * @{ */
+      * @{ */
         /** Prepares all. */
         void prepare();
         /** Prepares this. */
@@ -211,22 +211,22 @@ private:
     /** @} */
 
     /** @name General variables.
-     * @{ */
+      * @{ */
         /** Holds the Host Network Manager singleton instance. */
         static UIHostNetworkManager *s_pInstance;
 
-        /** Widget to center UIMediumManager according. */
+        /** Holds the widget reference to center Host Network Manager according. */
         QWidget *m_pPseudoParentWidget;
     /** @} */
 
     /** @name Widget variables.
-     * @{ */
+      * @{ */
         /** Holds the widget instance. */
         UIHostNetworkManagerWidget *m_pWidget;
     /** @} */
 
     /** @name Button-box variables.
-     * @{ */
+      * @{ */
         /** Holds the dialog button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
     /** @} */
