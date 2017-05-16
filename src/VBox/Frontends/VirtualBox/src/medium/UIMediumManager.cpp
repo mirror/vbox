@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -654,8 +654,8 @@ private:
 
 
 /* static */
-UIMediumManager* UIMediumManager::m_spInstance = 0;
-UIMediumManager* UIMediumManager::instance() { return m_spInstance; }
+UIMediumManager* UIMediumManager::s_pInstance = 0;
+UIMediumManager* UIMediumManager::instance() { return s_pInstance; }
 
 UIMediumManager::UIMediumManager(QWidget *pCenterWidget, bool fRefresh /* = true */)
     : QIWithRetranslateUI<QMainWindow>(0)
@@ -689,20 +689,20 @@ UIMediumManager::~UIMediumManager()
     cleanup();
 
     /* Cleanup instance: */
-    m_spInstance = 0;
+    s_pInstance = 0;
 }
 
 /* static */
 void UIMediumManager::showModeless(QWidget *pCenterWidget /* = 0 */, bool fRefresh /* = true */)
 {
     /* Create instance if not yet created: */
-    if (!m_spInstance)
-        m_spInstance = new UIMediumManager(pCenterWidget, fRefresh);
+    if (!s_pInstance)
+        s_pInstance = new UIMediumManager(pCenterWidget, fRefresh);
 
     /* Show instance: */
-    m_spInstance->show();
-    m_spInstance->setWindowState(m_spInstance->windowState() & ~Qt::WindowMinimized);
-    m_spInstance->activateWindow();
+    s_pInstance->show();
+    s_pInstance->setWindowState(s_pInstance->windowState() & ~Qt::WindowMinimized);
+    s_pInstance->activateWindow();
 }
 
 void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
@@ -1124,7 +1124,7 @@ void UIMediumManager::prepareCentralWidget()
         new QVBoxLayout(centralWidget());
         AssertPtrReturnVoid(centralWidget()->layout());
         {
-            /* Prepare tool-bar: */
+            /* Prepare toolbar: */
             prepareToolBar();
             /* Prepare tab-widget: */
             prepareTabWidget();
@@ -1136,17 +1136,17 @@ void UIMediumManager::prepareCentralWidget()
 
 void UIMediumManager::prepareToolBar()
 {
-    /* Create tool-bar: */
+    /* Create toolbar: */
     m_pToolBar = new UIToolBar(this);
     AssertPtrReturnVoid(m_pToolBar);
     {
-        /* Configure tool-bar: */
+        /* Configure toolbar: */
         const QStyle *pStyle = QApplication::style();
         const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         m_pToolBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        /* Add tool-bar actions: */
+        /* Add toolbar actions: */
         if (m_pActionCopy)
             m_pToolBar->addAction(m_pActionCopy);
         if (m_pActionModify)
@@ -1157,17 +1157,17 @@ void UIMediumManager::prepareToolBar()
             m_pToolBar->addAction(m_pActionRelease);
         if (m_pActionRefresh)
             m_pToolBar->addAction(m_pActionRefresh);
-        /* Integrate tool-bar into dialog: */
+        /* Integrate toolbar into dialog: */
         QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(centralWidget()->layout());
 #ifdef VBOX_WS_MAC
-        /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
+        /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
         m_pToolBar->enableMacToolbar();
         /* No spacing/margin on the Mac: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
         pMainLayout->insertSpacing(0, 10);
 #else /* !VBOX_WS_MAC */
-        /* Add the tool-bar: */
+        /* Add the toolbar: */
         pMainLayout->insertWidget(0, m_pToolBar);
         /* Set spacing/margin like in the selector window: */
         pMainLayout->setSpacing(5);
@@ -1781,7 +1781,7 @@ void UIMediumManager::retranslateUi()
         m_pActionRefresh->setStatusTip(QApplication::translate("VBoxMediaManagerDlg", "Refresh the list of disk image files"));
     }
 
-    /* Translate tool-bar: */
+    /* Translate toolbar: */
 #ifdef VBOX_WS_MAC
     /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
        the necessary size of the toolbar is increased. Also for some languages
