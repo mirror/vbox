@@ -231,6 +231,8 @@ g_kdOpTypes = {
     # ModR/M.rm - register only.
     'Uq':           ( 'IDX_UseModRM',       'rm',     '%Uq',  'Uq',      ),
     'UqHi':         ( 'IDX_UseModRM',       'rm',     '%Uq',  'UqHi',    ),
+    'Uss':          ( 'IDX_UseModRM',       'rm',     '%Uss', 'Uss',     ),
+    'Usd':          ( 'IDX_UseModRM',       'rm',     '%Usd', 'Usd',     ),
     'Nq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Nq',      ),
 
     # ModR/M.rm - memory only.

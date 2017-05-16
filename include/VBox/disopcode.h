@@ -739,14 +739,6 @@ enum OPCODES
     OP_SWAPGS,
     OP_UD1,
     OP_UD2,
-/** @name AVX instructions
- * @{ */
-    OP_VLDMXCSR,
-    OP_VSTMXCSR,
-    OP_VMOVUPS,
-    OP_VMOVUPD,
-    OP_VMOVSS,
-/** @} */
 /** @name VT-x instructions
  * @{ */
     OP_VMREAD,
@@ -777,8 +769,18 @@ enum OPCODES
 /** @}  */
 /** @name 64 bits instruction
  * @{ */
-    OP_MOVSXD
+    OP_MOVSXD,
 /** @} */
+/** @name AVX instructions
+ * @{ */
+    OP_VLDMXCSR,
+    OP_VSTMXCSR,
+    OP_VMOVUPS,
+    OP_VMOVUPD,
+    OP_VMOVSS,
+    OP_VMOVSD,
+/** @} */
+    OP_END_OF_OPCODES
 };
 AssertCompile(OP_LOCK == 7);
 /** @} */
@@ -1079,6 +1081,8 @@ enum OP_PARM
 #define OP_PARM_Nq              OP_PARM_Qq              /**< Missing 'N' class (MMX reg selected by modrm.mem) in disasm. */
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
 #define OP_PARM_UqHi            (OP_PARM_U+OP_PARM_dq)
+#define OP_PARM_Uss             (OP_PARM_U+OP_PARM_ss)
+#define OP_PARM_Usd             (OP_PARM_U+OP_PARM_sd)
 #define OP_PARM_Vdq_WO          OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
 #define OP_PARM_Vpd_WO          OP_PARM_Vpd             /**< Annotates write only operand. */
 #define OP_PARM_Vps_WO          OP_PARM_Vps             /**< Annotates write only operand. */
@@ -1089,12 +1093,12 @@ enum OP_PARM
 #define OP_PARM_VsdZx_WO        OP_PARM_Vsd             /**< Annotates that the registers get their upper bits cleared. */
 #define OP_PARM_VssZx_WO        OP_PARM_Vss             /**< Annotates that the registers get their upper bits cleared. */
 #define OP_PARM_Vss_WO          OP_PARM_Vss             /**< Annotates write only operand. */
+#define OP_PARM_Vsd_WO          OP_PARM_Vsd             /**< Annotates write only operand. */
 #define OP_PARM_Wpd_WO          OP_PARM_Wpd             /**< Annotates write only operand. */
 #define OP_PARM_Wps_WO          OP_PARM_Wps             /**< Annotates write only operand. */
 #define OP_PARM_WqZxReg_WO      OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */
 #define OP_PARM_Wss_WO          OP_PARM_Wss             /**< Annotates write only operand. */
 #define OP_PARM_Wsd_WO          OP_PARM_Wsd             /**< Annotates write only operand. */
-
 
 /** @} */
 
