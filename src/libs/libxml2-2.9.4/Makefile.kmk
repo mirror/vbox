@@ -37,7 +37,7 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  VBox-libxml2_CFLAGS.win   += -wd4005 # sdk\v7.1\include\sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition
 endif
 ifn1of ($(KBUILD_TARGET), win)
- VBox-libxml2_CFLAGS        = -Wno-format-security -Wno-strict-prototypes
+ VBox-libxml2_CFLAGS        = -Wno-format-security -Wno-strict-prototypes -Wno-format-extra-args
 endif
 VBox-libxml2_INCS           = include
 VBox-libxml2_SOURCES        = \
