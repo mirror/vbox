@@ -234,6 +234,7 @@ g_kdOpTypes = {
     'Uss':          ( 'IDX_UseModRM',       'rm',     '%Uss', 'Uss',     ),
     'Uss_WO':       ( 'IDX_UseModRM',       'rm',     '%Uss', 'Uss',     ),
     'Usd':          ( 'IDX_UseModRM',       'rm',     '%Usd', 'Usd',     ),
+    'Usd_WO':       ( 'IDX_UseModRM',       'rm',     '%Usd', 'Usd',     ),
     'Nq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Nq',      ),
 
     # ModR/M.rm - memory only.
