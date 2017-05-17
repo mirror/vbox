@@ -4077,8 +4077,11 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                         /* If we are re-injecting the NMI, clear NMI blocking. */
                         if (fRaiseInfo & IEMXCPTRAISEINFO_NMI_XCPT)
                             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
-                    } else if (uIdtVector == X86_XCPT_PF) {
-                        /* If the previous exception was a #PF, we need to recover the CR2 value.
+                    }
+                    else if (uIdtVector == X86_XCPT_PF)
+                    {
+                        /*
+                         * If the previous exception was a #PF, we need to recover the CR2 value.
                          * This can't happen with shadow paging.
                          */
                         GCPtrFaultAddress = pCtx->cr2;
