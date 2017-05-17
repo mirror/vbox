@@ -39,6 +39,7 @@ public:
 
     // public methods only for internal purposes
     const Bstr &i_id() const { return mID; }
+    const Bstr &i_familyId() const { return mFamilyID; }
     bool i_is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
     bool i_recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
     bool i_recommendedX2APIC() const { return !!(mOSHint & VBOXOSHINT_X2APIC); }

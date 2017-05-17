@@ -486,6 +486,7 @@ public:
      * Intended to be used only after doing addCaller() manually and locking it
      * for reading.
      */
+    Utf8Str i_getOSTypeId() const { return mUserData->s.strOsType; }
     ChipsetType_T i_getChipsetType() const { return mHWData->mChipsetType; }
     ParavirtProvider_T i_getParavirtProvider() const { return mHWData->mParavirtProvider; }
     Utf8Str i_getParavirtDebug() const { return mHWData->mParavirtDebug; }
