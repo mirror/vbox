@@ -909,28 +909,36 @@ typedef IEMCPU const *PCIEMCPU;
 /** VEX+ModR/M: reg, r/m */
 #define IEMOPFORM_VEX_RM        4
 /** VEX+ModR/M: reg, r/m (register) */
-#define IEMOPFORM_VEX_RM_REG        (IEMOPFORM_VEX_RM | IEMOPFORM_MOD3)
+#define IEMOPFORM_VEX_RM_REG    (IEMOPFORM_VEX_RM | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m (memory)   */
-#define IEMOPFORM_VEX_RM_MEM        (IEMOPFORM_VEX_RM | IEMOPFORM_NOT_MOD3)
-#define IEMOPFORM_VEX_XM            IEMOPFORM_VEX_RM_MEM
+#define IEMOPFORM_VEX_RM_MEM    (IEMOPFORM_VEX_RM | IEMOPFORM_NOT_MOD3)
+#define IEMOPFORM_VEX_XM        IEMOPFORM_VEX_RM_MEM
 /** VEX+ModR/M: r/m, reg */
 #define IEMOPFORM_VEX_MR        5
 /** VEX+ModR/M: r/m (register), reg */
-#define IEMOPFORM_VEX_MR_REG        (IEMOPFORM_VEX_MR | IEMOPFORM_MOD3)
+#define IEMOPFORM_VEX_MR_REG    (IEMOPFORM_VEX_MR | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m (memory), reg */
-#define IEMOPFORM_VEX_MR_MEM        (IEMOPFORM_VEX_MR | IEMOPFORM_NOT_MOD3)
+#define IEMOPFORM_VEX_MR_MEM    (IEMOPFORM_VEX_MR | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: r/m only */
 #define IEMOPFORM_VEX_M         6
 /** VEX+ModR/M: r/m only (register). */
-#define IEMOPFORM_VEX_M_REG         (IEMOPFORM_VEX_M | IEMOPFORM_MOD3)
+#define IEMOPFORM_VEX_M_REG     (IEMOPFORM_VEX_M | IEMOPFORM_MOD3)
 /** VEX+ModR/M: r/m only (memory). */
-#define IEMOPFORM_VEX_M_MEM         (IEMOPFORM_VEX_M | IEMOPFORM_NOT_MOD3)
+#define IEMOPFORM_VEX_M_MEM     (IEMOPFORM_VEX_M | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: reg only */
 #define IEMOPFORM_VEX_R         7
 /** VEX+ModR/M: reg, vvvv, r/m */
 #define IEMOPFORM_VEX_RVM       8
+/** VEX+ModR/M: reg, vvvv, r/m (register). */
+#define IEMOPFORM_VEX_RVM_REG   (IEMOPFORM_VEX_RVM | IEMOPFORM_MOD3)
+/** VEX+ModR/M: reg, vvvv, r/m (memory). */
+#define IEMOPFORM_VEX_RVM_MEM   (IEMOPFORM_VEX_RVM | IEMOPFORM_NOT_MOD3)
 /** VEX+ModR/M: r/m, vvvv, reg */
 #define IEMOPFORM_VEX_MVR       9
+/** VEX+ModR/M: r/m, vvvv, reg (register) */
+#define IEMOPFORM_VEX_MVR_REG   (IEMOPFORM_VEX_MVR | IEMOPFORM_MOD3)
+/** VEX+ModR/M: r/m, vvvv, reg (memory) */
+#define IEMOPFORM_VEX_MVR_MEM   (IEMOPFORM_VEX_MVR | IEMOPFORM_NOT_MOD3)
 
 /** Fixed register instruction, no R/M. */
 #define IEMOPFORM_FIXED         16

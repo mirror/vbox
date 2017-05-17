@@ -779,6 +779,8 @@ enum OPCODES
     OP_VMOVUPD,
     OP_VMOVSS,
     OP_VMOVSD,
+    OP_VMOVHLPS,
+    OP_VMOVLPS,
 /** @} */
     OP_END_OF_OPCODES
 };
@@ -1071,6 +1073,7 @@ enum OP_PARM
 #define OP_PARM_Gv_RO           OP_PARM_Gv              /**< Annotates read only first operand (default is readwrite). */
 #define OP_PARM_HdqCss          OP_PARM_Hx              /**< Hdq register complements (high) a ss specifier (low). */
 #define OP_PARM_HdqCsd          OP_PARM_Hx              /**< Hdq register complements (high) a sd specifier (low). */
+#define OP_PARM_HdqCq           OP_PARM_Hx              /**< Hdq register complements (high) a q specifier (low). */
 #define OP_PARM_M_RO            OP_PARM_M               /**< Annotates read only memory of variable operand size (xrstor). */
 #define OP_PARM_M_RW            OP_PARM_M               /**< Annotates read-write memory of variable operand size (xsave). */
 #define OP_PARM_Mb_RO           OP_PARM_Mb              /**< Annotates read only memory byte operand. */

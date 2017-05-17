@@ -11600,6 +11600,27 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
     } while (0)
+#define IEM_MC_MERGE_YREG_U64HI_U64_ZX_VLMAX(a_iYRegDst, a_iYRegSrc64, a_iYRegSrcHx) /* for vmovhlps */ \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         uintptr_t const iYRegSrc64Tmp  = (a_iYRegSrc64); \
+         uintptr_t const iYRegSrcHxTmp  = (a_iYRegSrcHx); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[0]       = pXStateTmp->x87.aXMM[iYRegSrc64Tmp].au64[1]; \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au64[1]; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+    } while (0)
+#define IEM_MC_MERGE_YREG_U64LOCAL_U64_ZX_VLMAX(a_iYRegDst, a_u64Local, a_iYRegSrcHx) \
+    do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         uintptr_t const iYRegSrcHxTmp  = (a_iYRegSrcHx); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[0]       = (a_u64Local); \
+         pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au64[1]; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+    } while (0)
 
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \
@@ -12648,6 +12669,22 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
                            & (IEM_OP_PRF_LOCK | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REX)) \
                       && !IEM_IS_REAL_OR_V86_MODE(pVCpu) )) \
+        { /* likely */ } \
+        else \
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+    } while (0)
+
+/**
+ * Done decoding VEX instruction, raise \#UD exception if any lock, rex, repz,
+ * repnz or size prefixes are present, or if in real or v8086 mode.
+ */
+#define IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX_AND_L0() \
+    do \
+    { \
+        if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
+                           & (IEM_OP_PRF_LOCK | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REX)) \
+                      && !IEM_IS_REAL_OR_V86_MODE(pVCpu) \
+                      && pVCpu->iem.s.uVexLength == 0)) \
         { /* likely */ } \
         else \
             return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
