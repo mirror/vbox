@@ -551,6 +551,22 @@ static const uint8_t g_acbBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_DW0_ZX] =*/ 4,
     /* [BS3CG1DST_XMM14_DW0_ZX] =*/ 4,
     /* [BS3CG1DST_XMM15_DW0_ZX] =*/ 4,
+    /* [BS3CG1DST_XMM0_HI96] = */   12,
+    /* [BS3CG1DST_XMM1_HI96] = */   12,
+    /* [BS3CG1DST_XMM2_HI96] = */   12,
+    /* [BS3CG1DST_XMM3_HI96] = */   12,
+    /* [BS3CG1DST_XMM4_HI96] = */   12,
+    /* [BS3CG1DST_XMM5_HI96] = */   12,
+    /* [BS3CG1DST_XMM6_HI96] = */   12,
+    /* [BS3CG1DST_XMM7_HI96] = */   12,
+    /* [BS3CG1DST_XMM8_HI96] = */   12,
+    /* [BS3CG1DST_XMM9_HI96] = */   12,
+    /* [BS3CG1DST_XMM10_HI96] =*/   12,
+    /* [BS3CG1DST_XMM11_HI96] =*/   12,
+    /* [BS3CG1DST_XMM12_HI96] =*/   12,
+    /* [BS3CG1DST_XMM13_HI96] =*/   12,
+    /* [BS3CG1DST_XMM14_HI96] =*/   12,
+    /* [BS3CG1DST_XMM15_HI96] =*/   12,
     /* [BS3CG1DST_YMM0] = */        32,
     /* [BS3CG1DST_YMM1] = */        32,
     /* [BS3CG1DST_YMM2] = */        32,
@@ -799,6 +815,22 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
     /* [BS3CG1DST_XMM13_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13]),
     /* [BS3CG1DST_XMM14_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14]),
     /* [BS3CG1DST_XMM15_DW0_ZX] =*/ sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]),
+    /* [BS3CG1DST_XMM0_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[0].au32[1]),
+    /* [BS3CG1DST_XMM1_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[1].au32[1]),
+    /* [BS3CG1DST_XMM2_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[2].au32[1]),
+    /* [BS3CG1DST_XMM3_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[3].au32[1]),
+    /* [BS3CG1DST_XMM4_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[4].au32[1]),
+    /* [BS3CG1DST_XMM5_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[5].au32[1]),
+    /* [BS3CG1DST_XMM6_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[6].au32[1]),
+    /* [BS3CG1DST_XMM7_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[7].au32[1]),
+    /* [BS3CG1DST_XMM8_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[8].au32[1]),
+    /* [BS3CG1DST_XMM9_HI96] = */   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[9].au32[1]),
+    /* [BS3CG1DST_XMM10_HI96] =*/   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[10].au32[1]),
+    /* [BS3CG1DST_XMM11_HI96] =*/   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[11].au32[1]),
+    /* [BS3CG1DST_XMM12_HI96] =*/   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[12].au32[1]),
+    /* [BS3CG1DST_XMM13_HI96] =*/   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[13].au32[1]),
+    /* [BS3CG1DST_XMM14_HI96] =*/   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[14].au32[1]),
+    /* [BS3CG1DST_XMM15_HI96] =*/   sizeof(BS3REGCTX) + RT_OFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15].au32[1]),
 
     /* [BS3CG1DST_YMM0] = */        ~0U,
     /* [BS3CG1DST_YMM1] = */        ~0U,
@@ -1047,6 +1079,22 @@ static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
     { "XMM13_DW0_ZX" },
     { "XMM14_DW0_ZX" },
     { "XMM15_DW0_ZX" },
+    { "XMM0_HI96" },
+    { "XMM1_HI96" },
+    { "XMM2_HI96" },
+    { "XMM3_HI96" },
+    { "XMM4_HI96" },
+    { "XMM5_HI96" },
+    { "XMM6_HI96" },
+    { "XMM7_HI96" },
+    { "XMM8_HI96" },
+    { "XMM9_HI96" },
+    { "XMM10_HI96" },
+    { "XMM11_HI96" },
+    { "XMM12_HI96" },
+    { "XMM13_HI96" },
+    { "XMM14_HI96" },
+    { "XMM15_HI96" },
     { "YMM0" },
     { "YMM1" },
     { "YMM2" },
@@ -2430,7 +2478,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Vps_WO_Wps__OR__VEX_MOD
  * Lig - VEX.L ignored.
  */
 static unsigned BS3_NEAR_CODE
-Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Lip_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -3575,18 +3623,18 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].idxFieldBase = BS3CG1DST_INVALID;
             break;
 
-        case BS3CG1ENC_VEX_MODRM_Vss_WO_HdqCss_Uss:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Lip_Wip_OR_ViceVersa;
+        case BS3CG1ENC_VEX_MODRM_Vss_WO_HssHi_Uss:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVersa;
             pThis->iRegOp            = 0;
             pThis->iRmOp             = 2;
             pThis->aOperands[0].cbOp = 16;
-            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[1].cbOp = 12;
             pThis->aOperands[2].cbOp = 4;
             pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
             pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[2].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
-            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0_HI96;
             pThis->aOperands[2].idxFieldBase = BS3CG1DST_XMM0_DW0;
             break;
 
@@ -3602,49 +3650,34 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].idxFieldBase = BS3CG1DST_INVALID;
             break;
 
-        case BS3CG1ENC_VEX_MODRM_Vsd_WO_HdqCsd_Usd:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Lip_Wip_OR_ViceVersa;
+        case BS3CG1ENC_VEX_MODRM_Vsd_WO_HsdHi_Usd:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVersa;
             pThis->iRegOp            = 0;
             pThis->iRmOp             = 2;
             pThis->aOperands[0].cbOp = 16;
-            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[1].cbOp = 8;
             pThis->aOperands[2].cbOp = 8;
             pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
             pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[2].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
-            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0_HI;
             pThis->aOperands[2].idxFieldBase = BS3CG1DST_XMM0_LO;
             break;
 
-        case BS3CG1ENC_VEX_MODRM_Vq_WO_HdqCq_UqHi:
+        case BS3CG1ENC_VEX_MODRM_Vq_WO_HqHi_UqHi:
             pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Wip_OR_ViceVersa;
             pThis->iRegOp            = 0;
             pThis->iRmOp             = 2;
             pThis->aOperands[0].cbOp = 16;
-            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[1].cbOp = 8;
             pThis->aOperands[2].cbOp = 8;
             pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
             pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[2].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
-            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0_HI;
             pThis->aOperands[2].idxFieldBase = BS3CG1DST_XMM0_HI;
-            break;
-
-        case BS3CG1ENC_VEX_MODRM_Vq_WO_HdqCq_Mq:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Msomething_Wip_OR_ViceVersa;
-            pThis->iRegOp            = 0;
-            pThis->iRmOp             = 2;
-            pThis->aOperands[0].cbOp = 16;
-            pThis->aOperands[1].cbOp = 16;
-            pThis->aOperands[2].cbOp = 8;
-            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
-            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
-            pThis->aOperands[2].enmLocation  = BS3CG1OPLOC_MEM;
-            pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
-            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
-            pThis->aOperands[2].idxFieldBase = BS3CG1DST_INVALID;
             break;
 
         case BS3CG1ENC_VEX_MODRM_Vq_WO_HqHi_Mq:
@@ -3686,33 +3719,33 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0_LO;
             break;
 
-        case BS3CG1ENC_VEX_MODRM_Uss_WO_HdqCss_Vss:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Lip_Wip_OR_ViceVersa;
+        case BS3CG1ENC_VEX_MODRM_Uss_WO_HssHi_Vss:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVersa;
             pThis->iRegOp            = 2;
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 16;
-            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[1].cbOp = 96;
             pThis->aOperands[2].cbOp = 4;
             pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
             pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[2].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
-            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0_HI96;
             pThis->aOperands[2].idxFieldBase = BS3CG1DST_XMM0_DW0;
             break;
 
-        case BS3CG1ENC_VEX_MODRM_Usd_WO_HdqCsd_Vsd:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Lip_Wip_OR_ViceVersa;
+        case BS3CG1ENC_VEX_MODRM_Usd_WO_HsdHi_Vsd:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVersa;
             pThis->iRegOp            = 2;
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 16;
-            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[1].cbOp = 8;
             pThis->aOperands[2].cbOp = 8;
             pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
             pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[2].enmLocation  = BS3CG1OPLOC_CTX;
             pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
-            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0_HI;
             pThis->aOperands[2].idxFieldBase = BS3CG1DST_XMM0_LO;
             break;
 
@@ -4425,7 +4458,7 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
 
             /* Optimized access to XMM and STx registers. */
             if (   pThis->pExtCtx->enmMethod != BS3EXTCTXMETHOD_ANCIENT
-                && offField - sizeof(BS3REGCTX) <= RT_UOFFSETOF(BS3EXTCTX, Ctx.x87.aXMM[15]) )
+                && offField - sizeof(BS3REGCTX) < RT_UOFFSET_AFTER(BS3EXTCTX, Ctx.x87.aXMM[15]) )
                 PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
             /* Non-register operands: */
             else if ((unsigned)(idxField - BS3CG1DST_OP1) < 4U)

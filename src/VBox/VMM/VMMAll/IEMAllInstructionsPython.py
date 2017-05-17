@@ -272,9 +272,8 @@ g_kdOpTypes = {
     'VqZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    ),
 
     # VEX.vvvv
-    'HdqCss':       ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HdqCss',  ),
-    'HdqCsd':       ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HdqCsd',  ),
-    'HdqCq':        ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HdqCq',   ),
+    'HssHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HssHi',   ),
+    'HsdHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HsdHi',   ),
     'HqHi':         ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HqHi',    ),
 
     # Immediate values.

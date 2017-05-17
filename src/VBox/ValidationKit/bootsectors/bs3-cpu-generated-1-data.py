@@ -305,7 +305,6 @@ class Bs3Cg1Instruction(object):
         for oOp in oInstr.aoOperands:
             self.sEncoding     += '_' + oOp.sType;
         if oInstr.fUnused:
-            print('DEBUG: Unused Bs3Cg1Instruction: %s\n' % (oInstr.sEncoding,));
             if oInstr.sInvalidStyle == 'immediate' and oInstr.sSubOpcode:
                 self.sEncoding += '_MOD_EQ_3' if oInstr.sSubOpcode == '11 mr/reg' else '_MOD_NE_3';
             elif oInstr.sInvalidStyle == 'intel-modrm':

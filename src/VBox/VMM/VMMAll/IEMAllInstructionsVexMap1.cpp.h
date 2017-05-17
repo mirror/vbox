@@ -217,8 +217,10 @@ FNIEMOP_DEF(iemOp_vmovss_Vss_Hss_Wss)
          * @optest      op1=1 op2=0  op3=2    -> op1=2
          * @optest      op1=0 op2=0  op3=-22  -> op1=0xffffffea
          * @optest      op1=3 op2=-1 op3=0x77 -> op1=-4294967177
+         * @optest      op1=3 op2=-2 op3=0x77 -> op1=-8589934473
+         * @note        HssHi refers to bits 127:32.
          */
-        IEMOP_MNEMONIC3(VEX_RVM, VMOVSS, vmovss, Vss_WO, HdqCss, Uss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC3(VEX_RVM, VMOVSS, vmovss, Vss_WO, HssHi, Uss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX();
         IEM_MC_BEGIN(0, 0);
 
@@ -282,8 +284,9 @@ FNIEMOP_DEF(iemOp_vmovsd_Vsd_Hsd_Wsd)
          * @optest      op1=0 op2=0  op3=-22  -> op1=0xffffffffffffffea
          * @optest      op1=3 op2=-1 op3=0x77 ->
          *              op1=0xffffffffffffffff0000000000000077
+         * @optest      op1=3 op2=0x42 op3=0x77 -> op1=0x420000000000000077
          */
-        IEMOP_MNEMONIC3(VEX_RVM, VMOVSD, vmovsd, Vsd_WO, HdqCsd, Usd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC3(VEX_RVM, VMOVSD, vmovsd, Vsd_WO, HsdHi, Usd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX();
         IEM_MC_BEGIN(0, 0);
 
@@ -498,8 +501,9 @@ FNIEMOP_DEF(iemOp_vmovss_Wss_Hss_Vss)
          * @optest      op1=1 op2=0  op3=2    -> op1=2
          * @optest      op1=0 op2=0  op3=-22  -> op1=0xffffffea
          * @optest      op1=3 op2=-1 op3=0x77 -> op1=-4294967177
+         * @optest      op1=3 op2=0x42 op3=0x77 -> op1=0x4200000077
          */
-        IEMOP_MNEMONIC3(VEX_MVR, VMOVSS, vmovss, Uss_WO, HdqCss, Vss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC3(VEX_MVR, VMOVSS, vmovss, Uss_WO, HssHi, Vss, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX();
         IEM_MC_BEGIN(0, 0);
 
@@ -563,8 +567,9 @@ FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hsd_Vsd)
          * @optest      op1=0 op2=0  op3=-22  -> op1=0xffffffffffffffea
          * @optest      op1=3 op2=-1 op3=0x77 ->
          *              op1=0xffffffffffffffff0000000000000077
+         * @optest      op2=0x42 op3=0x77 -> op1=0x420000000000000077
          */
-        IEMOP_MNEMONIC3(VEX_MVR, VMOVSD, vmovsd, Usd_WO, HdqCsd, Vsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC3(VEX_MVR, VMOVSD, vmovsd, Usd_WO, HsdHi, Vsd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
         IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX();
         IEM_MC_BEGIN(0, 0);
 
@@ -623,13 +628,13 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
          * @opcpuid     avx
          * @opgroup     og_avx_simdfp_datamerge
          * @opxcpttype  7LZ
-         * @optest         op2=0x22002201220222032204220522062207
+         * @optest         op2=0x2200220122022203
          *                 op3=0x3304330533063307
          *              -> op1=0x22002201220222033304330533063307
-         * @optest      op2=-2  op3=-42 -> op1=-42
-         * @note        op3 is only a 8-byte high XMM register half.
+         * @optest      op2=-1  op3=-42 -> op1=-42
+         * @note        op3 and op2 are only the 8-byte high XMM register halfs.
          */
-        IEMOP_MNEMONIC3(VEX_RVM, VMOVHLPS, vmovhlps, Vq_WO, HdqCq, UqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC3(VEX_RVM, VMOVHLPS, vmovhlps, Vq_WO, HqHi, UqHi, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX_AND_L0();
         IEM_MC_BEGIN(0, 0);
@@ -656,10 +661,10 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
          * @opfunction  iemOp_vmovlps_Vq_Hq_Mq__vmovhlps
          * @optest      op1=1 op2=0 op3=0 -> op1=0
          * @optest      op1=0 op2=-1 op3=-1 -> op1=-1
-         * @optest      op1=1 op2=0x20000000000000000 op3=3 -> op1=0x20000000000000003
+         * @optest      op1=1 op2=2 op3=3 -> op1=0x20000000000000003
          * @optest      op2=-1 op3=0x42 -> op1=0xffffffffffffffff0000000000000042
          */
-        IEMOP_MNEMONIC3(VEX_RVM_MEM, VMOVLPS, vmovlps, Vq_WO, HdqCq, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_MNEMONIC3(VEX_RVM_MEM, VMOVLPS, vmovlps, Vq_WO, HqHi, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
 
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
