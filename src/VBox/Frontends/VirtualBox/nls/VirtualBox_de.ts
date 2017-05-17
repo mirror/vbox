@@ -4812,6 +4812,115 @@
         <source>&amp;Hard disks</source>
         <translation>&amp;Festplatten</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Aktionen</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Entfernen</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Freigeben</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Aktualisieren</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Ausgewähltes Medium entfernen</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Löst die Bindung des ausgewählten Medium an alle virtuellen Maschinen</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Aktualisiert die Medienliste</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Überprüfe Zugriffsrecht</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;nicht&amp;nbsp;angeschlossen&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Manager für virtuelle Medien</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Endgröße</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Größe</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Größe</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Typ:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Ort:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Format:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Art der Abspeicherung:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>angeschlossen an:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Kopieren...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Erstellt eine Kopie des Medium</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Ändern...</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Ändert die Attribute des ausgewählten Mediums</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;nicht&amp;nbsp;verschlüsselt&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>verschlüsselt mit:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -8953,118 +9062,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>&amp;Ablehnen</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Aktionen</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Entfernen</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Freigeben</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Aktualisieren</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Ausgewähltes Medium entfernen</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Löst die Bindung des ausgewählten Medium an alle virtuellen Maschinen</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Aktualisiert die Medienliste</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Überprüfe Zugriffsrecht</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;nicht&amp;nbsp;angeschlossen&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Manager für virtuelle Medien</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Name</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Endgröße</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Größe</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Größe</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Typ:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Ort:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Format:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Art der Abspeicherung:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>angeschlossen an:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopieren...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Erstellt eine Kopie des Medium</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Ändern...</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Ändert die Attribute des ausgewählten Mediums</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;nicht&amp;nbsp;verschlüsselt&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>verschlüsselt mit:</translation>
     </message>
 </context>
 <context>

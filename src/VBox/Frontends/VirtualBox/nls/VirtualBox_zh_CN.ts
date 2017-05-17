@@ -7768,6 +7768,187 @@
         <source>&amp;Hard disks</source>
         <translation>虚拟硬盘(&amp;H)</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>动作(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">新建(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">注册(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>删除(&amp;e)</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>释放(&amp;l)</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>刷新(&amp;f)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">创建一个新的虚拟硬盘</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">注册一个已经存在的虚拟介质</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>移除所选的虚拟存储介质</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>从虚拟电脑中释放所选的虚拟存储介质</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>刷新虚拟存储介质列表</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>检测可访问性</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">选择(&amp;S)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">所有文件(*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">选择一个虚拟硬盘</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">选择一个虚拟光盘</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">选择一个虚拟软盘</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;未分配&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>中国</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>虚拟介质管理器</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">虚拟硬盘(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>虚拟分配空间</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>实际分配空间</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">虚拟光盘(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>大小</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">虚拟软盘(&amp;F)</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">光驱</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">虚拟硬盘</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">虚拟软盘</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">全部 %1 映像 (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>类型:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>位置:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>格式:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>存储器明细:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>分配到:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>复制(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>修改(&amp;M)...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>复制现有的介质</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>修改选定介质的属性</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">退出(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">创建一个新的虚拟硬盘</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;未加密&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>加密密钥:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -13516,190 +13697,6 @@
     <message>
         <source>String not found</source>
         <translation type="obsolete">字符串未找到</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>动作(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">新建(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">注册(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>删除(&amp;e)</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>释放(&amp;l)</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>刷新(&amp;f)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">创建一个新的虚拟硬盘</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">注册一个已经存在的虚拟介质</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>移除所选的虚拟存储介质</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>从虚拟电脑中释放所选的虚拟存储介质</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>刷新虚拟存储介质列表</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>检测可访问性</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">选择(&amp;S)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">所有文件(*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">选择一个虚拟硬盘</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">选择一个虚拟光盘</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">选择一个虚拟软盘</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;未分配&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>中国</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>虚拟介质管理器</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">虚拟硬盘(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名称</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>虚拟分配空间</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>实际分配空间</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">虚拟光盘(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>大小</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">虚拟软盘(&amp;F)</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">光驱</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">虚拟硬盘</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">虚拟软盘</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">全部 %1 映像 (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>类型:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>位置:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>格式:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>存储器明细:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>分配到:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>复制(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>修改(&amp;M)...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>复制现有的介质</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>修改选定介质的属性</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">退出(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">创建一个新的虚拟硬盘</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;未加密&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>加密密钥:</translation>
     </message>
 </context>
 <context>

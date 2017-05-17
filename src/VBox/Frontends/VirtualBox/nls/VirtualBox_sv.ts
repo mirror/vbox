@@ -8997,6 +8997,222 @@ serial ports</comment>
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Åtgärder</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Ny...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Lägg till...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Ta bort</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>Fr&amp;igör</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Uppdatera</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Skapa en ny virtuell hårddisk</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Lägg till ett befintligt media</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Ta bort markerat media</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Frigör det markerade mediet genom att koppla loss det från maskinerna</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Uppdatera medialistan</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Plats</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Typ (Format)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Ansluten till</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Kontrollerar tillgänglighet</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Välj</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Alla hårddiskavbildningar (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Alla filer (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Välj en hårddiskavbildningsfil</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD-avbildningar (*.iso);;Alla filer (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Välj en CD/DVD-diskavbildningsfil</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Diskettavbildningar (*.img);;Alla filer (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Välj en diskettavbildningsfil</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Inte&amp;nbsp;ansluten&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Hanterare för virtuella media</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Hård&amp;diskar</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Namn</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Virtuell storlek</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Faktisk storlek</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD-avbildningar</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Storlek</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Diskettavbildningar</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Ansluten till</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Ansluten till</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Ansluten till</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD-skiva</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">hårddisk</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">diskett</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Alla %1-avbildningar (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Typ:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Plats:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Format:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Lagringsinformation:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Ansluten till:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Kopiera...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>Än&amp;dra...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Kopiera ett befintligt media</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Ändra attribut för valt media</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">S&amp;täng</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -16888,225 +17104,6 @@ Version %1</translation>
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;inget media&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Åtgärder</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Ny...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Lägg till...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Ta bort</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>Fr&amp;igör</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Uppdatera</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Skapa en ny virtuell hårddisk</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Lägg till ett befintligt media</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Ta bort markerat media</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Frigör det markerade mediet genom att koppla loss det från maskinerna</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Uppdatera medialistan</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Plats</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Typ (Format)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Ansluten till</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Kontrollerar tillgänglighet</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Välj</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Alla hårddiskavbildningar (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Alla filer (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Välj en hårddiskavbildningsfil</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-avbildningar (*.iso);;Alla filer (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Välj en CD/DVD-diskavbildningsfil</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Diskettavbildningar (*.img);;Alla filer (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Välj en diskettavbildningsfil</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Inte&amp;nbsp;ansluten&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Hanterare för virtuella media</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Hård&amp;diskar</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Namn</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtuell storlek</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Faktisk storlek</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD-avbildningar</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Storlek</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Diskettavbildningar</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Ansluten till</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Ansluten till</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Ansluten till</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVD-skiva</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">hårddisk</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">diskett</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Alla %1-avbildningar (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Typ:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Plats:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Format:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Lagringsinformation:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Ansluten till:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopiera...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>Än&amp;dra...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Kopiera ett befintligt media</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Ändra attribut för valt media</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">S&amp;täng</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

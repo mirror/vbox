@@ -8822,6 +8822,226 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation>&amp;Merevlemezek</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Akciók</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">Ú&amp;j...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">Hozzá&amp;ad...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Eltávolítás</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>E&amp;lenged</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Frissítés</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Új virtuális merevlemez készítése</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Létező médium hozzáadása</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>A kiválasztott médium eltávolítása</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>A kiválasztott médium elengedése a gépekről történő lecsatolással</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Média lista frissítése</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Hely</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Típus (formátum)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Ide csatlakoztatva</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Elérhetőség tesztelése</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Kiválaszt</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Minden merevlemez képfájl (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Minden fájl (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Válaszd ki az új merevlemezkép fájlját</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD képfájl (*.iso);;Minden fájl (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVD képfájl kiválasztása</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Floppy képfájl (*.img);;Minden  fájl (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Floppy képfájl kiválasztása</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Nem&amp;nbsp;csatolt&lt;/i&gt;]</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Virtuális média-kezelő</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Merevlemezek</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Virtuális méret</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Aktuális méret</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD képek</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Méret</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Floppy képek</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Ide csatlakoztatva</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Ide csatlakoztatva</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Ide csatlakoztatva</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD lemez</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">merevlemez</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">floppy lemez</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Minden %1 képfájl (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Típus:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Hely:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Formátum:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Tároló részletei:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Csatlakoztatva:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>Má&amp;solás...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Módosítás...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Létező médium másolása</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>A kiválasztott médium attribútumainak módosítása</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">Be&amp;zárás</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Új virtuális merevlemez készítése</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Nem&amp;nbsp;titkosított&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Kulccsal titkosított:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -17350,229 +17570,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;nincs média&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Akciók</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">Ú&amp;j...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">Hozzá&amp;ad...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Eltávolítás</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>E&amp;lenged</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Frissítés</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Új virtuális merevlemez készítése</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Létező médium hozzáadása</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>A kiválasztott médium eltávolítása</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>A kiválasztott médium elengedése a gépekről történő lecsatolással</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Média lista frissítése</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Hely</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Típus (formátum)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Ide csatlakoztatva</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Elérhetőség tesztelése</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Kiválaszt</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Minden merevlemez képfájl (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Minden fájl (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Válaszd ki az új merevlemezkép fájlját</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD képfájl (*.iso);;Minden fájl (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">CD/DVD képfájl kiválasztása</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Floppy képfájl (*.img);;Minden  fájl (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Floppy képfájl kiválasztása</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Nem&amp;nbsp;csatolt&lt;/i&gt;]</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Virtuális média-kezelő</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Merevlemezek</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Név</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtuális méret</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Aktuális méret</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD képek</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Méret</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Floppy képek</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Ide csatlakoztatva</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Ide csatlakoztatva</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Ide csatlakoztatva</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVD lemez</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">merevlemez</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">floppy lemez</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Minden %1 képfájl (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Típus:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Hely:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Formátum:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Tároló részletei:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Csatlakoztatva:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>Má&amp;solás...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Módosítás...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Létező médium másolása</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>A kiválasztott médium attribútumainak módosítása</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">Be&amp;zárás</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Új virtuális merevlemez készítése</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Nem&amp;nbsp;titkosított&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Kulccsal titkosított:</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
     </message>
 </context>
 <context>

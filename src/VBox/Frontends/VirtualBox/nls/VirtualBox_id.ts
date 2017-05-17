@@ -8043,6 +8043,214 @@
         <source>&amp;Hard disks</source>
         <translation>&amp;Hard disk</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>Tind&amp;akan</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Baru...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">T&amp;ambah...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Hapus</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Lepas</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Sega&amp;rkan</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Ciptakan sebuah hard disk virtual baru</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Tambahkan sebuah medium yang telah ada</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Hapus berkas image disk yang dipilih</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Lepas berkas image disk yang dipilih dengan mencopotnya dari mesin-mesin</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Segarkan daftar berkas image disk</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Lokasi</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Terpasang pada</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Memeriksa aksesibilitas</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Pilih</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Semua file (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Pilih file image hard disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Image CD/DVD (*.iso);;Semua file (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Pilih file image CD/DVD</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Image Floppy (*.img);;Semua file (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Pilih file image floppy disk</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Tidak&amp;nbsp;Terpasang&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Manajer Media Virtual</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Hard &amp;Disk</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nama</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Ukuran Virtual</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Ukuran Aktual</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">Image &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Ukuran</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">Image &amp;Floppy</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Terpasang pada</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Terpasang pada</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Terpasang pada</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">Disk CD/DVD</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">hard disk</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">disk floppy</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Semua image %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Tipe:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Lokasi:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Format:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Rincian penyimpanan:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Terpasang pada:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Salin...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Ubah...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Salin berkas image disk yang ada</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Ubah atribut berkas image disk yang dipilih</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">&amp;Tutup</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Tidak&amp;nbsp;Terenkripsi&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Terenkripsi dengan kunci:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -16084,217 +16292,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     <message>
         <source>No hard disk</source>
         <translation type="obsolete">Tidak ada hard disk</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>Tind&amp;akan</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Baru...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">T&amp;ambah...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Hapus</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Lepas</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Sega&amp;rkan</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Ciptakan sebuah hard disk virtual baru</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Tambahkan sebuah medium yang telah ada</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Hapus berkas image disk yang dipilih</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Lepas berkas image disk yang dipilih dengan mencopotnya dari mesin-mesin</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Segarkan daftar berkas image disk</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Lokasi</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Terpasang pada</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Memeriksa aksesibilitas</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Pilih</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Semua file (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Pilih file image hard disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Image CD/DVD (*.iso);;Semua file (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Pilih file image CD/DVD</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Image Floppy (*.img);;Semua file (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Pilih file image floppy disk</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Tidak&amp;nbsp;Terpasang&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Manajer Media Virtual</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Hard &amp;Disk</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nama</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Ukuran Virtual</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Ukuran Aktual</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">Image &amp;CD/DVD</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Ukuran</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Image &amp;Floppy</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Terpasang pada</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Terpasang pada</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Terpasang pada</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">Disk CD/DVD</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">hard disk</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">disk floppy</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Semua image %1 (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Tipe:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Lokasi:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Format:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Rincian penyimpanan:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Terpasang pada:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Salin...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Ubah...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Salin berkas image disk yang ada</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Ubah atribut berkas image disk yang dipilih</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Tutup</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Tidak&amp;nbsp;Terenkripsi&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Terenkripsi dengan kunci:</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
     </message>
 </context>
 <context>

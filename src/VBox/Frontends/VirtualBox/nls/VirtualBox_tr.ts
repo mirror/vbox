@@ -8059,6 +8059,210 @@
         <source>&amp;Hard disks</source>
         <translation>&amp;Sabit diskler</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Eylemler</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Yeni...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Ekle...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Kaldır</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Bırak</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Yenile</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Yeni sanal sabit disk oluştur</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Mevcut bir ortam ekle</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Seçilen disk kalıbı dosyasını kaldır</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Seçilen disk kalıbı dosyasını makinelerden çıkartarak serbest bırak</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Disk kalıbı dosyası listesini yenile</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Konum</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Tip (Biçim)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Şuraya eklendi</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Erişilebilirlik kontrol ediliyor</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Seç</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Tüm sabit disk kalıpları (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Tüm dosyalar (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Bir sabit disk kalıbı seçin</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD kalıpları (*.iso);;Tüm dosyalar (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Bir CD/DVD kalıbı seç</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Disket kalıpları (*.img);;Tüm dosyalar (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Bir Disket kalıbı seç</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Sanal Ortam Yöneticisi</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Sabit Diskler</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Adı</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Sanal Boyut</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Gerçek Boyut</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD Kalıpları</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Boyut</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Disket Kalıpları</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Şuraya eklendi</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Şuraya eklendi</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Şuraya eklendi</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">sabit disk</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Türü:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Yeri:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Biçim:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Depolama ayrıntıları:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Şuna takıldı:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Kopyala...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Değiştir...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Mevcut disk kalıbı dosyasını kopyala</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Seçilen disk kalıbı dosyasının özniteliklerini değiştir</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Yeni bir sanal sabit sürücü oluştur</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Şifrelenmemiş&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Şu anahtar ile şifrelenmiş:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -15977,213 +16181,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;ortam yok&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Eylemler</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Yeni...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Ekle...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Kaldır</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Bırak</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Yenile</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Yeni sanal sabit disk oluştur</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Mevcut bir ortam ekle</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Seçilen disk kalıbı dosyasını kaldır</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Seçilen disk kalıbı dosyasını makinelerden çıkartarak serbest bırak</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Disk kalıbı dosyası listesini yenile</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Konum</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Tip (Biçim)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Şuraya eklendi</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Erişilebilirlik kontrol ediliyor</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Seç</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Tüm sabit disk kalıpları (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Tüm dosyalar (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Bir sabit disk kalıbı seçin</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD kalıpları (*.iso);;Tüm dosyalar (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Bir CD/DVD kalıbı seç</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Disket kalıpları (*.img);;Tüm dosyalar (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Bir Disket kalıbı seç</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Sanal Ortam Yöneticisi</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Sabit Diskler</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Adı</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Sanal Boyut</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Gerçek Boyut</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD Kalıpları</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Boyut</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Disket Kalıpları</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Şuraya eklendi</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Şuraya eklendi</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Şuraya eklendi</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">sabit disk</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Türü:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Yeri:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Biçim:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Depolama ayrıntıları:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Şuna takıldı:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopyala...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Değiştir...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Mevcut disk kalıbı dosyasını kopyala</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Seçilen disk kalıbı dosyasının özniteliklerini değiştir</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Yeni bir sanal sabit sürücü oluştur</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Şifrelenmemiş&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Şu anahtar ile şifrelenmiş:</translation>
     </message>
 </context>
 <context>

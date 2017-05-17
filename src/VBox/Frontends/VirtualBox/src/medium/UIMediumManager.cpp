@@ -1627,10 +1627,10 @@ void UIMediumManager::updateInformationFieldsHD()
         /* Acquire required details: */
         const QString strDetails = pCurrentItem->details();
         const QString strUsage = pCurrentItem->usage().isNull() ?
-                                 formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
+                                 formatFieldText(tr("<i>Not&nbsp;Attached</i>"), false) :
                                  formatFieldText(pCurrentItem->usage());
         const QString strEncryptionPasswordID = pCurrentItem->encryptionPasswordID().isNull() ?
-                                                formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Encrypted</i>"), false) :
+                                                formatFieldText(tr("<i>Not&nbsp;Encrypted</i>"), false) :
                                                 formatFieldText(pCurrentItem->encryptionPasswordID());
         const QString strID = pCurrentItem->id();
         if (infoField(UIMediumType_HardDisk, 0))
@@ -1671,7 +1671,7 @@ void UIMediumManager::updateInformationFieldsCD()
     {
         /* Update required details: */
         QString strUsage = pCurrentItem->usage().isNull() ?
-                           formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
+                           formatFieldText(tr("<i>Not&nbsp;Attached</i>"), false) :
                            formatFieldText(pCurrentItem->usage());
         const QString strID = pCurrentItem->id();
         if (infoField(UIMediumType_DVD, 0))
@@ -1704,7 +1704,7 @@ void UIMediumManager::updateInformationFieldsFD()
     {
         /* Update required details: */
         QString strUsage = pCurrentItem->usage().isNull() ?
-                           formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
+                           formatFieldText(tr("<i>Not&nbsp;Attached</i>"), false) :
                            formatFieldText(pCurrentItem->usage());
         const QString strID = pCurrentItem->id();
         if (infoField(UIMediumType_Floppy, 0))
@@ -1738,47 +1738,43 @@ void UIMediumManager::cleanup()
 
 void UIMediumManager::retranslateUi()
 {
-    /// @todo Rename translation context in .nls files!
-    /* Most of these translations were moved from VBoxMediaManagerDlg.ui file
-     * to keep old translation context.. */
-
     /* Translate window title: */
-    setWindowTitle(QApplication::translate("VBoxMediaManagerDlg", "Virtual Media Manager"));
+    setWindowTitle(tr("Virtual Media Manager"));
 
     /* Translate menu: */
     if (m_pMenu)
-        m_pMenu->setTitle(QApplication::translate("VBoxMediaManagerDlg", "&Actions"));
+        m_pMenu->setTitle(tr("&Medium"));
 
     /* Translate actions: */
     if (m_pActionCopy)
     {
-        m_pActionCopy->setText(QApplication::translate("VBoxMediaManagerDlg", "&Copy..."));
+        m_pActionCopy->setText(tr("&Copy..."));
         m_pActionCopy->setToolTip(m_pActionCopy->text().remove('&') + QString(" (%1)").arg(m_pActionCopy->shortcut().toString()));
-        m_pActionCopy->setStatusTip(QApplication::translate("VBoxMediaManagerDlg", "Copy an existing disk image file"));
+        m_pActionCopy->setStatusTip(tr("Copy an existing disk image file"));
     }
     if (m_pActionModify)
     {
-        m_pActionModify->setText(QApplication::translate("VBoxMediaManagerDlg", "&Modify..."));
+        m_pActionModify->setText(tr("&Modify..."));
         m_pActionModify->setToolTip(m_pActionModify->text().remove('&') + QString(" (%1)").arg(m_pActionModify->shortcut().toString()));
-        m_pActionModify->setStatusTip(QApplication::translate("VBoxMediaManagerDlg", "Modify the attributes of the selected disk image file"));
+        m_pActionModify->setStatusTip(tr("Modify the attributes of the selected disk image file"));
     }
     if (m_pActionRemove)
     {
-        m_pActionRemove->setText(QApplication::translate("VBoxMediaManagerDlg", "R&emove"));
+        m_pActionRemove->setText(tr("R&emove"));
         m_pActionRemove->setToolTip(m_pActionRemove->text().remove('&') + QString(" (%1)").arg(m_pActionRemove->shortcut().toString()));
-        m_pActionRemove->setStatusTip(QApplication::translate("VBoxMediaManagerDlg", "Remove the selected disk image file"));
+        m_pActionRemove->setStatusTip(tr("Remove the selected disk image file"));
     }
     if (m_pActionRelease)
     {
-        m_pActionRelease->setText(QApplication::translate("VBoxMediaManagerDlg", "Re&lease"));
+        m_pActionRelease->setText(tr("Re&lease"));
         m_pActionRelease->setToolTip(m_pActionRelease->text().remove('&') + QString(" (%1)").arg(m_pActionRelease->shortcut().toString()));
-        m_pActionRelease->setStatusTip(QApplication::translate("VBoxMediaManagerDlg", "Release the selected disk image file by detaching it from the machines"));
+        m_pActionRelease->setStatusTip(tr("Release the selected disk image file by detaching it from the machines"));
     }
     if (m_pActionRefresh)
     {
-        m_pActionRefresh->setText(QApplication::translate("VBoxMediaManagerDlg", "Re&fresh"));
+        m_pActionRefresh->setText(tr("Re&fresh"));
         m_pActionRefresh->setToolTip(m_pActionRefresh->text().remove('&') + QString(" (%1)").arg(m_pActionRefresh->shortcut().toString()));
-        m_pActionRefresh->setStatusTip(QApplication::translate("VBoxMediaManagerDlg", "Refresh the list of disk image files"));
+        m_pActionRefresh->setStatusTip(tr("Refresh the list of disk image files"));
     }
 
     /* Translate toolbar: */
@@ -1803,63 +1799,63 @@ void UIMediumManager::retranslateUi()
     QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
     if (pTreeWidgetHD)
     {
-        pTreeWidgetHD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
-        pTreeWidgetHD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Virtual Size"));
-        pTreeWidgetHD->headerItem()->setText(2, QApplication::translate("VBoxMediaManagerDlg", "Actual Size"));
+        pTreeWidgetHD->headerItem()->setText(0, tr("Name"));
+        pTreeWidgetHD->headerItem()->setText(1, tr("Virtual Size"));
+        pTreeWidgetHD->headerItem()->setText(2, tr("Actual Size"));
     }
 
     /* Translate HD information-labels: */
     if (infoLabel(UIMediumType_HardDisk, 0))
-        infoLabel(UIMediumType_HardDisk, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Type:"));
+        infoLabel(UIMediumType_HardDisk, 0)->setText(tr("Type:"));
     if (infoLabel(UIMediumType_HardDisk, 1))
-        infoLabel(UIMediumType_HardDisk, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
+        infoLabel(UIMediumType_HardDisk, 1)->setText(tr("Location:"));
     if (infoLabel(UIMediumType_HardDisk, 2))
-        infoLabel(UIMediumType_HardDisk, 2)->setText(QApplication::translate("VBoxMediaManagerDlg", "Format:"));
+        infoLabel(UIMediumType_HardDisk, 2)->setText(tr("Format:"));
     if (infoLabel(UIMediumType_HardDisk, 3))
-        infoLabel(UIMediumType_HardDisk, 3)->setText(QApplication::translate("VBoxMediaManagerDlg", "Storage details:"));
+        infoLabel(UIMediumType_HardDisk, 3)->setText(tr("Storage details:"));
     if (infoLabel(UIMediumType_HardDisk, 4))
-        infoLabel(UIMediumType_HardDisk, 4)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+        infoLabel(UIMediumType_HardDisk, 4)->setText(tr("Attached to:"));
     if (infoLabel(UIMediumType_HardDisk, 5))
-        infoLabel(UIMediumType_HardDisk, 5)->setText(QApplication::translate("VBoxMediaManagerDlg", "Encrypted with key:"));
+        infoLabel(UIMediumType_HardDisk, 5)->setText(tr("Encrypted with key:"));
     if (infoLabel(UIMediumType_HardDisk, 6))
-        infoLabel(UIMediumType_HardDisk, 6)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
+        infoLabel(UIMediumType_HardDisk, 6)->setText(tr("UUID:"));
 
     /* Translate CD tree-widget: */
     QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
     if (pTreeWidgetCD)
     {
-        pTreeWidgetCD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
-        pTreeWidgetCD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Size"));
+        pTreeWidgetCD->headerItem()->setText(0, tr("Name"));
+        pTreeWidgetCD->headerItem()->setText(1, tr("Size"));
     }
 
     /* Translate CD information-labels: */
     if (infoLabel(UIMediumType_DVD, 0))
-        infoLabel(UIMediumType_DVD, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
+        infoLabel(UIMediumType_DVD, 0)->setText(tr("Location:"));
     if (infoLabel(UIMediumType_DVD, 1))
-        infoLabel(UIMediumType_DVD, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+        infoLabel(UIMediumType_DVD, 1)->setText(tr("Attached to:"));
     if (infoLabel(UIMediumType_DVD, 2))
-        infoLabel(UIMediumType_DVD, 2)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
+        infoLabel(UIMediumType_DVD, 2)->setText(tr("UUID:"));
 
     /* Translate FD tree-widget: */
     QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
     if (pTreeWidgetFD)
     {
-        pTreeWidgetFD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
-        pTreeWidgetFD->headerItem()->setText(1, QApplication::translate("VBoxMediaManagerDlg", "Size"));
+        pTreeWidgetFD->headerItem()->setText(0, tr("Name"));
+        pTreeWidgetFD->headerItem()->setText(1, tr("Size"));
     }
 
     /* Translate FD information-labels: */
     if (infoLabel(UIMediumType_Floppy, 0))
-        infoLabel(UIMediumType_Floppy, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
+        infoLabel(UIMediumType_Floppy, 0)->setText(tr("Location:"));
     if (infoLabel(UIMediumType_Floppy, 1))
-        infoLabel(UIMediumType_Floppy, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+        infoLabel(UIMediumType_Floppy, 1)->setText(tr("Attached to:"));
     if (infoLabel(UIMediumType_Floppy, 2))
-        infoLabel(UIMediumType_Floppy, 2)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
+        infoLabel(UIMediumType_Floppy, 2)->setText(tr("UUID:"));
 
     /* Translate progress-bar: */
     if (m_pProgressBar)
     {
-        m_pProgressBar->setText(QApplication::translate("VBoxMediaManagerDlg", "Checking accessibility"));
+        m_pProgressBar->setText(tr("Checking accessibility"));
 #ifdef VBOX_WS_MAC
         /* Make sure that the widgets aren't jumping around
          * while the progress-bar get visible. */
@@ -2352,7 +2348,7 @@ QString UIMediumManager::formatFieldText(const QString &strText, bool fCompact /
     QString strInfo = QString("<nobr>%1%2%3</nobr>")
                               .arg(fCompact ? compactString : "")
                               .arg(strText.isEmpty() ?
-                                   QApplication::translate("VBoxMediaManagerDlg", "--", "no info") :
+                                   tr("--", "no info") :
                                    strText)
                               .arg(fCompact ? "</compact>" : "");
     return strInfo;

@@ -9382,6 +9382,226 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation>Discos rígidos (&amp;H)</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Ações</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Novo...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Acrescentar...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>R&amp;emover</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Liberar</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Atualizar (&amp;F)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Criar um novo disco rígido virtual</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Acrescentar uma mídia existente</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Remover a mídia selecionada</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Liberar a mídia selecionada e desconectá-la das máquinas</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Atualizar a lista de mídias</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Localização</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Tipo (Formatação)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Conectado a</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Verificando disponibilidade</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Selecionar</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Todas as imagens de disco rígido (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Todos os arquivos (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Selecione um arquivo de imagem de disco rígido</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Imagens de CD/DVD (*.iso);;Todos os arquivos (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Selecione um arquivo de imagem de CD/DVD</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Imagens de disquete (*.img);;Todos os arquivos (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Selecione um arquivo de imagem de disquete</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Não&amp;nbsp;Conectado&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Gerenciador de Mídias Virtuais</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Discos Rígidos</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nome</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Tamanho Virtual</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Tamanho Real</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">Imagens de &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Tamanho</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">Imagens de Disquete (&amp;F)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Conectado a</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Conectado a</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Conectado a</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">disco de CD/DVD</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">disco rígido</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">disquete</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Todas as imagens de %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Tipo:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Localização:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Formato:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Detalhes de armazenamento:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Conectado a:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Copiar...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Modificar...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Copiar uma mídia existente</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Modificar os atributos da mídia selecionada</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">Fechar (&amp;L)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Criar um novo disco rígido virtual</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Não&amp;nbsp;Criptografado&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Criptografado com a chave:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -18681,229 +18901,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;sem mídia&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Ações</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Novo...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Acrescentar...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>R&amp;emover</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Liberar</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Atualizar (&amp;F)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Criar um novo disco rígido virtual</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Acrescentar uma mídia existente</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Remover a mídia selecionada</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Liberar a mídia selecionada e desconectá-la das máquinas</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Atualizar a lista de mídias</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Localização</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Tipo (Formatação)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Conectado a</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Verificando disponibilidade</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Selecionar</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Todas as imagens de disco rígido (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Todos os arquivos (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Selecione um arquivo de imagem de disco rígido</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Imagens de CD/DVD (*.iso);;Todos os arquivos (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Selecione um arquivo de imagem de CD/DVD</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Imagens de disquete (*.img);;Todos os arquivos (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Selecione um arquivo de imagem de disquete</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Não&amp;nbsp;Conectado&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Gerenciador de Mídias Virtuais</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Discos Rígidos</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nome</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Tamanho Virtual</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Tamanho Real</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">Imagens de &amp;CD/DVD</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Tamanho</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Imagens de Disquete (&amp;F)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Conectado a</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Conectado a</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Conectado a</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">disco de CD/DVD</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">disco rígido</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">disquete</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Todas as imagens de %1 (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Tipo:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Localização:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Formato:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Detalhes de armazenamento:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Conectado a:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Copiar...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Modificar...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Copiar uma mídia existente</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Modificar os atributos da mídia selecionada</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">Fechar (&amp;L)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Criar um novo disco rígido virtual</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Não&amp;nbsp;Criptografado&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Criptografado com a chave:</translation>
     </message>
 </context>
 <context>

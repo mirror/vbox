@@ -4836,6 +4836,115 @@
         <source>&amp;Hard disks</source>
         <translation>&amp;Discos durs</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Accions</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Elimina</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>A&amp;llibera</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Ac&amp;tualitza</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Elimina el suport seleccionat</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Allibera el suport seleccionat de forma que ja no estigui connectat a les màquines</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Actualitza la llista de suports</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>S&apos;està comprovant l&apos;accessibilitat</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;No&amp;nbsp;connectat&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Gestor de suports virtuals</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nom</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Mida virtual</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Mida actual</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Mida</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Tipus:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Ubicació:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Format:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Detalls d&apos;emmagatzematge:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Connectat a:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Copia...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Modifica...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Copia un suport existent</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Modifica els atributs del suport seleccionat</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;No&amp;nbsp;encriptat&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Encriptat amb clau:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -9039,118 +9148,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>&amp;No hi estic d&apos;acord</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Accions</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Elimina</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>A&amp;llibera</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Ac&amp;tualitza</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Elimina el suport seleccionat</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Allibera el suport seleccionat de forma que ja no estigui connectat a les màquines</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Actualitza la llista de suports</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>S&apos;està comprovant l&apos;accessibilitat</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;No&amp;nbsp;connectat&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Gestor de suports virtuals</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nom</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Mida virtual</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Mida actual</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Mida</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Tipus:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Ubicació:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Format:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Detalls d&apos;emmagatzematge:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Connectat a:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Copia...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Modifica...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Copia un suport existent</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Modifica els atributs del suport seleccionat</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;No&amp;nbsp;encriptat&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Encriptat amb clau:</translation>
     </message>
 </context>
 <context>

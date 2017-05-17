@@ -7718,6 +7718,246 @@
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Veiksmai</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Naujas...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">Pri&amp;dėti...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>Pašalin&amp;ti</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>At&amp;laisvinti</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Atnaujinti</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Sukurti naują virtualų standųjį diską</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Pridėti esamą laikmeną</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Pašalinti pasirinktą laikmeną</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Atlaisvinus pasirinktą laikmeną, ji nebebus susieta su mašinomis</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Atnaujinti laikmenų sąrašą</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Vieta</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Tipas (formatas) </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Susietas su </translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Tikrinamas prieinamumas</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">Pa&amp;sirinkti</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Visi standžiųjų diskų atvaizdžiai (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Visos rinkmenos (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Pasirinkite standžiojo disko atvaizdžio rinkmeną</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD atvaizdžiai (*.iso);;Visos rinkmenos (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Pasirinkite CD/DVD atvaizdį</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Diskelių atvaizdžiai (*.img);;Visos rinkmenos (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Pasirinkite diskelio atvaizdžio rinkmeną</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;nesusieta&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info
+</comment>
+        <translation type="obsolete">--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Virtualių laikmenų tvarkytuvė</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Standieji &amp;diskai</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Pavadinimas</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Virtualus dydis</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Tikras dydis</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD atvaizdžiai</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Dydis</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Diskelių atvaizdžiai</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk
+</comment>
+        <translation type="obsolete">Susietas su </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image
+</comment>
+        <translation type="obsolete">Susietas su </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image
+</comment>
+        <translation type="obsolete">Susietas su </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Susietas su </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Susietas su </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Susietas su </translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD diskas</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">standusis diskas</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">diskelis</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Visi %1 atvaizdžiai (%2)</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Tipas:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Vieta:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Formatas:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Informacija apie atminties įtaisą:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Susietas su:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Kopijuoti...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Keisti...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Kopijuoti esamą laikmeną</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Modifikuoti pasirinktos laikmenos atributus</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">&amp;Užverti</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -15285,249 +15525,6 @@ IPv6.</translation>
     <message>
         <source>String not found</source>
         <translation type="obsolete">Frazė nerasta</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Veiksmai</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Naujas...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">Pri&amp;dėti...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>Pašalin&amp;ti</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>At&amp;laisvinti</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Atnaujinti</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Sukurti naują virtualų standųjį diską</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Pridėti esamą laikmeną</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Pašalinti pasirinktą laikmeną</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Atlaisvinus pasirinktą laikmeną, ji nebebus susieta su mašinomis</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Atnaujinti laikmenų sąrašą</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Vieta</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Tipas (formatas) </translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Susietas su </translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Tikrinamas prieinamumas</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">Pa&amp;sirinkti</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Visi standžiųjų diskų atvaizdžiai (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Visos rinkmenos (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Pasirinkite standžiojo disko atvaizdžio rinkmeną</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD atvaizdžiai (*.iso);;Visos rinkmenos (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Pasirinkite CD/DVD atvaizdį</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Diskelių atvaizdžiai (*.img);;Visos rinkmenos (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Pasirinkite diskelio atvaizdžio rinkmeną</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;nesusieta&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info
-</comment>
-        <translation type="obsolete">--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Virtualių laikmenų tvarkytuvė</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Standieji &amp;diskai</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Pavadinimas</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtualus dydis</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Tikras dydis</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD atvaizdžiai</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Dydis</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Diskelių atvaizdžiai</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk
-</comment>
-        <translation type="obsolete">Susietas su </translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image
-</comment>
-        <translation type="obsolete">Susietas su </translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image
-</comment>
-        <translation type="obsolete">Susietas su </translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Susietas su </translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Susietas su </translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Susietas su </translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVD diskas</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">standusis diskas</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">diskelis</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Visi %1 atvaizdžiai (%2)</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Tipas:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Vieta:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Formatas:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Informacija apie atminties įtaisą:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Susietas su:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopijuoti...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Keisti...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Kopijuoti esamą laikmeną</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Modifikuoti pasirinktos laikmenos atributus</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Užverti</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

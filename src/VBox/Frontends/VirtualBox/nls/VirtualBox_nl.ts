@@ -7762,6 +7762,191 @@
         <source>&amp;Hard disks</source>
         <translation>&amp;Harde schijven</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translatorcomment>&amp;A</translatorcomment>
+        <translation>&amp;Acties</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Nieuw...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Toevoegen...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translatorcomment>&amp;w</translatorcomment>
+        <translation>Ver&amp;wijderen</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translatorcomment>&amp;r</translatorcomment>
+        <translation>V&amp;rijgeven</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translatorcomment>&amp;V</translatorcomment>
+        <translation>&amp;Verversen</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Maak een nieuwe virtuele harde schijf aan</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Voeg een bestaand medium toe</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Verwijder het geselecteerde medium</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Geeft het geselecteerde medium vrij door deze te ontkoppelen van de machines</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Ververs de lijst met media</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Controleren toegankelijkheid</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Selecteer</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Alle bestanden (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Selecteer een harde schijf bestand</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Selecter een cd/dvd schijfbestand</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Selecteer een diskette schijfbestand</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Niet&amp;nbsp;aangesloten&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Virtuele Media Manager</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Harde schijven</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Naam</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Virtuele grootte</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Ware grootte</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD images</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Grootte</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Diskette images</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">cd/dvd-schijf</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">harde schijf</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">Diskette</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Alle %1 images (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Type:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Locatie:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Formaat:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Opslagdetails:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Aangesloten aan:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Kopiëren...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Aanpassen...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Kopieer een bestaand medium</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Pas de attributen van het geselecteerde medium aan</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">S&amp;luiten</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Maak een nieuwe virtuele harde schijf aan</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Niet&amp;nbsp;Versleuteld&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Versleuteld met sleutel:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -13520,194 +13705,6 @@
     <message>
         <source>String not found</source>
         <translation type="obsolete">Gezochte tekst niet gevonden</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translatorcomment>&amp;A</translatorcomment>
-        <translation>&amp;Acties</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Nieuw...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Toevoegen...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translatorcomment>&amp;w</translatorcomment>
-        <translation>Ver&amp;wijderen</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translatorcomment>&amp;r</translatorcomment>
-        <translation>V&amp;rijgeven</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translatorcomment>&amp;V</translatorcomment>
-        <translation>&amp;Verversen</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Maak een nieuwe virtuele harde schijf aan</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Voeg een bestaand medium toe</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Verwijder het geselecteerde medium</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Geeft het geselecteerde medium vrij door deze te ontkoppelen van de machines</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Ververs de lijst met media</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Controleren toegankelijkheid</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Selecteer</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Alle bestanden (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Selecteer een harde schijf bestand</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Selecter een cd/dvd schijfbestand</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Selecteer een diskette schijfbestand</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Niet&amp;nbsp;aangesloten&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Virtuele Media Manager</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Harde schijven</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Naam</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtuele grootte</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Ware grootte</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD images</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Grootte</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Diskette images</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">cd/dvd-schijf</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">harde schijf</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">Diskette</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Alle %1 images (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Type:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Locatie:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Formaat:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Opslagdetails:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Aangesloten aan:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopiëren...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Aanpassen...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Kopieer een bestaand medium</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Pas de attributen van het geselecteerde medium aan</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">S&amp;luiten</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Maak een nieuwe virtuele harde schijf aan</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Niet&amp;nbsp;Versleuteld&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Versleuteld met sleutel:</translation>
     </message>
 </context>
 <context>

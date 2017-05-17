@@ -4746,6 +4746,115 @@
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -8879,118 +8988,6 @@
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

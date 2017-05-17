@@ -7366,6 +7366,202 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Acțiuni</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Nou...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Adaugă...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>Ște&amp;rge</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>E&amp;liberează</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Reî&amp;mprospătează</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Crează un nou disc fix virtual</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Adaugă un mediu existent</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Șterge mediul selectat</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Eliberează mediul selectat prin deconectarea de la mașină</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Reîmprospătează lista mediilor</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Amplasare</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Tip (Format)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Conectat la</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Verificare accesibilitate</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Selectare</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Toate imaginile de disc (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Toate fișierele (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Selectați un fișier imagine disc fix</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Imagini CD/DVD (*.iso);;Toate fișierele (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Selectați un fișier imagine CD/DVD</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Imagini dischetă (*.img);;Toate fișierele (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Selectați un fișier imagine dischetă</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Nimic&amp;nbsp;atașat&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Gestionar medii virtuale</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Discuri fixe</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nume</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Dimensiune virtuală</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Dimensiune reală</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">Imagini &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Dimensiune</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">Imagini &amp;dischetă</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Conectat la</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Conectată la</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Conectată la</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished">Amplasare:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished">Conectat la:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -15341,205 +15537,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;lipsă mediu&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Acțiuni</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Nou...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Adaugă...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>Ște&amp;rge</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>E&amp;liberează</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Reî&amp;mprospătează</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Crează un nou disc fix virtual</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Adaugă un mediu existent</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Șterge mediul selectat</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Eliberează mediul selectat prin deconectarea de la mașină</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Reîmprospătează lista mediilor</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Amplasare</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Tip (Format)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Conectat la</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Verificare accesibilitate</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Selectare</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Toate imaginile de disc (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Toate fișierele (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Selectați un fișier imagine disc fix</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Imagini CD/DVD (*.iso);;Toate fișierele (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Selectați un fișier imagine CD/DVD</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Imagini dischetă (*.img);;Toate fișierele (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Selectați un fișier imagine dischetă</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Nimic&amp;nbsp;atașat&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Gestionar medii virtuale</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Discuri fixe</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nume</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Dimensiune virtuală</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Dimensiune reală</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">Imagini &amp;CD/DVD</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Dimensiune</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Imagini &amp;dischetă</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Conectat la</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Conectată la</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Conectată la</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="unfinished">Amplasare:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation type="unfinished">Conectat la:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

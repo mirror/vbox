@@ -7071,6 +7071,218 @@ network adapter name</comment>
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>សកម្មភាព</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">ថ្មី...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">បន្ថែម...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>យកចេញ</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>ចេញផ្សាយ</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>ធ្វើ​ឲ្យ​ស្រស់</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">បង្កើត​ថាសរឹង​និម្មិត​ថ្មី</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">បន្ថែម​ឧបករណ៍​ដែល​មាន​ស្រាប់</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>យក​ឧបករណ៍​ផ្ទុក​ដែល​បាន​ជ្រើស</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>ចេញផ្សាយ​ឧបករណ៍​ផ្ទុក​ដែល​បានជ្រើស ដោយ​ផ្ដាច់​វា​ពី​ម៉ាស៊ីន</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>ធ្វើ​ឲ្យ​បញ្ជី​មេឌៀ​ស្រស់</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">ទីតាំង</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">ប្រភេទ (ទ្រង់ទ្រាយ)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">បាន​ភ្ជាប់​ទៅកាន់</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>ពិនិត្យ​មើល​ភាព​អាច​ដំណើរការ​បាន​ទេ</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">ជ្រើស</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">រូបភាព​ថាសរឹង​ទាំងអស់ (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">ឯកសារ​ទាំង​អស់ (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី​រ៉ូម (*.iso);; ឯកសារ​ទាំងអស់ (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាស​ស៊ីឌី/ឌីវីឌីរ៉ូម</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">រូបភាព​ថាស​ទន់ (*.img);; ឯកសារ​ទាំង​អស់ (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាស​ទន់</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;មិនបាន​ភ្ជាប់&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>ទំហំ​និម្មិត</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>ទំហំ​ពិតប្រាកដ</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>ទំហំ</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">រូបភាព​ថាសទន់</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>
+
+
+
+VMM: Virtual Disk</comment>
+        <translation type="obsolete">បាន​ភ្ជាប់​ទៅកាន់</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>
+
+
+
+VMM: CD/DVD Image</comment>
+        <translation type="obsolete">បានភ្ជាប់​ទៅ​កាន់</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>
+
+
+
+VMM: Floppy Image</comment>
+        <translation type="obsolete">បាន​ភ្ជាប់​ទៅកាន់</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished">ទី​តាំង​ ៖</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished">បាន​​ភ្ជាប់ទៅកាន់ ៖</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -13746,221 +13958,6 @@ medium</comment>
     <message>
         <source>String not found</source>
         <translation type="obsolete">រក​មិនឃើញ​ខ្សែអក្សរ</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>សកម្មភាព</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">ថ្មី...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">បន្ថែម...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>យកចេញ</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>ចេញផ្សាយ</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>ធ្វើ​ឲ្យ​ស្រស់</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">បង្កើត​ថាសរឹង​និម្មិត​ថ្មី</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">បន្ថែម​ឧបករណ៍​ដែល​មាន​ស្រាប់</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>យក​ឧបករណ៍​ផ្ទុក​ដែល​បាន​ជ្រើស</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>ចេញផ្សាយ​ឧបករណ៍​ផ្ទុក​ដែល​បានជ្រើស ដោយ​ផ្ដាច់​វា​ពី​ម៉ាស៊ីន</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>ធ្វើ​ឲ្យ​បញ្ជី​មេឌៀ​ស្រស់</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">ទីតាំង</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">ប្រភេទ (ទ្រង់ទ្រាយ)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">បាន​ភ្ជាប់​ទៅកាន់</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>ពិនិត្យ​មើល​ភាព​អាច​ដំណើរការ​បាន​ទេ</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">ជ្រើស</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">រូបភាព​ថាសរឹង​ទាំងអស់ (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">ឯកសារ​ទាំង​អស់ (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាសរឹង</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី​រ៉ូម (*.iso);; ឯកសារ​ទាំងអស់ (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាស​ស៊ីឌី/ឌីវីឌីរ៉ូម</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">រូបភាព​ថាស​ទន់ (*.img);; ឯកសារ​ទាំង​អស់ (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាស​ទន់</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;មិនបាន​ភ្ជាប់&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">ថាសរឹង</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>ទំហំ​និម្មិត</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>ទំហំ​ពិតប្រាកដ</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>ទំហំ</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">រូបភាព​ថាសទន់</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>
-
-
-
-VMM: Virtual Disk</comment>
-        <translation type="obsolete">បាន​ភ្ជាប់​ទៅកាន់</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>
-
-
-
-VMM: CD/DVD Image</comment>
-        <translation type="obsolete">បានភ្ជាប់​ទៅ​កាន់</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>
-
-
-
-VMM: Floppy Image</comment>
-        <translation type="obsolete">បាន​ភ្ជាប់​ទៅកាន់</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">ថាសរឹង</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="unfinished">ទី​តាំង​ ៖</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation type="unfinished">បាន​​ភ្ជាប់ទៅកាន់ ៖</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

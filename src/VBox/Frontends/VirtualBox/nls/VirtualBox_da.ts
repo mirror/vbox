@@ -8461,6 +8461,226 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation>&amp;Harddiske</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>H&amp;andlinger</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Ny...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">Tilføj...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>Fj&amp;ern</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>Frigiv</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Genop&amp;frisk</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Opret en ny virtuel harddisk</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Tilføj et eksisterende medie</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Fjern det valgte medie</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Frigiv det valgte medie ved at afmontere det fra maskiner, hvor det bruges</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Opdater medie-listen</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Placering</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Type (Format)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Monteret på</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Kontrollerer tilgængelighed</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">Vælg</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Alle harddisk-aftryk (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Alle filer (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Vælg et harddisk-aftryk</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD-aftryk (*.iso);;Alle filer (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Vælg et CD/DVD-aftryk</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Diskette-aftryk (*.img);;Alle filer (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Vælg et diskette-aftryk</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Ikke&amp;nbsp;tilsluttet&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Virtuel diskhåndtering</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Hard&amp;diske</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Navn</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Virtuel størrelse</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Reel størrelse</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD-aftryk</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Størrelse</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">Diskette-a&amp;ftryk</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Monteret på</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Monteret på</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Monteret på</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD disk</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">harddisk</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">diskette</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Alle %1 aftryk (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Type:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Placering:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Format:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Lagerdetaljer:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Tilsluttet til:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>Kopier...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Tilret...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Kopier et eksisterende medie</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Tilpas egenskaberne for det valgte medie</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">&amp;Luk</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Opret en ny virtuel harddisk</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Ikke&amp;nbsp;krypteret&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Krypteret med nøgle:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -15716,229 +15936,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;intet medie&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>H&amp;andlinger</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Ny...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">Tilføj...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>Fj&amp;ern</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>Frigiv</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Genop&amp;frisk</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Opret en ny virtuel harddisk</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Tilføj et eksisterende medie</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Fjern det valgte medie</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Frigiv det valgte medie ved at afmontere det fra maskiner, hvor det bruges</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Opdater medie-listen</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Placering</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Type (Format)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Monteret på</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Kontrollerer tilgængelighed</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">Vælg</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Alle harddisk-aftryk (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Alle filer (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Vælg et harddisk-aftryk</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-aftryk (*.iso);;Alle filer (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Vælg et CD/DVD-aftryk</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Diskette-aftryk (*.img);;Alle filer (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Vælg et diskette-aftryk</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ikke&amp;nbsp;tilsluttet&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Virtuel diskhåndtering</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Hard&amp;diske</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Navn</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtuel størrelse</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Reel størrelse</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD-aftryk</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Størrelse</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Diskette-a&amp;ftryk</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Monteret på</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Monteret på</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Monteret på</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVD disk</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">harddisk</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">diskette</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Alle %1 aftryk (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Type:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Placering:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Format:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Lagerdetaljer:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Tilsluttet til:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>Kopier...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Tilret...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Kopier et eksisterende medie</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Tilpas egenskaberne for det valgte medie</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Luk</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Opret en ny virtuel harddisk</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ikke&amp;nbsp;krypteret&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Krypteret med nøgle:</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
     </message>
 </context>
 <context>

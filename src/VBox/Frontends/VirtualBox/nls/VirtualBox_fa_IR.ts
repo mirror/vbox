@@ -6651,6 +6651,135 @@
         <source>&amp;Hard disks</source>
         <translation>دیسک سخت&amp;</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>اقدام&amp;ات</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">جد&amp;ید...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;افزودن...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>حذ&amp;ف</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>تر&amp;خیص</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>تازه&amp; کردن</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">افزودن یک رسانه موجود</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>حذف رسانه انتخاب شده</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>رسانه انتخاب شده را با جداکردن آن از ماشین ترخیص میکند</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>تازه کردن لیست رسانه</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>بررسی دسترسی پذیری</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">همه فایل ها (*)</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;ضمیمه&amp;nbsp;نشده است&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>مدیر رسانه مجازی</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>نام</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>حجم مجازی</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>حجم واقعی</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>حجم</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>نوع:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>مکان:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>فرمت:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>جزئیات ذخیره ساز:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>ضمیمه شده به:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>کپ&amp;ی...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>ویرا&amp;یش...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>کپی یک رسانه موجود</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>ویرایش صفات رسانه انتخاب شده</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">ایجاد یک درایو سخت مجازی جدید</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;رمزگذاری نشده&amp;&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>رمزگذاری شده با کلید:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -11587,138 +11716,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>نمی &amp;پذیرم</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>اقدام&amp;ات</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">جد&amp;ید...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;افزودن...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>حذ&amp;ف</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>تر&amp;خیص</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>تازه&amp; کردن</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">افزودن یک رسانه موجود</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>حذف رسانه انتخاب شده</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>رسانه انتخاب شده را با جداکردن آن از ماشین ترخیص میکند</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>تازه کردن لیست رسانه</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>بررسی دسترسی پذیری</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">همه فایل ها (*)</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;ضمیمه&amp;nbsp;نشده است&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>مدیر رسانه مجازی</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>نام</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>حجم مجازی</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>حجم واقعی</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>حجم</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>نوع:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>مکان:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>فرمت:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>جزئیات ذخیره ساز:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>ضمیمه شده به:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>کپ&amp;ی...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>ویرا&amp;یش...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>کپی یک رسانه موجود</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>ویرایش صفات رسانه انتخاب شده</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">ایجاد یک درایو سخت مجازی جدید</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;رمزگذاری نشده&amp;&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>رمزگذاری شده با کلید:</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
     </message>
 </context>
 <context>

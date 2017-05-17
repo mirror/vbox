@@ -7717,6 +7717,170 @@
         <source>C&amp;lose</source>
         <translation type="obsolete">It&amp;xi</translation>
     </message>
+    <message>
+        <location filename="../src/medium/UIMediumManager.cpp" line="-49"/>
+        <source>&amp;Actions</source>
+        <translation>&amp;Ekintzak</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Berria...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Gehitu...</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>R&amp;emove</source>
+        <translation>&amp;Kendu</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Argitaratu</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Re&amp;fresh</source>
+        <translation>B&amp;erritu</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>Checking accessibility</source>
+        <translation>Sarbidetasuna egiaztatzen</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Agiri guztiak (*)</translation>
+    </message>
+    <message>
+        <location line="-232"/>
+        <location line="+44"/>
+        <location line="+33"/>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Ez&amp;nbsp;Erantsita&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <location line="+646"/>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <location line="-607"/>
+        <source>Virtual Media Manager</source>
+        <translation>Multimedia Birtual Kudeatzailea</translation>
+    </message>
+    <message>
+        <location line="-113"/>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Ez&amp;nbsp;Enkriptatuta&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <location line="+124"/>
+        <source>Copy an existing disk image file</source>
+        <translation>Kopiatu dagoen diska irudi agiri bat</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Aldatu hautaturiko diska irudi agiriaren ezaugarriak</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Remove the selected disk image file</source>
+        <translation>Kendu hautaturiko diska irudi agiria</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Askatu hautaturiko diska irudi agiria hura makinetatik deserantsiz</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Refresh the list of disk image files</source>
+        <translation>Berritu diska irudi agiri zerrenda</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <location line="+25"/>
+        <location line="+16"/>
+        <source>Name</source>
+        <translation>Izena</translation>
+    </message>
+    <message>
+        <location line="-40"/>
+        <source>Virtual Size</source>
+        <translation>Neurri Birtuala</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Actual Size</source>
+        <translation>Oraingo Neurria</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Encrypted with key:</source>
+        <translation>Enkriptaketa giltza:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+16"/>
+        <location line="+16"/>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <location line="-25"/>
+        <location line="+16"/>
+        <source>Size</source>
+        <translation>Neurria</translation>
+    </message>
+    <message>
+        <location line="-35"/>
+        <source>Type:</source>
+        <translation>Mota:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+22"/>
+        <location line="+16"/>
+        <source>Location:</source>
+        <translation>Kokalekua:</translation>
+    </message>
+    <message>
+        <location line="-36"/>
+        <source>Format:</source>
+        <translation>Heuskarria:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Storage details:</source>
+        <translation>Biltegi xehetasunak:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+18"/>
+        <location line="+16"/>
+        <source>Attached to:</source>
+        <translation>Hona Erantsita:</translation>
+    </message>
+    <message>
+        <location line="-100"/>
+        <source>&amp;Copy...</source>
+        <translation>K&amp;opiatu...</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>&amp;Modify...</source>
+        <translation>A&amp;ldatu...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Sortu diska gogor birtual berri bat
+</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -13675,173 +13839,6 @@
         <location line="+1"/>
         <source>I &amp;Disagree</source>
         <translation>&amp;Ez dut Onartzen</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <location filename="../src/medium/UIMediumManager.cpp" line="-49"/>
-        <source>&amp;Actions</source>
-        <translation>&amp;Ekintzak</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Berria...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Gehitu...</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>R&amp;emove</source>
-        <translation>&amp;Kendu</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Argitaratu</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Re&amp;fresh</source>
-        <translation>B&amp;erritu</translation>
-    </message>
-    <message>
-        <location line="+83"/>
-        <source>Checking accessibility</source>
-        <translation>Sarbidetasuna egiaztatzen</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Agiri guztiak (*)</translation>
-    </message>
-    <message>
-        <location line="-232"/>
-        <location line="+44"/>
-        <location line="+33"/>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ez&amp;nbsp;Erantsita&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <location line="+646"/>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <location line="-607"/>
-        <source>Virtual Media Manager</source>
-        <translation>Multimedia Birtual Kudeatzailea</translation>
-    </message>
-    <message>
-        <location line="-113"/>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ez&amp;nbsp;Enkriptatuta&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <location line="+124"/>
-        <source>Copy an existing disk image file</source>
-        <translation>Kopiatu dagoen diska irudi agiri bat</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Aldatu hautaturiko diska irudi agiriaren ezaugarriak</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Remove the selected disk image file</source>
-        <translation>Kendu hautaturiko diska irudi agiria</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Askatu hautaturiko diska irudi agiria hura makinetatik deserantsiz</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Refresh the list of disk image files</source>
-        <translation>Berritu diska irudi agiri zerrenda</translation>
-    </message>
-    <message>
-        <location line="+25"/>
-        <location line="+25"/>
-        <location line="+16"/>
-        <source>Name</source>
-        <translation>Izena</translation>
-    </message>
-    <message>
-        <location line="-40"/>
-        <source>Virtual Size</source>
-        <translation>Neurri Birtuala</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Actual Size</source>
-        <translation>Oraingo Neurria</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Encrypted with key:</source>
-        <translation>Enkriptaketa giltza:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <location line="+16"/>
-        <location line="+16"/>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <location line="-25"/>
-        <location line="+16"/>
-        <source>Size</source>
-        <translation>Neurria</translation>
-    </message>
-    <message>
-        <location line="-35"/>
-        <source>Type:</source>
-        <translation>Mota:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <location line="+22"/>
-        <location line="+16"/>
-        <source>Location:</source>
-        <translation>Kokalekua:</translation>
-    </message>
-    <message>
-        <location line="-36"/>
-        <source>Format:</source>
-        <translation>Heuskarria:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Storage details:</source>
-        <translation>Biltegi xehetasunak:</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <location line="+18"/>
-        <location line="+16"/>
-        <source>Attached to:</source>
-        <translation>Hona Erantsita:</translation>
-    </message>
-    <message>
-        <location line="-100"/>
-        <source>&amp;Copy...</source>
-        <translation>K&amp;opiatu...</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>&amp;Modify...</source>
-        <translation>A&amp;ldatu...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Sortu diska gogor birtual berri bat
-</translation>
     </message>
 </context>
 <context>

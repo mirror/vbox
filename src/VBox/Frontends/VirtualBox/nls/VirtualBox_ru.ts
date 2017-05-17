@@ -8902,6 +8902,226 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation>&amp;Жёсткие диски</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Действия</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Создать...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Добавить...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Удалить</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>Ос&amp;вободить</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Об&amp;новить</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Создать новый виртуальный жесткий диск</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Добавить существующий носитель</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Удалить выбранный носитель информации</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Освободить выбранный носитель информации, отсоединив его от машин</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Обновить список носителей информации</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Расположение</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Тип (Формат)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Подсоединен к</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Проверка доступности</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Выбрать</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Все образы жестких дисков (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Все файлы (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Выберите файл образа жесткого диска</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Образы CD/DVD (*.iso);;Все файлы (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Выберите файл образа диска CD/DVD</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Образы дискет (*.img);;Все файлы (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Выберите файл образа дискеты</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Не&amp;nbsp;подсоединен&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Менеджер виртуальных носителей</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">&amp;Жёсткие диски</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Имя</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Вирт. размер</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Факт. размер</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;Оптические диски</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Размер</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Гибкие диски</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Подсоединён к</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Подсоединён к</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Подсоединён к</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">оптических дисков</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">жёстких дисков</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">гибких дисков</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Все образы %1 (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Тип:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Расположение:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Формат:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Дополнительно:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Подсоединён к:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Копировать...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Изменить...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Копировать существующий носитель информации</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Изменить атрибуты выбранного носителя информации</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">&amp;Закрыть</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">Создать новый виртуальный жесткий диск</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Не&amp;nbsp;шифрован&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Шифрован ключём с ИД:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -16324,229 +16544,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;нет носителей&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Действия</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Создать...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Добавить...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Удалить</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>Ос&amp;вободить</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Об&amp;новить</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Создать новый виртуальный жесткий диск</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Добавить существующий носитель</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Удалить выбранный носитель информации</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Освободить выбранный носитель информации, отсоединив его от машин</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Обновить список носителей информации</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Расположение</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Тип (Формат)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Подсоединен к</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Проверка доступности</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Выбрать</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Все образы жестких дисков (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Все файлы (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Выберите файл образа жесткого диска</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Образы CD/DVD (*.iso);;Все файлы (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Выберите файл образа диска CD/DVD</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Образы дискет (*.img);;Все файлы (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Выберите файл образа дискеты</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Не&amp;nbsp;подсоединен&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Менеджер виртуальных носителей</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Жёсткие диски</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Имя</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Вирт. размер</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Факт. размер</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;Оптические диски</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Размер</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Гибкие диски</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Подсоединён к</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Подсоединён к</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Подсоединён к</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">оптических дисков</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">жёстких дисков</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">гибких дисков</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Все образы %1 (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Тип:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Расположение:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Формат:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Дополнительно:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Подсоединён к:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Копировать...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Изменить...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Копировать существующий носитель информации</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Изменить атрибуты выбранного носителя информации</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Закрыть</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">Создать новый виртуальный жесткий диск</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Не&amp;nbsp;шифрован&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Шифрован ключём с ИД:</translation>
     </message>
 </context>
 <context>

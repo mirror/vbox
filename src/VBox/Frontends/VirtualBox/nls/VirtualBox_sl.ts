@@ -4850,6 +4850,115 @@
         <source>&amp;Hard disks</source>
         <translation>&amp;Trdi diski</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Dejanja</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Odstrani</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Sprosti</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Osveži</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Odstrani izbrano datoteko odtisa diska</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Sprosti izbrano datoteko odtisa diska z njenim odklopom iz računlanikov</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Osveži seznam datotek odtisa diska</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Preverjanje dostopnosti</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Ni&amp;nbsp;priklopljen&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Upravljalnik navideznih nosilcev</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Ime</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Navidezna velikost</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Dejanska velikost</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Velikost</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Vrsta:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Mesto:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Oblika:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Podrobnosti pomnilniške naprave:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Priklopljen v:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Kopiraj …</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Spremeni …</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Kopiraj obstoječo datoteko odtisa diska</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Spremeni atribute izbrane datoteke odtisa diska</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Ni&amp;nbsp;šifriran&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Šifriran s ključem:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -9067,118 +9176,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>&amp;Ne strinjam se</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Dejanja</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Odstrani</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Sprosti</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Osveži</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Odstrani izbrano datoteko odtisa diska</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Sprosti izbrano datoteko odtisa diska z njenim odklopom iz računlanikov</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Osveži seznam datotek odtisa diska</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Preverjanje dostopnosti</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ni&amp;nbsp;priklopljen&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Upravljalnik navideznih nosilcev</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Ime</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Navidezna velikost</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Dejanska velikost</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Velikost</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Vrsta:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Mesto:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Oblika:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Podrobnosti pomnilniške naprave:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Priklopljen v:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopiraj …</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Spremeni …</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Kopiraj obstoječo datoteko odtisa diska</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Spremeni atribute izbrane datoteke odtisa diska</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ni&amp;nbsp;šifriran&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Šifriran s ključem:</translation>
     </message>
 </context>
 <context>

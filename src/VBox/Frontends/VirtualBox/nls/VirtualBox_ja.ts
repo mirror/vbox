@@ -9029,6 +9029,222 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation>ハードディスク(&amp;H)</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>動作(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">新規(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">追加(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>コピー(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>変更(&amp;M)...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>除去(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>解放(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>最新の情報に更新(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">新規仮想ハードドライブの作成</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">新規仮想ハードディスクの作成</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">既存のメディアを追加</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>既存のメディアをコピー</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>選択したメディアの属性を変更</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>選択したメディアを除去</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>選択したメディアを仮想マシンから割り当て解除して解放する</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>メディアリストを最新の情報に更新</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVDディスク</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">ハードディスク</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">場所</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">タイプ(形式)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>アクセス可否を確認</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">選択(&amp;S)</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">すべてのハードディスクイメージ(%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">すべてのファイル(*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">ハードディスクイメージファイルを選択</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVDイメージ(*.iso);;すべてのファイル(*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVDディスクイメージファイルを選択</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">フロッピーイメージ(*.img);;すべてのファイル(*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">フロッピーディスクイメージファイルを選択</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">フロッピーディスク</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">すべての%1イメージ(%2)</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;未割り当て&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>仮想メディアマネージャー</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">ハードディスク(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名前</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>仮想的なサイズ</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>実際のサイズ</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>タイプ:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>場所:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>フォーマット:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>ストレージの詳細:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>割り当て:</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">CD/DVDイメージ(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>サイズ</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">フロッピーイメージ(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">割り当て</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;暗号化なし&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>暗号化の鍵:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -17596,225 +17812,6 @@ USB フィルターを追加または除去するにはコンテキストメニ�
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;メディアなし&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>動作(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">新規(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">追加(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>コピー(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>変更(&amp;M)...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>除去(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>解放(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>最新の情報に更新(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">新規仮想ハードドライブの作成</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">新規仮想ハードディスクの作成</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">既存のメディアを追加</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>既存のメディアをコピー</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>選択したメディアの属性を変更</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>選択したメディアを除去</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>選択したメディアを仮想マシンから割り当て解除して解放する</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>メディアリストを最新の情報に更新</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVDディスク</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">ハードディスク</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">場所</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">タイプ(形式)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>アクセス可否を確認</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">選択(&amp;S)</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">すべてのハードディスクイメージ(%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">すべてのファイル(*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">ハードディスクイメージファイルを選択</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVDイメージ(*.iso);;すべてのファイル(*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">CD/DVDディスクイメージファイルを選択</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">フロッピーイメージ(*.img);;すべてのファイル(*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">フロッピーディスクイメージファイルを選択</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">フロッピーディスク</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">すべての%1イメージ(%2)</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;未割り当て&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>仮想メディアマネージャー</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">ハードディスク(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名前</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>仮想的なサイズ</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>実際のサイズ</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>タイプ:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>場所:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>フォーマット:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>ストレージの詳細:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>割り当て:</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">CD/DVDイメージ(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>サイズ</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">フロッピーイメージ(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">割り当て</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;暗号化なし&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>暗号化の鍵:</translation>
     </message>
 </context>
 <context>

@@ -7190,6 +7190,206 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Toiminnot</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Uusi...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Lisää...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Poista</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Vapauta</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Pä&amp;ivitä</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Luo uusi virtuaalikiintolevy</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Lisää olemassaoleva media</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Poista valittu media</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Vapauta valittu media irrottamalla se virtuaalikoneista</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Päivitä medialuettelo</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Sijainti</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Tyyppi (muoto)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Tarkistetaan saatavuutta</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Valitse</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Kaikki levykuvatiedostot (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Kaikki tiedostot (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Valitse kiintolevyn levykuvatiedosto</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD-levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Valitse CD/DVD-levykuvatiedosto</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Levykkeiden levykuvat (*.img);;Kaikki tiedostot (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Valitse levykkeen levykuvatiedosto</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Ei&amp;nbsp;liitetty&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Virtuaalimedian hallinta</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Kiinto&amp;levyt</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nimi</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Virtuaalinen koko</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Todellinen koko</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">&amp;CD/DVD-levykuvat</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Koko</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Levykelevykuvat</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Liitetty kohteeseen</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">kiintolevy</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -14286,209 +14486,6 @@ Version %1</source>
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;ei mediaa&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Toiminnot</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Uusi...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Lisää...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Poista</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Vapauta</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Pä&amp;ivitä</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Luo uusi virtuaalikiintolevy</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Lisää olemassaoleva media</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Poista valittu media</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Vapauta valittu media irrottamalla se virtuaalikoneista</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Päivitä medialuettelo</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Sijainti</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Tyyppi (muoto)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Tarkistetaan saatavuutta</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Valitse</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Kaikki levykuvatiedostot (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Kaikki tiedostot (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Valitse kiintolevyn levykuvatiedosto</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-levykuvat (*.iso);;Kaikki tiedostot (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Valitse CD/DVD-levykuvatiedosto</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Levykkeiden levykuvat (*.img);;Kaikki tiedostot (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Valitse levykkeen levykuvatiedosto</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Ei&amp;nbsp;liitetty&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Virtuaalimedian hallinta</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Kiinto&amp;levyt</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nimi</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtuaalinen koko</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Todellinen koko</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">&amp;CD/DVD-levykuvat</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Koko</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Levykelevykuvat</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Liitetty kohteeseen</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">kiintolevy</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -4836,6 +4836,115 @@
         <source>&amp;Hard disks</source>
         <translation>Σκληροί δίσκοι</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>Δράσεις</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>Αφαίρεση</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>Απελευθέρωση</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Ανανέωση</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Αφαιρέστε τα επιλεγμένα αρχεία εικόνας δίσκου</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Απελευθερώστε τον επιλεγμένο σκληρό δίσκο αποσπώντας τον από τις μηχανές</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Ανανέωση της λίστας επιλεγμένων αρχείων εικόνας δίσκου</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Checking accessibility</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Μη&amp;nbsp;Συνδεδεμένο&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Διαχειριστής Εικονικών Μέσων</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Όνομα</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Εικονικό Μέγεθος</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Πραγματικό μέγεθος</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Μέγεθος</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Τύπος:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Τοποθεσία:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Διαμόρφωση:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Λεπτομέρειες αποθήκευσης:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Συνδεδεμένο σε:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>Αντιγραφή...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>Τροποποίηση...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Αντιγραφή υπάρχοντος αρχείου σκληρού δίσκου</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Τροποποιήστε τις ιδιότητες του επιλεγμένου αρχείου σκληρού δίσκου</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Μη&amp;nbsp;Κρυπτογραφημένο&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>Κρυπτογραφημένο με κλειδί:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -9058,118 +9167,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>&amp;Διαφωνώ</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>Δράσεις</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>Αφαίρεση</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>Απελευθέρωση</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Ανανέωση</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Αφαιρέστε τα επιλεγμένα αρχεία εικόνας δίσκου</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Απελευθερώστε τον επιλεγμένο σκληρό δίσκο αποσπώντας τον από τις μηχανές</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Ανανέωση της λίστας επιλεγμένων αρχείων εικόνας δίσκου</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Checking accessibility</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Μη&amp;nbsp;Συνδεδεμένο&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Διαχειριστής Εικονικών Μέσων</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Όνομα</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Εικονικό Μέγεθος</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Πραγματικό μέγεθος</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Μέγεθος</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Τύπος:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Τοποθεσία:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Διαμόρφωση:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Λεπτομέρειες αποθήκευσης:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Συνδεδεμένο σε:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>Αντιγραφή...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>Τροποποίηση...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Αντιγραφή υπάρχοντος αρχείου σκληρού δίσκου</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Τροποποιήστε τις ιδιότητες του επιλεγμένου αρχείου σκληρού δίσκου</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Μη&amp;nbsp;Κρυπτογραφημένο&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>Κρυπτογραφημένο με κλειδί:</translation>
     </message>
 </context>
 <context>

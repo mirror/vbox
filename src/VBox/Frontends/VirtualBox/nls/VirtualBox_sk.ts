@@ -7507,6 +7507,222 @@
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>Č&amp;innosti</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Nový...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Pridať...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Odstrániť</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Uvoľniť</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>O&amp;bnoviť</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Vytvoriť nový virtuálny pevný disk</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Pridať existujúce médium</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Odstrániť vybrané médium</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Uvoľniť vybrané médium jeho odpojením od stroja</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Obnoviť zoznam médii</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Umiestnenie</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Typ (Formát)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Pripojený k</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Kontroluje sa dostupnosť</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Vybrať</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Všetky obrazy pevných diskov (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Všetky súbory (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Vyberte súbor s obrazom pevného disku</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Obrazy CD/DVD (*.iso);;Všetky súbory (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Vyberte súbor s obrazom CD/DVD</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Obrazy diskiet (*.img);;Všetky súbory (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Vyberte súbor s obrazom diskety</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Nepripojený&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Virtuálny diskový manažér</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Pevné &amp;disky</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Názov</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Virtuálna veľkosť</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Skutočná veľkosť</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">Obrazy &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Veľkosť</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">Obrazy &amp;diskiet</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Pripojený k</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Pripojený k</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Pripojený k</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">Disk CD/DVD</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">pevný disk</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">disketa</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Všetky %1 obrazy (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Typ:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Umiestnenie:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Formát:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Detaily o úložisku:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Pripojený k:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>&amp;Kopírovať...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>&amp;Zmeniť...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Kopírovať existujúce médium</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Zmeniť atribúty vybraného média</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">&amp;Zavrieť</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -14971,225 +15187,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;žiadne médium&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>Č&amp;innosti</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Nový...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Pridať...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Odstrániť</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Uvoľniť</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>O&amp;bnoviť</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Vytvoriť nový virtuálny pevný disk</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Pridať existujúce médium</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Odstrániť vybrané médium</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Uvoľniť vybrané médium jeho odpojením od stroja</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Obnoviť zoznam médii</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Umiestnenie</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Typ (Formát)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Pripojený k</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Kontroluje sa dostupnosť</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Vybrať</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Všetky obrazy pevných diskov (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Všetky súbory (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Vyberte súbor s obrazom pevného disku</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Obrazy CD/DVD (*.iso);;Všetky súbory (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Vyberte súbor s obrazom CD/DVD</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Obrazy diskiet (*.img);;Všetky súbory (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Vyberte súbor s obrazom diskety</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Nepripojený&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Virtuálny diskový manažér</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Pevné &amp;disky</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Názov</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Virtuálna veľkosť</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Skutočná veľkosť</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">Obrazy &amp;CD/DVD</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Veľkosť</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Obrazy &amp;diskiet</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Pripojený k</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Pripojený k</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Pripojený k</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">Disk CD/DVD</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">pevný disk</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">disketa</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Všetky %1 obrazy (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Typ:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Umiestnenie:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Formát:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Detaily o úložisku:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Pripojený k:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>&amp;Kopírovať...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>&amp;Zmeniť...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Kopírovať existujúce médium</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Zmeniť atribúty vybraného média</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Zavrieť</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

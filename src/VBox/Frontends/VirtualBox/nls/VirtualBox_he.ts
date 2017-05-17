@@ -5162,6 +5162,115 @@
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;פעולות</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>הס&amp;ר</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;שחרר</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;רענן</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;לא&amp;nbsp;מוצמד&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>מנהל מדיה וירטואלית</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>שם</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>גודל וירטואלי</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>גודל אמיתי</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>גודל</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>טיפוס:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>מיקום:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>פורמט:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>פרטי אחסון:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>מוצמד אל:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>ה&amp;עתק...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>ה&amp;תאם...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -9462,118 +9571,6 @@
         <source>I &amp;Disagree</source>
         <translatorcomment>אני &amp;לא מסכים</translatorcomment>
         <translation>הריני &amp;לא להסכים</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;פעולות</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>הס&amp;ר</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;שחרר</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;רענן</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;לא&amp;nbsp;מוצמד&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>מנהל מדיה וירטואלית</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>שם</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>גודל וירטואלי</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>גודל אמיתי</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>גודל</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>טיפוס:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>מיקום:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>פורמט:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>פרטי אחסון:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>מוצמד אל:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>ה&amp;עתק...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>ה&amp;תאם...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

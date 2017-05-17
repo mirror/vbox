@@ -8151,6 +8151,222 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>&amp;Акције</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">&amp;Ново...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">&amp;Додај...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>&amp;Скини</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>&amp;Ослободи</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Ос&amp;вежи</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">Креирај нови виртуелни хард диск</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">Додај постојећи медиј</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>Уклони одабран медиј</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>Ослободи одабран медиј преко одкачивања из мажине</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>Освежи списак медија</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">Смештај</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">Тип (Формат)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">Привезан на</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>Провера приступа</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">&amp;Одабери</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">Све хард слике (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">Све датотеке (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">Одабрати слику хард диска</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD слике (*.iso);;Све (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Одабрати CD/DVD слику</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">Флопи слике (*.img);;Све (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">Одабрати флопи слику</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;Није&amp;nbsp;Привезан&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>Менаджер виртуелних медија</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">Дискови</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Име</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>Виртуелна величина</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>Актуелна величина</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">CD/DVD &amp;Слике</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Величина</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">&amp;Флопи слике</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">Привезано на</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">Привезано на</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">Привезано на</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD диск</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">хард диск</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">флопи диск</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">Све %1 слике (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>Тип:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>Смештај:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>Формат:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>Детаљи стоваришта:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>Прикачено на:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>Копирај...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>Промени...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>Копирај постојећи медиј</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>Промени поставке одабраног медија</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">Затвори</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -15147,225 +15363,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;без медија&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>&amp;Акције</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Ново...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Додај...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>&amp;Скини</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>&amp;Ослободи</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Ос&amp;вежи</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Креирај нови виртуелни хард диск</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">Додај постојећи медиј</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>Уклони одабран медиј</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Ослободи одабран медиј преко одкачивања из мажине</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>Освежи списак медија</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">Смештај</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">Тип (Формат)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">Привезан на</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>Провера приступа</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Одабери</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">Све хард слике (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">Све датотеке (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Одабрати слику хард диска</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD слике (*.iso);;Све (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">Одабрати CD/DVD слику</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Флопи слике (*.img);;Све (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">Одабрати флопи слику</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Није&amp;nbsp;Привезан&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>Менаджер виртуелних медија</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">Дискови</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Име</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>Виртуелна величина</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>Актуелна величина</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">CD/DVD &amp;Слике</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>Величина</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">&amp;Флопи слике</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">Привезано на</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">Привезано на</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">Привезано на</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVD диск</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">хард диск</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">флопи диск</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">Све %1 слике (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>Тип:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>Смештај:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>Формат:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>Детаљи стоваришта:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>Прикачено на:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>Копирај...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>Промени...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>Копирај постојећи медиј</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>Промени поставке одабраног медија</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">Затвори</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

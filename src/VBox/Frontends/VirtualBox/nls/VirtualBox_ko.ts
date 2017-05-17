@@ -8980,6 +8980,226 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Hard disks</source>
         <translation>하드 디스크(&amp;H)</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>동작(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation type="obsolete">새로 만들기(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="obsolete">추가(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>삭제(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>등록 해제(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>새로 고침(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard disk</source>
+        <translation type="obsolete">새 가상 하드 디스크 만들기</translation>
+    </message>
+    <message>
+        <source>Add an existing disk image file</source>
+        <translation type="obsolete">이미 존재하는 미디어 추가하기</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>선택한 미디어 삭제하기</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>선택한 미디어를 가상 머신에서 연결 해제하여 등록 해제하기</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>미디어 목록 새로 고치기</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="obsolete">위치</translation>
+    </message>
+    <message>
+        <source>Type (Format)</source>
+        <translation type="obsolete">종류 (형식)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <translation type="obsolete">다음에 연결됨</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>접근 가능성 검사 중</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <translation type="obsolete">선택(&amp;S)</translation>
+    </message>
+    <message>
+        <source>All hard disk images (%1)</source>
+        <translation type="obsolete">모든 하드 디스크 이미지 (%1)</translation>
+    </message>
+    <message>
+        <source>All files (*)</source>
+        <translation type="obsolete">모든 파일 (*)</translation>
+    </message>
+    <message>
+        <source>Select a hard disk image file</source>
+        <translation type="obsolete">하드 디스크 이미지 파일 선택</translation>
+    </message>
+    <message>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD 이미지 (*.iso);;모든 파일 (*)</translation>
+    </message>
+    <message>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVD 디스크 이미지 파일 선택</translation>
+    </message>
+    <message>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="obsolete">플로피 이미지 (*.img);;모든 파일 (*)</translation>
+    </message>
+    <message>
+        <source>Select a floppy disk image files</source>
+        <translation type="obsolete">플로피 디스크 이미지 파일 선택</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;연결되지&amp;nbsp;않음&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>정보 없음</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>가상 미디어 관리자</translation>
+    </message>
+    <message>
+        <source>Hard &amp;Disks</source>
+        <translation type="obsolete">하드 디스크(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>이름</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>가상 크기</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>실제 크기</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="obsolete">CD/DVD 이미지(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>크기</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Images</source>
+        <translation type="obsolete">플로피 이미지(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation type="obsolete">다음에 연결됨</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation type="obsolete">다음에 연결됨</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation type="obsolete">다음에 연결됨</translation>
+    </message>
+    <message>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD 디스크</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">하드 디스크</translation>
+    </message>
+    <message>
+        <source>floppy disk</source>
+        <translation type="obsolete">플로피 디스크</translation>
+    </message>
+    <message>
+        <source>All %1 images (%2)</source>
+        <translation type="obsolete">모든 %1 이미지 (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>종류:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>위치:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>형식:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>저장소 정보:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>다음에 연결됨:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>복사(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>수정(&amp;M)...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>존재하는 미디어 복사</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>선택한 미디어 속성 수정</translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="obsolete">닫기(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Create a new virtual hard drive</source>
+        <translation type="obsolete">새 가상 하드 드라이브 만들기</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;암호화되지&amp;nbsp;않음&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>다음 키로 암호화됨:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -16361,229 +16581,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;no media&gt;</source>
         <translation type="obsolete">&lt;미디어 없음&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>동작(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation type="obsolete">새로 만들기(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">추가(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>삭제(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>등록 해제(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>새로 고침(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">새 가상 하드 디스크 만들기</translation>
-    </message>
-    <message>
-        <source>Add an existing disk image file</source>
-        <translation type="obsolete">이미 존재하는 미디어 추가하기</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>선택한 미디어 삭제하기</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>선택한 미디어를 가상 머신에서 연결 해제하여 등록 해제하기</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>미디어 목록 새로 고치기</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <translation type="obsolete">위치</translation>
-    </message>
-    <message>
-        <source>Type (Format)</source>
-        <translation type="obsolete">종류 (형식)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <translation type="obsolete">다음에 연결됨</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>접근 가능성 검사 중</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">선택(&amp;S)</translation>
-    </message>
-    <message>
-        <source>All hard disk images (%1)</source>
-        <translation type="obsolete">모든 하드 디스크 이미지 (%1)</translation>
-    </message>
-    <message>
-        <source>All files (*)</source>
-        <translation type="obsolete">모든 파일 (*)</translation>
-    </message>
-    <message>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">하드 디스크 이미지 파일 선택</translation>
-    </message>
-    <message>
-        <source>CD/DVD images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD 이미지 (*.iso);;모든 파일 (*)</translation>
-    </message>
-    <message>
-        <source>Select a CD/DVD disk image file</source>
-        <translation type="obsolete">CD/DVD 디스크 이미지 파일 선택</translation>
-    </message>
-    <message>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">플로피 이미지 (*.img);;모든 파일 (*)</translation>
-    </message>
-    <message>
-        <source>Select a floppy disk image files</source>
-        <translation type="obsolete">플로피 디스크 이미지 파일 선택</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;연결되지&amp;nbsp;않음&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>정보 없음</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>가상 미디어 관리자</translation>
-    </message>
-    <message>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">하드 디스크(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>이름</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>가상 크기</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>실제 크기</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">CD/DVD 이미지(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>크기</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">플로피 이미지(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Virtual Disk</comment>
-        <translation type="obsolete">다음에 연결됨</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: CD/DVD Image</comment>
-        <translation type="obsolete">다음에 연결됨</translation>
-    </message>
-    <message>
-        <source>Attached to</source>
-        <comment>VMM: Floppy Image</comment>
-        <translation type="obsolete">다음에 연결됨</translation>
-    </message>
-    <message>
-        <source>CD/DVD disk</source>
-        <translation type="obsolete">CD/DVD 디스크</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">하드 디스크</translation>
-    </message>
-    <message>
-        <source>floppy disk</source>
-        <translation type="obsolete">플로피 디스크</translation>
-    </message>
-    <message>
-        <source>All %1 images (%2)</source>
-        <translation type="obsolete">모든 %1 이미지 (%2)</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>종류:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>위치:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>형식:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>저장소 정보:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>다음에 연결됨:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>복사(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>수정(&amp;M)...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>존재하는 미디어 복사</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>선택한 미디어 속성 수정</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">닫기(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Create a new virtual hard drive</source>
-        <translation type="obsolete">새 가상 하드 드라이브 만들기</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;암호화되지&amp;nbsp;않음&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>다음 키로 암호화됨:</translation>
     </message>
 </context>
 <context>

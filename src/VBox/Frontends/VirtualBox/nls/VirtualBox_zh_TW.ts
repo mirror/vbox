@@ -4746,6 +4746,115 @@
         <source>&amp;Hard disks</source>
         <translation>硬碟(&amp;H)</translation>
     </message>
+    <message>
+        <source>&amp;Actions</source>
+        <translation>動作(&amp;A)</translation>
+    </message>
+    <message>
+        <source>R&amp;emove</source>
+        <translation>移除(&amp;E)</translation>
+    </message>
+    <message>
+        <source>Re&amp;lease</source>
+        <translation>釋放(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>重新整理(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Remove the selected disk image file</source>
+        <translation>移除選取的磁碟映像檔案</translation>
+    </message>
+    <message>
+        <source>Release the selected disk image file by detaching it from the machines</source>
+        <translation>從機器分離以釋放選取的磁碟映像檔案</translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation>重新整理磁碟映像檔案清單</translation>
+    </message>
+    <message>
+        <source>Checking accessibility</source>
+        <translation>正在檢查可存取性</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation>&lt;i&gt;未附加&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation>--</translation>
+    </message>
+    <message>
+        <source>Virtual Media Manager</source>
+        <translation>虛擬媒體管理員</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名稱</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation>虛擬大小</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation>實際大小</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>大小</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation>類型:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation>位置:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation>格式:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation>存放裝置詳細資料:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation>附加到:</translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation>複製(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation>修改(&amp;M)...</translation>
+    </message>
+    <message>
+        <source>Copy an existing disk image file</source>
+        <translation>複製現有的磁碟映像檔案</translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected disk image file</source>
+        <translation>修改選取磁碟映像檔案的屬性</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation>&lt;i&gt;未&amp;nbsp;加密&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation>使用金鑰加密:</translation>
+    </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
@@ -8880,118 +8989,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>我不同意(&amp;D)</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxMediaManagerDlg</name>
-    <message>
-        <source>&amp;Actions</source>
-        <translation>動作(&amp;A)</translation>
-    </message>
-    <message>
-        <source>R&amp;emove</source>
-        <translation>移除(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Re&amp;lease</source>
-        <translation>釋放(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>重新整理(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Remove the selected disk image file</source>
-        <translation>移除選取的磁碟映像檔案</translation>
-    </message>
-    <message>
-        <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>從機器分離以釋放選取的磁碟映像檔案</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation>重新整理磁碟映像檔案清單</translation>
-    </message>
-    <message>
-        <source>Checking accessibility</source>
-        <translation>正在檢查可存取性</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;未附加&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation>--</translation>
-    </message>
-    <message>
-        <source>Virtual Media Manager</source>
-        <translation>虛擬媒體管理員</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名稱</translation>
-    </message>
-    <message>
-        <source>Virtual Size</source>
-        <translation>虛擬大小</translation>
-    </message>
-    <message>
-        <source>Actual Size</source>
-        <translation>實際大小</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation>大小</translation>
-    </message>
-    <message>
-        <source>Type:</source>
-        <translation>類型:</translation>
-    </message>
-    <message>
-        <source>Location:</source>
-        <translation>位置:</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation>格式:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation>存放裝置詳細資料:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation>附加到:</translation>
-    </message>
-    <message>
-        <source>&amp;Copy...</source>
-        <translation>複製(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>&amp;Modify...</source>
-        <translation>修改(&amp;M)...</translation>
-    </message>
-    <message>
-        <source>Copy an existing disk image file</source>
-        <translation>複製現有的磁碟映像檔案</translation>
-    </message>
-    <message>
-        <source>Modify the attributes of the selected disk image file</source>
-        <translation>修改選取磁碟映像檔案的屬性</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation>UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation>&lt;i&gt;未&amp;nbsp;加密&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation>使用金鑰加密:</translation>
     </message>
 </context>
 <context>
