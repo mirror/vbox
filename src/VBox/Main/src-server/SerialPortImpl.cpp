@@ -611,10 +611,14 @@ void SerialPort::i_copyFrom(SerialPort *aThat)
     m->bd.assignCopy(aThat->m->bd);
 }
 
+/**
+ * Applies the defaults for this serial port.
+ *
+ * @note This method currently assumes that the object is in the state after
+ * calling init(), it does not set defaults from an arbitrary state.
+ */
 void SerialPort::i_applyDefaults(GuestOSType *aOsType)
 {
-    AssertReturnVoid(aOsType != NULL);
-
     /* sanity */
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
@@ -653,7 +657,9 @@ void SerialPort::i_applyDefaults(GuestOSType *aOsType)
             break;
     }
 
-    uint32_t numSerialEnabled = aOsType->i_numSerialEnabled();
+    uint32_t numSerialEnabled = 0;
+    if (aOsType)
+        numSerialEnabled = aOsType->i_numSerialEnabled();
 
     /* Enable port if requested */
     if (m->bd->ulSlot < numSerialEnabled)

@@ -489,7 +489,10 @@ void ParallelPort::i_copyFrom(ParallelPort *aThat)
 }
 
 /**
- * Applies the defaults for the given parallel port.
+ * Applies the defaults for this parallel port.
+ *
+ * @note This method currently assumes that the object is in the state after
+ * calling init(), it does not set defaults from an arbitrary state.
  */
 void ParallelPort::i_applyDefaults()
 {
