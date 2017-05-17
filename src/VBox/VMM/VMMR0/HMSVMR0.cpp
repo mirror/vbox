@@ -2195,13 +2195,14 @@ static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
  * steps before we can safely return to ring-3. This is not the same as longjmps
  * to ring-3, this is voluntary.
  *
+ * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   rcExit      The reason for exiting to ring-3. Can be
  *                      VINF_VMM_UNKNOWN_RING3_CALL.
  */
-static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
+static int hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
 {
     Assert(pVM);
     Assert(pVCpu);
@@ -2218,11 +2219,6 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         hmR0SvmPendingEventToTrpmTrap(pVCpu);
         Assert(!pVCpu->hm.s.Event.fPending);
     }
-
-    /* If we're emulating an instruction, we shouldn't have any TRPM traps pending
-       and if we're injecting an event we should have a TRPM trap pending. */
-    AssertMsg(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT ||  TRPMHasTrap(pVCpu), ("rcExit=%Rrc\n", rcExit));
-    AssertMsg(rcExit != VINF_EM_RAW_EMULATE_INSTR     || !TRPMHasTrap(pVCpu), ("rcExit=%Rrc\n", rcExit));
 
     /* Sync. the necessary state for going back to ring-3. */
     hmR0SvmLeaveSession(pVCpu);
@@ -2250,6 +2246,19 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
     /* We do -not- want any longjmp notifications after this! We must return to ring-3 ASAP. */
     VMMRZCallRing3RemoveNotification(pVCpu);
     VMMRZCallRing3Enable(pVCpu);
+
+    /*
+     * If we're emulating an instruction, we shouldn't have any TRPM traps pending
+     * and if we're injecting an event we should have a TRPM trap pending.
+     */
+    AssertReturnStmt(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT || TRPMHasTrap(pVCpu),
+                     pVCpu->hm.s.u32HMError = rcExit,
+                     VERR_SVM_IPE_5);
+    AssertReturnStmt(rcExit != VINF_EM_RAW_EMULATE_INSTR || !TRPMHasTrap(pVCpu),
+                     pVCpu->hm.s.u32HMError = rcExit,
+                     VERR_SVM_IPE_4);
+
+    return rcExit;
 }
 
 
@@ -3458,7 +3467,7 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = VINF_EM_TRIPLE_FAULT;
 
     /* Prepare to return to ring-3. This will remove longjmp notifications. */
-    hmR0SvmExitToRing3(pVM, pVCpu, pCtx, rc);
+    rc = hmR0SvmExitToRing3(pVM, pVCpu, pCtx, rc);
     Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
     return rc;
 }
