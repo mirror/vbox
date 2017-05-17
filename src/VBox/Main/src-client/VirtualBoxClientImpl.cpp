@@ -92,7 +92,7 @@ int VirtualBoxClient::getServiceAccount(const wchar_t *pwszServiceName, wchar_t 
 
     int vrc;
 
-    // Get a handle to the SCM database. 
+    // Get a handle to the SCM database.
     SC_HANDLE hSCManager = OpenSCManagerW(NULL /*pwszMachineName*/, NULL /*pwszDatabaseName*/, SC_MANAGER_ALL_ACCESS);
     if (hSCManager != NULL)
     {
@@ -175,7 +175,7 @@ HRESULT VirtualBoxClient::isServiceDisabled(const wchar_t *pwszServiceName, bool
         0,                       // Locale. NULL indicates current
         NULL,                    // Security flags.
         0,                       // Authority (for example, Kerberos)
-        0,                       // Context object 
+        0,                       // Context object
         aService.asOutParam()    // pointer to IWbemServices proxy
     );
     if (FAILED(hr))
@@ -222,11 +222,11 @@ HRESULT VirtualBoxClient::isServiceDisabled(const wchar_t *pwszServiceName, bool
         LogRel(("Error: Didn't found StartMode property: %Rhrc\n", hr));
         return hr;
     }
-    
+
     Assert((vtProp.vt & VT_BSTR) == VT_BSTR);
 
-    *pOutIsDisabled = RTUtf16Cmp((RTUTF16*)vtProp.bstrVal, 
-        (RTUTF16*)L"Disabled") == 0;
+    *pOutIsDisabled = RTUtf16Cmp((RTUTF16*)vtProp.bstrVal,
+                                 (RTUTF16*)L"Disabled") == 0;
 
     LogRel(("Service start mode is '%ls' \n", vtProp.bstrVal));
 
@@ -391,7 +391,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
     LogRelFunc(("VBoxSDS service is running under the '%ls' account.\n", wszBuffer));
 
     if (RTUtf16Cmp(wszBuffer, L"LocalSystem") != 0)
-        return setError(hrcCaller, 
+        return setError(hrcCaller,
                         tr("VBoxSDS should be run under SYSTEM account, but it started under '%ls' account:\n"
                            "Change VBoxSDS Windows Service Logon parameters in Service Control Manager. \n%Rhrc"),
                         wszBuffer, hrcCaller);

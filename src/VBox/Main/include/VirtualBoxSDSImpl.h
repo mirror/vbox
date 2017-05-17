@@ -55,7 +55,7 @@ public:
     virtual ULONG InternalAddRef();
     virtual ULONG InternalRelease();
 #endif
-    
+
 private:
 
     // wrapped IToken methods
