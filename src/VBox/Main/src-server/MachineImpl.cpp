@@ -9109,7 +9109,10 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
             if (FAILED(rc)) return rc;
         }
 
-        // serial ports
+        // serial ports (establish defaults first, to ensure reading the same
+        // settings as we saved, since the list skips ports having defaults)
+        for (unsigned i = 0; i < RT_ELEMENTS(mSerialPorts); i++)
+            mSerialPorts[i]->i_applyDefaults(pGuestOSType);
         for (settings::SerialPortsList::const_iterator
              it = data.llSerialPorts.begin();
              it != data.llSerialPorts.end();
@@ -9122,7 +9125,10 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
             if (FAILED(rc)) return rc;
         }
 
-        // parallel ports (optional)
+        // parallel ports (establish defaults first, to ensure reading the same
+        // settings as we saved, since the list skips ports having defaults)
+        for (unsigned i = 0; i < RT_ELEMENTS(mParallelPorts); i++)
+            mParallelPorts[i]->i_applyDefaults();
         for (settings::ParallelPortsList::const_iterator
              it = data.llParallelPorts.begin();
              it != data.llParallelPorts.end();
