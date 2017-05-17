@@ -1084,15 +1084,14 @@ HRESULT Machine::getOSTypeId(com::Utf8Str &aOSTypeId)
 HRESULT Machine::setOSTypeId(const com::Utf8Str &aOSTypeId)
 {
     /* look up the object by Id to check it is valid */
-    ComPtr<IGuestOSType> guestOSType;
-    HRESULT rc = mParent->GetGuestOSType(Bstr(aOSTypeId).raw(), guestOSType.asOutParam());
+    ComObjPtr<GuestOSType> pGuestOSType;
+    HRESULT rc = mParent->i_findGuestOSType(aOSTypeId,
+                                            pGuestOSType);
     if (FAILED(rc)) return rc;
 
     /* when setting, always use the "etalon" value for consistency -- lookup
      * by ID is case-insensitive and the input value may have different case */
-    Bstr osTypeId;
-    rc = guestOSType->COMGETTER(Id)(osTypeId.asOutParam());
-    if (FAILED(rc)) return rc;
+    Utf8Str osTypeId = pGuestOSType->i_id();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1284,14 +1283,13 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
         /* Resolve dynamic provider types to the effective types. */
         default:
         {
-            ComPtr<IGuestOSType> ptrGuestOSType;
-            HRESULT hrc2 = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(), ptrGuestOSType.asOutParam());
+            ComObjPtr<GuestOSType> pGuestOSType;
+            HRESULT hrc2 = mParent->i_findGuestOSType(mUserData->s.strOsType,
+                                                      pGuestOSType);
             AssertMsgReturn(SUCCEEDED(hrc2), ("Failed to get guest OS type. hrc2=%Rhrc\n", hrc2), hrc2);
 
-            Bstr guestTypeFamilyId;
-            hrc2 = ptrGuestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());
-            AssertMsgReturn(SUCCEEDED(hrc2), ("Failed to get guest family. hrc2=%Rhrc\n", hrc2), hrc2);
-            BOOL fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
+            Utf8Str guestTypeFamilyId = pGuestOSType->i_familyId();
+            bool fOsXGuest = guestTypeFamilyId == "MacOS";
 
             switch (mHWData->mParavirtProvider)
             {
@@ -2225,18 +2223,17 @@ HRESULT Machine::getCPUProperty(CPUPropertyType_T aProperty, BOOL *aValue)
             {
                 *aValue = FALSE;
 
-                ComPtr<IGuestOSType> ptrGuestOSType;
-                HRESULT hrc2 = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(), ptrGuestOSType.asOutParam());
+                ComObjPtr<GuestOSType> pGuestOSType;
+                HRESULT hrc2 = mParent->i_findGuestOSType(mUserData->s.strOsType,
+                                                          pGuestOSType);
                 if (SUCCEEDED(hrc2))
                 {
-                    BOOL fIs64Bit = FALSE;
-                    hrc2 = ptrGuestOSType->COMGETTER(Is64Bit)(&fIs64Bit); AssertComRC(hrc2);
-                    if (SUCCEEDED(hrc2) && fIs64Bit)
+                    if (pGuestOSType->i_is64Bit())
                     {
-                        ComObjPtr<Host> ptrHost = mParent->i_host();
+                        ComObjPtr<Host> pHost = mParent->i_host();
                         alock.release();
 
-                        hrc2 = ptrHost->GetProcessorFeature(ProcessorFeature_LongMode, aValue); AssertComRC(hrc2);
+                        hrc2 = pHost->GetProcessorFeature(ProcessorFeature_LongMode, aValue); AssertComRC(hrc2);
                         if (FAILED(hrc2))
                             *aValue = FALSE;
                     }
@@ -3858,7 +3855,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
     /* check if the device slot is already busy */
     MediumAttachment *pAttachTemp;
     if ((pAttachTemp = i_findAttachment(*mMediumAttachments.data(),
-                                        Bstr(aName).raw(),
+                                        aName,
                                         aControllerPort,
                                         aDevice)))
     {
@@ -3945,7 +3942,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
                 AssertReturn(!fIndirect, E_FAIL);
 
                 /* see if it's the same bus/channel/device */
-                if (pAttachTemp->i_matches(Bstr(aName).raw(), aControllerPort, aDevice))
+                if (pAttachTemp->i_matches(aName, aControllerPort, aDevice))
                 {
                     /* the simplest case: restore the whole attachment
                      * and return, nothing else to do */
@@ -4046,7 +4043,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
                          * otherwise the attachment that has the youngest
                          * descendant of medium will be used
                          */
-                        if (pAttach->i_matches(Bstr(aName).raw(), aControllerPort, aDevice))
+                        if (pAttach->i_matches(aName, aControllerPort, aDevice))
                         {
                             /* the simplest case: restore the whole attachment
                              * and return, nothing else to do */
@@ -4420,7 +4417,7 @@ HRESULT Machine::detachDevice(const com::Utf8Str &aName, LONG aControllerPort,
                         aName.c_str());
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                 Bstr(aName).raw(),
+                                                 aName,
                                                  aControllerPort,
                                                  aDevice);
     if (!pAttach)
@@ -4477,7 +4474,7 @@ HRESULT Machine::passthroughDevice(const com::Utf8Str &aName, LONG aControllerPo
                         Global::stringifyMachineState(mData->mMachineState));
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                 Bstr(aName).raw(),
+                                                 aName,
                                                  aControllerPort,
                                                  aDevice);
     if (!pAttach)
@@ -4513,7 +4510,7 @@ HRESULT Machine::temporaryEjectDevice(const com::Utf8Str &aName, LONG aControlle
     if (FAILED(rc)) return rc;
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                 Bstr(aName).raw(),
+                                                 aName,
                                                  aControllerPort,
                                                  aDevice);
     if (!pAttach)
@@ -4556,7 +4553,7 @@ HRESULT Machine::nonRotationalDevice(const com::Utf8Str &aName, LONG aController
                         Global::stringifyMachineState(mData->mMachineState));
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                 Bstr(aName).raw(),
+                                                 aName,
                                                  aControllerPort,
                                                  aDevice);
     if (!pAttach)
@@ -4599,7 +4596,7 @@ HRESULT Machine::setAutoDiscardForDevice(const com::Utf8Str &aName, LONG aContro
                         Global::stringifyMachineState(mData->mMachineState));
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                 Bstr(aName).raw(),
+                                                 aName,
                                                  aControllerPort,
                                                  aDevice);
     if (!pAttach)
@@ -4641,7 +4638,7 @@ HRESULT Machine::setHotPluggableForDevice(const com::Utf8Str &aName, LONG aContr
                         Global::stringifyMachineState(mData->mMachineState));
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                 Bstr(aName).raw(),
+                                                 aName,
                                                  aControllerPort,
                                                  aDevice);
     if (!pAttach)
@@ -4709,7 +4706,7 @@ HRESULT Machine::setBandwidthGroupForDevice(const com::Utf8Str &aName, LONG aCon
                         Global::stringifyMachineState(mData->mMachineState));
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                 Bstr(aName).raw(),
+                                                 aName,
                                                  aControllerPort,
                                                  aDevice);
     if (!pAttach)
@@ -4759,7 +4756,7 @@ HRESULT Machine::attachDeviceWithoutMedium(const com::Utf8Str &aName,
      LogFlowThisFunc(("aName=\"%s\" aControllerPort=%d aDevice=%d aType=%d\n",
                       aName.c_str(), aControllerPort, aDevice, aType));
 
-     rc = AttachDevice(Bstr(aName).raw(), aControllerPort, aDevice, aType, NULL);
+     rc = attachDevice(aName, aControllerPort, aDevice, aType, NULL);
 
      return rc;
 }
@@ -4796,7 +4793,7 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
                                   &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<MediumAttachment> pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                           Bstr(aName).raw(),
+                                                           aName,
                                                            aControllerPort,
                                                            aDevice);
     if (pAttach.isNull())
@@ -4843,7 +4840,7 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
         // The backup operation makes the pAttach reference point to the
         // old settings. Re-get the correct reference.
         pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                   Bstr(aName).raw(),
+                                   aName,
                                    aControllerPort,
                                    aDevice);
         if (!oldmedium.isNull())
@@ -4877,7 +4874,7 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
         if (!pMedium.isNull())
             pMedium->i_removeBackReference(mData->mUuid);
         pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                   Bstr(aName).raw(),
+                                   aName,
                                    aControllerPort,
                                    aDevice);
         /* If the attachment is gone in the meantime, bail out. */
@@ -4912,7 +4909,7 @@ HRESULT Machine::getMedium(const com::Utf8Str &aName,
     aMedium = NULL;
 
     ComObjPtr<MediumAttachment> pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                           Bstr(aName).raw(),
+                                                           aName,
                                                            aControllerPort,
                                                            aDevice);
     if (pAttach.isNull())
@@ -5523,10 +5520,10 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
     pProgress.createObject();
     rc = pProgress->init(i_getVirtualBox(),
                          static_cast<IMachine*>(this) /* aInitiator */,
-                         Bstr(tr("Deleting files")).raw(),
+                         tr("Deleting files"),
                          true /* fCancellable */,
                          (ULONG)(1 + llMediums.size() + llFilesToDelete.size() + 1),    // cOperations
-                         Bstr(tr("Collecting file inventory")).raw());
+                         tr("Collecting file inventory"));
     if (FAILED(rc))
         return rc;
 
@@ -5724,7 +5721,7 @@ HRESULT Machine::i_getGuestPropertyFromVM(const com::Utf8Str &aName,
     if (!directControl)
         rc = E_ACCESSDENIED;
     else
-        rc = directControl->AccessGuestProperty(Bstr(aName).raw(), Bstr("").raw(), Bstr("").raw(),
+        rc = directControl->AccessGuestProperty(Bstr(aName).raw(), Bstr::Empty.raw(), Bstr::Empty.raw(),
                                                 0 /* accessMode */,
                                                 &bValue, aTimestamp, &bFlags);
 
@@ -6088,7 +6085,7 @@ HRESULT Machine::getMediumAttachment(const com::Utf8Str &aName,
     aAttachment = NULL;
 
     ComObjPtr<MediumAttachment> pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                                           Bstr(aName).raw(),
+                                                           aName,
                                                            aControllerPort,
                                                            aDevice);
     if (pAttach.isNull())
@@ -6806,9 +6803,8 @@ HRESULT Machine::attachHostPCIDevice(LONG aHostAddress, LONG aDesiredGuestAddres
 
         RTStrPrintf(name, sizeof(name), "host%02x:%02x.%x", (aHostAddress>>8) & 0xff,
                     (aHostAddress & 0xf8) >> 3, aHostAddress & 7);
-        Bstr bname(name);
         pda.createObject();
-        pda->init(this, bname,  aHostAddress, aDesiredGuestAddress, TRUE);
+        pda->init(this, name, aHostAddress, aDesiredGuestAddress, TRUE);
         i_setModified(IsModified_MachineData);
         mHWData.backup();
         mHWData->mPCIDeviceAssignments.push_back(pda);
@@ -7407,10 +7403,10 @@ void Machine::i_getLogFolder(Utf8Str &aLogFolder)
             char szTmp2[RTPATH_MAX];
             vrc = RTPathAbs(szTmp, szTmp2, sizeof(szTmp2));
             if (RT_SUCCESS(vrc))
-                aLogFolder = BstrFmt("%s%c%s",
-                                     szTmp2,
-                                     RTPATH_DELIMITER,
-                                     mUserData->s.strName.c_str()); // path/to/logfolder/vmname
+                aLogFolder = Utf8StrFmt("%s%c%s",
+                                        szTmp2,
+                                        RTPATH_DELIMITER,
+                                        mUserData->s.strName.c_str()); // path/to/logfolder/vmname
         }
         else
             vrc = VERR_PATH_IS_RELATIVE;
@@ -8736,10 +8732,11 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     mUserData->s = config.machineUserData;
 
     // look up the object by Id to check it is valid
-    ComPtr<IGuestOSType> guestOSType;
-    HRESULT rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(),
-                                         guestOSType.asOutParam());
+    ComObjPtr<GuestOSType> pGuestOSType;
+    HRESULT rc = mParent->i_findGuestOSType(mUserData->s.strOsType,
+                                            pGuestOSType);
     if (FAILED(rc)) return rc;
+    mUserData->s.strOsType = pGuestOSType->i_id();
 
     // stateFile (optional)
     if (config.strStateFile.isEmpty())
@@ -9106,7 +9103,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         {
             const settings::NetworkAdapter &nic = *it;
 
-            /* slot unicity is guaranteed by XML Schema */
+            /* slot uniqueness is guaranteed by XML Schema */
             AssertBreak(nic.ulSlot < mNetworkAdapters.size());
             rc = mNetworkAdapters[nic.ulSlot]->i_loadSettings(mBandwidthControl, nic);
             if (FAILED(rc)) return rc;
@@ -9264,7 +9261,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
 }
 
 /**
- * Called from Machine::loadHardware() to load the debugging settings of the
+ * Called from i_loadHardware() to load the debugging settings of the
  * machine.
  *
  * @param   pDbg        Pointer to the settings.
@@ -9525,7 +9522,7 @@ HRESULT Machine::i_loadStorageDevices(StorageController *aStorageController,
             pBwGroup->i_reference();
         }
 
-        const Bstr controllerName = aStorageController->i_getName();
+        const Utf8Str controllerName = aStorageController->i_getName();
         ComObjPtr<MediumAttachment> pAttachment;
         pAttachment.createObject();
         rc = pAttachment->init(this,
@@ -12837,9 +12834,10 @@ void SessionMachine::uninit(Uninit::Reason aReason)
                 if (SUCCEEDED(hrc))
                 {
                     multilock.release();
-                    LogRel(("VM '%s' stops using NAT network '%ls'\n",
-                            mUserData->s.strName.c_str(), name.raw()));
-                    mParent->i_natNetworkRefDec(name.raw());
+                    Utf8Str strName(name);
+                    LogRel(("VM '%s' stops using NAT network '%s'\n",
+                            mUserData->s.strName.c_str(), strName.c_str()));
+                    mParent->i_natNetworkRefDec(strName);
                     multilock.acquire();
                 }
             }
@@ -13124,7 +13122,7 @@ HRESULT SessionMachine::i_saveStateWithReason(Reason_T aReason, ComPtr<IProgress
     pProgress.createObject();
     rc = pProgress->init(i_getVirtualBox(),
                          static_cast<IMachine *>(this) /* aInitiator */,
-                         Bstr(tr("Saving the execution state of the virtual machine")).raw(),
+                         tr("Saving the execution state of the virtual machine"),
                          FALSE /* aCancelable */);
     if (FAILED(rc))
         return rc;
@@ -13254,10 +13252,11 @@ HRESULT SessionMachine::beginPowerUp(const ComPtr<IProgress> &aProgress)
                 hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
                 if (SUCCEEDED(hrc))
                 {
-                    LogRel(("VM '%s' starts using NAT network '%ls'\n",
-                            mUserData->s.strName.c_str(), name.raw()));
+                    Utf8Str strName(name);
+                    LogRel(("VM '%s' starts using NAT network '%s'\n",
+                            mUserData->s.strName.c_str(), strName.c_str()));
                     mPeer->lockHandle()->unlockWrite();
-                    mParent->i_natNetworkRefInc(name.raw());
+                    mParent->i_natNetworkRefInc(strName);
 #ifdef RT_LOCK_STRICT
                     mPeer->lockHandle()->lockWrite(RT_SRC_POS);
 #else
@@ -13321,7 +13320,7 @@ HRESULT SessionMachine::beginPoweringDown(ComPtr<IProgress> &aProgress)
     pProgress.createObject();
     pProgress->init(i_getVirtualBox(),
                     static_cast<IMachine *>(this) /* aInitiator */,
-                    Bstr(tr("Stopping the virtual machine")).raw(),
+                    tr("Stopping the virtual machine"),
                     FALSE /* aCancelable */);
 
     /* fill in the console task data */
@@ -13751,7 +13750,7 @@ HRESULT SessionMachine::ejectMedium(const ComPtr<IMediumAttachment> &aAttachment
     IMediumAttachment *iAttach = aAttachment;
     ComObjPtr<MediumAttachment> pAttach = static_cast<MediumAttachment *>(iAttach);
 
-    Bstr ctrlName;
+    Utf8Str ctrlName;
     LONG lPort;
     LONG lDevice;
     bool fTempEject;
@@ -13779,7 +13778,7 @@ HRESULT SessionMachine::ejectMedium(const ComPtr<IMediumAttachment> &aAttachment
         // The backup operation makes the pAttach reference point to the
         // old settings. Re-get the correct reference.
         pAttach = i_findAttachment(*mMediumAttachments.data(),
-                                   ctrlName.raw(),
+                                   ctrlName,
                                    lPort,
                                    lDevice);
 
