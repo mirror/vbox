@@ -2246,6 +2246,15 @@
  */
 #define RT_SIZEOFMEMB(type, member)             ( sizeof(((type *)(void *)0)->member) )
 
+/** @def RT_UOFFSET_AFTER
+ * Returns the offset of the first byte following a structure/union member.
+ *
+ * @return byte offset into the struct.
+ * @param   a_Type      Structure type.
+ * @param   a_Member    The member name.
+ */
+#define RT_UOFFSET_AFTER(a_Type, a_Member)      ( RT_UOFFSETOF(a_Type, a_Member) + RT_SIZEOFMEMB(a_Type, a_Member) )
+
 /** @def RT_FROM_MEMBER
  * Convert a pointer to a structure member into a pointer to the structure.
  *
