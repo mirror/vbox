@@ -47,6 +47,8 @@ public:
     void i_rollback();
     void i_commit();
     void i_copyFrom(NATEngine *aThat);
+    void i_applyDefaults();
+    bool i_hasDefaults();
     HRESULT i_loadSettings(const settings::NAT &data);
     HRESULT i_saveSettings(settings::NAT &data);
 

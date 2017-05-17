@@ -57,6 +57,7 @@ public:
     void i_commit();
     void i_copyFrom(NetworkAdapter *aThat);
     void i_applyDefaults(GuestOSType *aOsType);
+    bool i_hasDefaults();
 
     ComObjPtr<NetworkAdapter> i_getPeer();
 

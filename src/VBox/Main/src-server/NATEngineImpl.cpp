@@ -179,6 +179,28 @@ void NATEngine::i_copyFrom(NATEngine *aThat)
     mData->m.assignCopy(aThat->mData->m);
 }
 
+void NATEngine::i_applyDefaults()
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* so far nothing to do */
+}
+
+bool NATEngine::i_hasDefaults()
+{
+   /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), true);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    return mData->m->areDefaultSettings();
+}
+
 HRESULT NATEngine::getNetworkSettings(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULONG *aTcpWndSnd, ULONG *aTcpWndRcv)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
