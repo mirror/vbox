@@ -337,14 +337,6 @@ HRESULT Machine::init(VirtualBox *aParent,
             /* Apply BIOS defaults */
             mBIOSSettings->i_applyDefaults(aOsType);
 
-            /* Apply network adapters defaults */
-            for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
-                mNetworkAdapters[slot]->i_applyDefaults(aOsType);
-
-            /* Apply serial port defaults */
-            for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
-                mSerialPorts[slot]->i_applyDefaults(aOsType);
-
             /* Let the OS type select 64-bit ness. */
             mHWData->mLongMode = aOsType->i_is64Bit()
                                ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
@@ -352,6 +344,14 @@ HRESULT Machine::init(VirtualBox *aParent,
             /* Let the OS type enable the X2APIC */
             mHWData->mX2APIC = aOsType->i_recommendedX2APIC();
         }
+
+        /* Apply network adapters defaults */
+        for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
+            mNetworkAdapters[slot]->i_applyDefaults(aOsType);
+
+        /* Apply serial port defaults */
+        for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
+            mSerialPorts[slot]->i_applyDefaults(aOsType);
 
         /* Apply parallel port defaults */
         for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
@@ -8934,6 +8934,12 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
 
     try
     {
+        GuestOSType *pGuestOSType;
+        rc = mParent->i_findGuestOSType(Bstr(mUserData->s.strOsType).raw(),
+                                        pGuestOSType);
+        if (FAILED(rc))
+            return rc;
+
         /* The hardware version attribute (optional). */
         mHWData->mHWVersion = data.strVersion;
         mHWData->mHardwareUUID = data.uuid;
@@ -9082,7 +9088,9 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         rc = mUSBDeviceFilters->i_loadSettings(data.usbSettings);
         if (FAILED(rc)) return rc;
 
-        // network adapters
+        // network adapters (establish array size first and apply defaults, to
+        // ensure reading the same settings as we saved, since the list skips
+        // adapters having defaults)
         size_t newCount = Global::getMaxNetworkAdapters(mHWData->mChipsetType);
         size_t oldCount = mNetworkAdapters.size();
         if (newCount > oldCount)
@@ -9096,6 +9104,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         }
         else if (newCount < oldCount)
             mNetworkAdapters.resize(newCount);
+        for (unsigned i = 0; i < mNetworkAdapters.size(); i++)
+            mNetworkAdapters[i]->i_applyDefaults(pGuestOSType);
         for (settings::NetworkAdaptersList::const_iterator
              it = data.llNetworkAdapters.begin();
              it != data.llNetworkAdapters.end();
@@ -9112,7 +9122,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         // serial ports (establish defaults first, to ensure reading the same
         // settings as we saved, since the list skips ports having defaults)
         for (unsigned i = 0; i < RT_ELEMENTS(mSerialPorts); i++)
-            mSerialPorts[i]->i_applyDefaults(NULL);
+            mSerialPorts[i]->i_applyDefaults(pGuestOSType);
         for (settings::SerialPortsList::const_iterator
              it = data.llSerialPorts.begin();
              it != data.llSerialPorts.end();
@@ -10417,6 +10427,9 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             /* paranoia check... must not be NULL, but must not crash either. */
             if (mNetworkAdapters[slot])
             {
+                if (mNetworkAdapters[slot]->i_hasDefaults())
+                    continue;
+
                 rc = mNetworkAdapters[slot]->i_saveSettings(nic);
                 if (FAILED(rc)) throw rc;
 
