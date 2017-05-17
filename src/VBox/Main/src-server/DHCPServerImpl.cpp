@@ -46,9 +46,9 @@ struct DHCPServer::Data
         , router(false)
     {}
 
-    Bstr IPAddress;
-    Bstr lowerIP;
-    Bstr upperIP;
+    Utf8Str IPAddress;
+    Utf8Str lowerIP;
+    Utf8Str upperIP;
 
     BOOL enabled;
     bool router;
@@ -102,9 +102,9 @@ void DHCPServer::uninit()
 }
 
 
-HRESULT DHCPServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
+HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const Utf8Str &aName)
 {
-    AssertReturn(aName != NULL, E_INVALIDARG);
+    AssertReturn(!aName.isEmpty(), E_INVALIDARG);
 
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);

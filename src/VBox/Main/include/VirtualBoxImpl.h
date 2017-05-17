@@ -160,8 +160,8 @@ public:
                                    IN_BSTR aGuestIp, LONG aGuestPort);
     void i_onHostNameResolutionConfigurationChange();
 
-    int i_natNetworkRefInc(IN_BSTR aNetworkName);
-    int i_natNetworkRefDec(IN_BSTR aNetworkName);
+    int i_natNetworkRefInc(const Utf8Str &aNetworkName);
+    int i_natNetworkRefDec(const Utf8Str &aNetworkName);
 
     ComObjPtr<GuestOSType> i_getUnknownOSType();
 
@@ -198,8 +198,8 @@ public:
                                    bool aSetError,
                                    ComObjPtr<Medium> &pMedium);
 
-    HRESULT i_findGuestOSType(const Bstr &bstrOSType,
-                              GuestOSType*& pGuestOSType);
+    HRESULT i_findGuestOSType(const Utf8Str &strOSType,
+                              ComObjPtr<GuestOSType> &guestOSType);
 
     const Guid &i_getGlobalRegistryId() const;
 
