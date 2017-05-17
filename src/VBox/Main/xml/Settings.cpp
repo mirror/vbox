@@ -2364,7 +2364,7 @@ bool NAT::areDefaultSettings() const
 bool NAT::operator==(const NAT &n) const
 {
    return (this == &n)
-        || (   strNetwork           == n.strNetwork
+       || (   strNetwork           == n.strNetwork
             && strBindIP           == n.strBindIP
             && u32Mtu              == n.u32Mtu
             && u32SockRcv          == n.u32SockRcv
