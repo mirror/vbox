@@ -424,13 +424,19 @@ check_gcc()
 {
   test_header gcc
   if check_avail "$CC" CC really; then
-    cc_ver=`$CC -dumpversion` 2>/dev/null
+    cc_ver=`$CC -dumpfullversion` 2>/dev/null
+    if [ $? -ne 0 ]; then
+      cc_ver=`$CC -dumpversion` 2>/dev/null
+    fi
     if [ $? -ne 0 ]; then
       log_failure "cannot execute '$CC -dumpversion'"
       fail really
     fi
     if check_avail "$CXX" CXX really; then
-      cxx_ver=`$CXX -dumpversion` 2>/dev/null
+      cxx_ver=`$CXX -dumpfullversion` 2>/dev/null
+      if [ $? -ne 0 ]; then
+        cxx_ver=`$CXX -dumpversion` 2>/dev/null
+      fi
       if [ $? -ne 0 ]; then
         log_failure "cannot execute '$CXX -dumpversion'"
         fail really
@@ -447,7 +453,7 @@ check_gcc()
              -o \( $cc_maj -eq 4 -a $cc_min -lt 4 -a "$OS" != "darwin" \) \
              -o \( $cc_maj -eq 4 -a $cc_min -lt 2 -a "$OS"  = "darwin" \) \
              -o $cc_maj -gt 7 ]; then
-        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 4.x, gcc 5.x or gcc 6.x"
+        log_failure "gcc version $cc_maj.$cc_min found, expected gcc 4.x...7.x"
         fail really
       else
         log_success "found version $cc_ver"
