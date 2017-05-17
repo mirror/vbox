@@ -683,16 +683,57 @@ FNIEMOP_DEF(iemOp_vmovlps_Vq_Hq_Mq__vmovhlps)
 
 
 /**
- * @ opcode      0x12
- * @ opcodesub   !11 mr/reg
- * @ oppfx       0x66
- * @ opcpuid     sse2
- * @ opgroup     og_sse2_pcksclr_datamove
- * @ opxcpttype  5
- * @ optest      op1=1 op2=2 -> op1=2
- * @ optest      op1=0 op2=-42 -> op1=-42
+ * @opcode      0x12
+ * @opcodesub   !11 mr/reg
+ * @oppfx       0x66
+ * @opcpuid     avx
+ * @opgroup     og_avx_pcksclr_datamerge
+ * @opxcpttype  5LZ
+ * @optest      op2=0 op3=2 -> op1=2
+ * @optest      op2=0x22 op3=0x33 -> op1=0x220000000000000033
+ * @optest      op2=0xfffffff0fffffff1 op3=0xeeeeeee8eeeeeee9
+ *              -> op1=0xfffffff0fffffff1eeeeeee8eeeeeee9
  */
-FNIEMOP_STUB(iemOp_vmovlpd_Vq_Hq_Mq);
+FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_MNEMONIC3(VEX_RVM_MEM, VMOVLPD, vmovlpd, Vq_WO, HqHi, Mq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX_AND_L0();
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
+
+        IEM_MC_FETCH_MEM_U64(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_MERGE_YREG_U64LOCAL_U64_ZX_VLMAX(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg,
+                                                uSrc,
+                                                pVCpu->iem.s.uVex3rdReg /*Hq*/);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+
+    /**
+     * @opdone
+     * @opmnemonic  udvex660f12m3
+     * @opcode      0x12
+     * @opcodesub   11 mr/reg
+     * @oppfx       0x66
+     * @opunused    immediate
+     * @opcpuid     avx
+     * @optest      ->
+     */
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
 //FNIEMOP_DEF(iemOp_vmovlpd_Vq_Hq_Mq)
 //{
 //    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);

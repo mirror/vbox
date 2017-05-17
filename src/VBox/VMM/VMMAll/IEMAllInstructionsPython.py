@@ -275,6 +275,7 @@ g_kdOpTypes = {
     'HdqCss':       ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HdqCss',  ),
     'HdqCsd':       ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HdqCsd',  ),
     'HdqCq':        ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HdqCq',   ),
+    'HqHi':         ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HqHi',    ),
 
     # Immediate values.
     'Ib':           ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instrs.
@@ -672,6 +673,11 @@ class InstructionMap(object):
                 sWord  = sWord.replace('map', 'Map');
                 sName += sWord[0].upper() + sWord[1:];
         return sName;
+
+
+    def isVexMap(self):
+        """ Returns True if a VEX map. """
+        return self.sEncoding.startswith('vex');
 
 
 class TestType(object):
@@ -1447,6 +1453,16 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         """ Returns asFlClear into a integer mask value """
         return self._flagsToIntegerMask(self.asFlClear);
 
+    def onlyInVexMaps(self):
+        """ Returns True if only in VEX maps, otherwise False.  (No maps -> False) """
+        if not self.aoMaps:
+            return False;
+        for oMap in self.aoMaps:
+            if not oMap.isVexMap():
+                return False;
+        return True;
+
+
 
 ## All the instructions.
 g_aoAllInstructions = []; # type: list(Instruction)
@@ -1737,19 +1753,6 @@ class SimpleParser(object):
             elif oInstr.sStats:
                 oInstr.sFunction = 'iemOp_' + oInstr.sStats;
 
-        # Derive encoding from operands.
-        if oInstr.sEncoding is None:
-            if not oInstr.aoOperands:
-                if oInstr.fUnused and oInstr.sSubOpcode:
-                    oInstr.sEncoding = 'ModR/M';
-                else:
-                    oInstr.sEncoding = 'fixed';
-            elif oInstr.aoOperands[0].usesModRM():
-                if len(oInstr.aoOperands) >= 2 and oInstr.aoOperands[1].sWhere == 'vvvv':
-                    oInstr.sEncoding = 'ModR/M+VEX';
-                else:
-                    oInstr.sEncoding = 'ModR/M';
-
         #
         # Apply default map and then add the instruction to all it's groups.
         #
@@ -1757,6 +1760,22 @@ class SimpleParser(object):
             oInstr.aoMaps = [ self.oDefaultMap, ];
         for oMap in oInstr.aoMaps:
             oMap.aoInstructions.append(oInstr);
+
+        #
+        # Derive encoding from operands and maps.
+        #
+        if oInstr.sEncoding is None:
+            if not oInstr.aoOperands:
+                if oInstr.fUnused and oInstr.sSubOpcode:
+                    oInstr.sEncoding = 'VEX.ModR/M' if oInstr.onlyInVexMaps() else 'ModR/M';
+                else:
+                    oInstr.sEncoding = 'fixed';
+            elif oInstr.aoOperands[0].usesModRM():
+                if     (len(oInstr.aoOperands) >= 2 and oInstr.aoOperands[1].sWhere == 'vvvv') \
+                    or oInstr.onlyInVexMaps():
+                    oInstr.sEncoding = 'VEX.ModR/M';
+                else:
+                    oInstr.sEncoding = 'ModR/M';
 
         #
         # Check the opstat value and add it to the opstat indexed dictionary.
@@ -3165,7 +3184,8 @@ class SimpleParser(object):
                 self.doneInstructions();
 
         self.doneInstructions();
-        self.debug('%3s stubs out of %3s instructions in %s' % (self.cTotalStubs, self.cTotalInstr, os.path.basename(self.sSrcFile),));
+        self.debug('%3s stubs out of %3s instructions in %s'
+                   % (self.cTotalStubs, self.cTotalInstr, os.path.basename(self.sSrcFile),));
         return self.printErrors();
 
 

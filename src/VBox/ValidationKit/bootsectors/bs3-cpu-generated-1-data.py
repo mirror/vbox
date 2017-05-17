@@ -301,9 +301,11 @@ class Bs3Cg1Instruction(object):
 
         self.asOpcodes          = oMap.asLeadOpcodes + [ '0x%02x' % (oInstr.getOpcodeByte(),) ];
         self.sEncoding          = iai.g_kdEncodings[oInstr.sEncoding][0];
+
         for oOp in oInstr.aoOperands:
             self.sEncoding     += '_' + oOp.sType;
         if oInstr.fUnused:
+            print('DEBUG: Unused Bs3Cg1Instruction: %s\n' % (oInstr.sEncoding,));
             if oInstr.sInvalidStyle == 'immediate' and oInstr.sSubOpcode:
                 self.sEncoding += '_MOD_EQ_3' if oInstr.sSubOpcode == '11 mr/reg' else '_MOD_NE_3';
             elif oInstr.sInvalidStyle == 'intel-modrm':
