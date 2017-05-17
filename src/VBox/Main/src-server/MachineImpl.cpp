@@ -8934,7 +8934,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
 
     try
     {
-        GuestOSType *pGuestOSType;
+        ComObjPtr<GuestOSType> pGuestOSType;
         rc = mParent->i_findGuestOSType(Bstr(mUserData->s.strOsType).raw(),
                                         pGuestOSType);
         if (FAILED(rc))
