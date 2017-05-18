@@ -1402,6 +1402,7 @@ class TestDriver(base.TestDriver):                                              
         self.aoVMs            = [];
         self.oVBoxMgr         = None;
         self.oVBox            = None;
+        vboxcon.goHackModuleClass.oVBoxMgr = None; # VBoxConstantWrappingHack.
 
         try:
             import gc
