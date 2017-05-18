@@ -528,31 +528,59 @@ DECLINLINE(int) vscsiLunReqFree(PVSCSILUNINT pVScsiLun, PVSCSIIOREQINT pVScsiIoR
 }
 
 /**
- * Wrapper for the get medium size I/O callback.
+ * Wrapper for the get medium region count I/O callback.
  *
- * @returns VBox status code.
+ * @returns Number of regions for the underlying medium.
  * @param   pVScsiLun   The LUN.
- * @param   pcbSize     Where to store the size on success.
  */
-DECLINLINE(int) vscsiLunMediumGetSize(PVSCSILUNINT pVScsiLun, uint64_t *pcbSize)
+DECLINLINE(uint32_t) vscsiLunMediumGetRegionCount(PVSCSILUNINT pVScsiLun)
 {
-    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumGetSize(pVScsiLun,
-                                                                     pVScsiLun->pvVScsiLunUser,
-                                                                     pcbSize);
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumGetRegionCount(pVScsiLun,
+                                                                            pVScsiLun->pvVScsiLunUser);
 }
 
 /**
- * Wrapper for the get medium sector size I/O callback.
+ * Wrapper for the query medium region properties I/O callback.
  *
  * @returns VBox status code.
  * @param   pVScsiLun     The LUN.
- * @param   pcbSectorSize Where to store the sector size on success.
+ * @param   uRegion       The region index to query the properties of.
+ * @param   pu64LbaStart  Where to store the starting LBA for the region on success.
+ * @param   pcBlocks      Where to store the number of blocks for the region on success.
+ * @param   pcbBlock      Where to store the size of one block in bytes on success.
+ * @param   penmDataForm  WHere to store the data form for the region on success.
  */
-DECLINLINE(int) vscsiLunMediumGetSectorSize(PVSCSILUNINT pVScsiLun, uint32_t *pcbSectorSize)
+DECLINLINE(int) vscsiLunMediumQueryRegionProperties(PVSCSILUNINT pVScsiLun, uint32_t uRegion,
+                                                    uint64_t *pu64LbaStart, uint64_t *pcBlocks,
+                                                    uint64_t *pcbBlock, PVDREGIONDATAFORM penmDataForm)
 {
-    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumGetSectorSize(pVScsiLun,
-                                                                           pVScsiLun->pvVScsiLunUser,
-                                                                           pcbSectorSize);
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumQueryRegionProperties(pVScsiLun,
+                                                                                   pVScsiLun->pvVScsiLunUser,
+                                                                                   uRegion, pu64LbaStart,
+                                                                                   pcBlocks, pcbBlock,
+                                                                                   penmDataForm);
+}
+
+/**
+ * Wrapper for the query medium region properties for LBA I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun     The LUN.
+ * @param   uRegion       The region index to query the properties of.
+ * @param   pu64LbaStart  Where to store the starting LBA for the region on success.
+ * @param   pcBlocks      Where to store the number of blocks for the region on success.
+ * @param   pcbBlock      Where to store the size of one block in bytes on success.
+ * @param   penmDataForm  WHere to store the data form for the region on success.
+ */
+DECLINLINE(int) vscsiLunMediumQueryRegionPropertiesForLba(PVSCSILUNINT pVScsiLun, uint64_t u64LbaStart, uint32_t *puRegion,
+                                                          uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                          PVDREGIONDATAFORM penmDataForm)
+{
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumQueryRegionPropertiesForLba(pVScsiLun,
+                                                                                         pVScsiLun->pvVScsiLunUser,
+                                                                                         u64LbaStart, puRegion,
+                                                                                         pcBlocks, pcbBlock,
+                                                                                         penmDataForm);
 }
 
 /**

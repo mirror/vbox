@@ -43,7 +43,7 @@ typedef struct VSCSILUNSBC
     /** Core LUN structure */
     VSCSILUNINT    Core;
     /** Sector size of the medium. */
-    uint32_t       cbSector;
+    uint64_t       cbSector;
     /** Size of the virtual disk. */
     uint64_t       cSectors;
     /** VPD page pool. */
@@ -55,18 +55,11 @@ typedef VSCSILUNSBC *PVSCSILUNSBC;
 static DECLCALLBACK(int) vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
 {
     PVSCSILUNSBC pVScsiLunSbc = (PVSCSILUNSBC)pVScsiLun;
-    uint64_t cbDisk = 0;
     int rc = VINF_SUCCESS;
     int cVpdPages = 0;
 
-    rc = vscsiLunMediumGetSectorSize(pVScsiLun, &pVScsiLunSbc->cbSector);
-    if (RT_SUCCESS(rc))
-    {
-        rc = vscsiLunMediumGetSize(pVScsiLun, &cbDisk);
-        if (RT_SUCCESS(rc))
-            pVScsiLunSbc->cSectors = cbDisk / pVScsiLunSbc->cbSector;
-    }
-
+    rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, 0, NULL, &pVScsiLunSbc->cbSector,
+                                             &pVScsiLunSbc->cSectors, NULL);
     if (RT_SUCCESS(rc))
         rc = vscsiVpdPagePoolInit(&pVScsiLunSbc->VpdPagePool);
 
@@ -256,7 +249,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 scsiH2BE_U32(aReply, UINT32_C(0xffffffff));
             else
                 scsiH2BE_U32(aReply, pVScsiLunSbc->cSectors - 1);
-            scsiH2BE_U32(&aReply[4], pVScsiLunSbc->cbSector);
+            scsiH2BE_U32(&aReply[4], (uint32_t)pVScsiLunSbc->cbSector);
             RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;

@@ -223,29 +223,40 @@ static DECLCALLBACK(int) drvscsiReqFree(VSCSILUN hVScsiLun, void *pvScsiLunUser,
 }
 
 /**
- * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunMediumGetSize}
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnGetRegionCount}
  */
-static DECLCALLBACK(int) drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcbSize)
+static DECLCALLBACK(uint32_t) drvscsiGetRegionCount(VSCSILUN hVScsiLun, void *pvScsiLunUser)
 {
     RT_NOREF(hVScsiLun);
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
-    *pcbSize = pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia);
-
-    return VINF_SUCCESS;
+    return pThis->pDrvMedia->pfnGetRegionCount(pThis->pDrvMedia);
 }
 
-/**
- * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunMediumGetSectorSize}
- */
-static DECLCALLBACK(int) drvscsiGetSectorSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint32_t *pcbSectorSize)
+/** @interface_method_impl{PDMIMEDIA,pfnQueryRegionProperties} */
+static DECLCALLBACK(int) drvscsiQueryRegionProperties(VSCSILUN hVScsiLun, void *pvScsiLunUser,
+                                                      uint32_t uRegion, uint64_t *pu64LbaStart,
+                                                      uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                      PVDREGIONDATAFORM penmDataForm)
 {
     RT_NOREF(hVScsiLun);
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
-    *pcbSectorSize = pThis->pDrvMedia->pfnGetSectorSize(pThis->pDrvMedia);
+    return pThis->pDrvMedia->pfnQueryRegionProperties(pThis->pDrvMedia, uRegion, pu64LbaStart,
+                                                      pcBlocks, pcbBlock, penmDataForm);
+}
 
-    return VINF_SUCCESS;
+/** @interface_method_impl{VSCSILUNIOCALLBACKS,pfnQueryRegionPropertiesForLba} */
+static DECLCALLBACK(int) drvscsiQueryRegionPropertiesForLba(VSCSILUN hVScsiLun, void *pvScsiLunUser,
+                                                            uint64_t u64LbaStart, uint32_t *puRegion,
+                                                            uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                            PVDREGIONDATAFORM penmDataForm)
+{
+    RT_NOREF(hVScsiLun);
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+
+    return pThis->pDrvMedia->pfnQueryRegionPropertiesForLba(pThis->pDrvMedia, u64LbaStart, puRegion,
+                                                            pcBlocks, pcbBlock, penmDataForm);
 }
 
 /**
@@ -1393,15 +1404,16 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     }
 
     /* Create VSCSI device and LUN. */
-    pThis->VScsiIoCallbacks.pfnVScsiLunReqAllocSizeSet     = drvscsiReqAllocSizeSet;
-    pThis->VScsiIoCallbacks.pfnVScsiLunReqAlloc            = drvscsiReqAlloc;
-    pThis->VScsiIoCallbacks.pfnVScsiLunReqFree             = drvscsiReqFree;
-    pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSize       = drvscsiGetSize;
-    pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSectorSize = drvscsiGetSectorSize;
-    pThis->VScsiIoCallbacks.pfnVScsiLunMediumEject         = drvscsiEject;
-    pThis->VScsiIoCallbacks.pfnVScsiLunReqTransferEnqueue  = drvscsiReqTransferEnqueue;
-    pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags     = drvscsiGetFeatureFlags;
-    pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock       = drvscsiSetLock;
+    pThis->VScsiIoCallbacks.pfnVScsiLunReqAllocSizeSet                   = drvscsiReqAllocSizeSet;
+    pThis->VScsiIoCallbacks.pfnVScsiLunReqAlloc                          = drvscsiReqAlloc;
+    pThis->VScsiIoCallbacks.pfnVScsiLunReqFree                           = drvscsiReqFree;
+    pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetRegionCount              = drvscsiGetRegionCount;
+    pThis->VScsiIoCallbacks.pfnVScsiLunMediumQueryRegionProperties       = drvscsiQueryRegionProperties;
+    pThis->VScsiIoCallbacks.pfnVScsiLunMediumQueryRegionPropertiesForLba = drvscsiQueryRegionPropertiesForLba;
+    pThis->VScsiIoCallbacks.pfnVScsiLunMediumEject                       = drvscsiEject;
+    pThis->VScsiIoCallbacks.pfnVScsiLunReqTransferEnqueue                = drvscsiReqTransferEnqueue;
+    pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags                   = drvscsiGetFeatureFlags;
+    pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock                     = drvscsiSetLock;
 
     rc = VSCSIDeviceCreate(&pThis->hVScsiDevice, drvscsiIoReqVScsiReqCompleted, pThis);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n", rc), rc);

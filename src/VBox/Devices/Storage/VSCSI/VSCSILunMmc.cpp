@@ -72,8 +72,6 @@ typedef struct VSCSILUNMMC
     VSCSILUNINT                 Core;
     /** Size of the virtual disk. */
     uint64_t                    cSectors;
-    /** Sector size. */
-    uint32_t                    cbSector;
     /** Medium locked indicator. */
     bool                        fLocked;
     /** Media event status. */
@@ -143,54 +141,77 @@ static const VSCSILUNMMCFEATURE g_aVScsiMmcFeatures[] =
 /* Fabricate normal TOC information. */
 static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer, bool fMSF)
 {
-    PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
-    uint8_t         aReply[32];
+    uint8_t         aReply[2+99*8 + 32]; RT_ZERO(aReply); /* Maximum possible reply plus some safety. */
     uint8_t         *pbBuf = aReply;
     uint8_t         *q;
     uint8_t         iStartTrack;
     uint32_t        cbSize;
+    uint32_t        cTracks = vscsiLunMediumGetRegionCount(pVScsiLun);
 
     iStartTrack = pVScsiReq->pbCDB[6];
-    if (iStartTrack > 1 && iStartTrack != 0xaa)
-    {
+    if (iStartTrack == 0)
+        iStartTrack = 1;
+    if (iStartTrack > cTracks && iStartTrack != 0xaa)
         return vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
-    }
+
     q = pbBuf + 2;
-    *q++ = 1;   /* first session */
-    *q++ = 1;   /* last session */
-    if (iStartTrack <= 1)
+    *q++ = iStartTrack; /* first track number */
+    *q++ = cTracks;     /* last track number */
+    for (uint32_t iTrack = iStartTrack; iTrack <= cTracks; iTrack++)
     {
-        *q++ = 0;       /* reserved */
-        *q++ = 0x14;    /* ADR, CONTROL */
-        *q++ = 1;       /* track number */
-        *q++ = 0;       /* reserved */
+        uint64_t uLbaStart = 0;
+        VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_MODE1_2048;
+
+        int rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, iTrack - 1, &uLbaStart,
+                                                     NULL, NULL, &enmDataForm);
+        AssertRC(rc);
+
+        *q++ = 0;                  /* reserved */
+
+        if (enmDataForm == VDREGIONDATAFORM_CDDA)
+            *q++ = 0x10;           /* ADR, control */
+        else
+            *q++ = 0x14;           /* ADR, control */
+
+        *q++ = (uint8_t)iTrack;    /* track number */
+        *q++ = 0;                  /* reserved */
         if (fMSF)
         {
-            *q++ = 0;   /* reserved */
-            scsiLBA2MSF(q, 0);
+            *q++ = 0; /* reserved */
+            scsiLBA2MSF(q, (uint32_t)uLbaStart);
             q += 3;
         }
         else
         {
             /* sector 0 */
-            scsiH2BE_U32(q, 0);
+            scsiH2BE_U32(q, (uint32_t)uLbaStart);
             q += 4;
         }
     }
     /* lead out track */
-    *q++ = 0;       /* reserved */
-    *q++ = 0x14;    /* ADR, CONTROL */
-    *q++ = 0xaa;    /* track number */
-    *q++ = 0;       /* reserved */
+    *q++ = 0; /* reserved */
+    *q++ = 0x14; /* ADR, control */
+    *q++ = 0xaa; /* track number */
+    *q++ = 0; /* reserved */
+
+    /* Query start and length of last track to get the start of the lead out track. */
+    uint64_t uLbaStart = 0;
+    uint64_t cBlocks = 0;
+
+    int rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, cTracks - 1, &uLbaStart,
+                                                 &cBlocks, NULL, NULL);
+    AssertRC(rc);
+
+    uLbaStart += cBlocks;
     if (fMSF)
     {
-        *q++ = 0;   /* reserved */
-        scsiLBA2MSF(q, pVScsiLunMmc->cSectors);
+        *q++ = 0; /* reserved */
+        scsiLBA2MSF(q, (uint32_t)uLbaStart);
         q += 3;
     }
     else
     {
-        scsiH2BE_U32(q, pVScsiLunMmc->cSectors);
+        scsiH2BE_U32(q, (uint32_t)uLbaStart);
         q += 4;
     }
     cbSize = q - pbBuf;
@@ -200,7 +221,6 @@ static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint
         cbMaxTransfer = cbSize;
 
     RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, cbMaxTransfer);
-
     return vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
 }
 
@@ -216,7 +236,17 @@ static int mmcReadTOCMulti(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint1
     pbBuf[1] = 0x0a;
     pbBuf[2] = 0x01;    /* first complete session number */
     pbBuf[3] = 0x01;    /* last complete session number */
-    pbBuf[5] = 0x14;    /* ADR, CONTROL */
+
+    VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_MODE1_2048;
+    int rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, 0, NULL,
+                                                 NULL, NULL, &enmDataForm);
+    AssertRC(rc);
+
+    if (enmDataForm == VDREGIONDATAFORM_CDDA)
+        pbBuf[5] = 0x10;           /* ADR, control */
+    else
+        pbBuf[5] = 0x14;           /* ADR, control */
+
     pbBuf[6] = 1;       /* first track in last complete session */
 
     if (fMSF)
@@ -854,18 +884,125 @@ static int vscsiLunMmcGetEventStatusNotification(PVSCSILUNMMC pVScsiLunMmc, PVSC
     return vscsiLunReqSenseOkSet(&pVScsiLunMmc->Core, pVScsiReq);
 }
 
+/**
+ * Processes a READ TRACK INFORMATION SCSI request.
+ *
+ * @returns SCSI status code.
+ * @param   pVScsiLunMmc  The MMC LUN instance.
+ * @param   pVScsiReq     The VSCSI request.
+ * @param   cbMaxTransfer The maximum transfer size.
+ */
+static int vscsiLunMmcReadTrackInformation(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq,
+                                           size_t cbMaxTransfer)
+{
+    int rcReq;
+    uint32_t u32LogAddr = scsiBE2H_U32(&pVScsiReq->pbCDB[2]);
+    uint8_t u8LogAddrType = pVScsiReq->pbCDB[1] & 0x03;
+
+    int rc = VINF_SUCCESS;
+    uint64_t u64LbaStart = 0;
+    uint32_t uRegion = 0;
+    uint64_t cBlocks = 0;
+    uint64_t cbBlock = 0;
+    VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
+
+    switch (u8LogAddrType)
+    {
+        case 0x00:
+            rc = vscsiLunMediumQueryRegionPropertiesForLba(&pVScsiLunMmc->Core, u32LogAddr, &uRegion,
+                                                           NULL, NULL, NULL);
+            if (RT_SUCCESS(rc))
+                rc = vscsiLunMediumQueryRegionProperties(&pVScsiLunMmc->Core, uRegion, &u64LbaStart,
+                                                         &cBlocks, &cbBlock, &enmDataForm);
+            break;
+        case 0x01:
+        {
+            if (u32LogAddr >= 1)
+            {
+                uRegion = u32LogAddr - 1;
+                rc = vscsiLunMediumQueryRegionProperties(&pVScsiLunMmc->Core, uRegion, &u64LbaStart,
+                                                         &cBlocks, &cbBlock, &enmDataForm);
+            }
+            else
+                rc = VERR_NOT_FOUND; /** @todo: Return lead-in information. */
+            break;
+        }
+        case 0x02:
+        default:
+            rc = VERR_INVALID_PARAMETER;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t u8DataMode = 0xf; /* Unknown data mode. */
+        uint8_t u8TrackMode = 0;
+        uint8_t aReply[36];
+        RT_ZERO(aReply);
+
+        switch (enmDataForm)
+        {
+            case VDREGIONDATAFORM_MODE1_2048:
+            case VDREGIONDATAFORM_MODE1_2352:
+            case VDREGIONDATAFORM_MODE1_0:
+                u8DataMode = 1;
+                break;
+            case VDREGIONDATAFORM_XA_2336:
+            case VDREGIONDATAFORM_XA_2352:
+            case VDREGIONDATAFORM_XA_0:
+            case VDREGIONDATAFORM_MODE2_2336:
+            case VDREGIONDATAFORM_MODE2_2352:
+            case VDREGIONDATAFORM_MODE2_0:
+                u8DataMode = 2;
+                break;
+            default:
+                u8DataMode = 0xf;
+        }
+
+        if (enmDataForm == VDREGIONDATAFORM_CDDA)
+            u8TrackMode = 0x0;
+        else
+            u8TrackMode = 0x4;
+
+        scsiH2BE_U16(&aReply[0], 34);
+        aReply[2] = uRegion + 1;                                            /* track number (LSB) */
+        aReply[3] = 1;                                                      /* session number (LSB) */
+        aReply[5] = (0 << 5) | (0 << 4) | u8TrackMode;                      /* not damaged, primary copy, data track */
+        aReply[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | u8DataMode; /* not reserved track, not blank, not packet writing, not fixed packet, data mode 1 */
+        aReply[7] = (0 << 1) | (0 << 0);                                    /* last recorded address not valid, next recordable address not valid */
+        scsiH2BE_U32(&aReply[8], (uint32_t)u64LbaStart);                    /* track start address is 0 */
+        scsiH2BE_U32(&aReply[24], (uint32_t)cBlocks);                       /* track size */
+        aReply[32] = 0;                                                     /* track number (MSB) */
+        aReply[33] = 0;                                                     /* session number (MSB) */
+
+        RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, RT_MIN(sizeof(aReply), cbMaxTransfer));
+        rcReq = vscsiLunReqSenseOkSet(&pVScsiLunMmc->Core, pVScsiReq);
+    }
+    else
+        rcReq = vscsiLunReqSenseErrorSet(&pVScsiLunMmc->Core, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                         SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+
+    return rcReq;
+}
+
 static DECLCALLBACK(int) vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
 {
     PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
-    uint64_t        cbDisk = 0;
     int             rc = VINF_SUCCESS;
 
     ASMAtomicWriteU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus, MMCEVENTSTATUSTYPE_UNCHANGED);
     pVScsiLunMmc->u32MediaTrackType = MMC_MEDIA_TYPE_UNKNOWN;
-    pVScsiLunMmc->cbSector          = 2048;  /* Default to 2K sectors. */
-    rc = vscsiLunMediumGetSize(pVScsiLun, &cbDisk);
-    if (RT_SUCCESS(rc))
-        pVScsiLunMmc->cSectors = cbDisk / pVScsiLunMmc->cbSector;
+    pVScsiLunMmc->cSectors          = 0;
+
+    uint32_t cTracks = vscsiLunMediumGetRegionCount(pVScsiLun);
+    for (uint32_t i = 0; i < cTracks; i++)
+    {
+        uint64_t cBlocks = 0;
+        rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, i, NULL, &cBlocks,
+                                                 NULL, NULL);
+        AssertRC(rc);
+
+        pVScsiLunMmc->cSectors += cBlocks;
+    }
 
     return rc;
 }
@@ -882,6 +1019,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
     VSCSIIOREQTXDIR enmTxDir = VSCSIIOREQTXDIR_INVALID;
     uint64_t        uLbaStart = 0;
     uint32_t        cSectorTransfer = 0;
+    size_t          cbSector = 0;
     int             rc = VINF_SUCCESS;
     int             rcReq = SCSI_STATUS_OK;
     unsigned        uCmd = pVScsiReq->pbCDB[0];
@@ -962,7 +1100,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                     scsiH2BE_U32(aReply, UINT32_C(0xffffffff));
                 else
                     scsiH2BE_U32(aReply, pVScsiLunMmc->cSectors - 1);
-                scsiH2BE_U32(&aReply[4], pVScsiLunMmc->cbSector);
+                scsiH2BE_U32(&aReply[4], _2K);
                 RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
                 rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                 break;
@@ -1034,6 +1172,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                                             |  (pVScsiReq->pbCDB[2] <<  8)
                                             | ((pVScsiReq->pbCDB[1] & 0x1f) << 16));
                 cSectorTransfer = pVScsiReq->pbCDB[4];
+                cbSector        = _2K;
                 break;
             }
             case SCSI_READ_10:
@@ -1041,6 +1180,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 enmTxDir        = VSCSIIOREQTXDIR_READ;
                 uLbaStart       = scsiBE2H_U32(&pVScsiReq->pbCDB[2]);
                 cSectorTransfer = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
+                cbSector        = _2K;
                 break;
             }
             case SCSI_READ_12:
@@ -1048,6 +1188,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 enmTxDir        = VSCSIIOREQTXDIR_READ;
                 uLbaStart       = scsiBE2H_U32(&pVScsiReq->pbCDB[2]);
                 cSectorTransfer = scsiBE2H_U32(&pVScsiReq->pbCDB[6]);
+                cbSector        = _2K;
                 break;
             }
             case SCSI_READ_16:
@@ -1055,122 +1196,165 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 enmTxDir        = VSCSIIOREQTXDIR_READ;
                 uLbaStart       = scsiBE2H_U64(&pVScsiReq->pbCDB[2]);
                 cSectorTransfer = scsiBE2H_U32(&pVScsiReq->pbCDB[10]);
+                cbSector        = _2K;
                 break;
             }
             case SCSI_READ_CD:
             {
                 uLbaStart       = scsiBE2H_U32(&pVScsiReq->pbCDB[2]);
                 cSectorTransfer = (pVScsiReq->pbCDB[6] << 16) | (pVScsiReq->pbCDB[7] << 8) | pVScsiReq->pbCDB[8];
-                switch (pVScsiReq->pbCDB[9] & 0xf8)
+
+                /*
+                 * If the LBA is in an audio track we are required to ignore pretty much all
+                 * of the channel selection values (except 0x00) and map everything to 0x10
+                 * which means read user data with a sector size of 2352 bytes.
+                 *
+                 * (MMC-6 chapter 6.19.2.6)
+                 */
+                uint8_t uChnSel = pVScsiReq->pbCDB[9] & 0xf8;
+                VDREGIONDATAFORM enmDataForm;
+                uint64_t cbSectorRegion = 0;
+                rc = vscsiLunMediumQueryRegionPropertiesForLba(pVScsiLun, uLbaStart,
+                                                               NULL, NULL, &cbSectorRegion,
+                                                               &enmDataForm);
+                AssertRC(rc);
+
+                if (enmDataForm == VDREGIONDATAFORM_CDDA)
                 {
-                    case 0x00:
+                    if (uChnSel == 0)
+                    {
                         /* nothing */
                         rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
-                        break;
-                    case 0x10:
-                        /* normal read */
-                        enmTxDir = VSCSIIOREQTXDIR_READ;
-                        break;
-                    case 0xf8:
+                    }
+                    else
                     {
-                        /*
-                         * Read all data, sector size is 2352.
-                         * Rearrange the buffer and fill the gaps with the sync bytes.
-                         */
-                        /* Count the number of segments for the buffer we require. */
-                        RTSGBUF SgBuf;
-                        bool fBufTooSmall = false;
-                        uint32_t cSegsNew = 0;
-                        RTSgBufClone(&SgBuf, &pVScsiReq->SgBuf);
-                        for (uint32_t uLba = (uint32_t)uLbaStart; uLba < uLbaStart + cSectorTransfer; uLba++)
+                        enmTxDir = VSCSIIOREQTXDIR_READ;
+                        cbSector = 2352;
+                    }
+                }
+                else
+                {
+                    switch (uChnSel)
+                    {
+                        case 0x00:
+                            /* nothing */
+                            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+                            break;
+                        case 0x10:
+                            /* normal read */
+                            enmTxDir = VSCSIIOREQTXDIR_READ;
+                            cbSector = _2K;
+                            break;
+                        case 0xf8:
                         {
-                            size_t cbTmp = RTSgBufAdvance(&SgBuf, 16);
-                            if (cbTmp < 16)
+                            if (cbSectorRegion == 2048)
                             {
-                                fBufTooSmall = true;
-                                break;
-                            }
-
-                            cbTmp = 2048;
-                            while (cbTmp)
-                            {
-                                size_t cbBuf = cbTmp;
-                                RTSgBufGetNextSegment(&SgBuf, &cbBuf);
-                                if (!cbBuf)
-                                {
-                                    fBufTooSmall = true;
-                                    break;
-                                }
-
-                                cbTmp -= cbBuf;
-                                cSegsNew++;
-                            }
-
-                            cbTmp = RTSgBufAdvance(&SgBuf, 280);
-                            if (cbTmp < 280)
-                            {
-                                fBufTooSmall = true;
-                                break;
-                            }
-                        }
-
-                        if (!fBufTooSmall)
-                        {
-                            PRTSGSEG paSegsNew = (PRTSGSEG)RTMemAllocZ(cSegsNew * sizeof(RTSGSEG));
-                            if (paSegsNew)
-                            {
-                                enmTxDir = VSCSIIOREQTXDIR_READ;
-
-                                uint32_t idxSeg = 0;
+                                /*
+                                 * Read all data, sector size is 2352.
+                                 * Rearrange the buffer and fill the gaps with the sync bytes.
+                                 */
+                                /* Count the number of segments for the buffer we require. */
+                                RTSGBUF SgBuf;
+                                bool fBufTooSmall = false;
+                                uint32_t cSegsNew = 0;
+                                RTSgBufClone(&SgBuf, &pVScsiReq->SgBuf);
                                 for (uint32_t uLba = (uint32_t)uLbaStart; uLba < uLbaStart + cSectorTransfer; uLba++)
                                 {
-                                    /* Sync bytes, see 4.2.3.8 CD Main Channel Block Formats */
-                                    uint8_t abBuf[16];
-                                    abBuf[0] = 0x00;
-                                    memset(&abBuf[1], 0xff, 10);
-                                    abBuf[11] = 0x00;
-                                    /* MSF */
-                                    scsiLBA2MSF(&abBuf[12], uLba);
-                                    abBuf[15] = 0x01; /* mode 1 data */
-                                    RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, &abBuf[0], sizeof(abBuf));
+                                    size_t cbTmp = RTSgBufAdvance(&SgBuf, 16);
+                                    if (cbTmp < 16)
+                                    {
+                                        fBufTooSmall = true;
+                                        break;
+                                    }
 
-                                    size_t cbTmp = 2048;
+                                    cbTmp = 2048;
                                     while (cbTmp)
                                     {
                                         size_t cbBuf = cbTmp;
-                                        paSegsNew[idxSeg].pvSeg = RTSgBufGetNextSegment(&pVScsiReq->SgBuf, &cbBuf);
-                                        paSegsNew[idxSeg].cbSeg = cbBuf;
-                                        idxSeg++;
+                                        RTSgBufGetNextSegment(&SgBuf, &cbBuf);
+                                        if (!cbBuf)
+                                        {
+                                            fBufTooSmall = true;
+                                            break;
+                                        }
 
                                         cbTmp -= cbBuf;
+                                        cSegsNew++;
                                     }
 
-                                    /**
-                                     * @todo: maybe compute ECC and parity, layout is:
-                                     * 2072 4   EDC
-                                     * 2076 172 P parity symbols
-                                     * 2248 104 Q parity symbols
-                                     */
-                                    RTSgBufSet(&pVScsiReq->SgBuf, 0, 280);
+                                    cbTmp = RTSgBufAdvance(&SgBuf, 280);
+                                    if (cbTmp < 280)
+                                    {
+                                        fBufTooSmall = true;
+                                        break;
+                                    }
                                 }
 
-                                paSegs = paSegsNew;
-                                cSegs  = cSegsNew;
-                                pVScsiReq->pvLun = paSegsNew;
+                                if (!fBufTooSmall)
+                                {
+                                    PRTSGSEG paSegsNew = (PRTSGSEG)RTMemAllocZ(cSegsNew * sizeof(RTSGSEG));
+                                    if (paSegsNew)
+                                    {
+                                        enmTxDir = VSCSIIOREQTXDIR_READ;
+
+                                        uint32_t idxSeg = 0;
+                                        for (uint32_t uLba = (uint32_t)uLbaStart; uLba < uLbaStart + cSectorTransfer; uLba++)
+                                        {
+                                            /* Sync bytes, see 4.2.3.8 CD Main Channel Block Formats */
+                                            uint8_t abBuf[16];
+                                            abBuf[0] = 0x00;
+                                            memset(&abBuf[1], 0xff, 10);
+                                            abBuf[11] = 0x00;
+                                            /* MSF */
+                                            scsiLBA2MSF(&abBuf[12], uLba);
+                                            abBuf[15] = 0x01; /* mode 1 data */
+                                            RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, &abBuf[0], sizeof(abBuf));
+
+                                            size_t cbTmp = 2048;
+                                            while (cbTmp)
+                                            {
+                                                size_t cbBuf = cbTmp;
+                                                paSegsNew[idxSeg].pvSeg = RTSgBufGetNextSegment(&pVScsiReq->SgBuf, &cbBuf);
+                                                paSegsNew[idxSeg].cbSeg = cbBuf;
+                                                idxSeg++;
+
+                                                cbTmp -= cbBuf;
+                                            }
+
+                                            /**
+                                             * @todo: maybe compute ECC and parity, layout is:
+                                             * 2072 4   EDC
+                                             * 2076 172 P parity symbols
+                                             * 2248 104 Q parity symbols
+                                             */
+                                            RTSgBufSet(&pVScsiReq->SgBuf, 0, 280);
+                                        }
+
+                                        paSegs = paSegsNew;
+                                        cSegs  = cSegsNew;
+                                        pVScsiReq->pvLun = paSegsNew;
+                                    }
+                                    else
+                                        rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                                         SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
+                                }
+                                else
+                                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                                     SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
                             }
-                            else
-                                rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
-                                                                 SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
+                            else if (cbSectorRegion == 2352)
+                            {
+                                /* Sector size matches what is read. */
+                                cbSector = cbSectorRegion;
+                                enmTxDir = VSCSIIOREQTXDIR_READ;
+                            }
+                            break;
                         }
-                        else
+                        default:
                             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
-                                                             SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
-                        break;
+                                                             SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+                            break;
                     }
-                    default:
-                        rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
-                                                         SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
-                        break;
                 }
                 break;
             }
@@ -1268,7 +1452,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
 
                         memset(aReply, 0, sizeof(aReply));
                         scsiH2BE_U64(aReply, pVScsiLunMmc->cSectors - 1);
-                        scsiH2BE_U32(&aReply[8], pVScsiLunMmc->cbSector);
+                        scsiH2BE_U32(&aReply[8], _2K);
                         /* Leave the rest 0 */
 
                         vscsiReqSetXferSize(pVScsiReq, sizeof(aReply));
@@ -1357,7 +1541,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 aReply[3] = 1; /* number of first track */
                 aReply[4] = 1; /* number of sessions (LSB) */
                 aReply[5] = 1; /* first track number in last session (LSB) */
-                aReply[6] = 1; /* last track number in last session (LSB) */
+                aReply[6] = (uint8_t)vscsiLunMediumGetRegionCount(pVScsiLun); /* last track number in last session (LSB) */
                 aReply[7] = (0 << 7) | (0 << 6) | (1 << 5) | (0 << 2) | (0 << 0); /* disc id not valid, disc bar code not valid, unrestricted use, not dirty, not RW medium */
                 aReply[8] = 0; /* disc type = CD-ROM */
                 aReply[9] = 0; /* number of sessions (MSB) */
@@ -1372,31 +1556,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_READ_TRACK_INFORMATION:
             {
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
-
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
-                /* Accept address/number type of 1 only, and only track 1 exists. */
-                if ((pVScsiReq->pbCDB[1] & 0x03) != 1 || scsiBE2H_U32(&pVScsiReq->pbCDB[2]) != 1)
-                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
-                                                     SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
-                else
-                {
-                    uint8_t aReply[36];
-                    RT_ZERO(aReply);
-
-                    scsiH2BE_U16(&aReply[0], 34);
-                    aReply[2] = 1; /* track number (LSB) */
-                    aReply[3] = 1; /* session number (LSB) */
-                    aReply[5] = (0 << 5) | (0 << 4) | (4 << 0); /* not damaged, primary copy, data track */
-                    aReply[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | (1 << 0); /* not reserved track, not blank, not packet writing, not fixed packet, data mode 1 */
-                    aReply[7] = (0 << 1) | (0 << 0); /* last recorded address not valid, next recordable address not valid */
-                    scsiH2BE_U32(&aReply[8], 0); /* track start address is 0 */
-                    scsiH2BE_U32(&aReply[24], pVScsiLunMmc->cSectors); /* track size */
-                    aReply[32] = 0; /* track number (MSB) */
-                    aReply[33] = 0; /* session number (MSB) */
-
-                    RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, RT_MIN(sizeof(aReply), cbMax));
-                    rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
-                }
+                rcReq = vscsiLunMmcReadTrackInformation(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
             }
             case SCSI_GET_CONFIGURATION:
@@ -1424,7 +1585,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         LogFlow(("%s: uLbaStart=%llu cSectorTransfer=%u\n",
                  __FUNCTION__, uLbaStart, cSectorTransfer));
 
-        vscsiReqSetXferSize(pVScsiReq, cSectorTransfer * pVScsiLunMmc->cbSector);
+        vscsiReqSetXferSize(pVScsiReq, cSectorTransfer * cbSector);
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunMmc->cSectors))
         {
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
@@ -1438,10 +1599,30 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         }
         else
         {
-            /* Enqueue new I/O request */
-            rc = vscsiIoReqTransferEnqueueEx(pVScsiLun, pVScsiReq, enmTxDir,
-                                             uLbaStart * pVScsiLunMmc->cbSector,
-                                             paSegs, cSegs, cSectorTransfer * pVScsiLunMmc->cbSector);
+            /* Check that the sector size is valid. */
+            VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
+            rc = vscsiLunMediumQueryRegionPropertiesForLba(pVScsiLun, uLbaStart,
+                                                           NULL, NULL, NULL, &enmDataForm);
+            AssertRC(rc);
+            if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
+                && enmDataForm != VDREGIONDATAFORM_MODE1_2352
+                && enmDataForm != VDREGIONDATAFORM_MODE2_2336
+                && enmDataForm != VDREGIONDATAFORM_MODE2_2352
+                && enmDataForm != VDREGIONDATAFORM_RAW
+                && cbSector == _2K)
+            {
+                rcReq = vscsiLunReqSenseErrorInfoSet(pVScsiLun, pVScsiReq,
+                                                     SCSI_SENSE_ILLEGAL_REQUEST | SCSI_SENSE_FLAG_ILI,
+                                                     SCSI_ASC_ILLEGAL_MODE_FOR_THIS_TRACK, 0, uLbaStart);
+                vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
+            }
+            else
+            {
+                /* Enqueue new I/O request */
+                rc = vscsiIoReqTransferEnqueueEx(pVScsiLun, pVScsiReq, enmTxDir,
+                                                 uLbaStart * cbSector,
+                                                 paSegs, cSegs, cSectorTransfer * cbSector);
+            }
         }
     }
     else /* Request completed */
@@ -1461,13 +1642,23 @@ static DECLCALLBACK(void) vscsiLunMmcReqFree(PVSCSILUNINT pVScsiLun, PVSCSIREQIN
 /** @interface_method_impl{VSCSILUNDESC,pfnVScsiLunMediumInserted} */
 static DECLCALLBACK(int) vscsiLunMmcMediumInserted(PVSCSILUNINT pVScsiLun)
 {
+    int rc = VINF_SUCCESS;
     PVSCSILUNMMC pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
-    uint64_t cbDisk = 0;
-    int rc = vscsiLunMediumGetSize(pVScsiLun, &cbDisk);
+
+    pVScsiLunMmc->cSectors = 0;
+    uint32_t cTracks = vscsiLunMediumGetRegionCount(pVScsiLun);
+    for (uint32_t i = 0; i < cTracks && RT_SUCCESS(rc); i++)
+    {
+        uint64_t cBlocks = 0;
+        rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, i, NULL, &cBlocks,
+                                                 NULL, NULL);
+        if (RT_FAILURE(rc))
+            break;
+        pVScsiLunMmc->cSectors += cBlocks;
+    }
+
     if (RT_SUCCESS(rc))
     {
-        pVScsiLunMmc->cSectors = cbDisk / pVScsiLunMmc->cbSector;
-
         uint32_t OldStatus, NewStatus;
         do
         {

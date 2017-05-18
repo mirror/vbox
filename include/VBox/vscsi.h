@@ -29,6 +29,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <VBox/vdmedia.h>
 #include <iprt/sg.h>
 
 RT_C_DECLS_BEGIN
@@ -154,26 +155,52 @@ typedef struct VSCSILUNIOCALLBACKS
     DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqFree, (VSCSILUN hVScsiLun, void *pvScsiLunUser, VSCSIIOREQ hVScsiIoReq));
 
     /**
-     * Retrieve the size of the underlying medium.
+     * Returns the number of regions for the medium.
      *
-     * @returns VBox status status code.
+     * @returns Number of regions.
      * @param   hVScsiLun       Virtual SCSI LUN handle.
      * @param   pvScsiLunUser   Opaque user data which may be used to identify the
      *                          medium.
-     * @param   pcbSize         Where to store the size of the medium.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumGetSize,(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcbSize));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnVScsiLunMediumGetRegionCount,(VSCSILUN hVScsiLun, void *pvScsiLunUser));
 
     /**
-     * Retrieve the sector size of the underlying medium.
+     * Queries the properties for the given region.
      *
-     * @returns VBox status status code.
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if the region index is not known.
      * @param   hVScsiLun       Virtual SCSI LUN handle.
      * @param   pvScsiLunUser   Opaque user data which may be used to identify the
      *                          medium.
-     * @param   pcbSectorSize   Where to store the sector size of the medium.
+     * @param   uRegion         The region index to query the properties of.
+     * @param   pu64LbaStart    Where to store the starting LBA for the region on success.
+     * @param   pcBlocks        Where to store the number of blocks for the region on success.
+     * @param   pcbBlock        Where to store the size of one block in bytes on success.
+     * @param   penmDataForm    WHere to store the data form for the region on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumGetSectorSize,(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint32_t *pcbSectorSize));
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumQueryRegionProperties,(VSCSILUN hVScsiLun, void *pvScsiLunUser,
+                                                                      uint32_t uRegion, uint64_t *pu64LbaStart,
+                                                                      uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                                      PVDREGIONDATAFORM penmDataForm));
+
+    /**
+     * Queries the properties for the region covering the given LBA.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if the region index is not known.
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   u64LbaStart     Where to store the starting LBA for the region on success.
+     * @param   puRegion        Where to store the region number on success.
+     * @param   pcBlocks        Where to store the number of blocks left in this region starting from the given LBA.
+     * @param   pcbBlock        Where to store the size of one block in bytes on success.
+     * @param   penmDataForm    WHere to store the data form for the region on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumQueryRegionPropertiesForLba,(VSCSILUN hVScsiLun, void *pvScsiLunUser,
+                                                                            uint64_t u64LbaStart, uint32_t *puRegion,
+                                                                            uint64_t *pcBlocks, uint64_t *pcbBlock,
+                                                                            PVDREGIONDATAFORM penmDataForm));
 
     /**
      * Set the lock state of the underlying medium.
