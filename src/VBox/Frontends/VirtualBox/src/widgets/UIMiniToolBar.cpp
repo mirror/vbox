@@ -687,9 +687,28 @@ void UIMiniToolBar::sltAdjust()
     LogRel(("GUI: Adjust mini-toolbar for window #%d\n", m_iWindowIndex));
 
     /* Get corresponding host-screen: */
-    const int iHostScreen = gpDesktop->screenNumber(m_pParent);
-    Q_UNUSED(iHostScreen);
-    /* And corresponding working area: */
+    const int iHostScreenCount = gpDesktop->screenCount();
+    int iHostScreen = gpDesktop->screenNumber(m_pParent);
+    // WORKAROUND:
+    // When switching host-screen count, especially in complex cases where RDP client is "replacing" host-screen(s) with own virtual-screen(s),
+    // Qt could behave quite arbitrary and laggy, and due to racing there could be a situation when QDesktopWidget::screenNumber() returns -1
+    // as a host-screen number where the parent window is currently located. We should handle this situation anyway, so let's assume the parent
+    // window is located on primary (0) host-screen if it's present or ignore this request at all.
+    if (iHostScreen < 0 || iHostScreen >= iHostScreenCount)
+    {
+        if (iHostScreenCount > 0)
+        {
+            LogRel(("GUI:  Mini-toolbar parent window #%d is located on invalid host-screen #%d. Fallback to primary.\n", m_iWindowIndex, iHostScreen));
+            iHostScreen = 0;
+        }
+        else
+        {
+            LogRel(("GUI:  Mini-toolbar parent window #%d is located on invalid host-screen #%d. Ignore request.\n", m_iWindowIndex, iHostScreen));
+            return;
+        }
+    }
+
+    /* Get corresponding working area: */
     QRect workingArea;
     switch (m_geometryType)
     {
