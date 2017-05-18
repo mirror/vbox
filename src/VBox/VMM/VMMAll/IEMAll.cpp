@@ -11526,7 +11526,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 #define IEM_MC_STORE_YREG_U64_ZX_VLMAX(a_iYRegDst, a_u64Src) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11535,7 +11535,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 #define IEM_MC_STORE_YREG_U128_ZX_VLMAX(a_iYRegDst, a_u128Src) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11544,7 +11544,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = (a_u128Src).au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 #define IEM_MC_STORE_YREG_U256_ZX_VLMAX(a_iYRegDst, a_u256Src) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11553,7 +11553,21 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = (a_u256Src).au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = (a_u256Src).au64[2]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_u256Src).au64[3]; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
+    } while (0)
+
+#define IEM_MC_REF_YREG_U128(a_pu128Dst, a_iYReg)       \
+    (a_pu128Dst) = (&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aYMM[(a_iYReg)].uXmm)
+#define IEM_MC_REF_YREG_U128_CONST(a_pu128Dst, a_iYReg) \
+    (a_pu128Dst) = ((PCRTUINT128U)&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aYMM[(a_iYReg)].uXmm)
+#define IEM_MC_REF_YREG_U64_CONST(a_pu64Dst, a_iYReg) \
+    (a_pu64Dst) = ((uint64_t const *)&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aYMM[(a_iYReg)].au64[0])
+#define IEM_MC_CLEAR_YREG_128_UP(a_iYReg) \
+    do { PX86XSAVEAREA   pXStateTmp = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
+         uintptr_t const iYRegTmp   = (a_iYReg); \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegTmp].au64[0] = 0; \
+         pXStateTmp->u.YmmHi.aYmmHi[iYRegTmp].au64[1] = 0; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegTmp); \
     } while (0)
 
 #define IEM_MC_COPY_YREG_U256_ZX_VLMAX(a_iYRegDst, a_iYRegSrc) \
@@ -11564,7 +11578,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = pXStateTmp->u.YmmHi.aYmmHi[iYRegSrcTmp].au64[0]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = pXStateTmp->u.YmmHi.aYmmHi[iYRegSrcTmp].au64[1]; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 #define IEM_MC_COPY_YREG_U128_ZX_VLMAX(a_iYRegDst, a_iYRegSrc) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11574,7 +11588,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 
 #define IEM_MC_MERGE_YREG_U32_U96_ZX_VLMAX(a_iYRegDst, a_iYRegSrc32, a_iYRegSrcHx) \
@@ -11587,7 +11601,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 #define IEM_MC_MERGE_YREG_U64_U64_ZX_VLMAX(a_iYRegDst, a_iYRegSrc64, a_iYRegSrcHx) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11598,7 +11612,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 #define IEM_MC_MERGE_YREG_U64HI_U64_ZX_VLMAX(a_iYRegDst, a_iYRegSrc64, a_iYRegSrcHx) /* for vmovhlps */ \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11609,7 +11623,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 #define IEM_MC_MERGE_YREG_U64LOCAL_U64_ZX_VLMAX(a_iYRegDst, a_u64Local, a_iYRegSrcHx) \
     do { PX86XSAVEAREA   pXStateTmp     = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState); \
@@ -11619,7 +11633,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
          pXStateTmp->x87.aXMM[iYRegDstTmp].au64[1]       = pXStateTmp->x87.aXMM[iYRegSrcHxTmp].au64[1]; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = 0; \
          pXStateTmp->u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = 0; \
-         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, a_iYRegDst); \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(pXStateTmp, iYRegDstTmp); \
     } while (0)
 
 #ifndef IEM_WITH_SETJMP
@@ -11726,12 +11740,12 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem)))
-# define IEM_MC_FETCH_MEM_U256_ALIGN_SSE(a_u256Dst, a_iSeg, a_GCPtrMem) \
+# define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU256AlignedSse(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem)))
 #else
 # define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256Jmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
-# define IEM_MC_FETCH_MEM_U256_ALIGN_SSE(a_u256Dst, a_iSeg, a_GCPtrMem) \
+# define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_u256Dst), (a_iSeg), (a_GCPtrMem))
 #endif
 
@@ -12295,7 +12309,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 /**
  * Calls a SSE assembly implementation taking two visible arguments.
  *
- * @param   a_pfnAImpl      Pointer to the assembly MMX routine.
+ * @param   a_pfnAImpl      Pointer to the assembly SSE routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  */
@@ -12308,7 +12322,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 /**
  * Calls a SSE assembly implementation taking three visible arguments.
  *
- * @param   a_pfnAImpl      Pointer to the assembly MMX routine.
+ * @param   a_pfnAImpl      Pointer to the assembly SSE routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  * @param   a2              The third extra argument.
@@ -12317,6 +12331,43 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     do { \
         IEM_MC_PREPARE_SSE_USAGE(); \
         a_pfnAImpl(&IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87, (a0), (a1), (a2)); \
+    } while (0)
+
+
+/** Declares implicit arguments for IEM_MC_CALL_AVX_AIMPL_2,
+ *  IEM_MC_CALL_AVX_AIMPL_3, IEM_MC_CALL_AVX_AIMPL_4, ... */
+#define IEM_MC_IMPLICIT_AVX_AIMPL_ARGS() \
+    IEM_MC_ARG_CONST(PX86XSAVEAREA, pXState, (pVCpu)->iem.s.CTX_SUFF(pCtx)->CTX_SUFF(pXState), 0)
+
+/**
+ * Calls a AVX assembly implementation taking two visible arguments.
+ *
+ * There is one implicit zero'th argument, a pointer to the extended state.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly AVX routine.
+ * @param   a1              The first extra argument.
+ * @param   a2              The second extra argument.
+ */
+#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a1, a2) \
+    do { \
+        IEM_MC_PREPARE_AVX_USAGE(); \
+        a_pfnAImpl(pXState, (a1), (a2)); \
+    } while (0)
+
+/**
+ * Calls a AVX assembly implementation taking three visible arguments.
+ *
+ * There is one implicit zero'th argument, a pointer to the extended state.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly AVX routine.
+ * @param   a1              The first extra argument.
+ * @param   a2              The second extra argument.
+ * @param   a3              The third extra argument.
+ */
+#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a1, a2, a3) \
+    do { \
+        IEM_MC_PREPARE_AVX_USAGE(); \
+        a_pfnAImpl(pXState, (a1), (a2), (a3)); \
     } while (0)
 
 /** @note Not for IOPL or IF testing. */

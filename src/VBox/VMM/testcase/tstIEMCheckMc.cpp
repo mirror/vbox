@@ -381,6 +381,9 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
     AssertCompile((a_iArg) < cArgs); \
     a_Type const a_Name = (a_Value); \
     NOREF(a_Name)
+#define IEM_MC_ARG_XSTATE(a_Name, a_iArg) \
+    IEM_MC_ARG_CONST(PX86XSAVEAREA, a_Name, NULL, a_iArg)
+
 #define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg) \
     RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
     int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_Name)); \
@@ -530,6 +533,10 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_STORE_YREG_U64_ZX_VLMAX(a_iYRegDst, a_u64Value)    do { CHK_TYPE(uint64_t, a_u64Value); (void)fAvxWrite; } while (0)
 #define IEM_MC_STORE_YREG_U128_ZX_VLMAX(a_iYRegDst, a_u128Value)  do { CHK_TYPE(RTUINT128U, a_u128Value); (void)fAvxWrite; } while (0)
 #define IEM_MC_STORE_YREG_U256_ZX_VLMAX(a_iYRegDst, a_u256Value)  do { CHK_TYPE(RTUINT256U, a_u256Value); (void)fAvxWrite; } while (0)
+#define IEM_MC_REF_YREG_U128(a_pu128Dst, a_iYReg)                 do { (a_pu128Dst) = (PRTUINT128U)((uintptr_t)0);      CHK_PTYPE(PRTUINT128U, a_pu128Dst);       (void)fAvxWrite; } while (0)
+#define IEM_MC_REF_YREG_U128_CONST(a_pu128Dst, a_iYReg)           do { (a_pu128Dst) = (PCRTUINT128U)((uintptr_t)0);     CHK_PTYPE(PCRTUINT128U, a_pu128Dst);      (void)fAvxWrite; } while (0)
+#define IEM_MC_REF_YREG_U64_CONST(a_pu64Dst, a_iYReg)             do { (a_pu64Dst)  = (uint64_t const *)((uintptr_t)0); CHK_PTYPE(uint64_t const *, a_pu64Dst);   (void)fAvxWrite; } while (0)
+#define IEM_MC_CLEAR_YREG_128_UP(a_iYReg)                         do { (void)fAvxWrite; } while (0)
 #define IEM_MC_COPY_YREG_U256_ZX_VLMAX(a_iYRegDst, a_iYRegSrc)    do { (void)fAvxWrite; } while (0)
 #define IEM_MC_COPY_YREG_U128_ZX_VLMAX(a_iYRegDst, a_iYRegSrc)    do { (void)fAvxWrite; } while (0)
 #define IEM_MC_MERGE_YREG_U32_U96_ZX_VLMAX(a_iYRegDst, a_iYRegSrc32, a_iYRegSrcHx)      do { (void)fAvxWrite; (void)fAvxRead; } while (0)
@@ -576,7 +583,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_FETCH_MEM_U128(a_u128Dst, a_iSeg, a_GCPtrMem)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Dst);} while (0)
 #define IEM_MC_FETCH_MEM_U128_ALIGN_SSE(a_u128Dst, a_iSeg, a_GCPtrMem)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Dst);} while (0)
 #define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Dst);} while (0)
-#define IEM_MC_FETCH_MEM_U256_ALIGN_SSE(a_u256Dst, a_iSeg, a_GCPtrMem)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Dst);} while (0)
+#define IEM_MC_FETCH_MEM_U256_ALIGN_AVX(a_u256Dst, a_iSeg, a_GCPtrMem)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Dst);} while (0)
 
 #define IEM_MC_STORE_MEM_U8(a_iSeg, a_GCPtrMem, a_u8Value)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(uint8_t,  a_u8Value); CHK_SEG_IDX(a_iSeg); } while (0)
 #define IEM_MC_STORE_MEM_U16(a_iSeg, a_GCPtrMem, a_u16Value)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(uint16_t, a_u16Value);      } while (0)
@@ -679,9 +686,9 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_PREPARE_SSE_USAGE()              const int fSseRead = 1, fSseWrite = 1, fSseHost = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ()   const int fSseRead = 1
 #define IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE() const int fSseRead = 1, fSseWrite = 1
-#define IEM_MC_PREPARE_AVX_USAGE()              const int fAvxRead = 1, fAvxWrite = 1, fAvxHost = 1
-#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ()   const int fAvxRead = 1
-#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE() const int fAvxRead = 1, fAvxWrite = 1
+#define IEM_MC_PREPARE_AVX_USAGE()              const int fAvxRead = 1, fAvxWrite = 1, fAvxHost = 1, fSseRead = 1, fSseWrite = 1, fSseHost = 1
+#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ()   const int fAvxRead = 1, fSseRead = 1
+#define IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE() const int fAvxRead = 1, fAvxWrite = 1, fSseRead = 1, fSseWrite = 1
 
 #define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { (void)fFpuHost; (void)fFpuWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); } while (0)
@@ -691,6 +698,13 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
     do { (void)fSseHost; (void)fSseWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); } while (0)
 #define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { (void)fSseHost; (void)fSseWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2);} while (0)
+#define IEM_MC_IMPLICIT_AVX_AIMPL_ARGS() IEM_MC_ARG_CONST(PX86XSAVEAREA, pXState, (pVCpu)->iem.s.CTX_SUFF(pCtx)->CTX_SUFF(pXState), 0)
+#define IEM_MC_CALL_AVX_AIMPL_2(a_pfnAImpl, a1, a2) \
+    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); } while (0)
+#define IEM_MC_CALL_AVX_AIMPL_3(a_pfnAImpl, a1, a2, a3) \
+    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3);} while (0)
+#define IEM_MC_CALL_AVX_AIMPL_4(a_pfnAImpl, a1, a2, a3, a4) \
+    do { (void)fAvxHost; (void)fAvxWrite; CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); CHK_CALL_ARG(a4, 4);} while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   if (g_fRandom) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)                               if (g_fRandom) {

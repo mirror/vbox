@@ -782,6 +782,7 @@ enum OPCODES
     OP_VMOVHLPS,
     OP_VMOVLPS,
     OP_VMOVLPD,
+    OP_VMOVSLDUP,
 /** @} */
     OP_END_OF_OPCODES
 };
@@ -1100,6 +1101,7 @@ enum OP_PARM
 #define OP_PARM_VssZx_WO        OP_PARM_Vss             /**< Annotates that the registers get their upper bits cleared. */
 #define OP_PARM_Vss_WO          OP_PARM_Vss             /**< Annotates write only operand. */
 #define OP_PARM_Vsd_WO          OP_PARM_Vsd             /**< Annotates write only operand. */
+#define OP_PARM_Vx_WO           OP_PARM_Vx              /**< Annotates write only operand. */
 #define OP_PARM_Wpd_WO          OP_PARM_Wpd             /**< Annotates write only operand. */
 #define OP_PARM_Wps_WO          OP_PARM_Wps             /**< Annotates write only operand. */
 #define OP_PARM_WqZxReg_WO      OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */

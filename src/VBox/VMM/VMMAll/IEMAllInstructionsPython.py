@@ -227,6 +227,7 @@ g_kdOpTypes = {
     'Wdq_WO':       ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     ),
     'Wq':           ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
     'WqZxReg_WO':   ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
+    'Wx':           ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      ),
 
     # ModR/M.rm - register only.
     'Uq':           ( 'IDX_UseModRM',       'rm',     '%Uq',  'Uq',      ),
@@ -270,6 +271,7 @@ g_kdOpTypes = {
     'VqHi':         ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
     'VqHi_WO':      ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
     'VqZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    ),
+    'Vx_WO':        ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      ),
 
     # VEX.vvvv
     'HssHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HssHi',   ),
@@ -1143,6 +1145,11 @@ class TestSelector(object):
             'o16':  'size_o16',
             'o32':  'size_o32',
             'o64':  'size_o64',
+        },
+        # VEX.L value.
+        'vex.l': {
+            '0':    'vexl_0',
+            '1':    'vexl_1',
         },
         # Execution ring.
         'ring': {
