@@ -620,6 +620,13 @@ void UIMiniToolBar::sltShow()
 
 #elif defined(VBOX_WS_WIN)
 
+    // WORKAROUND:
+    // If the host-screen is changed => we should
+    // reset window state to NONE first because
+    // we need an expose on showFullScreen call.
+    if (m_geometryType == GeometryType_Full)
+        setWindowState(Qt::WindowNoState);
+
     /* Adjust window: */
     sltAdjust();
     /* Show window in necessary mode: */
