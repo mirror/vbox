@@ -426,13 +426,15 @@ Qt::WindowFlags UIMiniToolBar::defaultWindowFlags(GeometryType geometryType)
 UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
                              GeometryType geometryType,
                              Qt::Alignment alignment,
-                             bool fAutoHide /* = true */)
+                             bool fAutoHide /* = true */,
+                             int iWindowIndex /* = -1 */)
     : QWidget(0, defaultWindowFlags(geometryType))
     /* Variables: General stuff: */
     , m_pParent(pParent)
     , m_geometryType(geometryType)
     , m_alignment(alignment)
     , m_fAutoHide(fAutoHide)
+    , m_iWindowIndex(iWindowIndex)
     /* Variables: Contents stuff: */
     , m_pArea(0)
     , m_pToolbar(0)
@@ -583,7 +585,7 @@ void UIMiniToolBar::sltHoverLeave()
 
 void UIMiniToolBar::sltHide()
 {
-    LogRel2(("GUI: UIMiniToolBar::sltHide\n"));
+    LogRel(("GUI: Hide mini-toolbar for window #%d\n", m_iWindowIndex));
 
 #if defined(VBOX_WS_MAC)
 
@@ -609,7 +611,7 @@ void UIMiniToolBar::sltHide()
 
 void UIMiniToolBar::sltShow()
 {
-    LogRel2(("GUI: UIMiniToolBar::sltShow\n"));
+    LogRel(("GUI: Show mini-toolbar for window #%d\n", m_iWindowIndex));
 
     /* Update transience: */
     sltAdjustTransience();
@@ -682,7 +684,7 @@ void UIMiniToolBar::sltShow()
 
 void UIMiniToolBar::sltAdjust()
 {
-    LogRel2(("GUI: UIMiniToolBar::sltAdjust\n"));
+    LogRel(("GUI: Adjust mini-toolbar for window #%d\n", m_iWindowIndex));
 
     /* Get corresponding host-screen: */
     const int iHostScreen = gpDesktop->screenNumber(m_pParent);
@@ -708,14 +710,14 @@ void UIMiniToolBar::sltAdjust()
         {
             /* Set appropriate window size: */
             const QSize newSize = workingArea.size();
-            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
-                     newSize.width(), newSize.height()));
+            LogRel(("GUI:  Resize mini-toolbar for window #%d to %dx%d\n",
+                     m_iWindowIndex, newSize.width(), newSize.height()));
             resize(newSize);
 
             /* Move window onto required screen: */
             const QPoint newPosition = workingArea.topLeft();
-            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
-                     newPosition.x(), newPosition.y()));
+            LogRel(("GUI:  Move mini-toolbar for window #%d to %dx%d\n",
+                     m_iWindowIndex, newPosition.x(), newPosition.y()));
             move(newPosition);
 
             break;
@@ -723,14 +725,14 @@ void UIMiniToolBar::sltAdjust()
         case GeometryType_Full:
         {
             /* Map window onto required screen: */
-            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Map window to screen: %d of: %d\n",
-                     iHostScreen, qApp->screens().size()));
+            LogRel(("GUI:  Map mini-toolbar for window #%d to screen %d of %d\n",
+                     m_iWindowIndex, iHostScreen, qApp->screens().size()));
             windowHandle()->setScreen(qApp->screens().at(iHostScreen));
 
             /* Set appropriate window size: */
             const QSize newSize = workingArea.size();
-            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
-                     newSize.width(), newSize.height()));
+            LogRel(("GUI:  Resize mini-toolbar for window #%d to %dx%d\n",
+                     m_iWindowIndex, newSize.width(), newSize.height()));
             resize(newSize);
 
             break;
@@ -758,14 +760,14 @@ void UIMiniToolBar::sltAdjust()
                 // window size is more than the available geometry (working area) of that
                 // host-screen. So we are resizing it to a smaller size first of all:
                 const QSize newSize = workingArea.size() * .9;
-                LogRel(("GUI: UIMiniToolBar::sltAdjust: Resize window to smaller size: %dx%d\n",
-                        newSize.width(), newSize.height()));
+                LogRel(("GUI:  Resize mini-toolbar for window #%d to smaller size %dx%d\n",
+                        m_iWindowIndex, newSize.width(), newSize.height()));
                 resize(newSize);
 
                 /* Move window onto required screen: */
                 const QPoint newPosition = workingArea.topLeft();
-                LogRel(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
-                        newPosition.x(), newPosition.y()));
+                LogRel(("GUI:  Move mini-toolbar for window #%d to %dx%d\n",
+                        m_iWindowIndex, newPosition.x(), newPosition.y()));
                 move(newPosition);
             }
 
@@ -784,14 +786,14 @@ void UIMiniToolBar::sltAdjust()
 
             /* Set appropriate window size: */
             const QSize newSize = workingArea.size();
-            LogRel(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
-                    newSize.width(), newSize.height()));
+            LogRel(("GUI:  Resize mini-toolbar for window #%d to %dx%d\n",
+                    m_iWindowIndex, newSize.width(), newSize.height()));
             resize(newSize);
 
             /* Move window onto required screen: */
             const QPoint newPosition = workingArea.topLeft();
-            LogRel(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
-                    newPosition.x(), newPosition.y()));
+            LogRel(("GUI:  Move mini-toolbar for window #%d to %dx%d\n",
+                    m_iWindowIndex, newPosition.x(), newPosition.y()));
             move(newPosition);
 
             /* Re-apply the full-screen state lost on above move(): */

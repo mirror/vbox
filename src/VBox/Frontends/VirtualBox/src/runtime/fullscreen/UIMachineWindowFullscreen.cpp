@@ -273,7 +273,8 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
     m_pMiniToolBar = new UIMiniToolBar(this,
                                        GeometryType_Full,
                                        gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
-                                       gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
+                                       gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()),
+                                       screenId());
     AssertPtrReturnVoid(m_pMiniToolBar);
     {
         /* Configure mini-toolbar: */
