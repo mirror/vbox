@@ -480,7 +480,8 @@ g_kdHints = {
     'sse':                   'DISOPTYPE_SSE',                   ##< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet!
     'mmx':                   'DISOPTYPE_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet!
     'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet!
-    'ignores_op_size':       '',                                ##< Ignores both operand size prefixes.
+    'ignores_op_size':       '',                                ##< Ignores both operand size prefixes (66h + REX.W).
+    'ignores_vex_l':         '',                                ##< Ignores VEX.L.
     'lock_allowed':          '',                                ##< Lock prefix allowed.
 };
 

@@ -549,7 +549,8 @@ typedef struct IEMCPU
 
     /** Prefix index (VEX.pp) for two byte and three byte tables. */
     uint8_t                 idxPrefix;                                                                      /* 0x30, 0x16 */
-    /** 3rd VEX/EVEX/XOP register. */
+    /** 3rd VEX/EVEX/XOP register.
+     * Please use IEM_GET_EFFECTIVE_VVVV to access.  */
     uint8_t                 uVex3rdReg;                                                                     /* 0x31, 0x17 */
     /** The VEX/EVEX/XOP length field. */
     uint8_t                 uVexLength;                                                                     /* 0x32, 0x18 */
@@ -956,6 +957,9 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEMOPHINT_IGNORES_OP_SIZE   RT_BIT_32(10)
 /** Allowed with the lock prefix. */
 #define IEMOPHINT_LOCK_ALLOWED      RT_BIT_32(11)
+/** The VEX.L value is ignored (aka LIG). */
+#define IEMOPHINT_IGNORES_VEX_L     RT_BIT_32(12)
+
 /** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */
 #define IEMOPHINT_SKIP_PYTHON       RT_BIT_32(31)
 /** @} */

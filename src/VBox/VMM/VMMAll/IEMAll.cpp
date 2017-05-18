@@ -369,6 +369,16 @@ typedef enum IEMXCPTCLASS
  */
 #define IEM_IS_CANONICAL(a_u64Addr)         X86_IS_CANONICAL(a_u64Addr)
 
+/**
+ * Gets the effective VEX.VVVV value.
+ *
+ * The 4th bit is ignored if not 64-bit code.
+ * @returns effective V-register value.
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
+ */
+#define IEM_GET_EFFECTIVE_VVVV(a_pVCpu) \
+    ((a_pVCpu)->iem.s.enmCpuMode == IEMMODE_64BIT ? (a_pVCpu)->iem.s.uVex3rdReg : (a_pVCpu)->iem.s.uVex3rdReg & 7)
+
 /** @def IEM_USE_UNALIGNED_DATA_ACCESS
  * Use unaligned accesses instead of elaborate byte assembly. */
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(DOXYGEN_RUNNING)
@@ -12714,7 +12724,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
  * Done decoding VEX instruction, raise \#UD exception if any lock, rex, repz,
  * repnz or size prefixes are present, or if in real or v8086 mode.
  */
-#define IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX() \
+#define IEMOP_HLP_DONE_VEX_DECODING() \
     do \
     { \
         if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
@@ -12729,7 +12739,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
  * Done decoding VEX instruction, raise \#UD exception if any lock, rex, repz,
  * repnz or size prefixes are present, or if in real or v8086 mode.
  */
-#define IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX_AND_L0() \
+#define IEMOP_HLP_DONE_VEX_DECODING_L0() \
     do \
     { \
         if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
@@ -12747,7 +12757,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
  * repnz or size prefixes are present, or if the VEX.VVVV field doesn't indicate
  * register 0, or if in real or v8086 mode.
  */
-#define IEMOP_HLP_DONE_DECODING_NO_AVX_PREFIX_AND_NO_VVVV() \
+#define IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV() \
     do \
     { \
         if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
@@ -12757,6 +12767,24 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         { /* likely */ } \
         else \
             return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+    } while (0)
+
+/**
+ * Done decoding VEX, no V, L=0.
+ * Raises \#UD exception if rex, rep, opsize or lock prefixes are present, if
+ * we're in real or v8086 mode, if VEX.V!=0xf, or if VEX.L!=0.
+ */
+#define IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV() \
+    do \
+    { \
+        if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
+                           & (IEM_OP_PRF_LOCK | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REX)) \
+                      && pVCpu->iem.s.uVexLength == 0 \
+                      && pVCpu->iem.s.uVex3rdReg == 0 \
+                      && !IEM_IS_REAL_OR_V86_MODE(pVCpu))) \
+        { /* likely */ } \
+        else \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
 #define IEMOP_HLP_DECODED_NL_1(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_fDisOpType) \
@@ -12796,40 +12824,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     } while (0)
 
 
-/**
- * Done decoding VEX.
- * Raises \#UD exception if rex, rep, opsize or lock prefixes are present, or if
- * we're in real or v8086 mode.
- */
-#define IEMOP_HLP_DONE_VEX_DECODING() \
-    do \
-    { \
-        if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
-                           & (IEM_OP_PRF_LOCK | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REX)) \
-                      && !IEM_IS_REAL_OR_V86_MODE(pVCpu) )) \
-        { /* likely */ } \
-        else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
-    } while (0)
-
-/**
- * Done decoding VEX, no V, no L.
- * Raises \#UD exception if rex, rep, opsize or lock prefixes are present, if
- * we're in real or v8086 mode, if VEX.V!=0xf, or if VEX.L!=0.
- */
-#define IEMOP_HLP_DONE_VEX_DECODING_L_ZERO_NO_VVV() \
-    do \
-    { \
-        if (RT_LIKELY(   !(  pVCpu->iem.s.fPrefixes \
-                           & (IEM_OP_PRF_LOCK | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REX)) \
-                      && pVCpu->iem.s.uVexLength == 0 \
-                      && pVCpu->iem.s.uVex3rdReg == 0 \
-                      && !IEM_IS_REAL_OR_V86_MODE(pVCpu))) \
-        { /* likely */ } \
-        else \
-            return IEMOP_RAISE_INVALID_OPCODE(); \
-    } while (0)
-
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /** Check and handles SVM nested-guest control & instruction intercept. */
 # define IEMOP_HLP_SVM_CTRL_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
@@ -12847,11 +12841,10 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
             IEM_RETURN_SVM_NST_GST_VMEXIT(a_pVCpu, SVM_EXIT_READ_CR0 + (a_uCr), a_uExitInfo1, a_uExitInfo2); \
     } while (0)
 
-#else
+#else  /* !VBOX_WITH_NESTED_HWVIRT */
 # define IEMOP_HLP_SVM_CTRL_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)    do { } while (0)
 # define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2)                    do { } while (0)
-
-#endif /* VBOX_WITH_NESTED_HWVIRT */
+#endif /* !VBOX_WITH_NESTED_HWVIRT */
 
 
 /**
