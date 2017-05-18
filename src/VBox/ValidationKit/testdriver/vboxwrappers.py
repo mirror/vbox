@@ -2835,7 +2835,9 @@ class TxsConnectTask(TdTaskBase):
             reporter.log2('onGuestPropertyChange(,%s,%s,%s,%s)' % (sMachineId, sName, sValue, sFlags));
             if    sMachineId == self.sMachineId \
               and sName  == '/VirtualBox/GuestInfo/Net/0/V4/IP':
-                self.oParentTask._setIp(sValue);                                # pylint: disable=W0212
+                oParentTask = self.oParentTask;
+                if oParentTask:
+                    oParentTask._setIp(sValue);                                # pylint: disable=W0212
 
 
     def __init__(self, oSession, cMsTimeout, sIpAddr, sMacAddr, fReversedSetup):
@@ -2845,10 +2847,10 @@ class TxsConnectTask(TdTaskBase):
         self.sNextIpAddr        = None;
         self.sMacAddr           = sMacAddr;
         self.fReversedSetup     = fReversedSetup;
-        self.oVBox              = oSession.oVBox;
+        self.oVBox              = oSession.oVBox;       ## @todo who needs this?
         self.oVBoxEventHandler  = None;
         self.oTxsSession        = None;
-        self.fpApiVer           = oSession.fpApiVer;
+        self.fpApiVer           = oSession.fpApiVer;    ## @todo who needs this?
 
         # Skip things we don't implement.
         if sMacAddr is not None:
@@ -2903,9 +2905,11 @@ class TxsConnectTask(TdTaskBase):
     def _deregisterEventHandler(self):
         """Deregisters the event handler."""
         fRc = True;
-        if self.oVBoxEventHandler is not None:
-            fRc = self.oVBoxEventHandler.unregister();
+        oVBoxEventHandler = self.oVBoxEventHandler;
+        if oVBoxEventHandler is not None:
             self.oVBoxEventHandler = None;
+            fRc = oVBoxEventHandler.unregister();
+            oVBoxEventHandler.oParentTask = None; # Try avoid cylic deps.
         return fRc;
 
     def _setIp(self, sIpAddr, fInitCall = False):
@@ -2971,15 +2975,21 @@ class TxsConnectTask(TdTaskBase):
             fSuccess = False;
 
         # Signal done, or retry?
+        fDeregister = False;
         if   fSuccess \
           or self.fReversedSetup \
           or self.getAgeAsMs() >= self.cMsTimeout:
             self.signalTaskLocked();
+            fDeregister = True;
         else:
             sIpAddr = self.sNextIpAddr if self.sNextIpAddr is not None else self.sIpAddr;
             self._openTcpSession(sIpAddr, cMsIdleFudge = 5000);
 
         self.oCv.release();
+
+        # If we're done, deregister the callback (w/o owning lock).  It will
+        if fDeregister:
+            self._deregisterEventHandler();
         return True;
 
     #
@@ -3001,6 +3011,7 @@ class TxsConnectTask(TdTaskBase):
 
     def cancelTask(self):
         """ Cancels the task. """
+        self._deregisterEventHandler(); # (make sure to avoid cyclic fun)
         self.oCv.acquire();
         if not self.fSignalled:
             oTxsSession = self.oTxsSession;
