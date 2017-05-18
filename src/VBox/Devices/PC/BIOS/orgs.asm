@@ -936,12 +936,6 @@ int09_handler:
 		mov	al, KBDC_DISABLE
 		out	KBC_CMD, al
 
-		mov	al, 0Bh
-		out	PIC_MASTER, al
-		in	al, PIC_MASTER
-		and	al, 2
-		jz	int09_finish
-
 		in	al, KBC_DATA
 		push	ds
 		DO_pusha
@@ -982,7 +976,6 @@ int09_done:
 		cli
 		call	eoi_master_pic
 
-int09_finish:
 		mov	al, KBDC_ENABLE
 		out	KBC_CMD, al
 		pop	ax
