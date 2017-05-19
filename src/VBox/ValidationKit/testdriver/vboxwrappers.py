@@ -2847,10 +2847,8 @@ class TxsConnectTask(TdTaskBase):
         self.sNextIpAddr        = None;
         self.sMacAddr           = sMacAddr;
         self.fReversedSetup     = fReversedSetup;
-        self.oVBox              = oSession.oVBox;       ## @todo who needs this?
         self.oVBoxEventHandler  = None;
         self.oTxsSession        = None;
-        self.fpApiVer           = oSession.fpApiVer;    ## @todo who needs this?
 
         # Skip things we don't implement.
         if sMacAddr is not None:
@@ -2877,7 +2875,7 @@ class TxsConnectTask(TdTaskBase):
 
             # 1. Register the callback / event listener object.
             dArgs = {'oParentTask':self, 'sMachineId':oSession.o.machine.id};
-            self.oVBoxEventHandler = self.oVBox.registerDerivedEventHandler(self.TxsConnectTaskVBoxCallback, dArgs);
+            self.oVBoxEventHandler = oSession.oVBox.registerDerivedEventHandler(self.TxsConnectTaskVBoxCallback, dArgs);
 
             # 2. Query the guest properties.
             try:
@@ -2898,9 +2896,9 @@ class TxsConnectTask(TdTaskBase):
 
     def toString(self):
         return '<%s cMsTimeout=%s, sIpAddr=%s, sNextIpAddr=%s, sMacAddr=%s, fReversedSetup=%s,' \
-               ' oTxsSession=%s oVBoxEventHandler=%s, oVBox=%s>' \
+               ' oTxsSession=%s oVBoxEventHandler=%s>' \
              % (TdTaskBase.toString(self), self.cMsTimeout, self.sIpAddr, self.sNextIpAddr, self.sMacAddr, self.fReversedSetup,
-                self.oTxsSession, self.oVBoxEventHandler, self.oVBox);
+                self.oTxsSession, self.oVBoxEventHandler);
 
     def _deregisterEventHandler(self):
         """Deregisters the event handler."""
