@@ -4062,11 +4062,30 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         else
         {
             /*
-             * If event delivery caused an #VMEXIT that is not an exception (e.g. #NPF) then reflect the original
-             * exception to the guest after handling the #VMEXIT.
+             * If delivery of an event caused a #VMEXIT that is not an exception (e.g. #NPF) then we
+             * end up here.
+             *
+             * If the event was:
+             *   - a software interrupt, we can re-execute the instruction which will regenerate
+             *     the event.
+             *   - an NMI, we need to clear NMI blocking and re-inject the NMI.
+             *   - a hardware exception or external interrupt, we re-inject it.
              */
-            enmRaise   = IEMXCPTRAISE_PREV_EVENT;
-            fRaiseInfo = IEMXCPTRAISEINFO_NONE;
+            if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_SOFTWARE_INT)
+            {
+                enmRaise   = IEMXCPTRAISE_REEXEC_INSTR;
+                fRaiseInfo = IEMXCPTRAISEINFO_NONE;
+            }
+            else if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI)
+            {
+                enmRaise   = IEMXCPTRAISE_PREV_EVENT;
+                fRaiseInfo = IEMXCPTRAISEINFO_SOFT_INT_XCPT;
+            }
+            else
+            {
+                enmRaise   = IEMXCPTRAISE_PREV_EVENT;
+                fRaiseInfo = IEMXCPTRAISEINFO_NONE;
+            }
         }
 
         switch (enmRaise)
@@ -4086,7 +4105,8 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                     /* Determine a vectoring #PF condition, see comment in hmR0SvmExitXcptPF(). */
                     if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
                         pSvmTransient->fVectoringPF = true;
-                    else if (uIdtVector == X86_XCPT_PF)
+                    else if (   uIdtVector == X86_XCPT_PF
+                             && pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION)
                     {
                         /*
                          * If the previous exception was a #PF, we need to recover the CR2 value.
@@ -4100,10 +4120,18 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                     hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, GCPtrFaultAddress);
 
                     /** @todo r=michaln: The comment makes no sense with nested paging on! */
-                    /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF. See hmR0SvmExitXcptPF(). */
-                    Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32 GCPtrFaultAddress=%#RX64\n", pVmcb->ctrl.ExitIntInfo.u,
-                          !!pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid, pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode, GCPtrFaultAddress));
+                    /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF,
+                       see hmR0SvmExitXcptPF(). */
+                    Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32 GCPtrFaultAddress=%#RX64\n",
+                          pVmcb->ctrl.ExitIntInfo.u, RT_BOOL(pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid),
+                          pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode, GCPtrFaultAddress));
                 }
+                break;
+            }
+
+            case IEMXCPTRAISE_REEXEC_INSTR:
+            {
+                Assert(rc == VINF_SUCCESS);
                 break;
             }
 
