@@ -4079,7 +4079,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             else if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI)
             {
                 enmRaise   = IEMXCPTRAISE_PREV_EVENT;
-                fRaiseInfo = IEMXCPTRAISEINFO_SOFT_INT_XCPT;
+                fRaiseInfo = IEMXCPTRAISEINFO_NMI_XCPT;
             }
             else
             {
