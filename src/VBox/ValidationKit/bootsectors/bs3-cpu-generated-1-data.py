@@ -326,6 +326,8 @@ class Bs3Cg1Instruction(object):
             self.asFlags.append('BS3CG1INSTR_F_INVALID');
         if oInstr.sInvalidStyle and oInstr.sInvalidStyle.startswith('intel-'):
             self.asFlags.append('BS3CG1INSTR_F_INTEL_DECODES_INVALID');
+        if 'vex_l_zero' in oInstr.dHints:
+            self.asFlags.append('BS3CG1INSTR_F_VEX_L_ZERO');
 
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
         if oInstr.sPrefix:

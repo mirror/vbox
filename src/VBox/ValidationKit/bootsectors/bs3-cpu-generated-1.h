@@ -160,6 +160,7 @@ typedef enum BS3CG1ENC
     BS3CG1ENC_VEX_MODRM_VsdZx_WO_Mq,
     BS3CG1ENC_VEX_MODRM_Vx_WO_Wx,
     BS3CG1ENC_VEX_MODRM_Md_WO,
+    BS3CG1ENC_VEX_MODRM_Mq_WO_Vq,
     BS3CG1ENC_VEX_MODRM_Md_WO_Vss,
     BS3CG1ENC_VEX_MODRM_Mq_WO_Vsd,
     BS3CG1ENC_VEX_MODRM_Uss_WO_HssHi_Vss,
@@ -315,6 +316,8 @@ typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
 /** Only intel does full ModR/M(, ++) decoding for invalid instruction.
  * Always used with BS3CG1INSTR_F_INVALID or BS3CG1INSTR_F_UNUSED. */
 #define BS3CG1INSTR_F_INTEL_DECODES_INVALID UINT32_C(0x00000010)
+/** VEX.L must be zero (IEMOPHINT_VEX_L_ZERO). */
+#define BS3CG1INSTR_F_VEX_L_ZERO            UINT32_C(0x00000020)
 /** @} */
 
 
