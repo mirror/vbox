@@ -707,7 +707,6 @@ static void ReadCachedConfigDesc(PCVUSBDESCCONFIGEX pCfgDesc, uint8_t *pbBuf, ui
 {
     uint32_t cbLeft = *pcbBuf;
 
-/** @todo See @bugref{2693} */
     /*
      * Make a copy of the config descriptor and calculate the wTotalLength field.
      */
