@@ -2690,6 +2690,15 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(!fIntShadow);
 #endif
 
+#ifndef RT_OS_WINDOWS
+        /* Temporary test for returning guru, later make this function return void as before. */
+        if (   Event.n.u3Type == SVM_EVENT_EXCEPTION
+            && Event.n.u8Vector == X86_XCPT_PF)
+        {
+            AssertRelease(pCtx->cr2 == pVCpu->hm.s.Event.GCPtrFaultAddress);
+        }
+#endif
+
         Log4(("Injecting pending HM event.\n"));
         hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
         pVCpu->hm.s.Event.fPending = false;
