@@ -175,8 +175,10 @@ typedef enum BS3CG1ENC
 
     BS3CG1ENC_MODRM_MOD_EQ_3, /**< Unused or invalid instruction. */
     BS3CG1ENC_MODRM_MOD_NE_3, /**< Unused or invalid instruction. */
+    //BS3CG1ENC_VEX_FIXED,          /**< Unused or invalid instruction. */
     BS3CG1ENC_VEX_MODRM_MOD_EQ_3, /**< Unused or invalid instruction. */
     BS3CG1ENC_VEX_MODRM_MOD_NE_3, /**< Unused or invalid instruction. */
+    BS3CG1ENC_VEX_MODRM,          /**< Unused or invalid instruction. */
 
     BS3CG1ENC_END
 } BS3CG1ENC;

@@ -2048,7 +2048,6 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED(PBS3CG1STATE pThis, unsigne
     {
         off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
         pThis->cbCurInstr = off;
-        iEncoding++;
     }
     else
         return 0;
@@ -3342,6 +3341,20 @@ Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa(PBS3CG1STATE
 }
 
 
+//static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_FIXED(PBS3CG1STATE pThis, unsigned iEncoding)
+//{
+//    unsigned off;
+//    if (iEncoding == 0)
+//        off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/);
+//    else if (iEncoding == 0)
+//        off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+//    else
+//        return 0;
+//    pThis->cbCurInstr = off;
+//    return iEncoding + 1;
+//}
+
+
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -3419,6 +3432,19 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_MOD_NE_3(PBS3CG1STATE p
         return 0;
     pThis->cbCurInstr = off;
     return iEncoding + 1;
+}
+
+
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    const unsigned cFirstEncodings = 32;
+    if (iEncoding < cFirstEncodings)
+    {
+        unsigned iRet = Bs3Cg1EncodeNext_VEX_MODRM_MOD_EQ_3(pThis, iEncoding);
+        BS3_ASSERT(iRet > iEncoding);
+        return iRet;
+    }
+    return Bs3Cg1EncodeNext_VEX_MODRM_MOD_NE_3(pThis, iEncoding - cFirstEncodings) + cFirstEncodings;
 }
 
 #endif /* BS3CG1_WITH_VEX */
@@ -3957,11 +3983,17 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 
 
             /* Unused or invalid instructions mostly. */
+        //case BS3CG1ENC_VEX_FIXED:
+        //    pThis->pfnEncoder = Bs3Cg1EncodeNext_VEX_FIXED;
+        //    break;
         case BS3CG1ENC_VEX_MODRM_MOD_EQ_3:
             pThis->pfnEncoder = Bs3Cg1EncodeNext_VEX_MODRM_MOD_EQ_3;
             break;
         case BS3CG1ENC_VEX_MODRM_MOD_NE_3:
             pThis->pfnEncoder = Bs3Cg1EncodeNext_VEX_MODRM_MOD_NE_3;
+            break;
+        case BS3CG1ENC_VEX_MODRM:
+            pThis->pfnEncoder = Bs3Cg1EncodeNext_VEX_MODRM;
             break;
 
 #endif /* BS3CG1_WITH_VEX */

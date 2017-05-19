@@ -383,13 +383,15 @@ g_kdSubOpcodes = {
 g_kdEncodings = {
     'ModR/M':       [ 'BS3CG1ENC_MODRM', ],     ##< ModR/M
     'VEX.ModR/M':   [ 'BS3CG1ENC_VEX_MODRM', ], ##< VEX...ModR/M
-    'fixed':        [ 'BS3CG1ENC_FIXED', ],     ##< Fixed encoding (address, registers, etc).
+    'fixed':        [ 'BS3CG1ENC_FIXED', ],     ##< Fixed encoding (address, registers, unused, etc).
+    'VEX.fixed':    [ 'BS3CG1ENC_VEX_FIXED', ], ##< VEX + fixed encoding (address, registers, unused, etc).
     'prefix':       [ None, ],                  ##< Prefix
 };
 
 ## \@opunused, \@opinvalid, \@opinvlstyle
 g_kdInvalidStyles = {
     'immediate':                [], ##< CPU stops decoding immediately after the opcode.
+    'vex.modrm':                [], ##< VEX+ModR/M, everyone.
     'intel-modrm':              [], ##< Intel decodes ModR/M.
     'intel-modrm-imm8':         [], ##< Intel decodes ModR/M and an 8-byte immediate.
     'intel-opcode-modrm':       [], ##< Intel decodes another opcode byte followed by ModR/M. (Unused extension tables.)
@@ -1777,7 +1779,7 @@ class SimpleParser(object):
                 if oInstr.fUnused and oInstr.sSubOpcode:
                     oInstr.sEncoding = 'VEX.ModR/M' if oInstr.onlyInVexMaps() else 'ModR/M';
                 else:
-                    oInstr.sEncoding = 'fixed';
+                    oInstr.sEncoding = 'VEX.fixed' if oInstr.onlyInVexMaps() else 'fixed';
             elif oInstr.aoOperands[0].usesModRM():
                 if     (len(oInstr.aoOperands) >= 2 and oInstr.aoOperands[1].sWhere == 'vvvv') \
                     or oInstr.onlyInVexMaps():

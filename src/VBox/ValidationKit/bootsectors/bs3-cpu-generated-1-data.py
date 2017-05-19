@@ -316,6 +316,8 @@ class Bs3Cg1Instruction(object):
                     self.sEncoding = 'BS3CG1ENC_MODRM_MOD_NE_3';
                 else:
                     raise Exception('Unhandled sSubOpcode=%s for sInvalidStyle=%s' % (oInstr.sSubOpcode, oInstr.sInvalidStyle));
+            elif oInstr.sInvalidStyle == 'vex.modrm':
+                self.sEncoding = 'BS3CG1ENC_VEX_MODRM';
 
         self.asFlags            = [];
         if 'invalid_64' in oInstr.dHints:
