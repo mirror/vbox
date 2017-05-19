@@ -4071,21 +4071,11 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
              *   - an NMI, we need to clear NMI blocking and re-inject the NMI.
              *   - a hardware exception or external interrupt, we re-inject it.
              */
+            fRaiseInfo = IEMXCPTRAISEINFO_NONE;
             if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_SOFTWARE_INT)
-            {
-                enmRaise   = IEMXCPTRAISE_REEXEC_INSTR;
-                fRaiseInfo = IEMXCPTRAISEINFO_NONE;
-            }
-            else if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI)
-            {
-                enmRaise   = IEMXCPTRAISE_PREV_EVENT;
-                fRaiseInfo = IEMXCPTRAISEINFO_NMI_XCPT;
-            }
+                enmRaise = IEMXCPTRAISE_REEXEC_INSTR;
             else
-            {
-                enmRaise   = IEMXCPTRAISE_PREV_EVENT;
-                fRaiseInfo = IEMXCPTRAISEINFO_NONE;
-            }
+                enmRaise = IEMXCPTRAISE_PREV_EVENT;
         }
 
         switch (enmRaise)
@@ -4098,15 +4088,15 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 {
                     RTGCUINTPTR GCPtrFaultAddress = 0;
 
-                    /* If we are re-injecting the NMI, clear NMI blocking. */
-                    if (fRaiseInfo & IEMXCPTRAISEINFO_NMI_XCPT)
+                    /* If we are re-injecting an NMI, clear NMI blocking. */
+                    if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI)
                         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
                     /* Determine a vectoring #PF condition, see comment in hmR0SvmExitXcptPF(). */
                     if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
                         pSvmTransient->fVectoringPF = true;
-                    else if (   uIdtVector == X86_XCPT_PF
-                             && pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION)
+                    else if (   pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION
+                             && uIdtVector == X86_XCPT_PF)
                     {
                         /*
                          * If the previous exception was a #PF, we need to recover the CR2 value.
