@@ -2504,10 +2504,19 @@ FNIEMOP_STUB(iemOp_cvtsi2ss_Vss_Ey); //NEXT
 FNIEMOP_STUB(iemOp_cvtsi2sd_Vsd_Ey); //NEXT
 
 
-/** Opcode      0x0f 0x2b - vmovntps Mps, Vps */
+/**
+ * @opcode      0x2b
+ * @opcodesub   !11 mr/reg
+ * @oppfx       none
+ * @opcpuid     sse
+ * @opgroup     og_sse1_cachect
+ * @opxcpttype  1
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
 FNIEMOP_DEF(iemOp_movntps_Mps_Vps)
 {
-    IEMOP_MNEMONIC(movntps_mr_r, "movntps Mps,Vps");
+    IEMOP_MNEMONIC2(MR_MEM, MOVNTPS, movntps, Mps_WO, Vps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -2535,10 +2544,19 @@ FNIEMOP_DEF(iemOp_movntps_Mps_Vps)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x66 0x0f 0x2b - movntpd Mpd, Vpd */
+/**
+ * @opcode      0x2b
+ * @opcodesub   !11 mr/reg
+ * @oppfx       0x66
+ * @opcpuid     sse2
+ * @opgroup     og_sse2_cachect
+ * @opxcpttype  1
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
 FNIEMOP_DEF(iemOp_movntpd_Mpd_Vpd)
 {
-    IEMOP_MNEMONIC(movntpd_mr_r, "movntpd Mdq,Vpd");
+    IEMOP_MNEMONIC2(MR_MEM, MOVNTPD, movntpd, Mpd_WO, Vpd, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {

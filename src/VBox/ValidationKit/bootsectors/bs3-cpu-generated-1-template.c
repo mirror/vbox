@@ -83,6 +83,15 @@
 # define BS3CG1_DPRINTF(a_ArgList) do { } while (0)
 #endif
 
+/**
+ * Checks if this is a 64-bit test target or not.
+ * Helps avoid ifdefs or code bloat.
+ */
+#if ARCH_BITS == 64
+# define BS3CG1_IS_64BIT_TARGET(a_pThis)    BS3_MODE_IS_64BIT_CODE((a_pThis)->bMode)
+#else
+# define BS3CG1_IS_64BIT_TARGET(a_pThis)    (false)
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1326,9 +1335,11 @@ static unsigned BS3_NEAR_CODE Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool 
         pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, iReg, 5 /*disp32*/);
         *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - cbOp - cbMissalign;
 
+#if ARCH_BITS == 64
         /* In 64-bit mode we always have a rip relative encoding regardless of fAddrOverride. */
-        if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+        if (BS3CG1_IS_64BIT_TARGET(pThis))
             *(uint32_t *)&pThis->abCurInstr[off] -= BS3_FP_OFF(&pThis->pbCodePg[X86_PAGE_SIZE]);
+#endif
         off += 4;
     }
 
@@ -1502,7 +1513,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_Ev__OR__MODRM_Ev_Gv(PBS3
         off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, off, X86_GREG_xSI, cbOp, 0,
                                        pThis->enmEncoding == BS3CG1ENC_MODRM_Gv_Ev ? BS3CG1OPLOC_MEM : BS3CG1OPLOC_MEM_WO);
     }
-    else if (iEncoding == 6 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+    else if (iEncoding == 6 && BS3CG1_IS_64BIT_TARGET(pThis))
     {
         cbOp = 8;
         off = Bs3Cg1InsertReqPrefix(pThis, 0);
@@ -2041,6 +2052,36 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Mq_WO_VqHi(PBS3CG1STATE pTh
 }
 
 
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    unsigned off;
+    switch (iEncoding)
+    {
+        case 0:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2 /*iReg*/, 0);
+            break;
+        case 1:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2 /*iReg*/, 1 /*cbMissalign*/ );
+            if (!Bs3Cg1XcptTypeIsUnaligned(pThis->enmXcptType))
+                pThis->bAlignmentXcpt = X86_XCPT_GP;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 1 : 0;
+            break;
+        case 2:
+            off = Bs3Cg1InsertReqPrefix(pThis, 0);
+            pThis->abCurInstr[off++] = REX__R__;
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2+8 /*iReg*/, 0);
+            break;
+        default:
+            return 0;
+    }
+    pThis->cbCurInstr = off;
+    return iEncoding + 1;
+}
+
+
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2117,7 +2158,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED_rAX_Iz(PBS3CG1STATE pThis, 
             pThis->cbOperand         = 4;
         }
     }
-    else if (iEncoding == 2 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+    else if (iEncoding == 2 && BS3CG1_IS_64BIT_TARGET(pThis))
     {
         off = Bs3Cg1InsertReqPrefix(pThis, 0);
         pThis->abCurInstr[off++] = REX_W___;
@@ -2486,7 +2527,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Vps_WO_Wps__OR__VEX_MOD
     }
 #if ARCH_BITS == 64
     /* 64-bit mode registers */
-    else if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+    else if (BS3CG1_IS_64BIT_TARGET(pThis))
     {
         if (iEncoding == 24)
         {
@@ -2540,21 +2581,18 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVer
             pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 3;
             pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + 7;
             pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 1;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 1 : 0;
             break;
         case 2:
 #if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, 0 /*L*/, 0 /*~R*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 3, 2);
-                pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 11;
-                pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + 15;
-                pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 2;
-                break;
-            }
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, 0 /*L*/, 0 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 3, 2);
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 11;
+            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + 15;
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 2;
+            break;
 #endif
-            /* fall thru */
         case 3:
             off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
@@ -2584,7 +2622,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVer
             off = Bs3Cg1InsertOpcodes(pThis, off);
             pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 2, 1);
             pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 2;
-            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3_MODE_IS_64BIT_CODE(pThis->bMode) ? 15 : 7);
+            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3CG1_IS_64BIT_TARGET(pThis) ? 15 : 7);
             pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 1;
             break;
         case 7:
@@ -2592,7 +2630,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVer
             off = Bs3Cg1InsertOpcodes(pThis, off);
             pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 2, 1);
             pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 2;
-            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3_MODE_IS_64BIT_CODE(pThis->bMode) ? 15 : 7);
+            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3CG1_IS_64BIT_TARGET(pThis) ? 15 : 7);
             pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 1;
             break;
         default:
@@ -2628,21 +2666,18 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Wip_OR_ViceVers
             pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + 7;
             pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 1;
             pThis->fInvalidEncoding = true;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 1 : 0;
             break;
         case 2:
 #if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, 0 /*L*/, 0 /*~R*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 3, 2);
-                pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 11;
-                pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + 15;
-                pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 2;
-                break;
-            }
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, 0 /*L*/, 0 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 3, 2);
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 11;
+            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + 15;
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 2;
+            break;
 #endif
-            /* fall thru */
         case 3:
             off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
@@ -2673,7 +2708,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Wip_OR_ViceVers
             off = Bs3Cg1InsertOpcodes(pThis, off);
             pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 2, 1);
             pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 2;
-            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3_MODE_IS_64BIT_CODE(pThis->bMode) ? 15 : 7);
+            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3CG1_IS_64BIT_TARGET(pThis) ? 15 : 7);
             pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 1;
             break;
         case 7:
@@ -2681,7 +2716,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Wip_OR_ViceVers
             off = Bs3Cg1InsertOpcodes(pThis, off);
             pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 2, 1);
             pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 2;
-            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3_MODE_IS_64BIT_CODE(pThis->bMode) ? 15 : 7);
+            pThis->aOperands[1            ].idxField = pThis->aOperands[1            ].idxFieldBase + (BS3CG1_IS_64BIT_TARGET(pThis) ? 15 : 7);
             pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 1;
             break;
         default:
@@ -2711,18 +2746,15 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lig_OR_ViceVersa(PBS3CG1S
             off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 1 /*L - ignored*/, 1 /*~R*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7, 0);
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 1 : 0;
             break;
-        case 2:
 #if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 1 /*L - ignored*/, 0 /*~R*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7 + 8, 0);
-                break;
-            }
+        case 2:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 1 /*L - ignored*/, 0 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7 + 8, 0);
+            break;
 #endif
-            /* fall thru */
         case 3:
             iEncoding = 3;
             off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xe /*~V*/, 0 /*L*/, 1 /*~R*/);
@@ -2744,42 +2776,26 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lig_OR_ViceVersa(PBS3CG1S
             off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 1 /*W-ignored*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5, 0);
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 3 : 0;
             break;
+#if ARCH_BITS == 64
         case 7:
-#if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 0 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5+8, 0);
-                break;
-            }
-#endif
-            /* fall thru */
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 0 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5+8, 0);
+            break;
         case 8:
-#if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 0 /*~B-ignored*/, 0 /*W*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 1, 0);
-                break;
-            }
-#endif
-            /* fall thru */
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 0 /*~B-ignored*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 1, 0);
+            break;
         case 9:
-#if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 0 /*~X-ignored*/, 1 /*~B*/, 0 /*W*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2, 0);
-                break;
-            }
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 0 /*~X-ignored*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2, 0);
+            break;
 #endif
-            /* fall thru */
         case 10:
-            iEncoding = 10;
             off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5, 0);
@@ -2819,8 +2835,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa(PBS3CG1ST
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7, 0);
             pThis->fInvalidEncoding = true;
-            if (!BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-                iEncoding += 2;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 2 : 0;
             break;
 #if ARCH_BITS == 64
         case 2:
@@ -2856,8 +2871,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa(PBS3CG1ST
             off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 1 /*W-ignored*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5, 0);
-            if (!BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-                iEncoding += 3;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 3 : 0;
             break;
 #if ARCH_BITS == 64
         case 8:
@@ -2917,21 +2931,17 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Msomething_Wip_OR_ViceVersa(P
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7, 0);
             pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
             pThis->fInvalidEncoding = true;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 1 : 0;
             break;
-        case 2:
 #if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0x1 /*~V*/, 0 /*L*/, 0 /*~R*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7 + 8, 0);
-                pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 14;
-                break;
-            }
+        case 2:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0x1 /*~V*/, 0 /*L*/, 0 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7 + 8, 0);
+            pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 14;
+            break;
 #endif
-            /* fall thru */
         case 3:
-            iEncoding = 3;
             off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xe /*~V*/, 0 /*L*/, 1 /*~R*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 0, 0);
@@ -2955,49 +2965,33 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Msomething_Wip_OR_ViceVersa(P
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5, 0);
             pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 3 : 0;
             break;
+#if ARCH_BITS == 64
         case 7:
-#if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 0 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5+8, 0);
-                pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
-                break;
-            }
-#endif
-            /* fall thru */
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 0 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5+8, 0);
+            pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
+            break;
         case 8:
-#if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 0 /*~B-ignored*/, 0 /*W*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 1, 0);
-                pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
-                break;
-            }
-#endif
-            /* fall thru */
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 0 /*~B-ignored*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 1, 0);
+            pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
+            break;
         case 9:
-#if ARCH_BITS == 64
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 0 /*~X-ignored*/, 1 /*~B*/, 0 /*W*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2, 0);
-                pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
-                break;
-            }
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 0 /*~X-ignored*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2, 0);
+            pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + 0;
+            break;
 #endif
-            /* fall thru */
         case 10:
-            iEncoding = 10;
             off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, 1 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
             off = Bs3Cg1InsertOpcodes(pThis, off);
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5, 0);
-            pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + (BS3_MODE_IS_64BIT_CODE(pThis->bMode) ? 15 : 7);
+            pThis->aOperands[1].idxField = pThis->aOperands[1].idxFieldBase + (BS3CG1_IS_64BIT_TARGET(pThis) ? 15 : 7);
             pThis->fInvalidEncoding = true;
             break;
         default:
@@ -3085,7 +3079,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Md_WO(PBS3CG1STATE pThi
                                        4, 0, BS3CG1OPLOC_MEM_WO);
     }
 #if ARCH_BITS == 64
-    else if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+    else if (BS3CG1_IS_64BIT_TARGET(pThis))
     {
         if (iEncoding == 8)
         {
@@ -3306,32 +3300,26 @@ Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa(PBS3CG1STATE
             pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 5;
             pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 4;
             pThis->fInvalidEncoding = true;
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 2 : 0;
             break;
 
+#if ARCH_BITS == 64
         /* 64-bit mode registers */
         case 34:
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 1 /*L*/, 0 /*~R*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 3, 4);
-                pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 4;
-                pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 11;
-                break;
-            }
-            /* fall thru */
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 1 /*L*/, 0 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 3, 4);
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 4;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 11;
+            break;
         case 35:
-            if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 1 /*L*/, 0 /*~R*/, 1 /*~X*/, 0 /*~B*/, 0 /*W*/);
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 4);
-                pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 12;
-                pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 9;
-                break;
-            }
-            /* fall thru */
-
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 1 /*L*/, 0 /*~R*/, 1 /*~X*/, 0 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 4);
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 12;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 9;
+            break;
+#endif
         default:
             return 0;
     }
@@ -3750,6 +3738,18 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
+        case BS3CG1ENC_MODRM_Mps_WO_Vps:
+        case BS3CG1ENC_MODRM_Mpd_WO_Vpd:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething;
+            pThis->iRmOp             = 0;
+            pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 16;
+            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_MEM_WO;
+            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
+            break;
+
         case BS3CG1ENC_FIXED:
             /* nothing to do here */
             break;
@@ -4089,7 +4089,7 @@ static bool BS3_NEAR_CODE Bs3Cg3SetupSseAndAvx(PBS3CG1STATE pThis)
 static bool BS3_NEAR_CODE Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSetup, bool BS3_FAR *pfInvalidInstr)
 {
     if (   (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)
-        && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+        && BS3CG1_IS_64BIT_TARGET(pThis))
         return false;
 
     switch (pThis->enmCpuTest)
@@ -4141,7 +4141,7 @@ static bool BS3_NEAR_CODE Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
     uint32_t fEdx;
 
     if (   (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT)
-        && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+        && BS3CG1_IS_64BIT_TARGET(pThis))
         return false;
 
     switch (pThis->enmCpuTest)
@@ -4279,7 +4279,7 @@ static bool BS3_NEAR_CODE Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR 
             CASE_PRED(BS3CG1PRED_RING_3, pThis->uCpl == 3);
             CASE_PRED(BS3CG1PRED_RING_0_THRU_2, pThis->uCpl <= 2);
             CASE_PRED(BS3CG1PRED_RING_1_THRU_3, pThis->uCpl >= 1);
-            CASE_PRED(BS3CG1PRED_CODE_64BIT, BS3_MODE_IS_64BIT_CODE(pThis->bMode));
+            CASE_PRED(BS3CG1PRED_CODE_64BIT, BS3CG1_IS_64BIT_TARGET(pThis));
             CASE_PRED(BS3CG1PRED_CODE_32BIT, BS3_MODE_IS_32BIT_CODE(pThis->bMode));
             CASE_PRED(BS3CG1PRED_CODE_16BIT, BS3_MODE_IS_16BIT_CODE(pThis->bMode));
             CASE_PRED(BS3CG1PRED_MODE_REAL,  BS3_MODE_IS_RM_SYS(pThis->bMode));
@@ -5465,7 +5465,7 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
         if (   (pThis->fFlags & BS3CG1INSTR_F_INTEL_DECODES_INVALID)
             && pThis->bCpuVendor != BS3CPUVENDOR_INTEL
             && (   (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID))
-                || (BS3_MODE_IS_64BIT_CODE(pThis->bMode) && (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT))
+                || (BS3CG1_IS_64BIT_TARGET(pThis) && (pThis->fFlags & BS3CG1INSTR_F_INVALID_64BIT))
                 || fOuterInvalidInstr ) )
             pThis->enmEncoding = Bs3Cg1CalcNoneIntelInvalidEncoding(pThis->enmEncoding);
 

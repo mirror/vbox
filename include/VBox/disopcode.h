@@ -1085,6 +1085,8 @@ enum OP_PARM
 #define OP_PARM_Md_RO           OP_PARM_Md              /**< Annotates read only memory byte operand. */
 #define OP_PARM_Md_WO           OP_PARM_Md              /**< Annotates write only memory byte operand. */
 #define OP_PARM_Mq_WO           OP_PARM_Mq              /**< Annotates write only memory quad word operand. */
+#define OP_PARM_Mps_WO          OP_PARM_Mps             /**< Annotates write only memory operand. */
+#define OP_PARM_Mpd_WO          OP_PARM_Mpd             /**< Annotates write only memory operand. */
 #define OP_PARM_Pq_WO           OP_PARM_Pq              /**< Annotates write only operand. */
 #define OP_PARM_Nq              OP_PARM_Qq              /**< Missing 'N' class (MMX reg selected by modrm.mem) in disasm. */
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
