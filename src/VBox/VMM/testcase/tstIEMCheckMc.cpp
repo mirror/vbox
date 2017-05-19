@@ -602,7 +602,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_STORE_MEM_U128(a_iSeg, a_GCPtrMem, a_u128Src)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Src); CHK_SEG_IDX(a_iSeg);} while (0)
 #define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Src)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Src); CHK_SEG_IDX(a_iSeg);} while (0)
 #define IEM_MC_STORE_MEM_U256(a_iSeg, a_GCPtrMem, a_u256Src)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Src); CHK_SEG_IDX(a_iSeg);} while (0)
-#define IEM_MC_STORE_MEM_U256_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u256Src)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Src); CHK_SEG_IDX(a_iSeg);} while (0)
+#define IEM_MC_STORE_MEM_U256_ALIGN_AVX(a_iSeg, a_GCPtrMem, a_u256Src)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Src); CHK_SEG_IDX(a_iSeg);} while (0)
 
 #define IEM_MC_PUSH_U16(a_u16Value)                                     do {} while (0)
 #define IEM_MC_PUSH_U32(a_u32Value)                                     do {} while (0)
