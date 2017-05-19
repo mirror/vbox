@@ -2513,8 +2513,12 @@ class TestDriver(base.TestDriver):                                              
             rc = self.waitOnProgress(oProgress);
             if rc < 0:
                 self.waitOnDirectSessionClose(oVM, 5000);
-                # VM failed to power up, still collect VBox.log
-                oSession.addLogsToReport();
+
+                # VM failed to power up, still collect VBox.log, need to wrap the session object
+                # in order to use the helper for adding the log files to the report.
+                from testdriver.vboxwrappers import SessionWrapper;
+                oTmp = SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, True, sName, sLogFile);
+                oTmp.addLogsToReport();
                 try:
                     if oSession is not None:
                         oSession.close();
