@@ -501,11 +501,9 @@
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <MergeRef Id="msm_VBoxNetworkAdp" />
                 <MergeRef Id="msm_VBoxNetworkAdp6" />
-                <MergeRef Id="msm_VBoxNetworkLwf" />
     <?else ?>
                 <ComponentRef Id="cp_NetAdpDriver" />
                 <ComponentRef Id="cp_NetAdp6Driver" />
-                <ComponentRef Id="cp_NetLwfDriver" />
     <?endif ?>
             </Feature>
 
