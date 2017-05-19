@@ -62,8 +62,9 @@ static DECLCALLBACK(int) vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
     if (cRegions != 1)
         rc = VERR_INVALID_PARAMETER;
 
-    rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, 0, NULL, &pVScsiLunSbc->cbSector,
-                                             &pVScsiLunSbc->cSectors, NULL);
+    if (RT_SUCCESS(rc))
+        rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, 0, NULL, &pVScsiLunSbc->cbSector,
+                                                 &pVScsiLunSbc->cSectors, NULL);
     if (RT_SUCCESS(rc))
         rc = vscsiVpdPagePoolInit(&pVScsiLunSbc->VpdPagePool);
 
