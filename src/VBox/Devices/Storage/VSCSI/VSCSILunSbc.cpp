@@ -58,6 +58,10 @@ static DECLCALLBACK(int) vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
     int rc = VINF_SUCCESS;
     int cVpdPages = 0;
 
+    uint32_t cRegions = vscsiLunMediumGetRegionCount(pVScsiLun);
+    if (cRegions != 1)
+        rc = VERR_INVALID_PARAMETER;
+
     rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, 0, NULL, &pVScsiLunSbc->cbSector,
                                              &pVScsiLunSbc->cSectors, NULL);
     if (RT_SUCCESS(rc))
