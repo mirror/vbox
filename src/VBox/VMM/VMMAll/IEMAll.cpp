@@ -3341,7 +3341,10 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
             fRaiseInfo |= IEMXCPTRAISEINFO_EXT_INT_PF;
     }
     else
+    {
+        Assert(fPrevFlags & IEM_XCPT_FLAGS_T_SOFT_INT);
         fRaiseInfo = IEMXCPTRAISEINFO_SOFT_INT_XCPT;
+    }
 
     if (pfXcptRaiseInfo)
         *pfXcptRaiseInfo = fRaiseInfo;
