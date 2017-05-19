@@ -1380,6 +1380,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PCX86FXSTATE pFpuState, PRTUINT128U p
     puDst->au32[3] = puSrc->au32[2];
 }
 
+#ifdef IEM_WITH_VEX
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_vmovsldup_256_rr,(PX86XSAVEAREA pXState, uint8_t iYRegDst, uint8_t iYRegSrc))
 {
@@ -1406,6 +1407,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovsldup_256_rm,(PX86XSAVEAREA pXState, uint8_
     pXState->u.YmmHi.aYmmHi[iYRegDst].au32[3] = pSrc->au32[6];
 }
 
+#endif /* IEM_WITH_VEX */
+
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_movshdup,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
 {
@@ -1424,4 +1427,23 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_movddup,(PCX86FXSTATE pFpuState, PRTUINT128U pu
     puDst->au64[1] = uSrc;
 }
 
+#ifdef IEM_WITH_VEX
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rr,(PX86XSAVEAREA pXState, uint8_t iYRegDst, uint8_t iYRegSrc))
+{
+    pXState->x87.aXMM[iYRegDst].au64[0] = pXState->x87.aXMM[iYRegSrc].au64[0];
+    pXState->x87.aXMM[iYRegDst].au64[1] = pXState->x87.aXMM[iYRegSrc].au64[0];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au64[0] = pXState->u.YmmHi.aYmmHi[iYRegSrc].au64[0];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au64[1] = pXState->u.YmmHi.aYmmHi[iYRegSrc].au64[0];
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rm,(PX86XSAVEAREA pXState, uint8_t iYRegDst, PCRTUINT256U pSrc))
+{
+    pXState->x87.aXMM[iYRegDst].au64[0]       = pSrc->au64[0];
+    pXState->x87.aXMM[iYRegDst].au64[1]       = pSrc->au64[0];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au64[0] = pSrc->au64[2];
+    pXState->u.YmmHi.aYmmHi[iYRegDst].au64[1] = pSrc->au64[2];
+}
+
+#endif /* IEM_WITH_VEX */
 
