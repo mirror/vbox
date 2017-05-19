@@ -957,7 +957,6 @@ FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
  * @opxcpttype  5
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
- * @oponly
  */
 FNIEMOP_DEF(iemOp_vmovlps_Mq_Vq)
 {
@@ -992,7 +991,6 @@ FNIEMOP_DEF(iemOp_vmovlps_Mq_Vq)
      * @opunused    immediate
      * @opcpuid     avx
      * @optest      ->
-    * @oponly
      */
     return IEMOP_RAISE_INVALID_OPCODE();
 }
@@ -1007,7 +1005,6 @@ FNIEMOP_DEF(iemOp_vmovlps_Mq_Vq)
  * @opxcpttype  5
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
- * @oponly
  */
 FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
 {
@@ -1041,7 +1038,6 @@ FNIEMOP_DEF(iemOp_vmovlpd_Mq_Vq)
      * @opunused    immediate
      * @opcpuid     avx
      * @optest      ->
-    * @oponly
      */
     return IEMOP_RAISE_INVALID_OPCODE();
 }
@@ -1094,48 +1090,83 @@ FNIEMOP_STUB(iemOp_vmovhpdv1_Mq_Vq);  //NEXT
 /*  Opcode VEX.0F 0x26 - invalid */
 /*  Opcode VEX.0F 0x27 - invalid */
 
-/** Opcode VEX.0F 0x28 - vmovaps Vps, Wps */
-FNIEMOP_STUB(iemOp_vmovaps_Vps_Wps);
-//FNIEMOP_DEF(iemOp_vmovaps_Vps_Wps)
-//{
-//    IEMOP_MNEMONIC(vmovaps_Vps_Wps, "vmovaps Vps,Wps");
-//    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-//    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-//    {
-//        /*
-//         * Register, register.
-//         */
-//        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-//        IEM_MC_BEGIN(0, 0);
-//        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
-//        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-//        IEM_MC_COPY_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg,
-//                              (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
-//        IEM_MC_ADVANCE_RIP();
-//        IEM_MC_END();
-//    }
-//    else
-//    {
-//        /*
-//         * Register, memory.
-//         */
-//        IEM_MC_BEGIN(0, 2);
-//        IEM_MC_LOCAL(RTUINT128U,                uSrc); /** @todo optimize this one day... */
-//        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-//
-//        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-//        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-//        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
-//        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-//
-//        IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-//        IEM_MC_STORE_XREG_U128(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, uSrc);
-//
-//        IEM_MC_ADVANCE_RIP();
-//        IEM_MC_END();
-//    }
-//    return VINF_SUCCESS;
-//}
+/**
+ * @opcode      0x28
+ * @oppfx       none
+ * @opcpuid     avx
+ * @opgroup     og_avx_pcksclr_datamove
+ * @opxcpttype  1
+ * @optest      op1=1 op2=2 -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
+FNIEMOP_DEF(iemOp_vmovaps_Vps_Wps)
+{
+    IEMOP_MNEMONIC2(VEX_RM, VMOVAPS, vmovaps, Vps_WO, Wps, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    Assert(pVCpu->iem.s.uVexLength <= 1);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+        IEM_MC_BEGIN(1, 0);
+
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+        if (pVCpu->iem.s.uVexLength == 0)
+            IEM_MC_COPY_YREG_U128_ZX_VLMAX(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg,
+                                           (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+        else
+            IEM_MC_COPY_YREG_U256_ZX_VLMAX(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg,
+                                           (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        if (pVCpu->iem.s.uVexLength == 0)
+        {
+            IEM_MC_BEGIN(0, 2);
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+            IEM_MC_LOCAL(RTUINT128U,                uSrc);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_FETCH_MEM_U128_ALIGN_SSE(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_STORE_YREG_U128_ZX_VLMAX(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, uSrc);
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(0, 2);
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+            IEM_MC_LOCAL(RTUINT256U,                uSrc);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_PREPARE_AVX_USAGE();
+
+            IEM_MC_FETCH_MEM_U256_ALIGN_AVX(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+            IEM_MC_STORE_YREG_U256_ZX_VLMAX(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg, uSrc);
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
 
 /** Opcode VEX.66.0F 0x28 - vmovapd Vpd, Wpd */
 FNIEMOP_STUB(iemOp_vmovapd_Vpd_Wpd);
