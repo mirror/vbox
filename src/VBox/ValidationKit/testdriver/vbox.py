@@ -2513,6 +2513,8 @@ class TestDriver(base.TestDriver):                                              
             rc = self.waitOnProgress(oProgress);
             if rc < 0:
                 self.waitOnDirectSessionClose(oVM, 5000);
+                # VM failed to power up, still collect VBox.log
+                oSession.addLogsToReport();
                 try:
                     if oSession is not None:
                         oSession.close();
