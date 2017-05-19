@@ -5208,7 +5208,10 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
         /* If event delivery causes an MMIO #NPF, go back to instruction emulation as
            otherwise injecting the original pending event would most likely cause the same MMIO #NPF. */
         if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+        {
+            /** @todo this should return VINF_EM_RAW_INJECT_TRPM_EVENT. */
             return VERR_EM_INTERPRETER;
+        }
 
         VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr,
                                                          u32ErrCode);
@@ -5632,6 +5635,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+        /** @todo this should return VINF_EM_RAW_INJECT_TRPM_EVENT. */
         return VERR_EM_INTERPRETER;
     }
 
