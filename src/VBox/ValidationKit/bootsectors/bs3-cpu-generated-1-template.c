@@ -4319,12 +4319,13 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
         /*
          * Decode the instruction.
          */
-        uint8_t const   bOpcode = *pbCode++;
-        unsigned        cbValue;
-        unsigned        cbDst;
-        BS3CG1DST       idxField;
-        BS3PTRUNION     PtrField;
-        bool            fZxVlMax;
+        uint8_t const       bOpcode = *pbCode++;
+        unsigned            cbValue;
+        unsigned            cbDst;
+        BS3CG1DST           idxField;
+        BS3PTRUNION         PtrField;
+        uint8_t BS3_FAR    *pbMemCopy = NULL;
+        bool                fZxVlMax;
 
         /* Expand the destiation field (can be escaped). Set fZxVlMax. */
         switch (bOpcode & BS3CG1_CTXOP_DST_MASK)
@@ -4477,7 +4478,10 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                     case BS3CG1OPLOC_MEM_RW:
                     case BS3CG1OPLOC_MEM_WO:
                         if (pbInstr)
+                        {
                             PtrField.pu8 = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[idxOp].off];
+                            pbMemCopy    = pThis->MemOp.ab;
+                        }
                         else
                             PtrField.pu8 = pThis->MemOp.ab;
                         break;
@@ -4670,7 +4674,10 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
                     case BS3CG1OPLOC_MEM_RW:
                     case BS3CG1OPLOC_MEM_WO:
                         if (pbInstr)
+                        {
                             PtrField.pu8 = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[idxOp].off];
+                            pbMemCopy    = pThis->MemOp.ab;
+                        }
                         else
                             PtrField.pu8 = pThis->MemOp.ab;
                         break;
@@ -4780,6 +4787,13 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
 #endif
                 }
             }
+
+            /*
+             * Hack! Update pThis->MemOp when setting up the inputs so we can
+             *       correctly validate value and alignment exceptions.
+             */
+            if (pbMemCopy && PtrField.pv)
+                Bs3MemCpy(pbMemCopy, PtrField.pv, cbDst);
         }
 
         /*
@@ -5515,12 +5529,8 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                                     || Bs3Cg1RunContextModifier(pThis, &pThis->Ctx, pHdr,
                                                                 pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
                                                                 &pThis->TrapFrame.Ctx, NULL /*pbCode*/))
-                                {
                                     Bs3Cg1CheckResult(pThis, bTestXcptExpected, false /*fInvalidEncodingPgFault*/, iEncoding);
-                                }
-                                else if (   !pThis->fInvalidEncoding
-                                         && pThis->bAlignmentXcpt == UINT8_MAX
-                                         && pThis->bValueXcpt     == UINT8_MAX)
+                                else
                                 {
                                     Bs3TestPrintf("Bs3Cg1RunContextModifier(out): iEncoding=%u iTest=%u\n", iEncoding, pThis->iTest);
                                     ASMHalt();
