@@ -959,6 +959,8 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEMOPHINT_LOCK_ALLOWED      RT_BIT_32(11)
 /** The VEX.L value is ignored (aka LIG). */
 #define IEMOPHINT_IGNORES_VEX_L     RT_BIT_32(12)
+/** The VEX.L value must be zero (i.e. 128-bit width). */
+#define IEMOPHINT_VEX_L_ZERO        RT_BIT_32(13)
 
 /** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */
 #define IEMOPHINT_SKIP_PYTHON       RT_BIT_32(31)

@@ -482,6 +482,7 @@ g_kdHints = {
     'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet!
     'ignores_op_size':       '',                                ##< Ignores both operand size prefixes (66h + REX.W).
     'ignores_vex_l':         '',                                ##< Ignores VEX.L.
+    'vex_l_zero':            '',                                ##< VEX.L must be 0.
     'lock_allowed':          '',                                ##< Lock prefix allowed.
 };
 
