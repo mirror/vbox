@@ -786,6 +786,8 @@ enum OPCODES
     OP_VMOVDDUP,
     OP_VMOVAPS,
     OP_VMOVAPD,
+    OP_VMOVNTPS,
+    OP_VMOVNTPD,
 /** @} */
     OP_END_OF_OPCODES
 };
