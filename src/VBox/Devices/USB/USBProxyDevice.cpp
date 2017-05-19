@@ -318,7 +318,7 @@ static int count_descriptors(struct desc_counts *cnt, uint8_t *buf, size_t len)
     return 1;
 }
 
-/* Given the pointer to an interface or endpoint descriptor, find any following
+/* Given the pointer to a configuration/interface/endpoint descriptor, find any following
  * non-standard (vendor or class) descriptors.
  */
 static const void *collect_stray_bits(uint8_t *this_desc, uint8_t *end, uint16_t *cbExtra)
@@ -326,10 +326,10 @@ static const void *collect_stray_bits(uint8_t *this_desc, uint8_t *end, uint16_t
     uint8_t *tmp, *buf;
     uint8_t type;
 
-    Assert(*(this_desc + 1) == VUSB_DT_INTERFACE || *(this_desc + 1) == VUSB_DT_ENDPOINT);
+    Assert(*(this_desc + 1) == VUSB_DT_INTERFACE || *(this_desc + 1) == VUSB_DT_ENDPOINT || *(this_desc + 1) == VUSB_DT_CONFIG);
     buf = this_desc;
 
-    /* Skip the current interface/endpoint descriptor. */
+    /* Skip the current configuration/interface/endpoint descriptor. */
     buf += *(uint8_t *)buf;
 
     /* Loop until we find another descriptor we understand. */
@@ -467,6 +467,7 @@ static bool copy_config(PUSBPROXYDEV pProxyDev, uint8_t idx, PVUSBDESCCONFIGEX o
     size_t tot_len;
     size_t cbIface;
     uint32_t i, x;
+    uint8_t *tmp, *end;
 
     descs = GetStdDescSync(pProxyDev, VUSB_DT_CONFIG, idx, 0, VUSB_DT_CONFIG_MIN_LEN);
     if ( descs == NULL ) {
@@ -513,6 +514,19 @@ static bool copy_config(PUSBPROXYDEV pProxyDev, uint8_t idx, PVUSBDESCCONFIGEX o
     out->Core.iConfiguration = cfg->iConfiguration;
     out->Core.bmAttributes = cfg->bmAttributes;
     out->Core.MaxPower = cfg->MaxPower;
+
+    tmp = (uint8_t *)out->pvOriginal;
+    end = tmp + tot_len;
+
+    /* Point to additional configuration descriptor bytes, if any. */
+    AssertCompile(sizeof(out->Core) == VUSB_DT_CONFIG_MIN_LEN);
+    if (out->Core.bLength - VUSB_DT_CONFIG_MIN_LEN > 0)
+        out->pvMore = tmp + VUSB_DT_CONFIG_MIN_LEN;
+    else
+        out->pvMore = NULL;
+
+    /* Typically there might be an interface association descriptor here. */
+    out->pvClass = collect_stray_bits(tmp, end, &out->cbClass);
 
     for(i=0; i < 4; i++)
         for(x=0; x < 32; x++)

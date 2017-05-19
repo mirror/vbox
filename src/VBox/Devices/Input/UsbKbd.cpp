@@ -345,6 +345,8 @@ static const VUSBDESCCONFIGEX g_UsbHidConfigDesc =
         /* .MaxPower = */           50 /* 100mA */
     },
     NULL,                           /* pvMore */
+    NULL,                           /* pvClass */
+    0,                              /* cbClass */
     &g_aUsbHidInterfaces[0],
     NULL                            /* pvOriginal */
 };

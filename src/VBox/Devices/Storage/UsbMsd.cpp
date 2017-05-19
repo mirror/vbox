@@ -481,6 +481,8 @@ static const VUSBDESCCONFIGEX g_UsbMsdConfigDescFS =
         /* .MaxPower = */           50 /* 100mA */
     },
     NULL,                           /* pvMore */
+    NULL,                           /* pvClass */
+    0,                              /* cbClass */
     &g_aUsbMsdInterfacesFS[0],
     NULL                            /* pvOriginal */
 };
@@ -498,6 +500,8 @@ static const VUSBDESCCONFIGEX g_UsbMsdConfigDescHS =
         /* .MaxPower = */           50 /* 100mA */
     },
     NULL,                           /* pvMore */
+    NULL,                           /* pvClass */
+    0,                              /* cbClass */
     &g_aUsbMsdInterfacesHS[0],
     NULL                            /* pvOriginal */
 };
@@ -515,6 +519,8 @@ static const VUSBDESCCONFIGEX g_UsbMsdConfigDescSS =
         /* .MaxPower = */           50 /* 100mA */
     },
     NULL,                           /* pvMore */
+    NULL,                           /* pvClass */
+    0,                              /* cbClass */
     &g_aUsbMsdInterfacesSS[0],
     NULL                            /* pvOriginal */
 };

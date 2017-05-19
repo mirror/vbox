@@ -332,6 +332,10 @@ typedef struct VUSBDESCCONFIGEX
     VUSBDESCCONFIG Core;
     /** Pointer to additional descriptor bytes following what's covered by VUSBDESCCONFIG. */
     void *pvMore;
+    /** Pointer to additional class- or vendor-specific interface descriptors. */
+    const void *pvClass;
+    /** Size of class- or vendor-specific descriptors. */
+    uint16_t cbClass;
     /** Pointer to an array of the interfaces referenced in the configuration.
      * Core.bNumInterfaces in size. */
     const struct VUSBINTERFACE *paIfs;
