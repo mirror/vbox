@@ -870,6 +870,11 @@ class SessionWrapper(TdTaskBase):
                     self.oTstDrv.pidFileRemove(self.uPid);
                     self.fPidFile = False;
 
+        # It's only logical to deregister the event handler after the session
+        # is closed. It also avoids circular references between the session
+        # and the listener, which causes trouble with garbage collection.
+        self.deregisterEventHandlerForTask();
+
         self.oTstDrv.processPendingEvents();
         return fRc;
 
