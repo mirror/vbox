@@ -4560,8 +4560,8 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 
         case BS3CG1ENC_VEX_MODRM_Vx_WO_Wx:
             pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa;
-            pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
+            pThis->iRmOp             = 1;
             pThis->aOperands[0].cbOp = 16;
             pThis->aOperands[1].cbOp = 16;
             pThis->aOperands[0].enmLocation     = BS3CG1OPLOC_CTX_ZX_VLMAX;
