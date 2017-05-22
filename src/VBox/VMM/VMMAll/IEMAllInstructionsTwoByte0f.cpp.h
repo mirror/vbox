@@ -3773,11 +3773,20 @@ FNIEMOP_DEF(iemOp_movdqa_Vdq_Wdq)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0xf3 0x0f 0x6f - movdqu Vx, Wx */
-FNIEMOP_DEF(iemOp_movdqu_Vx_Wx)
+/**
+ * @opcode      0x6f
+ * @oppfx       0xf3
+ * @opcpuid     sse2
+ * @opgroup     og_sse2_simdint_datamove
+ * @opxcpttype  4UA
+ * @optest      op1=1 op2=2   -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ * @oponly
+ */
+FNIEMOP_DEF(iemOp_movdqu_Vdq_Wdq)
 {
+    IEMOP_MNEMONIC2(RM, MOVDQU, movdqu, Vdq_WO, Wdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_MNEMONIC(movdqu_Vdq_Wdq, "movdqu Vdq,Wdq");
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         /*
@@ -9194,7 +9203,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x6c */  iemOp_InvalidNeedRM,        iemOp_punpcklqdq_Vx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x6d */  iemOp_InvalidNeedRM,        iemOp_punpckhqdq_Vx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x6e */  iemOp_movd_q_Pd_Ey,         iemOp_movd_q_Vy_Ey,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6f */  iemOp_movq_Pq_Qq,           iemOp_movdqa_Vdq_Wdq,       iemOp_movdqu_Vx_Wx,         iemOp_InvalidNeedRM,
+    /* 0x6f */  iemOp_movq_Pq_Qq,           iemOp_movdqa_Vdq_Wdq,       iemOp_movdqu_Vdq_Wdq,       iemOp_InvalidNeedRM,
 
     /* 0x70 */  iemOp_pshufw_Pq_Qq_Ib,      iemOp_pshufd_Vx_Wx_Ib,      iemOp_pshufhw_Vx_Wx_Ib,     iemOp_pshuflw_Vx_Wx_Ib,
     /* 0x71 */  IEMOP_X4(iemOp_Grp12),
