@@ -3463,6 +3463,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
          * @opxcpttype  5
          * @optest      64-bit / op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42 ftw=0xff
+        * @oponly
          */
         IEMOP_MNEMONIC2(RM, MOVQ, movq, Pq_WO, Eq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
         if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -3515,6 +3516,7 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
          * @opfunction  iemOp_movd_q_Pd_Ey
          * @optest      op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      op1=0 op2=-42 -> op1=-42 ftw=0xff
+         * @oponly
          */
         IEMOP_MNEMONIC2(RM, MOVD, movd, PdZx_WO, Ed, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
         if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
