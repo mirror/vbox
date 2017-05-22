@@ -251,7 +251,7 @@ class ReCreateQueueData(object):
                 raise TMExceptionBase('Incorrectly sorted testgroups returned by database: iTestGroup=%s prio=%s %s'
                                       % ( iTestGroup, iGrpPrio,
                                           ', '.join(['(%s: %s)' % (oCur.idTestGroup, oCur.iSchedPriority)
-                                                     for oCur in oTestGroup.aoTestCases]), ) );
+                                                     for oCur in oTestGroup]), ) );
             iGrpPrio = oTestGroup.iSchedPriority;
 
             if oTestGroup.aoTestCases:
