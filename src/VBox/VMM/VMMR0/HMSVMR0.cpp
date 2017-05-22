@@ -3142,7 +3142,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
     TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
-                                                                    to start executing. */
+                                                                   to start executing. */
 
     /*
      * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
@@ -4114,13 +4114,14 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                         GCPtrFaultAddress = pCtx->cr2;
                     }
 
+                    /*
+                     * Without nested paging, when uExitVector is #PF, CR2 value will be updated from the VMCB's
+                     * exit info. fields, if it's a guest #PF, see hmR0SvmExitXcptPF().
+                     */
                     Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
                     hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, GCPtrFaultAddress);
 
-                    /** @todo r=michaln: The comment makes no sense with nested paging on! */
-                    /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF,
-                       see hmR0SvmExitXcptPF(). */
                     Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32 GCPtrFaultAddress=%#RX64\n",
                           pVmcb->ctrl.ExitIntInfo.u, RT_BOOL(pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid),
                           pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode, GCPtrFaultAddress));
