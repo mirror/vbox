@@ -2702,7 +2702,7 @@ class TestDriver(base.TestDriver):                                              
                     oProgress.wait();
             self.removeTask(oProgress);
 
-        # Check if the VM has terminated by it self before powering it off.
+        # Check if the VM has terminated by itself before powering it off.
         fClose = True;
         fRc    = True;
         if oSession.needsPoweringOff():
