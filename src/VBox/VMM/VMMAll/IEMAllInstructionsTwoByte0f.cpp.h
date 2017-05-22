@@ -3463,7 +3463,6 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
          * @opxcpttype  5
          * @optest      64-bit / op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42 ftw=0xff
-        * @oponly
          */
         IEMOP_MNEMONIC2(RM, MOVQ, movq, Pq_WO, Eq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
         if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -3490,9 +3489,9 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
             IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
             IEM_MC_LOCAL(uint64_t, u64Tmp);
 
-            IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
 
             IEM_MC_FETCH_MEM_U64(u64Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
@@ -3516,7 +3515,6 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
          * @opfunction  iemOp_movd_q_Pd_Ey
          * @optest      op1=1 op2=2   -> op1=2   ftw=0xff
          * @optest      op1=0 op2=-42 -> op1=-42 ftw=0xff
-         * @oponly
          */
         IEMOP_MNEMONIC2(RM, MOVD, movd, PdZx_WO, Ed, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
         if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -3543,9 +3541,9 @@ FNIEMOP_DEF(iemOp_movd_q_Pd_Ey)
             IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
             IEM_MC_LOCAL(uint32_t, u32Tmp);
 
-            IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
             IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
 
             IEM_MC_FETCH_MEM_U32(u32Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
@@ -3574,7 +3572,6 @@ FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
          * @opxcpttype  5
          * @optest      64-bit / op1=1 op2=2   -> op1=2
          * @optest      64-bit / op1=0 op2=-42 -> op1=-42
-        * @oponly
          */
         IEMOP_MNEMONIC2(RM, MOVQ, movq, VqZx_WO, Eq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
         if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -3600,9 +3597,9 @@ FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
             IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
             IEM_MC_LOCAL(uint64_t, u64Tmp);
 
-            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT(); /** @todo order */
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
             IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
 
             IEM_MC_FETCH_MEM_U64(u64Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
@@ -3625,7 +3622,6 @@ FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
          * @opfunction  iemOp_movd_q_Vy_Ey
          * @optest      op1=1 op2=2   -> op1=2
          * @optest      op1=0 op2=-42 -> op1=-42
-         * @oponly
          */
         IEMOP_MNEMONIC2(RM, MOVD, movd, VdZx_WO, Ed, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OZ_PFX);
         if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -3651,9 +3647,9 @@ FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
             IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
             IEM_MC_LOCAL(uint32_t, u32Tmp);
 
-            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT(); /** @todo order */
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
             IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
 
             IEM_MC_FETCH_MEM_U32(u32Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);

@@ -788,6 +788,8 @@ enum OPCODES
     OP_VMOVAPD,
     OP_VMOVNTPS,
     OP_VMOVNTPD,
+    OP_VMOVD,
+    OP_VMOVQ,
 /** @} */
     OP_END_OF_OPCODES
 };
@@ -1100,6 +1102,7 @@ enum OP_PARM
 #define OP_PARM_Usd             (OP_PARM_U+OP_PARM_sd)
 #define OP_PARM_Usd_WO          OP_PARM_Usd             /**< Annotates write only operand. */
 #define OP_PARM_Vd              (OP_PARM_V+OP_PARM_d)
+#define OP_PARM_Vd_WO           OP_PARM_Vd              /**< Annotates write only operand. */
 #define OP_PARM_VdZx_WO         OP_PARM_Vd              /**< Annotates that the registers get their upper bits cleared */
 #define OP_PARM_Vdq_WO          OP_PARM_Vdq             /**< Annotates that only YMM/XMM[127:64] are accessed. */
 #define OP_PARM_Vpd_WO          OP_PARM_Vpd             /**< Annotates write only operand. */
