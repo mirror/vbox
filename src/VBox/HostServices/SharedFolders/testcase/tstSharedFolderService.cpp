@@ -847,6 +847,7 @@ void testCreateFileSimple(RTTEST hTest)
                      (hTest, "Result=%d\n", (int) Result));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile,
                      (hTest, "File=%u\n", (uintptr_t)g_testRTFileCloseFile));
@@ -881,6 +882,7 @@ void testCreateFileSimpleCaseInsensitive(RTTEST hTest)
                      (hTest, "Result=%d\n", (int) Result));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile,
                      (hTest, "File=%u\n", (uintptr_t)g_testRTFileCloseFile));
@@ -916,6 +918,7 @@ void testCreateDirSimple(RTTEST hTest)
                      (hTest, "Result=%d\n", (int) Result));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTDirClosepDir == pDir, (hTest, "pDir=%p\n", g_testRTDirClosepDir));
 }
@@ -951,6 +954,7 @@ void testReadFileSimple(RTTEST hTest)
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
 }
 
@@ -984,6 +988,7 @@ void testWriteFileSimple(RTTEST hTest)
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
 }
 
@@ -1008,6 +1013,7 @@ void testFlushFileSimple(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, g_testRTFileFlushFile == hcFile, (hTest, "File=%u\n", g_testRTFileFlushFile));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
@@ -1041,6 +1047,7 @@ void testDirListEmpty(RTTEST hTest)
                      (hTest, "cFiles=%llu\n", LLUIFY(cFiles)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTDirClosepDir == pDir, (hTest, "pDir=%p\n", g_testRTDirClosepDir));
 }
@@ -1081,6 +1088,7 @@ void testFSInfoQuerySetFMode(RTTEST hTest)
                      (hTest, "Size=%llu\n", LLUIFY(testRTFileSetFMode)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
@@ -1123,6 +1131,7 @@ void testFSInfoQuerySetDirATime(RTTEST hTest)
                       LLUIFY(RTTimeSpecGetNano(&testRTDirSetTimesATime))));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTDirClosepDir == pDir, (hTest, "pDir=%p\n", g_testRTDirClosepDir));
 }
@@ -1165,6 +1174,7 @@ void testFSInfoQuerySetFileATime(RTTEST hTest)
                       LLUIFY(RTTimeSpecGetNano(&testRTFileSetTimesATime))));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
@@ -1197,6 +1207,7 @@ void testFSInfoQuerySetEndOfFile(RTTEST hTest)
                      (hTest, "Size=%llu\n", LLUIFY(testRTFileSetSizeSize)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
@@ -1242,6 +1253,7 @@ void testLockFileSimple(RTTEST hTest)
 #endif
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
+    AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
     RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
