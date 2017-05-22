@@ -953,8 +953,12 @@ typedef IEMCPU const *PCIEMCPU;
 /** @name IEMOPHINT_XXX - Additional Opcode Hints
  * @note These are ORed together with IEMOPFORM_XXX.
  * @{ */
-/** Both the operand size prefixes are ignored. */
-#define IEMOPHINT_IGNORES_OP_SIZE   RT_BIT_32(10)
+/** Ignores the operand size prefix (66h). */
+#define IEMOPHINT_IGNORES_OZ_PFX    RT_BIT_32(10)
+/** Ignores REX.W. */
+#define IEMOPHINT_IGNORES_REXW      RT_BIT_32(11)
+/** Both the operand size prefixes (66h + REX.W) are ignored. */
+#define IEMOPHINT_IGNORES_OP_SIZES  (IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_IGNORES_REXW)
 /** Allowed with the lock prefix. */
 #define IEMOPHINT_LOCK_ALLOWED      RT_BIT_32(11)
 /** The VEX.L value is ignored (aka LIG). */

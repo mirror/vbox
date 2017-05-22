@@ -213,6 +213,8 @@ g_kdOpTypes = {
 
     # ModR/M.rm
     'Eb':           ( 'IDX_UseModRM',       'rm',     '%Eb',  'Eb',      ),
+    'Ed':           ( 'IDX_UseModRM',       'rm',     '%Ed',  'Ed',      ),
+    'Eq':           ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      ),
     'Ew':           ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      ),
     'Ev':           ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      ),
     'Wss':          ( 'IDX_UseModRM',       'rm',     '%Wss', 'Wss',     ),
@@ -256,6 +258,9 @@ g_kdOpTypes = {
     'Gw':           ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      ),
     'Gv':           ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
     'Gv_RO':        ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
+    'Pd':           ( 'IDX_UseModRM',       'reg',    '%Pd',  'Pd',      ),
+    'PdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Pd',  'PdZx',    ),
+    'Pq':           ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
     'Pq_WO':        ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
     'Vss':          ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
     'Vss_WO':       ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
@@ -379,6 +384,10 @@ g_kdSubOpcodes = {
     '11':           [ '11 mr/reg',  ],      ##< alias
     '!11 mr/reg':   [ '!11 mr/reg', ],
     '!11':          [ '!11 mr/reg', ],      ##< alias
+    'rex.w=0':      [ 'rex.w=0',    ],
+    'w=0':          [ 'rex.w=0',    ],      ##< alias
+    'rex.w=1':      [ 'rex.w=1',    ],
+    'w=1':          [ 'rex.w=1',    ],      ##< alias
 };
 
 ## Valid values for \@openc
@@ -484,7 +493,9 @@ g_kdHints = {
     'sse':                   'DISOPTYPE_SSE',                   ##< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet!
     'mmx':                   'DISOPTYPE_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet!
     'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet!
-    'ignores_op_size':       '',                                ##< Ignores both operand size prefixes (66h + REX.W).
+    'ignores_oz_pfx':        '',                                ##< Ignores operand size prefix 66h.
+    'ignores_rexw':          '',                                ##< Ignores REX.W.
+    'ignores_op_sizes':      '',                                ##< Shorthand for "ignores_oz_pfx | ignores_op_sizes".
     'ignores_vex_l':         '',                                ##< Ignores VEX.L.
     'vex_l_zero':            '',                                ##< VEX.L must be 0.
     'lock_allowed':          '',                                ##< Lock prefix allowed.
@@ -1207,6 +1218,9 @@ class TestSelector(object):
         'ring3':        'ring==3',
         'user':         'ring==3',
         'supervisor':   'ring==0..2',
+        '16-bit':       'codebits==16',
+        '32-bit':       'codebits==32',
+        '64-bit':       'codebits==64',
         'real':         'mode==real',
         'prot':         'mode==prot',
         'long':         'mode==long',

@@ -304,6 +304,9 @@ class Bs3Cg1Instruction(object):
 
         for oOp in oInstr.aoOperands:
             self.sEncoding     += '_' + oOp.sType;
+        if oInstr.sSubOpcode == 'rex.w=1':      self.sEncoding += '_WNZ';
+        elif oInstr.sSubOpcode == 'rex.w=0':    self.sEncoding += '_WZ';
+
         if oInstr.fUnused:
             if oInstr.sInvalidStyle == 'immediate' and oInstr.sSubOpcode:
                 self.sEncoding += '_MOD_EQ_3' if oInstr.sSubOpcode == '11 mr/reg' else '_MOD_NE_3';

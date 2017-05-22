@@ -1077,6 +1077,7 @@ enum OP_PARM
 #define OP_PARM_Lx              (OP_PARM_L+OP_PARM_x)
 
 /* For making IEM / bs3-cpu-generated-1 happy: */
+#define OP_PARM_Eq              (OP_PARM_E+OP_PARM_q)
 #define OP_PARM_Gv_RO           OP_PARM_Gv              /**< Annotates read only first operand (default is readwrite). */
 #define OP_PARM_HssHi           OP_PARM_Hx              /**< Register referenced by VEX.vvvv, bits [127:32]. */
 #define OP_PARM_HsdHi           OP_PARM_Hx              /**< Register referenced by VEX.vvvv, bits [127:64]. */
@@ -1089,6 +1090,7 @@ enum OP_PARM
 #define OP_PARM_Mq_WO           OP_PARM_Mq              /**< Annotates write only memory quad word operand. */
 #define OP_PARM_Mps_WO          OP_PARM_Mps             /**< Annotates write only memory operand. */
 #define OP_PARM_Mpd_WO          OP_PARM_Mpd             /**< Annotates write only memory operand. */
+#define OP_PARM_PdZx_WO         OP_PARM_Pd              /**< Annotates write only operand and zero extends to 64-bit. */
 #define OP_PARM_Pq_WO           OP_PARM_Pq              /**< Annotates write only operand. */
 #define OP_PARM_Nq              OP_PARM_Qq              /**< Missing 'N' class (MMX reg selected by modrm.mem) in disasm. */
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
