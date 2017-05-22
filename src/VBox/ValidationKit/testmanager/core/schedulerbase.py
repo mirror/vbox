@@ -246,9 +246,12 @@ class ReCreateQueueData(object):
         # sorting.
         #
         iGrpPrio = self.aoTestGroups[0].iSchedPriority;
-        for oTestGroup in self.aoTestGroups:
+        for iTestGroup, oTestGroup in enumerate(self.aoTestGroups):
             if oTestGroup.iSchedPriority > iGrpPrio:
-                raise TMExceptionBase('Incorrectly sorted testgroups returned by database.');
+                raise TMExceptionBase('Incorrectly sorted testgroups returned by database: iTestGroup=%s prio=%s %s'
+                                      % ( iTestGroup, iGrpPrio,
+                                          ', '.join(['(%s: %s)' % (oCur.idTestGroup, oCur.iSchedPriority)
+                                                     for oCur in oTestGroup.aoTestCases]), ) );
             iGrpPrio = oTestGroup.iSchedPriority;
 
             if oTestGroup.aoTestCases:
@@ -257,7 +260,7 @@ class ReCreateQueueData(object):
                     if oTestCase.iSchedPriority > iTstPrio:
                         raise TMExceptionBase('Incorrectly sorted testcases returned by database: i=%s prio=%s idGrp=%s %s'
                                               % ( iTestCase, iTstPrio, oTestGroup.idTestGroup,
-                                                  ','.join(['(%s: %s)' % (oCur.idTestCase, oCur.iSchedPriority)
+                                                  ', '.join(['(%s: %s)' % (oCur.idTestCase, oCur.iSchedPriority)
                                                             for oCur in oTestGroup.aoTestCases]),));
 
         #
