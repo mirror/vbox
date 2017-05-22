@@ -1081,7 +1081,9 @@ enum OP_PARM
 #define OP_PARM_Lx              (OP_PARM_L+OP_PARM_x)
 
 /* For making IEM / bs3-cpu-generated-1 happy: */
+#define OP_PARM_Ed_WO           OP_PARM_Ed              /**< Annotates write only operand. */
 #define OP_PARM_Eq              (OP_PARM_E+OP_PARM_q)
+#define OP_PARM_Eq_WO           OP_PARM_Eq              /**< Annotates write only operand. */
 #define OP_PARM_Gv_RO           OP_PARM_Gv              /**< Annotates read only first operand (default is readwrite). */
 #define OP_PARM_HssHi           OP_PARM_Hx              /**< Register referenced by VEX.vvvv, bits [127:32]. */
 #define OP_PARM_HsdHi           OP_PARM_Hx              /**< Register referenced by VEX.vvvv, bits [127:64]. */

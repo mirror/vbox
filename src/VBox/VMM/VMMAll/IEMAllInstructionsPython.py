@@ -214,7 +214,9 @@ g_kdOpTypes = {
     # ModR/M.rm
     'Eb':           ( 'IDX_UseModRM',       'rm',     '%Eb',  'Eb',      ),
     'Ed':           ( 'IDX_UseModRM',       'rm',     '%Ed',  'Ed',      ),
+    'Ed_WO':        ( 'IDX_UseModRM',       'rm',     '%Ed',  'Ed',      ),
     'Eq':           ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      ),
+    'Eq_WO':        ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      ),
     'Ew':           ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      ),
     'Ev':           ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      ),
     'Qq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      ),
@@ -264,6 +266,7 @@ g_kdOpTypes = {
     'PdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Pd',  'PdZx',    ),
     'Pq':           ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
     'Pq_WO':        ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
+    'Vd':           ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      ),
     'Vd_WO':        ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      ),
     'VdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      ),
     'Vss':          ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
