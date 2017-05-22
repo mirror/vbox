@@ -253,9 +253,12 @@ class ReCreateQueueData(object):
 
             if oTestGroup.aoTestCases:
                 iTstPrio = oTestGroup.aoTestCases[0];
-                for oTestCase in oTestGroup.aoTestCases:
+                for iTestCase, oTestCase in enumerate(oTestGroup.aoTestCases):
                     if oTestCase.iSchedPriority > iTstPrio:
-                        raise TMExceptionBase('Incorrectly sorted testcases returned by database.');
+                        raise TMExceptionBase('Incorrectly sorted testcases returned by database: i=%s prio=%s idGrp=%s %s'
+                                              % ( iTestCase, iTstPrio, oTestGroup.idTestGroup,
+                                                  ','.join(['(%s: %s)' % (oCur.idTestCase, oCur.iSchedPriority)
+                                                            for oCur in oTestGroup.aoTestCases]),));
 
         #
         # Sort the testgroups by dependencies.
