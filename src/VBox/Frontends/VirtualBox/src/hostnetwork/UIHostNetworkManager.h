@@ -22,6 +22,7 @@
 #include <QMainWindow>
 
 /* GUI includes: */
+#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
@@ -159,25 +160,27 @@ private:
 };
 
 
-/** Host Network Manager dialog. */
-class UIHostNetworkManager : public QIWithRetranslateUI<QMainWindow>
+/** Host Network Manager dialog factory. */
+class UIHostNetworkManagerFactory : public QIManagerDialogFactory
+{
+protected:
+
+    /** Creates derived @a pDialog instance.
+      * @param  pCenterWidget  Brings the widget reference to center according to. */
+    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
+};
+
+
+/** QIManagerDialog sub-class used as Host Network Manager dialog. */
+class UIHostNetworkManager : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
-    /** Constructs Host Network Manager dialog.
-      * @param  pCenterWidget  Brings the pseudo-parent widget to center according to. */
-    UIHostNetworkManager(QWidget *pCenterWidget);
-    /** Destructs Host Network Manager dialog. */
-    ~UIHostNetworkManager();
-
-public:
-
-    /** Returns Host Network Manager singleton instance. */
-    static UIHostNetworkManager *instance();
-    /** Shows Host Network Manager singleton instance, creates new if necessary. */
-    static void showModeless(QWidget *pCenterWidget);
-
 protected:
+
+    /** Constructs Host Network Manager dialog.
+      * @param  pCenterWidget  Brings the widget reference to center according to. */
+    UIHostNetworkManager(QWidget *pCenterWidget);
 
     /** @name Event-handling stuff.
       * @{ */
@@ -185,51 +188,16 @@ protected:
         virtual void retranslateUi() /* override */;
     /** @} */
 
-private:
-
     /** @name Prepare/cleanup cascade.
       * @{ */
-        /** Prepares all. */
-        void prepare();
-        /** Prepares this. */
-        void prepareThis();
-        /** Prepares central-widget. */
-        void prepareCentralWidget();
+        /** Prepares dialog. */
+        void prepareDialog();
         /** Prepares widget. */
         void prepareWidget();
-        /** Prepares button-box. */
-        void prepareButtonBox();
-        /** Prepares menu-bar. */
-        void prepareMenuBar();
-        /** Prepares toolbar. */
-        void prepareToolBar();
-
-        /** Cleanup menu-bar. */
-        void cleanupMenuBar();
-        /** Cleanups all. */
-        void cleanup();
     /** @} */
 
-    /** @name General variables.
-      * @{ */
-        /** Holds the Host Network Manager singleton instance. */
-        static UIHostNetworkManager *s_pInstance;
-
-        /** Holds the widget reference to center Host Network Manager according. */
-        QWidget *m_pPseudoParentWidget;
-    /** @} */
-
-    /** @name Widget variables.
-      * @{ */
-        /** Holds the widget instance. */
-        UIHostNetworkManagerWidget *m_pWidget;
-    /** @} */
-
-    /** @name Button-box variables.
-      * @{ */
-        /** Holds the dialog button-box instance. */
-        QIDialogButtonBox *m_pButtonBox;
-    /** @} */
+    /** Allow factory access to private/protected members: */
+    friend class UIHostNetworkManagerFactory;
 };
 
 #endif /* !___UIHostNetworkManager_h___ */

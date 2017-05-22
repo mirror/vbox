@@ -1003,45 +1003,22 @@ void UIHostNetworkManagerWidget::updateItemForNetworkHost(const UIDataHostNetwor
 
 
 /*********************************************************************************************************************************
+*   Class UIHostNetworkManagerFactory implementation.                                                                            *
+*********************************************************************************************************************************/
+
+void UIHostNetworkManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
+{
+    pDialog = new UIHostNetworkManager(pCenterWidget);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIHostNetworkManager implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-/* static */
-UIHostNetworkManager *UIHostNetworkManager::s_pInstance = 0;
-UIHostNetworkManager *UIHostNetworkManager::instance() { return s_pInstance; }
-
 UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
-    : m_pPseudoParentWidget(pCenterWidget)
-    , m_pWidget(0)
-    , m_pButtonBox(0)
+    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
 {
-    /* Prepare instance: */
-    s_pInstance = this;
-
-    /* Prepare: */
-    prepare();
-}
-
-UIHostNetworkManager::~UIHostNetworkManager()
-{
-    /* Cleanup: */
-    cleanup();
-
-    /* Cleanup instance: */
-    s_pInstance = 0;
-}
-
-/* static */
-void UIHostNetworkManager::showModeless(QWidget *pCenterWidget /* = 0 */)
-{
-    /* Create instance if not yet created: */
-    if (!s_pInstance)
-        new UIHostNetworkManager(pCenterWidget);
-
-    /* Show instance: */
-    s_pInstance->show();
-    s_pInstance->setWindowState(s_pInstance->windowState() & ~Qt::WindowMinimized);
-    s_pInstance->activateWindow();
 }
 
 void UIHostNetworkManager::retranslateUi()
@@ -1050,126 +1027,29 @@ void UIHostNetworkManager::retranslateUi()
     setWindowTitle(tr("Host Network Manager"));
 }
 
-void UIHostNetworkManager::prepare()
+void UIHostNetworkManager::prepareDialog()
 {
-    /* Prepare this: */
-    prepareThis();
-
-    /* Apply language settings: */
-    retranslateUi();
-
-    /* Center according pseudo-parent widget: */
-    VBoxGlobal::centerWidget(this, m_pPseudoParentWidget, false);
-}
-
-void UIHostNetworkManager::prepareThis()
-{
-    /* Initial size: */
-    resize(620, 460);
-
-    /* Dialog should delete itself on 'close': */
-    setAttribute(Qt::WA_DeleteOnClose);
-    /* And no need to count it as important for application.
-     * This way it will NOT be taken into account
-     * when other top-level windows will be closed: */
-    setAttribute(Qt::WA_QuitOnClose, false);
-
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/host_iface_manager_32px.png", ":/host_iface_manager_16px.png"));
 
-    /* Prepare central-widget: */
-    prepareCentralWidget();
-    /* Prepare menu-bar: */
-    prepareMenuBar();
-    /* Prepare toolbar: */
-    prepareToolBar();
-}
-
-void UIHostNetworkManager::prepareCentralWidget()
-{
-    /* Create central-widget: */
-    setCentralWidget(new QWidget);
-    AssertPtrReturnVoid(centralWidget());
-    {
-        /* Create main-layout: */
-        new QVBoxLayout(centralWidget());
-        AssertPtrReturnVoid(centralWidget()->layout());
-        {
-            /* Configure layout: */
-            centralWidget()->layout()->setContentsMargins(5, 5, 5, 5);
-            centralWidget()->layout()->setSpacing(10);
-
-            /* Prepare widget: */
-            prepareWidget();
-            /* Prepare button-box: */
-            prepareButtonBox();
-        }
-    }
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UIHostNetworkManager::prepareWidget()
 {
     /* Create widget: */
-    m_pWidget = new UIHostNetworkManagerWidget(this);
-    AssertPtrReturnVoid(m_pWidget);
+    UIHostNetworkManagerWidget *pWidget = new UIHostNetworkManagerWidget(this);
+    AssertPtrReturnVoid(pWidget);
     {
+        /* Configure widget: */
+        setWidget(pWidget);
+        setWidgetMenu(pWidget->menu());
+#ifdef VBOX_WS_MAC
+        setWidgetToolbar(pWidget->toolbar());
+#endif
         /* Add to layout: */
-        centralWidget()->layout()->addWidget(m_pWidget);
+        centralWidget()->layout()->addWidget(pWidget);
     }
-}
-
-void UIHostNetworkManager::prepareButtonBox()
-{
-    /* Create button-box: */
-    m_pButtonBox = new QIDialogButtonBox;
-    AssertPtrReturnVoid(m_pButtonBox);
-    {
-        /* Configure button-box: */
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
-        m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIHostNetworkManager::close);
-
-        /* Add into layout: */
-        centralWidget()->layout()->addWidget(m_pButtonBox);
-    }
-}
-
-void UIHostNetworkManager::prepareMenuBar()
-{
-    /* Add 'Network' menu: */
-    menuBar()->addMenu(m_pWidget->menu());
-
-#ifdef VBOX_WS_MAC
-    /* Prepare 'Window' menu: */
-    AssertPtrReturnVoid(gpWindowMenuManager);
-    menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
-    gpWindowMenuManager->addWindow(this);
-#endif
-}
-
-void UIHostNetworkManager::prepareToolBar()
-{
-#ifdef VBOX_WS_MAC
-    /* Enable unified toolbar on macOS: */
-    addToolBar(m_pWidget->toolbar());
-    m_pWidget->toolbar()->enableMacToolbar();
-#endif
-}
-
-void UIHostNetworkManager::cleanupMenuBar()
-{
-#ifdef VBOX_WS_MAC
-    /* Cleanup 'Window' menu: */
-    AssertPtrReturnVoid(gpWindowMenuManager);
-    gpWindowMenuManager->removeWindow(this);
-    gpWindowMenuManager->destroyMenu(this);
-#endif
-}
-
-void UIHostNetworkManager::cleanup()
-{
-    /* Cleanup menu-bar: */
-    cleanupMenuBar();
 }
 

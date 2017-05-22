@@ -27,6 +27,10 @@
 #include "VBoxGlobal.h"
 
 /* Forward declarations: */
+class QMenu;
+class QStackedWidget;
+class QIManagerDialog;
+class QISplitter;
 class CMachine;
 class UIAction;
 class UIActionPool;
@@ -39,9 +43,6 @@ class UISnapshotPane;
 class UITexturedSegmentedButton;
 class UIToolBar;
 class UIVMItem;
-class QISplitter;
-class QMenu;
-class QStackedWidget;
 
 /** Singleton QIMainWindow extension
   * used as VirtualBox Manager (selector-window) instance. */
@@ -125,6 +126,8 @@ private slots:
         void sltOpenVirtualMediumManagerWindow();
         /** Handles call to open Host Network Manager window. */
         void sltOpenHostNetworkManagerWindow();
+        /** Handles call to close Host Network Manager window. */
+        void sltCloseHostNetworkManagerWindow();
         /** Handles call to open Import Appliance wizard.
           * @param strFileName can bring the name of file to import appliance from. */
         void sltOpenImportApplianceWizard(const QString &strFileName = QString());
@@ -354,6 +357,9 @@ private:
     QList<UIAction*> m_machineActions;
     /** Holds the Machine menu parent action. */
     QAction *m_pMachineMenuAction;
+
+    /** Holds the Host Network Manager window instance. */
+    QIManagerDialog *m_pManagerHostNetwork;
 };
 
 #define gpSelectorWindow UISelectorWindow::instance()

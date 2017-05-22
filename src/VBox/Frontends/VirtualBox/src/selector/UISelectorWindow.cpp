@@ -132,6 +132,7 @@ UISelectorWindow::UISelectorWindow()
     , m_pPaneSnapshots(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
+    , m_pManagerHostNetwork(0)
 {
     m_spInstance = this;
 }
@@ -428,8 +429,28 @@ void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
 
 void UISelectorWindow::sltOpenHostNetworkManagerWindow()
 {
-    /* Show modeless Host Network Manager: */
-    UIHostNetworkManager::showModeless(this);
+    /* Create instance if not yet created: */
+    if (!m_pManagerHostNetwork)
+    {
+        UIHostNetworkManagerFactory().prepare(m_pManagerHostNetwork, this);
+        connect(m_pManagerHostNetwork, &QIManagerDialog::sigClose,
+                this, &UISelectorWindow::sltCloseHostNetworkManagerWindow);
+    }
+
+    /* Show instance: */
+    m_pManagerHostNetwork->show();
+    m_pManagerHostNetwork->setWindowState(m_pManagerHostNetwork->windowState() & ~Qt::WindowMinimized);
+    m_pManagerHostNetwork->activateWindow();
+}
+
+void UISelectorWindow::sltCloseHostNetworkManagerWindow()
+{
+    /* Destroy instance if still exists: */
+    if (m_pManagerHostNetwork)
+    {
+        m_pManagerHostNetwork->close();
+        UIHostNetworkManagerFactory().cleanup(m_pManagerHostNetwork);
+    }
 }
 
 void UISelectorWindow::sltOpenImportApplianceWizard(const QString &strFileName /* = QString() */)
@@ -2009,6 +2030,9 @@ void UISelectorWindow::cleanupMenuBar()
 
 void UISelectorWindow::cleanup()
 {
+    /* Close the sub-dialogs first: */
+    sltCloseHostNetworkManagerWindow();
+
     /* Save settings: */
     saveSettings();
 
