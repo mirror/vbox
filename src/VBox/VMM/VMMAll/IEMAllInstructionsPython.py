@@ -234,6 +234,7 @@ g_kdOpTypes = {
     'Wq':           ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
     'WqZxReg_WO':   ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
     'Wx':           ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      ),
+    'Wx_WO':        ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      ),
 
     # ModR/M.rm - register only.
     'Uq':           ( 'IDX_UseModRM',       'rm',     '%Uq',  'Uq',      ),
@@ -285,6 +286,7 @@ g_kdOpTypes = {
     'VqHi':         ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
     'VqHi_WO':      ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
     'VqZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    ),
+    'Vx':           ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      ),
     'Vx_WO':        ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      ),
 
     # VEX.vvvv

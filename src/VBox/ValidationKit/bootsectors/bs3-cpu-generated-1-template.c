@@ -4757,6 +4757,20 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].idxFieldBase    = BS3CG1DST_XMM0;
             break;
 
+        case BS3CG1ENC_VEX_MODRM_Wx_WO_Vx:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa;
+            pThis->iRmOp             = 0;
+            pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 16;
+            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[0].enmLocation     = BS3CG1OPLOC_CTX_ZX_VLMAX;
+            pThis->aOperands[0].enmLocationReg  = BS3CG1OPLOC_CTX_ZX_VLMAX;
+            pThis->aOperands[0].enmLocationMem  = BS3CG1OPLOC_MEM_WO;
+            pThis->aOperands[1].enmLocation     = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].idxFieldBase    = BS3CG1DST_XMM0;
+            pThis->aOperands[1].idxFieldBase    = BS3CG1DST_XMM0;
+            break;
+
 
             /* Unused or invalid instructions mostly. */
         //case BS3CG1ENC_VEX_FIXED:

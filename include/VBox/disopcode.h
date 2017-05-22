@@ -1126,6 +1126,7 @@ enum OP_PARM
 #define OP_PARM_WqZxReg_WO      OP_PARM_Wq              /**< Annotates that register targets get their upper bits cleared. */
 #define OP_PARM_Wss_WO          OP_PARM_Wss             /**< Annotates write only operand. */
 #define OP_PARM_Wsd_WO          OP_PARM_Wsd             /**< Annotates write only operand. */
+#define OP_PARM_Wx_WO           OP_PARM_Wx              /**< Annotates write only operand. */
 
 /** @} */
 
