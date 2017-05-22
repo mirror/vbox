@@ -4193,6 +4193,34 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation    = BS3CG1OPLOC_CTX;
             break;
 
+        case BS3CG1ENC_MODRM_Ed_WO_Vd_WZ:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Vd_WO_Ed_WZ;
+            pThis->iRmOp             = 0;
+            pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 4;
+            pThis->aOperands[1].cbOp = 4;
+            pThis->aOperands[0].idxFieldBase   = BS3CG1DST_EAX;
+            pThis->aOperands[1].idxFieldBase   = BS3CG1DST_XMM0;
+            pThis->aOperands[0].enmLocation    = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].enmLocationReg = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].enmLocationMem = BS3CG1OPLOC_MEM_WO;
+            pThis->aOperands[1].enmLocation    = BS3CG1OPLOC_CTX;
+            break;
+
+        case BS3CG1ENC_MODRM_Eq_WO_Vq_WNZ:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Vq_WO_Eq_WNZ;
+            pThis->iRmOp             = 0;
+            pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 8;
+            pThis->aOperands[1].cbOp = 8;
+            pThis->aOperands[0].idxFieldBase   = BS3CG1DST_RAX;
+            pThis->aOperands[1].idxFieldBase   = BS3CG1DST_XMM0;
+            pThis->aOperands[0].enmLocation    = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].enmLocationReg = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].enmLocationMem = BS3CG1OPLOC_MEM_WO;
+            pThis->aOperands[1].enmLocation    = BS3CG1OPLOC_CTX;
+            break;
+
         case BS3CG1ENC_MODRM_Gb_Eb:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
