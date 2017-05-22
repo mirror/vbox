@@ -78,6 +78,7 @@ static DECLCALLBACK(int) svcUnload (void *)
     int rc = VINF_SUCCESS;
 
     Log(("svcUnload\n"));
+    vbsfFreeHandleTable();
 
     return rc;
 }
