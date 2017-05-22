@@ -1094,6 +1094,7 @@ enum OP_PARM
 #define OP_PARM_Mpd_WO          OP_PARM_Mpd             /**< Annotates write only memory operand. */
 #define OP_PARM_PdZx_WO         OP_PARM_Pd              /**< Annotates write only operand and zero extends to 64-bit. */
 #define OP_PARM_Pq_WO           OP_PARM_Pq              /**< Annotates write only operand. */
+#define OP_PARM_Qq_WO           OP_PARM_Qq              /**< Annotates write only operand. */
 #define OP_PARM_Nq              OP_PARM_Qq              /**< Missing 'N' class (MMX reg selected by modrm.mem) in disasm. */
 #define OP_PARM_Uq              (OP_PARM_U+OP_PARM_q)
 #define OP_PARM_UqHi            (OP_PARM_U+OP_PARM_dq)

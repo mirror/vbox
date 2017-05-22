@@ -3665,25 +3665,36 @@ FNIEMOP_DEF(iemOp_movd_q_Vy_Ey)
 /*  Opcode 0xf3 0x0f 0x6e - invalid */
 
 
-/** Opcode      0x0f 0x6f - movq Pq, Qq */
+/**
+ * @opcode      0x6f
+ * @oppfx       none
+ * @opcpuid     sse2
+ * @opgroup     og_mmx_datamove
+ * @opxcpttype  5
+ * @optest      op1=1 op2=2   -> op1=2   ftw=0xff
+ * @optest      op1=0 op2=-42 -> op1=-42 ftw=0xff
+ * @oponly
+ */
 FNIEMOP_DEF(iemOp_movq_Pq_Qq)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_MNEMONIC(movq_Pq_Qq, "movq Pq,Qq");
+    IEMOP_MNEMONIC2(RM, MOVD, movd, Pq_WO, Qq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         /*
          * Register, register.
          */
-        /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
-        /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
         IEM_MC_LOCAL(uint64_t, u64Tmp);
+
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
+
         IEM_MC_FETCH_MREG_U64(u64Tmp, bRm & X86_MODRM_RM_MASK);
         IEM_MC_STORE_MREG_U64((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK, u64Tmp);
+        IEM_MC_FPU_TO_MMX_MODE();
+
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
@@ -3700,8 +3711,10 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
         IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
+
         IEM_MC_FETCH_MEM_U64(u64Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_STORE_MREG_U64((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK, u64Tmp);
+        IEM_MC_FPU_TO_MMX_MODE();
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();

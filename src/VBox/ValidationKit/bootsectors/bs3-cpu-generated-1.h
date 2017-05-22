@@ -45,6 +45,8 @@ typedef enum BS3CG1OP
     BS3CG1OP_Ed,
     BS3CG1OP_Eq,
     BS3CG1OP_Ev,
+    BS3CG1OP_Qq,
+    BS3CG1OP_Qq_WO,
     BS3CG1OP_Wss,
     BS3CG1OP_Wss_WO,
     BS3CG1OP_Wsd,
@@ -132,6 +134,7 @@ typedef enum BS3CG1ENC
 
     BS3CG1ENC_MODRM_Eb_Gb,
     BS3CG1ENC_MODRM_Ev_Gv,
+    BS3CG1ENC_MODRM_Pq_WO_Qq,
     BS3CG1ENC_MODRM_Wss_WO_Vss,
     BS3CG1ENC_MODRM_Wsd_WO_Vsd,
     BS3CG1ENC_MODRM_Wps_WO_Vps,
