@@ -941,9 +941,24 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
         }
         else
         {
-            /* use the format of the source medium if unspecified */
+            /*
+             * In case the format is unspecified check that the source medium supports
+             * image creation and use the same format for the destination image.
+             * Use the default image format if it is not supported.
+             */
             if (format.isEmpty())
-                CHECK_ERROR_BREAK(pSrcMedium, COMGETTER(Format)(format.asOutParam()));
+            {
+                ComPtr<IMediumFormat> pMediumFmt;
+                com::SafeArray<MediumFormatCapabilities_T> l_caps;
+                CHECK_ERROR_BREAK(pSrcMedium, COMGETTER(MediumFormat)(pMediumFmt.asOutParam()));
+                CHECK_ERROR_BREAK(pMediumFmt, COMGETTER(Capabilities)(ComSafeArrayAsOutParam(l_caps)));
+                ULONG caps=0;
+                for (size_t i = 0; i < l_caps.size(); i++)
+                    caps |= l_caps[i];
+                if (caps & (  MediumFormatCapabilities_CreateDynamic
+                            | MediumFormatCapabilities_CreateFixed))
+                    CHECK_ERROR_BREAK(pMediumFmt, COMGETTER(Id)(format.asOutParam()));
+            }
             Utf8Str strFormat(format);
             if (cmd == CMD_DISK)
                 rc = createMedium(a, strFormat.c_str(), pszDst, DeviceType_HardDisk,
