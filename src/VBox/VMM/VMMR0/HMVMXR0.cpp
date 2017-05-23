@@ -11580,25 +11580,19 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
             /* fall thru */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:
         {
-#if 0
             /*
-             * If there's any exception caused as a result of event injection, go back to
-             * the interpreter. The page-fault case is complicated and we manually handle
-             * any currently pending event in hmR0VmxExitXcptPF. Nested #ACs are already
-             * handled in hmR0VmxCheckExitDueToEventDelivery.
+             * If there's any exception caused as a result of event injection, the resulting
+             * secondary/final execption will be pending, we shall continue guest execution
+             * after injecting the event. The page-fault case is complicated and we manually
+             * handle any currently pending event in hmR0VmxExitXcptPF.
              */
             if (!pVCpu->hm.s.Event.fPending)
             { /* likely */ }
-            else if (   uVector != X86_XCPT_PF
-                     && uVector != X86_XCPT_AC)
+            else if (uVector != X86_XCPT_PF)
             {
-                /** @todo Why do we need to fallback to the interpreter here?  */
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
-                /** @todo return VINF_EM_RAW_INJECT_TRPM_EVENT? */
-                rc = VERR_EM_INTERPRETER;
+                rc = VINF_SUCCESS;
                 break;
             }
-#endif
 
             switch (uVector)
             {
