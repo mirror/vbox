@@ -195,8 +195,6 @@ class tdCpuPae1(vbox.TestDriver):
 
                 fRc = False;
                 if oConsoleCallbacks is not None:
-                    self.addTask(oSession);
-
                     # Wait for 30 seconds for something to finish.
                     tsStart = base.timestampMilli();
                     while base.timestampMilli() - tsStart < 30000:
