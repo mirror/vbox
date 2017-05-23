@@ -159,7 +159,7 @@ QT4DIR_PKGCONFIG=1
 QT5DIR="/usr/lib/qt5 /usr/share/qt5 /usr/lib64/qt5 /usr /usr/local"
 QT5DIR_PKGCONFIG=1
 QT5MAJ=5
-QT5MIN=3
+QT5MIN=6
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
