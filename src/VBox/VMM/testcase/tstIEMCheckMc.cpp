@@ -538,6 +538,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_CLEAR_YREG_128_UP(a_iYReg)                         do { (void)fAvxWrite; } while (0)
 #define IEM_MC_COPY_YREG_U256_ZX_VLMAX(a_iYRegDst, a_iYRegSrc)    do { (void)fAvxWrite; } while (0)
 #define IEM_MC_COPY_YREG_U128_ZX_VLMAX(a_iYRegDst, a_iYRegSrc)    do { (void)fAvxWrite; } while (0)
+#define IEM_MC_COPY_YREG_U64_ZX_VLMAX(a_iYRegDst, a_iYRegSrc)     do { (void)fAvxWrite; } while (0)
 #define IEM_MC_MERGE_YREG_U32_U96_ZX_VLMAX(a_iYRegDst, a_iYRegSrc32, a_iYRegSrcHx)      do { (void)fAvxWrite; (void)fAvxRead; } while (0)
 #define IEM_MC_MERGE_YREG_U64_U64_ZX_VLMAX(a_iYRegDst, a_iYRegSrc64, a_iYRegSrcHx)      do { (void)fAvxWrite; (void)fAvxRead; } while (0)
 #define IEM_MC_MERGE_YREG_U64HI_U64_ZX_VLMAX(a_iYRegDst, a_iYRegSrc64, a_iYRegSrcHx)    do { (void)fAvxWrite; (void)fAvxRead; } while (0)

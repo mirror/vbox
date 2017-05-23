@@ -3681,6 +3681,99 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Md_WO(PBS3CG1STATE pThi
 
 /**
  * Wip = VEX.W ignored.
+ * L0 = VEX.L must be zero.
+ */
+static unsigned BS3_NEAR_CODE
+Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_L0_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    unsigned off;
+    switch (iEncoding)
+    {
+        /* 128-bit wide stuff goes first, then we'll update the operand widths afterwards. */
+        case 0:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+            pThis->aOperands[pThis->iRmOp ].enmLocation = pThis->aOperands[pThis->iRmOp].enmLocationReg;
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 0;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 1;
+            break;
+
+        case 1:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 4, 5);
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 5;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 4;
+            break;
+        case 2:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 1 /*W - ignored*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 5, 4);
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 4;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 5;
+            break;
+        case 3:
+            pThis->aOperands[pThis->iRmOp].enmLocation = pThis->aOperands[pThis->iRmOp].enmLocationMem;
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2 /*iReg*/, 0);
+            break;
+        case 4:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 3 /*iReg*/, 0);
+            break;
+        case 5:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 1 /*W - ignored */);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 3 /*iReg*/, 0);
+            break;
+        case 6:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 3 /*iReg*/, 1 /*cbMisalign*/);
+            if (!Bs3Cg1XcptTypeIsVexUnaligned(pThis->enmXcptType))
+                pThis->bAlignmentXcpt = X86_XCPT_GP;
+            break;
+        case 7:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 3 /*iReg*/, 1 /*cbMisalign*/);
+            if (!Bs3Cg1XcptTypeIsVexUnaligned(pThis->enmXcptType))
+                pThis->bAlignmentXcpt = X86_XCPT_GP;
+            break;
+        /* 128-bit invalid encodings: */
+        case 8:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xe /*~V*/, 0 /*L*/, 1 /*~R*/); /* Bad V value */
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+            pThis->aOperands[pThis->iRmOp ].enmLocation = pThis->aOperands[pThis->iRmOp].enmLocationReg;
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 0;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 1;
+            pThis->fInvalidEncoding = true;
+            break;
+        case 9:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, 0 /*L*/, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 4, 5);
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 5;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 4;
+            pThis->fInvalidEncoding = true;
+            iEncoding = 20-1;
+            break;
+
+        default:
+            return 0;
+    }
+
+    pThis->cbCurInstr = off;
+    return iEncoding + 1;
+}
+
+
+/**
+ * Wip = VEX.W ignored.
  */
 static unsigned BS3_NEAR_CODE
 Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
@@ -4612,6 +4705,20 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
             pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0_HI;
             pThis->aOperands[2].idxFieldBase = BS3CG1DST_INVALID;
+            break;
+
+        case BS3CG1ENC_VEX_MODRM_Vq_WO_Wq:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_L0_OR_ViceVersa;
+            pThis->iRegOp            = 0;
+            pThis->iRmOp             = 1;
+            pThis->aOperands[0].cbOp = 8;
+            pThis->aOperands[1].cbOp = 8;
+            pThis->aOperands[0].enmLocation     = BS3CG1OPLOC_CTX_ZX_VLMAX;
+            pThis->aOperands[1].enmLocation     = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocationReg  = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocationMem  = BS3CG1OPLOC_MEM;
+            pThis->aOperands[0].idxFieldBase    = BS3CG1DST_XMM0_LO;
+            pThis->aOperands[1].idxFieldBase    = BS3CG1DST_XMM0_LO;
             break;
 
         case BS3CG1ENC_VEX_MODRM_Vx_WO_Wx:
