@@ -3419,6 +3419,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmNstGstEventIntercept(PVMCPU pVCpu, PCPUMCTX 
         {
             /** @todo Nested-guest SVM - figure out fetching op-code bytes from IEM. */
 #ifdef IEM_WITH_CODE_TLB
+            AssertReleaseFailedReturn(VERR_IEM_IPE_5);
 #else
             uint8_t const offOpCode = pVCpu->iem.s.offOpcode;
             uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode;
