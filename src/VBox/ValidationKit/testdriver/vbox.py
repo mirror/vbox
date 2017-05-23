@@ -1407,6 +1407,21 @@ class TestDriver(base.TestDriver):                                              
         try:
             import gc
             gc.collect();
+            objects = gc.get_objects()
+            try:
+                try:
+                    from types import InstanceType
+                except ImportError:
+                    InstanceType = None # Python 3.x compatibility
+                for o in objects:
+                    objtype = type(o)
+                    if objtype == InstanceType: # Python 2.x codepath
+                        objtype = o.__class__
+                    if objtype.__name__ == 'VirtualBoxManager':
+                        reporter.log('actionCleanupAfter: CAUTION, there is still a VirtualBoxManager object, GC trouble')
+                        break
+            finally:
+                del objects
         except:
             reporter.logXcpt();
         self.fImportedVBoxApi = False;
