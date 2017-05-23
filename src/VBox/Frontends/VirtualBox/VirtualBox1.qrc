@@ -49,6 +49,10 @@
         <file alias="chipset_warning_16px.png">images/chipset_warning_16px.png</file>
         <file alias="close_16px.png">images/close_16px.png</file>
         <file alias="close_popup_16px.png">images/close_popup_16px.png</file>
+        <file alias="commit_host_iface_16px.png">images/commit_host_iface_16px.png</file>
+        <file alias="commit_host_iface_disabled_16px.png">images/commit_host_iface_disabled_16px.png</file>
+        <file alias="commit_host_iface_22px.png">images/commit_host_iface_22px.png</file>
+        <file alias="commit_host_iface_disabled_22px.png">images/commit_host_iface_disabled_22px.png</file>
         <file alias="connect_16px.png">images/connect_16px.png</file>
         <file alias="controller_add_16px.png">images/controller_add_16px.png</file>
         <file alias="controller_add_disabled_16px.png">images/controller_add_disabled_16px.png</file>

@@ -49,6 +49,10 @@
         <file alias="chipset_warning_16px_hidpi.png">images/hidpi/chipset_warning_16px_hidpi.png</file>
         <file alias="close_16px_hidpi.png">images/hidpi/close_16px_hidpi.png</file>
         <file alias="close_popup_16px_hidpi.png">images/hidpi/close_popup_16px_hidpi.png</file>
+        <file alias="commit_host_iface_16px_hidpi.png">images/hidpi/commit_host_iface_16px_hidpi.png</file>
+        <file alias="commit_host_iface_disabled_16px_hidpi.png">images/hidpi/commit_host_iface_disabled_16px_hidpi.png</file>
+        <file alias="commit_host_iface_22px_hidpi.png">images/hidpi/commit_host_iface_22px_hidpi.png</file>
+        <file alias="commit_host_iface_disabled_22px_hidpi.png">images/hidpi/commit_host_iface_disabled_22px_hidpi.png</file>
         <file alias="connect_16px_hidpi.png">images/hidpi/connect_16px_hidpi.png</file>
         <file alias="controller_add_16px_hidpi.png">images/hidpi/controller_add_16px_hidpi.png</file>
         <file alias="controller_add_disabled_16px_hidpi.png">images/hidpi/controller_add_disabled_16px_hidpi.png</file>
