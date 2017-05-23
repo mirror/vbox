@@ -79,5 +79,6 @@ extern struct VBCLSERVICE **VBClGetHostVersionService();
 extern struct VBCLSERVICE **VBClGetDragAndDropService();
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 extern struct VBCLSERVICE **VBClCheck3DService();
+extern struct VBCLSERVICE **VBClDisplaySVGAService();
 
 #endif /* !___vboxclient_vboxclient_h */

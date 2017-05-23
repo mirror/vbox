@@ -182,8 +182,9 @@ void vboxClientUsage(const char *pcszFileName)
 # ifdef VBOX_WITH_GUEST_PROPS
              "--checkhostversion|"
 #endif
-             "--seamless|check3d [-d|--nodaemon]\n", pcszFileName);
-    RTPrintf("Starts the VirtualBox X Window System guest services.\n\n");
+             "--seamless|check3d|"
+             "--vmsvga [-d|--nodaemon]\n", pcszFileName);
+    RTPrintf("Starts the VirtualBox DRM/X Window System guest services.\n\n");
     RTPrintf("Options:\n");
     RTPrintf("  --clipboard        starts the shared clipboard service\n");
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -195,6 +196,7 @@ void vboxClientUsage(const char *pcszFileName)
 #endif
     RTPrintf("  --check3d          tests whether 3D pass-through is enabled\n");
     RTPrintf("  --seamless         starts the seamless windows service\n");
+    RTPrintf("  --vmsvga           starts VMSVGA dynamic resizing for DRM or for X11\n");
     RTPrintf("  -d, --nodaemon     continues running as a system service\n");
     RTPrintf("  -h, --help         shows this help text\n");
     RTPrintf("  -V, --version      shows version information\n");
@@ -283,6 +285,12 @@ int main(int argc, char *argv[])
             if (g_pService)
                 break;
             g_pService = VBClCheck3DService();
+        }
+        else if (!strcmp(argv[i], "--vmsvga"))
+        {
+            if (g_pService)
+                break;
+            g_pService = VBClDisplaySVGAService();
         }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
