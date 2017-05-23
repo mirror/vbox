@@ -56,7 +56,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     Additions Basics #1.
     """
     ## @todo
-    # - More of the settings stuff can e and need to be generalized!
+    # - More of the settings stuff can be and need to be generalized!
     #
 
     def __init__(self):
@@ -127,7 +127,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True, \
                                                                   sFileCdWait = 'AUTORUN.INF');
         if oSession is not None:
-            self.addTask(oSession);
+            self.addTask(oTxsSession);
             # Do the testing.
             reporter.testStart('Install');
             fRc, oTxsSession = self.testInstallAdditions(oSession, oTxsSession, oTestVm);
@@ -145,7 +145,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 fRc = fRc2 and fRc;
             reporter.testDone(fSkip);
 
-            ## @todo Save an restore test.
+            ## @todo Save and restore test.
 
             ## @todo Reset tests.
 
@@ -153,7 +153,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
             # Cleanup.
             self.removeTask(oTxsSession);
-            #self.terminateVmBySession(oSession)
+            self.terminateVmBySession(oSession)
         return fRc;
 
     def testInstallAdditions(self, oSession, oTxsSession, oTestVm):
