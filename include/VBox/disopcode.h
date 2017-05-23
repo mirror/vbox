@@ -792,6 +792,7 @@ enum OPCODES
     OP_VMOVQ,
     OP_VMOVDQA,
     OP_VMOVDQU,
+    OP_VMOVNTDQ,
 /** @} */
     OP_END_OF_OPCODES
 };
@@ -1097,6 +1098,7 @@ enum OP_PARM
 #define OP_PARM_Mq_WO           OP_PARM_Mq              /**< Annotates write only memory quad word operand. */
 #define OP_PARM_Mps_WO          OP_PARM_Mps             /**< Annotates write only memory operand. */
 #define OP_PARM_Mpd_WO          OP_PARM_Mpd             /**< Annotates write only memory operand. */
+#define OP_PARM_Mx_WO           OP_PARM_Mx             /**< Annotates write only memory operand. */
 #define OP_PARM_PdZx_WO         OP_PARM_Pd              /**< Annotates write only operand and zero extends to 64-bit. */
 #define OP_PARM_Pq_WO           OP_PARM_Pq              /**< Annotates write only operand. */
 #define OP_PARM_Qq_WO           OP_PARM_Qq              /**< Annotates write only operand. */

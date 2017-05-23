@@ -84,7 +84,7 @@ FNIEMOP_DEF(iemOp_vmovups_Vps_Wps)
     else if (pVCpu->iem.s.uVexLength == 0)
     {
         /*
-         * 128-bit: Memory, register.
+         * 128-bit: Register, Memory
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
@@ -104,7 +104,7 @@ FNIEMOP_DEF(iemOp_vmovups_Vps_Wps)
     else
     {
         /*
-         * 256-bit: Memory, register.
+         * 256-bit: Register, Memory
          */
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT256U,                uSrc);
@@ -3542,35 +3542,77 @@ FNIEMOP_STUB(iemOp_vcvtpd2dq_Vx_Wpd);
 
 /* Opcode VEX.0F 0xe7 - invalid */
 
-/** Opcode VEX.66.0F 0xe7 - vmovntdq Mx, Vx */
-FNIEMOP_STUB(iemOp_vmovntdq_Mx_Vx);
-//FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
-//{
-//    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-//    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-//    {
-//        /* Register, memory. */
-//        IEMOP_MNEMONIC(vmovntdq_Mx_Vx, "vmovntdq Mx,Vx");
-//        IEM_MC_BEGIN(0, 2);
-//        IEM_MC_LOCAL(RTUINT128U,                uSrc);
-//        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-//
-//        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-//        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-//        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-//        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-//
-//        IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-//        IEM_MC_STORE_MEM_U128_ALIGN_SSE(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
-//
-//        IEM_MC_ADVANCE_RIP();
-//        IEM_MC_END();
-//        return VINF_SUCCESS;
-//    }
-//
-//    /* The register, register encoding is invalid. */
-//    return IEMOP_RAISE_INVALID_OPCODE();
-//}
+/**
+ * @opcode      0xe7
+ * @opcodesub   !11 mr/reg
+ * @oppfx       0x66
+ * @opcpuid     avx
+ * @opgroup     og_avx_cachect
+ * @opxcpttype  1
+ * @optest      op1=-1 op2=2  -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
+FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
+{
+    IEMOP_MNEMONIC2(VEX_MR, VMOVNTDQ, vmovntdq, Mx_WO, Vx, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
+    Assert(pVCpu->iem.s.uVexLength <= 1);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        if (pVCpu->iem.s.uVexLength == 0)
+        {
+            /*
+             * 128-bit: Memory, register.
+             */
+            IEM_MC_BEGIN(0, 2);
+            IEM_MC_LOCAL(RTUINT128U,                uSrc);
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ();
+
+            IEM_MC_FETCH_YREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_STORE_MEM_U128_ALIGN_SSE(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        else
+        {
+            /*
+             * 256-bit: Memory, register.
+             */
+            IEM_MC_BEGIN(0, 2);
+            IEM_MC_LOCAL(RTUINT256U,                uSrc);
+            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV();
+            IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+            IEM_MC_ACTUALIZE_AVX_STATE_FOR_READ();
+
+            IEM_MC_FETCH_YREG_U256(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_STORE_MEM_U256_ALIGN_AVX(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+        }
+        return VINF_SUCCESS;
+    }
+    /**
+     * @opdone
+     * @opmnemonic  udvex660fe7reg
+     * @opcode      0xe7
+     * @opcodesub   11 mr/reg
+     * @oppfx       0x66
+     * @opunused    immediate
+     * @opcpuid     avx
+     * @optest      ->
+     */
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
 
 /*  Opcode VEX.F3.0F 0xe7 - invalid */
 /*  Opcode VEX.F2.0F 0xe7 - invalid */
