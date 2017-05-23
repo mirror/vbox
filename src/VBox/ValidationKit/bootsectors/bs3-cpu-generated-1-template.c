@@ -2334,6 +2334,38 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Md_WO(PBS3CG1STATE pThis, u
 }
 
 
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Mq_WO_Pq(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    unsigned off;
+    switch (iEncoding)
+    {
+        case 0:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 4 /*iReg*/, 0 /*cbMisalign*/);
+            break;
+        case 1:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7 /*iReg*/, 1 /*cbMisalign*/);
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 1 : 0;
+            break;
+#if ARCH_BITS == 64
+        case 2:
+            off = Bs3Cg1InsertReqPrefix(pThis, 0);
+            pThis->abCurInstr[off++] = REX__RBX;
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7 /*iReg - no +8*/, 0 /*cbMisalign*/);
+            break;
+#endif
+
+        default:
+            return 0;
+    }
+
+    pThis->cbCurInstr = off;
+    return iEncoding + 1;
+}
+
+
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Mq_WO_Vq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -4530,6 +4562,17 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 4;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM_WO;
+            break;
+
+        case BS3CG1ENC_MODRM_Mq_WO_Pq:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Mq_WO_Pq;
+            pThis->iRmOp             = 0;
+            pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 8;
+            pThis->aOperands[1].cbOp = 8;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_MM0;
+            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_MEM_WO;
+            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_MODRM_Mq_WO_Vq:

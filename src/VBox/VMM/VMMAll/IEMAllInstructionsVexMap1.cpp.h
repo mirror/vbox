@@ -3363,7 +3363,6 @@ FNIEMOP_STUB(iemOp_vpmullw_Vx_Hx_Wx);
  * @opxcpttype  none
  * @optest      op1=-1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
- * @oponly
  */
 FNIEMOP_DEF(iemOp_vmovq_Wq_Vq)
 {

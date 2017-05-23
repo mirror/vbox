@@ -8937,10 +8937,19 @@ FNIEMOP_STUB(iemOp_cvtdq2pd_Vx_Wpd);
 FNIEMOP_STUB(iemOp_cvtpd2dq_Vx_Wpd);
 
 
-/** Opcode      0x0f 0xe7 - movntq Mq, Pq */
+/**
+ * @opcode      0xe7
+ * @opcodesub   !11 mr/reg
+ * @oppfx       none
+ * @opcpuid     sse
+ * @opgroup     og_sse1_cachect
+ * @opxcpttype  none
+ * @optest      op1=-1 op2=2  -> op1=2   ftw=0xff
+ * @optest      op1=0 op2=-42 -> op1=-42 ftw=0xff
+ */
 FNIEMOP_DEF(iemOp_movntq_Mq_Pq)
 {
-    IEMOP_MNEMONIC(movntq_Mq_Pq, "movntq Mq,Pq");
+    IEMOP_MNEMONIC2(MR_MEM, MOVNTQ, movntq, Mq_WO, Pq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -8952,16 +8961,26 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq)
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-        IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+        IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
 
         IEM_MC_FETCH_MREG_U64(uSrc, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
         IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+        IEM_MC_FPU_TO_MMX_MODE();
 
         IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
         return VINF_SUCCESS;
     }
-    /* The register, register encoding is invalid. */
+    /**
+     * @opdone
+     * @opmnemonic  ud0fe7reg
+     * @opcode      0xe7
+     * @opcodesub   11 mr/reg
+     * @oppfx       f2
+     * @opunused    immediate
+     * @opcpuid     sse
+     * @optest      ->
+     */
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
