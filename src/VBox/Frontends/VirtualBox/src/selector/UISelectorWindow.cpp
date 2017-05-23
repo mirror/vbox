@@ -132,6 +132,7 @@ UISelectorWindow::UISelectorWindow()
     , m_pPaneSnapshots(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
+    , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
 {
     m_spInstance = this;
@@ -304,7 +305,7 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
     m_fWarningAboutInaccessibleMediaShown = true;
 
     /* Make sure MM window is not opened: */
-    if (UIMediumManager::instance())
+    if (m_pManagerVirtualMedia)
         return;
 
     /* Look for at least one inaccessible medium: */
@@ -321,8 +322,8 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
     /* Warn the user about inaccessible medium: */
     if (fIsThereAnyInaccessibleMedium && !msgCenter().warnAboutInaccessibleMedia())
     {
-        /* Open the MM window (without refresh): */
-        UIMediumManager::showModeless(this, false /* refresh? */);
+        /* Open the MM window: */
+        sltOpenVirtualMediumManagerWindow();
     }
 }
 
@@ -423,8 +424,28 @@ void UISelectorWindow::sltHandleSnapshotChange(QString strID)
 
 void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
 {
-    /* Show modeless Virtual Medium Manager: */
-    UIMediumManager::showModeless(this);
+    /* Create instance if not yet created: */
+    if (!m_pManagerVirtualMedia)
+    {
+        UIMediumManagerFactory().prepare(m_pManagerVirtualMedia, this);
+        connect(m_pManagerVirtualMedia, &QIManagerDialog::sigClose,
+                this, &UISelectorWindow::sltCloseVirtualMediumManagerWindow);
+    }
+
+    /* Show instance: */
+    m_pManagerVirtualMedia->show();
+    m_pManagerVirtualMedia->setWindowState(m_pManagerVirtualMedia->windowState() & ~Qt::WindowMinimized);
+    m_pManagerVirtualMedia->activateWindow();
+}
+
+void UISelectorWindow::sltCloseVirtualMediumManagerWindow()
+{
+    /* Destroy instance if still exists: */
+    if (m_pManagerVirtualMedia)
+    {
+        m_pManagerVirtualMedia->close();
+        UIMediumManagerFactory().cleanup(m_pManagerVirtualMedia);
+    }
 }
 
 void UISelectorWindow::sltOpenHostNetworkManagerWindow()
@@ -2031,6 +2052,7 @@ void UISelectorWindow::cleanupMenuBar()
 void UISelectorWindow::cleanup()
 {
     /* Close the sub-dialogs first: */
+    sltCloseVirtualMediumManagerWindow();
     sltCloseHostNetworkManagerWindow();
 
     /* Save settings: */

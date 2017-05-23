@@ -18,10 +18,8 @@
 #ifndef ___UIMediumManager_h___
 #define ___UIMediumManager_h___
 
-/* Qt includes: */
-#include <QMainWindow>
-
 /* GUI includes: */
+#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIMediumDefs.h"
 
@@ -52,27 +50,34 @@ public:
 };
 
 
-/** Medium Manager dialog. */
-class UIMediumManager : public QIWithRetranslateUI<QMainWindow>
+/** Medium Manager widget. */
+class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
     /** Item action types. */
     enum Action { Action_Add, Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
 
-    /** Constructs Virtual Medium Manager dialog.
-      * @param  pCenterWidget  Brings the pseudo-parent widget to center according to.
-      * @param  fRefresh       Brings whether we should restart medium enumeration. */
-    UIMediumManager(QWidget *pCenterWidget, bool fRefresh = true);
-    /** Destructs Virtual Medium Manager dialog. */
-    ~UIMediumManager();
-
 public:
 
-    /** Returns Virtual Medium Manager singleton instance. */
-    static UIMediumManager *instance();
-    /** Shows Virtual Medium Manager singleton instance, creates new if necessary. */
-    static void showModeless(QWidget *pCenterWidget, bool fRefresh = true);
+    /** Constructs Virtual Medium Manager widget. */
+    UIMediumManagerWidget(QWidget *pParent = 0);
+
+    /** Returns the menu. */
+    QMenu *menu() const { return m_pMenu; }
+
+#ifdef VBOX_WS_MAC
+    /** Returns the toolbar. */
+    UIToolBar *toolbar() const { return m_pToolBar; }
+#endif
+
+protected:
+
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+    /** @} */
 
 private slots:
 
@@ -138,12 +143,12 @@ private:
         void prepareConnections();
         /** Prepares actions. */
         void prepareActions();
-        /** Prepares menu-bar. */
-        void prepareMenuBar();
+        /** Prepares menu. */
+        void prepareMenu();
         /** Prepares context-menu. */
         void prepareContextMenu();
-        /** Prepares central-widget. */
-        void prepareCentralWidget();
+        /** Prepares widgets. */
+        void prepareWidgets();
         /** Prepares toolbar. */
         void prepareToolBar();
         /** Prepares tab-widget. */
@@ -154,10 +159,8 @@ private:
         void prepareTreeWidget(UIMediumType type, int iColumns);
         /** Prepares tab-widget's information-container. */
         void prepareInformationContainer(UIMediumType type, int iFields);
-        /** Prepares button-box. */
-        void prepareButtonBox();
-        /** Prepares progress-bar. */
-        void prepareProgressBar();
+//        /** Prepares progress-bar. */
+//        void prepareProgressBar();
 
         /** Repopulates tree-widgets content. */
         void repopulateTreeWidgets();
@@ -183,17 +186,6 @@ private:
         void updateInformationFieldsCD();
         /** Updates information fields for floppy-disk tab. */
         void updateInformationFieldsFD();
-
-        /** Cleanups menu-bar. */
-        void cleanupMenuBar();
-        /** Cleanups all. */
-        void cleanup();
-    /** @} */
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        void retranslateUi();
     /** @} */
 
     /** @name Widget operation stuff.
@@ -258,15 +250,8 @@ private:
 
     /** @name General variables.
       * @{ */
-        /** Holds the Virtual Medium Manager singleton instance. */
-        static UIMediumManager *s_pInstance;
-
-        /** Holds the widget reference to center Virtual Medium Manager according. */
-        QWidget *m_pPseudoParentWidget;
-        /** Holds whether Virtual Medium Manager should be refreshed on invoke. */
-        bool     m_fRefresh;
         /** Holds whether Virtual Medium Manager should preserve current item change. */
-        bool     m_fPreventChangeCurrentItem;
+        bool m_fPreventChangeCurrentItem;
     /** @} */
 
     /** @name Tab-widget variables.
@@ -323,13 +308,52 @@ private:
         QAction   *m_pActionRefresh;
     /** @} */
 
-    /** @name Button-box variables.
+    /** @name Progress-bar variables.
       * @{ */
-        /** Holds the dialog button-box instance. */
-        QIDialogButtonBox        *m_pButtonBox;
         /** Holds the progress-bar widget instance. */
         UIEnumerationProgressBar *m_pProgressBar;
     /** @} */
+};
+
+
+/** Medium Manager dialog factory. */
+class UIMediumManagerFactory : public QIManagerDialogFactory
+{
+protected:
+
+    /** Creates derived @a pDialog instance.
+      * @param  pCenterWidget  Brings the widget reference to center according to. */
+    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
+};
+
+
+/** QIManagerDialog sub-class used as Host Network Manager dialog. */
+class UIMediumManager : public QIWithRetranslateUI<QIManagerDialog>
+{
+    Q_OBJECT;
+
+protected:
+
+    /** Constructs Host Network Manager dialog.
+      * @param  pCenterWidget  Brings the widget reference to center according to. */
+    UIMediumManager(QWidget *pCenterWidget);
+
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+    /** @} */
+
+    /** @name Prepare/cleanup cascade.
+      * @{ */
+        /** Prepares dialog. */
+        void prepareDialog();
+        /** Prepares widget. */
+        void prepareWidget();
+    /** @} */
+
+    /** Allow factory access to private/protected members: */
+    friend class UIMediumManagerFactory;
 };
 
 #endif /* !___UIMediumManager_h___ */
