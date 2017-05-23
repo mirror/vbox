@@ -3656,7 +3656,7 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
         reporter.log("TxsSession: %s" % (oTxsSession,));
         if oSession is not None:
-            self.addTask(oSession);
+            self.addTask(oTxsSession);
 
             fManual = False; # Manual override for local testing. (Committed version shall be False.)
             if not fManual:

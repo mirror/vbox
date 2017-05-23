@@ -154,7 +154,7 @@ class tdSmokeTest1(vbox.TestDriver):
         self.logVmInfo(oVM);
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True);
         if oSession is not None:
-            self.addTask(oSession);
+            self.addTask(oTxsSession);
 
             ## @todo do some quick tests: save, restore, execute some test program, shut down the guest.
 
