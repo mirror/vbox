@@ -1218,6 +1218,7 @@ static bool BS3_NEAR_CODE Bs3Cg1XcptTypeIsUnaligned(BS3CG1XCPTTYPE enmXcptType)
         case BS3CG1XCPTTYPE_2:
         case BS3CG1XCPTTYPE_4:
             return false;
+        case BS3CG1XCPTTYPE_NONE:
         case BS3CG1XCPTTYPE_3:
         case BS3CG1XCPTTYPE_4UA:
         case BS3CG1XCPTTYPE_5:
@@ -1241,6 +1242,7 @@ static bool BS3_NEAR_CODE Bs3Cg1XcptTypeIsVexUnaligned(BS3CG1XCPTTYPE enmXcptTyp
         case BS3CG1XCPTTYPE_1:
             return false;
 
+        case BS3CG1XCPTTYPE_NONE:
         case BS3CG1XCPTTYPE_2:
         case BS3CG1XCPTTYPE_3:
         case BS3CG1XCPTTYPE_4:
@@ -4862,6 +4864,20 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation     = BS3CG1OPLOC_CTX;
             pThis->aOperands[0].idxFieldBase    = BS3CG1DST_XMM0;
             pThis->aOperands[1].idxFieldBase    = BS3CG1DST_XMM0;
+            break;
+
+        case BS3CG1ENC_VEX_MODRM_Wq_WO_Vq:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_L0_OR_ViceVersa;
+            pThis->iRegOp            = 1;
+            pThis->iRmOp             = 0;
+            pThis->aOperands[0].cbOp = 8;
+            pThis->aOperands[1].cbOp = 8;
+            pThis->aOperands[0].enmLocation     = BS3CG1OPLOC_CTX_ZX_VLMAX;
+            pThis->aOperands[0].enmLocationReg  = BS3CG1OPLOC_CTX_ZX_VLMAX;
+            pThis->aOperands[0].enmLocationMem  = BS3CG1OPLOC_MEM_WO;
+            pThis->aOperands[1].enmLocation     = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].idxFieldBase    = BS3CG1DST_XMM0_LO;
+            pThis->aOperands[1].idxFieldBase    = BS3CG1DST_XMM0_LO;
             break;
 
         case BS3CG1ENC_VEX_MODRM_Wx_WO_Vx:

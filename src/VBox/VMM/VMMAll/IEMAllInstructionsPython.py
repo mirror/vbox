@@ -232,6 +232,7 @@ g_kdOpTypes = {
     'Wdq':          ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     ),
     'Wdq_WO':       ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     ),
     'Wq':           ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
+    'Wq_WO':        ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
     'WqZxReg_WO':   ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
     'Wx':           ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      ),
     'Wx_WO':        ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      ),

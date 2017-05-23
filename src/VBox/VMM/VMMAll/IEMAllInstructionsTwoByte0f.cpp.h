@@ -4603,11 +4603,9 @@ FNIEMOP_DEF(iemOp_movd_q_Ey_Vy)
  * @oppfx       0xf3
  * @opcpuid     sse2
  * @opgroup     og_sse2_pcksclr_datamove
- * @opxcpttype  5
- * @note        Exception type isn't really 5, but close enough...
+ * @opxcpttype  none
  * @optest      op1=1 op2=2 -> op1=2
  * @optest      op1=0 op2=-42 -> op1=-42
- * @oponly
  */
 FNIEMOP_DEF(iemOp_movq_Vq_Wq)
 {
