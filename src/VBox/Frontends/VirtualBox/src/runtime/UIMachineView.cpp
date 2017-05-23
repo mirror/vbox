@@ -311,30 +311,37 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 
     /* Send new size-hint to the guest: */
     LogRel(("GUI: UIMachineView::sltPerformGuestResize: "
-            "Sending guest size-hint to screen %d as %dx%d\n",
+            "Sending guest size-hint to screen %d as %dx%d if necessary\n",
             (int)screenId(), size.width(), size.height()));
 
     /* If auto-mount of guest-screens (auto-pilot) enabled: */
     if (gEDataManager->autoMountGuestScreensEnabled(vboxGlobal().managedVMUuid()))
     {
-        /* If host and guest have same opinion about guest-screen visibility: */
-        if (uisession()->isScreenVisible(screenId()) == uisession()->isScreenVisibleHostDesires(screenId()))
-            display().SetVideoModeHint(screenId(),
-                                       uisession()->isScreenVisible(screenId()),
-                                       false, 0, 0, size.width(), size.height(), 0);
-        /* If host desires to have guest-screen disabled and guest-screen is enabled, retrying: */
-        else if (!uisession()->isScreenVisibleHostDesires(screenId()))
-            display().SetVideoModeHint(screenId(), false, false, 0, 0, 0, 0, 0);
-        /* If host desires to have guest-screen enabled and guest-screen is disabled, retrying: */
-        else if (uisession()->isScreenVisibleHostDesires(screenId()))
-            display().SetVideoModeHint(screenId(), true, false, 0, 0, size.width(), size.height(), 0);
+        /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
+        if (   (int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height()
+            || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId()))
+        {
+            /* If host and guest have same opinion about guest-screen visibility: */
+            if (uisession()->isScreenVisible(screenId()) == uisession()->isScreenVisibleHostDesires(screenId()))
+                display().SetVideoModeHint(screenId(),
+                                           uisession()->isScreenVisible(screenId()),
+                                           false, 0, 0, size.width(), size.height(), 0);
+            /* If host desires to have guest-screen disabled and guest-screen is enabled, retrying: */
+            else if (!uisession()->isScreenVisibleHostDesires(screenId()))
+                display().SetVideoModeHint(screenId(), false, false, 0, 0, 0, 0, 0);
+            /* If host desires to have guest-screen enabled and guest-screen is disabled, retrying: */
+            else if (uisession()->isScreenVisibleHostDesires(screenId()))
+                display().SetVideoModeHint(screenId(), true, false, 0, 0, size.width(), size.height(), 0);
+        }
     }
     /* If auto-mount of guest-screens (auto-pilot) disabled: */
     else
     {
-        display().SetVideoModeHint(screenId(),
-                                   uisession()->isScreenVisible(screenId()),
-                                   false, 0, 0, size.width(), size.height(), 0);
+        /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
+        if ((int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height())
+            display().SetVideoModeHint(screenId(),
+                                       uisession()->isScreenVisible(screenId()),
+                                       false, 0, 0, size.width(), size.height(), 0);
     }
 }
 
