@@ -389,7 +389,6 @@ class tdTeleportLocal1(vbox.TestDriver):
                             self.terminateVmBySession(oSessionSrc, oProgressSrc);
 
                             # Return with the source and destination swapped.
-                            self.addTask(oSessionDst);
                             return oVmDst, oSessionDst, oVmSrc;
 
                         # Failure / bail out.
@@ -440,8 +439,6 @@ class tdTeleportLocal1(vbox.TestDriver):
             # Start the source VM.
             oSessionSrc = self.startVm(oVmSrc);
             if oSessionSrc is not None:
-                self.addTask(oSessionSrc);
-
                 # Simple back and forth to test the ice...
                 cTeleportations = 0;
                 oVmSrc, oSessionSrc, oVmDst = self.test2Teleport(oVmSrc, oSessionSrc, oVmDst);
