@@ -266,7 +266,7 @@ def removeVm(ctx, mach):
 def startVm(ctx, mach, vmtype):
     vbox = ctx['vb']
     perf = ctx['perf']
-    session = ctx['global'].getSessionObject(vbox)
+    session = ctx['global'].getSessionObject()
     progress = mach.launchVMProcess(session, vmtype, "")
     if progressBar(ctx, progress, 100) and int(progress.resultCode) == 0:
         # we ignore exceptions to allow starting VM even if
@@ -699,8 +699,7 @@ def cmdExistingVm(ctx, mach, cmd, args):
     session = None
     try:
         vbox = ctx['vb']
-        session = ctx['global'].getSessionObject(vbox)
-        mach.lockMachine(session, ctx['global'].constants.LockType_Shared)
+        session = ctx['global'].openMachineSession(mach, fPermitSharing=True)
     except Exception as e:
         printErr(ctx, "Session to '%s' not open: %s" % (mach.name, str(e)))
         if g_fVerbose:
@@ -746,7 +745,7 @@ def cmdExistingVm(ctx, mach, cmd, args):
 
 
 def cmdClosedVm(ctx, mach, cmd, args=[], save=True):
-    session = ctx['global'].openMachineSession(mach, True)
+    session = ctx['global'].openMachineSession(mach, fPermitSharing=True)
     mach = session.machine
     try:
         cmd(ctx, mach, args)
@@ -766,7 +765,7 @@ def cmdClosedVm(ctx, mach, cmd, args=[], save=True):
 
 
 def cmdAnyVm(ctx, mach, cmd, args=[], save=False):
-    session = ctx['global'].openMachineSession(mach)
+    session = ctx['global'].openMachineSession(mach, fPermitSharing=True)
     mach = session.machine
     try:
         cmd(ctx, mach, session.console, args)
@@ -1669,7 +1668,7 @@ def portForwardCmd(ctx, args):
     hostPort = int(args[3])
     guestPort = int(args[4])
     proto = "TCP"
-    session = ctx['global'].openMachineSession(mach)
+    session = ctx['global'].openMachineSession(mach, fPermitSharing=True)
     mach = session.machine
 
     adapter = mach.getNetworkAdapter(adapterNum)
@@ -1878,10 +1877,9 @@ def connectCmd(ctx, args):
         passwd = ""
 
     ctx['wsinfo'] = [url, user, passwd]
-    vbox = ctx['global'].platform.connect(url, user, passwd)
-    ctx['vb'] = vbox
+    ctx['vb'] = ctx['global'].platform.connect(url, user, passwd)
     try:
-        print("Running VirtualBox version %s" % (vbox.version))
+        print("Running VirtualBox version %s" % (ctx['vb'].version))
     except Exception as e:
         printErr(ctx, e)
         if g_fVerbose:
@@ -1925,6 +1923,7 @@ def reconnectCmd(ctx, args):
         printErr(ctx, e)
         if g_fVerbose:
             traceback.print_exc()
+    ctx['perf'] = ctx['global'].getPerfCollector(ctx['vb'])
     return 0
 
 def exportVMCmd(ctx, args):
@@ -2905,7 +2904,7 @@ def natCmd(ctx, args):
     session = None
     if len(cmdargs) > 1:
         rosession = 0
-        session = ctx['global'].openMachineSession(mach, False)
+        session = ctx['global'].openMachineSession(mach, fPermitSharing=False)
         mach = session.machine
 
     adapter = mach.getNetworkAdapter(nicnum)
@@ -3083,7 +3082,7 @@ def nicCmd(ctx, args):
     cmdargs = args[3:]
     func = args[3]
     session = None
-    session = ctx['global'].openMachineSession(vm)
+    session = ctx['global'].openMachineSession(vm, fPermitSharing=True)
     vm = session.machine
     adapter = vm.getNetworkAdapter(nicnum)
     (rc, report) = niccomand[func](ctx, vm, nicnum, adapter, cmdargs)
@@ -3539,7 +3538,7 @@ def main(argv):
     if options.autopath:
         asLocations = [ os.getcwd(), ]
         try:    sScriptDir = os.path.dirname(os.path.abspath(__file__))
-        except: pass; # In case __file__ isn't there.
+        except: pass # In case __file__ isn't there.
         else:
             if platform.system() in [ 'SunOS', ]:
                 asLocations.append(os.path.join(sScriptDir, 'amd64'))
@@ -3583,7 +3582,7 @@ def main(argv):
     oVBoxMgr = VirtualBoxManager(style, params)
     ctx = {
         'global':       oVBoxMgr,
-        'vb':           oVBoxMgr.vbox,
+        'vb':           oVBoxMgr.getVirtualBox(),
         'const':        oVBoxMgr.constants,
         'remote':       oVBoxMgr.remote,
         'type':         oVBoxMgr.type,
@@ -3604,9 +3603,9 @@ def main(argv):
     # Release the interfaces references in ctx before cleaning up.
     #
     for sKey in list(ctx.keys()):
-        del ctx[sKey];
-    ctx = None;
-    gc.collect();
+        del ctx[sKey]
+    ctx = None
+    gc.collect()
 
     oVBoxMgr.deinit()
     del oVBoxMgr

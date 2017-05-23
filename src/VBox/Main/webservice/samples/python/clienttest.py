@@ -38,20 +38,18 @@ def main(argv):
 
     from vboxapi import VirtualBoxManager
     # This is a VirtualBox COM/XPCOM API client, no data needed.
-    wrapper = VirtualBoxManager(None, None)
+    mgr = VirtualBoxManager(None, None)
 
-    # Get the VirtualBox manager
-    mgr  = wrapper.mgr
     # Get the global VirtualBox object
-    vbox = wrapper.vbox
+    vbox = mgr.getVirtualBox()
 
     print "Running VirtualBox version %s" %(vbox.version)
 
-    # Get all constants through the Python wrapper code
-    vboxConstants = wrapper.constants
+    # Get all constants through the Python manager code
+    vboxConstants = mgr.constants
 
     # Enumerate all defined machines
-    for mach in wrapper.getArray(vbox, 'machines'):
+    for mach in mgr.getArray(vbox, 'machines'):
 
         try:
             # Be prepared for failures - the VM can be inaccessible
@@ -79,7 +77,7 @@ def main(argv):
             if mach.state == vboxConstants.MachineState_Running:
 
                 # Get the session object
-                session = mgr.getSessionObject(vbox)
+                session = mgr.getSessionObject()
 
                  # Lock the current machine (shared mode, since we won't modify the machine)
                 mach.lockMachine(session, vboxConstants.LockType_Shared)
@@ -110,8 +108,8 @@ def main(argv):
             print "Errror [%s]: %s" %(mach.name, str(e))
             traceback.print_exc()
 
-    # Call destructor and delete wrapper
-    del wrapper
+    # Call destructor and delete manager
+    del mgr
 
 if __name__ == '__main__':
     main(sys.argv)

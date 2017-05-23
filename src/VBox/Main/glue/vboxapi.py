@@ -44,7 +44,7 @@ if sys.version_info >= (3, 0):
 #
 # Globals, environment and sys.path changes.
 #
-import platform;
+import platform
 VBoxBinDir = os.environ.get("VBOX_PROGRAM_PATH", None)
 VBoxSdkDir = os.environ.get("VBOX_SDK_PATH", None)
 
@@ -209,7 +209,7 @@ class PlatformBase(object):
         """
         return None
 
-    def getSessionObject(self, oIVBox):
+    def getSessionObject(self):
         """
         Get a session object that can be used for opening machine sessions.
 
@@ -218,7 +218,6 @@ class PlatformBase(object):
 
         See also openMachineSession.
         """
-        _ = oIVBox
         return None
 
     def getType(self):
@@ -513,8 +512,7 @@ class PlatformMSCOM(PlatformBase):
         #
         return oGenCache.EnsureModule(self.VBOX_TLB_GUID, self.VBOX_TLB_LCID, self.VBOX_TLB_MAJOR, self.VBOX_TLB_MINOR)
 
-    def getSessionObject(self, oIVBox):
-        _ = oIVBox
+    def getSessionObject(self):
         import win32com
         from win32com.client import Dispatch
         return win32com.client.Dispatch("VirtualBox.Session")
@@ -544,23 +542,23 @@ class PlatformMSCOM(PlatformBase):
         # gets upset.  So, we redo some of the dispatcher work here, picking
         # the missing type information from the getter.
         #
-        oOleObj     = getattr(oInterface, '_oleobj_');
-        aPropMapGet = getattr(oInterface, '_prop_map_get_');
-        aPropMapPut = getattr(oInterface, '_prop_map_put_');
-        sComAttrib  = sAttrib if sAttrib in aPropMapGet else ComifyName(sAttrib);
+        oOleObj     = getattr(oInterface, '_oleobj_')
+        aPropMapGet = getattr(oInterface, '_prop_map_get_')
+        aPropMapPut = getattr(oInterface, '_prop_map_put_')
+        sComAttrib  = sAttrib if sAttrib in aPropMapGet else ComifyName(sAttrib)
         try:
-            aArgs, aDefaultArgs = aPropMapPut[sComAttrib];
-            aGetArgs            = aPropMapGet[sComAttrib];
+            aArgs, aDefaultArgs = aPropMapPut[sComAttrib]
+            aGetArgs            = aPropMapGet[sComAttrib]
         except KeyError: # fallback.
-            return oInterface.__setattr__(sAttrib, aoArray);
+            return oInterface.__setattr__(sAttrib, aoArray)
 
-        import pythoncom;
+        import pythoncom
         oOleObj.InvokeTypes(aArgs[0],                   # dispid
                             aArgs[1],                   # LCID
                             aArgs[2],                   # DISPATCH_PROPERTYPUT
                             (pythoncom.VT_HRESULT, 0),  # retType - or void?
                             (aGetArgs[2],),             # argTypes - trick: we get the type from the getter.
-                            aoArray,);                  # The array
+                            aoArray,)                   # The array
 
     def initPerThread(self):
         import pythoncom
@@ -752,8 +750,7 @@ class PlatformXPCOM(PlatformBase):
         import xpcom.components
         _ = dParams
 
-    def getSessionObject(self, oIVBox):
-        _ = oIVBox
+    def getSessionObject(self):
         import xpcom.components
         return xpcom.components.classes["@virtualbox.org/Session;1"].createInstance()
 
@@ -880,8 +877,8 @@ class PlatformWEBSERVICE(PlatformBase):
     # Base class overrides.
     #
 
-    def getSessionObject(self, oIVBox):
-        return self.wsmgr.getSessionObject(oIVBox)
+    def getSessionObject(self):
+        return self.wsmgr.getSessionObject(self.vbox)
 
     def getVirtualBox(self):
         return self.connect(self.url, self.user, self.password)
@@ -1013,7 +1010,7 @@ class VirtualBoxManager(object):
 
         # Get the virtualbox singleton.
         try:
-            self.vbox = self.platform.getVirtualBox()
+            vbox = self.platform.getVirtualBox()
         except NameError:
             print("Installation problem: check that appropriate libs in place")
             traceback.print_exc()
@@ -1022,10 +1019,6 @@ class VirtualBoxManager(object):
             _, e, _ = sys.exc_info()
             print("init exception: ", e)
             traceback.print_exc()
-            if self.remote:
-                self.vbox = None
-            else:
-                raise e
 
     def __del__(self):
         self.deinit()
@@ -1043,7 +1036,7 @@ class VirtualBoxManager(object):
         This used to be an attribute referring to a session manager class with
         only one method called getSessionObject. It moved into this class.
         """
-        return self;
+        return self
 
     #
     # Wrappers for self.platform methods.
@@ -1052,9 +1045,11 @@ class VirtualBoxManager(object):
         """ See PlatformBase::getVirtualBox(). """
         return self.platform.getVirtualBox()
 
-    def getSessionObject(self, oIVBox):
+    def getSessionObject(self, oIVBox = None):
         """ See PlatformBase::getSessionObject(). """
-        return self.platform.getSessionObject(oIVBox)
+        # ignore parameter which was never needed
+        _ = oIVBox
+        return self.platform.getSessionObject()
 
     def getArray(self, oInterface, sAttrib):
         """ See PlatformBase::getArray(). """
@@ -1096,9 +1091,6 @@ class VirtualBoxManager(object):
         For unitializing the manager.
         Do not access it after calling this method.
         """
-        if hasattr(self, "vbox") and self.vbox is not None:
-            del self.vbox
-            self.vbox = None
         if hasattr(self, "platform") and self.platform is not None:
             self.platform.deinit()
             self.platform = None
@@ -1113,7 +1105,7 @@ class VirtualBoxManager(object):
         Returns a session object on success.
         Raises exception on failure.
         """
-        oSession = self.getSessionObject(self.vbox);
+        oSession = self.getSessionObject()
         if fPermitSharing:
             eType = self.constants.LockType_Shared
         else:
