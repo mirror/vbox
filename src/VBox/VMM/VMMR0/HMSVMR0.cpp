@@ -3649,7 +3649,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_EXCEPTION_0:             /* X86_XCPT_DE */
                 /*   SVM_EXIT_EXCEPTION_1: */          /* X86_XCPT_DB - Handled above. */
                 case SVM_EXIT_EXCEPTION_2:             /* X86_XCPT_NMI */
-                /*   SVM_EXIT_EXCEPTION_3: */         /* X86_XCPT_BP - Handled above. */
+                /*   SVM_EXIT_EXCEPTION_3: */          /* X86_XCPT_BP - Handled above. */
                 case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
                 case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
                 /*   SVM_EXIT_EXCEPTION_6: */          /* X86_XCPT_UD - Handled above. */
@@ -3671,6 +3671,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27: case SVM_EXIT_EXCEPTION_28:
                 case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
                 {
+                    /** @todo r=ramshankar; We should be doing
+                     *        HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY here! */
+
                     PSVMVMCB pVmcb   = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
                     SVMEVENT Event;
                     Event.u          = 0;
@@ -5218,10 +5221,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
         /* If event delivery causes an MMIO #NPF, go back to instruction emulation as
            otherwise injecting the original pending event would most likely cause the same MMIO #NPF. */
         if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
-        {
-            /** @todo this should return VINF_EM_RAW_INJECT_TRPM_EVENT. */
-            return VERR_EM_INTERPRETER;
-        }
+            return VINF_EM_RAW_INJECT_TRPM_EVENT;
 
         VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr,
                                                          u32ErrCode);
@@ -5645,8 +5645,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
-        /** @todo this should return VINF_EM_RAW_INJECT_TRPM_EVENT. */
-        return VERR_EM_INTERPRETER;
+        return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
