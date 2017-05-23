@@ -351,7 +351,7 @@ class Bs3Cg1Instruction(object):
         self.sCpu = 'BS3CG1CPU_';
         assert len(oInstr.asCpuIds) in [0, 1], str(oInstr);
         if oInstr.asCpuIds:
-            self.sCpu += oInstr.asCpuIds[0].upper();
+            self.sCpu += oInstr.asCpuIds[0].upper().replace('.', '_');
         elif oInstr.sMinCpu:
             self.sCpu += 'GE_' + oInstr.sMinCpu;
         else:

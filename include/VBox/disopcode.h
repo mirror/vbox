@@ -793,6 +793,7 @@ enum OPCODES
     OP_VMOVDQA,
     OP_VMOVDQU,
     OP_VMOVNTDQ,
+    OP_VMOVNTDQA,
 /** @} */
     OP_END_OF_OPCODES
 };

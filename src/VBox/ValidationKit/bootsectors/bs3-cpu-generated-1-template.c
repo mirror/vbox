@@ -2410,7 +2410,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Mq_WO_VqHi(PBS3CG1STATE pTh
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -4187,8 +4187,6 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
             return Bs3Cg1EncodeNext_MODRM_VqHi_WO_Uq(pThis, iEncoding);
         case BS3CG1ENC_MODRM_VqHi_WO_Mq:
             return Bs3Cg1EncodeNext_MODRM_VqHi_WO_Mq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_Vdq_WO_Wdq:
-            return Bs3Cg1EncodeNext_MODRM_Vdq_WO_Wdq(pThis, iEncoding);
         case BS3CG1ENC_MODRM_Vpd_WO_Wpd:
         case BS3CG1ENC_MODRM_Vps_WO_Wps:
             return Bs3Cg1EncodeNext_MODRM_Vps_WO_Wps__OR__MODRM_Vpd_WO_Wpd(pThis, iEncoding);
@@ -4407,7 +4405,19 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
+        case BS3CG1ENC_MODRM_Vdq_WO_Mdq:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa;
+            pThis->iRegOp            = 0;
+            pThis->iRmOp             = 1;
+            pThis->aOperands[0].cbOp = 16;
+            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_MEM;
+            pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
+            break;
+
         case BS3CG1ENC_MODRM_Vdq_WO_Wdq:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Vdq_WO_Wdq;
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 16;
@@ -4565,7 +4575,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_Mdq_WO_Vdq:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething;
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa;
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 16;
@@ -4598,7 +4608,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 
         case BS3CG1ENC_MODRM_Mps_WO_Vps:
         case BS3CG1ENC_MODRM_Mpd_WO_Vpd:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething;
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa;
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 16;
@@ -5078,6 +5088,7 @@ static bool BS3_NEAR_CODE Bs3Cg1CpuSetupNext(PBS3CG1STATE pThis, unsigned iCpuSe
         case BS3CG1CPU_SSE:
         case BS3CG1CPU_SSE2:
         case BS3CG1CPU_SSE3:
+        case BS3CG1CPU_SSE4_1:
         case BS3CG1CPU_AVX:
         case BS3CG1CPU_AVX2:
             if (iCpuSetup > 0 || *pfInvalidInstr)
@@ -5157,6 +5168,7 @@ static bool BS3_NEAR_CODE Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
         case BS3CG1CPU_SSE:
         case BS3CG1CPU_SSE2:
         case BS3CG1CPU_SSE3:
+        case BS3CG1CPU_SSE4_1:
         case BS3CG1CPU_AVX:
             if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
             {
@@ -5173,6 +5185,10 @@ static bool BS3_NEAR_CODE Bs3Cg1CpuSetupFirst(PBS3CG1STATE pThis)
                         return false;
                     case BS3CG1CPU_SSE3:
                         if (fEcx & X86_CPUID_FEATURE_ECX_SSE3)
+                            return Bs3Cg3SetupSseAndAvx(pThis);
+                        return false;
+                    case BS3CG1CPU_SSE4_1:
+                        if (fEcx & X86_CPUID_FEATURE_ECX_SSE4_1)
                             return Bs3Cg3SetupSseAndAvx(pThis);
                         return false;
                     case BS3CG1CPU_AVX:

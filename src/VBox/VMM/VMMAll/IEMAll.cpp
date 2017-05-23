@@ -11228,6 +11228,15 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_SSE41_RELATED_XCPT() \
+    do { \
+        if (   (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_EM) \
+            || !(IEM_GET_CTX(pVCpu)->cr4 & X86_CR4_OSFXSR) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse41) \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        if (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pVCpu); \
+    } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE3_RELATED_XCPT() \
     do { \
         if (   (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_EM) \
