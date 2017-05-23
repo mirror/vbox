@@ -11219,6 +11219,15 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if ((pVCpu)->iem.s.CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87.FSW & X86_FSW_ES) \
             return iemRaiseMathFault(pVCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT() \
+    do { \
+        if (   (IEM_GET_CTX(pVCpu)->aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE) \
+            || !(IEM_GET_CTX(pVCpu)->cr4 & X86_CR4_OSXSAVE) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx2) \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        if (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pVCpu); \
+    } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT() \
     do { \
         if (   (IEM_GET_CTX(pVCpu)->aXcr[0] & (XSAVE_C_YMM | XSAVE_C_SSE)) != (XSAVE_C_YMM | XSAVE_C_SSE) \

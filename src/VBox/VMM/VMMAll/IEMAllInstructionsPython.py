@@ -258,6 +258,7 @@ g_kdOpTypes = {
     'Mq_WO':        ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
     'Mps_WO':       ( 'IDX_UseModRM',       'rm',     '%Mps', 'Mps',     ),
     'Mpd_WO':       ( 'IDX_UseModRM',       'rm',     '%Mpd', 'Mpd',     ),
+    'Mx':           ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      ),
     'Mx_WO':        ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      ),
     'M_RO':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       ),
     'M_RW':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       ),
