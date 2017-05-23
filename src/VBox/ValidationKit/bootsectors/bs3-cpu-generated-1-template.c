@@ -4564,6 +4564,17 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_MEM_WO;
             break;
 
+        case BS3CG1ENC_MODRM_Mdq_WO_Vdq:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething;
+            pThis->iRmOp             = 0;
+            pThis->iRegOp            = 1;
+            pThis->aOperands[0].cbOp = 16;
+            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_MEM_WO;
+            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_XMM0;
+            break;
+
         case BS3CG1ENC_MODRM_Mq_WO_Pq:
             pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Mq_WO_Pq;
             pThis->iRmOp             = 0;

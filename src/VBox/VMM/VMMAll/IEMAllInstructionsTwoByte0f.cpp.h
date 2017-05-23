@@ -8976,7 +8976,7 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq)
      * @opmnemonic  ud0fe7reg
      * @opcode      0xe7
      * @opcodesub   11 mr/reg
-     * @oppfx       f2
+     * @oppfx       none
      * @opunused    immediate
      * @opcpuid     sse
      * @optest      ->
@@ -8984,14 +8984,23 @@ FNIEMOP_DEF(iemOp_movntq_Mq_Pq)
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
-/** Opcode 0x66 0x0f 0xe7 - movntdq Mx, Vx */
-FNIEMOP_DEF(iemOp_movntdq_Mx_Vx)
+/**
+ * @opcode      0xe7
+ * @opcodesub   !11 mr/reg
+ * @oppfx       0x66
+ * @opcpuid     sse2
+ * @opgroup     og_sse2_cachect
+ * @opxcpttype  1
+ * @optest      op1=-1 op2=2  -> op1=2
+ * @optest      op1=0 op2=-42 -> op1=-42
+ */
+FNIEMOP_DEF(iemOp_movntdq_Mdq_Vdq)
 {
+    IEMOP_MNEMONIC2(MR_MEM, MOVNTDQ, movntdq, Mdq_WO, Vdq, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
         /* Register, memory. */
-        IEMOP_MNEMONIC(movntdq_Mx_Vx, "movntdq Mx,Vx");
         IEM_MC_BEGIN(0, 2);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
@@ -9009,7 +9018,16 @@ FNIEMOP_DEF(iemOp_movntdq_Mx_Vx)
         return VINF_SUCCESS;
     }
 
-    /* The register, register encoding is invalid. */
+    /**
+     * @opdone
+     * @opmnemonic  ud660fe7reg
+     * @opcode      0xe7
+     * @opcodesub   11 mr/reg
+     * @oppfx       0x66
+     * @opunused    immediate
+     * @opcpuid     sse
+     * @optest      ->
+     */
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -9449,7 +9467,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0xe4 */  iemOp_pmulhuw_Pq_Qq,        iemOp_pmulhuw_Vx_W,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe5 */  iemOp_pmulhw_Pq_Qq,         iemOp_pmulhw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe6 */  iemOp_InvalidNeedRM,        iemOp_cvttpd2dq_Vx_Wpd,     iemOp_cvtdq2pd_Vx_Wpd,      iemOp_cvtpd2dq_Vx_Wpd,
-    /* 0xe7 */  iemOp_movntq_Mq_Pq,         iemOp_movntdq_Mx_Vx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe7 */  iemOp_movntq_Mq_Pq,         iemOp_movntdq_Mdq_Vdq,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe8 */  iemOp_psubsb_Pq_Qq,         iemOp_psubsb_Vx_W,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe9 */  iemOp_psubsw_Pq_Qq,         iemOp_psubsw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xea */  iemOp_pminsw_Pq_Qq,         iemOp_pminsw_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
