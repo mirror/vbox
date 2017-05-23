@@ -5926,6 +5926,13 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
                             ("hmR0VmxCheckExitDueToEventDelivery: Unexpected VM-exit interruption info. %#x!\n",
                              uExitVectorType), VERR_VMX_IPE_5);
             enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fIdtVectorFlags, uIdtVector, fExitVectorFlags, uExitVector, &fRaiseInfo);
+
+            /* Determine a vectoring #PF condition, see comment in hmR0VmxExitXcptPF(). */
+            if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
+            {
+                pVmxTransient->fVectoringPF = true;
+                enmRaise = IEMXCPTRAISE_PREV_EVENT;
+            }
         }
         else
         {
@@ -5961,12 +5968,15 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
         switch (enmRaise)
         {
             case IEMXCPTRAISE_CURRENT_XCPT:
+            {
+                Log4(("IDT: vcpu[%RU32] Pending secondary xcpt: uIdtVectoringInfo=%#RX64 uExitIntInfo=%#RX64\n", pVCpu->idCpu,
+                      pVmxTransient->uIdtVectoringInfo, pVmxTransient->uExitIntInfo));
+                Assert(rcStrict == VINF_SUCCESS);
+                break;
+            }
+
             case IEMXCPTRAISE_PREV_EVENT:
             {
-                /* Determine a vectoring #PF condition, see comment in hmR0VmxExitXcptPF(). */
-                if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
-                    pVmxTransient->fVectoringPF = true;
-
                 uint32_t u32ErrCode;
                 if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo))
                 {
@@ -11570,6 +11580,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
             /* fall thru */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:
         {
+#if 0
             /*
              * If there's any exception caused as a result of event injection, go back to
              * the interpreter. The page-fault case is complicated and we manually handle
@@ -11587,6 +11598,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
                 rc = VERR_EM_INTERPRETER;
                 break;
             }
+#endif
 
             switch (uVector)
             {
@@ -12900,26 +12912,28 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
         AssertRCReturn(rc, rc);
         if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
         {
-            uint32_t uIntType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-
-            uint32_t uVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
-            bool fErrorCodeValid = VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo);
-
-            /* Save it as a pending event and it'll be converted to a TRPM event on the way out to ring-3. */
-            Assert(!pVCpu->hm.s.Event.fPending);
-            pVCpu->hm.s.Event.fPending = true;
-            pVCpu->hm.s.Event.u64IntInfo = pVmxTransient->uIdtVectoringInfo;
-            rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
+            uint32_t       uErrCode;
+            RTGCUINTPTR    GCPtrFaultAddress;
+            uint32_t const uIntType        = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
+            uint32_t const uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
+            bool const     fErrorCodeValid = VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo);
             if (fErrorCodeValid)
-                pVCpu->hm.s.Event.u32ErrCode = pVmxTransient->uIdtVectoringErrorCode;
+            {
+                rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+                uErrCode = pVmxTransient->uIdtVectoringErrorCode;
+            }
             else
-                pVCpu->hm.s.Event.u32ErrCode = 0;
+                uErrCode = 0;
+
             if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
                 && uVector == X86_XCPT_PF)
-            {
-                pVCpu->hm.s.Event.GCPtrFaultAddress = pMixedCtx->cr2;
-            }
+                GCPtrFaultAddress = pMixedCtx->cr2;
+            else
+                GCPtrFaultAddress = 0;
+
+            hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
+                                   0 /* cbInstr */, uErrCode, GCPtrFaultAddress);
 
             Log4(("Pending event on TaskSwitch uIntType=%#x uVector=%#x\n", uIntType, uVector));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTaskSwitch);
@@ -13850,7 +13864,6 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         pVCpu->hm.s.Event.fPending = false;                  /* In case it's a contributory or vectoring #PF. */
         if (RT_LIKELY(!pVmxTransient->fVectoringDoublePF))
         {
-            pMixedCtx->cr2 = pVmxTransient->uExitQualification;  /* Update here in case we go back to ring-3 before injection. */
             hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
                                    0 /* cbInstr */, pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQualification);
         }
@@ -13914,7 +13927,6 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             uint32_t uGstErrorCode = TRPMGetErrorCode(pVCpu);
             TRPMResetTrap(pVCpu);
             pVCpu->hm.s.Event.fPending = false;                 /* In case it's a contributory #PF. */
-            pMixedCtx->cr2 = pVmxTransient->uExitQualification; /* Update here in case we go back to ring-3 before injection. */
             hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
                                    0 /* cbInstr */, uGstErrorCode, pVmxTransient->uExitQualification);
         }
