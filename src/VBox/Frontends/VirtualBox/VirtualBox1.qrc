@@ -62,6 +62,7 @@
         <file alias="description_16px.png">images/description_16px.png</file>
         <file alias="disconnect_16px.png">images/disconnect_16px.png</file>
         <file alias="diskimage_16px.png">images/diskimage_16px.png</file>
+        <file alias="diskimage_22px.png">images/diskimage_22px.png</file>
         <file alias="diskimage_32px.png">images/diskimage_32px.png</file>
         <file alias="display_hardware_16px.png">images/display_hardware_16px.png</file>
         <file alias="display_hardware_write_16px.png">images/display_hardware_write_16px.png</file>
@@ -173,6 +174,7 @@
         <file alias="help_button_normal_mac_22px.png">images/help_button_normal_mac_22px.png</file>
         <file alias="help_button_pressed_mac_22px.png">images/help_button_pressed_mac_22px.png</file>
         <file alias="host_iface_manager_16px.png">images/host_iface_manager_16px.png</file>
+        <file alias="host_iface_manager_22px.png">images/host_iface_manager_22px.png</file>
         <file alias="host_iface_manager_32px.png">images/host_iface_manager_32px.png</file>
         <file alias="hostkey_16px.png">images/hostkey_16px.png</file>
         <file alias="hostkey_24px.png">images/hostkey_24px.png</file>

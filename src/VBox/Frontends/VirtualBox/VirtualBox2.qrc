@@ -139,6 +139,8 @@
         <file alias="snapshot_delete_22px.png">images/snapshot_delete_22px.png</file>
         <file alias="snapshot_delete_disabled_16px.png">images/snapshot_delete_disabled_16px.png</file>
         <file alias="snapshot_delete_disabled_22px.png">images/snapshot_delete_disabled_22px.png</file>
+        <file alias="snapshot_manager_16px.png">images/snapshot_manager_16px.png</file>
+        <file alias="snapshot_manager_22px.png">images/snapshot_manager_22px.png</file>
         <file alias="snapshot_offline_16px.png">images/snapshot_offline_16px.png</file>
         <file alias="snapshot_online_16px.png">images/snapshot_online_16px.png</file>
         <file alias="snapshot_restore_16px.png">images/snapshot_restore_16px.png</file>

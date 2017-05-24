@@ -377,6 +377,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/selector/UISelectorWindow.h \
 	src/selector/UISnapshotPane.h \
+	src/selector/UIToolsPane.h \
 	src/selector/graphics/chooser/UIGChooser.h \
 	src/selector/graphics/chooser/UIGChooserModel.h \
 	src/selector/graphics/chooser/UIGChooserView.h \
@@ -685,6 +686,7 @@ VirtualBox_SOURCES = \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/UISelectorWindow.cpp \
 	src/selector/UISnapshotPane.cpp \
+	src/selector/UIToolsPane.cpp \
 	src/selector/graphics/chooser/UIGChooser.cpp \
 	src/selector/graphics/chooser/UIGChooserModel.cpp \
 	src/selector/graphics/chooser/UIGChooserView.cpp \
