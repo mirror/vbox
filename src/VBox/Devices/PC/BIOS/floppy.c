@@ -45,11 +45,23 @@
 
 extern uint16_t get_floppy_dpt(uint8_t drive_type);
 
+// Local copies to slihgtly reduce stack usage.
+inline uint8_t read_byte(uint16_t seg, uint16_t offset)
+{
+    return( *(seg:>(uint8_t *)offset) );
+}
+
+inline void write_byte(uint16_t seg, uint16_t offset, uint8_t data)
+{
+    *(seg:>(uint8_t *)offset) = data;
+}
+
+
 //////////////////////
 // FLOPPY functions //
 //////////////////////
 
-void set_diskette_ret_status(uint8_t value)
+inline void set_diskette_ret_status(uint8_t value)
 {
     write_byte(0x0040, 0x0041, value);
 }
@@ -221,7 +233,6 @@ bx_bool floppy_read_id(uint16_t drive)
 #ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
     uint8_t     val8;
 #endif
-    uint8_t     return_status[7];
     int         i;
 
     floppy_prepare_controller(drive);
@@ -247,11 +258,10 @@ bx_bool floppy_read_id(uint16_t drive)
 #endif
 
     // read 7 return status bytes from controller
-    for (i = 0; i < 7; ++i) {
-        return_status[i] = inb(0x3f5);
-    }
+    for (i = 0; i < 7; ++i)
+        write_byte(0x0040, 0x0042 + i, inb(0x3f5));
 
-    if ( (return_status[0] & 0xc0) != 0 )
+    if ((read_byte(0x0040, 0x0042 + 0) & 0xc0) != 0)
         return 0;
     else
         return 1;
@@ -444,11 +454,11 @@ bx_bool floppy_drive_exists(uint16_t drive)
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
 #define DX      r.gr.u.r16.dx
-#define SI      r.gr.u.r16.si
+#define SI      r.gr.u.r16.si   // not used
 #define DI      r.gr.u.r16.di
-#define BP      r.gr.u.r16.bp
+#define BP      r.gr.u.r16.bp   // not used
 #define ELDX    r.gr.u.r16.sp
-#define DS      r.ds
+#define DS      r.ds            // not used
 #define ES      r.es
 #define FLAGS   r.ra.flags.u.r16.flags
 
@@ -457,16 +467,13 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
     uint8_t     drive, num_sectors, track, sector, head;
     uint16_t    base_address, base_count, base_es;
     uint8_t     page, mode_register, val8, media_state;
-    uint8_t     return_status[7];
-    uint8_t     drive_type, num_floppies, ah;
+    uint8_t     drive_type, num_floppies;
     uint16_t    last_addr;
     int         i;
 
     BX_DEBUG_INT13_FL("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
 
-    ah = GET_AH();
-
-    switch ( ah ) {
+    switch ( GET_AH() ) {
     case 0x00: // diskette controller reset
         BX_DEBUG_INT13_FL("floppy f00\n");
         drive = GET_ELDL();
@@ -548,7 +555,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             }
         }
 
-        if (ah == 0x02) {
+        if (GET_AH() == 0x02) {
             // Read Diskette Sectors
 
             //-----------------------------------
@@ -670,12 +677,10 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
                 BX_PANIC("%s: ctrl not ready\n", __func__);
 
             // read 7 return status bytes from controller and store in BDA
-            for (i = 0; i < 7; ++i) {
-                return_status[i] = inb(0x3f5);
-                write_byte(0x0040, 0x0042 + i, return_status[i]);
-            }
+            for (i = 0; i < 7; ++i)
+                write_byte(0x0040, 0x0042 + i, inb(0x3f5));
 
-            if ( (return_status[0] & 0xc0) != 0 ) {
+            if ((read_byte(0x0040, 0x0042 + 0) & 0xc0) != 0) {
                 BX_DEBUG_INT13_FL("failed (FDC failure)\n");
                 floppy_reset_controller(drive);
                 SET_AH(0x20);
@@ -695,7 +700,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             SET_AH(0x00); // success
             CLEAR_CF();   // success
             return;
-        } else if (ah == 0x03) {
+        } else if (GET_AH() == 0x03) {
             // Write Diskette Sectors
 
             //-----------------------------------
@@ -809,13 +814,11 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
                 BX_PANIC("%s: ctrl not ready\n", __func__);
 
             // read 7 return status bytes from controller and store in BDA
-            for (i = 0; i < 7; ++i) {
-                return_status[i] = inb(0x3f5);
-                write_byte(0x0040, 0x0042 + i, return_status[i]);
-            }
+            for (i = 0; i < 7; ++i)
+                write_byte(0x0040, 0x0042 + i, inb(0x3f5));
 
-            if ( (return_status[0] & 0xc0) != 0 ) {
-                if ( (return_status[1] & 0x02) != 0 ) {
+            if ((read_byte(0x0040, 0x0042 + 0) & 0xc0) != 0) {
+                if ((read_byte(0x0040, 0x0042 + 1) & 0x02) != 0) {
                     // diskette not writable.
                     // AH=status code=0x03 (tried to write on write-protected disk)
                     // AL=number of sectors written=0
@@ -974,13 +977,11 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             BX_PANIC("%s: ctrl not ready\n", __func__);
 
         // read 7 return status bytes from controller and store in BDA
-        for (i = 0; i < 7; ++i) {
-            return_status[i] = inb(0x3f5);
-            write_byte(0x0040, 0x0042 + i, return_status[i]);
-        }
+        for (i = 0; i < 7; ++i)
+            write_byte(0x0040, 0x0042 + i, inb(0x3f5));
 
-        if ( (return_status[0] & 0xc0) != 0 ) {
-            if ( (return_status[1] & 0x02) != 0 ) {
+        if ((read_byte(0x0040, 0x0042 + 0) & 0xc0) != 0) {
+            if ((read_byte(0x0040, 0x0042 + 1) & 0x02) != 0) {
                 // diskette not writable.
                 // AH=status code=0x03 (tried to write on write-protected disk)
                 // AL=number of sectors written=0
@@ -1351,46 +1352,5 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
 
 #endif  // #if BX_SUPPORT_FLOPPY
 
-#if 0
-void determine_floppy_media(uint16_t drive)
-{
-    uint8_t     val8, DOR, ctrl_info;
-
-    ctrl_info = read_byte(0x0040, 0x008F);
-    if (drive==1)
-        ctrl_info >>= 4;
-    else
-        ctrl_info &= 0x0f;
-
-#if 0
-    if (drive == 0) {
-        DOR = 0x1c; // DOR: drive0 motor on, DMA&int enabled, normal op, drive select 0
-    }
-    else {
-        DOR = 0x2d; // DOR: drive1 motor on, DMA&int enabled, normal op, drive select 1
-    }
-#endif
-
-    if ( (ctrl_info & 0x04) != 0x04 ) {
-        // Drive not determined means no drive exists, done.
-        return;
-    }
-
-#if 0
-    // check Main Status Register for readiness
-    val8 = inb(0x03f4) & 0x80; // Main Status Register
-    if (val8 != 0x80)
-    BX_PANIC("d_f_m: MRQ bit not set\n");
-
-    // change line
-
-    // existing BDA values
-
-    // turn on drive motor
-    outb(0x03f2, DOR); // Digital Output Register
-    //
-#endif
-    BX_PANIC("d_f_m: OK so far\n");
-}
-#endif
-
+/* Avoid saving general registers already saved by caller (PUSHA). */
+#pragma aux int13_diskette_function modify [di si cx dx bx];
