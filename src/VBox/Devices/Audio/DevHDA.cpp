@@ -795,7 +795,7 @@ typedef struct HDADRIVER
     /** Pointer to HDA controller (state). */
     R3PTRTYPE(PHDASTATE)               pHDAState;
     /** Driver flags. */
-    PDMAUDIODRVFLAGS                   Flags;
+    PDMAUDIODRVFLAGS                   fFlags;
     uint8_t                            u32Padding0[2];
     /** LUN to which this driver has been assigned. */
     uint8_t                            uLUN;
@@ -2932,7 +2932,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             }
 
             if (   RT_FAILURE(rc2)
-                && (pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY)) /* We only care about primary drivers here, the rest may fail. */
+                && (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)) /* We only care about primary drivers here, the rest may fail. */
             {
                 if (RT_SUCCESS(rc))
                     rc = rc2;
@@ -5992,9 +5992,9 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)
-                pDrv->Flags |= PDMAUDIODRVFLAGS_PRIMARY;
+                pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
 
-            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
+            LogFunc(("LUN#%u: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
 
             /* Attach to driver list if not attached yet. */
             if (!pDrv->fAttached)
@@ -6400,7 +6400,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
              * Only primary drivers are critical for the VM to run. Everything else
              * might not worth showing an own error message box in the GUI.
              */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
+            if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
                 continue;
 
             PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
@@ -6608,7 +6608,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         {
             /* Only register primary driver.
              * The device emulation does the output multiplexing then. */
-            if (pDrv->Flags != PDMAUDIODRVFLAGS_PRIMARY)
+            if (pDrv->fFlags != PDMAUDIODRVFLAGS_PRIMARY)
                 continue;
 
             PDMAUDIOCALLBACK AudioCallbacks[2];
