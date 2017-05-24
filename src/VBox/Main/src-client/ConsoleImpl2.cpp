@@ -1078,6 +1078,20 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
         }
 
+        /* Sanitize valid/useful APIC combinations, see @bugref{8868}. */
+        if (!fEnableAPIC)
+        {
+            if (fIsGuest64Bit)
+                return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Cannot disable the APIC for a 64-bit guest."));
+            if (cCpus > 1)
+                return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Cannot disable the APIC for an SMP guest."));
+            if (fIOAPIC)
+            {
+                return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                    N_("Cannot disable the APIC when the I/O APIC is present."));
+            }
+        }
+
         BOOL fHMEnabled;
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHMEnabled);     H();
         if (cCpus > 1 && !fHMEnabled)
