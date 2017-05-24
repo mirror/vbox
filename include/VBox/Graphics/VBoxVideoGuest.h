@@ -29,7 +29,7 @@
 #ifndef ___VBox_Graphics_VBoxVideoGuest_h___
 #define ___VBox_Graphics_VBoxVideoGuest_h___
 
-#include <HGSMIBuffers.h>
+#include <HGSMIBase.h>
 #include <VBoxVideo.h>
 #include <VBoxVideoIPRT.h>
 

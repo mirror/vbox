@@ -20,6 +20,7 @@
 
 #include "VBoxMPUtils.h"
 #include <VBoxVideoGuest.h>
+#include <HGSMIHostCmd.h>
 
 #ifdef VBOX_XPDM_MINIPORT
 # include <iprt/nt/miniport.h>

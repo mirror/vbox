@@ -28,6 +28,7 @@
 #include <VBoxVideoGuest.h>
 #include <VBoxVideoVBE.h>
 #include <VBoxVideoIPRT.h>
+#include <HGSMIHostCmd.h>
 
 /**
  * Initialise the host context structure.

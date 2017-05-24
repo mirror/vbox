@@ -54,8 +54,9 @@ VBoxDisp_SOURCES     = \
 	xpdm/VBoxDispDDraw.cpp \
 	xpdm/VBoxDisp.def \
 	xpdm/VBoxDisp.rc \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIGuest.cpp \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIHost.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBufferAlloc.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIHostCmd.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 ifdef VBOX_WITH_VIDEOHWACCEL

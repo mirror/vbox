@@ -1,5 +1,5 @@
 /** @file
- * VBox Host Guest Shared Memory Interface (HGSMI) buffer management.
+ * VBox Host Guest Shared Memory Interface (HGSMI) command contexts.
  */
 
 /*
@@ -24,8 +24,8 @@
  */
 
 
-#ifndef ___VBox_Graphics_HGSMIBuffers_h___
-#define ___VBox_Graphics_HGSMIBuffers_h___
+#ifndef ___VBox_Graphics_HGSMIContext_h___
+#define ___VBox_Graphics_HGSMIContext_h___
 
 #include <HGSMI.h>
 #include <HGSMIChSetup.h>
@@ -83,38 +83,22 @@ typedef struct HGSMIHOSTCOMMANDCONTEXT
     RTIOPORT port;
 } HGSMIHOSTCOMMANDCONTEXT, *PHGSMIHOSTCOMMANDCONTEXT;
 
-/** @name Base HGSMI Buffer APIs
+/** @name HGSMI context initialisation APIs.
  * @{ */
 
-/** Acknowlege an IRQ. */
-DECLINLINE(void) VBoxHGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx)
-{
-    VBVO_PORT_WRITE_U32(pCtx->port, HGSMIOFFSET_VOID);
-}
-
-DECLHIDDEN(void)     VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                               void *pvBaseMapping,
-                                               uint32_t offHostFlags,
-                                               void *pvHostAreaMapping,
-                                               uint32_t offVRAMHostArea,
-                                               uint32_t cbHostArea);
-DECLHIDDEN(void)     VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                              void *pvMem);
-DECLHIDDEN(void)     VBoxHGSMIProcessHostQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx);
 /** @todo we should provide a cleanup function too as part of the API */
 DECLHIDDEN(int)      VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                                 void *pvGuestHeapMemory,
                                                 uint32_t cbGuestHeapMemory,
                                                 uint32_t offVRAMGuestHeapMemory,
                                                 const HGSMIENV *pEnv);
-DECLHIDDEN(void *)   VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                          HGSMISIZE cbData,
-                                          uint8_t u8Ch,
-                                          uint16_t u16Op);
-DECLHIDDEN(void)     VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         void *pvBuffer);
-DECLHIDDEN(int)      VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                           void *pvBuffer);
+DECLHIDDEN(void)     VBoxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
+                                               void *pvBaseMapping,
+                                               uint32_t offHostFlags,
+                                               void *pvHostAreaMapping,
+                                               uint32_t offVRAMHostArea,
+                                               uint32_t cbHostArea);
+
 /** @}  */
 
 RT_C_DECLS_END
