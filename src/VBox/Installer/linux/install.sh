@@ -15,6 +15,13 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+# Testing:
+# * After successful installation, 0 is returned if the vboxdrv module version
+#   built matches the one loaded.
+# * If the kernel modules cannot be built (run the installer with KERN_DIR=/) or
+#   loaded (run with KERN_DIR=/lib/modules/<installed non-current version>/build)
+#   then 1 is returned.
+
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
 # Include routines and utilities needed by the installer
@@ -51,6 +58,9 @@ else
 fi
 VBOXUSB_MODE=0664
 VBOXUSB_GRP=$GROUPNAME
+
+## Were we able to stop any previously running Additions kernel modules?
+MODULES_STOPPED=1
 
 
 ##############################################################################
@@ -380,6 +390,10 @@ if [ "$ACTION" = "install" ]; then
       START_SERVICES="--nostart"
     fi
     "${INSTALLATION_DIR}/prerm-common.sh" >> "${LOG}"
+
+    # Now check whether the kernel modules were stopped.
+    lsmod | grep -q vboxdrv && MODULES_STOPPED=
+
     "${INSTALLATION_DIR}/postinst-common.sh" ${START_SERVICES} >> "${LOG}"
 
     info ""
@@ -392,6 +406,14 @@ if [ "$ACTION" = "install" ]; then
     info ""
     info "We hope that you enjoy using VirtualBox."
     info ""
+
+    # And do a final test as to whether the kernel modules were properly created
+    # and loaded.  Return 0 if both are true, 1 if not.
+    test -n "${MODULES_STOPPED}" &&
+        modinfo vboxdrv >/dev/null 2>&1 &&
+        lsmod | grep -q vboxdrv ||
+        abort "The installation log file is at ${LOG}."
+
     log "Installation successful"
 elif [ "$ACTION" = "uninstall" ]; then
     . ./uninstall.sh
