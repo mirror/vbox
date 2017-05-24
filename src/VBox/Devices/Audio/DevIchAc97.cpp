@@ -375,7 +375,7 @@ typedef struct AC97DRIVER
     /** Pointer to AC97 controller (state). */
     R3PTRTYPE(PAC97STATE)              pAC97State;
     /** Driver flags. */
-    PDMAUDIODRVFLAGS                   Flags;
+    PDMAUDIODRVFLAGS                   fFlags;
     uint32_t                           PaddingFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
@@ -3216,9 +3216,9 @@ static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER p
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)
-                pDrv->Flags |= PDMAUDIODRVFLAGS_PRIMARY;
+                pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
 
-            LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
+            LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
 
             /* Attach to driver list if not attached yet. */
             if (!pDrv->fAttached)
@@ -3512,7 +3512,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
              * Only primary drivers are critical for the VM to run. Everything else
              * might not worth showing an own error message box in the GUI.
              */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
+            if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
                 continue;
 
             PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
@@ -3632,7 +3632,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         {
             /* Only register primary driver.
              * The device emulation does the output multiplexing then. */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
+            if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
                 continue;
 
             PDMAUDIOCALLBACK AudioCallbacks[2];
