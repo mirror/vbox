@@ -1007,7 +1007,8 @@ static int hmR0VmxStructsAlloc(PVM pVM)
             goto cleanup;
 
         /* Get the allocated virtual-APIC page from the APIC device for transparent TPR accesses. */
-        if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
+        if (   PDMHasApic(pVM)
+            && (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW))
         {
             rc = APICGetApicPageForCpu(pVCpu, &pVCpu->hm.s.vmx.HCPhysVirtApic, (PRTR0PTR)&pVCpu->hm.s.vmx.pbVirtApic,
                                        NULL /* pR3Ptr */, NULL /* pRCPtr */);
@@ -2407,7 +2408,8 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
     }
 
     /* Use TPR shadowing if supported by the CPU. */
-    if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
+    if (   PDMHasApic(pVM)
+        && pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
     {
         Assert(pVCpu->hm.s.vmx.HCPhysVirtApic);
         Assert(!(pVCpu->hm.s.vmx.HCPhysVirtApic & 0xfff));              /* Bits 11:0 MBZ. */
