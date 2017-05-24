@@ -451,6 +451,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIToolBar.h \
 	src/widgets/VBoxMediaComboBox.h \
+	src/widgets/UIMenuToolBar.h \
 	src/widgets/UIMiniToolBar.h \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/UINameAndSystemEditor.h \
@@ -562,6 +563,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
+	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
@@ -758,6 +760,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIToolBar.cpp \
 	src/widgets/VBoxGuestRAMSlider.cpp \
 	src/widgets/VBoxMediaComboBox.cpp \
+	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/UINameAndSystemEditor.cpp \
