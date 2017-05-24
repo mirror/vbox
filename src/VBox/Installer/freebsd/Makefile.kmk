@@ -144,7 +144,7 @@ VBOX_FBSD_SYMLINKS = \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
 
-# Qt4 GUI
+# Qt GUI
 ifdef VBOX_WITH_QTGUI
  include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
  VBOX_FBSD_STRIP_BIN += \

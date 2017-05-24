@@ -91,32 +91,24 @@ tstDBGCParser_LIBS = \
 
 if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
 #
-# Debugger GUI component (Qt4).
+# Debugger GUI component (Qt).
 #
-ifndef VBOX_WITH_QTGUI_V5
- USES += qt4
-else # VBOX_WITH_QTGUI_V5
- USES += qt5
-endif # VBOX_WITH_QTGUI_V5
+USES += qt5
 DLLS += VBoxDbg
 VBoxDbg_TEMPLATE = VBOXQTGUI
-VBoxDbg_DEFS = IN_DBG_R3 VBOXDBG_USE_QT4
+VBoxDbg_DEFS = IN_DBG_R3
 VBoxDbg_INCS = .
-VBoxDbg_QT_MODULES = Core Gui
-ifdef VBOX_WITH_QTGUI_V5
- # Qt5 requires additional modules:
- VBoxDbg_QT_MODULES += Widgets
-endif # VBOX_WITH_QTGUI_V5
+VBoxDbg_QT_MODULES = Core Gui Widgets
 VBoxDbg_QT_MOCHDRS = \
 	VBoxDbgGui.h \
 	VBoxDbgConsole.h \
-	VBoxDbgStatsQt4.h
+	VBoxDbgStatsQt.h
 VBoxDbg_SOURCES = \
 	VBoxDbg.cpp \
 	VBoxDbgGui.cpp \
 	VBoxDbgBase.cpp \
 	VBoxDbgConsole.cpp \
-	VBoxDbgStatsQt4.cpp
+	VBoxDbgStatsQt.cpp
 VBoxDbg_LIBS = \
 	$(VBOX_LIB_VMM_LAZY)
 VBoxDbg_LDFLAGS.darwin = \
@@ -125,25 +117,16 @@ $(call VBOX_SET_VER_INFO_DLL,VBoxDbg,VirtualBox Debugger GUI)
 
  ifdef VBOX_WITH_TESTCASES
 #
-# The VBoxDbg testcase (Qt4).
+# The VBoxDbg testcase (Qt).
 #
 PROGRAMS += tstVBoxDbg
 tstVBoxDbg_TEMPLATE     = VBOXQTGUIEXE
-ifndef VBOX_WITH_QTGUI_V5
- tstVBoxDbg_USES         = qt4
- tstVBoxDbg_QTTOOL       = QT4
-else # VBOX_WITH_QTGUI_V5
- tstVBoxDbg_USES         = qt5
- tstVBoxDbg_QTTOOL       = QT5
-endif # VBOX_WITH_QTGUI_V5
-tstVBoxDbg_QT_MODULES   = Core Gui
-ifdef VBOX_WITH_QTGUI_V5
- # Qt5 requires additional modules:
- tstVBoxDbg_QT_MODULES += Widgets
- tstVBoxDbg_LIBS.linux   += xcb
- tstVBoxDbg_LIBS.solaris += xcb
- tstVBoxDbg_LIBS.freebsd += xcb
-endif # VBOX_WITH_QTGUI_V5
+tstVBoxDbg_USES         = qt5
+tstVBoxDbg_QTTOOL       = QT5
+tstVBoxDbg_QT_MODULES   = Core Gui Widgets
+tstVBoxDbg_LIBS.linux   += xcb
+tstVBoxDbg_LIBS.solaris += xcb
+tstVBoxDbg_LIBS.freebsd += xcb
 tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
 tstVBoxDbg_LIBS         = \
 	$(LIB_VMM) \
@@ -157,7 +140,7 @@ tstVBoxDbg_LIBS        += \
 	$(PATH_STAGE_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
   endif
  endif # TESTCASES
-endif # Qt4
+endif # Qt
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

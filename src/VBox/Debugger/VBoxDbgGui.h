@@ -25,7 +25,7 @@
 # include <VirtualBox.h>
 #endif
 
-#include "VBoxDbgStatsQt4.h"
+#include "VBoxDbgStatsQt.h"
 #include "VBoxDbgConsole.h"
 
 

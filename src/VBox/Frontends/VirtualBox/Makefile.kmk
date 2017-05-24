@@ -91,11 +91,7 @@ IMAGES         :=
 #
 # VirtualBox - The GUI program.
 #
-ifndef VBOX_WITH_QTGUI_V5
- USES += qt4
-else # VBOX_WITH_QTGUI_V5
- USES += qt5
-endif # VBOX_WITH_QTGUI_V5
+USES += qt5
 VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
 VirtualBox_NAME = VirtualBox
 ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
@@ -226,12 +222,9 @@ VirtualBox_LIBS.linux   += Xinerama
 VirtualBox_LIBS.solaris += Xinerama
 VirtualBox_LIBS.freebsd += Xinerama
 
-ifdef VBOX_WITH_QTGUI_V5
- # No Qt5 without Xcb under X11:
- VirtualBox_LIBS.linux   += xcb
- VirtualBox_LIBS.solaris += xcb
- VirtualBox_LIBS.freebsd += xcb
-endif # VBOX_WITH_QTGUI_V5
+VirtualBox_LIBS.linux   += xcb
+VirtualBox_LIBS.solaris += xcb
+VirtualBox_LIBS.freebsd += xcb
 
 ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
@@ -851,7 +844,7 @@ VirtualBox_SOURCES.win += \
 	src/platform/win/VBoxUtils-win.cpp \
 	src/platform/win/WinKeyboard.cpp
 
-if defined(VBOX_WITH_QTGUI_V5) && (defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD))
+if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
  INSTALLS.linux += VirtualBox.qt.conf
  INSTALLS.solaris += VirtualBox.qt.conf
  VirtualBox.qt.conf_INST = $(INST_BIN)
@@ -905,17 +898,13 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 endif
 
 # The Qt modules we're using.
-# (The include directory and lib/framework for each module will be added by the Qt4 unit.)
-VirtualBox_QT_MODULES = Core Gui
-ifdef VBOX_WITH_QTGUI_V5
- # Qt5 requires additional modules:
- VirtualBox_QT_MODULES += Widgets PrintSupport
- VirtualBox_QT_MODULES.linux   += X11Extras
- VirtualBox_QT_MODULES.solaris += X11Extras
- VirtualBox_QT_MODULES.freebsd += X11Extras
- VirtualBox_QT_MODULES.darwin  += MacExtras
- VirtualBox_QT_MODULES.win     += WinExtras
-endif # VBOX_WITH_QTGUI_V5
+# (The include directory and lib/framework for each module will be added by the Qt unit.)
+VirtualBox_QT_MODULES = Core Gui Widgets PrintSupport
+VirtualBox_QT_MODULES.linux   += X11Extras
+VirtualBox_QT_MODULES.solaris += X11Extras
+VirtualBox_QT_MODULES.freebsd += X11Extras
+VirtualBox_QT_MODULES.darwin  += MacExtras
+VirtualBox_QT_MODULES.win     += WinExtras
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_QT_MODULES += OpenGL
 endif
@@ -1120,11 +1109,9 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
 	$(PATH_ROOT)/src/VBox/Artwork/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
 
- ifdef VBOX_WITH_QTGUI_V5
  # Qt5 requires qt.conf on Mac OS X:
  VirtualBox.app_SOURCES += \
  	$(VirtualBox.app_0_OUTDIR)/qt.conf=>Resources/qt.conf
- endif # VBOX_WITH_QTGUI_V5
 
  $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
@@ -1243,13 +1230,8 @@ endif
 if defined(VBOX_WITH_TESTCASES) && defined(VBOX_GUI_WITH_NETWORK_MANAGER)
  PROGRAMS += tstSSLCertDownloads
  tstSSLCertDownloads_TEMPLATE   = VBOXQTGUIEXE
- ifndef VBOX_WITH_QTGUI_V5
-  tstSSLCertDownloads_USES       = qt4
-  tstSSLCertDownloads_QTTOOL     = QT4
- else # VBOX_WITH_QTGUI_V5
-  tstSSLCertDownloads_USES       = qt5
-  tstSSLCertDownloads_QTTOOL     = QT5
- endif # VBOX_WITH_QTGUI_V5
+ tstSSLCertDownloads_USES       = qt5
+ tstSSLCertDownloads_QTTOOL     = QT5
  tstSSLCertDownloads_QT_MODULES = Core Gui
  tstSSLCertDownloads_DEFS = VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
  tstSSLCertDownloads_INCS = \
@@ -1382,7 +1364,7 @@ makeallnls:: \
 		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
 		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
-	$(QUIET)$(if $(VBOX_WITH_QTGUI_V5),$(TOOL_QT5_LUPDATE),$(TOOL_QT4_LUPDATE)) \
+	$(QUIET)$(TOOL_QT5_LUPDATE) \
 		$^ \
 		-ts \
 		$(filter-out nls/VirtualBox_en.ts,$(filter-out nls/qt_%.ts,$(VirtualBox_QT_TRANSLATIONS))) \
@@ -1394,7 +1376,7 @@ nls/VirtualBox_en.ts: \
 		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
 		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate $@)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI_V5),$(TOOL_QT5_LUPDATE),$(TOOL_QT4_LUPDATE)) \
+	$(QUIET)$(TOOL_QT5_LUPDATE) \
 		$^ \
 		-ts \
 		$@

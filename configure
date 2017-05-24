@@ -82,7 +82,6 @@ WITH_JAVA=1
 WITH_VMMRAW=1
 WITH_LIBIDL=1
 WITH_GSOAP=0
-WITH_QT4=0
 WITH_QT5=1
 WITH_SDL=1
 WITH_SDL_TTF=1
@@ -154,8 +153,6 @@ INCVPX=""
 LIBVPX="-lvpx"
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
-QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr /usr/local"
-QT4DIR_PKGCONFIG=1
 QT5DIR="/usr/lib/qt5 /usr/share/qt5 /usr/lib64/qt5 /usr /usr/local"
 QT5DIR_PKGCONFIG=1
 QT5MAJ=5
@@ -1471,178 +1468,6 @@ EOF
 
 
 #
-# Check for the Qt4 library, needed by the VirtualBox frontend
-#
-# Currently not fatal.
-#
-check_qt4()
-{
-  foundqt4=
-  test_header Qt4
-  cat > $ODIR.tmp_src.cc << EOF
-#include <QtGlobal>
-extern "C" int main(void)
-{
-#if QT_VERSION >= 0x040800
-  return 0;
-#else
-  return 1;
-#endif
-}
-EOF
-  if [ "$OS" = "darwin" ]; then
-    # First check if there is the internal version of Qt. If yes nothing else
-    # has to be done.
-    QT_INTERNAL=`/bin/ls -rd1 $PWD/tools/$BUILD_TARGET.$BUILD_PLATFORM_ARCH/qt/* 2> /dev/null`
-    for t in $QT_INTERNAL; do
-      if [ -f "$t/Frameworks/QtCoreVBox.framework/QtCoreVBox" ]; then
-        cnf_append "VBOX_WITH_ORACLE_QT" "1"
-        log_success "use internal version"
-        return
-      fi
-    done
-    # Now try the user provided directory and some of the standard directories.
-    QT_TRIES="$QT4DIR /System/Library /Library"
-    for t in $QT_TRIES; do
-      if [ -f "$t/Frameworks/QtCore.framework/QtCore" ]; then
-        PATH_SDK_QT4="$t"
-        break
-      fi
-    done
-    # Add the necessary params for building the test application
-    if [ -n "$PATH_SDK_QT4" ]; then
-      foundqt4=1
-      INCQT4=-I$PATH_SDK_QT4/Frameworks/QtCore.framework/Headers
-      LIBQT4=-F$PATH_SDK_QT4/Frameworks
-      FLGQT4="-framework QtCore"
-    else
-      log_failure "Qt4 framework not found (can be disabled using --disable-qt)"
-      fail
-    fi
-  else # !darwin
-    if [ $QT4DIR_PKGCONFIG -eq 1 ]; then
-      # default is to use pkg-config
-      if which_wrapper pkg-config > /dev/null; then
-        qt4_ver=`pkg-config QtCore --modversion 2>> $LOG`
-        if [ $? -eq 0 ]; then
-          FLGQT4=`pkg-config QtCore --cflags`
-          INCQT4=`strip_I "$FLGQT4"`
-          LIBQT4=`PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config QtCore --libs`
-          TOOLQT4=`pkg-config QtCore --variable=prefix`
-          TOOLQT4MOC="`pkg-config QtCore --variable=moc_location`"
-          TOOLQT4BIN="`dirname $TOOLQT4MOC`"
-          if test_compile "$LIBQT4 $LIBPTHREAD $FLGQT4" qt4 qt4 nofatal; then
-            test_execute_path "`strip_L "$LIBQT4"`" nofatal && foundqt4=3 # pkg-config
-          fi
-        fi
-      else
-        log_failure "pkg-config not found"
-        fail
-      fi
-    fi
-    if [ -z "$foundqt4" ]; then
-      # do it the old way (e.g. user has specified QT4DIR)
-      for q in $QT4DIR "$PWD/tools/linux.$TARGET_MACHINE"/qt/v4.8.*; do
-        INCQT4="$q/include $q/include/QtCore"
-        FLGQT4="-DQT_SHARED"
-        I_INCQT4=`prefix_I "$INCQT4"`
-        LIBQT4="-L$q/lib -lQtCoreVBox"
-        TOOLQT4="$q"
-        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
-            test_execute_path "`strip_L "$LIBQT4"`" nofatal; then
-          foundqt4=2 # internal
-          break;
-        fi
-        LIBQT4="-L$q/lib -lQtCore"
-        if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal &&
-            test_execute_path "`strip_L "$LIBQT4"`" nofatal; then
-          foundqt4=1 # no pkg-config, Qt directory
-          break;
-        fi
-      done
-    fi
-  fi
-  if [ -n "$foundqt4" ]; then
-    # we decided which version of Qt to use. Now enforce the version requirement
-    cat > $ODIR.tmp_src.cc << EOF
-#include <cstdio>
-#include <QtGlobal>
-extern "C" int main(void)
-{
-  printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x040800
-  printf(", OK.\n");
-  return 0;
-#else
-  printf(", expected version 4.8.0 or higher\n");
-  return 1;
-#endif
-}
-EOF
-    [ -n "$INCQT4" ] && I_INCQT4=`prefix_I "$INCQT4"`
-    if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
-      if test_execute_path "`strip_L "$LIBQT4"`"; then
-        if [ "$OS" = "darwin" ]; then
-          # Successful build & run the test application so add the necessary
-          # params to AutoConfig.kmk
-          cnf_append "PATH_SDK_QT4_INC" "$PATH_SDK_QT4/Frameworks"
-          cnf_append "PATH_SDK_QT4_LIB" "$PATH_SDK_QT4/Frameworks"
-          cnf_append "PATH_SDK_QT4" "$PATH_SDK_QT4/Frameworks"
-          # Check for the moc tool in the Qt directory found & some standard
-          # directories.
-          for q in $PATH_SDK_QT4 /usr /Developer/Tools/Qt; do
-            if which_wrapper "$q/bin/moc" > /dev/null; then
-              cnf_append "PATH_TOOL_QT4_BIN" "$q/bin"
-            fi
-          done
-        else
-          # strip .../QtCore as we add components ourself
-          INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\)/QtCore|\1|g; s| $||g'`
-          # store only the first path, remove all other pathes
-          # most likely pkg-config gave us -I/usr/include/qt4 -I/usr/include/qt4/QtCore
-          INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
-          cnf_append "VBOX_PATH_QT_LIB" "`strip_L "$LIBQT4"`"
-          cnf_append "PATH_SDK_QT4_INC" "$INCQT4"
-          # this is not quite right since the qt libpath does not have to be first...
-          cnf_append "PATH_SDK_QT4_LIB" '$'"(firstword `strip_L "$LIBQT4"`)"
-          if [ "$foundqt4" = "2" ]; then
-            cnf_append "VBOX_WITH_ORACLE_QT" "1"
-          fi
-          if [ "$foundqt4" != "3" ]; then
-            TOOLQT4BIN="$TOOLQT4/bin"
-          fi
-          test_header "Qt4 devtools"
-          # try it with a suffix, some platforms use that
-          if which_wrapper "$TOOLQT4BIN/moc-qt4" > /dev/null; then
-            QT4BINSUFF="-qt4"
-          else
-            QT4BINSUFF=""
-          fi
-          moc_ver=`$TOOLQT4BIN/moc$QT4BINSUFF -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
-          if [ $? -ne 0 ]; then
-            log_failure "moc$QT4BINSUFF not working"
-            fail
-          else
-            log_success "found version $moc_ver"
-            cnf_append "VBOX_PATH_QT" "$TOOLQT4"
-            cnf_append "PATH_SDK_QT4" "$TOOLQT4"
-            cnf_append "PATH_TOOL_QT4_BIN" "$TOOLQT4BIN"
-            [ -n "$QT4BINSUFF" ] && cnf_append "TOOL_QT4_BIN_SUFF" "$QT4BINSUFF"
-          fi
-        fi
-      fi
-    else
-      log_failure "qt4 not working"
-      fail
-    fi
-  else
-    log_failure "qt4 not found"
-    fail
-  fi
-}
-
-
-#
 # Check for the Qt5 library, needed by the VirtualBox frontend
 #
 # Currently not fatal.
@@ -2495,14 +2320,12 @@ EOF
 [ $WITH_JAVA    -eq 1 ] && echo "  --disable-java           disable java bindings"
 [ $WITH_VMMRAW  -eq 1 ] && echo "  --disable-vmmraw         disable VMM raw mode (VT-x/AMD-V mandatory!)"
 [ $WITH_SDL_TTF -eq 1 ] && echo "  --disable-sdl-ttf        disable SDL_ttf detection"
-[ $WITH_QT4     -eq 1 ] && echo "  --disable-qt             disable Qt detection"
 [ $WITH_QT5     -eq 1 ] && echo "  --disable-qt             disable Qt detection"
 [ $WITH_ALSA    -eq 1 ] && echo "  --disable-alsa           disable the ALSA sound backend"
 [ $WITH_PULSE   -eq 1 ] && echo "  --disable-pulse          disable the PulseAudio backend"
 [ $WITH_DBUS    -eq 1 ] && echo "  --disable-dbus           don't use DBus and hal for hardware detection"
 [ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
 [ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support (2D & 3D)"
-[ $WITH_QT4     -eq 0 ] && echo "  --enable-qt4             enable Qt4 detection"
 [ $WITH_QT5     -eq 0 ] && echo "  --enable-qt5             enable Qt5 detection"
 [ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
 [ $OSE          -eq 1 ] && echo "  --enable-vnc             enable the VNC server"
@@ -2537,7 +2360,6 @@ EOF
 [ "$OS"   = "darwin" ] && echo "                           contains OS X 10.6 SDK (required for Mountain Lion and newer hosts"
 [ "$OS"   = "darwin" ] && echo "                           only, ignored for the rest)"
 [ "$OS"    = "linux" ] && echo "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
-[ $WITH_QT4    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt headers/libraries [pkgconfig]"
 [ $WITH_QT5    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt headers/libraries [pkgconfig]"
 [ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries"
 [ $WITH_GSOAP  -eq 1 ] && echo "                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)"
@@ -2631,8 +2453,6 @@ for option in "$@"; do
       fi
       ;;
     --with-qt-dir=*)
-      [ $WITH_QT4 -eq 1 ] && QT4DIR=`echo $option | cut -d'=' -f2`
-      [ $WITH_QT4 -eq 1 ] && QT4DIR_PKGCONFIG=0
       [ $WITH_QT5 -eq 1 ] && QT5DIR=`echo $option | cut -d'=' -f2`
       [ $WITH_QT5 -eq 1 ] && QT5DIR_PKGCONFIG=0
       ;;
@@ -2691,16 +2511,10 @@ for option in "$@"; do
       [ $WITH_SDL_TTF -eq 1 ] && WITH_SDL_TTF=0
       ;;
     --disable-qt)
-      [ $WITH_QT4 -eq 1 ] && WITH_QT4=0
-      [ $WITH_QT5 -eq 1 ] && WITH_QT5=0
-      ;;
-    --enable-qt4)
-      [ $WITH_QT4 -eq 0 ] && WITH_QT4=1
       [ $WITH_QT5 -eq 1 ] && WITH_QT5=0
       ;;
     --enable-qt5)
       [ $WITH_QT5 -eq 0 ] && WITH_QT5=1
-      [ $WITH_QT4 -eq 1 ] && WITH_QT4=0
       ;;
     --passive-mesa)
       PASSIVE_MESA=1
@@ -2780,7 +2594,6 @@ for option in "$@"; do
       WITH_SDL_TTF=0
       WITH_X11=0
       WITH_OPENGL=0
-      WITH_QT4=0
       WITH_QT5=0
       ;;
     --ose)
@@ -2931,8 +2744,7 @@ if [ $WITH_OPENGL -eq 0 ]; then
   cnf_append "VBOX_GUI_USE_QGL" ""
 fi
 [ $WITH_XPCOM     -eq 0 ] && cnf_append "VBOX_WITH_MAIN" ""
-[ $WITH_QT4       -eq 0 -a $WITH_QT5       -eq 0 ] && cnf_append "VBOX_WITH_QTGUI" ""
-[ $WITH_QT5       -eq 1 ] && cnf_append "VBOX_WITH_QTGUI_V5" "1"
+[ $WITH_QT5       -eq 0 ] && cnf_append "VBOX_WITH_QTGUI" ""
 [ $WITH_SDL_TTF   -eq 0 ] && cnf_append "VBOX_WITH_SECURELABEL" ""
 [ $WITH_PYTHON    -eq 0 ] && cnf_append "VBOX_WITH_PYTHON" ""
 [ $WITH_JAVA      -eq 0 ] && cnf_append "VBOX_WITH_JXPCOM" ""
@@ -2984,7 +2796,6 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   [ $WITH_X11    -eq 1 ] && check_xinerama
   [ $WITH_X11    -eq 1 ] && check_xrandr
   [ $WITH_OPENGL -eq 1 ] && check_opengl
-  [ $WITH_QT4    -eq 1 ] && check_qt4
   [ $WITH_QT5    -eq 1 ] && check_qt5
   [ $WITH_PYTHON -eq 1 ] && check_python
   [ $WITH_JAVA   -eq 1 ] && check_java

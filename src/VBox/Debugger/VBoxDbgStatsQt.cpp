@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGG
-#include "VBoxDbgStatsQt4.h"
+#include "VBoxDbgStatsQt.h"
 
 #include <QLocale>
 #include <QPushButton>

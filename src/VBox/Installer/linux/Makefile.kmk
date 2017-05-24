@@ -269,14 +269,9 @@ ifdef VBOX_WITH_QTGUI
  	$(if $(VBOX_WITH_ORACLE_QT),$(notdir $(wildcard $(PATH_STAGE_BIN)/lib*VBox*)),) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm) \
  	icons
- ifndef VBOX_WITH_QTGUI_V5
-  VBOX_LNX_NO_STRIP += \
-  	$(if $(VBOX_WITH_ORACLE_QT),accessible/libqtaccessiblewidgets.so,)
- else # VBOX_WITH_QTGUI_V5
-  VBOX_LNX_NO_STRIP += \
+ VBOX_LNX_NO_STRIP += \
   	$(if $(VBOX_WITH_ORACLE_QT),$(VBOX_QT_PLUGINS)) \
 	$(addprefix legacy/,$(VBOX_QT_LEGACY_LIBS))
- endif # VBOX_WITH_QTGUI_V5
 endif
 
 # Guest Additions
@@ -521,9 +516,7 @@ BLDDIRS += $(foreach d,\
 	archive/components \
 	archive/nls \
 	$(if $(VBOX_WITH_UNATTENDED),archive/unattended_templates,) \
-	$(if $(VBOX_WITH_ORACLE_QT),$(if $(VBOX_WITH_QTGUI_V5),,\
-	  archive/accessible),) \
-	$(if $(VBOX_WITH_QTGUI_V5),\
+	$(if $(VBOX_WITH_ORACLE_QT), \
 	  archive/plugins/platforms \
 	  archive/legacy,) \
 	$(if $(VBOX_WITH_PYTHON),\

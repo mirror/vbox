@@ -2022,35 +2022,8 @@ end function
 
 
 ''
-' Checks for any Qt4/5 binaries.
-sub CheckForQt(strOptQt4, strOptQt5)
-   dim strPathQt4
-
-   PrintHdr "Qt4"
-
-   '
-   ' Try to find the Qt4 installation (user specified path with --with-qt4)
-   '
-   strPathQt4 = ""
-
-   LogPrint "Checking for user specified path of Qt4 ... "
-   if (strPathQt4 = "") And (strOptQt4 <> "") then
-      strOptQt4 = UnixSlashes(strOptQt4)
-      if CheckForQt4Sub(strOptQt4) then strPathQt4 = strOptQt4
-   end if
-
-   ' Check the dev tools
-   if (strPathQt4 = "") Then
-      strPathQt4 = g_strPathDev & "/win." & g_strTargetArch & "/qt/v4.7.3-vcc100"
-      if CheckForQt4Sub(strPathQt4) = False then strPathQt4 = ""
-   end if
-
-   ' Display the result.
-   if strPathQt4 = "" then
-      PrintResultMsg "Qt4", "not found"
-   else
-      PrintResult "Qt4", strPathQt4
-   end if
+' Checks for any Qt5 binaries.
+sub CheckForQt(strOptQt5)
 
    PrintHdr "Qt5"
 
@@ -2082,46 +2055,11 @@ sub CheckForQt(strOptQt4, strOptQt5)
       CfgPrint "PATH_SDK_QT5          := " & strPathQt5
       CfgPrint "PATH_TOOL_QT5         := $(PATH_SDK_QT5)"
       CfgPrint "VBOX_PATH_QT          := $(PATH_SDK_QT5)"
-      if strPathQt4 <> "" then
-         MsgWarning "Have working path to both Qt4 ad Qt5, ignoring Qt4."
-      end if
-   elseif strPathQt4 <> "" then
-      CfgPrint "PATH_SDK_QT4          := " & strPathQt4
-      CfgPrint "PATH_TOOL_QT4         := $(PATH_SDK_QT4)"
-      CfgPrint "VBOX_PATH_QT          := $(PATH_SDK_QT4)"
    end if
-   if (strPathQt4 = "") And (strPathQt5 = "") then
+   if (strPathQt5 = "") then
       CfgPrint "VBOX_WITH_QTGUI       :="
    end if
-   if strPathQt5 = "" then
-      CfgPrint "VBOX_WITH_QTGUI_V5    :="
-   end if
 end sub
-
-
-''
-' Checks if the specified path points to an usable Qt4 library.
-function CheckForQt4Sub(strPathQt4)
-
-   CheckForQt4Sub = False
-   LogPrint "trying: strPathQt4=" & strPathQt4
-
-   if   LogFileExists(strPathQt4, "bin/moc.exe") _
-    And LogFileExists(strPathQt4, "bin/uic.exe") _
-    And LogFileExists(strPathQt4, "include/Qt/qwidget.h") _
-    And LogFileExists(strPathQt4, "include/QtGui/QApplication") _
-    And LogFileExists(strPathQt4, "include/QtNetwork/QHostAddress") _
-    And (   LogFileExists(strPathQt4, "lib/QtCore4.lib") _
-         Or LogFileExists(strPathQt4, "lib/VBoxQtCore4.lib") _
-         Or LogFileExists(strPathQt4, "lib/QtCoreVBox4.lib")) _
-    And (   LogFileExists(strPathQt4, "lib/QtNetwork4.lib") _
-         Or LogFileExists(strPathQt4, "lib/VBoxQtNetwork4.lib") _
-         Or LogFileExists(strPathQt4, "lib/QtNetworkVBox4.lib")) _
-      then
-         CheckForQt4Sub = True
-   end if
-
-end function
 
 
 ''
@@ -2206,7 +2144,6 @@ sub usage
    Print "  --with-libSDL=PATH    "
    Print "  --with-MinGW32=PATH   "
    Print "  --with-MinGW-w64=PATH "
-   Print "  --with-Qt4=PATH       "
    Print "  --with-Qt5=PATH       "
    Print "  --with-SDK=PATH       "
    Print "  --with-VC=PATH        "
@@ -2243,7 +2180,6 @@ Sub Main
    strOptlibSDL = ""
    strOptMinGW32 = ""
    strOptMinGWw64 = ""
-   strOptQt4 = ""
    strOptQt5 = ""
    strOptSDK = ""
    strOptVC = ""
@@ -2286,8 +2222,6 @@ Sub Main
             strOptMinGW32 = strPath
          case "--with-mingw-w64"
             strOptMinGWw64 = strPath
-         case "--with-qt4"
-            strOptQt4 = strPath
          case "--with-qt5"
             strOptQt5 = strPath
          case "--with-sdk"
@@ -2383,7 +2317,7 @@ Sub Main
    end if
    CheckForSsl strOptSsl
    CheckForCurl strOptCurl
-   CheckForQt strOptQt4, strOptQt5
+   CheckForQt strOptQt5
    if (strOptPython <> "") then
      CheckForPython strOptPython
    end if

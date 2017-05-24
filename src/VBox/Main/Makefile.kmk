@@ -1117,11 +1117,7 @@ endif
 # -MD version for the GUI in -MDd builds.
 ifeq ($(KBUILD_TARGET).$(VBOX_VCC_CRT_TYPE),win.d)
  LIBRARIES += VBoxCOM-GUI
- ifndef VBOX_WITH_QTGUI_V5
-  USES += qt4
- else # VBOX_WITH_QTGUI_V5
-  USES += qt5
- endif # VBOX_WITH_QTGUI_V5
+ USES += qt5
  VBoxCOM-GUI_TEMPLATE = VBOXQTGUI$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
  VBoxCOM-GUI_EXTENDS  = VBoxCOM
 endif

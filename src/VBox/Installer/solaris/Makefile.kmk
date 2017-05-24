@@ -344,7 +344,6 @@ SOLARIS_STRIP_BINS = \
 	components/VBoxXPCOMIPCC.so
 
 ifdef VBOX_WITH_QTGUI
- ifdef VBOX_WITH_QTGUI_V5
   ifdef VBOX_WITH_ORACLE_QT
    SOLARIS_STRIP_BINS += \
           libQt5CoreVBox.so.5 \
@@ -357,15 +356,6 @@ ifdef VBOX_WITH_QTGUI
           plugins/platforms/libqxcb.so \
 	  $(if $(VBOX_GUI_USE_QGL),libQt5OpenGLVBox.so.5,)
   endif
- else # VBOX_WITH_QTGUI_V5
-  ifdef VBOX_WITH_ORACLE_QT
-   SOLARIS_STRIP_BINS += \
-          libQtCoreVBox.so.4 \
-	  libQtGuiVBox.so.4 \
-	  $(if $(VBOX_GUI_USE_QGL),libQtOpenGLVBox.so.4,) \
-	  accessible/libqtaccessiblewidgets.so
-  endif # VBOX_WITH_ORACLE_QT
- endif # !VBOX_WITH_QTGUI_V5
 endif #VBOX_WITH_QTGUI
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API
@@ -433,32 +423,6 @@ SOLARIS_COMMON_EXES += \
 	smf-vboxautostart.sh \
 	$(if $(VBOX_WITH_WEBSERVICES),smf-vboxwebsrv.sh,)
 
-
-## @def SOLARIS_QTLIBS
-# List of Qt shared libs that we need to copy from $(VBOX_PATH_QT)/lib/ to /opt/VirtualBox/$(VBOX_SI_ARCH)/
-# so that we can run VBoxQtConfig.
-ifndef VBOX_WITH_QTGUI_V5
- SOLARIS_FILE_LIST_VARS += SOLARIS_QTLIBS
- SOLARIS_QTLIBS.SUBDIRS := no
- SOLARIS_QTLIBS.STRIP   := no
- SOLARIS_QTLIBS.MODE    := 0644
- SOLARIS_QTLIBS.SRC     := $(VBOX_PATH_QT)/lib
- SOLARIS_QTLIBS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)
- SOLARIS_QTLIBS =
- ifdef VBOX_WITH_QTGUI
-  ifdef VBOX_WITH_ORACLE_QT
-    SOLARIS_QTLIBS += \
-       	  libQtXmlVBox.so.4 \
-  	  libQtSqlVBox.so.4 \
-  	  libQt3SupportVBox.so.4
-    SOLARIS_USRBIN_LINKS += \
-  	  VBoxQtconfig
-  endif
-
- include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.kmk
- SOLARIS_COMMON += $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
- endif
-endif
 
 # Documentation (packed as DOCS as they are arch. neutral)
 ifdef VBOX_WITH_DOCS_PACKING
@@ -573,7 +537,6 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.applications.in \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		\
-		$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT) && !defined(VBOX_WITH_QTGUI_V5),$(VBOX_PATH_QT)/bin/qtconfig,) \
 		$(if-expr defined(VBOX_WITH_ADDITIONS_PACKING),$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso,) \
 		$(if-expr !defined(VBOX_OSE) && defined(VBOX_WITH_VBOXSDL), $(PATH_DEVTOOLS_TRG)/libsdl/v1.2.13/lib/libSDL-1.2.so.0.11.2,) \
 		\
@@ -645,10 +608,6 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 	$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/autoresponse
 
 # VirtualBox: Arch specific files.
-	$(if-expr defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_ORACLE_QT) && !defined(VBOX_WITH_QTGUI_V5)\
-	,$(INSTALL) -m 0755 \
-		$(VBOX_PATH_QT)/bin/qtconfig	$(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/VBoxQtconfig,)
-
 	$(if-expr defined(VBOX_WITH_QTGUI) \
 	,$(NLTAB)$(LN_SYMLINK) ../rdesktop-vrdp-keymaps/ $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)/rdesktop-vrdp-keymaps,)
 

@@ -3,8 +3,8 @@ Section: misc
 Priority: optional
 Maintainer: Oracle Corporation <info@virtualbox.org>
 Standards-Version: 3.2.1
-Build-Depends: debhelper (>= 5), libz-dev, libssl-dev, libqt4-dev,
-  libqt4-opengl-dev, libsdl1.2-dev, uuid-dev, libxcursor-dev,
+Build-Depends: debhelper (>= 5), libz-dev, libssl-dev,
+  libsdl1.2-dev, uuid-dev, libxcursor-dev,
   libidl-dev, libpam0g-dev, iasl, xsltproc, linux-headers-generic,
   wine, java2-runtime, lsb-release, g++-multilib [amd64],
   libc6-dev-i386 [amd64], ia32-libs [amd64], libasound-dev,

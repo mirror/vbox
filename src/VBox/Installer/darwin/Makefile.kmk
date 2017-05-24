@@ -36,13 +36,8 @@ else
 endif
 VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
 
-ifndef VBOX_WITH_QTGUI_V5
- VBOX_QT_VERSION_MAJOR = 4
- PATH_SDK_QT = $(PATH_SDK_QT4)
-else # VBOX_WITH_QTGUI_V5
- VBOX_QT_VERSION_MAJOR = 5
- PATH_SDK_QT = $(PATH_SDK_QT5)
-endif # VBOX_WITH_QTGUI_V5
+VBOX_QT_VERSION_MAJOR = 5
+PATH_SDK_QT = $(PATH_SDK_QT5)
 
 # Unset this to speed up things during makefile hacking.
 VBOX_DARWIN_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
@@ -519,17 +514,10 @@ VBOX_DI_VBAPP_MISC_FILES += \
 	MacOS/VBoxEFI32.fd \
 	MacOS/VBoxEFI64.fd
 endif
-ifndef VBOX_WITH_QTGUI_V5
- VBOX_DI_VBAPP_MISC_FILES += \
-	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/classes.nib \
-	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/info.nib \
-	Frameworks/QtGui$(VBOX_QT_INFIX).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/qt_menu.nib/keyedobjects.nib
-else
  VBOX_DI_VBAPP_DYLIBS += \
 	plugins/platforms/libqcocoa$(SUFF_DLL) \
 	plugins/platforms/libqminimal$(SUFF_DLL) \
 	plugins/platforms/libqoffscreen$(SUFF_DLL)
-endif # VBOX_WITH_QTGUI_V5
 VBOX_DI_VBAPP_MISC_FILES += \
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/$(VBOX_QT_VERSION_MAJOR)/Resources/Info.plist)
 

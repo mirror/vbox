@@ -438,11 +438,7 @@
     <?endif?>
         <ComponentRef Id="cp_MainBinaries" />
     <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-        <?if $(env.VBOX_WITH_QTGUI_V5) = "no" ?>
-            <ComponentRef Id="cp_QtAccessible" />
-        <?else ?>
-            <ComponentRef Id="cp_QtPlatforms" />
-        <?endif?>
+        <ComponentRef Id="cp_QtPlatforms" />
     <?endif ?>
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <ComponentRef Id="cp_VBoxPyInst" />

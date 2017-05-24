@@ -598,11 +598,6 @@ VBOX_WITH_WEBSERVICES = 1
 VBOX_WITH_WEBSERVICES_SSL = 1
 # The Qt GUI.
 VBOX_WITH_QTGUI = 1
-if1of ($(KBUILD_TARGET), linux win solaris)
- VBOX_WITH_QTGUI_V5 = 1 # r=bird: s/VBOX_WITH_QTGUI_V5/VBOX_WITH_QT5/g - our we released version 5.0 of the VirtualBox GUI last year, remember?
-else if "$(KBUILD_TARGET)" == "darwin" && $(KBUILD_HOST_VERSION_MAJOR) >= 13 # (OS X 10.9 Mavericks)
- VBOX_WITH_QTGUI_V5 = 1
-endif
 # Indicates the Qt is Cocoa based on the Mac.
 ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_COCOA_QT = 1
@@ -5814,11 +5809,7 @@ ifdef VBOX_WITH_QTGUI
  #
  ifeq ($(VBOX_PATH_QT),)
   ifeq ($(KBUILD_TARGET),darwin)
-   ifndef VBOX_WITH_QTGUI_V5
-    VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   else
-    VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
-   endif
+   VBOX_PATH_QT := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
    ifeq ($(VBOX_PATH_QT),)
     ifneq ($(wildcard /Library/Frameworks/QtCore.framework),)
      # Using the global installation (for OSE).
@@ -5827,17 +5818,9 @@ ifdef VBOX_WITH_QTGUI
     endif
    endif
   else if1of ($(KBUILD_TARGET), win)
-   ifndef VBOX_WITH_QTGUI_V5
-    VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*))))
-   else
-    VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))))
-   endif
+   VBOX_PATH_QT ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*))))
   else if1of ($(KBUILD_TARGET), linux solaris)
-   ifndef VBOX_WITH_QTGUI_V5
-    VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
-   else
-    VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
-   endif
+   VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v5*)))
    ifneq ($(VBOX_PATH_QT),)
     VBOX_WITH_ORACLE_QT = 1
    endif
@@ -5847,11 +5830,7 @@ ifdef VBOX_WITH_QTGUI
   if1of ($(USERNAME), bird)
    # gentoo (64-bit)
    VBOX_PATH_QT          ?= /usr
-   ifndef VBOX_WITH_QTGUI_V5
-    VBOX_PATH_QT_LIB      ?= /usr/lib/qt4
-   else
-    VBOX_PATH_QT_LIB      ?= /usr/lib/qt5
-   endif
+   VBOX_PATH_QT_LIB      ?= /usr/lib/qt5
   endif
  endif
  VBOX_PATH_QT            ?= /usr
@@ -5861,30 +5840,26 @@ ifdef VBOX_WITH_QTGUI
   VBOX_QT_INFIX=VBox
  endif
 
- ifndef VBOX_WITH_QTGUI_V5
-  VBOX_QT_MOD = QtCore QtGui $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
- else # VBOX_WITH_QTGUI_V5
-  ifeq ($(KBUILD_TARGET), darwin)
-   VBOX_QT_MOD = \
-    QtCore QtGui QtWidgets QtPrintSupport QtMacExtras \
-    $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
-  else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
-   VBOX_QT_MOD += \
-    Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport \
-    $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
-    if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
-     VBOX_QT_MOD += \
-      Qt5DBus Qt5XcbQpa Qt5X11Extras
-     # legacy libraries required to be installed on EL5
-     VBOX_QT_LEGACY_LIBS = \
-      $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
-     VBOX_QT_PLUGINS = plugins/platforms/libqxcb.so
-    else ifeq ($(KBUILD_TARGET), win)
-     VBOX_QT_MOD += \
-      Qt5WinExtras
-    endif # win
-  endif # linux freebsd netbsd openbsd solaris win
- endif # VBOX_WITH_QTGUI_V5
+ ifeq ($(KBUILD_TARGET), darwin)
+  VBOX_QT_MOD = \
+   QtCore QtGui QtWidgets QtPrintSupport QtMacExtras \
+   $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
+ else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
+  VBOX_QT_MOD += \
+   Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport \
+   $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
+   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
+    VBOX_QT_MOD += \
+     Qt5DBus Qt5XcbQpa Qt5X11Extras
+    # legacy libraries required to be installed on EL5
+    VBOX_QT_LEGACY_LIBS = \
+     $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
+    VBOX_QT_PLUGINS = plugins/platforms/libqxcb.so
+   else ifeq ($(KBUILD_TARGET), win)
+    VBOX_QT_MOD += \
+     Qt5WinExtras
+   endif # win
+ endif # linux freebsd netbsd openbsd solaris win
 
  VBOX_QT_MOD_NAMES = $(foreach qtmod,$(VBOX_QT_MOD),$(qtmod)$(VBOX_QT_INFIX))
 
@@ -5900,24 +5875,14 @@ ifdef VBOX_WITH_QTGUI
  # Template for building Qt GUI executables.
  #
  TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
- ifndef VBOX_WITH_QTGUI_V5
-  TEMPLATE_VBOXQTGUIEXE_USES = qt4
-  TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT4
-  TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT4
-  TEMPLATE_VBOXQTGUIEXE_UICTOOL = QT4
-  TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT4
-  TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT4
-  TEMPLATE_VBOXQTGUIEXE_SDKS = QT4
- else # VBOX_WITH_QTGUI_V5
-  TEMPLATE_VBOXQTGUIEXE_USES = qt5
-  TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT5
-  TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT5
-  TEMPLATE_VBOXQTGUIEXE_UICTOOL = QT5
-  TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT5
-  TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT5
-  TEMPLATE_VBOXQTGUIEXE_SDKS = QT5
-  TEMPLATE_VBOXQTGUIEXE_MOCDEFS.darwin += QT_VERSION=0x050602
- endif # VBOX_WITH_QTGUI_V5
+ TEMPLATE_VBOXQTGUIEXE_USES = qt5
+ TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT5
+ TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT5
+ TEMPLATE_VBOXQTGUIEXE_UICTOOL = QT5
+ TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT5
+ TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT5
+ TEMPLATE_VBOXQTGUIEXE_SDKS = QT5
+ TEMPLATE_VBOXQTGUIEXE_MOCDEFS.darwin += QT_VERSION=0x050602
  TEMPLATE_VBOXQTGUIEXE_QT_INFIX = $(VBOX_QT_INFIX)
  TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)
  TEMPLATE_VBOXQTGUIEXE_RCDEFS = $(TEMPLATE_VBOXR3EXE_RCDEFS)
@@ -6011,7 +5976,7 @@ ifdef VBOX_WITH_QTGUI
 	X11
     TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
 	$(VBOX_LIBPATH_X11)
-   if defined(VBOX_WITH_QTGUI_V5) && defined(VBOX_WITH_ORACLE_QT) && !defined(VBOX_LD_HAS_LIBXCB)
+   if defined(VBOX_WITH_ORACLE_QT) && !defined(VBOX_LD_HAS_LIBXCB)
     TEMPLATE_VBOXQTGUIEXE_LIBPATH += $(PATH_SDK_QT5_LIB)/legacy
     TEMPLATE_VBOXQTGUIEXE_INCS    += $(PATH_SDK_QT5_INC)/legacy
    endif
@@ -6082,14 +6047,12 @@ ifdef VBOX_WITH_QTGUI
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
  endif # COM
 
- ifdef VBOX_WITH_QTGUI_V5
-  ifn1of ($(KBUILD_TARGET), darwin os2 win)
-    TEMPLATE_VBOXQTGUIEXE_DEFS     += PIC
-    TEMPLATE_VBOXQTGUIEXE_CFLAGS   += -fPIC
-    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -fPIC
-    TEMPLATE_VBOXQTGUIEXE_LDFLAGS  += -fPIC
-  endif # not darwin, os2 or win
- endif # VBOX_WITH_QTGUI_V5
+ ifn1of ($(KBUILD_TARGET), darwin os2 win)
+   TEMPLATE_VBOXQTGUIEXE_DEFS     += PIC
+   TEMPLATE_VBOXQTGUIEXE_CFLAGS   += -fPIC
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -fPIC
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS  += -fPIC
+ endif # not darwin, os2 or win
 
 
  #
