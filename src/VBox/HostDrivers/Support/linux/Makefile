@@ -25,6 +25,10 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
+## @todo If you make non-trivial changes to this make file, please consider
+#        rewriting it to use Makefile.include.header and
+#        Makefile.include.footer.
+
 #
 # First, figure out which architecture we're targeting and the build type.
 # (We have to support basic cross building (ARCH=i386|x86_64).)
