@@ -199,6 +199,10 @@ void UIToolsPane::prepareTabBar()
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
         m_pTabBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pTabBar->setMovable(true);
+#ifdef VBOX_WS_MAC
+        /* Snapshots pane tab looks quite alone under macOS: */
+        m_pTabBar->setAutoHide(true);
+#endif
         m_pTabBar->setDrawBase(false);
         m_pTabBar->setExpanding(false);
         m_pTabBar->setShape(QTabBar::RoundedSouth);
@@ -324,6 +328,10 @@ void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
                 AssertPtrReturnVoid(pButtonClose);
                 {
                     /* Configure button: */
+#ifdef VBOX_WS_MAC
+                    /* Close buttons should be a bit smaller on macOS: */
+                    pButtonClose->setIconSize(QSize(12, 12));
+#endif
                     pButtonClose->setIcon(UIIconPool::iconSet(":/close_16px.png"));
                     pButtonClose->setProperty("ToolsType", QVariant::fromValue(enmType));
                     connect(pButtonClose, &QIToolButton::clicked, this, &UIToolsPane::sltHandleTabBarButtonClick);
@@ -331,6 +339,15 @@ void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
                     m_pTabBar->setTabButton(iActualTabIndex, QTabBar::RightSide, pButtonClose);
                 }
             }
+#ifdef VBOX_WS_MAC
+            /* Create placeholder of the same height if on macOS: */
+            else
+            {
+                QWidget *pWidget = new QWidget;
+                pWidget->setFixedSize(1, 26);
+                m_pTabBar->setTabButton(iActualTabIndex, QTabBar::RightSide, pWidget);
+            }
+#endif
             /* Store the data: */
             m_pTabBar->setTabData(iActualTabIndex, QVariant::fromValue(enmType));
         }
