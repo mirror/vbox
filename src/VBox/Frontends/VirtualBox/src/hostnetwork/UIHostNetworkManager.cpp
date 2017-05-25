@@ -216,25 +216,25 @@ void UIHostNetworkManagerWidget::retranslateUi()
     {
         m_pActionAdd->setText(UIHostNetworkManager::tr("&Create"));
         m_pActionAdd->setToolTip(UIHostNetworkManager::tr("Create Host-only Network (%1)").arg(m_pActionAdd->shortcut().toString()));
-        m_pActionAdd->setStatusTip(UIHostNetworkManager::tr("Creates new host-only network."));
+        m_pActionAdd->setStatusTip(UIHostNetworkManager::tr("Create new host-only network"));
     }
     if (m_pActionRemove)
     {
         m_pActionRemove->setText(UIHostNetworkManager::tr("&Remove..."));
         m_pActionRemove->setToolTip(UIHostNetworkManager::tr("Remove Host-only Network (%1)").arg(m_pActionRemove->shortcut().toString()));
-        m_pActionRemove->setStatusTip(UIHostNetworkManager::tr("Removes selected host-only network."));
+        m_pActionRemove->setStatusTip(UIHostNetworkManager::tr("Remove selected host-only network"));
     }
     if (m_pActionDetails)
     {
         m_pActionDetails->setText(UIHostNetworkManager::tr("&Details..."));
         m_pActionDetails->setToolTip(UIHostNetworkManager::tr("Open Host-only Network Details (%1)").arg(m_pActionDetails->shortcut().toString()));
-        m_pActionDetails->setStatusTip(UIHostNetworkManager::tr("Opens pane with the selected host-only network details."));
+        m_pActionDetails->setStatusTip(UIHostNetworkManager::tr("Open pane with the selected host-only network details"));
     }
     if (m_pActionCommit)
     {
         m_pActionCommit->setText(UIHostNetworkManager::tr("&Apply..."));
         m_pActionCommit->setToolTip(UIHostNetworkManager::tr("Apply Changes in Host-only Network Details (%1)").arg(m_pActionCommit->shortcut().toString()));
-        m_pActionCommit->setStatusTip(UIHostNetworkManager::tr("Applies changes in host-only network details pane."));
+        m_pActionCommit->setStatusTip(UIHostNetworkManager::tr("Apply changes in host-only network details pane"));
     }
 
     /* Adjust toolbar: */
@@ -811,8 +811,7 @@ void UIHostNetworkManagerWidget::prepareToolBar()
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure toolbar: */
-        const QStyle *pStyle = QApplication::style();
-        const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         /* Add toolbar actions: */
