@@ -193,6 +193,13 @@ typedef struct BS3CG1STATE
     /** End of rings being tested. */
     uint8_t                 iEndRing;
 
+    /** Default operand size. */
+    uint8_t                 cbOpDefault;
+    /** Operand size when overridden by 066h. */
+    uint8_t                 cbOpOvrd66;
+    /** Operand size when overridden by REX.W. */
+    uint8_t                 cbOpOvrdRexW;
+
 
     /** @name Current encoded instruction.
      * @{ */
@@ -1486,29 +1493,31 @@ Bs3Cfg1EncodeMemMod0DispWithDefaultsAndNoReg(PBS3CG1STATE pThis, unsigned off)
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Eb_Gb(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
-    /* Start by reg,reg encoding. */
-    if (iEncoding == 0)
+    switch (iEncoding)
     {
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-        pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
-        pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
+        /* Start by reg,reg encoding. */
+        case 0:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
+            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
+            pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
+            break;
+        case 1:
+            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, X86_GREG_xBP, 1, 0, BS3CG1OPLOC_MEM_RW);
+            break;
+        case 2:
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) < BS3CPU_80386)
+                return 0;
+            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
+            pThis->abCurInstr[0] = P_AZ;
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 1));
+            off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, off, X86_GREG_xDI, 1, 0, BS3CG1OPLOC_MEM_RW);
+            break;
+        default:
+            return 0;
     }
-    else if (iEncoding == 1)
-    {
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-        off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, X86_GREG_xBP, 1, 0, BS3CG1OPLOC_MEM_RW);
-    }
-    else if (iEncoding == 2 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
-    {
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
-        pThis->abCurInstr[0] = P_AZ;
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 1));
-        off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, off, X86_GREG_xDI, 1, 0, BS3CG1OPLOC_MEM_RW);
-    }
-    else
-        return 0;
     pThis->cbCurInstr = off;
     return iEncoding + 1;
 }
@@ -1517,29 +1526,31 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Eb_Gb(PBS3CG1STATE pThis, u
 static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gb_Eb(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
-    /* Start by reg,reg encoding. */
-    if (iEncoding == 0)
+    switch (iEncoding)
     {
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-        pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
-        pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
+        /* Start by reg,reg encoding. */
+        case 0:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
+            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
+            pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
+            break;
+        case 1:
+            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, X86_GREG_xBP, 1, 0, BS3CG1OPLOC_MEM);
+            break;
+        case 2:
+            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) < BS3CPU_80386)
+                return 0;
+            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
+            pThis->abCurInstr[0] = P_AZ;
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 1));
+            off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, off, X86_GREG_xDI, 1, 0, BS3CG1OPLOC_MEM);
+            break;
+        default:
+            return 0;
     }
-    else if (iEncoding == 1)
-    {
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-        off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, X86_GREG_xBP, 1, 0, BS3CG1OPLOC_MEM);
-    }
-    else if (iEncoding == 2 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
-    {
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
-        pThis->abCurInstr[0] = P_AZ;
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 1));
-        off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, off, X86_GREG_xDI, 1, 0, BS3CG1OPLOC_MEM);
-    }
-    else
-        return 0;
     pThis->cbCurInstr = off;
     return iEncoding + 1;
 }
@@ -2221,7 +2232,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething(PBS3CG1STATE pTh
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Mq_WO_Pq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething_Psomething(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -4155,7 +4166,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_Mq_WO_Pq:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Mq_WO_Pq;
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Msomething_Psomething;
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
             pThis->aOperands[0].cbOp = 8;
@@ -4606,6 +4617,35 @@ static BS3CG1ENC Bs3Cg1CalcNoneIntelInvalidEncoding(BS3CG1ENC enmEncoding)
         default:
             Bs3TestFailedF("Bs3Cg1CalcNoneIntelInvalidEncoding: Unsupported encoding: %d\n", enmEncoding);
             return BS3CG1ENC_FIXED;
+    }
+}
+
+
+/**
+ * Sets cbOpDefault, cbOpOvrd66 and cbOpOvrdRexW.
+ *
+ * @param   pThis               The state.
+ * @param   bMode               The mode (only code part is used).
+ */
+static void Bs3Cg1SetOpSizes(PBS3CG1STATE pThis, uint8_t bMode)
+{
+    if (BS3_MODE_IS_16BIT_CODE(bMode))
+    {
+        pThis->cbOpDefault  = 2;
+        pThis->cbOpOvrd66   = 4;
+        pThis->cbOpOvrdRexW = 0;
+    }
+    else if (BS3_MODE_IS_32BIT_CODE(bMode))
+    {
+        pThis->cbOpDefault  = 4;
+        pThis->cbOpOvrd66   = 2;
+        pThis->cbOpOvrdRexW = 0;
+    }
+    else
+    {
+        pThis->cbOpDefault  = 4;
+        pThis->cbOpOvrd66   = 2;
+        pThis->cbOpOvrdRexW = 8;
     }
 }
 
@@ -6095,6 +6135,7 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
             /*
              * Prep the operands and encoding handling.
              */
+            Bs3Cg1SetOpSizes(pThis, pThis->bMode);
             if (!Bs3Cg1EncodePrep(pThis))
                 break;
 
