@@ -2262,31 +2262,32 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_VsdZx_WO_Wsd__OR__MODRM_VqZ
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_VqZx_WO_Nq(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vsomething_Nsomething(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
-    if (iEncoding == 0)
+    switch (iEncoding)
     {
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-        pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
-        pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_MM0;
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM1_LO_ZX;
+        case 0:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 1, 0);
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 0;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 1;
+            break;
+        case 1:
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 6, 7);
+            pThis->aOperands[pThis->iRmOp ].idxField = pThis->aOperands[pThis->iRmOp ].idxFieldBase + 7;
+            pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + 6;
+            break;
+        default:
+            return 0;
     }
-    else if (iEncoding == 1)
-    {
-        off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-        pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, 6, 7);
-        pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_MM7;
-        pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_XMM6_LO_ZX;
-    }
-    else
-        return 0;
     pThis->cbCurInstr = off;
     return iEncoding + 1;
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_RO_Ma(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_RO_Ma(PBS3CG1STATE pThis, unsigned iEncoding) /* bound instr */
 {
     unsigned off;
     unsigned cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
@@ -3957,8 +3958,6 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
         case BS3CG1ENC_MODRM_VsdZx_WO_Wsd:
         case BS3CG1ENC_MODRM_VqZx_WO_Wq:
             return Bs3Cg1EncodeNext_MODRM_VsdZx_WO_Wsd__OR__MODRM_VqZx_WO_Wq(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_VqZx_WO_Nq:
-            return Bs3Cg1EncodeNext_MODRM_VqZx_WO_Nq(pThis, iEncoding);
 
         case BS3CG1ENC_FIXED:
             return Bs3Cg1EncodeNext_FIXED(pThis, iEncoding);
@@ -4113,7 +4112,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
-        case BS3CG1ENC_MODRM_Gv_RO_Ma:
+        case BS3CG1ENC_MODRM_Gv_RO_Ma: /* bound instr */
             pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Gv_RO_Ma;
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
@@ -4294,9 +4293,20 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
+        case BS3CG1ENC_MODRM_VqZx_WO_Nq:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Vsomething_Nsomething;
+            pThis->iRegOp            = 0;
+            pThis->iRmOp             = 1;
+            pThis->aOperands[0].cbOp = 8;
+            pThis->aOperands[1].cbOp = 8;
+            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0_LO_ZX;
+            pThis->aOperands[1].idxFieldBase = BS3CG1DST_MM0;
+            break;
+
         case BS3CG1ENC_MODRM_VsdZx_WO_Wsd:
         case BS3CG1ENC_MODRM_VqZx_WO_Wq:
-        case BS3CG1ENC_MODRM_VqZx_WO_Nq:
             pThis->iRmOp             = 1;
             pThis->iRegOp            = 0;
             pThis->aOperands[0].cbOp = 8;
