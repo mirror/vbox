@@ -366,6 +366,13 @@ $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(QUIET)$(SED) \
 		-e '/IEMOP_MNEMONIC\(\|[01234]\|[01234]EX\)(/!d' \
+               -e ':look-for-end-of-invocation' \
+               -e '/)/bend-of-invocation' \
+               -e 'N' \
+               -e 'blook-for-end-of-invocation' \
+               -e ':end-of-invocation' \
+               -e 's/\n/ /g' \
+               -e 's/  */ /g' \
                -e 's/^.*IEMOP_MNEMONIC\(\|[01234]\|[01234]EX\)(/IEM_DO_INSTR_STAT\1(/' \
                -e 's/;.*$(DOLLAR)//' \
 		--output "$@.tmp" $(filter %.cpp.h,$^)

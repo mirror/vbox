@@ -205,135 +205,136 @@ g_kdOpLocations = {
 ##    - 1: the location (g_kdOpLocations).
 ##    - 2: disassembler format string version of the type.
 ##    - 3: disassembler OP_PARAM_XXX (XXX only).
+##    - 4: IEM form matching instruction.
 ##
 ## Note! See the A.2.1 in SDM vol 2 for the type names.
 g_kdOpTypes = {
     # Fixed addresses
-    'Ap':           ( 'IDX_ParseImmAddrF',  'imm',    '%Ap',  'Ap',      ),
+    'Ap':           ( 'IDX_ParseImmAddrF',  'imm',    '%Ap',  'Ap',      'FIXED', ),
 
     # ModR/M.rm
-    'Eb':           ( 'IDX_UseModRM',       'rm',     '%Eb',  'Eb',      ),
-    'Ed':           ( 'IDX_UseModRM',       'rm',     '%Ed',  'Ed',      ),
-    'Ed_WO':        ( 'IDX_UseModRM',       'rm',     '%Ed',  'Ed',      ),
-    'Eq':           ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      ),
-    'Eq_WO':        ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      ),
-    'Ew':           ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      ),
-    'Ev':           ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      ),
-    'Qq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      ),
-    'Qq_WO':        ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      ),
-    'Wss':          ( 'IDX_UseModRM',       'rm',     '%Wss', 'Wss',     ),
-    'Wss_WO':       ( 'IDX_UseModRM',       'rm',     '%Wss', 'Wss',     ),
-    'Wsd':          ( 'IDX_UseModRM',       'rm',     '%Wsd', 'Wsd',     ),
-    'Wsd_WO':       ( 'IDX_UseModRM',       'rm',     '%Wsd', 'Wsd',     ),
-    'Wps':          ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',     ),
-    'Wps_WO':       ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',     ),
-    'Wpd':          ( 'IDX_UseModRM',       'rm',     '%Wpd', 'Wpd',     ),
-    'Wpd_WO':       ( 'IDX_UseModRM',       'rm',     '%Wpd', 'Wpd',     ),
-    'Wdq':          ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     ),
-    'Wdq_WO':       ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     ),
-    'Wq':           ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
-    'Wq_WO':        ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
-    'WqZxReg_WO':   ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      ),
-    'Wx':           ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      ),
-    'Wx_WO':        ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      ),
+    'Eb':           ( 'IDX_UseModRM',       'rm',     '%Eb',  'Eb',      'RM',    ),
+    'Ed':           ( 'IDX_UseModRM',       'rm',     '%Ed',  'Ed',      'RM',    ),
+    'Ed_WO':        ( 'IDX_UseModRM',       'rm',     '%Ed',  'Ed',      'RM',    ),
+    'Eq':           ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      'RM',    ),
+    'Eq_WO':        ( 'IDX_UseModRM',       'rm',     '%Eq',  'Eq',      'RM',    ),
+    'Ew':           ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      'RM',    ),
+    'Ev':           ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      'RM',    ),
+    'Qq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      'RM',    ),
+    'Qq_WO':        ( 'IDX_UseModRM',       'rm',     '%Qq',  'Qq',      'RM',    ),
+    'Wss':          ( 'IDX_UseModRM',       'rm',     '%Wss', 'Wss',     'RM',    ),
+    'Wss_WO':       ( 'IDX_UseModRM',       'rm',     '%Wss', 'Wss',     'RM',    ),
+    'Wsd':          ( 'IDX_UseModRM',       'rm',     '%Wsd', 'Wsd',     'RM',    ),
+    'Wsd_WO':       ( 'IDX_UseModRM',       'rm',     '%Wsd', 'Wsd',     'RM',    ),
+    'Wps':          ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',     'RM',    ),
+    'Wps_WO':       ( 'IDX_UseModRM',       'rm',     '%Wps', 'Wps',     'RM',    ),
+    'Wpd':          ( 'IDX_UseModRM',       'rm',     '%Wpd', 'Wpd',     'RM',    ),
+    'Wpd_WO':       ( 'IDX_UseModRM',       'rm',     '%Wpd', 'Wpd',     'RM',    ),
+    'Wdq':          ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     'RM',    ),
+    'Wdq_WO':       ( 'IDX_UseModRM',       'rm',     '%Wdq', 'Wdq',     'RM',    ),
+    'Wq':           ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      'RM',    ),
+    'Wq_WO':        ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      'RM',    ),
+    'WqZxReg_WO':   ( 'IDX_UseModRM',       'rm',     '%Wq',  'Wq',      'RM',    ),
+    'Wx':           ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      'RM',    ),
+    'Wx_WO':        ( 'IDX_UseModRM',       'rm',     '%Wx',  'Wx',      'RM',    ),
 
     # ModR/M.rm - register only.
-    'Uq':           ( 'IDX_UseModRM',       'rm',     '%Uq',  'Uq',      ),
-    'UqHi':         ( 'IDX_UseModRM',       'rm',     '%Uq',  'UqHi',    ),
-    'Uss':          ( 'IDX_UseModRM',       'rm',     '%Uss', 'Uss',     ),
-    'Uss_WO':       ( 'IDX_UseModRM',       'rm',     '%Uss', 'Uss',     ),
-    'Usd':          ( 'IDX_UseModRM',       'rm',     '%Usd', 'Usd',     ),
-    'Usd_WO':       ( 'IDX_UseModRM',       'rm',     '%Usd', 'Usd',     ),
-    'Nq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Nq',      ),
+    'Uq':           ( 'IDX_UseModRM',       'rm',     '%Uq',  'Uq',      'REG'    ),
+    'UqHi':         ( 'IDX_UseModRM',       'rm',     '%Uq',  'UqHi',    'REG'    ),
+    'Uss':          ( 'IDX_UseModRM',       'rm',     '%Uss', 'Uss',     'REG'    ),
+    'Uss_WO':       ( 'IDX_UseModRM',       'rm',     '%Uss', 'Uss',     'REG'    ),
+    'Usd':          ( 'IDX_UseModRM',       'rm',     '%Usd', 'Usd',     'REG'    ),
+    'Usd_WO':       ( 'IDX_UseModRM',       'rm',     '%Usd', 'Usd',     'REG'    ),
+    'Nq':           ( 'IDX_UseModRM',       'rm',     '%Qq',  'Nq',      'REG'    ),
 
     # ModR/M.rm - memory only.
-    'Ma':           ( 'IDX_UseModRM',       'rm',     '%Ma',  'Ma',      ), ##< Only used by BOUND.
-    'Mb_RO':        ( 'IDX_UseModRM',       'rm',     '%Mb',  'Mb',      ),
-    'Md':           ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
-    'Md_RO':        ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
-    'Md_WO':        ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      ),
-    'Mdq':          ( 'IDX_UseModRM',       'rm',     '%Mdq', 'Mdq',     ),
-    'Mdq_WO':       ( 'IDX_UseModRM',       'rm',     '%Mdq', 'Mdq',     ),
-    'Mq':           ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
-    'Mq_WO':        ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      ),
-    'Mps_WO':       ( 'IDX_UseModRM',       'rm',     '%Mps', 'Mps',     ),
-    'Mpd_WO':       ( 'IDX_UseModRM',       'rm',     '%Mpd', 'Mpd',     ),
-    'Mx':           ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      ),
-    'Mx_WO':        ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      ),
-    'M_RO':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       ),
-    'M_RW':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       ),
+    'Ma':           ( 'IDX_UseModRM',       'rm',     '%Ma',  'Ma',      'MEM',   ), ##< Only used by BOUND.
+    'Mb_RO':        ( 'IDX_UseModRM',       'rm',     '%Mb',  'Mb',      'MEM',   ),
+    'Md':           ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      'MEM',   ),
+    'Md_RO':        ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      'MEM',   ),
+    'Md_WO':        ( 'IDX_UseModRM',       'rm',     '%Md',  'Md',      'MEM',   ),
+    'Mdq':          ( 'IDX_UseModRM',       'rm',     '%Mdq', 'Mdq',     'MEM',   ),
+    'Mdq_WO':       ( 'IDX_UseModRM',       'rm',     '%Mdq', 'Mdq',     'MEM',   ),
+    'Mq':           ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      'MEM',   ),
+    'Mq_WO':        ( 'IDX_UseModRM',       'rm',     '%Mq',  'Mq',      'MEM',   ),
+    'Mps_WO':       ( 'IDX_UseModRM',       'rm',     '%Mps', 'Mps',     'MEM',   ),
+    'Mpd_WO':       ( 'IDX_UseModRM',       'rm',     '%Mpd', 'Mpd',     'MEM',   ),
+    'Mx':           ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      'MEM',   ),
+    'Mx_WO':        ( 'IDX_UseModRM',       'rm',     '%Mx',  'Mx',      'MEM',   ),
+    'M_RO':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       'MEM',   ),
+    'M_RW':         ( 'IDX_UseModRM',       'rm',     '%M',   'M',       'MEM',   ),
 
     # ModR/M.reg
-    'Gb':           ( 'IDX_UseModRM',       'reg',    '%Gb',  'Gb',      ),
-    'Gw':           ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      ),
-    'Gv':           ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
-    'Gv_RO':        ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
-    'Pd':           ( 'IDX_UseModRM',       'reg',    '%Pd',  'Pd',      ),
-    'PdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Pd',  'PdZx',    ),
-    'Pq':           ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
-    'Pq_WO':        ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      ),
-    'Vd':           ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      ),
-    'Vd_WO':        ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      ),
-    'VdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      ),
-    'Vdq':          ( 'IDX_UseModRM',       'reg',    '%Vdq', 'Vdq',     ),
-    'Vss':          ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
-    'Vss_WO':       ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
-    'VssZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     ),
-    'Vsd':          ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
-    'Vsd_WO':       ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
-    'VsdZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     ),
-    'Vps':          ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
-    'Vps_WO':       ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     ),
-    'Vpd':          ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     ),
-    'Vpd_WO':       ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     ),
-    'Vq':           ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      ),
-    'Vq_WO':        ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      ),
-    'Vdq_WO':       ( 'IDX_UseModRM',       'reg',    '%Vdq', 'Vdq',     ),
-    'VqHi':         ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
-    'VqHi_WO':      ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   ),
-    'VqZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    ),
-    'Vx':           ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      ),
-    'Vx_WO':        ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      ),
+    'Gb':           ( 'IDX_UseModRM',       'reg',    '%Gb',  'Gb',      '',      ),
+    'Gw':           ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      '',      ),
+    'Gv':           ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      '',      ),
+    'Gv_RO':        ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      '',      ),
+    'Pd':           ( 'IDX_UseModRM',       'reg',    '%Pd',  'Pd',      '',      ),
+    'PdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Pd',  'PdZx',    '',      ),
+    'Pq':           ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      '',      ),
+    'Pq_WO':        ( 'IDX_UseModRM',       'reg',    '%Pq',  'Pq',      '',      ),
+    'Vd':           ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      '',      ),
+    'Vd_WO':        ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      '',      ),
+    'VdZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vd',  'Vd',      '',      ),
+    'Vdq':          ( 'IDX_UseModRM',       'reg',    '%Vdq', 'Vdq',     '',      ),
+    'Vss':          ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     '',      ),
+    'Vss_WO':       ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     '',      ),
+    'VssZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vss', 'Vss',     '',      ),
+    'Vsd':          ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     '',      ),
+    'Vsd_WO':       ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     '',      ),
+    'VsdZx_WO':     ( 'IDX_UseModRM',       'reg',    '%Vsd', 'Vsd',     '',      ),
+    'Vps':          ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     '',      ),
+    'Vps_WO':       ( 'IDX_UseModRM',       'reg',    '%Vps', 'Vps',     '',      ),
+    'Vpd':          ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     '',      ),
+    'Vpd_WO':       ( 'IDX_UseModRM',       'reg',    '%Vpd', 'Vpd',     '',      ),
+    'Vq':           ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      '',      ),
+    'Vq_WO':        ( 'IDX_UseModRM',       'reg',    '%Vq',  'Vq',      '',      ),
+    'Vdq_WO':       ( 'IDX_UseModRM',       'reg',    '%Vdq', 'Vdq',     '',      ),
+    'VqHi':         ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   '',      ),
+    'VqHi_WO':      ( 'IDX_UseModRM',       'reg',    '%Vdq', 'VdqHi',   '',      ),
+    'VqZx_WO':      ( 'IDX_UseModRM',       'reg',    '%Vq',  'VqZx',    '',      ),
+    'Vx':           ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      '',      ),
+    'Vx_WO':        ( 'IDX_UseModRM',       'reg',    '%Vx',  'Vx',      '',      ),
 
     # VEX.vvvv
-    'HssHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HssHi',   ),
-    'HsdHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HsdHi',   ),
-    'HqHi':         ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HqHi',    ),
+    'HssHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HssHi',   'V',     ),
+    'HsdHi':        ( 'IDX_UseModRM',       'vvvv',   '%Hx',  'HsdHi',   'V',     ),
+    'HqHi':         ( 'IDX_UseModRM',       'vvvv',   '%Hq',  'HqHi',    'V',     ),
 
     # Immediate values.
-    'Ib':           ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instrs.
-    'Iw':           ( 'IDX_ParseImmUshort', 'imm',    '%Iw',  'Iw',      ),
-    'Id':           ( 'IDX_ParseImmUlong',  'imm',    '%Id',  'Id',      ),
-    'Iq':           ( 'IDX_ParseImmQword',  'imm',    '%Iq',  'Iq',      ),
-    'Iv':           ( 'IDX_ParseImmV',      'imm',    '%Iv',  'Iv',      ), ##< o16: word, o32: dword, o64: qword
-    'Iz':           ( 'IDX_ParseImmZ',      'imm',    '%Iz',  'Iz',      ), ##< o16: word, o32|o64:dword
+    'Ib':           ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',   '', ), ##< NB! Could be IDX_ParseImmByteSX for some instrs.
+    'Iw':           ( 'IDX_ParseImmUshort', 'imm',    '%Iw',  'Iw',      '',      ),
+    'Id':           ( 'IDX_ParseImmUlong',  'imm',    '%Id',  'Id',      '',      ),
+    'Iq':           ( 'IDX_ParseImmQword',  'imm',    '%Iq',  'Iq',      '',      ),
+    'Iv':           ( 'IDX_ParseImmV',      'imm',    '%Iv',  'Iv',      '',      ), ##< o16: word, o32: dword, o64: qword
+    'Iz':           ( 'IDX_ParseImmZ',      'imm',    '%Iz',  'Iz',      '',      ), ##< o16: word, o32|o64:dword
 
     # Address operands (no ModR/M).
-    'Ob':           ( 'IDX_ParseImmAddr',   'imm',    '%Ob',  'Ob',      ),
-    'Ov':           ( 'IDX_ParseImmAddr',   'imm',    '%Ov',  'Ov',      ),
+    'Ob':           ( 'IDX_ParseImmAddr',   'imm',    '%Ob',  'Ob',      '',      ),
+    'Ov':           ( 'IDX_ParseImmAddr',   'imm',    '%Ov',  'Ov',      '',      ),
 
     # Relative jump targets
-    'Jb':           ( 'IDX_ParseImmBRel',   'imm',    '%Jb',  'Jb',      ),
-    'Jv':           ( 'IDX_ParseImmVRel',   'imm',    '%Jv',  'Jv',      ),
+    'Jb':           ( 'IDX_ParseImmBRel',   'imm',    '%Jb',  'Jb',      '',      ),
+    'Jv':           ( 'IDX_ParseImmVRel',   'imm',    '%Jv',  'Jv',      '',      ),
 
     # DS:rSI
-    'Xb':           ( 'IDX_ParseXb',        'rSI',    '%eSI', 'Xb',      ),
-    'Xv':           ( 'IDX_ParseXv',        'rSI',    '%eSI', 'Xv',      ),
+    'Xb':           ( 'IDX_ParseXb',        'rSI',    '%eSI', 'Xb',      '',      ),
+    'Xv':           ( 'IDX_ParseXv',        'rSI',    '%eSI', 'Xv',      '',      ),
     # ES:rDI
-    'Yb':           ( 'IDX_ParseYb',        'rDI',    '%eDI', 'Yb',      ),
-    'Yv':           ( 'IDX_ParseYv',        'rDI',    '%eDI', 'Yv',      ),
+    'Yb':           ( 'IDX_ParseYb',        'rDI',    '%eDI', 'Yb',      '',      ),
+    'Yv':           ( 'IDX_ParseYv',        'rDI',    '%eDI', 'Yv',      '',      ),
 
-    'Fv':           ( 'IDX_ParseFixedReg',  'rFLAGS', '%Fv',  'Fv',      ),
+    'Fv':           ( 'IDX_ParseFixedReg',  'rFLAGS', '%Fv',  'Fv',      '',      ),
 
     # Fixed registers.
-    'AL':           ( 'IDX_ParseFixedReg',  'AL',     'al',   'REG_AL',  ),
-    'rAX':          ( 'IDX_ParseFixedReg',  'rAX',    '%eAX', 'REG_EAX', ),
-    'CS':           ( 'IDX_ParseFixedReg',  'CS',     'cs',   'REG_CS',  ), # 8086: push CS
-    'DS':           ( 'IDX_ParseFixedReg',  'DS',     'ds',   'REG_DS',  ),
-    'ES':           ( 'IDX_ParseFixedReg',  'ES',     'es',   'REG_ES',  ),
-    'FS':           ( 'IDX_ParseFixedReg',  'FS',     'fs',   'REG_FS',  ),
-    'GS':           ( 'IDX_ParseFixedReg',  'GS',     'gs',   'REG_GS',  ),
-    'SS':           ( 'IDX_ParseFixedReg',  'SS',     'ss',   'REG_SS',  ),
+    'AL':           ( 'IDX_ParseFixedReg',  'AL',     'al',   'REG_AL',  '',      ),
+    'rAX':          ( 'IDX_ParseFixedReg',  'rAX',    '%eAX', 'REG_EAX', '',      ),
+    'CS':           ( 'IDX_ParseFixedReg',  'CS',     'cs',   'REG_CS',  '',      ), # 8086: push CS
+    'DS':           ( 'IDX_ParseFixedReg',  'DS',     'ds',   'REG_DS',  '',      ),
+    'ES':           ( 'IDX_ParseFixedReg',  'ES',     'es',   'REG_ES',  '',      ),
+    'FS':           ( 'IDX_ParseFixedReg',  'FS',     'fs',   'REG_FS',  '',      ),
+    'GS':           ( 'IDX_ParseFixedReg',  'GS',     'gs',   'REG_GS',  '',      ),
+    'SS':           ( 'IDX_ParseFixedReg',  'SS',     'ss',   'REG_SS',  '',      ),
 };
 
 # IDX_ParseFixedReg
@@ -341,37 +342,36 @@ g_kdOpTypes = {
 
 
 ## IEMFORM_XXX mappings.
-g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]
-    'RM':           ( 'ModR/M',     [ 'reg', 'rm' ], ),
-    'RM_REG':       ( 'ModR/M',     [ 'reg', 'rm' ], ),
-    'RM_MEM':       ( 'ModR/M',     [ 'reg', 'rm' ], ),
-    'MR':           ( 'ModR/M',     [ 'rm', 'reg' ], ),
-    'MR_REG':       ( 'ModR/M',     [ 'rm', 'reg' ], ),
-    'MR_MEM':       ( 'ModR/M',     [ 'rm', 'reg' ], ),
-    'M':            ( 'ModR/M',     [ 'rm', ], ),
-    'M_REG':        ( 'ModR/M',     [ 'rm', ], ),
-    'M_MEM':        ( 'ModR/M',     [ 'rm', ], ),
-    'R':            ( 'ModR/M',     [ 'reg', ], ),
+g_kdIemForms = {     # sEncoding,   [ sWhere1, ... ]         opcodesub      ),
+    'RM':           ( 'ModR/M',     [ 'reg', 'rm' ],         '',            ),
+    'RM_REG':       ( 'ModR/M',     [ 'reg', 'rm' ],         '11 mr/reg',   ),
+    'RM_MEM':       ( 'ModR/M',     [ 'reg', 'rm' ],         '!11 mr/reg',  ),
+    'MR':           ( 'ModR/M',     [ 'rm', 'reg' ],         '',            ),
+    'MR_REG':       ( 'ModR/M',     [ 'rm', 'reg' ],         '11 mr/reg',   ),
+    'MR_MEM':       ( 'ModR/M',     [ 'rm', 'reg' ],         '!11 mr/reg',  ),
+    'M':            ( 'ModR/M',     [ 'rm', ],               '',            ),
+    'M_REG':        ( 'ModR/M',     [ 'rm', ],               '',            ),
+    'M_MEM':        ( 'ModR/M',     [ 'rm', ],               '',            ),
+    'R':            ( 'ModR/M',     [ 'reg', ],              '',            ),
 
-    'VEX_RM':       ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
-    'VEX_RM_REG':   ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
-    'VEX_RM_MEM':   ( 'VEX.ModR/M', [ 'reg', 'rm' ], ),
-    'VEX_XM':       ( 'VEX.ModR/M', [ 'reg', 'rm' ], ), # same as VEX_RM_MEM, typo?
-    'VEX_MR':       ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
-    'VEX_MR_REG':   ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
-    'VEX_MR_MEM':   ( 'VEX.ModR/M', [ 'rm', 'reg' ], ),
-    'VEX_M':        ( 'VEX.ModR/M', [ 'rm', ], ),
-    'VEX_M_REG':    ( 'VEX.ModR/M', [ 'rm', ], ),
-    'VEX_M_MEM':    ( 'VEX.ModR/M', [ 'rm', ], ),
-    'VEX_R':        ( 'VEX.ModR/M', [ 'reg', ], ),
-    'VEX_RVM':      ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm'], ),
-    'VEX_RVM_REG':  ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm'], ),
-    'VEX_RVM_MEM':  ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm'], ),
-    'VEX_MVR':      ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg'], ),
-    'VEX_MVR_REG':  ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg'], ),
-    'VEX_MVR_MEM':  ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg'], ),
+    'VEX_RM':       ( 'VEX.ModR/M', [ 'reg', 'rm' ],         '',            ),
+    'VEX_RM_REG':   ( 'VEX.ModR/M', [ 'reg', 'rm' ],         '11 mr/reg',   ),
+    'VEX_RM_MEM':   ( 'VEX.ModR/M', [ 'reg', 'rm' ],         '!11 mr/reg',  ),
+    'VEX_MR':       ( 'VEX.ModR/M', [ 'rm', 'reg' ],         '',            ),
+    'VEX_MR_REG':   ( 'VEX.ModR/M', [ 'rm', 'reg' ],         '11 mr/reg',   ),
+    'VEX_MR_MEM':   ( 'VEX.ModR/M', [ 'rm', 'reg' ],         '!11 mr/reg',  ),
+    'VEX_M':        ( 'VEX.ModR/M', [ 'rm', ],               '' ),
+    'VEX_M_REG':    ( 'VEX.ModR/M', [ 'rm', ],               '' ),
+    'VEX_M_MEM':    ( 'VEX.ModR/M', [ 'rm', ],               '' ),
+    'VEX_R':        ( 'VEX.ModR/M', [ 'reg', ],              '' ),
+    'VEX_RVM':      ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm' ], '',            ),
+    'VEX_RVM_REG':  ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm' ], '11 mr/reg',   ),
+    'VEX_RVM_MEM':  ( 'VEX.ModR/M', [ 'reg', 'vvvv', 'rm' ], '!11 mr/reg',  ),
+    'VEX_MVR':      ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg' ], '',            ),
+    'VEX_MVR_REG':  ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg' ], '11 mr/reg',   ),
+    'VEX_MVR_MEM':  ( 'VEX.ModR/M', [ 'rm', 'vvvv', 'reg' ], '!11 mr/reg',  ),
 
-    'FIXED':        ( 'fixed',      None, )
+    'FIXED':        ( 'fixed',      None,                    '',            ),
 };
 
 ## \@oppfx values.
@@ -393,16 +393,24 @@ g_kdSpecialOpcodes = {
 };
 
 ## Special \@opcodesub tag values.
+## The first value is the real value for aliases.
+## The second value is for bs3cg1.
 g_kdSubOpcodes = {
-    'none':         [ None,         ],
-    '11 mr/reg':    [ '11 mr/reg',  ],
-    '11':           [ '11 mr/reg',  ],      ##< alias
-    '!11 mr/reg':   [ '!11 mr/reg', ],
-    '!11':          [ '!11 mr/reg', ],      ##< alias
-    'rex.w=0':      [ 'rex.w=0',    ],
-    'w=0':          [ 'rex.w=0',    ],      ##< alias
-    'rex.w=1':      [ 'rex.w=1',    ],
-    'w=1':          [ 'rex.w=1',    ],      ##< alias
+    'none':                 [ None,                 '',         ],
+    '11 mr/reg':            [ '11 mr/reg',          '',         ],
+    '11':                   [ '11 mr/reg',          '',         ], ##< alias
+    '!11 mr/reg':           [ '!11 mr/reg',         '',         ],
+    '!11':                  [ '!11 mr/reg',         '',         ], ##< alias
+    'rex.w=0':              [ 'rex.w=0',            'WZ',       ],
+    'w=0':                  [ 'rex.w=0',            '',         ], ##< alias
+    'rex.w=1':              [ 'rex.w=1',            'WNZ',      ],
+    'w=1':                  [ 'rex.w=1',            '',         ], ##< alias
+    'vex.l=0':              [ 'vex.l=0',            'L0',       ],
+    'vex.l=1':              [ 'vex.l=0',            'L1',       ],
+    '11 mr/reg vex.l=0':    [ '11 mr/reg vex.l=0',  'L0',       ],
+    '11 mr/reg vex.l=1':    [ '11 mr/reg vex.l=1',  'L1',       ],
+    '!11 mr/reg vex.l=0':   [ '!11 mr/reg vex.l=0', 'L0',       ],
+    '!11 mr/reg vex.l=1':   [ '!11 mr/reg vex.l=1', 'L1',       ],
 };
 
 ## Valid values for \@openc
@@ -462,6 +470,7 @@ g_kdCpuIdFlags = {
     'aes':          'X86_CPUID_FEATURE_ECX_AES',
     'xsave':        'X86_CPUID_FEATURE_ECX_XSAVE',
     'avx':          'X86_CPUID_FEATURE_ECX_AVX',
+    'avx2':         'X86_CPUID_STEXT_FEATURE_EBX_AVX2',
     'f16c':         'X86_CPUID_FEATURE_ECX_F16C',
     'rdrand':       'X86_CPUID_FEATURE_ECX_RDRAND',
 
@@ -511,8 +520,8 @@ g_kdHints = {
     'ignores_oz_pfx':        '',                                ##< Ignores operand size prefix 66h.
     'ignores_rexw':          '',                                ##< Ignores REX.W.
     'ignores_op_sizes':      '',                                ##< Shorthand for "ignores_oz_pfx | ignores_op_sizes".
-    'ignores_vex_l':         '',                                ##< Ignores VEX.L.
     'vex_l_zero':            '',                                ##< VEX.L must be 0.
+    'vex_l_ignored':         '',                                ##< VEX.L is ignored.
     'lock_allowed':          '',                                ##< Lock prefix allowed.
 };
 
@@ -1684,6 +1693,14 @@ class SimpleParser(object):
         self.asErrors.append(u'%s:%d: error: %s\n' % (self.sSrcFile, self.iLine, sMessage,));
         return False;
 
+    def errorOnLine(self, iLine, sMessage):
+        """
+        Adds an error.
+        returns False;
+        """
+        self.asErrors.append(u'%s:%d: error: %s\n' % (self.sSrcFile, iLine, sMessage,));
+        return False;
+
     def errorComment(self, iLineInComment, sMessage):
         """
         Adds a comment error.
@@ -2164,7 +2181,8 @@ class SimpleParser(object):
     def parseTagOpcodeSub(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        \@opcodesub
-        Value:      none | 11 mr/reg | !11 mr/reg
+        Value:      none | 11 mr/reg | !11 mr/reg | rex.w=0 | rex.w=1 | vex.l=0 | vex.l=1
+                    | 11 mr/reg vex.l=0 | 11 mr/reg vex.l=1 | !11 mr/reg vex.l=0 | !11 mr/reg vex.l=1
 
         This is a simple way of dealing with encodings where the mod=3 and mod!=3
         represents exactly two different instructions.  The more proper way would
@@ -2893,15 +2911,24 @@ class SimpleParser(object):
         cDepth   = 1;
         off      = offOpen + 1;
         offStart = off;
+        chQuote  = None;
         while cDepth > 0:
             if off >= len(sInvocation):
                 if iLine >= len(self.asLines):
-                    return self.error('macro invocation beyond end of file');
+                    self.error('macro invocation beyond end of file');
+                    return (off, asRet);
                 sInvocation += self.asLines[iLine];
                 iLine += 1;
             ch = sInvocation[off];
 
-            if ch == ',' or ch == ')':
+            if chQuote:
+                if ch == '\\' and off + 1 < len(sInvocation):
+                    off += 1;
+                elif ch == chQuote:
+                    chQuote = None;
+            elif ch == '"' or ch == '\'':
+                chQuote = ch;
+            elif ch == ',' or ch == ')':
                 if cDepth == 1:
                     asRet.append(sInvocation[offStart:off].strip());
                     offStart = off + 1;
@@ -3020,6 +3047,21 @@ class SimpleParser(object):
                         if oInstr.aoOperands[iOperand].sWhere != sWhere:
                             self.error('%s: current instruction @op%u and a_Form location does not match: %s vs %s (%s)'
                                        % (sMacro, iOperand + 1, oInstr.aoOperands[iOperand].sWhere, sWhere, sForm,));
+                        sOpFormMatch = g_kdOpTypes[oInstr.aoOperands[iOperand].sType][4];
+                        if    (sOpFormMatch in [ 'REG', 'MEM', ] and sForm.find('_' + sOpFormMatch) < 0) \
+                           or (sOpFormMatch in [ 'FIXED', ]      and sForm.find(sOpFormMatch) < 0) \
+                           or (sOpFormMatch == 'RM' and (sForm.find('_MEM') > 0 or sForm.find('_REG') > 0) ) \
+                           or (sOpFormMatch == 'V'  and (   not (sForm.find('VEX') > 0 or sForm.find('XOP')) \
+                                                         or sForm.replace('VEX','').find('V') < 0) ):
+                            self.error('%s: current instruction @op%u and a_Form type does not match: %s/%s vs %s'
+                                       % (sMacro, iOperand + 1, oInstr.aoOperands[iOperand].sType, sOpFormMatch, sForm, ));
+
+            # Check @opcodesub
+            if oInstr.sSubOpcode \
+              and g_kdIemForms[sForm][2] \
+              and oInstr.sSubOpcode.find(g_kdIemForms[sForm][2]) < 0:
+                self.error('%s: current instruction @opcodesub and a_Form does not match: %s vs %s (%s)'
+                            % (sMacro, oInstr.sSubOpcode, g_kdIemForms[sForm][2], sForm,));
 
         # Stats.
         if not self.oReStatsName.match(sStats):
@@ -3052,7 +3094,6 @@ class SimpleParser(object):
                     self.error('%s: unknown a_fIemHints value: %s' % (sMacro, sHint,));
             elif sHint != '0':
                 self.error('%s: expected a_fIemHints value: %s' % (sMacro, sHint,));
-
 
         _ = sAsm;
         return True;
@@ -3098,6 +3139,28 @@ class SimpleParser(object):
                 if asArgs[0].find('STUB') > 0:
                     self.doneInstructions();
                 return True;
+
+            # IEMOP_HLP_DONE_VEX_DECODING_*
+            asArgs = self.findAndParseFirstMacroInvocation(sCode,
+                                                           [ 'IEMOP_HLP_DONE_VEX_DECODING',
+                                                             'IEMOP_HLP_DONE_VEX_DECODING_L0',
+                                                             'IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV',
+                                                             'IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV',
+                                                             ]);
+            if asArgs is not None:
+                sMacro = asArgs[0];
+                if sMacro in ('IEMOP_HLP_DONE_VEX_DECODING_L0', 'IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV', ):
+                    for oInstr in self.aoCurInstrs:
+                        if 'vex_l_zero' not in oInstr.dHints:
+                            if oInstr.iLineMnemonicMacro >= 0:
+                                self.errorOnLine(oInstr.iLineMnemonicMacro,
+                                                 'Missing IEMOPHINT_VEX_L_ZERO! (%s on line %d)' % (sMacro, self.iLine,));
+                            oInstr.dHints['vex_l_zero'] = True;
+                return True;
+
+            #
+            # IEMOP_MNEMONIC*
+            #
 
             # IEMOP_MNEMONIC(a_Stats, a_szMnemonic) IEMOP_INC_STATS(a_Stats)
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC');

@@ -146,7 +146,7 @@ typedef struct BS3CG1STATE
     uint32_t                fFlags;
     /** The encoding. */
     BS3CG1ENC               enmEncoding;
-    /** The non-invalid encoding.  This differs from enmEncoding when
+    /** The non-invalid encoding.  This may differ from enmEncoding when
      * Bs3Cg1CalcNoneIntelInvalidEncoding has been called. */
     BS3CG1ENC               enmEncodingNonInvalid;
     /** The CPU test / CPU ID. */
@@ -166,6 +166,8 @@ typedef struct BS3CG1STATE
     uint8_t                 cchMnemonic;
     /** Whether to advance the mnemonic pointer or not. */
     uint8_t                 fAdvanceMnemonic;
+    /** The opcode map number.  */
+    uint8_t                 uOpcodeMap;
     /** The number of opcode bytes.   */
     uint8_t                 cbOpcodes;
     /** Number of operands. */
@@ -274,6 +276,8 @@ typedef struct BS3CG1STATE
     uint8_t                 bAlignmentXcpt;
     /** Set by the encoding method to indicating invalid encoding. */
     bool                    fInvalidEncoding;
+    /** The result of Bs3Cg1CpuSetupFirst(). */
+    bool                    fCpuSetupFirstResult;
 
     /** The context we're working on. */
     BS3REGCTX               Ctx;
@@ -884,7 +888,6 @@ static const unsigned g_aoffBs3Cg1DstFields[] =
 };
 AssertCompile(RT_ELEMENTS(g_aoffBs3Cg1DstFields) == BS3CG1DST_END);
 
-#ifdef BS3CG1_DEBUG_CTX_MOD
 /** Destination field names. */
 static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
 {
@@ -1156,7 +1159,6 @@ static const struct { char sz[12]; } g_aszBs3Cg1DstFields[] =
 AssertCompile(RT_ELEMENTS(g_aszBs3Cg1DstFields) >= BS3CG1DST_END);
 AssertCompile(RT_ELEMENTS(g_aszBs3Cg1DstFields) == BS3CG1DST_END);
 
-#endif
 
 #if 0
 static const struct
@@ -2595,40 +2597,6 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MOD_NE_3(PBS3CG1STATE pThis
 #ifdef BS3CG1_WITH_VEX
 
 /**
- * Inserts a 2-byte VEX prefix.
- *
- * @returns New offDst value.
- * @param   pThis       The state.
- * @param   offDst      The current instruction offset.
- * @param   uVexL       The VEX.L value.
- * @param   uVexV       The VEX.V value (caller inverted it already).
- * @param   uVexR       The VEX.R value (caller inverted it already).
- */
-DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex2bPrefix(PBS3CG1STATE pThis, unsigned offDst,
-                                                           uint8_t uVexV, uint8_t uVexL, uint8_t uVexR)
-{
-    uint8_t b = uVexR << 7;
-    b        |= uVexV << 3;
-    b        |= uVexL << 2;
-    switch (pThis->enmPrefixKind)
-    {
-        case BS3CG1PFXKIND_NO_F2_F3_66:     b |= 0; break;
-        case BS3CG1PFXKIND_REQ_66:          b |= 1; break;
-        case BS3CG1PFXKIND_REQ_F3:          b |= 2; break;
-        case BS3CG1PFXKIND_REQ_F2:          b |= 3; break;
-        default:
-            Bs3TestFailedF("enmPrefixKind=%d not supported for VEX!\n");
-            break;
-    }
-
-    pThis->abCurInstr[offDst]     = 0xc5; /* vex2 */
-    pThis->abCurInstr[offDst + 1] = b;
-    pThis->uVexL                  = uVexL;
-    return offDst + 2;
-}
-
-
-/**
  * Inserts a 3-byte VEX prefix.
  *
  * @returns New offDst value.
@@ -2637,9 +2605,9 @@ DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex2bPrefix(PBS3CG1STATE pThis, u
  * @param   uVexL       The VEX.L value.
  * @param   uVexV       The VEX.V value (caller inverted it already).
  * @param   uVexR       The VEX.R value (caller inverted it already).
- * @param   uVexR       The VEX.X value (caller inverted it already).
- * @param   uVexR       The VEX.B value (caller inverted it already).
- * @param   uVexR       The VEX.W value (straight).
+ * @param   uVexX       The VEX.X value (caller inverted it already).
+ * @param   uVexB       The VEX.B value (caller inverted it already).
+ * @param   uVexW       The VEX.W value (straight).
  */
 DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, unsigned offDst, uint8_t uVexV, uint8_t uVexL,
                                                            uint8_t uVexR, uint8_t uVexX, uint8_t uVexB, uint8_t uVexW)
@@ -2649,7 +2617,7 @@ DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, u
     b1        = uVexR << 7;
     b1       |= uVexX << 6;
     b1       |= uVexB << 5;
-    b1       |= 1; /* VEX.mmmmm = 1*/ /** @todo three byte opcode tables */
+    b1       |= pThis->uOpcodeMap;
     b2        = uVexV << 3;
     b2       |= uVexW << 7;
     b2       |= uVexL << 2;
@@ -2669,6 +2637,46 @@ DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex3bPrefix(PBS3CG1STATE pThis, u
     pThis->abCurInstr[offDst + 2] = b2;
     pThis->uVexL                  = uVexL;
     return offDst + 3;
+}
+
+
+/**
+ * Inserts a 2-byte VEX prefix.
+ *
+ * @note    Will switch to 3-byte VEX prefix if uOpcodeMap isn't one.
+ *
+ * @returns New offDst value.
+ * @param   pThis       The state.
+ * @param   offDst      The current instruction offset.
+ * @param   uVexL       The VEX.L value.
+ * @param   uVexV       The VEX.V value (caller inverted it already).
+ * @param   uVexR       The VEX.R value (caller inverted it already).
+ */
+DECLINLINE(unsigned) BS3_NEAR_CODE Bs3Cg1InsertVex2bPrefix(PBS3CG1STATE pThis, unsigned offDst,
+                                                           uint8_t uVexV, uint8_t uVexL, uint8_t uVexR)
+{
+    if (pThis->uOpcodeMap == 1)
+    {
+        uint8_t b = uVexR << 7;
+        b        |= uVexV << 3;
+        b        |= uVexL << 2;
+        switch (pThis->enmPrefixKind)
+        {
+            case BS3CG1PFXKIND_NO_F2_F3_66:     b |= 0; break;
+            case BS3CG1PFXKIND_REQ_66:          b |= 1; break;
+            case BS3CG1PFXKIND_REQ_F3:          b |= 2; break;
+            case BS3CG1PFXKIND_REQ_F2:          b |= 3; break;
+            default:
+                Bs3TestFailedF("enmPrefixKind=%d not supported for VEX!\n");
+                break;
+        }
+
+        pThis->abCurInstr[offDst]     = 0xc5; /* vex2 */
+        pThis->abCurInstr[offDst + 1] = b;
+        pThis->uVexL                  = uVexL;
+        return offDst + 2;
+    }
+    return Bs3Cg1InsertVex3bPrefix(pThis, offDst, uVexV, uVexL, uVexR, 1 /*uVexX*/, 1 /*uVexB*/, 0/*uVexW*/);
 }
 
 
@@ -3431,7 +3439,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lig_OR_ViceVersa(PBS3CG1S
  * L0 - VEX.L must be zero.
  */
 static unsigned BS3_NEAR_CODE
-Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lmbz_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -3519,6 +3527,105 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa(PBS3CG1ST
     pThis->cbCurInstr = off;
     return iEncoding + 1;
 }
+
+
+/**
+ * Wip - VEX.W ignored.
+ */
+static unsigned BS3_NEAR_CODE
+Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lxx_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding, uint8_t uVexL)
+{
+    unsigned off;
+    switch (iEncoding)
+    {
+        case 0:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, uVexL, 1 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 0, 0);
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 1 : 0;
+            break;
+#if ARCH_BITS == 64
+        case 1:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, uVexL, 0 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 7 + 8, 0);
+            break;
+#endif
+        case 2:
+            off = Bs3Cg1InsertVex2bPrefix(pThis, 0 /*offDst*/, 0xe /*~V*/, uVexL, 1 /*~R*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 0, 0);
+            pThis->fInvalidEncoding = true;
+            break;
+        case 3:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, uVexL, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 1, 0);
+            break;
+        case 4:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, uVexL, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 1 /*W-ignored*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5, 0);
+            iEncoding += !BS3CG1_IS_64BIT_TARGET(pThis) ? 3 : 0;
+            break;
+#if ARCH_BITS == 64
+        case 5:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, uVexL, 0 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5+8, 0);
+            break;
+        case 6:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, uVexL, 1 /*~R*/, 1 /*~X*/, 0 /*~B-ignored*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 1, 0);
+            break;
+        case 7:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0xf /*~V*/, uVexL, 1 /*~R*/, 0 /*~X-ignored*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2, 0);
+            break;
+#endif
+        case 8:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 0 /*~V*/, uVexL, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 5, 0);
+            pThis->fInvalidEncoding = true;
+            break;
+        case 9:
+            off = Bs3Cg1InsertVex3bPrefix(pThis, 0 /*offDst*/, 7 /*~V*/, uVexL, 1 /*~R*/, 1 /*~X*/, 1 /*~B*/, 0 /*W*/);
+            off = Bs3Cg1InsertOpcodes(pThis, off);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, false, off, 2, 0);
+            pThis->fInvalidEncoding = true;
+            break;
+        default:
+            return 0;
+    }
+    pThis->cbCurInstr = off;
+    return iEncoding + 1;
+}
+
+
+/**
+ * Wip - VEX.W ignored.
+ * L0 - VEX.L is zero (encoding may exist where it isn't).
+ */
+static unsigned BS3_NEAR_CODE
+Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    return Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lxx_OR_ViceVersa(pThis, iEncoding, 0 /*uVexL*/);
+}
+
+
+/**
+ * Wip - VEX.W ignored.
+ * L1 - VEX.L is one (encoding may exist where it isn't).
+ */
+static unsigned BS3_NEAR_CODE
+Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L1_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+{
+    return Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lxx_OR_ViceVersa(pThis, iEncoding, 1 /*uVexL*/);
+}
+
 
 
 /**
@@ -3715,10 +3822,10 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Md_WO(PBS3CG1STATE pThi
 
 /**
  * Wip = VEX.W ignored.
- * L0 = VEX.L must be zero.
+ * Lmbz = VEX.L must be zero.
  */
 static unsigned BS3_NEAR_CODE
-Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_L0_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_Lmbz_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -4728,6 +4835,29 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].idxFieldBase = BS3CG1DST_INVALID;
             break;
 
+        case BS3CG1ENC_VEX_MODRM_Vx_WO_Mx_L0:
+            BS3_ASSERT(!(pThis->fFlags & BS3CG1INSTR_F_VEX_L_ZERO));
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa;
+            pThis->iRegOp            = 0;
+            pThis->iRmOp             = 1;
+            pThis->aOperands[0].cbOp = 16;
+            pThis->aOperands[1].cbOp = 16;
+            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
+            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_MEM;
+            pThis->aOperands[0].idxFieldBase = BS3CG1DST_XMM0;
+            break;
+
+        case BS3CG1ENC_VEX_MODRM_Vx_WO_Mx_L1:
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L1_OR_ViceVersa;
+            pThis->iRegOp            = 0;
+            pThis->iRmOp             = 1;
+            pThis->aOperands[0].cbOp = 32;
+            pThis->aOperands[1].cbOp = 32;
+            pThis->aOperands[0].enmLocation  = BS3CG1OPLOC_CTX_ZX_VLMAX;
+            pThis->aOperands[1].enmLocation  = BS3CG1OPLOC_MEM;
+            pThis->aOperands[0].idxFieldBase = BS3CG1DST_YMM0;
+            break;
+
         case BS3CG1ENC_VEX_MODRM_Vsd_WO_HsdHi_Usd:
             pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVersa;
             pThis->iRegOp            = 0;
@@ -4774,7 +4904,8 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_VEX_MODRM_Vq_WO_Wq:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_L0_OR_ViceVersa;
+            BS3_ASSERT(pThis->fFlags & BS3CG1INSTR_F_VEX_L_ZERO);
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_Lmbz_OR_ViceVersa;
             pThis->iRegOp            = 0;
             pThis->iRmOp             = 1;
             pThis->aOperands[0].cbOp = 8;
@@ -4849,8 +4980,9 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_VEX_MODRM_Mq_WO_Vq:
+            BS3_ASSERT(pThis->fFlags & (BS3CG1INSTR_F_VEX_L_ZERO | BS3CG1INSTR_F_VEX_L_IGNORED));
             pThis->pfnEncoder        = pThis->fFlags & BS3CG1INSTR_F_VEX_L_ZERO
-                                     ? Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa
+                                     ? Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lmbz_OR_ViceVersa
                                      : Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lig_OR_ViceVersa;
             pThis->iRmOp             = 0;
             pThis->iRegOp            = 1;
@@ -4932,7 +5064,8 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_VEX_MODRM_Wq_WO_Vq:
-            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_L0_OR_ViceVersa;
+            BS3_ASSERT(pThis->fFlags & BS3CG1INSTR_F_VEX_L_ZERO);
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_Lmbz_OR_ViceVersa;
             pThis->iRegOp            = 1;
             pThis->iRmOp             = 0;
             pThis->aOperands[0].cbOp = 8;
@@ -5541,13 +5674,21 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
             else if (   pThis->pExtCtx->enmMethod != BS3EXTCTXMETHOD_ANCIENT
                      && offField - sizeof(BS3REGCTX) < RT_UOFFSET_AFTER(BS3EXTCTX, Ctx.x87.aXMM[15]))
             {
-                if (!pThis->fWorkExtCtx)
-                    return Bs3TestFailedF("Extended context disabled: Field %d @ %#x LB %u\n", idxField, offField, cbDst);
-                PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
+                if (pThis->fWorkExtCtx)
+                    PtrField.pb = (uint8_t *)pThis->pExtCtx + offField - sizeof(BS3REGCTX);
+                else if (!pThis->fCpuSetupFirstResult)
+                {
+                    BS3CG1_DPRINTF(("dbg: Extended context disabled: skipping modification (<=8)\n"));
+                    goto l_advance_to_next;
+                }
+                else
+                    return Bs3TestFailedF("Extended context disabled: Field %d (%s) @ %#x LB %u\n",
+                                          idxField, g_aszBs3Cg1DstFields[idxField].sz, offField, cbDst);
             }
             /** @todo other FPU fields and FPU state formats. */
             else
-                return Bs3TestFailedF("Todo implement me: cbDst=%u idxField=%d offField=%#x (<= 8)", cbDst, idxField, offField);
+                return Bs3TestFailedF("Todo implement me: cbDst=%u idxField=%d %s offField=%#x (<= 8)",
+                                      cbDst, idxField, g_aszBs3Cg1DstFields[idxField].sz, offField);
 
 #ifdef BS3CG1_DEBUG_CTX_MOD
             switch (cbDst)
@@ -5660,7 +5801,7 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
         /*
          * Deal with larger field (FPU, SSE, AVX, ...).
          */
-        else
+        else if (pThis->fWorkExtCtx)
         {
             union
             {
@@ -5674,9 +5815,6 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
             } Value;
             unsigned const  offField = g_aoffBs3Cg1DstFields[idxField];
             unsigned        iReg;
-
-            if (!pThis->fWorkExtCtx)
-                return Bs3TestFailedF("Extended context disabled: Field %d @ %#x LB %u\n", idxField, offField, cbDst);
 
             /* Copy the value into the union, doing the zero padding / extending. */
             Bs3MemCpy(&Value, pbCode, cbValue);
@@ -5828,6 +5966,12 @@ static bool BS3_NEAR_CODE Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCT
             if (pbMemCopy && PtrField.pv)
                 Bs3MemCpy(pbMemCopy, PtrField.pv, cbDst);
         }
+        /* !pThis->fWorkExtCtx: */
+        else if (pThis->fCpuSetupFirstResult)
+            return Bs3TestFailedF("Extended context disabled: Field %d (%s) @ %#x LB %u\n",
+                                  idxField, g_aszBs3Cg1DstFields[idxField].sz, g_aoffBs3Cg1DstFields[idxField], cbDst);
+        else
+            BS3CG1_DPRINTF(("dbg: Extended context disabled: skipping modification [> 8]\n"));
 
         /*
          * Advance to the next instruction.
@@ -6438,6 +6582,7 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
         if (pThis->fAdvanceMnemonic)
             Bs3TestSubF("%s / %.*s", pThis->pszModeShort, pThis->cchMnemonic, pThis->pchMnemonic);
         pThis->fAdvanceMnemonic         = pInstr->fAdvanceMnemonic;
+        pThis->uOpcodeMap               = pInstr->uOpcodeMap;
         pThis->cOperands                = pInstr->cOperands;
         pThis->cbOpcodes                = pInstr->cbOpcodes;
         switch (pThis->cOperands)
@@ -6458,7 +6603,8 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
         /*
          * Check if the CPU supports the instruction.
          */
-        if (   !Bs3Cg1CpuSetupFirst(pThis)
+        pThis->fCpuSetupFirstResult = Bs3Cg1CpuSetupFirst(pThis);
+        if (   !pThis->fCpuSetupFirstResult
             || (pThis->fFlags & (BS3CG1INSTR_F_UNUSED | BS3CG1INSTR_F_INVALID)))
             fOuterInvalidInstr = true;
 
@@ -6565,7 +6711,8 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                                     Bs3Cg1CheckResult(pThis, bTestXcptExpected, false /*fInvalidEncodingPgFault*/, iEncoding);
                                 else
                                 {
-                                    Bs3TestPrintf("Bs3Cg1RunContextModifier(out): iEncoding=%u iTest=%u\n", iEncoding, pThis->iTest);
+                                    Bs3TestPrintf("Bs3Cg1RunContextModifier(out): iEncoding=%u iTest=%RU32 iInstr=%u %.*s\n",
+                                                  iEncoding, pThis->iTest, pThis->iInstr, pThis->cchMnemonic, pThis->pchMnemonic);
                                     ASMHalt();
                                 }
 
@@ -6603,7 +6750,8 @@ static uint8_t BS3_NEAR_CODE BS3_CMN_NM(Bs3Cg1WorkerInner)(PBS3CG1STATE pThis)
                             }
                             else
                             {
-                                Bs3TestPrintf("Bs3Cg1RunContextModifier(in): iEncoding=%u iTest=%u\n", iEncoding, pThis->iTest);
+                                Bs3TestPrintf("Bs3Cg1RunContextModifier(in): iEncoding=%u iTest=%u iInstr=%RU32 %.*s\n",
+                                              iEncoding, pThis->iTest, pThis->iInstr, pThis->cchMnemonic, pThis->pchMnemonic);
                                 ASMHalt();
                             }
                         }

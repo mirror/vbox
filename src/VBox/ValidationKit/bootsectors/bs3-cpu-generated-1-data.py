@@ -304,8 +304,8 @@ class Bs3Cg1Instruction(object):
 
         for oOp in oInstr.aoOperands:
             self.sEncoding     += '_' + oOp.sType;
-        if oInstr.sSubOpcode == 'rex.w=1':      self.sEncoding += '_WNZ';
-        elif oInstr.sSubOpcode == 'rex.w=0':    self.sEncoding += '_WZ';
+        if oInstr.sSubOpcode and iai.g_kdSubOpcodes[oInstr.sSubOpcode][1]:
+            self.sEncoding     += '_' + iai.g_kdSubOpcodes[oInstr.sSubOpcode][1];
 
         if oInstr.fUnused:
             if oInstr.sInvalidStyle == 'immediate' and oInstr.sSubOpcode:
@@ -333,6 +333,8 @@ class Bs3Cg1Instruction(object):
             self.asFlags.append('BS3CG1INSTR_F_INTEL_DECODES_INVALID');
         if 'vex_l_zero' in oInstr.dHints:
             self.asFlags.append('BS3CG1INSTR_F_VEX_L_ZERO');
+        if 'vex_l_ignored' in oInstr.dHints:
+            self.asFlags.append('BS3CG1INSTR_F_VEX_L_IGNORED');
 
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
         if oInstr.sPrefix:
@@ -366,8 +368,22 @@ class Bs3Cg1Instruction(object):
         """ Returns comma separated string of operand values for g_abBs3Cg1Operands. """
         return ', '.join(['(uint8_t)BS3CG1OP_%s' % (oOp.sType,) for oOp in self.oInstr.aoOperands]);
 
+    def getOpcodeMap(self):
+        """ Returns the opcode map number for the BS3CG1INSTR structure. """
+        sEncoding = self.oInstr.aoMaps[0].sEncoding;
+        if sEncoding == 'legacy':   return 0;
+        if sEncoding == 'vex1':     return 1;
+        if sEncoding == 'vex2':     return 2;
+        if sEncoding == 'vex3':     return 3;
+        if sEncoding == 'xop8':     return 8;
+        if sEncoding == 'xop9':     return 9;
+        if sEncoding == 'xop10':    return 10;
+        assert False, sEncoding;
+        return 3;
+
     def getInstructionEntry(self):
         """ Returns an array of BS3CG1INSTR member initializers. """
+        assert len(self.oInstr.sMnemonic) < 16;
         sOperands = ', '.join([oOp.sType for oOp in self.oInstr.aoOperands]);
         if sOperands:
             sOperands = ' /* ' + sOperands + ' */';
@@ -378,6 +394,7 @@ class Bs3Cg1Instruction(object):
             '        /* fAdvanceMnemonic = */ %s,' % ('true' if self.fAdvanceMnemonic else 'false',),
             '        /* offTests = */         %s,' % (self.oTests.offTests,),
             '        /* enmEncoding = */      (unsigned)%s,' % (self.sEncoding,),
+            '        /* uOpcodeMap = */       (unsigned)%s,' % (self.getOpcodeMap(),),
             '        /* enmPrefixKind = */    (unsigned)%s,' % (self.sPfxKind,),
             '        /* enmCpuTest = */       (unsigned)%s,' % (self.sCpu,),
             '        /* enmXcptType = */      (unsigned)%s,' % (self.sXcptType,),

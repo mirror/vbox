@@ -913,7 +913,6 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEMOPFORM_VEX_RM_REG    (IEMOPFORM_VEX_RM | IEMOPFORM_MOD3)
 /** VEX+ModR/M: reg, r/m (memory)   */
 #define IEMOPFORM_VEX_RM_MEM    (IEMOPFORM_VEX_RM | IEMOPFORM_NOT_MOD3)
-#define IEMOPFORM_VEX_XM        IEMOPFORM_VEX_RM_MEM
 /** VEX+ModR/M: r/m, reg */
 #define IEMOPFORM_VEX_MR        5
 /** VEX+ModR/M: r/m (register), reg */
@@ -955,15 +954,15 @@ typedef IEMCPU const *PCIEMCPU;
  * @{ */
 /** Ignores the operand size prefix (66h). */
 #define IEMOPHINT_IGNORES_OZ_PFX    RT_BIT_32(10)
-/** Ignores REX.W. */
+/** Ignores REX.W (aka WIG). */
 #define IEMOPHINT_IGNORES_REXW      RT_BIT_32(11)
 /** Both the operand size prefixes (66h + REX.W) are ignored. */
 #define IEMOPHINT_IGNORES_OP_SIZES  (IEMOPHINT_IGNORES_OZ_PFX | IEMOPHINT_IGNORES_REXW)
 /** Allowed with the lock prefix. */
 #define IEMOPHINT_LOCK_ALLOWED      RT_BIT_32(11)
 /** The VEX.L value is ignored (aka LIG). */
-#define IEMOPHINT_IGNORES_VEX_L     RT_BIT_32(12)
-/** The VEX.L value must be zero (i.e. 128-bit width). */
+#define IEMOPHINT_VEX_L_IGNORED     RT_BIT_32(12)
+/** The VEX.L value must be zero (i.e. 128-bit width only). */
 #define IEMOPHINT_VEX_L_ZERO        RT_BIT_32(13)
 
 /** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */

@@ -122,6 +122,7 @@ typedef enum BS3CG1OP
     BS3CG1OP_Mq_WO,
     BS3CG1OP_Mps_WO,
     BS3CG1OP_Mpd_WO,
+    BS3CG1OP_Mx,
     BS3CG1OP_Mx_WO,
 
     BS3CG1OP_END
@@ -194,6 +195,8 @@ typedef enum BS3CG1ENC
     BS3CG1ENC_VEX_MODRM_Vq_WO_Wq,
     BS3CG1ENC_VEX_MODRM_VssZx_WO_Md,
     BS3CG1ENC_VEX_MODRM_VsdZx_WO_Mq,
+    BS3CG1ENC_VEX_MODRM_Vx_WO_Mx_L0,
+    BS3CG1ENC_VEX_MODRM_Vx_WO_Mx_L1,
     BS3CG1ENC_VEX_MODRM_Vx_WO_Wx,
     BS3CG1ENC_VEX_MODRM_Ed_WO_Vd_WZ,
     BS3CG1ENC_VEX_MODRM_Eq_WO_Vq_WNZ,
@@ -334,6 +337,8 @@ typedef struct BS3CG1INSTR
     uint32_t    offTests : 23;
     /** BS3CG1ENC values. */
     uint32_t    enmEncoding : 10;
+    /** The VEX, EVEX or XOP opcode map number (VEX.mmmm). */
+    uint32_t    uOpcodeMap : 4;
     /** BS3CG1PFXKIND values. */
     uint32_t    enmPrefixKind : 4;
     /** CPU test / CPU ID bit test (BS3CG1CPU). */
@@ -341,7 +346,7 @@ typedef struct BS3CG1INSTR
     /** Exception type (BS3CG1XCPTTYPE)   */
     uint32_t    enmXcptType : 5;
     /** Currently unused bits. */
-    uint32_t    uUnused : 6;
+    uint32_t    uUnused : 3;
     /** BS3CG1INSTR_F_XXX. */
     uint32_t    fFlags;
 } BS3CG1INSTR;
@@ -365,6 +370,8 @@ typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
 #define BS3CG1INSTR_F_INTEL_DECODES_INVALID UINT32_C(0x00000010)
 /** VEX.L must be zero (IEMOPHINT_VEX_L_ZERO). */
 #define BS3CG1INSTR_F_VEX_L_ZERO            UINT32_C(0x00000020)
+/** VEX.L is ignored (IEMOPHINT_VEX_L_IGNORED). */
+#define BS3CG1INSTR_F_VEX_L_IGNORED         UINT32_C(0x00000040)
 /** @} */
 
 
