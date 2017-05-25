@@ -1803,6 +1803,12 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /* Nested Hw. virt through SVM R0 execution is not yet implemented, IEM only, we shouldn't get here. */
+    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+        return VERR_NOT_IMPLEMENTED;
+#endif
+
     int rc = hmR0SvmLoadGuestControlRegs(pVCpu, pVmcb, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestControlRegs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
