@@ -28,7 +28,7 @@
 class QAction;
 class QHBoxLayout;
 class QMenu;
-class QStackedWidget;
+class QStackedLayout;
 class QTabBar;
 class QVBoxLayout;
 class UIMenuToolBar;
@@ -54,6 +54,8 @@ public:
 
     /** Constructs tools pane passing @a pParent to the base-class. */
     UIToolsPane(QWidget *pParent = 0);
+    /** Destructs tools pane. */
+    virtual ~UIToolsPane() /* override */;
 
     /** Defines the @a comMachine object. */
     void setMachine(const CMachine &comMachine);
@@ -79,22 +81,24 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares stacked-widget. */
-    void prepareStackedWidget();
+    /** Prepares stacked-layout. */
+    void prepareStackedLayout();
     /** Prepares tab-bar. */
     void prepareTabBar();
     /** Prepares menu-toolbar. */
     void prepareMenuToolbar();
     /** Prepares menu. */
     void prepareMenu();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Activates corresponding tab-bar tab, adds new if necessary. */
     void activateTabBarTab(ToolsType enmType, bool fCloseable);
 
     /** Holds the main layout isntance. */
     QVBoxLayout               *m_pLayoutMain;
-    /** Holds the stacked-widget instance. */
-    QStackedWidget            *m_pStackedWidget;
+    /** Holds the stacked-layout instance. */
+    QStackedLayout            *m_pStackedLayout;
     /** Holds the snapshot pane. */
     UISnapshotPane            *m_pPaneSnapshots;
     /** Holds the controls layout instance. */

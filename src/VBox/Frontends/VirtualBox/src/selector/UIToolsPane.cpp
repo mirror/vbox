@@ -20,7 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QStackedWidget>
+# include <QStackedLayout>
 # include <QTabBar>
 
 /* GUI includes */
@@ -41,7 +41,7 @@
 UIToolsPane::UIToolsPane(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pLayoutMain(0)
-    , m_pStackedWidget(0)
+    , m_pStackedLayout(0)
     , m_pPaneSnapshots(0)
     , m_pLayoutControls(0)
     , m_pTabBar(0)
@@ -50,6 +50,12 @@ UIToolsPane::UIToolsPane(QWidget *pParent /* = 0 */)
 {
     /* Prepare: */
     prepare();
+}
+
+UIToolsPane::~UIToolsPane()
+{
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIToolsPane::setMachine(const CMachine &comMachine)
@@ -95,15 +101,15 @@ void UIToolsPane::sltHandleMenuToolbarTrigger()
 void UIToolsPane::sltHandleTabBarTabMoved(int iFrom, int iTo)
 {
     /* Swap stack-widget pages as well: */
-    QWidget *pWidget = m_pStackedWidget->widget(iFrom);
-    m_pStackedWidget->removeWidget(pWidget);
-    m_pStackedWidget->insertWidget(iTo, pWidget);
+    QWidget *pWidget = m_pStackedLayout->widget(iFrom);
+    m_pStackedLayout->removeWidget(pWidget);
+    m_pStackedLayout->insertWidget(iTo, pWidget);
 }
 
 void UIToolsPane::sltHandleTabBarCurrentChange(int iIndex)
 {
     /* Activate corresponding indexes: */
-    m_pStackedWidget->setCurrentIndex(iIndex);
+    m_pStackedLayout->setCurrentIndex(iIndex);
 }
 
 void UIToolsPane::sltHandleTabBarButtonClick()
@@ -125,8 +131,8 @@ void UIToolsPane::sltHandleTabBarButtonClick()
 
     /* Delete the tab and corresponding widget: */
     m_pTabBar->removeTab(iActualTabIndex);
-    QWidget *pWidget = m_pStackedWidget->widget(iActualTabIndex);
-    m_pStackedWidget->removeWidget(pWidget);
+    QWidget *pWidget = m_pStackedLayout->widget(iActualTabIndex);
+    m_pStackedLayout->removeWidget(pWidget);
     delete pWidget;
 }
 
@@ -140,8 +146,8 @@ void UIToolsPane::prepare()
         m_pLayoutMain->setSpacing(0);
         m_pLayoutMain->setContentsMargins(3, 4, 5, 0);
 
-        /* Prepare stacked-widget: */
-        prepareStackedWidget();
+        /* Prepare stacked-layout: */
+        prepareStackedLayout();
 
         /* Create controls layout: */
         m_pLayoutControls = new QHBoxLayout;
@@ -172,14 +178,14 @@ void UIToolsPane::prepare()
     retranslateUi();
 }
 
-void UIToolsPane::prepareStackedWidget()
+void UIToolsPane::prepareStackedLayout()
 {
-    /* Create stacked-widget: */
-    m_pStackedWidget = new QStackedWidget;
-    AssertPtrReturnVoid(m_pStackedWidget);
+    /* Create stacked-layout: */
+    m_pStackedLayout = new QStackedLayout;
+    AssertPtrReturnVoid(m_pStackedLayout);
     {
         /* Add into layout: */
-        m_pLayoutMain->addWidget(m_pStackedWidget);
+        m_pLayoutMain->addLayout(m_pStackedLayout);
     }
 }
 
@@ -267,6 +273,18 @@ void UIToolsPane::prepareMenu()
     }
 }
 
+void UIToolsPane::cleanup()
+{
+    /* Remove all tab prematurelly: */
+    while (m_pTabBar->count())
+    {
+        m_pTabBar->removeTab(0);
+        QWidget *pWidget = m_pStackedLayout->widget(0);
+        m_pStackedLayout->removeWidget(pWidget);
+        delete pWidget;
+    }
+}
+
 void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
 {
     /* Search for a tab with such type: */
@@ -284,13 +302,13 @@ void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
         {
             case ToolsType_SnapshotManager:
                 m_pPaneSnapshots = new UISnapshotPane;
-                m_pStackedWidget->addWidget(m_pPaneSnapshots);
+                m_pStackedLayout->addWidget(m_pPaneSnapshots);
                 break;
             case ToolsType_VirtualMediaManager:
-                m_pStackedWidget->addWidget(new UIMediumManagerWidget(EmbedTo_Stack));
+                m_pStackedLayout->addWidget(new UIMediumManagerWidget(EmbedTo_Stack));
                 break;
             case ToolsType_HostNetworkManager:
-                m_pStackedWidget->addWidget(new UIHostNetworkManagerWidget(EmbedTo_Stack));
+                m_pStackedLayout->addWidget(new UIHostNetworkManagerWidget(EmbedTo_Stack));
                 break;
             default:
                 AssertFailedReturnVoid();
@@ -319,7 +337,7 @@ void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
     }
 
     /* Activate corresponding indexes: */
-    m_pStackedWidget->setCurrentIndex(iActualTabIndex);
+    m_pStackedLayout->setCurrentIndex(iActualTabIndex);
     m_pTabBar->setCurrentIndex(iActualTabIndex);
     m_pTabBar->blockSignals(false);
 }
