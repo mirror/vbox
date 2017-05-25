@@ -1662,8 +1662,8 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
         PCCPUMCPUIDLEAF const pSxfLeaf0 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 7, 0);
         if (pSxfLeaf0)
         {
-            pFeatures->fAvx2                = RT_BOOL(pSxfLeaf0->uEcx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
-            pFeatures->fAvx512Foundation    = RT_BOOL(pSxfLeaf0->uEcx & X86_CPUID_STEXT_FEATURE_EBX_AVX512F);
+            pFeatures->fAvx2                = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
+            pFeatures->fAvx512Foundation    = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_AVX512F);
             pFeatures->fClFlushOpt          = RT_BOOL(pSxfLeaf0->uEbx & X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT);
         }
 
