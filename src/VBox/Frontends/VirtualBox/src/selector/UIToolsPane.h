@@ -88,8 +88,8 @@ private:
     /** Prepares menu. */
     void prepareMenu();
 
-    /** Adds corresponding tab-bar tab. */
-    void addTabBarTab(ToolsType enmType, bool fCloseable);
+    /** Activates corresponding tab-bar tab, adds new if necessary. */
+    void activateTabBarTab(ToolsType enmType, bool fCloseable);
 
     /** Holds the main layout isntance. */
     QVBoxLayout               *m_pLayoutMain;

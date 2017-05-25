@@ -54,7 +54,7 @@ UIToolsPane::UIToolsPane(QWidget *pParent /* = 0 */)
 
 void UIToolsPane::setMachine(const CMachine &comMachine)
 {
-    /* Update the panes: */
+    /* Update snapshots pane: */
     AssertPtrReturnVoid(m_pPaneSnapshots);
     m_pPaneSnapshots->setMachine(comMachine);
 }
@@ -62,9 +62,8 @@ void UIToolsPane::setMachine(const CMachine &comMachine)
 void UIToolsPane::retranslateUi()
 {
     /* Translate menu: */
-    m_pMenu->menuAction()->setText(tr("More Tools"));
-    m_pMenu->setToolTip(tr("Holds a list of tools"));
     m_pMenu->setTitle(tr("Tools"));
+    m_pMenu->setToolTip(tr("Holds a list of tools"));
 
     /* Translate actions: */
     m_actions[ToolsType_SnapshotManager]->setText(tr("Snapshot Manager"));
@@ -89,8 +88,8 @@ void UIToolsPane::sltHandleMenuToolbarTrigger()
     const ToolsType enmType = pAction->property("ToolsType").value<ToolsType>();
     AssertReturnVoid(enmType != ToolsType_Invalid);
 
-    /* Add corresponding tab: */
-    addTabBarTab(enmType, true);
+    /* Activate corresponding tab: */
+    activateTabBarTab(enmType, true);
 }
 
 void UIToolsPane::sltHandleTabBarTabMoved(int iFrom, int iTo)
@@ -154,10 +153,15 @@ void UIToolsPane::prepare()
 
             /* Prepare tab-bar: */
             prepareTabBar();
+
+            /* Add stretch: */
+            m_pLayoutControls->addStretch();
+
             /* Prepare menu-toolbar: */
             prepareMenuToolbar();
-            /* Add Snapshot Manager pane: */
-            addTabBarTab(ToolsType_SnapshotManager, false);
+
+            /* Add and activate snapshots pane: */
+            activateTabBarTab(ToolsType_SnapshotManager, false);
 
             /* Add into layout: */
             m_pLayoutMain->addLayout(m_pLayoutControls);
@@ -192,7 +196,7 @@ void UIToolsPane::prepareTabBar()
         m_pTabBar->setDrawBase(false);
         m_pTabBar->setExpanding(false);
         m_pTabBar->setShape(QTabBar::RoundedSouth);
-        m_pTabBar->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+        m_pTabBar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         connect(m_pTabBar, &QTabBar::tabMoved, this, &UIToolsPane::sltHandleTabBarTabMoved);
         connect(m_pTabBar, &QTabBar::currentChanged, this, &UIToolsPane::sltHandleTabBarCurrentChange);
 
@@ -263,7 +267,7 @@ void UIToolsPane::prepareMenu()
     }
 }
 
-void UIToolsPane::addTabBarTab(ToolsType enmType, bool fCloseable)
+void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
 {
     /* Search for a tab with such type: */
     int iActualTabIndex = -1;
