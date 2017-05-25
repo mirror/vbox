@@ -260,13 +260,6 @@ void UIToolsPane::prepareMenu()
 
         /* Add as tool-button into tool-bar: */
         m_pMenuToolbar->setMenuAction(m_pMenu->menuAction());
-        QToolButton *pButton = qobject_cast<QToolButton*>(m_pMenuToolbar->widgetForAction(m_pMenu->menuAction()));
-        AssertPtrReturnVoid(pButton);
-        {
-            /* Configure tool-button: */
-            pButton->setPopupMode(QToolButton::InstantPopup);
-            pButton->setAutoRaise(true);
-        }
     }
 }
 
