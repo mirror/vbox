@@ -45,7 +45,7 @@ class UIHostNetworkManagerWidget : public QIWithRetranslateUI<QWidget>
 public:
 
     /** Constructs Host Network Manager widget. */
-    UIHostNetworkManagerWidget(QWidget *pParent = 0);
+    UIHostNetworkManagerWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the menu. */
     QMenu *menu() const { return m_pMenu; }
@@ -132,6 +132,12 @@ private:
         void createItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem);
         /** Updates the passed tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForNetworkHost(const UIDataHostNetwork &data, bool fChooseItem, UIItemHostNetwork *pItem);
+    /** @} */
+
+    /** @name General variables.
+      * @{ */
+        /** Holds the widget embedding type. */
+        const EmbedTo m_enmEmbedding;
     /** @} */
 
     /** @name Toolbar and menu variables.

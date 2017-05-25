@@ -61,7 +61,7 @@ class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
 public:
 
     /** Constructs Virtual Medium Manager widget. */
-    UIMediumManagerWidget(QWidget *pParent = 0);
+    UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the menu. */
     QMenu *menu() const { return m_pMenu; }
@@ -250,6 +250,9 @@ private:
 
     /** @name General variables.
       * @{ */
+        /** Holds the widget embedding type. */
+        const EmbedTo m_enmEmbedding;
+
         /** Holds whether Virtual Medium Manager should preserve current item change. */
         bool m_fPreventChangeCurrentItem;
     /** @} */

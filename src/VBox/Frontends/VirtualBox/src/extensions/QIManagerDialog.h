@@ -29,6 +29,14 @@ class UIToolBar;
 #endif
 
 
+/** Widget embedding type. */
+enum EmbedTo
+{
+    EmbedTo_Dialog,
+    EmbedTo_Stack
+};
+
+
 /** Manager dialog factory insterface. */
 class QIManagerDialogFactory
 {

@@ -657,8 +657,9 @@ private:
 *   Class UIMediumManagerWidget implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIMediumManagerWidget::UIMediumManagerWidget(QWidget *pParent /* = 0 */)
+UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_enmEmbedding(enmEmbedding)
     , m_fPreventChangeCurrentItem(false)
     , m_pTabWidget(0)
     , m_iTabCount(3)
@@ -1244,7 +1245,14 @@ void UIMediumManagerWidget::prepareToolBar()
             m_pToolBar->addAction(m_pActionRelease);
         if (m_pActionRefresh)
             m_pToolBar->addAction(m_pActionRefresh);
-#ifndef VBOX_WS_MAC
+#ifdef VBOX_WS_MAC
+        /* Check whether we are embedded into a stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Add into layout: */
+            layout()->addWidget(m_pToolBar);
+        }
+#else
         /* Add into layout: */
         layout()->addWidget(m_pToolBar);
 #endif
@@ -2296,7 +2304,7 @@ void UIMediumManager::prepareDialog()
 void UIMediumManager::prepareWidget()
 {
     /* Create widget: */
-    UIMediumManagerWidget *pWidget = new UIMediumManagerWidget(this);
+    UIMediumManagerWidget *pWidget = new UIMediumManagerWidget(EmbedTo_Dialog, this);
     AssertPtrReturnVoid(pWidget);
     {
         /* Configure widget: */

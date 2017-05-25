@@ -189,8 +189,9 @@ int UIItemHostNetwork::maskToCidr(const QString &strMask)
 *   Class UIHostNetworkManagerWidget implementation.                                                                             *
 *********************************************************************************************************************************/
 
-UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(QWidget *pParent /* = 0 */)
+UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_enmEmbedding(enmEmbedding)
     , m_pToolBar(0)
     , m_pMenu(0)
     , m_pActionAdd(0)
@@ -825,7 +826,14 @@ void UIHostNetworkManagerWidget::prepareToolBar()
             m_pToolBar->addAction(m_pActionDetails);
         if (m_pActionCommit)
             m_pToolBar->addAction(m_pActionCommit);
-#ifndef VBOX_WS_MAC
+#ifdef VBOX_WS_MAC
+        /* Check whether we are embedded into a stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Add into layout: */
+            layout()->addWidget(m_pToolBar);
+        }
+#else
         /* Add into layout: */
         layout()->addWidget(m_pToolBar);
 #endif
@@ -1039,7 +1047,7 @@ void UIHostNetworkManager::prepareDialog()
 void UIHostNetworkManager::prepareWidget()
 {
     /* Create widget: */
-    UIHostNetworkManagerWidget *pWidget = new UIHostNetworkManagerWidget(this);
+    UIHostNetworkManagerWidget *pWidget = new UIHostNetworkManagerWidget(EmbedTo_Dialog, this);
     AssertPtrReturnVoid(pWidget);
     {
         /* Configure widget: */
