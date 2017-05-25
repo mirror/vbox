@@ -2098,27 +2098,6 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething_Vsomething_OR_Vi
             break;
         case 1:
             off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaultsMisaligned(pThis, off, 3 /*iReg*/, 1 /*cbMisalign*/);
-            break;
-        default:
-            return 0;
-    }
-    pThis->cbCurInstr = off;
-    return iEncoding + 1;
-}
-
-
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
-{
-    unsigned off;
-    switch (iEncoding)
-    {
-        case 0:
-            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, off, 2 /*iReg*/);
-            break;
-        case 1:
-            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
             off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaultsMisaligned(pThis, off, 2 /*iReg*/, 1 /*cbMisalign*/ );
             if (!Bs3Cg1XcptTypeIsUnaligned(pThis->enmXcptType))
                 pThis->bAlignmentXcpt = X86_XCPT_GP;
@@ -3789,7 +3768,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_Vdq_WO_Mdq:
-            pThis->pfnEncoder                   = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa;
+            pThis->pfnEncoder                   = Bs3Cg1EncodeNext_MODRM_Msomething_Vsomething_OR_ViceVersa;
             pThis->iRegOp                       = 0;
             pThis->iRmOp                        = 1;
             pThis->aOperands[0].cbOp            = 16;
@@ -4007,7 +3986,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_Mdq_WO_Vdq:
-            pThis->pfnEncoder                   = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa;
+            pThis->pfnEncoder                   = Bs3Cg1EncodeNext_MODRM_Msomething_Vsomething_OR_ViceVersa;
             pThis->iRmOp                        = 0;
             pThis->iRegOp                       = 1;
             pThis->aOperands[0].cbOp            = 16;
@@ -4044,7 +4023,7 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
 
         case BS3CG1ENC_MODRM_Mps_WO_Vps:
         case BS3CG1ENC_MODRM_Mpd_WO_Vpd:
-            pThis->pfnEncoder                  = Bs3Cg1EncodeNext_MODRM_MsomethingWO_Vsomething_OR_ViceVersa;
+            pThis->pfnEncoder                  = Bs3Cg1EncodeNext_MODRM_Msomething_Vsomething_OR_ViceVersa;
             pThis->iRmOp                       = 0;
             pThis->iRegOp                      = 1;
             pThis->aOperands[0].cbOp           = 16;
