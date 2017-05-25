@@ -1445,6 +1445,17 @@ Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(PBS3CG1STATE pThis, unsigned off
                                     pThis->aOperands[pThis->iRmOp].enmLocation);
 }
 
+/** Also encodes idxField of the register operand using idxFieldBase. */
+static unsigned BS3_NEAR_CODE
+Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaultsAddrOverride(PBS3CG1STATE pThis, unsigned off, uint8_t iReg)
+{
+    pThis->aOperands[pThis->iRegOp].idxField = pThis->aOperands[pThis->iRegOp].idxFieldBase + iReg;
+    return Bs3Cfg1EncodeMemMod0Disp(pThis, true /*fAddrOverride*/, off, iReg & 7,
+                                    pThis->aOperands[pThis->iRmOp].cbOp,
+                                    0 /*cbMisalign*/,
+                                    pThis->aOperands[pThis->iRmOp].enmLocation);
+}
+
 
 /** Also encodes idxField of the register operand using idxFieldBase. */
 static unsigned BS3_NEAR_CODE
@@ -1490,31 +1501,37 @@ Bs3Cfg1EncodeMemMod0DispWithDefaultsAndNoReg(PBS3CG1STATE pThis, unsigned off)
 
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Eb_Gb(PBS3CG1STATE pThis, unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Eb_Gb_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
     {
         /* Start by reg,reg encoding. */
         case 0:
+            pThis->aOperands[pThis->iRmOp].enmLocation = pThis->aOperands[pThis->iRmOp].enmLocationReg;
             off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
-            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
-            pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
+            off = Bs3Cg1InsertModRmWithRegFields(pThis, off, X86_GREG_xAX, X86_GREG_xCX);
             break;
         case 1:
-            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
+            pThis->aOperands[pThis->iRmOp].enmLocation = pThis->aOperands[pThis->iRmOp].enmLocationMem;
             off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-            off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, X86_GREG_xBP, 1, 0, BS3CG1OPLOC_MEM_RW);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, off, 5 /*CH*/);
             break;
         case 2:
             if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) < BS3CPU_80386)
                 return 0;
-            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
+            pThis->aOperands[pThis->iRmOp].enmLocation = pThis->aOperands[pThis->iRmOp].enmLocationMem;
+            pThis->abCurInstr[0] = P_OZ;
+            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaults(pThis, off, 6 /*DH*/);
+            break;
+        /* Tests with address override goes last! */
+        case 3:
             pThis->abCurInstr[0] = P_AZ;
             off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 1));
-            off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, off, X86_GREG_xDI, 1, 0, BS3CG1OPLOC_MEM_RW);
+            off = Bs3Cfg1EncodeMemMod0DispWithRegFieldAndDefaultsAddrOverride(pThis, off, 7 /*BH*/);
             break;
+
         default:
             return 0;
     }
@@ -1523,41 +1540,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Eb_Gb(PBS3CG1STATE pThis, u
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gb_Eb(PBS3CG1STATE pThis, unsigned iEncoding)
-{
-    unsigned off;
-    switch (iEncoding)
-    {
-        /* Start by reg,reg encoding. */
-        case 0:
-            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-            pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
-            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
-            pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
-            break;
-        case 1:
-            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
-            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 0));
-            off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, off, X86_GREG_xBP, 1, 0, BS3CG1OPLOC_MEM);
-            break;
-        case 2:
-            if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) < BS3CPU_80386)
-                return 0;
-            pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
-            pThis->abCurInstr[0] = P_AZ;
-            off = Bs3Cg1InsertOpcodes(pThis, Bs3Cg1InsertReqPrefix(pThis, 1));
-            off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, off, X86_GREG_xDI, 1, 0, BS3CG1OPLOC_MEM);
-            break;
-        default:
-            return 0;
-    }
-    pThis->cbCurInstr = off;
-    return iEncoding + 1;
-}
-
-
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_Ev__OR__MODRM_Ev_Gv(PBS3CG1STATE pThis,
-                                                                                                unsigned iEncoding)
+static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_Ev__OR__MODRM_Ev_Gv(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     unsigned cbOp;
@@ -3735,10 +3718,6 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEnc
 
     switch (pThis->enmEncoding)
     {
-        case BS3CG1ENC_MODRM_Eb_Gb:
-            return Bs3Cg1EncodeNext_MODRM_Eb_Gb(pThis, iEncoding);
-        case BS3CG1ENC_MODRM_Gb_Eb:
-            return Bs3Cg1EncodeNext_MODRM_Gb_Eb(pThis, iEncoding);
         case BS3CG1ENC_MODRM_Gv_Ev:
         case BS3CG1ENC_MODRM_Ev_Gv:
             return Bs3Cg1EncodeNext_MODRM_Gv_Ev__OR__MODRM_Ev_Gv(pThis, iEncoding);
@@ -3820,12 +3799,16 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
     switch (pThis->enmEncoding)
     {
         case BS3CG1ENC_MODRM_Eb_Gb:
-            pThis->iRmOp             = 0;
-            pThis->iRegOp            = 1;
-            pThis->aOperands[0].cbOp = 1;
-            pThis->aOperands[1].cbOp = 1;
-            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
-            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->pfnEncoder                  = Bs3Cg1EncodeNext_MODRM_Eb_Gb_OR_ViceVersa;
+            pThis->iRmOp                       = 0;
+            pThis->iRegOp                      = 1;
+            pThis->aOperands[0].cbOp           = 1;
+            pThis->aOperands[1].cbOp           = 1;
+            pThis->aOperands[0].idxFieldBase   = BS3CG1DST_AL;
+            pThis->aOperands[1].idxFieldBase   = BS3CG1DST_AL;
+            pThis->aOperands[0].enmLocationReg = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].enmLocationMem = BS3CG1OPLOC_MEM_RW;
+            pThis->aOperands[1].enmLocation    = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_MODRM_Ev_Gv:
@@ -3895,12 +3878,16 @@ bool BS3_NEAR_CODE Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             break;
 
         case BS3CG1ENC_MODRM_Gb_Eb:
-            pThis->iRmOp             = 1;
+            pThis->pfnEncoder        = Bs3Cg1EncodeNext_MODRM_Eb_Gb_OR_ViceVersa;
             pThis->iRegOp            = 0;
+            pThis->iRmOp             = 1;
             pThis->aOperands[0].cbOp = 1;
             pThis->aOperands[1].cbOp = 1;
-            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
-            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[0].idxFieldBase   = BS3CG1DST_AL;
+            pThis->aOperands[1].idxFieldBase   = BS3CG1DST_AL;
+            pThis->aOperands[0].enmLocation    = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocationReg = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocationMem = BS3CG1OPLOC_MEM;
             break;
 
         case BS3CG1ENC_MODRM_Gv_Ev:
