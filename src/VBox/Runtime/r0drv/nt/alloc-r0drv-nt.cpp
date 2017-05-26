@@ -45,7 +45,7 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 {
     if (!(fFlags & RTMEMHDR_FLAG_ANY_CTX))
     {
-#if 0 /* This allegedly makes the driver verifier happier... */
+#if 1 /* This allegedly makes the driver verifier happier... */
         POOL_TYPE enmPoolType = NonPagedPool;
         if (!(fFlags & RTMEMHDR_FLAG_EXEC) && g_uRtNtVersion >= RTNT_MAKE_VERSION(8,0))
             enmPoolType = NonPagedPoolNx;
