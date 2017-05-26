@@ -522,6 +522,7 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     , m_enmSessionState(KSessionState_Null)
     , m_pCurrentSnapshotItem(0)
     , m_pLockReadWrite(0)
+    , m_pToolBar(0)
     , m_pActionTakeSnapshot(0)
     , m_pActionRestoreSnapshot(0)
     , m_pActionDeleteSnapshot(0)
@@ -533,144 +534,14 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     , m_pIconSnapshotOnline(0)
     , m_pSnapshotTree(0)
 {
-    /* Create locker: */
-    m_pLockReadWrite = new QReadWriteLock;
-
-    /* Cache pixmaps: */
-    m_pIconSnapshotOffline = new QIcon(UIIconPool::iconSet(":/snapshot_offline_16px.png"));
-    m_pIconSnapshotOnline = new QIcon(UIIconPool::iconSet(":/snapshot_online_16px.png"));
-
-    /* Create layout: */
-    QVBoxLayout *pLayout = new QVBoxLayout(this);
-    {
-        /* Configure layout: */
-        pLayout->setContentsMargins(0, 0, 0, 0);
-#ifdef VBOX_WS_MAC
-        pLayout->setSpacing(10);
-#else
-        pLayout->setSpacing(4);
-#endif
-
-        /* Create snapshot toolbar: */
-        UIToolBar *pToolBar = new UIToolBar(this);
-        {
-            /* Configure toolbar: */
-            const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
-            pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-            pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            pToolBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-            /* Add Take Snapshot action: */
-            m_pActionTakeSnapshot = pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_take_22px.png",
-                                                                                ":/snapshot_take_16px.png",
-                                                                                ":/snapshot_take_disabled_22px.png",
-                                                                                ":/snapshot_take_disabled_16px.png"),
-                                                        QString(), this, &UISnapshotPane::sltTakeSnapshot);
-            {
-                m_pActionTakeSnapshot->setShortcut(QString("Ctrl+Shift+S"));
-            }
-
-            pToolBar->addSeparator();
-
-            /* Add Restore Snapshot action: */
-            m_pActionRestoreSnapshot = pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_restore_22px.png",
-                                                                                   ":/snapshot_restore_16px.png",
-                                                                                   ":/snapshot_restore_disabled_22px.png",
-                                                                                   ":/snapshot_restore_disabled_16px.png"),
-                                                           QString(), this, &UISnapshotPane::sltRestoreSnapshot);
-            {
-                m_pActionRestoreSnapshot->setShortcut(QString("Ctrl+Shift+R"));
-            }
-
-            /* Add Delete Snapshot action: */
-            m_pActionDeleteSnapshot = pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_delete_22px.png",
-                                                                                  ":/snapshot_delete_16px.png",
-                                                                                  ":/snapshot_delete_disabled_22px.png",
-                                                                                  ":/snapshot_delete_disabled_16px.png"),
-                                                          QString(), this, &UISnapshotPane::sltDeleteSnapshot);
-            {
-                m_pActionDeleteSnapshot->setShortcut(QString("Ctrl+Shift+D"));
-            }
-
-            /* Add Show Snapshot Details action: */
-            m_pActionShowSnapshotDetails = pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_show_details_22px.png",
-                                                                                       ":/snapshot_show_details_16px.png",
-                                                                                       ":/snapshot_show_details_disabled_22px.png",
-                                                                                       ":/snapshot_details_show_disabled_16px.png"),
-                                                               QString(), this, &UISnapshotPane::sltShowSnapshotDetails);
-            {
-                m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
-            }
-
-            pToolBar->addSeparator();
-
-            /* Add Clone Snapshot action: */
-            m_pActionCloneSnapshot = pToolBar->addAction(UIIconPool::iconSetFull(":/vm_clone_22px.png",
-                                                                                 ":/vm_clone_16px.png",
-                                                                                 ":/vm_clone_disabled_22px.png",
-                                                                                 ":/vm_clone_disabled_16px.png"),
-                                                         QString(), this, &UISnapshotPane::sltCloneSnapshot);
-            {
-                m_pActionCloneSnapshot->setShortcut(QString("Ctrl+Shift+C"));
-            }
-
-            /* Add into layout: */
-            pLayout->addWidget(pToolBar);
-        }
-
-        /* Create snapshot tree: */
-        m_pSnapshotTree = new UISnapshotTree(this);
-        {
-            /* Configure snapshot tree: */
-            connect(m_pSnapshotTree, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
-                    this, SLOT(sltCurrentItemChanged(QTreeWidgetItem *)));
-            connect(m_pSnapshotTree, SIGNAL(customContextMenuRequested(const QPoint &)),
-                    this, SLOT(sltContextMenuRequested(const QPoint &)));
-            connect(m_pSnapshotTree, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
-                    this, SLOT(sltItemChanged(QTreeWidgetItem *)));
-            connect(m_pSnapshotTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
-                    this, SLOT(sltItemDoubleClicked(QTreeWidgetItem *)));
-
-            /* Add into layout: */
-            pLayout->addWidget(m_pSnapshotTree);
-        }
-    }
-
-    /* Setup timer: */
-    m_pTimerUpdateAge = new QTimer;
-    m_pTimerUpdateAge->setSingleShot(true);
-    connect(m_pTimerUpdateAge, SIGNAL(timeout()), this, SLOT(sltUpdateSnapshotsAge()));
-
-    /* Setup Main event connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
-            this, SLOT(sltMachineDataChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SLOT(sltMachineStateChange(QString, KMachineState)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
-            this, SLOT(sltSessionStateChange(QString, KSessionState)));
-
-    /* Translate finally: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UISnapshotPane::~UISnapshotPane()
 {
-    /* Stop timer if active: */
-    if (m_pTimerUpdateAge->isActive())
-        m_pTimerUpdateAge->stop();
-    /* Destroy timer: */
-    delete m_pTimerUpdateAge;
-    m_pTimerUpdateAge = 0;
-
-    /* Destroy icons: */
-    delete m_pIconSnapshotOffline;
-    delete m_pIconSnapshotOnline;
-    m_pIconSnapshotOffline = 0;
-    m_pIconSnapshotOnline = 0;
-
-    /* Destroy read-write locker: */
-    delete m_pLockReadWrite;
-    m_pLockReadWrite = 0;
+    /* Cleanup: */
+    cleanup();
 }
 
 void UISnapshotPane::setMachine(const CMachine &comMachine)
@@ -724,6 +595,17 @@ void UISnapshotPane::retranslateUi()
     m_pActionDeleteSnapshot->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
     m_pActionShowSnapshotDetails->setStatusTip(tr("Display a window with selected snapshot details"));
     m_pActionCloneSnapshot->setStatusTip(tr("Clone selected virtual machine"));
+
+    /* Translate toolbar: */
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+    // the necessary size of the toolbar is increased. Also for some languages
+    // the with doesn't match if the text increase. So manually adjust the size
+    // after changing the text. */
+    if (m_pToolBar)
+        m_pToolBar->updateLayout();
+#endif
 }
 
 void UISnapshotPane::sltCurrentItemChanged(QTreeWidgetItem *pItem)
@@ -918,6 +800,169 @@ void UISnapshotPane::sltUpdateSnapshotsAge()
     /* Restart timer if necessary: */
     if (m_pTimerUpdateAge->interval() > 0)
         m_pTimerUpdateAge->start();
+}
+
+void UISnapshotPane::prepare()
+{
+    /* Configure Main event connections: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
+            this, &UISnapshotPane::sltMachineDataChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UISnapshotPane::sltMachineStateChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
+            this, &UISnapshotPane::sltSessionStateChange);
+
+    /* Create read-write locker: */
+    m_pLockReadWrite = new QReadWriteLock;
+
+    /* Create pixmaps: */
+    m_pIconSnapshotOffline = new QIcon(UIIconPool::iconSet(":/snapshot_offline_16px.png"));
+    m_pIconSnapshotOnline = new QIcon(UIIconPool::iconSet(":/snapshot_online_16px.png"));
+
+    /* Create timer: */
+    m_pTimerUpdateAge = new QTimer;
+    AssertPtrReturnVoid(m_pTimerUpdateAge);
+    {
+        /* Configure timer: */
+        m_pTimerUpdateAge->setSingleShot(true);
+        connect(m_pTimerUpdateAge, &QTimer::timeout, this, &UISnapshotPane::sltUpdateSnapshotsAge);
+    }
+
+    /* Prepare widgets: */
+    prepareWidgets();
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UISnapshotPane::prepareWidgets()
+{
+    /* Create layout: */
+    new QVBoxLayout(this);
+    AssertPtrReturnVoid(layout());
+    {
+        /* Configure layout: */
+        layout()->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+        layout()->setSpacing(10);
+#else
+        layout()->setSpacing(4);
+#endif
+
+        /* Prepare toolbar: */
+        prepareToolbar();
+        /* Prepare tree-widget: */
+        prepareTreeWidget();
+    }
+}
+
+void UISnapshotPane::prepareToolbar()
+{
+    /* Create snapshot toolbar: */
+    m_pToolBar = new UIToolBar(this);
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
+        /* Add Take Snapshot action: */
+        m_pActionTakeSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_take_22px.png",
+                                                                              ":/snapshot_take_16px.png",
+                                                                              ":/snapshot_take_disabled_22px.png",
+                                                                              ":/snapshot_take_disabled_16px.png"),
+                                                    QString(), this, &UISnapshotPane::sltTakeSnapshot);
+        {
+            m_pActionTakeSnapshot->setShortcut(QString("Ctrl+Shift+S"));
+        }
+
+        /* Add Delete Snapshot action: */
+        m_pActionDeleteSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_delete_22px.png",
+                                                                                ":/snapshot_delete_16px.png",
+                                                                                ":/snapshot_delete_disabled_22px.png",
+                                                                                ":/snapshot_delete_disabled_16px.png"),
+                                                      QString(), this, &UISnapshotPane::sltDeleteSnapshot);
+        {
+            m_pActionDeleteSnapshot->setShortcut(QString("Ctrl+Shift+D"));
+        }
+
+        m_pToolBar->addSeparator();
+
+        /* Add Restore Snapshot action: */
+        m_pActionRestoreSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_restore_22px.png",
+                                                                                 ":/snapshot_restore_16px.png",
+                                                                                 ":/snapshot_restore_disabled_22px.png",
+                                                                                 ":/snapshot_restore_disabled_16px.png"),
+                                                       QString(), this, &UISnapshotPane::sltRestoreSnapshot);
+        {
+            m_pActionRestoreSnapshot->setShortcut(QString("Ctrl+Shift+R"));
+        }
+
+        /* Add Show Snapshot Details action: */
+        m_pActionShowSnapshotDetails = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_show_details_22px.png",
+                                                                                     ":/snapshot_show_details_16px.png",
+                                                                                     ":/snapshot_show_details_disabled_22px.png",
+                                                                                     ":/snapshot_details_show_disabled_16px.png"),
+                                                           QString(), this, &UISnapshotPane::sltShowSnapshotDetails);
+        {
+            m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
+        }
+
+        m_pToolBar->addSeparator();
+
+        /* Add Clone Snapshot action: */
+        m_pActionCloneSnapshot = m_pToolBar->addAction(UIIconPool::iconSetFull(":/vm_clone_22px.png",
+                                                                               ":/vm_clone_16px.png",
+                                                                               ":/vm_clone_disabled_22px.png",
+                                                                               ":/vm_clone_disabled_16px.png"),
+                                                     QString(), this, &UISnapshotPane::sltCloneSnapshot);
+        {
+            m_pActionCloneSnapshot->setShortcut(QString("Ctrl+Shift+C"));
+        }
+
+        /* Add into layout: */
+        layout()->addWidget(m_pToolBar);
+    }
+}
+
+void UISnapshotPane::prepareTreeWidget()
+{
+    /* Create snapshot tree: */
+    m_pSnapshotTree = new UISnapshotTree(this);
+    {
+        /* Configure tree: */
+        connect(m_pSnapshotTree, &UISnapshotTree::currentItemChanged,
+                this, &UISnapshotPane::sltCurrentItemChanged);
+        connect(m_pSnapshotTree, &UISnapshotTree::customContextMenuRequested,
+                this, &UISnapshotPane::sltContextMenuRequested);
+        connect(m_pSnapshotTree, &UISnapshotTree::itemChanged,
+                this, &UISnapshotPane::sltItemChanged);
+        connect(m_pSnapshotTree, &UISnapshotTree::itemDoubleClicked,
+                this, &UISnapshotPane::sltItemDoubleClicked);
+
+        /* Add into layout: */
+        layout()->addWidget(m_pSnapshotTree);
+    }
+}
+
+void UISnapshotPane::cleanup()
+{
+    /* Stop timer if active: */
+    if (m_pTimerUpdateAge->isActive())
+        m_pTimerUpdateAge->stop();
+    /* Destroy timer: */
+    delete m_pTimerUpdateAge;
+    m_pTimerUpdateAge = 0;
+
+    /* Destroy icons: */
+    delete m_pIconSnapshotOffline;
+    delete m_pIconSnapshotOnline;
+    m_pIconSnapshotOffline = 0;
+    m_pIconSnapshotOnline = 0;
+
+    /* Destroy read-write locker: */
+    delete m_pLockReadWrite;
+    m_pLockReadWrite = 0;
 }
 
 bool UISnapshotPane::takeSnapshot()

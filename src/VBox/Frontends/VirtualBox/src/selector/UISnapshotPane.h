@@ -33,6 +33,7 @@ class QTreeWidgetItem;
 class QITreeWidgetItem;
 class UISnapshotTree;
 class UISnapshotItem;
+class UIToolBar;
 
 
 /** Snapshot age format. */
@@ -115,6 +116,26 @@ private slots:
 
 private:
 
+    /** @name Prepare/cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares widgets. */
+        void prepareWidgets();
+        /** Prepares toolbar. */
+        void prepareToolbar();
+        /** Prepares tree-widget. */
+        void prepareTreeWidget();
+
+        /** Refreshes everything. */
+        void refreshAll();
+        /** Populates snapshot items for corresponding @a comSnapshot using @a pItem as parent. */
+        void populateSnapshots(const CSnapshot &comSnapshot, QITreeWidgetItem *pItem);
+
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
+
     /** @name Toolbar helpers.
       * @{ */
         /** Proposes to take a snapshot. */
@@ -128,11 +149,6 @@ private:
         /** Proposes to clone the snapshot. */
         void cloneSnapshot();
     /** @} */
-
-    /** Refreshes everything. */
-    void refreshAll();
-    /** Populates snapshot items for corresponding @a comSnapshot using @a pItem as parent. */
-    void populateSnapshots(const CSnapshot &comSnapshot, QITreeWidgetItem *pItem);
 
     /** @name Tree-widget helpers.
       * @{ */
@@ -161,6 +177,8 @@ private:
 
     /** @name Widget variables.
       * @{ */
+        /** Holds the toolbar instance. */
+        UIToolBar *m_pToolBar;
         /** Holds the Take Snapshot action instance. */
         QAction   *m_pActionTakeSnapshot;
         /** Holds the Restore Snapshot action instance. */
