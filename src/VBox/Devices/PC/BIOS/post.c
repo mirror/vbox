@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2004-2016 Oracle Corporation
+ * Copyright (C) 2004-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -103,6 +103,20 @@ void rom_scan(uint16_t start_seg, uint16_t end_seg)
 
 #if VBOX_BIOS_CPU >= 80386
 
+/* NB: The CPUID detection is generic but currently not used elsewhere. */
+
+/* Check CPUID availability. */
+int is_cpuid_supported( void )
+{
+    uint32_t    old_flags, new_flags;
+
+    old_flags = eflags_read();
+    new_flags = old_flags ^ (1L << 21); /* Toggle CPUID bit. */
+    eflags_write( new_flags );
+    new_flags = eflags_read();
+    return( old_flags != new_flags );   /* Supported if bit changed. */
+}
+
 #define APICMODE_DISABLED   0
 #define APICMODE_APIC       1
 #define APICMODE_X2APIC     2
@@ -120,7 +134,9 @@ void rom_scan(uint16_t start_seg, uint16_t end_seg)
  * and needs no 32-bit addressing. Going to x2APIC mode does not lose the
  * existing virtual wire setup.
  *
- * NB: This code assumes that there *is* a local APIC.
+ * NB: This code does not assume that there is a local APIC. It is necessary
+ * to check CPUID whether APIC is present; the CPUID instruction might not be
+ * available either.
  *
  * NB: Destroys high bits of 32-bit registers.
  */
@@ -129,6 +145,19 @@ void BIOSCALL apic_setup(void)
     uint64_t    base_msr;
     uint16_t    mask;
     uint8_t     apic_mode;
+    uint32_t    cpu_id[4];
+
+    /* If there's no CPUID, there's certainly no APIC. */
+    if (!is_cpuid_supported()) {
+        return;
+    }
+
+    /* Check EDX bit 9 */
+    cpuid(&cpu_id, 1);
+    BX_DEBUG("CPUID EDX: 0x%lx\n", cpu_id[3]);
+    if ((cpu_id[3] & (1 << 9)) == 0) {
+        return; /* No local APIC, nothing to do. */
+    }
 
     /* APIC mode at offset 78h in CMOS NVRAM. */
     apic_mode = inb_cmos(0x78);

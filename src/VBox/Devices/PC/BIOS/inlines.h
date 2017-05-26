@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -145,7 +145,7 @@ uint64_t swap_64(uint64_t val);
 
 #if VBOX_BIOS_CPU >= 80386
 
-/* Warning: msr_read/msr_write destroy high bits of 32-bit registers. */
+/* Warning: msr_read/msr_write destroy high bits of 32-bit registers (EAX, ECX, EDX). */
 
 uint64_t msr_read(uint32_t msr);
 #pragma aux msr_read =  \
@@ -175,5 +175,38 @@ void msr_write(uint64_t val, uint32_t msr);
     "mov    cx, si"     \
     "wrmsr"             \
     parm [ax bx cx dx] [di si] modify [] nomemory;
+
+/* Warning: eflags_read/eflags_write destroy high bits of 32-bit registers (EDX). */
+uint32_t eflags_read( void );
+#pragma aux eflags_read =   \
+    ".386"                  \
+    "pushfd"                \
+    "pop  edx"              \
+    "mov  ax, dx"           \
+    "shr  edx, 16"          \
+    value [dx ax] modify [dx ax];
+
+uint32_t eflags_write( uint32_t e_flags );
+#pragma aux eflags_write =  \
+    ".386"                  \
+    "shl  edx, 16"          \
+    "mov  dx, ax"           \
+    "push edx"              \
+    "popfd"                 \
+    parm [dx ax] modify [dx ax];
+
+/* Warning cpuid destroys high bits of 32-bit registers (EAX, EBX, ECX, EDX). */
+void cpuid( uint32_t __far cpu_id[4], uint32_t leaf );
+#pragma aux cpuid =         \
+    ".586"                  \
+    "shl  edx, 16"          \
+    "mov  dx, ax"           \
+    "mov  eax, edx"         \
+    "cpuid"                 \
+    "mov  es:[di+0], eax"   \
+    "mov  es:[di+4], ebx"   \
+    "mov  es:[di+8], ecx"   \
+    "mov  es:[di+12], edx"  \
+    parm [es di] [dx ax] modify [bx cx dx]
 
 #endif
