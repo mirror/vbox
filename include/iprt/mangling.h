@@ -2330,6 +2330,7 @@
 # define RTVfsFileToIoStream                            RT_MANGLER(RTVfsFileToIoStream)
 # define RTVfsFileWrite                                 RT_MANGLER(RTVfsFileWrite)
 # define RTVfsFileWriteAt                               RT_MANGLER(RTVfsFileWriteAt)
+# define RTVfsFsStrmAdd                                 RT_MANGLER(RTVfsFsStrmAdd)
 # define RTVfsFsStrmNext                                RT_MANGLER(RTVfsFsStrmNext)
 # define RTVfsFsStrmQueryInfo                           RT_MANGLER(RTVfsFsStrmQueryInfo)
 # define RTVfsFsStrmRelease                             RT_MANGLER(RTVfsFsStrmRelease)
