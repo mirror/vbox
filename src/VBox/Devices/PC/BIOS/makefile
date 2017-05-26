@@ -20,7 +20,7 @@ CFLAGS   = -q -0 -wx -zu -s -oas -d1+ -ms
 CFLAGS32 = -q -wx -zu -s -oas -d1+ -ms -nt=BIOS32 -nd=BIOS32
 
 DEFS = -DVBOX -DVBOX_LANBOOT_SEG=0xE200 -DVBOX_VERSION_STRING=$(Q)0.9$(Q) &
- -DVBOX_WITH_SCSI -DVBOX_BIOS_CPU=80286
+ -DVBOX_WITH_SCSI -DVBOX_BIOS_CPU=80386
 
 AFLAGS = -q -0 -wx
 

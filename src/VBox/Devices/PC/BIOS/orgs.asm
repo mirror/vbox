@@ -637,6 +637,18 @@ endif
                 mov     dx, 0F000h
                 call    rom_scan_
                 
+if VBOX_BIOS_CPU ge 80386
+                ;; The POST code does not bother preserving high bits of the
+                ;; 32-bit registers. Now is a good time to clear them so that
+                ;; there's no garbage left in high bits.
+                .386
+                xor     eax, eax
+                xor     ebx, ebx
+                xor     ecx, ecx
+                xor     edx, edx
+                .286
+endif
+
                 call    _print_bios_banner
                 
                 ;; El Torito floppy/hard disk emulation
