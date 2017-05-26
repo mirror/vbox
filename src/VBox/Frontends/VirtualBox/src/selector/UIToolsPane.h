@@ -54,12 +54,22 @@ class UIToolsPane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about tool of particular @a enmType is opened. */
+    void sigToolOpened(ToolType enmType);
+
 public:
 
     /** Constructs tools pane passing @a pParent to the base-class. */
     UIToolsPane(QWidget *pParent = 0);
     /** Destructs tools pane. */
     virtual ~UIToolsPane() /* override */;
+
+    /** Returns whether tool of particular @a enmType is opened. */
+    bool isToolOpened(ToolType enmType) const;
+    /** Activates tool of particular @a enmType, creates new one if necessary. */
+    void setCurrentTool(ToolType enmType);
 
     /** Defines the @a comMachine object. */
     void setMachine(const CMachine &comMachine);

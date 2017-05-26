@@ -58,6 +58,19 @@ UIToolsPane::~UIToolsPane()
     cleanup();
 }
 
+bool UIToolsPane::isToolOpened(ToolType enmType) const
+{
+    for (int iTabIndex = 0; iTabIndex < m_pTabBar->count(); ++iTabIndex)
+        if (m_pTabBar->tabData(iTabIndex).value<ToolType>() == enmType)
+            return true;
+    return false;
+}
+
+void UIToolsPane::setCurrentTool(ToolType enmType)
+{
+    activateTabBarTab(enmType, true);
+}
+
 void UIToolsPane::setMachine(const CMachine &comMachine)
 {
     /* Update snapshots pane: */
@@ -359,6 +372,9 @@ void UIToolsPane::activateTabBarTab(ToolType enmType, bool fCloseable)
             /* Store the data: */
             m_pTabBar->setTabData(iActualTabIndex, QVariant::fromValue(enmType));
         }
+
+        /* Notify listeners: */
+        emit sigToolOpened(enmType);
     }
 
     /* Activate corresponding indexes: */
