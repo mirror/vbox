@@ -134,6 +134,11 @@ void UIToolsPane::sltHandleTabBarButtonClick()
     QWidget *pWidget = m_pStackedLayout->widget(iActualTabIndex);
     m_pStackedLayout->removeWidget(pWidget);
     delete pWidget;
+
+    /* Make sure action is unchecked: */
+    m_actions[enmType]->blockSignals(true);
+    m_actions[enmType]->setChecked(false);
+    m_actions[enmType]->blockSignals(false);
 }
 
 void UIToolsPane::prepare()
@@ -250,6 +255,7 @@ void UIToolsPane::prepareMenu()
                                                                                           ":/snapshot_manager_16px.png"),
                                                                   QString(), this, &UIToolsPane::sltHandleMenuToolbarTrigger);
         {
+            m_actions[ToolsType_SnapshotManager]->setCheckable(true);
             m_actions[ToolsType_SnapshotManager]->
                 setProperty("ToolsType", QVariant::fromValue(ToolsType_SnapshotManager));
         }
@@ -259,6 +265,7 @@ void UIToolsPane::prepareMenu()
                                                                                               ":/diskimage_16px.png"),
                                                                       QString(), this, &UIToolsPane::sltHandleMenuToolbarTrigger);
         {
+            m_actions[ToolsType_VirtualMediaManager]->setCheckable(true);
             m_actions[ToolsType_VirtualMediaManager]->
                 setProperty("ToolsType", QVariant::fromValue(ToolsType_VirtualMediaManager));
         }
@@ -268,6 +275,7 @@ void UIToolsPane::prepareMenu()
                                                                                              ":/host_iface_manager_16px.png"),
                                                                      QString(), this, &UIToolsPane::sltHandleMenuToolbarTrigger);
         {
+            m_actions[ToolsType_HostNetworkManager]->setCheckable(true);
             m_actions[ToolsType_HostNetworkManager]->
                 setProperty("ToolsType", QVariant::fromValue(ToolsType_HostNetworkManager));
         }
@@ -357,5 +365,10 @@ void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
     m_pStackedLayout->setCurrentIndex(iActualTabIndex);
     m_pTabBar->setCurrentIndex(iActualTabIndex);
     m_pTabBar->blockSignals(false);
+
+    /* Make sure action is checked: */
+    m_actions[enmType]->blockSignals(true);
+    m_actions[enmType]->setChecked(true);
+    m_actions[enmType]->blockSignals(false);
 }
 
