@@ -617,6 +617,7 @@ RuntimeR3_SOURCES       = \
 	common/zip/tarcmd.cpp \
 	common/zip/unzipcmd.cpp \
 	common/zip/tarvfs.cpp \
+	common/zip/tarvfswriter.cpp \
 	common/zip/gzipvfs.cpp \
 	common/zip/pkzip.cpp \
 	common/zip/pkzipvfs.cpp \

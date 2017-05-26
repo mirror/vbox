@@ -2431,6 +2431,7 @@
 # define RTZipTarCmd                                    RT_MANGLER(RTZipTarCmd)
 # define RTZipUnzipCmd                                  RT_MANGLER(RTZipUnzipCmd)
 # define RTZipTarFsStreamFromIoStream                   RT_MANGLER(RTZipTarFsStreamFromIoStream)
+# define RTZipTarFsStreamToIoStream                     RT_MANGLER(RTZipTarFsStreamToIoStream)
 # define RTZipXarFsStreamFromIoStream                   RT_MANGLER(RTZipXarFsStreamFromIoStream)
 
 /* sort/merge into the above later: */

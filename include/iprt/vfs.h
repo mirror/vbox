@@ -313,6 +313,7 @@ RTDECL(int)         RTVfsFsStrmQueryInfo(RTVFSFSSTREAM hVfsFss, PRTFSOBJINFO pOb
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if a new object was retrieved.
  * @retval  VERR_EOF when there are no more objects.
+ * @retval  VERR_INVALID_FUNCTION if called on a non-readable stream.
  *
  * @param   hVfsFss     The file system stream handle.
  * @param   ppszName    Where to return the object name.  Must be freed by
@@ -322,6 +323,20 @@ RTDECL(int)         RTVfsFsStrmQueryInfo(RTVFSFSSTREAM hVfsFss, PRTFSOBJINFO pOb
  *                      must be cast to the desired type before use.
  */
 RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
+
+/**
+ * Appends a VFS object to the stream.
+ *
+ * The stream must be writable.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_FUNCTION if called on a non-writable stream.
+ * @param   hVfsFss     The file system stream handle.
+ * @param   pszPath     The path.
+ * @param   hVfsObj     The VFS object to add.
+ * @param   fFlags      Flags for the future, MBZ.
+ */
+RTDECL(int)         RTVfsFsStrmAdd(RTVFSFSSTREAM hVfsFss, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags);
 
 /** @}  */
 

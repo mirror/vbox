@@ -1913,7 +1913,7 @@ RTDECL(int) RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed)
  */
 
 
-RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock, bool fReadOnly,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance)
 {
     /*
@@ -1924,7 +1924,10 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     AssertReturn(pFsStreamOps->uEndMarker == RTVFSFSSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
     Assert(!pFsStreamOps->fReserved);
     RTVFSOBJ_ASSERT_OPS(&pFsStreamOps->Obj, RTVFSOBJTYPE_FS_STREAM);
-    AssertPtr(pFsStreamOps->pfnNext);
+    if (fReadOnly)
+        AssertPtr(pFsStreamOps->pfnNext);
+    else
+        AssertPtr(pFsStreamOps->pfnAdd);
     Assert(cbInstance > 0);
     AssertPtr(ppvInstance);
     AssertPtr(phVfsFss);
@@ -1949,7 +1952,9 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     }
 
     pThis->uMagic = RTVFSFSSTREAM_MAGIC;
-    pThis->fFlags = RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE;
+    pThis->fFlags = fReadOnly
+                  ? RTFILE_O_READ  | RTFILE_O_OPEN   | RTFILE_O_DENY_NONE
+                  : RTFILE_O_WRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL;
     pThis->pOps   = pFsStreamOps;
 
     *phVfsFss     = pThis;
@@ -2017,9 +2022,24 @@ RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVF
     if (phVfsObj)
         *phVfsObj = NIL_RTVFSOBJ;
 
+    AssertReturn(pThis->fFlags & RTFILE_O_READ, VERR_INVALID_FUNCTION);
+
     return pThis->pOps->pfnNext(pThis->Base.pvThis, ppszName, penmType, phVfsObj);
 }
 
+
+RTDECL(int)         RTVfsFsStrmAdd(RTVFSFSSTREAM hVfsFss, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrNullReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(hVfsObj, VERR_INVALID_HANDLE);
+    AssertReturn(hVfsObj->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_INVALID_FUNCTION);
+
+    return pThis->pOps->pfnAdd(pThis->Base.pvThis, pszPath, hVfsObj, fFlags);
+}
 
 
 

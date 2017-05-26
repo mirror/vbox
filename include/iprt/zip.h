@@ -260,13 +260,27 @@ RTDECL(int) RTZipGzipCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags,
  *
  * @returns IPRT status code.
  *
- * @param   hVfsIosIn           The compressed input stream.  The reference is
- *                              not consumed, instead another one is retained.
+ * @param   hVfsIosIn           The input stream.  The reference is not
+ *                              consumed, instead another one is retained.
  * @param   fFlags              Flags, MBZ.
  * @param   phVfsFss            Where to return the handle to the TAR
  *                              filesystem stream.
  */
 RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
+
+/**
+ * Opens a TAR filesystem stream for the purpose of create a new TAR archive.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hVfsIosOut          The output stream, i.e. where the tar stuff is
+ *                              written.  The reference is not consumed, instead
+ *                              another one is retained.
+ * @param   fFlags              Flags, MBZ.
+ * @param   phVfsFss            Where to return the handle to the TAR
+ *                              filesystem stream.
+ */
+RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosOut, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
 
 /**
  * A mini TAR program.

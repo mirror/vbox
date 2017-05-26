@@ -444,62 +444,6 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
 }
 
 
-/**
- * Calculates the TAR header checksums and detects if it's all zeros.
- *
- * @returns true if all zeros, false if not.
- * @param   pHdr                The header to checksum.
- * @param   pi32Unsigned        Where to store the checksum calculated using
- *                              unsigned chars.   This is the one POSIX
- *                              specifies.
- * @param   pi32Signed          Where to store the checksum calculated using
- *                              signed chars.
- *
- * @remarks The reason why we calculate the checksum as both signed and unsigned
- *          has to do with various the char C type being signed on some hosts
- *          and unsigned on others.
- *
- * @remarks Borrowed from tarvfs.cpp.
- */
-static bool rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_t *pi32Signed)
-{
-    int32_t i32Unsigned = 0;
-    int32_t i32Signed   = 0;
-
-    /*
-     * Sum up the entire header.
-     */
-    const char *pch    = (const char *)pHdr;
-    const char *pchEnd = pch + sizeof(*pHdr);
-    do
-    {
-        i32Unsigned += *(unsigned char *)pch;
-        i32Signed   += *(signed   char *)pch;
-    } while (++pch != pchEnd);
-
-    /*
-     * Check if it's all zeros and replace the chksum field with spaces.
-     */
-    bool const fZeroHdr = i32Unsigned == 0;
-
-    pch    = pHdr->Common.chksum;
-    pchEnd = pch + sizeof(pHdr->Common.chksum);
-    do
-    {
-        i32Unsigned -= *(unsigned char *)pch;
-        i32Signed   -= *(signed   char *)pch;
-    } while (++pch != pchEnd);
-
-    i32Unsigned += (unsigned char)' ' * sizeof(pHdr->Common.chksum);
-    i32Signed   += (signed   char)' ' * sizeof(pHdr->Common.chksum);
-
-    *pi32Unsigned = i32Unsigned;
-    if (pi32Signed)
-        *pi32Signed = i32Signed;
-    return fZeroHdr;
-}
-
-
 static void rtTarSizeToRec(PRTTARRECORD pRecord, uint64_t cbSize)
 {
     /*

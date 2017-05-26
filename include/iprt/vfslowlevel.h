@@ -386,6 +386,8 @@ typedef struct RTVFSFSSTREAMOPS
     /**
      * Gets the next object in the stream.
      *
+     * Readable streams only.
+     *
      * @returns IPRT status code.
      * @retval  VINF_SUCCESS if a new object was retrieved.
      * @retval  VERR_EOF when there are no more objects.
@@ -393,11 +395,29 @@ typedef struct RTVFSFSSTREAMOPS
      * @param   ppszName    Where to return the object name.  Must be freed by
      *                      calling RTStrFree.
      * @param   penmType    Where to return the object type.
-     * @param   hVfsObj     Where to return the object handle (referenced).
-     *                      This must be cast to the desired type before use.
+     * @param   phVfsObj    Where to return the object handle (referenced). This
+     *                      must be cast to the desired type before use.
      * @sa      RTVfsFsStrmNext
+     *
+     * @note    Setting this member to NULL is okay for write-only streams.
      */
     DECLCALLBACKMEMBER(int, pfnNext)(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
+
+    /**
+     * Adds another object into the stream.
+     *
+     * Writable streams only.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific directory data.
+     * @param   pszPath     The path to the object.
+     * @param   hVfsObj     The object to add.
+     * @param   fFlags      Reserved for the future, MBZ.
+     * @sa      RTVfsFsStrmAdd
+     *
+     * @note    Setting this member to NULL is okay for read-only streams.
+     */
+    DECLCALLBACKMEMBER(int, pfnAdd)(void *pvThis, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags);
 
     /** Marks the end of the structure (RTVFSFSSTREAMOPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -420,11 +440,12 @@ typedef RTVFSFSSTREAMOPS const *PCRTVFSFSSTREAMOPS;
  * @param   hLock               Handle to a custom lock to be used with the new
  *                              object.  The reference is consumed.  NIL and
  *                              special lock handles are fine.
+ * @param   fReadOnly           Set if read-only, clear if write-only.
  * @param   phVfsFss            Where to return the new handle.
  * @param   ppvInstance         Where to return the pointer to the instance data
  *                              (size is @a cbInstance).
  */
-RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock, bool fReadOnly,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance);
 
 
