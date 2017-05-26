@@ -72,18 +72,6 @@ protected:
 
 private slots:
 
-    /** @name Tree-widget handlers.
-      * @{ */
-        /** Handles cursor change to @a pItem. */
-        void sltCurrentItemChanged(QTreeWidgetItem *pItem = 0);
-        /** Handles context menu request for @a point. */
-        void sltContextMenuRequested(const QPoint &point);
-        /** Handles modification for @a pItem. */
-        void sltItemChanged(QTreeWidgetItem *pItem);
-        /** Handles double-click for @a pItem. */
-        void sltItemDoubleClicked(QTreeWidgetItem *pItem);
-    /** @} */
-
     /** @name Main event handlers.
       * @{ */
         /** Handles machine data change for machine with @a strMachineID. */
@@ -114,6 +102,18 @@ private slots:
         void sltCloneSnapshot() { cloneSnapshot(); }
     /** @} */
 
+    /** @name Tree-widget handlers.
+      * @{ */
+        /** Handles cursor change to @a pItem. */
+        void sltCurrentItemChanged(QTreeWidgetItem *pItem = 0);
+        /** Handles context menu request for @a point. */
+        void sltContextMenuRequested(const QPoint &point);
+        /** Handles modification for @a pItem. */
+        void sltItemChanged(QTreeWidgetItem *pItem);
+        /** Handles double-click for @a pItem. */
+        void sltItemDoubleClicked(QTreeWidgetItem *pItem);
+    /** @} */
+
 private:
 
     /** @name Prepare/cleanup cascade.
@@ -140,10 +140,10 @@ private:
       * @{ */
         /** Proposes to take a snapshot. */
         bool takeSnapshot();
-        /** Proposes to restore the snapshot. */
-        bool restoreSnapshot(bool fSuppressNonCriticalWarnings = false);
         /** Proposes to delete the snapshot. */
         bool deleteSnapshot();
+        /** Proposes to restore the snapshot. */
+        bool restoreSnapshot(bool fSuppressNonCriticalWarnings = false);
         /** Displays the snapshot details dialog. */
         void showSnapshotDetails();
         /** Proposes to clone the snapshot. */
@@ -169,10 +169,20 @@ private:
         QString        m_strMachineID;
         /** Holds the cached session state. */
         KSessionState  m_enmSessionState;
-        /** Holds the current snapshot item reference. */
-        UISnapshotItem *m_pCurrentSnapshotItem;
+
+        /** Holds whether the snapshot operations are allowed. */
+        bool  m_fShapshotOperationsAllowed;
+
         /** Holds the snapshot item editing protector. */
         QReadWriteLock *m_pLockReadWrite;
+
+        /** Holds the cached snapshot-item pixmap for 'offline' state. */
+        QIcon *m_pIconSnapshotOffline;
+        /** Holds the cached snapshot-item pixmap for 'online' state. */
+        QIcon *m_pIconSnapshotOnline;
+
+        /** Holds the snapshot age update timer. */
+        QTimer *m_pTimerUpdateAge;
     /** @} */
 
     /** @name Widget variables.
@@ -181,28 +191,19 @@ private:
         UIToolBar *m_pToolBar;
         /** Holds the Take Snapshot action instance. */
         QAction   *m_pActionTakeSnapshot;
-        /** Holds the Restore Snapshot action instance. */
-        QAction   *m_pActionRestoreSnapshot;
         /** Holds the Delete Snapshot action instance. */
         QAction   *m_pActionDeleteSnapshot;
+        /** Holds the Restore Snapshot action instance. */
+        QAction   *m_pActionRestoreSnapshot;
         /** Holds the Show Snapshot Details action instance. */
         QAction   *m_pActionShowSnapshotDetails;
         /** Holds the Clone Snapshot action instance. */
         QAction   *m_pActionCloneSnapshot;
 
-        /** Holds the snapshot age update timer. */
-        QTimer *m_pTimerUpdateAge;
-
-        /** Holds whether the snapshot operations are allowed. */
-        bool  m_fShapshotOperationsAllowed;
-
-        /** Holds the cached snapshot-item pixmap for 'offline' state. */
-        QIcon *m_pIconSnapshotOffline;
-        /** Holds the cached snapshot-item pixmap for 'online' state. */
-        QIcon *m_pIconSnapshotOnline;
-
         /** Holds the snapshot tree instance. */
         UISnapshotTree *m_pSnapshotTree;
+        /** Holds the current snapshot item reference. */
+        UISnapshotItem *m_pCurrentSnapshotItem;
     /** @} */
 };
 
