@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
+#include "UIToolsPane.h"
 #include "VBoxGlobal.h"
 
 /* Forward declarations: */
@@ -39,7 +40,6 @@ class UIDesktopPane;
 class UIGChooser;
 class UIGDetails;
 class UIMainBar;
-class UISnapshotPane;
 class UITexturedSegmentedButton;
 class UIToolBar;
 class UIVMItem;
@@ -53,8 +53,8 @@ class UISelectorWindow : public QIWithRetranslateUI<QIMainWindow>
     /** Segmented-button segment types. */
     enum SegmentType
     {
-        SegmentType_Details   = 0,
-        SegmentType_Snapshots
+        SegmentType_Details,
+        SegmentType_Tools,
     };
 
 public:
@@ -203,6 +203,11 @@ private slots:
         void sltPerformSegmentedButtonSwitchToDetails() { sltPerformSegmentedButtonSwitch(SegmentType_Details); }
     /** @} */
 
+    /** @name Tools-pane stuff.
+      * @{ */
+        void sltHandleToolsPaneToolOpened(ToolType enmType);
+    /** @} */
+
 private:
 
     /** Returns current-item. */
@@ -347,8 +352,8 @@ private:
     UIGDetails *m_pPaneDetails;
     /** Holds the Desktop-pane instance. */
     UIDesktopPane *m_pPaneDesktop;
-    /** Holds the Snapshot-pane instance. */
-    UISnapshotPane *m_pPaneSnapshots;
+    /** Holds the Tools-pane instance. */
+    UIToolsPane *m_pPaneTools;
 
     /** Holds the list of Group menu actions. */
     QList<UIAction*> m_groupActions;

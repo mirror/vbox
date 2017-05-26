@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,7 +55,6 @@
 # include "UIMessageCenter.h"
 # include "UISelectorWindow.h"
 # include "UISettingsDialogSpecific.h"
-# include "UISnapshotPane.h"
 # include "UISpacerWidgets.h"
 # include "UISpecialControls.h"
 # include "UIToolBar.h"
@@ -129,7 +128,7 @@ UISelectorWindow::UISelectorWindow()
     , m_pPaneChooser(0)
     , m_pPaneDetails(0)
     , m_pPaneDesktop(0)
-    , m_pPaneSnapshots(0)
+    , m_pPaneTools(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
     , m_pManagerVirtualMedia(0)
@@ -305,7 +304,8 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
     m_fWarningAboutInaccessibleMediaShown = true;
 
     /* Make sure MM window is not opened: */
-    if (m_pManagerVirtualMedia)
+    if (   m_pManagerVirtualMedia
+        || m_pPaneTools->isToolOpened(ToolType_VirtualMediaManager))
         return;
 
     /* Look for at least one inaccessible medium: */
@@ -424,6 +424,14 @@ void UISelectorWindow::sltHandleSnapshotChange(QString strID)
 
 void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
 {
+    /* First check if instance of widget opened embedded: */
+    if (m_pPaneTools->isToolOpened(ToolType_VirtualMediaManager))
+    {
+        sltPerformSegmentedButtonSwitch(SegmentType_Tools);
+        m_pPaneTools->setCurrentTool(ToolType_VirtualMediaManager);
+        return;
+    }
+
     /* Create instance if not yet created: */
     if (!m_pManagerVirtualMedia)
     {
@@ -450,6 +458,14 @@ void UISelectorWindow::sltCloseVirtualMediumManagerWindow()
 
 void UISelectorWindow::sltOpenHostNetworkManagerWindow()
 {
+    /* First check if instance of widget opened embedded: */
+    if (m_pPaneTools->isToolOpened(ToolType_HostNetworkManager))
+    {
+        sltPerformSegmentedButtonSwitch(SegmentType_Tools);
+        m_pPaneTools->setCurrentTool(ToolType_HostNetworkManager);
+        return;
+    }
+
     /* Create instance if not yet created: */
     if (!m_pManagerHostNetwork)
     {
@@ -1061,8 +1077,8 @@ void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
         switch (iSegment)
         {
             case SegmentType_Details: m_pContainerDetails->setCurrentWidget(m_pPaneDetails); break;
-            case SegmentType_Snapshots: m_pContainerDetails->setCurrentWidget(m_pPaneSnapshots); break;
-            default: break;
+            case SegmentType_Tools:   m_pContainerDetails->setCurrentWidget(m_pPaneTools); break;
+            default:                  break;
         }
     }
     else
@@ -1091,6 +1107,16 @@ void UISelectorWindow::sltPerformSegmentedButtonSwitch(int iSegment)
     sltHandleSegmentedButtonSwitch(iSegment);
 }
 
+void UISelectorWindow::sltHandleToolsPaneToolOpened(ToolType enmType)
+{
+    switch (enmType)
+    {
+        case ToolType_VirtualMediaManager: sltCloseVirtualMediumManagerWindow(); break;
+        case ToolType_HostNetworkManager:  sltCloseHostNetworkManagerWindow(); break;
+        default:                           break;
+    }
+}
+
 UIVMItem* UISelectorWindow::currentItem() const
 {
     return m_pPaneChooser->currentItem();
@@ -1101,30 +1127,16 @@ QList<UIVMItem*> UISelectorWindow::currentItems() const
     return m_pPaneChooser->currentItems();
 }
 
-void UISelectorWindow::updateSnapshots(UIVMItem *pItem, const CMachine &comMachine)
+void UISelectorWindow::updateSnapshots(UIVMItem * /* pItem */, const CMachine &comMachine)
 {
-    /* Update segmented-button text: */
-    // TODO: Bring that NLS to "&Snapshots" / "&Snapshots (%1)" form
-    //       as translator should be able to translate whole sentence.
-    //       And move it from UIDesktopPane to UISelectorWindow context.
-    QString strName = QApplication::translate("UIDesktopPane", "&Snapshots");
-    if (pItem)
-    {
-        /* Append the snapshot count (if any): */
-        const ULONG count = pItem->snapshotCount();
-        if (count)
-            strName += QString(" (%1)").arg(count);
-    }
-    m_pSegmentedButton->setTitle(SegmentType_Snapshots, strName);
-
     /* Update snapshot pane availability: */
     if (comMachine.isNotNull())
-        m_pSegmentedButton->setEnabled(SegmentType_Snapshots, true);
+        m_pSegmentedButton->setEnabled(SegmentType_Tools, true);
     else
         lockSnapshots();
 
-    /* Update snapshot pane finally: */
-    m_pPaneSnapshots->setMachine(comMachine);
+    /* Update tools pane finally: */
+    m_pPaneTools->setMachine(comMachine);
 }
 
 void UISelectorWindow::lockSnapshots()
@@ -1132,7 +1144,7 @@ void UISelectorWindow::lockSnapshots()
     /* First switch to details pane: */
     sltPerformSegmentedButtonSwitchToDetails();
     /* Then lock the snapshot pane: */
-    m_pSegmentedButton->setEnabled(SegmentType_Snapshots, false);
+    m_pSegmentedButton->setEnabled(SegmentType_Tools, false);
 }
 
 void UISelectorWindow::retranslateUi()
@@ -1152,6 +1164,7 @@ void UISelectorWindow::retranslateUi()
     /* Translate segmented-button: */
     // TODO: Move that NLS from UIDesktopPane to UISelectorWindow context.
     m_pSegmentedButton->setTitle(SegmentType_Details, QApplication::translate("UIDesktopPane", "&Details"));
+    m_pSegmentedButton->setTitle(SegmentType_Tools, QApplication::translate("UIDesktopPane", "&Tools"));
 
     /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange();
@@ -1782,10 +1795,10 @@ void UISelectorWindow::prepareWidgets()
 
     /* Create/add segmented-button: */
     m_pSegmentedButton = new UITexturedSegmentedButton(this, 2);
-    m_pSegmentedButton->setIcon(SegmentType_Details, UIIconPool::iconSet(":/vm_settings_16px.png",
-                                                                         ":/vm_settings_disabled_16px.png"));
-    m_pSegmentedButton->setIcon(SegmentType_Snapshots, UIIconPool::iconSet(":/snapshot_take_16px.png",
-                                                                           ":/snapshot_take_disabled_16px.png"));
+    m_pSegmentedButton->setIcon(SegmentType_Details, UIIconPool::iconSet(":/edataman_16px.png",
+                                                                         ":/edataman_16px.png"));
+    m_pSegmentedButton->setIcon(SegmentType_Tools, UIIconPool::iconSet(":/guesttools_16px.png",
+                                                                       ":/guesttools_disabled_16px.png"));
     m_pToolBar->addWidget(m_pSegmentedButton);
 
     /* Create/add horizontal spacer widget of fixed size for the beta label: */
@@ -1814,14 +1827,14 @@ void UISelectorWindow::prepareWidgets()
     /* Prepare desktop pane: */
     m_pPaneDesktop = new UIDesktopPane(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
 
-    /* Prepare snapshot pane: */
-    m_pPaneSnapshots = new UISnapshotPane(this);
+    /* Prepare tools pane: */
+    m_pPaneTools = new UIToolsPane(this);
 
-    /* Crate container: */
+    /* Create container: */
     m_pContainerDetails = new QStackedWidget(this);
     m_pContainerDetails->addWidget(m_pPaneDetails);
     m_pContainerDetails->addWidget(m_pPaneDesktop);
-    m_pContainerDetails->addWidget(m_pPaneSnapshots);
+    m_pContainerDetails->addWidget(m_pPaneTools);
 
     /* Layout all the widgets: */
 #ifdef VBOX_WS_MAC
@@ -1946,6 +1959,7 @@ void UISelectorWindow::prepareConnections()
     /* VM desktop connections: */
     connect(m_pPaneDetails, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             this, SLOT(sltOpenMachineSettingsDialog(const QString&, const QString&, const QString&)));
+    connect(m_pPaneTools, &UIToolsPane::sigToolOpened, this, &UISelectorWindow::sltHandleToolsPaneToolOpened);
 
     /* Global event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltHandleStateChange(QString)));
