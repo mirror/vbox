@@ -50,7 +50,7 @@ public:
 };
 
 
-/** Medium Manager widget. */
+/** QWidget extension providing GUI with the pane to control media related functionality. */
 class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -234,9 +234,13 @@ private:
         static UIMediumType mediumType(int iIndex);
 
         /** Performs search for the @a pTree child which corresponds to the @a condition but not @a pException. */
-        static UIMediumItem *searchItem(QITreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
+        static UIMediumItem *searchItem(QITreeWidget *pTree,
+                                        const CheckIfSuitableBy &condition,
+                                        CheckIfSuitableBy *pException = 0);
         /** Performs search for the @a pParentItem child which corresponds to the @a condition but not @a pException. */
-        static UIMediumItem *searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
+        static UIMediumItem *searchItem(QTreeWidgetItem *pParentItem,
+                                        const CheckIfSuitableBy &condition,
+                                        CheckIfSuitableBy *pException = 0);
 
         /** Checks if @a action can be used for @a pItem. */
         static bool checkMediumFor(UIMediumItem *pItem, Action action);
@@ -319,7 +323,7 @@ private:
 };
 
 
-/** Medium Manager dialog factory. */
+/** QIManagerDialogFactory extension used as a factory for Virtual Medium Manager dialog. */
 class UIMediumManagerFactory : public QIManagerDialogFactory
 {
 protected:
@@ -330,7 +334,7 @@ protected:
 };
 
 
-/** QIManagerDialog sub-class used as Host Network Manager dialog. */
+/** QIManagerDialog extension providing GUI with the dialog to control media related functionality. */
 class UIMediumManager : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;

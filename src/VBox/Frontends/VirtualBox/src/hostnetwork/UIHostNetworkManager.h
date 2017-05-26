@@ -37,7 +37,7 @@ class UIToolBar;
 struct UIDataHostNetwork;
 
 
-/** Host Network Manager widget. */
+/** QWidget extension providing GUI with the pane to control host network related functionality. */
 class UIHostNetworkManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -166,7 +166,7 @@ private:
 };
 
 
-/** Host Network Manager dialog factory. */
+/** QIManagerDialogFactory extension used as a factory for Host Network Manager dialog. */
 class UIHostNetworkManagerFactory : public QIManagerDialogFactory
 {
 protected:
@@ -177,7 +177,7 @@ protected:
 };
 
 
-/** QIManagerDialog sub-class used as Host Network Manager dialog. */
+/** QIManagerDialog extension providing GUI with the dialog to control host network related functionality. */
 class UIHostNetworkManager : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
