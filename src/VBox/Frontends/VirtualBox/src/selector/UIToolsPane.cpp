@@ -81,7 +81,7 @@ void UIToolsPane::setMachine(const CMachine &comMachine)
 void UIToolsPane::retranslateUi()
 {
     /* Translate menu: */
-    m_pMenu->setTitle(tr("Tools"));
+    m_pMenu->setTitle(tr("More Tools"));
     m_pMenu->setToolTip(tr("Holds a list of tools"));
 
     /* Translate actions: */
@@ -261,7 +261,7 @@ void UIToolsPane::prepareMenu()
     AssertPtrReturnVoid(m_pMenu);
     {
         /* Configure menus: */
-        m_pMenu->setIcon(UIIconPool::iconSet(":/vm_settings_16px.png"));
+        m_pMenu->setIcon(UIIconPool::iconSet(":/guesttools_16px.png"));
 
         /* Create SnapShot manager action: */
         m_actions[ToolType_SnapshotManager] = m_pMenu->addAction(UIIconPool::iconSetFull(":/snapshot_manager_22px.png",
