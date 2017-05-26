@@ -72,14 +72,14 @@ void UIToolsPane::retranslateUi()
     m_pMenu->setToolTip(tr("Holds a list of tools"));
 
     /* Translate actions: */
-    m_actions[ToolsType_SnapshotManager]->setText(tr("Snapshot Manager"));
-    m_actions[ToolsType_VirtualMediaManager]->setText(tr("Virtual Media Manager"));
-    m_actions[ToolsType_HostNetworkManager]->setText(tr("Host Network Manager"));
+    m_actions[ToolType_SnapshotManager]->setText(tr("Snapshot Manager"));
+    m_actions[ToolType_VirtualMediaManager]->setText(tr("Virtual Media Manager"));
+    m_actions[ToolType_HostNetworkManager]->setText(tr("Host Network Manager"));
 
     /* Translate tab-bar: */
     for (int iTabIndex = 0; iTabIndex < m_pTabBar->count(); ++iTabIndex)
     {
-        const ToolsType enmType = m_pTabBar->tabData(iTabIndex).value<ToolsType>();
+        const ToolType enmType = m_pTabBar->tabData(iTabIndex).value<ToolType>();
         m_pTabBar->setTabText(iTabIndex, m_actions.value(enmType)->text());
     }
 }
@@ -91,8 +91,8 @@ void UIToolsPane::sltHandleMenuToolbarTrigger()
     AssertPtrReturnVoid(pAction);
 
     /* Acquire sender's type: */
-    const ToolsType enmType = pAction->property("ToolsType").value<ToolsType>();
-    AssertReturnVoid(enmType != ToolsType_Invalid);
+    const ToolType enmType = pAction->property("ToolType").value<ToolType>();
+    AssertReturnVoid(enmType != ToolType_Invalid);
 
     /* Activate corresponding tab: */
     activateTabBarTab(enmType, true);
@@ -119,13 +119,13 @@ void UIToolsPane::sltHandleTabBarButtonClick()
     AssertPtrReturnVoid(pButton);
 
     /* Acquire sender's type: */
-    const ToolsType enmType = pButton->property("ToolsType").value<ToolsType>();
-    AssertReturnVoid(enmType != ToolsType_Invalid);
+    const ToolType enmType = pButton->property("ToolType").value<ToolType>();
+    AssertReturnVoid(enmType != ToolType_Invalid);
 
     /* Search for the tab with such type: */
     int iActualTabIndex = -1;
     for (int iTabIndex = 0; iTabIndex < m_pTabBar->count(); ++iTabIndex)
-        if (m_pTabBar->tabData(iTabIndex).value<ToolsType>() == enmType)
+        if (m_pTabBar->tabData(iTabIndex).value<ToolType>() == enmType)
             iActualTabIndex = iTabIndex;
     AssertReturnVoid(iActualTabIndex != -1);
 
@@ -172,7 +172,7 @@ void UIToolsPane::prepare()
             prepareMenuToolbar();
 
             /* Add and activate snapshots pane: */
-            activateTabBarTab(ToolsType_SnapshotManager, false);
+            activateTabBarTab(ToolType_SnapshotManager, false);
 
             /* Add into layout: */
             m_pLayoutMain->addLayout(m_pLayoutControls);
@@ -251,33 +251,33 @@ void UIToolsPane::prepareMenu()
         m_pMenu->setIcon(UIIconPool::iconSet(":/vm_settings_16px.png"));
 
         /* Create SnapShot manager action: */
-        m_actions[ToolsType_SnapshotManager] = m_pMenu->addAction(UIIconPool::iconSetFull(":/snapshot_manager_22px.png",
+        m_actions[ToolType_SnapshotManager] = m_pMenu->addAction(UIIconPool::iconSetFull(":/snapshot_manager_22px.png",
                                                                                           ":/snapshot_manager_16px.png"),
                                                                   QString(), this, &UIToolsPane::sltHandleMenuToolbarTrigger);
         {
-            m_actions[ToolsType_SnapshotManager]->setCheckable(true);
-            m_actions[ToolsType_SnapshotManager]->
-                setProperty("ToolsType", QVariant::fromValue(ToolsType_SnapshotManager));
+            m_actions[ToolType_SnapshotManager]->setCheckable(true);
+            m_actions[ToolType_SnapshotManager]->
+                setProperty("ToolType", QVariant::fromValue(ToolType_SnapshotManager));
         }
 
         /* Create Virtual Media manager action: */
-        m_actions[ToolsType_VirtualMediaManager] = m_pMenu->addAction(UIIconPool::iconSetFull(":/diskimage_22px.png",
+        m_actions[ToolType_VirtualMediaManager] = m_pMenu->addAction(UIIconPool::iconSetFull(":/diskimage_22px.png",
                                                                                               ":/diskimage_16px.png"),
                                                                       QString(), this, &UIToolsPane::sltHandleMenuToolbarTrigger);
         {
-            m_actions[ToolsType_VirtualMediaManager]->setCheckable(true);
-            m_actions[ToolsType_VirtualMediaManager]->
-                setProperty("ToolsType", QVariant::fromValue(ToolsType_VirtualMediaManager));
+            m_actions[ToolType_VirtualMediaManager]->setCheckable(true);
+            m_actions[ToolType_VirtualMediaManager]->
+                setProperty("ToolType", QVariant::fromValue(ToolType_VirtualMediaManager));
         }
 
         /* Create Host Network manager action: */
-        m_actions[ToolsType_HostNetworkManager] = m_pMenu->addAction(UIIconPool::iconSetFull(":/host_iface_manager_22px.png",
+        m_actions[ToolType_HostNetworkManager] = m_pMenu->addAction(UIIconPool::iconSetFull(":/host_iface_manager_22px.png",
                                                                                              ":/host_iface_manager_16px.png"),
                                                                      QString(), this, &UIToolsPane::sltHandleMenuToolbarTrigger);
         {
-            m_actions[ToolsType_HostNetworkManager]->setCheckable(true);
-            m_actions[ToolsType_HostNetworkManager]->
-                setProperty("ToolsType", QVariant::fromValue(ToolsType_HostNetworkManager));
+            m_actions[ToolType_HostNetworkManager]->setCheckable(true);
+            m_actions[ToolType_HostNetworkManager]->
+                setProperty("ToolType", QVariant::fromValue(ToolType_HostNetworkManager));
         }
 
         /* Add as tool-button into tool-bar: */
@@ -297,12 +297,12 @@ void UIToolsPane::cleanup()
     }
 }
 
-void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
+void UIToolsPane::activateTabBarTab(ToolType enmType, bool fCloseable)
 {
     /* Search for a tab with such type: */
     int iActualTabIndex = -1;
     for (int iTabIndex = 0; iTabIndex < m_pTabBar->count(); ++iTabIndex)
-        if (m_pTabBar->tabData(iTabIndex).value<ToolsType>() == enmType)
+        if (m_pTabBar->tabData(iTabIndex).value<ToolType>() == enmType)
             iActualTabIndex = iTabIndex;
 
     /* If tab with such type doesn't exist: */
@@ -312,14 +312,14 @@ void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
         /* Append stack-widget with corresponding page: */
         switch (enmType)
         {
-            case ToolsType_SnapshotManager:
+            case ToolType_SnapshotManager:
                 m_pPaneSnapshots = new UISnapshotPane;
                 m_pStackedLayout->addWidget(m_pPaneSnapshots);
                 break;
-            case ToolsType_VirtualMediaManager:
+            case ToolType_VirtualMediaManager:
                 m_pStackedLayout->addWidget(new UIMediumManagerWidget(EmbedTo_Stack));
                 break;
-            case ToolsType_HostNetworkManager:
+            case ToolType_HostNetworkManager:
                 m_pStackedLayout->addWidget(new UIHostNetworkManagerWidget(EmbedTo_Stack));
                 break;
             default:
@@ -341,7 +341,7 @@ void UIToolsPane::activateTabBarTab(ToolsType enmType, bool fCloseable)
                     pButtonClose->setIconSize(QSize(12, 12));
 #endif
                     pButtonClose->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-                    pButtonClose->setProperty("ToolsType", QVariant::fromValue(enmType));
+                    pButtonClose->setProperty("ToolType", QVariant::fromValue(enmType));
                     connect(pButtonClose, &QIToolButton::clicked, this, &UIToolsPane::sltHandleTabBarButtonClick);
                     /* Add into tab-bar: */
                     m_pTabBar->setTabButton(iActualTabIndex, QTabBar::RightSide, pButtonClose);

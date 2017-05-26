@@ -36,21 +36,25 @@ class UISnapshotPane;
 class CMachine;
 
 
+/** Tool types. */
+enum ToolType
+{
+    ToolType_Invalid,
+    ToolType_SnapshotManager,
+    ToolType_VirtualMediaManager,
+    ToolType_HostNetworkManager,
+};
+
+/* Make sure QVariant can eat ToolType: */
+Q_DECLARE_METATYPE(ToolType);
+
+
 /** QWidget subclass representing container for tool panes. */
 class UIToolsPane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
-
-    /** Tools types. */
-    enum ToolsType
-    {
-        ToolsType_Invalid,
-        ToolsType_SnapshotManager,
-        ToolsType_VirtualMediaManager,
-        ToolsType_HostNetworkManager,
-    };
 
     /** Constructs tools pane passing @a pParent to the base-class. */
     UIToolsPane(QWidget *pParent = 0);
@@ -93,7 +97,7 @@ private:
     void cleanup();
 
     /** Activates corresponding tab-bar tab, adds new if necessary. */
-    void activateTabBarTab(ToolsType enmType, bool fCloseable);
+    void activateTabBarTab(ToolType enmType, bool fCloseable);
 
     /** Holds the main layout isntance. */
     QVBoxLayout               *m_pLayoutMain;
@@ -110,11 +114,8 @@ private:
     /** Holds the menu instance. */
     QMenu                     *m_pMenu;
     /** Holds the menu action instances. */
-    QMap<ToolsType, QAction*>  m_actions;
+    QMap<ToolType, QAction*>  m_actions;
 };
-
-/* Make sure QVariant can eat UIToolsPane::ToolsType: */
-Q_DECLARE_METATYPE(UIToolsPane::ToolsType);
 
 #endif /* !___UIToolsPane_h___ */
 
