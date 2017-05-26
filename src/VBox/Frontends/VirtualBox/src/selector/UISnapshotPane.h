@@ -18,11 +18,6 @@
 #ifndef ___UISnapshotPane_h___
 #define ___UISnapshotPane_h___
 
-/* Qt includes: */
-#include <QIcon>
-#include <QTimer>
-#include <QReadWriteLock>
-
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "VBoxGlobal.h"
@@ -31,10 +26,13 @@
 #include "CMachine.h"
 
 /* Forward declarations: */
-class UISnapshotTree;
-class UISnapshotItem;
+class QIcon;
+class QReadWriteLock;
+class QTimer;
 class QTreeWidgetItem;
 class QITreeWidgetItem;
+class UISnapshotTree;
+class UISnapshotItem;
 
 
 /** Snapshot age format. */
@@ -57,12 +55,14 @@ public:
 
     /** Constructs snapshot pane passing @a pParent to the base-class. */
     UISnapshotPane(QWidget *pParent = 0);
+    /** Destructs snapshot pane. */
+    virtual ~UISnapshotPane() /* override */;
 
     /** Defines the @a comMachine object to be parsed. */
     void setMachine(const CMachine &comMachine);
 
     /** Returns cached snapshot-item icon depending on @a fOnline flag. */
-    const QIcon &snapshotItemIcon(bool fOnline) const { return !fOnline ? m_snapshotIconOffline : m_snapshotIconOnline; }
+    const QIcon *snapshotItemIcon(bool fOnline) const;
 
 protected:
 
@@ -156,7 +156,7 @@ private:
         /** Holds the current snapshot item reference. */
         UISnapshotItem *m_pCurrentSnapshotItem;
         /** Holds the snapshot item editing protector. */
-        QReadWriteLock m_lockReadWrite;
+        QReadWriteLock *m_pLockReadWrite;
     /** @} */
 
     /** @name Widget variables.
@@ -173,15 +173,15 @@ private:
         QAction   *m_pActionCloneSnapshot;
 
         /** Holds the snapshot age update timer. */
-        QTimer m_ageUpdateTimer;
+        QTimer *m_pTimerUpdateAge;
 
         /** Holds whether the snapshot operations are allowed. */
         bool  m_fShapshotOperationsAllowed;
 
         /** Holds the cached snapshot-item pixmap for 'offline' state. */
-        QIcon m_snapshotIconOffline;
+        QIcon *m_pIconSnapshotOffline;
         /** Holds the cached snapshot-item pixmap for 'online' state. */
-        QIcon m_snapshotIconOnline;
+        QIcon *m_pIconSnapshotOnline;
 
         /** Holds the snapshot tree instance. */
         UISnapshotTree *m_pSnapshotTree;

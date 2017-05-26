@@ -24,9 +24,12 @@
 # include <QApplication>
 # include <QDateTime>
 # include <QHeaderView>
+# include <QIcon>
 # include <QMenu>
 # include <QPointer>
+# include <QReadWriteLock>
 # include <QScrollBar>
+# include <QTimer>
 # include <QWriteLocker>
 
 /* GUI includes: */
@@ -343,7 +346,7 @@ void UISnapshotItem::recache()
         m_strSnapshotID = m_comSnapshot.GetId();
         setText(0, m_comSnapshot.GetName());
         m_fOnline = m_comSnapshot.GetOnline();
-        setIcon(0, m_pSnapshotWidget->snapshotItemIcon(m_fOnline));
+        setIcon(0, *m_pSnapshotWidget->snapshotItemIcon(m_fOnline));
         m_strDesc = m_comSnapshot.GetDescription();
         m_timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
         m_fCurrentStateModified = false;
@@ -516,18 +519,26 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
 
 UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_enmSessionState(KSessionState_Null)
     , m_pCurrentSnapshotItem(0)
+    , m_pLockReadWrite(0)
     , m_pActionTakeSnapshot(0)
     , m_pActionRestoreSnapshot(0)
     , m_pActionDeleteSnapshot(0)
     , m_pActionShowSnapshotDetails(0)
     , m_pActionCloneSnapshot(0)
+    , m_pTimerUpdateAge(0)
     , m_fShapshotOperationsAllowed(false)
+    , m_pIconSnapshotOffline(0)
+    , m_pIconSnapshotOnline(0)
     , m_pSnapshotTree(0)
 {
+    /* Create locker: */
+    m_pLockReadWrite = new QReadWriteLock;
+
     /* Cache pixmaps: */
-    m_snapshotIconOffline = UIIconPool::iconSet(":/snapshot_offline_16px.png");
-    m_snapshotIconOnline = UIIconPool::iconSet(":/snapshot_online_16px.png");
+    m_pIconSnapshotOffline = new QIcon(UIIconPool::iconSet(":/snapshot_offline_16px.png"));
+    m_pIconSnapshotOnline = new QIcon(UIIconPool::iconSet(":/snapshot_online_16px.png"));
 
     /* Create layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
@@ -626,8 +637,9 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     }
 
     /* Setup timer: */
-    m_ageUpdateTimer.setSingleShot(true);
-    connect(&m_ageUpdateTimer, SIGNAL(timeout()), this, SLOT(sltUpdateSnapshotsAge()));
+    m_pTimerUpdateAge = new QTimer;
+    m_pTimerUpdateAge->setSingleShot(true);
+    connect(m_pTimerUpdateAge, SIGNAL(timeout()), this, SLOT(sltUpdateSnapshotsAge()));
 
     /* Setup Main event connections: */
     connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
@@ -639,6 +651,26 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
 
     /* Translate finally: */
     retranslateUi();
+}
+
+UISnapshotPane::~UISnapshotPane()
+{
+    /* Stop timer if active: */
+    if (m_pTimerUpdateAge->isActive())
+        m_pTimerUpdateAge->stop();
+    /* Destroy timer: */
+    delete m_pTimerUpdateAge;
+    m_pTimerUpdateAge = 0;
+
+    /* Destroy icons: */
+    delete m_pIconSnapshotOffline;
+    delete m_pIconSnapshotOnline;
+    m_pIconSnapshotOffline = 0;
+    m_pIconSnapshotOnline = 0;
+
+    /* Destroy read-write locker: */
+    delete m_pLockReadWrite;
+    m_pLockReadWrite = 0;
 }
 
 void UISnapshotPane::setMachine(const CMachine &comMachine)
@@ -662,6 +694,11 @@ void UISnapshotPane::setMachine(const CMachine &comMachine)
 
     /* Refresh everything: */
     refreshAll();
+}
+
+const QIcon *UISnapshotPane::snapshotItemIcon(bool fOnline) const
+{
+    return !fOnline ? m_pIconSnapshotOffline : m_pIconSnapshotOnline;
 }
 
 void UISnapshotPane::retranslateUi()
@@ -790,7 +827,7 @@ void UISnapshotPane::sltContextMenuRequested(const QPoint &point)
 void UISnapshotPane::sltItemChanged(QTreeWidgetItem *pItem)
 {
     /* Make sure nothing being edited in the meantime: */
-    if (!m_lockReadWrite.tryLockForWrite())
+    if (!m_pLockReadWrite->tryLockForWrite())
         return;
 
     /* Acquire corresponding snapshot item: */
@@ -803,7 +840,7 @@ void UISnapshotPane::sltItemChanged(QTreeWidgetItem *pItem)
         comSnapshot.SetName(pSnapshotItem->text(0));
 
     /* Allows editing again: */
-    m_lockReadWrite.unlock();
+    m_pLockReadWrite->unlock();
 }
 
 void UISnapshotPane::sltItemDoubleClicked(QTreeWidgetItem *pItem)
@@ -827,7 +864,7 @@ void UISnapshotPane::sltMachineDataChange(QString strMachineID)
         return;
 
     /* Prevent snapshot editing in the meantime: */
-    QWriteLocker locker(&m_lockReadWrite);
+    QWriteLocker locker(m_pLockReadWrite);
 
     /* Recache state current item: */
     currentStateItem()->recache();
@@ -840,7 +877,7 @@ void UISnapshotPane::sltMachineStateChange(QString strMachineID, KMachineState e
         return;
 
     /* Prevent snapshot editing in the meantime: */
-    QWriteLocker locker(&m_lockReadWrite);
+    QWriteLocker locker(m_pLockReadWrite);
 
     /* Recache new machine state: */
     currentStateItem()->recache();
@@ -854,7 +891,7 @@ void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState e
         return;
 
     /* Prevent snapshot editing in the meantime: */
-    QWriteLocker locker(&m_lockReadWrite);
+    QWriteLocker locker(m_pLockReadWrite);
 
     /* Recache new session state: */
     m_enmSessionState = enmState;
@@ -864,23 +901,23 @@ void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState e
 void UISnapshotPane::sltUpdateSnapshotsAge()
 {
     /* Stop timer if active: */
-    if (m_ageUpdateTimer.isActive())
-        m_ageUpdateTimer.stop();
+    if (m_pTimerUpdateAge->isActive())
+        m_pTimerUpdateAge->stop();
 
     /* Search for smallest snapshot age to optimize timer timeout: */
     const SnapshotAgeFormat age = traverseSnapshotAge(m_pSnapshotTree->invisibleRootItem());
     switch (age)
     {
-        case SnapshotAgeFormat_InSeconds: m_ageUpdateTimer.setInterval(5 * 1000); break;
-        case SnapshotAgeFormat_InMinutes: m_ageUpdateTimer.setInterval(60 * 1000); break;
-        case SnapshotAgeFormat_InHours:   m_ageUpdateTimer.setInterval(60 * 60 * 1000); break;
-        case SnapshotAgeFormat_InDays:    m_ageUpdateTimer.setInterval(24 * 60 * 60 * 1000); break;
-        default:                          m_ageUpdateTimer.setInterval(0); break;
+        case SnapshotAgeFormat_InSeconds: m_pTimerUpdateAge->setInterval(5 * 1000); break;
+        case SnapshotAgeFormat_InMinutes: m_pTimerUpdateAge->setInterval(60 * 1000); break;
+        case SnapshotAgeFormat_InHours:   m_pTimerUpdateAge->setInterval(60 * 60 * 1000); break;
+        case SnapshotAgeFormat_InDays:    m_pTimerUpdateAge->setInterval(24 * 60 * 60 * 1000); break;
+        default:                          m_pTimerUpdateAge->setInterval(0); break;
     }
 
     /* Restart timer if necessary: */
-    if (m_ageUpdateTimer.interval() > 0)
-        m_ageUpdateTimer.start();
+    if (m_pTimerUpdateAge->interval() > 0)
+        m_pTimerUpdateAge->start();
 }
 
 bool UISnapshotPane::takeSnapshot()
@@ -1176,7 +1213,7 @@ void UISnapshotPane::cloneSnapshot()
 void UISnapshotPane::refreshAll()
 {
     /* Prevent snapshot editing in the meantime: */
-    QWriteLocker locker(&m_lockReadWrite);
+    QWriteLocker locker(m_pLockReadWrite);
 
     /* If VM is null, just updated the current itm: */
     if (m_comMachine.isNull())
