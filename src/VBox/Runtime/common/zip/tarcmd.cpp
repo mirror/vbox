@@ -63,16 +63,16 @@
 #define RTZIPTARCMD_OPT_READ_AHEAD          1010
 
 /** File format. */
-typedef enum RTZIPTARFORMAT
+typedef enum RTZIPTARCMDFORMAT
 {
-    RTZIPTARFORMAT_INVALID = 0,
+    RTZIPTARCMDFORMAT_INVALID = 0,
     /** Autodetect if possible, defaulting to TAR. */
-    RTZIPTARFORMAT_AUTO_DEFAULT,
+    RTZIPTARCMDFORMAT_AUTO_DEFAULT,
     /** TAR.  */
-    RTZIPTARFORMAT_TAR,
+    RTZIPTARCMDFORMAT_TAR,
     /** XAR.  */
-    RTZIPTARFORMAT_XAR
-} RTZIPTARFORMAT;
+    RTZIPTARCMDFORMAT_XAR
+} RTZIPTARCMDFORMAT;
 
 
 /*********************************************************************************************************************************
@@ -84,7 +84,7 @@ typedef enum RTZIPTARFORMAT
 typedef struct RTZIPTARCMDOPS
 {
     /** The file format. */
-    RTZIPTARFORMAT  enmFormat;
+    RTZIPTARCMDFORMAT enmFormat;
 
     /** The operation (Acdrtux or RTZIPTARCMD_OPT_DELETE). */
     int             iOperation;
@@ -257,9 +257,9 @@ static RTEXITCODE rtZipTarCmdOpenInputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTR
     /*
      * Open the filesystem stream.
      */
-    if (pOpts->enmFormat == RTZIPTARFORMAT_TAR)
+    if (pOpts->enmFormat == RTZIPTARCMDFORMAT_TAR)
         rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
-    else if (pOpts->enmFormat == RTZIPTARFORMAT_XAR)
+    else if (pOpts->enmFormat == RTZIPTARCMDFORMAT_XAR)
 #ifdef IPRT_WITH_XAR /* Requires C++ and XML, so only in some configruation of IPRT. */
         rc = RTZipXarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
 #else
@@ -1010,7 +1010,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
 
     RTZIPTARCMDOPS Opts;
     RT_ZERO(Opts);
-    Opts.enmFormat = RTZIPTARFORMAT_AUTO_DEFAULT;
+    Opts.enmFormat = RTZIPTARCMDFORMAT_AUTO_DEFAULT;
     Opts.uidOwner = NIL_RTUID;
     Opts.gidGroup = NIL_RTUID;
     Opts.fFileModeAndMask = RTFS_UNIX_ALL_ACCESS_PERMS;
@@ -1139,11 +1139,11 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
 
             case RTZIPTARCMD_OPT_FORMAT:
                 if (!strcmp(ValueUnion.psz, "auto") || !strcmp(ValueUnion.psz, "default"))
-                    Opts.enmFormat = RTZIPTARFORMAT_AUTO_DEFAULT;
+                    Opts.enmFormat = RTZIPTARCMDFORMAT_AUTO_DEFAULT;
                 else if (!strcmp(ValueUnion.psz, "tar"))
-                    Opts.enmFormat = RTZIPTARFORMAT_TAR;
+                    Opts.enmFormat = RTZIPTARCMDFORMAT_TAR;
                 else if (!strcmp(ValueUnion.psz, "xar"))
-                    Opts.enmFormat = RTZIPTARFORMAT_XAR;
+                    Opts.enmFormat = RTZIPTARCMDFORMAT_XAR;
                 else
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown archive format: '%s'", ValueUnion.psz);
                 break;
