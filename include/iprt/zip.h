@@ -268,6 +268,23 @@ RTDECL(int) RTZipGzipCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags,
  */
 RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
 
+/** TAR format type. */
+typedef enum RTZIPTARFORMAT
+{
+    /** Customary invalid zero value. */
+    RTZIPTARFORMAT_INVALID = 0,
+    /** Default format (GNU). */
+    RTZIPTARFORMAT_DEFAULT,
+    /** The GNU format. */
+    RTZIPTARFORMAT_GNU,
+    /** Posix (PAX) format. */
+    RTZIPTARFORMAT_POSIX,
+    /** End of valid formats. */
+    RTZIPTARFORMAT_END,
+    /** Make sure the type is at least 32 bits wide. */
+    RTZIPTARFORMAT_32BIT_HACK = 0x7fffffff
+} RTZIPTARFORMAT;
+
 /**
  * Opens a TAR filesystem stream for the purpose of create a new TAR archive.
  *
@@ -276,11 +293,23 @@ RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlag
  * @param   hVfsIosOut          The output stream, i.e. where the tar stuff is
  *                              written.  The reference is not consumed, instead
  *                              another one is retained.
- * @param   fFlags              Flags, MBZ.
+ * @param   enmFormat           The desired output format.
+ * @param   fFlags              RTZIPTAR_C_XXX.
  * @param   phVfsFss            Where to return the handle to the TAR
  *                              filesystem stream.
  */
-RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosOut, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
+RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT enmFormat,
+                                       uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
+
+/** @name RTZIPTAR_C_XXX - TAR creation flags (RTZipTarFsStreamToIoStream).
+ * @{ */
+/** Check for sparse files.
+ * @note Only supported when adding file objects.  The files will be read
+ *       twice. */
+#define RTZIPTAR_C_SPARSE           RT_BIT_32(0)
+/** Valid bits. */
+#define RTZIPTAR_C_VALID_MASK       UINT32_C(0x00000001)
+/** @} */
 
 /**
  * A mini TAR program.

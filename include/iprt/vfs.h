@@ -334,11 +334,34 @@ RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVF
  * @param   hVfsFss     The file system stream handle.
  * @param   pszPath     The path.
  * @param   hVfsObj     The VFS object to add.
- * @param   fFlags      Flags for the future, MBZ.
+ * @param   fFlags      RTVFSFSSTRM_ADD_F_XXX.
  */
 RTDECL(int)         RTVfsFsStrmAdd(RTVFSFSSTREAM hVfsFss, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags);
 
-/** @}  */
+/** @name RTVFSFSSTRM_ADD_F_XXX - Flags for RTVfsFsStrmAdd.
+ * @{ */
+/** Input is an I/O stream of indeterminate length, read to the end and then
+ * update the file header.
+ * @note This is *only* possible if the output stream is actually a file. */
+#define RTVFSFSSTRM_ADD_F_STREAM         RT_BIT_32(0)
+/** Mask of flags specific to the target stream. */
+#define RTVFSFSSTRM_ADD_F_SPECIFIC_MASK  UINT32_C(0xff000000)
+/** Valid bits. */
+#define RTVFSFSSTRM_ADD_F_VALID_MASK     UINT32_C(0xff000001)
+/** @} */
+
+/**
+ * Marks the end of the stream.
+ *
+ * The stream must be writable.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_FUNCTION if called on a non-writable stream.
+ * @param   hVfsFss     The file system stream handle.
+ */
+RTDECL(int)         RTVfsFsStrmEnd(RTVFSFSSTREAM hVfsFss);
+
+/** @} */
 
 
 /** @defgroup grp_vfs_dir           VFS Directory API

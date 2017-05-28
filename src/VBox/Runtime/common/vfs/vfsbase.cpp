@@ -1927,7 +1927,10 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     if (fReadOnly)
         AssertPtr(pFsStreamOps->pfnNext);
     else
+    {
         AssertPtr(pFsStreamOps->pfnAdd);
+        AssertPtr(pFsStreamOps->pfnEnd);
+    }
     Assert(cbInstance > 0);
     AssertPtr(ppvInstance);
     AssertPtr(phVfsFss);
@@ -2036,9 +2039,20 @@ RTDECL(int)         RTVfsFsStrmAdd(RTVFSFSSTREAM hVfsFss, const char *pszPath, R
     AssertPtrNullReturn(pszPath, VERR_INVALID_POINTER);
     AssertPtrReturn(hVfsObj, VERR_INVALID_HANDLE);
     AssertReturn(hVfsObj->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!(fFlags & RTVFSFSSTRM_ADD_F_VALID_MASK), VERR_INVALID_FLAGS);
     AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_INVALID_FUNCTION);
 
     return pThis->pOps->pfnAdd(pThis->Base.pvThis, pszPath, hVfsObj, fFlags);
+}
+
+
+RTDECL(int)         RTVfsFsStrmEnd(RTVFSFSSTREAM hVfsFss)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    return pThis->pOps->pfnEnd(pThis->Base.pvThis);
 }
 
 

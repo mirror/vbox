@@ -1802,6 +1802,7 @@ static const RTVFSFSSTREAMOPS rtZipXarFssOps =
     0,
     rtZipXarFss_Next,
     NULL,
+    NULL,
     RTVFSFSSTREAMOPS_VERSION
 };
 

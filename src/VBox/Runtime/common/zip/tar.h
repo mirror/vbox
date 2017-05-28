@@ -93,6 +93,9 @@ AssertCompileMemberOffset(RTZIPTARHDRANCIENT, unused,    257);
  * @remarks The terminator character is not part of the field.  */
 #define RTZIPTAR_USTAR_VERSION  "00"
 
+/** The GNU magic + version value. */
+#define RTZIPTAR_USTAR_GNU_MAGIC    "ustar  "
+
 
 /**
  * The posix header (according to SuS).
@@ -135,6 +138,17 @@ AssertCompileMemberOffset(RTZIPTARHDRPOSIX, devmajor,  329);
 AssertCompileMemberOffset(RTZIPTARHDRPOSIX, devminor,  337);
 AssertCompileMemberOffset(RTZIPTARHDRPOSIX, prefix,    345);
 
+/**
+ * GNU sparse data segment descriptor entry.
+ */
+typedef struct RTZIPTARGNUSPARSE
+{
+    char    offset[12];     /**< Absolute offset relative to the start of the file. */
+    char    numbytes[12];
+} RTZIPTARGNUSPARSE;
+AssertCompileSize(RTZIPTARGNUSPARSE, 24);
+AssertCompileMemberOffset(RTZIPTARGNUSPARSE, offset,    0);
+AssertCompileMemberOffset(RTZIPTARGNUSPARSE, numbytes,  12);
 
 /**
  * The GNU header.
@@ -160,12 +174,8 @@ typedef struct RTZIPTARHDRGNU
     char    offset[12];
     char    longnames[4];
     char    unused[1];
-    struct
-    {
-        char offset[12];
-        char numbytes[12];
-    }       sparse[4];
-    char    isextended;
+    RTZIPTARGNUSPARSE sparse[4];
+    char    isextended; /**< More headers about sparse stuff if binary value 1. */
     char    realsize[12];
     char    unused2[17];
 } RTZIPTARHDRGNU;
@@ -196,6 +206,21 @@ AssertCompileMemberOffset(RTZIPTARHDRGNU, unused2,   495);
 
 
 /**
+ * GNU sparse header.
+ */
+typedef struct RTZIPTARHDRGNUSPARSE
+{
+    RTZIPTARGNUSPARSE sp[21];
+    char    isextended;
+    char    unused[7];
+} RTZIPTARHDRGNUSPARSE;
+AssertCompileSize(RTZIPTARHDRGNUSPARSE, 512);
+AssertCompileMemberOffset(RTZIPTARHDRGNUSPARSE, sp,         0);
+AssertCompileMemberOffset(RTZIPTARHDRGNUSPARSE, isextended, 504);
+AssertCompileMemberOffset(RTZIPTARHDRGNUSPARSE, unused,     505);
+
+
+/**
  * The bits common to posix and GNU.
  */
 typedef struct RTZIPTARHDRCOMMON
@@ -217,6 +242,37 @@ typedef struct RTZIPTARHDRCOMMON
     char    devminor[8];
     char    not_common[155+12];
 } RTZIPTARHDRCOMMON;
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, name,      RTZIPTARHDRPOSIX, name);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, mode,      RTZIPTARHDRPOSIX, mode);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, uid,       RTZIPTARHDRPOSIX, uid);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, gid,       RTZIPTARHDRPOSIX, gid);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, size,      RTZIPTARHDRPOSIX, size);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, mtime,     RTZIPTARHDRPOSIX, mtime);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, chksum,    RTZIPTARHDRPOSIX, chksum);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, typeflag,  RTZIPTARHDRPOSIX, typeflag);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, linkname,  RTZIPTARHDRPOSIX, linkname);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, magic,     RTZIPTARHDRPOSIX, magic);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, version,   RTZIPTARHDRPOSIX, version);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, uname,     RTZIPTARHDRPOSIX, uname);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, gname,     RTZIPTARHDRPOSIX, gname);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, devmajor,  RTZIPTARHDRPOSIX, devmajor);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, devminor,  RTZIPTARHDRPOSIX, devminor);
+
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, name,      RTZIPTARHDRGNU, name);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, mode,      RTZIPTARHDRGNU, mode);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, uid,       RTZIPTARHDRGNU, uid);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, gid,       RTZIPTARHDRGNU, gid);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, size,      RTZIPTARHDRGNU, size);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, mtime,     RTZIPTARHDRGNU, mtime);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, chksum,    RTZIPTARHDRGNU, chksum);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, typeflag,  RTZIPTARHDRGNU, typeflag);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, linkname,  RTZIPTARHDRGNU, linkname);
+AssertCompileMembersAtSameOffset(     RTZIPTARHDRCOMMON, magic,     RTZIPTARHDRGNU, magic);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, uname,     RTZIPTARHDRGNU, uname);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, gname,     RTZIPTARHDRGNU, gname);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, devmajor,  RTZIPTARHDRGNU, devmajor);
+AssertCompileMembersSameSizeAndOffset(RTZIPTARHDRCOMMON, devminor,  RTZIPTARHDRGNU, devminor);
+
 
 
 /**

@@ -419,6 +419,19 @@ typedef struct RTVFSFSSTREAMOPS
      */
     DECLCALLBACKMEMBER(int, pfnAdd)(void *pvThis, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags);
 
+    /**
+     * Marks the end of the stream.
+     *
+     * Writable streams only.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific directory data.
+     * @sa      RTVfsFsStrmEnd
+     *
+     * @note    Setting this member to NULL is okay for read-only streams.
+     */
+    DECLCALLBACKMEMBER(int, pfnEnd)(void *pvThis);
+
     /** Marks the end of the structure (RTVFSFSSTREAMOPS_VERSION). */
     uintptr_t               uEndMarker;
 } RTVFSFSSTREAMOPS;
