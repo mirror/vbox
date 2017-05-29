@@ -672,6 +672,7 @@ int main(int argc, char **argv)
              * Disassemble it.
              */
             rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, uHighlightAddr, (uint8_t *)pvFile, cbFile, enmStyle, fListing, enmUndefOp);
+            RTFileReadAllFree(pvFile, cbFile);
             if (RT_FAILURE(rc))
                 break;
         }
