@@ -277,8 +277,10 @@ typedef enum RTZIPTARFORMAT
     RTZIPTARFORMAT_DEFAULT,
     /** The GNU format. */
     RTZIPTARFORMAT_GNU,
-    /** Posix (PAX) format. */
-    RTZIPTARFORMAT_POSIX,
+    /** USTAR format from POSIX.1-1988. */
+    RTZIPTARFORMAT_USTAR,
+    /** PAX format from POSIX.1-2001. */
+    RTZIPTARFORMAT_PAX,
     /** End of valid formats. */
     RTZIPTARFORMAT_END,
     /** Make sure the type is at least 32 bits wide. */

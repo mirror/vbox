@@ -88,13 +88,13 @@ AssertCompileMemberOffset(RTZIPTARHDRANCIENT, unused,    257);
 
 
 /** The uniform standard tape archive format magic value. */
-#define RTZIPTAR_USTAR_MAGIC    "ustar"
+#define RTZIPTAR_USTAR_MAGIC        "ustar"
 /** The ustar version string.
  * @remarks The terminator character is not part of the field.  */
-#define RTZIPTAR_USTAR_VERSION  "00"
+#define RTZIPTAR_USTAR_VERSION      "00"
 
 /** The GNU magic + version value. */
-#define RTZIPTAR_USTAR_GNU_MAGIC    "ustar  "
+#define RTZIPTAR_GNU_MAGIC          "ustar  "
 
 
 /**
@@ -139,7 +139,7 @@ AssertCompileMemberOffset(RTZIPTARHDRPOSIX, devminor,  337);
 AssertCompileMemberOffset(RTZIPTARHDRPOSIX, prefix,    345);
 
 /**
- * GNU sparse data segment descriptor entry.
+ * GNU sparse data segment descriptor.
  */
 typedef struct RTZIPTARGNUSPARSE
 {
@@ -149,6 +149,10 @@ typedef struct RTZIPTARGNUSPARSE
 AssertCompileSize(RTZIPTARGNUSPARSE, 24);
 AssertCompileMemberOffset(RTZIPTARGNUSPARSE, offset,    0);
 AssertCompileMemberOffset(RTZIPTARGNUSPARSE, numbytes,  12);
+/** Pointer to a GNU sparse data segment descriptor. */
+typedef RTZIPTARGNUSPARSE *PRTZIPTARGNUSPARSE;
+/** Pointer to a const GNU sparse data segment descriptor. */
+typedef RTZIPTARGNUSPARSE *PCRTZIPTARGNUSPARSE;
 
 /**
  * The GNU header.
@@ -171,8 +175,8 @@ typedef struct RTZIPTARHDRGNU
     char    devminor[8];
     char    atime[12];
     char    ctime[12];
-    char    offset[12];
-    char    longnames[4];
+    char    offset[12];         /**< for multi-volume? */
+    char    longnames[4];       /**< Seems to be unused. */
     char    unused[1];
     RTZIPTARGNUSPARSE sparse[4];
     char    isextended; /**< More headers about sparse stuff if binary value 1. */
@@ -283,13 +287,15 @@ typedef union RTZIPTARHDR
     /** Byte view. */
     char                ab[512];
     /** The standard header. */
-    RTZIPTARHDRANCIENT  Ancient;
+    RTZIPTARHDRANCIENT      Ancient;
     /** The standard header. */
-    RTZIPTARHDRPOSIX    Posix;
+    RTZIPTARHDRPOSIX        Posix;
     /** The GNU header. */
-    RTZIPTARHDRGNU      Gnu;
+    RTZIPTARHDRGNU          Gnu;
     /** The bits common to both GNU and the standard header. */
-    RTZIPTARHDRCOMMON   Common;
+    RTZIPTARHDRCOMMON       Common;
+    /** GNU sparse header. */
+    RTZIPTARHDRGNUSPARSE    GnuSparse;
 } RTZIPTARHDR;
 AssertCompileSize(RTZIPTARHDR, 512);
 /** Pointer to a tar file header. */

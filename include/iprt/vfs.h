@@ -1338,6 +1338,21 @@ RTDECL(int) RTVfsChainQueryInfo(const char *pszSpec, PRTFSOBJINFO pObjInfo, RTFS
 RTDECL(bool) RTVfsChainIsSpec(const char *pszSpec);
 
 /**
+ * Queries the path from the final element.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_VFS_CHAIN_NOT_PATH_ONLY if the final element isn't just a
+ *          simple path.
+ * @param   pszSpec         The chain spec.
+ * @param   ppszFinalPath   Where to return a copy of the final path on success.
+ *                          Call RTStrFree when done.
+ * @param   poffError       Where to on error return an offset into @a pszSpec
+ *                          of what cause the error.  Optional.
+ *
+ */
+RTDECL(int) RTVfsChainQueryFinalPath(const char *pszSpec, char **ppszFinalPath, uint32_t *poffError);
+
+/**
  * Common code for reporting errors of a RTVfsChainOpen* API.
  *
  * @param   pszFunction The API called.

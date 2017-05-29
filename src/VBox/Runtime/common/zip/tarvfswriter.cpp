@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/zip.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
@@ -45,8 +46,70 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** The TAR block size we're using in this implementation.
+ * @remarks Should technically be user configurable, but we don't currently need that. */
+#define RTZIPTAR_BLOCKSIZE      sizeof(RTZIPTARHDR)
+
+/** Minimum file size we consider for sparse files. */
+#define RTZIPTAR_MIN_SPARSE     _64K
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/**
+ * A data span descriptor in a sparse file.
+ */
+typedef struct RTZIPTARSPARSESPAN
+{
+    /** Byte offset into the file of the data. */
+    uint64_t        off;
+    /** Number of bytes of data, rounded up to a multiple of blocksize. */
+    uint64_t        cb;
+} RTZIPTARSPARSESPAN;
+/** Pointer to a data span. */
+typedef RTZIPTARSPARSESPAN *PRTZIPTARSPARSESPAN;
+/** Pointer to a const data span. */
+typedef RTZIPTARSPARSESPAN const *PCRTZIPTARSPARSESPAN;
+
+/**
+ * Chunk of TAR sparse file data spans.
+ */
+typedef struct RTZIPTARSPARSECHUNK
+{
+    /** List entry. */
+    RTLISTNODE          Entry;
+    /** Array of data spans. */
+    RTZIPTARSPARSESPAN  aSpans[63];
+} RTZIPTARSPARSECHUNK;
+AssertCompile(sizeof(RTZIPTARSPARSECHUNK) <= 1024);
+AssertCompile(sizeof(RTZIPTARSPARSECHUNK) >= 1008);
+/** Pointer to a chunk of TAR data spans. */
+typedef RTZIPTARSPARSECHUNK *PRTZIPTARSPARSECHUNK;
+/** Pointer to a const chunk of TAR data spans. */
+typedef RTZIPTARSPARSECHUNK const *PCRTZIPTARSPARSECHUNK;
+
+/**
+ * TAR sparse file info.
+ */
+typedef struct RTZIPTARSPARSE
+{
+    /** Number of data bytes (real size).  */
+    uint64_t            cbDataSpans;
+    /** Number of data spans. */
+    uint32_t            cDataSpans;
+    /** The index of the next span in the tail chunk (to avoid modulus 63). */
+    uint32_t            iNextSpan;
+    /** Head of the data span chunk list (PRTZIPTARSPARSECHUNK). */
+    RTLISTANCHOR        ChunkHead;
+} RTZIPTARSPARSE;
+/** Pointer to TAR sparse file info. */
+typedef RTZIPTARSPARSE *PRTZIPTARSPARSE;
+/** Pointer to a const TAR sparse file info. */
+typedef RTZIPTARSPARSE const *PCRTZIPTARSPARSE;
+
 /**
  * Tar filesystem stream private data.
  */
@@ -54,6 +117,8 @@ typedef struct RTZIPTARFSSTREAMWRITER
 {
     /** The output I/O stream. */
     RTVFSIOSTREAM           hVfsIos;
+    /** Non-nil if the output is a file.  */
+    RTVFSFILE               hVfsFile;
 
     /** The TAR format. */
     RTZIPTARFORMAT          enmFormat;
@@ -74,6 +139,13 @@ typedef struct RTZIPTARFSSTREAMWRITER
 typedef RTZIPTARFSSTREAMWRITER *PRTZIPTARFSSTREAMWRITER;
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath, RTVFSIOSTREAM hVfsIos,
+                                     PCRTFSOBJINFO pObjInfo, const char *pszOwnerNm, const char *pszGroupNm);
+
+
 /**
  * Calculates the header checksum and stores it in the chksum field.
  *
@@ -86,7 +158,7 @@ static int rtZipTarFssWriter_ChecksumHdr(PRTZIPTARHDR pHdr)
     rtZipTarCalcChkSum(pHdr, &iUnsignedChksum, NULL);
 
     int rc = RTStrFormatU32(pHdr->Common.chksum, sizeof(pHdr->Common.chksum), iUnsignedChksum,
-                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pHdr->Common.chksum) - 1, RTSTR_F_ZEROPAD);
+                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pHdr->Common.chksum) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
     return VINF_SUCCESS;
 }
@@ -113,7 +185,7 @@ static int rtZipTarFssWriter_FormatOffset(char pach12Field[12], uint64_t off)
      */
     if (off < _4G * 2U)
     {
-        int rc = RTStrFormatU64(pach12Field, 12, off, 8 /*uBase*/, -1 /*cchWidth*/, 12 - 1, RTSTR_F_ZEROPAD);
+        int rc = RTStrFormatU64(pach12Field, 12, off, 8 /*uBase*/, -1 /*cchWidth*/, 12 - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
         AssertRCReturn(rc, rc);
     }
     /*
@@ -126,6 +198,8 @@ static int rtZipTarFssWriter_FormatOffset(char pach12Field[12], uint64_t off)
      *       "ustar\000" version.  However, this shouldn't cause much
      *       trouble as they are not picky about what they read.
      */
+    /** @todo above note is wrong:  GNU tar only uses base-256 with the GNU tar
+     * format, i.e. "ustar   \0", see create.c line 303 in v1.29. */
     else
     {
         size_t         cchField  = 12 - 1;
@@ -191,7 +265,7 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
      */
     int rc;
     rc = RTStrFormatU32(pThis->aHdrs[0].Common.mode, sizeof(pThis->aHdrs[0].Common.mode), pObjInfo->Attr.fMode & RTFS_UNIX_MASK,
-                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.mode) - 1, RTSTR_F_ZEROPAD);
+                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.mode) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
 
 
@@ -200,12 +274,12 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
      */
     uint32_t uValue = pObjInfo->Attr.u.Unix.uid != NIL_RTUID ? pObjInfo->Attr.u.Unix.uid : 0;
     rc = RTStrFormatU32(pThis->aHdrs[0].Common.uid, sizeof(pThis->aHdrs[0].Common.uid), uValue,
-                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.uid) - 1, RTSTR_F_ZEROPAD);
+                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.uid) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
 
     uValue = pObjInfo->Attr.u.Unix.gid != NIL_RTUID ? pObjInfo->Attr.u.Unix.gid : 0;
     rc = RTStrFormatU32(pThis->aHdrs[0].Common.gid, sizeof(pThis->aHdrs[0].Common.gid), uValue,
-                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.gid) - 1, RTSTR_F_ZEROPAD);
+                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.gid) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
 
     /*
@@ -219,7 +293,7 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
      */
     rc = RTStrFormatU64(pThis->aHdrs[0].Common.mtime, sizeof(pThis->aHdrs[0].Common.mtime),
                         RTTimeSpecGetSeconds(&pObjInfo->ModificationTime),
-                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.mtime) - 1, RTSTR_F_ZEROPAD);
+                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.mtime) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, rc);
 
     /* Skipping checksum for now */
@@ -246,9 +320,16 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
     /*
      * Set TAR record magic and version.
      */
-    memcpy(pThis->aHdrs[0].Common.magic, RT_STR_TUPLE("ustar "));
-    pThis->aHdrs[0].Common.version[0] = ' ';
-    pThis->aHdrs[0].Common.version[1] = ' ';
+    if (pThis->enmFormat == RTZIPTARFORMAT_GNU)
+        memcpy(pThis->aHdrs[0].Gnu.magic, RTZIPTAR_GNU_MAGIC, sizeof(pThis->aHdrs[0].Gnu.magic));
+    else if (   pThis->enmFormat == RTZIPTARFORMAT_USTAR
+             || pThis->enmFormat == RTZIPTARFORMAT_PAX)
+    {
+        memcpy(pThis->aHdrs[0].Common.magic, RTZIPTAR_USTAR_MAGIC, sizeof(pThis->aHdrs[0].Common.magic));
+        memcpy(pThis->aHdrs[0].Common.version, RTZIPTAR_USTAR_VERSION, sizeof(pThis->aHdrs[0].Common.version));
+    }
+    else
+        AssertFailedReturn(VERR_INTERNAL_ERROR_4);
 
     /*
      * Owner and group names.  Silently truncate them for now.
@@ -264,99 +345,523 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
     {
         rc = RTStrFormatU32(pThis->aHdrs[0].Common.devmajor, sizeof(pThis->aHdrs[0].Common.devmajor),
                             RTDEV_MAJOR(pObjInfo->Attr.u.Unix.Device),
-                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.devmajor) - 1, RTSTR_F_ZEROPAD);
+                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.devmajor) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
         AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
 
         rc = RTStrFormatU32(pThis->aHdrs[0].Common.devminor, sizeof(pThis->aHdrs[0].Common.devmajor),
                             RTDEV_MINOR(pObjInfo->Attr.u.Unix.Device),
-                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.devmajor) - 1, RTSTR_F_ZEROPAD);
+                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.devmajor) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
         AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
     }
+
+#if 0 /** @todo why doesn't this work? */
+    /*
+     * Set GNU specific stuff.
+     */
+    if (pThis->enmFormat == RTZIPTARFORMAT_GNU)
+    {
+        rc = RTStrFormatU64(pThis->aHdrs[0].Gnu.ctime, sizeof(pThis->aHdrs[0].Gnu.ctime),
+                            RTTimeSpecGetSeconds(&pObjInfo->ChangeTime),
+                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Gnu.ctime) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
+        AssertRCReturn(rc, rc);
+
+        rc = RTStrFormatU64(pThis->aHdrs[0].Gnu.atime, sizeof(pThis->aHdrs[0].Gnu.atime),
+                            RTTimeSpecGetSeconds(&pObjInfo->ChangeTime),
+                            8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Gnu.atime) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
+        AssertRCReturn(rc, rc);
+    }
+#endif
 
     /*
      * Finally the checksum.
      */
+    pThis->cHdrs = 1;
     return rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
 }
 
 
 /**
- * Adds a file to the stream.
+ * Allocates a buffer for transfering file data.
+ *
+ * @note    Will use the 3rd TAR header as fallback buffer if we're out of
+ *          memory!
+ *
+ * @returns Pointer to buffer (won't ever fail).
+ * @param   pThis           The TAR writer instance.
+ * @param   pcbBuf          Where to return the buffer size.  This will be a
+ *                          multiple of the TAR block size.
+ * @param   ppvFree         Where to return the pointer to pass to RTMemTmpFree
+ *                          when done with the buffer.
+ * @param   cbFile          The file size.  Used as a buffer size hint.
+ */
+static uint8_t *rtZipTarFssWrite_AllocBuf(PRTZIPTARFSSTREAMWRITER pThis, size_t *pcbBuf, void **ppvFree, uint64_t cbObject)
+{
+    uint8_t *pbBuf;
+
+    /*
+     * If this is a large file, try for a large buffer with 16KB alignment.
+     */
+    if (cbObject >= _64M)
+    {
+        pbBuf = (uint8_t *)RTMemTmpAlloc(_2M + _16K - 1);
+        if (pbBuf)
+        {
+            *pcbBuf  = _2M;
+            *ppvFree = pbBuf;
+            return RT_ALIGN_PT(pbBuf, _16K, uint8_t *);
+        }
+    }
+    /*
+     * 4KB aligned 512KB buffer if larger 512KB or larger.
+     */
+    else if (cbObject >= _512K)
+    {
+        pbBuf = (uint8_t *)RTMemTmpAlloc(_512K + _4K - 1);
+        if (pbBuf)
+        {
+            *pcbBuf  = _512K;
+            *ppvFree = pbBuf;
+            return RT_ALIGN_PT(pbBuf, _4K, uint8_t *);
+        }
+    }
+    /*
+     * Otherwise a 4KB aligned 128KB buffer.
+     */
+    else
+    {
+        pbBuf = (uint8_t *)RTMemTmpAlloc(_128K + _4K - 1);
+        if (pbBuf)
+        {
+            *pcbBuf  = _128K;
+            *ppvFree = pbBuf;
+            return RT_ALIGN_PT(pbBuf, _4K, uint8_t *);
+        }
+    }
+
+    /*
+     * If allocation failed, fallback on a 16KB buffer without any extra alignment.
+     */
+    pbBuf = (uint8_t *)RTMemTmpAlloc(_16K);
+    if (pbBuf)
+    {
+        *pcbBuf  = _16K;
+        *ppvFree = pbBuf;
+        return pbBuf;
+    }
+
+    /*
+     * Final fallback, 512KB buffer using the 3rd header.
+     */
+    AssertCompile(RT_ELEMENTS(pThis->aHdrs) >= 3);
+    *pcbBuf  = sizeof(pThis->aHdrs[2]);
+    *ppvFree = NULL;
+    return (uint8_t *)&pThis->aHdrs[2];
+}
+
+
+/**
+ * Frees the sparse info for a TAR file.
+ *
+ * @param   pSparse         The sparse info to free.
+ */
+static void rtZipTarFssWriter_SparseInfoDestroy(PRTZIPTARSPARSE pSparse)
+{
+    PRTZIPTARSPARSECHUNK pCur;
+    PRTZIPTARSPARSECHUNK pNext;
+    RTListForEachSafe(&pSparse->ChunkHead, pCur, pNext, RTZIPTARSPARSECHUNK, Entry)
+        RTMemTmpFree(pCur);
+    RTMemTmpFree(pSparse);
+}
+
+
+/**
+ * Adds a data span to the sparse info.
+ *
+ * @returns VINF_SUCCESS or VINF_NO_TMP_MEMORY.
+ * @param   pSparse         The sparse info to free.
+ * @param   offSpan         Offset of the span.
+ * @param   cbSpan          Number of bytes.
+ */
+static int rtZipTarFssWriter_SparseInfoAddSpan(PRTZIPTARSPARSE pSparse, uint64_t offSpan, uint64_t cbSpan)
+{
+    /*
+     * Get the chunk we're adding it to.
+     */
+    PRTZIPTARSPARSECHUNK pChunk;
+    if (pSparse->iNextSpan != 0)
+    {
+        pChunk = RTListGetLast(&pSparse->ChunkHead, RTZIPTARSPARSECHUNK, Entry);
+        Assert(pSparse->iNextSpan < RT_ELEMENTS(pChunk->aSpans));
+    }
+    else
+    {
+        pChunk = (PRTZIPTARSPARSECHUNK)RTMemTmpAllocZ(sizeof(*pChunk));
+        if (!pChunk)
+            return VERR_NO_TMP_MEMORY;
+        RTListAppend(&pSparse->ChunkHead, &pChunk->Entry);
+    }
+
+    /*
+     * Append it.
+     */
+    pSparse->cDataSpans  += 1;
+    pSparse->cbDataSpans += cbSpan;
+    pChunk->aSpans[pSparse->iNextSpan].cb  = cbSpan;
+    pChunk->aSpans[pSparse->iNextSpan].off = offSpan;
+    if (++pSparse->iNextSpan >= RT_ELEMENTS(pChunk->aSpans))
+        pSparse->iNextSpan = 0;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Scans the input stream recording non-zero blocks.
+ */
+static int rtZipTarFssWriter_ScanSparseFile(PRTZIPTARFSSTREAMWRITER pThis, RTVFSFILE hVfsFile, uint64_t cbFile,
+                                            size_t cbBuf, uint8_t *pbBuf, PRTZIPTARSPARSE *ppSparse)
+{
+    RT_NOREF(pThis);
+
+    /*
+     * Create an empty sparse info bundle.
+     */
+    PRTZIPTARSPARSE pSparse = (PRTZIPTARSPARSE)RTMemTmpAlloc(sizeof(*pSparse));
+    AssertReturn(pSparse, VERR_NO_MEMORY);
+    pSparse->cbDataSpans = 0;
+    pSparse->cDataSpans  = 0;
+    pSparse->iNextSpan   = 0;
+    RTListInit(&pSparse->ChunkHead);
+
+    /*
+     * Scan the file from the start.
+     */
+    int rc = RTVfsFileSeek(hVfsFile, 0, RTFILE_SEEK_BEGIN, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        bool        fZeroSpan = false;
+        uint64_t    offSpan   = 0;
+        uint64_t    cbSpan    = 0;
+
+        for (uint64_t off = 0; off < cbFile;)
+        {
+            uint64_t cbLeft   = cbFile - off;
+            size_t   cbToRead = cbLeft >= cbBuf ? cbBuf : (size_t)cbLeft;
+            rc = RTVfsFileRead(hVfsFile, pbBuf, cbToRead, NULL);
+            if (RT_FAILURE(rc))
+                break;
+            size_t cBlocks = cbToRead / RTZIPTAR_BLOCKSIZE;
+
+            /* Zero pad the final buffer to a multiple of the blocksize. */
+            if (!(cbToRead & (RTZIPTAR_BLOCKSIZE - 1)))
+            { /* likely */ }
+            else
+            {
+                AssertBreakStmt(cbLeft == cbToRead, rc = VERR_INTERNAL_ERROR_3);
+                RT_BZERO(&pbBuf[cbToRead], RTZIPTAR_BLOCKSIZE - (cbToRead & (RTZIPTAR_BLOCKSIZE - 1)));
+                cBlocks++;
+            }
+
+            /*
+             * Process the blocks we've just read one by one.
+             */
+            uint8_t const *pbBlock = pbBuf;
+            for (size_t iBlock = 0; iBlock < cBlocks; iBlock++)
+            {
+                bool fZeroBlock = ASMMemIsZero(pbBlock, RTZIPTAR_BLOCKSIZE);
+                if (fZeroBlock == fZeroSpan)
+                    cbSpan += RTZIPTAR_BLOCKSIZE;
+                else
+                {
+                    if (!fZeroSpan && cbSpan)
+                    {
+                        rc = rtZipTarFssWriter_SparseInfoAddSpan(pSparse, offSpan, cbSpan);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+                    fZeroSpan = fZeroBlock;
+                    offSpan   = off;
+                    cbSpan    = RTZIPTAR_BLOCKSIZE;
+                }
+
+                /* next block. */
+                pbBlock += RTZIPTAR_BLOCKSIZE;
+                off     += RTZIPTAR_BLOCKSIZE;
+            }
+        }
+
+        /*
+         * Deal with the final span.  If we've got zeros thowards the end, we
+         * must add a zero byte data span at the end.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            if (!fZeroSpan && cbSpan)
+            {
+                if (cbFile & (RTZIPTAR_BLOCKSIZE - 1))
+                {
+                    Assert(!(cbSpan & (RTZIPTAR_BLOCKSIZE - 1)));
+                    cbSpan -= RTZIPTAR_BLOCKSIZE;
+                    cbSpan |= cbFile & (RTZIPTAR_BLOCKSIZE - 1);
+                }
+                rc = rtZipTarFssWriter_SparseInfoAddSpan(pSparse, offSpan, cbSpan);
+            }
+            if (RT_SUCCESS(rc))
+                rc = rtZipTarFssWriter_SparseInfoAddSpan(pSparse, cbFile, 0);
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Return the file back to the start position before we return so that we
+         * can segue into the regular rtZipTarFssWriter_AddFile without further ado.
+         */
+        rc = RTVfsFileSeek(hVfsFile, 0, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            *ppSparse = pSparse;
+            return VINF_SUCCESS;
+        }
+    }
+
+    rtZipTarFssWriter_SparseInfoDestroy(pSparse);
+    *ppSparse = NULL;
+    return rc;
+}
+
+
+/**
+ * Writes GNU the sparse file headers.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The TAR writer instance.
+ * @param   pszPath         The path to the file.
+ * @param   pObjInfo        The object information.
+ * @param   pszOwnerNm      The owner name.
+ * @param   pszGroupNm      The group name.
+ * @param   pSparse         The sparse file info.
+ */
+static int rtZipTarFssWriter_WriteGnuSparseHeaders(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath,  PCRTFSOBJINFO pObjInfo,
+                                                   const char *pszOwnerNm, const char *pszGroupNm, PCRTZIPTARSPARSE pSparse)
+{
+    /*
+     * Format the first header.
+     */
+    int rc = rtZipTarFssWriter_ObjInfoToHdr(pThis, pszPath, pObjInfo, pszOwnerNm, pszGroupNm, RTZIPTAR_TF_GNU_SPARSE);
+    AssertRCReturn(rc, rc);
+    AssertReturn(pThis->cHdrs == 1, VERR_INTERNAL_ERROR_2);
+
+    /* data size. */
+    rc = rtZipTarFssWriter_FormatOffset(pThis->aHdrs[0].Common.size, pSparse->cbDataSpans);
+    AssertRCReturn(rc, rc);
+
+    /* realsize. */
+    rc = rtZipTarFssWriter_FormatOffset(pThis->aHdrs[0].Gnu.realsize, pObjInfo->cbObject);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Walk the sparse spans, fill and write headers one by one.
+     */
+    PRTZIPTARGNUSPARSE  paSparse    = &pThis->aHdrs[0].Gnu.sparse[0];
+    uint32_t            cSparse     = RT_ELEMENTS(pThis->aHdrs[0].Gnu.sparse);
+    uint32_t            iSparse     = 0;
+
+    PRTZIPTARSPARSECHUNK const pLastChunk = RTListGetLast(&pSparse->ChunkHead, RTZIPTARSPARSECHUNK, Entry);
+    PRTZIPTARSPARSECHUNK pChunk;
+    RTListForEach(&pSparse->ChunkHead, pChunk, RTZIPTARSPARSECHUNK, Entry)
+    {
+        uint32_t cSpans = pChunk != pLastChunk || pSparse->iNextSpan == 0
+                        ? RT_ELEMENTS(pChunk->aSpans) : pSparse->iNextSpan;
+        for (uint32_t iSpan = 0; iSpan < cSpans; iSpan++)
+        {
+            /* Flush the header? */
+            if (iSparse >= cSparse)
+            {
+                pThis->aHdrs[0].Gnu.isextended = 1; /* more headers to come */
+                if (cSparse == RT_ELEMENTS(pThis->aHdrs[0].Gnu.sparse))
+                    rc = rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
+                if (RT_SUCCESS(rc))
+                    rc = RTVfsIoStrmWrite(pThis->hVfsIos, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
+                if (RT_FAILURE(rc))
+                    return rc;
+                RT_ZERO(pThis->aHdrs[0]);
+                cSparse  = RT_ELEMENTS(pThis->aHdrs[0].GnuSparse.sp);
+                iSparse  = 0;
+                paSparse = &pThis->aHdrs[0].GnuSparse.sp[0];
+            }
+
+            /* Append sparse data segment. */
+            rc = rtZipTarFssWriter_FormatOffset(paSparse[iSparse].offset, pChunk->aSpans[iSpan].off);
+            AssertRCReturn(rc, rc);
+            rc = rtZipTarFssWriter_FormatOffset(paSparse[iSparse].numbytes, pChunk->aSpans[iSpan].cb);
+            AssertRCReturn(rc, rc);
+            iSparse++;
+        }
+    }
+
+    /*
+     * The final header.
+     */
+    if (iSparse != 0)
+    {
+        Assert(pThis->aHdrs[0].Gnu.isextended == 0);
+        rc = RTVfsIoStrmWrite(pThis->hVfsIos, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
+    }
+    pThis->cHdrs = 0;
+    return rc;
+}
+
+
+/**
+ * Adds a potentially sparse file to the output.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The TAR writer instance.
+ * @param   pszPath         The path to the file.
+ * @param   hVfsFile        The potentially sparse file.
+ * @param   hVfsIos         The I/O stream of the file. Same as @a hVfsFile.
+ * @param   pObjInfo        The object information.
+ * @param   pszOwnerNm      The owner name.
+ * @param   pszGroupNm      The group name.
+ */
+static int rtZipTarFssWriter_AddFileSparse(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath, RTVFSFILE hVfsFile,
+                                           RTVFSIOSTREAM hVfsIos, PCRTFSOBJINFO pObjInfo,
+                                           const char *pszOwnerNm, const char *pszGroupNm)
+{
+    /*
+     * Scan the input file to locate all zero blocks.
+     */
+    void    *pvBufFree;
+    size_t   cbBuf;
+    uint8_t *pbBuf = rtZipTarFssWrite_AllocBuf(pThis, &cbBuf, &pvBufFree, pObjInfo->cbObject);
+
+    PRTZIPTARSPARSE pSparse;
+    int rc = rtZipTarFssWriter_ScanSparseFile(pThis, hVfsFile, pObjInfo->cbObject, cbBuf, pbBuf, &pSparse);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * If there aren't at least 2 zero blocks in the file, don't bother
+         * doing the sparse stuff and store it as a normal file.
+         */
+        if (pSparse->cbDataSpans + RTZIPTAR_BLOCKSIZE > (uint64_t)pObjInfo->cbObject)
+        {
+            rtZipTarFssWriter_SparseInfoDestroy(pSparse);
+            RTMemTmpFree(pvBufFree);
+            return rtZipTarFssWriter_AddFile(pThis, pszPath, hVfsIos, pObjInfo, pszOwnerNm, pszGroupNm);
+        }
+
+        /*
+         * Produce and write the headers.
+         */
+        if (pThis->enmFormat == RTZIPTARFORMAT_GNU)
+            rc = rtZipTarFssWriter_WriteGnuSparseHeaders(pThis, pszPath, pObjInfo, pszOwnerNm, pszGroupNm, pSparse);
+        else
+            AssertStmt(pThis->enmFormat != RTZIPTARFORMAT_GNU, rc = VERR_NOT_IMPLEMENTED);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Write the file bytes.
+             */
+            PRTZIPTARSPARSECHUNK const pLastChunk = RTListGetLast(&pSparse->ChunkHead, RTZIPTARSPARSECHUNK, Entry);
+            PRTZIPTARSPARSECHUNK pChunk;
+            RTListForEach(&pSparse->ChunkHead, pChunk, RTZIPTARSPARSECHUNK, Entry)
+            {
+                uint32_t cSpans = pChunk != pLastChunk || pSparse->iNextSpan == 0
+                                ? RT_ELEMENTS(pChunk->aSpans) : pSparse->iNextSpan;
+                for (uint32_t iSpan = 0; iSpan < cSpans; iSpan++)
+                {
+                    rc = RTVfsFileSeek(hVfsFile, pChunk->aSpans[iSpan].off, RTFILE_SEEK_BEGIN, NULL);
+                    if (RT_FAILURE(rc))
+                        break;
+                    uint64_t cbLeft = pChunk->aSpans[iSpan].cb;
+                    Assert(   !(cbLeft & (RTZIPTAR_BLOCKSIZE - 1))
+                           || (iSpan + 1 == cSpans && pChunk == pLastChunk));
+                    while (cbLeft > 0)
+                    {
+                        size_t cbToRead = cbLeft >= cbBuf ? cbBuf : (size_t)cbLeft;
+                        rc = RTVfsFileRead(hVfsFile, pbBuf, cbToRead, NULL);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = RTVfsIoStrmWrite(pThis->hVfsIos, pbBuf, cbToRead, true /*fBlocking*/, NULL);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pThis->cbWritten += cbToRead;
+                                cbLeft           -= cbToRead;
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+            }
+
+            /*
+             * Do the zero padding.
+             */
+            if (   RT_SUCCESS(rc)
+                && (pSparse->cbDataSpans & (RTZIPTAR_BLOCKSIZE - 1)))
+            {
+                size_t cbToZero = RTZIPTAR_BLOCKSIZE - (pSparse->cbDataSpans & (RTZIPTAR_BLOCKSIZE - 1));
+                rc = RTVfsIoStrmWrite(pThis->hVfsIos, g_abRTZero4K, cbToZero, true /*fBlocking*/, NULL);
+                if (RT_SUCCESS(rc))
+                    pThis->cbWritten += cbToZero;
+            }
+        }
+
+        if (RT_FAILURE(rc))
+            pThis->rcFatal = rc;
+        rtZipTarFssWriter_SparseInfoDestroy(pSparse);
+    }
+    RTMemTmpFree(pvBufFree);
+    return rc;
+}
+
+
+/**
+ * Adds an I/O stream of indeterminate length to the TAR file.
+ *
+ * This requires the output to be seekable, i.e. a file, because we need to go
+ * back and update @c size field of the TAR header after pumping all the data
+ * bytes thru and establishing the file length.
  *
  * @returns IPRT status code.
  * @param   pThis           The TAR writer instance.
  * @param   pszPath         The path to the file.
  * @param   hVfsIos         The I/O stream of the file.
- * @param   fFlags          The RTVFSFSSTREAMOPS::pfnAdd flags.
  * @param   pObjInfo        The object information.
  * @param   pszOwnerNm      The owner name.
  * @param   pszGroupNm      The group name.
  */
-static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath, RTVFSIOSTREAM hVfsIos, uint32_t fFlags,
-                                     PCRTFSOBJINFO pObjInfo, const char *pszOwnerNm, const char *pszGroupNm)
+static int rtZipTarFssWriter_AddFileStream(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath, RTVFSIOSTREAM hVfsIos,
+                                           PCRTFSOBJINFO pObjInfo, const char *pszOwnerNm, const char *pszGroupNm)
 {
+    AssertReturn(pThis->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
+
     /*
      * Append the header.
      */
     int rc = rtZipTarFssWriter_ObjInfoToHdr(pThis, pszPath, pObjInfo, pszOwnerNm, pszGroupNm, UINT8_MAX);
     if (RT_SUCCESS(rc))
     {
-        RTFOFF const offHdr = fFlags & RTVFSFSSTRM_ADD_F_STREAM ? RTVfsIoStrmTell(pThis->hVfsIos) : RTFOFF_MAX;
-        rc = RTVfsIoStrmWrite(pThis->hVfsIos, pThis->aHdrs, pThis->cHdrs * sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
-        if (RT_SUCCESS(rc))
+        RTFOFF const offHdr = RTVfsFileTell(pThis->hVfsFile);
+        if (offHdr >= 0)
         {
-            pThis->cbWritten += pThis->cHdrs * sizeof(pThis->aHdrs[0]);
-
-            /*
-             * Allocate a tmporary buffer
-             */
-            uint8_t *pbFree;
-            size_t   cbBuf = _512K;
-            uint8_t *pbBuf = pbFree = (uint8_t *)RTMemTmpAlloc(cbBuf);
-            if (!pbBuf)
+            rc = RTVfsIoStrmWrite(pThis->hVfsIos, pThis->aHdrs, pThis->cHdrs * sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
+            if (RT_SUCCESS(rc))
             {
-                cbBuf = _32K;
-                pbBuf = pbFree = (uint8_t *)RTMemTmpAlloc(cbBuf);
-                if (!pbBuf)
-                {
-                    cbBuf = sizeof(pThis->aHdrs) - sizeof(pThis->aHdrs[0]);
-                    pbBuf = (uint8_t *)&pThis->aHdrs[1];
-                }
-            }
+                pThis->cbWritten += pThis->cHdrs * sizeof(pThis->aHdrs[0]);
 
-            /*
-             * Copy the bytes.  Padding the last buffer to a multiple of 512.
-             */
-            if (!(fFlags & RTVFSFSSTRM_ADD_F_STREAM))
-            {
-                uint64_t cbLeft = pObjInfo->cbObject;
-                while (cbLeft > 0)
-                {
-                    size_t cbRead = cbLeft > cbBuf ? cbBuf : (size_t)cbBuf;
-                    rc = RTVfsIoStrmRead(hVfsIos, pbBuf, cbRead, true /*fBlocking*/, NULL);
-                    if (RT_FAILURE(rc))
-                        break;
+                /*
+                 * Transfer the bytes.
+                 */
+                void    *pvBufFree;
+                size_t   cbBuf;
+                uint8_t *pbBuf = rtZipTarFssWrite_AllocBuf(pThis, &cbBuf, &pvBufFree,
+                                                           pObjInfo->cbObject > 0 && pObjInfo->cbObject != RTFOFF_MAX
+                                                           ? pObjInfo->cbObject : _1G);
 
-                    size_t cbToWrite = cbRead;
-                    if (cbRead & (sizeof(RTZIPTARHDR) - 1))
-                    {
-                        size_t cbToZero = sizeof(RTZIPTARHDR) - (cbRead & (sizeof(RTZIPTARHDR) - 1));
-                        memset(&pbBuf[cbRead], 0, cbToZero);
-                        cbToWrite += cbToZero;
-                    }
-
-                    rc = RTVfsIoStrmWrite(pThis->hVfsIos, pbBuf, cbToWrite, true /*fBlocking*/, NULL);
-                    if (RT_FAILURE(rc))
-                        break;
-                    pThis->cbWritten += cbToWrite;
-                    cbLeft -= cbRead;
-                }
-            }
-            /*
-             * Same as above, only here we don't know the exact input length.
-             */
-            else
-            {
                 uint64_t cbReadTotal = 0;
                 for (;;)
                 {
@@ -377,10 +882,14 @@ static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *
                     break;
                 }
 
-                /* Do the zero padding. */
-                if ((cbReadTotal & (sizeof(RTZIPTARHDR) - 1)) && RT_SUCCESS(rc))
+                RTMemTmpFree(pvBufFree);
+
+                /*
+                 * Do the zero padding.
+                 */
+                if ((cbReadTotal & (RTZIPTAR_BLOCKSIZE - 1)) && RT_SUCCESS(rc))
                 {
-                    size_t cbToZero = sizeof(RTZIPTARHDR) - (cbReadTotal & (sizeof(RTZIPTARHDR) - 1));
+                    size_t cbToZero = RTZIPTAR_BLOCKSIZE - (cbReadTotal & (RTZIPTAR_BLOCKSIZE - 1));
                     rc = RTVfsIoStrmWrite(pThis->hVfsIos, g_abRTZero4K, cbToZero, true /*fBlocking*/, NULL);
                     if (RT_SUCCESS(rc))
                         pThis->cbWritten += cbToZero;
@@ -390,34 +899,95 @@ static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *
                  * Update the header.  We ASSUME that aHdr[0] is unmodified
                  * from before the data pumping above and just update the size.
                  */
-                if (RT_SUCCESS(rc) && (RTFOFF)cbReadTotal != pObjInfo->cbObject)
+                if ((RTFOFF)cbReadTotal != pObjInfo->cbObject && RT_SUCCESS(rc))
                 {
-                    RTVFSFILE hVfsFile = RTVfsIoStrmToFile(pThis->hVfsIos);
-                    if (hVfsFile != NIL_RTVFSFILE)
+                    RTFOFF const offRestore = RTVfsFileTell(pThis->hVfsFile);
+                    if (offRestore >= 0)
                     {
-                        RTFOFF offRestore = RTVfsFileTell(hVfsFile);
-                        if (offRestore >= 0)
+                        rc = rtZipTarFssWriter_FormatOffset(pThis->aHdrs[0].Common.size, cbReadTotal);
+                        if (RT_SUCCESS(rc))
+                            rc = rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
+                        if (RT_SUCCESS(rc))
                         {
-                            rc = rtZipTarFssWriter_FormatOffset(pThis->aHdrs[0].Common.size, cbReadTotal);
+                            rc = RTVfsFileWriteAt(pThis->hVfsFile, offHdr, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), NULL);
                             if (RT_SUCCESS(rc))
-                                rc = rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = RTVfsFileWriteAt(hVfsFile, offHdr, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), NULL);
-                                if (RT_SUCCESS(rc))
-                                    rc = RTVfsFileSeek(hVfsFile, offRestore, RTFILE_SEEK_BEGIN, NULL);
-                            }
+                                rc = RTVfsFileSeek(pThis->hVfsFile, offRestore, RTFILE_SEEK_BEGIN, NULL);
                         }
-                        else
-                            rc = (int)offRestore;
-                        RTVfsFileRelease(hVfsFile);
                     }
                     else
-                        AssertFailedStmt(rc = VERR_NOT_A_FILE);
+                        rc = (int)offRestore;
                 }
+
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
+            }
+        }
+        else
+            rc = (int)offHdr;
+        pThis->rcFatal = rc;
+    }
+    return rc;
+}
+
+
+/**
+ * Adds a file to the stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The TAR writer instance.
+ * @param   pszPath         The path to the file.
+ * @param   hVfsIos         The I/O stream of the file.
+ * @param   fFlags          The RTVFSFSSTREAMOPS::pfnAdd flags.
+ * @param   pObjInfo        The object information.
+ * @param   pszOwnerNm      The owner name.
+ * @param   pszGroupNm      The group name.
+ */
+static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath, RTVFSIOSTREAM hVfsIos,
+                                     PCRTFSOBJINFO pObjInfo, const char *pszOwnerNm, const char *pszGroupNm)
+{
+    /*
+     * Append the header.
+     */
+    int rc = rtZipTarFssWriter_ObjInfoToHdr(pThis, pszPath, pObjInfo, pszOwnerNm, pszGroupNm, UINT8_MAX);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTVfsIoStrmWrite(pThis->hVfsIos, pThis->aHdrs, pThis->cHdrs * sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->cbWritten += pThis->cHdrs * sizeof(pThis->aHdrs[0]);
+
+            /*
+             * Copy the bytes.  Padding the last buffer to a multiple of 512.
+             */
+            void    *pvBufFree;
+            size_t   cbBuf;
+            uint8_t *pbBuf = rtZipTarFssWrite_AllocBuf(pThis, &cbBuf, &pvBufFree, pObjInfo->cbObject);
+
+            uint64_t cbLeft = pObjInfo->cbObject;
+            while (cbLeft > 0)
+            {
+                size_t cbRead = cbLeft > cbBuf ? cbBuf : (size_t)cbLeft;
+                rc = RTVfsIoStrmRead(hVfsIos, pbBuf, cbRead, true /*fBlocking*/, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+
+                size_t cbToWrite = cbRead;
+                if (cbRead & (RTZIPTAR_BLOCKSIZE - 1))
+                {
+                    size_t cbToZero = RTZIPTAR_BLOCKSIZE - (cbRead & (RTZIPTAR_BLOCKSIZE - 1));
+                    memset(&pbBuf[cbRead], 0, cbToZero);
+                    cbToWrite += cbToZero;
+                }
+
+                rc = RTVfsIoStrmWrite(pThis->hVfsIos, pbBuf, cbToWrite, true /*fBlocking*/, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+                pThis->cbWritten += cbToWrite;
+                cbLeft -= cbRead;
             }
 
-            RTMemTmpFree(pbFree);
+            RTMemTmpFree(pvBufFree);
+
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
         }
@@ -532,6 +1102,12 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Close(void *pvThis)
     RTVfsIoStrmRelease(pThis->hVfsIos);
     pThis->hVfsIos = NIL_RTVFSIOSTREAM;
 
+    if (pThis->hVfsFile != NIL_RTVFSFILE)
+    {
+        RTVfsFileRelease(pThis->hVfsFile);
+        pThis->hVfsFile = NIL_RTVFSFILE;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -579,14 +1155,34 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Add(void *pvThis, const char *pszPath
         strcpy(ObjGrpName.Attr.u.UnixGroup.szName, "somegroup");
 
     /*
-     * Do type specific handling.
+     * Do type specific handling.  File have several options and variations to
+     * take into account, thus the mess.
      */
     if (RTFS_IS_FILE(ObjInfo.Attr.fMode))
     {
         RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
         AssertReturn(hVfsIos != NIL_RTVFSIOSTREAM, VERR_WRONG_TYPE);
-        rc = rtZipTarFssWriter_AddFile(pThis, pszPath, hVfsIos, fFlags, &ObjInfo,
-                                       ObjOwnerName.Attr.u.UnixOwner.szName, ObjGrpName.Attr.u.UnixOwner.szName);
+
+        if (fFlags & RTVFSFSSTRM_ADD_F_STREAM)
+            rc = rtZipTarFssWriter_AddFileStream(pThis, pszPath, hVfsIos, &ObjInfo,
+                                                 ObjOwnerName.Attr.u.UnixOwner.szName, ObjGrpName.Attr.u.UnixOwner.szName);
+        else if (   !(pThis->fFlags & RTZIPTAR_C_SPARSE)
+                 || ObjInfo.cbObject < RTZIPTAR_MIN_SPARSE)
+            rc = rtZipTarFssWriter_AddFile(pThis, pszPath, hVfsIos, &ObjInfo,
+                                           ObjOwnerName.Attr.u.UnixOwner.szName, ObjGrpName.Attr.u.UnixOwner.szName);
+        else
+        {
+            RTVFSFILE hVfsFile = RTVfsObjToFile(hVfsObj);
+            if (hVfsFile != NIL_RTVFSFILE)
+            {
+                rc = rtZipTarFssWriter_AddFileSparse(pThis, pszPath, hVfsFile, hVfsIos, &ObjInfo,
+                                                     ObjOwnerName.Attr.u.UnixOwner.szName, ObjGrpName.Attr.u.UnixOwner.szName);
+                RTVfsFileRelease(hVfsFile);
+            }
+            else
+                rc = rtZipTarFssWriter_AddFile(pThis, pszPath, hVfsIos, &ObjInfo,
+                                               ObjOwnerName.Attr.u.UnixOwner.szName, ObjGrpName.Attr.u.UnixOwner.szName);
+        }
         RTVfsIoStrmRelease(hVfsIos);
     }
     else if (RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
@@ -611,12 +1207,29 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Add(void *pvThis, const char *pszPath
 static DECLCALLBACK(int) rtZipTarFssWriter_End(void *pvThis)
 {
     PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)pvThis;
-    if (RT_SUCCESS(pThis->rcFatal))
+    int rc = pThis->rcFatal;
+    if (RT_SUCCESS(rc))
     {
-        /** @todo investigate zero end records. */
-        return VINF_SUCCESS;
+        /*
+         * There are supposed to be two zero headers at the end of the archive.
+         * GNU tar may write more because of the way it does buffering,
+         * libarchive OTOH writes exactly two.
+         */
+        rc = RTVfsIoStrmWrite(pThis->hVfsIos, g_abRTZero4K, RTZIPTAR_BLOCKSIZE * 2, true /*fBlocking*/, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->cbWritten += RTZIPTAR_BLOCKSIZE * 2;
+
+            /*
+             * Flush the output.
+             */
+            rc = RTVfsIoStrmFlush(pThis->hVfsIos);
+            if (RT_SUCCESS(rc))
+                return rc;
+        }
+        pThis->rcFatal = rc;
     }
-    return pThis->rcFatal;
+    return rc;
 }
 
 
@@ -656,7 +1269,9 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
 
     if (enmFormat == RTZIPTARFORMAT_DEFAULT)
         enmFormat = RTZIPTARFORMAT_GNU;
-    AssertReturn(enmFormat == RTZIPTARFORMAT_GNU, VERR_NOT_IMPLEMENTED); /* Only implementing GNU output at the moment. */
+    AssertReturn(   enmFormat == RTZIPTARFORMAT_GNU
+                 || enmFormat == RTZIPTARFORMAT_USTAR
+                 , VERR_NOT_IMPLEMENTED); /* Only implementing GNU and USTAR output at the moment. */
 
     uint32_t cRefs = RTVfsIoStrmRetain(hVfsIosOut);
     AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
@@ -671,7 +1286,10 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
     if (RT_SUCCESS(rc))
     {
         pThis->hVfsIos   = hVfsIosOut;
+        pThis->hVfsFile  = RTVfsIoStrmToFile(hVfsIosOut);
+
         pThis->enmFormat = enmFormat;
+        pThis->fFlags    = fFlags;
         pThis->rcFatal   = VINF_SUCCESS;
 
         *phVfsFss = hVfsFss;
