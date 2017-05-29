@@ -358,6 +358,16 @@ RTDECL(void) RTPathStripSuffix(char *pszPath);
 RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath);
 
 /**
+ * Skips the root specification, if present.
+ *
+ * @return  Pointer to the first char after the root specification.  This can be
+ *          pointing to the terminator, if the path is only a root
+ *          specification.
+ * @param   pszPath     The path to skip ahead in.
+ */
+RTDECL(char *) RTPathSkipRootSpec(const char *pszPath);
+
+/**
  * Ensures that the path has a trailing path separator such that file names can
  * be appended without further work.
  *
@@ -478,6 +488,8 @@ RTDECL(bool) RTPathHasPath(const char *pszPath);
  * @param   pszPath     Path to check.
  */
 RTDECL(bool) RTPathStartsWithRoot(const char *pszPath);
+
+
 
 /**
  * Counts the components in the specified path.
