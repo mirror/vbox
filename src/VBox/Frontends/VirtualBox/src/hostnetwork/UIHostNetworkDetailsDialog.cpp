@@ -251,12 +251,16 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
             pLayoutInterface->setContentsMargins(10, 10, 10, 10);
 #endif
 
+            /* Get the required icon metric: */
+            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+
             /* Create automatic interface configuration layout: */
             QHBoxLayout *pLayoutAutomatic = new QHBoxLayout;
             AssertPtrReturnVoid(pLayoutAutomatic);
             {
                 /* Configure layout: */
                 pLayoutAutomatic->setContentsMargins(0, 0, 0, 0);
+
                 /* Create automatic interface configuration radio-button: */
                 m_pButtonAutomatic = new QRadioButton;
                 AssertPtrReturnVoid(m_pButtonAutomatic);
@@ -274,7 +278,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                     /* Configure label: */
                     m_pErrorPaneAutomatic->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
                     m_pErrorPaneAutomatic->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-                    m_pErrorPaneAutomatic->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneAutomatic->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                     .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutAutomatic->addWidget(m_pErrorPaneAutomatic);
                 }
@@ -308,7 +313,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                     /* Configure label: */
                     m_pErrorPaneManual->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
                     m_pErrorPaneManual->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-                    m_pErrorPaneManual->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneManual->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                  .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutManual->addWidget(m_pErrorPaneManual);
                 }
@@ -351,7 +357,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 {
                     /* Configure label: */
                     m_pErrorPaneIPv4->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneIPv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneIPv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutIPv4->addWidget(m_pErrorPaneIPv4);
                 }
@@ -391,7 +398,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 {
                     /* Configure label: */
                     m_pErrorPaneNMv4->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneNMv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneNMv4->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutNMv4->addWidget(m_pErrorPaneNMv4);
                 }
@@ -431,7 +439,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 {
                     /* Configure label: */
                     m_pErrorPaneIPv6->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneIPv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneIPv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutIPv6->addWidget(m_pErrorPaneIPv6);
                 }
@@ -471,7 +480,8 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 {
                     /* Configure label: */
                     m_pErrorPaneNMv6->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneNMv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneNMv6->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutNMv6->addWidget(m_pErrorPaneNMv6);
                 }
@@ -519,6 +529,9 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
             pLayoutDHCPServer->setContentsMargins(10, 10, 10, 10);
 #endif
 
+            /* Get the required icon metric: */
+            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+
             /* Create DHCP server status check-box: */
             m_pCheckBoxDHCP = new QCheckBox;
             AssertPtrReturnVoid(m_pCheckBoxDHCP);
@@ -565,7 +578,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 {
                     /* Configure label: */
                     m_pErrorPaneDHCPAddress->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneDHCPAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneDHCPAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                       .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutDHCPAddress->addWidget(m_pErrorPaneDHCPAddress);
                 }
@@ -605,7 +619,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 {
                     /* Configure label: */
                     m_pErrorPaneDHCPMask->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneDHCPMask->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneDHCPMask->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                    .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutDHCPMask->addWidget(m_pErrorPaneDHCPMask);
                 }
@@ -645,7 +660,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 {
                     /* Configure label: */
                     m_pErrorPaneDHCPLowerAddress->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneDHCPLowerAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneDHCPLowerAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                            .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutDHCPLowerAddress->addWidget(m_pErrorPaneDHCPLowerAddress);
                 }
@@ -685,7 +701,8 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 {
                     /* Configure label: */
                     m_pErrorPaneDHCPUpperAddress->setAlignment(Qt::AlignCenter);
-                    m_pErrorPaneDHCPUpperAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(16, 16)));
+                    m_pErrorPaneDHCPUpperAddress->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                            .pixmap(QSize(iIconMetric, iIconMetric)));
                     /* Add into layout: */
                     pLayoutDHCPUpperAddress->addWidget(m_pErrorPaneDHCPUpperAddress);
                 }
