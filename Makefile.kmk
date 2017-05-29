@@ -221,36 +221,36 @@ else # win x11
      endif # solaris
 
 $(foreach qtmod,$(VBOX_QT_MOD_NAMES),$$(qt5-bin_0_OUTDIR)/lib$(qtmod).so.$(QT5_VERSION)): \
-       $$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
-       $(call MSG_INST_FILE,$^,$@)
-       $(QUIET)$(CP) $^ $@
-       $(QUIET)chrpath --delete $@
+	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/% | $$(qt5-bin_0_OUTDIR)/
+	$(call MSG_INST_FILE,$^,$@)
+	$(QUIET)$(CP) $^ $@
+	$(QUIET)chrpath --delete $@
 
      ifneq ($(KBUILD_TARGET),solaris)
 $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
-       $$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
-       $(call MSG_INST_FILE,$^,$@)
-       $(QUIET)$(MKDIR) -p $(@D)
-       $(QUIET)$(CP) $^ $@
-       $(QUIET)chrpath --delete $@
+	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
+	$(call MSG_INST_FILE,$^,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(CP) $^ $@
+	$(QUIET)chrpath --delete $@
      endif # !solaris
 
      # @todo For solaris dlopen fails to navigate executable rpath to dependent libraries,
      #       so add explicit rpath for libqxcb.so, find better solution later.
      ifeq ($(KBUILD_TARGET),solaris)
 $(foreach lib,$(VBOX_QT_PLUGINS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
-       $$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
-       $(call MSG_INST_FILE,$^,$@)
-       $(QUIET)$(MKDIR) -p $(@D)
-       $(QUIET)$(CP) $^ $@
-       $(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
+	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT)/% | $$(qt5-bin_0_OUTDIR)/
+	$(call MSG_INST_FILE,$^,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(CP) $^ $@
+	$(QUIET)chrpath --replace "\$$ORIGIN/../../" $@
      endif # solaris
 
 $(foreach lib,$(VBOX_QT_LEGACY_LIBS),$$(qt5-bin_0_OUTDIR)/$(lib)): \
-       $$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/legacy/% | $$(qt5-bin_0_OUTDIR)/
-       $(call MSG_INST_FILE,$^,$@)
-       $(QUIET)$(CP) $^ $@
-       $(QUIET)chrpath --delete $@
+	$$(qt5-bin_0_OUTDIR)/% : $(VBOX_PATH_QT_LIB)/legacy/% | $$(qt5-bin_0_OUTDIR)/
+	$(call MSG_INST_FILE,$^,$@)
+	$(QUIET)$(CP) $^ $@
+	$(QUIET)chrpath --delete $@
 
    endif # !VBOX_WITH_HARDENING
   endif # x11
