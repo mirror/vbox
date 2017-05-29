@@ -1963,6 +1963,8 @@ RT_C_DECLS_END
 /** VFS chain element preceding the final path needs to be a directory, file
  * system or file system stream. */
 #define VERR_VFS_CHAIN_TYPE_MISMATCH_PATH_ONLY      (-22156)
+/** VFS chain doesn't end with a path only element. */
+#define VERR_VFS_CHAIN_NOT_PATH_ONLY                (-22157)
 /** @} */
 
 /** @name RTDvm status codes

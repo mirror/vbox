@@ -1490,3 +1490,37 @@ RTDECL(bool) RTVfsChainIsSpec(const char *pszSpec)
 }
 
 
+RTDECL(int) RTVfsChainQueryFinalPath(const char *pszSpec, char **ppszFinalPath, uint32_t *poffError)
+{
+    /* Make sure we've got an error info variable. */
+    uint32_t offErrorIgn;
+    if (!poffError)
+        poffError = &offErrorIgn;
+    *poffError = 0;
+
+    /*
+     * If not chain specifier, just duplicate the input and return.
+     */
+    if (strncmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX, sizeof(RTVFSCHAIN_SPEC_PREFIX) - 1) != 0)
+        return RTStrDupEx(ppszFinalPath, pszSpec);
+
+    /*
+     * Parse it and check out the last element.
+     */
+    PRTVFSCHAINSPEC pSpec = NULL;
+    int rc = RTVfsChainSpecParse(pszSpec,  0 /*fFlags*/, RTVFSOBJTYPE_BASE, &pSpec, poffError);
+    if (RT_SUCCESS(rc))
+    {
+        PCRTVFSCHAINELEMSPEC pLast = &pSpec->paElements[pSpec->cElements - 1];
+        if (pLast->pszProvider == NULL)
+            rc = RTStrDupEx(ppszFinalPath, pLast->paArgs[0].psz);
+        else
+        {
+            rc = VERR_VFS_CHAIN_NOT_PATH_ONLY;
+            *poffError = pLast->offSpec;
+        }
+        RTVfsChainSpecFree(pSpec);
+    }
+    return rc;
+}
+
