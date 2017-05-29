@@ -1637,50 +1637,6 @@ efi-packing:
 
 
 #
-# Generate VirtualBox-x.x.x.tar.bz2 (OSE) tarballs for distribution
-# - includes kBuild
-# - must be executed on an OSE checkout
-#
-
-# the path where to store the tarball
-TARBALLPATH ?= $(abspath $(PATH_ROOT)/..)
-# the root directory inside the tarball
-TARBALLROOT ?= VirtualBox-$(subst _OSE,,$(VBOX_VERSION_STRING))
-# the name of the tarball file
-TARBALLNAME ?= VirtualBox-$(subst _OSE,,$(VBOX_VERSION_STRING)).tar.bz2
-snapshot-ose:
-	@$(call MSG_L1,Creating tarball $(TARBALLPATH)/$(TARBALLNAME))
-	@if [ -r "$(PATH_ROOT)/src/VBox/RDP/server/server.cpp" ]; then \
-	    echo; \
-	    echo "Found RDP stuff, refused to build OSE tarball!"; \
-	    echo; \
-	    exit 1; \
-	fi; \
-	if [ -z "$(VBOX_OSE)" ]; then \
-	    echo; \
-	    echo "Please do 'kmk snapshot-ose VBOX_OSE=1'"; \
-	    echo; \
-	    exit 1; \
-	fi
-	$(QUIET)$(MKDIR) -p $(TARBALLPATH)
-	$(QUIET)$(RM) -f $(TARBALLPATH)/$(TARBALLROOT)
-	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(TARBALLPATH)/$(TARBALLROOT)
-	$(QUIET)tar -cjh --dereference --owner 0 --group 0 --totals \
-	    --exclude=.svn \
-	    --exclude=$(TARBALLROOT)/out \
-	    --exclude=$(TARBALLROOT)/env.sh \
-	    --exclude=$(TARBALLROOT)/configure.log \
-	    --exclude=$(TARBALLROOT)/build.log \
-	    --exclude=$(TARBALLROOT)/AutoConfig.kmk \
-	    --exclude=$(TARBALLROOT)/LocalConfig.kmk \
-	    --exclude=$(TARBALLROOT)/prebuild \
-	    -C $(TARBALLPATH) \
-	    -f $(TARBALLPATH)/$(TARBALLNAME) \
-	    $(TARBALLROOT)
-	$(QUIET)$(RM) $(TARBALLPATH)/$(TARBALLROOT)
-
-
-#
 # Generate VirtualBox-x.x.x.tar.bz2 (PUEL) zip archives for internal use only
 # - includes kBuild
 # - must be executed on an PUEL checkout
