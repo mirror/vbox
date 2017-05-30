@@ -110,6 +110,38 @@ typedef RTZIPTARSPARSE *PRTZIPTARSPARSE;
 /** Pointer to a const TAR sparse file info. */
 typedef RTZIPTARSPARSE const *PCRTZIPTARSPARSE;
 
+
+/** Pointer to a the private data of a TAR filesystem stream. */
+typedef struct RTZIPTARFSSTREAMWRITER *PRTZIPTARFSSTREAMWRITER;
+
+
+/**
+ * Instance data for a file or I/O stream returned by
+ * RTVFSFSSTREAMOPS::pfnPushFile.
+ */
+typedef struct RTZIPTARFSSTREAMWRITERPUSH
+{
+    /** Pointer to the parent FS stream writer instance.
+     * This is set to NULL should the push object live longer than the stream. */
+    PRTZIPTARFSSTREAMWRITER pParent;
+    /** The header offset, UINT64_MAX if non-seekable output. */
+    uint64_t                offHdr;
+    /** The data offset, UINT64_MAX if non-seekable output. */
+    uint64_t                offData;
+    /** The current I/O stream position (relative to offData). */
+    uint64_t                offCurrent;
+    /** The expected size amount of file content.  This is set to UINT64_MAX if
+     * open-ended file size. */
+    uint64_t                cbExpected;
+    /** The current amount of file content written. */
+    uint64_t                cbCurrent;
+    /** Object info copy for rtZipTarWriterPush_QueryInfo. */
+    RTFSOBJINFO             ObjInfo;
+} RTZIPTARFSSTREAMWRITERPUSH;
+/** Pointer to a push I/O instance. */
+typedef RTZIPTARFSSTREAMWRITERPUSH *PRTZIPTARFSSTREAMWRITERPUSH;
+
+
 /**
  * Tar filesystem stream private data.
  */
@@ -119,6 +151,9 @@ typedef struct RTZIPTARFSSTREAMWRITER
     RTVFSIOSTREAM           hVfsIos;
     /** Non-nil if the output is a file.  */
     RTVFSFILE               hVfsFile;
+
+    /** The current push file.  NULL if none. */
+    PRTZIPTARFSSTREAMWRITERPUSH pPush;
 
     /** The TAR format. */
     RTZIPTARFORMAT          enmFormat;
@@ -135,13 +170,12 @@ typedef struct RTZIPTARFSSTREAMWRITER
     /** Header buffers returned by rtZipTarFssWriter_ObjInfoToHdr. */
     RTZIPTARHDR             aHdrs[3];
 } RTZIPTARFSSTREAMWRITER;
-/** Pointer to a the private data of a TAR filesystem stream. */
-typedef RTZIPTARFSSTREAMWRITER *PRTZIPTARFSSTREAMWRITER;
 
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static int rtZipTarFssWriter_CompleteCurrentPushFile(PRTZIPTARFSSTREAMWRITER pThis);
 static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath, RTVFSIOSTREAM hVfsIos,
                                      PCRTFSOBJINFO pObjInfo, const char *pszOwnerNm, const char *pszGroupNm);
 
@@ -377,6 +411,542 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
      */
     pThis->cHdrs = 1;
     return rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
+}
+
+
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_Close(void *pvThis)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush   = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+    PRTZIPTARFSSTREAMWRITER     pParent = pPush->pParent;
+    if (pParent)
+    {
+        if (pParent->pPush == pPush)
+            rtZipTarFssWriter_CompleteCurrentPushFile(pParent);
+        else
+            AssertFailedStmt(pPush->pParent = NULL);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+
+    /* Basic info (w/ additional unix attribs). */
+    *pObjInfo = pPush->ObjInfo;
+    pObjInfo->cbObject = pPush->cbCurrent;
+    pObjInfo->cbAllocated = RT_ALIGN_64(pPush->cbCurrent, RTZIPTAR_BLOCKSIZE);
+
+    /* Additional info. */
+    switch (enmAddAttr)
+    {
+        case RTFSOBJATTRADD_NOTHING:
+        case RTFSOBJATTRADD_UNIX:
+            Assert(pObjInfo->Attr.enmAdditional == RTFSOBJATTRADD_UNIX);
+            break;
+
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pObjInfo->Attr.u.UnixOwner.uid = pPush->ObjInfo.Attr.u.Unix.uid;
+            if (pPush->pParent)
+                strcpy(pObjInfo->Attr.u.UnixOwner.szName, pPush->pParent->aHdrs[0].Common.uname);
+            else
+                pObjInfo->Attr.u.UnixOwner.szName[0] = '\0';
+            pObjInfo->Attr.enmAdditional = enmAddAttr;
+            break;
+
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pObjInfo->Attr.u.UnixGroup.gid = pPush->ObjInfo.Attr.u.Unix.gid;
+            if (pPush->pParent)
+                strcpy(pObjInfo->Attr.u.UnixGroup.szName, pPush->pParent->aHdrs[0].Common.uname);
+            else
+                pObjInfo->Attr.u.UnixGroup.szName[0] = '\0';
+            pObjInfo->Attr.enmAdditional = enmAddAttr;
+            break;
+
+        case RTFSOBJATTRADD_EASIZE:
+            pObjInfo->Attr.u.EASize.cb = 0;
+            pObjInfo->Attr.enmAdditional = enmAddAttr;
+            break;
+
+        default:
+        AssertFailed();
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+{
+    /* No read support, sorry. */
+    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbRead);
+    AssertFailed();
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush   = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+    PRTZIPTARFSSTREAMWRITER     pParent = pPush->pParent;
+    AssertPtrReturn(pParent, VERR_WRONG_ORDER);
+    Assert(!pcbWritten || !*pcbWritten /* assume caller sets this to zero so we can be lazy here */);
+
+    int rc = pParent->rcFatal;
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Single segment at a time.
+     */
+    Assert(pSgBuf->cSegs == 1);
+    size_t      cbToWrite = pSgBuf->paSegs[0].cbSeg;
+    void const *pvToWrite = pSgBuf->paSegs[0].pvSeg;
+
+    /*
+     * Deal with simple non-seeking write first.
+     */
+    Assert(pPush->offCurrent <= pPush->cbExpected);
+    Assert(pPush->offCurrent <= pPush->cbCurrent);
+    if (   off < 0
+        || (uint64_t)off == pPush->offCurrent)
+    {
+        AssertMsgReturn(cbToWrite <= pPush->cbExpected - pPush->offCurrent,
+                        ("offCurrent=%#RX64 + cbToWrite=%#zx = %#RX64; cbExpected=%RX64\n",
+                         pPush->offCurrent, cbToWrite, pPush->offCurrent + cbToWrite, pPush->cbExpected),
+                        VERR_DISK_FULL);
+        size_t cbWritten = 0;
+        rc = RTVfsIoStrmWrite(pParent->hVfsIos, pvToWrite, cbToWrite, fBlocking, &cbWritten);
+        if (RT_SUCCESS(rc))
+        {
+            pPush->offCurrent += cbWritten;
+            if (pPush->offCurrent > pPush->cbCurrent)
+            {
+                pParent->cbWritten = pPush->offCurrent - pPush->cbCurrent;
+                pPush->cbCurrent   = pPush->offCurrent;
+            }
+        }
+    }
+    /*
+     * Needs to seek, more validation, possible zero filling of the space in between.
+     */
+    else
+    {
+        AssertMsgReturn((uint64_t)off <= pPush->cbExpected,
+                        ("off=%#RX64 cbExpected=%#RX64", (uint64_t)off, pPush->cbExpected),
+                        VERR_SEEK);
+        AssertMsgReturn(cbToWrite <= pPush->cbExpected - (uint64_t)off,
+                        ("off=%#RX64 + cbToWrite=%#zx = %#RX64; cbExpected=%RX64\n",
+                         (uint64_t)off, cbToWrite, (uint64_t)off + cbToWrite, pPush->cbExpected),
+                        VERR_DISK_FULL);
+
+        /* Zero fill seek gap if necessary. */
+        if ((uint64_t)off > pPush->cbCurrent)
+        {
+            if (pPush->offCurrent == pPush->cbCurrent)
+                rc = VINF_SUCCESS;
+            else
+            {
+                AssertReturn(pParent->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
+                rc = RTVfsFileSeek(pParent->hVfsFile, pPush->offData + pPush->cbCurrent, RTFILE_SEEK_BEGIN, NULL);
+                if (RT_SUCCESS(rc))
+                    pPush->offCurrent = pPush->cbCurrent;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                uint64_t cbToZero = (uint64_t)off - pPush->cbCurrent;
+                rc = RTVfsIoStrmZeroFill(pParent->hVfsIos, cbToZero);
+                if (RT_SUCCESS(rc))
+                {
+                    pPush->offCurrent  += cbToZero;
+                    pParent->cbWritten += cbToZero;
+                }
+            }
+        }
+        /* Seek backwards to the desired position. */
+        else
+        {
+            AssertReturn(pParent->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
+            rc = RTVfsFileSeek(pParent->hVfsFile, pPush->offData + (uint64_t)off, RTFILE_SEEK_BEGIN, NULL);
+            if (RT_SUCCESS(rc))
+                pPush->offCurrent = (uint64_t)off;
+        }
+
+        /* Do the write. */
+        if (RT_SUCCESS(rc))
+        {
+            size_t cbWritten = 0;
+            rc = RTVfsIoStrmWrite(pParent->hVfsIos, pvToWrite, cbToWrite, fBlocking, &cbWritten);
+            if (RT_SUCCESS(rc))
+            {
+                pPush->offCurrent += cbWritten;
+                if (pPush->offCurrent > pPush->cbCurrent)
+                {
+                    pParent->cbWritten = pPush->offCurrent - pPush->cbCurrent;
+                    pPush->cbCurrent   = pPush->offCurrent;
+                }
+            }
+        }
+    }
+
+    /*
+     * Fatal errors get down here, non-fatal ones returns earlier.
+     */
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    pParent->rcFatal = rc;
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_Flush(void *pvThis)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush   = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+    PRTZIPTARFSSTREAMWRITER     pParent = pPush->pParent;
+    AssertPtrReturn(pParent, VERR_WRONG_ORDER);
+    int rc = pParent->rcFatal;
+    if (RT_SUCCESS(rc))
+        pParent->rcFatal = rc = RTVfsIoStrmFlush(pParent->hVfsIos);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                                                    uint32_t *pfRetEvents)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+    PRTZIPTARFSSTREAMWRITER     pParent = pPush->pParent;
+    AssertPtrReturn(pParent, VERR_WRONG_ORDER);
+    return RTVfsIoStrmPoll(pParent->hVfsIos, fEvents, cMillies, fIntr, pfRetEvents);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_Tell(void *pvThis, PRTFOFF poffActual)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+    *poffActual = (RTFOFF)pPush->offCurrent;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnSkip}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_Skip(void *pvThis, RTFOFF cb)
+{
+    RT_NOREF(pvThis, cb);
+    AssertFailed();
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    RT_NOREF(pvThis, fMode, fMask);
+    AssertFailed();
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                                     PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    AssertFailed();
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    RT_NOREF(pvThis, uid, gid);
+    AssertFailed();
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSeek}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush   = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+    PRTZIPTARFSSTREAMWRITER     pParent = pPush->pParent;
+    AssertPtrReturn(pParent, VERR_WRONG_ORDER);
+
+    int rc = pParent->rcFatal;
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Calculate the new file offset.
+     */
+    uint64_t offNew;
+    switch (uMethod)
+    {
+        case RTFILE_SEEK_BEGIN:
+            AssertReturn(offSeek >= 0, VERR_NEGATIVE_SEEK);
+            offNew = (uint64_t)offSeek;
+            break;
+
+        case RTFILE_SEEK_CURRENT:
+            if (offSeek >= 0)
+            {
+                offNew = (uint64_t)offSeek + pPush->offCurrent;
+                AssertReturn(offNew >= pPush->offCurrent, VERR_SEEK);
+            }
+            else if ((uint64_t)-offSeek <= pPush->offCurrent)
+                offNew = 0;
+            else
+                offNew = pPush->offCurrent + offSeek;
+            break;
+
+        case RTFILE_SEEK_END:
+            if (offSeek >= 0)
+            {
+                offNew = (uint64_t)offSeek + pPush->cbCurrent;
+                AssertReturn(offNew >= pPush->cbCurrent, VERR_SEEK);
+            }
+            else if ((uint64_t)-offSeek <= pPush->cbCurrent)
+                offNew = 0;
+            else
+                offNew = pPush->cbCurrent + offSeek;
+            break;
+
+        default:
+            AssertFailedReturn(VERR_INTERNAL_ERROR_5);
+    }
+
+    /*
+     * Check the new file offset against expectations.
+     */
+    AssertMsgReturn(offNew <= pPush->cbExpected, ("offNew=%#RX64 cbExpected=%#Rx64\n", offNew, pPush->cbExpected), VERR_SEEK);
+
+    /*
+     * Any change at all?  We can always hope...
+     */
+    if (offNew == pPush->offCurrent)
+    { }
+    /*
+     * Gap that needs zero filling?
+     */
+    else if (offNew > pPush->cbCurrent)
+    {
+        if (pPush->offCurrent != pPush->cbCurrent)
+        {
+            AssertReturn(pParent->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
+            rc = RTVfsFileSeek(pParent->hVfsFile, pPush->offData + pPush->cbCurrent, RTFILE_SEEK_BEGIN, NULL);
+            if (RT_FAILURE(rc))
+                return pParent->rcFatal = rc;
+            pPush->offCurrent = pPush->cbCurrent;
+        }
+
+        uint64_t cbToZero = offNew - pPush->cbCurrent;
+        rc = RTVfsIoStrmZeroFill(pParent->hVfsIos, cbToZero);
+        if (RT_FAILURE(rc))
+            return pParent->rcFatal = rc;
+        pParent->cbWritten += cbToZero;
+        pPush->cbCurrent = pPush->offCurrent = offNew;
+    }
+    /*
+     * Just change the file positions.
+     */
+    else
+    {
+        AssertReturn(pParent->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
+        rc = RTVfsFileSeek(pParent->hVfsFile, pPush->offData + offNew, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_FAILURE(rc))
+            return pParent->rcFatal = rc;
+        pPush->offCurrent = offNew;
+    }
+
+    *poffActual = pPush->offCurrent;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQuerySize}
+ */
+static DECLCALLBACK(int) rtZipTarWriterPush_QuerySize(void *pvThis, uint64_t *pcbFile)
+{
+    PRTZIPTARFSSTREAMWRITERPUSH pPush = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
+    *pcbFile = pPush->cbCurrent;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * TAR writer push I/O stream operations.
+ */
+DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_rtZipTarWriterIoStrmOps =
+{
+    { /* Obj */
+        RTVFSOBJOPS_VERSION,
+        RTVFSOBJTYPE_IO_STREAM,
+        "TAR push I/O Stream",
+        rtZipTarWriterPush_Close,
+        rtZipTarWriterPush_QueryInfo,
+        RTVFSOBJOPS_VERSION
+    },
+    RTVFSIOSTREAMOPS_VERSION,
+    RTVFSIOSTREAMOPS_FEAT_NO_SG,
+    rtZipTarWriterPush_Read,
+    rtZipTarWriterPush_Write,
+    rtZipTarWriterPush_Flush,
+    rtZipTarWriterPush_PollOne,
+    rtZipTarWriterPush_Tell,
+    rtZipTarWriterPush_Skip,
+    NULL /*ZeroFill*/,
+    RTVFSIOSTREAMOPS_VERSION,
+};
+
+
+/**
+ * TAR writer push file operations.
+ */
+DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtZipTarWriterFileOps =
+{
+    { /* Stream */
+        { /* Obj */
+            RTVFSOBJOPS_VERSION,
+            RTVFSOBJTYPE_FILE,
+            "TAR push file",
+            rtZipTarWriterPush_Close,
+            rtZipTarWriterPush_QueryInfo,
+            RTVFSOBJOPS_VERSION
+        },
+        RTVFSIOSTREAMOPS_VERSION,
+        RTVFSIOSTREAMOPS_FEAT_NO_SG,
+        rtZipTarWriterPush_Read,
+        rtZipTarWriterPush_Write,
+        rtZipTarWriterPush_Flush,
+        rtZipTarWriterPush_PollOne,
+        rtZipTarWriterPush_Tell,
+        rtZipTarWriterPush_Skip,
+        NULL /*ZeroFill*/,
+        RTVFSIOSTREAMOPS_VERSION,
+    },
+    RTVFSFILEOPS_VERSION,
+    0,
+    { /* ObjSet */
+        RTVFSOBJSETOPS_VERSION,
+        RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
+        rtZipTarWriterPush_SetMode,
+        rtZipTarWriterPush_SetTimes,
+        rtZipTarWriterPush_SetOwner,
+        RTVFSOBJSETOPS_VERSION
+    },
+    rtZipTarWriterPush_Seek,
+    rtZipTarWriterPush_QuerySize,
+    RTVFSFILEOPS_VERSION
+};
+
+
+
+/**
+ * Checks rcFatal and completes any current push file.
+ *
+ * On return the output stream position will be at the next header location.
+ *
+ * After this call, the push object no longer can write anything.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The TAR writer instance.
+ */
+static int rtZipTarFssWriter_CompleteCurrentPushFile(PRTZIPTARFSSTREAMWRITER pThis)
+{
+    /*
+     * Check if there is a push file pending, remove it if there is.
+     * We also check for fatal errors at this point so the caller doesn't need to.
+     */
+    PRTZIPTARFSSTREAMWRITERPUSH pPush = pThis->pPush;
+    if (!pPush)
+    {
+        AssertRC(pThis->rcFatal);
+        return pThis->rcFatal;
+    }
+
+    pThis->pPush   = NULL;
+    pPush->pParent = NULL;
+
+    int rc = pThis->rcFatal;
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Do we need to update the header.  pThis->aHdrs[0] will retain the current
+     * content at pPush->offHdr and we only need to update the size.
+     */
+    if (pPush->cbExpected == UINT64_MAX)
+    {
+        rc = rtZipTarFssWriter_FormatOffset(pThis->aHdrs[0].Common.size, pPush->cbCurrent);
+        if (RT_SUCCESS(rc))
+            rc = rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTVfsFileWriteAt(pThis->hVfsFile, pPush->offHdr, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), NULL);
+            if (RT_SUCCESS(rc))
+                rc = RTVfsFileSeek(pThis->hVfsFile, pPush->offData + pPush->cbCurrent, RTFILE_SEEK_BEGIN, NULL);
+        }
+    }
+    /*
+     * Check that we've received all the data we were promissed in the PushFile
+     * call, fail if we weren't.
+     */
+    else
+        AssertMsgStmt(pPush->cbCurrent == pPush->cbExpected,
+                      ("cbCurrent=%#RX64 cbExpected=%#RX64\n", pPush->cbCurrent, pPush->cbExpected),
+                      rc = VERR_BUFFER_UNDERFLOW);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Do zero padding if necessary.
+         */
+        if (pPush->cbCurrent & (RTZIPTAR_BLOCKSIZE - 1))
+        {
+            size_t cbToZero = RTZIPTAR_BLOCKSIZE - (pPush->cbCurrent & (RTZIPTAR_BLOCKSIZE - 1));
+            rc = RTVfsIoStrmWrite(pThis->hVfsIos, g_abRTZero4K, cbToZero, true /*fBlocking*/, NULL);
+            if (RT_SUCCESS(rc))
+                pThis->cbWritten += cbToZero;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    pThis->rcFatal = rc;
+    return rc;
 }
 
 
@@ -1099,6 +1669,8 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Close(void *pvThis)
 {
     PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)pvThis;
 
+    rtZipTarFssWriter_CompleteCurrentPushFile(pThis);
+
     RTVfsIoStrmRelease(pThis->hVfsIos);
     pThis->hVfsIos = NIL_RTVFSIOSTREAM;
 
@@ -1132,16 +1704,17 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Add(void *pvThis, const char *pszPath
     PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)pvThis;
 
     /*
-     * Refuse to do anything if we've encountered a fatal error.
-     * Assert this because the caller should know better than calling us again.
+     * Before we continue we must complete any current push file and check rcFatal.
      */
-    AssertRCReturn(pThis->rcFatal, pThis->rcFatal);
+    int rc = rtZipTarFssWriter_CompleteCurrentPushFile(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Query information about the object.
      */
     RTFSOBJINFO ObjInfo;
-    int rc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_UNIX);
+    rc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_UNIX);
     AssertRCReturn(rc, rc);
 
     RTFSOBJINFO ObjOwnerName;
@@ -1202,12 +1775,146 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Add(void *pvThis, const char *pszPath
 
 
 /**
+ * @interface_method_impl{RTVFSFSSTREAMOPS,pfnPushFile}
+ */
+static DECLCALLBACK(int) rtZipTarFssWriter_PushFile(void *pvThis, const char *pszPath, uint64_t cbFile, PCRTFSOBJINFO paObjInfo,
+                                                    uint32_t cObjInfo, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)pvThis;
+
+    /*
+     * We can only deal with output of indeterminate length if the output is
+     * seekable (see also rtZipTarFssWriter_AddFileStream).
+     */
+    AssertReturn(cbFile != UINT64_MAX || pThis->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
+    AssertReturn(RT_BOOL(cbFile == UINT64_MAX) == RT_BOOL(fFlags & RTVFSFSSTRM_ADD_F_STREAM), VERR_INVALID_FLAGS);
+
+    /*
+     * Before we continue we must complete any current push file and check rcFatal.
+     */
+    int rc = rtZipTarFssWriter_CompleteCurrentPushFile(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * If no object info was provideded, fake up some.
+     */
+    const char *pszOwnerNm = "someone";
+    const char *pszGroupNm = "somegroup";
+    RTFSOBJINFO ObjInfo;
+    if (cObjInfo == 0)
+    {
+        /* Fake up a info. */
+        RT_ZERO(ObjInfo);
+        ObjInfo.cbObject                    = cbFile != UINT64_MAX ? cbFile : 0;
+        ObjInfo.cbAllocated                 = cbFile != UINT64_MAX ? RT_ALIGN_64(cbFile, RTZIPTAR_BLOCKSIZE) : UINT64_MAX;
+        RTTimeNow(&ObjInfo.ModificationTime);
+        ObjInfo.BirthTime                   = ObjInfo.ModificationTime;
+        ObjInfo.ChangeTime                  = ObjInfo.ModificationTime;
+        ObjInfo.AccessTime                  = ObjInfo.ModificationTime;
+        ObjInfo.Attr.fMode                  = RTFS_TYPE_FILE | 0666;
+        ObjInfo.Attr.enmAdditional          = RTFSOBJATTRADD_UNIX;
+        ObjInfo.Attr.u.Unix.uid             = NIL_RTUID;
+        ObjInfo.Attr.u.Unix.gid             = NIL_RTGID;
+        ObjInfo.Attr.u.Unix.cHardlinks      = 1;
+        //ObjInfo.Attr.u.Unix.INodeIdDevice   = 0;
+        //ObjInfo.Attr.u.Unix.INodeId         = 0;
+        //ObjInfo.Attr.u.Unix.fFlags          = 0;
+        //ObjInfo.Attr.u.Unix.GenerationId    = 0;
+        //ObjInfo.Attr.u.Unix.Device          = 0;
+    }
+    else
+    {
+        /* Make a copy of the object info and adjust the size, if necessary. */
+        ObjInfo = paObjInfo[0];
+        Assert(ObjInfo.Attr.enmAdditional == RTFSOBJATTRADD_UNIX);
+        Assert(RTFS_IS_FILE(ObjInfo.Attr.fMode));
+        if ((uint64_t)ObjInfo.cbObject != cbFile)
+        {
+            ObjInfo.cbObject    = cbFile != UINT64_MAX ? cbFile : 0;
+            ObjInfo.cbAllocated = cbFile != UINT64_MAX ? RT_ALIGN_64(cbFile, RTZIPTAR_BLOCKSIZE) : UINT64_MAX;
+        }
+
+        /* Lookup the group and user names. */
+        for (uint32_t i = 0; i < cObjInfo; i++)
+            if (   paObjInfo[i].Attr.enmAdditional == RTFSOBJATTRADD_UNIX_OWNER
+                && paObjInfo[i].Attr.u.UnixOwner.szName[0] != '\0')
+                pszOwnerNm = paObjInfo[i].Attr.u.UnixOwner.szName;
+            else if (   paObjInfo[i].Attr.enmAdditional == RTFSOBJATTRADD_UNIX_GROUP
+                     && paObjInfo[i].Attr.u.UnixGroup.szName[0] != '\0')
+                pszGroupNm = paObjInfo[i].Attr.u.UnixGroup.szName;
+    }
+
+    /*
+     * Create an I/O stream object for the caller to use.
+     */
+    PRTZIPTARFSSTREAMWRITERPUSH pPush;
+    RTVFSIOSTREAM hVfsIos;
+    if (pThis->hVfsFile == NIL_RTVFSFILE)
+    {
+        rc = RTVfsNewIoStream(&g_rtZipTarWriterIoStrmOps, sizeof(*pPush), RTFILE_O_WRITE, NIL_RTVFS, NIL_RTVFSLOCK,
+                              &hVfsIos, (void **)&pPush);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else
+    {
+        RTVFSFILE hVfsFile;
+        rc = RTVfsNewFile(&g_rtZipTarWriterFileOps, sizeof(*pPush), RTFILE_O_WRITE, NIL_RTVFS, NIL_RTVFSLOCK,
+                          &hVfsFile, (void **)&pPush);
+        if (RT_FAILURE(rc))
+            return rc;
+        hVfsIos = RTVfsFileToIoStream(hVfsFile);
+        RTVfsFileRelease(hVfsFile);
+    }
+    pPush->pParent      = NULL;
+    pPush->cbExpected   = cbFile;
+    pPush->offHdr       = RTVfsIoStrmTell(pThis->hVfsIos);
+    pPush->offData      = 0;
+    pPush->offCurrent   = 0;
+    pPush->cbCurrent    = 0;
+    pPush->ObjInfo      = ObjInfo;
+
+    /*
+     * Produce and write file headers.
+     */
+    rc = rtZipTarFssWriter_ObjInfoToHdr(pThis, pszPath, &ObjInfo, pszOwnerNm, pszGroupNm, RTZIPTAR_TF_NORMAL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTVfsIoStrmWrite(pThis->hVfsIos, pThis->aHdrs, pThis->cHdrs * sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->cbWritten += pThis->cHdrs * sizeof(pThis->aHdrs[0]);
+
+            /*
+             * Complete the object and return.
+             */
+            pPush->offData = RTVfsIoStrmTell(pThis->hVfsIos);
+            pPush->pParent = pThis;
+            pThis->pPush   = pPush;
+
+            *phVfsIos = hVfsIos;
+            return VINF_SUCCESS;
+        }
+        pThis->rcFatal = rc;
+    }
+
+    RTVfsIoStrmRelease(hVfsIos);
+    return rc;
+}
+
+
+/**
  * @interface_method_impl{RTVFSFSSTREAMOPS,pfnEnd}
  */
 static DECLCALLBACK(int) rtZipTarFssWriter_End(void *pvThis)
 {
     PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)pvThis;
-    int rc = pThis->rcFatal;
+
+    /*
+     * Make sure to complete any pending push file and that rcFatal is fine.
+     */
+    int rc = rtZipTarFssWriter_CompleteCurrentPushFile(pThis);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1250,6 +1957,7 @@ static const RTVFSFSSTREAMOPS rtZipTarFssOps =
     0,
     NULL,
     rtZipTarFssWriter_Add,
+    rtZipTarFssWriter_PushFile,
     rtZipTarFssWriter_End,
     RTVFSFSSTREAMOPS_VERSION
 };

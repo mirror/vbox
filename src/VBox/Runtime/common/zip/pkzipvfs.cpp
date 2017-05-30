@@ -1240,6 +1240,7 @@ static const RTVFSFSSTREAMOPS rtZipPkzipFssOps =
     rtZipPkzipFss_Next,
     NULL,
     NULL,
+    NULL,
     RTVFSFSSTREAMOPS_VERSION
 };
 

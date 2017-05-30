@@ -351,6 +351,48 @@ RTDECL(int)         RTVfsFsStrmAdd(RTVFSFSSTREAM hVfsFss, const char *pszPath, R
 /** @} */
 
 /**
+ * Pushes an byte stream onto the stream.
+ *
+ * The stream must be writable.
+ *
+ * This differs from RTVfsFsStrmAdd() in that it will create a regular file in
+ * the output file system stream and provide the actual content bytes via the
+ * returned I/O stream object.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_FUNCTION if called on a non-writable stream.
+ * @param   hVfsFss     The file system stream handle.
+ * @param   pszPath     The path to the file.
+ * @param   cbFile      The file size.  This can also be set to UINT64_MAX if
+ *                      the file system stream is backed by a file.
+ * @param   paObjInfo   Array of zero or more RTFSOBJINFO structures containing
+ *                      different pieces of information about the file.  If any
+ *                      provided, the first one should be a RTFSOBJATTRADD_UNIX
+ *                      one, additional can be supplied if wanted.  What exactly
+ *                      is needed depends on the underlying FS stream
+ *                      implementation.
+ * @param   cObjInfo    Number of items in the array @a paObjInfo points at.
+ * @param   fFlags      RTVFSFSSTRM_PUSH_F_XXX.
+ * @param   phVfsIos    Where to return the I/O stream to feed the file content
+ *                      to.  If the FS stream is backed by a file, the returned
+ *                      handle can be cast to a file if necessary.
+ */
+RTDECL(int)         RTVfsFsStrmPushFile(RTVFSFSSTREAM hVfsFss, const char *pszPath, uint64_t cbFile,
+                                        PCRTFSOBJINFO paObjInfo, uint32_t cObjInfo, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos);
+
+/** @name RTVFSFSSTRM_PUSH_F_XXX - Flags for RTVfsFsStrmPushFile.
+ * @{ */
+/** Input is an I/O stream of indeterminate length, read to the end and then
+ * update the file header.
+ * @note This is *only* possible if the output stream is actually a file. */
+#define RTVFSFSSTRM_PUSH_F_STREAM        RT_BIT_32(0)
+/** Mask of flags specific to the target stream. */
+#define RTVFSFSSTRM_PUSH_F_SPECIFIC_MASK UINT32_C(0xff000000)
+/** Valid bits. */
+#define RTVFSFSSTRM_PUSH_F_VALID_MASK    UINT32_C(0xff000001)
+/** @} */
+
+/**
  * Marks the end of the stream.
  *
  * The stream must be writable.

@@ -420,6 +420,35 @@ typedef struct RTVFSFSSTREAMOPS
     DECLCALLBACKMEMBER(int, pfnAdd)(void *pvThis, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags);
 
     /**
+     * Pushes an byte stream onto the stream.
+     *
+     * Writable streams only.
+     *
+     * This differs from RTVFSFSSTREAMOPS::pfnAdd() in that it will create a regular
+     * file in the output file system stream and provide the actual content bytes
+     * via the returned I/O stream object.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific directory data.
+     * @param   pszPath     The path to the file.
+     * @param   cbFile      The file size.  This can also be set to UINT64_MAX if
+     *                      the file system stream is backed by a file.
+     * @param   paObjInfo   Array of zero or more RTFSOBJINFO structures containing
+     *                      different pieces of information about the file.  If any
+     *                      provided, the first one should be a RTFSOBJATTRADD_UNIX
+     *                      one, additional can be supplied if wanted.  What exactly
+     *                      is needed depends on the underlying FS stream
+     *                      implementation.
+     * @param   cObjInfo    Number of items in the array @a paObjInfo points at.
+     * @param   fFlags      RTVFSFSSTRM_PUSH_F_XXX.
+     * @param   phVfsIos    Where to return the I/O stream to feed the file content
+     *                      to.  If the FS stream is backed by a file, the returned
+     *                      handle can be cast to a file if necessary.
+     */
+    DECLCALLBACKMEMBER(int, pfnPushFile)(void *pvThis, const char *pszPath, uint64_t cbFile,
+                                         PCRTFSOBJINFO paObjInfo, uint32_t cObjInfo, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos);
+
+    /**
      * Marks the end of the stream.
      *
      * Writable streams only.
@@ -439,7 +468,7 @@ typedef struct RTVFSFSSTREAMOPS
 typedef RTVFSFSSTREAMOPS const *PCRTVFSFSSTREAMOPS;
 
 /** The RTVFSFSSTREAMOPS structure version. */
-#define RTVFSFSSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x3f,1,0)
+#define RTVFSFSSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x3f,2,0)
 
 
 /**
