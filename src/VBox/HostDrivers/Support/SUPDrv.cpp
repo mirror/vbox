@@ -3882,6 +3882,7 @@ SUPR0DECL(int) SUPR0GetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
 #ifdef RT_OS_LINUX
     return supdrvOSGetCurrentGdtRw(pGdtRw);
 #else
+    NOREF(pGdtRw);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
