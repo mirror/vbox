@@ -96,3 +96,28 @@ DECLHIDDEN(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     HGSMIHeapFree (&pCtx->heapCtx, pvBuffer);
 #endif
 }
+
+/**
+ * Submit a command descriptor allocated by @a VBoxHGSMIBufferAlloc.
+ *
+ * @param  pCtx      the context containing the heap used
+ * @param  pvBuffer  the pointer returned by @a VBoxHGSMIBufferAlloc
+ */
+DECLHIDDEN(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                      void *pvBuffer)
+{
+    /* Initialize the buffer and get the offset for port IO. */
+    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (HGSMIGUESTCMDHEAP_GET(&pCtx->heapCtx), pvBuffer);
+
+    Assert(offBuffer != HGSMIOFFSET_VOID);
+    if (offBuffer != HGSMIOFFSET_VOID)
+    {
+        /* Submit the buffer to the host. */
+        VBVO_PORT_WRITE_U32(pCtx->port, offBuffer);
+        /* Make the compiler aware that the host has changed memory. */
+        ASMCompilerBarrier();
+        return VINF_SUCCESS;
+    }
+
+    return VERR_INVALID_PARAMETER;
+}

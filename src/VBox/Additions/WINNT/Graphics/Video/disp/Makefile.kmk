@@ -55,7 +55,7 @@ VBoxDisp_SOURCES     = \
 	xpdm/VBoxDisp.def \
 	xpdm/VBoxDisp.rc \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBufferAlloc.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBuffers.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIHostCmd.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp

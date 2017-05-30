@@ -48,7 +48,7 @@ VBoxVideo_SOURCES       = \
 	common/VBoxMPHGSMI.cpp \
 	common/VBoxMPVidModes.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBufferAlloc.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBuffers.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIHostCmd.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 VBoxVideo_LIBS          = \
@@ -121,7 +121,7 @@ ifdef VBOX_WITH_WDDM
  	common/VBoxMPCommon.cpp \
  	common/VBoxMPHGSMI.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
- 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBufferAlloc.cpp \
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBuffers.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIHostCmd.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp

@@ -104,7 +104,7 @@ vboxvideo_drv_SOURCES = \
 	vboxvideo.c \
 	vbva.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBufferAlloc.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBuffers.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
