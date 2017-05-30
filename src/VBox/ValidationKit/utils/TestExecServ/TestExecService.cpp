@@ -2974,9 +2974,10 @@ static RTEXITCODE txsAutoUpdateStage2(int argc, char **argv, bool *pfExit, const
  * @returns Exit code. Exit if this is non-zero or @a *pfExit is set.
  * @param   argc                The number of arguments.
  * @param   argv                The argument vector.
+ * @param   cSecsCdWait         Number of seconds to wait on the CD.
  * @param   pfExit              For indicating exit when the exit code is zero.
  */
-static RTEXITCODE txsAutoUpdateStage1(int argc, char **argv, bool *pfExit)
+static RTEXITCODE txsAutoUpdateStage1(int argc, char **argv, uint32_t cSecsCdWait, bool *pfExit)
 {
     /*
      * Figure names of the current service image and the potential upgrade.
@@ -3000,18 +3001,28 @@ static RTEXITCODE txsAutoUpdateStage1(int argc, char **argv, bool *pfExit)
 
     /*
      * Query information about the two images and read the entire potential source file.
+     * Because the CD may take a little time to be mounted when the system boots, we
+     * need to do some fudging here.
      */
+    uint64_t nsStart = RTTimeNanoTS();
     RTFSOBJINFO UpgradeInfo;
-    rc = RTPathQueryInfo(szUpgradePath, &UpgradeInfo, RTFSOBJATTRADD_NOTHING);
-    if (    rc == VERR_FILE_NOT_FOUND
-        ||  rc == VERR_PATH_NOT_FOUND
-        ||  rc == VERR_MEDIA_NOT_PRESENT
-        ||  rc == VERR_MEDIA_NOT_RECOGNIZED)
-        return RTEXITCODE_SUCCESS;
-    if (RT_FAILURE(rc))
+    for (;;)
     {
-        RTMsgError("RTPathQueryInfo(\"%s\"): %Rrc (upgrade)\n", szUpgradePath, rc);
-        return RTEXITCODE_SUCCESS;
+        rc = RTPathQueryInfo(szUpgradePath, &UpgradeInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+            break;
+        if (   rc != VERR_FILE_NOT_FOUND
+            && rc != VERR_PATH_NOT_FOUND
+            && rc != VERR_MEDIA_NOT_PRESENT
+            && rc != VERR_MEDIA_NOT_RECOGNIZED)
+        {
+            RTMsgError("RTPathQueryInfo(\"%s\"): %Rrc (upgrade)\n", szUpgradePath, rc);
+            return RTEXITCODE_SUCCESS;
+        }
+        uint64_t cNsElapsed = RTTimeNanoTS() - nsStart;
+        if (cNsElapsed >= cSecsCdWait * RT_NS_1SEC_64)
+            return RTEXITCODE_SUCCESS;
+        RTThreadSleep(500);
     }
 
     RTFSOBJINFO OrgInfo;
@@ -3221,6 +3232,10 @@ static void txsUsage(PRTSTREAM pStrm, const char *pszArgv0)
                  "      To enable or disable the automatic upgrade mechanism where any different\n"
                  "      version found on the CD-ROM on startup will replace the initial copy.\n"
                  "      Default: --auto-upgrade\n"
+                 "  --wait-cdrom <secs>\n"
+                 "     Number of seconds to wait for the CD-ROM to be mounted before giving up\n"
+                 "     on automatic upgrading.\n"
+                 "     Default: --wait-cdrom 1;  solaris: --wait-cdrom 8\n"
                  "  --upgrading <org-path>\n"
                  "      Internal use only.\n");
     RTStrmPrintf(pStrm,
@@ -3264,6 +3279,11 @@ static RTEXITCODE txsParseArgv(int argc, char **argv, bool *pfExit)
     bool        fDaemonize      = true;
     bool        fDaemonized     = false;
     const char *pszUpgrading    = NULL;
+#ifdef RT_OS_SOLARIS
+    uint32_t    cSecsCdWait     = 8;
+#else
+    uint32_t    cSecsCdWait     = 1;
+#endif
 
     /*
      * Combine the base and transport layer option arrays.
@@ -3272,14 +3292,15 @@ static RTEXITCODE txsParseArgv(int argc, char **argv, bool *pfExit)
     {
         { "--transport",        't', RTGETOPT_REQ_STRING  },
         { "--cdrom",            'c', RTGETOPT_REQ_STRING  },
+        { "--wait-cdrom",       'w', RTGETOPT_REQ_UINT32  },
         { "--scratch",          's', RTGETOPT_REQ_STRING  },
         { "--auto-upgrade",     'a', RTGETOPT_REQ_NOTHING },
         { "--no-auto-upgrade",  'A', RTGETOPT_REQ_NOTHING },
         { "--upgrading",        'U', RTGETOPT_REQ_STRING  },
-        { "--display-output",   'd', RTGETOPT_REQ_NOTHING  },
-        { "--no-display-output",'D', RTGETOPT_REQ_NOTHING  },
-        { "--foreground",       'f', RTGETOPT_REQ_NOTHING  },
-        { "--daemonized",       'Z', RTGETOPT_REQ_NOTHING  },
+        { "--display-output",   'd', RTGETOPT_REQ_NOTHING },
+        { "--no-display-output",'D', RTGETOPT_REQ_NOTHING },
+        { "--foreground",       'f', RTGETOPT_REQ_NOTHING },
+        { "--daemonized",       'Z', RTGETOPT_REQ_NOTHING },
     };
 
     size_t cOptions = RT_ELEMENTS(s_aBaseOptions);
@@ -3367,6 +3388,10 @@ static RTEXITCODE txsParseArgv(int argc, char **argv, bool *pfExit)
                 pszUpgrading = Val.psz;
                 break;
 
+            case 'w':
+                cSecsCdWait = Val.u32;
+                break;
+
             case 'V':
                 RTPrintf("$Revision$\n");
                 *pfExit = true;
@@ -3411,7 +3436,7 @@ static RTEXITCODE txsParseArgv(int argc, char **argv, bool *pfExit)
         if (pszUpgrading)
             rcExit = txsAutoUpdateStage2(argc, argv, pfExit, pszUpgrading);
         else
-            rcExit = txsAutoUpdateStage1(argc, argv, pfExit);
+            rcExit = txsAutoUpdateStage1(argc, argv, cSecsCdWait, pfExit);
         if (   *pfExit
             || rcExit != RTEXITCODE_SUCCESS)
             return rcExit;
