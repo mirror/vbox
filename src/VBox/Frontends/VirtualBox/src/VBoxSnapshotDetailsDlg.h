@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,46 +15,66 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxSnapshotDetailsDlg_h__
-#define __VBoxSnapshotDetailsDlg_h__
+#ifndef ___VBoxSnapshotDetailsDlg_h___
+#define ___VBoxSnapshotDetailsDlg_h___
 
 /* GUI includes: */
-#include "VBoxSnapshotDetailsDlg.gen.h"
 #include "QIWithRetranslateUI.h"
+#include "VBoxSnapshotDetailsDlg.gen.h"
 
 /* COM includes: */
 #include "CSnapshot.h"
 
 
-class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI <QDialog>, public Ui::VBoxSnapshotDetailsDlg
+/** QDialog extension providing GUI with snapshot details dialog. */
+class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI<QDialog>, public Ui::VBoxSnapshotDetailsDlg
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSnapshotDetailsDlg (QWidget *aParent);
+    /** Constructs snapshot details dialog passing @a pParent to the base-class. */
+    VBoxSnapshotDetailsDlg(QWidget *pParent = 0);
 
-    void getFromSnapshot (const CSnapshot &aSnapshot);
-    void putBackToSnapshot();
+    /** Defines the snapshot @a data. */
+    void setData(const CSnapshot &comSnapshot);
+    /** Saves the snapshot data. */
+    void saveData();
 
 protected:
 
-    void retranslateUi();
+    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
 
-    bool eventFilter (QObject *aObject, QEvent *aEvent);
-    void showEvent (QShowEvent *aEvent);
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** Handles polish @a pEvent. */
+    virtual void polishEvent(QShowEvent *pEvent);
 
 private slots:
 
-    void onNameChanged (const QString &aText);
+    /** Handles snapshot @a strName change. */
+    void sltHandleNameChange(const QString &strName);
 
 private:
 
-    CSnapshot mSnapshot;
+    /** Prepares all. */
+    void prepare();
 
-    QPixmap mThumbnail;
-    QPixmap mScreenshot;
+    /** Holds whether this widget was polished. */
+    bool m_fPolished;
+
+    /** Holds the snapshot object to load data from. */
+    CSnapshot m_comSnapshot;
+
+    /** Holds the cached thumbnail. */
+    QPixmap m_pixmapThumbnail;
+    /** Holds the cached screenshot. */
+    QPixmap m_pixmapScreenshot;
 };
 
-#endif // __VBoxSnapshotDetailsDlg_h__
+#endif /* !___VBoxSnapshotDetailsDlg_h___ */
 

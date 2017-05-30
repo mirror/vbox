@@ -1324,9 +1324,9 @@ void UISnapshotPane::showSnapshotDetails()
 
     /* Show Snapshot Details dialog: */
     QPointer<VBoxSnapshotDetailsDlg> pDlg = new VBoxSnapshotDetailsDlg(this);
-    pDlg->getFromSnapshot(comSnapshot);
+    pDlg->setData(comSnapshot);
     if (pDlg->exec() == QDialog::Accepted)
-        pDlg->putBackToSnapshot();
+        pDlg->saveData();
     if (pDlg)
         delete pDlg;
 }
