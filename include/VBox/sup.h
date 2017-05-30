@@ -100,9 +100,11 @@ typedef enum SUPPAGINGMODE
  * @{
  */
 /** GDT is read-only. */
-#define SUPKERNELFEATURES_GDT_READ_ONLY     RT_BIT(0)
+#define SUPKERNELFEATURES_GDT_READ_ONLY       RT_BIT(0)
 /** SMAP is possibly enabled. */
-#define SUPKERNELFEATURES_SMAP              RT_BIT(1)
+#define SUPKERNELFEATURES_SMAP                RT_BIT(1)
+/** GDT is read-only but the writable GDT can be fetched by SUPR0GetCurrentGdtRw(). */
+#define SUPKERNELFEATURES_GDT_NEED_WRITABLE   RT_BIT(2)
 /** @} */
 
 
@@ -1893,6 +1895,7 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm);
 SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous);
+SUPR0DECL(int) SUPR0GetCurrentGdtRw(RTHCUINTPTR *pGdtRw);
 SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);

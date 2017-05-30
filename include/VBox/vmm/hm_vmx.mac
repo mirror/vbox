@@ -160,6 +160,7 @@
 %define VMX_RESTORE_HOST_IDTR                                   40h   ;RT_BIT(6)
 %define VMX_RESTORE_HOST_GDT_READ_ONLY                          80h   ;RT_BIT(7)
 %define VMX_RESTORE_HOST_REQUIRED                              100h   ;RT_BIT(8)
+%define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                     200h   ;RT_BIT(9)
 
 ;; C version hm_vmx.h.
 struc VMXRESTOREHOST
@@ -171,12 +172,15 @@ struc VMXRESTOREHOST
     .abPadding0         resb    4
     .HostGdtr           resb    10
     .abPadding1         resb    6
+    .HostGdtrRw         resb    10
+    .abPadding2         resb    6
     .HostIdtr           resb    10
     .uHostFSBase        resq    1
     .uHostGSBase        resq    1
 endstruc
 AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr,     16-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr,     32-2)
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    40)
-AssertCompileSize(VMXRESTOREHOST, 56)
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw,   32-2)
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr,     48-2)
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    56)
+AssertCompileSize(VMXRESTOREHOST, 72)
 

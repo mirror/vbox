@@ -111,6 +111,7 @@
 #define VMX_RESTORE_HOST_IDTR                 RT_BIT(6)
 #define VMX_RESTORE_HOST_GDT_READ_ONLY        RT_BIT(7)
 #define VMX_RESTORE_HOST_REQUIRED             RT_BIT(8)
+#define VMX_RESTORE_HOST_GDT_NEED_WRITABLE    RT_BIT(9)
 /** @} */
 
 /**
@@ -126,19 +127,22 @@ typedef struct VMXRESTOREHOST
     RTSEL       uHostSelGS;     /* 0x06 */
     RTSEL       uHostSelTR;     /* 0x08 */
     uint8_t     abPadding0[4];
-    X86XDTR64   HostGdtr;       /**< 0x0e - should be aligned by it's 64-bit member.  */
+    X86XDTR64   HostGdtr;       /**< 0x0e - should be aligned by it's 64-bit member. */
     uint8_t     abPadding1[6];
-    X86XDTR64   HostIdtr;       /**< 0x1e - should be aligned by it's 64-bit member. */
-    uint64_t    uHostFSBase;    /* 0x28 */
-    uint64_t    uHostGSBase;    /* 0x30 */
+    X86XDTR64   HostGdtrRw;     /**< 0x1e - should be aligned by it's 64-bit member. */
+    uint8_t     abPadding2[6];
+    X86XDTR64   HostIdtr;       /**< 0x2e - should be aligned by it's 64-bit member. */
+    uint64_t    uHostFSBase;    /* 0x38 */
+    uint64_t    uHostGSBase;    /* 0x40 */
 } VMXRESTOREHOST;
 /** Pointer to VMXRESTOREHOST. */
 typedef VMXRESTOREHOST *PVMXRESTOREHOST;
 AssertCompileSize(X86XDTR64, 10);
 AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr, 16);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr, 32);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    40);
-AssertCompileSize(VMXRESTOREHOST, 56);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtrRw.uAddr, 32);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr, 48);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    56);
+AssertCompileSize(VMXRESTOREHOST, 72);
 AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 
 /** @name Host-state MSR lazy-restoration flags.

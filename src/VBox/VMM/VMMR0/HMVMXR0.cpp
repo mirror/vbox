@@ -3037,11 +3037,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      * maximum limit (0xffff) on every VM-exit.
      */
     if (Gdtr.cbGdt != 0xffff)
-    {
         pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
-        AssertCompile(sizeof(Gdtr) == sizeof(X86XDTR64));
-        memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
-    }
 
     /*
      * IDT limit is effectively capped at 0xfff. (See Intel spec. 6.14.1 "64-Bit Mode IDT"
@@ -3093,9 +3089,23 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
             pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
         pVCpu->hm.s.vmx.RestoreHost.uHostSelTR = uSelTR;
+    }
 
-        /* Store the GDTR here as we need it while restoring TR. */
+    /*
+     * Store the GDTR as we need it when restoring the GDT and while restoring the TR.
+     */
+    if (pVCpu->hm.s.vmx.fRestoreHostFlags & (VMX_RESTORE_HOST_GDTR | VMX_RESTORE_HOST_SEL_TR))
+    {
+        AssertCompile(sizeof(Gdtr) == sizeof(X86XDTR64));
         memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
+        if (pVM->hm.s.fHostKernelFeatures & SUPKERNELFEATURES_GDT_NEED_WRITABLE)
+        {
+            /* The GDT is read-only but the writable GDT is available. */
+            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_NEED_WRITABLE;
+            pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.cb = Gdtr.cbGdt;
+            rc = SUPR0GetCurrentGdtRw(&pVCpu->hm.s.vmx.RestoreHost.HostGdtrRw.uAddr);
+            AssertRCReturn(rc, rc);
+        }
     }
 #else
     NOREF(pVM);
