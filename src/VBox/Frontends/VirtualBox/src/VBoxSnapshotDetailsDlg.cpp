@@ -36,143 +36,66 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/*********************************************************************************************************************************
-*   Class VBoxSnapshotDetailsDlg implementation.                                                                                 *
-*********************************************************************************************************************************/
-
-VBoxSnapshotDetailsDlg::VBoxSnapshotDetailsDlg (QWidget *aParent)
-    : QIWithRetranslateUI <QDialog> (aParent)
+/** QWiget extension providing GUI with snapshot screenshot viewer widget. */
+class UIScreenshotViewer : public QIWithRetranslateUI2<QWidget>
 {
-    /* Apply UI decorations */
-    Ui::VBoxSnapshotDetailsDlg::setupUi (this);
+    Q_OBJECT;
 
-    /* Setup mLbThumbnail label */
-    mLbThumbnail->setCursor (Qt::PointingHandCursor);
-    mLbThumbnail->installEventFilter (this);
+public:
 
-    /* Setup mTeDetails browser */
-    mTeDetails->viewport()->setAutoFillBackground (false);
-    mTeDetails->setFocus();
+    /** Constructs screenshow viewer passing @a pParent to the base-class.
+      * @param  pixmapScreenshot  Brings the screenshot to show.
+      * @param  strSnapshotName   Brings the snapshot name.
+      * @param  strMachineName    Brings the machine name. */
+    UIScreenshotViewer(const QPixmap &pixmapScreenshot,
+                       const QString &strSnapshotName,
+                       const QString &strMachineName,
+                       QWidget *pParent = 0);
 
-    /* Setup connections */
-    connect (mLeName, SIGNAL (textChanged (const QString&)), this, SLOT (onNameChanged (const QString&)));
-    connect (mButtonBox, SIGNAL (helpRequested()), &msgCenter(), SLOT (sltShowHelpHelpDialog()));
-}
+protected:
 
-void VBoxSnapshotDetailsDlg::getFromSnapshot (const CSnapshot &aSnapshot)
-{
-    mSnapshot = aSnapshot;
-    CMachine machine = mSnapshot.GetMachine();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    /* Get general properties */
-    mLeName->setText (aSnapshot.GetName());
-    mTeDescription->setText (aSnapshot.GetDescription());
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** Handles polish @a pEvent. */
+    virtual void polishEvent(QShowEvent *pEvent);
 
-    /* Get timestamp info */
-    QDateTime timestamp;
-    timestamp.setTime_t (mSnapshot.GetTimeStamp() / 1000);
-    bool dateTimeToday = timestamp.date() == QDate::currentDate();
-    QString dateTime = dateTimeToday ? timestamp.time().toString (Qt::LocalDate) : timestamp.toString (Qt::LocalDate);
-    mTxTaken->setText (dateTime);
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
-    /* Get thumbnail if present */
-    ULONG width = 0, height = 0;
-    QVector <BYTE> thumbData = machine.ReadSavedThumbnailToArray (0, KBitmapFormat_BGR0, width, height);
-    mThumbnail = thumbData.size() != 0 ? QPixmap::fromImage (QImage (thumbData.data(), width, height, QImage::Format_RGB32).copy()) : QPixmap();
-    QVector <BYTE> screenData = machine.ReadSavedScreenshotToArray (0, KBitmapFormat_PNG, width, height);
-    mScreenshot = screenData.size() != 0 ? QPixmap::fromImage (QImage::fromData (screenData.data(), screenData.size(), "PNG")) : QPixmap();
+    /** Handles mouse press @a pEvent. */
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    /** Handles key press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
-    QGridLayout *lt = qobject_cast <QGridLayout*> (layout());
-    Assert (lt);
-    if (mThumbnail.isNull())
-    {
-        lt->removeWidget (mLbThumbnail);
-        mLbThumbnail->setHidden (true);
+private:
 
-        lt->removeWidget (mLeName);
-        lt->removeWidget (mTxTaken);
-        lt->addWidget (mLeName, 0, 1, 1, 2);
-        lt->addWidget (mTxTaken, 1, 1, 1, 2);
-    }
-    else
-    {
-        lt->removeWidget (mLeName);
-        lt->removeWidget (mTxTaken);
-        lt->addWidget (mLeName, 0, 1);
-        lt->addWidget (mTxTaken, 1, 1);
+    /** Prepares all. */
+    void prepare();
 
-        lt->removeWidget (mLbThumbnail);
-        lt->addWidget (mLbThumbnail, 0, 2, 2, 1);
-        mLbThumbnail->setHidden (false);
-    }
+    /** Adjusts picture. */
+    void adjustPicture();
 
-    retranslateUi();
-}
+    /** Holds whether this widget was polished. */
+    bool m_fPolished;
 
-void VBoxSnapshotDetailsDlg::putBackToSnapshot()
-{
-    AssertReturn (!mSnapshot.isNull(), (void) 0);
+    /** Holds the screenshot to show. */
+    QPixmap m_pixmapScreenshot;
+    /** Holds the snapshot name. */
+    QString m_strSnapshotName;
+    /** Holds the machine name. */
+    QString m_strMachineName;
 
-    /* We need a session when we manipulate the snapshot data of a machine. */
-    CSession session = vboxGlobal().openExistingSession(mSnapshot.GetMachine().GetId());
-    if (session.isNull())
-        return;
+    /** Holds the scroll-area instance. */
+    QScrollArea *m_pScrollArea;
+    /** Holds the picture label instance. */
+    QLabel *m_pLabelPicture;
 
-    mSnapshot.SetName(mLeName->text());
-    mSnapshot.SetDescription(mTeDescription->toPlainText());
-
-    /* Close the session again. */
-    session.UnlockMachine();
-}
-
-void VBoxSnapshotDetailsDlg::retranslateUi()
-{
-    /* Translate uic generated strings */
-    Ui::VBoxSnapshotDetailsDlg::retranslateUi (this);
-
-    if(mSnapshot.isNull())
-        return;
-
-    CMachine machine = mSnapshot.GetMachine();
-
-    setWindowTitle (tr ("Details of %1 (%2)").arg (mSnapshot.GetName()).arg (machine.GetName()));
-
-    mLbThumbnail->setToolTip (mScreenshot.isNull() ? QString() : tr ("Click to enlarge the screenshot."));
-
-    mTeDetails->setText (vboxGlobal().detailsReport (machine, false /* with links? */));
-}
-
-bool VBoxSnapshotDetailsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
-{
-    Assert (aObject == mLbThumbnail);
-    if (aEvent->type() == QEvent::MouseButtonPress && !mScreenshot.isNull())
-    {
-        UIScreenshotViewer *pViewer = new UIScreenshotViewer(mScreenshot,
-                                                             mSnapshot.GetMachine().GetName(),
-                                                             mSnapshot.GetName(),
-                                                             this);
-        pViewer->show();
-        pViewer->activateWindow();
-    }
-    return QDialog::eventFilter (aObject, aEvent);
-}
-
-void VBoxSnapshotDetailsDlg::showEvent (QShowEvent *aEvent)
-{
-    if (!mLbThumbnail->pixmap() && !mThumbnail.isNull())
-    {
-        mLbThumbnail->setPixmap (mThumbnail.scaled (QSize (1, mLbThumbnail->height()),
-                                                    Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
-        retranslateUi();
-    }
-
-    QDialog::showEvent (aEvent);
-}
-
-void VBoxSnapshotDetailsDlg::onNameChanged (const QString &aText)
-{
-    mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!aText.trimmed().isEmpty());
-}
+    /** Holds whether we are in zoom mode. */
+    bool m_fZoomMode;
+};
 
 
 /*********************************************************************************************************************************
@@ -330,4 +253,144 @@ void UIScreenshotViewer::adjustPicture()
     }
 }
 
+
+/*********************************************************************************************************************************
+*   Class VBoxSnapshotDetailsDlg implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+VBoxSnapshotDetailsDlg::VBoxSnapshotDetailsDlg (QWidget *aParent)
+    : QIWithRetranslateUI <QDialog> (aParent)
+{
+    /* Apply UI decorations */
+    Ui::VBoxSnapshotDetailsDlg::setupUi (this);
+
+    /* Setup mLbThumbnail label */
+    mLbThumbnail->setCursor (Qt::PointingHandCursor);
+    mLbThumbnail->installEventFilter (this);
+
+    /* Setup mTeDetails browser */
+    mTeDetails->viewport()->setAutoFillBackground (false);
+    mTeDetails->setFocus();
+
+    /* Setup connections */
+    connect (mLeName, SIGNAL (textChanged (const QString&)), this, SLOT (onNameChanged (const QString&)));
+    connect (mButtonBox, SIGNAL (helpRequested()), &msgCenter(), SLOT (sltShowHelpHelpDialog()));
+}
+
+void VBoxSnapshotDetailsDlg::getFromSnapshot (const CSnapshot &aSnapshot)
+{
+    mSnapshot = aSnapshot;
+    CMachine machine = mSnapshot.GetMachine();
+
+    /* Get general properties */
+    mLeName->setText (aSnapshot.GetName());
+    mTeDescription->setText (aSnapshot.GetDescription());
+
+    /* Get timestamp info */
+    QDateTime timestamp;
+    timestamp.setTime_t (mSnapshot.GetTimeStamp() / 1000);
+    bool dateTimeToday = timestamp.date() == QDate::currentDate();
+    QString dateTime = dateTimeToday ? timestamp.time().toString (Qt::LocalDate) : timestamp.toString (Qt::LocalDate);
+    mTxTaken->setText (dateTime);
+
+    /* Get thumbnail if present */
+    ULONG width = 0, height = 0;
+    QVector <BYTE> thumbData = machine.ReadSavedThumbnailToArray (0, KBitmapFormat_BGR0, width, height);
+    mThumbnail = thumbData.size() != 0 ? QPixmap::fromImage (QImage (thumbData.data(), width, height, QImage::Format_RGB32).copy()) : QPixmap();
+    QVector <BYTE> screenData = machine.ReadSavedScreenshotToArray (0, KBitmapFormat_PNG, width, height);
+    mScreenshot = screenData.size() != 0 ? QPixmap::fromImage (QImage::fromData (screenData.data(), screenData.size(), "PNG")) : QPixmap();
+
+    QGridLayout *lt = qobject_cast <QGridLayout*> (layout());
+    Assert (lt);
+    if (mThumbnail.isNull())
+    {
+        lt->removeWidget (mLbThumbnail);
+        mLbThumbnail->setHidden (true);
+
+        lt->removeWidget (mLeName);
+        lt->removeWidget (mTxTaken);
+        lt->addWidget (mLeName, 0, 1, 1, 2);
+        lt->addWidget (mTxTaken, 1, 1, 1, 2);
+    }
+    else
+    {
+        lt->removeWidget (mLeName);
+        lt->removeWidget (mTxTaken);
+        lt->addWidget (mLeName, 0, 1);
+        lt->addWidget (mTxTaken, 1, 1);
+
+        lt->removeWidget (mLbThumbnail);
+        lt->addWidget (mLbThumbnail, 0, 2, 2, 1);
+        mLbThumbnail->setHidden (false);
+    }
+
+    retranslateUi();
+}
+
+void VBoxSnapshotDetailsDlg::putBackToSnapshot()
+{
+    AssertReturn (!mSnapshot.isNull(), (void) 0);
+
+    /* We need a session when we manipulate the snapshot data of a machine. */
+    CSession session = vboxGlobal().openExistingSession(mSnapshot.GetMachine().GetId());
+    if (session.isNull())
+        return;
+
+    mSnapshot.SetName(mLeName->text());
+    mSnapshot.SetDescription(mTeDescription->toPlainText());
+
+    /* Close the session again. */
+    session.UnlockMachine();
+}
+
+void VBoxSnapshotDetailsDlg::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxSnapshotDetailsDlg::retranslateUi (this);
+
+    if(mSnapshot.isNull())
+        return;
+
+    CMachine machine = mSnapshot.GetMachine();
+
+    setWindowTitle (tr ("Details of %1 (%2)").arg (mSnapshot.GetName()).arg (machine.GetName()));
+
+    mLbThumbnail->setToolTip (mScreenshot.isNull() ? QString() : tr ("Click to enlarge the screenshot."));
+
+    mTeDetails->setText (vboxGlobal().detailsReport (machine, false /* with links? */));
+}
+
+bool VBoxSnapshotDetailsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
+{
+    Assert (aObject == mLbThumbnail);
+    if (aEvent->type() == QEvent::MouseButtonPress && !mScreenshot.isNull())
+    {
+        UIScreenshotViewer *pViewer = new UIScreenshotViewer(mScreenshot,
+                                                             mSnapshot.GetMachine().GetName(),
+                                                             mSnapshot.GetName(),
+                                                             this);
+        pViewer->show();
+        pViewer->activateWindow();
+    }
+    return QDialog::eventFilter (aObject, aEvent);
+}
+
+void VBoxSnapshotDetailsDlg::showEvent (QShowEvent *aEvent)
+{
+    if (!mLbThumbnail->pixmap() && !mThumbnail.isNull())
+    {
+        mLbThumbnail->setPixmap (mThumbnail.scaled (QSize (1, mLbThumbnail->height()),
+                                                    Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
+        retranslateUi();
+    }
+
+    QDialog::showEvent (aEvent);
+}
+
+void VBoxSnapshotDetailsDlg::onNameChanged (const QString &aText)
+{
+    mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!aText.trimmed().isEmpty());
+}
+
+#include "VBoxSnapshotDetailsDlg.moc"
 

@@ -531,6 +531,7 @@ VirtualBox_QT_MOCHDRS.darwin += \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
+	src/VBoxSnapshotDetailsDlg.cpp \
 	src/UIVMLogViewer.cpp \
 	src/extensions/QIArrowSplitter.cpp \
 	src/extensions/QISplitter.cpp \
