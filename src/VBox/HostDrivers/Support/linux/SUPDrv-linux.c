@@ -1415,7 +1415,7 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 }
 
 
-int supdrvOSetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
+int VBOXCALL    supdrvOSGetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
     *pGdtRw = (RTHCUINTPTR)get_current_gdt_rw();

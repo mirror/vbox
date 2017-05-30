@@ -3880,7 +3880,7 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
 SUPR0DECL(int) SUPR0GetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
 {
 #ifdef RT_OS_LINUX
-    return supdrvOSetCurrentGdtRw(pGdtRw);
+    return supdrvOSGetCurrentGdtRw(pGdtRw);
 #else
     return VERR_NOT_IMPLEMENTED;
 #endif
