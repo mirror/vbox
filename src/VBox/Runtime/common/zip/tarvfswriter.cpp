@@ -520,6 +520,7 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRT
     /*
      * Deal with simple non-seeking write first.
      */
+    size_t cbWritten = 0;
     Assert(pPush->offCurrent <= pPush->cbExpected);
     Assert(pPush->offCurrent <= pPush->cbCurrent);
     if (   off < 0
@@ -529,7 +530,6 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRT
                         ("offCurrent=%#RX64 + cbToWrite=%#zx = %#RX64; cbExpected=%RX64\n",
                          pPush->offCurrent, cbToWrite, pPush->offCurrent + cbToWrite, pPush->cbExpected),
                         VERR_DISK_FULL);
-        size_t cbWritten = 0;
         rc = RTVfsIoStrmWrite(pParent->hVfsIos, pvToWrite, cbToWrite, fBlocking, &cbWritten);
         if (RT_SUCCESS(rc))
         {
@@ -590,7 +590,6 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRT
         /* Do the write. */
         if (RT_SUCCESS(rc))
         {
-            size_t cbWritten = 0;
             rc = RTVfsIoStrmWrite(pParent->hVfsIos, pvToWrite, cbToWrite, fBlocking, &cbWritten);
             if (RT_SUCCESS(rc))
             {
@@ -607,6 +606,8 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRT
     /*
      * Fatal errors get down here, non-fatal ones returns earlier.
      */
+    if (pcbWritten)
+        *pcbWritten = cbWritten;
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     pParent->rcFatal = rc;
