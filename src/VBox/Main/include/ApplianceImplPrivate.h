@@ -18,6 +18,10 @@
 #ifndef ____H_APPLIANCEIMPLPRIVATE
 #define ____H_APPLIANCEIMPLPRIVATE
 
+#ifdef DEBUG_bird
+# define MAIN_WITH_NEW_TAR_CREATOR
+#endif
+
 class VirtualSystemDescription;
 
 #include "ovfreader.h"
@@ -435,6 +439,7 @@ PVDINTERFACEIO ShaCreateInterface();
 PVDINTERFACEIO FileCreateInterface();
 PVDINTERFACEIO tarWriterCreateInterface(void);
 
+int writeBufferToFile(const char *pszFilename, const void *pvContent, size_t cbContent, RTVFSFSSTREAM hVfsFss);
 int writeBufferToFile(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser);
 
 #endif // !____H_APPLIANCEIMPLPRIVATE

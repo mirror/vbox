@@ -2025,7 +2025,7 @@ HRESULT Appliance::i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_FAIL;
             break;
         }
-        rc = i_writeFSImpl(pTask, writeLock, pShaIo, &storage);
+        rc = i_writeFSImpl(pTask, writeLock, NIL_RTVFSFSSTREAM, pShaIo, &storage);
     } while (0);
 
     /* Cleanup */
@@ -2083,7 +2083,7 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_FAIL;
             break;
         }
-        rc = i_writeFSImpl(pTask, writeLock, pShaIo, &storage);
+        rc = i_writeFSImpl(pTask, writeLock, NIL_RTVFSFSSTREAM, pShaIo, &storage);
     } while (0);
 
     RTTarClose(tar);
@@ -2102,7 +2102,8 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     return rc;
 }
 
-HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
+HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, RTVFSFSSTREAM hVfsFssOut,
+                                 PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -2136,8 +2137,12 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                                tr("Could not create OVF file '%s'"),
                                strOvfFile.c_str());
             /* Write the ovf file to disk. */
-            vrc = writeBufferToFile(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
+            if (hVfsFssOut != NIL_RTVFSFSSTREAM)
+                vrc = writeBufferToFile(strOvfFile.c_str(), pvBuf, cbSize, hVfsFssOut);
+            else
+                vrc = writeBufferToFile(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
             if (RT_FAILURE(vrc))
+
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create OVF file '%s' (%Rrc)"),
                                strOvfFile.c_str(), vrc);
@@ -2233,6 +2238,9 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                 // create a flat copy of the source disk image
                 if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
                 {
+                    /*
+                     * Export a disk image.
+                     */
                     ComObjPtr<Progress> pProgress2;
                     pProgress2.createObject();
                     rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this),
@@ -2240,13 +2248,20 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                                           strTargetFilePath.c_str()).raw(), TRUE);
                     if (FAILED(rc)) throw rc;
 
-                    rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
-                                                   format,
-                                                   MediumVariant_VmdkStreamOptimized,
-                                                   m->m_pSecretKeyStore,
-                                                   pIfIo,
-                                                   pStorage,
-                                                   pProgress2);
+                    if (hVfsFssOut != NIL_RTVFSFSSTREAM)
+                        rc = E_NOTIMPL; /** @todo Continue here later. Need to (1) wrap the FSS thing (in the caller?)
+                                         *        and (2) provide a push API for adding streams.  (RTVfsFsStrmAdd is a pull API,
+                                         *        in that it pulls in the data bytes itself.) */
+                    else
+                    {
+                        rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
+                                                       format,
+                                                       MediumVariant_VmdkStreamOptimized,
+                                                       m->m_pSecretKeyStore,
+                                                       pIfIo,
+                                                       pStorage,
+                                                       pProgress2);
+                    }
                     if (FAILED(rc)) throw rc;
 
                     ComPtr<IProgress> pProgress3(pProgress2);
@@ -2255,11 +2270,36 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                 }
                 else
                 {
-                    //copy/clone CD/DVD image
+                    /*
+                     * Copy CD/DVD/floppy image.
+                     */
                     Assert(pDiskEntry->type == VirtualSystemDescriptionType_CDROM);
 
-                    /* Read the ISO file and add one to OVA/OVF package */
+                    if (hVfsFssOut != NIL_RTVFSFSSTREAM)
                     {
+                        /* Open the source image and cast it to a VFS base object. */
+                        RTVFSFILE hVfsSrcFile;
+                        vrc = RTVfsFileOpenNormal(strSrcFilePath.c_str(),
+                                                  RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
+                                                  &hVfsSrcFile);
+                        if (RT_FAILURE(vrc))
+                            throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                               tr("Could not create or open file '%s' (%Rrc)"), strSrcFilePath.c_str(), vrc);
+
+                        RTVFSOBJ hVfsSrc = RTVfsObjFromFile(hVfsSrcFile);
+                        RTVfsFileRelease(hVfsSrcFile);
+                        AssertStmt(hVfsSrc != NIL_RTVFSOBJ, throw VERR_INTERNAL_ERROR);
+
+                        /* Add it to the output stream.  This will pull in all the data from the object. */
+                        vrc = RTVfsFsStrmAdd(hVfsFssOut, strTargetFilePath.c_str(), hVfsSrc, 0 /*fFlags*/);
+                        RTVfsObjRelease(hVfsSrc);
+                        if (RT_FAILURE(vrc))
+                            throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,  tr("Error during copy CD/DVD image '%s' (%Rrc)"),
+                                               strSrcFilePath.c_str(), vrc);
+                    }
+                    else
+                    {
+                        /* Read the ISO file and add one to OVA/OVF package */
                         void *pvStorage;
                         RTFILE pFile = NULL;
                         void *pvUser = pStorage;
@@ -2379,7 +2419,10 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             /* Disable digest creation for the manifest file. */
             pStorage->fCreateDigest = false;
             /* Write the manifest file to disk. */
-            vrc = writeBufferToFile(strMfFilePath.c_str(), pvBuf, cbSize, pIfIo, pStorage);
+            if (hVfsFssOut != NIL_RTVFSFSSTREAM)
+                vrc = writeBufferToFile(strMfFilePath.c_str(), pvBuf, cbSize, hVfsFssOut);
+            else
+                vrc = writeBufferToFile(strMfFilePath.c_str(), pvBuf, cbSize, pIfIo, pStorage);
             RTMemFree(pvBuf);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
