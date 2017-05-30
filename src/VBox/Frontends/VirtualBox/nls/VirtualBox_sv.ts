@@ -17313,7 +17313,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
         <translation>Skärmbild av %1 (%2)</translation>

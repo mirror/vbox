@@ -16412,7 +16412,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
         <translation>Zrzut ekranu %1 (%2)</translation>

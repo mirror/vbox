@@ -19070,7 +19070,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
         <translation>Schermata di %1 (%2)</translation>

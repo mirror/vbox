@@ -15719,7 +15719,7 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
         <translation>Protector de Ecrã de %1 (%2)</translation>

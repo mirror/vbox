@@ -14624,7 +14624,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
         <translation type="unfinished"></translation>

@@ -15611,7 +15611,7 @@ IPv6.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
         <translation>%1 nuotrauka (%2)</translation>

@@ -13861,7 +13861,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <location filename="../src/VBoxSnapshotDetailsDlg.cpp" line="+203"/>
         <source>Screenshot of %1 (%2)</source>

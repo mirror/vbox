@@ -18037,7 +18037,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
     </message>
 </context>
 <context>
-    <name>VBoxScreenshotViewer</name>
+    <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
         <translation>%1(%2)のスクリーンショット</translation>

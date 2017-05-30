@@ -28,6 +28,7 @@
 /* Forward declarations: */
 class QScrollArea;
 
+
 class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI <QDialog>, public Ui::VBoxSnapshotDetailsDlg
 {
     Q_OBJECT;
@@ -58,34 +59,66 @@ private:
     QPixmap mScreenshot;
 };
 
-class VBoxScreenshotViewer : public QIWithRetranslateUI2 <QWidget>
+
+/** QWiget extension providing GUI with snapshot screenshot viewer widget. */
+class UIScreenshotViewer : public QIWithRetranslateUI2<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    VBoxScreenshotViewer (QWidget *aParent, const QPixmap &aScreenshot,
-                          const QString &aSnapshotName, const QString &aMachineName);
+    /** Constructs screenshow viewer passing @a pParent to the base-class.
+      * @param  pixmapScreenshot  Brings the screenshot to show.
+      * @param  strSnapshotName   Brings the snapshot name.
+      * @param  strMachineName    Brings the machine name. */
+    UIScreenshotViewer(const QPixmap &pixmapScreenshot,
+                       const QString &strSnapshotName,
+                       const QString &strMachineName,
+                       QWidget *pParent = 0);
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** Handles polish @a pEvent. */
+    virtual void polishEvent(QShowEvent *pEvent);
+
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
+    /** Handles mouse press @a pEvent. */
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    /** Handles key press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
 private:
 
-    void retranslateUi();
+    /** Prepares all. */
+    void prepare();
 
-    void showEvent (QShowEvent *aEvent);
-    void resizeEvent (QResizeEvent *aEvent);
-    void mousePressEvent (QMouseEvent *aEvent);
-    void keyPressEvent (QKeyEvent *aEvent);
-
+    /** Adjusts picture. */
     void adjustPicture();
 
-    QScrollArea *mArea;
-    QLabel *mPicture;
+    /** Holds whether this widget was polished. */
+    bool m_fPolished;
 
-    QPixmap mScreenshot;
-    QString mSnapshotName;
-    QString mMachineName;
+    /** Holds the screenshot to show. */
+    QPixmap m_pixmapScreenshot;
+    /** Holds the snapshot name. */
+    QString m_strSnapshotName;
+    /** Holds the machine name. */
+    QString m_strMachineName;
 
-    bool mZoomMode;
+    /** Holds the scroll-area instance. */
+    QScrollArea *m_pScrollArea;
+    /** Holds the picture label instance. */
+    QLabel *m_pLabelPicture;
+
+    /** Holds whether we are in zoom mode. */
+    bool m_fZoomMode;
 };
 
 #endif // __VBoxSnapshotDetailsDlg_h__

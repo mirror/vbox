@@ -36,6 +36,10 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class VBoxSnapshotDetailsDlg implementation.                                                                                 *
+*********************************************************************************************************************************/
+
 VBoxSnapshotDetailsDlg::VBoxSnapshotDetailsDlg (QWidget *aParent)
     : QIWithRetranslateUI <QDialog> (aParent)
 {
@@ -143,8 +147,12 @@ bool VBoxSnapshotDetailsDlg::eventFilter (QObject *aObject, QEvent *aEvent)
     Assert (aObject == mLbThumbnail);
     if (aEvent->type() == QEvent::MouseButtonPress && !mScreenshot.isNull())
     {
-        VBoxScreenshotViewer *viewer = new VBoxScreenshotViewer (this, mScreenshot, mSnapshot.GetMachine().GetName(), mSnapshot.GetName());
-        viewer->show();
+        UIScreenshotViewer *pViewer = new UIScreenshotViewer(mScreenshot,
+                                                             mSnapshot.GetMachine().GetName(),
+                                                             mSnapshot.GetName(),
+                                                             this);
+        pViewer->show();
+        pViewer->activateWindow();
     }
     return QDialog::eventFilter (aObject, aEvent);
 }
@@ -166,84 +174,160 @@ void VBoxSnapshotDetailsDlg::onNameChanged (const QString &aText)
     mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (!aText.trimmed().isEmpty());
 }
 
-VBoxScreenshotViewer::VBoxScreenshotViewer (QWidget *aParent, const QPixmap &aScreenshot,
-                                            const QString &aSnapshotName, const QString &aMachineName)
-    : QIWithRetranslateUI2 <QWidget> (aParent, Qt::Tool)
-    , mArea (new QScrollArea (this))
-    , mPicture (new QLabel)
-    , mScreenshot (aScreenshot)
-    , mSnapshotName (aSnapshotName)
-    , mMachineName (aMachineName)
-    , mZoomMode (true)
+
+/*********************************************************************************************************************************
+*   Class UIScreenshotViewer implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIScreenshotViewer::UIScreenshotViewer(const QPixmap &pixmapScreenshot,
+                                       const QString &strSnapshotName,
+                                       const QString &strMachineName,
+                                       QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI2<QWidget>(pParent, Qt::Tool)
+    , m_fPolished(false)
+    , m_pixmapScreenshot(pixmapScreenshot)
+    , m_strSnapshotName(strSnapshotName)
+    , m_strMachineName(strMachineName)
+    , m_pScrollArea(0)
+    , m_pLabelPicture(0)
+    , m_fZoomMode(true)
 {
-    setWindowModality (Qt::ApplicationModal);
-    setCursor (Qt::PointingHandCursor);
-    QVBoxLayout *layout = new QVBoxLayout (this);
-    layout->setMargin (0);
-
-    mArea->setWidget (mPicture);
-    mArea->setWidgetResizable (true);
-    layout->addWidget (mArea);
-
-    double aspectRatio = (double) aScreenshot.height() / aScreenshot.width();
-    QSize maxSize = aScreenshot.size() + QSize (mArea->frameWidth() * 2, mArea->frameWidth() * 2);
-    QSize initSize = QSize (640, (int)(640 * aspectRatio)).boundedTo (maxSize);
-
-    setMaximumSize (maxSize);
-
-    QRect geo (QPoint (0, 0), initSize);
-    geo.moveCenter (parentWidget()->geometry().center());
-    VBoxGlobal::setTopLevelGeometry(this, geo);
-
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
-void VBoxScreenshotViewer::retranslateUi()
+void UIScreenshotViewer::retranslateUi()
 {
-    setWindowTitle (tr ("Screenshot of %1 (%2)").arg (mSnapshotName).arg (mMachineName));
+    /* Translate window title: */
+    setWindowTitle(tr("Screenshot of %1 (%2)").arg(m_strSnapshotName).arg(m_strMachineName));
 }
 
-void VBoxScreenshotViewer::showEvent (QShowEvent *aEvent)
+void UIScreenshotViewer::showEvent(QShowEvent *pEvent)
 {
+    /* Call to base-class: */
+    QIWithRetranslateUI2<QWidget>::showEvent(pEvent);
+
+    /* Make sure we should polish dialog: */
+    if (m_fPolished)
+        return;
+
+    /* Call to polish-event: */
+    polishEvent(pEvent);
+
+    /* Mark dialog as polished: */
+    m_fPolished = true;
+}
+
+void UIScreenshotViewer::polishEvent(QShowEvent * /* pEvent */)
+{
+    /* Adjust the picture: */
     adjustPicture();
-    QIWithRetranslateUI2 <QWidget>::showEvent (aEvent);
 }
 
-void VBoxScreenshotViewer::resizeEvent (QResizeEvent *aEvent)
+void UIScreenshotViewer::resizeEvent(QResizeEvent *pEvent)
 {
+    /* Call to base-class: */
+    QIWithRetranslateUI2<QWidget>::resizeEvent(pEvent);
+
+    /* Adjust the picture: */
     adjustPicture();
-    QIWithRetranslateUI2 <QWidget>::resizeEvent (aEvent);
 }
 
-void VBoxScreenshotViewer::mousePressEvent (QMouseEvent *aEvent)
+void UIScreenshotViewer::mousePressEvent(QMouseEvent *pEvent)
 {
-    mZoomMode = !mZoomMode;
+    /* Toggle the zoom mode: */
+    m_fZoomMode = !m_fZoomMode;
+
+    /* Adjust the picture: */
     adjustPicture();
-    QIWithRetranslateUI2 <QWidget>::mousePressEvent (aEvent);
+
+    /* Call to base-class: */
+    QIWithRetranslateUI2<QWidget>::mousePressEvent(pEvent);
 }
 
-void VBoxScreenshotViewer::keyPressEvent (QKeyEvent *aEvent)
+void UIScreenshotViewer::keyPressEvent(QKeyEvent *pEvent)
 {
-    if (aEvent->key() == Qt::Key_Escape)
-        deleteLater();
-    QIWithRetranslateUI2 <QWidget>::keyPressEvent (aEvent);
+    /* Close on escape: */
+    if (pEvent->key() == Qt::Key_Escape)
+        close();
+
+    /* Call to base-class: */
+    QIWithRetranslateUI2<QWidget>::keyPressEvent(pEvent);
 }
 
-void VBoxScreenshotViewer::adjustPicture()
+void UIScreenshotViewer::prepare()
 {
-    if (mZoomMode)
+    /* Screenshot viewer is an application-modal window: */
+    setWindowModality(Qt::ApplicationModal);
+    /* With the pointing-hand cursor: */
+    setCursor(Qt::PointingHandCursor);
+    /* And it's being deleted when closed: */
+    setAttribute(Qt::WA_DeleteOnClose);
+
+    /* Create layout: */
+    new QVBoxLayout(this);
+    AssertPtrReturnVoid(layout());
     {
-        mArea->setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
-        mArea->setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
-        mPicture->setPixmap (mScreenshot.scaled (mArea->viewport()->size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
-        mPicture->setToolTip (tr ("Click to view non-scaled screenshot."));
+        /* Configure layout: */
+        layout()->setContentsMargins(0, 0, 0, 0);
+
+        /* Create scroll-area: */
+        m_pScrollArea = new QScrollArea;
+        AssertPtrReturnVoid(m_pScrollArea);
+        {
+            /* Configure scroll-area: */
+            m_pScrollArea->setWidgetResizable (true);
+
+            /* Create picture label: */
+            m_pLabelPicture = new QLabel;
+            AssertPtrReturnVoid(m_pLabelPicture);
+            {
+                /* Add into scroll-area: */
+                m_pScrollArea->setWidget(m_pLabelPicture);
+            }
+
+            /* Add into layout: */
+            layout()->addWidget(m_pScrollArea);
+        }
+    }
+
+    /* Calculate aspect-ratio: */
+    double dAspectRatio = (double)m_pixmapScreenshot.height() / m_pixmapScreenshot.width();
+    /* Calculate maximum window size: */
+    const QSize maxSize = m_pixmapScreenshot.size() + QSize(m_pScrollArea->frameWidth() * 2, m_pScrollArea->frameWidth() * 2);
+    /* Calculate initial window size: */
+    const QSize initSize = QSize(640, (int)(640 * dAspectRatio)).boundedTo(maxSize);
+
+    /* Apply maximum window size restrictions: */
+    setMaximumSize(maxSize);
+    /* Apply initial window size: */
+    resize(initSize);
+
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Center according requested widget: */
+    VBoxGlobal::centerWidget(this, parentWidget(), false);
+}
+
+void UIScreenshotViewer::adjustPicture()
+{
+    if (m_fZoomMode)
+    {
+        m_pScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pLabelPicture->setPixmap(m_pixmapScreenshot.scaled(m_pScrollArea->viewport()->size(),
+                                                             Qt::IgnoreAspectRatio,
+                                                             Qt::SmoothTransformation));
+        m_pLabelPicture->setToolTip(tr("Click to view non-scaled screenshot."));
     }
     else
     {
-        mArea->setVerticalScrollBarPolicy (Qt::ScrollBarAsNeeded);
-        mArea->setHorizontalScrollBarPolicy (Qt::ScrollBarAsNeeded);
-        mPicture->setPixmap (mScreenshot);
-        mPicture->setToolTip (tr ("Click to view scaled screenshot."));
+        m_pScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        m_pScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        m_pLabelPicture->setPixmap(m_pixmapScreenshot);
+        m_pLabelPicture->setToolTip(tr("Click to view scaled screenshot."));
     }
 }
+
 
