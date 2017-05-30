@@ -265,18 +265,22 @@ VBoxSnapshotDetailsDlg::VBoxSnapshotDetailsDlg(QWidget *pParent /* = 0 */)
     prepare();
 }
 
-void VBoxSnapshotDetailsDlg::setData(const CSnapshot &comSnapshot)
+void VBoxSnapshotDetailsDlg::setData(const UIDataSnapshot &data, const CSnapshot &comSnapshot)
 {
+    /* Cache old/new data: */
+    m_oldData = data;
+    m_newData = m_oldData;
+
     /* Cache snapshot: */
     m_comSnapshot = comSnapshot;
+
+    /* Load general snapshot properties: */
+    mLeName->setText(m_newData.m_strName);
+    mTeDescription->setText(m_newData.m_strDescription);
 
     /* If there is really a snapshot: */
     if (m_comSnapshot.isNotNull())
     {
-        /* Read general snapshot properties: */
-        mLeName->setText(m_comSnapshot.GetName());
-        mTeDescription->setText(m_comSnapshot.GetDescription());
-
         /* Calculate snapshot timestamp info: */
         QDateTime timestamp;
         timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
@@ -363,9 +367,9 @@ void VBoxSnapshotDetailsDlg::saveData()
         return;
 
     /* Save snapshot name: */
-    m_comSnapshot.SetName(mLeName->text());
+    m_comSnapshot.SetName(m_newData.m_strName);
     /* Save snapshot description: */
-    m_comSnapshot.SetDescription(mTeDescription->toPlainText());
+    m_comSnapshot.SetDescription(m_newData.m_strDescription);
 
     /* Close the session again. */
     comSession.UnlockMachine();
@@ -450,8 +454,16 @@ void VBoxSnapshotDetailsDlg::polishEvent(QShowEvent * /* pEvent */)
 
 void VBoxSnapshotDetailsDlg::sltHandleNameChange(const QString &strName)
 {
+    /* Recache snapshot name: */
+    m_newData.m_strName = strName;
     /* Perform snapshot name sanity check: */
     mButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!strName.trimmed().isEmpty());
+}
+
+void VBoxSnapshotDetailsDlg::sltHandleDescriptionChange()
+{
+    /* Recache snapshot description: */
+    m_newData.m_strDescription = mTeDescription->toPlainText();
 }
 
 void VBoxSnapshotDetailsDlg::prepare()
@@ -467,6 +479,14 @@ void VBoxSnapshotDetailsDlg::prepare()
             /* Configure editor: */
             connect(mLeName, &QLineEdit::textChanged,
                     this, &VBoxSnapshotDetailsDlg::sltHandleNameChange);
+        }
+
+        /* Description editor created in the .ui file: */
+        AssertPtrReturnVoid(mTeDescription);
+        {
+            /* Configure editor: */
+            connect(mTeDescription, &QTextEdit::textChanged,
+                    this, &VBoxSnapshotDetailsDlg::sltHandleDescriptionChange);
         }
 
         /* Thumbnail label created in the .ui file: */

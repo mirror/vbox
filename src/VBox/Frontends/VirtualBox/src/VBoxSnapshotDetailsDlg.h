@@ -26,6 +26,36 @@
 #include "CSnapshot.h"
 
 
+/** Snapshot pane: Snapshot data structure. */
+struct UIDataSnapshot
+{
+    /** Constructs data. */
+    UIDataSnapshot()
+        : m_strName(QString())
+        , m_strDescription(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSnapshot &other) const
+    {
+        return true
+               && (m_strName == other.m_strName)
+               && (m_strDescription == other.m_strDescription)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSnapshot &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSnapshot &other) const { return !equal(other); }
+
+    /** Holds the snapshot name. */
+    QString m_strName;
+    /** Holds the snapshot description. */
+    QString m_strDescription;
+};
+
+
 /** QDialog extension providing GUI with snapshot details dialog. */
 class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI<QDialog>, public Ui::VBoxSnapshotDetailsDlg
 {
@@ -37,7 +67,7 @@ public:
     VBoxSnapshotDetailsDlg(QWidget *pParent = 0);
 
     /** Defines the snapshot @a data. */
-    void setData(const CSnapshot &comSnapshot);
+    void setData(const UIDataSnapshot &data, const CSnapshot &comSnapshot);
     /** Saves the snapshot data. */
     void saveData();
 
@@ -58,6 +88,8 @@ private slots:
 
     /** Handles snapshot @a strName change. */
     void sltHandleNameChange(const QString &strName);
+    /** Handles snapshot description change. */
+    void sltHandleDescriptionChange();
 
 private:
 
@@ -69,6 +101,11 @@ private:
 
     /** Holds the snapshot object to load data from. */
     CSnapshot m_comSnapshot;
+
+    /** Holds the old data copy. */
+    UIDataSnapshot  m_oldData;
+    /** Holds the new data copy. */
+    UIDataSnapshot  m_newData;
 
     /** Holds the cached thumbnail. */
     QPixmap m_pixmapThumbnail;
