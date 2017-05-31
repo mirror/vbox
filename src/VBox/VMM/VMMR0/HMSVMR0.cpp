@@ -2966,7 +2966,7 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 {
     HMSVM_ASSERT_PREEMPT_SAFE();
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_IN_IEM
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     /* Nested Hw. virt through SVM R0 execution is not yet implemented, IEM only, we shouldn't get here. */
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         return VINF_EM_RESCHEDULE_REM;
