@@ -5064,7 +5064,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 
     if (IEM_IS_SVM_READ_CR_INTERCEPT_SET(pVCpu, iCrReg))
     {
-        Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+        Log(("iemCImpl_mov_Rd_Cd%#x: Guest intercept -> #VMEXIT\n", iCrReg));
         IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_READ_CR0 + iCrReg, IEMACCESSCRX_MOV_CRX, iGReg);
     }
 
@@ -5082,6 +5082,13 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 4: crX = pCtx->cr4; break;
         case 8:
         {
+#ifdef VBOX_WITH_NESTED_HWVIRT
+            if (pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIntrMasking)
+            {
+                crX = pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u8VTPR;
+                break;
+            }
+#endif
             uint8_t uTpr;
             int rc = APICGetTpr(pVCpu, &uTpr, NULL, NULL);
             if (RT_SUCCESS(rc))
@@ -5433,22 +5440,36 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
          * CR8 maps to the APIC TPR.
          */
         case 8:
+        {
             if (uNewCrX & ~(uint64_t)0xf)
             {
                 Log(("Trying to set reserved CR8 bits (%#RX64)\n", uNewCrX));
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
-            if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 8))
+            uint8_t const u8Tpr = (uint8_t)uNewCrX << 4;
+#ifdef VBOX_WITH_NESTED_HWVIRT
+            if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             {
-                Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
-                IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR8, enmAccessCrX, iGReg);
-            }
+                if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 8))
+                {
+                    Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                    IEM_RETURN_SVM_NST_GST_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR8, enmAccessCrX, iGReg);
+                }
 
+                pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u8VTPR = u8Tpr;
+                if (pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIntrMasking)
+                {
+                    rcStrict = VINF_SUCCESS;
+                    break;
+                }
+            }
+#endif
             if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-                APICSetTpr(pVCpu, (uint8_t)uNewCrX << 4);
+                APICSetTpr(pVCpu, u8Tpr);
             rcStrict = VINF_SUCCESS;
             break;
+        }
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
     }
@@ -6193,7 +6214,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
         IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_VMRUN, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    VBOXSTRICTRC rcStrict = HMSvmVmrun(pVCpu, pCtx, GCPhysVmcb);
+    VBOXSTRICTRC rcStrict = HMSvmVmrun(pVCpu, pCtx, cbInstr, GCPhysVmcb);
     /* If VMRUN execution causes a #VMEXIT, we continue executing the instruction following the VMRUN. */
     if (rcStrict == VINF_SVM_VMEXIT)
     {

@@ -923,7 +923,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
                                                 uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo, uint8_t cbInstr)
 {
     Assert(IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT));
-    Assert(cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
+    Assert(cAddrSizeBits == 0 || cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
     Assert(cbReg == 1 || cbReg == 2 || cbReg == 4 || cbReg == 8);
 
     static const uint32_t s_auIoOpSize[]   = { SVM_IOIO_32_BIT_OP, SVM_IOIO_8_BIT_OP, SVM_IOIO_16_BIT_OP, 0, SVM_IOIO_32_BIT_OP, 0, 0, 0 };
@@ -3377,7 +3377,7 @@ IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
 IEM_STATIC VBOXSTRICTRC iemHandleSvmNstGstEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t u8Vector, uint32_t fFlags,
                                                          uint32_t uErr, uint64_t uCr2)
 {
-    Assert(IEM_IS_SVM_ENABLED(pVCpu));
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
     /*
      * Handle nested-guest SVM exception and software interrupt intercepts,
@@ -3431,8 +3431,8 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmNstGstEventIntercept(PVMCPU pVCpu, PCPUMCTX 
             }
 #endif
         }
-        Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept. u8Vector=%#x uExitInfo1=%#RX64, uExitInfo2=%#RX64 -> #VMEXIT\n",
-             u8Vector, uExitInfo1, uExitInfo2));
+        Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept. u32InterceptXcpt=%#RX32 u8Vector=%#x uExitInfo1=%#RX64, uExitInfo2=%#RX64 -> #VMEXIT\n",
+             pCtx->hwvirt.svm.VmcbCtrl.u32InterceptXcpt, u8Vector, uExitInfo1, uExitInfo2));
         IEM_RETURN_SVM_NST_GST_VMEXIT(pVCpu, SVM_EXIT_EXCEPTION_0 + u8Vector, uExitInfo1, uExitInfo2);
     }
 
@@ -5466,7 +5466,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
-    if (IEM_IS_SVM_ENABLED(pVCpu))
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
         /*
          * If the event is being injected as part of VMRUN, it isn't subject to event
@@ -16046,7 +16046,7 @@ VMM_INT_DECL(bool) IEMGetCurrentXcpt(PVMCPU pVCpu, uint8_t *puVector, uint32_t *
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
- * Interface for HM and EM to emulate the STGI instruction.
+ * Interface for HM and EM to emulate the CLGI instruction.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
