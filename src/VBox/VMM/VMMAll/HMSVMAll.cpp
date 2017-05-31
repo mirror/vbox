@@ -1040,7 +1040,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
      */
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT));
-    Log(("HMSvmNstGstHandleIOIntercept: u16Port=%u\n", pIoExitInfo->n.u16Port));
+    Log3(("HMSvmNstGstHandleIOIntercept: u16Port=%u\n", pIoExitInfo->n.u16Port));
 
     /*
      * The IOPM layout:
@@ -1067,12 +1067,11 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
     uint16_t const u16Iopm = *(uint16_t *)pbIopm;
     if (u16Iopm & fIopmMask)
     {
-        Log(("HMSvmNstGstHandleIOIntercept: u16Port=%u offIoPm=%u fSizeMask=%#x cShift=%u fIopmMask=%#x\n", u16Port, offIopm,
+        Log3(("HMSvmNstGstHandleIOIntercept: u16Port=%u offIoPm=%u fSizeMask=%#x cShift=%u fIopmMask=%#x\n", u16Port, offIopm,
              fSizeMask, cShift, fIopmMask));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_IOIO, pIoExitInfo->u, uNextRip);
     }
 
-    Log(("HMSvmNstGstHandleIOIntercept: huh!?\n"));
     AssertMsgFailed(("We expect an IO intercept here!\n"));
     return VINF_HM_INTERCEPT_NOT_ACTIVE;
 }
