@@ -1510,8 +1510,18 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
     AssertPtrReturn(pfEvents, VERR_INVALID_PARAMETER);
     AssertReturn(!(fEvents & ~RTSOCKET_EVT_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
-    int const fdMax = (int)pThis->hNative + 1;
-    AssertReturn((RTSOCKETNATIVE)(fdMax - 1) == pThis->hNative, VERR_INTERNAL_ERROR_5);
+
+    RTSOCKETNATIVE hNative = pThis->hNative;
+    if (hNative == NIL_RTSOCKETNATIVE)
+    {
+        /* Socket is already closed? Possible we raced someone calling rtSocketCloseIt.
+           Should we return a different status code? */
+        *pfEvents = RTSOCKET_EVT_ERROR;
+        return VINF_SUCCESS;
+    }
+
+    int const fdMax = (int)hNative + 1;
+    AssertReturn((RTSOCKETNATIVE)(fdMax - 1) == hNative, VERR_INTERNAL_ERROR_5);
 
     *pfEvents = 0;
 
@@ -1526,11 +1536,11 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
     FD_ZERO(&fdsetE);
 
     if (fEvents & RTSOCKET_EVT_READ)
-        FD_SET(pThis->hNative, &fdsetR);
+        FD_SET(hNative, &fdsetR);
     if (fEvents & RTSOCKET_EVT_WRITE)
-        FD_SET(pThis->hNative, &fdsetW);
+        FD_SET(hNative, &fdsetW);
     if (fEvents & RTSOCKET_EVT_ERROR)
-        FD_SET(pThis->hNative, &fdsetE);
+        FD_SET(hNative, &fdsetE);
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
@@ -1544,17 +1554,22 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
     }
     if (rc > 0)
     {
-        if (pThis->hNative != NIL_RTSOCKETNATIVE)
+        if (pThis->hNative == hNative)
         {
-            if (FD_ISSET(pThis->hNative, &fdsetR))
+            if (FD_ISSET(hNative, &fdsetR))
                 *pfEvents |= RTSOCKET_EVT_READ;
-            if (FD_ISSET(pThis->hNative, &fdsetW))
+            if (FD_ISSET(hNative, &fdsetW))
                 *pfEvents |= RTSOCKET_EVT_WRITE;
-            if (FD_ISSET(pThis->hNative, &fdsetE))
+            if (FD_ISSET(hNative, &fdsetE))
                 *pfEvents |= RTSOCKET_EVT_ERROR;
+            rc = VINF_SUCCESS;
         }
-
-        rc = VINF_SUCCESS;
+        else
+        {
+            /* Socket was closed while we waited (rtSocketCloseIt).  Different status code? */
+            *pfEvents = RTSOCKET_EVT_ERROR;
+            rc = VINF_SUCCESS;
+        }
     }
     else if (rc == 0)
         rc = VERR_TIMEOUT;
