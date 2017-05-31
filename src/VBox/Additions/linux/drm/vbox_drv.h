@@ -89,7 +89,7 @@ struct vbox_private {
 
     u8 __iomem *guest_heap;
     u8 __iomem *vbva_buffers;
-    HGSMIGUESTCOMMANDCONTEXT submit_info;
+    struct gen_pool *guest_pool;
     struct VBVABUFFERCONTEXT *vbva_info;
     bool any_pitch;
     unsigned num_crtcs;

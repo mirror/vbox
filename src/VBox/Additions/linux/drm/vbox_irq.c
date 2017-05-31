@@ -123,7 +123,7 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
     unsigned crtc_id;
     int rc;
 
-    rc = VBoxHGSMIGetModeHints(&vbox->submit_info, vbox->num_crtcs,
+    rc = VBoxHGSMIGetModeHints(vbox->guest_pool, vbox->num_crtcs,
                                vbox->last_mode_hints);
     if (RT_FAILURE(rc)) {
         printk("vboxvideo: VBoxHGSMIGetModeHints failed, rc=%i.\n", rc);
@@ -149,7 +149,7 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
             vbox_connector->vbox_crtc->y_hint = hints->dy;
             vbox_connector->mode_hint.disconnected = disconnected;
             if (vbox_connector->vbox_crtc->disconnected != disconnected) {
-                VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, crtc_id,
+                VBoxHGSMIProcessDisplayInfo(vbox->guest_pool, crtc_id,
                                             0, 0, 0, hints->cx * 4, hints->cx,
                                             hints->cy, 0, flags);
                 vbox_connector->vbox_crtc->disconnected = disconnected;

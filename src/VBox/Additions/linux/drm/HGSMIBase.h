@@ -33,9 +33,7 @@
 #include <HGSMIDefs.h>
 #include <linux/genalloc.h>
 
-typedef struct HGSMIGUESTCOMMANDCONTEXT {
-	struct gen_pool *guest_pool;
-} HGSMIGUESTCOMMANDCONTEXT, *PHGSMIGUESTCOMMANDCONTEXT;
+typedef struct gen_pool *PHGSMIGUESTCOMMANDCONTEXT;
 
 void *hgsmi_buffer_alloc(struct gen_pool *guest_pool, size_t size,
 			 u8 channel, u16 channel_info);
@@ -47,8 +45,8 @@ int hgsmi_buffer_submit(struct gen_pool *guest_pool, void *buf);
  * kernel style names.
  */
 #define VBoxHGSMIBufferAlloc(ctx, size, ch, ch_info) \
-	hgsmi_buffer_alloc((ctx)->guest_pool, size, ch, ch_info)
-#define VBoxHGSMIBufferFree(ctx, buf)	hgsmi_buffer_free((ctx)->guest_pool, buf)
-#define VBoxHGSMIBufferSubmit(ctx, buf)	hgsmi_buffer_submit((ctx)->guest_pool, buf)
+	hgsmi_buffer_alloc(ctx, size, ch, ch_info)
+#define VBoxHGSMIBufferFree(ctx, buf)	hgsmi_buffer_free(ctx, buf)
+#define VBoxHGSMIBufferSubmit(ctx, buf)	hgsmi_buffer_submit(ctx, buf)
 
 #endif

@@ -100,7 +100,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
     flags = VBVA_SCREEN_F_ACTIVE;
     flags |= (crtc->enabled && !vbox_crtc->blanked ? 0 : VBVA_SCREEN_F_BLANK);
     flags |= (vbox_crtc->disconnected ? VBVA_SCREEN_F_DISABLED : 0);
-    VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, vbox_crtc->crtc_id,
+    VBoxHGSMIProcessDisplayInfo(vbox->guest_pool, vbox_crtc->crtc_id,
                                 x_offset, y_offset,
                                 crtc->x * bpp / 8 + crtc->y * pitch,
                                 pitch, width, height,
@@ -121,7 +121,7 @@ static int vbox_set_view(struct drm_crtc *crtc)
      * second and so on.  The first match wins.  We cheat around this by making
      * the first view be the managed memory plus the first command buffer, the
      * second the same plus the second buffer and so on. */
-    p = VBoxHGSMIBufferAlloc(&vbox->submit_info, sizeof(VBVAINFOVIEW), HGSMI_CH_VBVA,
+    p = VBoxHGSMIBufferAlloc(vbox->guest_pool, sizeof(VBVAINFOVIEW), HGSMI_CH_VBVA,
                              VBVA_INFO_VIEW);
     if (p)
     {
@@ -131,8 +131,8 @@ static int vbox_set_view(struct drm_crtc *crtc)
         pInfo->u32ViewSize =   vbox->available_vram_size - vbox_crtc->fb_offset
                              + vbox_crtc->crtc_id * VBVA_MIN_BUFFER_SIZE;
         pInfo->u32MaxScreenSize = vbox->available_vram_size - vbox_crtc->fb_offset;
-        VBoxHGSMIBufferSubmit(&vbox->submit_info, p);
-        VBoxHGSMIBufferFree(&vbox->submit_info, p);
+        VBoxHGSMIBufferSubmit(vbox->guest_pool, p);
+        VBoxHGSMIBufferFree(vbox->guest_pool, p);
     }
     else
         return -ENOMEM;
@@ -296,7 +296,7 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
     rc = vbox_set_view(crtc);
     if (!rc)
         vbox_do_modeset(crtc, mode);
-    VBoxHGSMIUpdateInputMapping(&vbox->submit_info, 0, 0,
+    VBoxHGSMIUpdateInputMapping(vbox->guest_pool, 0, 0,
                                 vbox->input_mapping_width,
                                 vbox->input_mapping_height);
     mutex_unlock(&vbox->hw_mutex);
@@ -535,7 +535,7 @@ static int vbox_get_modes(struct drm_connector *connector)
      * this place in the code rather than elsewhere.
      * We need to report the flags location before reporting the IRQ
      * capability. */
-    VBoxHGSMIReportFlagsLocation(&vbox->submit_info, GUEST_HEAP_OFFSET(vbox) +
+    VBoxHGSMIReportFlagsLocation(vbox->guest_pool, GUEST_HEAP_OFFSET(vbox) +
                                                      HOST_FLAGS_OFFSET);
     if (vbox_connector->vbox_crtc->crtc_id == 0)
         vbox_report_caps(vbox);
@@ -728,7 +728,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 
     /* Re-set this regularly as in 5.0.20 and earlier the information was lost
      * on save and restore. */
-    VBoxHGSMIUpdateInputMapping(&vbox->submit_info, 0, 0,
+    VBoxHGSMIUpdateInputMapping(vbox->guest_pool, 0, 0,
                                 vbox->input_mapping_width,
                                 vbox->input_mapping_height);
     if (!handle) {
@@ -741,14 +741,14 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
             if (to_vbox_crtc(crtci)->cursor_enabled)
                 cursor_enabled = true;
         if (!cursor_enabled)
-            VBoxHGSMIUpdatePointerShape(&vbox->submit_info, 0, 0, 0, 0, 0, NULL, 0);
+            VBoxHGSMIUpdatePointerShape(vbox->guest_pool, 0, 0, 0, 0, 0, NULL, 0);
         return 0;
     }
     vbox_crtc->cursor_enabled = true;
     if (   width > VBOX_MAX_CURSOR_WIDTH || height > VBOX_MAX_CURSOR_HEIGHT
         || width == 0 || height == 0)
         return -EINVAL;
-    rc = VBoxQueryConfHGSMI(&vbox->submit_info,
+    rc = VBoxQueryConfHGSMI(vbox->guest_pool,
                             VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &caps);
     ret = rc == VINF_SUCCESS ? 0 : rc == VERR_NO_MEMORY ? -ENOMEM : -EINVAL;
     if (ret)
@@ -789,7 +789,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
                                       | VBOX_MOUSE_POINTER_SHAPE
                                       | VBOX_MOUSE_POINTER_ALPHA;
                     copy_cursor_image(src, dst, width, height, mask_size);
-                    rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, flags,
+                    rc = VBoxHGSMIUpdatePointerShape(vbox->guest_pool, flags,
                                                      vbox->cursor_hot_x,
                                                      vbox->cursor_hot_y,
                                                      width, height, dst,
@@ -834,7 +834,7 @@ static int vbox_cursor_move(struct drm_crtc *crtc,
     /* We compare these to unsigned later and don't need to handle negative. */
     if (x + crtc_x < 0 || y + crtc_y < 0 || vbox->cursor_data_size == 0)
         return 0;
-    rc = VBoxHGSMICursorPosition(&vbox->submit_info, true, x + crtc_x,
+    rc = VBoxHGSMICursorPosition(vbox->guest_pool, true, x + crtc_x,
                                  y + crtc_y, &host_x, &host_y);
     /* Work around a bug after save and restore in 5.0.20 and earlier. */
     if (RT_FAILURE(rc) || (host_x == 0 && host_y == 0))
@@ -849,7 +849,7 @@ static int vbox_cursor_move(struct drm_crtc *crtc,
         return 0;
     vbox->cursor_hot_x = hot_x;
     vbox->cursor_hot_y = hot_y;
-    rc = VBoxHGSMIUpdatePointerShape(&vbox->submit_info, flags, hot_x, hot_y,
+    rc = VBoxHGSMIUpdatePointerShape(vbox->guest_pool, flags, hot_x, hot_y,
                                      vbox->cursor_width, vbox->cursor_height,
                                      vbox->cursor_data,
                                      vbox->cursor_data_size);

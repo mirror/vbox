@@ -132,9 +132,8 @@ else
  VBOX_PDFLATEX_CMD         = pdflatex $(VBOX_PDFLATEX_HALT) -interaction $(VBOX_PDFLATEX_INTERACTION)
 endif
 
-# Windows HTML Help Workshop compiler (stupid thing always returns an error!)
-VBOX_HHC = -$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe
-
+# FreePascal chm compiler
+VBOX_HHC = chmcmd
 
 # Additional xsltproc options when generating
 VBOX_HTMLHELP_OPTS ?=
@@ -729,7 +728,7 @@ ifdef VBOX_WITH_DOCS_CHM
 		$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(f))))
 	$(call MSG_L1,hhc $<,=> $@)
 	$(QUIET)$(RM) -f $@
-	$(QUIET)$(VBOX_HHC) $(subst /,\\,$<)
+	$(QUIET)cd $(dir $<); $(VBOX_HHC) $<; chmod 0644 $@
 
  # Prepare the XSL file for our title page, htmlhelp variant.
  $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/titlepage-htmlhelp.xsl): \
@@ -752,7 +751,7 @@ ifdef VBOX_WITH_DOCS_CHM
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --output $(@D)/ \
 		--stringparam htmlhelp.chm \
-		$(subst /,\\,$(@D)/../VirtualBox.chm) \
+		$(@D)/../VirtualBox.chm \
 		$(HTMLHELPOPTS) $(@D)/../docbook-htmlhelp-formatcfg.xsl \
 		$<
 

@@ -63,7 +63,7 @@ void vbox_enable_accel(struct vbox_private *vbox)
         if (vbox->vbva_info[i].pVBVA == NULL) {
             vbva = (struct VBVABUFFER *) ((u8 *)vbox->vbva_buffers
                                            + i * VBVA_MIN_BUFFER_SIZE);
-            if (!VBoxVBVAEnable(&vbox->vbva_info[i], &vbox->submit_info, vbva, i)) {
+            if (!VBoxVBVAEnable(&vbox->vbva_info[i], vbox->guest_pool, vbva, i)) {
                 /* very old host or driver error. */
                 printk(KERN_ERR "vboxvideo: VBoxVBVAEnable failed - heap allocation error.\n");
                 return;
@@ -77,7 +77,7 @@ void vbox_disable_accel(struct vbox_private *vbox)
     unsigned i;
 
     for (i = 0; i < vbox->num_crtcs; ++i)
-        VBoxVBVADisable(&vbox->vbva_info[i], &vbox->submit_info, i);
+        VBoxVBVADisable(&vbox->vbva_info[i], vbox->guest_pool, i);
 }
 
 void vbox_report_caps(struct vbox_private *vbox)
@@ -87,7 +87,7 @@ void vbox_report_caps(struct vbox_private *vbox)
                      | VBVACAPS_USE_VBVA_ONLY;
     if (vbox->initial_mode_queried)
         caps |= VBVACAPS_VIDEO_MODE_HINTS;
-    VBoxHGSMISendCapsInfo(&vbox->submit_info, caps);
+    VBoxHGSMISendCapsInfo(vbox->guest_pool, caps);
 }
 
 /** Send information about dirty rectangles to VBVA.  If necessary we enable
@@ -123,9 +123,9 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                 cmd_hdr.w = (uint16_t)rects[i].x2 - rects[i].x1;
                 cmd_hdr.h = (uint16_t)rects[i].y2 - rects[i].y1;
                 if (VBoxVBVABufferBeginUpdate(&vbox->vbva_info[crtc_id],
-                                              &vbox->submit_info))
+                                              vbox->guest_pool))
                 {
-                    VBoxVBVAWrite(&vbox->vbva_info[crtc_id], &vbox->submit_info, &cmd_hdr,
+                    VBoxVBVAWrite(&vbox->vbva_info[crtc_id], vbox->guest_pool, &cmd_hdr,
                                   sizeof(cmd_hdr));
                     VBoxVBVABufferEndUpdate(&vbox->vbva_info[crtc_id]);
                 }
@@ -263,8 +263,8 @@ static bool have_hgsmi_mode_hints(struct vbox_private *vbox)
 {
     uint32_t have_hints, have_cursor;
 
-    return    RT_SUCCESS(VBoxQueryConfHGSMI(&vbox->submit_info, VBOX_VBVA_CONF32_MODE_HINT_REPORTING, &have_hints))
-           && RT_SUCCESS(VBoxQueryConfHGSMI(&vbox->submit_info, VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING, &have_cursor))
+    return    RT_SUCCESS(VBoxQueryConfHGSMI(vbox->guest_pool, VBOX_VBVA_CONF32_MODE_HINT_REPORTING, &have_hints))
+           && RT_SUCCESS(VBoxQueryConfHGSMI(vbox->guest_pool, VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING, &have_cursor))
            && have_hints == VINF_SUCCESS
            && have_cursor == VINF_SUCCESS;
 }
@@ -286,11 +286,11 @@ static int vbox_hw_init(struct vbox_private *vbox)
         return -ENOMEM;
 
     /* Create guest-heap mem-pool use 2^4 = 16 byte chunks */
-    vbox->submit_info.guest_pool = gen_pool_create(4, -1);
-    if (!vbox->submit_info.guest_pool)
+    vbox->guest_pool = gen_pool_create(4, -1);
+    if (!vbox->guest_pool)
         return -ENOMEM;
 
-    ret = gen_pool_add_virt(vbox->submit_info.guest_pool,
+    ret = gen_pool_add_virt(vbox->guest_pool,
 			    (unsigned long)vbox->guest_heap,
 			    GUEST_HEAP_OFFSET(vbox),
 			    GUEST_HEAP_USABLE_SIZE, -1);
@@ -300,7 +300,7 @@ static int vbox_hw_init(struct vbox_private *vbox)
     /* Reduce available VRAM size to reflect the guest heap. */
     vbox->available_vram_size = GUEST_HEAP_OFFSET(vbox);
     /* Linux drm represents monitors as a 32-bit array. */
-    vbox->num_crtcs = min(VBoxHGSMIGetMonitorCount(&vbox->submit_info),
+    vbox->num_crtcs = min(VBoxHGSMIGetMonitorCount(vbox->guest_pool),
                           (uint32_t)VBOX_MAX_SCREENS);
     if (!have_hgsmi_mode_hints(vbox))
         return -ENOTSUPP;
@@ -384,8 +384,8 @@ int vbox_driver_unload(struct drm_device *dev)
 
     vbox_hw_fini(vbox);
     vbox_mm_fini(vbox);
-    if (vbox->submit_info.guest_pool)
-        gen_pool_destroy(vbox->submit_info.guest_pool);
+    if (vbox->guest_pool)
+        gen_pool_destroy(vbox->guest_pool);
     if (vbox->guest_heap)
         pci_iounmap(dev->pdev, vbox->guest_heap);
     kfree(vbox);
