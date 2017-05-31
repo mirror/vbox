@@ -29,12 +29,8 @@
 #define ___VBox_VBoxVideoIPRT_h
 
 #include <asm/io.h>
-#include <iprt/cdefs.h>
-#include <iprt/stdarg.h>
-#include <iprt/stdint.h>
-#include <iprt/types.h>
-
 #include <linux/string.h>
+#include <linux/version.h>
 
 /** @name VirtualBox error macros
  * @{ */
@@ -82,6 +78,8 @@ extern int RTASSERTVAR[1];
 #define AssertCompileSize(type, size) \
     AssertCompile(sizeof(type) == (size))
 
+#define VALID_PTR(p) (p != NULL)
+
 /** @}  */
 
 /** @name Port I/O helpers
@@ -113,6 +111,26 @@ extern int RTASSERTVAR[1];
 /* HGSMI uses 32 bit offsets and sizes. */
 typedef uint32_t HGSMISIZE;
 typedef uint32_t HGSMIOFFSET;
+
+typedef void RTRECT;
+
+#define UINT32_C(val)		(val ## U)
+#define UINT32_MAX		UINT32_C(0xffffffff)
+
+/** @}  */
+
+/** @name iprt/desc.h replacement macros
+ * @{ */
+
+#define RT_C_DECLS_BEGIN
+#define RT_C_DECLS_END
+#define DECLCALLBACK(type) type
+#define DECLCALLBACKMEMBER(type, name) type (*name)
+#define DECLHIDDEN(type) __attribute__((visibility("hidden"))) type
+#define DECLINLINE(type) static __inline__ type
+#define RT_BOOL(val) (!!(val))
+#define RT_BIT BIT
+#define _1K 0x00000400
 
 /** @}  */
 
