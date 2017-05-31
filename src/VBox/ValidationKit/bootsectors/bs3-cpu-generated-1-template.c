@@ -119,6 +119,7 @@ AssertCompile(BS3CG1OPLOC_END <= 16);
  * @param   pThis       The state.
  * @param   iEncoding   The encoding.
  */
+struct BS3CG1STATE;
 typedef BS3_DECL_NEAR(unsigned) FNBS3CG1ENCODER(struct BS3CG1STATE *pThis, unsigned iEncoding);
 /** Pointer to a encoder callback. */
 typedef FNBS3CG1ENCODER *PFNBS3CG1ENCODER;
@@ -1500,7 +1501,7 @@ Bs3Cfg1EncodeMemMod0DispWithDefaultsAndNoReg(PBS3CG1STATE pThis, unsigned off)
 
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Eb_Gb_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Eb_Gb_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1539,7 +1540,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Eb_Gb_OR_ViceVersa(PBS3CG1S
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_Ev__OR__MODRM_Ev_Gv(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Gv_Ev__OR__MODRM_Ev_Gv(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     unsigned cbOp;
@@ -1615,7 +1616,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_Ev__OR__MODRM_Ev_Gv(PBS3
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Pq_WO_Qq(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Pq_WO_Qq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1667,7 +1668,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Pq_WO_Qq(PBS3CG1STATE pThis
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Pq_WO_Uq(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Pq_WO_Uq(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1695,7 +1696,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Pq_WO_Uq(PBS3CG1STATE pThis
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_PdZx_WO_Ed_WZ(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_PdZx_WO_Ed_WZ(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1745,7 +1746,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_PdZx_WO_Ed_WZ(PBS3CG1STATE 
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Pq_WO_Eq_WNZ(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Pq_WO_Eq_WNZ(PBS3CG1STATE pThis, unsigned iEncoding)
 {
 #if ARCH_BITS == 64
     if (BS3CG1_IS_64BIT_TARGET(pThis))
@@ -1804,7 +1805,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Pq_WO_Eq_WNZ(PBS3CG1STATE p
 
 
 /* Differs from Bs3Cg1EncodeNext_MODRM_PdZx_WO_Ed_WZ in that REX.R isn't ignored. */
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vd_WO_Ed_WZ(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Vd_WO_Ed_WZ(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1855,7 +1856,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vd_WO_Ed_WZ(PBS3CG1STATE pT
 
 
 /* Differs from Bs3Cg1EncodeNext_MODRM_Pq_WO_Eq_WNZ in that REX.R isn't ignored. */
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vq_WO_Eq_WNZ(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Vq_WO_Eq_WNZ(PBS3CG1STATE pThis, unsigned iEncoding)
 {
 #if ARCH_BITS == 64
     if (BS3CG1_IS_64BIT_TARGET(pThis))
@@ -1913,7 +1914,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vq_WO_Eq_WNZ(PBS3CG1STATE p
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vsomething_Usomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Vsomething_Usomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1941,7 +1942,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vsomething_Usomething_OR_Vi
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vsomething_Wsomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Vsomething_Wsomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1969,7 +1970,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vsomething_Wsomething_OR_Vi
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vsomething_Nsomething(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Vsomething_Nsomething(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -1998,7 +1999,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Vsomething_Nsomething(PBS3C
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_RO_Ma(PBS3CG1STATE pThis, unsigned iEncoding) /* bound instr */
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Gv_RO_Ma(PBS3CG1STATE pThis, unsigned iEncoding) /* bound instr */
 {
     unsigned off;
     unsigned cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
@@ -2038,7 +2039,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Gv_RO_Ma(PBS3CG1STATE pThis
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Msomething(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -2055,7 +2056,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething(PBS3CG1STATE pTh
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething_Psomething(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Msomething_Psomething(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -2087,7 +2088,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething_Psomething(PBS3C
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething_Vsomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_Msomething_Vsomething_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -2117,7 +2118,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_Msomething_Vsomething_OR_Vi
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_FIXED(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -2133,7 +2134,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED(PBS3CG1STATE pThis, unsigne
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED_AL_Ib(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_FIXED_AL_Ib(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -2151,7 +2152,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED_AL_Ib(PBS3CG1STATE pThis, u
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED_rAX_Iz(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_FIXED_rAX_Iz(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     unsigned cbOp;
@@ -2214,7 +2215,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_FIXED_rAX_Iz(PBS3CG1STATE pThis, 
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding < 8)
@@ -2237,7 +2238,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MOD_EQ_3(PBS3CG1STATE pThis
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_MODRM_MOD_NE_3(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_MODRM_MOD_NE_3(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding < 3)
@@ -2378,7 +2379,7 @@ static unsigned Bs3Cg1InsertModRmWithRegFieldsAndVvvv(PBS3CG1STATE pThis, unsign
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Vd_WO_Ed_WZ(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_VEX_MODRM_Vd_WO_Ed_WZ(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -2460,7 +2461,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Vd_WO_Ed_WZ(PBS3CG1STAT
 
 
 /* Differs from Bs3Cg1EncodeNext_MODRM_Pq_WO_Eq_WNZ in that REX.R isn't ignored. */
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Vq_WO_Eq_WNZ(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_VEX_MODRM_Vq_WO_Eq_WNZ(PBS3CG1STATE pThis, unsigned iEncoding)
 {
 #if ARCH_BITS == 64
     if (BS3CG1_IS_64BIT_TARGET(pThis))
@@ -2524,7 +2525,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Vq_WO_Eq_WNZ(PBS3CG1STA
  * Wip - VEX.W ignored.
  * Lig - VEX.L ignored.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2584,7 +2585,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Usomething_Lip_Wip_OR_ViceVer
 /**
  * Wip - VEX.W ignored.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2646,7 +2647,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_HdqCsomething_Usomething_Wip_OR_ViceVers
 /**
  * Wip - VEX.W ignored.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2740,7 +2741,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_OR_ViceVersa(PBS3CG1STATE
  * Wip - VEX.W ignored.
  * Lig - VEX.L ignored.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lig_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2828,7 +2829,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lig_OR_ViceVersa(PBS3CG1S
  * Wip - VEX.W ignored.
  * L0 - VEX.L must be zero.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lmbz_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -2999,7 +3000,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lxx_OR_ViceVersa(PBS3CG1S
  * Wip - VEX.W ignored.
  * L0 - VEX.L is zero (encoding may exist where it isn't).
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     return Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lxx_OR_ViceVersa(pThis, iEncoding, 0 /*uVexL*/);
@@ -3010,7 +3011,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L0_OR_ViceVersa(PBS3CG1ST
  * Wip - VEX.W ignored.
  * L1 - VEX.L is one (encoding may exist where it isn't).
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L1_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     return Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_Lxx_OR_ViceVersa(pThis, iEncoding, 1 /*uVexL*/);
@@ -3021,7 +3022,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Msomething_Wip_L1_OR_ViceVersa(PBS3CG1ST
 /**
  * Wip - VEX.W ignored.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Msomething_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -3110,7 +3111,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_VsomethingWO_Hsomething_Msomething_Wip_OR_ViceVersa(P
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Md_WO(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_VEX_MODRM_Md_WO(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     switch (iEncoding)
@@ -3186,7 +3187,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_Md_WO(PBS3CG1STATE pThi
  * Wip = VEX.W ignored.
  * Lmbz = VEX.L must be zero.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_Lmbz_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -3268,7 +3269,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_Lmbz_OR_ViceVersa(PBS3CG1
 /**
  * Wip = VEX.W ignored.
  */
-static unsigned BS3_NEAR_CODE
+static BS3_DECL_NEAR_CALLBACK(unsigned)
 Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
@@ -3425,7 +3426,7 @@ Bs3Cg1EncodeNext_VEX_MODRM_WsomethingWO_Vsomething_Wip_OR_ViceVersa(PBS3CG1STATE
 //}
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_VEX_MODRM_MOD_EQ_3(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding < 8)
@@ -3473,7 +3474,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_MOD_EQ_3(PBS3CG1STATE p
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_MOD_NE_3(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_VEX_MODRM_MOD_NE_3(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
     if (iEncoding < 8)
@@ -3505,7 +3506,7 @@ static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM_MOD_NE_3(PBS3CG1STATE p
 }
 
 
-static unsigned BS3_NEAR_CODE Bs3Cg1EncodeNext_VEX_MODRM(PBS3CG1STATE pThis, unsigned iEncoding)
+static BS3_DECL_NEAR_CALLBACK(unsigned) Bs3Cg1EncodeNext_VEX_MODRM(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     const unsigned cFirstEncodings = 32;
     if (iEncoding < cFirstEncodings)
