@@ -28,12 +28,11 @@
 #ifndef ___VBox_VBoxVideoIPRT_h
 #define ___VBox_VBoxVideoIPRT_h
 
-#include <asm/atomic.h>
 #include <asm/io.h>
 #include <iprt/cdefs.h>
-#include <iprt/list.h>
 #include <iprt/stdarg.h>
 #include <iprt/stdint.h>
+#include <iprt/types.h>
 
 #include <linux/string.h>
 
@@ -62,10 +61,6 @@
 /** @name VirtualBox helper functions
  * @{ */
 
-#define RT_ZERO(x) memset(&(x), 0, sizeof(x))
-#define ASMAtomicCmpXchgBool(b, new_val, old_val) \
-	(cmpxchg(b, old_val, new_val) == old_val)
-#define ASMAtomicWriteBool(b, val) xchg(b, val)
 #define ASMCompilerBarrier() mb()
 
 /** @}  */
@@ -109,6 +104,15 @@ extern int RTASSERTVAR[1];
 /** Read a 32-bit value from an I/O port. */
 #define VBVO_PORT_READ_U32(Port) \
     inl(Port)
+
+/** @}  */
+
+/** @name types for VirtualBox OS-independent code
+ * @{ */
+
+/* HGSMI uses 32 bit offsets and sizes. */
+typedef uint32_t HGSMISIZE;
+typedef uint32_t HGSMIOFFSET;
 
 /** @}  */
 

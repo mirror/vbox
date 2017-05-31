@@ -258,31 +258,6 @@ static int vbox_accel_init(struct vbox_private *vbox)
     return 0;
 }
 
-/** Allocation function for the HGSMI heap and data. */
-static DECLCALLBACK(void *) alloc_hgsmi_environ(void *environ, HGSMISIZE size)
-{
-    NOREF(environ);
-    return kmalloc(size, GFP_KERNEL);
-}
-
-
-/** Free function for the HGSMI heap and data. */
-static DECLCALLBACK(void) free_hgsmi_environ(void *environ, void *ptr)
-{
-    NOREF(environ);
-    kfree(ptr);
-}
-
-
-/** Pointers to the HGSMI heap and data manipulation functions. */
-static HGSMIENV hgsmi_environ =
-{
-    NULL,
-    alloc_hgsmi_environ,
-    free_hgsmi_environ
-};
-
-
 /** Do we support the 4.3 plus mode hint reporting interface? */
 static bool have_hgsmi_mode_hints(struct vbox_private *vbox)
 {
@@ -300,6 +275,8 @@ static int vbox_hw_init(struct vbox_private *vbox)
 {
     vbox->full_vram_size = VBoxVideoGetVRAMSize();
     vbox->any_pitch = VBoxVideoAnyWidthAllowed();
+    int ret;
+
     DRM_INFO("VRAM %08x\n", vbox->full_vram_size);
 
     /* Map guest-heap at end of vram */
@@ -308,10 +285,18 @@ static int vbox_hw_init(struct vbox_private *vbox)
     if (!vbox->guest_heap)
         return -ENOMEM;
 
-    if (RT_FAILURE(VBoxHGSMISetupGuestContext(&vbox->submit_info, vbox->guest_heap,
-                                              GUEST_HEAP_USABLE_SIZE, GUEST_HEAP_OFFSET(vbox),
-                                              &hgsmi_environ)))
+    /* Create guest-heap mem-pool use 2^4 = 16 byte chunks */
+    vbox->submit_info.guest_pool = gen_pool_create(4, -1);
+    if (!vbox->submit_info.guest_pool)
         return -ENOMEM;
+
+    ret = gen_pool_add_virt(vbox->submit_info.guest_pool,
+			    (unsigned long)vbox->guest_heap,
+			    GUEST_HEAP_OFFSET(vbox),
+			    GUEST_HEAP_USABLE_SIZE, -1);
+    if (ret)
+        return ret;
+
     /* Reduce available VRAM size to reflect the guest heap. */
     vbox->available_vram_size = GUEST_HEAP_OFFSET(vbox);
     /* Linux drm represents monitors as a 32-bit array. */
@@ -399,6 +384,8 @@ int vbox_driver_unload(struct drm_device *dev)
 
     vbox_hw_fini(vbox);
     vbox_mm_fini(vbox);
+    if (vbox->submit_info.guest_pool)
+        gen_pool_destroy(vbox->submit_info.guest_pool);
     if (vbox->guest_heap)
         pci_iounmap(dev->pdev, vbox->guest_heap);
     kfree(vbox);

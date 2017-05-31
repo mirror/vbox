@@ -34,9 +34,9 @@ ifneq ($(KERN_VERSION),24)
 
 MOD_NAME   = vboxvideo
 
-MOD_OBJS   = HGSMIBase.o HGSMIBuffers.o HGSMICommon.o HGSMIMemAlloc.o \
+MOD_OBJS   = HGSMIBase.o \
              Modesetting.o vbox_drv.o vbox_fb.o vbox_irq.o vbox_main.o \
-             vbox_mode.o vbox_ttm.o VBVABase.o vbox_prime.o
+             vbox_mode.o vbox_ttm.o VBVABase.o vbox_prime.o vbox_hgsmi.o
 
 MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -fno-pie
 MOD_INCL   = $(addprefix -I$(KBUILD_EXTMOD),/ /include)
