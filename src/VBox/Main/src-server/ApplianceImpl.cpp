@@ -871,6 +871,43 @@ HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, Com
 }
 
 /**
+ * Setup automatic I/O stream digest calculation, adding it to hOurManifest.
+ *
+ * @returns Passthru I/O stream, of @a hVfsIos if no digest calc needed.
+ * @param   hVfsIos             The stream to wrap. Always consumed.
+ * @param   pszManifestEntry    The manifest entry.
+ * @param   fRead               Set if read stream, clear if write.
+ * @throws  Nothing.
+ */
+RTVFSIOSTREAM Appliance::i_manifestSetupDigestCalculationForGivenIoStream(RTVFSIOSTREAM hVfsIos, const char *pszManifestEntry,
+                                                                          bool fRead /*= true */)
+{
+    int vrc;
+    Assert(!RTManifestPtIosIsInstanceOf(hVfsIos));
+
+    if (m->fDigestTypes == 0)
+        return hVfsIos;
+
+    /* Create the manifest if necessary. */
+    if (m->hOurManifest == NIL_RTMANIFEST)
+    {
+        vrc = RTManifestCreate(0 /*fFlags*/, &m->hOurManifest);
+        AssertRCReturnStmt(vrc, RTVfsIoStrmRelease(hVfsIos), NIL_RTVFSIOSTREAM);
+    }
+
+    /* Setup the stream. */
+    RTVFSIOSTREAM hVfsIosPt;
+    vrc = RTManifestEntryAddPassthruIoStream(m->hOurManifest, hVfsIos, pszManifestEntry, m->fDigestTypes, fRead, &hVfsIosPt);
+
+    RTVfsIoStrmRelease(hVfsIos);        /* always consumed! */
+    if (RT_SUCCESS(vrc))
+        return hVfsIosPt;
+
+    setErrorVrc(vrc, "RTManifestEntryAddPassthruIoStream failed with rc=%Rrc", vrc);
+    return NIL_RTVFSIOSTREAM;
+}
+
+/**
  * Returns true if the appliance is in "idle" state. This should always be the
  * case unless an import or export is currently in progress. Similar to machine
  * states, this permits the Appliance implementation code to let go of the

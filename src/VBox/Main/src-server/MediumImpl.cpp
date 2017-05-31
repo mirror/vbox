@@ -659,8 +659,12 @@ public:
                MediumFormat *aFormat,
                MediumVariant_T aVariant,
                SecretKeyStore *pSecretKeyStore,
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+               RTVFSIOSTREAM aVfsIosDst,
+#else
                VDINTERFACEIO *aVDImageIOIf,
                void *aVDImageIOUser,
+#endif
                MediumLockList *aSourceMediumLockList,
                bool fKeepSourceMediumLockList = false)
         : Medium::Task(aMedium, aProgress),
@@ -674,6 +678,17 @@ public:
         AssertReturnVoidStmt(aSourceMediumLockList != NULL, mRC = E_FAIL);
 
         mVDImageIfaces = aMedium->m->vdImageIfaces;
+
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+        int vrc = VDIfCreateFromVfsStream(aVfsIosDst, RTFILE_O_WRITE, &mpVfsIoIf);
+        AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
+
+        vrc = VDInterfaceAdd(&mpVfsIoIf->Core, "Medium::ExportTaskVfsIos",
+                             VDINTERFACETYPE_IO, mpVfsIoIf,
+                             sizeof(VDINTERFACEIO), &mVDImageIfaces);
+        AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
+#else
+
         if (aVDImageIOIf)
         {
             int vrc = VDInterfaceAdd(&aVDImageIOIf->Core, "Medium::vdInterfaceIO",
@@ -681,6 +696,7 @@ public:
                                      sizeof(VDINTERFACEIO), &mVDImageIfaces);
             AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
         }
+#endif
         m_strTaskName = "createExport";
     }
 
@@ -688,6 +704,13 @@ public:
     {
         if (!mfKeepSourceMediumLockList && mpSourceMediumLockList)
             delete mpSourceMediumLockList;
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+        if (mpVfsIoIf)
+        {
+            VDIfDestroyFromVfsStream(mpVfsIoIf);
+            mpVfsIoIf = NULL;
+        }
+#endif
     }
 
     MediumLockList *mpSourceMediumLockList;
@@ -695,6 +718,7 @@ public:
     ComObjPtr<MediumFormat> mFormat;
     MediumVariant_T mVariant;
     PVDINTERFACE mVDImageIfaces;
+    PVDINTERFACEIO mpVfsIoIf; /**< Pointer to the VFS I/O stream to VD I/O interface wrapper. */
     SecretKeyStore *m_pSecretKeyStore;
 
 private:
@@ -6095,7 +6119,11 @@ HRESULT Medium::i_exportFile(const char *aFilename,
                              const ComObjPtr<MediumFormat> &aFormat,
                              MediumVariant_T aVariant,
                              SecretKeyStore *pKeyStore,
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+                             RTVFSIOSTREAM hVfsIosDst,
+#else
                              PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
+#endif
                              const ComObjPtr<Progress> &aProgress)
 {
     AssertPtrReturn(aFilename, E_INVALIDARG);
@@ -6135,9 +6163,12 @@ HRESULT Medium::i_exportFile(const char *aFilename,
         }
 
         /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::ExportTask(this, aProgress, aFilename, aFormat,
-                                       aVariant, pKeyStore, aVDImageIOIf,
-                                       aVDImageIOUser, pSourceMediumLockList);
+        pTask = new Medium::ExportTask(this, aProgress, aFilename, aFormat, aVariant,
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+                                       pKeyStore, hVfsIosDst, pSourceMediumLockList);
+#else
+                                       pKeyStore, aVDImageIOIf, aVDImageIOUser, pSourceMediumLockList);
+#endif
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))

@@ -147,6 +147,9 @@ private:
     Utf8Str i_applianceIOName(APPLIANCEIONAME type) const;
 
     HRESULT i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, ComObjPtr<MediumFormat>& mf);
+
+    RTVFSIOSTREAM i_manifestSetupDigestCalculationForGivenIoStream(RTVFSIOSTREAM hVfsIos, const char *pszManifestEntry,
+                                                                   bool fRead = true);
     /** @}  */
 
     /** @name Read stuff
@@ -197,7 +200,6 @@ private:
 
     HRESULT i_preCheckImageAvailability(ImportStack &stack);
     bool    i_importEnsureOvaLookAhead(ImportStack &stack);
-    RTVFSIOSTREAM i_importSetupDigestCalculationForGivenIoStream(RTVFSIOSTREAM hVfsIos, const char *pszManifestEntry);
     RTVFSIOSTREAM i_importOpenSourceFile(ImportStack &stack, Utf8Str const &rstrSrcPath, const char *pszManifestEntry);
     HRESULT i_importCreateAndWriteDestinationFile(Utf8Str const &rstrDstPath,
                                                   RTVFSIOSTREAM hVfsIosSrc, Utf8Str const &rstrSrcLogNm);
@@ -216,8 +218,12 @@ private:
     HRESULT i_writeFS(TaskOVF *pTask);
     HRESULT i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
-    HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFss,
-                          PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+    HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst);
+    HRESULT i_writeBufferToFile(RTVFSFSSTREAM hVfsFssDst, const char *pszFilename, const void *pvContent, size_t cbContent);
+#else
+    HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
+#endif
 
     struct XMLStack;
 

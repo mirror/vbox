@@ -206,7 +206,11 @@ public:
                          const ComObjPtr<MediumFormat> &aFormat,
                          MediumVariant_T aVariant,
                          SecretKeyStore *pKeyStore,
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+                         RTVFSIOSTREAM hVfsIosDst,
+#else
                          PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
+#endif
                          const ComObjPtr<Progress> &aProgress);
     HRESULT i_importFile(const char *aFilename,
                         const ComObjPtr<MediumFormat> &aFormat,

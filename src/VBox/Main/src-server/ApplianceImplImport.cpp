@@ -855,42 +855,6 @@ HRESULT Appliance::i_preCheckImageAvailability(ImportStack &stack)
 }
 
 /**
- * Setup automatic I/O stream digest calculation, adding it to hOurManifest.
- *
- * @returns Passthru I/O stream, of @a hVfsIos if no digest calc needed.
- * @param   hVfsIos             The stream to wrap. Always consumed.
- * @param   pszManifestEntry    The manifest entry.
- * @throws  Nothing.
- */
-RTVFSIOSTREAM Appliance::i_importSetupDigestCalculationForGivenIoStream(RTVFSIOSTREAM hVfsIos, const char *pszManifestEntry)
-{
-    int vrc;
-    Assert(!RTManifestPtIosIsInstanceOf(hVfsIos));
-
-    if (m->fDigestTypes == 0)
-        return hVfsIos;
-
-    /* Create the manifest if necessary. */
-    if (m->hOurManifest == NIL_RTMANIFEST)
-    {
-        vrc = RTManifestCreate(0 /*fFlags*/, &m->hOurManifest);
-        AssertRCReturnStmt(vrc, RTVfsIoStrmRelease(hVfsIos), NIL_RTVFSIOSTREAM);
-    }
-
-    /* Setup the stream. */
-    RTVFSIOSTREAM hVfsIosPt;
-    vrc = RTManifestEntryAddPassthruIoStream(m->hOurManifest, hVfsIos, pszManifestEntry, m->fDigestTypes,
-                                             true /*fReadOrWrite*/, &hVfsIosPt);
-
-    RTVfsIoStrmRelease(hVfsIos);        /* always consumed! */
-    if (RT_SUCCESS(vrc))
-        return hVfsIosPt;
-
-    setErrorVrc(vrc, "RTManifestEntryAddPassthruIoStream failed with rc=%Rrc", vrc);
-    return NIL_RTVFSIOSTREAM;
-}
-
-/**
  * Opens a source file (for reading obviously).
  *
  * @param   stack
@@ -933,7 +897,7 @@ RTVFSIOSTREAM Appliance::i_importOpenSourceFile(ImportStack &stack, Utf8Str cons
     /*
      * Digest calculation filtering.
      */
-    hVfsIosSrc = i_importSetupDigestCalculationForGivenIoStream(hVfsIosSrc, pszManifestEntry);
+    hVfsIosSrc = i_manifestSetupDigestCalculationForGivenIoStream(hVfsIosSrc, pszManifestEntry);
     if (hVfsIosSrc == NIL_RTVFSIOSTREAM)
         throw E_FAIL;
 
@@ -1444,7 +1408,7 @@ HRESULT Appliance::i_readOVFFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosOvf, const
     /*
      * Set up digest calculation.
      */
-    hVfsIosOvf = i_importSetupDigestCalculationForGivenIoStream(hVfsIosOvf, pszManifestEntry);
+    hVfsIosOvf = i_manifestSetupDigestCalculationForGivenIoStream(hVfsIosOvf, pszManifestEntry);
     if (hVfsIosOvf == NIL_RTVFSIOSTREAM)
         return VBOX_E_FILE_ERROR;
 
@@ -1542,7 +1506,9 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     AssertRCReturn(vrc, Global::vboxStatusCodeToCOM(vrc));
     m->fDeterminedDigestTypes = true;
 
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
     m->fSha256 = RT_BOOL(m->fDigestTypes & RTMANIFEST_ATTR_SHA256); /** @todo retire this member */
+#endif
     return S_OK;
 }
 
