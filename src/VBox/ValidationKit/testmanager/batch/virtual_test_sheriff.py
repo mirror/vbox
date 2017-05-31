@@ -372,6 +372,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         #
         aidFailureReasons = [
             self.getFailureReason(self.ktReason_Host_DriverNotUnloading).idFailureReason,
+            self.getFailureReason(self.ktReason_Host_DriverNotCompilable).idFailureReason,
         ];
 
         #
@@ -465,6 +466,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_HostMemoryLow                        = ( 'Host',              'HostMemoryLow' );
     ktReason_Host_DriverNotLoaded                      = ( 'Host',              'Driver not loaded' );
     ktReason_Host_DriverNotUnloading                   = ( 'Host',              'Driver not unloading' );
+    ktReason_Host_DriverNotCompilable                  = ( 'Host',              'Driver not compilable' );
     ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
     ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
@@ -662,6 +664,13 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             # ( Whether to stop on hit, reason tuple, needle text. )
             ( True, ktReason_Host_DriverNotUnloading,
               'Can\'t remove kext org.virtualbox.kext.VBoxDrv; services failed to terminate - 0xe00002c7' ),
+        ],
+        'linux': [
+            # ( Whether to stop on hit, reason tuple, needle text. )
+            ( True, ktReason_Host_DriverNotCompilable,
+              'This system is not currently set up to build kernel modules' ),
+            ( True, ktReason_Host_DriverNotCompilable,
+              'This system is currently not set up to build kernel modules' ),
         ],
     };
 
