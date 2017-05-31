@@ -672,7 +672,13 @@ typedef struct IEMCPU
     uint32_t                cPendingCommit;
     /** Number of long jumps. */
     uint32_t                cLongJumps;
+    /** Whether to force execution to continue in IEM. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    uint8_t                 fForceIemExec;
+    uint8_t                 uAlignment6[3]; /**< Alignment padding. */
+#else
     uint32_t                uAlignment6; /**< Alignment padding. */
+#endif
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The Number of I/O port reads that has been performed. */
     uint32_t                cIOReads;

@@ -14910,6 +14910,10 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
         pVCpu->iem.s.cRetPassUpStatus++;
         rcStrict = pVCpu->iem.s.rcPassUp;
     }
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    else if (pVCpu->iem.s.fForceIemExec)
+        rcStrict = VINF_EM_RESCHEDULE_REM;
+#endif
 
     return rcStrict;
 }

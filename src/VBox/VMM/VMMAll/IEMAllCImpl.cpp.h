@@ -6367,6 +6367,9 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
 
     pCtx->hwvirt.svm.fGif = 0;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    pVCpu->iem.s.fForceIemExec = true;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -6386,6 +6389,9 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 
     pCtx->hwvirt.svm.fGif = 1;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    pVCpu->iem.s.fForceIemExec = false;
+#endif
     return VINF_SUCCESS;
 }
 
