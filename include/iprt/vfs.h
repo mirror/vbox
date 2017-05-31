@@ -1215,7 +1215,6 @@ RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
  */
 RTDECL(int) RTVfsMemorizeIoStreamAsFile(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, PRTVFSFILE phVfsFile);
 
-
 /**
  * Creates a VFS file from a memory buffer.
  *
@@ -1241,8 +1240,24 @@ RTDECL(int) RTVfsFileFromBuffer(uint32_t fFlags, void const *pvBuf, size_t cbBuf
  * @param   cbEstimate      The estimated file size.
  * @param   phVfsFile       Where to return the handle to the memory file on
  *                          success.
+ * @sa      RTVfsMemIoStrmCreate
  */
 RTDECL(int) RTVfsMemFileCreate(RTVFSIOSTREAM hVfsIos, size_t cbEstimate, PRTVFSFILE phVfsFile);
+
+/**
+ * Creates a memory backed VFS file object for read and write.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hVfsIos         The VFS I/O stream to memorize.  This will be read
+ *                          to the end on success, on failure its position is
+ *                          undefined.
+ * @param   cbEstimate      The estimated file size.
+ * @param   phVfsIos        Where to return the handle to the memory I/O stream
+ *                          on success.
+ * @sa      RTVfsMemFileCreate
+ */
+RTDECL(int) RTVfsMemIoStrmCreate(RTVFSIOSTREAM hVfsIos, size_t cbEstimate, PRTVFSIOSTREAM phVfsIos);
 
 /**
  * Pumps data from one I/O stream to another.

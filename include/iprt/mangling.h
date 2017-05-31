@@ -2375,6 +2375,7 @@
 # define RTVfsLockRetain                                RT_MANGLER(RTVfsLockRetain)
 # define RTVfsLockRetainDebug                           RT_MANGLER(RTVfsLockRetainDebug)
 # define RTVfsMemFileCreate                             RT_MANGLER(RTVfsMemFileCreate)
+# define RTVfsMemIoStrmCreate                           RT_MANGLER(RTVfsMemIoStrmCreate)
 # define RTVfsMemorizeIoStreamAsFile                    RT_MANGLER(RTVfsMemorizeIoStreamAsFile)
 # define RTVfsNew                                       RT_MANGLER(RTVfsNew)
 # define RTVfsNewBaseObj                                RT_MANGLER(RTVfsNewBaseObj)
