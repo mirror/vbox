@@ -742,6 +742,33 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsMemFileOps =
 
 
 /**
+ * Initialize the RTVFSMEMFILE::Base.ObjInfo  specific members.
+ *
+ * @param   pObjInfo        The object info to init.
+ * @param   cbObject        The object size set.
+ */
+static void rtVfsMemInitObjInfo(PRTFSOBJINFO pObjInfo, uint64_t cbObject)
+{
+    pObjInfo->cbObject                  = cbObject;
+    pObjInfo->cbAllocated               = cbObject;
+    pObjInfo->Attr.fMode                = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FILE | RTFS_UNIX_IRWXU;
+    pObjInfo->Attr.enmAdditional        = RTFSOBJATTRADD_UNIX;
+    pObjInfo->Attr.u.Unix.uid           = NIL_RTUID;
+    pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;
+    pObjInfo->Attr.u.Unix.cHardlinks    = 1;
+    pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
+    pObjInfo->Attr.u.Unix.INodeId       = 0;
+    pObjInfo->Attr.u.Unix.fFlags        = 0;
+    pObjInfo->Attr.u.Unix.GenerationId  = 0;
+    pObjInfo->Attr.u.Unix.Device        = 0;
+    RTTimeNow(&pObjInfo->AccessTime);
+    pObjInfo->ModificationTime          = pObjInfo->AccessTime;
+    pObjInfo->ChangeTime                = pObjInfo->AccessTime;
+    pObjInfo->BirthTime                 = pObjInfo->AccessTime;
+}
+
+
+/**
  * Initialize the RTVFSMEMFILE specific members.
  *
  * @param   pThis           The memory file to initialize.
@@ -793,8 +820,7 @@ RTDECL(int) RTVfsMemFileCreate(RTVFSIOSTREAM hVfsIos, size_t cbEstimate, PRTVFSF
                           &hVfsFile, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
-        pThis->Base.ObjInfo.cbObject   = 0;
-        pThis->Base.ObjInfo.Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FILE | RTFS_UNIX_IRWXU;
+        rtVfsMemInitObjInfo(&pThis->Base.ObjInfo, 0);
         rtVfsMemFileInit(pThis, cbEstimate, RTFILE_O_READ | RTFILE_O_WRITE);
 
         if (hVfsIos != NIL_RTVFSIOSTREAM)
@@ -843,8 +869,7 @@ RTDECL(int) RTVfsFileFromBuffer(uint32_t fFlags, void const *pvBuf, size_t cbBuf
                           &hVfsFile, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
-        pThis->Base.ObjInfo.cbObject   = cbBuf;
-        pThis->Base.ObjInfo.Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FILE | RTFS_UNIX_IRWXU;
+        rtVfsMemInitObjInfo(&pThis->Base.ObjInfo, cbBuf);
         rtVfsMemFileInit(pThis, cbBuf, fFlags);
 
         /*
