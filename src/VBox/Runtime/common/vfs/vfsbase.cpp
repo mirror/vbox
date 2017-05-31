@@ -2036,13 +2036,43 @@ RTDECL(int)         RTVfsFsStrmAdd(RTVFSFSSTREAM hVfsFss, const char *pszPath, R
     RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, VERR_INVALID_HANDLE);
-    AssertPtrNullReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath != '\0', VERR_INVALID_NAME);
     AssertPtrReturn(hVfsObj, VERR_INVALID_HANDLE);
     AssertReturn(hVfsObj->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(!(fFlags & RTVFSFSSTRM_ADD_F_VALID_MASK), VERR_INVALID_FLAGS);
     AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_INVALID_FUNCTION);
 
     return pThis->pOps->pfnAdd(pThis->Base.pvThis, pszPath, hVfsObj, fFlags);
+}
+
+
+RTDECL(int)         RTVfsFsStrmPushFile(RTVFSFSSTREAM hVfsFss, const char *pszPath, uint64_t cbFile,
+                                        PCRTFSOBJINFO paObjInfo, uint32_t cObjInfo, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(phVfsIos, VERR_INVALID_POINTER);
+    *phVfsIos = NIL_RTVFSIOSTREAM;
+
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath != '\0', VERR_INVALID_NAME);
+
+    AssertReturn(!(fFlags & RTVFSFSSTRM_PUSH_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(RT_BOOL(cbFile == UINT64_MAX) == RT_BOOL(fFlags & RTVFSFSSTRM_PUSH_F_STREAM), VERR_INVALID_FLAGS);
+
+    if (cObjInfo)
+    {
+        AssertPtrReturn(paObjInfo, VERR_INVALID_POINTER);
+        AssertReturn(paObjInfo[0].Attr.enmAdditional == RTFSOBJATTRADD_UNIX, VERR_INVALID_PARAMETER);
+    }
+
+    AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_INVALID_FUNCTION);
+    if (pThis->pOps->pfnPushFile)
+        return pThis->pOps->pfnPushFile(pThis->Base.pvThis, pszPath, cbFile, paObjInfo, cObjInfo, fFlags, phVfsIos);
+    return VERR_NOT_SUPPORTED;
 }
 
 

@@ -130,13 +130,14 @@ typedef struct RTZIPTARFSSTREAMWRITERPUSH
     uint64_t                offData;
     /** The current I/O stream position (relative to offData). */
     uint64_t                offCurrent;
-    /** The expected size amount of file content.  This is set to UINT64_MAX if
-     * open-ended file size. */
+    /** The expected size amount of file content, or max file size if open-ended. */
     uint64_t                cbExpected;
     /** The current amount of file content written. */
     uint64_t                cbCurrent;
     /** Object info copy for rtZipTarWriterPush_QueryInfo. */
     RTFSOBJINFO             ObjInfo;
+    /** Set if open-ended file size requiring a tar header update when done. */
+    bool                    fOpenEnded;
 } RTZIPTARFSSTREAMWRITERPUSH;
 /** Pointer to a push I/O instance. */
 typedef RTZIPTARFSSTREAMWRITERPUSH *PRTZIPTARFSSTREAMWRITERPUSH;
@@ -175,6 +176,7 @@ typedef struct RTZIPTARFSSTREAMWRITER
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static DECLCALLBACK(int) rtZipTarWriterPush_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual);
 static int rtZipTarFssWriter_CompleteCurrentPushFile(PRTZIPTARFSSTREAMWRITER pThis);
 static int rtZipTarFssWriter_AddFile(PRTZIPTARFSSTREAMWRITER pThis, const char *pszPath, RTVFSIOSTREAM hVfsIos,
                                      PCRTFSOBJINFO pObjInfo, const char *pszOwnerNm, const char *pszGroupNm);
@@ -505,7 +507,6 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRT
     PRTZIPTARFSSTREAMWRITERPUSH pPush   = (PRTZIPTARFSSTREAMWRITERPUSH)pvThis;
     PRTZIPTARFSSTREAMWRITER     pParent = pPush->pParent;
     AssertPtrReturn(pParent, VERR_WRONG_ORDER);
-    Assert(!pcbWritten || !*pcbWritten /* assume caller sets this to zero so we can be lazy here */);
 
     int rc = pParent->rcFatal;
     AssertRCReturn(rc, rc);
@@ -518,18 +519,23 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRT
     void const *pvToWrite = pSgBuf->paSegs[0].pvSeg;
 
     /*
-     * Deal with simple non-seeking write first.
+     * Hopefully we don't need to seek.  But if we do, let the seek method do
+     * it as it's not entirely trivial.
      */
-    size_t cbWritten = 0;
-    Assert(pPush->offCurrent <= pPush->cbExpected);
-    Assert(pPush->offCurrent <= pPush->cbCurrent);
     if (   off < 0
         || (uint64_t)off == pPush->offCurrent)
+        rc = VINF_SUCCESS;
+    else
+        rc = rtZipTarWriterPush_Seek(pvThis, off, RTFILE_SEEK_BEGIN, NULL);
+    if (RT_SUCCESS(rc))
     {
+        Assert(pPush->offCurrent <= pPush->cbExpected);
+        Assert(pPush->offCurrent <= pPush->cbCurrent);
         AssertMsgReturn(cbToWrite <= pPush->cbExpected - pPush->offCurrent,
                         ("offCurrent=%#RX64 + cbToWrite=%#zx = %#RX64; cbExpected=%RX64\n",
                          pPush->offCurrent, cbToWrite, pPush->offCurrent + cbToWrite, pPush->cbExpected),
                         VERR_DISK_FULL);
+        size_t cbWritten = 0;
         rc = RTVfsIoStrmWrite(pParent->hVfsIos, pvToWrite, cbToWrite, fBlocking, &cbWritten);
         if (RT_SUCCESS(rc))
         {
@@ -539,75 +545,14 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Write(void *pvThis, RTFOFF off, PCRT
                 pParent->cbWritten = pPush->offCurrent - pPush->cbCurrent;
                 pPush->cbCurrent   = pPush->offCurrent;
             }
-        }
-    }
-    /*
-     * Needs to seek, more validation, possible zero filling of the space in between.
-     */
-    else
-    {
-        AssertMsgReturn((uint64_t)off <= pPush->cbExpected,
-                        ("off=%#RX64 cbExpected=%#RX64", (uint64_t)off, pPush->cbExpected),
-                        VERR_SEEK);
-        AssertMsgReturn(cbToWrite <= pPush->cbExpected - (uint64_t)off,
-                        ("off=%#RX64 + cbToWrite=%#zx = %#RX64; cbExpected=%RX64\n",
-                         (uint64_t)off, cbToWrite, (uint64_t)off + cbToWrite, pPush->cbExpected),
-                        VERR_DISK_FULL);
-
-        /* Zero fill seek gap if necessary. */
-        if ((uint64_t)off > pPush->cbCurrent)
-        {
-            if (pPush->offCurrent == pPush->cbCurrent)
-                rc = VINF_SUCCESS;
-            else
-            {
-                AssertReturn(pParent->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
-                rc = RTVfsFileSeek(pParent->hVfsFile, pPush->offData + pPush->cbCurrent, RTFILE_SEEK_BEGIN, NULL);
-                if (RT_SUCCESS(rc))
-                    pPush->offCurrent = pPush->cbCurrent;
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                uint64_t cbToZero = (uint64_t)off - pPush->cbCurrent;
-                rc = RTVfsIoStrmZeroFill(pParent->hVfsIos, cbToZero);
-                if (RT_SUCCESS(rc))
-                {
-                    pPush->offCurrent  += cbToZero;
-                    pParent->cbWritten += cbToZero;
-                }
-            }
-        }
-        /* Seek backwards to the desired position. */
-        else
-        {
-            AssertReturn(pParent->hVfsFile != NIL_RTVFSFILE, VERR_NOT_A_FILE);
-            rc = RTVfsFileSeek(pParent->hVfsFile, pPush->offData + (uint64_t)off, RTFILE_SEEK_BEGIN, NULL);
-            if (RT_SUCCESS(rc))
-                pPush->offCurrent = (uint64_t)off;
-        }
-
-        /* Do the write. */
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTVfsIoStrmWrite(pParent->hVfsIos, pvToWrite, cbToWrite, fBlocking, &cbWritten);
-            if (RT_SUCCESS(rc))
-            {
-                pPush->offCurrent += cbWritten;
-                if (pPush->offCurrent > pPush->cbCurrent)
-                {
-                    pParent->cbWritten = pPush->offCurrent - pPush->cbCurrent;
-                    pPush->cbCurrent   = pPush->offCurrent;
-                }
-            }
+            if (pcbWritten)
+                *pcbWritten = cbWritten;
         }
     }
 
     /*
      * Fatal errors get down here, non-fatal ones returns earlier.
      */
-    if (pcbWritten)
-        *pcbWritten = cbWritten;
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     pParent->rcFatal = rc;
@@ -710,49 +655,33 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Seek(void *pvThis, RTFOFF offSeek, u
 
     int rc = pParent->rcFatal;
     AssertRCReturn(rc, rc);
+    Assert(pPush->offCurrent <= pPush->cbCurrent);
 
     /*
      * Calculate the new file offset.
      */
-    uint64_t offNew;
+    RTFOFF offNewSigned;
     switch (uMethod)
     {
         case RTFILE_SEEK_BEGIN:
-            AssertReturn(offSeek >= 0, VERR_NEGATIVE_SEEK);
-            offNew = (uint64_t)offSeek;
+            offNewSigned = offSeek;
             break;
-
         case RTFILE_SEEK_CURRENT:
-            if (offSeek >= 0)
-            {
-                offNew = (uint64_t)offSeek + pPush->offCurrent;
-                AssertReturn(offNew >= pPush->offCurrent, VERR_SEEK);
-            }
-            else if ((uint64_t)-offSeek <= pPush->offCurrent)
-                offNew = 0;
-            else
-                offNew = pPush->offCurrent + offSeek;
+            offNewSigned = pPush->offCurrent + offSeek;
             break;
-
         case RTFILE_SEEK_END:
-            if (offSeek >= 0)
-            {
-                offNew = (uint64_t)offSeek + pPush->cbCurrent;
-                AssertReturn(offNew >= pPush->cbCurrent, VERR_SEEK);
-            }
-            else if ((uint64_t)-offSeek <= pPush->cbCurrent)
-                offNew = 0;
-            else
-                offNew = pPush->cbCurrent + offSeek;
+            offNewSigned = pPush->cbCurrent + offSeek;
             break;
-
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_5);
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
 
     /*
      * Check the new file offset against expectations.
      */
+    AssertMsgReturn(offNewSigned >= 0, ("offNewSigned=%RTfoff\n", offNewSigned), VERR_NEGATIVE_SEEK);
+
+    uint64_t offNew = (uint64_t)offNewSigned;
     AssertMsgReturn(offNew <= pPush->cbExpected, ("offNew=%#RX64 cbExpected=%#Rx64\n", offNew, pPush->cbExpected), VERR_SEEK);
 
     /*
@@ -782,7 +711,7 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Seek(void *pvThis, RTFOFF offSeek, u
         pPush->cbCurrent = pPush->offCurrent = offNew;
     }
     /*
-     * Just change the file positions.
+     * Just change the file position to somewhere we've already written.
      */
     else
     {
@@ -792,6 +721,7 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Seek(void *pvThis, RTFOFF offSeek, u
             return pParent->rcFatal = rc;
         pPush->offCurrent = offNew;
     }
+    Assert(pPush->offCurrent <= pPush->cbCurrent);
 
     *poffActual = pPush->offCurrent;
     return VINF_SUCCESS;
@@ -910,7 +840,7 @@ static int rtZipTarFssWriter_CompleteCurrentPushFile(PRTZIPTARFSSTREAMWRITER pTh
      * Do we need to update the header.  pThis->aHdrs[0] will retain the current
      * content at pPush->offHdr and we only need to update the size.
      */
-    if (pPush->cbExpected == UINT64_MAX)
+    if (pPush->fOpenEnded)
     {
         rc = rtZipTarFssWriter_FormatOffset(pThis->aHdrs[0].Common.size, pPush->cbCurrent);
         if (RT_SUCCESS(rc))
@@ -1849,6 +1779,9 @@ static DECLCALLBACK(int) rtZipTarFssWriter_PushFile(void *pvThis, const char *ps
     /*
      * Create an I/O stream object for the caller to use.
      */
+    RTFOFF const offHdr = RTVfsIoStrmTell(pThis->hVfsIos);
+    AssertReturn(offHdr >= 0, (int)offHdr);
+
     PRTZIPTARFSSTREAMWRITERPUSH pPush;
     RTVFSIOSTREAM hVfsIos;
     if (pThis->hVfsFile == NIL_RTVFSFILE)
@@ -1870,11 +1803,12 @@ static DECLCALLBACK(int) rtZipTarFssWriter_PushFile(void *pvThis, const char *ps
     }
     pPush->pParent      = NULL;
     pPush->cbExpected   = cbFile;
-    pPush->offHdr       = RTVfsIoStrmTell(pThis->hVfsIos);
+    pPush->offHdr       = (uint64_t)offHdr;
     pPush->offData      = 0;
     pPush->offCurrent   = 0;
     pPush->cbCurrent    = 0;
     pPush->ObjInfo      = ObjInfo;
+    pPush->fOpenEnded   = cbFile == UINT64_MAX;
 
     /*
      * Produce and write file headers.
@@ -1882,15 +1816,18 @@ static DECLCALLBACK(int) rtZipTarFssWriter_PushFile(void *pvThis, const char *ps
     rc = rtZipTarFssWriter_ObjInfoToHdr(pThis, pszPath, &ObjInfo, pszOwnerNm, pszGroupNm, RTZIPTAR_TF_NORMAL);
     if (RT_SUCCESS(rc))
     {
-        rc = RTVfsIoStrmWrite(pThis->hVfsIos, pThis->aHdrs, pThis->cHdrs * sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
+        size_t cbHdrs = pThis->cHdrs * sizeof(pThis->aHdrs[0]);
+        rc = RTVfsIoStrmWrite(pThis->hVfsIos, pThis->aHdrs, cbHdrs, true /*fBlocking*/, NULL);
         if (RT_SUCCESS(rc))
         {
-            pThis->cbWritten += pThis->cHdrs * sizeof(pThis->aHdrs[0]);
+            pThis->cbWritten += cbHdrs;
 
             /*
              * Complete the object and return.
              */
-            pPush->offData = RTVfsIoStrmTell(pThis->hVfsIos);
+            pPush->offData = pPush->offHdr + cbHdrs;
+            if (cbFile == UINT64_MAX)
+                pPush->cbExpected = (uint64_t)(RTFOFF_MAX - _4K) - pPush->offData;
             pPush->pParent = pThis;
             pThis->pPush   = pPush;
 

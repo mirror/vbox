@@ -2335,6 +2335,7 @@
 # define RTVfsFsStrmAdd                                 RT_MANGLER(RTVfsFsStrmAdd)
 # define RTVfsFsStrmEnd                                 RT_MANGLER(RTVfsFsStrmEnd)
 # define RTVfsFsStrmNext                                RT_MANGLER(RTVfsFsStrmNext)
+# define RTVfsFsStrmPushFile                            RT_MANGLER(RTVfsFsStrmPushFile)
 # define RTVfsFsStrmQueryInfo                           RT_MANGLER(RTVfsFsStrmQueryInfo)
 # define RTVfsFsStrmRelease                             RT_MANGLER(RTVfsFsStrmRelease)
 # define RTVfsFsStrmRetain                              RT_MANGLER(RTVfsFsStrmRetain)

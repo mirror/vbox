@@ -420,7 +420,7 @@ typedef struct RTVFSFSSTREAMOPS
     DECLCALLBACKMEMBER(int, pfnAdd)(void *pvThis, const char *pszPath, RTVFSOBJ hVfsObj, uint32_t fFlags);
 
     /**
-     * Pushes an byte stream onto the stream.
+     * Pushes an byte stream onto the stream (optional).
      *
      * Writable streams only.
      *
