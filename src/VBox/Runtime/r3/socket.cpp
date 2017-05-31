@@ -1544,12 +1544,15 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
     }
     if (rc > 0)
     {
-        if (FD_ISSET(pThis->hNative, &fdsetR))
-            *pfEvents |= RTSOCKET_EVT_READ;
-        if (FD_ISSET(pThis->hNative, &fdsetW))
-            *pfEvents |= RTSOCKET_EVT_WRITE;
-        if (FD_ISSET(pThis->hNative, &fdsetE))
-            *pfEvents |= RTSOCKET_EVT_ERROR;
+        if (pThis->hNative != NIL_RTSOCKETNATIVE)
+        {
+            if (FD_ISSET(pThis->hNative, &fdsetR))
+                *pfEvents |= RTSOCKET_EVT_READ;
+            if (FD_ISSET(pThis->hNative, &fdsetW))
+                *pfEvents |= RTSOCKET_EVT_WRITE;
+            if (FD_ISSET(pThis->hNative, &fdsetE))
+                *pfEvents |= RTSOCKET_EVT_ERROR;
+        }
 
         rc = VINF_SUCCESS;
     }
