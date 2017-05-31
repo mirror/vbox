@@ -13,7 +13,7 @@
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
  <class>VBoxSnapshotDetailsDlg</class>
- <widget class="QDialog" name="VBoxSnapshotDetailsDlg">
+ <widget class="QWidget" name="VBoxSnapshotDetailsDlg">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -146,57 +146,9 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="3">
-    <widget class="QIDialogButtonBox" name="mButtonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QIDialogButtonBox</class>
-   <extends>QDialogButtonBox</extends>
-   <header>QIDialogButtonBox.h</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="../VirtualBox1.qrc"/>
  </resources>
- <connections>
-  <connection>
-   <sender>mButtonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>VBoxSnapshotDetailsDlg</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>203</x>
-     <y>365</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>203</x>
-     <y>193</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>mButtonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>VBoxSnapshotDetailsDlg</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>203</x>
-     <y>365</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>203</x>
-     <y>193</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
 </ui>

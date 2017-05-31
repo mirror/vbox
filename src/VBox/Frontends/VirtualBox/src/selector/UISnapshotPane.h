@@ -31,8 +31,9 @@ class QReadWriteLock;
 class QTimer;
 class QTreeWidgetItem;
 class QITreeWidgetItem;
-class UISnapshotTree;
+class UISnapshotDetailsWidget;
 class UISnapshotItem;
+class UISnapshotTree;
 class UIToolBar;
 
 
@@ -90,14 +91,16 @@ private slots:
 
     /** @name Toolbar handlers.
       * @{ */
-        /** Proposes to take a snapshot. */
+        /** Handles command to take a snapshot. */
         void sltTakeSnapshot() { takeSnapshot(); }
-        /** Proposes to restore the snapshot. */
+        /** Handles command to restore the snapshot. */
         void sltRestoreSnapshot() { restoreSnapshot(); }
-        /** Proposes to delete the snapshot. */
+        /** Handles command to delete the snapshot. */
         void sltDeleteSnapshot() { deleteSnapshot(); }
-        /** Displays the snapshot details dialog. */
-        void sltShowSnapshotDetails() { showSnapshotDetails(); }
+        /** Handles command to make snapshot details @a fVisible. */
+        void sltToggleSnapshotDetailsVisibility(bool fVisible);
+        /** Handles command to commit snapshot details changes. */
+        void sltCommitSnapshotDetailsChanges();
         /** Proposes to clone the snapshot. */
         void sltCloneSnapshot() { cloneSnapshot(); }
     /** @} */
@@ -126,6 +129,8 @@ private:
         void prepareToolbar();
         /** Prepares tree-widget. */
         void prepareTreeWidget();
+        /** Prepares details-widget. */
+        void prepareDetailsWidget();
 
         /** Refreshes everything. */
         void refreshAll();
@@ -144,8 +149,6 @@ private:
         bool deleteSnapshot();
         /** Proposes to restore the snapshot. */
         bool restoreSnapshot(bool fSuppressNonCriticalWarnings = false);
-        /** Displays the snapshot details dialog. */
-        void showSnapshotDetails();
         /** Proposes to clone the snapshot. */
         void cloneSnapshot();
     /** @} */
@@ -197,6 +200,8 @@ private:
         QAction   *m_pActionRestoreSnapshot;
         /** Holds the Show Snapshot Details action instance. */
         QAction   *m_pActionShowSnapshotDetails;
+        /** Holds the Commit Snapshot Details action instance. */
+        QAction   *m_pActionCommitSnapshotDetails;
         /** Holds the Clone Snapshot action instance. */
         QAction   *m_pActionCloneSnapshot;
 
@@ -204,6 +209,9 @@ private:
         UISnapshotTree *m_pSnapshotTree;
         /** Holds the current snapshot item reference. */
         UISnapshotItem *m_pCurrentSnapshotItem;
+
+        /** Holds the details-widget instance. */
+        UISnapshotDetailsWidget *m_pDetailsWidget;
     /** @} */
 };
 

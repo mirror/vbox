@@ -135,6 +135,10 @@
         <file alias="site_forum_16px.png">images/site_forum_16px.png</file>
         <file alias="site_oracle_16px.png">images/site_oracle_16px.png</file>
         <file alias="site_warning_16px.png">images/site_warning_16px.png</file>
+        <file alias="snapshot_commit_details_16px.png">images/snapshot_commit_details_16px.png</file>
+        <file alias="snapshot_commit_details_22px.png">images/snapshot_commit_details_22px.png</file>
+        <file alias="snapshot_commit_details_disabled_16px.png">images/snapshot_commit_details_disabled_16px.png</file>
+        <file alias="snapshot_commit_details_disabled_22px.png">images/snapshot_commit_details_disabled_22px.png</file>
         <file alias="snapshot_delete_16px.png">images/snapshot_delete_16px.png</file>
         <file alias="snapshot_delete_22px.png">images/snapshot_delete_22px.png</file>
         <file alias="snapshot_delete_disabled_16px.png">images/snapshot_delete_disabled_16px.png</file>

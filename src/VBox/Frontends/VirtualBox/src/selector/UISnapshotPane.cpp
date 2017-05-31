@@ -530,9 +530,11 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     , m_pActionDeleteSnapshot(0)
     , m_pActionRestoreSnapshot(0)
     , m_pActionShowSnapshotDetails(0)
+    , m_pActionCommitSnapshotDetails(0)
     , m_pActionCloneSnapshot(0)
     , m_pSnapshotTree(0)
     , m_pCurrentSnapshotItem(0)
+    , m_pDetailsWidget(0)
 {
     /* Prepare: */
     prepare();
@@ -582,6 +584,7 @@ void UISnapshotPane::retranslateUi()
     m_pActionDeleteSnapshot->setText(tr("&Delete"));
     m_pActionRestoreSnapshot->setText(tr("&Restore"));
     m_pActionShowSnapshotDetails->setText(tr("D&etails..."));
+    m_pActionCommitSnapshotDetails->setText(tr("&Apply..."));
     m_pActionCloneSnapshot->setText(tr("&Clone..."));
     /* Translate actions tool-tips: */
     m_pActionTakeSnapshot->setToolTip(tr("Take Snapshot (%1)")
@@ -590,15 +593,18 @@ void UISnapshotPane::retranslateUi()
                                         .arg(m_pActionDeleteSnapshot->shortcut().toString()));
     m_pActionRestoreSnapshot->setToolTip(tr("Restore Snapshot (%1)")
                                          .arg(m_pActionRestoreSnapshot->shortcut().toString()));
-    m_pActionShowSnapshotDetails->setToolTip(tr("Show Snapshot Details (%1)")
+    m_pActionShowSnapshotDetails->setToolTip(tr("Open Snapshot Details (%1)")
                                              .arg(m_pActionShowSnapshotDetails->shortcut().toString()));
+    m_pActionCommitSnapshotDetails->setToolTip(tr("Apply Changes in Snapshot Details (%1)")
+                                               .arg(m_pActionCommitSnapshotDetails->shortcut().toString()));
     m_pActionCloneSnapshot->setToolTip(tr("Clone Virtual Machine (%1)")
                                        .arg(m_pActionCloneSnapshot->shortcut().toString()));
     /* Translate actions status-tips: */
     m_pActionTakeSnapshot->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
     m_pActionDeleteSnapshot->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
     m_pActionRestoreSnapshot->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
-    m_pActionShowSnapshotDetails->setStatusTip(tr("Display a window with selected snapshot details"));
+    m_pActionShowSnapshotDetails->setStatusTip(tr("Open pane with the selected snapshot details"));
+    m_pActionCommitSnapshotDetails->setStatusTip(tr("Apply changes in snapshot details pane"));
     m_pActionCloneSnapshot->setStatusTip(tr("Clone selected virtual machine"));
 
     /* Translate toolbar: */
@@ -676,9 +682,73 @@ void UISnapshotPane::sltUpdateSnapshotsAge()
         m_pTimerUpdateAge->start();
 }
 
+void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
+{
+    /* Show/hide commit action and details-widget: */
+    m_pActionCommitSnapshotDetails->setVisible(fVisible);
+    m_pDetailsWidget->setVisible(fVisible);
+    /* If details-widget is visible: */
+    if (m_pDetailsWidget->isVisible())
+    {
+        /* Acquire current snapshot item: */
+        const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+        /* Update details-widget: */
+        m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
+    }
+}
+
+void UISnapshotPane::sltCommitSnapshotDetailsChanges()
+{
+    /* Make sure nothing being edited in the meantime: */
+    if (!m_pLockReadWrite->tryLockForWrite())
+        return;
+
+    /* Disable button first of all: */
+    m_pActionCommitSnapshotDetails->setEnabled(false);
+
+    /* Acquire current snapshot item: */
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+    AssertPtr(pSnapshotItem);
+    if (pSnapshotItem)
+    {
+        /* Make sure that's a snapshot item indeed: */
+        CSnapshot comSnapshot = pSnapshotItem->snapshot();
+        if (comSnapshot.isNotNull())
+        {
+            /* Get item data: */
+            UIDataSnapshot oldData = *pSnapshotItem;
+            UIDataSnapshot newData = m_pDetailsWidget->data();
+
+            /* Update corresponding snapshot attributes if necessary: */
+            if (newData != oldData)
+            {
+                /* We need to open a session when we manipulate the snapshot data of a machine: */
+                CSession comSession = vboxGlobal().openExistingSession(comSnapshot.GetMachine().GetId());
+                if (!comSession.isNull())
+                {
+                    // TODO: Add settings save validation.
+
+                    /* Save snapshot name: */
+                    if (newData.m_strName != oldData.m_strName)
+                        comSnapshot.SetName(newData.m_strName);
+                    /* Save snapshot description: */
+                    if (newData.m_strDescription != oldData.m_strDescription)
+                        comSnapshot.SetDescription(newData.m_strDescription);
+
+                    /* Close the session again: */
+                    comSession.UnlockMachine();
+                }
+            }
+        }
+    }
+
+    /* Allows editing again: */
+    m_pLockReadWrite->unlock();
+}
+
 void UISnapshotPane::sltHandleCurrentItemChange()
 {
-    /* Acquire corresponding snapshot item: */
+    /* Acquire current snapshot item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
 
     /* Make the selected item visible: */
@@ -733,11 +803,33 @@ void UISnapshotPane::sltHandleCurrentItemChange()
         && pSnapshotItem
         && !pSnapshotItem->isCurrentStateItem()
     );
+    m_pActionCommitSnapshotDetails->setEnabled(
+        false
+    );
     m_pActionCloneSnapshot->setEnabled(
            pSnapshotItem
         && (   !pSnapshotItem->isCurrentStateItem()
             || !fBusy)
     );
+
+    /* If there is a proper snasphot item: */
+    if (   m_pCurrentSnapshotItem
+        && pSnapshotItem
+        && !pSnapshotItem->isCurrentStateItem())
+    {
+        /* Update details-widget if it's visible: */
+        if (m_pDetailsWidget->isVisible())
+            m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
+    }
+    else
+    {
+        /* Clear details-widget if it's visible: */
+        if (m_pDetailsWidget->isVisible())
+            m_pDetailsWidget->clearData();
+        /* Toggle details button off and hide the widget: */
+        m_pActionShowSnapshotDetails->setChecked(false);
+        sltToggleSnapshotDetailsVisibility(false);
+    }
 }
 
 void UISnapshotPane::sltHandleContextMenuRequest(const QPoint &position)
@@ -760,6 +852,7 @@ void UISnapshotPane::sltHandleContextMenuRequest(const QPoint &position)
         menu.addSeparator();
         menu.addAction(m_pActionRestoreSnapshot);
         menu.addAction(m_pActionShowSnapshotDetails);
+        menu.addAction(m_pActionCommitSnapshotDetails);
         menu.addSeparator();
         menu.addAction(m_pActionCloneSnapshot);
     }
@@ -783,14 +876,31 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
 
     /* Acquire corresponding snapshot item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(pItem);
-    AssertReturnVoid(pSnapshotItem);
+    AssertPtr(pSnapshotItem);
+    if (pSnapshotItem)
+    {
+        /* Make sure that's a snapshot item indeed: */
+        CSnapshot comSnapshot = pSnapshotItem->snapshot();
+        if (comSnapshot.isNotNull())
+        {
+            /* Rename corresponding snapshot if necessary: */
+            if (comSnapshot.GetName() != pSnapshotItem->text(0))
+            {
+                /* We need to open a session when we manipulate the snapshot data of a machine: */
+                CSession comSession = vboxGlobal().openExistingSession(comSnapshot.GetMachine().GetId());
+                if (!comSession.isNull())
+                {
+                    // TODO: Add settings save validation.
 
-    /* Rename corresponding snapshot: */
-    CSnapshot comSnapshot = pSnapshotItem->snapshotID().isNull()
-                          ? CSnapshot()
-                          : m_comMachine.FindSnapshot(pSnapshotItem->snapshotID());
-    if (!comSnapshot.isNull() && comSnapshot.isOk() && comSnapshot.GetName() != pSnapshotItem->text(0))
-        comSnapshot.SetName(pSnapshotItem->text(0));
+                    /* Save snapshot name: */
+                    comSnapshot.SetName(pSnapshotItem->text(0));
+
+                    /* Close the session again: */
+                    comSession.UnlockMachine();
+                }
+            }
+        }
+    }
 
     /* Allows editing again: */
     m_pLockReadWrite->unlock();
@@ -802,11 +912,23 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(pItem);
     AssertReturnVoid(pSnapshotItem);
 
-    /* Handle Ctrl+DoubleClick: */
-    if (QApplication::keyboardModifiers() == Qt::ControlModifier)
+    /* If this is a snapshot item: */
+    if (   m_pCurrentSnapshotItem
+        && pSnapshotItem
+        && !pSnapshotItem->isCurrentStateItem())
     {
-        /* As snapshot-restore procedure: */
-        restoreSnapshot(true /* suppress non-critical warnings */);
+        /* Handle Ctrl+DoubleClick: */
+        if (QApplication::keyboardModifiers() == Qt::ControlModifier)
+        {
+            /* As snapshot-restore procedure: */
+            restoreSnapshot(true /* suppress non-critical warnings */);
+        }
+        /* Handle other kinds of DoubleClick: */
+        else
+        {
+            /* As show details-widget procedure: */
+            m_pActionShowSnapshotDetails->setChecked(true);
+        }
     }
 }
 
@@ -861,6 +983,8 @@ void UISnapshotPane::prepareWidgets()
         prepareToolbar();
         /* Prepare tree-widget: */
         prepareTreeWidget();
+        /* Prepare details-widget: */
+        prepareDetailsWidget();
     }
 }
 
@@ -911,10 +1035,25 @@ void UISnapshotPane::prepareToolbar()
         m_pActionShowSnapshotDetails = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_show_details_22px.png",
                                                                                      ":/snapshot_show_details_16px.png",
                                                                                      ":/snapshot_show_details_disabled_22px.png",
-                                                                                     ":/snapshot_details_show_disabled_16px.png"),
-                                                             QString(), this, &UISnapshotPane::sltShowSnapshotDetails);
+                                                                                     ":/snapshot_show_details_disabled_16px.png"),
+                                                             QString());
         {
+            connect(m_pActionShowSnapshotDetails, &QAction::toggled,
+                    this, &UISnapshotPane::sltToggleSnapshotDetailsVisibility);
+            m_pActionShowSnapshotDetails->setCheckable(true);
             m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
+        }
+
+        /* Add Commit Snapshot Details action: */
+        m_pActionCommitSnapshotDetails = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_commit_details_22px.png",
+                                                                                       ":/snapshot_commit_details_16px.png",
+                                                                                       ":/snapshot_commit_details_disabled_22px.png",
+                                                                                       ":/snapshot_commit_details_disabled_16px.png"),
+                                                               QString(), this, &UISnapshotPane::sltCommitSnapshotDetailsChanges);
+        {
+            connect(m_pActionShowSnapshotDetails, &QAction::toggled,
+                    m_pActionCommitSnapshotDetails, &QAction::setVisible);
+            m_pActionCommitSnapshotDetails->setShortcut(QString("Ctrl+Return"));
         }
 
         m_pToolBar->addSeparator();
@@ -941,6 +1080,9 @@ void UISnapshotPane::prepareTreeWidget()
     AssertPtrReturnVoid(m_pSnapshotTree);
     {
         /* Configure tree: */
+        m_pSnapshotTree->setExpandsOnDoubleClick(false);
+        m_pSnapshotTree->setEditTriggers(  QAbstractItemView::SelectedClicked
+                                         | QAbstractItemView::EditKeyPressed);
         connect(m_pSnapshotTree, &UISnapshotTree::currentItemChanged,
                 this, &UISnapshotPane::sltHandleCurrentItemChange);
         connect(m_pSnapshotTree, &UISnapshotTree::customContextMenuRequested,
@@ -952,6 +1094,22 @@ void UISnapshotPane::prepareTreeWidget()
 
         /* Add into layout: */
         layout()->addWidget(m_pSnapshotTree);
+    }
+}
+
+void UISnapshotPane::prepareDetailsWidget()
+{
+    /* Create details-widget: */
+    m_pDetailsWidget = new UISnapshotDetailsWidget;
+    AssertPtrReturnVoid(m_pDetailsWidget);
+    {
+        /* Configure details-widget: */
+        m_pDetailsWidget->setVisible(false);
+        connect(m_pDetailsWidget, &UISnapshotDetailsWidget::sigDataChanged,
+                m_pActionCommitSnapshotDetails, &QAction::setEnabled);
+
+        /* Add into layout: */
+        layout()->addWidget(m_pDetailsWidget);
     }
 }
 
@@ -1178,7 +1336,7 @@ bool UISnapshotPane::deleteSnapshot()
     bool fSuccess = false;
     do
     {
-        /* Acquire currently chosen snapshot item: */
+        /* Acquire current snapshot item: */
         const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
@@ -1252,7 +1410,7 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
     bool fSuccess = false;
     do
     {
-        /* Acquire currently chosen snapshot item: */
+        /* Acquire current snapshot item: */
         const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
@@ -1321,28 +1479,9 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
     return fSuccess;
 }
 
-void UISnapshotPane::showSnapshotDetails()
-{
-    /* Acquire currently chosen snapshot item: */
-    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
-    AssertReturnVoid(pSnapshotItem);
-
-    /* Get corresponding snapshot: */
-    const CSnapshot comSnapshot = pSnapshotItem->snapshot();
-    AssertReturnVoid(!comSnapshot.isNull());
-
-    /* Show Snapshot Details dialog: */
-    QPointer<VBoxSnapshotDetailsDlg> pDlg = new VBoxSnapshotDetailsDlg(this);
-    pDlg->setData(*pSnapshotItem, comSnapshot);
-    if (pDlg->exec() == QDialog::Accepted)
-        pDlg->saveData();
-    if (pDlg)
-        delete pDlg;
-}
-
 void UISnapshotPane::cloneSnapshot()
 {
-    /* Acquire currently chosen snapshot item: */
+    /* Acquire current snapshot item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertReturnVoid(pSnapshotItem);
 

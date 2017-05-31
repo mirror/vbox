@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBoxSnapshotDetailsDlg class declaration.
+ * VBox Qt GUI - UISnapshotDetailsWidget class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxSnapshotDetailsDlg_h___
-#define ___VBoxSnapshotDetailsDlg_h___
+#ifndef ___UISnapshotDetailsWidget_h___
+#define ___UISnapshotDetailsWidget_h___
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -56,20 +56,27 @@ struct UIDataSnapshot
 };
 
 
-/** QDialog extension providing GUI with snapshot details dialog. */
-class VBoxSnapshotDetailsDlg : public QIWithRetranslateUI<QDialog>, public Ui::VBoxSnapshotDetailsDlg
+/** QWidget extension providing GUI with snapshot details-widget. */
+class UISnapshotDetailsWidget : public QIWithRetranslateUI<QWidget>, public Ui::VBoxSnapshotDetailsDlg
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about data changed and whether it @a fDiffers. */
+    void sigDataChanged(bool fDiffers);
+
 public:
 
-    /** Constructs snapshot details dialog passing @a pParent to the base-class. */
-    VBoxSnapshotDetailsDlg(QWidget *pParent = 0);
+    /** Constructs snapshot details-widget passing @a pParent to the base-class. */
+    UISnapshotDetailsWidget(QWidget *pParent = 0);
 
+    /** Returns the snapshot data. */
+    const UIDataSnapshot &data() const { return m_newData; }
     /** Defines the snapshot @a data. */
     void setData(const UIDataSnapshot &data, const CSnapshot &comSnapshot);
-    /** Saves the snapshot data. */
-    void saveData();
+    /** Clears the snapshot data. */
+    void clearData();
 
 protected:
 
@@ -86,8 +93,8 @@ protected:
 
 private slots:
 
-    /** Handles snapshot @a strName change. */
-    void sltHandleNameChange(const QString &strName);
+    /** Handles snapshot name change. */
+    void sltHandleNameChange();
     /** Handles snapshot description change. */
     void sltHandleDescriptionChange();
 
@@ -95,6 +102,12 @@ private:
 
     /** Prepares all. */
     void prepare();
+
+    /** Loads snapshot data. */
+    void loadSnapshotData();
+
+    /** Notifies listeners about data changed or not. */
+    void notify();
 
     /** Holds whether this widget was polished. */
     bool m_fPolished;
@@ -113,5 +126,5 @@ private:
     QPixmap m_pixmapScreenshot;
 };
 
-#endif /* !___VBoxSnapshotDetailsDlg_h___ */
+#endif /* !___UISnapshotDetailsWidget_h___ */
 
