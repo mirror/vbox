@@ -155,7 +155,7 @@ VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, u
                                                   uint64_t uExitInfo2);
 VMM_INT_DECL(void)              HMVmxNstGstVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
-VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr, RTGCPHYS GCPhysVmcb);
 VMM_INT_DECL(uint8_t)           HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx);
 VMM_INT_DECL(bool)              HMSvmNstGstCanTakeInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode,

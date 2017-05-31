@@ -248,15 +248,17 @@ static uint8_t hmSvmEventTypeFromIemEvent(uint32_t uVector, uint32_t fIemXcptFla
  *
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pCtx                Pointer to the guest-CPU context.
+ * @param   cbInstr             The length of the VMRUN instruction.
  * @param   GCPhysVmcb          Guest physical address of the VMCB to run.
  */
 /** @todo move this to IEM and make the VMRUN version that can execute under
  *        hardware SVM here instead. */
-VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb)
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr, RTGCPHYS GCPhysVmcb)
 {
     Assert(pVCpu);
     Assert(pCtx);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Log3(("HMSvmVmrun\n"));
 
     /*
      * Cache the physical address of the VMCB for #VMEXIT exceptions.
@@ -282,7 +284,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
         pHostState->uCr3     = pCtx->cr3;
         pHostState->uCr4     = pCtx->cr4;
         pHostState->rflags   = pCtx->rflags;
-        pHostState->uRip     = pCtx->rip;
+        pHostState->uRip     = pCtx->rip + cbInstr;
         pHostState->uRsp     = pCtx->rsp;
         pHostState->uRax     = pCtx->rax;
 
@@ -336,18 +338,21 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             }
 
             /* IO permission bitmap. */
-            RTGCPHYS GCPhysIOBitmap = pVmcbCtrl->u64IOPMPhysAddr;
+            RTGCPHYS const GCPhysIOBitmap = pVmcbCtrl->u64IOPMPhysAddr;
             if (   (GCPhysIOBitmap & X86_PAGE_4K_OFFSET_MASK)
-                || !PGMPhysIsGCPhysNormal(pVM, GCPhysIOBitmap))
+                || !PGMPhysIsGCPhysNormal(pVM, GCPhysIOBitmap)
+                || !PGMPhysIsGCPhysNormal(pVM, GCPhysIOBitmap + X86_PAGE_4K_SIZE)
+                || !PGMPhysIsGCPhysNormal(pVM, GCPhysIOBitmap + (X86_PAGE_4K_SIZE << 1)))
             {
                 Log(("HMSvmVmRun: IO bitmap physaddr invalid. GCPhysIOBitmap=%#RX64 -> #VMEXIT\n", GCPhysIOBitmap));
                 return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
             }
 
             /* MSR permission bitmap. */
-            RTGCPHYS GCPhysMsrBitmap = pVmcbCtrl->u64MSRPMPhysAddr;
+            RTGCPHYS const GCPhysMsrBitmap = pVmcbCtrl->u64MSRPMPhysAddr;
             if (   (GCPhysMsrBitmap & X86_PAGE_4K_OFFSET_MASK)
-                || !PGMPhysIsGCPhysNormal(pVM, GCPhysMsrBitmap))
+                || !PGMPhysIsGCPhysNormal(pVM, GCPhysMsrBitmap)
+                || !PGMPhysIsGCPhysNormal(pVM, GCPhysMsrBitmap + X86_PAGE_4K_SIZE))
             {
                 Log(("HMSvmVmRun: MSR bitmap physaddr invalid. GCPhysMsrBitmap=%#RX64 -> #VMEXIT\n", GCPhysMsrBitmap));
                 return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
@@ -377,6 +382,30 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             }
 
             /** @todo gPAT MSR validation? */
+
+            /*
+             * Copy the IO permission bitmap into the cache.
+             */
+            Assert(pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap));
+            rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap), GCPhysIOBitmap,
+                                         SVM_IOPM_PAGES * X86_PAGE_4K_SIZE);
+            if (RT_FAILURE(rc))
+            {
+                Log(("HMSvmVmRun: Failed reading the IO permission bitmap at %#RGp. rc=%Rrc\n", GCPhysIOBitmap, rc));
+                return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            }
+
+            /*
+             * Copy the MSR permission bitmap into the cache.
+             */
+            Assert(pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap));
+            rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap), GCPhysMsrBitmap,
+                                         SVM_MSRPM_PAGES * X86_PAGE_4K_SIZE);
+            if (RT_FAILURE(rc))
+            {
+                Log(("HMSvmVmRun: Failed reading the MSR permission bitmap at %#RGp. rc=%Rrc\n", GCPhysMsrBitmap, rc));
+                return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            }
 
             /*
              * Copy segments from nested-guest VMCB state to the guest-CPU state.
@@ -467,12 +496,15 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
 
             /*
              * TLB flush control.
+             * Currently disabled since it's redundant as we unconditionally flush the TLB below.
              */
+#if 0
             /** @todo @bugref{7243}: ASID based PGM TLB flushes. */
             if (   pVmcbCtrl->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_ENTIRE
                 || pVmcbCtrl->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT
                 || pVmcbCtrl->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT_RETAIN_GLOBALS)
                 PGMFlushTLB(pVCpu, VmcbNstGst.u64CR3, true /* fGlobal */);
+#endif
 
             /** @todo @bugref{7243}: SVM TSC offset, see tmCpuTickGetInternal. */
 
@@ -500,6 +532,14 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
             pCtx->dr[6] |= X86_DR6_RA1_MASK;
             pCtx->dr[7] &= ~(X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
             pCtx->dr[7] |= X86_DR7_RA1_MASK;
+
+            /*
+             * Ask PGM to flush the TLB as if we continue to interpret the nested-guest
+             * instructions from guest memory we'd be in trouble otherwise.
+             */
+            PGMFlushTLB(pVCpu, pCtx->cr3, true);
+            PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
+            CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
 
             /*
              * Check for pending virtual interrupts.
@@ -557,12 +597,15 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
                 /** @todo NRIP: Software interrupts can only be pushed properly if we support
                  *        NRIP for the nested-guest to calculate the instruction length
                  *        below. */
+                Log3(("HMSvmVmRun: InjectingEvent: uVector=%u enmType=%d uErrorCode=%u cr2=%#RX64\n", uVector, enmType,
+                      uErrorCode, pCtx->cr2));
                 VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
                 if (   rcStrict == VINF_SVM_VMEXIT
                     || rcStrict == VERR_SVM_VMEXIT_FAILED)
                     return rcStrict;
             }
 
+            Log3(("HMSvmVmRun: Entered nested-guest at CS:RIP=%04x:%08RX64\n", pCtx->cs.Sel, pCtx->rip));
             return VINF_SUCCESS;
         }
 
@@ -596,9 +639,11 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
 VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
                                              uint64_t uExitInfo2)
 {
-    if (   CPUMIsGuestInNestedHwVirtMode(pCtx)
+    if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
         || uExitCode == SVM_EXIT_INVALID)
     {
+        Log3(("HMSvmNstGstVmExit: uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitCode, uExitInfo1, uExitInfo2));
+
         /*
          * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
          */
@@ -733,6 +778,10 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
             pCtx->dr[7]     &= ~(X86_DR7_ENABLED_MASK | X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
             pCtx->dr[7]     |= X86_DR7_RA1_MASK;
 
+            PGMFlushTLB(pVCpu, pCtx->cr3, true);
+            PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
+            CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+
             /** @todo if RIP is not canonical or outside the CS segment limit, we need to
              *        raise \#GP(0) in the guest. */
 
@@ -744,10 +793,11 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
         else
         {
             Log(("HMNstGstSvmVmExit: Writing VMCB at %#RGp failed\n", pCtx->hwvirt.svm.GCPhysVmcb));
-            Assert(!CPUMIsGuestInNestedHwVirtMode(pCtx));
+            Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
             rc = VERR_SVM_VMEXIT_FAILED;
         }
 
+        Log3(("HMSvmNstGstVmExit: returns %Rrc\n", rc));
         return rc;
     }
 
@@ -770,7 +820,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
 VMM_INT_DECL(bool) HMSvmNstGstCanTakeInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
-    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
     X86RFLAGS RFlags;
     if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
@@ -835,7 +885,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX
         break; \
     } while (0)
 
-    if (!CPUMIsGuestInNestedHwVirtMode(pCtx))
+    if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         return VINF_HM_INTERCEPT_NOT_ACTIVE;
 
     switch (uExitCode)
@@ -988,8 +1038,9 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
     /*
      * Check if any IO accesses are being intercepted.
      */
-    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT));
+    Log(("HMSvmNstGstHandleIOIntercept: u16Port=%u\n", pIoExitInfo->n.u16Port));
 
     /*
      * The IOPM layout:
@@ -1004,6 +1055,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
      */
     static const uint16_t s_auSizeMasks[] = { 0, 1, 3, 0, 0xf, 0, 0, 0 };
     uint8_t const *pbIopm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
+    Assert(pbIopm);
 
     uint16_t const u16Port   = pIoExitInfo->n.u16Port;
     uint16_t const offIopm   = u16Port >> 3;
@@ -1014,8 +1066,14 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
     pbIopm += offIopm;
     uint16_t const u16Iopm = *(uint16_t *)pbIopm;
     if (u16Iopm & fIopmMask)
+    {
+        Log(("HMSvmNstGstHandleIOIntercept: u16Port=%u offIoPm=%u fSizeMask=%#x cShift=%u fIopmMask=%#x\n", u16Port, offIopm,
+             fSizeMask, cShift, fIopmMask));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_IOIO, pIoExitInfo->u, uNextRip);
+    }
 
+    Log(("HMSvmNstGstHandleIOIntercept: huh!?\n"));
+    AssertMsgFailed(("We expect an IO intercept here!\n"));
     return VINF_HM_INTERCEPT_NOT_ACTIVE;
 }
 
@@ -1044,7 +1102,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX 
      * Check if any MSRs are being intercepted.
      */
     Assert(CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_MSR_PROT));
-    Assert(CPUMIsGuestInNestedHwVirtMode(pCtx));
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
     uint64_t const uExitInfo1 = fWrite ? SVM_EXIT1_MSR_WRITE : SVM_EXIT1_MSR_READ;
 
