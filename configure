@@ -507,6 +507,18 @@ check_gcc()
         cnf_append "TOOL_GXX64_CXX" "$CXX64"
         cnf_append "TOOL_GXX64_LD"  "$CXX64"
       fi
+      if [ "$CC" != "gcc" ]; then
+        if [ -n "$CC64" ]; then
+          cnf_append "TOOL_Bs3Gcc64Elf64_CC"  "$CC64"
+        else
+          cnf_append "TOOL_Bs3Gcc64Elf64_CC"  "$CC"
+        fi
+        if [ -n "$CXX64" ]; then
+          cnf_append "TOOL_Bs3Gcc64Elf64_CXX" "$CXX64"
+        else
+          cnf_append "TOOL_Bs3Gcc64Elf64_CXX" "$CXX"
+        fi
+      fi
       # Solaris sports a 32-bit gcc/g++.
       if [ "$OS" = "solaris" -a "$BUILD_MACHINE" = "amd64" ]; then
         [ "$CC" = "gcc" ] && CC="gcc -m64"
