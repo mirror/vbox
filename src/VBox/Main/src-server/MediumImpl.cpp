@@ -6086,6 +6086,10 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
  * @param aProgress         Progress object to use.
  * @return
  * @note The source format is defined by the Medium instance.
+ *
+ * @todo The only consumer of this method (Appliance::i_writeFSImpl) is already
+ *       on a worker thread, so perhaps consider bypassing the thread here and
+ *       run in the task synchronously?  VBoxSVC has enough threads as it is...
  */
 HRESULT Medium::i_exportFile(const char *aFilename,
                              const ComObjPtr<MediumFormat> &aFormat,
@@ -6161,6 +6165,11 @@ HRESULT Medium::i_exportFile(const char *aFilename,
  * @param aProgress             Progress object to use.
  * @return
  * @note The destination format is defined by the Medium instance.
+ *
+ * @todo The only consumer of this method (Appliance::i_importOneDiskImage) is
+ *       already on a worker thread, so perhaps consider bypassing the thread
+ *       here and run in the task synchronously?  VBoxSVC has enough threads as
+ *       it is...
  */
 HRESULT Medium::i_importFile(const char *aFilename,
                              const ComObjPtr<MediumFormat> &aFormat,
