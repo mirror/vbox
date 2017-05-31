@@ -86,11 +86,6 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-    /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
-    /** Handles polish @a pEvent. */
-    virtual void polishEvent(QShowEvent *pEvent);
-
 private slots:
 
     /** Handles snapshot name change. */
@@ -109,11 +104,8 @@ private:
     /** Notifies listeners about data changed or not. */
     void notify();
 
-    /** Holds whether this widget was polished. */
-    bool m_fPolished;
-
     /** Holds the snapshot object to load data from. */
-    CSnapshot m_comSnapshot;
+    CSnapshot  m_comSnapshot;
 
     /** Holds the old data copy. */
     UIDataSnapshot  m_oldData;
@@ -121,9 +113,9 @@ private:
     UIDataSnapshot  m_newData;
 
     /** Holds the cached thumbnail. */
-    QPixmap m_pixmapThumbnail;
+    QPixmap  m_pixmapThumbnail;
     /** Holds the cached screenshot. */
-    QPixmap m_pixmapScreenshot;
+    QPixmap  m_pixmapScreenshot;
 };
 
 #endif /* !___UISnapshotDetailsWidget_h___ */

@@ -79,22 +79,22 @@ private:
     void adjustPicture();
 
     /** Holds whether this widget was polished. */
-    bool m_fPolished;
+    bool  m_fPolished;
 
     /** Holds the screenshot to show. */
-    QPixmap m_pixmapScreenshot;
+    QPixmap  m_pixmapScreenshot;
     /** Holds the snapshot name. */
-    QString m_strSnapshotName;
+    QString  m_strSnapshotName;
     /** Holds the machine name. */
-    QString m_strMachineName;
+    QString  m_strMachineName;
 
     /** Holds the scroll-area instance. */
     QScrollArea *m_pScrollArea;
     /** Holds the picture label instance. */
-    QLabel *m_pLabelPicture;
+    QLabel      *m_pLabelPicture;
 
     /** Holds whether we are in zoom mode. */
-    bool m_fZoomMode;
+    bool  m_fZoomMode;
 };
 
 
@@ -339,35 +339,6 @@ void UISnapshotDetailsWidget::retranslateUi()
     }
 }
 
-void UISnapshotDetailsWidget::showEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
-
-    /* Make sure we should polish dialog: */
-    if (m_fPolished)
-        return;
-
-    /* Call to polish-event: */
-    polishEvent(pEvent);
-
-    /* Mark dialog as polished: */
-    m_fPolished = true;
-}
-
-void UISnapshotDetailsWidget::polishEvent(QShowEvent * /* pEvent */)
-{
-    /* If we haven't assigned the thumbnail yet, do it now: */
-    if (!mLbThumbnail->pixmap() && !m_pixmapThumbnail.isNull())
-    {
-        mLbThumbnail->setPixmap(m_pixmapThumbnail.scaled(QSize(1, mLbThumbnail->height()),
-                                                         Qt::KeepAspectRatioByExpanding,
-                                                         Qt::SmoothTransformation));
-        /* Make sure tool-tip is translated afterwards: */
-        retranslateUi();
-    }
-}
-
 void UISnapshotDetailsWidget::sltHandleNameChange()
 {
     m_newData.m_strName = mLeName->text();
@@ -463,6 +434,8 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         AssertPtrReturnVoid(pLayout);
         if (m_pixmapThumbnail.isNull())
         {
+            mLbThumbnail->setPixmap(QPixmap());
+
             pLayout->removeWidget(mLbThumbnail);
             mLbThumbnail->setHidden(true);
 
@@ -473,6 +446,12 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         }
         else
         {
+            const QStyle *pStyle = QApplication::style();
+            const int iIconMetric = pStyle->pixelMetric(QStyle::PM_LargeIconSize);
+            mLbThumbnail->setPixmap(m_pixmapThumbnail.scaled(QSize(1, iIconMetric),
+                                                             Qt::KeepAspectRatioByExpanding,
+                                                             Qt::SmoothTransformation));
+
             pLayout->removeWidget(mLeName);
             pLayout->removeWidget(mTxTaken);
             pLayout->addWidget(mLeName, 0, 1);
@@ -493,6 +472,8 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         QGridLayout *pLayout = qobject_cast<QGridLayout*>(layout());
         AssertPtrReturnVoid(pLayout);
         {
+            mLbThumbnail->setPixmap(QPixmap());
+
             pLayout->removeWidget(mLbThumbnail);
             mLbThumbnail->setHidden(true);
 
