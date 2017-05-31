@@ -755,22 +755,20 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
  */
 static void cpumR3FreeHwVirtState(PVM pVM)
 {
-    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    Assert(pVM->cpum.ro.GuestFeatures.fSvm);
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        PVMCPU pVCpu = &pVM->aCpus[i];
+        if (pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3)
         {
-            PVMCPU pVCpu = &pVM->aCpus[i];
-            if (pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3)
-            {
-                SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES);
-                pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3 = NULL;
-            }
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3 = NULL;
+        }
 
-            if (pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3)
-            {
-                SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3, SVM_IOPM_PAGES);
-                pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3 = NULL;
-            }
+        if (pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3, SVM_IOPM_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3 = NULL;
         }
     }
 }
@@ -784,46 +782,47 @@ static void cpumR3FreeHwVirtState(PVM pVM)
  */
 static int cpumR3AllocHwVirtState(PVM pVM)
 {
+    Assert(pVM->cpum.ro.GuestFeatures.fSvm);
+
     int rc = VINF_SUCCESS;
-    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    LogRel(("CPUM: Allocating a total of %u pages for the nested-guest SVM MSR and IO permission bitmaps\n",
+            pVM->cCpus * (SVM_MSRPM_PAGES + SVM_IOPM_PAGES)));
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        /*
+         * Allocate the MSRPM (MSR Permission bitmap).
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
+        rc = SUPR3PageAllocEx(SVM_MSRPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
         {
-            PVMCPU pVCpu = &pVM->aCpus[i];
-
-            /*
-             * Allocate the MSRPM (MSR Permission bitmap).
-             */
             Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
-            rc = SUPR3PageAllocEx(SVM_MSRPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3,
-                                  &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR0, NULL /* paPages */);
-            if (RT_FAILURE(rc))
-            {
-                Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
-                LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's MSR permission bitmap\n", pVCpu->idCpu,
-                        SVM_MSRPM_PAGES));
-                break;
-            }
-
-            /*
-             * Allocate the IOPM (IO Permission bitmap).
-             */
-            Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3);
-            rc = SUPR3PageAllocEx(SVM_IOPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3,
-                                  &pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR0, NULL /* paPages */);
-            if (RT_FAILURE(rc))
-            {
-                Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3);
-                LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's IO permission bitmap\n", pVCpu->idCpu,
-                        SVM_IOPM_PAGES));
-                break;
-            }
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's MSR permission bitmap\n", pVCpu->idCpu,
+                    SVM_MSRPM_PAGES));
+            break;
         }
 
-        /* On any failure, cleanup. */
+        /*
+         * Allocate the IOPM (IO Permission bitmap).
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3);
+        rc = SUPR3PageAllocEx(SVM_IOPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3,
+                              &pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR0, NULL /* paPages */);
         if (RT_FAILURE(rc))
-            cpumR3FreeHwVirtState(pVM);
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's IO permission bitmap\n", pVCpu->idCpu,
+                    SVM_IOPM_PAGES));
+            break;
+        }
     }
+
+    /* On any failure, cleanup. */
+    if (RT_FAILURE(rc))
+        cpumR3FreeHwVirtState(pVM);
 
     return rc;
 }
@@ -965,13 +964,6 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     }
 
     /*
-     * Allocate memory required by the hardware virtualization state.
-     */
-    rc = cpumR3AllocHwVirtState(pVM);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
      * Register saved state data item.
      */
     rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
@@ -1011,6 +1003,17 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     rc = cpumR3InitCpuIdAndMsrs(pVM);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Allocate memory required by the guest hardware virtualization state.
+     */
+    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    {
+        rc = cpumR3AllocHwVirtState(pVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     CPUMR3Reset(pVM);
     return VINF_SUCCESS;
 }
@@ -1092,7 +1095,8 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
     }
 #endif
 
-    cpumR3FreeHwVirtState(pVM);
+    if (pVM->cpum.ro.GuestFeatures.fSvm)
+        cpumR3FreeHwVirtState(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1240,8 +1244,8 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     /*
      * Hardware virtualization state.
      */
-    memset(&pCtx->hwvirt, 0, sizeof(pCtx->hwvirt));
     /* SVM. */
+    RT_ZERO(pCtx->hwvirt.svm.VmcbCtrl);
     pCtx->hwvirt.svm.fGif = 1;
 }
 
