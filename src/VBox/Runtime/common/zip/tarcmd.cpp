@@ -61,6 +61,7 @@
 #define RTZIPTARCMD_OPT_DIR_MODE_OR_MASK    1008
 #define RTZIPTARCMD_OPT_FORMAT              1009
 #define RTZIPTARCMD_OPT_READ_AHEAD          1010
+#define RTZIPTARCMD_OPT_USE_PUSH_FILE       1011
 
 /** File format. */
 typedef enum RTZIPTARCMDFORMAT
@@ -106,6 +107,8 @@ typedef struct RTZIPTARCMDOPS
     bool            fNoModTime;
     /** Whether to add a read ahead thread. */
     bool            fReadAhead;
+    /** Use RTVfsFsStrmPushFile instead of RTVfsFsStrmAdd for files. */
+    bool            fUsePushFile;
     /** The compressor/decompressor method to employ (0, z or j). */
     char            chZipper;
 
@@ -189,40 +192,62 @@ static bool rtZipTarCmdIsNameInArray(const char *pszName, const char * const *pa
  * @param   pOpts           The options.
  * @param   hVfsFss         The TAR filesystem stream handle.
  * @param   pszSrc          The file path or VFS spec.
+ * @param   paObjInfo[3]    Array of three FS object info structures.  The first
+ *                          one is always filled with RTFSOBJATTRADD_UNIX info.
+ *                          The next two may contain owner and group names if
+ *                          available.  Buffers can be modified.
  * @param   pszDst          The name to archive the file under.
  * @param   pErrInfo        Error info buffer (saves stack space).
  */
-static RTEXITCODE rtZipTarCmdArchiveFile(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVfsFss,
-                                         const char *pszSrc, const char *pszDst, PRTERRINFOSTATIC pErrInfo)
+static RTEXITCODE rtZipTarCmdArchiveFile(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVfsFss, const char *pszSrc,
+                                         RTFSOBJINFO paObjInfo[3], const char *pszDst, PRTERRINFOSTATIC pErrInfo)
 {
     if (pOpts->fVerbose)
         RTPrintf("%s\n", pszDst);
 
     /* Open the file. */
     uint32_t        offError;
-    RTVFSIOSTREAM   hVfsIos;
+    RTVFSIOSTREAM   hVfsIosSrc;
     int rc = RTVfsChainOpenIoStream(pszSrc, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
-                                    &hVfsIos, &offError, RTErrInfoInitStatic(pErrInfo));
+                                    &hVfsIosSrc, &offError, RTErrInfoInitStatic(pErrInfo));
     if (RT_FAILURE(rc))
         return RTVfsChainMsgErrorExitFailure("RTVfsChainOpenIoStream", pszSrc, rc, offError, &pErrInfo->Core);
 
     /* I/O stream to base object. */
-    RTVFSOBJ hVfsObj = RTVfsObjFromIoStream(hVfsIos);
-    RTVfsIoStrmRelease(hVfsIos);
-    if (hVfsObj == NIL_RTVFSOBJ)
-        return RTMsgErrorExitFailure("RTVfsObjFromIoStream failed unexpectedly!");
-
-    /* Add it to the stream. */
-    rc = RTVfsFsStrmAdd(hVfsFss, pszDst, hVfsObj, 0 /*fFlags*/);
-    RTVfsObjRelease(hVfsObj);
-
-    if (RT_SUCCESS(rc))
+    RTVFSOBJ hVfsObjSrc = RTVfsObjFromIoStream(hVfsIosSrc);
+    if (hVfsObjSrc != NIL_RTVFSOBJ)
     {
-        if (rc != VINF_SUCCESS)
-            RTMsgWarning("%Rrc adding '%s'", rc, pszDst);
-        return RTEXITCODE_SUCCESS;
+        /*
+         * Add it to the stream.  Got to variants here so we can test the
+         * RTVfsFsStrmPushFile API too.
+         */
+        if (!pOpts->fUsePushFile)
+            rc = RTVfsFsStrmAdd(hVfsFss, pszDst, hVfsObjSrc, 0 /*fFlags*/);
+        else
+        {
+            uint32_t cObjInfo = 1 + (paObjInfo[1].Attr.enmAdditional == RTFSOBJATTRADD_UNIX_OWNER)
+                                  + (paObjInfo[2].Attr.enmAdditional == RTFSOBJATTRADD_UNIX_GROUP);
+            RTVFSIOSTREAM hVfsIosDst;
+            rc = RTVfsFsStrmPushFile(hVfsFss, pszDst, paObjInfo[0].cbObject, paObjInfo, cObjInfo, 0 /*fFlags*/, &hVfsIosDst);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0);
+                RTVfsIoStrmRelease(hVfsIosDst);
+            }
+        }
+        RTVfsIoStrmRelease(hVfsIosSrc);
+        RTVfsObjRelease(hVfsObjSrc);
+
+        if (RT_SUCCESS(rc))
+        {
+            if (rc != VINF_SUCCESS)
+                RTMsgWarning("%Rrc adding '%s'", rc, pszDst);
+            return RTEXITCODE_SUCCESS;
+        }
+        return RTMsgErrorExitFailure("%Rrc adding '%s'", rc, pszDst);
     }
-    return RTMsgErrorExitFailure("%Rrc adding '%s'", rc, pszDst);
+    RTVfsIoStrmRelease(hVfsIosSrc);
+    return RTMsgErrorExitFailure("RTVfsObjFromIoStream failed unexpectedly!");
 }
 
 
@@ -235,15 +260,20 @@ static RTEXITCODE rtZipTarCmdArchiveFile(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hV
  * @param   pszSrc          The directory path or VFS spec.  We append to the
  *                          buffer as we decend.
  * @param   cchSrc          The length of the input.
+ * @param   paObjInfo[3]    Array of three FS object info structures.  The first
+ *                          one is always filled with RTFSOBJATTRADD_UNIX info.
+ *                          The next two may contain owner and group names if
+ *                          available.  The three buffers can be reused.
  * @param   pszDst          The name to archive it the under.  We append to the
  *                          buffer as we decend.
  * @param   cchDst          The length of the input.
  * @param   pErrInfo        Error info buffer (saves stack space).
  */
 static RTEXITCODE rtZipTarCmdArchiveDir(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVfsFss, char pszSrc[RTPATH_MAX], size_t cchSrc,
-                                        char pszDst[RTPATH_MAX], size_t cchDst, PRTERRINFOSTATIC pErrInfo)
+                                        RTFSOBJINFO paObjInfo[3], char pszDst[RTPATH_MAX], size_t cchDst,
+                                        PRTERRINFOSTATIC pErrInfo)
 {
-    RT_NOREF(pOpts, hVfsFss, pszSrc, cchSrc, pszDst, cchDst, pErrInfo);
+    RT_NOREF(pOpts, hVfsFss, pszSrc, cchSrc, paObjInfo, pszDst, cchDst, pErrInfo);
     return RTMsgErrorExitFailure("Adding directories has not yet been implemented! Sorry.");
 }
 
@@ -417,20 +447,54 @@ static RTEXITCODE rtZipTarCreate(PRTZIPTARCMDOPS pOpts)
                 if (RT_SUCCESS(rc))
                 {
                     /*
-                     * What kind of object is this?
+                     * What kind of object is this and what affiliations does it have?
                      */
                     RTERRINFOSTATIC ErrInfo;
                     uint32_t        offError;
-                    RTFSOBJINFO     ObjInfo;
-                    rc = RTVfsChainQueryInfo(szSrc, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK,
+                    RTFSOBJINFO     aObjInfo[3];
+                    rc = RTVfsChainQueryInfo(szSrc, &aObjInfo[0], RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK,
                                              &offError, RTErrInfoInitStatic(&ErrInfo));
                     if (RT_SUCCESS(rc))
                     {
-                        RTEXITCODE rcExit2;
-                        if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
-                            rcExit2 = rtZipTarCmdArchiveDir(pOpts, hVfsFss, szSrc, strlen(szSrc), szDst, strlen(szDst), &ErrInfo);
+
+                        rc = RTVfsChainQueryInfo(szSrc, &aObjInfo[1], RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK,
+                                                 &offError, RTErrInfoInitStatic(&ErrInfo));
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = RTVfsChainQueryInfo(szSrc, &aObjInfo[2], RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK,
+                                                     &offError, RTErrInfoInitStatic(&ErrInfo));
+                            if (RT_FAILURE(rc))
+                                RT_ZERO(aObjInfo[2]);
+                        }
                         else
-                            rcExit2 = rtZipTarCmdArchiveFile(pOpts, hVfsFss, szSrc, szDst, &ErrInfo);
+                        {
+                            RT_ZERO(aObjInfo[1]);
+                            RT_ZERO(aObjInfo[2]);
+                        }
+
+                        /*
+                         * Process on an object type basis.
+                         */
+                        RTEXITCODE rcExit2;
+                        if (RTFS_IS_DIRECTORY(aObjInfo[0].Attr.fMode))
+                            rcExit2 = rtZipTarCmdArchiveDir(pOpts, hVfsFss, szSrc, strlen(szSrc), aObjInfo,
+                                                            szDst, strlen(szDst), &ErrInfo);
+                        else if (RTFS_IS_FILE(aObjInfo[0].Attr.fMode))
+                            rcExit2 = rtZipTarCmdArchiveFile(pOpts, hVfsFss, szSrc, aObjInfo, szDst, &ErrInfo);
+                        else if (RTFS_IS_SYMLINK(aObjInfo[0].Attr.fMode))
+                            rcExit2 = RTMsgErrorExitFailure("Symlink archiving is not implemented");
+                        else if (RTFS_IS_FIFO(aObjInfo[0].Attr.fMode))
+                            rcExit2 = RTMsgErrorExitFailure("FIFO archiving is not implemented");
+                        else if (RTFS_IS_SOCKET(aObjInfo[0].Attr.fMode))
+                            rcExit2 = RTMsgErrorExitFailure("Socket archiving is not implemented");
+                        else if (RTFS_IS_DEV_CHAR(aObjInfo[0].Attr.fMode) || RTFS_IS_DEV_BLOCK(aObjInfo[0].Attr.fMode))
+                            rcExit2 = RTMsgErrorExitFailure("Device archiving is not implemented");
+                        else if (RTFS_IS_WHITEOUT(aObjInfo[0].Attr.fMode))
+                            rcExit2 = RTEXITCODE_SUCCESS;
+                        else
+                            rcExit2 = RTMsgErrorExitFailure("Unknown file type: %#x\n", aObjInfo[0].Attr.fMode);
+                        if (rcExit2 != RTEXITCODE_SUCCESS)
+                            rcExit = rcExit2;
                     }
                     else
                         rcExit = RTVfsChainMsgErrorExitFailure("RTVfsChainQueryInfo", pszFile, rc, offError, &ErrInfo.Core);
@@ -1237,6 +1301,8 @@ static void rtZipTarUsage(const char *pszProgName)
              "        Include the given access mode for directories.\n"
              "    --read-ahead                          (-x)\n"
              "        Enabled read ahead thread when extracting files.\n"
+             "    --push-file                           (-A, -c, -u)\n"
+             "        Use RTVfsFsStrmPushFile instead of RTVfsFsStrmAdd.\n"
              "\n");
     RTPrintf("Standard Options:\n"
              "    -h, -?, --help\n"
@@ -1294,6 +1360,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         { "--dir-mode-and-mask",    RTZIPTARCMD_OPT_DIR_MODE_AND_MASK,  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--dir-mode-or-mask",     RTZIPTARCMD_OPT_DIR_MODE_OR_MASK,   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--read-ahead",           RTZIPTARCMD_OPT_READ_AHEAD,         RTGETOPT_REQ_NOTHING },
+        { "--use-push-file",        RTZIPTARCMD_OPT_USE_PUSH_FILE,      RTGETOPT_REQ_NOTHING },
     };
 
     RTGETOPTSTATE GetState;
@@ -1319,7 +1386,6 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
     }
 #endif
     Opts.enmTarFormat = RTZIPTARFORMAT_DEFAULT;
-    Opts.fTarCreate   = 0;
 
     RTGETOPTUNION   ValueUnion;
     while (   (rc = RTGetOpt(&GetState, &ValueUnion)) != 0
@@ -1473,6 +1539,10 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
 
             case RTZIPTARCMD_OPT_READ_AHEAD:
                 Opts.fReadAhead = true;
+                break;
+
+            case RTZIPTARCMD_OPT_USE_PUSH_FILE:
+                Opts.fUsePushFile = true;
                 break;
 
             /* Standard bits. */
