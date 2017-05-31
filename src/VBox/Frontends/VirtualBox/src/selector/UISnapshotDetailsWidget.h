@@ -28,9 +28,12 @@
 #include "CSnapshot.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QLineEdit;
+class QTabWidget;
 class QTextEdit;
+class QVBoxLayout;
 
 
 /** Snapshot pane: Snapshot data structure. */
@@ -104,6 +107,12 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares tab-widget. */
+    void prepareTabWidget();
+    /** Prepares 'Options' tab. */
+    void prepareTabOptions();
+    /** Prepares 'Details' tab. */
+    void prepareTabDetails();
 
     /** Loads snapshot data. */
     void loadSnapshotData();
@@ -124,15 +133,21 @@ private:
     /** Holds the cached screenshot. */
     QPixmap  m_pixmapScreenshot;
 
-    /** Holds the name label instance. */
-    QLabel    *m_pLabelName;
-    /** Holds the name editor instance. */
-    QLineEdit *m_pEditorName;
+    /** Holds the tab-widget instance. */
+    QTabWidget *m_pTabWidget;
+
+    /** Holds the 'Options' layout instance. */
+    QGridLayout *m_pLayoutOptions;
 
     /** Holds the taken label instance. */
     QLabel *m_pLabelTaken;
     /** Holds the taken text instance. */
     QLabel *m_pLabelTakenText;
+
+    /** Holds the name label instance. */
+    QLabel    *m_pLabelName;
+    /** Holds the name editor instance. */
+    QLineEdit *m_pEditorName;
 
     /** Holds the thumbnail label instance. */
     QLabel *m_pLabelThumbnail;
@@ -142,8 +157,9 @@ private:
     /** Holds the description editor instance. */
     QTextEdit *m_pBrowserDescription;
 
-    /** Holds the details label instance. */
-    QLabel    *m_pLabelDetails;
+    /** Holds the 'Details' layout instance. */
+    QVBoxLayout *m_pLayoutDetails;
+
     /** Holds the description editor instance. */
     QTextEdit *m_pBrowserDetails;
 };
