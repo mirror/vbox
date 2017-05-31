@@ -648,7 +648,7 @@
 #include "VBoxMediaComboBox.h"
 #include "VBoxOSTypeSelectorButton.h"
 #include "UISettingsSelector.h"
-#include "VBoxSnapshotDetailsDlg.h"
+#include "UISnapshotDetailsWidget.h"
 #include "UISnapshotPane.h"
 #include "VBoxTakeSnapshotDlg.h"
 #ifdef RT_OS_DARWIN

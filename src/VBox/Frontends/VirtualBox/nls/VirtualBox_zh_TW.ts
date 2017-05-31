@@ -9007,7 +9007,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source>Details of %1 (%2)</source>
         <translation>%1 (%2) 的詳細資料</translation>

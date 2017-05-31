@@ -12,8 +12,8 @@
  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>VBoxSnapshotDetailsDlg</class>
- <widget class="QWidget" name="VBoxSnapshotDetailsDlg">
+ <class>UISnapshotDetailsWidget</class>
+ <widget class="QWidget" name="UISnapshotDetailsWidget">
   <property name="geometry">
    <rect>
     <x>0</x>

@@ -11753,7 +11753,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source>Details of %1 (%2)</source>
         <translation>جزئیات %1 (%2)</translation>

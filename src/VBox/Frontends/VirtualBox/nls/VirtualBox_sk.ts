@@ -15789,10 +15789,10 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+        <source>UISnapshotDetailsWidget</source>
+        <translation type="obsolete">UISnapshotDetailsWidget</translation>
     </message>
     <message>
         <source> Snapshot Details </source>

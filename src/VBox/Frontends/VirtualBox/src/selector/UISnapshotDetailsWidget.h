@@ -20,7 +20,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "VBoxSnapshotDetailsDlg.gen.h"
+#include "UISnapshotDetailsWidget.gen.h"
 
 /* COM includes: */
 #include "CSnapshot.h"
@@ -57,7 +57,7 @@ struct UIDataSnapshot
 
 
 /** QWidget extension providing GUI with snapshot details-widget. */
-class UISnapshotDetailsWidget : public QIWithRetranslateUI<QWidget>, public Ui::VBoxSnapshotDetailsDlg
+class UISnapshotDetailsWidget : public QIWithRetranslateUI<QWidget>, public Ui::UISnapshotDetailsWidget
 {
     Q_OBJECT;
 

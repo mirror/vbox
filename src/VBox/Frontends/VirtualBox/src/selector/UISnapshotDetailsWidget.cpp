@@ -25,9 +25,9 @@
 # include <QScrollArea>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
+# include "UISnapshotDetailsWidget.h"
 # include "UIMessageCenter.h"
-# include "VBoxSnapshotDetailsDlg.h"
+# include "VBoxGlobal.h"
 # include "VBoxUtils.h"
 
 /* COM includes: */
@@ -315,7 +315,7 @@ bool UISnapshotDetailsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 void UISnapshotDetailsWidget::retranslateUi()
 {
     /* Translate uic generated strings: */
-    Ui::VBoxSnapshotDetailsDlg::retranslateUi(this);
+    Ui::UISnapshotDetailsWidget::retranslateUi(this);
 
     /* And if snapshot is valid: */
     if (!m_comSnapshot.isNull())
@@ -385,7 +385,7 @@ void UISnapshotDetailsWidget::sltHandleDescriptionChange()
 void UISnapshotDetailsWidget::prepare()
 {
     /* Apply UI decorations: */
-    Ui::VBoxSnapshotDetailsDlg::setupUi(this);
+    Ui::UISnapshotDetailsWidget::setupUi(this);
 
     /* Layout created in the .ui file: */
     {
@@ -517,5 +517,5 @@ void UISnapshotDetailsWidget::notify()
     emit sigDataChanged(m_oldData != m_newData);
 }
 
-#include "VBoxSnapshotDetailsDlg.moc"
+#include "UISnapshotDetailsWidget.moc"
 

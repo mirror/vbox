@@ -289,7 +289,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/UIMediumTypeChangeDialog.h \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
-	src/VBoxSnapshotDetailsDlg.h \
 	src/VBoxTakeSnapshotDlg.h \
 	src/UIVMLogViewer.h \
 	src/extensions/QIAdvancedSlider.h \
@@ -376,6 +375,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIVMItem.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/selector/UISelectorWindow.h \
+	src/selector/UISnapshotDetailsWidget.h \
 	src/selector/UISnapshotPane.h \
 	src/selector/UIToolsPane.h \
 	src/selector/graphics/chooser/UIGChooser.h \
@@ -531,7 +531,6 @@ VirtualBox_QT_MOCHDRS.darwin += \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
-	src/VBoxSnapshotDetailsDlg.cpp \
 	src/UIVMLogViewer.cpp \
 	src/extensions/QIArrowSplitter.cpp \
 	src/extensions/QISplitter.cpp \
@@ -550,6 +549,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
+	src/selector/UISnapshotDetailsWidget.cpp \
 	src/selector/UISnapshotPane.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
@@ -590,7 +590,6 @@ VirtualBox_SOURCES = \
 	src/UIMediumTypeChangeDialog.cpp \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
-	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/UIVMLogViewer.cpp \
 	src/converter/UIConverter.cpp \
@@ -686,6 +685,7 @@ VirtualBox_SOURCES = \
 	src/selector/UIVMItem.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/UISelectorWindow.cpp \
+	src/selector/UISnapshotDetailsWidget.cpp \
 	src/selector/UISnapshotPane.cpp \
 	src/selector/UIToolsPane.cpp \
 	src/selector/graphics/chooser/UIGChooser.cpp \

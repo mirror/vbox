@@ -18308,7 +18308,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source> Snapshot Details </source>
         <translation type="obsolete"> Detaily snímku </translation>

@@ -16384,11 +16384,11 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
+        <source>UISnapshotDetailsWidget</source>
         <translatorcomment>Probably should not be translated</translatorcomment>
-        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+        <translation type="obsolete">UISnapshotDetailsWidget</translation>
     </message>
     <message>
         <source>&amp;Name</source>

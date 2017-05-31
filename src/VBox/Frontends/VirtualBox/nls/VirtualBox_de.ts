@@ -9080,7 +9080,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source>Details of %1 (%2)</source>
         <translation>Details von %1 (%2)</translation>

@@ -13863,7 +13863,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/VBoxSnapshotDetailsDlg.cpp" line="+203"/>
+        <location filename="../src/UISnapshotDetailsWidget.cpp" line="+203"/>
         <source>Screenshot of %1 (%2)</source>
         <translation>Ikusleiho-argazkiak %1 (%2)</translation>
     </message>
@@ -13879,7 +13879,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <location line="-112"/>
         <source>Details of %1 (%2)</source>
@@ -13891,7 +13891,7 @@
         <translation>Klikatu ikusleiho-argazkia handitzeko.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotDetailsDlg.ui" line="+32"/>
+        <location filename="../src/UISnapshotDetailsWidget.ui" line="+32"/>
         <source>&amp;Name:</source>
         <translation>&amp;Izena:</translation>
     </message>

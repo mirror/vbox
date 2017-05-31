@@ -17059,7 +17059,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Имя</translation>

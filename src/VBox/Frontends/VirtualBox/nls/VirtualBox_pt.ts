@@ -16272,10 +16272,10 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+        <source>UISnapshotDetailsWidget</source>
+        <translation type="obsolete">UISnapshotDetailsWidget</translation>
     </message>
     <message>
         <source> Snapshot Details </source>

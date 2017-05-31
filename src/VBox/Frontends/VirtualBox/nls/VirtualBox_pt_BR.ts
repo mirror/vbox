@@ -19703,10 +19703,10 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+        <source>UISnapshotDetailsWidget</source>
+        <translation type="obsolete">UISnapshotDetailsWidget</translation>
     </message>
     <message>
         <source> Snapshot Details </source>

@@ -18709,7 +18709,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Cancel·la</translation>
@@ -18747,8 +18747,8 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation type="obsolete">Detalls de Captura</translation>
     </message>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+        <source>UISnapshotDetailsWidget</source>
+        <translation type="obsolete">UISnapshotDetailsWidget</translation>
     </message>
     <message>
         <source>Snapshot Details</source>

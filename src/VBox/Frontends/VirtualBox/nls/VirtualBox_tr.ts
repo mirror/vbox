@@ -16781,10 +16781,10 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+        <source>UISnapshotDetailsWidget</source>
+        <translation type="obsolete">UISnapshotDetailsWidget</translation>
     </message>
     <message>
         <source> Snapshot Details </source>

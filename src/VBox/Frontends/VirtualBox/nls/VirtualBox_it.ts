@@ -19625,7 +19625,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source>Details of %1 (%2)</source>
         <translation>Dettagli di %1 (%2)</translation>
@@ -19651,8 +19651,8 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation>D&amp;ettagli:</translation>
     </message>
     <message>
-        <source>VBoxSnapshotDetailsDlg</source>
-        <translation type="obsolete">VBoxSnapshotDetailsDlg</translation>
+        <source>UISnapshotDetailsWidget</source>
+        <translation type="obsolete">UISnapshotDetailsWidget</translation>
     </message>
     <message>
         <source> Snapshot Details </source>

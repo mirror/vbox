@@ -13986,7 +13986,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotDetailsDlg</name>
+    <name>UISnapshotDetailsWidget</name>
     <message>
         <source>Details of %1 (%2)</source>
         <translation>明细 %1 (%2)</translation>

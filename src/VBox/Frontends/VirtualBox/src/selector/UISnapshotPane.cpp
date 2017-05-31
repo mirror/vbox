@@ -39,11 +39,11 @@
 # include "UIIconPool.h"
 # include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
+# include "UISnapshotDetailsWidget.h"
 # include "UISnapshotPane.h"
 # include "UIToolBar.h"
 # include "UIVirtualBoxEventHandler.h"
 # include "UIWizardCloneVM.h"
-# include "VBoxSnapshotDetailsDlg.h"
 # include "VBoxTakeSnapshotDlg.h"
 
 /* COM includes: */
