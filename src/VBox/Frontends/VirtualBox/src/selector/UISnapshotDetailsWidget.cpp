@@ -21,8 +21,11 @@
 
 /* Qt includes: */
 # include <QDateTime>
+# include <QLabel>
+# include <QLineEdit>
 # include <QPushButton>
 # include <QScrollArea>
+# include <QTextEdit>
 
 /* GUI includes: */
 # include "UISnapshotDetailsWidget.h"
@@ -260,6 +263,11 @@ void UIScreenshotViewer::adjustPicture()
 
 UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pLabelName(0), m_pEditorName(0)
+    , m_pLabelTaken(0), m_pLabelTakenText(0)
+    , m_pLabelThumbnail(0)
+    , m_pLabelDescription(0), m_pBrowserDescription(0)
+    , m_pLabelDetails(0), m_pBrowserDetails(0)
 {
     /* Prepare: */
     prepare();
@@ -294,7 +302,7 @@ void UISnapshotDetailsWidget::clearData()
 bool UISnapshotDetailsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* We have filter for thumbnail label only: */
-    AssertReturn(pObject == mLbThumbnail, false);
+    AssertReturn(pObject == m_pLabelThumbnail, false);
 
     /* For a mouse-press event inside the thumbnail area: */
     if (pEvent->type() == QEvent::MouseButtonPress && !m_pixmapScreenshot.isNull())
@@ -314,8 +322,11 @@ bool UISnapshotDetailsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 
 void UISnapshotDetailsWidget::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UISnapshotDetailsWidget::retranslateUi(this);
+    /* Translate labels: */
+    m_pLabelName->setText(tr("&Name:"));
+    m_pLabelTaken->setText(tr("Taken:"));
+    m_pLabelDescription->setText(tr("&Description:"));
+    m_pLabelDetails->setText(tr("D&etails:"));
 
     /* And if snapshot is valid: */
     if (!m_comSnapshot.isNull())
@@ -324,72 +335,162 @@ void UISnapshotDetailsWidget::retranslateUi()
         const CMachine comMachine = m_comSnapshot.GetMachine();
 
         /* Translate the picture tool-tip: */
-        mLbThumbnail->setToolTip(m_pixmapScreenshot.isNull() ? QString() : tr("Click to enlarge the screenshot."));
+        m_pLabelThumbnail->setToolTip(m_pixmapScreenshot.isNull() ? QString() : tr("Click to enlarge the screenshot."));
 
         /* Rebuild the details report: */
-        mTeDetails->setText(vboxGlobal().detailsReport(comMachine, false /* with links? */));
+        m_pBrowserDetails->setText(vboxGlobal().detailsReport(comMachine, false /* with links? */));
     }
     else
     {
         /* Clear the picture tool-tip: */
-        mLbThumbnail->setToolTip(QString());
+        m_pLabelThumbnail->setToolTip(QString());
 
         /* Clear the details report: */
-        mTeDetails->clear();
+        m_pBrowserDetails->clear();
     }
 }
 
 void UISnapshotDetailsWidget::sltHandleNameChange()
 {
-    m_newData.m_strName = mLeName->text();
+    m_newData.m_strName = m_pEditorName->text();
+    // TODO: Validate
     //revalidate(m_pErrorPaneName);
     notify();
 }
 
 void UISnapshotDetailsWidget::sltHandleDescriptionChange()
 {
-    m_newData.m_strDescription = mTeDescription->toPlainText();
+    m_newData.m_strDescription = m_pBrowserDescription->toPlainText();
+    // TODO: Validate
     //revalidate(m_pErrorPaneName);
     notify();
 }
 
 void UISnapshotDetailsWidget::prepare()
 {
-    /* Apply UI decorations: */
-    Ui::UISnapshotDetailsWidget::setupUi(this);
-
-    /* Layout created in the .ui file: */
+    /* Create layout: */
+    QGridLayout *pLayout = new QGridLayout(this);
+    AssertPtrReturnVoid(pLayout);
     {
-        /* Name editor created in the .ui file: */
-        AssertPtrReturnVoid(mLeName);
+        /* Create name label: */
+        m_pLabelName = new QLabel;
+        AssertPtrReturnVoid(m_pLabelName);
+        {
+            /* Configure label: */
+            m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pLabelName, 0, 0);
+        }
+        /* Create name editor: */
+        m_pEditorName = new QLineEdit;
+        AssertPtrReturnVoid(m_pEditorName);
         {
             /* Configure editor: */
-            connect(mLeName, &QLineEdit::textChanged,
+            m_pLabelName->setBuddy(m_pEditorName);
+            QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+            policy.setHorizontalStretch(1);
+            m_pEditorName->setSizePolicy(policy);
+            connect(m_pEditorName, &QLineEdit::textChanged,
                     this, &UISnapshotDetailsWidget::sltHandleNameChange);
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pEditorName, 0, 1);
         }
 
-        /* Description editor created in the .ui file: */
-        AssertPtrReturnVoid(mTeDescription);
+        /* Create taken label: */
+        m_pLabelTaken = new QLabel;
+        AssertPtrReturnVoid(m_pLabelTaken);
         {
-            /* Configure editor: */
-            connect(mTeDescription, &QTextEdit::textChanged,
+            /* Configure label: */
+            m_pLabelTaken->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pLabelTaken, 1, 0);
+        }
+        /* Create taken text: */
+        m_pLabelTakenText = new QLabel;
+        AssertPtrReturnVoid(m_pLabelTakenText);
+        {
+            /* Configure label: */
+            QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+            policy.setHorizontalStretch(1);
+            m_pLabelTakenText->setSizePolicy(policy);
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pLabelTakenText, 1, 1);
+        }
+
+        /* Create thumbnail label: */
+        m_pLabelThumbnail = new QLabel;
+        AssertPtrReturnVoid(m_pLabelThumbnail);
+        {
+            /* Configure label: */
+            m_pLabelThumbnail->installEventFilter(this);
+            m_pLabelThumbnail->setFrameShape(QFrame::Panel);
+            m_pLabelThumbnail->setFrameShadow(QFrame::Sunken);
+            m_pLabelThumbnail->setCursor(Qt::PointingHandCursor);
+            m_pLabelThumbnail->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pLabelThumbnail, 0, 2, 2, 1);
+        }
+
+        /* Create description label: */
+        m_pLabelDescription = new QLabel;
+        AssertPtrReturnVoid(m_pLabelDescription);
+        {
+            /* Configure label: */
+            m_pLabelDescription->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignTop);
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pLabelDescription, 2, 0);
+        }
+        /* Create description browser: */
+        m_pBrowserDescription = new QTextEdit;
+        AssertPtrReturnVoid(m_pBrowserDescription);
+        {
+            /* Configure browser: */
+            m_pLabelDescription->setBuddy(m_pBrowserDescription);
+            m_pBrowserDescription->setTabChangesFocus(true);
+            m_pBrowserDescription->setAcceptRichText(false);
+            QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+            policy.setHorizontalStretch(1);
+            m_pBrowserDescription->setSizePolicy(policy);
+            connect(m_pBrowserDescription, &QTextEdit::textChanged,
                     this, &UISnapshotDetailsWidget::sltHandleDescriptionChange);
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pBrowserDescription, 2, 1, 1, 2);
         }
 
-        /* Thumbnail label created in the .ui file: */
-        AssertPtrReturnVoid(mLbThumbnail);
+        /* Create details label: */
+        m_pLabelDetails = new QLabel;
+        AssertPtrReturnVoid(m_pLabelDetails);
         {
-            /* Configure thumbnail label: */
-            mLbThumbnail->setCursor(Qt::PointingHandCursor);
-            mLbThumbnail->installEventFilter(this);
-        }
+            /* Configure label: */
+            m_pLabelDetails->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignTop);
 
-        /* Details browser created in the .ui file: */
-        AssertPtrReturnVoid(mTeDetails);
+            /* Add to layout: */
+            pLayout->addWidget(m_pLabelDetails, 3, 0);
+        }
+        /* Create details browser: */
+        m_pBrowserDetails = new QTextEdit;
+        AssertPtrReturnVoid(m_pBrowserDetails);
         {
-            /* Configure details browser: */
-            mTeDetails->viewport()->setAutoFillBackground(false);
-            mTeDetails->setFocus();
+            /* Configure browser: */
+            m_pLabelDetails->setBuddy(m_pBrowserDetails);
+            m_pBrowserDetails->setReadOnly(true);
+            m_pBrowserDetails->setFrameShadow(QFrame::Plain);
+            m_pBrowserDetails->setFrameShape(QFrame::NoFrame);
+            m_pBrowserDetails->viewport()->setAutoFillBackground(false);
+            QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+            policy.setHorizontalStretch(1);
+            m_pBrowserDetails->setSizePolicy(policy);
+            m_pBrowserDetails->setFocus();
+
+            /* Add to layout: */
+            pLayout->addWidget(m_pBrowserDetails, 3, 1, 1, 2);
         }
     }
 }
@@ -397,8 +498,8 @@ void UISnapshotDetailsWidget::prepare()
 void UISnapshotDetailsWidget::loadSnapshotData()
 {
     /* Read general snapshot properties: */
-    mLeName->setText(m_newData.m_strName);
-    mTeDescription->setText(m_newData.m_strDescription);
+    m_pEditorName->setText(m_newData.m_strName);
+    m_pBrowserDescription->setText(m_newData.m_strDescription);
 
     /* If there is a snapshot: */
     if (m_comSnapshot.isNotNull())
@@ -408,7 +509,7 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
         bool fDateTimeToday = timestamp.date() == QDate::currentDate();
         QString dateTime = fDateTimeToday ? timestamp.time().toString(Qt::LocalDate) : timestamp.toString(Qt::LocalDate);
-        mTxTaken->setText(dateTime);
+        m_pLabelTakenText->setText(dateTime);
 
         /* Read snapshot display contents: */
         CMachine comMachine = m_comSnapshot.GetMachine();
@@ -434,53 +535,53 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         AssertPtrReturnVoid(pLayout);
         if (m_pixmapThumbnail.isNull())
         {
-            mLbThumbnail->setPixmap(QPixmap());
+            m_pLabelThumbnail->setPixmap(QPixmap());
 
-            pLayout->removeWidget(mLbThumbnail);
-            mLbThumbnail->setHidden(true);
+            pLayout->removeWidget(m_pLabelThumbnail);
+            m_pLabelThumbnail->setHidden(true);
 
-            pLayout->removeWidget(mLeName);
-            pLayout->removeWidget(mTxTaken);
-            pLayout->addWidget(mLeName, 0, 1, 1, 2);
-            pLayout->addWidget(mTxTaken, 1, 1, 1, 2);
+            pLayout->removeWidget(m_pEditorName);
+            pLayout->removeWidget(m_pLabelTakenText);
+            pLayout->addWidget(m_pEditorName, 0, 1, 1, 2);
+            pLayout->addWidget(m_pLabelTakenText, 1, 1, 1, 2);
         }
         else
         {
             const QStyle *pStyle = QApplication::style();
             const int iIconMetric = pStyle->pixelMetric(QStyle::PM_LargeIconSize);
-            mLbThumbnail->setPixmap(m_pixmapThumbnail.scaled(QSize(1, iIconMetric),
+            m_pLabelThumbnail->setPixmap(m_pixmapThumbnail.scaled(QSize(1, iIconMetric),
                                                              Qt::KeepAspectRatioByExpanding,
                                                              Qt::SmoothTransformation));
 
-            pLayout->removeWidget(mLeName);
-            pLayout->removeWidget(mTxTaken);
-            pLayout->addWidget(mLeName, 0, 1);
-            pLayout->addWidget(mTxTaken, 1, 1);
+            pLayout->removeWidget(m_pEditorName);
+            pLayout->removeWidget(m_pLabelTakenText);
+            pLayout->addWidget(m_pEditorName, 0, 1);
+            pLayout->addWidget(m_pLabelTakenText, 1, 1);
 
-            pLayout->removeWidget(mLbThumbnail);
-            pLayout->addWidget(mLbThumbnail, 0, 2, 2, 1);
-            mLbThumbnail->setHidden(false);
+            pLayout->removeWidget(m_pLabelThumbnail);
+            pLayout->addWidget(m_pLabelThumbnail, 0, 2, 2, 1);
+            m_pLabelThumbnail->setHidden(false);
         }
     }
     else
     {
         /* Clear snapshot timestamp info: */
-        mTxTaken->clear();
+        m_pLabelTakenText->clear();
 
         // TODO: Check whether layout manipulations are really
         //       necessary, they looks a bit dangerous to me..
         QGridLayout *pLayout = qobject_cast<QGridLayout*>(layout());
         AssertPtrReturnVoid(pLayout);
         {
-            mLbThumbnail->setPixmap(QPixmap());
+            m_pLabelThumbnail->setPixmap(QPixmap());
 
-            pLayout->removeWidget(mLbThumbnail);
-            mLbThumbnail->setHidden(true);
+            pLayout->removeWidget(m_pLabelThumbnail);
+            m_pLabelThumbnail->setHidden(true);
 
-            pLayout->removeWidget(mLeName);
-            pLayout->removeWidget(mTxTaken);
-            pLayout->addWidget(mLeName, 0, 1, 1, 2);
-            pLayout->addWidget(mTxTaken, 1, 1, 1, 2);
+            pLayout->removeWidget(m_pEditorName);
+            pLayout->removeWidget(m_pLabelTakenText);
+            pLayout->addWidget(m_pEditorName, 0, 1, 1, 2);
+            pLayout->addWidget(m_pLabelTakenText, 1, 1, 1, 2);
         }
     }
 

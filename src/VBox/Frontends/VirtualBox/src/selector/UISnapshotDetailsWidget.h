@@ -18,12 +18,19 @@
 #ifndef ___UISnapshotDetailsWidget_h___
 #define ___UISnapshotDetailsWidget_h___
 
+/* Qt includes: */
+#include <QWidget>
+
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UISnapshotDetailsWidget.gen.h"
 
 /* COM includes: */
 #include "CSnapshot.h"
+
+/* Forward declarations: */
+class QLabel;
+class QLineEdit;
+class QTextEdit;
 
 
 /** Snapshot pane: Snapshot data structure. */
@@ -57,7 +64,7 @@ struct UIDataSnapshot
 
 
 /** QWidget extension providing GUI with snapshot details-widget. */
-class UISnapshotDetailsWidget : public QIWithRetranslateUI<QWidget>, public Ui::UISnapshotDetailsWidget
+class UISnapshotDetailsWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -116,6 +123,29 @@ private:
     QPixmap  m_pixmapThumbnail;
     /** Holds the cached screenshot. */
     QPixmap  m_pixmapScreenshot;
+
+    /** Holds the name label instance. */
+    QLabel    *m_pLabelName;
+    /** Holds the name editor instance. */
+    QLineEdit *m_pEditorName;
+
+    /** Holds the taken label instance. */
+    QLabel *m_pLabelTaken;
+    /** Holds the taken text instance. */
+    QLabel *m_pLabelTakenText;
+
+    /** Holds the thumbnail label instance. */
+    QLabel *m_pLabelThumbnail;
+
+    /** Holds the description label instance. */
+    QLabel    *m_pLabelDescription;
+    /** Holds the description editor instance. */
+    QTextEdit *m_pBrowserDescription;
+
+    /** Holds the details label instance. */
+    QLabel    *m_pLabelDetails;
+    /** Holds the description editor instance. */
+    QTextEdit *m_pBrowserDetails;
 };
 
 #endif /* !___UISnapshotDetailsWidget_h___ */

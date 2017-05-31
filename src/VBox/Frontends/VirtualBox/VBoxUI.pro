@@ -23,7 +23,6 @@ LANGUAGE	= C++
 FORMS = \
     src/VBoxTakeSnapshotDlg.ui \
     src/UIVMLogViewer.ui \
-    src/selector/UISnapshotDetailsWidget.ui \
     src/settings/UISettingsDialog.ui \
     src/settings/global/UIGlobalSettingsGeneral.ui \
     src/settings/global/UIGlobalSettingsInput.ui \
