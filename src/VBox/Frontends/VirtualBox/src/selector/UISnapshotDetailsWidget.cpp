@@ -32,6 +32,7 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "UIDesktopWidgetWatchdog.h"
 # include "UISnapshotDetailsWidget.h"
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
@@ -81,6 +82,9 @@ private:
 
     /** Prepares all. */
     void prepare();
+
+    /** Adjusts window size. */
+    void adjustWindowSize();
 
     /** Adjusts picture. */
     void adjustPicture();
@@ -168,6 +172,8 @@ void UIScreenshotViewer::mousePressEvent(QMouseEvent *pEvent)
     /* Toggle the zoom mode: */
     m_fZoomMode = !m_fZoomMode;
 
+    /* Adjust the windiow size: */
+    adjustWindowSize();
     /* Adjust the picture: */
     adjustPicture();
 
@@ -221,29 +227,48 @@ void UIScreenshotViewer::prepare()
         }
     }
 
-    /* Calculate aspect-ratio: */
-    double dAspectRatio = (double)m_pixmapScreenshot.height() / m_pixmapScreenshot.width();
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Adjust window size: */
+    adjustWindowSize();
+
+    /* Center according requested widget: */
+    VBoxGlobal::centerWidget(this, parentWidget(), false);
+}
+
+void UIScreenshotViewer::adjustWindowSize()
+{
+    /* Acquire current host-screen size, fallback to 1024x768 if failed: */
+    QSize screenSize = gpDesktop->screenGeometry(parentWidget()).size();
+    if (!screenSize.isValid())
+        screenSize = QSize(1024, 768);
+    const int iInitWidth = screenSize.width() * .50 /* 50% of host-screen width */;
+
+    /* Calculate screenshot aspect-ratio: */
+    const double dAspectRatio = (double)m_pixmapScreenshot.height() / m_pixmapScreenshot.width();
+
     /* Calculate maximum window size: */
-    const QSize maxSize = m_pixmapScreenshot.size() + QSize(m_pScrollArea->frameWidth() * 2, m_pScrollArea->frameWidth() * 2);
+    const QSize maxSize = m_fZoomMode
+                        ? screenSize * .9 /* 90% of host-screen size */ +
+                          QSize(m_pScrollArea->frameWidth() * 2, m_pScrollArea->frameWidth() * 2)
+                        : m_pixmapScreenshot.size() /* just the screenshot size */ +
+                          QSize(m_pScrollArea->frameWidth() * 2, m_pScrollArea->frameWidth() * 2);
+
     /* Calculate initial window size: */
-    const QSize initSize = QSize(640, (int)(640 * dAspectRatio)).boundedTo(maxSize);
+    const QSize initSize = QSize(iInitWidth, (int)(iInitWidth * dAspectRatio)).boundedTo(maxSize);
 
     /* Apply maximum window size restrictions: */
     setMaximumSize(maxSize);
     /* Apply initial window size: */
     resize(initSize);
-
-    /* Apply language settings: */
-    retranslateUi();
-
-    /* Center according requested widget: */
-    VBoxGlobal::centerWidget(this, parentWidget(), false);
 }
 
 void UIScreenshotViewer::adjustPicture()
 {
     if (m_fZoomMode)
     {
+        /* Adjust visual aspects: */
         m_pScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         m_pScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         m_pLabelPicture->setPixmap(m_pixmapScreenshot.scaled(m_pScrollArea->viewport()->size(),
@@ -253,6 +278,7 @@ void UIScreenshotViewer::adjustPicture()
     }
     else
     {
+        /* Adjust visual aspects: */
         m_pScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_pScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_pLabelPicture->setPixmap(m_pixmapScreenshot);
