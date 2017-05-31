@@ -1387,19 +1387,42 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector)
 }
 
 /**
- * Checks if we are executing inside the nested hardware-virtualized guest.
+ * Checks if we are executing inside an SVM nested hardware-virtualized guest.
  *
- * @returns true if in nested-guest mode, false otherwise.
+ * @returns true if in SVM nested-guest mode, false otherwise.
  * @param   pCtx        Pointer to the context.
  */
-DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
 {
     /*
      * With AMD-V, the VMRUN intercept is a pre-requisite to entering SVM guest-mode.
      * See AMD spec. 15.5 "VMRUN instruction" subsection "Canonicalization and Consistency Checks".
      */
     return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
-    /** @todo Intel VMX.  */
+}
+
+/**
+ * Checks if we are executing inside a VMX nested hardware-virtualized guest.
+ *
+ * @returns true if in VMX nested-guest mode, false otherwise.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(bool) CPUMIsGuestInVmxNestedHwVirtMode(PCCPUMCTX pCtx)
+{
+    RT_NOREF1(pCtx);
+    /** @todo Intel. */
+    return false;
+}
+
+/**
+ * Checks if we are executing inside a nested hardware-virtualized guest.
+ *
+ * @returns true if in SVM/VMX nested-guest mode, false otherwise.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCCPUMCTX pCtx)
+{
+    return CPUMIsGuestInSvmNestedHwVirtMode(pCtx) || CPUMIsGuestInVmxNestedHwVirtMode(pCtx);
 }
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
