@@ -209,13 +209,54 @@ static DECLCALLBACK(int) vdVfsFile_Close(void *pvThis)
 /**
  * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
  */
-static DECLCALLBACK(int) vdVfsFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo,
-                                               RTFSOBJATTRADD enmAddAttr)
+static DECLCALLBACK(int) vdVfsFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
-    NOREF(pvThis);
-    NOREF(pObjInfo);
-    NOREF(enmAddAttr);
-    return VERR_NOT_SUPPORTED;
+    PVDVFSFILE pThis = (PVDVFSFILE)pvThis;
+    unsigned const cOpenImages = VDGetCount(pThis->pDisk);
+
+    pObjInfo->cbObject    = VDGetSize(pThis->pDisk, cOpenImages - 1);
+    pObjInfo->cbAllocated = 0;
+    for (unsigned iImage = 0; iImage < cOpenImages; iImage++)
+        pObjInfo->cbAllocated += VDGetFileSize(pThis->pDisk, iImage);
+
+    /** @todo enumerate the disk images directly...   */
+    RTTimeNow(&pObjInfo->AccessTime);
+    pObjInfo->BirthTime        = pObjInfo->AccessTime;
+    pObjInfo->ChangeTime       = pObjInfo->AccessTime;
+    pObjInfo->ModificationTime = pObjInfo->AccessTime;
+
+    pObjInfo->Attr.fMode       = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FILE | 0644;
+    pObjInfo->Attr.enmAdditional = enmAddAttr;
+    switch (enmAddAttr)
+    {
+        case RTFSOBJATTRADD_UNIX:
+            pObjInfo->Attr.u.Unix.uid           = NIL_RTUID;
+            pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;
+            pObjInfo->Attr.u.Unix.cHardlinks    = 1;
+            pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
+            pObjInfo->Attr.u.Unix.INodeId       = 0;
+            pObjInfo->Attr.u.Unix.fFlags        = 0;
+            pObjInfo->Attr.u.Unix.GenerationId  = 0;
+            pObjInfo->Attr.u.Unix.Device        = 0;
+            break;
+
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pObjInfo->Attr.u.UnixOwner.uid = NIL_RTUID;
+            pObjInfo->Attr.u.UnixOwner.szName[0] = '\0';
+            break;
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pObjInfo->Attr.u.UnixGroup.gid = NIL_RTGID;
+            pObjInfo->Attr.u.UnixGroup.szName[0] = '\0';
+            break;
+        case RTFSOBJATTRADD_EASIZE:
+            pObjInfo->Attr.u.EASize.cb = 0;
+            break;
+
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -225,7 +266,6 @@ static DECLCALLBACK(int) vdVfsFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo
 static DECLCALLBACK(int) vdVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PVDVFSFILE pThis = (PVDVFSFILE)pvThis;
-    int rc = VINF_SUCCESS;
 
     Assert(pSgBuf->cSegs == 1);
     NOREF(fBlocking);
@@ -234,29 +274,31 @@ static DECLCALLBACK(int) vdVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
      * Find the current position and check if it's within the volume.
      */
     uint64_t offUnsigned = off < 0 ? pThis->offCurPos : (uint64_t)off;
-    if (offUnsigned >= VDGetSize(pThis->pDisk, VD_LAST_IMAGE))
+    uint64_t const cbImage = VDGetSize(pThis->pDisk, VD_LAST_IMAGE);
+    if (offUnsigned >= cbImage)
     {
         if (pcbRead)
         {
             *pcbRead = 0;
-            pThis->offCurPos = offUnsigned;
+            pThis->offCurPos = cbImage;
             return VINF_EOF;
         }
         return VERR_EOF;
     }
 
-    size_t cbLeftToRead;
-    if (offUnsigned + pSgBuf->paSegs[0].cbSeg > VDGetSize(pThis->pDisk, VD_LAST_IMAGE))
+    int rc = VINF_SUCCESS;
+    size_t cbLeftToRead = pSgBuf->paSegs[0].cbSeg;
+    if (offUnsigned + cbLeftToRead <= cbImage)
     {
-        if (!pcbRead)
-            return VERR_EOF;
-        *pcbRead = cbLeftToRead = (size_t)(VDGetSize(pThis->pDisk, VD_LAST_IMAGE) - offUnsigned);
+        if (pcbRead)
+            *pcbRead = cbLeftToRead;
     }
     else
     {
-        cbLeftToRead = pSgBuf->paSegs[0].cbSeg;
-        if (pcbRead)
-            *pcbRead = cbLeftToRead;
+        if (!pcbRead)
+            return VERR_EOF;
+        *pcbRead = cbLeftToRead = (size_t)(cbImage - offUnsigned);
+        rc = VINF_EOF;
     }
 
     /*
@@ -264,9 +306,11 @@ static DECLCALLBACK(int) vdVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
      */
     if (cbLeftToRead > 0)
     {
-        rc = vdReadHelper(pThis->pDisk, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbLeftToRead);
-        if (RT_SUCCESS(rc))
+        int rc2 = vdReadHelper(pThis->pDisk, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToRead);
+        if (RT_SUCCESS(rc2))
             offUnsigned += cbLeftToRead;
+        else
+            rc = rc2;
     }
 
     pThis->offCurPos = offUnsigned;
@@ -280,7 +324,6 @@ static DECLCALLBACK(int) vdVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
 static DECLCALLBACK(int) vdVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PVDVFSFILE pThis = (PVDVFSFILE)pvThis;
-    int rc = VINF_SUCCESS;
 
     Assert(pSgBuf->cSegs == 1);
     NOREF(fBlocking);
@@ -290,36 +333,38 @@ static DECLCALLBACK(int) vdVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
      * Writing beyond the end of a volume is not supported.
      */
     uint64_t offUnsigned = off < 0 ? pThis->offCurPos : (uint64_t)off;
-    if (offUnsigned >= VDGetSize(pThis->pDisk, VD_LAST_IMAGE))
+    uint64_t const cbImage = VDGetSize(pThis->pDisk, VD_LAST_IMAGE);
+    if (offUnsigned >= cbImage)
     {
         if (pcbWritten)
         {
             *pcbWritten = 0;
-            pThis->offCurPos = offUnsigned;
+            pThis->offCurPos = cbImage;
         }
-        return VERR_NOT_SUPPORTED;
+        return VERR_EOF;
     }
 
     size_t cbLeftToWrite;
-    if (offUnsigned + pSgBuf->paSegs[0].cbSeg > VDGetSize(pThis->pDisk, VD_LAST_IMAGE))
-    {
-        if (!pcbWritten)
-            return VERR_EOF;
-        *pcbWritten = cbLeftToWrite = (size_t)(VDGetSize(pThis->pDisk, VD_LAST_IMAGE) - offUnsigned);
-    }
-    else
+    if (offUnsigned + pSgBuf->paSegs[0].cbSeg < cbImage)
     {
         cbLeftToWrite = pSgBuf->paSegs[0].cbSeg;
         if (pcbWritten)
             *pcbWritten = cbLeftToWrite;
     }
+    else
+    {
+        if (!pcbWritten)
+            return VERR_EOF;
+        *pcbWritten = cbLeftToWrite = (size_t)(cbImage - offUnsigned);
+    }
 
     /*
      * Ok, we've got a valid stretch within the file.  Do the reading.
      */
+    int rc = VINF_SUCCESS;
     if (cbLeftToWrite > 0)
     {
-        rc = vdWriteHelper(pThis->pDisk, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbLeftToWrite);
+        rc = vdWriteHelper(pThis->pDisk, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToWrite);
         if (RT_SUCCESS(rc))
             offUnsigned += cbLeftToWrite;
     }
@@ -343,7 +388,7 @@ static DECLCALLBACK(int) vdVfsFile_Flush(void *pvThis)
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
  */
 static DECLCALLBACK(int) vdVfsFile_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                              uint32_t *pfRetEvents)
+                                           uint32_t *pfRetEvents)
 {
     NOREF(pvThis);
     int rc;
@@ -438,9 +483,7 @@ static DECLCALLBACK(int) vdVfsFile_Seek(void *pvThis, RTFOFF offSeek, unsigned u
     }
 
     /*
-     * Calc new position, take care to stay within bounds.
-     *
-     * @todo: Setting position beyond the end of the disk does not make sense.
+     * Calc new position, take care to stay without bounds.
      */
     uint64_t offNew;
     if (offSeek == 0)
