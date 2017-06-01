@@ -1993,11 +1993,38 @@ HRESULT Appliance::i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     LogFlowFuncEnter();
 
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
-    HRESULT hrc = E_NOTIMPL;
-    AssertFailed();
-    RT_NOREF(pTask, writeLock);
-
-    /** @todo need a FSS creator wrapper around a directory here.   */
+    /*
+     * Create write-to-dir file system stream for the target directory.
+     * This unifies the disk access with the TAR based OVA variant.
+     */
+    HRESULT         hrc;
+    int             vrc;
+    RTVFSFSSTREAM   hVfsFss2Dir = NIL_RTVFSFSSTREAM;
+    try
+    {
+        Utf8Str strTargetDir(pTask->locInfo.strPath);
+        strTargetDir.stripFilename();
+        vrc = RTVfsFsStrmToNormalDir(strTargetDir.c_str(), 0 /*fFlags*/, &hVfsFss2Dir);
+        if (RT_SUCCESS(vrc))
+            hrc = S_OK;
+        else
+            hrc = setErrorVrc(vrc, tr("Failed to open directory '%s' (%Rrc)"), strTargetDir.c_str(), vrc);
+    }
+    catch (std::bad_alloc)
+    {
+        hrc = E_OUTOFMEMORY;
+    }
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * Join i_writeFSOVA.  On failure, delete (undo) anything we might
+         * have written to the disk before failing.
+         */
+        hrc = i_writeFSImpl(pTask, writeLock, hVfsFss2Dir);
+        if (FAILED(hrc))
+            RTVfsFsStrmToDirUndo(hVfsFss2Dir);
+        RTVfsFsStrmRelease(hVfsFss2Dir);
+    }
 
     LogFlowFuncLeave();
     return hrc;
@@ -2067,7 +2094,7 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                                     &hVfsIosTar);
     if (RT_SUCCESS(vrc))
     {
-        /** @todo which format does the standard dicate here actually?
+        /** @todo which format does the standard dictate here actually?
          *  GNU or USTAR/POSIX? */
         RTVFSFSSTREAM hVfsFssTar;
         vrc = RTZipTarFsStreamToIoStream(hVfsIosTar, RTZIPTARFORMAT_GNU, 0 /*fFlags*/, &hVfsFssTar);
@@ -2180,7 +2207,11 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
         {
             /* Construct the OVF name. */
             Utf8Str strOvfFile(pTask->locInfo.strPath);
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+            strOvfFile.stripPath().stripSuffix().append(".ovf");
+#else
             strOvfFile.stripSuffix().append(".ovf");
+#endif
 
             /* Render a valid ovf document into a memory buffer. */
             xml::Document doc;
@@ -2282,10 +2313,14 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+            const Utf8Str &strTargetFilePath = strTargetFileNameOnly;
+#else
             Utf8Str strTargetFilePath(pTask->locInfo.strPath);
             strTargetFilePath.stripFilename()
                 .append("/")
                 .append(strTargetFileNameOnly);
+#endif
 
             // The exporting requests a lock on the media tree. So leave our lock temporary.
             writeLock.release();
@@ -2499,7 +2534,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                 if (RT_SUCCESS(vrc))
                 {
                     RTVFSOBJ hVfsObjManifest = RTVfsObjFromIoStream(hVfsIosManifest);
-                    vrc = RTVfsFsStrmAdd(hVfsFssDst, strMfFilePath.c_str(), hVfsObjManifest, 0 /*fFlags*/);
+                    vrc = RTVfsFsStrmAdd(hVfsFssDst, strMfFileName.c_str(), hVfsObjManifest, 0 /*fFlags*/);
                     if (RT_SUCCESS(vrc))
                         rc = S_OK;
                     else
