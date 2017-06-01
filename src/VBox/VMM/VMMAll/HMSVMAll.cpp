@@ -642,7 +642,8 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
     if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
         || uExitCode == SVM_EXIT_INVALID)
     {
-        Log3(("HMSvmNstGstVmExit: uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitCode, uExitInfo1, uExitInfo2));
+        Log3(("HMSvmNstGstVmExit: CS:RIP=%04x:%08RX64 uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", pCtx->cs.Sel,
+              pCtx->rip, uExitCode, uExitInfo1, uExitInfo2));
 
         /*
          * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
@@ -1040,7 +1041,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
      */
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_IOIO_PROT));
-    Log3(("HMSvmNstGstHandleIOIntercept: u16Port=%u\n", pIoExitInfo->n.u16Port));
+    Log3(("HMSvmNstGstHandleIOIntercept: u16Port=%#x (%u)\n", pIoExitInfo->n.u16Port, pIoExitInfo->n.u16Port));
 
     /*
      * The IOPM layout:
@@ -1067,8 +1068,8 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX p
     uint16_t const u16Iopm = *(uint16_t *)pbIopm;
     if (u16Iopm & fIopmMask)
     {
-        Log3(("HMSvmNstGstHandleIOIntercept: u16Port=%u offIoPm=%u fSizeMask=%#x cShift=%u fIopmMask=%#x\n", u16Port, offIopm,
-             fSizeMask, cShift, fIopmMask));
+        Log3(("HMSvmNstGstHandleIOIntercept: u16Port=%#x (%u) offIoPm=%u fSizeMask=%#x cShift=%u fIopmMask=%#x\n", u16Port,
+              u16Port, offIopm, fSizeMask, cShift, fIopmMask));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_IOIO, pIoExitInfo->u, uNextRip);
     }
 
