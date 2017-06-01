@@ -383,7 +383,11 @@ void UISnapshotDetailsWidget::retranslateUi()
         m_pLabelThumbnail->setToolTip(QString());
 
         /* Clear the details report: */
-        m_pBrowserDetails->clear();
+        // WORKAROUND:
+        // How stupid Qt *is* to wipe out registered icons not just on clear()
+        // call but on setText(QString()) and even setText("") as well.
+        // Nice way to oversmart itself..
+        m_pBrowserDetails->setText("<empty>");
     }
 }
 
