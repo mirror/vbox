@@ -1211,8 +1211,15 @@ static int rtZipTarFssWriter_WriteGnuSparseHeaders(PRTZIPTARFSSTREAMWRITER pThis
      */
     if (iSparse != 0)
     {
-        Assert(pThis->aHdrs[0].GnuSparse.isextended == 0);
-        rc = RTVfsIoStrmWrite(pThis->hVfsIos, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
+        if (cSparse != RT_ELEMENTS(pThis->aHdrs[0].Gnu.sparse))
+            Assert(pThis->aHdrs[0].GnuSparse.isextended == 0);
+        else
+        {
+            Assert(pThis->aHdrs[0].Gnu.isextended == 0);
+            rc = rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
+        }
+        if (RT_SUCCESS(rc))
+            rc = RTVfsIoStrmWrite(pThis->hVfsIos, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
     }
     pThis->cHdrs = 0;
     return rc;
