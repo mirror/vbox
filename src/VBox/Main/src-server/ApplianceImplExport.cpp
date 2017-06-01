@@ -2205,52 +2205,199 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 {
     LogFlowFuncEnter();
+    HRESULT hrc = S_OK;
 
     /*
-     * Open the output file, pipe it thru gzip and attach a TAR creator.
+     * We're duplicating parts of i_writeFSImpl here because that's simpler
+     * and creates less spaghetti code.
      */
-    HRESULT hrc;
-    RTVFSIOSTREAM hVfsIosFile;
-    int vrc = RTVfsIoStrmOpenNormal(pTask->locInfo.strPath.c_str(),
-                                    RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
-                                    &hVfsIosFile);
-    if (RT_SUCCESS(vrc))
+    std::list<Utf8Str> lstTarballs;
+    try
     {
-
-        RTVFSIOSTREAM hVfsIosGzip;
-        vrc = RTZipGzipCompressIoStream(hVfsIosFile, 0 /*fFlags*/, 6 /*uLevel*/, &hVfsIosGzip);
-        RTVfsIoStrmRelease(hVfsIosFile);
-        if (RT_SUCCESS(vrc))
+        /*
+         * Use i_buildXML to build a stack of disk images.  We don't care about the XML doc here.
+         */
+        XMLStack stack;
         {
-
-            RTVFSFSSTREAM hVfsFssTar;
-            vrc = RTZipTarFsStreamToIoStream(hVfsIosGzip, RTZIPTARFORMAT_GNU, RTZIPTAR_C_SPARSE, &hVfsFssTar);
-            RTVfsIoStrmRelease(hVfsIosGzip);
-            if (RT_SUCCESS(vrc))
-            {
-                /*
-                 * Before we do the actual writing, disable OVF and manifest creation.
-                 */
-                bool fManifestSaved = m->fManifest;
-                m->fManifest = false;
-
-                hrc = i_writeFSImpl(pTask, writeLock, hVfsFssTar, false /*fOvfFile*/, false /*fStreamOptimizedVmdk*/);
-                RTVfsFsStrmRelease(hVfsFssTar);
-
-                m->fManifest = fManifestSaved;
-            }
-            else
-                hrc = setErrorVrc(vrc, tr("Failed create TAR creator for '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+            xml::Document doc;
+            i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath, ovf::OVFVersion_2_0);
         }
-        else
-            hrc = setErrorVrc(vrc, tr("Failed create gzipper for '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
 
-        /* Delete the OVA on failure. */
-        if (FAILED(hrc))
-            RTFileDelete(pTask->locInfo.strPath.c_str());
+        /*
+         * Process the disk images.
+         */
+        unsigned cTarballs = 0;
+        for (list<Utf8Str>::const_iterator it = stack.mapDiskSequence.begin();
+             it != stack.mapDiskSequence.end();
+             ++it)
+        {
+            const Utf8Str                       &strDiskID = *it;
+            const VirtualSystemDescriptionEntry *pDiskEntry = stack.mapDisks[strDiskID];
+            const Utf8Str                       &strSrcFilePath = pDiskEntry->strVBoxCurrent;  // where the VBox image is
+
+            /*
+             * Some skipping.
+             */
+            if (pDiskEntry->skipIt)
+                continue;
+
+            /* Skip empty media (DVD-ROM, floppy). */
+            if (strSrcFilePath.isEmpty())
+                continue;
+
+            /* Only deal with harddisk and DVD-ROMs, skip any floppies for now. */
+            if (   pDiskEntry->type != VirtualSystemDescriptionType_HardDiskImage
+                && pDiskEntry->type != VirtualSystemDescriptionType_CDROM)
+                continue;
+
+            /*
+             * Locate the Medium object for this entry (by location/path).
+             */
+            Log(("Finding source disk \"%s\"\n", strSrcFilePath.c_str()));
+            ComObjPtr<Medium> ptrSourceDisk;
+            if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+                hrc = mVirtualBox->i_findHardDiskByLocation(strSrcFilePath, true, &ptrSourceDisk);
+            else
+                hrc = mVirtualBox->i_findDVDOrFloppyImage(DeviceType_DVD, NULL /*aId*/, strSrcFilePath,
+                                                          true /*aSetError*/, &ptrSourceDisk);
+            if (FAILED(hrc))
+                throw hrc;
+            if (strSrcFilePath.isEmpty())
+                continue;
+
+            /*
+             * Figure out the names.
+             */
+
+            /* The name inside the tarball.  Replace the suffix of harddisk images with ".img". */
+            Utf8Str strInsideName = pDiskEntry->strOvf;
+            if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+                strInsideName.stripSuffix().append(".img");
+
+            /* The first tarball we create uses the specified name. Subsequent
+               takes the name from the disk entry or something. */
+            Utf8Str strTarballPath = pTask->locInfo.strPath;
+            if (cTarballs > 0)
+            {
+                /** @todo test this stuff   */
+                const char *pszExt = RTPathSuffix(pDiskEntry->strOvf.c_str());
+                pszExt = !pszExt || *pszExt == '.' ? "" : pszExt + 1;
+
+                strTarballPath.stripFilename().append(RTPATH_SLASH_STR).append(pDiskEntry->strOvf);
+                strTarballPath.stripSuffix().append("_").append(pszExt).append(".tar.gz");
+
+            }
+            cTarballs++;
+
+            /*
+             * Create the tar output stream.
+             */
+            RTVFSIOSTREAM hVfsIosFile;
+            int vrc = RTVfsIoStrmOpenNormal(strTarballPath.c_str(),
+                                            RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
+                                            &hVfsIosFile);
+            if (RT_FAILURE(vrc))
+                throw setErrorVrc(vrc, tr("Failed to create '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
+
+            RTVFSIOSTREAM hVfsIosGzip;
+            vrc = RTZipGzipCompressIoStream(hVfsIosFile, 0 /*fFlags*/, 6 /*uLevel*/, &hVfsIosGzip);
+            RTVfsIoStrmRelease(hVfsIosFile);
+
+            RTVFSFSSTREAM hVfsFssTar = NIL_RTVFSFSSTREAM;
+            if (RT_SUCCESS(vrc))
+                vrc = RTZipTarFsStreamToIoStream(hVfsIosGzip, RTZIPTARFORMAT_GNU, RTZIPTAR_C_SPARSE, &hVfsFssTar);
+            RTVfsIoStrmRelease(hVfsIosGzip);
+
+            if (RT_FAILURE(vrc))
+            {
+                RTFileDelete(strTarballPath.c_str());
+                throw setErrorVrc(vrc, tr("Failed to TAR creator instance for '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
+            }
+
+            /*
+             * The exporting requests a lock on the media tree. So temporarily
+             * leave the appliance lock.
+             */
+            writeLock.release();
+
+            try
+            {
+                /* advance to the next operation */
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%Rbn'"), strTarballPath.c_str()).raw(),
+                                                   pDiskEntry->ulSizeMB);     // operation's weight, as set up
+                                                                              // with the IProgress originally
+                ///*
+                // * We threat the harddisks are raw images, but since they typically
+                // * require a lot more setup and configuration compares to ISOs, we
+                // * don't bother trying sharing code here (yet).
+                // */
+                //if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+                    hrc = ptrSourceDisk->i_addRawToFss(strInsideName.c_str(), m->m_pSecretKeyStore, hVfsFssTar /*, pProgress2*/);
+                //else if (pDiskEntry->type == VirtualSystemDescriptionType_CDROM)
+                //{
+                //    /* Open the source image and cast it to a VFS base object. */
+                //    RTVFSFILE hVfsSrcFile;
+                //    vrc = RTVfsFileOpenNormal(strSrcFilePath.c_str(),
+                //                              RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
+                //                              &hVfsSrcFile);
+                //    if (RT_FAILURE(vrc))
+                //        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                //                           tr("Could not create or open file '%s' (%Rrc)"), strSrcFilePath.c_str(), vrc);
+                //
+                //    RTVFSOBJ hVfsSrc = RTVfsObjFromFile(hVfsSrcFile);
+                //    RTVfsFileRelease(hVfsSrcFile);
+                //    AssertStmt(hVfsSrc != NIL_RTVFSOBJ, throw VERR_INTERNAL_ERROR);
+                //
+                //    /* Add it to the output stream.  This will pull in all the data from the object. */
+                //    vrc = RTVfsFsStrmAdd(hVfsFssTar, strInsideName.c_str(), hVfsSrc, 0 /*fFlags*/);
+                //    RTVfsObjRelease(hVfsSrc);
+                //    if (RT_FAILURE(vrc))
+                //        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,  tr("Error during copy CD/DVD image '%s' (%Rrc)"),
+                //                           strSrcFilePath.c_str(), vrc);
+                //}
+                //else
+                //    AssertFailedStmt(throw E_UNEXPECTED);
+                if (FAILED(hrc))
+                    throw hrc;
+
+                /*
+                 * Complete and close the tarball.
+                 */
+                vrc = RTVfsFsStrmEnd(hVfsFssTar);
+                RTVfsFsStrmRelease(hVfsFssTar);
+                hVfsFssTar = NIL_RTVFSFSSTREAM;
+                if (RT_FAILURE(vrc))
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Error completing TAR file '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
+
+                /* Remember the tarball name for cleanup. */
+                try { lstTarballs.push_back(strTarballPath.c_str()); }
+                catch (std::bad_alloc) { throw E_OUTOFMEMORY; }
+            }
+            catch (HRESULT hrc3)
+            {
+                writeLock.acquire();
+                RTVfsFsStrmRelease(hVfsFssTar);
+                RTFileDelete(strTarballPath.c_str());
+                throw hrc3;
+            }
+
+            // Finished, lock again (so nobody mess around with the medium tree
+            // in the meantime)
+            writeLock.acquire();
+        }
     }
-    else
-        hrc = setErrorVrc(vrc, tr("Failed to open '%s' for writing (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+    catch (HRESULT hrc2)
+    {
+        hrc = hrc2;
+    }
+
+    /*
+     * Delete output files on failure.
+     */
+    if (FAILED(hrc))
+        for (list<Utf8Str>::const_iterator it = lstTarballs.begin(); it != lstTarballs.end(); ++it)
+            RTFileDelete(it->c_str());
 
     LogFlowFuncLeave();
     return hrc;
