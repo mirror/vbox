@@ -5864,7 +5864,7 @@ int Console::i_configNetwork(const char *pszDevice,
             case NetworkAttachmentType_Generic:
             case NetworkAttachmentType_NATNetwork:
             {
-                if (SUCCEEDED(hrc) && SUCCEEDED(rc))
+                if (SUCCEEDED(hrc) && RT_SUCCESS(rc))
                 {
                     if (fAttachDetach)
                     {
