@@ -243,13 +243,14 @@
         software on CD is disabled) need manual start of the installer.</para>
 
         <note>
-          <para>For the basic Direct3D acceleration to work in a Windows Guest, you
-          have to install the Guest Additions in "Safe Mode".
-          This does <emphasis role="bold">not</emphasis> apply to the experimental
-          WDDM Direct3D video driver available
-          for Vista and Windows 7 guests, see <xref linkend="KnownIssues" /> for
-          details.<footnote><para>The experimental WDDM driver was added with
-          VirtualBox 4.1.</para></footnote></para>
+          <para>For the basic Direct3D acceleration to work in a Windows guest,
+          you have to install the WDDM video driver available for Windows Vista
+          or higher.<footnote><para>An experimental WDDM driver was
+          added with VirtualBox 4.1.</para></footnote> For Windows 8 and higher
+          only the WDDM Direct3D video driver is available. For basic Direct3D
+          acceleration to work in Windows XP guests, you have to install the
+          Guest Additions in "Safe Mode", see <xref linkend="KnownIssues" /> for
+          details.</para>
         </note>
 
         <para>If you prefer to mount the additions manually, you can perform
@@ -489,13 +490,13 @@
         <para>This automatically installs the right files and drivers for the
         corresponding platform (32- or 64-bit).</para>
 
-        <note><para>By default on an unattended installation on a Windows 7 or 8
-        guest, there will be the XPDM graphics driver installed. This graphics
-        driver does not support Windows Aero / Direct3D on the guest - instead the
-        experimental WDDM graphics driver needs to be installed. To select this
-        driver by default, add the command line parameter
+        <note><para>By default on an unattended installation on a Vista or Windows
+        7 guest, there will be the XPDM graphics driver installed. This graphics
+        driver does not support Windows Aero / Direct3D on the guest &ndash; instead
+        the WDDM graphics driver needs to be installed. To select this driver by
+        default, add the command line parameter
         <computeroutput>/with_wddm</computeroutput> when invoking the Windows
-        Guest Additions installer.</para></note>
+        Guest Additions installer (only required for Vista and Windows 7).</para></note>
         <note><para>For Windows Aero to run correctly on a guest, the guest's
         VRAM size needs to be configured to at least 128 MB.</para></note>
 
@@ -1211,10 +1212,8 @@ $</screen>
                 program offers Direct3D acceleration as an option that must
                 be explicitly enabled. Also, you must install the Guest
                 Additions in "Safe Mode". This does <emphasis role="bold">not</emphasis>
-                apply to the experimental WDDM Direct3D video
-                driver available for Vista and Windows 7 guests,
-                see <xref linkend="KnownIssues" />
-                for details.</para></note>
+                apply to the WDDM Direct3D video driver available for Vista
+                and higher, see <xref linkend="KnownIssues" /> for details.</para></note>
               </para>
           </listitem>
 
@@ -1239,18 +1238,14 @@ $</screen>
           </listitem>
         </orderedlist></para>
 
-      <para>With VirtualBox 4.1, Windows Aero theme support is added for
-      Windows Vista and Windows 7 guests. To enable Aero theme support,
-      the experimental VirtualBox WDDM video driver must be installed,
+      <para>To enable Aero theme support,
+      the VirtualBox WDDM video driver must be installed,
       which is available with the Guest Additions installation.
-      Since the WDDM video driver is still experimental at this time, it is
-      not installed by default and must be <emphasis role="bold">manually
+      The WDDM driver is not installed by default for Vista and Windows 7
+      guest and must be <emphasis role="bold">manually
       selected</emphasis> in the Guest Additions installer by answering "No"
-      int the "Would you like to install basic Direct3D support" dialog
-      displayed when the Direct3D feature is selected.
-      <note><para>Unlike the current basic Direct3D support, the WDDM video
-      driver installation does <emphasis role="bold">not</emphasis> require
-      the "Safe Mode".</para></note></para>
+      in the "Would you like to install basic Direct3D support" dialog
+      displayed when the Direct3D feature is selected.</para>
 
       <para>The Aero theme is not enabled by default. To enable it
         <itemizedlist>

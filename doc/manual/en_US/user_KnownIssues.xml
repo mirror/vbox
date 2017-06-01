@@ -11,9 +11,6 @@
             welcome. A comprehensive list of experimental features follows:</para>
         <itemizedlist>
             <listitem>
-                <para>WDDM Direct3D video driver for Windows guests</para>
-            </listitem>
-            <listitem>
                 <para>Hardware 3D acceleration support for Windows, Linux, and Solaris 
                 guests</para>
             </listitem>
@@ -87,9 +84,8 @@
           installed by VirtualBox and keep restoring the original Windows system
           DLLs. <note>
           <para>This does <emphasis role="bold">not</emphasis> apply to the
-          experimental WDDM Direct3D video
-          driver available for Vista and Windows 7 guests shipped with
-            VirtualBox 4.1.</para>
+          WDDM Direct3D video driver available for Vista and Windows 7 guests
+          shipped with VirtualBox 4.1.</para>
           </note></para>
         </listitem>
     
