@@ -2283,11 +2283,12 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
             {
                 /** @todo test this stuff   */
                 const char *pszExt = RTPathSuffix(pDiskEntry->strOvf.c_str());
-                pszExt = !pszExt || *pszExt == '.' ? "" : pszExt + 1;
+                pszExt = !pszExt || *pszExt != '.' ? "" : pszExt + 1;
 
                 strTarballPath.stripFilename().append(RTPATH_SLASH_STR).append(pDiskEntry->strOvf);
-                strTarballPath.stripSuffix().append("_").append(pszExt).append(".tar.gz");
-
+                if (*pszExt)
+                    strTarballPath.stripSuffix().append("_").append(pszExt);
+                strTarballPath.append(".tar.gz");
             }
             cTarballs++;
 
