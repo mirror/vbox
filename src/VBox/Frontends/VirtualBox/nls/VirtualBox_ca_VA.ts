@@ -8965,10 +8965,6 @@ p, li { white-space: pre-wrap; }
         <translation>S&apos;està comprovant l&apos;accessibilitat</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Selecciona</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Totes les imatges de disc dur (%1)</translation>
     </message>
@@ -9103,10 +9099,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Modifica els atributs del suport seleccionat</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Tanca</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

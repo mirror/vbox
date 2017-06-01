@@ -9028,10 +9028,6 @@ p, li { white-space: pre-wrap; }
         <translation>Verificando accesibilidad</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Seleccionar</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Todas las imágenes de discos duros (%1)</translation>
     </message>
@@ -9166,10 +9162,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected medium</source>
         <translation type="obsolete">Modificar los atributos del medio seleccionado</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">Cerra&amp;r</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

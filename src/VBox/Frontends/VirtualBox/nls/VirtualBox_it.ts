@@ -9583,10 +9583,6 @@ p, li { white-space: pre-wrap; }
         <translation>Controllo accessibilità</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Seleziona</translation>
-    </message>
-    <message>
         <source>All files (*)</source>
         <translation type="obsolete">Tutti i file (*)</translation>
     </message>
@@ -9694,10 +9690,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Modifica gli attributi del supporto selezionato</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">C&amp;hiudi</translation>
     </message>
     <message>
         <source>Location</source>

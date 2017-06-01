@@ -9058,10 +9058,6 @@ serial ports</comment>
         <translation>Kontrollerar tillgänglighet</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Välj</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Alla hårddiskavbildningar (%1)</translation>
     </message>
@@ -9196,10 +9192,6 @@ serial ports</comment>
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Ändra attribut för valt media</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">S&amp;täng</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>

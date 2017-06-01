@@ -7606,10 +7606,6 @@
         <translation>A verificar acessibilidade</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Seleccionar</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Todas as imagens de disco rígido (%1)</translation>
     </message>

@@ -9443,10 +9443,6 @@ p, li { white-space: pre-wrap; }
         <translation>Verificando disponibilidade</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Selecionar</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Todas as imagens de disco rígido (%1)</translation>
     </message>
@@ -9581,10 +9577,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Modificar os atributos da mídia selecionada</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">Fechar (&amp;L)</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

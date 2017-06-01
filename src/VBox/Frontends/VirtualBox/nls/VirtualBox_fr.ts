@@ -7990,10 +7990,6 @@
         <translation>Vérifie l&apos;accessibilité</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">Choi&amp;sir</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Tous les images disque dur (%1)</translation>
     </message>
@@ -8131,10 +8127,6 @@
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Modifier les attributs du média sélectionné</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Fermer</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

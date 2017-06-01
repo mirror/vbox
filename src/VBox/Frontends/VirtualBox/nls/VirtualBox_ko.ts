@@ -9041,10 +9041,6 @@ p, li { white-space: pre-wrap; }
         <translation>접근 가능성 검사 중</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">선택(&amp;S)</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">모든 하드 디스크 이미지 (%1)</translation>
     </message>
@@ -9179,10 +9175,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>선택한 미디어 속성 수정</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">닫기(&amp;L)</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

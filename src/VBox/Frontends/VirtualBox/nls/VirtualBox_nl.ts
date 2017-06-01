@@ -7815,10 +7815,6 @@
         <translation>Controleren toegankelijkheid</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Selecteer</translation>
-    </message>
-    <message>
         <source>All files (*)</source>
         <translation type="obsolete">Alle bestanden (*)</translation>
     </message>
@@ -7926,10 +7922,6 @@
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Pas de attributen van het geselecteerde medium aan</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">S&amp;luiten</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

@@ -9118,10 +9118,6 @@ p, li { white-space: pre-wrap; }
         <translation>アクセス可否を確認</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">選択(&amp;S)</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">すべてのハードディスクイメージ(%1)</translation>
     </message>

@@ -8212,10 +8212,6 @@ p, li { white-space: pre-wrap; }
         <translation>Провера приступа</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Одабери</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Све хард слике (%1)</translation>
     </message>
@@ -8350,10 +8346,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Промени поставке одабраног медија</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">Затвори</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>

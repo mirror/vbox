@@ -8883,10 +8883,6 @@ p, li { white-space: pre-wrap; }
         <translation>Elérhetőség tesztelése</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Kiválaszt</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Minden merevlemez képfájl (%1)</translation>
     </message>
@@ -9021,10 +9017,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>A kiválasztott médium attribútumainak módosítása</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">Be&amp;zárás</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

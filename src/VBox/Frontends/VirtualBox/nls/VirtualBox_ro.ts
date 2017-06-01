@@ -8496,11 +8496,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">&amp;Creează</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Selectează</translation>
-    </message>
-    <message>
         <source>Force Unmount</source>
         <translation type="unfinished"></translation>
     </message>

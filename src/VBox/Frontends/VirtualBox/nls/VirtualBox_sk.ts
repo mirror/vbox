@@ -7568,10 +7568,6 @@
         <translation>Kontroluje sa dostupnosť</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Vybrať</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Všetky obrazy pevných diskov (%1)</translation>
     </message>
@@ -7706,10 +7702,6 @@
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Zmeniť atribúty vybraného média</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Zavrieť</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>

@@ -7817,10 +7817,6 @@
         <translation>检测可访问性</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">选择(&amp;S)</translation>
-    </message>
-    <message>
         <source>All files (*)</source>
         <translation type="obsolete">所有文件(*)</translation>
     </message>
@@ -7928,10 +7924,6 @@
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>修改选定介质的属性</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">退出(&amp;C)</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

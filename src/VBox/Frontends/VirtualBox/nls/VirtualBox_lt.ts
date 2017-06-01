@@ -7779,10 +7779,6 @@
         <translation>Tikrinamas prieinamumas</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">Pa&amp;sirinkti</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Visi standžiųjų diskų atvaizdžiai (%1)</translation>
     </message>
@@ -7941,10 +7937,6 @@
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Modifikuoti pasirinktos laikmenos atributus</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Užverti</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>

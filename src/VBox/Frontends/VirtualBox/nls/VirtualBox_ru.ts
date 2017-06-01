@@ -8963,10 +8963,6 @@ p, li { white-space: pre-wrap; }
         <translation>Проверка доступности</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Выбрать</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Все образы жестких дисков (%1)</translation>
     </message>
@@ -9101,10 +9097,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Изменить атрибуты выбранного носителя информации</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Закрыть</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

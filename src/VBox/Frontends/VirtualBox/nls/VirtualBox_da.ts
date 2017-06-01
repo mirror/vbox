@@ -8522,10 +8522,6 @@ p, li { white-space: pre-wrap; }
         <translation>Kontrollerer tilgængelighed</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">Vælg</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Alle harddisk-aftryk (%1)</translation>
     </message>
@@ -8660,10 +8656,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Tilpas egenskaberne for det valgte medie</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Luk</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

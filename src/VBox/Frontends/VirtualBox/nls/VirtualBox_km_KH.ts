@@ -7132,10 +7132,6 @@ network adapter name</comment>
         <translation>ពិនិត្យ​មើល​ភាព​អាច​ដំណើរការ​បាន​ទេ</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">ជ្រើស</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">រូបភាព​ថាសរឹង​ទាំងអស់ (%1)</translation>
     </message>

@@ -8382,10 +8382,6 @@ p, li { white-space: pre-wrap; }
         <translation>Перевірка доступності</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">Ви&amp;брати</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Усі образи жорстких дисків (%1)</translation>
     </message>
@@ -8520,10 +8516,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Змінити атрибути вибраного носія</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Закрити</translation>
     </message>
     <message>
         <source>Create a new virtual hard drive</source>

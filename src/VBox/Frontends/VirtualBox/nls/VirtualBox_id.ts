@@ -8100,10 +8100,6 @@
         <translation>Memeriksa aksesibilitas</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Pilih</translation>
-    </message>
-    <message>
         <source>All files (*)</source>
         <translation type="obsolete">Semua file (*)</translation>
     </message>
@@ -8234,10 +8230,6 @@
     <message>
         <source>Modify the attributes of the selected disk image file</source>
         <translation>Ubah atribut berkas image disk yang dipilih</translation>
-    </message>
-    <message>
-        <source>C&amp;lose</source>
-        <translation type="obsolete">&amp;Tutup</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>

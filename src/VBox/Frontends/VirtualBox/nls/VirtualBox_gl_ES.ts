@@ -7189,10 +7189,6 @@ p, li { white-space: pre-wrap; }
         <translation>Comprobando accesibilidade</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Seleccionar</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Todas as imaxes de disco ríxido (%1)</translation>
     </message>

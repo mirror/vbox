@@ -7251,10 +7251,6 @@ p, li { white-space: pre-wrap; }
         <translation>Tarkistetaan saatavuutta</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Valitse</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Kaikki levykuvatiedostot (%1)</translation>
     </message>

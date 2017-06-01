@@ -8120,10 +8120,6 @@
         <translation>Erişilebilirlik kontrol ediliyor</translation>
     </message>
     <message>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Seç</translation>
-    </message>
-    <message>
         <source>All hard disk images (%1)</source>
         <translation type="obsolete">Tüm sabit disk kalıpları (%1)</translation>
     </message>
