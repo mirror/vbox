@@ -32,7 +32,10 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "UIConverter.h"
 # include "UIDesktopWidgetWatchdog.h"
+# include "UIExtraDataDefs.h"
+# include "UIIconPool.h"
 # include "UISnapshotDetailsWidget.h"
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
@@ -565,6 +568,35 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                 policy.setHorizontalStretch(1);
                 m_pBrowserDetails->setSizePolicy(policy);
                 m_pBrowserDetails->setFocus();
+                /* Determine icon metric: */
+                const QStyle *pStyle = QApplication::style();
+                const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+                const QSize iconSize = QSize(iIconMetric, iIconMetric);
+                /* Register DetailsElementType icons in the m_pBrowserDetails document: */
+                // WORKAROUND:
+                // Unfortunatelly we can't just enumerate types within
+                // cycle since they have exceptions like 'parallel' case.
+                QList<DetailsElementType> types;
+                types << DetailsElementType_General
+                      << DetailsElementType_System
+                      << DetailsElementType_Preview
+                      << DetailsElementType_Display
+                      << DetailsElementType_Storage
+                      << DetailsElementType_Audio
+                      << DetailsElementType_Network
+                      << DetailsElementType_Serial
+#ifdef VBOX_WITH_PARALLEL_PORTS
+                      << DetailsElementType_Parallel
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+                      << DetailsElementType_USB
+                      << DetailsElementType_SF
+                      << DetailsElementType_UI
+                      << DetailsElementType_Description;
+                foreach (const DetailsElementType &enmType, types)
+                    m_pBrowserDetails->document()->addResource(
+                        QTextDocument::ImageResource,
+                        QUrl(QString("details://%1").arg(gpConverter->toInternalString(enmType))),
+                        QVariant(gpConverter->toIcon(enmType).pixmap(iconSize)));
 
                 /* Add to layout: */
                 m_pLayoutDetails->addWidget(m_pBrowserDetails);

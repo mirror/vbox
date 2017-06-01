@@ -971,12 +971,12 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
     static const char *sTableTpl =
         "<table border=0 cellspacing=1 cellpadding=0>%1</table>";
     static const char *sSectionHrefTpl =
-        "<tr><td width=%7 rowspan=%1 align=left><img width=%6 height=%6 src='%2'></td>"
+        "<tr><td width=%6 rowspan=%1 align=left><img src='%2'></td>"
             "<td colspan=3><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
             "%5"
         "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionBoldTpl =
-        "<tr><td width=%7 rowspan=%1 align=left><img width=%6 height=%6 src='%2'></td>"
+        "<tr><td width=%6 rowspan=%1 align=left><img src='%2'></td>"
             "<td colspan=3><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
             "%5"
         "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
@@ -1020,11 +1020,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/machine_16px.png", /* icon */
+            .arg("details://general", /* icon */
                  "#general", /* link */
                  tr("General", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
@@ -1118,11 +1117,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/chipset_16px.png", /* icon */
+            .arg("details://system", /* icon */
                  "#system", /* link */
                  tr("System", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
@@ -1175,11 +1173,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/vrdp_16px.png", /* icon */
+            .arg("details://display", /* icon */
                  "#display", /* link */
                  tr("Display", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
@@ -1245,11 +1242,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/hd_16px.png", /* icon */
+            .arg("details://storage", /* icon */
                  "#storage", /* link */
                  tr("Storage", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
@@ -1278,11 +1274,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/sound_16px.png", /* icon */
+            .arg("details://audio", /* icon */
                  "#audio", /* link */
                  tr("Audio", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
@@ -1351,11 +1346,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/nw_16px.png", /* icon */
+            .arg("details://network", /* icon */
                  "#network", /* link */
                  tr("Network", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
@@ -1403,11 +1397,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/serial_port_16px.png", /* icon */
+            .arg("details://serialPorts", /* icon */
                  "#serialPorts", /* link */
                  tr("Serial Ports", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
@@ -1446,11 +1439,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Temporary disabled: */
         const QString dummy = strSectionTpl /* strReport += strSectionTpl */
             .arg(2 + iRowCount) /* rows */
-            .arg(":/parallel_port_16px.png", /* icon */
+            .arg("details://parallelPorts", /* icon */
                  "#parallelPorts", /* link */
                  tr("Parallel Ports", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
         Q_UNUSED(dummy);
     }
@@ -1489,11 +1481,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
             /* Append report: */
             strReport += strSectionTpl
                 .arg(2 + iRowCount) /* rows */
-                .arg(":/usb_16px.png", /* icon */
+                .arg("details://usb", /* icon */
                      "#usb", /* link */
                      tr("USB", "details report"), /* title */
                      strItem, /* items */
-                     QString::number(iIconMetric),
                      QString::number(iIndentMetric));
         }
     }
@@ -1515,11 +1506,10 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Append report: */
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
-            .arg(":/sf_16px.png", /* icon */
+            .arg("details://sharedFolders", /* icon */
                  "#sfolders", /* link */
                  tr("Shared Folders", "details report"), /* title */
                  strItem, /* items */
-                 QString::number(iIconMetric),
                  QString::number(iIndentMetric));
     }
 
