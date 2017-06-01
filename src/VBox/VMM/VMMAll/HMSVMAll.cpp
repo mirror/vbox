@@ -810,37 +810,59 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64
 
 
 /**
- * Checks whether an interrupt is pending for the nested-guest.
+ * Checks whether the nested-guest is in a state to receive physical (APIC)
+ * interrupts.
  *
  * @returns VBox status code.
- * @retval  true if there's a pending interrupt, false otherwise.
+ * @retval  true if it's ready, false otherwise.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        The guest-CPU context.
  */
-VMM_INT_DECL(bool) HMSvmNstGstCanTakeInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) HMSvmNstGstCanTakePhysInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
-    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+    RT_NOREF(pVCpu);
 
-    X86RFLAGS RFlags;
-    if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
-        RFlags.u = pCtx->rflags.u;
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+    X86EFLAGS fEFlags;
+    if (!pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
+        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
     else
-        RFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+        fEFlags.u = pCtx->eflags.u;
 
-    if (!RFlags.Bits.u1IF)
-        return false;
+    return pCtx->hwvirt.svm.fGif && fEFlags.Bits.u1IF;
+}
 
+
+/**
+ * Checks whether the nested-guest is in a state to receive virtual (injected by
+ * VMRUN) interrupts.
+ *
+ * @returns VBox status code.
+ * @retval  true if it's ready, false otherwise.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        The guest-CPU context.
+ */
+VMM_INT_DECL(bool) HMSvmNstGstCanTakeVirtInterrupt(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+    Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST));
+    RT_NOREF(pVCpu);
+
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
     if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
         &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
         return false;
 
-    /* Paranoia. */
-    Assert(RT_BOOL(pCtx->hwvirt.svm.fGif));
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-    Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST));
-    RT_NOREF(pVCpu);
+    if (!pCtx->rflags.Bits.u1IF)
+        return false;
+
+    if (!pCtx->hwvirt.svm.fGif)
+        return false;
+
     return true;
 }
 
