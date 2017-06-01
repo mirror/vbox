@@ -220,8 +220,7 @@ private:
     HRESULT i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase& writeLock);
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
-    HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst,
-                          bool fOvfFile = true, bool fStreamOptimizedVmdk = true);
+    HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst);
     HRESULT i_writeBufferToFile(RTVFSFSSTREAM hVfsFssDst, const char *pszFilename, const void *pvContent, size_t cbContent);
 #else
     HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);

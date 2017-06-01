@@ -353,6 +353,8 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                 if (FAILED(rc)) throw rc;
 
                 Utf8Str strName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
+                if (locInfo.strPath.endsWith(".tar.gz", Utf8Str::CaseSensitive))
+                    strName.stripSuffix();
                 strTargetImageName = Utf8StrFmt("%s-disk%.3d.vmdk", strName.c_str(), ++pAppliance->m->cDisks);
                 if (strTargetImageName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
@@ -680,7 +682,7 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
         ovfF = ovf::OVFVersion_1_0;
     else if (aFormat == "ovf-2.0")
         ovfF = ovf::OVFVersion_2_0;
-    else if (aFormat == "opc")
+    else if (aFormat == "opc-1.0")
         ovfF = ovf::OVFVersion_unknown;
     else
         return setError(VBOX_E_FILE_ERROR,
@@ -2326,37 +2328,7 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%Rbn'"), strTarballPath.c_str()).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up
                                                                               // with the IProgress originally
-                ///*
-                // * We threat the harddisks are raw images, but since they typically
-                // * require a lot more setup and configuration compares to ISOs, we
-                // * don't bother trying sharing code here (yet).
-                // */
-                //if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
-                    hrc = ptrSourceDisk->i_addRawToFss(strInsideName.c_str(), m->m_pSecretKeyStore, hVfsFssTar /*, pProgress2*/);
-                //else if (pDiskEntry->type == VirtualSystemDescriptionType_CDROM)
-                //{
-                //    /* Open the source image and cast it to a VFS base object. */
-                //    RTVFSFILE hVfsSrcFile;
-                //    vrc = RTVfsFileOpenNormal(strSrcFilePath.c_str(),
-                //                              RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
-                //                              &hVfsSrcFile);
-                //    if (RT_FAILURE(vrc))
-                //        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                //                           tr("Could not create or open file '%s' (%Rrc)"), strSrcFilePath.c_str(), vrc);
-                //
-                //    RTVFSOBJ hVfsSrc = RTVfsObjFromFile(hVfsSrcFile);
-                //    RTVfsFileRelease(hVfsSrcFile);
-                //    AssertStmt(hVfsSrc != NIL_RTVFSOBJ, throw VERR_INTERNAL_ERROR);
-                //
-                //    /* Add it to the output stream.  This will pull in all the data from the object. */
-                //    vrc = RTVfsFsStrmAdd(hVfsFssTar, strInsideName.c_str(), hVfsSrc, 0 /*fFlags*/);
-                //    RTVfsObjRelease(hVfsSrc);
-                //    if (RT_FAILURE(vrc))
-                //        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,  tr("Error during copy CD/DVD image '%s' (%Rrc)"),
-                //                           strSrcFilePath.c_str(), vrc);
-                //}
-                //else
-                //    AssertFailedStmt(throw E_UNEXPECTED);
+                hrc = ptrSourceDisk->i_addRawToFss(strInsideName.c_str(), m->m_pSecretKeyStore, hVfsFssTar /*, pProgress2*/);
                 if (FAILED(hrc))
                     throw hrc;
 
@@ -2406,8 +2378,7 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 #endif
 
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
-HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst,
-                                 bool fOvfFile /*= true*/, bool fStreamOptimizedVmdk /*= true*/)
+HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst)
 #else
 HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
 #endif
@@ -2445,9 +2416,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath,
                        pTask->enFormat != ovf::OVFVersion_unknown ? pTask->enFormat : ovf::OVFVersion_2_0);
 
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
-            if (fOvfFile)
-#endif
             {
                 void *pvBuf = NULL;
                 size_t cbSize = 0;
@@ -2578,34 +2546,24 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
 
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
                     /* For compressed VMDK fun, we let i_exportFile produce the image bytes. */
-                    if (fStreamOptimizedVmdk)
-                    {
-                        RTVFSIOSTREAM hVfsIosDst;
-                        vrc = RTVfsFsStrmPushFile(hVfsFssDst, strTargetFilePath.c_str(), UINT64_MAX,
-                                                  NULL /*paObjInfo*/, 0 /*cObjInfo*/, RTVFSFSSTRM_PUSH_F_STREAM, &hVfsIosDst);
-                        if (RT_FAILURE(vrc))
-                            throw setErrorVrc(vrc, tr("RTVfsFsStrmPushFile failed for '%s' (%Rrc)"), strTargetFilePath.c_str(), vrc);
-                        hVfsIosDst = i_manifestSetupDigestCalculationForGivenIoStream(hVfsIosDst, strTargetFilePath.c_str(),
-                                                                                      false /*fRead*/);
-                        if (hVfsIosDst == NIL_RTVFSIOSTREAM)
-                            throw setError(E_FAIL, "i_manifestSetupDigestCalculationForGivenIoStream(%s)", strTargetFilePath.c_str());
+                    RTVFSIOSTREAM hVfsIosDst;
+                    vrc = RTVfsFsStrmPushFile(hVfsFssDst, strTargetFilePath.c_str(), UINT64_MAX,
+                                              NULL /*paObjInfo*/, 0 /*cObjInfo*/, RTVFSFSSTRM_PUSH_F_STREAM, &hVfsIosDst);
+                    if (RT_FAILURE(vrc))
+                        throw setErrorVrc(vrc, tr("RTVfsFsStrmPushFile failed for '%s' (%Rrc)"), strTargetFilePath.c_str(), vrc);
+                    hVfsIosDst = i_manifestSetupDigestCalculationForGivenIoStream(hVfsIosDst, strTargetFilePath.c_str(),
+                                                                                  false /*fRead*/);
+                    if (hVfsIosDst == NIL_RTVFSIOSTREAM)
+                        throw setError(E_FAIL, "i_manifestSetupDigestCalculationForGivenIoStream(%s)", strTargetFilePath.c_str());
 
-                        rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
-                                                       format,
-                                                       MediumVariant_VmdkStreamOptimized,
-                                                       m->m_pSecretKeyStore,
-                                                       hVfsIosDst,
-                                                       pProgress2);
-                        RTVfsIoStrmRelease(hVfsIosDst);
-                        if (FAILED(rc)) throw rc;
-                    }
-                    /* When creating sparse raw images, the tar creator stream pulls the data
-                       out of the disk image.  It will scan for empty space first, then copy
-                       the non-empty segments into the tar stream. */
-                    else
-                    {
-                        throw E_NOTIMPL;
-                    }
+                    rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
+                                                   format,
+                                                   MediumVariant_VmdkStreamOptimized,
+                                                   m->m_pSecretKeyStore,
+                                                   hVfsIosDst,
+                                                   pProgress2);
+                    RTVfsIoStrmRelease(hVfsIosDst);
+                    if (FAILED(rc)) throw rc;
 #else
                     rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
                                                    format,
@@ -2629,25 +2587,8 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                     Assert(pDiskEntry->type == VirtualSystemDescriptionType_CDROM);
 
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
-                    /* Open the source image and cast it to a VFS base object. */
-                    RTVFSFILE hVfsSrcFile;
-                    vrc = RTVfsFileOpenNormal(strSrcFilePath.c_str(),
-                                              RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
-                                              &hVfsSrcFile);
-                    if (RT_FAILURE(vrc))
-                        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                                           tr("Could not create or open file '%s' (%Rrc)"), strSrcFilePath.c_str(), vrc);
-
-                    RTVFSOBJ hVfsSrc = RTVfsObjFromFile(hVfsSrcFile);
-                    RTVfsFileRelease(hVfsSrcFile);
-                    AssertStmt(hVfsSrc != NIL_RTVFSOBJ, throw VERR_INTERNAL_ERROR);
-
-                    /* Add it to the output stream.  This will pull in all the data from the object. */
-                    vrc = RTVfsFsStrmAdd(hVfsFssDst, strTargetFilePath.c_str(), hVfsSrc, 0 /*fFlags*/);
-                    RTVfsObjRelease(hVfsSrc);
-                    if (RT_FAILURE(vrc))
-                        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,  tr("Error during copy CD/DVD image '%s' (%Rrc)"),
-                                           strSrcFilePath.c_str(), vrc);
+                    rc = pSourceDisk->i_addRawToFss(strTargetFilePath.c_str(), m->m_pSecretKeyStore, hVfsFssDst /*, pProgress2*/);
+                    if (FAILED(rc)) throw rc;
 #else
                     /* Read the ISO file and add one to OVA/OVF package */
                     void *pvStorage;

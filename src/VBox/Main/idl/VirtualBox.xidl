@@ -3375,8 +3375,8 @@
       <param name="format" type="wstring" dir="in">
         <desc>
             Output format, as a string. Currently supported formats are "ovf-0.9", "ovf-1.0",
-            "ovf-2.0" and "opc"; future versions of VirtualBox may support additional formats.
-            The "opc" format is for creating tarballs for the Oracle Public Cloud.
+            "ovf-2.0" and "opc-1.0"; future versions of VirtualBox may support additional formats.
+            The "opc-1.0" format is for creating tarballs for the Oracle Public Cloud.
         </desc>
       </param>
       <param name="options" type="ExportOptions" dir="in" safearray="yes">
@@ -3385,7 +3385,7 @@
       <param name="path" type="wstring" dir="in">
           <desc>
               Name of appliance file to create.  There are certain restrictions with regard
-              to the file name suffix.  If the format parameter is "opc" a <tt>.tar.gz</tt>
+              to the file name suffix.  If the format parameter is "opc-1.0" a <tt>.tar.gz</tt>
               suffix is required.  Otherwise the suffix must either be <tt>.ovf</tt> or
               <tt>.ova</tt>, depending on whether the appliance is distributed as a set of
               files or as a single file, respectively.
