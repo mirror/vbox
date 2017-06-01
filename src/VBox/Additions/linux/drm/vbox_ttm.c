@@ -270,7 +270,7 @@ struct ttm_bo_driver vbox_bo_driver = {
     .verify_access = vbox_bo_verify_access,
     .io_mem_reserve = &vbox_ttm_io_mem_reserve,
     .io_mem_free = &vbox_ttm_io_mem_free,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
     .io_mem_pfn = ttm_bo_default_io_mem_pfn,
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
