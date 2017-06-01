@@ -2301,9 +2301,12 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
             if (RT_FAILURE(vrc))
                 throw setErrorVrc(vrc, tr("Failed to create '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
 
-            RTVFSIOSTREAM hVfsIosGzip;
+            RTVFSIOSTREAM hVfsIosGzip = NIL_RTVFSIOSTREAM;
             vrc = RTZipGzipCompressIoStream(hVfsIosFile, 0 /*fFlags*/, 6 /*uLevel*/, &hVfsIosGzip);
             RTVfsIoStrmRelease(hVfsIosFile);
+
+            /** @todo insert I/O thread here between gzip and the tar creator. Needs
+             *        implementing. */
 
             RTVFSFSSTREAM hVfsFssTar = NIL_RTVFSFSSTREAM;
             if (RT_SUCCESS(vrc))
