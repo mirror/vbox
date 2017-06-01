@@ -2316,6 +2316,7 @@
 # define RTVfsFileFlush                                 RT_MANGLER(RTVfsFileFlush)
 # define RTVfsFileFromBuffer                            RT_MANGLER(RTVfsFileFromBuffer)
 # define RTVfsFileFromRTFile                            RT_MANGLER(RTVfsFileFromRTFile)
+# define RTVfsFileGetOpenFlags                          RT_MANGLER(RTVfsFileGetOpenFlags)
 # define RTVfsFileGetSize                               RT_MANGLER(RTVfsFileGetSize)
 # define RTVfsFileOpen                                  RT_MANGLER(RTVfsFileOpen)
 # define RTVfsFileOpenNormal                            RT_MANGLER(RTVfsFileOpenNormal)
