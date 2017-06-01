@@ -672,12 +672,7 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
     if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
-    // see if we can handle this file; for now we insist it has an ".ovf" extension
-    if (!(   aPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
-          || aPath.endsWith(".ova", Utf8Str::CaseInsensitive)))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Appliance file must have .ovf or .ova extension"));
-
+    // figure the export format.  We exploit the unknown version value for oracle public cloud.
     ovf::OVFVersion_T ovfF;
     if (aFormat == "ovf-0.9")
         ovfF = ovf::OVFVersion_0_9;
@@ -685,9 +680,23 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
         ovfF = ovf::OVFVersion_1_0;
     else if (aFormat == "ovf-2.0")
         ovfF = ovf::OVFVersion_2_0;
+    else if (aFormat == "opc")
+        ovfF = ovf::OVFVersion_unknown;
     else
         return setError(VBOX_E_FILE_ERROR,
                         tr("Invalid format \"%s\" specified"), aFormat.c_str());
+
+    // Check the extension.
+    if (ovfF == ovf::OVFVersion_unknown)
+    {
+        if (!aPath.endsWith(".tar.gz", Utf8Str::CaseInsensitive))
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("OPC appliance file must have .tar.gz extension"));
+    }
+    else if (   !aPath.endsWith(".ovf", Utf8Str::CaseInsensitive)
+             && !aPath.endsWith(".ova", Utf8Str::CaseInsensitive))
+        return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
+
 
     /* As of OVF 2.0 we have to use SHA-256 in the manifest. */
     m->fManifest = m->optListExport.contains(ExportOptions_CreateManifest);
@@ -1975,7 +1984,13 @@ HRESULT Appliance::i_writeFS(TaskOVF *pTask)
     // callers on this lengthy operations.
     m->state = Data::ApplianceExporting;
 
-    if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    if (pTask->enFormat == ovf::OVFVersion_unknown)
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+        rc = i_writeFSOPC(pTask, multiLock);
+#else
+        rc = E_NOTIMPL;
+#endif
+    else if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         rc = i_writeFSOVF(pTask, multiLock);
     else
         rc = i_writeFSOVA(pTask, multiLock);
@@ -2181,7 +2196,72 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 }
 
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
-HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst)
+/**
+ * Writes the Oracle Public Cloud appliance.
+ *
+ * It expect raw disk images inside a gzipped tarball.  We enable sparse files
+ * to save diskspace on the target host system.
+ */
+HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
+{
+    LogFlowFuncEnter();
+
+    /*
+     * Open the output file, pipe it thru gzip and attach a TAR creator.
+     */
+    HRESULT hrc;
+    RTVFSIOSTREAM hVfsIosFile;
+    int vrc = RTVfsIoStrmOpenNormal(pTask->locInfo.strPath.c_str(),
+                                    RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
+                                    &hVfsIosFile);
+    if (RT_SUCCESS(vrc))
+    {
+
+        RTVFSIOSTREAM hVfsIosGzip;
+        vrc = RTZipGzipCompressIoStream(hVfsIosFile, 0 /*fFlags*/, 6 /*uLevel*/, &hVfsIosGzip);
+        RTVfsIoStrmRelease(hVfsIosFile);
+        if (RT_SUCCESS(vrc))
+        {
+
+            RTVFSFSSTREAM hVfsFssTar;
+            vrc = RTZipTarFsStreamToIoStream(hVfsIosGzip, RTZIPTARFORMAT_GNU, RTZIPTAR_C_SPARSE, &hVfsFssTar);
+            RTVfsIoStrmRelease(hVfsIosGzip);
+            if (RT_SUCCESS(vrc))
+            {
+                /*
+                 * Before we do the actual writing, disable OVF and manifest creation.
+                 */
+                bool fManifestSaved = m->fManifest;
+                m->fManifest = false;
+
+                __debugbreak();
+                hrc = i_writeFSImpl(pTask, writeLock, hVfsFssTar, false /*fOvfFile*/, false /*fStreamOptimizedVmdk*/);
+                RTVfsFsStrmRelease(hVfsFssTar);
+
+                m->fManifest = fManifestSaved;
+            }
+            else
+                hrc = setErrorVrc(vrc, tr("Failed create TAR creator for '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+        }
+        else
+            hrc = setErrorVrc(vrc, tr("Failed create gzipper for '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+
+        /* Delete the OVA on failure. */
+        if (FAILED(hrc))
+            RTFileDelete(pTask->locInfo.strPath.c_str());
+    }
+    else
+        hrc = setErrorVrc(vrc, tr("Failed to open '%s' for writing (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+
+    LogFlowFuncLeave();
+    return hrc;
+
+}
+#endif
+
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst,
+                                 bool fOvfFile /*= true*/, bool fStreamOptimizedVmdk /*= true*/)
 #else
 HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
 #endif
@@ -2213,33 +2293,38 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             strOvfFile.stripSuffix().append(".ovf");
 #endif
 
-            /* Render a valid ovf document into a memory buffer. */
+            /* Render a valid ovf document into a memory buffer.  The unknown
+               version upgrade relates to the OPC hack up in Appliance::write(). */
             xml::Document doc;
-            i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
+            i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath,
+                       pTask->enFormat != ovf::OVFVersion_unknown ? pTask->enFormat : ovf::OVFVersion_2_0);
 
-            void *pvBuf = NULL;
-            size_t cbSize = 0;
-            xml::XmlMemWriter writer;
-            writer.write(doc, &pvBuf, &cbSize);
-            if (RT_UNLIKELY(!pvBuf))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not create OVF file '%s'"),
-                               strOvfFile.c_str());
-
-            /* Write the ovf file to "disk". */
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
-            rc = i_writeBufferToFile(hVfsFssDst, strOvfFile.c_str(), pvBuf, cbSize);
-            if (FAILED(rc))
-                throw rc;
+            if (fOvfFile)
+#endif
+            {
+                void *pvBuf = NULL;
+                size_t cbSize = 0;
+                xml::XmlMemWriter writer;
+                writer.write(doc, &pvBuf, &cbSize);
+                if (RT_UNLIKELY(!pvBuf))
+                    throw setError(VBOX_E_FILE_ERROR, tr("Could not create OVF file '%s'"), strOvfFile.c_str());
+
+                /* Write the ovf file to "disk". */
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+                rc = i_writeBufferToFile(hVfsFssDst, strOvfFile.c_str(), pvBuf, cbSize);
+                if (FAILED(rc))
+                    throw rc;
 #else
-            vrc = writeBufferToFile(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
-            if (RT_FAILURE(vrc))
-                throw setErrorVrc(vrc, tr("Could not create OVF file '%s' (%Rrc)"), strOvfFile.c_str(), vrc);
+                vrc = writeBufferToFile(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
+                if (RT_FAILURE(vrc))
+                    throw setErrorVrc(vrc, tr("Could not create OVF file '%s' (%Rrc)"), strOvfFile.c_str(), vrc);
 #endif
 
 #ifndef VBOX_WITH_NEW_TAR_CREATOR
-            fileList.push_back(STRPAIR(strOvfFile, pStorage->strDigest));
+                fileList.push_back(STRPAIR(strOvfFile, pStorage->strDigest));
 #endif
+            }
         }
 
         // We need a proper format description
@@ -2347,7 +2432,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
 
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
                     /* For compressed VMDK fun, we let i_exportFile produce the image bytes. */
-                    if (true)
+                    if (fStreamOptimizedVmdk)
                     {
                         RTVFSIOSTREAM hVfsIosDst;
                         vrc = RTVfsFsStrmPushFile(hVfsFssDst, strTargetFilePath.c_str(), UINT64_MAX,
