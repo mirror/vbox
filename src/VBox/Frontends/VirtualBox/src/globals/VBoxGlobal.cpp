@@ -965,24 +965,18 @@ QString VBoxGlobal::toolTip(const CHostVideoInputDevice &webcam) const
     return records.join("<br>");
 }
 
-/**
- * Returns a details report on a given VM represented as a HTML table.
- *
- * @param aMachine      Machine to create a report for.
- * @param aWithLinks    @c true if section titles should be hypertext links.
- */
-QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
+QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
 {
-    /* Details templates */
+    /* Details templates: */
     static const char *sTableTpl =
         "<table border=0 cellspacing=1 cellpadding=0>%1</table>";
     static const char *sSectionHrefTpl =
-        "<tr><td width=22 rowspan=%1 align=left><img width=16 height=16 src='%2'></td>"
+        "<tr><td width=%7 rowspan=%1 align=left><img width=%6 height=%6 src='%2'></td>"
             "<td colspan=3><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
             "%5"
         "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionBoldTpl =
-        "<tr><td width=22 rowspan=%1 align=left><img width=16 height=16 src='%2'></td>"
+        "<tr><td width=%7 rowspan=%1 align=left><img width=%6 height=%6 src='%2'></td>"
             "<td colspan=3><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
             "%5"
         "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
@@ -993,225 +987,237 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     static const char *sSectionItemTpl3 =
         "<tr><td width=40%><nobr>%1</nobr></td><td/><td/></tr>";
 
-    const QString &sectionTpl = aWithLinks ? sSectionHrefTpl : sSectionBoldTpl;
+    /* Do we want the links? */
+    const QString &strSectionTpl = fWithLinks ? sSectionHrefTpl : sSectionBoldTpl;
 
-    /* Compose details report */
-    QString report;
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+    const int iIndentMetric = iIconMetric * 1.375;
 
-    /* General */
+    /* Compose details report: */
+    QString strReport;
+
+    /* General: */
     {
-        QString item = QString (sSectionItemTpl2).arg (tr ("Name", "details report"),
-                                                       aMachine.GetName())
-                     + QString (sSectionItemTpl2).arg (tr ("OS Type", "details report"),
-                                                       vmGuestOSTypeDescription (aMachine.GetOSTypeId()));
+        /* Name, OS Type: */
+        int iRowCount = 2;
+        QString strItem = QString(sSectionItemTpl2).arg(tr("Name", "details report"),
+                                                        comMachine.GetName())
+                        + QString(sSectionItemTpl2).arg(tr("OS Type", "details report"),
+                                                        vmGuestOSTypeDescription(comMachine.GetOSTypeId()));
 
-        report += sectionTpl
-                  .arg (2 + 2) /* rows */
-                  .arg (":/machine_16px.png", /* icon */
-                        "#general", /* link */
-                        tr ("General", "details report"), /* title */
-                        item); /* items */
+        /* Group(s)? */
+        const QStringList &groups = comMachine.GetGroups().toList();
+        if (   groups.size() > 1
+            || groups.size() > 0 && groups.at(0) != "/")
+        {
+            ++iRowCount;
+            strItem += QString(sSectionItemTpl2).arg(tr("Group(s)", "details report"),
+                                                     groups.join(", "));
+        }
+
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/machine_16px.png", /* icon */
+                 "#general", /* link */
+                 tr("General", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
     }
 
-    /* System */
+    /* System: */
     {
-#ifdef VBOX_WITH_FULL_DETAILS_REPORT
-        /* BIOS Settings holder */
-        CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
+        /* Base Memory, Processor(s): */
+        int iRowCount = 2;
+        QString strItem = QString(sSectionItemTpl2).arg(tr("Base Memory", "details report"),
+                                                        tr("<nobr>%1 MB</nobr>", "details report")
+                                                           .arg(QString::number(comMachine.GetMemorySize())))
+                        + QString(sSectionItemTpl2).arg(tr("Processor(s)", "details report"),
+                                                        tr("<nobr>%1</nobr>", "details report")
+                                                           .arg(QString::number(comMachine.GetCPUCount())));
 
-        /* System details row count: */
-        int iRowCount = 2; /* Memory & CPU details rows initially. */
-
-        /* Boot order */
-        QString bootOrder;
-        for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++ i)
+        /* Execution Cap? */
+        ULONG uExecutionCap = comMachine.GetCPUExecutionCap();
+        if (uExecutionCap < 100)
         {
-            KDeviceType device = aMachine.GetBootOrder (i);
-            if (device == KDeviceType_Null)
-                continue;
-            if (!bootOrder.isEmpty())
-                bootOrder += ", ";
-            bootOrder += gpConverter->toString (device);
+            ++iRowCount;
+            strItem += QString(sSectionItemTpl2).arg(tr("Execution Cap", "details report"),
+                                                     tr("<nobr>%1%</nobr>", "details report")
+                                                        .arg(comMachine.GetCPUExecutionCap()));
+        }
+
+        /* Boot Order: */
+        ++iRowCount;
+        QStringList bootOrder;
+        for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++i)
+        {
+            const KDeviceType enmDevice = comMachine.GetBootOrder(i);
+            if (enmDevice != KDeviceType_Null)
+                bootOrder << gpConverter->toString(enmDevice);
         }
         if (bootOrder.isEmpty())
-            bootOrder = gpConverter->toString (KDeviceType_Null);
-
-        iRowCount += 1; /* Boot-order row. */
+            bootOrder << gpConverter->toString(KDeviceType_Null);
+        strItem += QString(sSectionItemTpl2).arg(tr("Boot Order", "details report"),
+                                                 bootOrder.join(", "));
 
 #ifdef VBOX_WITH_FULL_DETAILS_REPORT
-        /* ACPI */
-        QString acpi = biosSettings.GetACPIEnabled()
-            ? tr ("Enabled", "details report (ACPI)")
-            : tr ("Disabled", "details report (ACPI)");
 
-        /* I/O APIC */
-        QString ioapic = biosSettings.GetIOAPICEnabled()
-            ? tr ("Enabled", "details report (I/O APIC)")
-            : tr ("Disabled", "details report (I/O APIC)");
+        /* Acquire BIOS Settings: */
+        const CBIOSSettings &comBiosSettings = comMachine.GetBIOSSettings();
 
-        /* PAE/NX */
-        QString pae = aMachine.GetCpuProperty(KCpuPropertyType_PAE)
-            ? tr ("Enabled", "details report (PAE/NX)")
-            : tr ("Disabled", "details report (PAE/NX)");
+        /* ACPI: */
+        ++iRowCount;
+        const QString strAcpi = comBiosSettings.GetACPIEnabled()
+                              ? tr("Enabled", "details report (ACPI)")
+                              : tr("Disabled", "details report (ACPI)");
+        strItem += QString(sSectionItemTpl2).arg(tr("ACPI", "details report"), strAcpi);
 
-        iRowCount += 3; /* Full report rows. */
+        /* I/O APIC: */
+        ++iRowCount;
+        const QString strIoapic = comBiosSettings.GetIOAPICEnabled()
+                                ? tr("Enabled", "details report (I/O APIC)")
+                                : tr("Disabled", "details report (I/O APIC)");
+        strItem += QString(sSectionItemTpl2).arg(tr("I/O APIC", "details report"), strIoapic);
+
+        /* PAE/NX: */
+        ++iRowCount;
+        const QString strPae = comMachine.GetCPUProperty(KCPUPropertyType_PAE)
+                             ? tr("Enabled", "details report (PAE/NX)")
+                             : tr("Disabled", "details report (PAE/NX)");
+        strItem += QString(sSectionItemTpl2).arg(tr("PAE/NX", "details report"), strPae);
+
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
-
-        /* VT-x/AMD-V */
-        QString virt = aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled)
-            ? tr ("Enabled", "details report (VT-x/AMD-V)")
-            : tr ("Disabled", "details report (VT-x/AMD-V)");
-
-        /* Nested Paging */
-        QString nested = aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging)
-            ? tr ("Enabled", "details report (Nested Paging)")
-            : tr ("Disabled", "details report (Nested Paging)");
 
         /* VT-x/AMD-V availability: */
-        bool fVTxAMDVSupported = host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-
+        const bool fVTxAMDVSupported = host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
         if (fVTxAMDVSupported)
-            iRowCount += 2; /* VT-x/AMD-V items. */
+        {
+            /* VT-x/AMD-V: */
+            ++iRowCount;
+            const QString strVirt = comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled)
+                                  ? tr("Enabled", "details report (VT-x/AMD-V)")
+                                  : tr("Disabled", "details report (VT-x/AMD-V)");
+            strItem += QString(sSectionItemTpl2).arg(tr("VT-x/AMD-V", "details report"), strVirt);
+
+            /* Nested Paging: */
+            ++iRowCount;
+            const QString strNested = comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging)
+                                    ? tr("Enabled", "details report (Nested Paging)")
+                                    : tr("Disabled", "details report (Nested Paging)");
+            strItem += QString(sSectionItemTpl2).arg(tr("Nested Paging", "details report"), strNested);
+        }
 
         /* Paravirtualization Interface: */
-        const QString strParavirtProvider = gpConverter->toString(aMachine.GetParavirtProvider());
+        ++iRowCount;
+        const QString strParavirtProvider = gpConverter->toString(comMachine.GetParavirtProvider());
+        strItem += QString(sSectionItemTpl2).arg(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
 
-        iRowCount += 1; /* Paravirtualization Interface. */
-
-        QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
-                                                       tr ("<nobr>%1 MB</nobr>", "details report"))
-                       .arg (aMachine.GetMemorySize())
-                     + QString (sSectionItemTpl2).arg (tr ("Processor(s)", "details report"),
-                                                       tr ("<nobr>%1</nobr>", "details report"))
-                       .arg (aMachine.GetCPUCount())
-                     + QString (sSectionItemTpl2).arg (tr ("Execution Cap", "details report"),
-                                                       tr ("<nobr>%1%</nobr>", "details report"))
-                       .arg (aMachine.GetCPUExecutionCap())
-                     + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), bootOrder)
-#ifdef VBOX_WITH_FULL_DETAILS_REPORT
-                     + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), acpi)
-                     + QString (sSectionItemTpl2).arg (tr ("I/O APIC", "details report"), ioapic)
-                     + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), pae)
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
-                     ;
-
-        if (fVTxAMDVSupported)
-                item += QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), virt)
-                     +  QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested);
-
-        item += QString(sSectionItemTpl2).arg(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
-
-        report += sectionTpl
-                  .arg (2 + iRowCount) /* rows */
-                  .arg (":/chipset_16px.png", /* icon */
-                        "#system", /* link */
-                        tr ("System", "details report"), /* title */
-                        item); /* items */
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/chipset_16px.png", /* icon */
+                 "#system", /* link */
+                 tr("System", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
     }
 
-    /* Display */
+    /* Display: */
     {
-        /* Rows including section header and footer */
-        int rows = 2;
+        /* Video Memory: */
+        int iRowCount = 1;
+        QString strItem = QString(sSectionItemTpl2).arg(tr("Video Memory", "details report"),
+                                                        tr("<nobr>%1 MB</nobr>", "details report")
+                                                           .arg(QString::number(comMachine.GetVRAMSize())));
 
-        /* Video tab */
-        QString item = QString(sSectionItemTpl2)
-                       .arg(tr ("Video Memory", "details report"),
-                             tr ("<nobr>%1 MB</nobr>", "details report"))
-                       .arg(aMachine.GetVRAMSize());
-        ++rows;
-
-        int cGuestScreens = aMachine.GetMonitorCount();
+        /* Screens? */
+        const int cGuestScreens = comMachine.GetMonitorCount();
         if (cGuestScreens > 1)
         {
-            item += QString(sSectionItemTpl2)
-                    .arg(tr("Screens", "details report"))
-                    .arg(cGuestScreens);
-            ++rows;
+            ++iRowCount;
+            strItem += QString(sSectionItemTpl2).arg(tr("Screens", "details report"),
+                                                     QString::number(cGuestScreens));
         }
 
-        QString acc3d = aMachine.GetAccelerate3DEnabled() && is3DAvailable()
-            ? tr ("Enabled", "details report (3D Acceleration)")
-            : tr ("Disabled", "details report (3D Acceleration)");
-
-        item += QString(sSectionItemTpl2)
-                .arg(tr("3D Acceleration", "details report"), acc3d);
-        ++rows;
+        /* 3D Acceleration: */
+        ++iRowCount;
+        QString strAcc3d = comMachine.GetAccelerate3DEnabled() && is3DAvailable()
+                         ? tr("Enabled", "details report (3D Acceleration)")
+                         : tr("Disabled", "details report (3D Acceleration)");
+        strItem += QString(sSectionItemTpl2).arg(tr("3D Acceleration", "details report"), strAcc3d);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        QString acc2dVideo = aMachine.GetAccelerate2DVideoEnabled()
-            ? tr ("Enabled", "details report (2D Video Acceleration)")
-            : tr ("Disabled", "details report (2D Video Acceleration)");
-
-        item += QString (sSectionItemTpl2)
-                .arg (tr ("2D Video Acceleration", "details report"), acc2dVideo);
-        ++ rows;
+        /* 2D Video Acceleration: */
+        ++iRowCount;
+        QString strAcc2dVideo = comMachine.GetAccelerate2DVideoEnabled()
+                              ? tr("Enabled", "details report (2D Video Acceleration)")
+                              : tr("Disabled", "details report (2D Video Acceleration)");
+        strItem += QString(sSectionItemTpl2).arg(tr("2D Video Acceleration", "details report"), strAcc2dVideo);
 #endif
 
-        /* VRDP tab */
-        CVRDEServer srv = aMachine.GetVRDEServer();
-        if (!srv.isNull())
+        /* Remote Desktop Server: */
+        const CVRDEServer comServer = comMachine.GetVRDEServer();
+        if (!comServer.isNull())
         {
-            if (srv.GetEnabled())
-                item += QString (sSectionItemTpl2)
-                        .arg (tr ("Remote Desktop Server Port", "details report (VRDE Server)"))
-                        .arg (srv.GetVRDEProperty("TCP/Ports"));
+            ++iRowCount;
+            if (comServer.GetEnabled())
+                strItem += QString(sSectionItemTpl2).arg(tr("Remote Desktop Server Port", "details report (VRDE Server)"),
+                                                         comServer.GetVRDEProperty("TCP/Ports"));
             else
-                item += QString (sSectionItemTpl2)
-                        .arg (tr ("Remote Desktop Server", "details report (VRDE Server)"))
-                        .arg (tr ("Disabled", "details report (VRDE Server)"));
-            ++ rows;
+                strItem += QString(sSectionItemTpl2).arg(tr("Remote Desktop Server", "details report (VRDE Server)"),
+                                                         tr("Disabled", "details report (VRDE Server)"));
         }
 
-        report += sectionTpl
-            .arg (rows) /* rows */
-            .arg (":/vrdp_16px.png", /* icon */
-                  "#display", /* link */
-                  tr ("Display", "details report"), /* title */
-                  item); /* items */
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/vrdp_16px.png", /* icon */
+                 "#display", /* link */
+                 tr("Display", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
     }
 
-    /* Storage */
+    /* Storage: */
     {
-        /* Rows including section header and footer */
-        int rows = 2;
-
-        QString item;
+        /* Nothing: */
+        int iRowCount = 0;
+        QString strItem;
 
         /* Iterate over the all machine controllers: */
-        CStorageControllerVector controllers = aMachine.GetStorageControllers();
-        for (int i = 0; i < controllers.size(); ++i)
+        foreach (const CStorageController &comController, comMachine.GetStorageControllers())
         {
-            /* Get current controller: */
-            const CStorageController &controller = controllers[i];
             /* Add controller information: */
-            QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
-            item += QString(sSectionItemTpl3).arg(strControllerName.arg(controller.GetName()));
-            ++ rows;
+            ++iRowCount;
+            const QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
+            strItem += QString(sSectionItemTpl3).arg(strControllerName.arg(comController.GetName()));
 
             /* Populate sorted map with attachments information: */
             QMap<StorageSlot,QString> attachmentsMap;
-            CMediumAttachmentVector attachments = aMachine.GetMediumAttachmentsOfController(controller.GetName());
-            for (int j = 0; j < attachments.size(); ++j)
+            foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachmentsOfController(comController.GetName()))
             {
-                /* Get current attachment: */
-                const CMediumAttachment &attachment = attachments[j];
                 /* Prepare current storage slot: */
-                StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
+                const StorageSlot attachmentSlot(comController.GetBus(), comAttachment.GetPort(), comAttachment.GetDevice());
+                // TODO: Fix that NLS bug one day..
                 /* Append 'device slot name' with 'device type name' for optical devices only: */
-                QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(Optical Drive)") : QString();
+                QString strDeviceType = comAttachment.GetType() == KDeviceType_DVD ? tr("(Optical Drive)") : QString();
                 if (!strDeviceType.isNull())
                     strDeviceType.prepend(' ');
                 /* Prepare current medium object: */
-                const CMedium &medium = attachment.GetMedium();
+                const CMedium &medium = comAttachment.GetMedium();
                 /* Prepare information about current medium & attachment: */
-                QString strAttachmentInfo = !attachment.isOk() ? QString() :
-                                            QString(sSectionItemTpl2)
+                QString strAttachmentInfo = !comAttachment.isOk()
+                                          ? QString()
+                                          : QString(sSectionItemTpl2)
                                             .arg(QString("&nbsp;&nbsp;") +
-                                                 gpConverter->toString(StorageSlot(controller.GetBus(),
-                                                                                   attachment.GetPort(),
-                                                                                   attachment.GetDevice())) + strDeviceType)
+                                                 gpConverter->toString(StorageSlot(comController.GetBus(),
+                                                                                   comAttachment.GetPort(),
+                                                                                   comAttachment.GetDevice())) + strDeviceType)
                                             .arg(details(medium, false));
                 /* Insert that attachment into map: */
                 if (!strAttachmentInfo.isNull())
@@ -1219,256 +1225,306 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             }
 
             /* Iterate over the sorted map with attachments information: */
-            QMapIterator<StorageSlot,QString> it(attachmentsMap);
+            QMapIterator<StorageSlot, QString> it(attachmentsMap);
             while (it.hasNext())
             {
                 /* Add controller information: */
                 it.next();
-                item += it.value();
-                ++rows;
+                ++iRowCount;
+                strItem += it.value();
             }
         }
 
-        if (item.isNull())
+        /* Handle side-case: */
+        if (strItem.isNull())
         {
-            item = QString (sSectionItemTpl1)
-                   .arg (tr ("Not Attached", "details report (Storage)"));
-            ++ rows;
+            ++iRowCount;
+            strItem = QString(sSectionItemTpl1).arg(tr("Not Attached", "details report (Storage)"));
         }
 
-        report += sectionTpl
-            .arg (rows) /* rows */
-            .arg (":/hd_16px.png", /* icon */
-                  "#storage", /* link */
-                  tr ("Storage", "details report"), /* title */
-                  item); /* items */
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/hd_16px.png", /* icon */
+                 "#storage", /* link */
+                 tr("Storage", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
     }
 
-    /* Audio */
+    /* Audio: */
     {
-        QString item;
+        /* Nothing: */
+        int iRowCount = 0;
+        QString strItem;
 
-        CAudioAdapter audio = aMachine.GetAudioAdapter();
-        int rows = audio.GetEnabled() ? 3 : 2;
-        if (audio.GetEnabled())
-            item = QString (sSectionItemTpl2)
-                   .arg (tr ("Host Driver", "details report (audio)"),
-                         gpConverter->toString (audio.GetAudioDriver())) +
-                   QString (sSectionItemTpl2)
-                   .arg (tr ("Controller", "details report (audio)"),
-                         gpConverter->toString (audio.GetAudioController()));
+        /* Host Driver, Controller? */
+        const CAudioAdapter &comAudio = comMachine.GetAudioAdapter();
+        if (comAudio.GetEnabled())
+        {
+            iRowCount += 2;
+            strItem = QString(sSectionItemTpl2).arg(tr("Host Driver", "details report (audio)"),
+                                                    gpConverter->toString(comAudio.GetAudioDriver()))
+                    + QString(sSectionItemTpl2).arg(tr("Controller", "details report (audio)"),
+                                                    gpConverter->toString(comAudio.GetAudioController()));
+        }
         else
-            item = QString (sSectionItemTpl1)
-                   .arg (tr ("Disabled", "details report (audio)"));
+        {
+            ++iRowCount;
+            strItem = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (audio)"));
+        }
 
-        report += sectionTpl
-            .arg (rows + 1) /* rows */
-            .arg (":/sound_16px.png", /* icon */
-                  "#audio", /* link */
-                  tr ("Audio", "details report"), /* title */
-                  item); /* items */
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/sound_16px.png", /* icon */
+                 "#audio", /* link */
+                 tr("Audio", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
     }
 
-    /* Network */
+    /* Network: */
     {
-        QString item;
+        /* Nothing: */
+        int iRowCount = 0;
+        QString strItem;
 
-        ulong count = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(aMachine.GetChipsetType());
-        int rows = 2; /* including section header and footer */
-        for (ulong slot = 0; slot < count; slot ++)
+        /* Enumerate all the network adapters (up to acquired/limited count): */
+        const ulong iCount = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
+        for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
         {
-            CNetworkAdapter adapter = aMachine.GetNetworkAdapter (slot);
-            if (adapter.GetEnabled())
+            /* Get current network adapter: */
+            const CNetworkAdapter &comNetwork = comMachine.GetNetworkAdapter(iSlot);
+            if (comNetwork.GetEnabled())
             {
-                KNetworkAttachmentType type = adapter.GetAttachmentType();
-                QString attType = gpConverter->toString (adapter.GetAdapterType())
-                                  .replace (QRegExp ("\\s\\(.+\\)"), " (%1)");
-                /* don't use the adapter type string for types that have
-                 * an additional symbolic network/interface name field, use
-                 * this name instead */
-                if (type == KNetworkAttachmentType_Bridged)
-                    attType = attType.arg (tr ("Bridged adapter, %1",
-                        "details report (network)").arg (adapter.GetBridgedInterface()));
-                else if (type == KNetworkAttachmentType_Internal)
-                    attType = attType.arg (tr ("Internal network, '%1'",
-                        "details report (network)").arg (adapter.GetInternalNetwork()));
-                else if (type == KNetworkAttachmentType_HostOnly)
-                    attType = attType.arg (tr ("Host-only adapter, '%1'",
-                        "details report (network)").arg (adapter.GetHostOnlyInterface()));
-                else if (type == KNetworkAttachmentType_Generic)
-                    attType = attType.arg (tr ("Generic, '%1'",
-                        "details report (network)").arg (adapter.GetGenericDriver()));
-                else if (type == KNetworkAttachmentType_NATNetwork)
-                    attType = attType.arg (tr ("NAT network, '%1'",
-                        "details report (network)").arg (adapter.GetNATNetwork()));
+                /* Determine attachment type: */
+                const KNetworkAttachmentType enmType = comNetwork.GetAttachmentType();
+                QString attType = gpConverter->toString(comNetwork.GetAdapterType())
+                                  .replace(QRegExp("\\s\\(.+\\)"), " (%1)");
+                /* Don't use the adapter type string for types that have
+                 * an additional symbolic network/interface name field,
+                 * use this name instead: */
+                switch (enmType)
+                {
+                    case KNetworkAttachmentType_Bridged:
+                        attType = attType.arg(tr("Bridged adapter, %1", "details report (network)")
+                                                 .arg(comNetwork.GetBridgedInterface()));
+                        break;
+                    case KNetworkAttachmentType_Internal:
+                        attType = attType.arg(tr("Internal network, '%1'", "details report (network)")
+                                                 .arg(comNetwork.GetInternalNetwork()));
+                        break;
+                    case KNetworkAttachmentType_HostOnly:
+                        attType = attType.arg(tr("Host-only adapter, '%1'", "details report (network)")
+                                                 .arg(comNetwork.GetHostOnlyInterface()));
+                        break;
+                    case KNetworkAttachmentType_Generic:
+                        attType = attType.arg(tr("Generic, '%1'", "details report (network)")
+                                                 .arg(comNetwork.GetGenericDriver()));
+                        break;
+                    case KNetworkAttachmentType_NATNetwork:
+                        attType = attType.arg(tr("NAT network, '%1'", "details report (network)")
+                                                 .arg(comNetwork.GetNATNetwork()));
+                        break;
+                    default:
+                        attType = attType.arg(gpConverter->toString(enmType));
+                        break;
+                }
+                /* Here goes the record: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(tr("Adapter %1", "details report (network)")
+                                                            .arg(comNetwork.GetSlot() + 1),
+                                                         attType);
+            }
+        }
+
+        /* Handle side-case: */
+        if (strItem.isNull())
+        {
+            ++iRowCount;
+            strItem = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (network)"));
+        }
+
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/nw_16px.png", /* icon */
+                 "#network", /* link */
+                 tr("Network", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
+    }
+
+    /* Serial Ports: */
+    {
+        /* Nothing: */
+        int iRowCount = 0;
+        QString strItem;
+
+        /* Enumerate all the serial ports (up to acquired/limited count): */
+        const ulong iCount = m_vbox.GetSystemProperties().GetSerialPortCount();
+        for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
+        {
+            /* Get current serial port: */
+            const CSerialPort &comSerial = comMachine.GetSerialPort(iSlot);
+            if (comSerial.GetEnabled())
+            {
+                /* Determine port mode: */
+                const KPortMode enmMode = comSerial.GetHostMode();
+                /* Compose the data: */
+                QString strData = toCOMPortName(comSerial.GetIRQ(), comSerial.GetIOBase()) + ", ";
+                if (   enmMode == KPortMode_HostPipe
+                    || enmMode == KPortMode_HostDevice
+                    || enmMode == KPortMode_TCP
+                    || enmMode == KPortMode_RawFile)
+                    strData += QString("%1 (<nobr>%2</nobr>)").arg(gpConverter->toString(enmMode))
+                                                              .arg(QDir::toNativeSeparators(comSerial.GetPath()));
                 else
-                    attType = attType.arg (gpConverter->toString (type));
-
-                item += QString (sSectionItemTpl2)
-                        .arg (tr ("Adapter %1", "details report (network)")
-                              .arg (adapter.GetSlot() + 1))
-                        .arg (attType);
-                ++ rows;
+                    strData += gpConverter->toString(enmMode);
+                /* Here goes the record: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(tr("Port %1", "details report (serial ports)")
+                                                            .arg(comSerial.GetSlot() + 1),
+                                                         strData);
             }
         }
-        if (item.isNull())
+
+        /* Handle side-case: */
+        if (strItem.isNull())
         {
-            item = QString (sSectionItemTpl1)
-                   .arg (tr ("Disabled", "details report (network)"));
-            ++ rows;
+            ++iRowCount;
+            strItem = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (serial ports)"));
         }
 
-        report += sectionTpl
-            .arg (rows) /* rows */
-            .arg (":/nw_16px.png", /* icon */
-                  "#network", /* link */
-                  tr ("Network", "details report"), /* title */
-                  item); /* items */
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/serial_port_16px.png", /* icon */
+                 "#serialPorts", /* link */
+                 tr("Serial Ports", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
     }
 
-    /* Serial Ports */
+    /* Parallel Ports: */
     {
-        QString item;
+        /* Nothing: */
+        int iRowCount = 0;
+        QString strItem;
 
-        ulong count = m_vbox.GetSystemProperties().GetSerialPortCount();
-        int rows = 2; /* including section header and footer */
-        for (ulong slot = 0; slot < count; slot ++)
+        /* Enumerate all the serial ports (up to acquired/limited count): */
+        const ulong iCount = m_vbox.GetSystemProperties().GetParallelPortCount();
+        for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
         {
-            CSerialPort port = aMachine.GetSerialPort (slot);
-            if (port.GetEnabled())
+            /* Get current parallel port: */
+            const CParallelPort &comParallel = comMachine.GetParallelPort(iSlot);
+            if (comParallel.GetEnabled())
             {
-                KPortMode mode = port.GetHostMode();
-                QString data =
-                    toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
-                if (mode == KPortMode_HostPipe ||
-                    mode == KPortMode_HostDevice ||
-                    mode == KPortMode_TCP ||
-                    mode == KPortMode_RawFile)
-                    data += QString ("%1 (<nobr>%2</nobr>)")
-                            .arg (gpConverter->toString (mode))
-                            .arg (QDir::toNativeSeparators (port.GetPath()));
-                else
-                    data += gpConverter->toString (mode);
-
-                item += QString (sSectionItemTpl2)
-                        .arg (tr ("Port %1", "details report (serial ports)")
-                              .arg (port.GetSlot() + 1))
-                        .arg (data);
-                ++ rows;
+                /* Compose the data: */
+                QString strData = toLPTPortName(comParallel.GetIRQ(), comParallel.GetIOBase())
+                                + QString(" (<nobr>%1</nobr>)").arg(QDir::toNativeSeparators(comParallel.GetPath()));
+                /* Here goes the record: */
+                ++iRowCount;
+                strItem += QString(sSectionItemTpl2).arg(tr("Port %1", "details report (parallel ports)")
+                                                            .arg(comParallel.GetSlot() + 1),
+                                                         strData);
             }
         }
-        if (item.isNull())
+
+        /* Handle side-case: */
+        if (strItem.isNull())
         {
-            item = QString (sSectionItemTpl1)
-                   .arg (tr ("Disabled", "details report (serial ports)"));
-            ++ rows;
+            ++iRowCount;
+            strItem = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (parallel ports)"));
         }
 
-        report += sectionTpl
-            .arg (rows) /* rows */
-            .arg (":/serial_port_16px.png", /* icon */
-                  "#serialPorts", /* link */
-                  tr ("Serial Ports", "details report"), /* title */
-                  item); /* items */
-    }
-
-    /* Parallel Ports */
-    {
-        QString item;
-
-        ulong count = m_vbox.GetSystemProperties().GetParallelPortCount();
-        int rows = 2; /* including section header and footer */
-        for (ulong slot = 0; slot < count; slot ++)
-        {
-            CParallelPort port = aMachine.GetParallelPort (slot);
-            if (port.GetEnabled())
-            {
-                QString data =
-                    toLPTPortName (port.GetIRQ(), port.GetIOBase()) +
-                    QString (" (<nobr>%1</nobr>)")
-                    .arg (QDir::toNativeSeparators (port.GetPath()));
-
-                item += QString (sSectionItemTpl2)
-                        .arg (tr ("Port %1", "details report (parallel ports)")
-                              .arg (port.GetSlot() + 1))
-                        .arg (data);
-                ++ rows;
-            }
-        }
-        if (item.isNull())
-        {
-            item = QString (sSectionItemTpl1)
-                   .arg (tr ("Disabled", "details report (parallel ports)"));
-            ++ rows;
-        }
-
-        /* Temporary disabled */
-        QString dummy = sectionTpl /* report += sectionTpl */
-            .arg (rows) /* rows */
-            .arg (":/parallel_port_16px.png", /* icon */
-                  "#parallelPorts", /* link */
-                  tr ("Parallel Ports", "details report"), /* title */
-                  item); /* items */
+        /* Temporary disabled: */
+        const QString dummy = strSectionTpl /* strReport += strSectionTpl */
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/parallel_port_16px.png", /* icon */
+                 "#parallelPorts", /* link */
+                 tr("Parallel Ports", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
+        Q_UNUSED(dummy);
     }
 
     /* USB */
     {
-        QString item;
-
-        CUSBDeviceFilters flts = aMachine.GetUSBDeviceFilters();
-        if (   !flts.isNull()
-            && aMachine.GetUSBProxyAvailable())
+        /* Acquire USB filters object: */
+        const CUSBDeviceFilters &comFilters = comMachine.GetUSBDeviceFilters();
+        if (   !comFilters.isNull()
+            && comMachine.GetUSBProxyAvailable())
         {
-            /* The USB controller may be unavailable (i.e. in VirtualBox OSE): */
-            if (aMachine.GetUSBControllers().isEmpty())
-                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (USB)"));
-            else
-            {
-                CUSBDeviceFilterVector coll = flts.GetDeviceFilters();
-                uint active = 0;
-                for (int i = 0; i < coll.size(); ++i)
-                    if (coll[i].GetActive())
-                        active ++;
+            /* Device Filters: */
+            int iRowCount = 1;
+            QString strItem;
 
-                item = QString (sSectionItemTpl2)
-                       .arg (tr ("Device Filters", "details report (USB)"),
-                             tr ("%1 (%2 active)", "details report (USB)")
-                                 .arg (coll.size()).arg (active));
+            /* The USB controller may be unavailable (i.e. in VirtualBox OSE): */
+            if (!comMachine.GetUSBControllers().isEmpty())
+            {
+                /* Acquire USB filters: */
+                const CUSBDeviceFilterVector &filterVector = comFilters.GetDeviceFilters();
+                /* Calculate the amount of active filters: */
+                uint cActive = 0;
+                foreach (const CUSBDeviceFilter &comFilter, filterVector)
+                    if (comFilter.GetActive())
+                        ++cActive;
+                /* Here goes the record: */
+                strItem = QString(sSectionItemTpl2).arg(tr("Device Filters", "details report (USB)"),
+                                                        tr("%1 (%2 active)", "details report (USB)")
+                                                           .arg(filterVector.size()).arg(cActive));
             }
 
-            report += sectionTpl
-                .arg (2 + 1) /* rows */
-                .arg (":/usb_16px.png", /* icon */
-                      "#usb", /* link */
-                      tr ("USB", "details report"), /* title */
-                      item); /* items */
+            /* Handle side-case: */
+            if (strItem.isNull())
+                strItem = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (USB)"));
+
+            /* Append report: */
+            strReport += strSectionTpl
+                .arg(2 + iRowCount) /* rows */
+                .arg(":/usb_16px.png", /* icon */
+                     "#usb", /* link */
+                     tr("USB", "details report"), /* title */
+                     strItem, /* items */
+                     QString::number(iIconMetric),
+                     QString::number(iIndentMetric));
         }
     }
 
     /* Shared Folders */
     {
-        QString item;
+        /* Shared Folders: */
+        int iRowCount = 1;
+        QString strItem;
 
-        ulong count = aMachine.GetSharedFolders().size();
-        if (count > 0)
-        {
-            item = QString (sSectionItemTpl2)
-                   .arg (tr ("Shared Folders", "details report (shared folders)"))
-                   .arg (count);
-        }
+        /* Acquire shared folders count: */
+        const ulong iCount = comMachine.GetSharedFolders().size();
+        if (iCount > 0)
+            strItem = QString(sSectionItemTpl2).arg(tr("Shared Folders", "details report (shared folders)"),
+                                                    QString::number(iCount));
         else
-            item = QString (sSectionItemTpl1)
-                   .arg (tr ("None", "details report (shared folders)"));
+            strItem = QString(sSectionItemTpl1).arg(tr("None", "details report (shared folders)"));
 
-        report += sectionTpl
-            .arg (2 + 1) /* rows */
-            .arg (":/sf_16px.png", /* icon */
-                  "#sfolders", /* link */
-                  tr ("Shared Folders", "details report"), /* title */
-                  item); /* items */
+        /* Append report: */
+        strReport += strSectionTpl
+            .arg(2 + iRowCount) /* rows */
+            .arg(":/sf_16px.png", /* icon */
+                 "#sfolders", /* link */
+                 tr("Shared Folders", "details report"), /* title */
+                 strItem, /* items */
+                 QString::number(iIconMetric),
+                 QString::number(iIndentMetric));
     }
 
-    return QString (sTableTpl). arg (report);
+    /* Compose full report: */
+    return QString(sTableTpl).arg(strReport);
 }
 
 CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = KLockType_Shared */)
