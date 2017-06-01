@@ -3789,7 +3789,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       is, the heartbeat service of the VirtualBox Guest Additions will send a heartbeat
       ping every two seconds. The value in nanoseconds can be configured like this:
     </para>
-    <screen>VBoxManage controlvm "VM name" VBoxInternal/Devices/VMMDev/0/Config/HeartbeatInterval 2000000000</screen>
+    <screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/VMMDev/0/Config/HeartbeatInterval 2000000000</screen>
     <para>
       The <emphasis>heartbeat timeout</emphasis> defines the time the host waits
       starting from the last heartbeat ping before it defines the guest as unresponsive.
@@ -3797,7 +3797,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       as following (in nanoseconds):
     </para>
 
-    <screen>VBoxManage controlvm "VM name" VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
+    <screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
 
     <para>
       If the heartbeat timeout expires, there will be a log message like
