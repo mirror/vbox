@@ -1160,6 +1160,8 @@ static int rtZipTarFssWriter_WriteGnuSparseHeaders(PRTZIPTARFSSTREAMWRITER pThis
     rc = rtZipTarFssWriter_FormatOffset(pThis->aHdrs[0].Gnu.realsize, pObjInfo->cbObject);
     AssertRCReturn(rc, rc);
 
+    Assert(pThis->aHdrs[0].Gnu.isextended == 0);
+
     /*
      * Walk the sparse spans, fill and write headers one by one.
      */
@@ -1178,9 +1180,13 @@ static int rtZipTarFssWriter_WriteGnuSparseHeaders(PRTZIPTARFSSTREAMWRITER pThis
             /* Flush the header? */
             if (iSparse >= cSparse)
             {
-                pThis->aHdrs[0].Gnu.isextended = 1; /* more headers to come */
-                if (cSparse == RT_ELEMENTS(pThis->aHdrs[0].Gnu.sparse))
+                if (cSparse != RT_ELEMENTS(pThis->aHdrs[0].Gnu.sparse))
+                    pThis->aHdrs[0].GnuSparse.isextended = 1; /* more headers to come */
+                else
+                {
+                    pThis->aHdrs[0].Gnu.isextended = 1; /* more headers to come */
                     rc = rtZipTarFssWriter_ChecksumHdr(&pThis->aHdrs[0]);
+                }
                 if (RT_SUCCESS(rc))
                     rc = RTVfsIoStrmWrite(pThis->hVfsIos, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
                 if (RT_FAILURE(rc))
@@ -1205,7 +1211,7 @@ static int rtZipTarFssWriter_WriteGnuSparseHeaders(PRTZIPTARFSSTREAMWRITER pThis
      */
     if (iSparse != 0)
     {
-        Assert(pThis->aHdrs[0].Gnu.isextended == 0);
+        Assert(pThis->aHdrs[0].GnuSparse.isextended == 0);
         rc = RTVfsIoStrmWrite(pThis->hVfsIos, &pThis->aHdrs[0], sizeof(pThis->aHdrs[0]), true /*fBlocking*/, NULL);
     }
     pThis->cHdrs = 0;
