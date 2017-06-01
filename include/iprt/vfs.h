@@ -945,6 +945,14 @@ RTDECL(int)         RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb);
 RTDECL(bool)        RTVfsIoStrmIsAtEnd(RTVFSIOSTREAM hVfsIos);
 
 /**
+ * Get the RTFILE_O_XXX flags for the I/O stream.
+ *
+ * @returns RTFILE_O_XXX, 0 on failure.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ */
+RTDECL(uint64_t)    RTVfsIoStrmGetOpenFlags(RTVFSIOSTREAM hVfsIos);
+
+/**
  * Process the rest of the stream, checking if it's all valid UTF-8 encoding.
  *
  * @returns IPRT status code.
@@ -1191,6 +1199,14 @@ RTDECL(int)         RTVfsFileGetSize(RTVFSFILE hVfsFile, uint64_t *pcbSize);
 RTDECL(RTFOFF)      RTVfsFileGetMaxSize(RTVFSFILE hVfsFile);
 RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
 
+/**
+ * Get the RTFILE_O_XXX flags for the I/O stream.
+ *
+ * @returns RTFILE_O_XXX, 0 on failure.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ */
+RTDECL(uint64_t)    RTVfsFileGetOpenFlags(RTVFSFILE hVfsFile);
+
 /** @} */
 
 
@@ -1287,6 +1303,57 @@ RTDECL(int) RTVfsMemIoStrmCreate(RTVFSIOSTREAM hVfsIos, size_t cbEstimate, PRTVF
  *                      clueless.
  */
 RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsIosDst, size_t cbBufHint);
+
+
+/**
+ * Creates a progress wrapper for an I/O stream.
+ *
+ * @returns IRPT status code.
+ * @param   hVfsIos             The I/O stream to wrap.
+ * @param   pfnProgress         The progress callback.  The return code is
+ *                              ignored!
+ * @param   pvUser              The user argument to @a pfnProgress.
+ * @param   fFlags              RTVFSPROGRESS_F_XXX
+ * @param   cbExpectedRead      The expected number of bytes read.
+ * @param   cbExpectedWritten   The execpted number of bytes written.
+ * @param   phVfsIos            Where to return the I/O stream handle.
+ *
+ * @remarks Again, the return code from @a pfnProgress is ignored.  Cancellation
+ *          is not supported.
+ */
+RTDECL(int) RTVfsCreateProcessForIoStream(RTVFSIOSTREAM hVfsIos, PFNRTPROGRESS pfnProgress, void *pvUser, uint32_t fFlags,
+                                          uint64_t cbExpectedRead, uint64_t cbExpectedWritten, PRTVFSIOSTREAM phVfsIos);
+
+/**
+ * Creates a progress wrapper for a file stream.
+ *
+ * @returns IRPT status code.
+ * @param   hVfsFile            The file to wrap.
+ * @param   pfnProgress         The progress callback.  The return code is
+ *                              ignored!
+ * @param   pvUser              The user argument to @a pfnProgress.
+ * @param   fFlags              RTVFSPROGRESS_F_XXX
+ * @param   cbExpectedRead      The expected number of bytes read.
+ * @param   cbExpectedWritten   The execpted number of bytes written.
+ * @param   phVfsFile           Where to return the file handle.
+ *
+ * @remarks Again, the return code from @a pfnProgress is ignored.  Cancellation
+ *          is not supported.
+ */
+RTDECL(int) RTVfsCreateProcessForFile(RTVFSFILE hVfsFile, PFNRTPROGRESS pfnProgress, void *pvUser, uint32_t fFlags,
+                                      uint64_t cbExpectedRead, uint64_t cbExpectedWritten, PRTVFSFILE phVfsFile);
+
+/** @name RTVFSPROGRESS_F_XXX - Flags for RTVfsCreateProcessForIoStream and
+ *        RTVfsCreateProcessForFile.
+ * @{ */
+/** Account forward seeks as reads. */
+#define RTVFSPROGRESS_F_FORWARD_SEEK_AS_READ    RT_BIT_32(0)
+/** Account fprward seeks as writes. */
+#define RTVFSPROGRESS_F_FORWARD_SEEK_AS_WRITE   RT_BIT_32(1)
+/** Valid bits.   */
+#define RTVFSPROGRESS_F_VALID_MASK              UINT32_C(0x00000003)
+/** @} */
+
 
 /**
  * Create an I/O stream instance performing simple sequential read-ahead.

@@ -612,6 +612,7 @@ RuntimeR3_SOURCES       = \
 	common/vfs/vfsmemory.cpp \
 	common/vfs/vfsmisc.cpp \
 	common/vfs/vfsmsg.cpp \
+	common/vfs/vfsprogress.cpp \
 	common/vfs/vfsreadahead.cpp \
 	common/vfs/vfsstdfile.cpp \
 	common/vfs/vfsstdpipe.cpp \
