@@ -2040,7 +2040,7 @@ RTDECL(int)         RTVfsFsStrmAdd(RTVFSFSSTREAM hVfsFss, const char *pszPath, R
     AssertReturn(*pszPath != '\0', VERR_INVALID_NAME);
     AssertPtrReturn(hVfsObj, VERR_INVALID_HANDLE);
     AssertReturn(hVfsObj->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(!(fFlags & RTVFSFSSTRM_ADD_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTVFSFSSTRM_ADD_F_VALID_MASK), VERR_INVALID_FLAGS);
     AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_INVALID_FUNCTION);
 
     return pThis->pOps->pfnAdd(pThis->Base.pvThis, pszPath, hVfsObj, fFlags);
@@ -2060,7 +2060,7 @@ RTDECL(int)         RTVfsFsStrmPushFile(RTVFSFSSTREAM hVfsFss, const char *pszPa
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(*pszPath != '\0', VERR_INVALID_NAME);
 
-    AssertReturn(!(fFlags & RTVFSFSSTRM_PUSH_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~RTVFSFSSTRM_PUSH_F_VALID_MASK), VERR_INVALID_FLAGS);
     AssertReturn(RT_BOOL(cbFile == UINT64_MAX) == RT_BOOL(fFlags & RTVFSFSSTRM_PUSH_F_STREAM), VERR_INVALID_FLAGS);
 
     if (cObjInfo)
