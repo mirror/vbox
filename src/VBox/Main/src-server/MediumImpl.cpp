@@ -6102,11 +6102,10 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
 HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore,
                               RTVFSFSSTREAM hVfsFssDst /*, const ComObjPtr<Progress> &aProgress*/)
 {
-
-    //RT_NOREF(aProgress); /** @todo fix progress object. */
+     /** @todo fix progress object. */
 
     /*
-     * Build the source lock list.
+     * Build the source lock list and lock the images.
      */
     MediumLockList SourceMediumLockList;
     HRESULT rc = i_createMediumLockList(true /* fFailIfInaccessible */,
@@ -6114,6 +6113,8 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore,
                                         false /* fMediumLockWriteAll */,
                                         NULL,
                                         SourceMediumLockList);
+    if (SUCCEEDED(rc))
+        rc = SourceMediumLockList.Lock();
     if (FAILED(rc))
         return rc;
 
