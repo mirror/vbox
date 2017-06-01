@@ -2234,7 +2234,6 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                 bool fManifestSaved = m->fManifest;
                 m->fManifest = false;
 
-                __debugbreak();
                 hrc = i_writeFSImpl(pTask, writeLock, hVfsFssTar, false /*fOvfFile*/, false /*fStreamOptimizedVmdk*/);
                 RTVfsFsStrmRelease(hVfsFssTar);
 

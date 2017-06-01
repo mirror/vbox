@@ -428,6 +428,7 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox, BOOL fLongMod
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
 
 
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
 typedef struct SHASTORAGE
 {
     PVDINTERFACE pVDImageIfaces;
@@ -439,6 +440,7 @@ typedef struct SHASTORAGE
 PVDINTERFACEIO ShaCreateInterface();
 PVDINTERFACEIO FileCreateInterface();
 PVDINTERFACEIO tarWriterCreateInterface(void);
+#endif
 
 int writeBufferToFile(const char *pszFilename, const void *pvContent, size_t cbContent, RTVFSFSSTREAM hVfsFss);
 int writeBufferToFile(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser);

@@ -39,6 +39,8 @@
 
 #include "Logging.h"
 
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -1229,7 +1231,6 @@ PVDINTERFACEIO FileCreateInterface()
 }
 
 
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
 int writeBufferToFile(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
@@ -1261,5 +1262,6 @@ int writeBufferToFile(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDI
 
     return rc;
 }
+
 #endif /* !VBOX_WITH_NEW_TAR_CREATOR */
 
