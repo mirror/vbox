@@ -312,6 +312,13 @@ test_coredumps() {
     return 0;
 }
 
+##
+# Test if unattended updates are disabled. See
+#   http://ask.xmodulo.com/disable-automatic-updates-ubuntu.html
+test_unattended_updates_disabled() {
+    # This is a linux hook.
+    return 0;
+}
 
 ##
 # Grants the user write access to the testboxscript files so it can perform
@@ -664,6 +671,7 @@ check_proxy_config;
 maybe_add_testboxscript_user;
 test_user;
 test_coredumps;
+test_unattended_updates_disabled;
 
 grant_user_testboxscript_write_access;
 
