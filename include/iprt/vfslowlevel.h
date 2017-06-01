@@ -490,6 +490,17 @@ typedef RTVFSFSSTREAMOPS const *PCRTVFSFSSTREAMOPS;
 RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock, bool fReadOnly,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance);
 
+/**
+ * Gets the private data of an filesystem stream.
+ *
+ * @returns Pointer to the private data.  NULL if the handle is invalid in some
+ *          way.
+ * @param   hVfsFss             The FS stream handle.
+ * @param   pFsStreamOps        The FS stream operations.  This servers as a
+ *                              sort of password.
+ */
+RTDECL(void *) RTVfsFsStreamToPrivate(RTVFSFSSTREAM hVfsFss, PCRTVFSFSSTREAMOPS pFsStreamOps);
+
 
 /**
  * The directory operations.

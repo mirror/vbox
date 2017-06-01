@@ -447,8 +447,22 @@ RTDECL(int) RTVfsDirOpen(RTVFS hVfs, const char *pszPath, uint32_t fFlags, PRTVF
  * @param   pszPath         Path to the file.
  * @param   fOpen           RTFILE_O_XXX flags.
  * @param   phVfsFile       Where to return the file.
+ * @sa      RTVfsDirOpenFileAsIoStream
  */
 RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOpen, PRTVFSFILE phVfsFile);
+
+/**
+ * Convenience wrapper around RTVfsDirOpenFile that returns an I/O stream.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsDir         The VFS directory start walking the @a pszPath
+ *                          relative to.
+ * @param   pszPath         Path to the file.
+ * @param   fOpen           RTFILE_O_XXX flags.
+ * @param   phVfsIos        Where to return the I/O stream handle of the file.
+ * @sa      RTVfsDirOpenFile
+ */
+RTDECL(int) RTVfsDirOpenFileAsIoStream(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos);
 
 /**
  * Opens a directory in or under the given directory.
@@ -1313,6 +1327,58 @@ RTDECL(int) RTVfsCreateReadAheadForIoStream(RTVFSIOSTREAM hVfsIos, uint32_t fFla
  */
 RTDECL(int) RTVfsCreateReadAheadForFile(RTVFSFILE hVfsFile, uint32_t fFlags, uint32_t cBuffers, uint32_t cbBuffer,
                                         PRTVFSFILE phVfsFile);
+
+
+/**
+ * Create a file system stream for writing to a directory.
+ *
+ * This is just supposed to be a drop in replacement for the TAR creator stream
+ * that instead puts the files and stuff in a directory instead of a TAR
+ * archive.  In addition, it has an undo feature for simplying cleaning up after
+ * a botched run
+ *
+ * @returns IPRT status code.
+ * @param   hVfsBaseDir The base directory.
+ * @param   fFlags      RTVFSFSS2DIR_F_XXX
+ * @param   phVfsFss    Where to return the FSS handle.
+ * @sa      RTVfsFsStrmToNormalDir, RTVfsFsStrmToDirUndo
+ */
+RTDECL(int) RTVfsFsStrmToDir(RTVFSDIR hVfsBaseDir, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
+
+/**
+ * Create a file system stream for writing to a normal directory.
+ *
+ * This is just supposed to be a drop in replacement for the TAR creator stream
+ * that instead puts the files and stuff in a directory instead of a TAR
+ * archive.  In addition, it has an undo feature for simplying cleaning up after
+ * a botched run
+ *
+ * @returns IPRT status code.
+ * @param   pszBaseDir  The base directory.  Must exist.
+ * @param   fFlags      RTVFSFSS2DIR_F_XXX
+ * @param   phVfsFss    Where to return the FSS handle.
+ * @sa      RTVfsFsStrmToDir, RTVfsFsStrmToDirUndo
+ */
+RTDECL(int) RTVfsFsStrmToNormalDir(const char *pszBaseDir, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
+
+/** @name RTVFSFSS2DIR_F_XXX - Flags for RTVfsFsStrmToNormalDir
+ * @{ */
+/** Overwrite existing files (default is to not overwrite anything). */
+#define RTVFSFSS2DIR_F_OVERWRITE_FILES      RT_BIT_32(0)
+/** Valid bits.   */
+#define RTVFSFSS2DIR_F_VALID_MASK           UINT32_C(0x00000001)
+/** @} */
+
+/**
+ * Deletes files, directories, symlinks and stuff created by a FSS returned by
+ * RTVfsFsStrmToNormalDir or RTVfsFsStrmToDir.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss     The write-to-directory FSS handle.
+ */
+RTDECL(int) RTVfsFsStrmToDirUndo(RTVFSFSSTREAM hVfsFss);
+
+
 
 /** @}  */
 

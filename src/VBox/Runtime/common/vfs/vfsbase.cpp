@@ -2086,6 +2086,16 @@ RTDECL(int)         RTVfsFsStrmEnd(RTVFSFSSTREAM hVfsFss)
 }
 
 
+RTDECL(void *) RTVfsFsStreamToPrivate(RTVFSFSSTREAM hVfsFss, PCRTVFSFSSTREAMOPS pFsStreamOps)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, NULL);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, NULL);
+    if (pThis->pOps != pFsStreamOps)
+        return NULL;
+    return pThis->Base.pvThis;
+}
+
 
 /*
  *
@@ -2361,6 +2371,21 @@ RTDECL(int) RTVfsDirOpenFile(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOp
     }
     return rc;
 }
+
+
+RTDECL(int) RTVfsDirOpenFileAsIoStream(RTVFSDIR hVfsDir, const char *pszPath, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos)
+{
+    RTVFSFILE hVfsFile;
+    int rc = RTVfsDirOpenFile(hVfsDir, pszPath, fOpen, &hVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        *phVfsIos = RTVfsFileToIoStream(hVfsFile);
+        AssertStmt(*phVfsIos != NIL_RTVFSIOSTREAM, rc = VERR_INTERNAL_ERROR_2);
+        RTVfsFileRelease(hVfsFile);
+    }
+    return rc;
+}
+
 
 
 RTDECL(int) RTVfsDirQueryPathInfo(RTVFSDIR hVfsDir, const char *pszPath, PRTFSOBJINFO pObjInfo,

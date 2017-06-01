@@ -607,6 +607,7 @@ RuntimeR3_SOURCES       = \
 	common/time/timesup.cpp \
 	common/vfs/vfsbase.cpp \
 	common/vfs/vfschain.cpp \
+	common/vfs/vfsfss2dir.cpp \
 	common/vfs/vfsiosmisc.cpp \
 	common/vfs/vfsmemory.cpp \
 	common/vfs/vfsmisc.cpp \
