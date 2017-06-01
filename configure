@@ -2196,6 +2196,14 @@ check_darwinversion()
   test_header "Darwin version"
   darwin_ver=`uname -r`
   case "$darwin_ver" in
+    16\.*)
+      check_xcode_sdk_path "$WITH_XCODE_DIR"
+      [ $? -eq 1 ] || fail
+      darwin_ver="10.11" # Sierra
+      sdk=$WITH_XCODE_DIR/Developer/SDKs/MacOSX10.6.sdk
+      cnf_append "VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL" "1"
+      cnf_append "VBOX_PATH_MACOSX_DEVEL_ROOT" "$WITH_XCODE_DIR/Developer"
+      ;;
     15\.*)
       check_xcode_sdk_path "$WITH_XCODE_DIR"
       [ $? -eq 1 ] || fail
