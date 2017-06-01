@@ -1010,7 +1010,7 @@ QString VBoxGlobal::detailsReport(const CMachine &comMachine, bool fWithLinks)
         /* Group(s)? */
         const QStringList &groups = comMachine.GetGroups().toList();
         if (   groups.size() > 1
-            || groups.size() > 0 && groups.at(0) != "/")
+            || (groups.size() > 0 && groups.at(0) != "/"))
         {
             ++iRowCount;
             strItem += QString(sSectionItemTpl2).arg(tr("Group(s)", "details report"),
