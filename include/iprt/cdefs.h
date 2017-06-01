@@ -1062,7 +1062,11 @@
  */
 #ifdef RT_EXCEPTIONS_ENABLED
 # ifdef __GNUC__
-#  define RT_NO_THROW_PROTO     __attribute__((__nothrow__))
+#  if RT_GNUC_PREREQ(3, 3)
+#   define RT_NO_THROW_PROTO    __attribute__((__nothrow__))
+#  else
+#   define RT_NO_THROW_PROTO
+#  endif
 # else
 #  define RT_NO_THROW_PROTO     throw()
 # endif
