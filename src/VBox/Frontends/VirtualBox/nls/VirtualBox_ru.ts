@@ -14459,12 +14459,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation>ACPI</translation>
+        <translation>Функция ACPI</translation>
     </message>
     <message>
         <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>I/O APIC</translation>
+        <translation>Функция I/O APIC</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -14479,22 +14479,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Включен</translation>
+        <translation>Включена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Выключен</translation>
+        <translation>Выключена</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation>Включен</translation>
+        <translation>Включена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation>Выключен</translation>
+        <translation>Выключена</translation>
     </message>
     <message>
         <source>Not mounted</source>
@@ -14911,22 +14911,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation>Функция VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation>PAE/NX</translation>
+        <translation>Функция PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Включены</translation>
+        <translation>Включена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Выключены</translation>
+        <translation>Выключена</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -15179,17 +15179,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>Nested Paging</translation>
+        <translation>Функция Nested Paging</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>Включено</translation>
+        <translation>Включена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>Выключено</translation>
+        <translation>Выключена</translation>
     </message>
     <message>
         <source>Bridged network, %1</source>
