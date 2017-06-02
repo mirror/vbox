@@ -134,12 +134,8 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 /* Registers */
 #define HDA_REG_IND_NAME(x)                 HDA_REG_##x
 #define HDA_MEM_IND_NAME(x)                 HDA_RMX_##x
-#define HDA_REG_FIELD_MASK(reg, x)          HDA_##reg##_##x##_MASK
-#define HDA_REG_FIELD_FLAG_MASK(reg, x)     RT_BIT(HDA_##reg##_##x##_SHIFT)
-#define HDA_REG_FIELD_SHIFT(reg, x)         HDA_##reg##_##x##_SHIFT
 #define HDA_REG_IND(pThis, x)               ((pThis)->au32Regs[g_aHdaRegMap[x].mem_idx])
 #define HDA_REG(pThis, x)                   (HDA_REG_IND((pThis), HDA_REG_IND_NAME(x)))
-#define HDA_REG_FLAG_VALUE(pThis, reg, val) (HDA_REG((pThis),reg) & (((HDA_REG_FIELD_FLAG_MASK(reg, val)))))
 
 
 #define HDA_REG_GCAP                0 /* range 0x00-0x01*/
@@ -172,9 +168,9 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_GCTL                5 /* 0x08-0x0B */
 #define HDA_RMX_GCTL                5
-#define HDA_GCTL_RST_SHIFT          0
-#define HDA_GCTL_FSH_SHIFT          1
-#define HDA_GCTL_UR_SHIFT           8
+#define HDA_GCTL_UNSOL              RT_BIT(8)   /* Accept Unsolicited Response Enable */
+#define HDA_GCTL_FCNTRL             RT_BIT(1)   /* Flush Control */
+#define HDA_GCTL_CRST               RT_BIT(0)   /* Controller Reset */
 
 #define HDA_REG_WAKEEN              6 /* 0x0C */
 #define HDA_RMX_WAKEEN              6
@@ -185,7 +181,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_GSTS                8 /* 0x10-0x11*/
 #define HDA_RMX_GSTS                8
-#define HDA_GSTS_FSH_SHIFT          1
+#define HDA_GSTS_FSTS               RT_BIT(1)   /* Flush Status */
 
 #define HDA_REG_OUTSTRMPAY          9  /* 0x18 */
 #define HDA_RMX_OUTSTRMPAY          112
@@ -195,15 +191,14 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_INTCTL              11 /* 0x20 */
 #define HDA_RMX_INTCTL              9
-#define HDA_INTCTL_GIE_SHIFT        31
-#define HDA_INTCTL_CIE_SHIFT        30
+#define HDA_INTCTL_GIE              RT_BIT(31)  /* Global Interrupt Enable */
+#define HDA_INTCTL_CIE              RT_BIT(30)  /* Controller Interrupt Enable */
 /* Bits 0-29 correspond to streams 0-29. */
-#define HDA_INTCTL_GIE_MASK         RT_BIT(31) /* Global Interrupt Enable (3.3.14). */
 
 #define HDA_REG_INTSTS              12 /* 0x24 */
 #define HDA_RMX_INTSTS              10
-#define HDA_INTSTS_GIS_SHIFT        31
-#define HDA_INTSTS_CIS_SHIFT        30
+#define HDA_INTSTS_GIS              RT_BIT(31)  /* Global Interrupt Status */
+#define HDA_INTSTS_CIS              RT_BIT(30)  /* Controller Interrupt Status */
 /* Bits 0-29 correspond to streams 0-29. */
 
 #define HDA_REG_WALCLK              13 /* 0x30 */
@@ -227,14 +222,14 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_CORBRP              18 /* 0x4A */
 #define HDA_RMX_CORBRP              16
-#define HDA_CORBRP_RST_SHIFT        15
+#define HDA_CORBRP_RST              RT_BIT(15)  /* CORB Read Pointer Reset */
 #define HDA_CORBRP_WP_SHIFT         0
 #define HDA_CORBRP_WP_MASK          0xFF
 
 #define HDA_REG_CORBCTL             19 /* 0x4C */
 #define HDA_RMX_CORBCTL             17
-#define HDA_CORBCTL_DMA_SHIFT       1
-#define HDA_CORBCTL_CMEIE_SHIFT     0
+#define HDA_CORBCTL_DMA             RT_BIT(1)   /* Enable CORB DMA Engine */
+#define HDA_CORBCTL_CMEIE           RT_BIT(0)   /* CORB Memory Error Interrupt Enable */
 
 #define HDA_REG_CORBSTS             20 /* 0x4D */
 #define HDA_RMX_CORBSTS             18
@@ -254,7 +249,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_RIRBWP              24 /* 0x58 */
 #define HDA_RMX_RIRBWP              22
-#define HDA_RIRBWP_RST_SHIFT        15
+#define HDA_RIRBWP_RST              RT_BIT(15)  /* RIRB Write Pointer Reset */
 #define HDA_RIRBWP_WP_MASK          0xFF
 
 #define HDA_REG_RINTCNT             25 /* 0x5A */
@@ -263,14 +258,14 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_RIRBCTL             26 /* 0x5C */
 #define HDA_RMX_RIRBCTL             24
-#define HDA_RIRBCTL_RIC_SHIFT       0
-#define HDA_RIRBCTL_DMA_SHIFT       1
-#define HDA_ROI_DMA_SHIFT           2
+#define HDA_RIRBCTL_ROIC            RT_BIT(2)   /* Response Overrun Interrupt Control */
+#define HDA_RIRBCTL_RDMAEN          RT_BIT(1)   /* RIRB DMA Enable */
+#define HDA_RIRBCTL_RINTCTL         RT_BIT(0)   /* Response Interrupt Control */
 
 #define HDA_REG_RIRBSTS             27 /* 0x5D */
 #define HDA_RMX_RIRBSTS             25
-#define HDA_RIRBSTS_RINTFL_SHIFT    0
-#define HDA_RIRBSTS_RIRBOIS_SHIFT   2
+#define HDA_RIRBSTS_RIRBOIS         RT_BIT(2)   /* Response Overrun Interrupt Status */
+#define HDA_RIRBSTS_RINTFL          RT_BIT(0)   /* Response Interrupt Flag */
 
 #define HDA_REG_RIRBSIZE            28 /* 0x5E */
 #define HDA_RMX_RIRBSIZE            26
@@ -289,8 +284,8 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_IRS                 31 /* 0x68 */
 #define HDA_RMX_IRS                 29
-#define HDA_IRS_ICB_SHIFT           0
-#define HDA_IRS_IRV_SHIFT           1
+#define HDA_IRS_IRV                 RT_BIT(1)   /* Immediate Result Valid */
+#define HDA_IRS_ICB                 RT_BIT(0)   /* Immediate Command Busy */
 
 #define HDA_REG_DPLBASE             32 /* 0x70 */
 #define HDA_RMX_DPLBASE             30
@@ -331,18 +326,17 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define SD(func, num)               SD##num##func
 
 #define HDA_SDCTL(pThis, num)       HDA_REG((pThis), SD(CTL, num))
-#define HDA_SDCTL_NUM(pThis, num)   ((HDA_SDCTL((pThis), num) & HDA_REG_FIELD_MASK(SDCTL,NUM)) >> HDA_REG_FIELD_SHIFT(SDCTL, NUM))
 #define HDA_SDCTL_NUM_MASK          0xF
 #define HDA_SDCTL_NUM_SHIFT         20
-#define HDA_SDCTL_DIR_SHIFT         19
-#define HDA_SDCTL_TP_SHIFT          18
+#define HDA_SDCTL_DIR               RT_BIT(19)  /* Direction (Bidirectional streams only!) */
+#define HDA_SDCTL_TP                RT_BIT(18)  /* Traffic Priority (PCI Express) */
 #define HDA_SDCTL_STRIPE_MASK       0x3
 #define HDA_SDCTL_STRIPE_SHIFT      16
-#define HDA_SDCTL_DEIE_SHIFT        4
-#define HDA_SDCTL_FEIE_SHIFT        3
-#define HDA_SDCTL_ICE_SHIFT         2
-#define HDA_SDCTL_RUN_SHIFT         1
-#define HDA_SDCTL_SRST_SHIFT        0
+#define HDA_SDCTL_DEIE              RT_BIT(4)   /* Descriptor Error Interrupt Enable */
+#define HDA_SDCTL_FEIE              RT_BIT(3)   /* FIFO Error Interrupt Enable */
+#define HDA_SDCTL_IOCE              RT_BIT(2)   /* Interrupt On Completion Enable */
+#define HDA_SDCTL_RUN               RT_BIT(1)   /* Stream Run */
+#define HDA_SDCTL_SRST              RT_BIT(0)   /* Stream Reset */
 
 #define HDA_REG_SD0STS              35 /* 0x83 */
 #define HDA_REG_SD1STS              (HDA_STREAM_REG_DEF(STS, 0) + 10) /* 0xA3 */
@@ -496,9 +490,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD7FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 70)
 
 #define SDFMT(pThis, num)               (HDA_REG((pThis), SD(FMT, num)))
-#define HDA_SDFMT_BASE_RATE(pThis, num) ((SDFMT(pThis, num)   & HDA_REG_FIELD_FLAG_MASK(SDFMT, BASE_RATE)) >> HDA_REG_FIELD_SHIFT(SDFMT, BASE_RATE))
-#define HDA_SDFMT_MULT(pThis, num)      ((SDFMT((pThis), num) & HDA_REG_FIELD_MASK(SDFMT,MULT)) >> HDA_REG_FIELD_SHIFT(SDFMT, MULT))
-#define HDA_SDFMT_DIV(pThis, num)       ((SDFMT((pThis), num) & HDA_REG_FIELD_MASK(SDFMT,DIV)) >> HDA_REG_FIELD_SHIFT(SDFMT, DIV))
 
 #define HDA_REG_SD0BDPL             42 /* 0x98 */
 #define HDA_REG_SD1BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 10) /* 0xB8 */
@@ -1437,14 +1428,15 @@ static void hdaUpdateINTSTS(PHDASTATE pThis)
 {
     uint32_t intSts = 0;
 
-    if (/* Response Overrun Interrupt Status (ROIS) */
-           HDA_REG_FLAG_VALUE(pThis, RIRBSTS, RIRBOIS)
+    /** @todo r=michaln This is ignoring HDA_RIRBCTL_ROIC! */
+    if (/* Response Overrun Interrupt Status (ROIS aka RIRBOIS) */
+           (HDA_REG(pThis, RIRBSTS) & HDA_RIRBSTS_RIRBOIS)
         /* Response Interrupt */
-        || HDA_REG_FLAG_VALUE(pThis, RIRBSTS, RINTFL)
+        || (HDA_REG(pThis, RIRBSTS) & HDA_RIRBSTS_RINTFL)
         /* SDIN State Change Status Flags (SCSF) */
         || (HDA_REG(pThis, STATESTS) & HDA_STATESTS_SCSF_MASK))
     {
-        intSts |= RT_BIT(30); /* Touch Controller Interrupt Status (CIS). */
+        intSts |= HDA_INTSTS_CIS;   /* Set the Controller Interrupt Status (CIS). */
     }
 
 #define HDA_MARK_STREAM(x)                                                  \
@@ -1468,7 +1460,7 @@ static void hdaUpdateINTSTS(PHDASTATE pThis)
 #undef HDA_MARK_STREAM
 
     if (intSts)
-        intSts |= RT_BIT(31); /* Touch Global Interrupt Status (GIS). */
+        intSts |= HDA_INTSTS_GIS;   /* Set the Global Interrupt Status (GIS). */
 
     HDA_REG(pThis, INTSTS) = intSts;
 
@@ -1481,14 +1473,14 @@ static int hdaProcessInterrupt(PHDASTATE pThis)
 
     int iLevel = 0;
 
-    /* Global Interrupt Status (GIS) touched? */
-    if (HDA_REG_FLAG_VALUE(pThis, INTSTS, GIS))
+    /* Global Interrupt Status (GIS) set? */
+    if (HDA_REG(pThis, INTSTS) & HDA_INTSTS_GIS)
         iLevel = 1;
 
     Log3Func(("INTCTL=%x, INTSTS=%x, Level=%d\n", HDA_REG(pThis, INTCTL), HDA_REG(pThis, INTSTS), iLevel));
 
     /* Global Interrupt Enable (GIE) set? */
-    if (HDA_REG_FLAG_VALUE(pThis, INTCTL, GIE))
+    if (HDA_REG(pThis, INTCTL) & HDA_INTCTL_GIE)
         PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, iLevel);
 
     return VINF_SUCCESS;
@@ -1606,7 +1598,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
     int rc = VINF_SUCCESS;
     if (fLocal)
     {
-        Assert((HDA_REG_FLAG_VALUE(pThis, CORBCTL, DMA)));
+        Assert((HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA));
         Assert(pThis->u64CORBBase);
         AssertPtr(pThis->pu32CorbBuf);
         Assert(pThis->cbCorbBuf);
@@ -1639,7 +1631,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
     }
     else
     {
-        Assert((HDA_REG_FLAG_VALUE(pThis, RIRBCTL, DMA)));
+        Assert((HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RDMAEN));
         rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
@@ -1689,7 +1681,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
         (rirbWp)++;
 
         if (   (uResp & CODEC_RESPONSE_UNSOLICITED)
-            && !HDA_REG_FLAG_VALUE(pThis, GCTL, UR))
+            && !(HDA_REG(pThis, GCTL) & HDA_GCTL_UNSOL))
         {
             LogFunc(("Unexpected unsolicited response\n"));
             HDA_REG(pThis, CORBRP) = corbRp;
@@ -1710,9 +1702,9 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
 
     Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n", HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
 
-    if (HDA_REG_FLAG_VALUE(pThis, RIRBCTL, RIC))
+    if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RINTCTL)
     {
-        HDA_REG(pThis, RIRBSTS) |= HDA_REG_FIELD_FLAG_MASK(RIRBSTS,RINTFL);
+        HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
 
         pThis->u8RespIntCnt = 0;
         rc = hdaProcessInterrupt(pThis);
@@ -1822,7 +1814,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     const uint8_t uSD = pStream->u8SD;
 
 # ifdef VBOX_STRICT
-    AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, uSD) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
+    AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_RUN),
                      ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
 # endif
 
@@ -1843,7 +1835,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     HDA_STREAM_REG(pThis, STS,   uSD) = HDA_SDSTS_FIFORDY;
     /* According to the ICH6 datasheet, 0x40000 is the default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33, resets SDnCTL except SRST bit. */
-    HDA_STREAM_REG(pThis, CTL,   uSD) = 0x40000 | (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
+    HDA_STREAM_REG(pThis, CTL,   uSD) = 0x40000 | (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_SRST);
     /*
      * ICH6 defines default values (120 bytes for input and 192 bytes for output descriptors) of FIFO size. 18.2.39.
      * BUT: Windows guests seem to read the FIFOS but define a DMA region which does not fit to that FIFO size
@@ -2125,10 +2117,10 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
 
-    if (u32Value & HDA_REG_FIELD_FLAG_MASK(GCTL, RST))
+    if (u32Value & HDA_GCTL_CRST)
     {
         /* Set the CRST bit to indicate that we're leaving reset mode. */
-        HDA_REG(pThis, GCTL) |= HDA_REG_FIELD_FLAG_MASK(GCTL, RST);
+        HDA_REG(pThis, GCTL) |= HDA_GCTL_CRST;
 
         if (pThis->fInReset)
         {
@@ -2141,11 +2133,11 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #ifdef IN_RING3
         /* Enter reset state. */
         LogFunc(("Guest entering HDA reset with DMA(RIRB:%s, CORB:%s)\n",
-                 HDA_REG_FLAG_VALUE(pThis, CORBCTL, DMA) ? "on" : "off",
-                 HDA_REG_FLAG_VALUE(pThis, RIRBCTL, DMA) ? "on" : "off"));
+                 HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA ? "on" : "off",
+                 HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RDMAEN ? "on" : "off"));
 
         /* Clear the CRST bit to indicate that we're in reset state. */
-        HDA_REG(pThis, GCTL) &= ~HDA_REG_FIELD_FLAG_MASK(GCTL, RST);
+        HDA_REG(pThis, GCTL) &= ~HDA_GCTL_CRST;
         pThis->fInReset = true;
 
         hdaReset(pThis->CTX_SUFF(pDevIns));
@@ -2154,10 +2146,10 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #endif
     }
 
-    if (u32Value & HDA_REG_FIELD_FLAG_MASK(GCTL, FSH))
+    if (u32Value & HDA_GCTL_FCNTRL)
     {
         /* Flush: GSTS:1 set, see 6.2.6. */
-        HDA_REG(pThis, GSTS) |= HDA_REG_FIELD_FLAG_MASK(GSTS, FSH); /* Set the flush state. */
+        HDA_REG(pThis, GSTS) |= HDA_GSTS_FSTS;  /* Set the flush status. */
         /* DPLBASE and DPUBASE should be initialized with initial value (see 6.2.6). */
     }
     return VINF_SUCCESS;
@@ -2182,7 +2174,7 @@ static int hdaRegWriteINTCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     HDA_REG(pThis, INTCTL) = u32Value;
 
     /* Global Interrupt Enable (GIE) set? */
-    if (u32Value & HDA_INTCTL_GIE_MASK)
+    if (u32Value & HDA_INTCTL_GIE)
     {
         rc = hdaProcessInterrupt(pThis);
     }
@@ -2225,7 +2217,7 @@ static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
 
-    if (u32Value & HDA_REG_FIELD_FLAG_MASK(CORBRP, RST))
+    if (u32Value & HDA_CORBRP_RST)
     {
         HDA_REG(pThis, CORBRP) = 0;
     }
@@ -2241,8 +2233,8 @@ static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #ifdef IN_RING3
     int rc = hdaRegWriteU8(pThis, iReg, u32Value);
     AssertRC(rc);
-    if (   HDA_REG(pThis, CORBWP)                  != HDA_REG(pThis, CORBRP)
-        && HDA_REG_FLAG_VALUE(pThis, CORBCTL, DMA) != 0)
+    if (   HDA_REG(pThis, CORBWP) != HDA_REG(pThis, CORBRP)
+        && (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
     {
         return hdaCORBCmdProcess(pThis);
     }
@@ -2271,7 +2263,7 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         AssertRCReturn(rc, rc);
     if (HDA_REG(pThis, CORBWP) == HDA_REG(pThis, CORBRP))
         return VINF_SUCCESS;
-    if (!HDA_REG_FLAG_VALUE(pThis, CORBCTL, DMA))
+    if (!(HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
         return VINF_SUCCESS;
     rc = hdaCORBCmdProcess(pThis);
     return rc;
@@ -2322,11 +2314,11 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
      */
     u32Value = (u32Value & 0x00ffffff);
 
-    bool fRun      = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
-    bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+    bool fRun      = RT_BOOL(u32Value & HDA_SDCTL_RUN);
+    bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
 
-    bool fReset    = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
-    bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
+    bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
+    bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
 
     /* Get the stream descriptor. */
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, CTL, iReg);
@@ -2372,7 +2364,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         ASMAtomicXchgBool(&pStream->State.fInReset, false);
 
         /* Report that we're done resetting this stream by clearing SRST. */
-        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
+        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_SRST;
 
         LogFunc(("[SD%RU8]: Reset exit\n", uSD));
     }
@@ -2983,9 +2975,9 @@ static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     /* regarding 3.4.3 we should mark IRS as busy in case CORB is active */
     if (   HDA_REG(pThis, CORBWP) != HDA_REG(pThis, CORBRP)
-        || HDA_REG_FLAG_VALUE(pThis, CORBCTL, DMA))
+        || (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
     {
-        HDA_REG(pThis, IRS) = HDA_REG_FIELD_FLAG_MASK(IRS, ICB);  /* busy */
+        HDA_REG(pThis, IRS) = HDA_IRS_ICB;  /* busy */
     }
 
     return hdaRegReadU32(pThis, iReg, pu32Value);
@@ -2999,8 +2991,8 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
      * If the guest set the ICB bit of IRS register, HDA should process the verb in IC register,
      * write the response to IR register, and set the IRV (valid in case of success) bit of IRS register.
      */
-    if (   u32Value & HDA_REG_FIELD_FLAG_MASK(IRS, ICB)
-        && !HDA_REG_FLAG_VALUE(pThis, IRS, ICB))
+    if (   (u32Value & HDA_IRS_ICB)
+        && !(HDA_REG(pThis, IRS) & HDA_IRS_ICB))
     {
 #ifdef IN_RING3
         uint32_t uCmd = HDA_REG(pThis, IC);
@@ -3014,7 +3006,7 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             return VINF_SUCCESS;
         }
 
-        HDA_REG(pThis, IRS) = HDA_REG_FIELD_FLAG_MASK(IRS, ICB);  /* busy */
+        HDA_REG(pThis, IRS) = HDA_IRS_ICB;  /* busy */
 
         uint64_t uResp;
         int rc2 = pThis->pCodec->pfnLookup(pThis->pCodec,
@@ -3023,8 +3015,9 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             LogFunc(("Codec lookup failed with rc2=%Rrc\n", rc2));
 
         HDA_REG(pThis, IR)   = (uint32_t)uResp; /** @todo r=andy Do we need a 64-bit response? */
-        HDA_REG(pThis, IRS)  = HDA_REG_FIELD_FLAG_MASK(IRS, IRV);  /* result is ready  */
-        HDA_REG(pThis, IRS) &= ~HDA_REG_FIELD_FLAG_MASK(IRS, ICB); /* busy is clear */
+        HDA_REG(pThis, IRS)  = HDA_IRS_IRV;     /* result is ready  */
+        /** @todo r=michaln We just set the IRS value, why are we clearing unset bits? */
+        HDA_REG(pThis, IRS) &= ~HDA_IRS_ICB;    /* busy is clear */
         return VINF_SUCCESS;
 #else  /* !IN_RING3 */
         return VINF_IOM_R3_MMIO_WRITE;
@@ -3032,11 +3025,9 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     }
 
     /*
-     * Once the guest read the response, it should clean the IRV bit of the IRS register.
+     * Once the guest read the response, it should clear the IRV bit of the IRS register.
      */
-    if (   u32Value & HDA_REG_FIELD_FLAG_MASK(IRS, IRV)
-        && HDA_REG_FLAG_VALUE(pThis, IRS, IRV))
-        HDA_REG(pThis, IRS) &= ~HDA_REG_FIELD_FLAG_MASK(IRS, IRV);
+    HDA_REG(pThis, IRS) &= ~(u32Value & HDA_IRS_IRV);
     return VINF_SUCCESS;
 }
 
@@ -3044,7 +3035,7 @@ static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
 
-    if (u32Value & HDA_REG_FIELD_FLAG_MASK(RIRBWP, RST))
+    if (u32Value & HDA_RIRBWP_RST)
         HDA_REG(pThis, RIRBWP) = 0;
 
     /* The remaining bits are O, see 6.2.22. */
@@ -4083,7 +4074,7 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
               pStream->u8SD, HDA_STREAM_REG(pThis, STS, pStream->u8SD), cbToProcess));
 
     /* Is the stream not in a running state currently? */
-    if (!(HDA_STREAM_REG(pThis, CTL, pStream->u8SD) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)))
+    if (!(HDA_STREAM_REG(pThis, CTL, pStream->u8SD) & HDA_SDCTL_RUN))
         fProceed = false;
     /* Is the BCIS (Buffer Completion Interrupt Status) flag set? Then we have to wait and skip. */
     else if ((HDA_STREAM_REG(pThis, STS, pStream->u8SD) & HDA_SDSTS_BCIS))
@@ -4896,7 +4887,7 @@ DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, c
          */
 
             /* Is the RUN bit currently set? */
-        if (   RT_BOOL(uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
+        if (   RT_BOOL(uSDCTL & HDA_SDCTL_RUN)
             /* Are writes to the register denied if RUN bit is set? */
             && !(g_aHdaRegMap[idxRegDsc].fFlags & HDA_RD_FLAG_SD_WRITE_RUN))
         {
@@ -5464,7 +5455,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             {
                 hdaStreamEnable(pThis, pStream, false /* fEnable */);
 
-                bool fActive = RT_BOOL(HDA_STREAM_REG(pThis, CTL, i) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+                bool fActive = RT_BOOL(HDA_STREAM_REG(pThis, CTL, i) & HDA_SDCTL_RUN);
                 if (fActive)
                 {
                     int rc2 = hdaStreamEnable(pThis, pStream, true /* fEnable */);
@@ -5513,14 +5504,14 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDCTL(PFNRTSTROUTPUT pfnOutput, void *pvArg
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                        "SDCTL(raw:%#x, DIR:%s, TP:%RTbool, STRIPE:%x, DEIE:%RTbool, FEIE:%RTbool, IOCE:%RTbool, RUN:%RTbool, RESET:%RTbool)",
                        uSDCTL,
-                       (uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, DIR)) ? "OUT" : "IN",
-                       RT_BOOL(uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, TP)),
-                       (uSDCTL & HDA_REG_FIELD_MASK(SDCTL, STRIPE)) >> HDA_SDCTL_STRIPE_SHIFT,
-                       RT_BOOL(uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, DEIE)),
-                       RT_BOOL(uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, FEIE)),
-                       RT_BOOL(uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)),
-                       RT_BOOL(uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
-                       RT_BOOL(uSDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST)));
+                       uSDCTL & HDA_SDCTL_DIR ? "OUT" : "IN",
+                       RT_BOOL(uSDCTL & HDA_SDCTL_TP),
+                       (uSDCTL & HDA_SDCTL_STRIPE_MASK) >> HDA_SDCTL_STRIPE_SHIFT,
+                       RT_BOOL(uSDCTL & HDA_SDCTL_DEIE),
+                       RT_BOOL(uSDCTL & HDA_SDCTL_FEIE),
+                       RT_BOOL(uSDCTL & HDA_SDCTL_IOCE),
+                       RT_BOOL(uSDCTL & HDA_SDCTL_RUN),
+                       RT_BOOL(uSDCTL & HDA_SDCTL_SRST));
 }
 
 /**
@@ -5871,7 +5862,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
     {
         /* Remove the RUN bit from SDnCTL in case the stream was in a running state before. */
-        HDA_STREAM_REG(pThis, CTL, i) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN);
+        HDA_STREAM_REG(pThis, CTL, i) &= ~HDA_SDCTL_RUN;
         hdaStreamReset(pThis, &pThis->aStreams[i]);
     }
 
