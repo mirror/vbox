@@ -650,61 +650,6 @@ private:
     bool mfKeepMediumLockList;
 };
 
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-class Medium::ExportTask : public Medium::Task
-{
-public:
-    ExportTask(Medium *aMedium,
-               Progress *aProgress,
-               const char *aFilename,
-               MediumFormat *aFormat,
-               MediumVariant_T aVariant,
-               SecretKeyStore *pSecretKeyStore,
-               VDINTERFACEIO *aVDImageIOIf,
-               void *aVDImageIOUser,
-               MediumLockList *aSourceMediumLockList,
-               bool fKeepSourceMediumLockList = false)
-        : Medium::Task(aMedium, aProgress),
-          mpSourceMediumLockList(aSourceMediumLockList),
-          mFilename(aFilename),
-          mFormat(aFormat),
-          mVariant(aVariant),
-          m_pSecretKeyStore(pSecretKeyStore),
-          mfKeepSourceMediumLockList(fKeepSourceMediumLockList)
-    {
-        AssertReturnVoidStmt(aSourceMediumLockList != NULL, mRC = E_FAIL);
-
-        mVDImageIfaces = aMedium->m->vdImageIfaces;
-
-        if (aVDImageIOIf)
-        {
-            int vrc = VDInterfaceAdd(&aVDImageIOIf->Core, "Medium::vdInterfaceIO",
-                                     VDINTERFACETYPE_IO, aVDImageIOUser,
-                                     sizeof(VDINTERFACEIO), &mVDImageIfaces);
-            AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
-        }
-        m_strTaskName = "createExport";
-    }
-
-    ~ExportTask()
-    {
-        if (!mfKeepSourceMediumLockList && mpSourceMediumLockList)
-            delete mpSourceMediumLockList;
-    }
-
-    MediumLockList *mpSourceMediumLockList;
-    Utf8Str mFilename;
-    ComObjPtr<MediumFormat> mFormat;
-    MediumVariant_T mVariant;
-    PVDINTERFACE mVDImageIfaces;
-    SecretKeyStore *m_pSecretKeyStore;
-
-private:
-    HRESULT executeTask();
-    bool mfKeepSourceMediumLockList;
-};
-#endif /* !VBOX_WITH_NEW_TAR_CREATOR */
-
 class Medium::ImportTask : public Medium::Task
 {
 public:
@@ -955,16 +900,6 @@ HRESULT Medium::MergeTask::executeTask()
 {
     return mMedium->i_taskMergeHandler(*this);
 }
-
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-/**
- * Implementation code for the "export" task.
- */
-HRESULT Medium::ExportTask::executeTask()
-{
-    return mMedium->i_taskExportHandler(*this);
-}
-#endif
 
 /**
  * Implementation code for the "import" task.
@@ -6140,9 +6075,7 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
  *                          destination image.
  * @param pKeyStore         The optional key store for decrypting the data for
  *                          encrypted media during the export.
- * @param aVDImageIOIf      Pointer to the callback table for a VDINTERFACEIO
- *                          interface. May be NULL.
- * @param aVDImageIOUser    Opaque data for the callbacks.
+ * @param hVfsIosDst        The destination I/O stream object.
  * @param aProgress         Progress object to use.
  * @return
  *
@@ -6152,18 +6085,12 @@ HRESULT Medium::i_exportFile(const char *aFilename,
                              const ComObjPtr<MediumFormat> &aFormat,
                              MediumVariant_T aVariant,
                              SecretKeyStore *pKeyStore,
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
                              RTVFSIOSTREAM hVfsIosDst,
-#else
-                             PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
-#endif
                              const ComObjPtr<Progress> &aProgress)
 {
     AssertPtrReturn(aFilename, E_INVALIDARG);
     AssertReturn(aFormat.isNotNull(), E_INVALIDARG);
     AssertReturn(aProgress.isNotNull(), E_INVALIDARG);
-
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -6255,57 +6182,6 @@ HRESULT Medium::i_exportFile(const char *aFilename,
             hrc = setErrorVrc(vrc, "VDIfCreateFromVfsStream -> %Rrc", vrc);
     }
     return hrc;
-#else
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = S_OK;
-    Medium::Task *pTask = NULL;
-
-    try
-    {
-        // This needs no extra locks besides what is done in the called methods.
-
-        /* Build the source lock list. */
-        MediumLockList *pSourceMediumLockList(new MediumLockList());
-        rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                    NULL /* pToLockWrite */,
-                                    false /* fMediumLockWriteAll */,
-                                    NULL,
-                                    *pSourceMediumLockList);
-        if (FAILED(rc))
-        {
-            delete pSourceMediumLockList;
-            throw rc;
-        }
-
-        rc = pSourceMediumLockList->Lock();
-        if (FAILED(rc))
-        {
-            delete pSourceMediumLockList;
-            throw setError(rc,
-                           tr("Failed to lock source media '%s'"),
-                           i_getLocationFull().c_str());
-        }
-
-        /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::ExportTask(this, aProgress, aFilename, aFormat, aVariant,
-                                       pKeyStore, aVDImageIOIf, aVDImageIOUser, pSourceMediumLockList);
-        rc = pTask->rc();
-        AssertComRC(rc);
-        if (FAILED(rc))
-            throw rc;
-    }
-    catch (HRESULT aRC) { rc = aRC; }
-
-    if (SUCCEEDED(rc))
-        rc = pTask->createThread();
-    else if (pTask != NULL)
-        delete pTask;
-
-    return rc;
-#endif
 }
 
 /**
@@ -9765,202 +9641,6 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
 
     return rc;
 }
-
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-/**
- * Implementation code for the "export" task.
- *
- * This only gets started from Medium::exportFile() and always runs
- * asynchronously. It doesn't touch anything configuration related, so
- * we never save the VirtualBox.xml file here.
- *
- * @param task
- * @return
- */
-HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
-{
-    HRESULT rc = S_OK;
-
-    try
-    {
-        /* Lock all in {parent,child} order. The lock is also used as a
-         * signal from the task initiator (which releases it only after
-         * RTThreadCreate()) that we can start the job. */
-        ComObjPtr<Medium> pBase = i_getBase();
-        AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
-
-        PVDISK hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
-        ComAssertRCThrow(vrc, E_FAIL);
-
-        try
-        {
-            settings::StringsMap::iterator itKeyStore = pBase->m->mapProperties.find("CRYPT/KeyStore");
-            if (itKeyStore != pBase->m->mapProperties.end())
-            {
-                settings::StringsMap::iterator itKeyId = pBase->m->mapProperties.find("CRYPT/KeyId");
-
-#ifdef VBOX_WITH_EXTPACK
-                ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
-                if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
-                {
-                    /* Load the plugin */
-                    Utf8Str strPlugin;
-                    rc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
-                    if (SUCCEEDED(rc))
-                    {
-                        vrc = VDPluginLoadFromFilename(strPlugin.c_str());
-                        if (RT_FAILURE(vrc))
-                            throw setError(VBOX_E_NOT_SUPPORTED,
-                                           tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
-                                           i_vdError(vrc).c_str());
-                    }
-                    else
-                        throw setError(VBOX_E_NOT_SUPPORTED,
-                                       tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
-                                       ORACLE_PUEL_EXTPACK_NAME);
-                }
-                else
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Encryption is not supported because the extension pack '%s' is missing"),
-                                   ORACLE_PUEL_EXTPACK_NAME);
-#else
-                throw setError(VBOX_E_NOT_SUPPORTED,
-                               tr("Encryption is not supported because extension pack support is not built in"));
-#endif
-
-                if (itKeyId == pBase->m->mapProperties.end())
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Image '%s' is configured for encryption but doesn't has a key identifier set"),
-                                   pBase->m->strLocationFull.c_str());
-
-                /* Find the proper secret key in the key store. */
-                if (!task.m_pSecretKeyStore)
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Image '%s' is configured for encryption but there is no key store to retrieve the password from"),
-                                   pBase->m->strLocationFull.c_str());
-
-                SecretKey *pKey = NULL;
-                vrc = task.m_pSecretKeyStore->retainSecretKey(itKeyId->second, &pKey);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
-                                   itKeyId->second.c_str(), vrc);
-
-/** @todo r=bird: Someone explain why this continue to work when
- *        CryptoSettingsRead goes out of the scope? */
-                Medium::CryptoFilterSettings CryptoSettingsRead;
-                i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
-                                           false /* fCreateKeyStore */);
-                vrc = VDFilterAdd(hdd, "CRYPT", VD_FILTER_FLAGS_READ, CryptoSettingsRead.vdFilterIfaces);
-                if (vrc == VERR_VD_PASSWORD_INCORRECT)
-                {
-                    task.m_pSecretKeyStore->releaseSecretKey(itKeyId->second);
-                    throw setError(VBOX_E_PASSWORD_INCORRECT,
-                                   tr("The password to decrypt the image is incorrect"));
-                }
-                else if (RT_FAILURE(vrc))
-                {
-                    task.m_pSecretKeyStore->releaseSecretKey(itKeyId->second);
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Failed to load the decryption filter: %s"),
-                                   i_vdError(vrc).c_str());
-                }
-
-                task.m_pSecretKeyStore->releaseSecretKey(itKeyId->second);
-            }
-
-            /* Open all media in the source chain. */
-            MediumLockList::Base::const_iterator sourceListBegin =
-                task.mpSourceMediumLockList->GetBegin();
-            MediumLockList::Base::const_iterator sourceListEnd =
-                task.mpSourceMediumLockList->GetEnd();
-            for (MediumLockList::Base::const_iterator it = sourceListBegin;
-                 it != sourceListEnd;
-                 ++it)
-            {
-                const MediumLock &mediumLock = *it;
-                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
-                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
-
-                /* sanity check */
-                Assert(pMedium->m->state == MediumState_LockedRead);
-
-                /* Open all media in read-only mode. */
-                vrc = VDOpen(hdd,
-                             pMedium->m->strFormat.c_str(),
-                             pMedium->m->strLocationFull.c_str(),
-                             VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
-                             pMedium->m->vdImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
-            }
-
-            Utf8Str targetFormat(task.mFormat->i_getId());
-            Utf8Str targetLocation(task.mFilename);
-            uint64_t capabilities = task.mFormat->i_getCapabilities();
-
-            Assert(m->state == MediumState_LockedRead);
-
-            /* unlock before the potentially lengthy operation */
-            thisLock.release();
-
-            /* ensure the target directory exists */
-            if (capabilities & MediumFormatCapabilities_File)
-            {
-                rc = VirtualBox::i_ensureFilePathExists(targetLocation,
-                                                        !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
-                if (FAILED(rc))
-                    throw rc;
-            }
-
-            PVDISK targetHdd;
-            vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &targetHdd);
-            ComAssertRCThrow(vrc, E_FAIL);
-
-            try
-            {
-                vrc = VDCopy(hdd,
-                             VD_LAST_IMAGE,
-                             targetHdd,
-                             targetFormat.c_str(),
-                             targetLocation.c_str(),
-                             false /* fMoveByRename */,
-                             0 /* cbSize */,
-                             task.mVariant & ~MediumVariant_NoCreateDir,
-                             NULL /* pDstUuid */,
-                             VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL,
-                             NULL /* pVDIfsOperation */,
-                             task.mVDImageIfaces,
-                             task.mVDOperationIfaces);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the exported medium '%s'%s"),
-                                   targetLocation.c_str(), i_vdError(vrc).c_str());
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            VDDestroy(targetHdd);
-        }
-        catch (HRESULT aRC) { rc = aRC; }
-
-        VDDestroy(hdd);
-    }
-    catch (HRESULT aRC) { rc = aRC; }
-
-    /* Everything is explicitly unlocked when the task exits,
-     * as the task destruction also destroys the source chain. */
-
-    /* Make sure the source chain is released early, otherwise it can
-     * lead to deadlocks with concurrent IAppliance activities. */
-    task.mpSourceMediumLockList->Clear();
-
-    return rc;
-}
-#endif /* !VBOX_WITH_NEW_TAR_CREATOR */
 
 /**
  * Implementation code for the "import" task.

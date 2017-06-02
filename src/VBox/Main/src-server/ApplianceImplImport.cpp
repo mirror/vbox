@@ -1506,9 +1506,6 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
     AssertRCReturn(vrc, Global::vboxStatusCodeToCOM(vrc));
     m->fDeterminedDigestTypes = true;
 
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-    m->fSha256 = RT_BOOL(m->fDigestTypes & RTMANIFEST_ATTR_SHA256); /** @todo retire this member */
-#endif
     return S_OK;
 }
 

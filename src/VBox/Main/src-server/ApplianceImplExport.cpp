@@ -21,11 +21,7 @@
 #include <iprt/s3.h>
 #include <iprt/manifest.h>
 #include <iprt/stream.h>
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-# include <iprt/tar.h>
-#else
-# include <iprt/zip.h>
-#endif
+#include <iprt/zip.h>
 
 #include <VBox/version.h>
 
@@ -704,9 +700,6 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
     m->fManifest = m->optListExport.contains(ExportOptions_CreateManifest);
     if (m->fManifest)
         m->fDigestTypes = ovfF >= ovf::OVFVersion_2_0 ? RTMANIFEST_ATTR_SHA256 : RTMANIFEST_ATTR_SHA1;
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-    m->fSha256 = ovfF >= ovf::OVFVersion_2_0;
-#endif
     Assert(m->hOurManifest == NIL_RTMANIFEST);
 
     /* Check whether all passwords are supplied or error out. */
@@ -1987,11 +1980,7 @@ HRESULT Appliance::i_writeFS(TaskOVF *pTask)
     m->state = Data::ApplianceExporting;
 
     if (pTask->enFormat == ovf::OVFVersion_unknown)
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
         rc = i_writeFSOPC(pTask, multiLock);
-#else
-        rc = E_NOTIMPL;
-#endif
     else if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         rc = i_writeFSOVF(pTask, multiLock);
     else
@@ -2009,7 +1998,6 @@ HRESULT Appliance::i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 {
     LogFlowFuncEnter();
 
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
     /*
      * Create write-to-dir file system stream for the target directory.
      * This unifies the disk access with the TAR based OVA variant.
@@ -2045,62 +2033,12 @@ HRESULT Appliance::i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     LogFlowFuncLeave();
     return hrc;
-
-#else /* VBOX_WITH_NEW_TAR_CREATOR */
-    HRESULT rc = S_OK;
-
-    PVDINTERFACEIO pShaIo = 0;
-    PVDINTERFACEIO pFileIo = 0;
-    do
-    {
-        pShaIo = ShaCreateInterface();
-        if (!pShaIo)
-        {
-            rc = E_OUTOFMEMORY;
-            break;
-        }
-        pFileIo = FileCreateInterface();
-        if (!pFileIo)
-        {
-            rc = E_OUTOFMEMORY;
-            break;
-        }
-
-        SHASTORAGE storage;
-        RT_ZERO(storage);
-        storage.fCreateDigest = m->fManifest;
-        storage.fSha256 = m->fSha256;
-
-
-        Utf8Str name = i_applianceIOName(applianceIOFile);
-
-        int vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                                 VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                 &storage.pVDImageIfaces);
-        if (RT_FAILURE(vrc))
-        {
-            rc = E_FAIL;
-            break;
-        }
-        rc = i_writeFSImpl(pTask, writeLock, pShaIo, &storage);
-    } while (0);
-
-    /* Cleanup */
-    if (pShaIo)
-        RTMemFree(pShaIo);
-    if (pFileIo)
-        RTMemFree(pFileIo);
-
-    LogFlowFuncLeave();
-    return rc;
-#endif
 }
 
 HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 {
     LogFlowFuncEnter();
 
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
     /*
      * Open the output file and attach a TAR creator to it.
      */
@@ -2133,71 +2071,8 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 
     LogFlowFuncLeave();
     return hrc;
-
-#else /* VBOX_WITH_NEW_TAR_CREATOR */
-
-    RTTAR tar;
-    int vrc = RTTarOpen(&tar, pTask->locInfo.strPath.c_str(), RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL);
-    if (RT_FAILURE(vrc))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Could not create OVA file '%s' (%Rrc)"),
-                        pTask->locInfo.strPath.c_str(), vrc);
-
-    HRESULT rc = S_OK;
-
-    PVDINTERFACEIO pShaIo = 0;
-    PVDINTERFACEIO pTarIo = 0;
-    do
-    {
-        pShaIo = ShaCreateInterface();
-        if (!pShaIo)
-        {
-            rc = E_OUTOFMEMORY;
-            break;
-        }
-        pTarIo = tarWriterCreateInterface();
-        if (!pTarIo)
-        {
-            rc = E_OUTOFMEMORY;
-            break;
-        }
-        SHASTORAGE storage;
-        RT_ZERO(storage);
-        storage.fCreateDigest = m->fManifest;
-        storage.fSha256 = m->fSha256;
-
-        Utf8Str name = i_applianceIOName(applianceIOTar);
-
-        vrc = VDInterfaceAdd(&pTarIo->Core, name.c_str(),
-                             VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
-                             &storage.pVDImageIfaces);
-
-        if (RT_FAILURE(vrc))
-        {
-            rc = E_FAIL;
-            break;
-        }
-        rc = i_writeFSImpl(pTask, writeLock, pShaIo, &storage);
-    } while (0);
-
-    RTTarClose(tar);
-
-    /* Cleanup */
-    if (pShaIo)
-        RTMemFree(pShaIo);
-    if (pTarIo)
-        RTMemFree(pTarIo);
-
-    /* Delete ova file on error */
-    if (FAILED(rc))
-        RTFileDelete(pTask->locInfo.strPath.c_str());
-
-    LogFlowFuncLeave();
-    return rc;
-#endif
 }
 
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
 /**
  * Writes the Oracle Public Cloud appliance.
  *
@@ -2380,21 +2255,13 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
     return hrc;
 
 }
-#endif
 
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
 HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst)
-#else
-HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
-#endif
 {
     LogFlowFuncEnter();
 
     HRESULT rc = S_OK;
     int vrc;
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-    list<STRPAIR> fileList;
-#endif
     try
     {
         // the XML stack contains two maps for disks and networks, which allows us to
@@ -2405,11 +2272,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
         {
             /* Construct the OVF name. */
             Utf8Str strOvfFile(pTask->locInfo.strPath);
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
             strOvfFile.stripPath().stripSuffix().append(".ovf");
-#else
-            strOvfFile.stripSuffix().append(".ovf");
-#endif
 
             /* Render a valid ovf document into a memory buffer.  The unknown
                version upgrade relates to the OPC hack up in Appliance::write(). */
@@ -2417,29 +2280,17 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath,
                        pTask->enFormat != ovf::OVFVersion_unknown ? pTask->enFormat : ovf::OVFVersion_2_0);
 
-            {
-                void *pvBuf = NULL;
-                size_t cbSize = 0;
-                xml::XmlMemWriter writer;
-                writer.write(doc, &pvBuf, &cbSize);
-                if (RT_UNLIKELY(!pvBuf))
-                    throw setError(VBOX_E_FILE_ERROR, tr("Could not create OVF file '%s'"), strOvfFile.c_str());
+            void *pvBuf = NULL;
+            size_t cbSize = 0;
+            xml::XmlMemWriter writer;
+            writer.write(doc, &pvBuf, &cbSize);
+            if (RT_UNLIKELY(!pvBuf))
+                throw setError(VBOX_E_FILE_ERROR, tr("Could not create OVF file '%s'"), strOvfFile.c_str());
 
-                /* Write the ovf file to "disk". */
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
-                rc = i_writeBufferToFile(hVfsFssDst, strOvfFile.c_str(), pvBuf, cbSize);
-                if (FAILED(rc))
-                    throw rc;
-#else
-                vrc = writeBufferToFile(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
-                if (RT_FAILURE(vrc))
-                    throw setErrorVrc(vrc, tr("Could not create OVF file '%s' (%Rrc)"), strOvfFile.c_str(), vrc);
-#endif
-
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-                fileList.push_back(STRPAIR(strOvfFile, pStorage->strDigest));
-#endif
-            }
+            /* Write the ovf file to "disk". */
+            rc = i_writeBufferToFile(hVfsFssDst, strOvfFile.c_str(), pvBuf, cbSize);
+            if (FAILED(rc))
+                throw rc;
         }
 
         // We need a proper format description
@@ -2513,14 +2364,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
             const Utf8Str &strTargetFilePath = strTargetFileNameOnly;
-#else
-            Utf8Str strTargetFilePath(pTask->locInfo.strPath);
-            strTargetFilePath.stripFilename()
-                .append("/")
-                .append(strTargetFileNameOnly);
-#endif
 
             // The exporting requests a lock on the media tree. So leave our lock temporary.
             writeLock.release();
@@ -2538,7 +2382,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                     /*
                      * Export a disk image.
                      */
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
                     /* For compressed VMDK fun, we let i_exportFile produce the image bytes. */
                     RTVFSIOSTREAM hVfsIosDst;
                     vrc = RTVfsFsStrmPushFile(hVfsFssDst, strTargetFilePath.c_str(), UINT64_MAX,
@@ -2557,29 +2400,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                                                    hVfsIosDst,
                                                    pTask->pProgress);
                     RTVfsIoStrmRelease(hVfsIosDst);
-                    if (FAILED(rc)) throw rc;
-#else
-                    /** @todo this progress object needs to be hooked up to pTask->pProgress... */
-                    ComObjPtr<Progress> pProgress2;
-                    pProgress2.createObject();
-                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this),
-                                          BstrFmt(tr("Creating medium '%s'"),
-                                          strTargetFilePath.c_str()).raw(), TRUE);
-                    if (FAILED(rc)) throw rc;
-
-                    rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
-                                                   format,
-                                                   MediumVariant_VmdkStreamOptimized,
-                                                   m->m_pSecretKeyStore,
-                                                   pIfIo,
-                                                   pStorage,
-                                                   pProgress2);
-                    if (FAILED(rc)) throw rc;
-
-                    ComPtr<IProgress> pProgress3(pProgress2);
-                    // now wait for the background disk operation to complete; this throws HRESULTs on error
-                    i_waitForAsyncProgress(pTask->pProgress, pProgress3);
-#endif
                 }
                 else
                 {
@@ -2587,89 +2407,10 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                      * Copy CD/DVD/floppy image.
                      */
                     Assert(pDiskEntry->type == VirtualSystemDescriptionType_CDROM);
-
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
                     rc = pSourceDisk->i_addRawToFss(strTargetFilePath.c_str(), m->m_pSecretKeyStore, hVfsFssDst,
                                                     pTask->pProgress, false /*fSparse*/);
-                    if (FAILED(rc)) throw rc;
-#else
-                    /* Read the ISO file and add one to OVA/OVF package */
-                    void *pvStorage;
-                    RTFILE pFile = NULL;
-                    void *pvUser = pStorage;
-
-                    vrc = pIfIo->pfnOpen(pvUser, strTargetFilePath.c_str(),
-                                         RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
-                                         0,
-                                         &pvStorage);
-                    if (RT_FAILURE(vrc))
-                        throw setError(VBOX_E_FILE_ERROR,
-                                       tr("Could not create or open file '%s' (%Rrc)"),
-                                       strTargetFilePath.c_str(), vrc);
-
-                    vrc = RTFileOpen(&pFile,
-                                     strSrcFilePath.c_str(),
-                                     RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
-
-                    if (RT_FAILURE(vrc) || pFile == NULL)
-                    {
-                        pIfIo->pfnClose(pvUser, pvStorage);
-                        throw setError(VBOX_E_FILE_ERROR,
-                                       tr("Could not create or open file '%s' (%Rrc)"),
-                                       strSrcFilePath.c_str(), vrc);
-                    }
-
-                    uint64_t cbFile = 0;
-                    vrc = RTFileGetSize(pFile, &cbFile);
-                    if (RT_SUCCESS(vrc))
-                    {
-                        size_t const cbTmpSize = _1M;
-                        void *pvTmpBuf = RTMemAlloc(cbTmpSize);
-                        if (pvTmpBuf)
-                        {
-                            /* The copy loop. */
-                            uint64_t offDstFile = 0;
-                            for (;;)
-                            {
-                                size_t cbChunk = 0;
-                                vrc = RTFileRead(pFile, pvTmpBuf, cbTmpSize, &cbChunk);
-                                if (RT_FAILURE(vrc) || cbChunk == 0)
-                                    break;
-
-                                size_t cbWritten = 0;
-                                vrc = pIfIo->pfnWriteSync(pvUser,
-                                                          pvStorage,
-                                                          offDstFile,
-                                                          pvTmpBuf,
-                                                          cbChunk,
-                                                          &cbWritten);
-                                if (RT_FAILURE(vrc))
-                                    break;
-                                Assert(cbWritten == cbChunk);
-
-                                offDstFile += cbWritten;
-                            }
-
-                            RTMemFree(pvTmpBuf);
-                        }
-                        else
-                            vrc = VERR_NO_MEMORY;
-                    }
-
-                    pIfIo->pfnClose(pvUser, pvStorage);
-                    RTFileClose(pFile);
-
-                    if (RT_FAILURE(vrc))
-                    {
-                        if (vrc == VERR_EOF)
-                            vrc = VINF_SUCCESS;
-                        else
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Error during copy CD/DVD image '%s' (%Rrc)"),
-                                           strSrcFilePath.c_str(), vrc);
-                    }
-#endif
                 }
+                if (FAILED(rc)) throw rc;
             }
             catch (HRESULT rc3)
             {
@@ -2680,9 +2421,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             // Finished, lock again (so nobody mess around with the medium tree
             // in the meantime)
             writeLock.acquire();
-#ifndef VBOX_WITH_NEW_TAR_CREATOR
-            fileList.push_back(STRPAIR(strTargetFilePath, pStorage->strDigest));
-#endif
         }
 
         if (m->fManifest)
@@ -2693,7 +2431,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), strMfFileName.c_str()).raw(),
                                                m->ulWeightForManifestOperation);     // operation's weight, as set up
                                                                                      // with the IProgress originally);
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
             /* Create a memory I/O stream and write the manifest to it. */
             RTVFSIOSTREAM hVfsIosManifest;
             vrc = RTVfsMemIoStrmCreate(NIL_RTVFSIOSTREAM, _1K, &hVfsIosManifest);
@@ -2723,36 +2460,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             RTVfsIoStrmRelease(hVfsIosManifest);
             if (FAILED(rc))
                 throw rc;
-#else
-            PRTMANIFESTTEST paManifestFiles = (PRTMANIFESTTEST)RTMemAlloc(sizeof(RTMANIFESTTEST) * fileList.size());
-            size_t i = 0;
-            for (list<STRPAIR>::const_iterator
-                 it = fileList.begin();
-                 it != fileList.end();
-                 ++it, ++i)
-            {
-                paManifestFiles[i].pszTestFile   = (*it).first.c_str();
-                paManifestFiles[i].pszTestDigest = (*it).second.c_str();
-            }
-            void *pvBuf;
-            size_t cbSize;
-            vrc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, m->fSha256 ? RTDIGESTTYPE_SHA256 : RTDIGESTTYPE_SHA1,
-                                          paManifestFiles, fileList.size());
-            RTMemFree(paManifestFiles);
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not create manifest file '%s' (%Rrc)"),
-                               strMfFileName.c_str(), vrc);
-            /* Disable digest creation for the manifest file. */
-            pStorage->fCreateDigest = false;
-            /* Write the manifest file to disk. */
-            vrc = writeBufferToFile(strMfFilePath.c_str(), pvBuf, cbSize, pIfIo, pStorage);
-            RTMemFree(pvBuf);
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not create manifest file '%s' (%Rrc)"),
-                               strMfFilePath.c_str(), vrc);
-#endif
         }
     }
     catch (RTCError &x)  // includes all XML exceptions
@@ -2765,18 +2472,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
         rc = aRC;
     }
 
-#ifndef VBOX_WITH_NEW_TAR_CREATOR /* done in caller now */
-    /* Cleanup on error */
-    if (FAILED(rc))
-    {
-        for (list<STRPAIR>::const_iterator
-             it = fileList.begin();
-             it != fileList.end();
-             ++it)
-             pIfIo->pfnDelete(pStorage, (*it).first.c_str());
-    }
-#endif
-
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
@@ -2784,7 +2479,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
 }
 
 
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
 /**
  * Writes a memory buffer to a file in the output file system stream.
  *
@@ -2826,5 +2520,4 @@ HRESULT Appliance::i_writeBufferToFile(RTVFSFSSTREAM hVfsFssDst, const char *psz
         hrc = setErrorVrc(vrc, "RTVfsIoStrmFromBuffer");
     return hrc;
 }
-#endif
 

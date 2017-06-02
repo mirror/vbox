@@ -373,9 +373,6 @@ ifdef VBOX_WITH_USB
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
 	$(if $(VBOX_WITH_NEW_USB_CODE_ON_DARWIN),VBOX_WITH_NEW_USB_CODE_ON_DARWIN,)
 endif
-if !defined(VBOX_WITHOUT_NEW_TAR_CREATOR)
- VBoxSVC_DEFS += VBOX_WITH_NEW_TAR_CREATOR
-endif
 VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
 VBoxSVC_DEFS.win += _WIN32_WINNT=0x0510
 # Try to load and use libhal at runtime for probing removable media
@@ -446,7 +443,6 @@ VBoxSVC_SOURCES = \
 	src-server/ApplianceImpl.cpp \
 	src-server/ApplianceImplExport.cpp \
 	src-server/ApplianceImplImport.cpp \
-	src-server/ApplianceImplIO.cpp \
 	src-server/AudioAdapterImpl.cpp \
 	src-server/BandwidthControlImpl.cpp \
 	src-server/BandwidthGroupImpl.cpp \
