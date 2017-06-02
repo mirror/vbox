@@ -362,7 +362,46 @@ static RTEXITCODE rtZipTarCmdOpenOutputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSST
      */
     if (   pOpts->enmFormat == RTZIPTARCMDFORMAT_TAR
         || pOpts->enmFormat == RTZIPTARCMDFORMAT_AUTO_DEFAULT)
-        rc = RTZipTarFsStreamToIoStream(hVfsIos, pOpts->enmTarFormat, pOpts->fTarCreate, phVfsFss);
+    {
+        RTVFSFSSTREAM hVfsFss;
+        rc = RTZipTarFsStreamToIoStream(hVfsIos, pOpts->enmTarFormat, pOpts->fTarCreate, &hVfsFss);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Set transformation options.
+             */
+            rc = RTZipTarFsStreamSetFileMode(hVfsFss, pOpts->fFileModeAndMask, pOpts->fFileModeOrMask);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTZipTarFsStreamSetDirMode(hVfsFss, pOpts->fDirModeAndMask, pOpts->fDirModeOrMask);
+                if (RT_FAILURE(rc))
+                    RTMsgError("RTZipTarFsStreamSetDirMode(%o,%o) failed: %Rrc", pOpts->fDirModeAndMask, pOpts->fDirModeOrMask, rc);
+            }
+            else
+                RTMsgError("RTZipTarFsStreamSetFileMode(%o,%o) failed: %Rrc", pOpts->fFileModeAndMask, pOpts->fFileModeOrMask, rc);
+            if ((pOpts->pszOwner || pOpts->uidOwner != NIL_RTUID) && RT_SUCCESS(rc))
+            {
+                rc = RTZipTarFsStreamSetOwner(hVfsFss, pOpts->uidOwner, pOpts->pszOwner);
+                if (RT_FAILURE(rc))
+                    RTMsgError("RTZipTarFsStreamSetOwner(%d,%s) failed: %Rrc", pOpts->uidOwner, pOpts->pszOwner, rc);
+            }
+            if ((pOpts->pszGroup || pOpts->gidGroup != NIL_RTGID) && RT_SUCCESS(rc))
+            {
+                rc = RTZipTarFsStreamSetGroup(hVfsFss, pOpts->gidGroup, pOpts->pszGroup);
+                if (RT_FAILURE(rc))
+                    RTMsgError("RTZipTarFsStreamSetGroup(%d,%s) failed: %Rrc", pOpts->gidGroup, pOpts->pszGroup, rc);
+            }
+            if (RT_SUCCESS(rc))
+                *phVfsFss = hVfsFss;
+            else
+            {
+                RTVfsFsStrmRelease(hVfsFss);
+                *phVfsFss = NIL_RTVFSFSSTREAM;
+            }
+        }
+        else
+            rc = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open tar filesystem stream: %Rrc", rc);
+    }
     else
         rc = VERR_NOT_SUPPORTED;
     RTVfsIoStrmRelease(hVfsIos);
