@@ -6248,7 +6248,7 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
                                                  VDGetSize(hdd, VD_LAST_IMAGE) * (fSparse ? 2 : 1) /*cbExpectedRead*/,
                                                  0 /*cbExpectedWritten*/, &hVfsFileProgress);
                 RTVfsFileRelease(hVfsFileDisk);
-                if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(vrc))
                 {
                     RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFileProgress);
                     RTVfsFileRelease(hVfsFileProgress);
