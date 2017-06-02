@@ -314,6 +314,71 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
 /** @} */
 
 /**
+ * Set the owner to store the archive entries with.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss             The handle to a TAR creator.
+ * @param   uid                 The UID value to set.  Passing NIL_RTUID makes
+ *                              it use the value found in RTFSOBJINFO.
+ * @param   pszOwner            The owner name to store.  Passing NULL makes it
+ *                              use the value found in RTFSOBJINFO.
+ */
+RTDECL(int) RTZipTarFsStreamSetOwner(RTVFSFSSTREAM hVfsFss, RTUID uid, const char *pszOwner);
+
+/**
+ * Set the group to store the archive entries with.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss             The handle to a TAR creator.
+ * @param   gid                 The GID value to set.  Passing NIL_RTUID makes
+ *                              it use the value found in RTFSOBJINFO.
+ * @param   pszGroup            The group name to store.  Passing NULL makes it
+ *                              use the value found in RTFSOBJINFO.
+ */
+RTDECL(int) RTZipTarFsStreamSetGroup(RTVFSFSSTREAM hVfsFss, RTGID gid, const char *pszGroup);
+
+/**
+ * Set path prefix to store the archive entries with.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss             The handle to a TAR creator.
+ * @param   pszPrefix           The path prefix to join the names with.  Pass
+ *                              NULL for no prefix.
+ */
+RTDECL(int) RTZipTarFsStreamSetPrefix(RTVFSFSSTREAM hVfsFss, const char *pszPrefix);
+
+/**
+ * Set the AND and OR masks to apply to file (non-dir) modes in the archive.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss             The handle to a TAR creator.
+ * @param   fAndMode            The bits to keep
+ * @param   fOrMode             The bits to set.
+ */
+RTDECL(int) RTZipTarFsStreamSetFileMode(RTVFSFSSTREAM hVfsFss, RTFMODE fAndMode, RTFMODE fOrMode);
+
+/**
+ * Set the AND and OR masks to apply to directory modes in the archive.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss             The handle to a TAR creator.
+ * @param   fAndMode            The bits to keep
+ * @param   fOrMode             The bits to set.
+ */
+RTDECL(int) RTZipTarFsStreamSetDirMode(RTVFSFSSTREAM hVfsFss, RTFMODE fAndMode, RTFMODE fOrMode);
+
+/**
+ * Set the modification time to store the archive entires with.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFss             The handle to a TAR creator.
+ * @param   pModificationTime   The modification time to use.  Pass NULL to use
+ *                              the value found in RTFSOBJINFO.
+ */
+RTDECL(int) RTZipTarFsStreamSetMTime(RTVFSFSSTREAM hVfsFss, PCRTTIMESPEC pModificationTime);
+
+
+/**
  * A mini TAR program.
  *
  * @returns Program exit code.

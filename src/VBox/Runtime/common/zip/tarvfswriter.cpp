@@ -166,6 +166,24 @@ typedef struct RTZIPTARFSSTREAMWRITER
     /** Number of bytes written. */
     uint64_t                cbWritten;
 
+    /** @name Attribute overrides.
+     * @{
+     */
+    RTUID                   uidOwner;           /**< Owner, NIL_RTUID if no change. */
+    char                   *pszOwner;           /**< Owner, NULL if no change. */
+    RTGID                   gidGroup;           /**< Group, NIL_RTGID if no change. */
+    char                   *pszGroup;           /**< Group, NULL if no change. */
+    char                   *pszPrefix;          /**< Path prefix, NULL if no change. */
+    size_t                  cchPrefix;          /**< The length of pszPrefix. */
+    PRTTIMESPEC             pModTime;           /**< Modification time, NULL of no change. */
+    RTTIMESPEC              ModTime;            /**< pModTime points to this. */
+    RTFMODE                 fFileModeAndMask;   /**< File mode AND mask. */
+    RTFMODE                 fFileModeOrMask;    /**< File mode OR mask. */
+    RTFMODE                 fDirModeAndMask;    /**< Directory mode AND mask. */
+    RTFMODE                 fDirModeOrMask;     /**< Directory mode OR mask. */
+    /** @} */
+
+
     /** Number of headers returned by rtZipTarFssWriter_ObjInfoToHdr. */
     uint32_t                cHdrs;
     /** Header buffers returned by rtZipTarFssWriter_ObjInfoToHdr. */
@@ -280,7 +298,7 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
     if (cchPath < sizeof(pThis->aHdrs[0].Common.name))
     {
         memcpy(pThis->aHdrs[0].Common.name, pszPath, cchPath + 1);
-#if RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
+#if RTPATH_STYLE != RTPATH_STR_F_STYLE_UNIX
         char *pszDosSlash = strchr(pThis->aHdrs[0].Common.name, '\\');
         while (pszDosSlash)
         {
@@ -299,21 +317,26 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
      * File mode.  ASSUME that the unix part of the IPRT mode mask is
      * compatible with the TAR/Unix world.
      */
-    int rc;
-    rc = RTStrFormatU32(pThis->aHdrs[0].Common.mode, sizeof(pThis->aHdrs[0].Common.mode), pObjInfo->Attr.fMode & RTFS_UNIX_MASK,
-                        8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.mode) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
+    uint32_t uValue = pObjInfo->Attr.fMode & RTFS_UNIX_MASK;
+    if (RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+        uValue = (uValue & pThis->fDirModeAndMask) | pThis->fDirModeOrMask;
+    else
+        uValue = (uValue & pThis->fFileModeAndMask) | pThis->fFileModeOrMask;
+    int rc = RTStrFormatU32(pThis->aHdrs[0].Common.mode, sizeof(pThis->aHdrs[0].Common.mode), uValue, 8 /*uBase*/,
+                            -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.mode) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
-
 
     /*
      * uid & gid.  Just guard against NIL values as they won't fit.
      */
-    uint32_t uValue = pObjInfo->Attr.u.Unix.uid != NIL_RTUID ? pObjInfo->Attr.u.Unix.uid : 0;
+    uValue = pThis->uidOwner != NIL_RTUID ? pThis->uidOwner
+           : pObjInfo->Attr.u.Unix.uid != NIL_RTUID ? pObjInfo->Attr.u.Unix.uid : 0;
     rc = RTStrFormatU32(pThis->aHdrs[0].Common.uid, sizeof(pThis->aHdrs[0].Common.uid), uValue,
                         8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.uid) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
 
-    uValue = pObjInfo->Attr.u.Unix.gid != NIL_RTUID ? pObjInfo->Attr.u.Unix.gid : 0;
+    uValue = pThis->gidGroup != NIL_RTGID ? pThis->gidGroup
+           : pObjInfo->Attr.u.Unix.gid != NIL_RTGID ? pObjInfo->Attr.u.Unix.gid : 0;
     rc = RTStrFormatU32(pThis->aHdrs[0].Common.gid, sizeof(pThis->aHdrs[0].Common.gid), uValue,
                         8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.gid) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, VERR_TAR_NUM_VALUE_TOO_LARGE);
@@ -328,7 +351,7 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
      * Modification time relative to unix epoc.
      */
     rc = RTStrFormatU64(pThis->aHdrs[0].Common.mtime, sizeof(pThis->aHdrs[0].Common.mtime),
-                        RTTimeSpecGetSeconds(&pObjInfo->ModificationTime),
+                        RTTimeSpecGetSeconds(pThis->pModTime ? pThis->pModTime : &pObjInfo->ModificationTime),
                         8 /*uBase*/, -1 /*cchWidth*/, sizeof(pThis->aHdrs[0].Common.mtime) - 1, RTSTR_F_ZEROPAD | RTSTR_F_PRECISION);
     AssertRCReturn(rc, rc);
 
@@ -370,8 +393,8 @@ static int rtZipTarFssWriter_ObjInfoToHdr(PRTZIPTARFSSTREAMWRITER pThis, const c
     /*
      * Owner and group names.  Silently truncate them for now.
      */
-    RTStrCopy(pThis->aHdrs[0].Common.uname, sizeof(pThis->aHdrs[0].Common.uname), pszOwnerNm);
-    RTStrCopy(pThis->aHdrs[0].Common.gname, sizeof(pThis->aHdrs[0].Common.uname), pszGroupNm);
+    RTStrCopy(pThis->aHdrs[0].Common.uname, sizeof(pThis->aHdrs[0].Common.uname), pThis->pszOwner ? pThis->pszOwner : pszOwnerNm);
+    RTStrCopy(pThis->aHdrs[0].Common.gname, sizeof(pThis->aHdrs[0].Common.uname), pThis->pszGroup ? pThis->pszGroup : pszGroupNm);
 
     /*
      * Char/block device numbers.
@@ -1533,7 +1556,7 @@ static int rtZipTarFssWriter_AddSymlink(PRTZIPTARFSSTREAMWRITER pThis, const cha
     int rc = RTVfsSymlinkRead(hVfsSymlink, szTarget,  sizeof(szTarget));
     if (RT_SUCCESS(rc))
     {
-#if RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
+#if RTPATH_STYLE != RTPATH_STR_F_STYLE_UNIX
         char *pszDosSlash = strchr(szTarget, '\\');
         while (pszDosSlash)
         {
@@ -1622,6 +1645,22 @@ static DECLCALLBACK(int) rtZipTarFssWriter_Close(void *pvThis)
     {
         RTVfsFileRelease(pThis->hVfsFile);
         pThis->hVfsFile = NIL_RTVFSFILE;
+    }
+
+    if (pThis->pszOwner)
+    {
+        RTStrFree(pThis->pszOwner);
+        pThis->pszOwner = NULL;
+    }
+    if (pThis->pszGroup)
+    {
+        RTStrFree(pThis->pszGroup);
+        pThis->pszGroup = NULL;
+    }
+    if (pThis->pszPrefix)
+    {
+        RTStrFree(pThis->pszPrefix);
+        pThis->pszPrefix = NULL;
     }
 
     return VINF_SUCCESS;
@@ -1894,7 +1933,7 @@ static DECLCALLBACK(int) rtZipTarFssWriter_End(void *pvThis)
 /**
  * Tar filesystem stream operations.
  */
-static const RTVFSFSSTREAMOPS rtZipTarFssOps =
+static const RTVFSFSSTREAMOPS g_rtZipTarFssOps =
 {
     { /* Obj */
         RTVFSOBJOPS_VERSION,
@@ -1940,16 +1979,27 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
      */
     PRTZIPTARFSSTREAMWRITER pThis;
     RTVFSFSSTREAM           hVfsFss;
-    int rc = RTVfsNewFsStream(&rtZipTarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, false /*fReadOnly*/,
+    int rc = RTVfsNewFsStream(&g_rtZipTarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, false /*fReadOnly*/,
                               &hVfsFss, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
-        pThis->hVfsIos   = hVfsIosOut;
-        pThis->hVfsFile  = RTVfsIoStrmToFile(hVfsIosOut);
+        pThis->hVfsIos          = hVfsIosOut;
+        pThis->hVfsFile         = RTVfsIoStrmToFile(hVfsIosOut);
 
-        pThis->enmFormat = enmFormat;
-        pThis->fFlags    = fFlags;
-        pThis->rcFatal   = VINF_SUCCESS;
+        pThis->enmFormat        = enmFormat;
+        pThis->fFlags           = fFlags;
+        pThis->rcFatal          = VINF_SUCCESS;
+
+        pThis->uidOwner         = NIL_RTUID;
+        pThis->pszOwner         = NULL;
+        pThis->gidGroup         = NIL_RTGID;
+        pThis->pszGroup         = NULL;
+        pThis->pszPrefix        = NULL;
+        pThis->pModTime         = NULL;
+        pThis->fFileModeAndMask = ~(RTFMODE)0;
+        pThis->fFileModeOrMask  = 0;
+        pThis->fDirModeAndMask  = ~(RTFMODE)0;
+        pThis->fDirModeOrMask   = 0;
 
         *phVfsFss = hVfsFss;
         return VINF_SUCCESS;
@@ -1957,5 +2007,128 @@ RTDECL(int) RTZipTarFsStreamToIoStream(RTVFSIOSTREAM hVfsIosOut, RTZIPTARFORMAT 
 
     RTVfsIoStrmRelease(hVfsIosOut);
     return rc;
+}
+
+
+RTDECL(int) RTZipTarFsStreamSetOwner(RTVFSFSSTREAM hVfsFss, RTUID uid, const char *pszOwner)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)RTVfsFsStreamToPrivate(hVfsFss, &g_rtZipTarFssOps);
+    AssertReturn(pThis, VERR_WRONG_TYPE);
+
+    pThis->uidOwner = uid;
+    if (pThis->pszOwner)
+    {
+        RTStrFree(pThis->pszOwner);
+        pThis->pszOwner = NULL;
+    }
+    if (pszOwner)
+    {
+        pThis->pszOwner = RTStrDup(pszOwner);
+        AssertReturn(pThis->pszOwner, VERR_NO_STR_MEMORY);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTZipTarFsStreamSetGroup(RTVFSFSSTREAM hVfsFss, RTGID gid, const char *pszGroup)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)RTVfsFsStreamToPrivate(hVfsFss, &g_rtZipTarFssOps);
+    AssertReturn(pThis, VERR_WRONG_TYPE);
+
+    pThis->gidGroup = gid;
+    if (pThis->pszGroup)
+    {
+        RTStrFree(pThis->pszGroup);
+        pThis->pszGroup = NULL;
+    }
+    if (pszGroup)
+    {
+        pThis->pszGroup = RTStrDup(pszGroup);
+        AssertReturn(pThis->pszGroup, VERR_NO_STR_MEMORY);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTZipTarFsStreamSetPrefix(RTVFSFSSTREAM hVfsFss, const char *pszPrefix)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)RTVfsFsStreamToPrivate(hVfsFss, &g_rtZipTarFssOps);
+    AssertReturn(pThis, VERR_WRONG_TYPE);
+    AssertReturn(!pszPrefix || *pszPrefix, VERR_INVALID_NAME);
+
+    if (pThis->pszPrefix)
+    {
+        RTStrFree(pThis->pszPrefix);
+        pThis->pszPrefix = NULL;
+        pThis->cchPrefix = 0;
+    }
+    if (pszPrefix)
+    {
+        /*
+         * Make a copy of the prefix, make sure it ends with a slash,
+         * then flip DOS slashes.
+         */
+        size_t cchPrefix = strlen(pszPrefix);
+        char *pszCopy = RTStrAlloc(cchPrefix + 3);
+        AssertReturn(pszCopy, VERR_NO_STR_MEMORY);
+        memcpy(pszCopy, pszPrefix, cchPrefix + 1);
+
+        RTPathEnsureTrailingSeparator(pszCopy, cchPrefix + 3);
+
+#if RTPATH_STYLE != RTPATH_STR_F_STYLE_UNIX
+        char *pszDosSlash = strchr(pszCopy, '\\');
+        while (pszDosSlash)
+        {
+            *pszDosSlash = '/';
+            pszDosSlash = strchr(pszDosSlash + 1, '\\');
+        }
+#endif
+
+        pThis->cchPrefix = cchPrefix + strlen(&pszCopy[cchPrefix]);
+        pThis->pszPrefix = pszCopy;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTZipTarFsStreamSetModTime(RTVFSFSSTREAM hVfsFss, PCRTTIMESPEC pModificationTime)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)RTVfsFsStreamToPrivate(hVfsFss, &g_rtZipTarFssOps);
+    AssertReturn(pThis, VERR_WRONG_TYPE);
+
+    if (pModificationTime)
+    {
+        pThis->ModTime  = *pModificationTime;
+        pThis->pModTime = &pThis->ModTime;
+    }
+    else
+        pThis->pModTime = NULL;
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTZipTarFsStreamSetFileMode(RTVFSFSSTREAM hVfsFss, RTFMODE fAndMode, RTFMODE fOrMode)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)RTVfsFsStreamToPrivate(hVfsFss, &g_rtZipTarFssOps);
+    AssertReturn(pThis, VERR_WRONG_TYPE);
+
+    pThis->fFileModeAndMask = fAndMode | ~RTFS_UNIX_ALL_PERMS;
+    pThis->fFileModeOrMask  = fOrMode  & RTFS_UNIX_ALL_PERMS;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTZipTarFsStreamSetDirMode(RTVFSFSSTREAM hVfsFss, RTFMODE fAndMode, RTFMODE fOrMode)
+{
+    PRTZIPTARFSSTREAMWRITER pThis = (PRTZIPTARFSSTREAMWRITER)RTVfsFsStreamToPrivate(hVfsFss, &g_rtZipTarFssOps);
+    AssertReturn(pThis, VERR_WRONG_TYPE);
+
+    pThis->fDirModeAndMask = fAndMode | ~RTFS_UNIX_ALL_PERMS;
+    pThis->fDirModeOrMask  = fOrMode  & RTFS_UNIX_ALL_PERMS;
+    return VINF_SUCCESS;
 }
 

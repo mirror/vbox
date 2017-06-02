@@ -2447,6 +2447,12 @@
 # define RTZipUnzipCmd                                  RT_MANGLER(RTZipUnzipCmd)
 # define RTZipTarFsStreamFromIoStream                   RT_MANGLER(RTZipTarFsStreamFromIoStream)
 # define RTZipTarFsStreamToIoStream                     RT_MANGLER(RTZipTarFsStreamToIoStream)
+# define RTZipTarFsStreamSetOwner                       RT_MANGLER(RTZipTarFsStreamSetOwner)
+# define RTZipTarFsStreamSetGroup                       RT_MANGLER(RTZipTarFsStreamSetGroup)
+# define RTZipTarFsStreamSetPrefix                      RT_MANGLER(RTZipTarFsStreamSetPrefix)
+# define RTZipTarFsStreamSetFileMode                    RT_MANGLER(RTZipTarFsStreamSetFileMode)
+# define RTZipTarFsStreamSetDirMode                     RT_MANGLER(RTZipTarFsStreamSetDirMode)
+# define RTZipTarFsStreamSetModTime                     RT_MANGLER(RTZipTarFsStreamSetModTime)
 # define RTZipXarFsStreamFromIoStream                   RT_MANGLER(RTZipXarFsStreamFromIoStream)
 
 /* sort/merge into the above later: */
