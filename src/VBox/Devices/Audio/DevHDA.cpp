@@ -306,14 +306,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 /** @todo Condense marcos! */
 
-#define HDA_REG_SD0CTL              HDA_NUM_GENERAL_REGS /* 0x80 */
-#define HDA_REG_SD1CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 10)  /* 0xA0 */
-#define HDA_REG_SD2CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 20)  /* 0xC0 */
-#define HDA_REG_SD3CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 30)  /* 0xE0 */
-#define HDA_REG_SD4CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 40)  /* 0x100 */
-#define HDA_REG_SD5CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 50)  /* 0x120 */
-#define HDA_REG_SD6CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 60)  /* 0x140 */
-#define HDA_REG_SD7CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 70)  /* 0x160 */
+#define HDA_REG_SD0CTL              HDA_NUM_GENERAL_REGS /* 0x80; other streams offset by 0x20 */
 #define HDA_RMX_SD0CTL              32
 #define HDA_RMX_SD1CTL              (HDA_STREAM_RMX_DEF(CTL, 0) + 10)
 #define HDA_RMX_SD2CTL              (HDA_STREAM_RMX_DEF(CTL, 0) + 20)
@@ -325,7 +318,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define SD(func, num)               SD##num##func
 
-#define HDA_SDCTL(pThis, num)       HDA_REG((pThis), SD(CTL, num))
 #define HDA_SDCTL_NUM_MASK          0xF
 #define HDA_SDCTL_NUM_SHIFT         20
 #define HDA_SDCTL_DIR               RT_BIT(19)  /* Direction (Bidirectional streams only!) */
@@ -338,14 +330,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_SDCTL_RUN               RT_BIT(1)   /* Stream Run */
 #define HDA_SDCTL_SRST              RT_BIT(0)   /* Stream Reset */
 
-#define HDA_REG_SD0STS              35 /* 0x83 */
-#define HDA_REG_SD1STS              (HDA_STREAM_REG_DEF(STS, 0) + 10) /* 0xA3 */
-#define HDA_REG_SD2STS              (HDA_STREAM_REG_DEF(STS, 0) + 20) /* 0xC3 */
-#define HDA_REG_SD3STS              (HDA_STREAM_REG_DEF(STS, 0) + 30) /* 0xE3 */
-#define HDA_REG_SD4STS              (HDA_STREAM_REG_DEF(STS, 0) + 40) /* 0x103 */
-#define HDA_REG_SD5STS              (HDA_STREAM_REG_DEF(STS, 0) + 50) /* 0x123 */
-#define HDA_REG_SD6STS              (HDA_STREAM_REG_DEF(STS, 0) + 60) /* 0x143 */
-#define HDA_REG_SD7STS              (HDA_STREAM_REG_DEF(STS, 0) + 70) /* 0x163 */
+#define HDA_REG_SD0STS              35 /* 0x83; other streams offset by 0x20 */
 #define HDA_RMX_SD0STS              33
 #define HDA_RMX_SD1STS              (HDA_STREAM_RMX_DEF(STS, 0) + 10)
 #define HDA_RMX_SD2STS              (HDA_STREAM_RMX_DEF(STS, 0) + 20)
@@ -361,7 +346,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_SDSTS_FIFOE             RT_BIT(3)   /* FIFO Error */
 #define HDA_SDSTS_BCIS              RT_BIT(2)   /* Buffer Completion Interrupt Status */
 
-#define HDA_REG_SD0LPIB             36 /* 0x84 */
+#define HDA_REG_SD0LPIB             36 /* 0x84; other streams offset by 0x20 */
 #define HDA_REG_SD1LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 10) /* 0xA4 */
 #define HDA_REG_SD2LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 20) /* 0xC4 */
 #define HDA_REG_SD3LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 30) /* 0xE4 */
@@ -378,14 +363,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD6LPIB             (HDA_STREAM_RMX_DEF(LPIB, 0) + 60)
 #define HDA_RMX_SD7LPIB             (HDA_STREAM_RMX_DEF(LPIB, 0) + 70)
 
-#define HDA_REG_SD0CBL              37 /* 0x88 */
-#define HDA_REG_SD1CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 10) /* 0xA8 */
-#define HDA_REG_SD2CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 20) /* 0xC8 */
-#define HDA_REG_SD3CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 30) /* 0xE8 */
-#define HDA_REG_SD4CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 40) /* 0x108 */
-#define HDA_REG_SD5CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 50) /* 0x128 */
-#define HDA_REG_SD6CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 60) /* 0x148 */
-#define HDA_REG_SD7CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 70) /* 0x168 */
+#define HDA_REG_SD0CBL              37 /* 0x88; other streams offset by 0x20 */
 #define HDA_RMX_SD0CBL              35
 #define HDA_RMX_SD1CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 10)
 #define HDA_RMX_SD2CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 20)
@@ -395,14 +373,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD6CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 60)
 #define HDA_RMX_SD7CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 70)
 
-#define HDA_REG_SD0LVI              38 /* 0x8C */
-#define HDA_REG_SD1LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 10) /* 0xAC */
-#define HDA_REG_SD2LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 20) /* 0xCC */
-#define HDA_REG_SD3LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 30) /* 0xEC */
-#define HDA_REG_SD4LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 40) /* 0x10C */
-#define HDA_REG_SD5LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 50) /* 0x12C */
-#define HDA_REG_SD6LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 60) /* 0x14C */
-#define HDA_REG_SD7LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 70) /* 0x16C */
+#define HDA_REG_SD0LVI              38 /* 0x8C; other streams offset by 0x20 */
 #define HDA_RMX_SD0LVI              36
 #define HDA_RMX_SD1LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 10)
 #define HDA_RMX_SD2LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 20)
@@ -412,14 +383,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD6LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 60)
 #define HDA_RMX_SD7LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 70)
 
-#define HDA_REG_SD0FIFOW            39 /* 0x8E */
-#define HDA_REG_SD1FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 10) /* 0xAE */
-#define HDA_REG_SD2FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 20) /* 0xCE */
-#define HDA_REG_SD3FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 30) /* 0xEE */
-#define HDA_REG_SD4FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 40) /* 0x10E */
-#define HDA_REG_SD5FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 50) /* 0x12E */
-#define HDA_REG_SD6FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 60) /* 0x14E */
-#define HDA_REG_SD7FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 70) /* 0x16E */
+#define HDA_REG_SD0FIFOW            39 /* 0x8E; other streams offset by 0x20 */
 #define HDA_RMX_SD0FIFOW            37
 #define HDA_RMX_SD1FIFOW            (HDA_STREAM_RMX_DEF(FIFOW, 0) + 10)
 #define HDA_RMX_SD2FIFOW            (HDA_STREAM_RMX_DEF(FIFOW, 0) + 20)
@@ -436,14 +400,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_SDFIFOW_16B             0x3
 #define HDA_SDFIFOW_32B             0x4
 
-#define HDA_REG_SD0FIFOS            40 /* 0x90 */
-#define HDA_REG_SD1FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 10) /* 0xB0 */
-#define HDA_REG_SD2FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 20) /* 0xD0 */
-#define HDA_REG_SD3FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 30) /* 0xF0 */
-#define HDA_REG_SD4FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 40) /* 0x110 */
-#define HDA_REG_SD5FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 50) /* 0x130 */
-#define HDA_REG_SD6FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 60) /* 0x150 */
-#define HDA_REG_SD7FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 70) /* 0x170 */
+#define HDA_REG_SD0FIFOS            40 /* 0x90; other streams offset by 0x20 */
 #define HDA_RMX_SD0FIFOS            38
 #define HDA_RMX_SD1FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 10)
 #define HDA_RMX_SD2FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 20)
@@ -472,14 +429,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_SDOFIFO_256B            0xFF /* 20-, 24-bit Output Streams */
 #define SDFIFOS(pThis, num)         HDA_REG((pThis), SD(FIFOS, num))
 
-#define HDA_REG_SD0FMT              41 /* 0x92 */
-#define HDA_REG_SD1FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 10) /* 0xB2 */
-#define HDA_REG_SD2FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 20) /* 0xD2 */
-#define HDA_REG_SD3FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 30) /* 0xF2 */
-#define HDA_REG_SD4FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 40) /* 0x112 */
-#define HDA_REG_SD5FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 50) /* 0x132 */
-#define HDA_REG_SD6FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 60) /* 0x152 */
-#define HDA_REG_SD7FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 70) /* 0x172 */
+#define HDA_REG_SD0FMT              41 /* 0x92; other streams offset by 0x20 */
 #define HDA_RMX_SD0FMT              39
 #define HDA_RMX_SD1FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 10)
 #define HDA_RMX_SD2FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 20)
@@ -491,14 +441,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define SDFMT(pThis, num)               (HDA_REG((pThis), SD(FMT, num)))
 
-#define HDA_REG_SD0BDPL             42 /* 0x98 */
-#define HDA_REG_SD1BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 10) /* 0xB8 */
-#define HDA_REG_SD2BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 20) /* 0xD8 */
-#define HDA_REG_SD3BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 30) /* 0xF8 */
-#define HDA_REG_SD4BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 40) /* 0x118 */
-#define HDA_REG_SD5BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 50) /* 0x138 */
-#define HDA_REG_SD6BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 60) /* 0x158 */
-#define HDA_REG_SD7BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 70) /* 0x178 */
+#define HDA_REG_SD0BDPL             42 /* 0x98; other streams offset by 0x20 */
 #define HDA_RMX_SD0BDPL             40
 #define HDA_RMX_SD1BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 10)
 #define HDA_RMX_SD2BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 20)
@@ -508,14 +451,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD6BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 60)
 #define HDA_RMX_SD7BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 70)
 
-#define HDA_REG_SD0BDPU             43 /* 0x9C */
-#define HDA_REG_SD1BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 10) /* 0xBC */
-#define HDA_REG_SD2BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 20) /* 0xDC */
-#define HDA_REG_SD3BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 30) /* 0xFC */
-#define HDA_REG_SD4BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 40) /* 0x11C */
-#define HDA_REG_SD5BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 50) /* 0x13C */
-#define HDA_REG_SD6BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 60) /* 0x15C */
-#define HDA_REG_SD7BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 70) /* 0x17C */
+#define HDA_REG_SD0BDPU             43 /* 0x9C; other streams offset by 0x20 */
 #define HDA_RMX_SD0BDPU             41
 #define HDA_RMX_SD1BDPU             (HDA_STREAM_RMX_DEF(BDPU, 0) + 10)
 #define HDA_RMX_SD2BDPU             (HDA_STREAM_RMX_DEF(BDPU, 0) + 20)
@@ -1439,25 +1375,16 @@ static void hdaUpdateINTSTS(PHDASTATE pThis)
         intSts |= HDA_INTSTS_CIS;   /* Set the Controller Interrupt Status (CIS). */
     }
 
-#define HDA_MARK_STREAM(x)                                                  \
-        if (   (HDA_REG(pThis, INTCTL) & RT_BIT(x))                         \
-            && ((SDSTS(pThis, x) & (HDA_SDSTS_DESE | HDA_SDSTS_FIFOE | HDA_SDSTS_BCIS))) \
-           )                                                                \
-    {                                                                       \
-        Log3Func(("[SD%RU8] Marked\n", x));                                 \
-        intSts |= RT_BIT(x);                                                \
+    /** @todo r=michaln The logic here ignores enable bits and is generally completely broken. */
+    for (int iStrm = 0; iStrm < 8; ++iStrm)
+    {
+        if (   (HDA_REG(pThis, INTCTL) & RT_BIT(iStrm))
+            && (HDA_STREAM_REG(pThis, STS, iStrm) & (HDA_SDSTS_DESE | HDA_SDSTS_FIFOE | HDA_SDSTS_BCIS)))
+        {
+            Log3Func(("[SD%d] interrupt set\n", iStrm));
+            intSts |= RT_BIT(iStrm);
+        }
     }
-
-    HDA_MARK_STREAM(0);
-    HDA_MARK_STREAM(1);
-    HDA_MARK_STREAM(2);
-    HDA_MARK_STREAM(3);
-    HDA_MARK_STREAM(4);
-    HDA_MARK_STREAM(5);
-    HDA_MARK_STREAM(6);
-    HDA_MARK_STREAM(7);
-
-#undef HDA_MARK_STREAM
 
     if (intSts)
         intSts |= HDA_INTSTS_GIS;   /* Set the Global Interrupt Status (GIS). */
@@ -1474,6 +1401,7 @@ static int hdaProcessInterrupt(PHDASTATE pThis)
     int iLevel = 0;
 
     /* Global Interrupt Status (GIS) set? */
+    /** @todo r=michaln: This is wrong. It is possible to have GIS set when CIS and all stream interrupts are disabled. */
     if (HDA_REG(pThis, INTSTS) & HDA_INTSTS_GIS)
         iLevel = 1;
 
