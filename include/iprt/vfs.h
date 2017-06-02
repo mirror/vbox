@@ -1203,7 +1203,7 @@ RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
  * Get the RTFILE_O_XXX flags for the I/O stream.
  *
  * @returns RTFILE_O_XXX, 0 on failure.
- * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   hVfsFile        The VFS file handle.
  */
 RTDECL(uint64_t)    RTVfsFileGetOpenFlags(RTVFSFILE hVfsFile);
 
