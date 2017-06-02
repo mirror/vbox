@@ -6257,7 +6257,6 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
                     RTVfsObjRelease(hVfsObj);
                     if (RT_FAILURE(vrc))
                         rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to add '%s' to output (%Rrc)"), aFilename, vrc);
-
                 }
                 else
                     rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
@@ -6271,13 +6270,6 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
         VDDestroy(hdd);
     }
     catch (HRESULT hrc2) { rc = hrc2; }
-
-    /* Everything is explicitly unlocked when the task exits,
-     * as the task destruction also destroys the source chain. */
-
-    /* Make sure the source chain is released early, otherwise it can
-     * lead to deadlocks with concurrent IAppliance activities. */
-    SourceMediumLockList.Clear();
 
     return rc;
 }
