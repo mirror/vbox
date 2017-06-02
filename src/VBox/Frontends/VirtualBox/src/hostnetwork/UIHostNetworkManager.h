@@ -79,8 +79,8 @@ private slots:
         void sltRemoveHostNetwork();
         /** Handles command to make host network details @a fVisible. */
         void sltToggleHostNetworkDetailsVisibility(bool fVisible);
-        /** Handles command to apply host network details changes. */
-        void sltApplyHostNetworkDetailsChanges();
+        /** Handles command to commit host network details changes. */
+        void sltCommitHostNetworkDetailsChanges();
     /** @} */
 
     /** @name Tree-widget stuff.

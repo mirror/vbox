@@ -62,9 +62,8 @@ UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent /* = 0 *
 
 void UIHostNetworkDetailsDialog::setData(const UIDataHostNetwork &data)
 {
-    /* Save old data: */
+    /* Cache old/new data: */
     m_oldData = data;
-    /* Copy old data to new one: */
     m_newData = m_oldData;
 
     /* Load 'Interface' data: */

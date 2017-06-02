@@ -409,14 +409,14 @@ void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
     }
 }
 
-void UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fShow)
+void UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVisible)
 {
     /* Show/hide details area and Apply button: */
-    m_pDetailsWidget->setVisible(fShow);
-    m_pActionCommit->setVisible(fShow);
+    m_pDetailsWidget->setVisible(fVisible);
+    m_pActionCommit->setVisible(fVisible);
 }
 
-void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
+void UIHostNetworkManagerWidget::sltCommitHostNetworkDetailsChanges()
 {
     /* Disable button first of all: */
     m_pActionCommit->setEnabled(false);
@@ -653,9 +653,12 @@ void UIHostNetworkManagerWidget::sltHandleCurrentItemChange()
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
 
     /* Update actions availability: */
-    m_pActionRemove->setEnabled(pItem);
-    m_pActionDetails->setEnabled(pItem);
-    m_pActionCommit->setEnabled(false);
+    if (m_pActionRemove)
+        m_pActionRemove->setEnabled(pItem);
+    if (m_pActionDetails)
+        m_pActionDetails->setEnabled(pItem);
+    if (m_pActionCommit)
+        m_pActionCommit->setEnabled(false);
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -674,13 +677,17 @@ void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &pos)
     QMenu menu;
     if (m_pTreeWidget->itemAt(pos))
     {
-        menu.addAction(m_pActionRemove);
-        menu.addAction(m_pActionDetails);
-        menu.addAction(m_pActionCommit);
+        if (m_pActionRemove)
+            menu.addAction(m_pActionRemove);
+        if (m_pActionDetails)
+            menu.addAction(m_pActionDetails);
+        if (m_pActionCommit)
+            menu.addAction(m_pActionCommit);
     }
     else
     {
-        menu.addAction(m_pActionAdd);
+        if (m_pActionAdd)
+            menu.addAction(m_pActionAdd);
     }
     /* And show it: */
     menu.exec(m_pTreeWidget->mapToGlobal(pos));
@@ -759,8 +766,9 @@ void UIHostNetworkManagerWidget::prepareActions()
                                                          ":/commit_host_iface_16px.png",
                                                          ":/commit_host_iface_disabled_22px.png",
                                                          ":/commit_host_iface_disabled_16px.png"));
-        connect(m_pActionDetails, &QAction::toggled, m_pActionCommit, &QAction::setVisible);
-        connect(m_pActionCommit, &QAction::triggered, this, &UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
+        if (m_pActionDetails)
+            connect(m_pActionDetails, &QAction::toggled, m_pActionCommit, &QAction::setVisible);
+        connect(m_pActionCommit, &QAction::triggered, this, &UIHostNetworkManagerWidget::sltCommitHostNetworkDetailsChanges);
     }
 
     /* Prepare menu: */
@@ -774,10 +782,14 @@ void UIHostNetworkManagerWidget::prepareMenu()
     AssertPtrReturnVoid(m_pMenu);
     {
         /* Configure menu: */
-        m_pMenu->addAction(m_pActionAdd);
-        m_pMenu->addAction(m_pActionRemove);
-        m_pMenu->addAction(m_pActionDetails);
-        m_pMenu->addAction(m_pActionCommit);
+        if (m_pActionAdd)
+            m_pMenu->addAction(m_pActionAdd);
+        if (m_pActionRemove)
+            m_pMenu->addAction(m_pActionRemove);
+        if (m_pActionDetails)
+            m_pMenu->addAction(m_pActionDetails);
+        if (m_pActionCommit)
+            m_pMenu->addAction(m_pActionCommit);
     }
 }
 
@@ -860,8 +872,9 @@ void UIHostNetworkManagerWidget::prepareTreeWidget()
                 this, &UIHostNetworkManagerWidget::sltHandleContextMenuRequest);
         connect(m_pTreeWidget, &QITreeWidget::itemChanged,
                 this, &UIHostNetworkManagerWidget::sltHandleItemChange);
-        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
-                m_pActionDetails, &QAction::setChecked);
+        if (m_pActionDetails)
+            connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked,
+                    m_pActionDetails, &QAction::setChecked);
 
         /* Add into layout: */
         layout()->addWidget(m_pTreeWidget);
@@ -877,8 +890,9 @@ void UIHostNetworkManagerWidget::prepareDetailsWidget()
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
-                m_pActionCommit, &QAction::setEnabled);
+        if (m_pActionCommit)
+            connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
+                    m_pActionCommit, &QAction::setEnabled);
 
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidget);
@@ -1055,7 +1069,7 @@ void UIHostNetworkManager::prepareWidget()
 #ifdef VBOX_WS_MAC
         setWidgetToolbar(pWidget->toolbar());
 #endif
-        /* Add to layout: */
+        /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
 }
