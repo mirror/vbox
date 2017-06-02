@@ -86,7 +86,7 @@ static int rtVfsProgressFile_UpdateProgress(PRTVFSPROGRESSFILE pThis)
 {
     uint64_t cbDone = RT_MIN(pThis->cbCurrentlyRead, pThis->cbExpectedRead)
                     + RT_MIN(pThis->cbCurrentlyWritten, pThis->cbExpectedWritten);
-    unsigned uPct = cbDone / pThis->cbExpected;
+    unsigned uPct = cbDone * 100 / pThis->cbExpected;
     if (uPct == pThis->uCurPct)
         return pThis->rcCanceled;
     pThis->uCurPct = uPct;
@@ -455,7 +455,7 @@ RTDECL(int) RTVfsCreateProgressForIoStream(RTVFSIOSTREAM hVfsIos, PFNRTPROGRESS 
                  VERR_INVALID_FLAGS);
 
     uint32_t cRefs = RTVfsIoStrmRetain(hVfsIos);
-    AssertReturn(cRefs == UINT32_MAX, VERR_INVALID_HANDLE);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
 
     PRTVFSPROGRESSFILE pThis;
     int rc = RTVfsNewIoStream(&g_rtVfsProgressIosOps, sizeof(*pThis), RTVfsIoStrmGetOpenFlags(hVfsIos),
@@ -490,7 +490,7 @@ RTDECL(int) RTVfsCreateProgressForFile(RTVFSFILE hVfsFile, PFNRTPROGRESS pfnProg
                  VERR_INVALID_FLAGS);
 
     uint32_t cRefs = RTVfsFileRetain(hVfsFile);
-    AssertReturn(cRefs == UINT32_MAX, VERR_INVALID_HANDLE);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
 
     RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(hVfsFile);
     AssertReturnStmt(hVfsIos != NIL_RTVFSIOSTREAM, RTVfsFileRelease(hVfsFile), VERR_INVALID_HANDLE);
