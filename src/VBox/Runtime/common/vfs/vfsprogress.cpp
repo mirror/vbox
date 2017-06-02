@@ -47,6 +47,8 @@
  */
 typedef struct RTVFSPROGRESSFILE
 {
+    /** This is negative (RT_FAILURE) if canceled.  */
+    int             rcCanceled;
     /** RTVFSPROGRESS_F_XXX. */
     uint32_t        fFlags;
     /** Progress callback.   */
@@ -77,18 +79,25 @@ typedef RTVFSPROGRESSFILE *PRTVFSPROGRESSFILE;
 /**
  * Update the progress and do the progress callback if necessary.
  *
+ * @returns Callback return code.
  * @param   pThis     The file progress instance.
  */
-static void rtVfsProgressFile_UpdateProgress(PRTVFSPROGRESSFILE pThis)
+static int rtVfsProgressFile_UpdateProgress(PRTVFSPROGRESSFILE pThis)
 {
     uint64_t cbDone = RT_MIN(pThis->cbCurrentlyRead, pThis->cbExpectedRead)
                     + RT_MIN(pThis->cbCurrentlyWritten, pThis->cbExpectedWritten);
     unsigned uPct = cbDone / pThis->cbExpected;
     if (uPct == pThis->uCurPct)
-        return;
+        return pThis->rcCanceled;
     pThis->uCurPct = uPct;
-    pThis->pfnProgress(uPct, pThis->pvUser);
-    /* Yes, we ignore the return code. */
+
+    int rc = pThis->pfnProgress(uPct, pThis->pvUser);
+    if (!(pThis->fFlags & RTVFSPROGRESS_F_ALLOW_CANCEL))
+        rc = VINF_SUCCESS;
+    else if (RT_FAILURE(rc) && RT_SUCCESS(pThis->rcCanceled))
+        pThis->rcCanceled = rc;
+
+    return rc;
 }
 
 
@@ -119,7 +128,10 @@ static DECLCALLBACK(int) rtVfsProgressFile_Close(void *pvThis)
 static DECLCALLBACK(int) rtVfsProgressFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
-    return RTVfsIoStrmQueryInfo(pThis->hVfsIos, pObjInfo, enmAddAttr);
+    int rc = pThis->rcCanceled;
+    if (RT_SUCCESS(rc))
+        rc = RTVfsIoStrmQueryInfo(pThis->hVfsIos, pObjInfo, enmAddAttr);
+    return rc;
 }
 
 
@@ -130,28 +142,32 @@ static DECLCALLBACK(int) rtVfsProgressFile_Read(void *pvThis, RTFOFF off, PCRTSG
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
 
-    /* Simplify a little there if a seeks is implied and assume the read goes well. */
-    if (   off >= 0
-        && (pThis->fFlags & RTVFSPROGRESS_F_FORWARD_SEEK_AS_READ))
-    {
-        uint64_t offCurrent = RTVfsFileTell(pThis->hVfsFile);
-        if (offCurrent < (uint64_t)off)
-            pThis->cbCurrentlyRead += off - offCurrent;
-    }
-
-    /* Calc the request before calling down the stack. */
-    size_t   cbReq = 0;
-    unsigned i = pSgBuf->cSegs;
-    while (i-- > 0)
-        cbReq += pSgBuf->paSegs[i].cbSeg;
-
-    /* Do the read. */
-    int rc = RTVfsIoStrmSgRead(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbRead);
+    int rc = pThis->rcCanceled;
     if (RT_SUCCESS(rc))
     {
-        /* Update the progress (we cannot cancel here, sorry). */
-        pThis->cbCurrentlyRead += pcbRead ? *pcbRead : cbReq;
-        rtVfsProgressFile_UpdateProgress(pThis);
+        /* Simplify a little there if a seeks is implied and assume the read goes well. */
+        if (   off >= 0
+            && (pThis->fFlags & RTVFSPROGRESS_F_FORWARD_SEEK_AS_READ))
+        {
+            uint64_t offCurrent = RTVfsFileTell(pThis->hVfsFile);
+            if (offCurrent < (uint64_t)off)
+                pThis->cbCurrentlyRead += off - offCurrent;
+        }
+
+        /* Calc the request before calling down the stack. */
+        size_t   cbReq = 0;
+        unsigned i = pSgBuf->cSegs;
+        while (i-- > 0)
+            cbReq += pSgBuf->paSegs[i].cbSeg;
+
+        /* Do the read. */
+        rc = RTVfsIoStrmSgRead(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbRead);
+        if (RT_SUCCESS(rc))
+        {
+            /* Update the progress (we cannot cancel here, sorry). */
+            pThis->cbCurrentlyRead += pcbRead ? *pcbRead : cbReq;
+            rtVfsProgressFile_UpdateProgress(pThis);
+        }
     }
 
     return rc;
@@ -165,28 +181,32 @@ static DECLCALLBACK(int) rtVfsProgressFile_Write(void *pvThis, RTFOFF off, PCRTS
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
 
-    /* Simplify a little there if a seeks is implied and assume the write goes well. */
-    if (   off >= 0
-        && (pThis->fFlags & RTVFSPROGRESS_F_FORWARD_SEEK_AS_WRITE))
-    {
-        uint64_t offCurrent = RTVfsFileTell(pThis->hVfsFile);
-        if (offCurrent < (uint64_t)off)
-            pThis->cbCurrentlyWritten += off - offCurrent;
-    }
-
-    /* Calc the request before calling down the stack. */
-    size_t   cbReq = 0;
-    unsigned i = pSgBuf->cSegs;
-    while (i-- > 0)
-        cbReq += pSgBuf->paSegs[i].cbSeg;
-
-    /* Do the read. */
-    int rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbWritten);
+    int rc = pThis->rcCanceled;
     if (RT_SUCCESS(rc))
     {
-        /* Update the progress (we cannot cancel here, sorry). */
-        pThis->cbCurrentlyWritten += pcbWritten ? *pcbWritten : cbReq;
-        rtVfsProgressFile_UpdateProgress(pThis);
+        /* Simplify a little there if a seeks is implied and assume the write goes well. */
+        if (   off >= 0
+            && (pThis->fFlags & RTVFSPROGRESS_F_FORWARD_SEEK_AS_WRITE))
+        {
+            uint64_t offCurrent = RTVfsFileTell(pThis->hVfsFile);
+            if (offCurrent < (uint64_t)off)
+                pThis->cbCurrentlyWritten += off - offCurrent;
+        }
+
+        /* Calc the request before calling down the stack. */
+        size_t   cbReq = 0;
+        unsigned i = pSgBuf->cSegs;
+        while (i-- > 0)
+            cbReq += pSgBuf->paSegs[i].cbSeg;
+
+        /* Do the read. */
+        rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbWritten);
+        if (RT_SUCCESS(rc))
+        {
+            /* Update the progress (we cannot cancel here, sorry). */
+            pThis->cbCurrentlyWritten += pcbWritten ? *pcbWritten : cbReq;
+            rtVfsProgressFile_UpdateProgress(pThis);
+        }
     }
 
     return rc;
@@ -199,7 +219,10 @@ static DECLCALLBACK(int) rtVfsProgressFile_Write(void *pvThis, RTFOFF off, PCRTS
 static DECLCALLBACK(int) rtVfsProgressFile_Flush(void *pvThis)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
-    return RTVfsIoStrmFlush(pThis->hVfsIos);
+    int rc = pThis->rcCanceled;
+    if (RT_SUCCESS(rc))
+        rc = RTVfsIoStrmFlush(pThis->hVfsIos);
+    return rc;
 }
 
 
@@ -210,7 +233,15 @@ static DECLCALLBACK(int)
 rtVfsProgressFile_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr, uint32_t *pfRetEvents)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
-    return RTVfsIoStrmPoll(pThis->hVfsIos, fEvents, cMillies, fIntr, pfRetEvents);
+    int rc = pThis->rcCanceled;
+    if (RT_SUCCESS(rc))
+        rc = RTVfsIoStrmPoll(pThis->hVfsIos, fEvents, cMillies, fIntr, pfRetEvents);
+    else
+    {
+        *pfRetEvents |= RTPOLL_EVT_ERROR;
+        rc = VINF_SUCCESS;
+    }
+    return rc;
 }
 
 
@@ -231,11 +262,15 @@ static DECLCALLBACK(int) rtVfsProgressFile_Tell(void *pvThis, PRTFOFF poffActual
 static DECLCALLBACK(int) rtVfsProgressFile_Skip(void *pvThis, RTFOFF cb)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
-    int rc = RTVfsIoStrmSkip(pThis->hVfsIos, cb);
+    int rc = pThis->rcCanceled;
     if (RT_SUCCESS(rc))
     {
-        pThis->cbCurrentlyRead += cb;
-        rtVfsProgressFile_UpdateProgress(pThis);
+        rc = RTVfsIoStrmSkip(pThis->hVfsIos, cb);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->cbCurrentlyRead += cb;
+            rtVfsProgressFile_UpdateProgress(pThis);
+        }
     }
     return rc;
 }
@@ -247,11 +282,15 @@ static DECLCALLBACK(int) rtVfsProgressFile_Skip(void *pvThis, RTFOFF cb)
 static DECLCALLBACK(int) rtVfsProgressFile_ZeroFill(void *pvThis, RTFOFF cb)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
-    int rc = RTVfsIoStrmZeroFill(pThis->hVfsIos, cb);
+    int rc = pThis->rcCanceled;
     if (RT_SUCCESS(rc))
     {
-        pThis->cbCurrentlyWritten += cb;
-        rtVfsProgressFile_UpdateProgress(pThis);
+        rc = RTVfsIoStrmZeroFill(pThis->hVfsIos, cb);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->cbCurrentlyWritten += cb;
+            rtVfsProgressFile_UpdateProgress(pThis);
+        }
     }
     return rc;
 }
@@ -423,6 +462,7 @@ RTDECL(int) RTVfsIoStrmCreateProgress(RTVFSIOSTREAM hVfsIos, PFNRTPROGRESS pfnPr
                               NIL_RTVFS, NIL_RTVFSLOCK, phVfsIos, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
+        pThis->rcCanceled           = VINF_SUCCESS;
         pThis->fFlags               = fFlags;
         pThis->pfnProgress          = pfnProgress;
         pThis->pvUser               = pvUser;
