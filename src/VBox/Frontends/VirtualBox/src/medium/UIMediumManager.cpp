@@ -816,6 +816,16 @@ void UIMediumManagerWidget::retranslateUi()
         sltRefreshAll();
 }
 
+void UIMediumManagerWidget::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+
+    /* Focus current tree-widget: */
+    if (currentTreeWidget())
+        currentTreeWidget()->setFocus();
+}
+
 void UIMediumManagerWidget::sltHandleMediumCreated(const QString &strMediumID)
 {
     /* Search for corresponding medium: */
@@ -1275,9 +1285,6 @@ void UIMediumManagerWidget::prepareTabWidget()
         connect(m_pTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandleCurrentTabChanged()));
         /* Add tab-widget into central layout: */
         layout()->addWidget(m_pTabWidget);
-        /* Focus current tree-widget: */
-        if (currentTreeWidget())
-            currentTreeWidget()->setFocus();
         /* Update other widgets according chosen tab: */
         sltHandleCurrentTabChanged();
     }
@@ -2312,7 +2319,7 @@ void UIMediumManager::prepareWidget()
 #ifdef VBOX_WS_MAC
         setWidgetToolbar(pWidget->toolbar());
 #endif
-        /* Add to layout: */
+        /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
 }
