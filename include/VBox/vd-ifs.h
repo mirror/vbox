@@ -724,6 +724,9 @@ typedef struct VDINTERFACEPROGRESS
 
 } VDINTERFACEPROGRESS, *PVDINTERFACEPROGRESS;
 
+/** Initializer for VDINTERFACEPROGRESS.  */
+#define VDINTERFACEPROGRESS_INITALIZER(a_pfnProgress) { { 0, NULL, NULL, (VDINTERFACETYPE)-1, 0, NULL }, a_pfnProgress }
+
 /**
  * Get progress interface from interface list.
  *
