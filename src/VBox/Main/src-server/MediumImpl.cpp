@@ -6109,21 +6109,24 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
 HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, RTVFSFSSTREAM hVfsFssDst,
                               const ComObjPtr<Progress> &aProgress, bool fSparse)
 {
-     /** @todo fix progress object. */
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return hrc;
 
     /*
      * Build the source lock list and lock the images.
      */
     MediumLockList SourceMediumLockList;
-    HRESULT rc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                        NULL /* pToLockWrite */,
-                                        false /* fMediumLockWriteAll */,
-                                        NULL,
-                                        SourceMediumLockList);
-    if (SUCCEEDED(rc))
-        rc = SourceMediumLockList.Lock();
-    if (FAILED(rc))
-        return rc;
+    hrc = i_createMediumLockList(true /* fFailIfInaccessible */,
+                                 NULL /* pToLockWrite */,
+                                 false /* fMediumLockWriteAll */,
+                                 NULL,
+                                 SourceMediumLockList);
+    if (SUCCEEDED(hrc))
+        hrc = SourceMediumLockList.Lock();
+    if (FAILED(hrc))
+        return hrc;
 
     try
     {
@@ -6150,8 +6153,8 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
                 {
                     /* Load the plugin */
                     Utf8Str strPlugin;
-                    rc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
-                    if (SUCCEEDED(rc))
+                    hrc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
+                    if (SUCCEEDED(hrc))
                     {
                         vrc = VDPluginLoadFromFilename(strPlugin.c_str());
                         if (RT_FAILURE(vrc))
@@ -6256,22 +6259,22 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
                     vrc = RTVfsFsStrmAdd(hVfsFssDst, aFilename, hVfsObj, 0 /*fFlags*/);
                     RTVfsObjRelease(hVfsObj);
                     if (RT_FAILURE(vrc))
-                        rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to add '%s' to output (%Rrc)"), aFilename, vrc);
+                        hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to add '%s' to output (%Rrc)"), aFilename, vrc);
                 }
                 else
-                    rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                                      tr("RTVfsCreateProgressForFile failed when processing '%s' (%Rrc)"), aFilename, vrc);
+                    hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("RTVfsCreateProgressForFile failed when processing '%s' (%Rrc)"), aFilename, vrc);
             }
             else
-                rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("VDCreateVfsFileFromDisk failed for '%s' (%Rrc)"), aFilename, vrc);
+                hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("VDCreateVfsFileFromDisk failed for '%s' (%Rrc)"), aFilename, vrc);
         }
-        catch (HRESULT hrc3) { rc = hrc3; }
+        catch (HRESULT hrc3) { hrc = hrc3; }
 
         VDDestroy(hdd);
     }
-    catch (HRESULT hrc2) { rc = hrc2; }
+    catch (HRESULT hrc2) { hrc = hrc2; }
 
-    return rc;
+    return hrc;
 }
 
 /**
