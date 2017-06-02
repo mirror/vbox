@@ -6111,144 +6111,30 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
-    if (FAILED(hrc))
-        return hrc;
-
-    /*
-     * Build the source lock list and lock the images.
-     */
-    MediumLockList SourceMediumLockList;
-    hrc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                 NULL /* pToLockWrite */,
-                                 false /* fMediumLockWriteAll */,
-                                 NULL,
-                                 SourceMediumLockList);
     if (SUCCEEDED(hrc))
-        hrc = SourceMediumLockList.Lock();
-    if (FAILED(hrc))
-        return hrc;
-
-    try
     {
         /*
-         * Lock all in {parent,child} order.
+         * Get a readonly hdd for this medium.
          */
-        ComObjPtr<Medium> pBase = i_getBase();
-        AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
-
-        PVDISK hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
-        ComAssertRCThrow(vrc, E_FAIL);
-
-        try
+        Medium::CryptoFilterSettings    CryptoSettingsRead;
+        MediumLockList                  SourceMediumLockList;
+        PVDISK                          pHdd;
+        hrc = i_openHddForReading(pKeyStore, &pHdd, &SourceMediumLockList, &CryptoSettingsRead);
+        if (SUCCEEDED(hrc))
         {
-            settings::StringsMap::iterator itKeyStore = pBase->m->mapProperties.find("CRYPT/KeyStore");
-            if (itKeyStore != pBase->m->mapProperties.end())
-            {
-                settings::StringsMap::iterator itKeyId = pBase->m->mapProperties.find("CRYPT/KeyId");
-
-#ifdef VBOX_WITH_EXTPACK
-                ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
-                if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
-                {
-                    /* Load the plugin */
-                    Utf8Str strPlugin;
-                    hrc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
-                    if (SUCCEEDED(hrc))
-                    {
-                        vrc = VDPluginLoadFromFilename(strPlugin.c_str());
-                        if (RT_FAILURE(vrc))
-                            throw setError(VBOX_E_NOT_SUPPORTED,
-                                           tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
-                                           i_vdError(vrc).c_str());
-                    }
-                    else
-                        throw setError(VBOX_E_NOT_SUPPORTED,
-                                       tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
-                                       ORACLE_PUEL_EXTPACK_NAME);
-                }
-                else
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Encryption is not supported because the extension pack '%s' is missing"),
-                                   ORACLE_PUEL_EXTPACK_NAME);
-#else
-                throw setError(VBOX_E_NOT_SUPPORTED,
-                               tr("Encryption is not supported because extension pack support is not built in"));
-#endif
-
-                if (itKeyId == pBase->m->mapProperties.end())
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Image '%s' is configured for encryption but doesn't has a key identifier set"),
-                                   pBase->m->strLocationFull.c_str());
-
-                /* Find the proper secret key in the key store. */
-                if (!pKeyStore)
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Image '%s' is configured for encryption but there is no key store to retrieve the password from"),
-                                   pBase->m->strLocationFull.c_str());
-
-                SecretKey *pKey = NULL;
-                vrc = pKeyStore->retainSecretKey(itKeyId->second, &pKey);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
-                                   itKeyId->second.c_str(), vrc);
-
-                Medium::CryptoFilterSettings CryptoSettingsRead;
-                i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
-                                           false /* fCreateKeyStore */);
-                vrc = VDFilterAdd(hdd, "CRYPT", VD_FILTER_FLAGS_READ, CryptoSettingsRead.vdFilterIfaces);
-                pKeyStore->releaseSecretKey(itKeyId->second);
-                if (vrc == VERR_VD_PASSWORD_INCORRECT)
-                    throw setError(VBOX_E_PASSWORD_INCORRECT, tr("The password to decrypt the image is incorrect"));
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE, tr("Failed to load the decryption filter: %s"),
-                                   i_vdError(vrc).c_str());
-            }
-
-            /* Open all media in the source chain. */
-            MediumLockList::Base::const_iterator sourceListBegin = SourceMediumLockList.GetBegin();
-            MediumLockList::Base::const_iterator sourceListEnd = SourceMediumLockList.GetEnd();
-            for (MediumLockList::Base::const_iterator it = sourceListBegin; it != sourceListEnd; ++it)
-            {
-                const MediumLock &mediumLock = *it;
-                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
-                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
-
-                /* sanity check */
-                Assert(pMedium->m->state == MediumState_LockedRead);
-
-                /* Open all media in read-only mode. */
-                vrc = VDOpen(hdd,
-                             pMedium->m->strFormat.c_str(),
-                             pMedium->m->strLocationFull.c_str(),
-                             VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
-                             pMedium->m->vdImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
-            }
-
-            Assert(m->state == MediumState_LockedRead);
-
-            /* unlock before the potentially lengthy operation */
-            thisLock.release();
-
             /*
              * Create a VFS file interface to the HDD and attach a progress wrapper
              * that monitors the progress reading of the raw image.  The image will
              * be read twice if hVfsFssDst does sparse processing.
              */
             RTVFSFILE hVfsFileDisk = NIL_RTVFSFILE;
-            vrc = VDCreateVfsFileFromDisk(hdd, 0 /*fFlags*/, &hVfsFileDisk);
+            int vrc = VDCreateVfsFileFromDisk(pHdd, 0 /*fFlags*/, &hVfsFileDisk);
             if (RT_SUCCESS(vrc))
             {
                 RTVFSFILE hVfsFileProgress = NIL_RTVFSFILE;
                 vrc = RTVfsCreateProgressForFile(hVfsFileDisk, aProgress->i_iprtProgressCallback, &*aProgress,
                                                  RTVFSPROGRESS_F_CANCELABLE | RTVFSPROGRESS_F_FORWARD_SEEK_AS_READ,
-                                                 VDGetSize(hdd, VD_LAST_IMAGE) * (fSparse ? 2 : 1) /*cbExpectedRead*/,
+                                                 VDGetSize(pHdd, VD_LAST_IMAGE) * (fSparse ? 2 : 1) /*cbExpectedRead*/,
                                                  0 /*cbExpectedWritten*/, &hVfsFileProgress);
                 RTVfsFileRelease(hVfsFileDisk);
                 if (RT_SUCCESS(vrc))
@@ -6267,13 +6153,9 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
             }
             else
                 hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("VDCreateVfsFileFromDisk failed for '%s' (%Rrc)"), aFilename, vrc);
+            VDDestroy(pHdd);
         }
-        catch (HRESULT hrc3) { hrc = hrc3; }
-
-        VDDestroy(hdd);
     }
-    catch (HRESULT hrc2) { hrc = hrc2; }
-
     return hrc;
 }
 
@@ -6309,8 +6191,8 @@ HRESULT Medium::i_exportFile(const char *aFilename,
                              const ComObjPtr<Progress> &aProgress)
 {
     AssertPtrReturn(aFilename, E_INVALIDARG);
-    AssertReturn(!aFormat.isNull(), E_INVALIDARG);
-    AssertReturn(!aProgress.isNull(), E_INVALIDARG);
+    AssertReturn(aFormat.isNotNull(), E_INVALIDARG);
+    AssertReturn(aProgress.isNotNull(), E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -8070,6 +7952,166 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const
 }
 
 /**
+ * Creates a read-only VDISK instance for this medium.
+ *
+ * @note    Caller should not hold any medium related locks as this method will
+ *          acquire the medium lock for writing and others (VirtualBox).
+ *
+ * @returns COM status code.
+ * @param   pKeyStore               The key store.
+ * @param   ppHdd                   Where to return the pointer to the VDISK on
+ *                                  success.
+ * @param   pMediumLockList         The lock list to populate and lock.  Caller
+ *                                  is responsible for calling the destructor or
+ *                                  MediumLockList::Clear() after destroying
+ *                                  @a *ppHdd
+ * @param   pCryptoSettingsRead     The crypto read settings to use for setting
+ *                                  up decryption of the VDISK.  This object
+ *                                  must be alive until the VDISK is destroyed!
+ */
+HRESULT Medium::i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
+                                    Medium::CryptoFilterSettings *pCryptoSettingsRead)
+{
+    /*
+     * Create the media lock list and lock the media.
+     */
+    HRESULT hrc = i_createMediumLockList(true /* fFailIfInaccessible */,
+                                         NULL /* pToLockWrite */,
+                                         false /* fMediumLockWriteAll */,
+                                         NULL,
+                                         *pMediumLockList);
+    if (SUCCEEDED(hrc))
+        hrc = pMediumLockList->Lock();
+    if (FAILED(hrc))
+        return hrc;
+
+    /*
+     * Get the base medium before write locking this medium.
+     */
+    ComObjPtr<Medium> pBase = i_getBase();
+    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+    /*
+     * Create the VDISK instance.
+     */
+    PVDISK pHdd;
+    int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pHdd);
+    AssertRCReturn(vrc, E_FAIL);
+
+    /*
+     * Goto avoidance using try/catch/throw(HRESULT).
+     */
+    try
+    {
+        settings::StringsMap::iterator itKeyStore = pBase->m->mapProperties.find("CRYPT/KeyStore");
+        if (itKeyStore != pBase->m->mapProperties.end())
+        {
+            settings::StringsMap::iterator itKeyId = pBase->m->mapProperties.find("CRYPT/KeyId");
+
+#ifdef VBOX_WITH_EXTPACK
+            ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
+            if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
+            {
+                /* Load the plugin */
+                Utf8Str strPlugin;
+                hrc = pExtPackManager->i_getLibraryPathForExtPack(g_szVDPlugin, ORACLE_PUEL_EXTPACK_NAME, &strPlugin);
+                if (SUCCEEDED(hrc))
+                {
+                    vrc = VDPluginLoadFromFilename(strPlugin.c_str());
+                    if (RT_FAILURE(vrc))
+                        throw setError(VBOX_E_NOT_SUPPORTED,
+                                       tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
+                                       i_vdError(vrc).c_str());
+                }
+                else
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
+                                   ORACLE_PUEL_EXTPACK_NAME);
+            }
+            else
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Encryption is not supported because the extension pack '%s' is missing"),
+                               ORACLE_PUEL_EXTPACK_NAME);
+#else
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Encryption is not supported because extension pack support is not built in"));
+#endif
+
+            if (itKeyId == pBase->m->mapProperties.end())
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Image '%s' is configured for encryption but doesn't has a key identifier set"),
+                               pBase->m->strLocationFull.c_str());
+
+            /* Find the proper secret key in the key store. */
+            if (!pKeyStore)
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Image '%s' is configured for encryption but there is no key store to retrieve the password from"),
+                               pBase->m->strLocationFull.c_str());
+
+            SecretKey *pKey = NULL;
+            vrc = pKeyStore->retainSecretKey(itKeyId->second, &pKey);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
+                               itKeyId->second.c_str(), vrc);
+
+            i_taskEncryptSettingsSetup(pCryptoSettingsRead, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
+                                       false /* fCreateKeyStore */);
+            vrc = VDFilterAdd(pHdd, "CRYPT", VD_FILTER_FLAGS_READ, pCryptoSettingsRead->vdFilterIfaces);
+            pKeyStore->releaseSecretKey(itKeyId->second);
+            if (vrc == VERR_VD_PASSWORD_INCORRECT)
+                throw setError(VBOX_E_PASSWORD_INCORRECT, tr("The password to decrypt the image is incorrect"));
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_INVALID_OBJECT_STATE, tr("Failed to load the decryption filter: %s"),
+                               i_vdError(vrc).c_str());
+        }
+
+        /*
+         * Open all media in the source chain.
+         */
+        MediumLockList::Base::const_iterator sourceListBegin = pMediumLockList->GetBegin();
+        MediumLockList::Base::const_iterator sourceListEnd = pMediumLockList->GetEnd();
+        for (MediumLockList::Base::const_iterator it = sourceListBegin; it != sourceListEnd; ++it)
+        {
+            const MediumLock &mediumLock = *it;
+            const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+            AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+            /* sanity check */
+            Assert(pMedium->m->state == MediumState_LockedRead);
+
+            /* Open all media in read-only mode. */
+            vrc = VDOpen(pHdd,
+                         pMedium->m->strFormat.c_str(),
+                         pMedium->m->strLocationFull.c_str(),
+                         VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
+                         pMedium->m->vdImageIfaces);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not open the medium storage unit '%s'%s"),
+                               pMedium->m->strLocationFull.c_str(),
+                               i_vdError(vrc).c_str());
+        }
+
+        Assert(m->state == MediumState_LockedRead);
+
+        /*
+         * Done!
+         */
+        *ppHdd = pHdd;
+        return S_OK;
+    }
+    catch (HRESULT hrc2)
+    {
+        hrc = hrc2;
+    }
+
+    VDDestroy(pHdd);
+    return hrc;
+
+}
+
+/**
  * Implementation code for the "create base" task.
  *
  * This only gets started from Medium::CreateBaseStorage() and always runs
@@ -9744,6 +9786,8 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
                                    tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
                                    itKeyId->second.c_str(), vrc);
 
+/** @todo r=bird: Someone explain why this continue to work when
+ *        CryptoSettingsRead goes out of the scope? */
                 Medium::CryptoFilterSettings CryptoSettingsRead;
                 i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
                                            false /* fCreateKeyStore */);

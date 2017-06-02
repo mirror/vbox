@@ -367,6 +367,10 @@ private:
     static DECLCALLBACK(int) i_vdCryptoKeyStoreReturnParameters(void *pvUser, const char *pszCipher,
                                                                 const uint8_t *pbDek, size_t cbDek);
 
+    struct CryptoFilterSettings;
+    HRESULT i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
+                                struct CryptoFilterSettings *pCryptoSettingsRead);
+
     class Task;
     class CreateBaseTask;
     class CreateDiffTask;
@@ -407,7 +411,6 @@ private:
     HRESULT i_taskImportHandler(Medium::ImportTask &task);
     HRESULT i_taskEncryptHandler(Medium::EncryptTask &task);
 
-    struct CryptoFilterSettings;
     void i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const char *pszCipher,
                                     const char *pszKeyStore,  const char *pszPassword,
                                     bool fCreateKeyStore);
