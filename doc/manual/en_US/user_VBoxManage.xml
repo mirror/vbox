@@ -3610,7 +3610,7 @@ Virtual system 0:
                          [--property &lt;name=[value]&gt;]
                          [--compact]
                          [--resize &lt;megabytes&gt;|--resizebyte &lt;bytes&gt;]
-                         [--move &lt;full path to a new location&gt;</screen><note>
+                         [--move &lt;path&gt;</screen><note>
         <para>For compatibility with earlier versions of VirtualBox, the "modifyvdi" and "modifyhd" 
         commands are also supported and mapped internally to the "modifymedium" command.</para>
       </note></para>
@@ -3686,9 +3686,10 @@ Virtual system 0:
         </listitem>
 
         <listitem>
-          <para>The <computeroutput>--move &lt;dest&gt;</computeroutput> option
-          can be used to move an image to a different location &lt;dest&gt; on the host file system, 
-          specified by either the relative path to the current directory or absolute path.</para>
+          <para>The <computeroutput>--move &lt;path&gt;</computeroutput> option
+          can be used to relocate a medium to a different location &lt;path&gt; on the
+          host file system. The path can be either relative to the current directory or
+          absolute.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
