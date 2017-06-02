@@ -197,30 +197,14 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_INTCTL              9
 #define HDA_INTCTL_GIE_SHIFT        31
 #define HDA_INTCTL_CIE_SHIFT        30
-#define HDA_INTCTL_S0_SHIFT         0
-#define HDA_INTCTL_S1_SHIFT         1
-#define HDA_INTCTL_S2_SHIFT         2
-#define HDA_INTCTL_S3_SHIFT         3
-#define HDA_INTCTL_S4_SHIFT         4
-#define HDA_INTCTL_S5_SHIFT         5
-#define HDA_INTCTL_S6_SHIFT         6
-#define HDA_INTCTL_S7_SHIFT         7
-#define INTCTL_SX(pThis, X)         (HDA_REG_FLAG_VALUE((pThis), INTCTL, S##X))
+/* Bits 0-29 correspond to streams 0-29. */
 #define HDA_INTCTL_GIE_MASK         RT_BIT(31) /* Global Interrupt Enable (3.3.14). */
 
 #define HDA_REG_INTSTS              12 /* 0x24 */
 #define HDA_RMX_INTSTS              10
 #define HDA_INTSTS_GIS_SHIFT        31
 #define HDA_INTSTS_CIS_SHIFT        30
-#define HDA_INTSTS_S0_SHIFT         0
-#define HDA_INTSTS_S1_SHIFT         1
-#define HDA_INTSTS_S2_SHIFT         2
-#define HDA_INTSTS_S3_SHIFT         3
-#define HDA_INTSTS_S4_SHIFT         4
-#define HDA_INTSTS_S5_SHIFT         5
-#define HDA_INTSTS_S6_SHIFT         6
-#define HDA_INTSTS_S7_SHIFT         7
-#define HDA_INTSTS_S_MASK(num)      RT_BIT(HDA_REG_FIELD_SHIFT(S##num))
+/* Bits 0-29 correspond to streams 0-29. */
 
 #define HDA_REG_WALCLK              13 /* 0x30 */
 #define HDA_RMX_WALCLK              /* Not defined! */
@@ -378,10 +362,10 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD7STS              (HDA_STREAM_RMX_DEF(STS, 0) + 70)
 
 #define SDSTS(pThis, num)           HDA_REG((pThis), SD(STS, num))
-#define HDA_SDSTS_FIFORDY_SHIFT     5
-#define HDA_SDSTS_DE_SHIFT          4
-#define HDA_SDSTS_FE_SHIFT          3
-#define HDA_SDSTS_BCIS_SHIFT        2
+#define HDA_SDSTS_FIFORDY           RT_BIT(5)   /* FIFO Ready */
+#define HDA_SDSTS_DESE              RT_BIT(4)   /* Descriptor Error */
+#define HDA_SDSTS_FIFOE             RT_BIT(3)   /* FIFO Error */
+#define HDA_SDSTS_BCIS              RT_BIT(2)   /* Buffer Completion Interrupt Status */
 
 #define HDA_REG_SD0LPIB             36 /* 0x84 */
 #define HDA_REG_SD1LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 10) /* 0xA4 */
@@ -1464,11 +1448,8 @@ static void hdaUpdateINTSTS(PHDASTATE pThis)
     }
 
 #define HDA_MARK_STREAM(x)                                                  \
-        if (   (INTCTL_SX(pThis, x))                                        \
-            && (   (SDSTS(pThis, x) & HDA_REG_FIELD_FLAG_MASK(SDSTS, DE))   \
-                || (SDSTS(pThis, x) & HDA_REG_FIELD_FLAG_MASK(SDSTS, FE))   \
-                || (SDSTS(pThis, x) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)) \
-               )                                                            \
+        if (   (HDA_REG(pThis, INTCTL) & RT_BIT(x))                         \
+            && ((SDSTS(pThis, x) & (HDA_SDSTS_DESE | HDA_SDSTS_FIFOE | HDA_SDSTS_BCIS))) \
            )                                                                \
     {                                                                       \
         Log3Func(("[SD%RU8] Marked\n", x));                                 \
@@ -1859,7 +1840,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     /*
      * Second, initialize the registers.
      */
-    HDA_STREAM_REG(pThis, STS,   uSD) = HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
+    HDA_STREAM_REG(pThis, STS,   uSD) = HDA_SDSTS_FIFORDY;
     /* According to the ICH6 datasheet, 0x40000 is the default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33, resets SDnCTL except SRST bit. */
     HDA_STREAM_REG(pThis, CTL,   uSD) = 0x40000 | (HDA_STREAM_REG(pThis, CTL, uSD) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
@@ -2207,8 +2188,6 @@ static int hdaRegWriteINTCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     }
     else
     {
-        /** @todo Clear INTSTS's individual stream status bits as well? */
-
         /* Make sure to lower interrupt line, as Global Interrupt Enable (GIE) is disabled. */
         PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0 /* iLevel */);
 
@@ -4107,7 +4086,7 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
     if (!(HDA_STREAM_REG(pThis, CTL, pStream->u8SD) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)))
         fProceed = false;
     /* Is the BCIS (Buffer Completion Interrupt Status) flag set? Then we have to wait and skip. */
-    else if ((HDA_STREAM_REG(pThis, STS, pStream->u8SD) & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)))
+    else if ((HDA_STREAM_REG(pThis, STS, pStream->u8SD) & HDA_SDSTS_BCIS))
         fProceed = false;
 
     if (!fProceed)
@@ -4244,7 +4223,7 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
          *
          * This must be set in *any* case.
          */
-        HDA_STREAM_REG(pThis, STS, pStream->u8SD) |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
+        HDA_STREAM_REG(pThis, STS, pStream->u8SD) |= HDA_SDSTS_BCIS;
         Log3Func(("[SD%RU8]: BCIS set\n", pStream->u8SD));
 
         hdaProcessInterrupt(pThis);
@@ -5583,10 +5562,10 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDSTS(PFNRTSTROUTPUT pfnOutput, void *pvArg
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                        "SDSTS(raw:%#0x, fifordy:%RTbool, dese:%RTbool, fifoe:%RTbool, bcis:%RTbool)",
                        uSdSts,
-                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY)),
-                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, DE)),
-                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, FE)),
-                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)));
+                       RT_BOOL(uSdSts & HDA_SDSTS_FIFORDY),
+                       RT_BOOL(uSdSts & HDA_SDSTS_DESE),
+                       RT_BOOL(uSdSts & HDA_SDSTS_FIFOE),
+                       RT_BOOL(uSdSts & HDA_SDSTS_BCIS));
 }
 
 static int hdaDbgLookupRegByName(const char *pszArgs)
