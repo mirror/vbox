@@ -6106,8 +6106,8 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
  *
  * @note    Similar code exists in i_taskExportHandler.
  */
-HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore,
-                              RTVFSFSSTREAM hVfsFssDst /*, const ComObjPtr<Progress> &aProgress*/)
+HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, RTVFSFSSTREAM hVfsFssDst,
+                              const ComObjPtr<Progress> &aProgress, bool fSparse)
 {
      /** @todo fix progress object. */
 
@@ -6234,18 +6234,34 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore,
             thisLock.release();
 
             /*
-             * Create a VFS file interface to the HDD.
+             * Create a VFS file interface to the HDD and attach a progress wrapper
+             * that monitors the progress reading of the raw image.  The image will
+             * be read twice if hVfsFssDst does sparse processing.
              */
-            RTVFSFILE hVfsFile = NIL_RTVFSFILE;
-            vrc = VDCreateVfsFileFromDisk(hdd, 0 /*fFlags*/, &hVfsFile);
+            RTVFSFILE hVfsFileDisk = NIL_RTVFSFILE;
+            vrc = VDCreateVfsFileFromDisk(hdd, 0 /*fFlags*/, &hVfsFileDisk);
             if (RT_SUCCESS(vrc))
             {
-                RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFile);
-                RTVfsFileRelease(hVfsFile);
-                vrc = RTVfsFsStrmAdd(hVfsFssDst, aFilename, hVfsObj, 0 /*fFlags*/);
-                RTVfsObjRelease(hVfsObj);
-                if (RT_FAILURE(vrc))
-                    rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to add '%s' to output (%Rrc)"), aFilename, vrc);
+                RTVFSFILE hVfsFileProgress = NIL_RTVFSFILE;
+                vrc = RTVfsCreateProgressForFile(hVfsFileDisk, aProgress->i_iprtProgressCallback, &*aProgress,
+                                                 RTVFSPROGRESS_F_CANCELABLE | RTVFSPROGRESS_F_FORWARD_SEEK_AS_READ,
+                                                 VDGetSize(hdd, VD_LAST_IMAGE) * (fSparse ? 2 : 1) /*cbExpectedRead*/,
+                                                 0 /*cbExpectedWritten*/, &hVfsFileProgress);
+                RTVfsFileRelease(hVfsFileDisk);
+                if (RT_SUCCESS(rc))
+                {
+                    RTVFSOBJ hVfsObj = RTVfsObjFromFile(hVfsFileProgress);
+                    RTVfsFileRelease(hVfsFileProgress);
+
+                    vrc = RTVfsFsStrmAdd(hVfsFssDst, aFilename, hVfsObj, 0 /*fFlags*/);
+                    RTVfsObjRelease(hVfsObj);
+                    if (RT_FAILURE(vrc))
+                        rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to add '%s' to output (%Rrc)"), aFilename, vrc);
+
+                }
+                else
+                    rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                      tr("RTVfsCreateProgressForFile failed when processing '%s' (%Rrc)"), aFilename, vrc);
             }
             else
                 rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("VDCreateVfsFileFromDisk failed for '%s' (%Rrc)"), aFilename, vrc);

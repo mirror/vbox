@@ -2332,7 +2332,8 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%Rbn'"), strTarballPath.c_str()).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up
                                                                               // with the IProgress originally
-                hrc = ptrSourceDisk->i_addRawToFss(strInsideName.c_str(), m->m_pSecretKeyStore, hVfsFssTar /*, pProgress2*/);
+                hrc = ptrSourceDisk->i_addRawToFss(strInsideName.c_str(), m->m_pSecretKeyStore, hVfsFssTar,
+                                                   pTask->pProgress, true /*fSparse*/);
                 if (FAILED(hrc))
                     throw hrc;
 
@@ -2537,6 +2538,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                     /*
                      * Export a disk image.
                      */
+                    /** @todo this progress object needs to be hooked up to pTask->pProgress... */
                     ComObjPtr<Progress> pProgress2;
                     pProgress2.createObject();
                     rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this),
@@ -2587,7 +2589,8 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                     Assert(pDiskEntry->type == VirtualSystemDescriptionType_CDROM);
 
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
-                    rc = pSourceDisk->i_addRawToFss(strTargetFilePath.c_str(), m->m_pSecretKeyStore, hVfsFssDst /*, pProgress2*/);
+                    rc = pSourceDisk->i_addRawToFss(strTargetFilePath.c_str(), m->m_pSecretKeyStore, hVfsFssDst,
+                                                    pTask->pProgress, false /*fSparse*/);
                     if (FAILED(rc)) throw rc;
 #else
                     /* Read the ISO file and add one to OVA/OVF package */

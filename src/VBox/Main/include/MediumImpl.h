@@ -202,8 +202,8 @@ public:
 
     HRESULT i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent);
 
-    HRESULT i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore,
-                          RTVFSFSSTREAM hVfsFssDst /*, const ComObjPtr<Progress> &aProgress*/);
+    HRESULT i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, RTVFSFSSTREAM hVfsFssDst,
+                          const ComObjPtr<Progress> &aProgress, bool fSparse);
 
     HRESULT i_exportFile(const char *aFilename,
                          const ComObjPtr<MediumFormat> &aFormat,
