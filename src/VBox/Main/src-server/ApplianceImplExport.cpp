@@ -2041,6 +2041,9 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
 
     /*
      * Open the output file and attach a TAR creator to it.
+     * The OVF 1.1.0 spec specifies the TAR format to be compatible with USTAR
+     * according to POSIX 1003.1-2008.  We use the 1988 spec here as it's the
+     * only variant we currently implement.
      */
     HRESULT hrc;
     RTVFSIOSTREAM hVfsIosTar;
@@ -2049,13 +2052,21 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
                                     &hVfsIosTar);
     if (RT_SUCCESS(vrc))
     {
-        /** @todo which format does the standard dictate here actually?
-         *  GNU or USTAR/POSIX? */
         RTVFSFSSTREAM hVfsFssTar;
-        vrc = RTZipTarFsStreamToIoStream(hVfsIosTar, RTZIPTARFORMAT_GNU, 0 /*fFlags*/, &hVfsFssTar);
+        vrc = RTZipTarFsStreamToIoStream(hVfsIosTar, RTZIPTARFORMAT_USTAR, 0 /*fFlags*/, &hVfsFssTar);
         RTVfsIoStrmRelease(hVfsIosTar);
         if (RT_SUCCESS(vrc))
         {
+            RTZipTarFsStreamSetFileMode(hVfsFssTar, 0660, 0440);
+            RTZipTarFsStreamSetOwner(hVfsFssTar, VBOX_VERSION_MAJOR,
+                                       pTask->enFormat == ovf::OVFVersion_0_9 ? "vboxovf09"
+                                     : pTask->enFormat == ovf::OVFVersion_1_0 ? "vboxovf10"
+                                     : pTask->enFormat == ovf::OVFVersion_2_0 ? "vboxovf20"
+                                     :                                          "vboxovf");
+            RTZipTarFsStreamSetGroup(hVfsFssTar, VBOX_VERSION_MINOR,
+                                     "vbox_v" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "."
+                                     RT_XSTR(VBOX_VERSION_MAJOR) "r" RT_XSTR(VBOX_SVN_REV));
+
             hrc = i_writeFSImpl(pTask, writeLock, hVfsFssTar);
             RTVfsFsStrmRelease(hVfsFssTar);
         }
@@ -2188,6 +2199,12 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
             RTVfsIoStrmRelease(hVfsIosGzip);
             if (RT_SUCCESS(vrc))
             {
+                RTZipTarFsStreamSetFileMode(hVfsFssTar, 0660, 0440);
+                RTZipTarFsStreamSetOwner(hVfsFssTar, VBOX_VERSION_MAJOR, "vboxopc10");
+                RTZipTarFsStreamSetGroup(hVfsFssTar, VBOX_VERSION_MINOR,
+                                         "vbox_v" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "."
+                                         RT_XSTR(VBOX_VERSION_MAJOR) "r" RT_XSTR(VBOX_SVN_REV));
+
                 /*
                  * Let the Medium code do the heavy work.
                  *
