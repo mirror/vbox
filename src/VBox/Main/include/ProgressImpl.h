@@ -140,7 +140,8 @@ public:
     bool i_notifyPointOfNoReturn(void);
     bool i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
 
-    static DECLCALLBACK(int) i_iprtProgressCallback(unsigned uPrecentage, void *pvUser);
+    static DECLCALLBACK(int) i_iprtProgressCallback(unsigned uPercentage, void *pvUser);
+    static DECLCALLBACK(int) Progress::i_vdProgressCallback(void *pvUser, unsigned uPercentage);
 
 protected:
     DECLARE_EMPTY_CTOR_DTOR(Progress)

@@ -537,9 +537,10 @@ bool Progress::i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
 }
 
 /**
- * @callback_method_impl{FNRTPROGRESS, }
+ * @callback_method_impl{FNRTPROGRESS,
+ *      Works the progress of the current operation.}
  */
-/*static*/ DECLCALLBACK(int) Progress::i_iprtProgressCallback(unsigned uPrecentage, void *pvUser)
+/*static*/ DECLCALLBACK(int) Progress::i_iprtProgressCallback(unsigned uPercentage, void *pvUser)
 {
     Progress *pThis = (Progress *)pvUser;
 
@@ -552,7 +553,10 @@ bool Progress::i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
     {
         pThis->i_checkForAutomaticTimeout();
         if (!pThis->mCanceled)
-            pThis->m_ulOperationPercent = RT_MIN(uPrecentage, 100);
+        {
+            if (uPercentage > pThis->m_ulOperationPercent)
+                pThis->m_ulOperationPercent = RT_MIN(uPercentage, 100);
+        }
         else
         {
             Assert(pThis->mCancelable);
@@ -563,6 +567,14 @@ bool Progress::i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
     return vrc;
 }
 
+/**
+ * @callback_method_impl{FNVDPROGRESS,
+ *      Progress::i_iprtProgressCallback with parameters switched around.}
+ */
+/*static*/ DECLCALLBACK(int) Progress::i_vdProgressCallback(void *pvUser, unsigned uPercentage)
+{
+    return i_iprtProgressCallback(uPercentage, pvUser);
+}
 
 // IProgress properties
 /////////////////////////////////////////////////////////////////////////////
