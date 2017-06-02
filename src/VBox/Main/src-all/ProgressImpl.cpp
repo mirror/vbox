@@ -536,6 +536,33 @@ bool Progress::i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
     return true;
 }
 
+/**
+ * @callback_method_impl{FNRTPROGRESS, }
+ */
+/*static*/ DECLCALLBACK(int) Progress::i_iprtProgressCallback(unsigned uPrecentage, void *pvUser)
+{
+    Progress *pThis = (Progress *)pvUser;
+
+    /*
+     * Same as setCurrentOperationProgress, except we don't fail on mCompleted.
+     */
+    AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
+    int vrc = VINF_SUCCESS;
+    if (!pThis->mCompleted)
+    {
+        pThis->i_checkForAutomaticTimeout();
+        if (!pThis->mCanceled)
+            pThis->m_ulOperationPercent = RT_MIN(uPrecentage, 100);
+        else
+        {
+            Assert(pThis->mCancelable);
+            vrc = VERR_CANCELLED;
+        }
+    }
+    /* else ignored */
+    return vrc;
+}
+
 
 // IProgress properties
 /////////////////////////////////////////////////////////////////////////////
