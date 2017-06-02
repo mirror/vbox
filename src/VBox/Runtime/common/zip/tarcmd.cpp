@@ -289,6 +289,7 @@ static RTEXITCODE rtZipTarCmdArchiveDir(PRTZIPTARCMDOPS pOpts, RTVFSFSSTREAM hVf
 static RTEXITCODE rtZipTarCmdOpenOutputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTREAM phVfsFss)
 {
     int rc;
+    *phVfsFss = NIL_RTVFSFSSTREAM;
 
     /*
      * Open the output file.
