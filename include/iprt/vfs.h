@@ -1311,16 +1311,16 @@ RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsI
  * @returns IRPT status code.
  * @param   hVfsIos             The I/O stream to wrap.
  * @param   pfnProgress         The progress callback.  The return code is
- *                              ignored by default, but can be enabled using
- *                              RTVFSPROGRESS_F_ALLOW_CANCEL.
+ *                              ignored by default, see
+ *                              RTVFSPROGRESS_F_CANCELABLE.
  * @param   pvUser              The user argument to @a pfnProgress.
  * @param   fFlags              RTVFSPROGRESS_F_XXX
  * @param   cbExpectedRead      The expected number of bytes read.
  * @param   cbExpectedWritten   The execpted number of bytes written.
  * @param   phVfsIos            Where to return the I/O stream handle.
  */
-RTDECL(int) RTVfsCreateProcessForIoStream(RTVFSIOSTREAM hVfsIos, PFNRTPROGRESS pfnProgress, void *pvUser, uint32_t fFlags,
-                                          uint64_t cbExpectedRead, uint64_t cbExpectedWritten, PRTVFSIOSTREAM phVfsIos);
+RTDECL(int) RTVfsCreateProgressForIoStream(RTVFSIOSTREAM hVfsIos, PFNRTPROGRESS pfnProgress, void *pvUser, uint32_t fFlags,
+                                           uint64_t cbExpectedRead, uint64_t cbExpectedWritten, PRTVFSIOSTREAM phVfsIos);
 
 /**
  * Creates a progress wrapper for a file stream.
@@ -1328,24 +1328,25 @@ RTDECL(int) RTVfsCreateProcessForIoStream(RTVFSIOSTREAM hVfsIos, PFNRTPROGRESS p
  * @returns IRPT status code.
  * @param   hVfsFile            The file to wrap.
  * @param   pfnProgress         The progress callback.  The return code is
- *                              ignored by default, but can be enabled using
- *                              RTVFSPROGRESS_F_ALLOW_CANCEL.
+ *                              ignored by default, see
+ *                              RTVFSPROGRESS_F_CANCELABLE.
  * @param   pvUser              The user argument to @a pfnProgress.
  * @param   fFlags              RTVFSPROGRESS_F_XXX
  * @param   cbExpectedRead      The expected number of bytes read.
  * @param   cbExpectedWritten   The execpted number of bytes written.
  * @param   phVfsFile           Where to return the file handle.
  */
-RTDECL(int) RTVfsCreateProcessForFile(RTVFSFILE hVfsFile, PFNRTPROGRESS pfnProgress, void *pvUser, uint32_t fFlags,
-                                      uint64_t cbExpectedRead, uint64_t cbExpectedWritten, PRTVFSFILE phVfsFile);
+RTDECL(int) RTVfsCreateProgressForFile(RTVFSFILE hVfsFile, PFNRTPROGRESS pfnProgress, void *pvUser, uint32_t fFlags,
+                                       uint64_t cbExpectedRead, uint64_t cbExpectedWritten, PRTVFSFILE phVfsFile);
 
 /** @name RTVFSPROGRESS_F_XXX - Flags for RTVfsCreateProcessForIoStream and
  *        RTVfsCreateProcessForFile.
  * @{ */
-/** Allow cancellation, forcing every access to return the pfnProgress failure
- * status triggering it.  The cancelation is generally delayed till the next
- * operation after the cancel was seen. */
-#define RTVFSPROGRESS_F_ALLOW_CANCEL            RT_BIT_32(0)
+/** Cancel if the callback returns a failure status code.
+ * This isn't default behavior because the cancelation is delayed one I/O
+ * operation in most cases and it's uncertain how the VFS user will handle the
+ * cancellation status code. */
+#define RTVFSPROGRESS_F_CANCELABLE             RT_BIT_32(0)
 /** Account forward seeks as reads. */
 #define RTVFSPROGRESS_F_FORWARD_SEEK_AS_READ    RT_BIT_32(1)
 /** Account fprward seeks as writes. */
