@@ -381,7 +381,9 @@ private:
     class ResetTask;
     class DeleteTask;
     class MergeTask;
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
     class ExportTask;
+#endif
     class ImportTask;
     class EncryptTask;
     friend class Task;
@@ -394,7 +396,9 @@ private:
     friend class ResetTask;
     friend class DeleteTask;
     friend class MergeTask;
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
     friend class ExportTask;
+#endif
     friend class ImportTask;
     friend class EncryptTask;
 
@@ -407,7 +411,9 @@ private:
     HRESULT i_taskResetHandler(Medium::ResetTask &task);
     HRESULT i_taskCompactHandler(Medium::CompactTask &task);
     HRESULT i_taskResizeHandler(Medium::ResizeTask &task);
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
     HRESULT i_taskExportHandler(Medium::ExportTask &task);
+#endif
     HRESULT i_taskImportHandler(Medium::ImportTask &task);
     HRESULT i_taskEncryptHandler(Medium::EncryptTask &task);
 

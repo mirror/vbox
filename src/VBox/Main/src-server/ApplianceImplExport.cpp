@@ -2538,14 +2538,6 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                     /*
                      * Export a disk image.
                      */
-                    /** @todo this progress object needs to be hooked up to pTask->pProgress... */
-                    ComObjPtr<Progress> pProgress2;
-                    pProgress2.createObject();
-                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this),
-                                          BstrFmt(tr("Creating medium '%s'"),
-                                          strTargetFilePath.c_str()).raw(), TRUE);
-                    if (FAILED(rc)) throw rc;
-
 #ifdef VBOX_WITH_NEW_TAR_CREATOR
                     /* For compressed VMDK fun, we let i_exportFile produce the image bytes. */
                     RTVFSIOSTREAM hVfsIosDst;
@@ -2563,10 +2555,18 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                                                    MediumVariant_VmdkStreamOptimized,
                                                    m->m_pSecretKeyStore,
                                                    hVfsIosDst,
-                                                   pProgress2);
+                                                   pTask->pProgress);
                     RTVfsIoStrmRelease(hVfsIosDst);
                     if (FAILED(rc)) throw rc;
 #else
+                    /** @todo this progress object needs to be hooked up to pTask->pProgress... */
+                    ComObjPtr<Progress> pProgress2;
+                    pProgress2.createObject();
+                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this),
+                                          BstrFmt(tr("Creating medium '%s'"),
+                                          strTargetFilePath.c_str()).raw(), TRUE);
+                    if (FAILED(rc)) throw rc;
+
                     rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
                                                    format,
                                                    MediumVariant_VmdkStreamOptimized,
@@ -2575,11 +2575,11 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                                                    pStorage,
                                                    pProgress2);
                     if (FAILED(rc)) throw rc;
-#endif
 
                     ComPtr<IProgress> pProgress3(pProgress2);
                     // now wait for the background disk operation to complete; this throws HRESULTs on error
                     i_waitForAsyncProgress(pTask->pProgress, pProgress3);
+#endif
                 }
                 else
                 {

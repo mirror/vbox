@@ -650,6 +650,7 @@ private:
     bool mfKeepMediumLockList;
 };
 
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
 class Medium::ExportTask : public Medium::Task
 {
 public:
@@ -659,12 +660,8 @@ public:
                MediumFormat *aFormat,
                MediumVariant_T aVariant,
                SecretKeyStore *pSecretKeyStore,
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
-               RTVFSIOSTREAM aVfsIosDst,
-#else
                VDINTERFACEIO *aVDImageIOIf,
                void *aVDImageIOUser,
-#endif
                MediumLockList *aSourceMediumLockList,
                bool fKeepSourceMediumLockList = false)
         : Medium::Task(aMedium, aProgress),
@@ -679,16 +676,6 @@ public:
 
         mVDImageIfaces = aMedium->m->vdImageIfaces;
 
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
-        int vrc = VDIfCreateFromVfsStream(aVfsIosDst, RTFILE_O_WRITE, &mpVfsIoIf);
-        AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
-
-        vrc = VDInterfaceAdd(&mpVfsIoIf->Core, "Medium::ExportTaskVfsIos",
-                             VDINTERFACETYPE_IO, mpVfsIoIf,
-                             sizeof(VDINTERFACEIO), &mVDImageIfaces);
-        AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
-#else
-
         if (aVDImageIOIf)
         {
             int vrc = VDInterfaceAdd(&aVDImageIOIf->Core, "Medium::vdInterfaceIO",
@@ -696,7 +683,6 @@ public:
                                      sizeof(VDINTERFACEIO), &mVDImageIfaces);
             AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
         }
-#endif
         m_strTaskName = "createExport";
     }
 
@@ -704,13 +690,6 @@ public:
     {
         if (!mfKeepSourceMediumLockList && mpSourceMediumLockList)
             delete mpSourceMediumLockList;
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
-        if (mpVfsIoIf)
-        {
-            VDIfDestroyFromVfsStream(mpVfsIoIf);
-            mpVfsIoIf = NULL;
-        }
-#endif
     }
 
     MediumLockList *mpSourceMediumLockList;
@@ -718,13 +697,13 @@ public:
     ComObjPtr<MediumFormat> mFormat;
     MediumVariant_T mVariant;
     PVDINTERFACE mVDImageIfaces;
-    PVDINTERFACEIO mpVfsIoIf; /**< Pointer to the VFS I/O stream to VD I/O interface wrapper. */
     SecretKeyStore *m_pSecretKeyStore;
 
 private:
     HRESULT executeTask();
     bool mfKeepSourceMediumLockList;
 };
+#endif /* !VBOX_WITH_NEW_TAR_CREATOR */
 
 class Medium::ImportTask : public Medium::Task
 {
@@ -977,6 +956,7 @@ HRESULT Medium::MergeTask::executeTask()
     return mMedium->i_taskMergeHandler(*this);
 }
 
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
 /**
  * Implementation code for the "export" task.
  */
@@ -984,6 +964,7 @@ HRESULT Medium::ExportTask::executeTask()
 {
     return mMedium->i_taskExportHandler(*this);
 }
+#endif
 
 /**
  * Implementation code for the "import" task.
@@ -6164,11 +6145,8 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
  * @param aVDImageIOUser    Opaque data for the callbacks.
  * @param aProgress         Progress object to use.
  * @return
- * @note The source format is defined by the Medium instance.
  *
- * @todo The only consumer of this method (Appliance::i_writeFSImpl) is already
- *       on a worker thread, so perhaps consider bypassing the thread here and
- *       run in the task synchronously?  VBoxSVC has enough threads as it is...
+ * @note The source format is defined by the Medium instance.
  */
 HRESULT Medium::i_exportFile(const char *aFilename,
                              const ComObjPtr<MediumFormat> &aFormat,
@@ -6184,6 +6162,100 @@ HRESULT Medium::i_exportFile(const char *aFilename,
     AssertPtrReturn(aFilename, E_INVALIDARG);
     AssertReturn(aFormat.isNotNull(), E_INVALIDARG);
     AssertReturn(aProgress.isNotNull(), E_INVALIDARG);
+
+#ifdef VBOX_WITH_NEW_TAR_CREATOR
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * Setup VD interfaces.
+         */
+        PVDINTERFACE   pVDImageIfaces = m->vdImageIfaces;
+        PVDINTERFACEIO pVfsIoIf;
+        int vrc = VDIfCreateFromVfsStream(hVfsIosDst, RTFILE_O_WRITE, &pVfsIoIf);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = VDInterfaceAdd(&pVfsIoIf->Core, "Medium::ExportTaskVfsIos", VDINTERFACETYPE_IO,
+                                 pVfsIoIf, sizeof(VDINTERFACEIO), &pVDImageIfaces);
+            if (RT_SUCCESS(vrc))
+            {
+                /*
+                 * Get a readonly hdd for this medium (source).
+                 */
+                Medium::CryptoFilterSettings    CryptoSettingsRead;
+                MediumLockList                  SourceMediumLockList;
+                PVDISK                          pSrcHdd;
+                hrc = i_openHddForReading(pKeyStore, &pSrcHdd, &SourceMediumLockList, &CryptoSettingsRead);
+                if (SUCCEEDED(hrc))
+                {
+                    /*
+                     * Create the target medium.
+                     */
+                    Utf8Str strDstFormat(aFormat->i_getId());
+
+                    /* ensure the target directory exists */
+                    uint64_t fDstCapabilities = aFormat->i_getCapabilities();
+                    if (fDstCapabilities & MediumFormatCapabilities_File)
+                    {
+                        Utf8Str strDstLocation(aFilename);
+                        hrc = VirtualBox::i_ensureFilePathExists(strDstLocation.c_str(),
+                                                                 !(aVariant & MediumVariant_NoCreateDir) /* fCreate */);
+                    }
+                    if (SUCCEEDED(hrc))
+                    {
+                        PVDISK pDstHdd;
+                        vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDstHdd);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            /*
+                             * Create an interface for getting progress callbacks.
+                             */
+                            VDINTERFACEPROGRESS ProgressIf = VDINTERFACEPROGRESS_INITALIZER(aProgress->i_vdProgressCallback);
+                            PVDINTERFACE        pProgress = NULL;
+                            vrc = VDInterfaceAdd(&ProgressIf.Core, "export-progress", VDINTERFACETYPE_PROGRESS,
+                                                 &*aProgress, sizeof(ProgressIf), &pProgress);
+                            AssertRC(vrc);
+
+                            /*
+                             * Do the exporting.
+                             */
+                            vrc = VDCopy(pSrcHdd,
+                                         VD_LAST_IMAGE,
+                                         pDstHdd,
+                                         strDstFormat.c_str(),
+                                         aFilename,
+                                         false /* fMoveByRename */,
+                                         0 /* cbSize */,
+                                         aVariant & ~MediumVariant_NoCreateDir,
+                                         NULL /* pDstUuid */,
+                                         VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL,
+                                         pProgress,
+                                         pVDImageIfaces,
+                                         NULL);
+                            if (RT_SUCCESS(vrc))
+                                hrc = S_OK;
+                            else
+                                hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Could not create the exported medium '%s'%s"),
+                                                   aFilename, i_vdError(vrc).c_str());
+                            VDDestroy(pDstHdd);
+                        }
+                        else
+                            hrc = setErrorVrc(vrc);
+                    }
+                }
+                VDDestroy(pSrcHdd);
+            }
+            else
+                hrc = setErrorVrc(vrc, "VDInterfaceAdd -> %Rrc", vrc);
+            VDIfDestroyFromVfsStream(pVfsIoIf);
+        }
+        else
+            hrc = setErrorVrc(vrc, "VDIfCreateFromVfsStream -> %Rrc", vrc);
+    }
+    return hrc;
+#else
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -6219,11 +6291,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::ExportTask(this, aProgress, aFilename, aFormat, aVariant,
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
-                                       pKeyStore, hVfsIosDst, pSourceMediumLockList);
-#else
                                        pKeyStore, aVDImageIOIf, aVDImageIOUser, pSourceMediumLockList);
-#endif
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -6237,6 +6305,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
         delete pTask;
 
     return rc;
+#endif
 }
 
 /**
@@ -9697,6 +9766,7 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
     return rc;
 }
 
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
 /**
  * Implementation code for the "export" task.
  *
@@ -9890,6 +9960,7 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
 
     return rc;
 }
+#endif /* !VBOX_WITH_NEW_TAR_CREATOR */
 
 /**
  * Implementation code for the "import" task.
