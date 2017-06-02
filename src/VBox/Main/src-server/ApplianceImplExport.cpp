@@ -2089,94 +2089,92 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
      * and creates less spaghetti code.
      */
     std::list<Utf8Str> lstTarballs;
-    try
+
+    /*
+     * Use i_buildXML to build a stack of disk images.  We don't care about the XML doc here.
+     */
+    XMLStack stack;
     {
+        xml::Document doc;
+        i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath, ovf::OVFVersion_2_0);
+    }
+
+    /*
+     * Process the disk images.
+     */
+    unsigned cTarballs = 0;
+    for (list<Utf8Str>::const_iterator it = stack.mapDiskSequence.begin();
+         it != stack.mapDiskSequence.end();
+         ++it)
+    {
+        const Utf8Str                       &strDiskID = *it;
+        const VirtualSystemDescriptionEntry *pDiskEntry = stack.mapDisks[strDiskID];
+        const Utf8Str                       &strSrcFilePath = pDiskEntry->strVBoxCurrent;  // where the VBox image is
+
         /*
-         * Use i_buildXML to build a stack of disk images.  We don't care about the XML doc here.
+         * Some skipping.
          */
-        XMLStack stack;
+        if (pDiskEntry->skipIt)
+            continue;
+
+        /* Skip empty media (DVD-ROM, floppy). */
+        if (strSrcFilePath.isEmpty())
+            continue;
+
+        /* Only deal with harddisk and DVD-ROMs, skip any floppies for now. */
+        if (   pDiskEntry->type != VirtualSystemDescriptionType_HardDiskImage
+            && pDiskEntry->type != VirtualSystemDescriptionType_CDROM)
+            continue;
+
+        /*
+         * Locate the Medium object for this entry (by location/path).
+         */
+        Log(("Finding source disk \"%s\"\n", strSrcFilePath.c_str()));
+        ComObjPtr<Medium> ptrSourceDisk;
+        if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+            hrc = mVirtualBox->i_findHardDiskByLocation(strSrcFilePath, true /*aSetError*/, &ptrSourceDisk);
+        else
+            hrc = mVirtualBox->i_findDVDOrFloppyImage(DeviceType_DVD, NULL /*aId*/, strSrcFilePath,
+                                                      true /*aSetError*/, &ptrSourceDisk);
+        if (FAILED(hrc))
+            break;
+        if (strSrcFilePath.isEmpty())
+            continue;
+
+        /*
+         * Figure out the names.
+         */
+
+        /* The name inside the tarball.  Replace the suffix of harddisk images with ".img". */
+        Utf8Str strInsideName = pDiskEntry->strOvf;
+        if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+            strInsideName.stripSuffix().append(".img");
+
+        /* The first tarball we create uses the specified name. Subsequent
+           takes the name from the disk entry or something. */
+        Utf8Str strTarballPath = pTask->locInfo.strPath;
+        if (cTarballs > 0)
         {
-            xml::Document doc;
-            i_buildXML(writeLock, doc, stack, pTask->locInfo.strPath, ovf::OVFVersion_2_0);
+            const char *pszExt = RTPathSuffix(pDiskEntry->strOvf.c_str());
+            pszExt = !pszExt || *pszExt != '.' ? ""
+                   : pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage ? "img" : pszExt + 1;
+
+            strTarballPath.stripFilename().append(RTPATH_SLASH_STR).append(pDiskEntry->strOvf);
+            if (*pszExt)
+                strTarballPath.stripSuffix().append("_").append(pszExt);
+            strTarballPath.append(".tar.gz");
         }
+        cTarballs++;
 
         /*
-         * Process the disk images.
+         * Create the tar output stream.
          */
-        unsigned cTarballs = 0;
-        for (list<Utf8Str>::const_iterator it = stack.mapDiskSequence.begin();
-             it != stack.mapDiskSequence.end();
-             ++it)
+        RTVFSIOSTREAM hVfsIosFile;
+        int vrc = RTVfsIoStrmOpenNormal(strTarballPath.c_str(),
+                                        RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
+                                        &hVfsIosFile);
+        if (RT_SUCCESS(vrc))
         {
-            const Utf8Str                       &strDiskID = *it;
-            const VirtualSystemDescriptionEntry *pDiskEntry = stack.mapDisks[strDiskID];
-            const Utf8Str                       &strSrcFilePath = pDiskEntry->strVBoxCurrent;  // where the VBox image is
-
-            /*
-             * Some skipping.
-             */
-            if (pDiskEntry->skipIt)
-                continue;
-
-            /* Skip empty media (DVD-ROM, floppy). */
-            if (strSrcFilePath.isEmpty())
-                continue;
-
-            /* Only deal with harddisk and DVD-ROMs, skip any floppies for now. */
-            if (   pDiskEntry->type != VirtualSystemDescriptionType_HardDiskImage
-                && pDiskEntry->type != VirtualSystemDescriptionType_CDROM)
-                continue;
-
-            /*
-             * Locate the Medium object for this entry (by location/path).
-             */
-            Log(("Finding source disk \"%s\"\n", strSrcFilePath.c_str()));
-            ComObjPtr<Medium> ptrSourceDisk;
-            if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
-                hrc = mVirtualBox->i_findHardDiskByLocation(strSrcFilePath, true, &ptrSourceDisk);
-            else
-                hrc = mVirtualBox->i_findDVDOrFloppyImage(DeviceType_DVD, NULL /*aId*/, strSrcFilePath,
-                                                          true /*aSetError*/, &ptrSourceDisk);
-            if (FAILED(hrc))
-                throw hrc;
-            if (strSrcFilePath.isEmpty())
-                continue;
-
-            /*
-             * Figure out the names.
-             */
-
-            /* The name inside the tarball.  Replace the suffix of harddisk images with ".img". */
-            Utf8Str strInsideName = pDiskEntry->strOvf;
-            if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
-                strInsideName.stripSuffix().append(".img");
-
-            /* The first tarball we create uses the specified name. Subsequent
-               takes the name from the disk entry or something. */
-            Utf8Str strTarballPath = pTask->locInfo.strPath;
-            if (cTarballs > 0)
-            {
-                /** @todo test this stuff   */
-                const char *pszExt = RTPathSuffix(pDiskEntry->strOvf.c_str());
-                pszExt = !pszExt || *pszExt != '.' ? "" : pszExt + 1;
-
-                strTarballPath.stripFilename().append(RTPATH_SLASH_STR).append(pDiskEntry->strOvf);
-                if (*pszExt)
-                    strTarballPath.stripSuffix().append("_").append(pszExt);
-                strTarballPath.append(".tar.gz");
-            }
-            cTarballs++;
-
-            /*
-             * Create the tar output stream.
-             */
-            RTVFSIOSTREAM hVfsIosFile;
-            int vrc = RTVfsIoStrmOpenNormal(strTarballPath.c_str(),
-                                            RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
-                                            &hVfsIosFile);
-            if (RT_FAILURE(vrc))
-                throw setErrorVrc(vrc, tr("Failed to create '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
-
             RTVFSIOSTREAM hVfsIosGzip = NIL_RTVFSIOSTREAM;
             vrc = RTZipGzipCompressIoStream(hVfsIosFile, 0 /*fFlags*/, 6 /*uLevel*/, &hVfsIosGzip);
             RTVfsIoStrmRelease(hVfsIosFile);
@@ -2188,60 +2186,57 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
             if (RT_SUCCESS(vrc))
                 vrc = RTZipTarFsStreamToIoStream(hVfsIosGzip, RTZIPTARFORMAT_GNU, RTZIPTAR_C_SPARSE, &hVfsFssTar);
             RTVfsIoStrmRelease(hVfsIosGzip);
-
-            if (RT_FAILURE(vrc))
+            if (RT_SUCCESS(vrc))
             {
-                RTFileDelete(strTarballPath.c_str());
-                throw setErrorVrc(vrc, tr("Failed to TAR creator instance for '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
-            }
+                /*
+                 * Let the Medium code do the heavy work.
+                 *
+                 * The exporting requests a lock on the media tree. So temporarily
+                 * leave the appliance lock.
+                 */
+                writeLock.release();
 
-            /*
-             * The exporting requests a lock on the media tree. So temporarily
-             * leave the appliance lock.
-             */
-            writeLock.release();
-
-            try
-            {
-                /* advance to the next operation */
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%Rbn'"), strTarballPath.c_str()).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up
                                                                               // with the IProgress originally
                 hrc = ptrSourceDisk->i_addRawToFss(strInsideName.c_str(), m->m_pSecretKeyStore, hVfsFssTar,
                                                    pTask->pProgress, true /*fSparse*/);
-                if (FAILED(hrc))
-                    throw hrc;
 
-                /*
-                 * Complete and close the tarball.
-                 */
-                vrc = RTVfsFsStrmEnd(hVfsFssTar);
-                RTVfsFsStrmRelease(hVfsFssTar);
-                hVfsFssTar = NIL_RTVFSFSSTREAM;
-                if (RT_FAILURE(vrc))
-                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                                       tr("Error completing TAR file '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
-
-                /* Remember the tarball name for cleanup. */
-                try { lstTarballs.push_back(strTarballPath.c_str()); }
-                catch (std::bad_alloc) { throw E_OUTOFMEMORY; }
-            }
-            catch (HRESULT hrc3)
-            {
                 writeLock.acquire();
-                RTVfsFsStrmRelease(hVfsFssTar);
-                RTFileDelete(strTarballPath.c_str());
-                throw hrc3;
+                if (SUCCEEDED(hrc))
+                {
+                    /*
+                     * Complete and close the tarball.
+                     */
+                    vrc = RTVfsFsStrmEnd(hVfsFssTar);
+                    RTVfsFsStrmRelease(hVfsFssTar);
+                    hVfsFssTar = NIL_RTVFSFSSTREAM;
+                    if (RT_SUCCESS(vrc))
+                    {
+                        /* Remember the tarball name for cleanup. */
+                        try
+                        {
+                            lstTarballs.push_back(strTarballPath.c_str());
+                            strTarballPath.setNull();
+                        }
+                        catch (std::bad_alloc)
+                        { hrc = E_OUTOFMEMORY; }
+                    }
+                    else
+                        hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                           tr("Error completing TAR file '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
+                }
             }
+            else
+                hrc = setErrorVrc(vrc, tr("Failed to TAR creator instance for '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
 
-            // Finished, lock again (so nobody mess around with the medium tree
-            // in the meantime)
-            writeLock.acquire();
+            if (FAILED(hrc) && strTarballPath.isNotEmpty())
+                RTFileDelete(strTarballPath.c_str());
         }
-    }
-    catch (HRESULT hrc2)
-    {
-        hrc = hrc2;
+        else
+            hrc = setErrorVrc(vrc, tr("Failed to create '%s' (%Rrc)"), strTarballPath.c_str(), vrc);
+        if (FAILED(hrc))
+            break;
     }
 
     /*
