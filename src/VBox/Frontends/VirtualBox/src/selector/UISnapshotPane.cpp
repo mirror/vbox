@@ -799,9 +799,7 @@ void UISnapshotPane::sltHandleCurrentItemChange()
         && !pSnapshotItem->isCurrentStateItem()
     );
     m_pActionShowSnapshotDetails->setEnabled(
-           m_pCurrentSnapshotItem
-        && pSnapshotItem
-        && !pSnapshotItem->isCurrentStateItem()
+        pSnapshotItem
     );
     m_pActionCommitSnapshotDetails->setEnabled(
         false
@@ -813,22 +811,11 @@ void UISnapshotPane::sltHandleCurrentItemChange()
     );
 
     /* If there is a proper snasphot item: */
-    if (   m_pCurrentSnapshotItem
-        && pSnapshotItem
-        && !pSnapshotItem->isCurrentStateItem())
+    if (pSnapshotItem)
     {
         /* Update details-widget if it's visible: */
         if (m_pDetailsWidget->isVisible())
             m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
-    }
-    else
-    {
-        /* Clear details-widget if it's visible: */
-        if (m_pDetailsWidget->isVisible())
-            m_pDetailsWidget->clearData();
-        /* Toggle details button off and hide the widget: */
-        m_pActionShowSnapshotDetails->setChecked(false);
-        sltToggleSnapshotDetailsVisibility(false);
     }
 }
 
@@ -913,9 +900,7 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
     AssertReturnVoid(pSnapshotItem);
 
     /* If this is a snapshot item: */
-    if (   m_pCurrentSnapshotItem
-        && pSnapshotItem
-        && !pSnapshotItem->isCurrentStateItem())
+    if (pSnapshotItem)
     {
         /* Handle Ctrl+DoubleClick: */
         if (QApplication::keyboardModifiers() == Qt::ControlModifier)

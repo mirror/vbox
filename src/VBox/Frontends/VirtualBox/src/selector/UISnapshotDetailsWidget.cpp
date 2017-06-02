@@ -27,6 +27,7 @@
 # include <QLineEdit>
 # include <QPushButton>
 # include <QScrollArea>
+# include <QStackedLayout>
 # include <QTabWidget>
 # include <QTextEdit>
 # include <QVBoxLayout>
@@ -296,6 +297,9 @@ void UIScreenshotViewer::adjustPicture()
 
 UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pStackedLayout(0)
+    , m_pEmptyWidget(0)
+    , m_pEmptyWidgetLabel(0)
     , m_pTabWidget(0)
     , m_pLayoutOptions(0)
     , m_pLabelTaken(0), m_pLabelTakenText(0)
@@ -359,6 +363,8 @@ bool UISnapshotDetailsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 void UISnapshotDetailsWidget::retranslateUi()
 {
     /* Translate labels: */
+    m_pEmptyWidgetLabel->setText("<p>You have the <b>Current State</b> item selected.<br>"
+                                 "Press <b>Take</b> button if you wish to take a new snapshot.</p>");
     m_pTabWidget->setTabText(0, tr("&Attributes"));
     m_pTabWidget->setTabText(1, tr("D&etails"));
     m_pLabelName->setText(tr("&Name:"));
@@ -409,15 +415,43 @@ void UISnapshotDetailsWidget::sltHandleDescriptionChange()
 
 void UISnapshotDetailsWidget::prepare()
 {
-    /* Create layout: */
-    new QVBoxLayout(this);
-    AssertPtrReturnVoid(layout());
+    /* Create stacked layout: */
+    m_pStackedLayout = new QStackedLayout(this);
+    AssertPtrReturnVoid(m_pStackedLayout);
     {
-        /* Configure layout: */
-        layout()->setContentsMargins(0, 0, 0, 0);
-
+        /* Prepare empty-widget: */
+        prepareEmptyWidget();
         /* Prepare tab-widget: */
         prepareTabWidget();
+    }
+}
+
+void UISnapshotDetailsWidget::prepareEmptyWidget()
+{
+    /* Create empty-widget: */
+    m_pEmptyWidget = new QWidget;
+    AssertPtrReturnVoid(m_pEmptyWidget);
+    {
+        /* Create empty-widget layout: */
+        new QVBoxLayout(m_pEmptyWidget);
+        AssertPtrReturnVoid(m_pEmptyWidget->layout());
+        {
+            /* Create empty-widget label: */
+            m_pEmptyWidgetLabel = new QLabel;
+            {
+                /* Configure label: */
+                QFont font = m_pEmptyWidgetLabel->font();
+                font.setPointSize(font.pointSize() * 1.5);
+                m_pEmptyWidgetLabel->setAlignment(Qt::AlignCenter);
+                m_pEmptyWidgetLabel->setFont(font);
+
+                /* Add into layout: */
+                m_pEmptyWidget->layout()->addWidget(m_pEmptyWidgetLabel);
+            }
+        }
+
+        /* Add into layout: */
+        m_pStackedLayout->addWidget(m_pEmptyWidget);
     }
 }
 
@@ -433,7 +467,7 @@ void UISnapshotDetailsWidget::prepareTabWidget()
         prepareTabDetails();
 
         /* Add into layout: */
-        layout()->addWidget(m_pTabWidget);
+        m_pStackedLayout->addWidget(m_pTabWidget);
     }
 }
 
@@ -454,7 +488,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 /* Configure label: */
                 m_pLabelTaken->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pLabelTaken, 0, 0);
             }
             /* Create taken text: */
@@ -466,7 +500,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 policy.setHorizontalStretch(1);
                 m_pLabelTakenText->setSizePolicy(policy);
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pLabelTakenText, 0, 1);
             }
 
@@ -477,7 +511,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 /* Configure label: */
                 m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pLabelName, 1, 0);
             }
             /* Create name editor: */
@@ -492,7 +526,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 connect(m_pEditorName, &QLineEdit::textChanged,
                         this, &UISnapshotDetailsWidget::sltHandleNameChange);
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pEditorName, 1, 1);
             }
 
@@ -511,7 +545,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 pal.setColor(QPalette::Window, Qt::black);
                 m_pLabelThumbnail->setPalette(pal);
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pLabelThumbnail, 0, 2, 2, 1);
             }
 
@@ -522,7 +556,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 /* Configure label: */
                 m_pLabelDescription->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignTop);
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pLabelDescription, 2, 0);
             }
             /* Create description browser: */
@@ -539,7 +573,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 connect(m_pBrowserDescription, &QTextEdit::textChanged,
                         this, &UISnapshotDetailsWidget::sltHandleDescriptionChange);
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pBrowserDescription, 2, 1, 1, 2);
             }
         }
@@ -602,7 +636,7 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                         QUrl(QString("details://%1").arg(gpConverter->toInternalString(enmType))),
                         QVariant(gpConverter->toIcon(enmType).pixmap(iconSize)));
 
-                /* Add to layout: */
+                /* Add into layout: */
                 m_pLayoutDetails->addWidget(m_pBrowserDetails);
             }
         }
@@ -621,6 +655,9 @@ void UISnapshotDetailsWidget::loadSnapshotData()
     /* If there is a snapshot: */
     if (m_comSnapshot.isNotNull())
     {
+        /* Choose the tab-widget as current one: */
+        m_pStackedLayout->setCurrentWidget(m_pTabWidget);
+
         /* Calculate snapshot timestamp info: */
         QDateTime timestamp;
         timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
@@ -680,6 +717,9 @@ void UISnapshotDetailsWidget::loadSnapshotData()
     }
     else
     {
+        /* Choose the empty-widget as current one: */
+        m_pStackedLayout->setCurrentWidget(m_pEmptyWidget);
+
         /* Clear snapshot timestamp info: */
         m_pLabelTakenText->clear();
 

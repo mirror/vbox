@@ -31,9 +31,11 @@
 class QGridLayout;
 class QLabel;
 class QLineEdit;
+class QStackedLayout;
 class QTabWidget;
 class QTextEdit;
 class QVBoxLayout;
+class QWidget;
 
 
 /** Snapshot pane: Snapshot data structure. */
@@ -107,6 +109,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares empty-widget. */
+    void prepareEmptyWidget();
     /** Prepares tab-widget. */
     void prepareTabWidget();
     /** Prepares 'Options' tab. */
@@ -132,6 +136,14 @@ private:
     QPixmap  m_pixmapThumbnail;
     /** Holds the cached screenshot. */
     QPixmap  m_pixmapScreenshot;
+
+    /** Holds the stacked layout instance. */
+    QStackedLayout *m_pStackedLayout;
+
+    /** Holds the empty-widget instance. */
+    QWidget *m_pEmptyWidget;
+    /** Holds the empty-widget label instance. */
+    QLabel  *m_pEmptyWidgetLabel;
 
     /** Holds the tab-widget instance. */
     QTabWidget *m_pTabWidget;
