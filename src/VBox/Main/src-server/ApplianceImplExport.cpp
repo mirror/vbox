@@ -74,6 +74,12 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
 
         LocationInfo locInfo;
         i_parseURI(aLocation, locInfo);
+
+        Utf8Str strBasename(locInfo.strPath);
+        strBasename.stripPath().stripSuffix();
+        if (locInfo.strPath.endsWith(".tar.gz", Utf8Str::CaseSensitive))
+            strBasename.stripSuffix();
+
         // create a new virtual system to store in the appliance
         rc = pNewDesc.createObject();
         if (FAILED(rc)) throw rc;
@@ -348,10 +354,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                         // returns pMedium if there are no diff images
                 if (FAILED(rc)) throw rc;
 
-                Utf8Str strName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
-                if (locInfo.strPath.endsWith(".tar.gz", Utf8Str::CaseSensitive))
-                    strName.stripSuffix();
-                strTargetImageName = Utf8StrFmt("%s-disk%.3d.vmdk", strName.c_str(), ++pAppliance->m->cDisks);
+                strTargetImageName = Utf8StrFmt("%s-disk%.3d.vmdk", strBasename.c_str(), ++pAppliance->m->cDisks);
                 if (strTargetImageName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                 tr("Cannot attach disk '%s' -- file name too long"), strTargetImageName.c_str());
@@ -442,8 +445,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                 if (eq != 0)
                     continue;
 
-                Utf8Str strName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
-                strTargetImageName = Utf8StrFmt("%s-disk%.3d.iso", strName.c_str(), ++pAppliance->m->cDisks);
+                strTargetImageName = Utf8StrFmt("%s-disk%.3d.iso", strBasename.c_str(), ++pAppliance->m->cDisks);
                 if (strTargetImageName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                 tr("Cannot attach image '%s' -- file name too long"), strTargetImageName.c_str());
@@ -2166,13 +2168,15 @@ HRESULT Appliance::i_writeFSOPC(TaskOVF *pTask, AutoWriteLockBase &writeLock)
         Utf8Str strTarballPath = pTask->locInfo.strPath;
         if (cTarballs > 0)
         {
-            const char *pszExt = RTPathSuffix(pDiskEntry->strOvf.c_str());
-            pszExt = !pszExt || *pszExt != '.' ? ""
-                   : pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage ? "img" : pszExt + 1;
 
             strTarballPath.stripFilename().append(RTPATH_SLASH_STR).append(pDiskEntry->strOvf);
-            if (*pszExt)
-                strTarballPath.stripSuffix().append("_").append(pszExt);
+            const char *pszExt = RTPathSuffix(pDiskEntry->strOvf.c_str());
+            if (pszExt && pszExt[0] == '.' && pszExt[1] != '\0')
+            {
+                strTarballPath.stripSuffix();
+                if (pDiskEntry->type != VirtualSystemDescriptionType_HardDiskImage)
+                    strTarballPath.append("_").append(&pszExt[1]);
+            }
             strTarballPath.append(".tar.gz");
         }
         cTarballs++;
