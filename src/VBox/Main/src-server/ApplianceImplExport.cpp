@@ -2390,12 +2390,8 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
     LogFlowFuncEnter();
 
     HRESULT rc = S_OK;
-#ifdef VBOX_WITH_NEW_TAR_CREATOR
-    RTMANIFEST hManifest;
-    int vrc = RTManifestCreate(0 /*fFlags*/, &hManifest);
-
-#else
     int vrc;
+#ifndef VBOX_WITH_NEW_TAR_CREATOR
     list<STRPAIR> fileList;
 #endif
     try
