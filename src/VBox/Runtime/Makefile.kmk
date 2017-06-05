@@ -429,6 +429,7 @@ RuntimeR3_SOURCES       = \
 	common/fs/filesystemext.cpp \
 	common/fs/fatvfs.cpp \
 	common/fs/iso9660vfs.cpp \
+	$(if-expr "$(USERNAME)" == "bird",common/fs/isomaker.cpp,) \
 	common/ldr/ldr.cpp \
 	common/ldr/ldrELF.cpp \
 	common/ldr/ldrEx.cpp \

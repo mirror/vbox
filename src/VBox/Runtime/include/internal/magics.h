@@ -68,6 +68,8 @@
 #define RTENV_MAGIC                     UINT32_C(0x19571010)
 /** The value of RTERRVARS::ai32Vars[0]. (Ryuichi Sakamoto) */
 #define RTERRVARS_MAGIC                 UINT32_C(0x19520117)
+/** The value of RTFSISOMAKERINT::uMagic. (Brian Blade) */
+#define RTFSISOMAKERINT_MAGIC           UINT32_C(0x19700725)
 /** Magic number for RTHANDLETABLEINT::u32Magic. (Hitomi Kanehara) */
 #define RTHANDLETABLE_MAGIC             UINT32_C(0x19830808)
 /** Magic number for RTHEAPOFFSETINTERNAL::u32Magic. (Neal Town Stephenson) */

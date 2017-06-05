@@ -2154,6 +2154,13 @@ typedef RTFILEAIOCTX                               *PRTFILEAIOCTX;
 /** Nil context handle. */
 #define NIL_RTFILEAIOCTX                            0
 
+/** ISO image maker handle. */
+typedef struct RTFSISOMAKERINT                     *RTFSISOMAKER;
+/** Pointer to an ISO image maker handle. */
+typedef RTFSISOMAKER                               *PRTFSISOMAKER;
+/** NIL ISO maker handle. */
+#define NIL_RTFSISOMAKER                           ((RTFSISOMAKER)0)
+
 /** Loader module handle. */
 typedef R3R0PTRTYPE(struct RTLDRMODINTERNAL *)      RTLDRMOD;
 /** Pointer to a loader module handle. */
