@@ -95,18 +95,13 @@ public:
     /** Returns whether this is the "current state" item. */
     bool isCurrentStateItem() const { return m_fCurrentStateItem; }
 
+    /** Returns whether this is the current snapshot item. */
+    bool isCurrentSnapshotItem() const { return m_fCurrentSnapshotItem; }
+    /** Defines whether this is the @a fCurrent snapshot item. */
+    void setCurrentSnapshotItem(bool fCurrent);
+
     /** Calculates and returns the current item level. */
     int level() const;
-
-    /** Returns whether the font is bold. */
-    bool bold() const;
-    /** Defines whether the font is @a fBold. */
-    void setBold(bool fBold);
-
-    /** Returns whether the font is italic. */
-    bool italic() const;
-    /** Defines whether the font is @a fItalic. */
-    void setItalic(bool fItalic);
 
     /** Recaches the item's contents. */
     void recache();
@@ -134,6 +129,8 @@ private:
 
     /** Holds whether this is a "current state" item. */
     bool  m_fCurrentStateItem;
+    /** Holds whether this is a "current snapshot" item. */
+    bool  m_fCurrentSnapshotItem;
 
     /** Holds the snapshot COM wrapper. */
     CSnapshot  m_comSnapshot;
@@ -199,6 +196,7 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
     : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(false)
+    , m_fCurrentSnapshotItem(false)
     , m_comSnapshot(comSnapshot)
 {
 }
@@ -207,6 +205,7 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
     : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(false)
+    , m_fCurrentSnapshotItem(false)
     , m_comSnapshot(comSnapshot)
 {
 }
@@ -215,8 +214,15 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
     : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(true)
+    , m_fCurrentSnapshotItem(false)
     , m_comMachine(comMachine)
 {
+    /* Set the bold font state
+     * for current state item: */
+    QFont myFont = font(0);
+    myFont.setBold(true);
+    setFont(0, myFont);
+
     /* Fetch current machine state: */
     setMachineState(m_comMachine.GetState());
 }
@@ -225,8 +231,15 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
     : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentStateItem(true)
+    , m_fCurrentSnapshotItem(false)
     , m_comMachine(comMachine)
 {
+    /* Set the bold font state
+     * for current state item: */
+    QFont myFont = font(0);
+    myFont.setBold(true);
+    setFont(0, myFont);
+
     /* Fetch current machine state: */
     setMachineState(m_comMachine.GetState());
 }
@@ -281,36 +294,19 @@ int UISnapshotItem::level() const
     return iResult;
 }
 
-bool UISnapshotItem::bold() const
+void UISnapshotItem::setCurrentSnapshotItem(bool fCurrent)
 {
-    return font(0).bold();
-}
+    /* Remember the state: */
+    m_fCurrentSnapshotItem = fCurrent;
 
-void UISnapshotItem::setBold(bool fBold)
-{
-    /* Update font: */
+    /* Set/clear the bold font state
+     * for current snapshot item: */
     QFont myFont = font(0);
-    myFont.setBold(fBold);
+    myFont.setBold(fCurrent);
     setFont(0, myFont);
 
-    /* Adjust text: */
-    adjustText();
-}
-
-bool UISnapshotItem::italic() const
-{
-    return font(0).italic();
-}
-
-void UISnapshotItem::setItalic(bool fItalic)
-{
-    /* Update font: */
-    QFont myFont = font(0);
-    myFont.setItalic(fItalic);
-    setFont(0, myFont);
-
-    /* Adjust text: */
-    adjustText();
+    /* Update tool-tip: */
+    recacheToolTip();
 }
 
 void UISnapshotItem::recache()
@@ -461,8 +457,7 @@ void UISnapshotItem::recacheToolTip()
     /* For snapshot item: */
     else
     {
-        /* The current snapshot is always bold: */
-        if (bold())
+        if (isCurrentSnapshotItem())
             strDetails = UISnapshotPane::tr(" (current, ", "Snapshot details");
         else
             strDetails = " (";
@@ -1130,7 +1125,6 @@ void UISnapshotPane::refreshAll()
 
         /* Add the "current state" item as a child to current snapshot item: */
         UISnapshotItem *pCsi = new UISnapshotItem(this, m_pCurrentSnapshotItem, m_comMachine);
-        pCsi->setBold(true);
         pCsi->recache();
 
         /* Search for a previously selected item: */
@@ -1153,7 +1147,6 @@ void UISnapshotPane::refreshAll()
 
         /* Add the "current state" item as a child of snapshot tree: */
         UISnapshotItem *pCsi = new UISnapshotItem(this, m_pSnapshotTree, m_comMachine);
-        pCsi->setBold(true);
         pCsi->recache();
 
         /* Choose current item: */
@@ -1176,11 +1169,11 @@ void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QITreeWidge
     /* And recache it's content: */
     pSnapshotItem->recache();
 
-    /* Mark current snapshot item bold and remember it: */
+    /* Mark snapshot item as "current" and remember it: */
     CSnapshot comCurrentSnapshot = m_comMachine.GetCurrentSnapshot();
     if (!comCurrentSnapshot.isNull() && comCurrentSnapshot.GetId() == comSnapshot.GetId())
     {
-        pSnapshotItem->setBold(true);
+        pSnapshotItem->setCurrentSnapshotItem(true);
         m_pCurrentSnapshotItem = pSnapshotItem;
     }
 
