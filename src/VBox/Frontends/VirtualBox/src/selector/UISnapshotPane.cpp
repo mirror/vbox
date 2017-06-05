@@ -57,6 +57,15 @@
 #endif /* QT_VERSION < 0x050000 */
 
 
+/** Snapshot tree column tags. */
+enum
+{
+    Column_Name,
+    Column_Taken,
+    Column_Max,
+};
+
+
 /** QITreeWidgetItem subclass for snapshots items. */
 class UISnapshotItem : public QITreeWidgetItem, public UIDataSnapshot
 {
@@ -86,12 +95,6 @@ public:
     /** Returns item snapshot ID. */
     QString snapshotID() const { return m_strSnapshotID; }
 
-    /** Returns item data for corresponding @a iColumn and @a iRole. */
-    QVariant data(int iColumn, int iRole) const;
-
-    /** Returns item text for corresponding @a iColumn. */
-    QString text(int iColumn) const;
-
     /** Returns whether this is the "current state" item. */
     bool isCurrentStateItem() const { return m_fCurrentStateItem; }
 
@@ -115,9 +118,6 @@ public:
     SnapshotAgeFormat updateAge();
 
 protected:
-
-    /** Adjusts item text. */
-    void adjustText();
 
     /** Recaches item tool-tip. */
     void recacheToolTip();
@@ -219,9 +219,9 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
 {
     /* Set the bold font state
      * for current state item: */
-    QFont myFont = font(0);
+    QFont myFont = font(Column_Name);
     myFont.setBold(true);
-    setFont(0, myFont);
+    setFont(Column_Name, myFont);
 
     /* Fetch current machine state: */
     setMachineState(m_comMachine.GetState());
@@ -236,50 +236,12 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
 {
     /* Set the bold font state
      * for current state item: */
-    QFont myFont = font(0);
+    QFont myFont = font(Column_Name);
     myFont.setBold(true);
-    setFont(0, myFont);
+    setFont(Column_Name, myFont);
 
     /* Fetch current machine state: */
     setMachineState(m_comMachine.GetState());
-}
-
-QVariant UISnapshotItem::data(int iColumn, int iRole) const
-{
-    switch (iRole)
-    {
-        case Qt::DisplayRole:
-        {
-            /* Call to base-class for "current state" item, compose ourselves otherwise: */
-            return m_fCurrentStateItem ? QTreeWidgetItem::data(iColumn, iRole)
-                                       : QString("%1%2")
-                                             .arg(QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString())
-                                             .arg(QTreeWidgetItem::data(iColumn, Qt::UserRole).toString());
-        }
-        case Qt::SizeHintRole:
-        {
-            /* Determine the icon metric: */
-            const QStyle *pStyle = QApplication::style();
-            const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-            /* Determine the minimum size-hint for this tree-widget-item: */
-            const QSize baseSizeHint = QTreeWidgetItem::data(iColumn, iRole).toSize();
-            /* Determine the effective height-hint for this tree-widget-item: */
-            const int iEffectiveHeightHint = qMax(baseSizeHint.height(),
-                                                  iIconMetric + 2 * 2 /* margins */);
-            /* Return size-hint for this tree-widget-item: */
-            return QSize(baseSizeHint.width(), iEffectiveHeightHint);
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return QTreeWidgetItem::data(iColumn, iRole);
-}
-
-QString UISnapshotItem::text(int iColumn) const
-{
-    return QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString();
 }
 
 int UISnapshotItem::level() const
@@ -301,9 +263,9 @@ void UISnapshotItem::setCurrentSnapshotItem(bool fCurrent)
 
     /* Set/clear the bold font state
      * for current snapshot item: */
-    QFont myFont = font(0);
+    QFont myFont = font(Column_Name);
     myFont.setBold(fCurrent);
-    setFont(0, myFont);
+    setFont(Column_Name, myFont);
 
     /* Update tool-tip: */
     recacheToolTip();
@@ -320,7 +282,7 @@ void UISnapshotItem::recache()
         m_strName = m_fCurrentStateModified
                   ? UISnapshotPane::tr("Current State (changed)", "Current State (Modified)")
                   : UISnapshotPane::tr("Current State", "Current State (Unmodified)");
-        setText(0, m_strName);
+        setText(Column_Name, m_strName);
         m_strDescription = m_fCurrentStateModified
                          ? UISnapshotPane::tr("The current state differs from the state stored in the current snapshot")
                          : QTreeWidgetItem::parent() != 0
@@ -334,16 +296,14 @@ void UISnapshotItem::recache()
         AssertReturnVoid(m_comSnapshot.isNotNull());
         m_strSnapshotID = m_comSnapshot.GetId();
         m_strName = m_comSnapshot.GetName();
-        setText(0, m_strName);
+        setText(Column_Name, m_strName);
         m_fOnline = m_comSnapshot.GetOnline();
-        setIcon(0, *m_pSnapshotWidget->snapshotItemIcon(m_fOnline));
+        setIcon(Column_Name, *m_pSnapshotWidget->snapshotItemIcon(m_fOnline));
         m_strDescription = m_comSnapshot.GetDescription();
         m_timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
         m_fCurrentStateModified = false;
     }
 
-    /* Adjust text: */
-    adjustText();
     /* Update tool-tip: */
     recacheToolTip();
 }
@@ -367,7 +327,7 @@ void UISnapshotItem::setMachineState(KMachineState enmState)
     /* Cache new state: */
     m_enmMachineState = enmState;
     /* Set corresponding icon: */
-    setIcon(0, gpConverter->toIcon(m_enmMachineState));
+    setIcon(Column_Name, gpConverter->toIcon(m_enmMachineState));
     /* Update timestamp: */
     m_timestamp.setTime_t(m_comMachine.GetLastStateChange() / 1000);
 }
@@ -385,54 +345,40 @@ SnapshotAgeFormat UISnapshotItem::updateAge()
         then = now; /* can happen if the host time is wrong */
     if (then.daysTo(now) > 30)
     {
-        strAge = UISnapshotPane::tr(" (%1)").arg(then.toString(Qt::LocalDate));
+        strAge = then.toString(Qt::LocalDate);
         enmAgeFormat = SnapshotAgeFormat_Max;
     }
     else if (then.secsTo(now) > 60 * 60 * 24)
     {
-        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::daysToString(then.secsTo(now) / 60 / 60 / 24));
+        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
+                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::daysToString(then.secsTo(now) / 60 / 60 / 24));
         enmAgeFormat = SnapshotAgeFormat_InDays;
     }
     else if (then.secsTo(now) > 60 * 60)
     {
-        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::hoursToString(then.secsTo(now) / 60 / 60));
+        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
+                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::hoursToString(then.secsTo(now) / 60 / 60));
         enmAgeFormat = SnapshotAgeFormat_InHours;
     }
     else if (then.secsTo(now) > 60)
     {
-        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::minutesToString(then.secsTo(now) / 60));
+        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
+                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::minutesToString(then.secsTo(now) / 60));
         enmAgeFormat = SnapshotAgeFormat_InMinutes;
     }
     else
     {
-        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::secondsToString(then.secsTo(now)));
+        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
+                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::secondsToString(then.secsTo(now)));
         enmAgeFormat = SnapshotAgeFormat_InSeconds;
     }
 
     /* Update data: */
-    setData(0, Qt::UserRole, strAge);
+    if (!m_fCurrentStateItem)
+        setText(Column_Taken, strAge);
 
     /* Return age: */
     return enmAgeFormat;
-}
-
-void UISnapshotItem::adjustText()
-{
-    /* Make sure item is initialised: */
-    if (!treeWidget())
-        return;
-
-    /* Calculate metrics: */
-    QFontMetrics metrics(font(0));
-    int iHei0 = (metrics.height() > 16 ?
-                 metrics.height() /* text */ : 16 /* icon */) +
-                2 * 2 /* 2 pixel per margin */;
-    int iWid0 = metrics.width(text(0)) /* text */ +
-                treeWidget()->indentation() /* indent */ +
-                16 /* icon */;
-
-    /* Adjust size finally: */
-    setSizeHint(0, QSize(iWid0, iHei0));
 }
 
 void UISnapshotItem::recacheToolTip()
@@ -457,14 +403,13 @@ void UISnapshotItem::recacheToolTip()
     /* For snapshot item: */
     else
     {
+        /* Gather details: */
+        QStringList details;
         if (isCurrentSnapshotItem())
-            strDetails = UISnapshotPane::tr(" (current, ", "Snapshot details");
-        else
-            strDetails = " (";
-
-        /* Add online/offline information: */
-        strDetails += m_fOnline ? UISnapshotPane::tr("online)", "Snapshot details")
-                                : UISnapshotPane::tr("offline)", "Snapshot details");
+            details << UISnapshotPane::tr("current", "snapshot");
+        details << (m_fOnline ? UISnapshotPane::tr("online", "snapshot")
+                              : UISnapshotPane::tr("offline", "snapshot"));
+        strDetails = QString(" (%1)").arg(details.join(", "));
 
         /* Add date/time information: */
         if (fDateTimeToday)
@@ -475,14 +420,14 @@ void UISnapshotItem::recacheToolTip()
 
     /* Prepare tool-tip: */
     QString strToolTip = QString("<nobr><b>%1</b>%2</nobr><br><nobr>%3</nobr>")
-                             .arg(text(0)).arg(strDetails).arg(strDateTime);
+                             .arg(text(Column_Name)).arg(strDetails).arg(strDateTime);
 
     /* Append description if any: */
     if (!m_strDescription.isEmpty())
         strToolTip += "<hr>" + m_strDescription;
 
     /* Assign tool-tip finally: */
-    setToolTip(0, strToolTip);
+    setToolTip(Column_Name, strToolTip);
 }
 
 
@@ -493,12 +438,14 @@ void UISnapshotItem::recacheToolTip()
 UISnapshotTree::UISnapshotTree(QWidget *pParent)
     : QITreeWidget(pParent)
 {
-    /* No header: */
-    header()->hide();
-    /* All columns as one: */
+    /* Configure snapshot tree: */
+    setColumnCount(Column_Max);
     setAllColumnsShowFocus(true);
-    /* Our own context menu: */
+    setAlternatingRowColors(true);
+    setExpandsOnDoubleClick(false);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    setEditTriggers(  QAbstractItemView::SelectedClicked
+                    | QAbstractItemView::EditKeyPressed);
 }
 
 
@@ -606,6 +553,30 @@ void UISnapshotPane::retranslateUi()
     if (m_pToolBar)
         m_pToolBar->updateLayout();
 #endif
+
+    /* Translate snapshot tree: */
+    const QStringList fields = QStringList()
+                               << tr("Name", "snapshot")
+                               << tr("Taken", "snapshot");
+    m_pSnapshotTree->setHeaderLabels(fields);
+}
+
+void UISnapshotPane::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
+
+    /* Adjust snapshot tree: */
+    adjustTreeWidget();
+}
+
+void UISnapshotPane::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+
+    /* Adjust snapshot tree: */
+    adjustTreeWidget();
 }
 
 void UISnapshotPane::sltMachineDataChange(QString strMachineID)
@@ -733,6 +704,9 @@ void UISnapshotPane::sltCommitSnapshotDetailsChanges()
 
     /* Allows editing again: */
     m_pLockReadWrite->unlock();
+
+    /* Adjust snapshot tree: */
+    adjustTreeWidget();
 }
 
 void UISnapshotPane::sltHandleCurrentItemChange()
@@ -860,7 +834,7 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
         if (comSnapshot.isNotNull())
         {
             /* Rename corresponding snapshot if necessary: */
-            if (comSnapshot.GetName() != pSnapshotItem->text(0))
+            if (comSnapshot.GetName() != pSnapshotItem->text(Column_Name))
             {
                 /* We need to open a session when we manipulate the snapshot data of a machine: */
                 CSession comSession = vboxGlobal().openExistingSession(comSnapshot.GetMachine().GetId());
@@ -869,7 +843,7 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
                     // TODO: Add settings save validation.
 
                     /* Save snapshot name: */
-                    comSnapshot.SetName(pSnapshotItem->text(0));
+                    comSnapshot.SetName(pSnapshotItem->text(Column_Name));
 
                     /* Close the session again: */
                     comSession.UnlockMachine();
@@ -880,6 +854,9 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
 
     /* Allows editing again: */
     m_pLockReadWrite->unlock();
+
+    /* Adjust snapshot tree: */
+    adjustTreeWidget();
 }
 
 void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
@@ -895,7 +872,8 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
         if (QApplication::keyboardModifiers() == Qt::ControlModifier)
         {
             /* As snapshot-restore procedure: */
-            restoreSnapshot(true /* suppress non-critical warnings */);
+            if (pSnapshotItem->snapshot().isNotNull())
+                restoreSnapshot(true /* suppress non-critical warnings */);
         }
         /* Handle other kinds of DoubleClick: */
         else
@@ -955,7 +933,7 @@ void UISnapshotPane::prepareWidgets()
 
         /* Prepare toolbar: */
         prepareToolbar();
-        /* Prepare tree-widget: */
+        /* Prepare snapshot tree: */
         prepareTreeWidget();
         /* Prepare details-widget: */
         prepareDetailsWidget();
@@ -1054,9 +1032,6 @@ void UISnapshotPane::prepareTreeWidget()
     AssertPtrReturnVoid(m_pSnapshotTree);
     {
         /* Configure tree: */
-        m_pSnapshotTree->setExpandsOnDoubleClick(false);
-        m_pSnapshotTree->setEditTriggers(  QAbstractItemView::SelectedClicked
-                                         | QAbstractItemView::EditKeyPressed);
         connect(m_pSnapshotTree, &UISnapshotTree::currentItemChanged,
                 this, &UISnapshotPane::sltHandleCurrentItemChange);
         connect(m_pSnapshotTree, &UISnapshotTree::customContextMenuRequested,
@@ -1158,7 +1133,7 @@ void UISnapshotPane::refreshAll()
     sltUpdateSnapshotsAge();
 
     /* Adjust snapshot tree: */
-    m_pSnapshotTree->resizeColumnToContents(0);
+    adjustTreeWidget();
 }
 
 void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QITreeWidgetItem *pItem)
@@ -1246,7 +1221,7 @@ bool UISnapshotPane::takeSnapshot()
             QTreeWidgetItemIterator iterator(m_pSnapshotTree);
             while (*iterator)
             {
-                QString strSnapshot = static_cast<UISnapshotItem*>(*iterator)->text(0);
+                QString strSnapshot = static_cast<UISnapshotItem*>(*iterator)->text(Column_Name);
                 int iPos = regExp.indexIn(strSnapshot);
                 if (iPos != -1)
                     iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
@@ -1297,6 +1272,9 @@ bool UISnapshotPane::takeSnapshot()
         comSession.UnlockMachine();
     }
     while (0);
+
+    /* Adjust snapshot tree: */
+    adjustTreeWidget();
 
     /* Return result: */
     return fSuccess;
@@ -1371,6 +1349,9 @@ bool UISnapshotPane::deleteSnapshot()
         comSession.UnlockMachine();
     }
     while (0);
+
+    /* Adjust snapshot tree: */
+    adjustTreeWidget();
 
     /* Return result: */
     return fSuccess;
@@ -1447,6 +1428,9 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
     }
     while (0);
 
+    /* Adjust snapshot tree: */
+    adjustTreeWidget();
+
     /* Return result: */
     return fSuccess;
 }
@@ -1476,6 +1460,24 @@ void UISnapshotPane::cloneSnapshot()
     pWizard->exec();
     if (pWizard)
         delete pWizard;
+}
+
+void UISnapshotPane::adjustTreeWidget()
+{
+    /* Get the snapshot tree abstract interface: */
+    QAbstractItemView *pItemView = m_pSnapshotTree;
+    /* Get the snapshot tree header-view: */
+    QHeaderView *pItemHeader = m_pSnapshotTree->header();
+
+    /* Calculate the total snapshot tree width: */
+    const int iTotal = m_pSnapshotTree->viewport()->width();
+    /* Look for a minimum width hints for non-important columns: */
+    const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(Column_Taken), pItemHeader->sectionSizeHint(Column_Taken));
+    /* Propose suitable width hints for non-important columns: */
+    const int iWidth1 = iMinWidth1 < iTotal / Column_Max ? iMinWidth1 : iTotal / Column_Max;
+    /* Apply the proposal: */
+    m_pSnapshotTree->setColumnWidth(Column_Taken, iWidth1);
+    m_pSnapshotTree->setColumnWidth(Column_Name, iTotal - iWidth1);
 }
 
 UISnapshotItem *UISnapshotPane::findItem(const QString &strSnapshotID) const

@@ -72,6 +72,12 @@ protected:
       * @{ */
         /** Handles translation event. */
         virtual void retranslateUi() /* override */;
+
+        /** Handles resize @a pEvent. */
+        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
+        /** Handles show @a pEvent. */
+        virtual void showEvent(QShowEvent *pEvent) /* override */;
     /** @} */
 
 private slots:
@@ -158,6 +164,9 @@ private:
 
     /** @name Tree-widget helpers.
       * @{ */
+        /** Handles command to adjust snapshot tree. */
+        void adjustTreeWidget();
+
         /** Searches for an item with corresponding @a strSnapshotID. */
         UISnapshotItem *findItem(const QString &strSnapshotID) const;
         /** Returns the "current state" item. */
