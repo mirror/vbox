@@ -2542,3 +2542,68 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
     return pVM->cpum.s.GuestInfo.fMxCsrMask;
 }
 
+
+/**
+ * Checks whether the SVM nested-guest is in a state to receive physical (APIC)
+ * interrupts.
+ *
+ * @returns VBox status code.
+ * @retval  true if it's ready, false otherwise.
+ *
+ * @param   pCtx        The guest-CPU context.
+ */
+VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
+{
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+    X86EFLAGS fEFlags;
+    if (!pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
+        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+    else
+        fEFlags.u = pCtx->eflags.u;
+
+    return pCtx->hwvirt.svm.fGif && fEFlags.Bits.u1IF;
+}
+
+
+/**
+ * Checks whether the SVM nested-guest is in a state to receive virtual
+ * (injected by VMRUN) interrupts.
+ *
+ * @returns VBox status code.
+ * @retval  true if it's ready, false otherwise.
+ *
+ * @param   pCtx        The guest-CPU context.
+ */
+VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
+{
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+    if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
+        &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
+        return false;
+
+    if (!pCtx->rflags.Bits.u1IF)
+        return false;
+
+    if (!pCtx->hwvirt.svm.fGif)
+        return false;
+
+    return true;
+}
+
+
+/**
+ * Gets the pending SVM nested-guest interrupt.
+ *
+ * @returns The nested-guest interrupt to inject.
+ * @param   pCtx            The guest-CPU context.
+ */
+VMM_INT_DECL(uint8_t) CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx)
+{
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+    return pVmcbCtrl->IntCtrl.n.u8VIntrVector;
+}
+

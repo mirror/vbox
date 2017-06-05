@@ -1179,7 +1179,6 @@ VMMR0_INT_DECL(uint64_t)    CPUMR0GetGuestTscAux(PVMCPU pVCpu);
 
 /** @name Misc Guest Predicate Functions.
  * @{  */
-
 VMMDECL(bool)       CPUMIsGuestIn16BitCode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestIn32BitCode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestIn64BitCode(PVMCPU pVCpu);
@@ -1194,6 +1193,14 @@ VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInLongMode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInPAEMode(PVMCPU pVCpu);
 VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
+/** @} */
+
+/** @name Nested Hardware-Virtualization Helpers.
+ * @{  */
+VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx);
+VMM_INT_DECL(uint8_t)   CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx);
+/** @} */
 
 #ifndef VBOX_WITHOUT_UNNAMED_UNIONS
 
