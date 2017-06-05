@@ -68,8 +68,11 @@ public:
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+    /** @} */
 
 private slots:
 

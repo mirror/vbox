@@ -93,7 +93,7 @@ public:
     QString text(int iColumn) const;
 
     /** Returns whether this is the "current state" item. */
-    bool isCurrentStateItem() const;
+    bool isCurrentStateItem() const { return m_fCurrentStateItem; }
 
     /** Calculates and returns the current item level. */
     int level() const;
@@ -112,10 +112,9 @@ public:
     void recache();
 
     /** Returns current machine state. */
-    KMachineState getCurrentState() const;
-
-    /** Recaches current machine state. */
-    void updateCurrentState(KMachineState enmState);
+    KMachineState machineState() const;
+    /** Defines current machine @a enmState. */
+    void setMachineState(KMachineState enmState);
 
     /** Updates item age. */
     SnapshotAgeFormat updateAge();
@@ -131,28 +130,28 @@ protected:
 private:
 
     /** Holds the pointer to the snapshot-widget this item belongs to. */
-    QPointer<UISnapshotPane> m_pSnapshotWidget;
+    QPointer<UISnapshotPane>  m_pSnapshotWidget;
 
     /** Holds whether this is a "current state" item. */
-    bool                     m_fCurrentState;
+    bool  m_fCurrentStateItem;
 
     /** Holds the snapshot COM wrapper. */
-    CSnapshot                m_comSnapshot;
+    CSnapshot  m_comSnapshot;
     /** Holds the machine COM wrapper. */
-    CMachine                 m_comMachine;
+    CMachine   m_comMachine;
 
     /** Holds the current snapshot ID. */
-    QString                  m_strSnapshotID;
+    QString  m_strSnapshotID;
     /** Holds whether the current snapshot is online one. */
-    bool                     m_fOnline;
+    bool     m_fOnline;
 
     /** Holds the item timestamp. */
-    QDateTime                m_timestamp;
+    QDateTime  m_timestamp;
 
     /** Holds whether the current state is modified. */
-    bool                     m_fCurrentStateModified;
+    bool           m_fCurrentStateModified;
     /** Holds the cached machine state. */
-    KMachineState            m_enmMachineState;
+    KMachineState  m_enmMachineState;
 };
 
 
@@ -199,7 +198,7 @@ const UISnapshotItem *UISnapshotItem::toSnapshotItem(const QTreeWidgetItem *pIte
 UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CSnapshot &comSnapshot)
     : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
-    , m_fCurrentState(false)
+    , m_fCurrentStateItem(false)
     , m_comSnapshot(comSnapshot)
 {
 }
@@ -207,7 +206,7 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
 UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CSnapshot &comSnapshot)
     : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
-    , m_fCurrentState(false)
+    , m_fCurrentStateItem(false)
     , m_comSnapshot(comSnapshot)
 {
 }
@@ -215,21 +214,21 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
 UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CMachine &comMachine)
     : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
-    , m_fCurrentState(true)
+    , m_fCurrentStateItem(true)
     , m_comMachine(comMachine)
 {
     /* Fetch current machine state: */
-    updateCurrentState(m_comMachine.GetState());
+    setMachineState(m_comMachine.GetState());
 }
 
 UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CMachine &comMachine)
     : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
-    , m_fCurrentState(true)
+    , m_fCurrentStateItem(true)
     , m_comMachine(comMachine)
 {
     /* Fetch current machine state: */
-    updateCurrentState(m_comMachine.GetState());
+    setMachineState(m_comMachine.GetState());
 }
 
 QVariant UISnapshotItem::data(int iColumn, int iRole) const
@@ -239,10 +238,10 @@ QVariant UISnapshotItem::data(int iColumn, int iRole) const
         case Qt::DisplayRole:
         {
             /* Call to base-class for "current state" item, compose ourselves otherwise: */
-            return m_fCurrentState ? QTreeWidgetItem::data(iColumn, iRole) :
-                                     QString("%1%2")
-                                         .arg(QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString())
-                                         .arg(QTreeWidgetItem::data(iColumn, Qt::UserRole).toString());
+            return m_fCurrentStateItem ? QTreeWidgetItem::data(iColumn, iRole)
+                                       : QString("%1%2")
+                                             .arg(QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString())
+                                             .arg(QTreeWidgetItem::data(iColumn, Qt::UserRole).toString());
         }
         case Qt::SizeHintRole:
         {
@@ -268,11 +267,6 @@ QVariant UISnapshotItem::data(int iColumn, int iRole) const
 QString UISnapshotItem::text(int iColumn) const
 {
     return QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString();
-}
-
-bool UISnapshotItem::isCurrentStateItem() const
-{
-    return m_comSnapshot.isNull();
 }
 
 int UISnapshotItem::level() const
@@ -322,26 +316,26 @@ void UISnapshotItem::setItalic(bool fItalic)
 void UISnapshotItem::recache()
 {
     /* For "current state" item: */
-    if (m_fCurrentState)
+    if (m_fCurrentStateItem)
     {
         /* Fetch machine information: */
-        AssertReturnVoid(!m_comMachine.isNull());
+        AssertReturnVoid(m_comMachine.isNotNull());
         m_fCurrentStateModified = m_comMachine.GetCurrentStateModified();
-        m_strName = m_fCurrentStateModified ?
-                    UISnapshotPane::tr("Current State (changed)", "Current State (Modified)") :
-                    UISnapshotPane::tr("Current State", "Current State (Unmodified)");
+        m_strName = m_fCurrentStateModified
+                  ? UISnapshotPane::tr("Current State (changed)", "Current State (Modified)")
+                  : UISnapshotPane::tr("Current State", "Current State (Unmodified)");
         setText(0, m_strName);
-        m_strDescription = m_fCurrentStateModified ?
-                           UISnapshotPane::tr("The current state differs from the state stored in the current snapshot") :
-                           QTreeWidgetItem::parent() != 0 ?
-                           UISnapshotPane::tr("The current state is identical to the state stored in the current snapshot") :
-                           QString();
+        m_strDescription = m_fCurrentStateModified
+                         ? UISnapshotPane::tr("The current state differs from the state stored in the current snapshot")
+                         : QTreeWidgetItem::parent() != 0
+                         ? UISnapshotPane::tr("The current state is identical to the state stored in the current snapshot")
+                         : QString();
     }
-    /* For others: */
+    /* For snapshot item: */
     else
     {
         /* Fetch snapshot information: */
-        AssertReturnVoid(!m_comSnapshot.isNull());
+        AssertReturnVoid(m_comSnapshot.isNotNull());
         m_strSnapshotID = m_comSnapshot.GetId();
         m_strName = m_comSnapshot.GetName();
         setText(0, m_strName);
@@ -358,7 +352,7 @@ void UISnapshotItem::recache()
     recacheToolTip();
 }
 
-KMachineState UISnapshotItem::getCurrentState() const
+KMachineState UISnapshotItem::machineState() const
 {
     /* Make sure machine is valid: */
     if (m_comMachine.isNull())
@@ -368,16 +362,16 @@ KMachineState UISnapshotItem::getCurrentState() const
     return m_enmMachineState;
 }
 
-void UISnapshotItem::updateCurrentState(KMachineState enmState)
+void UISnapshotItem::setMachineState(KMachineState enmState)
 {
     /* Make sure machine is valid: */
     if (m_comMachine.isNull())
         return;
 
-    /* Set corresponding icon: */
-    setIcon(0, gpConverter->toIcon(enmState));
     /* Cache new state: */
     m_enmMachineState = enmState;
+    /* Set corresponding icon: */
+    setIcon(0, gpConverter->toIcon(m_enmMachineState));
     /* Update timestamp: */
     m_timestamp.setTime_t(m_comMachine.GetLastStateChange() / 1000);
 }
@@ -451,15 +445,21 @@ void UISnapshotItem::recacheToolTip()
     const bool fDateTimeToday = m_timestamp.date() == QDate::currentDate();
 
     /* Compose date time: */
-    QString strDateTime = fDateTimeToday ?
-                          m_timestamp.time().toString(Qt::LocalDate) :
-                          m_timestamp.toString(Qt::LocalDate);
+    QString strDateTime = fDateTimeToday
+                        ? m_timestamp.time().toString(Qt::LocalDate)
+                        : m_timestamp.toString(Qt::LocalDate);
 
     /* Prepare details: */
     QString strDetails;
 
+    /* For "current state" item: */
+    if (m_fCurrentStateItem)
+    {
+        strDateTime = UISnapshotPane::tr("%1 since %2", "Current State (time or date + time)")
+                      .arg(gpConverter->toString(m_enmMachineState)).arg(strDateTime);
+    }
     /* For snapshot item: */
-    if (!m_comSnapshot.isNull())
+    else
     {
         /* The current snapshot is always bold: */
         if (bold())
@@ -476,12 +476,6 @@ void UISnapshotItem::recacheToolTip()
             strDateTime = UISnapshotPane::tr("Taken at %1", "Snapshot (time)").arg(strDateTime);
         else
             strDateTime = UISnapshotPane::tr("Taken on %1", "Snapshot (date + time)").arg(strDateTime);
-    }
-    /* For "current state" item: */
-    else
-    {
-        strDateTime = UISnapshotPane::tr("%1 since %2", "Current State (time or date + time)")
-                      .arg(gpConverter->toString(m_enmMachineState)).arg(strDateTime);
     }
 
     /* Prepare tool-tip: */
@@ -643,7 +637,7 @@ void UISnapshotPane::sltMachineStateChange(QString strMachineID, KMachineState e
 
     /* Recache current item data and machine-state: */
     currentStateItem()->recache();
-    currentStateItem()->updateCurrentState(enmState);
+    currentStateItem()->setMachineState(enmState);
 }
 
 void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState enmState)
@@ -765,7 +759,7 @@ void UISnapshotPane::sltHandleCurrentItemChange()
     /* Acquire machine state of the "current state" item: */
     KMachineState enmState = KMachineState_Null;
     if (currentStateItem())
-        enmState = currentStateItem()->getCurrentState();
+        enmState = currentStateItem()->machineState();
 
     /* Whether taking or deleting snapshots is possible right now: */
     const bool fCanTakeDeleteSnapshot =    !fBusy
