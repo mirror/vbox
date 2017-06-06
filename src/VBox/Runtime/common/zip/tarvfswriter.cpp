@@ -746,7 +746,8 @@ static DECLCALLBACK(int) rtZipTarWriterPush_Seek(void *pvThis, RTFOFF offSeek, u
     }
     Assert(pPush->offCurrent <= pPush->cbCurrent);
 
-    *poffActual = pPush->offCurrent;
+    if (poffActual)
+        *poffActual = pPush->offCurrent;
     return VINF_SUCCESS;
 }
 
