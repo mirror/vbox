@@ -644,7 +644,6 @@ void UISnapshotPane::sltUpdateSnapshotsAge()
 
 void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
 {
-    printf("sltToggleSnapshotDetailsVisibility(%d)\n", fVisible);
     /* Show/hide commit action and details-widget: */
     m_pActionCommitSnapshotDetails->setVisible(fVisible);
     m_pDetailsWidget->setVisible(fVisible);
