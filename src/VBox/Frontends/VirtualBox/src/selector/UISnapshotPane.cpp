@@ -644,6 +644,7 @@ void UISnapshotPane::sltUpdateSnapshotsAge()
 
 void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
 {
+    printf("sltToggleSnapshotDetailsVisibility(%d)\n", fVisible);
     /* Show/hide commit action and details-widget: */
     m_pActionCommitSnapshotDetails->setVisible(fVisible);
     m_pDetailsWidget->setVisible(fVisible);
@@ -1006,6 +1007,7 @@ void UISnapshotPane::prepareToolbar()
             connect(m_pActionShowSnapshotDetails, &QAction::toggled,
                     m_pActionCommitSnapshotDetails, &QAction::setVisible);
             m_pActionCommitSnapshotDetails->setShortcut(QString("Ctrl+Return"));
+            m_pActionCommitSnapshotDetails->setVisible(false);
         }
 
         m_pToolBar->addSeparator();
