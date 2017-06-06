@@ -47,6 +47,19 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Asserts valid handle, returns VERR_INVALID_HANDLE if not. */
+#define RTFSISOMAKER_ASSER_VALID_HANDLE_RET(a_pThis) \
+    do { AssertPtrReturn(a_pThis, VERR_INVALID_HANDLE); \
+         AssertPtrReturn((a_pThis)->uMagic == RTFSISOMAKERINT_MAGIC, VERR_INVALID_HANDLE); \
+    } while (0)
+
+/** The sector size. */
+#define RTFSISOMAKER_SECTOR_SIZE            _2K
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** Pointer to an ISO maker object name space node. */
@@ -55,6 +68,18 @@ typedef struct RTFSISOMAKERNAME *PRTFSISOMAKERNAME;
 typedef struct RTFSISOMAKEROBJ *PRTFSISOMAKEROBJ;
 /** Pointer to a ISO maker file object. */
 typedef struct RTFSISOMAKERFILE *PRTFSISOMAKERFILE;
+
+
+/** @name RTFSISOMAKER_NAMESPACE_XXX - Namespace selector.
+ * @{
+ */
+#define RTFSISOMAKERNAMESPACE_ISO_9660      RT_BIT_32(0)            /**< The primary ISO-9660 namespace. */
+#define RTFSISOMAKERNAMESPACE_JOLIET        RT_BIT_32(1)            /**< The joliet namespace. */
+#define RTFSISOMAKERNAMESPACE_UDF           RT_BIT_32(2)            /**< The UDF namespace. */
+#define RTFSISOMAKERNAMESPACE_HFS           RT_BIT_32(3)            /**< The HFS namespace */
+#define RTFSISOMAKERNAMESPACE_ALL           UINT32_C(0x0000000f)    /**< All namespaces. */
+#define RTFSISOMAKERNAMESPACE_VALID_MASK    UINT32_C(0x0000000f)    /**< Valid namespace bits. */
+/** @} */
 
 
 /**
@@ -68,7 +93,6 @@ typedef enum RTFSISOMAKEROBJTYPE
     //RTFSISOMAKEROBJTYPE_SYMLINK,
     RTFSISOMAKEROBJTYPE_END
 } RTFSISOMAKEROBJTYPE;
-
 
 /**
  * Extra name space information required for directories.
@@ -92,7 +116,7 @@ typedef RTFSISOMAKERNAMEDIR *PRTFSISOMAKERNAMEDIR;
 
 
 /**
- * ISO maker object name space node.
+ * ISO maker object namespace node.
  */
 typedef struct RTFSISOMAKERNAME
 {
@@ -106,6 +130,11 @@ typedef struct RTFSISOMAKERNAME
      * freeing. */
     PRTFSISOMAKERNAMEDIR    pDir;
 
+    /** The name specified when creating this namespace node.  Helps navigating
+     * the namespace when we mangle or otherwise change the names.
+     * Allocated together with of this structure, no spearate free necessary. */
+    const char             *pszSpecNm;
+
     /** Alternative rock ridge name. */
     char                   *pszRockRidgeNm;
     /** Alternative TRANS.TBL name. */
@@ -117,7 +146,11 @@ typedef struct RTFSISOMAKERNAME
 
     /** The depth in the namespace tree of this name. */
     uint8_t                 uDepth;
-    uint8_t                 bUnused;
+    /** Set if pszTransNm is allocated separately. */
+    bool                    fTransNmAlloced : 1;
+    /** Set if pszTransNm is allocated separately. */
+    bool                    fRockRidgeNmAlloced : 1;
+
 /** @todo more rock ridge info here.    */
 
     /** The name length. */
@@ -134,6 +167,8 @@ typedef struct RTFSISOMAKEROBJ
 {
     /** The linear list entry of the image content. */
     RTLISTNODE              Entry;
+    /** The object index. */
+    uint32_t                idxObj;
     /** The type of this object. */
     RTFSISOMAKEROBJTYPE     enmType;
 
@@ -150,6 +185,17 @@ typedef struct RTFSISOMAKEROBJ
 
 
 /**
+ * File source type.
+ */
+typedef enum RTFSISOMAKERSRCTYPE
+{
+    RTFSISOMAKERSRCTYPE_INVALID = 0,
+    RTFSISOMAKERSRCTYPE_PATH,
+    RTFSISOMAKERSRCTYPE_VFS_IO_STREAM,
+    RTFSISOMAKERSRCTYPE_END,
+} RTFSISOMAKERSRCTYPE;
+
+/**
  * ISO maker file object.
  */
 typedef struct RTFSISOMAKERFILE
@@ -160,6 +206,17 @@ typedef struct RTFSISOMAKERFILE
     uint64_t                cbData;
     /** Byte offset of the data in the image. */
     uint64_t                offData;
+
+    /** The type of source object. */
+    RTFSISOMAKERSRCTYPE     enmSrcType;
+    /** The source data. */
+    union
+    {
+        /** Path to the source file. */
+        const char         *pszSrcPath;
+        /** Source I/O stream (or file). */
+        RTVFSIOSTREAM       hVfsIoStr;
+    } u;
 } RTFSISOMAKERFILE;
 
 
@@ -199,10 +256,21 @@ typedef struct RTFSISOMAKERINT
     /** The ISO level (1-3), default is 3.
      * @todo support mkisofs level 4 (ISO-9660:1990, version 2). */
     uint8_t                 uIsoLevel;
+    /** The ISO rock ridge level: 1 - enabled; 2 - with ER tag.
+     * Linux behaves a little different when seeing the ER tag. */
+    uint8_t                 uRockRidgeLevel;
     /** The joliet UCS level (1, 2, or 3), 0 if joliet is not enabled. */
     uint8_t                 uJolietLevel;
-    /** Set if rock ridge is enabled. */
-    bool                    fRockRidge;
+    /** The joliet rock ridge level: 1 - enabled; 2 - with ER tag.
+     * @note Nobody seems to do rock ridge with joliet, so this is highly
+     *       expermental and here just because we can. */
+    uint8_t                 uJolietRockRidgeLevel;
+    /** Enables UDF.
+     * @remarks not yet implemented. */
+    bool                    fUdf;
+    /** Enables HFS
+     * @remarks not yet implemented. */
+    bool                    fHfs;
     /** @} */
 
     /** The root of the primary ISO-9660 name space. */
@@ -225,6 +293,30 @@ typedef struct RTFSISOMAKERINT
 typedef RTFSISOMAKERINT *PRTFSISOMAKERINT;
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * Help for iterating over namespaces.
+ */
+struct const struct
+{
+    /** The RTFSISOMAKERNAMESPACE_XXX indicator.  */
+    uint32_t        fNamespace;
+    /** Offset into RTFSISOMAKERINT of the root member. */
+    uintptr_t       offRoot;
+    /** Offset into RTFSISOMAKERNAMESPACE of the name member. */
+    uintptr_t       offName;
+    /** Namespace name for debugging purposes. */
+    const char     *pszName;
+} g_aRTFsIosNamespaces[] =
+{
+    {   RTFSISOMAKERNAMESPACE_ISO_9660, RT_OFFSETOF(RTFSISOMAKERINT, pPrimaryIsoRoot), RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pPrimaryName), "iso-9660" },
+    {   RTFSISOMAKERNAMESPACE_JOLIET,   RT_OFFSETOF(RTFSISOMAKERINT, pJolietRoot),     RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pJolietName),  "joliet" },
+    {   RTFSISOMAKERNAMESPACE_UDF,      RT_OFFSETOF(RTFSISOMAKERINT, pUdfRoot),        RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pUdfName),     "udf" },
+    {   RTFSISOMAKERNAMESPACE_HFS,      RT_OFFSETOF(RTFSISOMAKERINT, pHfsRoot),        RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pHfsName),     "hfs" },
+};
+
 
 /**
  * Creates an ISO creator instance.
@@ -237,15 +329,18 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
     PRTFSISOMAKERINT pThis = (PRTFSISOMAKERINT)RTMemAllocZ(sizeof(*pThis));
     if (pThis)
     {
-        pThis->uMagic           = RTFSISOMAKERINT_MAGIC;
-        pThis->cRefs            = 1;
-        //pThis->fSeenContent     = false;
-        pThis->uIsoLevel        = 3;
-        pThis->uJolietLevel     = 3;
-        pThis->fRockRidge       = true;
+        pThis->uMagic                   = RTFSISOMAKERINT_MAGIC;
+        pThis->cRefs                    = 1;
+        //pThis->fSeenContent             = false;
+        pThis->uIsoLevel                = 3;
+        pThis->uRockRidgeLevel          = 1;
+        pThis->uJolietLevel             = 3;
+        //pThis->uJolietRockRidgeLevel    = 0;
         RTListInit(&pThis->ObjectHead);
-        pThis->cbTotal          = _32K; /* system area size */
-
+        pThis->cbTotal                  = _32K /* The system area size. */
+                                        + RTFSISOMAKER_SECTOR_SIZE /* Primary volume descriptor. */
+                                        + RTFSISOMAKER_SECTOR_SIZE /* Secondary volume descriptor for joliet. */
+                                        + RTFSISOMAKER_SECTOR_SIZE /* Terminator descriptor. */;
         *phIsoMaker = pThis;
         return VINF_SUCCESS;
     }
@@ -321,7 +416,7 @@ static void rtFsIsoMakerDestroy(PRTFSISOMAKERINT pThis)
  * Retains a references to an ISO maker instance.
  *
  * @returns New reference count on success, UINT32_MAX if invalid handle.
- * @param   hIsoMaker           The IOS maker handler.
+ * @param   hIsoMaker           The ISO maker handle.
  */
 RTDECL(uint32_t) RTFsIsoMakerRetain(RTFSISOMAKER hIsoMaker)
 {
@@ -339,7 +434,7 @@ RTDECL(uint32_t) RTFsIsoMakerRetain(RTFSISOMAKER hIsoMaker)
  * Releases a references to an ISO maker instance.
  *
  * @returns New reference count on success, UINT32_MAX if invalid handle.
- * @param   hIsoMaker           The IOS maker handler.  NIL is ignored.
+ * @param   hIsoMaker           The ISO maker handle.  NIL is ignored.
  */
 RTDECL(uint32_t) RTFsIsoMakerRelease(RTFSISOMAKER hIsoMaker)
 {
@@ -357,5 +452,221 @@ RTDECL(uint32_t) RTFsIsoMakerRelease(RTFSISOMAKER hIsoMaker)
             rtFsIsoMakerDestroy(pThis);
     }
     return cRefs;
+}
+
+
+/**
+ * Sets the ISO-9660 level.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   uIsoLevel           The level, 1-3.
+ */
+RTDECL(int) RTFsIsoMakerSetIso9660Level(RTFSISOMAKER hIsoMaker, uint8_t uIsoLevel)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(uIsoLevel <= 3, VERR_INVALID_PARAMETER);
+    AssertReturn(uIsoLevel > 0, VERR_INVALID_PARAMETER); /* currently not possible to disable this */
+    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
+
+    pThis->uIsoLevel = uIsoLevel;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the joliet level.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   uJolietLevel        The joliet UCS-2 level 1-3, or 0 to disable
+ *                              joliet.
+ */
+RTDECL(int) RTFsIsoMakerSetJolietUcs2Level(RTFSISOMAKER hIsoMaker, uint8_t uJolietLevel)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(uJolietLevel <= 3, VERR_INVALID_PARAMETER);
+    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
+
+    if (pThis->uJolietLevel != uJolietLevel)
+    {
+        if (uJolietLevel == 0)
+            pThis->cbTotal -= RTFSISOMAKER_SECTOR_SIZE;
+        else if (pThis->uJolietLevel == 0)
+            pThis->cbTotal += RTFSISOMAKER_SECTOR_SIZE;
+        pThis->uJolietLevel = uJolietLevel;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the rock ridge support level (on the primary ISO-9660 namespace).
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   uLevel              0 if disabled, 1 to just enable, 2 to enable and
+ *                              write the ER tag.
+ */
+RTDECL(int) RTFsIsoMakerSetRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
+    AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
+
+    pThis->uRockRidgeLevel = uLevel;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the rock ridge support level on the joliet namespace (experimental).
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   uLevel              0 if disabled, 1 to just enable, 2 to enable and
+ *                              write the ER tag.
+ */
+RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
+    AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
+
+    pThis->uJolietRockRidgeLevel = uLevel;
+    return VINF_SUCCESS;
+}
+
+
+/*
+ *
+ * Object level config
+ * Object level config
+ * Object level config
+ *
+ */
+
+
+DECL_NO_INLINE(static, PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT pThis, uint32_t idxObj)
+{
+    PRTFSISOMAKEROBJ pObj;
+    RTListForEachReverse(&pThis->ObjectHead, pObj, RTFSISOMAKEROBJ, Entry)
+    {
+        if (pObj->idxObj == idxObj)
+            return pObj;
+    }
+    return NULL;
+}
+
+
+DECLINLINE(PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT pThis, uint32_t idxObj)
+{
+    PRTFSISOMAKEROBJ pObj = RTListGetLast(&pThis->ObjectHead, RTFSISOMAKEROBJ, Entry);
+    if (!pObj || RT_LIKELY(pObj->idxObj == idxObj))
+        return pObj;
+    return rtFsIsoMakerIndexToObjSlow(pThis, idxObj)
+}
+
+
+/**
+ * Adds an unnamed directory to the image.
+ *
+ * The directory must explictly be entered into the desired namespaces.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedDir(RTFSISOMAKER hIsoMaker, uint32_t *pidxObj)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertPtr(pidxObj);
+
+
+
+    return VINF_SUCCESS;
+}
+
+static int rtTFsIsoMakerObjSetPathInOne(RTFSISOMAKER hIsoMaker, uint32_t idxEntry,
+                                        uint32_t fNamespace, const char *pszPath)
+{
+
+}
+
+
+/**
+ * Sets the path (name) of an object in the selected namespaces.
+ *
+ * The name will be transformed as necessary.
+ *
+ * The initial implementation does not allow this function to be called more
+ * than once on an object.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxObj              The configuration index of to name.
+ * @param   fNamespaces         The namespaces to apply the path to.
+ * @param   pszPath             The ISO-9660 path.
+ */
+RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint32_t fNamespaces, const char *pszPath)
+{
+    /*
+     * Validate and translate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(!(fNamespaces & ~RTFSISOMAKERNAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertPtrReturn(pszPath);
+    AssertReturn(RTPATH_IS_SLASH(pszPath == '/'), VERR_INVALID_NAME);
+    PRTFSISOMAKEROBJ pObj = rtFsIsoMakerIndexToObj(pThis, idxObj);
+    AssertReturn(pObj, VERR_OUT_OF_RANGE);
+
+    /*
+     * Execute requested actions.
+     */
+    int rc = VINF_SUCCESS;
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIosNamespaces); i++)
+        if (fNamespace & g_aRTFsIosNamespaces[i].fNamespace)
+        {
+            int rc2 = rtTFsIsoMakerObjSetPathInOne(pThis, pEntry, g_aRTFsIosNamespaces[i].fNamespace, pszPath,
+                                                   (PRTFSISOMAKERNAME *)((uintptr_t)pThis + g_aRTFsIosNamespaces[i].offRoot),
+                                                   (PRTFSISOMAKERNAMESPACE *)((uintptr_t)pEntry + g_aRTFsIosNamespaces[i].offName));
+            if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
+                continue;
+            rc = rc2;
+        }
+    return rc;
+}
+
+
+
+
+/**
+ * Adds a directory to the image.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pszDir              The path (UTF-8) to the directory in the ISO.
+ *
+ * @param   pidxEntry           Where to return the configuration index of the
+ *                              directory.  Optional.
+ */
+RTDECL(int) RTFsIsoMakerAddDir(RTFSISOMAKER hIsoMaker, const char *pszDir, uint32_t *pidxEntry)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+
+
+    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
+    AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
+
+    pThis->uJolietRockRidgeLevel = uLevel;
+    return VINF_SUCCESS;
 }
 
