@@ -57,6 +57,8 @@
 
 /** The sector size. */
 #define RTFSISOMAKER_SECTOR_SIZE            _2K
+/** Maximum number of objects. */
+#define RTFSISOMAKER_MAX_OBJECTS            _16M
 
 
 /*********************************************************************************************************************************
@@ -192,7 +194,7 @@ typedef enum RTFSISOMAKERSRCTYPE
     RTFSISOMAKERSRCTYPE_INVALID = 0,
     RTFSISOMAKERSRCTYPE_PATH,
     RTFSISOMAKERSRCTYPE_VFS_IO_STREAM,
-    RTFSISOMAKERSRCTYPE_END,
+    RTFSISOMAKERSRCTYPE_END
 } RTFSISOMAKERSRCTYPE;
 
 /**
@@ -299,7 +301,7 @@ typedef RTFSISOMAKERINT *PRTFSISOMAKERINT;
 /**
  * Help for iterating over namespaces.
  */
-struct const struct
+static const struct
 {
     /** The RTFSISOMAKERNAMESPACE_XXX indicator.  */
     uint32_t        fNamespace;
@@ -311,10 +313,10 @@ struct const struct
     const char     *pszName;
 } g_aRTFsIosNamespaces[] =
 {
-    {   RTFSISOMAKERNAMESPACE_ISO_9660, RT_OFFSETOF(RTFSISOMAKERINT, pPrimaryIsoRoot), RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pPrimaryName), "iso-9660" },
-    {   RTFSISOMAKERNAMESPACE_JOLIET,   RT_OFFSETOF(RTFSISOMAKERINT, pJolietRoot),     RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pJolietName),  "joliet" },
-    {   RTFSISOMAKERNAMESPACE_UDF,      RT_OFFSETOF(RTFSISOMAKERINT, pUdfRoot),        RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pUdfName),     "udf" },
-    {   RTFSISOMAKERNAMESPACE_HFS,      RT_OFFSETOF(RTFSISOMAKERINT, pHfsRoot),        RT_OFFSETOF(RTFSISOMAKERNAMESPACE, pHfsName),     "hfs" },
+    {   RTFSISOMAKERNAMESPACE_ISO_9660, RT_OFFSETOF(RTFSISOMAKERINT, pPrimaryIsoRoot), RT_OFFSETOF(RTFSISOMAKEROBJ, pPrimaryName), "iso-9660" },
+    {   RTFSISOMAKERNAMESPACE_JOLIET,   RT_OFFSETOF(RTFSISOMAKERINT, pJolietRoot),     RT_OFFSETOF(RTFSISOMAKEROBJ, pJolietName),  "joliet" },
+    {   RTFSISOMAKERNAMESPACE_UDF,      RT_OFFSETOF(RTFSISOMAKERINT, pUdfRoot),        RT_OFFSETOF(RTFSISOMAKEROBJ, pUdfName),     "udf" },
+    {   RTFSISOMAKERNAMESPACE_HFS,      RT_OFFSETOF(RTFSISOMAKERINT, pHfsRoot),        RT_OFFSETOF(RTFSISOMAKEROBJ, pHfsName),     "hfs" },
 };
 
 
@@ -572,27 +574,6 @@ DECLINLINE(PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT pThis, uint
 }
 
 
-/**
- * Adds an unnamed directory to the image.
- *
- * The directory must explictly be entered into the desired namespaces.
- *
- * @returns IPRT status code
- * @param   hIsoMaker           The ISO maker handle.
- * @param   pidxObj             Where to return the configuration index of the
- *                              directory.
- */
-RTDECL(int) RTFsIsoMakerAddUnnamedDir(RTFSISOMAKER hIsoMaker, uint32_t *pidxObj)
-{
-    PRTFSISOMAKERINT pThis = hIsoMaker;
-    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
-    AssertPtr(pidxObj);
-
-
-
-    return VINF_SUCCESS;
-}
-
 static int rtTFsIsoMakerObjSetPathInOne(RTFSISOMAKER hIsoMaker, uint32_t idxEntry,
                                         uint32_t fNamespace, const char *pszPath)
 {
@@ -611,7 +592,8 @@ static int rtTFsIsoMakerObjSetPathInOne(RTFSISOMAKER hIsoMaker, uint32_t idxEntr
  * @returns IPRT status code.
  * @param   hIsoMaker           The ISO maker handle.
  * @param   idxObj              The configuration index of to name.
- * @param   fNamespaces         The namespaces to apply the path to.
+ * @param   fNamespaces         The namespaces to apply the path to
+ *                              (RTFSISOMAKERNAMESPACE_XXX).
  * @param   pszPath             The ISO-9660 path.
  */
 RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint32_t fNamespaces, const char *pszPath)
@@ -622,7 +604,7 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
     PRTFSISOMAKERINT pThis = hIsoMaker;
     RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
     AssertReturn(!(fNamespaces & ~RTFSISOMAKERNAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
-    AssertPtrReturn(pszPath);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(RTPATH_IS_SLASH(pszPath == '/'), VERR_INVALID_NAME);
     PRTFSISOMAKEROBJ pObj = rtFsIsoMakerIndexToObj(pThis, idxObj);
     AssertReturn(pObj, VERR_OUT_OF_RANGE);
@@ -645,28 +627,89 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
 }
 
 
+/**
+ * Initalizes the common part of a file system object and links it into global
+ * chain.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The ISO maker instance.
+ * @param   pObj                The common object.
+ * @param   enmType             The object type.
+ */
+static void rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj, RTFSISOMAKEROBJTYPE enmType)
+{
+    AssertReturn(pThis->cObjects < RTFSISOMAKER_MAX_OBJECTS, VERR_OUT_OF_RANGE);
+    pObj->enmType       = enmType;
+    pObj->pPrimaryName  = NULL;
+    pObj->pJolietName   = NULL;
+    pObj->pUdfName      = NULL;
+    pObj->pHfsName      = NULL;
+    pObj->idxObj        = pThis->cObjects++;
+    RTListAppend(&pThis->ObjectHead, &pObj->Entry);
+    return VINF_SUCCESS;
+}
 
 
 /**
- * Adds a directory to the image.
+ * Adds an unnamed directory to the image.
+ *
+ * The directory must explictly be entered into the desired namespaces.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ * @sa      RTFsIsoMakerAddDir, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedDir(RTFSISOMAKER hIsoMaker, uint32_t *pidxObj)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pidxObj, VERR_INVALID_POINTER);
+
+    PRTFSISOMAKERDIR pDir = (PRTFSISOMAKERDIR)RTMemAllocZ(sizeof(*pDir));
+    AssertReturn(pDir, VERR_NO_MEMORY);
+    int rc = rtFsIsoMakerInitCommonObj(&pDir->Core, RTFSISOMAKEROBJTYPE_DIR);
+    if (RT_SUCCESS(rc))
+    {
+        *pidxObj = pObj->idxObj;
+        return VINF_SUCCESS;
+    }
+    RTMemFree(pDir);
+    return rc;
+}
+
+
+/**
+ * Adds a directory to the image in all namespaces and default attributes.
  *
  * @returns IPRT status code
  * @param   hIsoMaker           The ISO maker handle.
  * @param   pszDir              The path (UTF-8) to the directory in the ISO.
  *
- * @param   pidxEntry           Where to return the configuration index of the
+ * @param   pidxObj             Where to return the configuration index of the
  *                              directory.  Optional.
+ * @sa      RTFsIsoMakerAddUnnamedDir, RTFsIsoMakerObjSetPath
  */
-RTDECL(int) RTFsIsoMakerAddDir(RTFSISOMAKER hIsoMaker, const char *pszDir, uint32_t *pidxEntry)
+RTDECL(int) RTFsIsoMakerAddDir(RTFSISOMAKER hIsoMaker, const char *pszDir, uint32_t *pidxObj)
 {
     PRTFSISOMAKERINT pThis = hIsoMaker;
     RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
+    AssertReturn(RTPATH_IS_SLASH(pszPath == '/'), VERR_INVALID_NAME);
 
-
-    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
-    AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
-
-    pThis->uJolietRockRidgeLevel = uLevel;
-    return VINF_SUCCESS;
+    uint32_t idxObj;
+    int rc = RTFsIsoMakerAddUnnamedDir(hIsoMaker, &idxObj);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFsIsoMakerObjSetPath(hIsoMaker, idxObj, RTFSISOMAKERNAMESPACE_ALL);
+        if (RT_SUCCESS(rc))
+        {
+            if (pidxObj)
+                *pidxObj = idxObj;
+        }
+        /** @todo else: back out later?  */
+    }
+    return rc;
 }
 
