@@ -124,6 +124,9 @@ private:
     /** Notifies listeners about data changed or not. */
     void notify();
 
+    /** Returns a details report on a given @a comMachine. */
+    QString detailsReport(const CMachine &comMachine);
+
     /** Holds the snapshot object to load data from. */
     CSnapshot  m_comSnapshot;
 

@@ -310,11 +310,6 @@ public:
     QString toolTip (const CUSBDeviceFilter &aFilter) const;
     QString toolTip(const CHostVideoInputDevice &webcam) const;
 
-    /** Returns a details report on a given VM represented as a HTML table.
-      * @param  comMachine  Brings the machine object to create a report for.
-      * @param  fWithLinks  Brings @c true if section titles should be hypertext links. */
-    QString detailsReport(const CMachine &comMachine, bool fWithLinks);
-
     /* VirtualBox helpers */
 
     CSession openSession(const QString &aId, KLockType aLockType = KLockType_Write);
