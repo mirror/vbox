@@ -272,7 +272,7 @@ static void x11SendHints(struct X11CONTEXT *pContext, struct DRMVMWRECT *pRects,
     if (cRects == 0)
         return;
     /* Try a topology (multiple screen) request. */
-    x11GetRequest(pContext, X11_VMW_TOPOLOGY_REQ, pContext->hVMWMajor,
+    x11GetRequest(pContext, pContext->hVMWMajor, X11_VMW_TOPOLOGY_REQ,
                     sizeof(struct X11VMWTOPOLOGYREQ)
                   + sizeof(struct X11VMWRECT) * (cRects - 1),
                   (struct X11REQHEADER **)&pReqTopology);
@@ -291,7 +291,7 @@ static void x11SendHints(struct X11CONTEXT *pContext, struct DRMVMWRECT *pRects,
     /* That failed, so try the old single screen set resolution.  We prefer
      * simpler code to negligeably improved efficiency, so we just always try
      * both requests instead of doing version checks or caching. */
-    x11GetRequest(pContext, X11_VMW_RESOLUTION_REQUEST, pContext->hVMWMajor,
+    x11GetRequest(pContext, pContext->hVMWMajor, X11_VMW_RESOLUTION_REQUEST,
                   sizeof(struct X11VMWTOPOLOGYREQ),
                   (struct X11REQHEADER **)&pReqResolution);
     pReqResolution->idX11Screen = DefaultScreen(pContext->pDisplay);
@@ -311,7 +311,7 @@ static void x11GetScreenInfo(struct X11CONTEXT *pContext)
 
     if (!VALID_PTR(pContext->pDisplay))
         VBClFatalError(("%s bad display argument.\n", __func__));
-    x11GetRequest(pContext, X11_RANDR_GET_SCREEN_REQUEST, pContext->hRandRMajor,
+    x11GetRequest(pContext, pContext->hRandRMajor, X11_RANDR_GET_SCREEN_REQUEST,
                     sizeof(struct X11RANDRGETSCREENREQ),
                   (struct X11REQHEADER **)&pReqGetScreen);
     pReqGetScreen->hWindow = DefaultRootWindow(pContext->pDisplay);
