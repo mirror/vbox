@@ -617,7 +617,9 @@ void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState e
 
     /* Recache current session-state: */
     m_enmSessionState = enmState;
-    sltHandleCurrentItemChange();
+
+    /* Update action states: */
+    updateActionStates();
 }
 
 void UISnapshotPane::sltUpdateSnapshotsAge()
@@ -714,7 +716,7 @@ void UISnapshotPane::sltHandleCurrentItemChange()
     /* Acquire current snapshot item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
 
-    /* Make the selected item visible: */
+    /* Make the current item visible: */
     if (pSnapshotItem)
     {
         m_pSnapshotTree->horizontalScrollBar()->setValue(0);
@@ -722,64 +724,12 @@ void UISnapshotPane::sltHandleCurrentItemChange()
         m_pSnapshotTree->horizontalScrollBar()->setValue(m_pSnapshotTree->indentation() * pSnapshotItem->level());
     }
 
-    /* Check whether another direct session is open or not: */
-    const bool fBusy = m_enmSessionState != KSessionState_Unlocked;
+    /* Update action states: */
+    updateActionStates();
 
-    /* Acquire machine state of the "current state" item: */
-    KMachineState enmState = KMachineState_Null;
-    if (currentStateItem())
-        enmState = currentStateItem()->machineState();
-
-    /* Whether taking or deleting snapshots is possible right now: */
-    const bool fCanTakeDeleteSnapshot =    !fBusy
-                                        || enmState == KMachineState_PoweredOff
-                                        || enmState == KMachineState_Saved
-                                        || enmState == KMachineState_Aborted
-                                        || enmState == KMachineState_Running
-                                        || enmState == KMachineState_Paused;
-
-    /* Enable/disable snapshot operations: */
-    m_pActionTakeSnapshot->setEnabled(
-           m_fShapshotOperationsAllowed
-        && (   (   fCanTakeDeleteSnapshot
-                && m_pCurrentSnapshotItem
-                && pSnapshotItem
-                && pSnapshotItem->isCurrentStateItem())
-            || (   pSnapshotItem
-                && !m_pCurrentSnapshotItem))
-    );
-    m_pActionDeleteSnapshot->setEnabled(
-           m_fShapshotOperationsAllowed
-        && fCanTakeDeleteSnapshot
-        && m_pCurrentSnapshotItem
-        && pSnapshotItem
-        && !pSnapshotItem->isCurrentStateItem()
-    );
-    m_pActionRestoreSnapshot->setEnabled(
-           !fBusy
-        && m_pCurrentSnapshotItem
-        && pSnapshotItem
-        && !pSnapshotItem->isCurrentStateItem()
-    );
-    m_pActionShowSnapshotDetails->setEnabled(
-        pSnapshotItem
-    );
-    m_pActionCommitSnapshotDetails->setEnabled(
-        false
-    );
-    m_pActionCloneSnapshot->setEnabled(
-           pSnapshotItem
-        && (   !pSnapshotItem->isCurrentStateItem()
-            || !fBusy)
-    );
-
-    /* If there is a proper snasphot item: */
-    if (pSnapshotItem)
-    {
-        /* Update details-widget if it's visible: */
-        if (m_pDetailsWidget->isVisible())
-            m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
-    }
+    /* Update details-widget if it's visible: */
+    if (pSnapshotItem && m_pDetailsWidget->isVisible())
+        m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
 }
 
 void UISnapshotPane::sltHandleContextMenuRequest(const QPoint &position)
@@ -1068,7 +1018,7 @@ void UISnapshotPane::refreshAll()
     /* Prevent snapshot editing in the meantime: */
     QWriteLocker locker(m_pLockReadWrite);
 
-    /* If VM is null, just updated the current itm: */
+    /* If VM is null, just updated the current item: */
     if (m_comMachine.isNull())
     {
         sltHandleCurrentItemChange();
@@ -1181,6 +1131,73 @@ void UISnapshotPane::cleanup()
     /* Destroy read-write locker: */
     delete m_pLockReadWrite;
     m_pLockReadWrite = 0;
+}
+
+void UISnapshotPane::updateActionStates()
+{
+    /* Acquire current snapshot item: */
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+
+    /* Check whether another direct session is opened: */
+    const bool fBusy = m_enmSessionState != KSessionState_Unlocked;
+
+    /* Acquire machine-state of the "current state" item: */
+    KMachineState enmState = KMachineState_Null;
+    if (currentStateItem())
+        enmState = currentStateItem()->machineState();
+
+    /* Determine whether taking or deleting snapshots is possible: */
+    const bool fCanTakeDeleteSnapshot =    !fBusy
+                                        || enmState == KMachineState_PoweredOff
+                                        || enmState == KMachineState_Saved
+                                        || enmState == KMachineState_Aborted
+                                        || enmState == KMachineState_Running
+                                        || enmState == KMachineState_Paused;
+
+    /* Update 'Take' action: */
+    m_pActionTakeSnapshot->setEnabled(
+           m_fShapshotOperationsAllowed
+        && (   (   fCanTakeDeleteSnapshot
+                && m_pCurrentSnapshotItem
+                && pSnapshotItem
+                && pSnapshotItem->isCurrentStateItem())
+            || (   pSnapshotItem
+                && !m_pCurrentSnapshotItem))
+    );
+
+    /* Update 'Delete' action: */
+    m_pActionDeleteSnapshot->setEnabled(
+           m_fShapshotOperationsAllowed
+        && fCanTakeDeleteSnapshot
+        && m_pCurrentSnapshotItem
+        && pSnapshotItem
+        && !pSnapshotItem->isCurrentStateItem()
+    );
+
+    /* Update 'Restore' action: */
+    m_pActionRestoreSnapshot->setEnabled(
+           !fBusy
+        && m_pCurrentSnapshotItem
+        && pSnapshotItem
+        && !pSnapshotItem->isCurrentStateItem()
+    );
+
+    /* Update 'Show Details' action: */
+    m_pActionShowSnapshotDetails->setEnabled(
+        pSnapshotItem
+    );
+
+    /* Update 'Commit Details' action: */
+    m_pActionCommitSnapshotDetails->setEnabled(
+        false
+    );
+
+    /* Update 'Clone' action: */
+    m_pActionCloneSnapshot->setEnabled(
+           pSnapshotItem
+        && (   !pSnapshotItem->isCurrentStateItem()
+            || !fBusy)
+    );
 }
 
 bool UISnapshotPane::takeSnapshot()

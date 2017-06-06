@@ -152,6 +152,9 @@ private:
 
     /** @name Toolbar helpers.
       * @{ */
+        /** Updates action states. */
+        void updateActionStates();
+
         /** Proposes to take a snapshot. */
         bool takeSnapshot();
         /** Proposes to delete the snapshot. */
