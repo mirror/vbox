@@ -340,12 +340,15 @@ DECLHIDDEN(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                       unsigned cScreens, VBVAMODEHINT *paHints)
 {
     int rc;
+    void *p;
+
     AssertPtr(paHints);
     if (!VALID_PTR(paHints))
         return VERR_INVALID_POINTER;
-    void *p = VBoxHGSMIBufferAlloc(pCtx,   sizeof(VBVAQUERYMODEHINTS)
-                                         + cScreens * sizeof(VBVAMODEHINT),
-                                   HGSMI_CH_VBVA, VBVA_QUERY_MODE_HINTS);
+
+    p = VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAQUERYMODEHINTS)
+                                       + cScreens * sizeof(VBVAMODEHINT),
+                             HGSMI_CH_VBVA, VBVA_QUERY_MODE_HINTS);
     if (!p)
     {
         // LogFunc(("HGSMIHeapAlloc failed\n"));
