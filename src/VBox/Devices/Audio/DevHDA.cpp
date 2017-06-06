@@ -5380,7 +5380,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     return rc;
 }
 
-#ifdef DEBUG
+
 /* Debug and log type formatters. */
 
 /**
@@ -5647,7 +5647,7 @@ static DECLCALLBACK(void) hdaDbgInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     else
         pHlp->pfnPrintf(pHlp, "Mixer not available\n");
 }
-#endif /* DEBUG */
+
 
 /* PDMIBASE */
 
@@ -6393,7 +6393,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         HDA_REG(pThis, WAKEEN)   = 0x0;
         HDA_REG(pThis, STATESTS) = 0x0;
 
-#ifdef DEBUG
         /*
          * Debug and string formatter types.
          */
@@ -6414,7 +6413,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("sdfifow", hdaDbgFmtSDFIFOW, NULL);
         AssertRC(rc);
-#endif /* DEBUG */
 
         /*
          * Some debug assertions.

@@ -244,7 +244,6 @@ int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
     return rc;
 }
 
-#ifdef DEBUG
 /**
  * Helper function for the internal debugger to print the mixer's current
  * state, along with the attached sinks.
@@ -276,7 +275,6 @@ void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs
     rc2 = RTCritSectLeave(&pMixer->CritSect);
     AssertRC(rc2);
 }
-#endif
 
 /**
  * Destroys an audio mixer.
