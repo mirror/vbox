@@ -35,10 +35,12 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 #include <iprt/formats/iso9660.h>
@@ -59,6 +61,15 @@
 #define RTFSISOMAKER_SECTOR_SIZE            _2K
 /** Maximum number of objects. */
 #define RTFSISOMAKER_MAX_OBJECTS            _16M
+/** UTF-8 name buffer.  */
+#define RTFSISOMAKER_MAX_NAME_BUF           768
+
+/** Tests if @a a_ch is in the set of d-characters. */
+#define RTFSISOMAKER_IS_IN_D_CHARS(a_ch)        (RT_C_IS_UPPER(a_ch) || RT_C_IS_DIGIT(a_ch) || (a_ch) == '_')
+
+/** Tests if @a a_ch is in the set of d-characters when uppercased. */
+#define RTFSISOMAKER_IS_UPPER_IN_D_CHARS(a_ch)  (RT_C_IS_ALNUM(a_ch) || (a_ch) == '_')
+
 
 
 /*********************************************************************************************************************************
@@ -141,6 +152,8 @@ typedef struct RTFSISOMAKERNAME
     char                   *pszRockRidgeNm;
     /** Alternative TRANS.TBL name. */
     char                   *pszTransNm;
+    /** Length of pszSpecNm. */
+    uint16_t                cchSpecNm;
     /** Length of pszRockRidgeNm. */
     uint16_t                cchRockRidgeNm;
     /** Length of pszTransNm. */
@@ -286,8 +299,14 @@ typedef struct RTFSISOMAKERINT
 
     /** The list of objects (RTFSISOMAKEROBJ). */
     RTLISTANCHOR            ObjectHead;
+    /** Number of objects in the image (ObjectHead).
+     * This is used to number them, i.e. create RTFSISOMAKEROBJ::idxObj.  */
+    uint32_t                cObjects;
 
-    /** The total image size. */
+    /** Amount of file data. */
+    uint64_t                cbData;
+    /** The total image size.
+     * @todo not sure if this is desirable.  */
     uint64_t                cbTotal;
 
 } RTFSISOMAKERINT;
@@ -553,7 +572,14 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
  */
 
 
-DECL_NO_INLINE(static, PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT pThis, uint32_t idxObj)
+/**
+ * Translates an object index number to an object pointer, slow path.
+ *
+ * @returns Pointer to object, NULL if not found.
+ * @param   pThis               The ISO creator instance.
+ * @param   idxObj              The object index too resolve.
+ */
+DECL_NO_INLINE(static, PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObjSlow(PRTFSISOMAKERINT pThis, uint32_t idxObj)
 {
     PRTFSISOMAKEROBJ pObj;
     RTListForEachReverse(&pThis->ObjectHead, pObj, RTFSISOMAKEROBJ, Entry)
@@ -565,19 +591,338 @@ DECL_NO_INLINE(static, PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT
 }
 
 
+/**
+ * Translates an object index number to an object pointer.
+ *
+ * @returns Pointer to object, NULL if not found.
+ * @param   pThis               The ISO creator instance.
+ * @param   idxObj              The object index too resolve.
+ */
 DECLINLINE(PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT pThis, uint32_t idxObj)
 {
     PRTFSISOMAKEROBJ pObj = RTListGetLast(&pThis->ObjectHead, RTFSISOMAKEROBJ, Entry);
     if (!pObj || RT_LIKELY(pObj->idxObj == idxObj))
         return pObj;
-    return rtFsIsoMakerIndexToObjSlow(pThis, idxObj)
+    return rtFsIsoMakerIndexToObjSlow(pThis, idxObj);
 }
 
 
-static int rtTFsIsoMakerObjSetPathInOne(RTFSISOMAKER hIsoMaker, uint32_t idxEntry,
-                                        uint32_t fNamespace, const char *pszPath)
+/**
+ * Locates a child object by its namespace name.
+ *
+ * @returns Pointer to the child if found, NULL if not.
+ * @param   pDirObj             The directory object to search.
+ * @param   pszEntry            The (namespace) entry name.
+ * @param   cchEntry            The length of the name.
+ */
+static PRTFSISOMAKERNAME rtFsIsoMakerFindObjInDir(PRTFSISOMAKERNAME pDirObj, const char *pszEntry, size_t cchEntry)
 {
+    if (pDirObj)
+    {
+        PRTFSISOMAKERNAMEDIR pDir = pDirObj->pDir;
+        AssertReturn(pDir, NULL);
 
+        uint32_t i = pDir->cChildren;
+        while (i-- > 0)
+        {
+            PRTFSISOMAKERNAME pChild = pDir->papChildren[i];
+            if (   pChild->cchName == cchEntry
+                && RTStrNICmp(pChild->szName, pszEntry, cchEntry) == 0)
+                return pChild;
+        }
+    }
+    return NULL;
+}
+
+
+/**
+ * Locates a child object by its specified name.
+ *
+ * @returns Pointer to the child if found, NULL if not.
+ * @param   pDirObj             The directory object to search.
+ * @param   pszEntry            The (specified) entry name.
+ * @param   cchEntry            The length of the name.
+ */
+static PRTFSISOMAKERNAME rtFsIsoMakerFindObjInDirBySpec(PRTFSISOMAKERNAME pDirObj, const char *pszEntry, size_t cchEntry)
+{
+    if (pDirObj)
+    {
+        PRTFSISOMAKERNAMEDIR pDir = pDirObj->pDir;
+        AssertReturn(pDir, NULL);
+
+        uint32_t i = pDir->cChildren;
+        while (i-- > 0)
+        {
+            PRTFSISOMAKERNAME pChild = pDir->papChildren[i];
+            if (   pChild->cchSpecNm == cchEntry
+                && RTStrNICmp(pChild->pszSpecNm, pszEntry, cchEntry) == 0)
+                return pChild;
+        }
+    }
+    return NULL;
+}
+
+/**
+ * Copy and convert a name to valid ISO-9660 (d-characters only).
+ *
+ * Worker for rtFsIsoMakerNormalizeNameForNamespace.  ASSUMES it deals with
+ * dots.
+ *
+ * @returns Length of the resulting string.
+ * @param   pszDst              The output buffer.
+ * @param   cchDstMax           The maximum number of (d-chars) to put in the
+ *                              output buffer .
+ * @param   pszSrc              The UTF-8 source string.
+ * @param   cchSrc              The maximum number of chars to copy from the
+ *                              source string.
+ */
+static size_t rtFsIsoMakerCopyIso9660Name(char *pszDst, size_t cchDstMax, const char *pszSrc, size_t cchSrc)
+{
+    const char *pszSrcIn = pszSrc;
+    size_t      offDst = 0;
+    while ((size_t)(pszSrc - pszSrcIn) < cchSrc)
+    {
+        RTUNICP uc;
+        int rc = RTStrGetCpEx(&pszSrc, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            if (   uc < 128
+                && RTFSISOMAKER_IS_UPPER_IN_D_CHARS((char)uc))
+            {
+                pszDst[offDst++] = RT_C_TO_UPPER((char)uc);
+                if (offDst >= cchDstMax)
+                    break;
+            }
+        }
+    }
+    pszDst[offDst] = '\0';
+    return offDst;
+}
+
+
+/**
+ * Normalizes a name for the specified name space.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The ISO maker instance.
+ * @param   pParent     The parent directory.  NULL if root.
+ * @param   pszSrc      The specified name to normalize.
+ * @param   fNamespace  The namespace rulez to normalize it according to.
+ * @param   fIsDir      Indicates whether it's a directory or file (like).
+ * @param   pszDst      The output buffer.  Must be at least 32 bytes.
+ * @param   cbDst       The size of the output buffer.
+ * @param   pcchDst     Where to return the length of the returned string (i.e.
+ *                      not counting the terminator).
+ */
+static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAME pParent, const char *pszSrc,
+                                                 uint32_t fNamespace, bool fIsDir, char *pszDst, size_t cbDst, size_t *pcchDst)
+{
+    size_t cchSrc = strlen(pszSrc);
+    if (cchSrc)
+    {
+        /*
+         * Check that the object doesn't already exist.
+         */
+        AssertReturn(!rtFsIsoMakerFindObjInDirBySpec(pParent, pszSrc, cchSrc), VERR_ALREADY_EXISTS);
+        switch (fNamespace)
+        {
+            /*
+             * This one is fun. :)
+             */
+            case RTFSISOMAKERNAMESPACE_ISO_9660:
+            {
+                AssertReturn(cbDst > ISO9660_MAX_NAME_LEN, VERR_INTERNAL_ERROR_3);
+
+                /* Skip leading dots. */
+                while (*pszSrc == '.')
+                    pszSrc++, cchSrc--;
+                if (!cchSrc)
+                {
+                    pszSrc = "DOTS";
+                    cchSrc = 4;
+                }
+
+                /*
+                 * Produce a first name.
+                 */
+                size_t cchDst;
+                size_t offDstDot;
+                if (fIsDir)
+                    offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, pThis->uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8,
+                                                                     pszSrc, cchSrc);
+                else
+                {
+                    /* Look for the last dot and try preserve the extension when doing the conversion. */
+                    size_t offLastDot = cchSrc;
+                    for (size_t off = 0; off < cchSrc; off++)
+                        if (pszSrc[off] == '.')
+                            offLastDot = off;
+
+                    if (offLastDot == cchSrc)
+                        offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, pThis->uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8,
+                                                                         pszSrc, cchSrc);
+                    else
+                    {
+                        const char * const pszSrcExt = &pszSrc[offLastDot + 1];
+                        size_t       const cchSrcExt = cchSrc - offLastDot - 1;
+                        if (pThis->uIsoLevel < 2)
+                        {
+                            cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, 8, pszSrc, cchSrc);
+                            offDstDot = cchDst;
+                            pszDst[cchDst++] = '.';
+                            cchDst += rtFsIsoMakerCopyIso9660Name(&pszDst[cchDst], 3, pszSrcExt, cchSrcExt);
+                        }
+                        else
+                        {
+                            size_t cchDstExt = rtFsIsoMakerCopyIso9660Name(pszDst, ISO9660_MAX_NAME_LEN - 2, pszSrcExt, cchSrcExt);
+                            if (cchDstExt > 0)
+                            {
+                                size_t cchBasename = rtFsIsoMakerCopyIso9660Name(pszDst, ISO9660_MAX_NAME_LEN - 2,
+                                                                                 pszSrc, offLastDot);
+                                if (cchBasename + 1 + cchDstExt <= ISO9660_MAX_NAME_LEN)
+                                    cchDst = cchBasename;
+                                else
+                                    cchDst = ISO9660_MAX_NAME_LEN - 1 - RT_MIN(cchDstExt, 4);
+                                offDstDot = cchDst;
+                                pszDst[cchDst++] = '.';
+                                cchDst += rtFsIsoMakerCopyIso9660Name(pszDst, ISO9660_MAX_NAME_LEN - 1 - cchDst,
+                                                                      pszSrcExt, cchSrcExt);
+                            }
+                            else
+                                offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, ISO9660_MAX_NAME_LEN, pszSrc, cchSrc);
+                        }
+                    }
+                }
+
+                /*
+                 * Unique name?
+                 */
+                if (!rtFsIsoMakerFindObjInDir(pParent, pszDst, cchDst))
+                {
+                    *pcchDst = cchDst;
+                    return VINF_SUCCESS;
+                }
+
+                /*
+                 * Mangle the name till we've got a unique one.
+                 */
+                size_t const cchMaxBasename = (pThis->uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8) - (cchDst - offDstDot);
+                size_t       cchInserted = 0;
+                for (uint32_t i = 0; i < _32K; i++)
+                {
+                    /* Add a numberic infix. */
+                    char szOrd[64];
+                    size_t cchOrd = RTStrFormatU32(szOrd, sizeof(szOrd), i + 1, 10, -1, -1, 0 /*fFlags*/);
+                    Assert((ssize_t)cchOrd > 0);
+
+                    /* Do we need to shuffle the suffix? */
+                    if (cchOrd > cchInserted)
+                    {
+                        if (offDstDot < cchMaxBasename)
+                        {
+                            memmove(&pszDst[offDstDot + 1], &pszDst[offDstDot], cchDst + 1 - offDstDot);
+                            cchDst++;
+                            offDstDot++;
+                        }
+                        cchInserted = cchOrd;
+                    }
+
+                    /* Insert the new infix and try again. */
+                    memcpy(&pszDst[offDstDot - cchOrd], szOrd, cchOrd);
+                    if (!rtFsIsoMakerFindObjInDir(pParent, pszDst, cchDst))
+                    {
+                        *pcchDst = cchDst;
+                        return VINF_SUCCESS;
+                    }
+                }
+                AssertFailed();
+                return VERR_DUPLICATE;
+            }
+
+            /*
+             * At the moment we don't give darn about UCS-2 limitations here...
+             */
+            case RTFSISOMAKERNAMESPACE_JOLIET:
+            {
+                AssertReturn(cbDst > cchSrc, VERR_BUFFER_OVERFLOW);
+                memcpy(pszDst, pszSrc, cchSrc);
+                pszDst[cchSrc] = '\0';
+                *pcchDst = cchSrc;
+                return VINF_SUCCESS;
+            }
+
+            case RTFSISOMAKERNAMESPACE_UDF:
+            case RTFSISOMAKERNAMESPACE_HFS:
+                AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+        }
+    }
+    else
+    {
+        /*
+         * Root special case.
+         */
+        AssertReturn(pParent, VERR_INTERNAL_ERROR_3);
+        *pszDst = '\0';
+        *pcchDst = 0;
+        return VINF_SUCCESS;
+    }
+}
+
+
+static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAME *ppRoot, uint32_t fNamespace, const char *pszPath,
+                                    PRTFSISOMAKERNAME *ppParent, const char **ppszEntry)
+{
+    RT_NOREF(pThis, ppRoot, fNamespace, pszPath, ppParent, ppszEntry);
+    return -1;
+}
+
+
+static int rtFsIsoMakerObjSetPathInOne(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pEntry, uint32_t fNamespace, const char *pszPath,
+                                       PRTFSISOMAKERNAME *ppRoot, PRTFSISOMAKERNAME *ppName)
+{
+    AssertReturn(!*ppName, VERR_WRONG_ORDER);
+
+    /*
+     * Figure out where the parent is.
+     * This will create missing parent name space entries and directory nodes.
+     */
+    PRTFSISOMAKERNAME   pParent;
+    const char         *pszEntry;
+    int                 rc;
+    if (pszPath[1] != '\0')
+        rc = rtFsIsoMakerPathToParent(pThis, ppRoot, fNamespace, pszPath, &pParent, &pszEntry);
+    else
+    {
+        /*
+         * Special case for the root directory.
+         */
+        AssertReturn(!*ppRoot, VERR_WRONG_ORDER);
+        pszEntry = &pszPath[1];
+        pParent = NULL;
+        rc = VINF_SUCCESS;
+        Assert(pEntry->enmType == RTFSISOMAKEROBJTYPE_DIR);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * .
+         */
+        //size_t cchEntry = strlen(pszEntry);
+        size_t cchName;
+        char   szName[RTFSISOMAKER_MAX_NAME_BUF];
+        rc = rtFsIsoMakerNormalizeNameForNamespace(pThis, pParent, pszEntry, fNamespace,
+                                                   pEntry->enmType == RTFSISOMAKEROBJTYPE_DIR, szName, sizeof(szName), &cchName);
+        if (RT_SUCCESS(rc))
+        {
+
+            //PRTFSISOMAKERNAME pNameEntry = RTMemAllocZ()
+        }
+    }
+
+    return rc;
 }
 
 
@@ -605,7 +950,7 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
     RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
     AssertReturn(!(fNamespaces & ~RTFSISOMAKERNAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertReturn(RTPATH_IS_SLASH(pszPath == '/'), VERR_INVALID_NAME);
+    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INVALID_NAME);
     PRTFSISOMAKEROBJ pObj = rtFsIsoMakerIndexToObj(pThis, idxObj);
     AssertReturn(pObj, VERR_OUT_OF_RANGE);
 
@@ -614,11 +959,11 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
      */
     int rc = VINF_SUCCESS;
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIosNamespaces); i++)
-        if (fNamespace & g_aRTFsIosNamespaces[i].fNamespace)
+        if (fNamespaces & g_aRTFsIosNamespaces[i].fNamespace)
         {
-            int rc2 = rtTFsIsoMakerObjSetPathInOne(pThis, pEntry, g_aRTFsIosNamespaces[i].fNamespace, pszPath,
-                                                   (PRTFSISOMAKERNAME *)((uintptr_t)pThis + g_aRTFsIosNamespaces[i].offRoot),
-                                                   (PRTFSISOMAKERNAMESPACE *)((uintptr_t)pEntry + g_aRTFsIosNamespaces[i].offName));
+            int rc2 = rtFsIsoMakerObjSetPathInOne(pThis, pObj, g_aRTFsIosNamespaces[i].fNamespace, pszPath,
+                                                  (PRTFSISOMAKERNAME *)((uintptr_t)pThis + g_aRTFsIosNamespaces[i].offRoot),
+                                                  (PRTFSISOMAKERNAME *)((uintptr_t)pObj  + g_aRTFsIosNamespaces[i].offName));
             if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
                 continue;
             rc = rc2;
@@ -636,7 +981,7 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
  * @param   pObj                The common object.
  * @param   enmType             The object type.
  */
-static void rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj, RTFSISOMAKEROBJTYPE enmType)
+static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj, RTFSISOMAKEROBJTYPE enmType)
 {
     AssertReturn(pThis->cObjects < RTFSISOMAKER_MAX_OBJECTS, VERR_OUT_OF_RANGE);
     pObj->enmType       = enmType;
@@ -669,10 +1014,10 @@ RTDECL(int) RTFsIsoMakerAddUnnamedDir(RTFSISOMAKER hIsoMaker, uint32_t *pidxObj)
 
     PRTFSISOMAKERDIR pDir = (PRTFSISOMAKERDIR)RTMemAllocZ(sizeof(*pDir));
     AssertReturn(pDir, VERR_NO_MEMORY);
-    int rc = rtFsIsoMakerInitCommonObj(&pDir->Core, RTFSISOMAKEROBJTYPE_DIR);
+    int rc = rtFsIsoMakerInitCommonObj(pThis, &pDir->Core, RTFSISOMAKEROBJTYPE_DIR);
     if (RT_SUCCESS(rc))
     {
-        *pidxObj = pObj->idxObj;
+        *pidxObj = pDir->Core.idxObj;
         return VINF_SUCCESS;
     }
     RTMemFree(pDir);
@@ -696,13 +1041,13 @@ RTDECL(int) RTFsIsoMakerAddDir(RTFSISOMAKER hIsoMaker, const char *pszDir, uint3
     PRTFSISOMAKERINT pThis = hIsoMaker;
     RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
-    AssertReturn(RTPATH_IS_SLASH(pszPath == '/'), VERR_INVALID_NAME);
+    AssertReturn(RTPATH_IS_SLASH(*pszDir), VERR_INVALID_NAME);
 
     uint32_t idxObj;
     int rc = RTFsIsoMakerAddUnnamedDir(hIsoMaker, &idxObj);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFsIsoMakerObjSetPath(hIsoMaker, idxObj, RTFSISOMAKERNAMESPACE_ALL);
+        rc = RTFsIsoMakerObjSetPath(hIsoMaker, idxObj, RTFSISOMAKERNAMESPACE_ALL, pszDir);
         if (RT_SUCCESS(rc))
         {
             if (pidxObj)
