@@ -202,13 +202,13 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 /* Bits 0-29 correspond to streams 0-29. */
 
 #define HDA_REG_WALCLK              13 /* 0x30 */
-#define HDA_RMX_WALCLK              /* Not defined! */
+/* NB: HDA_RMX_WALCLK is not defined because the register is not stored in memory. */
 
 /* Note: The HDA specification defines a SSYNC register at offset 0x38. The
  * ICH6/ICH9 datahseet defines SSYNC at offset 0x34. The Linux HDA driver matches
  * the datasheet.
  */
-#define HDA_REG_SSYNC               14 /* 0x38 */
+#define HDA_REG_SSYNC               14 /* 0x34 */
 #define HDA_RMX_SSYNC               12
 
 #define HDA_REG_CORBLBASE           15 /* 0x40 */
@@ -223,8 +223,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_REG_CORBRP              18 /* 0x4A */
 #define HDA_RMX_CORBRP              16
 #define HDA_CORBRP_RST              RT_BIT(15)  /* CORB Read Pointer Reset */
-#define HDA_CORBRP_WP_SHIFT         0
-#define HDA_CORBRP_WP_MASK          0xFF
 
 #define HDA_REG_CORBCTL             19 /* 0x4C */
 #define HDA_RMX_CORBCTL             17
@@ -233,13 +231,10 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_CORBSTS             20 /* 0x4D */
 #define HDA_RMX_CORBSTS             18
-#define HDA_CORBSTS_CMEI_SHIFT      0
 
 #define HDA_REG_CORBSIZE            21 /* 0x4E */
 #define HDA_RMX_CORBSIZE            19
-#define HDA_CORBSIZE_SZ_CAP         0xF0
-#define HDA_CORBSIZE_SZ             0x3
-/* till ich 10 sizes of CORB and RIRB are hardcoded to 256 in real hw */
+/* NB: Up to and including ICH 10, sizes of CORB and RIRB are fixed at 256 entries. */
 
 #define HDA_REG_RIRBLBASE           22 /* 0x50 */
 #define HDA_RMX_RIRBLBASE           20
@@ -250,7 +245,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_REG_RIRBWP              24 /* 0x58 */
 #define HDA_RMX_RIRBWP              22
 #define HDA_RIRBWP_RST              RT_BIT(15)  /* RIRB Write Pointer Reset */
-#define HDA_RIRBWP_WP_MASK          0xFF
 
 #define HDA_REG_RINTCNT             25 /* 0x5A */
 #define HDA_RMX_RINTCNT             23
@@ -269,12 +263,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_RIRBSIZE            28 /* 0x5E */
 #define HDA_RMX_RIRBSIZE            26
-#define HDA_RIRBSIZE_SZ_CAP         0xF0
-#define HDA_RIRBSIZE_SZ             0x3
-
-#define RIRBSIZE_SZ(pThis)          (HDA_REG(pThis, HDA_REG_RIRBSIZE) & HDA_RIRBSIZE_SZ)
-#define RIRBSIZE_SZ_CAP(pThis)      (HDA_REG(pThis, HDA_REG_RIRBSIZE) & HDA_RIRBSIZE_SZ_CAP)
-
 
 #define HDA_REG_IC                  29 /* 0x60 */
 #define HDA_RMX_IC                  27
@@ -289,11 +277,9 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #define HDA_REG_DPLBASE             32 /* 0x70 */
 #define HDA_RMX_DPLBASE             30
-#define DPLBASE(pThis)              (HDA_REG((pThis), DPLBASE))
 
 #define HDA_REG_DPUBASE             33 /* 0x74 */
 #define HDA_RMX_DPUBASE             31
-#define DPUBASE(pThis)              (HDA_REG((pThis), DPUBASE))
 
 #define DPBASE_ADDR_MASK            (~(uint64_t)0x7f)
 
@@ -315,8 +301,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD5CTL              (HDA_STREAM_RMX_DEF(CTL, 0) + 50)
 #define HDA_RMX_SD6CTL              (HDA_STREAM_RMX_DEF(CTL, 0) + 60)
 #define HDA_RMX_SD7CTL              (HDA_STREAM_RMX_DEF(CTL, 0) + 70)
-
-#define SD(func, num)               SD##num##func
 
 #define HDA_SDCTL_NUM_MASK          0xF
 #define HDA_SDCTL_NUM_SHIFT         20
@@ -340,7 +324,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD6STS              (HDA_STREAM_RMX_DEF(STS, 0) + 60)
 #define HDA_RMX_SD7STS              (HDA_STREAM_RMX_DEF(STS, 0) + 70)
 
-#define SDSTS(pThis, num)           HDA_REG((pThis), SD(STS, num))
 #define HDA_SDSTS_FIFORDY           RT_BIT(5)   /* FIFO Ready */
 #define HDA_SDSTS_DESE              RT_BIT(4)   /* Descriptor Error */
 #define HDA_SDSTS_FIFOE             RT_BIT(3)   /* FIFO Error */
@@ -427,7 +410,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_SDOFIFO_128B            0x7F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
 #define HDA_SDOFIFO_192B            0xBF /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
 #define HDA_SDOFIFO_256B            0xFF /* 20-, 24-bit Output Streams */
-#define SDFIFOS(pThis, num)         HDA_REG((pThis), SD(FIFOS, num))
 
 #define HDA_REG_SD0FMT              41 /* 0x92; other streams offset by 0x20 */
 #define HDA_RMX_SD0FMT              39
@@ -438,8 +420,6 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD5FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 50)
 #define HDA_RMX_SD6FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 60)
 #define HDA_RMX_SD7FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 70)
-
-#define SDFMT(pThis, num)               (HDA_REG((pThis), SD(FMT, num)))
 
 #define HDA_REG_SD0BDPL             42 /* 0x98; other streams offset by 0x20 */
 #define HDA_RMX_SD0BDPL             40
@@ -993,10 +973,10 @@ static void          hdaTimerMain(PHDASTATE pThis);
 #define HDA_REG_IDX_STRM(reg, suff) HDA_MEM_IND_NAME(reg ## suff), #reg #suff
 
 /** Same as above for a register *not* stored in memory. */
-#define HDA_REG_IDX_LOCAL(abbrev)   0, #abbrev
+#define HDA_REG_IDX_NOMEM(abbrev)   0, #abbrev
 
 /** No register description (RD) flags defined. */
-#define HDA_RD_FLAG_NONE           UINT32_C(0)
+#define HDA_RD_FLAG_NONE           0
 /** Writes to SD are allowed while RUN bit is set. */
 #define HDA_RD_FLAG_SD_WRITE_RUN   RT_BIT(0)
 
@@ -1073,7 +1053,7 @@ static const struct HDAREGDESC
     { 0x0001A, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(INSTRMPAY)    }, /* Input Stream Payload Capability */
     { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteINTCTL  , HDA_REG_IDX(INTCTL)       }, /* Interrupt Control */
     { 0x00024, 0x00004, 0xC00000FF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , HDA_REG_IDX(INTSTS)       }, /* Interrupt Status */
-    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadWALCLK, hdaRegWriteUnimpl  , HDA_REG_IDX_LOCAL(WALCLK) }, /* Wall Clock Counter */
+    { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadWALCLK, hdaRegWriteUnimpl  , HDA_REG_IDX_NOMEM(WALCLK) }, /* Wall Clock Counter */
     { 0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(SSYNC)        }, /* Stream Synchronization */
     { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBLBASE)    }, /* CORB Lower Base Address */
     { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteBase    , HDA_REG_IDX(CORBUBASE)    }, /* CORB Upper Base Address */
