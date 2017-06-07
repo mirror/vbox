@@ -157,7 +157,7 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
         char szTemp[RTPATH_MAX];
         rc = RTPathTemp(szTemp, sizeof(szTemp));
 
-        RTPathAppend(szTemp, sizeof(szTemp), "VBoxAudioValKit");
+        RTPathAppend(szTemp, sizeof(szTemp), "VBoxTestTmp\\VBoxAudioValKit");
 
         if (RT_SUCCESS(rc))
         {
