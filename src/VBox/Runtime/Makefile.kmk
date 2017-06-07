@@ -881,6 +881,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/uuid-generic.cpp \
 	r3/posix/allocex-r3-posix.cpp \
 	r3/linux/RTThreadGetNativeState-linux.cpp \
+	r3/linux/krnlmod-linux.cpp \
 	r3/linux/mp-linux.cpp \
 	r3/linux/rtProcInitExePath-linux.cpp \
 	r3/linux/sched-linux.cpp \
