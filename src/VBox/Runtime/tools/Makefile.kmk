@@ -112,6 +112,11 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  RTSignTool_SOURCES = RTSignTool.cpp
  RTSignTool_LIBS = $(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
 
+ # RTKrnlModInfo - our lsmod/kextstat clone (for testing the RTKrnlMod code).
+ PROGRAMS += RTKrnlModInfo
+ RTKrnlModInfo_TEMPLATE = VBoxR3Tool
+ RTKrnlModInfo_SOURCES = RTKrnlModInfo.cpp
+
 endif # !VBOX_ONLY_EXTPACKS_USE_IMPLIBS
 
 include $(FILE_KBUILD_SUB_FOOTER)

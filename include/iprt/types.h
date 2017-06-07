@@ -2520,6 +2520,13 @@ typedef RTAIOMGRFILE                               *PRTAIOMGRFILE;
 /** A NIL async I/O manager file handle. */
 #define NIL_RTAIOMGRFILE                            ((RTAIOMGRFILE)~(uintptr_t)0)
 
+/** Kernel module information record handle. */
+typedef struct RTKRNLMODINFOINT                    *RTKRNLMODINFO;
+/** Pointer to a kernel information record handle. */
+typedef RTKRNLMODINFO                              *PRTKRNLMODINFO;
+/** A NIL kernel module information record handle. */
+#define NIL_RTKRNLMODINFO                          ((RTKRNLMODINFO)~(uintptr_t)0);
+
 /**
  * Handle type.
  *

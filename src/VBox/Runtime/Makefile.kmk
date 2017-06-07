@@ -1055,6 +1055,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/darwin/RTCrStoreCreateSnapshotById-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
+	r3/darwin/krnlmod-darwin.cpp \
 	r3/darwin/mp-darwin.cpp \
 	r3/darwin/pathhost-darwin.cpp \
 	r3/darwin/rtProcInitExePath-darwin.cpp \
