@@ -97,7 +97,7 @@ RTDECL(uint32_t) RTKrnlModInfoRelease(RTKRNLMODINFO hKrnlModInfo);
  * Returns the number of references held onto the kernel module by other
  * drivers or userspace clients.
  *
- * @returns Number of references held on the kernel module.
+ * @returns Number of references held on the kernel module.
  * @param   hKrnlModInfo     The kernel module information record handle.
  */
 RTDECL(uint32_t) RTKrnlModInfoGetRefCnt(RTKRNLMODINFO hKrnlModInfo);
@@ -105,7 +105,7 @@ RTDECL(uint32_t) RTKrnlModInfoGetRefCnt(RTKRNLMODINFO hKrnlModInfo);
 /**
  * Returns the name of the kernel module.
  *
- * @returns Pointer to the kernel module name.
+ * @returns Pointer to the kernel module name.
  * @param   hKrnlModInfo     The kernel module information record handle.
  */
 RTDECL(const char *) RTKrnlModInfoGetName(RTKRNLMODINFO hKrnlModInfo);
@@ -121,7 +121,7 @@ RTDECL(const char *) RTKrnlModInfoGetFilePath(RTKRNLMODINFO hKrnlModInfo);
 /**
  * Returns the size of the kernel module.
  *
- * @returns Size of the kernel module in bytes.
+ * @returns Size of the kernel module in bytes.
  * @param   hKrnlModInfo     The kernel module information record handle.
  */
 RTDECL(size_t) RTKrnlModInfoGetSize(RTKRNLMODINFO hKrnlModInfo);
@@ -129,7 +129,7 @@ RTDECL(size_t) RTKrnlModInfoGetSize(RTKRNLMODINFO hKrnlModInfo);
 /**
  * Returns the load address of the kernel module.
  *
- * @returns Load address of the kernel module.
+ * @returns Load address of the kernel module.
  * @param   hKrnlModInfo     The kernel module information record handle.
  */
 RTDECL(RTR0UINTPTR) RTKrnlModInfoGetLoadAddr(RTKRNLMODINFO hKrnlModInfo);
