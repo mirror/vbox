@@ -171,7 +171,24 @@ typedef struct RTFSISOMAKERNAME
     /** Set if pszTransNm is allocated separately.  Normally same as pszSpecNm. */
     bool                    fTransNmAlloced : 1;
 
-/** @todo more rock ridge info here.    */
+    /** The mode mask.
+     * Starts out as a copy of RTFSISOMAKEROBJ::fMode. */
+    RTFMODE                 fMode;
+    /** The owner ID.
+     * Starts out as a copy of RTFSISOMAKEROBJ::uid. */
+    RTUID                   uid;
+    /** The group ID.
+     * Starts out as a copy of RTFSISOMAKEROBJ::gid. */
+    RTGID                   gid;
+    /** The device number if a character or block device.
+     * This is for Rock Ridge.  */
+    RTDEV                   Device;
+    /** The number of hardlinks to report in the file stats.
+     * This is for Rock Ridge.  */
+    uint32_t                cHardlinks;
+    /** The inode/serial number.
+     * This is for Rock Ridge.  */
+    uint64_t                INode;
 
     /** The name length. */
     uint16_t                cchName;
@@ -185,13 +202,15 @@ typedef struct RTFSISOMAKERNAME
 typedef struct RTFSISOMAKERNAMESPACE
 {
     /** The namespace root. */
-    RTFSISOMAKERNAME        pRoot;
+    PRTFSISOMAKERNAME       pRoot;
     /** Total number of name nodes in the namespace. */
     uint32_t                cNames;
     /** Total number of directories in the namespace. */
     uint32_t                cDirs;
     /** The namespace selector (RTFSISOMAKER_NAMESPACE_XXX). */
     uint32_t                fNamespace;
+    /** Offset into RTFSISOMAKERNAMESPACE of the name member. */
+    uint32_t                offName;
     /** The configuration level for this name space.
      *     - For UDF and HFS namespaces this is either @c true or @c false.
      *     - For the primary ISO-9660 namespace this is 1, 2, or 3.
@@ -201,13 +220,19 @@ typedef struct RTFSISOMAKERNAMESPACE
      * Linux behaves a little different when seeing the ER tag. */
     uint8_t                 uRockRidgeLevel;
     /** Set if TRANS.TBL files are to be generated for this namespace. */
+    bool                    fTransTbl;
 } RTFSISOMAKERNAMESPACE;
 /** Pointer to a namespace. */
 typedef RTFSISOMAKERNAMESPACE *PRTFSISOMAKERNAMESPACE;
+/** Pointer to a const namespace. */
+typedef RTFSISOMAKERNAMESPACE const *PCRTFSISOMAKERNAMESPACE;
 
 
 /**
  * Common base structure for the file system objects.
+ *
+ * The times are shared across all namespaces, while the uid, gid and mode are
+ * duplicates in each namespace.
  */
 typedef struct RTFSISOMAKEROBJ
 {
@@ -227,6 +252,22 @@ typedef struct RTFSISOMAKEROBJ
     /** The HFS name space name. */
     PRTFSISOMAKERNAME       pHfsName;
 
+    /** Birth (creation) time. */
+    RTTIMESPEC              BirthTime;
+    /** Attribute change time. */
+    RTTIMESPEC              ChangeTime;
+    /** Modification time. */
+    RTTIMESPEC              ModificationTime;
+    /** Accessed time. */
+    RTTIMESPEC              AccessedTime;
+
+    /** Owner ID. */
+    RTUID                   uid;
+    /** Group ID. */
+    RTGID                   gid;
+    /** Attributes (unix permissions bits mainly). */
+    RTFMODE                 fMode;
+
 } RTFSISOMAKEROBJ;
 
 
@@ -237,7 +278,7 @@ typedef enum RTFSISOMAKERSRCTYPE
 {
     RTFSISOMAKERSRCTYPE_INVALID = 0,
     RTFSISOMAKERSRCTYPE_PATH,
-    RTFSISOMAKERSRCTYPE_VFS_IO_STREAM,
+    RTFSISOMAKERSRCTYPE_VFS_FILE,
     RTFSISOMAKERSRCTYPE_END
 } RTFSISOMAKERSRCTYPE;
 
@@ -258,10 +299,11 @@ typedef struct RTFSISOMAKERFILE
     /** The source data. */
     union
     {
-        /** Path to the source file. */
+        /** Path to the source file.
+         * Allocated together with this structure.  */
         const char         *pszSrcPath;
-        /** Source I/O stream (or file). */
-        RTVFSIOSTREAM       hVfsIoStr;
+        /** Source VFS file. */
+        RTVFSFILE           hVfsFile;
     } u;
 } RTFSISOMAKERFILE;
 
@@ -292,25 +334,11 @@ typedef struct RTFSISOMAKERINT
     /** Reference counter. */
     uint32_t volatile       cRefs;
 
-    /** @name Name space configuration.
-     * @{ */
     /** Set after we've been fed the first bit of content.
      * This means that the namespace configuration has been finalized and can no
      * longer be changed because it's simply too much work to do adjustments
      * after having started to add files. */
     bool                    fSeenContent;
-    /** The ISO level (1-3), default is 3.
-     * @todo support mkisofs level 4 (ISO-9660:1990, version 2). */
-    uint8_t                 uIsoLevel;
-    /** The joliet UCS level (1, 2, or 3), 0 if joliet is not enabled. */
-    uint8_t                 uJolietLevel;
-    /** Enables UDF.
-     * @remarks not yet implemented. */
-    bool                    fUdf;
-    /** Enables HFS
-     * @remarks not yet implemented. */
-    bool                    fHfs;
-    /** @} */
 
     /** The primary ISO-9660 namespace. */
     RTFSISOMAKERNAMESPACE   PrimaryIso;
@@ -333,6 +361,19 @@ typedef struct RTFSISOMAKERINT
      * @todo not sure if this is desirable.  */
     uint64_t                cbTotal;
 
+    /** The 'now' timestamp we use for the whole image.
+     * This way we'll save lots of RTTimeNow calls and have similar timestamps
+     * over the whole image. */
+    RTTIMESPEC              ImageCreationTime;
+    /** The default owner ID. */
+    RTUID                   uidDefault;
+    /** The default group ID. */
+    RTGID                   gidDefault;
+    /** The default file mode mask. */
+    RTFMODE                 fDefaultFileMode;
+    /** The default file mode mask. */
+    RTFMODE                 fDefaultDirMode;
+
 } RTFSISOMAKERINT;
 /** Pointer to an ISO maker instance. */
 typedef RTFSISOMAKERINT *PRTFSISOMAKERINT;
@@ -348,18 +389,18 @@ static const struct
 {
     /** The RTFSISOMAKERNAMESPACE_XXX indicator.  */
     uint32_t        fNamespace;
-    /** Offset into RTFSISOMAKERINT of the root member. */
-    uintptr_t       offRoot;
+    /** Offset into RTFSISOMAKERINT of the namespace member. */
+    uintptr_t       offNamespace;
     /** Offset into RTFSISOMAKERNAMESPACE of the name member. */
     uintptr_t       offName;
     /** Namespace name for debugging purposes. */
     const char     *pszName;
 } g_aRTFsIsoNamespaces[] =
 {
-    {   RTFSISOMAKERNAMESPACE_ISO_9660, RT_OFFSETOF(RTFSISOMAKERINT, pPrimaryIsoRoot), RT_OFFSETOF(RTFSISOMAKEROBJ, pPrimaryName), "iso-9660" },
-    {   RTFSISOMAKERNAMESPACE_JOLIET,   RT_OFFSETOF(RTFSISOMAKERINT, pJolietRoot),     RT_OFFSETOF(RTFSISOMAKEROBJ, pJolietName),  "joliet" },
-    {   RTFSISOMAKERNAMESPACE_UDF,      RT_OFFSETOF(RTFSISOMAKERINT, pUdfRoot),        RT_OFFSETOF(RTFSISOMAKEROBJ, pUdfName),     "udf" },
-    {   RTFSISOMAKERNAMESPACE_HFS,      RT_OFFSETOF(RTFSISOMAKERINT, pHfsRoot),        RT_OFFSETOF(RTFSISOMAKEROBJ, pHfsName),     "hfs" },
+    {   RTFSISOMAKERNAMESPACE_ISO_9660, RT_OFFSETOF(RTFSISOMAKERINT, PrimaryIso), RT_OFFSETOF(RTFSISOMAKEROBJ, pPrimaryName), "iso-9660" },
+    {   RTFSISOMAKERNAMESPACE_JOLIET,   RT_OFFSETOF(RTFSISOMAKERINT, Joliet),     RT_OFFSETOF(RTFSISOMAKEROBJ, pJolietName),  "joliet" },
+    {   RTFSISOMAKERNAMESPACE_UDF,      RT_OFFSETOF(RTFSISOMAKERINT, Udf),        RT_OFFSETOF(RTFSISOMAKEROBJ, pUdfName),     "udf" },
+    {   RTFSISOMAKERNAMESPACE_HFS,      RT_OFFSETOF(RTFSISOMAKERINT, Hfs),        RT_OFFSETOF(RTFSISOMAKEROBJ, pHfsName),     "hfs" },
 };
 
 /**
@@ -442,30 +483,105 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->fSeenContent               = false;
 
         pThis->PrimaryIso.fNamespace        = RTFSISOMAKERNAMESPACE_ISO_9660;
+        pThis->PrimaryIso.offName           = RT_OFFSETOF(RTFSISOMAKEROBJ, pPrimaryName);
         pThis->PrimaryIso.uLevel            = 3; /* 30 char names, large files */
         pThis->PrimaryIso.uRockRidgeLevel   = 1;
+        pThis->PrimaryIso.fTransTbl         = true;
         pThis->Joliet.fNamespace            = RTFSISOMAKERNAMESPACE_JOLIET;
+        pThis->Joliet.offName               = RT_OFFSETOF(RTFSISOMAKEROBJ, pJolietName);
         pThis->Joliet.uLevel                = 3;
         //pThis->Joliet.uRockRidgeLevel     = 0;
+        //pThis->Joliet.fTransTbl           = false;
         pThis->Udf.fNamespace               = RTFSISOMAKERNAMESPACE_UDF;
+        pThis->Udf.offName                  = RT_OFFSETOF(RTFSISOMAKEROBJ, pUdfName);
         //pThis->Udf.uLevel                 = 0;
         //pThis->Udf.uRockRidgeLevel        = 0;
+        //pThis->Udf.fTransTbl              = false;
         pThis->Hfs.fNamespace               = RTFSISOMAKERNAMESPACE_HFS;
+        pThis->Hfs.offName                  = RT_OFFSETOF(RTFSISOMAKEROBJ, pHfsName);
         //pThis->Hfs.uLevel                 = 0;
         //pThis->Hfs.uRockRidgeLevel        = 0;
+        //pThis->Hfs.fTransTbl              = false;
 
         RTListInit(&pThis->ObjectHead);
         //pThis->cObjects                   = 0;
-        //pThis->cNames                     = 0;
         //pThis->cbData                     = 0;
+
         pThis->cbTotal                      = _32K /* The system area size. */
                                             + RTFSISOMAKER_SECTOR_SIZE /* Primary volume descriptor. */
                                             + RTFSISOMAKER_SECTOR_SIZE /* Secondary volume descriptor for joliet. */
                                             + RTFSISOMAKER_SECTOR_SIZE /* Terminator descriptor. */;
+
+        //pThis->uidDefault                 = 0;
+        //pThis->gidDefault                 = 0;
+        pThis->fDefaultFileMode             = 0444 | RTFS_TYPE_FILE      | RTFS_DOS_ARCHIVED  | RTFS_DOS_READONLY;
+        pThis->fDefaultDirMode              = 0555 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | RTFS_DOS_READONLY;
+
+        RTTimeNow(&pThis->ImageCreationTime);
+
         *phIsoMaker = pThis;
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
+}
+
+
+/**
+ * Frees an object.
+ *
+ * This is a worker for rtFsIsoMakerDestroy and RTFsIsoMakerObjRemove.
+ *
+ * @param   pObj                The object to free.
+ */
+DECLINLINE(void) rtFsIsoMakerObjDestroy(PRTFSISOMAKEROBJ pObj)
+{
+    if (pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
+    {
+        PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
+        switch (pFile->enmSrcType)
+        {
+            case RTFSISOMAKERSRCTYPE_PATH:
+                /* do nothing. */
+                break;
+
+            case RTFSISOMAKERSRCTYPE_VFS_FILE:
+                RTVfsFileRelease(pFile->u.hVfsFile);
+                pFile->u.hVfsFile = NIL_RTVFSFILE;
+                break;
+
+            case RTFSISOMAKERSRCTYPE_INVALID:
+            case RTFSISOMAKERSRCTYPE_END:
+                AssertFailed();
+                break;
+
+            /* no default, want warnings */
+        }
+    }
+
+    RTMemFree(pObj);
+}
+
+
+/**
+ * Frees a namespace node.
+ *
+ * This is a worker for rtFsIsoMakerDestroyTree and rtFsIsoMakerObjUnsetName.
+ *
+ * @param   pName               The node to free.
+ */
+DECLINLINE(void) rtFsIsoMakerDestroyName(PRTFSISOMAKERNAME pName)
+{
+    if (pName->fRockRidgeNmAlloced)
+    {
+        RTMemFree(pName->pszRockRidgeNm);
+        pName->pszRockRidgeNm = NULL;
+    }
+    if (pName->fTransNmAlloced)
+    {
+        RTMemFree(pName->pszTransNm);
+        pName->pszTransNm = NULL;
+    }
+    RTMemFree(pName);
 }
 
 
@@ -485,12 +601,8 @@ static void rtFsIsoMakerDestroyTree(PRTFSISOMAKERNAME pRoot)
             pCur = pCur->pDir->papChildren[pCur->pDir->cChildren - 1];
         else
         {
-            RTMemFree(pCur->pszRockRidgeNm);
-            pCur->pszRockRidgeNm = NULL;
-            RTMemFree(pCur->pszTransNm);
-            pCur->pszTransNm = NULL;
             PRTFSISOMAKERNAME pNext = pCur->pParent;
-            RTMemFree(pCur);
+            rtFsIsoMakerDestroyName(pCur);
 
             /* Unlink from parent, we're the last entry. */
             if (pNext)
@@ -518,17 +630,17 @@ static void rtFsIsoMakerDestroyTree(PRTFSISOMAKERNAME pRoot)
  */
 static void rtFsIsoMakerDestroy(PRTFSISOMAKERINT pThis)
 {
-    rtFsIsoMakerDestroyTree(pThis->pPrimaryIsoRoot);
-    rtFsIsoMakerDestroyTree(pThis->pJolietRoot);
-    rtFsIsoMakerDestroyTree(pThis->pUdfRoot);
-    rtFsIsoMakerDestroyTree(pThis->pHfsRoot);
+    rtFsIsoMakerDestroyTree(pThis->PrimaryIso.pRoot);
+    rtFsIsoMakerDestroyTree(pThis->Joliet.pRoot);
+    rtFsIsoMakerDestroyTree(pThis->Udf.pRoot);
+    rtFsIsoMakerDestroyTree(pThis->Hfs.pRoot);
 
     PRTFSISOMAKEROBJ pCur;
     PRTFSISOMAKEROBJ pNext;
     RTListForEachSafe(&pThis->ObjectHead, pCur, pNext, RTFSISOMAKEROBJ, Entry)
     {
         RTListNodeRemove(&pCur->Entry);
-        RTMemFree(pCur);
+        rtFsIsoMakerObjDestroy(pCur);
     }
 }
 
@@ -591,7 +703,7 @@ RTDECL(int) RTFsIsoMakerSetIso9660Level(RTFSISOMAKER hIsoMaker, uint8_t uIsoLeve
     AssertReturn(uIsoLevel > 0, VERR_INVALID_PARAMETER); /* currently not possible to disable this */
     AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
 
-    pThis->uIsoLevel = uIsoLevel;
+    pThis->PrimaryIso.uLevel = uIsoLevel;
     return VINF_SUCCESS;
 }
 
@@ -611,13 +723,13 @@ RTDECL(int) RTFsIsoMakerSetJolietUcs2Level(RTFSISOMAKER hIsoMaker, uint8_t uJoli
     AssertReturn(uJolietLevel <= 3, VERR_INVALID_PARAMETER);
     AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
 
-    if (pThis->uJolietLevel != uJolietLevel)
+    if (pThis->Joliet.uLevel != uJolietLevel)
     {
         if (uJolietLevel == 0)
             pThis->cbTotal -= RTFSISOMAKER_SECTOR_SIZE;
-        else if (pThis->uJolietLevel == 0)
+        else if (pThis->Joliet.uLevel == 0)
             pThis->cbTotal += RTFSISOMAKER_SECTOR_SIZE;
-        pThis->uJolietLevel = uJolietLevel;
+        pThis->Joliet.uLevel = uJolietLevel;
     }
     return VINF_SUCCESS;
 }
@@ -638,7 +750,7 @@ RTDECL(int) RTFsIsoMakerSetRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel
     AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
     AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
 
-    pThis->uRockRidgeLevel = uLevel;
+    pThis->PrimaryIso.uRockRidgeLevel = uLevel;
     return VINF_SUCCESS;
 }
 
@@ -658,7 +770,7 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
     AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
     AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
 
-    pThis->uJolietRockRidgeLevel = uLevel;
+    pThis->Joliet.uRockRidgeLevel = uLevel;
     return VINF_SUCCESS;
 }
 
@@ -672,7 +784,7 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
  *
  */
 
-
+#if 0
 /**
  * Gets the pointer to the root member for the given namespace.
  *
@@ -687,6 +799,7 @@ static PPRTFSISOMAKERNAME rtFsIsoMakerGetRootForNamespace(PRTFSISOMAKERINT pThis
     Assert(fNamespace <= RTFSISOMAKERNAMESPACE_HFS);
     return (PPRTFSISOMAKERNAME)((uintptr_t)pThis + g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[fNamespace]].offRoot);
 }
+#endif
 
 
 /**
@@ -694,14 +807,11 @@ static PPRTFSISOMAKERNAME rtFsIsoMakerGetRootForNamespace(PRTFSISOMAKERINT pThis
  *
  * @returns Pointer to name member.
  * @param   pObj                The object to find a name member in.
- * @param   fNamespace          The namespace which name to find.
+ * @param   pNamespace          The namespace which name to calculate.
  */
-static PPRTFSISOMAKERNAME rtFsIsoMakerObjGetNameForNamespace(PRTFSISOMAKEROBJ pObj, uint32_t fNamespace)
+DECLINLINE(PPRTFSISOMAKERNAME) rtFsIsoMakerObjGetNameForNamespace(PRTFSISOMAKEROBJ pObj, PCRTFSISOMAKERNAMESPACE pNamespace)
 {
-    Assert(RT_IS_POWER_OF_TWO(fNamespace));
-    Assert(fNamespace);
-    Assert(fNamespace <= RTFSISOMAKERNAMESPACE_HFS);
-    return (PPRTFSISOMAKERNAME)((uintptr_t)pObj + g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[fNamespace]].offName);
+    return (PPRTFSISOMAKERNAME)((uintptr_t)pObj + pNamespace->offName);
 }
 
 
@@ -874,10 +984,11 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
     /*
      * Produce a first name.
      */
+    uint8_t const uIsoLevel = pThis->PrimaryIso.uLevel;
     size_t cchDst;
     size_t offDstDot;
     if (fIsDir)
-        offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, pThis->uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8,
+        offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8,
                                                          pchSrc, cchSrc);
     else
     {
@@ -888,13 +999,13 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
                 offLastDot = off;
 
         if (offLastDot == cchSrc)
-            offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, pThis->uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8,
+            offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8,
                                                              pchSrc, cchSrc);
         else
         {
             const char * const pchSrcExt = &pchSrc[offLastDot + 1];
             size_t       const cchSrcExt = cchSrc - offLastDot - 1;
-            if (pThis->uIsoLevel < 2)
+            if (uIsoLevel < 2)
             {
                 cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, 8, pchSrc, cchSrc);
                 offDstDot = cchDst;
@@ -935,7 +1046,7 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
     /*
      * Mangle the name till we've got a unique one.
      */
-    size_t const cchMaxBasename = (pThis->uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8) - (cchDst - offDstDot);
+    size_t const cchMaxBasename = (uIsoLevel >= 2 ? ISO9660_MAX_NAME_LEN : 8) - (cchDst - offDstDot);
     size_t       cchInserted = 0;
     for (uint32_t i = 0; i < _32K; i++)
     {
@@ -974,19 +1085,19 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
  *
  * @returns IPRT status code.
  * @param   pThis       The ISO maker instance.
+ * @param   pNamespace  The namespace which rules to normalize it according to.
  * @param   pParent     The parent directory.  NULL if root.
  * @param   pchSrc      The specified name to normalize (not necessarily zero
  *                      terminated).
  * @param   cchSrc      The length of the specified name.
- * @param   fNamespace  The namespace rules to normalize it according to.
  * @param   fIsDir      Indicates whether it's a directory or file (like).
  * @param   pszDst      The output buffer.  Must be at least 32 bytes.
  * @param   cbDst       The size of the output buffer.
  * @param   pcchDst     Where to return the length of the returned string (i.e.
  *                      not counting the terminator).
  */
-static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAME pParent,
-                                                 const char *pchSrc, size_t cchSrc, uint32_t fNamespace, bool fIsDir,
+static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace,
+                                                 PRTFSISOMAKERNAME pParent, const char *pchSrc, size_t cchSrc, bool fIsDir,
                                                  char *pszDst, size_t cbDst, size_t *pcchDst)
 {
     if (cchSrc > 0)
@@ -995,7 +1106,7 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
          * Check that the object doesn't already exist.
          */
         AssertReturn(!rtFsIsoMakerFindEntryInDirBySpec(pParent, pchSrc, cchSrc), VERR_ALREADY_EXISTS);
-        switch (fNamespace)
+        switch (pNamespace->fNamespace)
         {
             /*
              * This one is a lot of work, so separate function.
@@ -1008,7 +1119,7 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
              */
             case RTFSISOMAKERNAMESPACE_JOLIET:
             {
-/** @todo Joliet name limit.   */
+/** @todo Joliet name limit and check for duplicates.   */
                 AssertReturn(cbDst > cchSrc, VERR_BUFFER_OVERFLOW);
                 memcpy(pszDst, pchSrc, cchSrc);
                 pszDst[cchSrc] = '\0';
@@ -1046,15 +1157,13 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
  * @param   pThis       The ISO maker instance.
  * @param   pNamespace  The namespace.
  * @param   pObj        The object to name.
- * @param   ppName      The pointer to the object's namespace member.
  * @param   pParent     The parent namespace entry
  * @param   pchSpec     The specified name (not necessarily terminated).
  * @param   cchSpec     The specified name length.
  * @param   ppNewName   Where to return the name entry.  Optional.
  */
 static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace, PRTFSISOMAKEROBJ pObj,
-                                  PPRTFSISOMAKERNAME ppName, PRTFSISOMAKERNAME pParent, const char *pchSpec, size_t cchSpec,
-                                  PPRTFSISOMAKERNAME ppNewName)
+                                  PRTFSISOMAKERNAME pParent, const char *pchSpec, size_t cchSpec, PPRTFSISOMAKERNAME ppNewName)
 {
     Assert(cchSpec < _32K);
 
@@ -1062,7 +1171,6 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
      * To avoid need to revert anything, make sure papChildren in the parent is
      * large enough.  If root object, make sure we haven't got a root already.
      */
-    PPRTFSISOMAKERNAME ppRoot;
     if (pParent)
     {
         AssertReturn(pParent->pDir, VERR_INTERNAL_ERROR_5);
@@ -1076,20 +1184,16 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             AssertReturn(pvNew, VERR_NO_MEMORY);
             pParent->pDir->papChildren = (PPRTFSISOMAKERNAME)pvNew;
         }
-        ppRoot = NULL;
     }
     else
-    {
-        ppRoot = rtFsIsoMakerGetRootForNamespace(pThis, fNamespace);
-        AssertReturn(*ppRoot, VERR_INTERNAL_ERROR_5);
-    }
+        AssertReturn(pNamespace->pRoot == NULL, VERR_INTERNAL_ERROR_5);
 
     /*
      * Normalize the name for this namespace.
      */
     size_t cchName;
     char   szName[RTFSISOMAKER_MAX_NAME_BUF];
-    int rc = rtFsIsoMakerNormalizeNameForNamespace(pThis, pParent, pchSpec, cchSpec, fNamespace,
+    int rc = rtFsIsoMakerNormalizeNameForNamespace(pThis, pNamespace, pParent, pchSpec, cchSpec,
                                                    pObj->enmType == RTFSISOMAKEROBJTYPE_DIR,
                                                    szName, sizeof(szName), &cchName);
     if (RT_SUCCESS(rc))
@@ -1119,6 +1223,13 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->fRockRidgeNmAlloced  = false;
             pName->fTransNmAlloced      = false;
 
+            pName->fMode                = pObj->fMode;
+            pName->uid                  = pObj->uid;
+            pName->gid                  = pObj->gid;
+            pName->Device               = 0;
+            pName->cHardlinks           = 1;
+            pName->INode                = pObj->idxObj;
+
             memcpy(pName->szName, szName, cchName);
             pName->szName[cchName] = '\0';
 
@@ -1145,9 +1256,9 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             if (pParent)
                 pParent->pDir->papChildren[pParent->pDir->cChildren++] = pName;
             else
-                *ppRoot = pName;
-            *ppName = pName;
-            pThis->cNames++;
+                pNamespace->pRoot = pName;
+            *rtFsIsoMakerObjGetNameForNamespace(pObj, pNamespace) = pName;
+            pNamespace->cNames++;
 
             /*
              * Done.
@@ -1161,7 +1272,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
 }
 
 
-static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PPRTFSISOMAKERNAME ppRoot, uint32_t fNamespace, const char *pszPath,
+static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace, const char *pszPath,
                                     PPRTFSISOMAKERNAME ppParent, const char **ppszEntry, size_t *pcchEntry)
 {
     int rc;
@@ -1174,7 +1285,7 @@ static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PPRTFSISOMAKERNAME p
         pszPath++;
     AssertReturn(*pszPath, VERR_INTERNAL_ERROR_4);
 
-    PRTFSISOMAKERNAME pParent = *ppRoot;
+    PRTFSISOMAKERNAME pParent = pNamespace->pRoot;
     if (!pParent)
     {
         PRTFSISOMAKERDIR pDir;
@@ -1190,15 +1301,14 @@ static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PPRTFSISOMAKERNAME p
             Assert(pDir);
             Assert(pDir->Core.idxObj == 0);
             Assert(pDir->Core.enmType == RTFSISOMAKEROBJTYPE_DIR);
-            Assert(*rtFsIsoMakerObjGetNameForNamespace(&pDir->Core, fNamespace) == NULL);
+            Assert(*rtFsIsoMakerObjGetNameForNamespace(&pDir->Core, pNamespace) == NULL);
 #endif
         }
 
-        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pDir->Core, rtFsIsoMakerObjGetNameForNamespace(&pDir->Core, fNamespace),
-                                    NULL /*pParent*/, "", 0, &pParent);
+        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pDir->Core, NULL /*pParent*/, "", 0, &pParent);
         AssertRCReturn(rc, rc);
-        AssertReturn(*ppRoot, VERR_INTERNAL_ERROR_4);
-        pParent = *ppRoot;
+        pParent = pNamespace->pRoot;
+        AssertReturn(pParent, VERR_INTERNAL_ERROR_4);
     }
 
     /*
@@ -1259,14 +1369,13 @@ static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PPRTFSISOMAKERNAME p
                 /* Try see if we've got a directory with the same spec name in a different namespace.
                    (We don't want to waste heap by creating a directory instance per namespace.) */
                 PRTFSISOMAKERDIR pChildObj = rtFsIsoMakerFindSubdirBySpec((PRTFSISOMAKERDIR)pParent->pObj,
-                                                                           pszPath, cchComponent, fNamespace);
+                                                                           pszPath, cchComponent, pNamespace->fNamespace);
                 if (pChildObj)
                 {
-                    PPRTFSISOMAKERNAME ppChildName = rtFsIsoMakerObjGetNameForNamespace(&pChildObj->Core, fNamespace);
+                    PPRTFSISOMAKERNAME ppChildName = rtFsIsoMakerObjGetNameForNamespace(&pChildObj->Core, pNamespace);
                     if (!*ppChildName)
                     {
-                        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pChildObj->Core, ppChildName, pParent,
-                                                    pszPath, cchComponent, &pChild);
+                        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pChildObj->Core, pParent, pszPath, cchComponent, &pChild);
                         if (RT_FAILURE(rc))
                             return rc;
                         AssertReturn(pChild != NULL, VERR_INTERNAL_ERROR_4);
@@ -1277,9 +1386,7 @@ static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PPRTFSISOMAKERNAME p
                 {
                     rc = rtFsIsoMakerAddUnnamedDirWorker(pThis, &pChildObj);
                     if (RT_SUCCESS(rc))
-                        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pChildObj->Core,
-                                                    rtFsIsoMakerObjGetNameForNamespace(&pChildObj->Core, fNamespace),
-                                                    pParent, pszPath, cchComponent, &pChild);
+                        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pChildObj->Core, pParent, pszPath, cchComponent, &pChild);
                     if (RT_FAILURE(rc))
                         return rc;
                     AssertReturn(pChild != NULL, VERR_INTERNAL_ERROR_4);
@@ -1300,16 +1407,14 @@ static int rtFsIsoMakerPathToParent(PRTFSISOMAKERINT pThis, PPRTFSISOMAKERNAME p
  *
  * @returns IPRT status code.
  * @param   pThis           The ISO maker instance.
+ * @param   pNamespace      The namespace to name it in.
  * @param   pObj            The filesystem object to name.
- * @param   fNamespace      The namespace to name it in.
  * @param   pszPath         The path to the entry in the namespace.
- * @param   ppRoot          The namespace root.
- * @param   ppName          The namespace name member in @a paEntry.
  */
-static int rtFsIsoMakerObjSetPathInOne(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj, uint32_t fNamespace, const char *pszPath,
-                                       PPRTFSISOMAKERNAME ppRoot, PPRTFSISOMAKERNAME ppName)
+static int rtFsIsoMakerObjSetPathInOne(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace,
+                                       PRTFSISOMAKEROBJ pObj, const char *pszPath)
 {
-    AssertReturn(!*ppName, VERR_WRONG_ORDER);
+    AssertReturn(*rtFsIsoMakerObjGetNameForNamespace(pObj, pNamespace) == NULL, VERR_WRONG_ORDER);
     AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INTERNAL_ERROR_5);
 
     /*
@@ -1321,14 +1426,14 @@ static int rtFsIsoMakerObjSetPathInOne(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ 
     size_t              cchEntry;
     int                 rc;
     if (pszPath[1] != '\0')
-        rc = rtFsIsoMakerPathToParent(pThis, ppRoot, fNamespace, pszPath, &pParent, &pszEntry, &cchEntry);
+        rc = rtFsIsoMakerPathToParent(pThis, pNamespace, pszPath, &pParent, &pszEntry, &cchEntry);
     else
     {
         /*
          * Special case for the root directory.
          */
         Assert(pObj->enmType == RTFSISOMAKEROBJTYPE_DIR);
-        AssertReturn(!*ppRoot, VERR_WRONG_ORDER);
+        AssertReturn(pNamespace->pRoot == NULL, VERR_WRONG_ORDER);
         pszEntry = "/";
         cchEntry = 0;
         pParent  = NULL;
@@ -1342,9 +1447,78 @@ static int rtFsIsoMakerObjSetPathInOne(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ 
     {
         AssertReturn(!RTPATH_IS_SLASH(pszEntry[cchEntry]) || pObj->enmType == RTFSISOMAKEROBJTYPE_DIR,
                      VERR_NOT_A_DIRECTORY);
-        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, pObj, ppName, pParent, pszEntry, cchEntry, NULL);
+        rc = rtFsIsoMakerObjSetName(pThis, pNamespace, pObj, pParent, pszEntry, cchEntry, NULL);
     }
     return rc;
+}
+
+
+/**
+ * Removes an object from the given namespace.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The ISO maker instance.
+ * @param   pNamespace  The namespace.
+ * @param   pObj        The object to name.
+ */
+static int rtFsIsoMakerObjUnsetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace, PRTFSISOMAKEROBJ pObj)
+{
+    /*
+     * First check if there is anything to do here at all.
+     */
+    PPRTFSISOMAKERNAME ppName = rtFsIsoMakerObjGetNameForNamespace(pObj, pNamespace);
+    PRTFSISOMAKERNAME  pName = *ppName;
+    if (!pName)
+        return VINF_SUCCESS;
+
+    /*
+     * We don't support this on the root.
+     */
+    AssertReturn(pName->pParent, VERR_ACCESS_DENIED);
+
+    /*
+     * If this is a directory, we're in for some real fun here as we need to
+     * unset the names of all the children too.
+     */
+    PRTFSISOMAKERNAMEDIR pDir = pName->pDir;
+    if (pDir)
+    {
+        uint32_t iChild = pDir->cChildren;
+        while (iChild-- > 0)
+        {
+            int rc = rtFsIsoMakerObjUnsetName(pThis, pNamespace, pDir->papChildren[iChild]->pObj);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        AssertReturn(pDir->cChildren == 0, VERR_DIR_NOT_EMPTY);
+    }
+
+    /*
+     * Unlink the pName from the parent.
+     */
+    pDir = pName->pParent->pDir;
+    uint32_t iChild = pDir->cChildren;
+    while (iChild-- > 0)
+        if (pDir->papChildren[iChild] == pName)
+        {
+            uint32_t cToMove = pDir->cChildren - iChild - 1;
+            if (cToMove > 0)
+                memmove(&pDir->papChildren[iChild], &pDir->papChildren[iChild + 1], cToMove * sizeof(pDir->papChildren[0]));
+            pDir->cChildren--;
+            pNamespace->cNames--;
+
+            /*
+             * NULL the name member in the object and free the structure.
+             */
+            *ppName = NULL;
+            RTMemFree(pName);
+
+            return VINF_SUCCESS;
+        }
+
+    /* Not found. This can't happen. */
+    AssertFailed();
+    return VERR_INTERNAL_ERROR_2;
 }
 
 
@@ -1394,6 +1568,55 @@ DECLINLINE(PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT pThis, uint
 
 
 /**
+ * Removes the specified object from the image.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker instance.
+ * @param   idxObj              The index of the object to remove.
+ */
+RTDECL(int) RTFsIsoMakerObjRemove(RTFSISOMAKER hIsoMaker, uint32_t idxObj)
+{
+    /*
+     * Validate and translate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    PRTFSISOMAKEROBJ pObj = rtFsIsoMakerIndexToObj(pThis, idxObj);
+    AssertReturn(pObj, VERR_OUT_OF_RANGE);
+
+    /*
+     * Remove the object from all name spaces.
+     */
+    int rc = VINF_SUCCESS;
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
+    {
+        PRTFSISOMAKERNAMESPACE pNamespace = (PRTFSISOMAKERNAMESPACE)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offNamespace);
+        int rc2 = rtFsIsoMakerObjUnsetName(pThis, pNamespace, pObj);
+        if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
+            continue;
+            rc = rc2;
+    }
+
+    /*
+     * If that succeeded, remove the object itself.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        RTListNodeRemove(&pObj->Entry);
+        if (pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
+        {
+            uint64_t cbData = ((PRTFSISOMAKERFILE)pObj)->cbData;
+            pThis->cbData -= RT_ALIGN_64(cbData, RTFSISOMAKER_SECTOR_SIZE);
+        }
+        pThis->cObjects--;
+        rtFsIsoMakerObjDestroy(pObj);
+    }
+
+    return rc;
+}
+
+
+/**
  * Sets the path (name) of an object in the selected namespaces.
  *
  * The name will be transformed as necessary.
@@ -1406,7 +1629,7 @@ DECLINLINE(PRTFSISOMAKEROBJ) rtFsIsoMakerIndexToObj(PRTFSISOMAKERINT pThis, uint
  * @param   idxObj              The configuration index of to name.
  * @param   fNamespaces         The namespaces to apply the path to
  *                              (RTFSISOMAKERNAMESPACE_XXX).
- * @param   pszPath             The ISO-9660 path.
+ * @param   pszPath             The path.
  */
 RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint32_t fNamespaces, const char *pszPath)
 {
@@ -1428,12 +1651,73 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
         if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
         {
-            int rc2 = rtFsIsoMakerObjSetPathInOne(pThis, pObj, g_aRTFsIsoNamespaces[i].fNamespace, pszPath,
-                                                  (PPRTFSISOMAKERNAME)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offRoot),
-                                                  (PPRTFSISOMAKERNAME)((uintptr_t)pObj  + g_aRTFsIsoNamespaces[i].offName));
-            if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
-                continue;
-            rc = rc2;
+            PRTFSISOMAKERNAMESPACE pNamespace = (PRTFSISOMAKERNAMESPACE)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offNamespace);
+            if (pNamespace->uLevel > 0)
+            {
+                int rc2 = rtFsIsoMakerObjSetPathInOne(pThis, pNamespace, pObj, pszPath);
+                if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
+                    continue;
+                rc = rc2;
+            }
+        }
+    return rc;
+}
+
+
+/**
+ * Sets the name of an object in the selected namespaces, placing it under the
+ * given directory.
+ *
+ * The name will be transformed as necessary.
+ *
+ * The initial implementation does not allow this function to be called more
+ * than once on an object.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxObj              The configuration index of to name.
+ * @param   idxParentObj        The parent directory object.
+ * @param   fNamespaces         The namespaces to apply the path to
+ *                              (RTFSISOMAKERNAMESPACE_XXX).
+ * @param   pszName             The name.
+ */
+RTDECL(int) RTFsIsoMakerObjSetNameAndParent(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint32_t idxParentObj,
+                                            uint32_t fNamespaces, const char *pszName)
+{
+    /*
+     * Validate and translate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(!(fNamespaces & ~RTFSISOMAKERNAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    size_t cchName = strlen(pszName);
+    AssertReturn(cchName > 0, VERR_INVALID_NAME);
+    AssertReturn(memchr(pszName, '/', cchName) == NULL, VERR_INVALID_NAME);
+    PRTFSISOMAKEROBJ pObj = rtFsIsoMakerIndexToObj(pThis, idxObj);
+    AssertReturn(pObj, VERR_OUT_OF_RANGE);
+    PRTFSISOMAKEROBJ pParentObj = rtFsIsoMakerIndexToObj(pThis, idxParentObj);
+    AssertReturn(pParentObj, VERR_OUT_OF_RANGE);
+
+    /*
+     * Execute requested actions.
+     */
+    int rc = VINF_SUCCESS;
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
+        if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
+        {
+            PRTFSISOMAKERNAMESPACE pNamespace = (PRTFSISOMAKERNAMESPACE)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offNamespace);
+            if (pNamespace->uLevel > 0)
+            {
+                PRTFSISOMAKERNAME pParentName = *rtFsIsoMakerObjGetNameForNamespace(pParentObj, pNamespace);
+                if (pParentName)
+                {
+                    int rc2 = rtFsIsoMakerObjSetName(pThis, pNamespace, pObj, pParentName, pszName, cchName, NULL /*ppNewName*/);
+                    if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
+                        continue;
+                    rc = rc2;
+                }
+            }
         }
     return rc;
 }
@@ -1447,8 +1731,11 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
  * @param   pThis               The ISO maker instance.
  * @param   pObj                The common object.
  * @param   enmType             The object type.
+ * @param   pObjInfo            The object information (typically source).
+ *                              Optional.
  */
-static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj, RTFSISOMAKEROBJTYPE enmType)
+static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj,
+                                     RTFSISOMAKEROBJTYPE enmType, PCRTFSOBJINFO pObjInfo)
 {
     AssertReturn(pThis->cObjects < RTFSISOMAKER_MAX_OBJECTS, VERR_OUT_OF_RANGE);
     pObj->enmType       = enmType;
@@ -1457,6 +1744,27 @@ static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pO
     pObj->pUdfName      = NULL;
     pObj->pHfsName      = NULL;
     pObj->idxObj        = pThis->cObjects++;
+    if (pObjInfo)
+    {
+        pObj->BirthTime         = pObjInfo->BirthTime;
+        pObj->ChangeTime        = pObjInfo->ChangeTime;
+        pObj->ModificationTime  = pObjInfo->ModificationTime;
+        pObj->AccessedTime      = pObjInfo->AccessTime;
+        pObj->fMode             = pObjInfo->Attr.fMode;
+        pObj->uid               = pObjInfo->Attr.u.Unix.uid != NIL_RTUID ? pObjInfo->Attr.u.Unix.uid : pThis->uidDefault;
+        pObj->gid               = pObjInfo->Attr.u.Unix.gid != NIL_RTGID ? pObjInfo->Attr.u.Unix.gid : pThis->gidDefault;
+    }
+    else
+    {
+        pObj->BirthTime         = pThis->ImageCreationTime;
+        pObj->ChangeTime        = pThis->ImageCreationTime;
+        pObj->ModificationTime  = pThis->ImageCreationTime;
+        pObj->AccessedTime      = pThis->ImageCreationTime;
+        pObj->fMode             = enmType == RTFSISOMAKEROBJTYPE_DIR ? pThis->fDefaultDirMode : pThis->fDefaultFileMode;
+        pObj->uid               = pThis->uidDefault;
+        pObj->gid               = pThis->gidDefault;
+    }
+
     RTListAppend(&pThis->ObjectHead, &pObj->Entry);
     return VINF_SUCCESS;
 }
@@ -1473,7 +1781,7 @@ static int rtFsIsoMakerAddUnnamedDirWorker(PRTFSISOMAKERINT pThis, PRTFSISOMAKER
 {
     PRTFSISOMAKERDIR pDir = (PRTFSISOMAKERDIR)RTMemAllocZ(sizeof(*pDir));
     AssertReturn(pDir, VERR_NO_MEMORY);
-    int rc = rtFsIsoMakerInitCommonObj(pThis, &pDir->Core, RTFSISOMAKEROBJTYPE_DIR);
+    int rc = rtFsIsoMakerInitCommonObj(pThis, &pDir->Core, RTFSISOMAKEROBJTYPE_DIR, NULL);
     if (RT_SUCCESS(rc))
     {
         *ppDir = pDir;
@@ -1537,7 +1845,209 @@ RTDECL(int) RTFsIsoMakerAddDir(RTFSISOMAKER hIsoMaker, const char *pszDir, uint3
             if (pidxObj)
                 *pidxObj = idxObj;
         }
-        /** @todo else: back out later?  */
+        else
+            RTFsIsoMakerObjRemove(hIsoMaker, idxObj);
+    }
+    return rc;
+}
+
+
+/**
+ * Internal function for adding an unnamed file.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ISO make instance.
+ * @param   cbExtra             Extra space for additional data (e.g. source
+ *                              path string copy).
+ * @param   ppFile              Where to return the file.
+ */
+static int rtFsIsoMakerAddUnnamedFileWorker(PRTFSISOMAKERINT pThis, PCRTFSOBJINFO pObjInfo, size_t cbExtra,
+                                            PRTFSISOMAKERFILE *ppFile)
+{
+    PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)RTMemAllocZ(sizeof(*pFile) + cbExtra);
+    AssertReturn(pFile, VERR_NO_MEMORY);
+    int rc = rtFsIsoMakerInitCommonObj(pThis, &pFile->Core, RTFSISOMAKEROBJTYPE_FILE, pObjInfo);
+    if (RT_SUCCESS(rc))
+    {
+        pFile->cbData       = pObjInfo->cbObject;
+        pThis->cbData += RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
+        pFile->offData      = UINT64_MAX;
+        pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_INVALID;
+        pFile->u.pszSrcPath = NULL;
+
+        *ppFile = pFile;
+        return VINF_SUCCESS;
+    }
+    RTMemFree(pFile);
+    return rc;
+
+}
+
+
+/**
+ * Adds an unnamed file to the image that's backed by a host file.
+ *
+ * The file must explictly be entered into the desired namespaces.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pszSrcFile          The source file path.  VFS chain spec allowed.
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ * @sa      RTFsIsoMakerAddFile, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedFileWithSrcPath(RTFSISOMAKER hIsoMaker, const char *pszSrcFile, uint32_t *pidxObj)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pidxObj, VERR_INVALID_POINTER);
+    *pidxObj = UINT32_MAX;
+
+    /*
+     * Check that the source file exists and is a file.
+     */
+    uint32_t    offError = 0;
+    RTFSOBJINFO ObjInfo;
+    int rc = RTVfsChainQueryInfo(pszSrcFile, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK, &offError, NULL);
+    AssertMsgRCReturn(rc, ("%s -> %Rrc offError=%u\n", pszSrcFile, rc, offError), rc);
+    AssertMsgReturn(RTFS_IS_FILE(ObjInfo.Attr.fMode), ("%#x - %s\n", ObjInfo.Attr.fMode, pszSrcFile), VERR_NOT_A_FILE);
+
+    /*
+     * Create a file object for it.
+     */
+    size_t const      cbSrcFile = strlen(pszSrcFile) + 1;
+    PRTFSISOMAKERFILE pFile;
+    rc = rtFsIsoMakerAddUnnamedFileWorker(pThis, &ObjInfo, cbSrcFile, &pFile);
+    if (RT_SUCCESS(rc))
+    {
+        pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_PATH;
+        pFile->u.pszSrcPath = (char *)memcpy(pFile + 1, pszSrcFile, cbSrcFile);
+
+        *pidxObj = pFile->Core.idxObj;
+    }
+    return rc;
+}
+
+
+/**
+ * Adds an unnamed file to the image that's backed by a VFS file.
+ *
+ * The file must explictly be entered into the desired namespaces.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   hVfsFileSrc         The source file handle.
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ * @sa      RTFsIsoMakerAddUnnamedFileWithSrcPath, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedFileWithVfsFile(RTFSISOMAKER hIsoMaker, RTVFSFILE hVfsFileSrc, uint32_t *pidxObj)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pidxObj, VERR_INVALID_POINTER);
+    *pidxObj = UINT32_MAX;
+
+    /*
+     * Get the VFS file info.  This implicitly validates the handle.
+     */
+    RTFSOBJINFO ObjInfo;
+    int rc = RTVfsFileQueryInfo(hVfsFileSrc, &ObjInfo, RTFSOBJATTRADD_UNIX);
+    AssertMsgRCReturn(rc, ("RTVfsFileQueryInfo(%p) -> %Rrc\n", hVfsFileSrc, rc), rc);
+
+    /*
+     * Retain a reference to the file.
+     */
+    uint32_t cRefs = RTVfsFileRetain(hVfsFileSrc);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
+    /*
+     * Create a file object for it.
+     */
+    PRTFSISOMAKERFILE pFile;
+    rc = rtFsIsoMakerAddUnnamedFileWorker(pThis, &ObjInfo, 0, &pFile);
+    if (RT_SUCCESS(rc))
+    {
+        pFile->enmSrcType = RTFSISOMAKERSRCTYPE_VFS_FILE;
+        pFile->u.hVfsFile = hVfsFileSrc;
+
+        *pidxObj = pFile->Core.idxObj;
+    }
+    else
+        RTVfsFileRelease(hVfsFileSrc);
+    return rc;
+}
+
+
+/**
+ * Adds a file that's backed by a host file to the image in all namespaces and
+ * with attributes taken from the source file.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker       The ISO maker handle.
+ * @param   pszFile         The path to the file in the image.
+ * @param   pszSrcFile      The source file path.  VFS chain spec allowed.
+ * @param   pidxObj         Where to return the configuration index of the file.
+ *                          Optional
+ * @sa      RTFsIsoMakerAddFileWithVfsFile,
+ *          RTFsIsoMakerAddUnnamedFileWithSrcPath
+ */
+RTDECL(int) RTFsIsoMakerAddFileWithSrcPath(RTFSISOMAKER hIsoMaker, const char *pszFile, const char *pszSrcFile, uint32_t *pidxObj)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
+    AssertReturn(RTPATH_IS_SLASH(*pszFile), VERR_INVALID_NAME);
+
+    uint32_t idxObj;
+    int rc = RTFsIsoMakerAddUnnamedFileWithSrcPath(hIsoMaker, pszSrcFile, &idxObj);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFsIsoMakerObjSetPath(hIsoMaker, idxObj, RTFSISOMAKERNAMESPACE_ALL, pszFile);
+        if (RT_SUCCESS(rc))
+        {
+            if (pidxObj)
+                *pidxObj = idxObj;
+        }
+        else
+            RTFsIsoMakerObjRemove(hIsoMaker, idxObj);
+    }
+    return rc;
+}
+
+
+/**
+ * Adds a file that's backed by a VFS file to the image in all namespaces and
+ * with attributes taken from the source file.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker       The ISO maker handle.
+ * @param   pszFile         The path to the file in the image.
+ * @param   hVfsFileSrc     The source file handle.
+ * @param   pidxObj         Where to return the configuration index of the file.
+ *                          Optional.
+ * @sa      RTFsIsoMakerAddUnnamedFileWithVfsFile,
+ *          RTFsIsoMakerAddFileWithSrcPath
+ */
+RTDECL(int) RTFsIsoMakerAddFileWithVfsFile(RTFSISOMAKER hIsoMaker, const char *pszFile, RTVFSFILE hVfsFileSrc, uint32_t *pidxObj)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
+    AssertReturn(RTPATH_IS_SLASH(*pszFile), VERR_INVALID_NAME);
+
+    uint32_t idxObj;
+    int rc = RTFsIsoMakerAddUnnamedFileWithVfsFile(hIsoMaker, hVfsFileSrc, &idxObj);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFsIsoMakerObjSetPath(hIsoMaker, idxObj, RTFSISOMAKERNAMESPACE_ALL, pszFile);
+        if (RT_SUCCESS(rc))
+        {
+            if (pidxObj)
+                *pidxObj = idxObj;
+        }
+        else
+            RTFsIsoMakerObjRemove(hIsoMaker, idxObj);
     }
     return rc;
 }
