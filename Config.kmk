@@ -1982,8 +1982,10 @@ else
  VBOX_MKISOFS  ?= mkisofs
 endif
 
-ifeq ($(KBUILD_HOST),win)
+ifeq ($(KBUILD_HOST).$(KBUILD_HOST_ARCH),win.x86)
  VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
+else ifeq ($(KBUILD_HOST).$(KBUILD_HOST_ARCH),win.amd64)
+ VBOX_NM ?= $(PATH_TOOL_MINGWW64)/bin/nm.exe -p
 else ifeq ($(KBUILD_HOST),darwin) # Xcode 7.3.1 nm doesn't like -t, and -x behaves very differently.  Throwing in -B (bsd) to make sure.
  VBOX_NM ?= $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN_BIN_SLASH)nm -p $(if-expr \
  	$(VBOX_XCODE_VERSION_MAJOR) > 7 || ($(VBOX_XCODE_VERSION_MAJOR) == 7 && $(VBOX_XCODE_VERSION_MINOR) >= 3),-B,)
