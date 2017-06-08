@@ -1307,6 +1307,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
+	r3/solaris/krnlmod-solaris.cpp \
 	r3/solaris/systemmem-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp \
