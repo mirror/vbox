@@ -75,6 +75,7 @@ VBOX_VBOXPCI_SOURCES=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/qdivrem.c=>math/gcc/qdivrem.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/quad.h=>math/gcc/quad.h \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/udivdi3.c=>math/gcc/udivdi3.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/udivmoddi4.c=>math/gcc/udivmoddi4.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/umoddi3.c=>math/gcc/umoddi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
     ${PATH_OUT}/version-generated.h=>version-generated.h \

@@ -72,6 +72,7 @@ OBJS += math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
 	math/gcc/qdivrem.o \
 	math/gcc/udivdi3.o \
+	math/gcc/udivmoddi4.o \
         math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
