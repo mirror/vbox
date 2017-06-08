@@ -40,8 +40,8 @@ uint64_t __udivmoddi4(uint64_t u64A, uint64_t u64B, uint64_t *pu64R);
  */
 uint64_t __udivmoddi4(uint64_t u64A, uint64_t u64B, uint64_t *pu64R)
 {
-    const RTUINT64U Divident = { u64A };
-    const RTUINT64U Divisor  = { u64B };
+    RTUINT64U Divident = { u64A };
+    RTUINT64U Divisor  = { u64B };
     RTUINT64U Quotient;
     RTUINT64U Reminder;
     RTUInt64DivRem(&Quotient, &Reminder, &Divident, &Divisor);
