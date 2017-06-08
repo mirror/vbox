@@ -1224,15 +1224,16 @@ static int rtFsFatClusterMap_AllocateCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache
             pbFat[offFat]     |= 0xf0;
             pbFat[offFat + 1]  = 0xff;
         }
-        else if (   pbFat[offFat]
-                 || pbFat[offFat + 1] & 0x0f)
-        {
-            offFat += 1;
-            idxCluster++;
-            continue;
-        }
         else
         {
+            if (   pbFat[offFat]
+                || pbFat[offFat + 1] & 0x0f)
+            {
+                offFat += 1;
+                idxCluster++;
+                continue;
+            }
+
             /* Set EOC. */
             pbFat[offFat]      = 0xff;
             pbFat[offFat + 1] |= 0x0f;
@@ -1253,7 +1254,7 @@ static int rtFsFatClusterMap_AllocateCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache
             else
             {
                 pbFat[offFatPrev]     = (uint8_t)idxCluster;
-                pbFat[offFatPrev + 1] = (pbFat[offFatPrev] & (uint8_t)0xf0) | ((uint8_t)(idxCluster >> 8) & (uint8_t)0x0f);
+                pbFat[offFatPrev + 1] = (pbFat[offFatPrev + 1] & (uint8_t)0xf0) | ((uint8_t)(idxCluster >> 8) & (uint8_t)0x0f);
             }
             rtFsFatClusterMap_SetDirtyByte(pFatCache, 0, offFatPrev);
             rtFsFatClusterMap_SetDirtyByte(pFatCache, 0, offFatPrev + 1);
