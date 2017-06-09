@@ -1147,6 +1147,10 @@ ifdef VBOX_OSE
  if1of ($(KBUILD_TARGET), solaris)
   VBOX_WITH_32_ON_64_MAIN_API=
  endif
+ if1of ($(KBUILD_TARGET), win)
+  # tar/gzip uncommon on Windows
+  VBOX_WITH_EXTPACK_VBOXDTRACE=
+ endif
  # Enable any translations in OSE, even partial ones.
  ifndef ($(VBOX_NO_DOCS_TRANSLATIONS))
   VBOX_WITH_DOCS_TRANSLATIONS = 1
