@@ -443,6 +443,7 @@ VBGLR3DECL(int)     VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn,
 VBGLR3DECL(int)     VbglR3PidFile(const char *pszPath, PRTFILE phFile);
 VBGLR3DECL(void)    VbglR3ClosePidFile(const char *pszPath, RTFILE hFile);
 VBGLR3DECL(int)     VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot);
+VBGLR3DECL(int)     VbglR3AcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fConfig);
 VBGLR3DECL(int)     VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfEvents);
 
 VBGLR3DECL(int)     VbglR3ReportAdditionsStatus(VBoxGuestFacilityType Facility, VBoxGuestFacilityStatus StatusCurrent,
