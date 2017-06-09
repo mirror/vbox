@@ -133,7 +133,7 @@ static int rtKrnlModWinInfoCreate(PRTL_PROCESS_MODULE_INFORMATION pModInfo, PRTK
         pThis->cchFilePath = cchFilePath;
         pThis->cRefs       = 1;
         pThis->cbKrnlMod   = pModInfo->ImageSize;
-        pThis->uLoadAddr   = (RTR0UINTPTR)pModInfo->MappedBase;
+        pThis->uLoadAddr   = (RTR0UINTPTR)pModInfo->ImageBase;
         pThis->pszName     =   pModInfo->OffsetToFileName >= cchFilePath
                              ? NULL
                              : pThis->achFilePath + pModInfo->OffsetToFileName;
