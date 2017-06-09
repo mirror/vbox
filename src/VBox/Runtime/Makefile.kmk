@@ -826,6 +826,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/errvars-win.cpp \
 	r3/win/fileio-win.cpp \
 	r3/win/init-win.cpp \
+	r3/win/krnlmod-win.cpp \
 	r3/win/ldrNative-win.cpp \
 	r3/win/localipc-win.cpp \
 	r3/win/mp-win.cpp \

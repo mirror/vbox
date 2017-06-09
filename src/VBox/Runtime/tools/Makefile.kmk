@@ -112,7 +112,7 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  RTSignTool_SOURCES = RTSignTool.cpp
  RTSignTool_LIBS = $(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
 
- if1of ($(KBUILD_TARGET), darwin linux solaris)
+ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  # RTKrnlModInfo - our lsmod/kextstat clone (for testing the RTKrnlMod code).
  PROGRAMS += RTKrnlModInfo
  RTKrnlModInfo_TEMPLATE = VBoxR3Tool
