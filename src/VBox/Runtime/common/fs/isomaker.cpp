@@ -128,9 +128,20 @@ typedef struct RTFSISOMAKERNAMEDIR
     uint32_t                cChildren;
     /** Sorted array of children. */
     PPRTFSISOMAKERNAME      papChildren;
-
     /** The translate table file. */
     PRTFSISOMAKERFILE       pTransTblFile;
+
+    /** The offset in the path table (ISO-9660).
+     * This is set when finalizing the image.  */
+    uint32_t                offPathTable;
+    /** The path table identifier of this directory (ISO-9660).
+    * This is set when finalizing the image.  */
+    uint16_t                idPathTable;
+    /** Pointer to back to the namespace node this belongs to (for the finalized
+     *  entry list). */
+    PRTFSISOMAKERNAME       pName;
+    /** Entry in the list of finalized directories. */
+    RTLISTNODE              FinalizedEntry;
 } RTFSISOMAKERNAMEDIR;
 /** Pointer to directory specfic name space node info. */
 typedef RTFSISOMAKERNAMEDIR *PRTFSISOMAKERNAMEDIR;
@@ -193,6 +204,12 @@ typedef struct RTFSISOMAKERNAME
      * This is for Rock Ridge.  */
     uint64_t                INode;
 
+    /** Size of the directory record (ISO-9660).
+     * This is set when the image is being finalized. */
+    uint16_t                cbDirRec;
+
+    /** The number of bytes the name requires in the directory record. */
+    uint16_t                cbNameInDirRec;
     /** The name length. */
     uint16_t                cchName;
     /** The name. */
@@ -299,7 +316,8 @@ typedef struct RTFSISOMAKERFILE
     RTFSISOMAKEROBJ         Core;
     /** The file data size. */
     uint64_t                cbData;
-    /** Byte offset of the data in the image. */
+    /** Byte offset of the data in the image.
+     * UINT64_MAX until the location is finalized. */
     uint64_t                offData;
 
     /** The type of source object. */
@@ -315,6 +333,9 @@ typedef struct RTFSISOMAKERFILE
         /** The directory the translation table belongs to. */
         PRTFSISOMAKERNAME   pTransTblDir;
     } u;
+
+    /** Entry in the list of finalized directories. */
+    RTLISTNODE              FinalizedEntry;
 } RTFSISOMAKERFILE;
 
 
@@ -371,7 +392,7 @@ typedef struct RTFSISOMAKERINT
     /** Amount of file data. */
     uint64_t                cbData;
     /** Number of volume descriptors. */
-    uint8_t                 cVolumeDescriptors;
+    uint32_t                cVolumeDescriptors;
 
     /** The 'now' timestamp we use for the whole image.
      * This way we'll save lots of RTTimeNow calls and have similar timestamps
@@ -386,12 +407,68 @@ typedef struct RTFSISOMAKERINT
     /** The default file mode mask. */
     RTFMODE                 fDefaultDirMode;
 
+
+    /** @name Finalized image stuff
+     * @{ */
     /** The finalized image size. */
     uint64_t                cbFinalizedImage;
-    //PISO9660PRIMARYVOLDESC
+    /** System area content (sectors 0 thur 15).  This is NULL if the system area
+     * are all zeros, which is often the case.   Hybrid ISOs have an MBR followed by
+     * a GUID partition table here, helping making the image bootable when
+     * transfered to a USB stick. */
+    uint8_t                *pbSysArea;
+    /** Number of non-zero system area bytes pointed to by pbSysArea.  */
+    size_t                  cbSysArea;
+
+    /** Pointer to the buffer holding the volume descriptors. */
+    uint8_t                *pbVolDescs;
+    /** Pointer to the primary volume descriptor. */
+    PISO9660PRIMARYVOLDESC  pPrimaryVolDesc;
+    /** El Torito volume descriptor.
+     * @todo fix type  */
+    PISO9660BOOTRECORD      pElToritoDesc;
+    /** Pointer to the primary volume descriptor. */
+    PISO9660SUPVOLDESC      pJolietVolDesc;
+    /** Terminating ISO-9660 volume descriptor. */
+    PISO9660VOLDESCHDR      pTerminatorVolDesc;
+
+    /** Finalized ISO-9660 directory structures. */
+    struct RTFSISOMAKERFINALIZEDDIRS
+    {
+        /** The image byte offset of the first directory. */
+        uint64_t            offDirs;
+        /** The image byte offset of the little endian path table.
+         * This always follows offDirs.  */
+        uint64_t            offPathTableL;
+        /** The image byte offset of the big endian path table.
+         * This always follows offPathTableL.  */
+        uint64_t            offPathTableM;
+        /** List of finalized directories for this namespace.
+         * The list is in path table order so it can be generated on the fly.  The
+         * directories will be ordered in the same way. */
+        RTLISTANCHOR        FinalizedDirs;
+        /** Rock ridge spill file. */
+        PRTFSISOMAKERFILE   pRRSpillFile;
+    }
+    /** The finalized directory data for the primary ISO-9660 namespace. */
+                            PrimaryIsoDirs,
+    /** The finalized directory data for the joliet namespace. */
+                            JolietDirs;
+
+    /** The image byte offset of the first file. */
+    uint64_t                offFirstFile;
+    /** Finalized file head (RTFSISOMAKERFILE).
+     * The list is ordered by disk location.  Files are following the
+     * directories and path tables. */
+    RTLISTANCHOR            FinalizedFiles;
+    /** @} */
+
 } RTFSISOMAKERINT;
 /** Pointer to an ISO maker instance. */
 typedef RTFSISOMAKERINT *PRTFSISOMAKERINT;
+
+/** Pointer to the data for finalized ISO-9660 (primary / joliet) dirs. */
+typedef struct RTFSISOMAKERINT::RTFSISOMAKERFINALIZEDDIRS *PRTFSISOMAKERFINALIZEDDIRS;
 
 
 /*********************************************************************************************************************************
@@ -504,6 +581,7 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         pThis->uMagic                       = RTFSISOMAKERINT_MAGIC;
         pThis->cRefs                        = 1;
         //pThis->fSeenContent               = false;
+        //pThis->fFinalized                 = false;
 
         pThis->PrimaryIso.fNamespace        = RTFSISOMAKER_NAMESPACE_ISO_9660;
         pThis->PrimaryIso.offName           = RT_OFFSETOF(RTFSISOMAKEROBJ, pPrimaryName);
@@ -537,8 +615,30 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         pThis->fDefaultFileMode             = 0444 | RTFS_TYPE_FILE      | RTFS_DOS_ARCHIVED  | RTFS_DOS_READONLY;
         pThis->fDefaultDirMode              = 0555 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | RTFS_DOS_READONLY;
 
-        RTTimeNow(&pThis->ImageCreationTime);
+        pThis->cbFinalizedImage             = UINT64_MAX;
+        //pThis->pbSysArea                  = NULL;
+        //pThis->cbSysArea                  = 0;
+        //pThis->pbVolDescs                 = NULL;
+        //pThis->pPrimaryVolDesc            = NULL;
+        //pThis->pElToritoDesc              = NULL;
+        //pThis->pJolietVolDesc             = NULL;
 
+        pThis->PrimaryIsoDirs.offDirs       = UINT64_MAX;
+        pThis->PrimaryIsoDirs.offPathTableL = UINT64_MAX;
+        pThis->PrimaryIsoDirs.offPathTableM = UINT64_MAX;
+        RTListInit(&pThis->PrimaryIsoDirs.FinalizedDirs);
+        //pThis->PrimaryIsoDirs.pRRSpillFile = NULL;
+
+        pThis->JolietDirs.offDirs           = UINT64_MAX;
+        pThis->JolietDirs.offPathTableL     = UINT64_MAX;
+        pThis->JolietDirs.offPathTableM     = UINT64_MAX;
+        RTListInit(&pThis->JolietDirs.FinalizedDirs);
+        //pThis->JolietDirs.pRRSpillFile    = NULL;
+
+        pThis->offFirstFile                 = UINT64_MAX;
+        RTListInit(&pThis->FinalizedFiles);
+
+        RTTimeNow(&pThis->ImageCreationTime);
         *phIsoMaker = pThis;
         return VINF_SUCCESS;
     }
@@ -1166,10 +1266,11 @@ static size_t rtFsIsoMakerCopyIso9660Name(char *pszDst, size_t cchDstMax, const 
  * @param   cbDst       The size of the output buffer.
  * @param   pcchDst     Where to return the length of the returned string (i.e.
  *                      not counting the terminator).
+ * @param   pcbInDirRec Where to return the name size in the directory record.
  */
 static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAME pParent,
                                                       const char *pchSrc, size_t cchSrc, bool fIsDir,
-                                                      char *pszDst, size_t cbDst, size_t *pcchDst)
+                                                      char *pszDst, size_t cbDst, size_t *pcchDst, size_t *pcbInDirRec)
 {
     AssertReturn(cbDst > ISO9660_MAX_NAME_LEN, VERR_INTERNAL_ERROR_3);
 
@@ -1240,7 +1341,8 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
      */
     if (!rtFsIsoMakerFindObjInDir(pParent, pszDst, cchDst))
     {
-        *pcchDst = cchDst;
+        *pcchDst     = cchDst;
+        *pcbInDirRec = cchDst;
         return VINF_SUCCESS;
     }
 
@@ -1272,7 +1374,8 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
         memcpy(&pszDst[offDstDot - cchOrd], szOrd, cchOrd);
         if (!rtFsIsoMakerFindObjInDir(pParent, pszDst, cchDst))
         {
-            *pcchDst = cchDst;
+            *pcchDst     = cchDst;
+            *pcbInDirRec = cchDst;
             return VINF_SUCCESS;
         }
     }
@@ -1296,10 +1399,11 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
  * @param   cbDst       The size of the output buffer.
  * @param   pcchDst     Where to return the length of the returned string (i.e.
  *                      not counting the terminator).
+ * @param   pcbInDirRec Where to return the name size in the directory record.
  */
 static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace,
                                                  PRTFSISOMAKERNAME pParent, const char *pchSrc, size_t cchSrc, bool fIsDir,
-                                                 char *pszDst, size_t cbDst, size_t *pcchDst)
+                                                 char *pszDst, size_t cbDst, size_t *pcchDst, size_t *pcbInDirRec)
 {
     if (cchSrc > 0)
     {
@@ -1313,7 +1417,8 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
              * This one is a lot of work, so separate function.
              */
             case RTFSISOMAKER_NAMESPACE_ISO_9660:
-                return rtFsIsoMakerNormalizeNameForPrimaryIso9660(pThis, pParent, pchSrc, cchSrc, fIsDir, pszDst, cbDst, pcchDst);
+                return rtFsIsoMakerNormalizeNameForPrimaryIso9660(pThis, pParent, pchSrc, cchSrc, fIsDir,
+                                                                  pszDst, cbDst, pcchDst, pcbInDirRec);
 
             /*
              * At the moment we don't give darn about UCS-2 limitations here...
@@ -1324,7 +1429,8 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
                 AssertReturn(cbDst > cchSrc, VERR_BUFFER_OVERFLOW);
                 memcpy(pszDst, pchSrc, cchSrc);
                 pszDst[cchSrc] = '\0';
-                *pcchDst = cchSrc;
+                *pcchDst     = cchSrc;
+                *pcbInDirRec = RTStrCalcUtf16Len(pszDst);
                 return VINF_SUCCESS;
             }
 
@@ -1341,9 +1447,10 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
         /*
          * Root special case.
          */
+        *pszDst      = '\0';
+        *pcchDst     = 0;
+        *pcbInDirRec = 0;
         AssertReturn(pParent, VERR_INTERNAL_ERROR_3);
-        *pszDst = '\0';
-        *pcchDst = 0;
         return VINF_SUCCESS;
     }
 }
@@ -1448,10 +1555,11 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
      * Normalize the name for this namespace.
      */
     size_t cchName;
+    size_t cbNameInDirRec;
     char   szName[RTFSISOMAKER_MAX_NAME_BUF];
     int rc = rtFsIsoMakerNormalizeNameForNamespace(pThis, pNamespace, pParent, pchSpec, cchSpec,
                                                    pObj->enmType == RTFSISOMAKEROBJTYPE_DIR,
-                                                   szName, sizeof(szName), &cchName);
+                                                   szName, sizeof(szName), &cchName, &cbNameInDirRec);
     if (RT_SUCCESS(rc))
     {
         size_t cbName = sizeof(RTFSISOMAKERNAME)
@@ -1464,6 +1572,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
         {
             pName->pObj                 = pObj;
             pName->pParent              = pParent;
+            pName->cbNameInDirRec       = (uint16_t)cbNameInDirRec;
             pName->cchName              = (uint16_t)cchName;
 
             char *pszDst = &pName->szName[cchName + 1];
@@ -1485,6 +1594,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->Device               = 0;
             pName->cHardlinks           = 1;
             pName->INode                = pObj->idxObj;
+            pName->cbDirRec             = 0;
 
             memcpy(pName->szName, szName, cchName);
             pName->szName[cchName] = '\0';
@@ -1501,6 +1611,10 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
                 pDir->cChildren     = 0;
                 pDir->papChildren   = NULL;
                 pDir->pTransTblFile = NULL;
+                pDir->pName         = pName;
+                pDir->offPathTable  = UINT32_MAX;
+                pDir->idPathTable   = UINT16_MAX;
+                RTListInit(&pDir->FinalizedEntry);
                 pName->pDir = pDir;
 
                 /* Create the TRANS.TBL file object and enter it into this directory as the first entry. */
@@ -2233,6 +2347,7 @@ static int rtFsIsoMakerAddUnnamedFileWorker(PRTFSISOMAKERINT pThis, PCRTFSOBJINF
         pFile->offData      = UINT64_MAX;
         pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_INVALID;
         pFile->u.pszSrcPath = NULL;
+        RTListInit(&pFile->FinalizedEntry);
 
         *ppFile = pFile;
         return VINF_SUCCESS;
@@ -2480,6 +2595,177 @@ static int rtFsIsoMakerFinalizeBootStuff(PRTFSISOMAKERINT pThis, uint64_t *poffD
 
 
 /**
+ * Gathers the dirs for an ISO-9660 namespace (e.g. primary or joliet).
+ *
+ * @param   pNamespace          The namespace.
+ * @param   pFinalizedDirs      The finalized directory structure.  The
+ *                              FinalizedDirs will be worked here.
+ */
+static void rtFsIsoMakerFinalizeGatherDirs(PRTFSISOMAKERNAMESPACE pNamespace, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs)
+{
+    RTListInit(&pFinalizedDirs->FinalizedDirs);
+
+    /*
+     * Enter the root directory (if we got one).
+     */
+    if (!pNamespace->pRoot)
+        return;
+    PRTFSISOMAKERNAMEDIR pCurDir = pNamespace->pRoot->pDir;
+    RTListAppend(&pFinalizedDirs->FinalizedDirs, &pCurDir->FinalizedEntry);
+    do
+    {
+        /*
+         * Scan pCurDir and add directories.  We don't need to sort anything
+         * here because the directory is already in path table compatible order.
+         */
+        uint32_t            cLeft    = pCurDir->cChildren;
+        PPRTFSISOMAKERNAME  ppChild  = pCurDir->papChildren;
+        while (cLeft-- > 0)
+        {
+            PRTFSISOMAKERNAME pChild = *ppChild++;
+            if (pChild->pDir)
+                RTListAppend(&pFinalizedDirs->FinalizedDirs, &pChild->pDir->FinalizedEntry);
+        }
+
+        /*
+         * Advance to the next directory.
+         */
+        pCurDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pCurDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+    } while (pCurDir);
+}
+
+
+/**
+ * Finalizes a directory entry (i.e. namespace node).
+ *
+ * This calculates the directory record size.
+ *
+ * @returns IPRT status code.
+ * @param   pFinalizedDirs  .
+ * @param   pName           The directory entry to finalize.
+ * @param   offInDir        The offset in the directory of this record.
+ * @param   fIsRoot         Indicates whether this is the root and would
+ *                          therefore require more rock ridge fun and stuff.
+ */
+static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, PRTFSISOMAKERNAME pName,
+                                                 uint32_t offInDir, bool fIsRoot)
+{
+    RT_NOREF(pFinalizedDirs, pName, offInDir, fIsRoot);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Finalizes either a primary and secondary ISO namespace.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The ISO maker instance.
+ * @param   pNamespace      The namespace.
+ * @param   pFinalizedDirs  The finalized directories structure for the
+ *                          namespace.
+ * @param   poffData        The data offset.  We will allocate blocks for the
+ *                          directories and the path tables.
+ */
+static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace,
+                                                         PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, uint64_t *poffData)
+{
+    /* The directory data comes first, so take down it's offset. */
+    pFinalizedDirs->offDirs = *poffData;
+
+    /* Reset the rock ridge spill file, in case we someone are finalized multiple times. */
+    if (pFinalizedDirs->pRRSpillFile)
+    {
+        rtFsIsoMakerObjRemoveWorker(pThis, &pFinalizedDirs->pRRSpillFile->Core);
+        pFinalizedDirs->pRRSpillFile = NULL;
+    }
+
+    int      rc;
+    uint16_t idPathTable = 0;
+    uint32_t cbPathTable = 0;
+    if (pNamespace->pRoot)
+    {
+        /*
+         * Precalc the directory record size for the root directory.
+         */
+        rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pNamespace->pRoot, 0 /*offInDir*/, true /*fIsRoot*/);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * Work thru the directories.
+         */
+        PRTFSISOMAKERNAMEDIR pCurDir;
+        RTListForEach(&pThis->PrimaryIsoDirs.FinalizedDirs, pCurDir, RTFSISOMAKERNAMEDIR, FinalizedEntry)
+        {
+            PRTFSISOMAKERNAME pCurName    = pCurDir->pName;
+            PRTFSISOMAKERNAME pParentName = pCurName->pParent ? pCurName->pParent : pCurName;
+
+            /* We don't do anything special for the special '.' and '..' directory
+               entries, instead we use the directory entry in the parent directory
+               with a 1 byte name (00 or 01). */
+            Assert(pCurName->cbDirRec != 0);
+            uint32_t offInDir = pCurName->cbDirRec    - pCurName->cbNameInDirRec    + 1;
+            offInDir         += pParentName->cbDirRec - pParentName->cbNameInDirRec + 1;
+
+            /* Finalize the directory entries. */
+            uint32_t            cbTransTbl = 0;
+            uint32_t            cLeft      = pCurDir->cChildren;
+            PPRTFSISOMAKERNAME  ppChild    = pCurDir->papChildren;
+            while (cLeft-- > 0)
+            {
+                PRTFSISOMAKERNAME pChild = *ppChild++;
+                rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, false /*fIsRoot*/);
+                AssertRCReturn(rc, rc);
+
+                offInDir += pChild->cbDirRec;
+                if (pChild->cchTransNm)
+                    cbTransTbl += 2 /* type & space*/
+                                + RT_MAX(pChild->cchName, 39)
+                                + 1 /* tab */
+                                + pChild->cchTransNm
+                                + 1 /* newline */;
+            }
+
+            /* Set the directory size and location, advancing the data offset. */
+            pCurDir->cbDir  = offInDir;
+            pCurDir->offDir = *poffData;
+            *poffData += RT_ALIGN_32(offInDir, RTFSISOMAKER_SECTOR_SIZE);
+
+            /* Set the translation table file size. */
+            if (pCurDir->pTransTblFile)
+                pCurDir->pTransTblFile->cbData = cbTransTbl;
+
+            /* Add to the path table size calculation. */
+            pCurDir->offPathTable = cbPathTable;
+            pCurDir->idPathTable  = idPathTable++;
+            cbPathTable += RT_OFFSETOF(ISO9660PATHREC, achDirId[pCurName->cbNameInDirRec]) + (pCurName->cbNameInDirRec & 1);
+        }
+    }
+
+    /*
+     * Update the rock ridge spill file size.
+     */
+    if (pFinalizedDirs->pRRSpillFile)
+    {
+        rc = RTVfsFileGetSize(pFinalizedDirs->pRRSpillFile->u.hVfsFile, &pFinalizedDirs->pRRSpillFile->cbData);
+        AssertRCReturn(rc, rc);
+        pThis->cbData += pFinalizedDirs->pRRSpillFile->cbData;
+    }
+
+    /*
+     * Calculate the path table offsets and move past them.
+     */
+    pFinalizedDirs->offPathTableL = *poffData;
+    *poffData += RT_ALIGN_64(cbPathTable, RTFSISOMAKER_SECTOR_SIZE);
+
+    pFinalizedDirs->offPathTableM = *poffData;
+    *poffData += RT_ALIGN_64(cbPathTable, RTFSISOMAKER_SECTOR_SIZE);
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Finalizes directories and related stuff.
  *
  * This will not generate actual directory data, but calculate the size of it
@@ -2492,8 +2778,26 @@ static int rtFsIsoMakerFinalizeBootStuff(PRTFSISOMAKERINT pThis, uint64_t *poffD
  */
 static int rtFsIsoMakerFinalizeDirectories(PRTFSISOMAKERINT pThis, uint64_t *poffData)
 {
-    RT_NOREF(pThis, poffData);
-    return VINF_SUCCESS;
+    /*
+     * Locate the directories, width first, inserting them in the finalized lists so
+     * we can process them efficiently.
+     */
+    rtFsIsoMakerFinalizeGatherDirs(&pThis->PrimaryIso, &pThis->PrimaryIsoDirs);
+    rtFsIsoMakerFinalizeGatherDirs(&pThis->Joliet, &pThis->JolietDirs);
+
+    /*
+     * Process the primary ISO and joliet namespaces.
+     */
+    int rc = rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(pThis, &pThis->PrimaryIso, &pThis->PrimaryIsoDirs, poffData);
+    if (RT_SUCCESS(rc))
+        rc = rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(pThis, &pThis->Joliet, &pThis->JolietDirs, poffData);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Later: UDF, HFS.
+         */
+    }
+    return rc;
 }
 
 
@@ -2508,7 +2812,24 @@ static int rtFsIsoMakerFinalizeDirectories(PRTFSISOMAKERINT pThis, uint64_t *pof
  */
 static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
 {
-    RT_NOREF(pThis, poffData);
+    /*
+     * We currently does not have any ordering prioritizing implemented, so we
+     * just store files in the order they were added.
+     */
+    PRTFSISOMAKEROBJ pCur;
+    RTListForEach(&pThis->ObjectHead, pCur, RTFSISOMAKEROBJ, Entry)
+    {
+        if (pCur->enmType == RTFSISOMAKEROBJTYPE_FILE)
+        {
+            PRTFSISOMAKERFILE pCurFile = (PRTFSISOMAKERFILE)pCur;
+            if (pCurFile->offData == UINT64_MAX)
+            {
+                pCurFile->offData = *poffData;
+                *poffData += RT_ALIGN_64(pCurFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
+            }
+        }
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -2523,7 +2844,20 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
  */
 static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
 {
-    RT_NOREF(pThis);
+    AssertReturn(pThis->pbVolDescs && pThis->pPrimaryVolDesc && pThis->pTerminatorVolDesc, VERR_INTERNAL_ERROR_3);
+
+    /*
+     * The primary descriptor.
+     */
+
+
+    /*
+     * The terminator record.
+     */
+    pThis->pTerminatorVolDesc->bDescType    = ISO9660VOLDESC_TYPE_TERMINATOR;
+    pThis->pTerminatorVolDesc->bDescVersion = 1;
+    memcpy(pThis->pTerminatorVolDesc->achStdId, ISO9660VOLDESC_STD_ID, sizeof(pThis->pTerminatorVolDesc->achStdId));
+
     return VINF_SUCCESS;
 }
 
@@ -2548,6 +2882,43 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
         return rc;
 
     /*
+     * Allocate space for the volume descriptors.
+     */
+    RTMemFree(pThis->pbVolDescs);
+    pThis->pbVolDescs = (uint8_t *)RTMemAllocZ(pThis->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE);
+    AssertReturn(pThis->pbVolDescs, VERR_NO_MEMORY);
+
+    uint32_t offVolDescs = 0;
+
+    pThis->pPrimaryVolDesc = (PISO9660PRIMARYVOLDESC)&pThis->pbVolDescs[offVolDescs];
+    offVolDescs += RTFSISOMAKER_SECTOR_SIZE;
+
+    if (true)
+        pThis->pElToritoDesc = NULL;
+    else
+    {
+        pThis->pElToritoDesc = (PISO9660BOOTRECORD)&pThis->pbVolDescs[offVolDescs];
+        offVolDescs += RTFSISOMAKER_SECTOR_SIZE;
+    }
+
+    if (!pThis->Joliet.uLevel)
+        pThis->pJolietVolDesc = NULL;
+    else
+    {
+        pThis->pJolietVolDesc = (PISO9660SUPVOLDESC)&pThis->pbVolDescs[offVolDescs];
+        offVolDescs += RTFSISOMAKER_SECTOR_SIZE;
+    }
+
+    pThis->pTerminatorVolDesc = (PISO9660VOLDESCHDR)&pThis->pbVolDescs[offVolDescs];
+    offVolDescs += RTFSISOMAKER_SECTOR_SIZE;
+
+    if (pThis->Udf.uLevel > 0)
+    {
+        /** @todo UDF descriptors. */
+    }
+    AssertReturn(offVolDescs == pThis->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE, VERR_INTERNAL_ERROR_2);
+
+    /*
      * If there is any boot related stuff to be included, it ends up right after
      * the descriptors.
      */
@@ -2555,16 +2926,23 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
     rc = rtFsIsoMakerFinalizeBootStuff(pThis, &offData);
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Directories and path tables comes next.
+         */
         rc = rtFsIsoMakerFinalizeDirectories(pThis, &offData);
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Then we store the file data.
+             */
             rc = rtFsIsoMakerFinalizeData(pThis, &offData);
             if (RT_SUCCESS(rc))
             {
                 pThis->cbFinalizedImage = offData;
 
                 /*
-                 * Finally, finalize the volume descriptors.
+                 * Finally, finalize the volume descriptors as they depend on some of the
+                 * block allocations done in the previous steps.
                  */
                 rc = rtFsIsoMakerFinalizeVolumeDescriptors(pThis);
                 if (RT_SUCCESS(rc))
