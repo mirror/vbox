@@ -205,6 +205,8 @@ typedef struct RTFSISOMAKERNAME
      * This is for Rock Ridge.  */
     uint64_t                INode;
 
+    /** The offset of the directory entry in the parent directory. */
+    uint32_t                offDirRec;
     /** Size of the directory record (ISO-9660).
      * This is set when the image is being finalized. */
     uint16_t                cbDirRec;
@@ -1730,6 +1732,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->Device               = 0;
             pName->cHardlinks           = 1;
             pName->INode                = pObj->idxObj;
+            pName->offDirRec            = UINT32_MAX;
             pName->cbDirRec             = 0;
 
             memcpy(pName->szName, szName, cchName);
@@ -2780,14 +2783,25 @@ static void rtFsIsoMakerFinalizeGatherDirs(PRTFSISOMAKERNAMESPACE pNamespace, PR
  * @param   pFinalizedDirs  .
  * @param   pName           The directory entry to finalize.
  * @param   offInDir        The offset in the directory of this record.
- * @param   fIsRoot         Indicates whether this is the root and would
- *                          therefore require more rock ridge fun and stuff.
+ * @param   uRootRockRidge  This is the rock ridge level when
+ *                          root, otherwise it's zero.
  */
 static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, PRTFSISOMAKERNAME pName,
-                                                 uint32_t offInDir, bool fIsRoot)
+                                                 uint32_t offInDir, uint8_t uRootRockRidge)
 {
-    RT_NOREF(pFinalizedDirs, pName, offInDir, fIsRoot);
-    return VERR_NOT_IMPLEMENTED;
+    pName->offDirRec = offInDir;
+
+    size_t cbDirRec  = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1);
+    AssertReturn(cbDirRec <= UINT8_MAX, VERR_FILENAME_TOO_LONG);
+    pName->cbDirRec  = (uint8_t)cbDirRec;
+
+    /** @todo rock ridge    */
+    if (pFinalizedDirs->pRRSpillFile)
+    {
+        RT_NOREF(uRootRockRidge);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2808,11 +2822,16 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
     /* The directory data comes first, so take down it's offset. */
     pFinalizedDirs->offDirs = *poffData;
 
-    /* Reset the rock ridge spill file, in case we someone are finalized multiple times. */
+    /*
+     * Reset the rock ridge spill file, in case we someone are finalized multiple times.
+     */
     if (pFinalizedDirs->pRRSpillFile)
     {
         rtFsIsoMakerObjRemoveWorker(pThis, &pFinalizedDirs->pRRSpillFile->Core);
         pFinalizedDirs->pRRSpillFile = NULL;
+    }
+    if (pNamespace->fNamespace)
+    {
     }
 
     int      rc;
