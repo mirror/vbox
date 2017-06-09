@@ -134,7 +134,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  # The packing target rule, but only if we're on the local build box.
  # (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
  ifndef VBOX_WITHOUT_ADDITIONS_ISO
-  PACKING += $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip
+  PACKING += $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
  endif
 endif # !VBOX_ONLY_VALIDATIONKIT
 
@@ -340,7 +340,7 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip: $(VBOX_PATH_ADDITIONS_ISO)/VB
 
 # Alias for creating the iso.
 .PHONY: additions-iso
-additions-iso: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip
+additions-iso: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
 
 endif
 
