@@ -30,6 +30,7 @@
 # include <QScrollArea>
 # include <QStackedLayout>
 # include <QTabWidget>
+# include <QTextBrowser>
 # include <QTextEdit>
 # include <QVBoxLayout>
 
@@ -68,10 +69,17 @@ class UISnapshotDetailsElement : public QWidget
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about @a link was clicked. */
+    void sigAnchorClicked(const QUrl &link);
+
 public:
 
-    /** Constructs details element passing @a pParent to the base-class. */
-    UISnapshotDetailsElement(QWidget *pParent = 0);
+    /** Constructs details element passing @a pParent to the base-class.
+      * @param  fLinkSupport  Brings whether we should construct text-browser
+      *                       instead of simple text-edit otherwise. */
+    UISnapshotDetailsElement(bool fLinkSupport, QWidget *pParent = 0);
 
     /** Returns underlying text-document. */
     QTextDocument *document() const;
@@ -86,6 +94,10 @@ private:
 
     /** Prepares all. */
     void prepare();
+
+    /** Holds whether we should construct text-browser
+      * instead of simple text-edit otherwise. */
+    bool  m_fLinkSupport;
 
     /** Holds the text-edit interface instance. */
     QTextEdit *m_pTextEdit;
@@ -161,8 +173,9 @@ private:
 *   Class UISnapshotDetailsElement implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UISnapshotDetailsElement::UISnapshotDetailsElement(QWidget *pParent /* = 0 */)
+UISnapshotDetailsElement::UISnapshotDetailsElement(bool fLinkSupport, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
+    , m_fLinkSupport(fLinkSupport)
     , m_pTextEdit(0)
 {
     /* Prepare: */
@@ -203,7 +216,7 @@ void UISnapshotDetailsElement::prepare()
         layout()->setContentsMargins(0, 0, 0, 0);
 
         /* Create text-browser if requested, text-edit otherwise: */
-        m_pTextEdit = new QTextEdit;
+        m_pTextEdit = m_fLinkSupport ? new QTextBrowser : new QTextEdit;
         AssertPtrReturnVoid(m_pTextEdit);
         {
             /* Configure that we have: */
@@ -213,6 +226,13 @@ void UISnapshotDetailsElement::prepare()
             m_pTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             m_pTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             m_pTextEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+            if (m_fLinkSupport)
+            {
+                // WORKAROUND:
+                // Intentionally using old kind of API here:
+                connect(m_pTextEdit, SIGNAL(anchorClicked(const QUrl &)),
+                        this, SIGNAL(sigAnchorClicked(const QUrl &)));
+            }
 
             /* Add into layout: */
             layout()->addWidget(m_pTextEdit);
@@ -411,7 +431,6 @@ UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     , m_pTabWidget(0)
     , m_pLayoutOptions(0)
     , m_pLabelName(0), m_pEditorName(0)
-    , m_pLabelThumbnail(0)
     , m_pLabelDescription(0), m_pBrowserDescription(0)
     , m_pLayoutDetails(0)
     , m_pScrollAreaDetails(0)
@@ -446,27 +465,6 @@ void UISnapshotDetailsWidget::clearData()
     loadSnapshotData();
 }
 
-bool UISnapshotDetailsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* We have filter for thumbnail label only: */
-    AssertReturn(pObject == m_pLabelThumbnail, false);
-
-    /* For a mouse-press event inside the thumbnail area: */
-    if (pEvent->type() == QEvent::MouseButtonPress && !m_pixmapScreenshot.isNull())
-    {
-        /* We are creating screenshot viewer and show it: */
-        UIScreenshotViewer *pViewer = new UIScreenshotViewer(m_pixmapScreenshot,
-                                                             m_comSnapshot.GetMachine().GetName(),
-                                                             m_comSnapshot.GetName(),
-                                                             this);
-        pViewer->show();
-        pViewer->activateWindow();
-    }
-
-    /* Call to base-class: */
-    return QWidget::eventFilter(pObject, pEvent);
-}
-
 void UISnapshotDetailsWidget::retranslateUi()
 {
     /* Translate labels: */
@@ -484,7 +482,8 @@ void UISnapshotDetailsWidget::retranslateUi()
         const CMachine comMachine = m_comSnapshot.GetMachine();
 
         /* Translate the picture tool-tip: */
-        m_pLabelThumbnail->setToolTip(m_pixmapScreenshot.isNull() ? QString() : tr("Click to enlarge the screenshot."));
+        const QString strToolTip = m_pixmapScreenshot.isNull() ? QString() : tr("Click to enlarge the screenshot.");
+        m_details.value(DetailsElementType_Preview)->setToolTip(strToolTip);
 
         /* Rebuild the details report: */
         foreach (const DetailsElementType &enmType, m_details.keys())
@@ -493,7 +492,7 @@ void UISnapshotDetailsWidget::retranslateUi()
     else
     {
         /* Clear the picture tool-tip: */
-        m_pLabelThumbnail->setToolTip(QString());
+        m_details.value(DetailsElementType_Preview)->setToolTip(QString());
 
         /* Clear the details report: */
         // WORKAROUND:
@@ -519,6 +518,22 @@ void UISnapshotDetailsWidget::sltHandleDescriptionChange()
     // TODO: Validate
     //revalidate(m_pErrorPaneName);
     notify();
+}
+
+void UISnapshotDetailsWidget::sltHandleAnchorClicked(const QUrl &link)
+{
+    /* Get the link out of url: */
+    const QString strLink = link.toString();
+    if (strLink == "#thumbnail")
+    {
+        /* We are creating screenshot viewer and show it: */
+        UIScreenshotViewer *pViewer = new UIScreenshotViewer(m_pixmapScreenshot,
+                                                             m_comSnapshot.GetMachine().GetName(),
+                                                             m_comSnapshot.GetName(),
+                                                             this);
+        pViewer->show();
+        pViewer->activateWindow();
+    }
 }
 
 void UISnapshotDetailsWidget::prepare()
@@ -615,25 +630,6 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 m_pLayoutOptions->addWidget(m_pEditorName, 0, 1);
             }
 
-            /* Create thumbnail label: */
-            m_pLabelThumbnail = new QLabel;
-            AssertPtrReturnVoid(m_pLabelThumbnail);
-            {
-                /* Configure label: */
-                m_pLabelThumbnail->installEventFilter(this);
-                m_pLabelThumbnail->setFrameShape(QFrame::Panel);
-                m_pLabelThumbnail->setFrameShadow(QFrame::Sunken);
-                m_pLabelThumbnail->setCursor(Qt::PointingHandCursor);
-                m_pLabelThumbnail->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-                m_pLabelThumbnail->setAutoFillBackground(true);
-                QPalette pal = m_pLabelThumbnail->palette();
-                pal.setColor(QPalette::Window, Qt::black);
-                m_pLabelThumbnail->setPalette(pal);
-
-                /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pLabelThumbnail, 0, 2, 2, 1);
-            }
-
             /* Create description label: */
             m_pLabelDescription = new QLabel;
             AssertPtrReturnVoid(m_pLabelDescription);
@@ -642,7 +638,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 m_pLabelDescription->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignTop);
 
                 /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pLabelDescription, 2, 0);
+                m_pLayoutOptions->addWidget(m_pLabelDescription, 1, 0);
             }
             /* Create description browser: */
             m_pBrowserDescription = new QTextEdit;
@@ -659,7 +655,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                         this, &UISnapshotDetailsWidget::sltHandleDescriptionChange);
 
                 /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pBrowserDescription, 2, 1, 1, 2);
+                m_pLayoutOptions->addWidget(m_pBrowserDescription, 1, 1);
             }
         }
 
@@ -701,47 +697,54 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                 AssertPtrReturnVoid(m_details[DetailsElementType_System]);
                 m_pLayoutDetails->addWidget(m_details[DetailsElementType_System], 1, 0);
 
+                /* Create 'Preview' element: */
+                m_details[DetailsElementType_Preview] = createDetailsElement(DetailsElementType_Preview);
+                AssertPtrReturnVoid(m_details[DetailsElementType_Preview]);
+                connect(m_details[DetailsElementType_Preview], &UISnapshotDetailsElement::sigAnchorClicked,
+                        this, &UISnapshotDetailsWidget::sltHandleAnchorClicked);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Preview], 0, 1, 2, 1);
+
                 /* Create 'Display' element: */
                 m_details[DetailsElementType_Display] = createDetailsElement(DetailsElementType_Display);
                 AssertPtrReturnVoid(m_details[DetailsElementType_Display]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Display], 2, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Display], 2, 0, 1, 2);
 
                 /* Create 'Storage' element: */
                 m_details[DetailsElementType_Storage] = createDetailsElement(DetailsElementType_Storage);
                 AssertPtrReturnVoid(m_details[DetailsElementType_Storage]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Storage], 3, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Storage], 3, 0, 1, 2);
 
                 /* Create 'Audio' element: */
                 m_details[DetailsElementType_Audio] = createDetailsElement(DetailsElementType_Audio);
                 AssertPtrReturnVoid(m_details[DetailsElementType_Audio]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Audio], 4, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Audio], 4, 0, 1, 2);
 
                 /* Create 'Network' element: */
                 m_details[DetailsElementType_Network] = createDetailsElement(DetailsElementType_Network);
                 AssertPtrReturnVoid(m_details[DetailsElementType_Network]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Network], 5, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Network], 5, 0, 1, 2);
 
                 /* Create 'Serial' element: */
                 m_details[DetailsElementType_Serial] = createDetailsElement(DetailsElementType_Serial);
                 AssertPtrReturnVoid(m_details[DetailsElementType_Serial]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Serial], 6, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Serial], 6, 0, 1, 2);
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
                 /* Create 'Parallel' element: */
                 m_details[DetailsElementType_Parallel] = createDetailsElement(DetailsElementType_Parallel);
                 AssertPtrReturnVoid(m_details[DetailsElementType_Parallel]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Parallel], 7, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Parallel], 7, 0, 1, 2);
 #endif
 
                 /* Create 'USB' element: */
                 m_details[DetailsElementType_USB] = createDetailsElement(DetailsElementType_USB);
                 AssertPtrReturnVoid(m_details[DetailsElementType_USB]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_USB], 8, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_USB], 8, 0, 1, 2);
 
                 /* Create 'SF' element: */
                 m_details[DetailsElementType_SF] = createDetailsElement(DetailsElementType_SF);
                 AssertPtrReturnVoid(m_details[DetailsElementType_SF]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_SF], 9, 0);
+                m_pLayoutDetails->addWidget(m_details[DetailsElementType_SF], 9, 0, 1, 2);
             }
 
             /* Add to scroll-area: */
@@ -758,12 +761,16 @@ void UISnapshotDetailsWidget::prepareTabDetails()
 UISnapshotDetailsElement *UISnapshotDetailsWidget::createDetailsElement(DetailsElementType enmType)
 {
     /* Create element: */
-    UISnapshotDetailsElement *pElement = new UISnapshotDetailsElement;
+    const bool fWithHypertextNavigation = enmType == DetailsElementType_Preview;
+    UISnapshotDetailsElement *pElement = new UISnapshotDetailsElement(fWithHypertextNavigation);
     AssertPtrReturn(pElement, 0);
     {
         /* Configure element: */
         switch (enmType)
         {
+            case DetailsElementType_Preview:
+                pElement->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+                break;
             default:
                 pElement->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
                 break;
@@ -797,13 +804,6 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         CMachine comMachine = m_comSnapshot.GetMachine();
         ULONG iWidth = 0, iHeight = 0;
 
-        /* Get thumbnail if present: */
-        QVector<BYTE> thumbData = comMachine.ReadSavedThumbnailToArray(0, KBitmapFormat_BGR0, iWidth, iHeight);
-        m_pixmapThumbnail = thumbData.size() != 0 ? QPixmap::fromImage(QImage(thumbData.data(),
-                                                                              iWidth, iHeight,
-                                                                              QImage::Format_RGB32).copy())
-                                                  : QPixmap();
-
         /* Get screenshot if present: */
         QVector<BYTE> screenData = comMachine.ReadSavedScreenshotToArray(0, KBitmapFormat_PNG, iWidth, iHeight);
         m_pixmapScreenshot = screenData.size() != 0 ? QPixmap::fromImage(QImage::fromData(screenData.data(),
@@ -811,50 +811,20 @@ void UISnapshotDetailsWidget::loadSnapshotData()
                                                                                           "PNG"))
                                                     : QPixmap();
 
-        // TODO: Check whether layout manipulations are really
-        //       necessary, they looks a bit dangerous to me..
-        if (m_pixmapThumbnail.isNull())
-        {
-            m_pLabelThumbnail->setPixmap(QPixmap());
-
-            m_pLayoutOptions->removeWidget(m_pLabelThumbnail);
-            m_pLabelThumbnail->setHidden(true);
-
-            m_pLayoutOptions->removeWidget(m_pEditorName);
-            m_pLayoutOptions->addWidget(m_pEditorName, 0, 1, 1, 2);
-        }
-        else
-        {
-            const QStyle *pStyle = QApplication::style();
-            const int iIconMetric = pStyle->pixelMetric(QStyle::PM_LargeIconSize);
-            m_pLabelThumbnail->setPixmap(m_pixmapThumbnail.scaled(QSize(1, iIconMetric),
-                                                                  Qt::KeepAspectRatioByExpanding,
-                                                                  Qt::SmoothTransformation));
-
-            m_pLayoutOptions->removeWidget(m_pEditorName);
-            m_pLayoutOptions->addWidget(m_pEditorName, 0, 1);
-
-            m_pLayoutOptions->removeWidget(m_pLabelThumbnail);
-            m_pLayoutOptions->addWidget(m_pLabelThumbnail, 0, 2, 2, 1);
-            m_pLabelThumbnail->setHidden(false);
-        }
+        /* Register thumbnail pixmap in preview element: */
+        // WORKAROUND:
+        // We are generating it from the screenshot because thumbnail
+        // returned by the CMachine::ReadSavedThumbnailToArray is too small.
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+        const QSize thumbnailSize = QSize(iIconMetric * 4, iIconMetric * 4);
+        m_details.value(DetailsElementType_Preview)->document()->addResource(
+            QTextDocument::ImageResource, QUrl("details://thumbnail"),
+            QVariant(m_pixmapScreenshot.scaled(thumbnailSize, Qt::KeepAspectRatio, Qt::SmoothTransformation)));
     }
     else
     {
         /* Choose the empty-widget as current one: */
         m_pStackedLayout->setCurrentWidget(m_pEmptyWidget);
-
-        // TODO: Check whether layout manipulations are really
-        //       necessary, they looks a bit dangerous to me..
-        {
-            m_pLabelThumbnail->setPixmap(QPixmap());
-
-            m_pLayoutOptions->removeWidget(m_pLabelThumbnail);
-            m_pLabelThumbnail->setHidden(true);
-
-            m_pLayoutOptions->removeWidget(m_pEditorName);
-            m_pLayoutOptions->addWidget(m_pEditorName, 0, 1, 1, 2);
-        }
     }
 
     /* Retranslate: */
@@ -882,15 +852,24 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
         "<td colspan=3><nobr><b>%4</b></nobr></td>"
         "</tr>"
         "%5";
+    static const char *sSectionBoldTpl2 =
+        "<tr>"
+        "<td width=%3 rowspan=%1 align=left><img src='%2'></td>"
+        "<td><nobr><b>%4</b></nobr></td>"
+        "</tr>"
+        "%5";
     static const char *sSectionItemTpl1 =
         "<tr><td><nobr><i>%1</i></nobr></td><td/><td/></tr>";
     static const char *sSectionItemTpl2 =
         "<tr><td><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
     static const char *sSectionItemTpl3 =
         "<tr><td><nobr>%1</nobr></td><td/><td/></tr>";
+    static const char *sSectionItemTpl4 =
+        "<tr><td><a href='%2'><img src='%1'/></a></td></tr>";
 
     /* Use the const ref on the basis of implicit QString constructor: */
-    const QString &strSectionTpl = sSectionBoldTpl1;
+    const QString &strSectionTpl = enmType == DetailsElementType_Preview
+                                 ? sSectionBoldTpl2 : sSectionBoldTpl1;
 
     /* Determine icon metric: */
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
@@ -1023,6 +1002,23 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, Detai
                      QString::number(iIconArea), /* icon area */
                      tr("System", "details report"), /* title */
                      strItem); /* items */
+
+            break;
+        }
+        case DetailsElementType_Preview:
+        {
+            /* Preview: */
+            int iRowCount = 1;
+            QString strItem = QString(sSectionItemTpl4).arg("details://thumbnail").arg("#thumbnail");
+
+            /* Append report: */
+            if (!m_pixmapScreenshot.isNull())
+                strReport += strSectionTpl
+                    .arg(1 + iRowCount) /* rows */
+                    .arg("details://preview", /* icon */
+                         QString::number(iIconArea), /* icon area */
+                         tr("Preview", "details report"), /* title */
+                         strItem); /* items */
 
             break;
         }

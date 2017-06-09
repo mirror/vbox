@@ -94,9 +94,6 @@ public:
 
 protected:
 
-    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
@@ -106,6 +103,9 @@ private slots:
     void sltHandleNameChange();
     /** Handles snapshot description change. */
     void sltHandleDescriptionChange();
+
+    /** Handles snapshot details anchor clicks. */
+    void sltHandleAnchorClicked(const QUrl &link);
 
 private:
 
@@ -140,8 +140,6 @@ private:
     /** Holds the new data copy. */
     UIDataSnapshot  m_newData;
 
-    /** Holds the cached thumbnail. */
-    QPixmap  m_pixmapThumbnail;
     /** Holds the cached screenshot. */
     QPixmap  m_pixmapScreenshot;
 
@@ -163,9 +161,6 @@ private:
     QLabel    *m_pLabelName;
     /** Holds the name editor instance. */
     QLineEdit *m_pEditorName;
-
-    /** Holds the thumbnail label instance. */
-    QLabel *m_pLabelThumbnail;
 
     /** Holds the description label instance. */
     QLabel    *m_pLabelDescription;
