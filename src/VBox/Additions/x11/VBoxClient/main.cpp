@@ -328,6 +328,9 @@ int main(int argc, char *argv[])
                           (*g_pService)->getPidFilePath());
         if (RT_FAILURE(rc))
             VBClFatalError(("Creating PID file path failed: %Rrc\n", rc));
+    }
+    if ((*g_pService)->getPidFilePath || (*g_pService)->fDaemonise)
+    {
         if (fDaemonise)
             rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &cRespawn);
         if (RT_FAILURE(rc))
