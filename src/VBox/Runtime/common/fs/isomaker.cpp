@@ -34,6 +34,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
@@ -242,6 +243,27 @@ typedef struct RTFSISOMAKERNAMESPACE
     /** The TRANS.TBL filename if enabled, NULL if disabled.
      * When not NULL, this may be pointing to heap or g_szTransTbl. */
     char                   *pszTransTbl;
+    /** The system ID (ISO9660PRIMARYVOLDESC::achSystemId).
+     * Empty if NULL.  */
+    char                   *pszSystemId;
+    /** The volume ID / label (ISO9660PRIMARYVOLDESC::achVolumeId).
+     * A string representation of RTFSISOMAKERINT::ImageCreationTime if NULL. */
+    char                   *pszVolumeId;
+    /** The volume set ID (ISO9660PRIMARYVOLDESC::achVolumeSetId). Empty if NULL. */
+    char                   *pszVolumeSetId;
+    /** The publisher ID or (root) file reference (ISO9660PRIMARYVOLDESC::achPublisherId).  Empty if NULL.  */
+    char                   *pszPublisherId;
+    /** The data preperer ID or (root) file reference (ISO9660PRIMARYVOLDESC::achDataPreparerId).
+     * Defaults to g_szPreparerIdPrimaryIso or g_szPreparerIdJoliet. */
+    char                   *pszDataPreparerId;
+    /** The application ID or (root) file reference (ISO9660PRIMARYVOLDESC::achApplicationId). None if NULL. */
+    char                   *pszApplicationId;
+    /** The copyright (root) file identifier (ISO9660PRIMARYVOLDESC::achCopyrightFileId).  None if NULL. */
+    char                   *pszCopyrightFileId;
+    /** The abstract (root) file identifier (ISO9660PRIMARYVOLDESC::achAbstractFileId). None if NULL. */
+    char                   *pszAbstractFileId;
+    /** The bibliographic (root) file identifier (ISO9660PRIMARYVOLDESC::achBibliographicFileId).  None if NULL. */
+    char                   *pszBibliographicFileId;
 } RTFSISOMAKERNAMESPACE;
 /** Pointer to a namespace. */
 typedef RTFSISOMAKERNAMESPACE *PRTFSISOMAKERNAMESPACE;
@@ -407,7 +429,6 @@ typedef struct RTFSISOMAKERINT
     /** The default file mode mask. */
     RTFMODE                 fDefaultDirMode;
 
-
     /** @name Finalized image stuff
      * @{ */
     /** The finalized image size. */
@@ -443,6 +464,8 @@ typedef struct RTFSISOMAKERINT
         /** The image byte offset of the big endian path table.
          * This always follows offPathTableL.  */
         uint64_t            offPathTableM;
+        /** The size of the path table.   */
+        uint32_t            cbPathTable;
         /** List of finalized directories for this namespace.
          * The list is in path table order so it can be generated on the fly.  The
          * directories will be ordered in the same way. */
@@ -536,7 +559,11 @@ static const uint8_t g_aidxRTFsIsoNamespaceFlagToIdx[] =
 };
 
 /** The default translation table filename. */
-static char g_szTransTbl[] = "TRANS.TBL";
+static const char   g_szTransTbl[] = "TRANS.TBL";
+/** The default data preparer ID for the primary ISO-9660 volume descriptor. */
+static char         g_szPreparerIdPrimaryIso[64] = "";
+/** The default data preparer ID for the joliet volume descriptor. */
+static char         g_szPreparerIdJoliet[64]     = "";
 
 
 /*********************************************************************************************************************************
@@ -572,6 +599,13 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
     AssertReturn(g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[RTFSISOMAKER_NAMESPACE_HFS]].fNamespace      == RTFSISOMAKER_NAMESPACE_HFS,
                  VERR_INTERNAL_ERROR_5);
 
+    if (g_szPreparerIdPrimaryIso[0] == '\0')
+        RTStrPrintf(g_szPreparerIdPrimaryIso, sizeof(g_szPreparerIdPrimaryIso), "IPRT ISO MAKER V%u.%u.%u R%s",
+                    RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild(), RTBldCfgRevision());
+    if (g_szPreparerIdJoliet[0] == '\0')
+        RTStrPrintf(g_szPreparerIdJoliet, sizeof(g_szPreparerIdJoliet),
+                    "IPRT ISO Maker v%s r%s", RTBldCfgVersion(), RTBldCfgRevision());
+
     /*
      * Create the instance with defaults.
      */
@@ -587,22 +621,63 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         pThis->PrimaryIso.offName           = RT_OFFSETOF(RTFSISOMAKEROBJ, pPrimaryName);
         pThis->PrimaryIso.uLevel            = 3; /* 30 char names, large files */
         pThis->PrimaryIso.uRockRidgeLevel   = 1;
-        pThis->PrimaryIso.pszTransTbl       = g_szTransTbl;
+        pThis->PrimaryIso.pszTransTbl       = (char *)g_szTransTbl;
+        //pThis->PrimaryIso.pszSystemId       = NULL;
+        //pThis->PrimaryIso.pszVolumeId       = NULL;
+        //pThis->PrimaryIso.pszSetVolumeId    = NULL;
+        //pThis->PrimaryIso.pszPublisherId    = NULL;
+        pThis->PrimaryIso.pszDataPreparerId = g_szPreparerIdPrimaryIso;
+        //pThis->PrimaryIso.pszApplicationId  = NULL;
+        //pThis->PrimaryIso.pszCopyrightFileId= NULL;
+        //pThis->PrimaryIso.pszAbstractFileId = NULL;
+        //pThis->PrimaryIso.pszBibliographicFileId = NULL;
+
         pThis->Joliet.fNamespace            = RTFSISOMAKER_NAMESPACE_JOLIET;
         pThis->Joliet.offName               = RT_OFFSETOF(RTFSISOMAKEROBJ, pJolietName);
         pThis->Joliet.uLevel                = 3;
         //pThis->Joliet.uRockRidgeLevel     = 0;
         //pThis->Joliet.pszTransTbl         = NULL;
+        //pThis->Joliet.pszSystemId         = NULL;
+        //pThis->Joliet.pszVolumeId         = NULL;
+        //pThis->Joliet.pszSetVolumeId      = NULL;
+        //pThis->Joliet.pszPublisherId      = NULL;
+        pThis->Joliet.pszDataPreparerId     = g_szPreparerIdJoliet;
+        //pThis->Joliet.pszApplicationId    = NULL;
+        //pThis->Joliet.pszCopyrightFileId  = NULL;
+        //pThis->Joliet.pszAbstractFileId   = NULL;
+        //pThis->Joliet.pszBibliographicFileId = NULL;
+
         pThis->Udf.fNamespace               = RTFSISOMAKER_NAMESPACE_UDF;
         pThis->Udf.offName                  = RT_OFFSETOF(RTFSISOMAKEROBJ, pUdfName);
         //pThis->Udf.uLevel                 = 0;
         //pThis->Udf.uRockRidgeLevel        = 0;
         //pThis->Udf.pszTransTbl            = NULL;
+        //pThis->Udf.uRockRidgeLevel        = 0;
+        //pThis->Udf.pszTransTbl            = NULL;
+        //pThis->Udf.pszSystemId            = NULL;
+        //pThis->Udf.pszVolumeId            = NULL;
+        //pThis->Udf.pszSetVolumeId         = NULL;
+        //pThis->Udf.pszPublisherId         = NULL;
+        //pThis->Udf.pszDataPreparerId      = NULL;
+        //pThis->Udf.pszApplicationId       = NULL;
+        //pThis->Udf.pszCopyrightFileId     = NULL;
+        //pThis->Udf.pszAbstractFileId      = NULL;
+        //pThis->Udf.pszBibliographicFileId = NULL;
+
         pThis->Hfs.fNamespace               = RTFSISOMAKER_NAMESPACE_HFS;
         pThis->Hfs.offName                  = RT_OFFSETOF(RTFSISOMAKEROBJ, pHfsName);
         //pThis->Hfs.uLevel                 = 0;
         //pThis->Hfs.uRockRidgeLevel        = 0;
         //pThis->Hfs.pszTransTbl            = NULL;
+        //pThis->Hfs.pszSystemId            = NULL;
+        //pThis->Hfs.pszVolumeId            = NULL;
+        //pThis->Hfs.pszSetVolumeId         = NULL;
+        //pThis->Hfs.pszPublisherId         = NULL;
+        //pThis->Hfs.pszDataPreparerId      = NULL;
+        //pThis->Hfs.pszApplicationId       = NULL;
+        //pThis->Hfs.pszCopyrightFileId     = NULL;
+        //pThis->Hfs.pszAbstractFileId      = NULL;
+        //pThis->Hfs.pszBibliographicFileId = NULL;
 
         RTListInit(&pThis->ObjectHead);
         //pThis->cObjects                   = 0;
@@ -626,12 +701,14 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         pThis->PrimaryIsoDirs.offDirs       = UINT64_MAX;
         pThis->PrimaryIsoDirs.offPathTableL = UINT64_MAX;
         pThis->PrimaryIsoDirs.offPathTableM = UINT64_MAX;
+        pThis->PrimaryIsoDirs.cbPathTable   = 0;
         RTListInit(&pThis->PrimaryIsoDirs.FinalizedDirs);
         //pThis->PrimaryIsoDirs.pRRSpillFile = NULL;
 
         pThis->JolietDirs.offDirs           = UINT64_MAX;
         pThis->JolietDirs.offPathTableL     = UINT64_MAX;
         pThis->JolietDirs.offPathTableM     = UINT64_MAX;
+        pThis->JolietDirs.cbPathTable       = 0;
         RTListInit(&pThis->JolietDirs.FinalizedDirs);
         //pThis->JolietDirs.pRRSpillFile    = NULL;
 
@@ -760,6 +837,65 @@ static void rtFsIsoMakerDestroyTree(PRTFSISOMAKERNAMESPACE pNamespace)
         if (pNamespace->pszTransTbl != g_szTransTbl)
             RTMemFree(pNamespace->pszTransTbl);
         pNamespace->pszTransTbl = NULL;
+    }
+
+    /*
+     * Free string IDs.
+     */
+    if (pNamespace->pszSystemId)
+    {
+        RTMemFree(pNamespace->pszSystemId);
+        pNamespace->pszSystemId = NULL;
+    }
+
+    if (pNamespace->pszVolumeId)
+    {
+        RTMemFree(pNamespace->pszVolumeId);
+        pNamespace->pszVolumeId = NULL;
+    }
+
+    if (pNamespace->pszVolumeSetId)
+    {
+        RTMemFree(pNamespace->pszVolumeSetId);
+        pNamespace->pszVolumeSetId = NULL;
+    }
+
+    if (pNamespace->pszPublisherId)
+    {
+        RTMemFree(pNamespace->pszPublisherId);
+        pNamespace->pszPublisherId = NULL;
+    }
+
+    if (pNamespace->pszDataPreparerId)
+    {
+        if (   pNamespace->pszDataPreparerId != g_szPreparerIdPrimaryIso
+            && pNamespace->pszDataPreparerId != g_szPreparerIdJoliet)
+            RTMemFree(pNamespace->pszDataPreparerId);
+        pNamespace->pszDataPreparerId = NULL;
+    }
+
+    if (pNamespace->pszApplicationId)
+    {
+        RTMemFree(pNamespace->pszApplicationId);
+        pNamespace->pszApplicationId = NULL;
+    }
+
+    if (pNamespace->pszCopyrightFileId)
+    {
+        RTMemFree(pNamespace->pszCopyrightFileId);
+        pNamespace->pszCopyrightFileId = NULL;
+    }
+
+    if (pNamespace->pszAbstractFileId)
+    {
+        RTMemFree(pNamespace->pszAbstractFileId);
+        pNamespace->pszAbstractFileId = NULL;
+    }
+
+    if (pNamespace->pszBibliographicFileId)
+    {
+        RTMemFree(pNamespace->pszBibliographicFileId);
+        pNamespace->pszBibliographicFileId = NULL;
     }
 }
 
@@ -2754,6 +2890,7 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
     /*
      * Calculate the path table offsets and move past them.
      */
+    pFinalizedDirs->cbPathTable   = cbPathTable;
     pFinalizedDirs->offPathTableL = *poffData;
     *poffData += RT_ALIGN_64(cbPathTable, RTFSISOMAKER_SECTOR_SIZE);
 
@@ -2835,54 +2972,130 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
 
 
 /**
- * Finalizes the volume descriptors.
+ * Copies the given string as UTF-16 and pad unused space in the destination
+ * with spaces.
  *
- * This will set the RTFSISOMAKERFILE::offData members.
- *
- * @returns IPRT status code.
- * @param   pThis               The ISO maker instance.
+ * @param   pachDst     The destination field.  C type is char, but real life
+ *                      type is UTF-16 / UCS-2.
+ * @param   cchDst      The size of the destination field.
+ * @param   pszSrc      The source string. NULL is treated like empty string.
  */
-static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
+static void rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(char *pachDst, size_t cchDst, const char *pszSrc)
 {
-    AssertReturn(pThis->pbVolDescs && pThis->pPrimaryVolDesc && pThis->pTerminatorVolDesc, VERR_INTERNAL_ERROR_3);
+    size_t const cwcDst = cchDst / sizeof(RTUTF16);
+    size_t cwcSrc = 0;
+    if (pszSrc)
+    {
+        RTUTF16  wszSrc[256];
+        PRTUTF16 pwszSrc = wszSrc;
+        int rc = RTStrToUtf16Ex(pszSrc, RTSTR_MAX, &pwszSrc, RT_ELEMENTS(wszSrc), &cwcSrc);
+        AssertRCStmt(rc, cwcSrc = 0);
 
-    /*
-     * The primary descriptor.
-     */
-
-
-    /*
-     * The terminator record.
-     */
-    pThis->pTerminatorVolDesc->bDescType    = ISO9660VOLDESC_TYPE_TERMINATOR;
-    pThis->pTerminatorVolDesc->bDescVersion = 1;
-    memcpy(pThis->pTerminatorVolDesc->achStdId, ISO9660VOLDESC_STD_ID, sizeof(pThis->pTerminatorVolDesc->achStdId));
-
-    return VINF_SUCCESS;
+        if (cwcSrc > cchDst / sizeof(RTUTF16))
+            cwcSrc = cchDst / sizeof(RTUTF16);
+        memcpy(pachDst, wszSrc, cwcSrc * sizeof(RTUTF16));
+    }
+    if (cwcSrc < cwcDst)
+    {
+        PRTUTF16 pwcDst = (PRTUTF16)pachDst;
+        pwcDst += cwcSrc;
+        while (cwcSrc < cwcDst)
+        {
+            *pwcDst++ = ' ';
+            cwcSrc++;
+        }
+    }
 }
 
 
 /**
- * Finalizes the image.
+ * Copies the given string and pad unused space in the destination with spaces.
  *
- * @returns IPRT status code.
- * @param   hIsoMaker       The ISO maker handle.
+ * @param   pachDst     The destination field.
+ * @param   cchDst      The size of the destination field.
+ * @param   pszSrc      The source string. NULL is treated like empty string.
  */
-RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
+static void rtFsIsoMakerFinalizeCopyAndSpacePad(char *pachDst, size_t cchDst, const char *pszSrc)
 {
-    PRTFSISOMAKERINT pThis = hIsoMaker;
-    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
-    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+    size_t cchSrc;
+    if (!pszSrc)
+        cchSrc = 0;
+    else
+    {
+        cchSrc = strlen(pszSrc);
+        if (cchSrc > cchDst)
+            cchSrc = cchDst;
+        memcpy(pachDst, pszSrc, cchSrc);
+    }
+    if (cchSrc < cchDst)
+        memset(&pachDst[cchSrc], ' ', cchDst - cchSrc);
+}
 
-    /*
-     * Remove orphaned objects.
-     */
-    int rc = rtFsIsoMakerFinalizeRemoveOrphans(pThis);
-    if (RT_FAILURE(rc))
-        return rc;
 
+/**
+ * Formats a timespec as an ISO-9660 ascii timestamp.
+ *
+ * @param   pTime       The timespec to format.
+ * @param   pIsoTs      The ISO-9660 timestamp destination buffer.
+ */
+static void rtFsIsoMakerTimespecToIso9660Timestamp(PCRTTIMESPEC pTime, PISO9660TIMESTAMP pIsoTs)
+{
+    RTTIME Exploded;
+    RTTimeExplode(&Exploded, pTime);
+
+    char szTmp[64];
+#define FORMAT_FIELD(a_achDst, a_uSrc) \
+        do { \
+            RTStrFormatU32(szTmp, sizeof(szTmp), a_uSrc, 10, sizeof(a_achDst), sizeof(a_achDst), \
+                           RTSTR_F_ZEROPAD | RTSTR_F_WIDTH | RTSTR_F_PRECISION); \
+            memcpy(a_achDst, szTmp, sizeof(a_achDst)); \
+        } while (0)
+    FORMAT_FIELD(pIsoTs->achYear,   Exploded.i32Year);
+    FORMAT_FIELD(pIsoTs->achMonth,  Exploded.u8Month);
+    FORMAT_FIELD(pIsoTs->achDay,    Exploded.u8MonthDay);
+    FORMAT_FIELD(pIsoTs->achHour,   Exploded.u8Hour);
+    FORMAT_FIELD(pIsoTs->achMinute, Exploded.u8Minute);
+    FORMAT_FIELD(pIsoTs->achSecond, Exploded.u8Second);
+    FORMAT_FIELD(pIsoTs->achCentisecond, Exploded.u32Nanosecond / RT_NS_10MS);
+#undef FORMAT_FIELD
+    pIsoTs->offUtc = 0;
+}
+
+
+/**
+ * Formats a timespec as an ISO-9660 record timestamp.
+ *
+ * @param   pTime       The timespec to format.
+ * @param   pIsoTs      The ISO-9660 timestamp destination buffer.
+ */
+static void rtFsIsoMakerTimespecToIso9660RecTimestamp(PCRTTIMESPEC pTime, PISO9660RECTIMESTAMP pIsoRecTs)
+{
+    RTTIME Exploded;
+    RTTimeExplode(&Exploded, pTime);
+
+    pIsoRecTs->bYear    = Exploded.i32Year >= 1900 ? Exploded.i32Year - 1900 : 0;
+    pIsoRecTs->bMonth   = Exploded.u8Month;
+    pIsoRecTs->bDay     = Exploded.u8MonthDay;
+    pIsoRecTs->bHour    = Exploded.u8Hour;
+    pIsoRecTs->bMinute  = Exploded.u8Minute;
+    pIsoRecTs->bSecond  = Exploded.u8Second;
+    pIsoRecTs->offUtc   = 0;
+}
+
+
+/**
+ * Allocate and prepare the volume descriptors.
+ *
+ * What's not done here gets done later by rtFsIsoMakerFinalizeBootStuff, or at
+ * teh very end of the finalization by rtFsIsoMakerFinalizeVolumeDescriptors.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The ISO maker instance.
+ */
+static int rtFsIsoMakerFinalizePrepVolumeDescriptors(PRTFSISOMAKERINT pThis)
+{
     /*
-     * Allocate space for the volume descriptors.
+     * Allocate and calc pointers.
      */
     RTMemFree(pThis->pbVolDescs);
     pThis->pbVolDescs = (uint8_t *)RTMemAllocZ(pThis->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE);
@@ -2917,6 +3130,220 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
         /** @todo UDF descriptors. */
     }
     AssertReturn(offVolDescs == pThis->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE, VERR_INTERNAL_ERROR_2);
+
+    /*
+     * This may be needed later.
+     */
+    char szImageCreationTime[42];
+    RTTimeSpecToString(&pThis->ImageCreationTime, szImageCreationTime, sizeof(szImageCreationTime));
+
+    /*
+     * Initialize the primary descriptor.
+     */
+    PISO9660PRIMARYVOLDESC pPrimary = pThis->pPrimaryVolDesc;
+
+    pPrimary->Hdr.bDescType             = ISO9660VOLDESC_TYPE_PRIMARY;
+    pPrimary->Hdr.bDescVersion          = ISO9660PRIMARYVOLDESC_VERSION;
+    memcpy(pPrimary->Hdr.achStdId, ISO9660VOLDESC_STD_ID, sizeof(pPrimary->Hdr.achStdId));
+    //pPrimary->bPadding8               = 0;
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achSystemId, sizeof(pPrimary->achSystemId), pThis->PrimaryIso.pszSystemId);
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achVolumeId, sizeof(pPrimary->achVolumeId),
+                                        pThis->PrimaryIso.pszVolumeId ? pThis->PrimaryIso.pszVolumeId : szImageCreationTime);
+    //pPrimary->Unused73                = {0}
+    //pPrimary->VolumeSpaceSize         = later
+    //pPrimary->abUnused89              = {0}
+    pPrimary->cVolumesInSet.be          = RT_H2BE_U16_C(1);
+    pPrimary->cVolumesInSet.le          = RT_H2LE_U16_C(1);
+    pPrimary->VolumeSeqNo.be            = RT_H2BE_U16_C(1);
+    pPrimary->VolumeSeqNo.le            = RT_H2LE_U16_C(1);
+    pPrimary->cbLogicalBlock.be         = RT_H2BE_U16_C(RTFSISOMAKER_SECTOR_SIZE);
+    pPrimary->cbLogicalBlock.le         = RT_H2LE_U16_C(RTFSISOMAKER_SECTOR_SIZE);
+    //pPrimary->cbPathTable             = later
+    //pPrimary->offTypeLPathTable       = later
+    //pPrimary->offOptionalTypeLPathTable = {0}
+    //pPrimary->offTypeMPathTable       = later
+    //pPrimary->offOptionalTypeMPathTable = {0}
+    //pPrimary->RootDir                 = later
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achVolumeSetId, sizeof(pPrimary->achVolumeSetId),
+                                        pThis->PrimaryIso.pszVolumeSetId);
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achPublisherId, sizeof(pPrimary->achPublisherId),
+                                        pThis->PrimaryIso.pszPublisherId);
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achDataPreparerId, sizeof(pPrimary->achDataPreparerId),
+                                        pThis->PrimaryIso.pszDataPreparerId);
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achApplicationId, sizeof(pPrimary->achApplicationId),
+                                        pThis->PrimaryIso.pszApplicationId);
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achCopyrightFileId, sizeof(pPrimary->achCopyrightFileId),
+                                        pThis->PrimaryIso.pszCopyrightFileId);
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achAbstractFileId, sizeof(pPrimary->achAbstractFileId),
+                                        pThis->PrimaryIso.pszAbstractFileId);
+    rtFsIsoMakerFinalizeCopyAndSpacePad(pPrimary->achBibliographicFileId, sizeof(pPrimary->achBibliographicFileId),
+                                        pThis->PrimaryIso.pszBibliographicFileId);
+    rtFsIsoMakerTimespecToIso9660Timestamp(&pThis->ImageCreationTime, &pPrimary->BirthTime);
+    rtFsIsoMakerTimespecToIso9660Timestamp(&pThis->ImageCreationTime, &pPrimary->ModifyTime);
+    //RT_ZERO(pPrimary->ExpireTime);
+    //RT_ZERO(pPrimary->EffectiveTime)
+    pPrimary->bFileStructureVersion     = ISO9660_FILE_STRUCTURE_VERSION;
+    //pPrimary->bReserved883            = 0;
+    //RT_ZERO(pPrimary->abAppUse);
+    //RT_ZERO(pPrimary->abReserved1396);
+
+    /*
+     * Initialize the joliet descriptor if included.
+     */
+    PISO9660SUPVOLDESC pJoliet = pThis->pJolietVolDesc;
+    if (pJoliet)
+    {
+        pJoliet->Hdr.bDescType              = ISO9660VOLDESC_TYPE_SUPPLEMENTARY;
+        pJoliet->Hdr.bDescVersion           = ISO9660SUPVOLDESC_VERSION;
+        memcpy(pJoliet->Hdr.achStdId, ISO9660VOLDESC_STD_ID, sizeof(pJoliet->Hdr.achStdId));
+        pJoliet->fVolumeFlags               = ISO9660SUPVOLDESC_VOL_F_ESC_ONLY_REG;
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achSystemId, sizeof(pJoliet->achSystemId), pThis->Joliet.pszSystemId);
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achVolumeId, sizeof(pJoliet->achVolumeId),
+                                                   pThis->Joliet.pszVolumeId ? pThis->Joliet.pszVolumeId : szImageCreationTime);
+        //pJoliet->Unused73                 = {0}
+        //pJoliet->VolumeSpaceSize          = later
+        pJoliet->abEscapeSequences[0]       = ISO9660_JOLIET_ESC_SEQ_0;
+        pJoliet->abEscapeSequences[1]       = ISO9660_JOLIET_ESC_SEQ_1;
+        pJoliet->abEscapeSequences[1]       = pThis->Joliet.uLevel == 1 ? ISO9660_JOLIET_ESC_SEQ_2_LEVEL_1
+                                            : pThis->Joliet.uLevel == 2 ? ISO9660_JOLIET_ESC_SEQ_2_LEVEL_2
+                                            :                             ISO9660_JOLIET_ESC_SEQ_2_LEVEL_3;
+        pJoliet->cVolumesInSet.be           = RT_H2BE_U16_C(1);
+        pJoliet->cVolumesInSet.le           = RT_H2LE_U16_C(1);
+        pJoliet->VolumeSeqNo.be             = RT_H2BE_U16_C(1);
+        pJoliet->VolumeSeqNo.le             = RT_H2LE_U16_C(1);
+        pJoliet->cbLogicalBlock.be          = RT_H2BE_U16_C(RTFSISOMAKER_SECTOR_SIZE);
+        pJoliet->cbLogicalBlock.le          = RT_H2LE_U16_C(RTFSISOMAKER_SECTOR_SIZE);
+        //pJoliet->cbPathTable              = later
+        //pJoliet->offTypeLPathTable        = later
+        //pJoliet->offOptionalTypeLPathTable = {0}
+        //pJoliet->offTypeMPathTable        = later
+        //pJoliet->offOptionalTypeMPathTable = {0}
+        //pJoliet->RootDir                  = later
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achVolumeSetId, sizeof(pJoliet->achVolumeSetId),
+                                                   pThis->Joliet.pszVolumeSetId);
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achPublisherId, sizeof(pJoliet->achPublisherId),
+                                                   pThis->Joliet.pszPublisherId);
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achDataPreparerId, sizeof(pJoliet->achDataPreparerId),
+                                                   pThis->Joliet.pszDataPreparerId);
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achApplicationId, sizeof(pJoliet->achApplicationId),
+                                                   pThis->Joliet.pszApplicationId);
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achCopyrightFileId, sizeof(pJoliet->achCopyrightFileId),
+                                                   pThis->Joliet.pszCopyrightFileId);
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achAbstractFileId, sizeof(pJoliet->achAbstractFileId),
+                                                   pThis->Joliet.pszAbstractFileId);
+        rtFsIsoMakerFinalizeCopyAsUtf16AndSpacePad(pJoliet->achBibliographicFileId, sizeof(pJoliet->achBibliographicFileId),
+                                                   pThis->Joliet.pszBibliographicFileId);
+        rtFsIsoMakerTimespecToIso9660Timestamp(&pThis->ImageCreationTime, &pJoliet->BirthTime);
+        rtFsIsoMakerTimespecToIso9660Timestamp(&pThis->ImageCreationTime, &pJoliet->ModifyTime);
+        //RT_ZERO(pJoliet->ExpireTime);
+        //RT_ZERO(pJoliet->EffectiveTime)
+        pJoliet->bFileStructureVersion      = ISO9660_FILE_STRUCTURE_VERSION;
+        //pJoliet->bReserved883             = 0;
+        //RT_ZERO(pJoliet->abAppUse);
+        //RT_ZERO(pJoliet->abReserved1396);
+    }
+
+    /*
+     * The ISO-9660 terminator descriptor.
+     */
+    pThis->pTerminatorVolDesc->bDescType    = ISO9660VOLDESC_TYPE_TERMINATOR;
+    pThis->pTerminatorVolDesc->bDescVersion = 1;
+    memcpy(pThis->pTerminatorVolDesc->achStdId, ISO9660VOLDESC_STD_ID, sizeof(pThis->pTerminatorVolDesc->achStdId));
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Finalizes the volume descriptors.
+ *
+ * This will set the RTFSISOMAKERFILE::offData members.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ISO maker instance.
+ */
+static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
+{
+    AssertReturn(pThis->pbVolDescs && pThis->pPrimaryVolDesc && pThis->pTerminatorVolDesc, VERR_INTERNAL_ERROR_3);
+
+    /*
+     * Primary descriptor.
+     */
+    PISO9660PRIMARYVOLDESC pPrimary = pThis->pPrimaryVolDesc;
+
+    pPrimary->VolumeSpaceSize.be        = RT_H2BE_U32(pThis->cbFinalizedImage / RTFSISOMAKER_SECTOR_SIZE);
+    pPrimary->VolumeSpaceSize.le        = RT_H2LE_U32(pThis->cbFinalizedImage / RTFSISOMAKER_SECTOR_SIZE);
+    pPrimary->cbPathTable.be            = RT_H2BE_U32(pThis->JolietDirs.cbPathTable);
+    pPrimary->cbPathTable.le            = RT_H2LE_U32(pThis->JolietDirs.cbPathTable);
+    pPrimary->offTypeLPathTable         = RT_H2LE_U32(pThis->JolietDirs.offPathTableL);
+    pPrimary->offTypeMPathTable         = RT_H2BE_U32(pThis->JolietDirs.offPathTableM);
+    pPrimary->RootDir.DirRec.cbDirRec           = sizeof(pPrimary->RootDir);
+    pPrimary->RootDir.DirRec.cExtAttrBlocks     = 0;
+    pPrimary->RootDir.DirRec.offExtent.be       = RT_H2BE_U32(pThis->PrimaryIso.pRoot->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+    pPrimary->RootDir.DirRec.offExtent.le       = RT_H2LE_U32(pThis->PrimaryIso.pRoot->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+    pPrimary->RootDir.DirRec.cbData.be          = RT_H2BE_U32(pThis->PrimaryIso.pRoot->pDir->cbDir);
+    pPrimary->RootDir.DirRec.cbData.le          = RT_H2LE_U32(pThis->PrimaryIso.pRoot->pDir->cbDir);
+    rtFsIsoMakerTimespecToIso9660RecTimestamp(&pThis->PrimaryIso.pRoot->pObj->BirthTime, &pPrimary->RootDir.DirRec.RecTime);
+    pPrimary->RootDir.DirRec.fFileFlags         = ISO9660_FILE_FLAGS_DIRECTORY;
+    pPrimary->RootDir.DirRec.bFileUnitSize      = 0;
+    pPrimary->RootDir.DirRec.bInterleaveGapSize = 0;
+    pPrimary->RootDir.DirRec.VolumeSeqNo.be     = RT_H2BE_U16_C(1);
+    pPrimary->RootDir.DirRec.VolumeSeqNo.le     = RT_H2BE_U16_C(1);
+    pPrimary->RootDir.DirRec.bFileIdLength      = 1;
+    pPrimary->RootDir.DirRec.achFileId[1]       = 0x00;
+
+    /*
+     * Initialize the joliet descriptor if included.
+     */
+    PISO9660SUPVOLDESC pJoliet = pThis->pJolietVolDesc;
+    if (pJoliet)
+    {
+        pJoliet->VolumeSpaceSize            = pPrimary->VolumeSpaceSize;
+        pJoliet->cbPathTable.be             = RT_H2BE_U32(pThis->JolietDirs.cbPathTable);
+        pJoliet->cbPathTable.le             = RT_H2LE_U32(pThis->JolietDirs.cbPathTable);
+        pJoliet->offTypeLPathTable          = RT_H2LE_U32(pThis->JolietDirs.offPathTableL);
+        pJoliet->offTypeMPathTable          = RT_H2BE_U32(pThis->JolietDirs.offPathTableM);
+        pJoliet->RootDir.DirRec.cbDirRec           = sizeof(pJoliet->RootDir);
+        pJoliet->RootDir.DirRec.cExtAttrBlocks     = 0;
+        pJoliet->RootDir.DirRec.offExtent.be       = RT_H2BE_U32(pThis->Joliet.pRoot->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+        pJoliet->RootDir.DirRec.offExtent.le       = RT_H2LE_U32(pThis->Joliet.pRoot->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+        pJoliet->RootDir.DirRec.cbData.be          = RT_H2BE_U32(pThis->Joliet.pRoot->pDir->cbDir);
+        pJoliet->RootDir.DirRec.cbData.le          = RT_H2LE_U32(pThis->Joliet.pRoot->pDir->cbDir);
+        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pThis->Joliet.pRoot->pObj->BirthTime, &pJoliet->RootDir.DirRec.RecTime);
+        pJoliet->RootDir.DirRec.fFileFlags         = ISO9660_FILE_FLAGS_DIRECTORY;
+        pJoliet->RootDir.DirRec.bFileUnitSize      = 0;
+        pJoliet->RootDir.DirRec.bInterleaveGapSize = 0;
+        pJoliet->RootDir.DirRec.VolumeSeqNo.be     = RT_H2BE_U16_C(1);
+        pJoliet->RootDir.DirRec.VolumeSeqNo.le     = RT_H2BE_U16_C(1);
+        pJoliet->RootDir.DirRec.bFileIdLength      = 1;
+        pJoliet->RootDir.DirRec.achFileId[1]       = 0x00;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Finalizes the image.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker       The ISO maker handle.
+ */
+RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    /*
+     * Remove orphaned objects and allocate volume descriptors.
+     */
+    int rc = rtFsIsoMakerFinalizeRemoveOrphans(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = rtFsIsoMakerFinalizePrepVolumeDescriptors(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * If there is any boot related stuff to be included, it ends up right after
