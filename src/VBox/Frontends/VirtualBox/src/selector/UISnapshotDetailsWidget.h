@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIExtraDataDefs.h"
 
 /* COM includes: */
 #include "CSnapshot.h"
@@ -31,11 +32,12 @@
 class QGridLayout;
 class QLabel;
 class QLineEdit;
+class QScrollArea;
 class QStackedLayout;
 class QTabWidget;
 class QTextEdit;
-class QVBoxLayout;
 class QWidget;
+class UISnapshotDetailsElement;
 
 
 /** Snapshot pane: Snapshot data structure. */
@@ -118,6 +120,9 @@ private:
     /** Prepares 'Details' tab. */
     void prepareTabDetails();
 
+    /** Creates details element of passed @a enmType. */
+    static UISnapshotDetailsElement *createDetailsElement(DetailsElementType enmType);
+
     /** Loads snapshot data. */
     void loadSnapshotData();
 
@@ -125,7 +130,7 @@ private:
     void notify();
 
     /** Returns a details report on a given @a comMachine. */
-    QString detailsReport(const CMachine &comMachine);
+    QString detailsReport(const CMachine &comMachine, DetailsElementType enmType);
 
     /** Holds the snapshot object to load data from. */
     CSnapshot  m_comSnapshot;
@@ -168,10 +173,13 @@ private:
     QTextEdit *m_pBrowserDescription;
 
     /** Holds the 'Details' layout instance. */
-    QVBoxLayout *m_pLayoutDetails;
+    QGridLayout *m_pLayoutDetails;
 
-    /** Holds the description editor instance. */
-    QTextEdit *m_pBrowserDetails;
+    /** Holds the details scroll-area instance. */
+    QScrollArea *m_pScrollAreaDetails;
+
+    /** Holds the details element map. */
+    QMap<DetailsElementType, UISnapshotDetailsElement*> m_details;
 };
 
 #endif /* !___UISnapshotDetailsWidget_h___ */
