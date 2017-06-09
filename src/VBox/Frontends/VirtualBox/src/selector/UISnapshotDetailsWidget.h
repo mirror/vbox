@@ -154,11 +154,6 @@ private:
     /** Holds the 'Options' layout instance. */
     QGridLayout *m_pLayoutOptions;
 
-    /** Holds the taken label instance. */
-    QLabel *m_pLabelTaken;
-    /** Holds the taken text instance. */
-    QLabel *m_pLabelTakenText;
-
     /** Holds the name label instance. */
     QLabel    *m_pLabelName;
     /** Holds the name editor instance. */

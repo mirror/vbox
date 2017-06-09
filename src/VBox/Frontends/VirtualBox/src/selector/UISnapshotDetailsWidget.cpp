@@ -318,7 +318,6 @@ UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     , m_pEmptyWidgetLabel(0)
     , m_pTabWidget(0)
     , m_pLayoutOptions(0)
-    , m_pLabelTaken(0), m_pLabelTakenText(0)
     , m_pLabelName(0), m_pEditorName(0)
     , m_pLabelThumbnail(0)
     , m_pLabelDescription(0), m_pBrowserDescription(0)
@@ -384,7 +383,6 @@ void UISnapshotDetailsWidget::retranslateUi()
     m_pTabWidget->setTabText(0, tr("&Attributes"));
     m_pTabWidget->setTabText(1, tr("D&etails"));
     m_pLabelName->setText(tr("&Name:"));
-    m_pLabelTaken->setText(tr("Taken:"));
     m_pLabelDescription->setText(tr("&Description:"));
 
     /* And if snapshot is valid: */
@@ -497,29 +495,6 @@ void UISnapshotDetailsWidget::prepareTabOptions()
         m_pLayoutOptions = new QGridLayout(pWidget);
         AssertPtrReturnVoid(m_pLayoutOptions);
         {
-            /* Create taken label: */
-            m_pLabelTaken = new QLabel;
-            AssertPtrReturnVoid(m_pLabelTaken);
-            {
-                /* Configure label: */
-                m_pLabelTaken->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-
-                /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pLabelTaken, 0, 0);
-            }
-            /* Create taken text: */
-            m_pLabelTakenText = new QLabel;
-            AssertPtrReturnVoid(m_pLabelTakenText);
-            {
-                /* Configure label: */
-                QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-                policy.setHorizontalStretch(1);
-                m_pLabelTakenText->setSizePolicy(policy);
-
-                /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pLabelTakenText, 0, 1);
-            }
-
             /* Create name label: */
             m_pLabelName = new QLabel;
             AssertPtrReturnVoid(m_pLabelName);
@@ -528,7 +503,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
                 /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pLabelName, 1, 0);
+                m_pLayoutOptions->addWidget(m_pLabelName, 0, 0);
             }
             /* Create name editor: */
             m_pEditorName = new QLineEdit;
@@ -543,7 +518,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                         this, &UISnapshotDetailsWidget::sltHandleNameChange);
 
                 /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pEditorName, 1, 1);
+                m_pLayoutOptions->addWidget(m_pEditorName, 0, 1);
             }
 
             /* Create thumbnail label: */
@@ -674,13 +649,6 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         /* Choose the tab-widget as current one: */
         m_pStackedLayout->setCurrentWidget(m_pTabWidget);
 
-        /* Calculate snapshot timestamp info: */
-        QDateTime timestamp;
-        timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
-        bool fDateTimeToday = timestamp.date() == QDate::currentDate();
-        QString dateTime = fDateTimeToday ? timestamp.time().toString(Qt::LocalDate) : timestamp.toString(Qt::LocalDate);
-        m_pLabelTakenText->setText(dateTime);
-
         /* Read snapshot display contents: */
         CMachine comMachine = m_comSnapshot.GetMachine();
         ULONG iWidth = 0, iHeight = 0;
@@ -708,10 +676,8 @@ void UISnapshotDetailsWidget::loadSnapshotData()
             m_pLayoutOptions->removeWidget(m_pLabelThumbnail);
             m_pLabelThumbnail->setHidden(true);
 
-            m_pLayoutOptions->removeWidget(m_pLabelTakenText);
             m_pLayoutOptions->removeWidget(m_pEditorName);
-            m_pLayoutOptions->addWidget(m_pLabelTakenText, 0, 1, 1, 2);
-            m_pLayoutOptions->addWidget(m_pEditorName, 1, 1, 1, 2);
+            m_pLayoutOptions->addWidget(m_pEditorName, 0, 1, 1, 2);
         }
         else
         {
@@ -721,10 +687,8 @@ void UISnapshotDetailsWidget::loadSnapshotData()
                                                                   Qt::KeepAspectRatioByExpanding,
                                                                   Qt::SmoothTransformation));
 
-            m_pLayoutOptions->removeWidget(m_pLabelTakenText);
             m_pLayoutOptions->removeWidget(m_pEditorName);
-            m_pLayoutOptions->addWidget(m_pLabelTakenText, 0, 1);
-            m_pLayoutOptions->addWidget(m_pEditorName, 1, 1);
+            m_pLayoutOptions->addWidget(m_pEditorName, 0, 1);
 
             m_pLayoutOptions->removeWidget(m_pLabelThumbnail);
             m_pLayoutOptions->addWidget(m_pLabelThumbnail, 0, 2, 2, 1);
@@ -736,9 +700,6 @@ void UISnapshotDetailsWidget::loadSnapshotData()
         /* Choose the empty-widget as current one: */
         m_pStackedLayout->setCurrentWidget(m_pEmptyWidget);
 
-        /* Clear snapshot timestamp info: */
-        m_pLabelTakenText->clear();
-
         // TODO: Check whether layout manipulations are really
         //       necessary, they looks a bit dangerous to me..
         {
@@ -748,9 +709,7 @@ void UISnapshotDetailsWidget::loadSnapshotData()
             m_pLabelThumbnail->setHidden(true);
 
             m_pLayoutOptions->removeWidget(m_pEditorName);
-            m_pLayoutOptions->removeWidget(m_pLabelTakenText);
-            m_pLayoutOptions->addWidget(m_pLabelTakenText, 0, 1, 1, 2);
-            m_pLayoutOptions->addWidget(m_pEditorName, 1, 1, 1, 2);
+            m_pLayoutOptions->addWidget(m_pEditorName, 0, 1, 1, 2);
         }
     }
 
