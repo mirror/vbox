@@ -277,7 +277,7 @@ static void rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRR
     pCore->cbObject             = ISO9660_GET_ENDIAN(&pDirRec->cbData);
     pCore->cExtents             = 1;
     pCore->FirstExtent.cbExtent = pCore->cbObject;
-    pCore->FirstExtent.offDisk  = ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)pVol->cbBlock;
+    pCore->FirstExtent.offDisk  = (ISO9660_GET_ENDIAN(&pDirRec->offExtent) + pDirRec->cExtAttrBlocks) * (uint64_t)pVol->cbBlock;
 
     rtFsIso9660DateTime2TimeSpec(&pCore->ModificationTime, &pDirRec->RecTime);
     pCore->BirthTime  = pCore->ModificationTime;
@@ -1440,7 +1440,7 @@ static void rtFsIso9660DirShrd_LogContent(PRTFSISO9660DIRSHRD pThis)
             Log2(("ISO9660:  %04x: rec=%#x ea=%#x cb=%#010RX32 off=%#010RX32 fl=%#04x %04u-%02u-%02u %02u:%02u:%02u%+03d unit=%#x igap=%#x idVol=%#x '%ls'\n",
                   offRec,
                   pDirRec->cbDirRec,
-                  pDirRec->cbExtAttr,
+                  pDirRec->cExtAttrBlocks,
                   ISO9660_GET_ENDIAN(&pDirRec->cbData),
                   ISO9660_GET_ENDIAN(&pDirRec->offExtent),
                   pDirRec->fFileFlags,
@@ -1746,7 +1746,7 @@ static void rtFsIso9660VolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVo
         Log2(("ISO9660:  bReserved883:              %#RX8\n", pVolDesc->bReserved883));
 
         Log2(("ISO9660:  RootDir.cbDirRec:                   %#RX8\n", pVolDesc->RootDir.DirRec.cbDirRec));
-        Log2(("ISO9660:  RootDir.cbExtAttr:                  %#RX8\n", pVolDesc->RootDir.DirRec.cbExtAttr));
+        Log2(("ISO9660:  RootDir.cExtAttrBlocks:             %#RX8\n", pVolDesc->RootDir.DirRec.cExtAttrBlocks));
         Log2(("ISO9660:  RootDir.offExtent:                  {%#RX32,%#RX32}\n", RT_BE2H_U32(pVolDesc->RootDir.DirRec.offExtent.be), RT_LE2H_U32(pVolDesc->RootDir.DirRec.offExtent.le)));
         Log2(("ISO9660:  RootDir.cbData:                     {%#RX32,%#RX32}\n", RT_BE2H_U32(pVolDesc->RootDir.DirRec.cbData.be), RT_LE2H_U32(pVolDesc->RootDir.DirRec.cbData.le)));
         Log2(("ISO9660:  RootDir.RecTime:                    %04u-%02u-%02u %02u:%02u:%02u%+03d\n",
