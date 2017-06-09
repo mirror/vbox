@@ -772,7 +772,7 @@ ifdef VBOX_WITH_DOCS_CHM
  $(PATH_STAGE_BIN)/VBoxDocumentation.zip: $(VBOX_MANUAL_PACK)
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -C $(PATH_STAGE_BIN) -- zip$(HOSTSUFF_EXE) -9 $@ $(notdir $^)
+	$(QUIET)$(REDIRECT) -C $(PATH_STAGE_BIN) -- $(VBOX_ZIP) -9 $@ $(notdir $^)
 
 endif # VBOX_WITH_DOCS_CHM
 
@@ -823,7 +823,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- zip$(HOSTSUFF_EXE) \
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
 		-9 -r $@ html-single html-chunks $(VBOX_MANUAL_PNG_FILES_en_US)
 
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html

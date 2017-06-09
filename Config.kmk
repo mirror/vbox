@@ -1982,6 +1982,9 @@ else
  VBOX_MKISOFS  ?= mkisofs
 endif
 
+# zip
+VBOX_ZIP ?= zip$(HOSTSUFF_EXE)
+
 ifeq ($(KBUILD_TARGET),win)
  ifeq ($(KBUILD_TARGET_ARCH),x86) # Normally we should test for KBUILD_HOST_ARCH but we only require MINGWW64 for 64-bit _targets_
   VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p

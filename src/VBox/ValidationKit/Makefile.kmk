@@ -103,7 +103,7 @@ ifndef VBOX_WITHOUT_VALIDATIONKIT_ZIP
 	$(foreach os, darwin freebsd linux os2 solaris win,$(foreach arch, x86 amd64 \
 	,$(if-expr defined(VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch))\
 		,$(NLTAB)$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/ \
-			-- zip$(HOSTSUFF_EXE) -r9 $@ $(INST_VALIDATIONKIT) -x '*.pyc',)))
+			-- $(VBOX_ZIP) -r9 $@ $(INST_VALIDATIONKIT) -x '*.pyc',)))
 
  #
  # VBoxTestBoxScript.zip - For setting up the testboxes.
@@ -118,7 +118,7 @@ ifndef VBOX_WITHOUT_VALIDATIONKIT_ZIP
 	$(foreach os, darwin freebsd linux os2 solaris win,$(foreach arch, x86 amd64 \
 	,$(if-expr defined(VBOX_WITH_VALIDATIONKIT_PACKING.$(os).$(arch))\
 		,$(NLTAB)$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/ \
-			-- zip$(HOSTSUFF_EXE) -r9 $@ $(INST_TESTBOXSCRIPT) -x '*.pyc',)))
+			-- $(VBOX_ZIP) -r9 $@ $(INST_TESTBOXSCRIPT) -x '*.pyc',)))
 
 endif # !VBOX_WITHOUT_VALIDATIONKIT_ZIP
 

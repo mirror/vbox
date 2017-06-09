@@ -336,7 +336,7 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
 	$(call MSG_L1,Zipping image $@)
 	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_ADDITIONS_ISO) -- zip$(HOSTSUFF_EXE) -9 $@ $(notdir $^)
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_ADDITIONS_ISO) -- $(VBOX_ZIP) -9 $@ $(notdir $^)
 
 # Alias for creating the iso.
 .PHONY: additions-iso
