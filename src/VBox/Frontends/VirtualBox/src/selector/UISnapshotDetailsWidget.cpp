@@ -731,30 +731,32 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
 {
     /* Details templates: */
     static const char *sTableTpl =
-        "<table border=0 cellspacing=1 cellpadding=0>%1</table>";
+        "<table border=0 cellspacing=1 cellpadding=0 style='white-space:pre'>%1</table>";
     static const char *sSectionBoldTpl =
-        "<tr><td width=%6 rowspan=%1 align=left><img src='%2'></td>"
-            "<td colspan=3><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
-            "%5"
-        "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
+        "<tr>"
+        "<td width=%3 rowspan=%1 align=left><img src='%2'></td>"
+        "<td colspan=3><nobr><b>%4</b></nobr></td>"
+        "</tr>"
+        "%5"
+        "<tr>"
+        "<td colspan=3><font size=1>&nbsp;</font></td>"
+        "</tr>";
     static const char *sSectionItemTpl1 =
-        "<tr><td width=40%><nobr><i>%1</i></nobr></td><td/><td/></tr>";
+        "<tr><td><nobr><i>%1</i></nobr></td><td/><td/></tr>";
     static const char *sSectionItemTpl2 =
-        "<tr><td width=40%><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
+        "<tr><td><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
     static const char *sSectionItemTpl3 =
-        "<tr><td width=40%><nobr>%1</nobr></td><td/><td/></tr>";
+        "<tr><td><nobr>%1</nobr></td><td/><td/></tr>";
 
     /* Use the const ref on the basis of implicit QString constructor: */
     const QString &strSectionTpl = sSectionBoldTpl;
 
     /* Determine icon metric: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-    const int iIndentMetric = iIconMetric * 1.375;
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    const int iIconArea = iIconMetric * 1.375;
 
-    /* Compose details report: */
+    /* Compose report: */
     QString strReport;
-
     /* General: */
     {
         /* Name, OS Type: */
@@ -778,12 +780,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://general", /* icon */
-                 "#general", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("General", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem /* items */);
     }
-
     /* System: */
     {
         /* Base Memory, Processor(s): */
@@ -875,12 +875,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://system", /* icon */
-                 "#system", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("System", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem); /* items */
     }
-
     /* Display: */
     {
         /* Video Memory: */
@@ -931,12 +929,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://display", /* icon */
-                 "#display", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("Display", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem); /* items */
     }
-
     /* Storage: */
     {
         /* Nothing: */
@@ -1000,12 +996,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://storage", /* icon */
-                 "#storage", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("Storage", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem); /* items */
     }
-
     /* Audio: */
     {
         /* Nothing: */
@@ -1032,12 +1026,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://audio", /* icon */
-                 "#audio", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("Audio", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem); /* items */
     }
-
     /* Network: */
     {
         /* Nothing: */
@@ -1104,12 +1096,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://network", /* icon */
-                 "#network", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("Network", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem); /* items */
     }
-
     /* Serial Ports: */
     {
         /* Nothing: */
@@ -1155,12 +1145,10 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://serialPorts", /* icon */
-                 "#serialPorts", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("Serial Ports", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem); /* items */
     }
-
 #ifdef VBOX_WITH_PARALLEL_PORTS
     /* Parallel Ports: */
     {
@@ -1194,19 +1182,16 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
             strItem = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (parallel ports)"));
         }
 
-        /* Temporary disabled: */
-        const QString dummy = strSectionTpl /* strReport += strSectionTpl */
+        /* Append report: */
+        strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://parallelPorts", /* icon */
-                 "#parallelPorts", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("Parallel Ports", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
-        Q_UNUSED(dummy);
+                 strItem); /* items */
     }
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-
-    /* USB */
+    /* USB: */
     {
         /* Acquire USB filters object: */
         const CUSBDeviceFilters &comFilters = comMachine.GetUSBDeviceFilters();
@@ -1241,14 +1226,12 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
             strReport += strSectionTpl
                 .arg(2 + iRowCount) /* rows */
                 .arg("details://usb", /* icon */
-                     "#usb", /* link */
+                     QString::number(iIconArea), /* icon area */
                      tr("USB", "details report"), /* title */
-                     strItem, /* items */
-                     QString::number(iIndentMetric));
+                     strItem); /* items */
         }
     }
-
-    /* Shared Folders */
+    /* Shared Folders: */
     {
         /* Shared Folders: */
         int iRowCount = 1;
@@ -1266,13 +1249,12 @@ QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine)
         strReport += strSectionTpl
             .arg(2 + iRowCount) /* rows */
             .arg("details://sharedFolders", /* icon */
-                 "#sfolders", /* link */
+                 QString::number(iIconArea), /* icon area */
                  tr("Shared Folders", "details report"), /* title */
-                 strItem, /* items */
-                 QString::number(iIndentMetric));
+                 strItem); /* items */
     }
 
-    /* Compose full report: */
+    /* Return report as table: */
     return QString(sTableTpl).arg(strReport);
 }
 
