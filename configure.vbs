@@ -2275,9 +2275,6 @@ Sub Main
    if blnOptDisableUDPTunnel = True then
       DisableUDPTunnel "--disable-udptunnel"
    end if
-   if blnOptDisableSDL = True then
-      DisableSDL "--disable-sdl"
-   end if
    CheckSourcePath
    CheckForkBuild strOptkBuild
    CheckForWinDDK strOptDDK
@@ -2289,9 +2286,13 @@ Sub Main
    CheckForMinGWw64 strOptMinGWw64
    CfgPrint "VBOX_WITH_OPEN_WATCOM := " '' @todo look for openwatcom 1.9+
    EnvPrint "set PATH=%PATH%;" & g_strPath& "/tools/win." & g_strTargetArch & "/bin;" '' @todo look for yasm
-   CheckForlibSDL strOptlibSDL
-   ' Don't check for these libraries by default as they are part of OSE
-   ' Using external libs can add a dependency to iconv
+   if blnOptDisableSDL = True then
+      DisableSDL "--disable-sdl"
+   else
+      CheckForlibSDL strOptlibSDL
+   end if
+   ' Don't check for this library by default as it's part of the tarball
+   ' Using an external library can add a dependency to iconv
    if (strOptXml2 <> "") then
       CheckForXml2 strOptXml2
    end if
