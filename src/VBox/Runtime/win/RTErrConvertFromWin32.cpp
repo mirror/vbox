@@ -203,6 +203,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_PASSWORD_RESTRICTION:
         case ERROR_ACCOUNT_DISABLED:        return VERR_ACCOUNT_RESTRICTED;
 
+        case ERROR_INVALID_IMAGE_HASH:      return VERR_LDR_IMAGE_HASH;
+
 
         /*
          * Winsocket errors are mostly BSD errno.h wrappers.
