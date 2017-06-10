@@ -508,6 +508,12 @@ typedef struct RTFSISOMAKEROUTPUTFILE
     PRTFSISOMAKERINT        pIsoMaker;
     /** The current file position. */
     uint64_t                offCurPos;
+    /** Current file hint. */
+    PRTFSISOMAKERFILE       pFileHint;
+    /** Source file corresponding to pFileHint.
+     * This is used when dealing with a RTFSISOMAKERSRCTYPE_VFS_FILE or
+     * RTFSISOMAKERSRCTYPE_TRANS_TBL file. */
+    RTVFSFILE               hVfsSrcFile;
 } RTFSISOMAKEROUTPUTFILE;
 /** Pointer to the instance data of an ISO maker output file. */
 typedef RTFSISOMAKEROUTPUTFILE *PRTFSISOMAKEROUTPUTFILE;
@@ -3015,6 +3021,7 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
             {
                 pCurFile->offData = *poffData;
                 *poffData += RT_ALIGN_64(pCurFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
+                RTListAppend(&pThis->FinalizedFiles, &pCurFile->FinalizedEntry);
             }
         }
     }
@@ -3518,6 +3525,197 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_QueryInfo(void *pvThis, PRTFSOBJINF
 
 
 /**
+ * Produces the content of a TRANS.TBL file as a memory file.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The ISO maker output file instance.  The file is
+ *                      returned as pThis->hVfsSrcFile.
+ * @param   pFile       The TRANS.TBL file.
+ */
+static int rtFsIsoMakerOutFile_ProduceTransTbl(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERFILE pFile)
+{
+    /*
+     * Create memory file instance.
+     */
+    RTVFSFILE hVfsFile;
+    int rc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, pFile->cbData, &hVfsFile);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Produce the file content.
+     */
+    PRTFSISOMAKERNAME *ppChild = pFile->u.pTransTblDir->pDir->papChildren;
+    uint32_t           cLeft   = pFile->u.pTransTblDir->pDir->cChildren;
+    while (cLeft-- > 0)
+    {
+        PRTFSISOMAKERNAME pChild = *ppChild++;
+        if (pChild->pszTransNm)
+        {
+            /** @todo TRANS.TBL codeset, currently using UTF-8 which is probably not it. */
+            char   szEntry[RTFSISOMAKER_MAX_NAME_BUF * 2 + 128];
+            size_t cchEntry = RTStrPrintf(szEntry, sizeof(szEntry),
+                                          "%c %-38s\t%s\n", pChild->pDir ? 'D' : 'F', pChild->szName, pChild->pszTransNm);
+            rc = RTVfsFileWrite(hVfsFile, szEntry, cchEntry, NULL);
+            if (RT_FAILURE(rc))
+            {
+                RTVfsFileRelease(hVfsFile);
+                return rc;
+            }
+        }
+    }
+
+    /*
+     * Check that the size matches our estimate.
+     */
+    uint64_t cbResult = 0;
+    rc = RTVfsFileGetSize(hVfsFile, &cbResult);
+    if (RT_SUCCESS(rc) && cbResult == pFile->cbData)
+    {
+        pThis->hVfsSrcFile = hVfsFile;
+        return VINF_SUCCESS;
+    }
+
+    AssertMsgFailed(("rc=%Rrc, cbResult=%#RX64 cbData=%#RX64\n", rc, cbResult, pFile->cbData));
+    RTVfsFileRelease(hVfsFile);
+    return VERR_INTERNAL_ERROR_4;
+}
+
+
+
+static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERINT pIsoMaker, uint64_t offUnsigned,
+                                            uint8_t *pbBuf, size_t cbBuf, size_t *pcbDone)
+{
+    *pcbDone = 0;
+
+    /*
+     * Figure out which file.  We keep a hint in the instance.
+     */
+    uint64_t          offInFile;
+    PRTFSISOMAKERFILE pFile = pThis->pFileHint;
+    if (!pFile)
+    {
+        pFile = RTListGetFirst(&pIsoMaker->FinalizedFiles, RTFSISOMAKERFILE, FinalizedEntry);
+        AssertReturn(pFile, VERR_INTERNAL_ERROR_2);
+    }
+    if ((offInFile = offUnsigned - pFile->offData) < RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE))
+    { /* hit */ }
+    else if (offUnsigned > pFile->offData)
+    {
+        /* Seek forwards. */
+        do
+        {
+            pFile = RTListGetNext(&pIsoMaker->FinalizedFiles, pFile, RTFSISOMAKERFILE, FinalizedEntry);
+            AssertReturn(pFile, VERR_INTERNAL_ERROR_3);
+        } while ((offInFile = offUnsigned - pFile->offData) < RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
+    }
+    else
+    {
+        /* Seek backwards. */
+        do
+        {
+            pFile = RTListGetPrev(&pIsoMaker->FinalizedFiles, pFile, RTFSISOMAKERFILE, FinalizedEntry);
+            AssertReturn(pFile, VERR_INTERNAL_ERROR_3);
+        } while ((offInFile = offUnsigned - pFile->offData) < RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
+    }
+
+    /*
+     * Update the hint/current file.
+     */
+    if (pThis->pFileHint != pFile)
+    {
+        pThis->pFileHint = pFile;
+        if (pThis->hVfsSrcFile != NIL_RTVFSFILE)
+        {
+            RTVfsFileRelease(pThis->hVfsSrcFile);
+            pThis->hVfsSrcFile = NIL_RTVFSFILE;
+        }
+    }
+
+    /*
+     * Produce data bits according to the source type.
+     */
+    if (offInFile < pFile->cbData)
+    {
+        int rc;
+        size_t cbToRead = RT_MIN(cbBuf, pFile->cbData - offInFile);
+        switch (pFile->enmSrcType)
+        {
+            case RTFSISOMAKERSRCTYPE_PATH:
+                if (pThis->hVfsSrcFile == NIL_RTVFSFILE)
+                {
+                    rc = RTVfsChainOpenFile(pFile->u.pszSrcPath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                                            &pThis->hVfsSrcFile, NULL, NULL);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+                rc = RTVfsFileReadAt(pThis->hVfsSrcFile, offInFile, pbBuf, cbToRead, NULL);
+                break;
+
+            case RTFSISOMAKERSRCTYPE_VFS_FILE:
+                rc = RTVfsFileReadAt(pFile->u.hVfsFile, offInFile, pbBuf, cbToRead, NULL);
+                break;
+
+            case RTFSISOMAKERSRCTYPE_TRANS_TBL:
+                if (pThis->hVfsSrcFile == NIL_RTVFSFILE)
+                {
+                    rc = rtFsIsoMakerOutFile_ProduceTransTbl(pThis, pFile);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+                rc = RTVfsFileReadAt(pFile->u.hVfsFile, offInFile, pbBuf, cbToRead, NULL);
+                break;
+
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_5);
+        }
+        if (RT_FAILURE(rc))
+            return rc;
+        *pcbDone = cbToRead;
+    }
+    else
+    {
+        size_t cbZeros = RT_MIN(cbBuf, RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE) - offInFile);
+        memset(pbBuf, 0, cbZeros);
+        *pcbDone = cbZeros;
+    }
+    return VINF_SUCCESS;
+}
+
+
+static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERNAMESPACE pNamespace,
+                                                 PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, bool fLittleEndian,
+                                                 uint32_t offInTable, uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis, pNamespace, pFinalizedDirs, fLittleEndian, offInTable, pbBuf, cbBuf);
+    return 0;
+}
+
+
+static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERNAMESPACE pNamespace,
+                                                 PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
+                                                 uint64_t off, uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis, pNamespace, pFinalizedDirs, off, pbBuf, cbBuf);
+    return 0;
+}
+
+
+static size_t rtFsIsoMakerOutFile_ReadDirStructures(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERNAMESPACE pNamespace,
+                                                    PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
+                                                    uint64_t off, uint8_t *pbBuf, size_t cbBuf)
+{
+    if (off < pFinalizedDirs->offPathTableL)
+        return rtFsIsoMakerOutFile_ReadDirRecords(pThis, pNamespace, pFinalizedDirs, off, pbBuf, cbBuf);
+    if (off < pFinalizedDirs->offPathTableM)
+        return rtFsIsoMakerOutFile_ReadPathTable(pThis, pNamespace, pFinalizedDirs, true /*fLittleEndian*/,
+                                                 (uint32_t)(off - pFinalizedDirs->offPathTableL), pbBuf, cbBuf);
+    return rtFsIsoMakerOutFile_ReadPathTable(pThis, pNamespace, pFinalizedDirs, false /*fLittleEndian*/,
+                                             (uint32_t)(off - pFinalizedDirs->offPathTableM), pbBuf, cbBuf);
+}
+
+
+
+/**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
 static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
@@ -3526,12 +3724,105 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRT
     PRTFSISOMAKERINT        pIsoMaker = pThis->pIsoMaker;
     size_t                  cbBuf     = pSgBuf->paSegs[0].cbSeg;
     uint8_t                *pbBuf     = (uint8_t *)pSgBuf->paSegs[0].pvSeg;
-    size_t                  cbRead    = 0;
-    int                     rc;
-    Assert(pSgBuf->cSegs == 1);
 
-    rc = VERR_NOT_IMPLEMENTED;
-    RT_NOREF(pThis, pIsoMaker, cbBuf, pbBuf, off, fBlocking);
+    Assert(pSgBuf->cSegs == 1);
+    RT_NOREF(fBlocking);
+
+    /*
+     * Process the offset, checking for end-of-file.
+     */
+    uint64_t offUnsigned;
+    if (off < 0)
+        offUnsigned = pThis->offCurPos;
+    else
+        offUnsigned = (uint64_t)off;
+    if (offUnsigned >= pIsoMaker->cbFinalizedImage)
+    {
+        if (*pcbRead)
+        {
+            *pcbRead = 0;
+            return VINF_EOF;
+        }
+        return VERR_EOF;
+    }
+    if (   !pcbRead
+        && pIsoMaker->cbFinalizedImage - offUnsigned < cbBuf)
+        return VERR_EOF;
+
+    /*
+     * Produce the bytes.
+     */
+    int    rc     = VINF_SUCCESS;
+    size_t cbRead = 0;
+    while (cbBuf > 0)
+    {
+        size_t cbDone;
+
+        /* Betting on there being more file data than metadata, thus doing the
+           offset switch in decending order. */
+        if (offUnsigned >= pIsoMaker->offFirstFile)
+        {
+            if (offUnsigned < pIsoMaker->cbFinalizedImage)
+            {
+                rc = rtFsIsoMakerOutFile_ReadFileData(pThis, pIsoMaker, offUnsigned, pbBuf, cbBuf, &cbDone);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            else
+            {
+                rc = pcbRead ? VINF_EOF : VERR_EOF;
+                break;
+            }
+        }
+        /*
+         * Joliet directory structures.
+         */
+        else if (   offUnsigned >= pIsoMaker->JolietDirs.offDirs
+                 && pIsoMaker->JolietDirs.offDirs < pIsoMaker->JolietDirs.offPathTableL)
+            cbDone = rtFsIsoMakerOutFile_ReadDirStructures(pThis, &pIsoMaker->Joliet, &pIsoMaker->JolietDirs,
+                                                           offUnsigned, pbBuf, cbBuf);
+        /*
+         * Primary ISO directory structures.
+         */
+        else if (offUnsigned >= pIsoMaker->PrimaryIsoDirs.offDirs)
+            cbDone = rtFsIsoMakerOutFile_ReadDirStructures(pThis, &pIsoMaker->PrimaryIso, &pIsoMaker->PrimaryIsoDirs,
+                                                           offUnsigned, pbBuf, cbBuf);
+        /** @todo Insert El Torito stuff here? Probably okay to let it be in the file
+         *        area, right? */
+        /*
+         * Volume descriptors.
+         */
+        else if (offUnsigned >= _32K)
+        {
+            size_t offVolDescs = (size_t)offUnsigned - _32K;
+            cbDone = RT_MIN(cbBuf, (pIsoMaker->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE) - offVolDescs);
+            memcpy(pbBuf, &pIsoMaker->pbVolDescs[offVolDescs], cbDone);
+        }
+        /*
+         * Zeros in the system area.
+         */
+        else if (offUnsigned >= pIsoMaker->cbSysArea)
+        {
+            cbDone = RT_MIN(cbBuf, _32K - (size_t)offUnsigned);
+            memset(pbBuf, 0, cbDone);
+        }
+        /*
+         * Actual data in the system area.
+         */
+        else
+        {
+            cbDone = RT_MIN(cbBuf, pIsoMaker->cbSysArea - (size_t)offUnsigned);
+            memcpy(pbBuf, &pIsoMaker->pbSysArea[(size_t)offUnsigned], cbDone);
+        }
+
+        /*
+         * Common advance.
+         */
+        cbRead      += cbDone;
+        offUnsigned += cbDone;
+        pbBuf       += cbDone;
+        cbBuf       -= cbDone;
+    }
 
     if (pcbRead)
         *pcbRead = cbRead;
@@ -3563,7 +3854,7 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Flush(void *pvThis)
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
  */
 static DECLCALLBACK(int) rtFsIsoMakerOutFile_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                              uint32_t *pfRetEvents)
+                                                     uint32_t *pfRetEvents)
 {
     NOREF(pvThis);
     return RTVfsUtilDummyPollOne(fEvents, cMillies, fIntr, pfRetEvents);
@@ -3605,7 +3896,7 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetMode(void *pvThis, RTFMODE fMode
  * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
  */
 static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+                                                      PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
     return VERR_WRITE_PROTECT;
@@ -3755,8 +4046,10 @@ RTDECL(int) RTFsIsoMakerCreateVfsOutputFile(RTFSISOMAKER hIsoMaker, PRTVFSFILE p
                           NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pFileData);
     if (RT_SUCCESS(rc))
     {
-        pFileData->pIsoMaker = pThis;
-        pFileData->offCurPos = 0;
+        pFileData->pIsoMaker   = pThis;
+        pFileData->offCurPos   = 0;
+        pFileData->pFileHint   = NULL;
+        pFileData->hVfsSrcFile = NIL_RTVFSFILE;
         return VINF_SUCCESS;
     }
 
