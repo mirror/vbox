@@ -657,7 +657,7 @@ static DECLCALLBACK(int) rtVfsMemFile_Seek(void *pvThis, RTFOFF offSeek, unsigne
     }
 
     /*
-     * Calc new position, take care to stay without bounds.
+     * Calc new position, take care to stay within RTFOFF type bounds.
      */
     uint64_t offNew;
     if (offSeek == 0)
