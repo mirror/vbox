@@ -44,6 +44,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
+#include <iprt/vfslowlevel.h>
 #include <iprt/formats/iso9660.h>
 
 #include <internal/magics.h>
@@ -198,13 +199,15 @@ typedef struct RTFSISOMAKERNAME
     /** The device number if a character or block device.
      * This is for Rock Ridge.  */
     RTDEV                   Device;
-    /** The number of hardlinks to report in the file stats.
-     * This is for Rock Ridge.  */
-    uint32_t                cHardlinks;
     /** The inode/serial number.
      * This is for Rock Ridge.  */
     uint64_t                INode;
+    /** The number of hardlinks to report in the file stats.
+     * This is for Rock Ridge.  */
+    uint32_t                cHardlinks;
 
+    /** The offset of the translate table file entry. */
+    uint32_t                offTransTbl;
     /** The offset of the directory entry in the parent directory. */
     uint32_t                offDirRec;
     /** Size of the directory record (ISO-9660).
@@ -496,6 +499,21 @@ typedef RTFSISOMAKERINT *PRTFSISOMAKERINT;
 typedef struct RTFSISOMAKERINT::RTFSISOMAKERFINALIZEDDIRS *PRTFSISOMAKERFINALIZEDDIRS;
 
 
+/**
+ * Instance data of an ISO maker output file.
+ */
+typedef struct RTFSISOMAKEROUTPUTFILE
+{
+    /** The ISO maker (owns a reference). */
+    PRTFSISOMAKERINT        pIsoMaker;
+    /** The current file position. */
+    uint64_t                offCurPos;
+} RTFSISOMAKEROUTPUTFILE;
+/** Pointer to the instance data of an ISO maker output file. */
+typedef RTFSISOMAKEROUTPUTFILE *PRTFSISOMAKEROUTPUTFILE;
+
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -578,6 +596,8 @@ static int rtFsIsoMakerAddUnnamedDirWorker(PRTFSISOMAKERINT pThis, PRTFSISOMAKER
 static int rtFsIsoMakerAddUnnamedFileWorker(PRTFSISOMAKERINT pThis, PCRTFSOBJINFO pObjInfo, size_t cbExtra,
                                             PRTFSISOMAKERFILE *ppFile);
 static int rtFsIsoMakerObjRemoveWorker(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj);
+
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual);
 
 
 
@@ -1730,8 +1750,9 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->uid                  = pObj->uid;
             pName->gid                  = pObj->gid;
             pName->Device               = 0;
-            pName->cHardlinks           = 1;
             pName->INode                = pObj->idxObj;
+            pName->cHardlinks           = 1;
+            pName->offTransTbl          = UINT32_MAX;
             pName->offDirRec            = UINT32_MAX;
             pName->cbDirRec             = 0;
 
@@ -2787,17 +2808,25 @@ static void rtFsIsoMakerFinalizeGatherDirs(PRTFSISOMAKERNAMESPACE pNamespace, PR
  *                          root, otherwise it's zero.
  */
 static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, PRTFSISOMAKERNAME pName,
-                                                 uint32_t offInDir, uint8_t uRootRockRidge)
+                                                 uint32_t offInDir, uint32_t offInTransTbl, uint8_t uRootRockRidge)
 {
-    pName->offDirRec = offInDir;
+    /* Set directory and translation table offsets.  (These are for
+       helping generating data blocks later.) */
+    pName->offDirRec   = offInDir;
+    pName->offTransTbl = offInTransTbl;
 
+    /* Calculate the minimal directory record size. */
     size_t cbDirRec  = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1);
     AssertReturn(cbDirRec <= UINT8_MAX, VERR_FILENAME_TOO_LONG);
     pName->cbDirRec  = (uint8_t)cbDirRec;
 
-    /** @todo rock ridge    */
+    /*
+     * Calculate additional rock ridge stuff, if it doesn't all fit write it
+     * to the spill file.
+     */
     if (pFinalizedDirs->pRRSpillFile)
     {
+        /** @todo rock ridge    */
         RT_NOREF(uRootRockRidge);
     }
 
@@ -2823,15 +2852,18 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
     pFinalizedDirs->offDirs = *poffData;
 
     /*
-     * Reset the rock ridge spill file, in case we someone are finalized multiple times.
+     * Reset the rock ridge spill file (in case we allow finalizing more than once)
+     * and create a new spill file if rock ridge is enabled.  The directory entry
+     * finalize function uses this as a clue that rock ridge is enabled.
      */
     if (pFinalizedDirs->pRRSpillFile)
     {
         rtFsIsoMakerObjRemoveWorker(pThis, &pFinalizedDirs->pRRSpillFile->Core);
         pFinalizedDirs->pRRSpillFile = NULL;
     }
-    if (pNamespace->fNamespace)
+    if (pNamespace->uRockRidgeLevel > 0)
     {
+        /** @todo create rock ridge spill file to indicate rock ridge */
     }
 
     int      rc;
@@ -2842,7 +2874,8 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
         /*
          * Precalc the directory record size for the root directory.
          */
-        rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pNamespace->pRoot, 0 /*offInDir*/, true /*fIsRoot*/);
+        rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pNamespace->pRoot, 0 /*offInDir*/, 0 /*offInTransTbl*/,
+                                                   pNamespace->uRockRidgeLevel);
         AssertRCReturn(rc, rc);
 
         /*
@@ -2862,22 +2895,22 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
             offInDir         += pParentName->cbDirRec - pParentName->cbNameInDirRec + 1;
 
             /* Finalize the directory entries. */
-            uint32_t            cbTransTbl = 0;
-            uint32_t            cLeft      = pCurDir->cChildren;
-            PPRTFSISOMAKERNAME  ppChild    = pCurDir->papChildren;
+            uint32_t            offInTransTbl = 0;
+            uint32_t            cLeft         = pCurDir->cChildren;
+            PPRTFSISOMAKERNAME  ppChild       = pCurDir->papChildren;
             while (cLeft-- > 0)
             {
                 PRTFSISOMAKERNAME pChild = *ppChild++;
-                rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, false /*fIsRoot*/);
+                rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, offInTransTbl, 0 /*uRootRockRidge*/);
                 AssertRCReturn(rc, rc);
 
                 offInDir += pChild->cbDirRec;
                 if (pChild->cchTransNm)
-                    cbTransTbl += 2 /* type & space*/
-                                + RT_MAX(pChild->cchName, 39)
-                                + 1 /* tab */
-                                + pChild->cchTransNm
-                                + 1 /* newline */;
+                    offInTransTbl += 2 /* type & space*/
+                                  +  RT_MAX(pChild->cchName, 39)
+                                  +  1 /* tab */
+                                  +  pChild->cchTransNm
+                                  +  1 /* newline */;
             }
 
             /* Set the directory size and location, advancing the data offset. */
@@ -2887,7 +2920,7 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
 
             /* Set the translation table file size. */
             if (pCurDir->pTransTblFile)
-                pCurDir->pTransTblFile->cbData = cbTransTbl;
+                pCurDir->pTransTblFile->cbData = offInTransTbl;
 
             /* Add to the path table size calculation. */
             pCurDir->offPathTable = cbPathTable;
@@ -3402,4 +3435,333 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
     return rc;
 }
 
+
+
+
+
+/*
+ *
+ * Image I/O.
+ * Image I/O.
+ * Image I/O.
+ *
+ */
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Close(void *pvThis)
+{
+    PRTFSISOMAKEROUTPUTFILE pThis = (PRTFSISOMAKEROUTPUTFILE)pvThis;
+
+    RTFsIsoMakerRelease(pThis->pIsoMaker);
+    pThis->pIsoMaker = NULL;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTFSISOMAKEROUTPUTFILE pThis     = (PRTFSISOMAKEROUTPUTFILE)pvThis;
+    PRTFSISOMAKERINT        pIsoMaker = pThis->pIsoMaker;
+
+
+    pObjInfo->cbObject         = pIsoMaker->cbFinalizedImage;
+    pObjInfo->cbAllocated      = pIsoMaker->cbFinalizedImage;
+    pObjInfo->AccessTime       = pIsoMaker->ImageCreationTime;
+    pObjInfo->ModificationTime = pIsoMaker->ImageCreationTime;
+    pObjInfo->ChangeTime       = pIsoMaker->ImageCreationTime;
+    pObjInfo->BirthTime        = pIsoMaker->ImageCreationTime;
+    pObjInfo->Attr.fMode       = 0444 | RTFS_TYPE_FILE | RTFS_DOS_READONLY;
+
+    switch (enmAddAttr)
+    {
+        case RTFSOBJATTRADD_NOTHING:
+            enmAddAttr = RTFSOBJATTRADD_UNIX;
+            /* fall thru */
+        case RTFSOBJATTRADD_UNIX:
+            pObjInfo->Attr.u.Unix.uid           = NIL_RTUID;
+            pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;
+            pObjInfo->Attr.u.Unix.cHardlinks    = 1;
+            pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
+            pObjInfo->Attr.u.Unix.INodeId       = 0;
+            pObjInfo->Attr.u.Unix.fFlags        = 0;
+            pObjInfo->Attr.u.Unix.GenerationId  = 0;
+            pObjInfo->Attr.u.Unix.Device        = 0;
+            break;
+
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pObjInfo->Attr.u.UnixOwner.uid = NIL_RTUID;
+            pObjInfo->Attr.u.UnixOwner.szName[0] = '\0';
+            break;
+
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pObjInfo->Attr.u.UnixGroup.gid = NIL_RTGID;
+            pObjInfo->Attr.u.UnixGroup.szName[0] = '\0';
+            break;
+
+        case RTFSOBJATTRADD_EASIZE:
+            pObjInfo->Attr.u.EASize.cb = 0;
+            break;
+
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+    pObjInfo->Attr.enmAdditional = enmAddAttr;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+{
+    PRTFSISOMAKEROUTPUTFILE pThis     = (PRTFSISOMAKEROUTPUTFILE)pvThis;
+    PRTFSISOMAKERINT        pIsoMaker = pThis->pIsoMaker;
+    size_t                  cbBuf     = pSgBuf->paSegs[0].cbSeg;
+    uint8_t                *pbBuf     = (uint8_t *)pSgBuf->paSegs[0].pvSeg;
+    size_t                  cbRead    = 0;
+    int                     rc;
+    Assert(pSgBuf->cSegs == 1);
+
+    rc = VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pThis, pIsoMaker, cbBuf, pbBuf, off, fBlocking);
+
+    if (pcbRead)
+        *pcbRead = cbRead;
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Flush(void *pvThis)
+{
+    RT_NOREF(pvThis);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                                              uint32_t *pfRetEvents)
+{
+    NOREF(pvThis);
+    return RTVfsUtilDummyPollOne(fEvents, cMillies, fIntr, pfRetEvents);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Tell(void *pvThis, PRTFOFF poffActual)
+{
+    PRTFSISOMAKEROUTPUTFILE pThis = (PRTFSISOMAKEROUTPUTFILE)pvThis;
+    *poffActual = pThis->offCurPos;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnSkip}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Skip(void *pvThis, RTFOFF cb)
+{
+    RTFOFF offIgnored;
+    return rtFsIsoMakerOutFile_Seek(pvThis, cb, RTFILE_SEEK_CURRENT, &offIgnored);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    RT_NOREF(pvThis, fMode, fMask);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    RT_NOREF(pvThis, uid, gid);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSeek}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
+{
+    PRTFSISOMAKEROUTPUTFILE pThis = (PRTFSISOMAKEROUTPUTFILE)pvThis;
+
+    /*
+     * Seek relative to which position.
+     */
+    uint64_t offWrt;
+    switch (uMethod)
+    {
+        case RTFILE_SEEK_BEGIN:
+            offWrt = 0;
+            break;
+
+        case RTFILE_SEEK_CURRENT:
+            offWrt = pThis->offCurPos;
+            break;
+
+        case RTFILE_SEEK_END:
+            offWrt = pThis->pIsoMaker->cbFinalizedImage;
+            break;
+
+        default:
+            return VERR_INTERNAL_ERROR_5;
+    }
+
+    /*
+     * Calc new position, take care to stay within RTFOFF type bounds.
+     */
+    uint64_t offNew;
+    if (offSeek == 0)
+        offNew = offWrt;
+    else if (offSeek > 0)
+    {
+        offNew = offWrt + offSeek;
+        if (   offNew < offWrt
+            || offNew > RTFOFF_MAX)
+            offNew = RTFOFF_MAX;
+    }
+    else if ((uint64_t)-offSeek < offWrt)
+        offNew = offWrt + offSeek;
+    else
+        offNew = 0;
+    pThis->offCurPos = offNew;
+
+    *poffActual = offNew;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQuerySize}
+ */
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_QuerySize(void *pvThis, uint64_t *pcbFile)
+{
+    PRTFSISOMAKEROUTPUTFILE pThis = (PRTFSISOMAKEROUTPUTFILE)pvThis;
+    *pcbFile = pThis->pIsoMaker->cbFinalizedImage;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Standard file operations.
+ */
+DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoMakerOutputFileOps =
+{
+    { /* Stream */
+        { /* Obj */
+            RTVFSOBJOPS_VERSION,
+            RTVFSOBJTYPE_FILE,
+            "ISO Maker Output File",
+            rtFsIsoMakerOutFile_Close,
+            rtFsIsoMakerOutFile_QueryInfo,
+            RTVFSOBJOPS_VERSION
+        },
+        RTVFSIOSTREAMOPS_VERSION,
+        RTVFSIOSTREAMOPS_FEAT_NO_SG,
+        rtFsIsoMakerOutFile_Read,
+        rtFsIsoMakerOutFile_Write,
+        rtFsIsoMakerOutFile_Flush,
+        rtFsIsoMakerOutFile_PollOne,
+        rtFsIsoMakerOutFile_Tell,
+        rtFsIsoMakerOutFile_Skip,
+        NULL /*ZeroFill*/,
+        RTVFSIOSTREAMOPS_VERSION,
+    },
+    RTVFSFILEOPS_VERSION,
+    0,
+    { /* ObjSet */
+        RTVFSOBJSETOPS_VERSION,
+        RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
+        rtFsIsoMakerOutFile_SetMode,
+        rtFsIsoMakerOutFile_SetTimes,
+        rtFsIsoMakerOutFile_SetOwner,
+        RTVFSOBJSETOPS_VERSION
+    },
+    rtFsIsoMakerOutFile_Seek,
+    rtFsIsoMakerOutFile_QuerySize,
+    RTVFSFILEOPS_VERSION
+};
+
+
+
+/**
+ * Creates a VFS file for a finalized ISO maker instanced.
+ *
+ * The file can be used to access the image.  Both sequential and random access
+ * are supported, so that this could in theory be hooked up to a CD/DVD-ROM
+ * drive emulation and used as a virtual ISO image.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   phVfsFile           Where to return the handle.
+ */
+RTDECL(int) RTFsIsoMakerCreateVfsOutputFile(RTFSISOMAKER hIsoMaker, PRTVFSFILE phVfsFile)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(pThis->fFinalized, VERR_WRONG_ORDER);
+    AssertPtrReturn(phVfsFile, VERR_INVALID_POINTER);
+
+    uint32_t cRefs = RTFsIsoMakerRetain(pThis);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
+    PRTFSISOMAKEROUTPUTFILE pFileData;
+    RTVFSFILE               hVfsFile;
+    int rc = RTVfsNewFile(&g_rtFsIsoMakerOutputFileOps, sizeof(*pFileData), RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_CREATE,
+                          NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pFileData);
+    if (RT_SUCCESS(rc))
+    {
+        pFileData->pIsoMaker = pThis;
+        pFileData->offCurPos = 0;
+        return VINF_SUCCESS;
+    }
+
+    RTFsIsoMakerRelease(pThis);
+    *phVfsFile = NIL_RTVFSFILE;
+    return rc;
+}
 
