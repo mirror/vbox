@@ -64,6 +64,8 @@
 
 /** The sector size. */
 #define RTFSISOMAKER_SECTOR_SIZE            _2K
+/** The sector offset mask. */
+#define RTFSISOMAKER_SECTOR_OFFSET_MASK     (_2K - 1)
 /** Maximum number of objects. */
 #define RTFSISOMAKER_MAX_OBJECTS            _16M
 /** Maximum number of objects per directory. */
@@ -71,6 +73,11 @@
 
 /** UTF-8 name buffer.  */
 #define RTFSISOMAKER_MAX_NAME_BUF           768
+
+/** TRANS.TBL left padding length.
+ * We keep the amount of padding low to avoid wasing memory when generating
+ * these long obsolete files. */
+#define RTFSISOMAKER_TRANS_TBL_LEFT_PAD     12
 
 /** Tests if @a a_ch is in the set of d-characters. */
 #define RTFSISOMAKER_IS_IN_D_CHARS(a_ch)        (RT_C_IS_UPPER(a_ch) || RT_C_IS_DIGIT(a_ch) || (a_ch) == '_')
@@ -206,8 +213,6 @@ typedef struct RTFSISOMAKERNAME
      * This is for Rock Ridge.  */
     uint32_t                cHardlinks;
 
-    /** The offset of the translate table file entry. */
-    uint32_t                offTransTbl;
     /** The offset of the directory entry in the parent directory. */
     uint32_t                offDirRec;
     /** Size of the directory record (ISO-9660).
@@ -514,6 +519,8 @@ typedef struct RTFSISOMAKEROUTPUTFILE
      * This is used when dealing with a RTFSISOMAKERSRCTYPE_VFS_FILE or
      * RTFSISOMAKERSRCTYPE_TRANS_TBL file. */
     RTVFSFILE               hVfsSrcFile;
+    /** Current directory hint. */
+    PRTFSISOMAKERNAMEDIR    pDirHint;
 } RTFSISOMAKEROUTPUTFILE;
 /** Pointer to the instance data of an ISO maker output file. */
 typedef RTFSISOMAKEROUTPUTFILE *PRTFSISOMAKEROUTPUTFILE;
@@ -1648,10 +1655,14 @@ static int rtFsIsoMakerAddTransTblFileToNewDir(PRTFSISOMAKERINT pThis, PRTFSISOM
         /*
          * Add it to the directory.
          */
+        PRTFSISOMAKERNAME pTransTblNm;
         rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pFile->Core, pDirName,
-                                    pNamespace->pszTransTbl, strlen(pNamespace->pszTransTbl), NULL /*ppNewName*/);
+                                    pNamespace->pszTransTbl, strlen(pNamespace->pszTransTbl), &pTransTblNm);
         if (RT_SUCCESS(rc))
+        {
+            pTransTblNm->cchTransNm = 0;
             return VINF_SUCCESS;
+        }
 
         /*
          * Bail.
@@ -1746,8 +1757,8 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->pszRockRidgeNm       = pszDst;
             pName->pszTransNm           = pszDst;
             pName->cchSpecNm            = (uint16_t)cchSpec;
-            pName->cchRockRidgeNm       = 0;
-            pName->cchTransNm           = 0;
+            pName->cchRockRidgeNm       = (uint16_t)cchSpec;
+            pName->cchTransNm           = (uint16_t)cchSpec;
             pName->uDepth               = pParent->uDepth + 1;
             pName->fRockRidgeNmAlloced  = false;
             pName->fTransNmAlloced      = false;
@@ -1758,7 +1769,6 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->Device               = 0;
             pName->INode                = pObj->idxObj;
             pName->cHardlinks           = 1;
-            pName->offTransTbl          = UINT32_MAX;
             pName->offDirRec            = UINT32_MAX;
             pName->cbDirRec             = 0;
 
@@ -2814,12 +2824,11 @@ static void rtFsIsoMakerFinalizeGatherDirs(PRTFSISOMAKERNAMESPACE pNamespace, PR
  *                          root, otherwise it's zero.
  */
 static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, PRTFSISOMAKERNAME pName,
-                                                 uint32_t offInDir, uint32_t offInTransTbl, uint8_t uRootRockRidge)
+                                                 uint32_t offInDir, uint8_t uRootRockRidge)
 {
     /* Set directory and translation table offsets.  (These are for
        helping generating data blocks later.) */
     pName->offDirRec   = offInDir;
-    pName->offTransTbl = offInTransTbl;
 
     /* Calculate the minimal directory record size. */
     size_t cbDirRec  = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1);
@@ -2880,8 +2889,7 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
         /*
          * Precalc the directory record size for the root directory.
          */
-        rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pNamespace->pRoot, 0 /*offInDir*/, 0 /*offInTransTbl*/,
-                                                   pNamespace->uRockRidgeLevel);
+        rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pNamespace->pRoot, 0 /*offInDir*/, pNamespace->uRockRidgeLevel);
         AssertRCReturn(rc, rc);
 
         /*
@@ -2901,22 +2909,22 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
             offInDir         += pParentName->cbDirRec - pParentName->cbNameInDirRec + 1;
 
             /* Finalize the directory entries. */
-            uint32_t            offInTransTbl = 0;
-            uint32_t            cLeft         = pCurDir->cChildren;
-            PPRTFSISOMAKERNAME  ppChild       = pCurDir->papChildren;
+            uint32_t            cbTransTbl  = 0;
+            uint32_t            cLeft       = pCurDir->cChildren;
+            PPRTFSISOMAKERNAME  ppChild     = pCurDir->papChildren;
             while (cLeft-- > 0)
             {
                 PRTFSISOMAKERNAME pChild = *ppChild++;
-                rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, offInTransTbl, 0 /*uRootRockRidge*/);
+                rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, 0 /*uRootRockRidge*/);
                 AssertRCReturn(rc, rc);
 
                 offInDir += pChild->cbDirRec;
                 if (pChild->cchTransNm)
-                    offInTransTbl += 2 /* type & space*/
-                                  +  RT_MAX(pChild->cchName, 39)
-                                  +  1 /* tab */
-                                  +  pChild->cchTransNm
-                                  +  1 /* newline */;
+                    cbTransTbl += 2 /* type & space*/
+                               +  RT_MAX(pChild->cchName, RTFSISOMAKER_TRANS_TBL_LEFT_PAD)
+                               +  1 /* tab */
+                               +  pChild->cchTransNm
+                               +  1 /* newline */;
             }
 
             /* Set the directory size and location, advancing the data offset. */
@@ -2926,7 +2934,7 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
 
             /* Set the translation table file size. */
             if (pCurDir->pTransTblFile)
-                pCurDir->pTransTblFile->cbData = offInTransTbl;
+                pCurDir->pTransTblFile->cbData = cbTransTbl;
 
             /* Add to the path table size calculation. */
             pCurDir->offPathTable = cbPathTable;
@@ -3551,10 +3559,11 @@ static int rtFsIsoMakerOutFile_ProduceTransTbl(PRTFSISOMAKEROUTPUTFILE pThis, PR
         PRTFSISOMAKERNAME pChild = *ppChild++;
         if (pChild->pszTransNm)
         {
-            /** @todo TRANS.TBL codeset, currently using UTF-8 which is probably not it. */
+            /** @todo TRANS.TBL codeset, currently using UTF-8 which is probably not it.
+             *        However, nobody uses this stuff any more, so who cares. */
             char   szEntry[RTFSISOMAKER_MAX_NAME_BUF * 2 + 128];
-            size_t cchEntry = RTStrPrintf(szEntry, sizeof(szEntry),
-                                          "%c %-38s\t%s\n", pChild->pDir ? 'D' : 'F', pChild->szName, pChild->pszTransNm);
+            size_t cchEntry = RTStrPrintf(szEntry, sizeof(szEntry), "%c %-*s\t%s\n", pChild->pDir ? 'D' : 'F',
+                                          RTFSISOMAKER_TRANS_TBL_LEFT_PAD, pChild->szName, pChild->pszTransNm);
             rc = RTVfsFileWrite(hVfsFile, szEntry, cchEntry, NULL);
             if (RT_FAILURE(rc))
             {
@@ -3582,6 +3591,19 @@ static int rtFsIsoMakerOutFile_ProduceTransTbl(PRTFSISOMAKEROUTPUTFILE pThis, PR
 
 
 
+/**
+ * Reads file data.
+ *
+ * @returns IPRT status code
+ * @param   pThis           The instance data for the VFS file.  We use this to
+ *                          keep hints about where we are and we which source
+ *                          file we've opened/created.
+ * @param   pIsoMaker       The ISO maker instance.
+ * @param   offUnsigned     The ISO image byte offset of the requested data.
+ * @param   pbBuf           The output buffer.
+ * @param   cbBuf           How much to read.
+ * @param   pcbDone         Where to return how much was read.
+ */
 static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERINT pIsoMaker, uint64_t offUnsigned,
                                             uint8_t *pbBuf, size_t cbBuf, size_t *pcbDone)
 {
@@ -3671,6 +3693,19 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
         if (RT_FAILURE(rc))
             return rc;
         *pcbDone = cbToRead;
+
+        /*
+         * Check if we're into the zero padding at the end of the file now.
+         */
+        if (   cbToRead < cbBuf
+            && offInFile + cbToRead == pFile->cbData)
+        {
+            cbBuf -= cbToRead;
+            pbBuf += cbToRead;
+            size_t cbZeros = RT_MIN(cbBuf, RTFSISOMAKER_SECTOR_SIZE - (pFile->cbData & RTFSISOMAKER_SECTOR_OFFSET_MASK));
+            memset(pbBuf, 0, cbZeros);
+            *pcbDone += cbZeros;
+        }
     }
     else
     {
@@ -3691,12 +3726,159 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKEROUTPUTFILE pThis, P
 }
 
 
-static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERNAMESPACE pNamespace,
-                                                 PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
-                                                 uint64_t off, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, uint8_t *pbBuf)
 {
-    RT_NOREF(pThis, pNamespace, pFinalizedDirs, off, pbBuf, cbBuf);
-    return 0;
+    memset(pbBuf, pName->szName[0], sizeof(ISO9660DIRREC));
+    return pName->cbDirRec;
+}
+
+
+static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pName, uint32_t off, uint8_t *pbBuf, size_t cbBuf)
+{
+    Assert(off < pName->cbDirRec);
+
+    uint8_t abTmpBuf[256];
+    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, pbBuf);
+    cbToCopy = RT_MIN(cbBuf, cbToCopy - off);
+    memcpy(pbBuf, &abTmpBuf[off], cbToCopy);
+    return (uint32_t)cbToCopy;
+}
+
+
+static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
+                                                 uint64_t offUnsigned, uint8_t *pbBuf, size_t cbBuf)
+{
+
+    /*
+     * Figure out which directory.  We keep a hint in the instance.
+     */
+    uint64_t             offInDir64;
+    PRTFSISOMAKERNAMEDIR pDir = pThis->pDirHint;
+    if (!pDir)
+    {
+        pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+        AssertReturn(pDir, 0);
+    }
+    if ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE))
+    { /* hit */ }
+    /* Seek forwards: */
+    else if (offUnsigned > pDir->offDir)
+        do
+        {
+            pDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+            AssertReturn(pDir, 0);
+        } while ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
+    /* Back to the start: */
+    else if (pFinalizedDirs->offDirs / RTFSISOMAKER_SECTOR_SIZE == offUnsigned / RTFSISOMAKER_SECTOR_SIZE)
+    {
+        pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+        AssertReturn(pDir, 0);
+    }
+    /* Seek backwards: */
+    else
+        do
+        {
+            pDir = RTListGetPrev(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+            AssertReturn(pDir, 0);
+        } while ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
+
+    /*
+     * Update the hint.
+     */
+    pThis->pDirHint = pDir;
+
+    /*
+     * Generate content.
+     */
+    size_t cbDone = 0;
+    uint32_t offInDir = (uint32_t)offInDir64;
+    if (offInDir < pDir->cbDir)
+    {
+        PRTFSISOMAKERNAME   pDirName      = pDir->pName;
+        PRTFSISOMAKERNAME   pParentName   = pDirName->pParent ? pDirName->pParent : pDirName;
+        uint32_t            cbSpecialRecs = pDirName->cbDirRec + pParentName->cbDirRec;
+
+        /*
+         * Special '.' and/or '..' entries requested.
+         */
+        uint32_t iChild;
+        if (offInDir < cbSpecialRecs)
+        {
+            /* do '.' */
+            if (offInDir < pDirName->cbDirRec)
+            {
+                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pDirName, offInDir, pbBuf, cbBuf);
+                cbDone   += cbCopied;
+                offInDir += cbCopied;
+                cbBuf    -= cbCopied;
+            }
+
+            /* do '..' */
+            if (cbBuf > 0)
+            {
+                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pParentName, offInDir - pDirName->cbDirRec,
+                                                                              pbBuf, cbBuf);
+                cbDone   += cbCopied;
+                offInDir += cbCopied;
+                cbBuf    -= cbCopied;
+            }
+
+            iChild = 0;
+        }
+        /*
+         * Locate the directory entry we should start with.  We can do this
+         * using binary searching on offInDir.
+         */
+        else
+        {
+            /** @todo binary search   */
+            iChild = 0;
+            while (iChild < pDir->cChildren)
+            {
+                PRTFSISOMAKERNAME pChild = pDir->papChildren[iChild];
+                if ((offInDir - pChild->offDirRec) < pChild->cbDirRec)
+                    break;
+                iChild++;
+            }
+            AssertReturn(iChild < pDir->cChildren, 0);
+        }
+
+        /*
+         * Normal directory entries.
+         */
+        while (   cbBuf > 0
+               && iChild < pDir->cChildren)
+        {
+            PRTFSISOMAKERNAME pChild = pDir->papChildren[iChild];
+            uint32_t cbCopied;
+            if (   offInDir == pChild->offDirRec
+                && cbBuf    >= pChild->cbDirRec)
+                cbCopied = rtFsIsoMakerOutFile_GenerateDirRec(pChild, pbBuf);
+            else
+                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pChild, offInDir - pChild->offDirRec, pbBuf, cbBuf);
+            cbDone   += cbCopied;
+            offInDir += cbCopied;
+            cbBuf    -= cbCopied;
+        }
+
+        /*
+         * Check if we're into the zero padding at the end of the directory now.
+         */
+        if (   cbBuf > 0
+            && iChild >= pDir->cChildren)
+        {
+            size_t cbZeros = RT_MIN(cbBuf, RTFSISOMAKER_SECTOR_SIZE - (pDir->cbDir & RTFSISOMAKER_SECTOR_OFFSET_MASK));
+            memset(pbBuf, 0, cbZeros);
+            cbDone += cbZeros;
+        }
+    }
+    else
+    {
+        cbDone = RT_MIN(cbBuf, RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE) - offInDir);
+        memset(pbBuf, 0, cbDone);
+    }
+
+    return cbDone;
 }
 
 
@@ -3705,7 +3887,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirStructures(PRTFSISOMAKEROUTPUTFILE pThi
                                                     uint64_t off, uint8_t *pbBuf, size_t cbBuf)
 {
     if (off < pFinalizedDirs->offPathTableL)
-        return rtFsIsoMakerOutFile_ReadDirRecords(pThis, pNamespace, pFinalizedDirs, off, pbBuf, cbBuf);
+        return rtFsIsoMakerOutFile_ReadDirRecords(pThis, pFinalizedDirs, off, pbBuf, cbBuf);
     if (off < pFinalizedDirs->offPathTableM)
         return rtFsIsoMakerOutFile_ReadPathTable(pThis, pNamespace, pFinalizedDirs, true /*fLittleEndian*/,
                                                  (uint32_t)(off - pFinalizedDirs->offPathTableL), pbBuf, cbBuf);
@@ -4050,6 +4232,7 @@ RTDECL(int) RTFsIsoMakerCreateVfsOutputFile(RTFSISOMAKER hIsoMaker, PRTVFSFILE p
         pFileData->offCurPos   = 0;
         pFileData->pFileHint   = NULL;
         pFileData->hVfsSrcFile = NIL_RTVFSFILE;
+        pFileData->pDirHint    = NULL;
         return VINF_SUCCESS;
     }
 
