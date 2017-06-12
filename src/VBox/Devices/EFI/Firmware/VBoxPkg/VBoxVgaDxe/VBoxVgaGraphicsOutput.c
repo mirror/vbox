@@ -443,7 +443,7 @@ VBoxVgaGraphicsOutputConstructor (
 {
   EFI_STATUS                   Status;
   EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
-  UINT32                        GopMode = 2;
+  UINT32                        GopMode = 2; /* 1024x768 */
 
   GraphicsOutput            = &Private->GraphicsOutput;
   GraphicsOutput->QueryMode = VBoxVgaGraphicsOutputQueryMode;

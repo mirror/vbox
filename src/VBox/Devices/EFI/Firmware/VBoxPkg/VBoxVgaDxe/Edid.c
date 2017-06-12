@@ -364,9 +364,9 @@ VBoxVgaVideoModeSetup (
   UINT8                                  *EdidActiveDataBlock;
   VALID_EDID_TIMING                      ValidEdidTiming;
   UINT32                                 ValidModeCount;
-  VBOX_VGA_MODE_DATA            *ModeData;
+  VBOX_VGA_MODE_DATA                     *ModeData;
   BOOLEAN                                TimingMatch;
-  VBOX_VGA_VIDEO_MODES          *VideoMode;
+  VBOX_VGA_VIDEO_MODES                   *VideoMode;
   EDID_TIMING                            TempTiming;
 
   //
@@ -428,10 +428,10 @@ VBoxVgaVideoModeSetup (
     //
     if (ReadEdidData (Private, &EdidDiscoveredDataBlock, &EdidDiscoveredDataSize) == EFI_SUCCESS) {
       Private->EdidDiscovered.SizeOfEdid = (UINT32) EdidDiscoveredDataSize;
-        Private->EdidDiscovered.Edid = (UINT8 *) AllocateCopyPool (
+      Private->EdidDiscovered.Edid = (UINT8 *) AllocateCopyPool (
                                                           EdidDiscoveredDataSize,
                                                           EdidDiscoveredDataBlock
-                                                                                                                                                                                                                  );
+                                                                );
 
       if (NULL == Private->EdidDiscovered.Edid) {
           Status = EFI_OUT_OF_RESOURCES;
@@ -449,9 +449,9 @@ VBoxVgaVideoModeSetup (
     EdidActiveDataSize  = EdidOverrideDataSize;
     EdidActiveDataBlock = EdidOverrideDataBlock;
     EdidFound = TRUE;
-        }
+  }
 
-        if (EdidFound == TRUE) {
+  if (EdidFound == TRUE) {
     //
     // Parse EDID data structure to retrieve modes supported by monitor
     //
@@ -480,9 +480,10 @@ VBoxVgaVideoModeSetup (
     // Initialize the private mode data with the supported modes.
     //
     ValidModeCount = 0;
+    Private->ModeData = AllocatePool(sizeof(VBOX_VGA_MODE_DATA) * VBoxVgaVideoModeCount);
     ModeData = &Private->ModeData[0];
     VideoMode = &VBoxVgaVideoModes[0];
-    for (Index = 0; Index < VBOX_VGA_MODE_COUNT; Index++) {
+    for (Index = 0; Index < VBoxVgaVideoModeCount; Index++) {
 
       TimingMatch = TRUE;
 
@@ -503,6 +504,13 @@ VBoxVgaVideoModeSetup (
         TimingMatch = FALSE;
       }
 
+      //
+      // Check whether the mode would be exceeding the VRAM size.
+      //
+      if (VideoMode->Width * VideoMode->Height * (VideoMode->ColorDepth / 8) > Private->VRAMSize) {
+        TimingMatch = FALSE;
+      }
+
       if (TimingMatch) {
         ModeData->ModeNumber = Index;
         ModeData->HorizontalResolution          = VideoMode->Width;
@@ -516,27 +524,34 @@ VBoxVgaVideoModeSetup (
 
       VideoMode ++;
     }
-
-    Private->MaxMode = ValidModeCount;
-
   } else {
     //
     // If EDID information wasn't found
     //
+    ValidModeCount = 0;
+    Private->ModeData = AllocatePool(sizeof(VBOX_VGA_MODE_DATA) * VBoxVgaVideoModeCount);
     ModeData = &Private->ModeData[0];
     VideoMode = &VBoxVgaVideoModes[0];
-    for (Index = 0; Index < VBOX_VGA_MODE_COUNT; Index ++) {
-      ModeData->ModeNumber = Index;
-      ModeData->HorizontalResolution          = VideoMode->Width;
-      ModeData->VerticalResolution            = VideoMode->Height;
-      ModeData->ColorDepth                    = VideoMode->ColorDepth;
-      ModeData->RefreshRate                   = VideoMode->RefreshRate;
+    for (Index = 0; Index < VBoxVgaVideoModeCount; Index ++) {
+      //
+      // Check whether the mode would be exceeding the VRAM size.
+      //
+      if (VideoMode->Width * VideoMode->Height * (VideoMode->ColorDepth / 8) <= Private->VRAMSize) {
+        ModeData->ModeNumber = Index;
+        ModeData->HorizontalResolution          = VideoMode->Width;
+        ModeData->VerticalResolution            = VideoMode->Height;
+        ModeData->ColorDepth                    = VideoMode->ColorDepth;
+        ModeData->RefreshRate                   = VideoMode->RefreshRate;
 
-      ModeData ++ ;
+        ModeData ++;
+        ValidModeCount ++;
+      }
+
       VideoMode ++;
     }
-    Private->MaxMode = VBOX_VGA_MODE_COUNT;
   }
+
+  Private->MaxMode = ValidModeCount;
 
   if (EdidOverrideDataBlock != NULL) {
     FreePool (EdidOverrideDataBlock);

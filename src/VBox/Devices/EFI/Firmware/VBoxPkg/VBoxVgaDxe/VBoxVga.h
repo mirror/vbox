@@ -41,7 +41,7 @@
 */
 
 //
-// Cirrus Logic 5430 Controller Driver
+// VirtualBox VGA Controller Driver
 //
 
 #ifndef _VBOX_VGA_H_
@@ -72,19 +72,16 @@
 
 #include "VBoxPkg.h"
 #include "DevEFI.h"
-#include "iprt/asm.h"
 
 //
-// Cirrus Logic 5430 PCI Configuration Header values
+// VirtualBox VGA PCI Configuration Header values
 //
 #define VBOX_VENDOR_ID           0x80ee
 #define VBOX_VGA_DEVICE_ID           0xbeef
 
 //
-// Cirrus Logic Graphical Mode Data
+// VirtualBox VGA Mode Data
 //
-#define VBOX_VGA_MODE_COUNT         6
-
 typedef struct {
   UINT32  ModeNumber;
   UINT32  HorizontalResolution;
@@ -96,9 +93,9 @@ typedef struct {
 #define GRAPHICS_OUTPUT_INVALIDE_MODE_NUMBER  0xffff
 
 //
-// Cirrus Logic 5440 Private Data Structure
+// VirtualBox VGA Private Data Structure
 //
-#define VBOX_VGA_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('C', 'L', '5', '4')
+#define VBOX_VGA_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('V', 'B', 'V', 'D')
 
 typedef struct {
   UINT64                                Signature;
@@ -113,9 +110,10 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL              *UgaDevicePath;
   UINTN                                 CurrentMode;
   UINTN                                 MaxMode;
-  VBOX_VGA_MODE_DATA           ModeData[VBOX_VGA_MODE_COUNT];
-  UINT32                                 *LineBuffer;
+  VBOX_VGA_MODE_DATA                    *ModeData;
+  UINT32                                *LineBuffer;
   BOOLEAN                               HardwareNeedsStarting;
+  UINT32                                VRAMSize;
   void         *TmpBuf;
 } VBOX_VGA_PRIVATE_DATA;
 
@@ -127,8 +125,10 @@ typedef struct {
   UINT32  Height;
   UINT32  ColorDepth;
   UINT32  RefreshRate;
+  /// CRTC settings are optional. If NULL then VBE is used
   UINT8   *CrtcSettings;
-  UINT8  *SeqSettings;
+  /// Sequencer settings are optional. If NULL then defaults are used
+  UINT8   *SeqSettings;
   UINT8   MiscSetting;
 } VBOX_VGA_VIDEO_MODES;
 
@@ -145,12 +145,13 @@ typedef struct {
 extern UINT8                                      AttributeController[];
 extern UINT8                                      GraphicsController[];
 extern UINT8                                      Crtc_640_480_256_60[];
-extern UINT8                                     Seq_640_480_256_60[];
+extern UINT8                                      Seq_640_480_256_60[];
 extern UINT8                                      Crtc_800_600_256_60[];
-extern UINT8                                     Seq_800_600_256_60[];
+extern UINT8                                      Seq_800_600_256_60[];
 extern UINT8                                      Crtc_1024_768_256_60[];
-extern UINT8                                     Seq_1024_768_256_60[];
-extern VBOX_VGA_VIDEO_MODES              VBoxVgaVideoModes[];
+extern UINT8                                      Seq_1024_768_256_60[];
+extern VBOX_VGA_VIDEO_MODES                       VBoxVgaVideoModes[];
+extern const UINT32                               VBoxVgaVideoModeCount;
 extern EFI_DRIVER_BINDING_PROTOCOL                gVBoxVgaDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL                gVBoxVgaComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL               gVBoxVgaComponentName2;
@@ -166,11 +167,17 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gVBoxVgaDriverSupportedEfiVers
 #define GRAPH_ADDRESS_REGISTER  0x3ce
 #define GRAPH_DATA_REGISTER     0x3cf
 #define ATT_ADDRESS_REGISTER    0x3c0
+#define ATT_DATA_REGISTER       0x3c1
 #define MISC_OUTPUT_REGISTER    0x3c2
 #define INPUT_STATUS_1_REGISTER 0x3da
 #define DAC_PIXEL_MASK_REGISTER 0x3c6
 #define PALETTE_INDEX_REGISTER  0x3c8
 #define PALETTE_DATA_REGISTER   0x3c9
+
+// IO Registers defined by VBE
+#define VBE_DISPI_IOPORT_INDEX  0x1ce
+#define VBE_DISPI_IOPORT_DATA   0x1cf
+
 
 //
 // UGA Draw Hardware abstraction internal worker functions
@@ -416,32 +423,6 @@ DrawLogo (
   VBOX_VGA_PRIVATE_DATA  *Private,
   UINTN                           ScreenWidth,
   UINTN                           ScreenHeight
-  );
-
-VOID
-outb (
-  VBOX_VGA_PRIVATE_DATA  *Private,
-  UINTN                           Address,
-  UINT8                           Data
-  );
-
-VOID
-outw (
-  VBOX_VGA_PRIVATE_DATA  *Private,
-  UINTN                           Address,
-  UINT16                          Data
-  );
-
-UINT8
-inb (
-  VBOX_VGA_PRIVATE_DATA  *Private,
-  UINTN                           Address
-  );
-
-UINT16
-inw (
-  VBOX_VGA_PRIVATE_DATA  *Private,
-  UINTN                           Address
   );
 
 EFI_STATUS
