@@ -829,6 +829,9 @@ RTDECL(int) RTStrCalcUtf16LenEx(const char *psz, size_t cch, size_t *pcwc);
  * Translate a UTF-8 string into a UTF-16 allocating the result buffer (custom
  * tag).
  *
+ * This differs from RTStrToUtf16 in that it always produces a
+ * big-endian string.
+ *
  * @returns iprt status code.
  * @param   pszString       UTF-8 string to convert.
  * @param   ppwszString     Receives pointer to the allocated UTF-16 string.
@@ -836,6 +839,32 @@ RTDECL(int) RTStrCalcUtf16LenEx(const char *psz, size_t cch, size_t *pcwc);
  * @param   pszTag          Allocation tag used for statistics and such.
  */
 RTDECL(int) RTStrToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, const char *pszTag);
+
+/**
+ * Translate a UTF-8 string into a UTF-16BE allocating the result buffer
+ * (default tag).
+ *
+ * This differs from RTStrToUtf16Tag in that it always produces a
+ * big-endian string.
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   ppwszString     Receives pointer to the allocated UTF-16BE string.
+ *                          The returned string must be freed using RTUtf16Free().
+ */
+#define RTStrToUtf16Big(pszString, ppwszString)  RTStrToUtf16BigTag((pszString), (ppwszString), RTSTR_TAG)
+
+/**
+ * Translate a UTF-8 string into a UTF-16BE allocating the result buffer (custom
+ * tag).
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   ppwszString     Receives pointer to the allocated UTF-16BE string.
+ *                          The returned string must be freed using RTUtf16Free().
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int) RTStrToUtf16BigTag(const char *pszString, PRTUTF16 *ppwszString, const char *pszTag);
 
 /**
  * Translates pszString from UTF-8 to UTF-16, allocating the result buffer if requested.
@@ -886,7 +915,67 @@ RTDECL(int) RTStrToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, const 
  *                          length that can be used to resize the buffer.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
-RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc, const char *pszTag);
+RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString,
+                               PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc, const char *pszTag);
+
+
+/**
+ * Translates pszString from UTF-8 to UTF-16BE, allocating the result buffer if requested.
+ *
+ * This differs from RTStrToUtf16Ex in that it always produces a
+ * big-endian string.
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
+ *                          when it reaches cchString or the string terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ * @param   ppwsz           If cwc is non-zero, this must either be pointing to pointer to
+ *                          a buffer of the specified size, or pointer to a NULL pointer.
+ *                          If *ppwsz is NULL or cwc is zero a buffer of at least cwc items
+ *                          will be allocated to hold the translated string.
+ *                          If a buffer was requested it must be freed using RTUtf16Free().
+ * @param   cwc             The buffer size in RTUTF16s. This includes the terminator.
+ * @param   pcwc            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ */
+#define RTStrToUtf16BigEx(pszString, cchString, ppwsz, cwc, pcwc) \
+    RTStrToUtf16BigExTag((pszString), (cchString), (ppwsz), (cwc), (pcwc), RTSTR_TAG)
+
+/**
+ * Translates pszString from UTF-8 to UTF-16BE, allocating the result buffer if
+ * requested (custom tag).
+ *
+ * This differs from RTStrToUtf16ExTag in that it always produces a
+ * big-endian string.
+ *
+ * @returns iprt status code.
+ * @param   pszString       UTF-8 string to convert.
+ * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
+ *                          when it reaches cchString or the string terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ * @param   ppwsz           If cwc is non-zero, this must either be pointing to pointer to
+ *                          a buffer of the specified size, or pointer to a NULL pointer.
+ *                          If *ppwsz is NULL or cwc is zero a buffer of at least cwc items
+ *                          will be allocated to hold the translated string.
+ *                          If a buffer was requested it must be freed using RTUtf16Free().
+ * @param   cwc             The buffer size in RTUTF16s. This includes the terminator.
+ * @param   pcwc            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int)  RTStrToUtf16BigExTag(const char *pszString, size_t cchString,
+                                  PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc, const char *pszTag);
 
 
 /**

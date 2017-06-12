@@ -687,25 +687,6 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
 
 
 /**
- * RTStrToUtf16Ex returning big-endian UTF-16.
- */
-static int rtFsIso9660_StrToUtf16BigEndian(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc)
-{
-    int rc = RTStrToUtf16Ex(pszString, cchString, ppwsz, cwc, pcwc);
-#ifndef RT_BIG_ENDIAN
-    if (RT_SUCCESS(rc))
-    {
-        PRTUTF16 pwc = *ppwsz;
-        RTUTF16  wc;
-        while ((wc = *pwc))
-            *pwc++ = RT_H2BE_U16(wc);
-    }
-#endif
-    return rc;
-}
-
-
-/**
  * Looks up the shared structure for a child.
  *
  * @returns Referenced pointer to the shared structure, NULL if not found.
@@ -773,7 +754,7 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
     if (fIsUtf16)
     {
         PRTUTF16 pwszEntry = uBuf.wszEntry;
-        rc = rtFsIso9660_StrToUtf16BigEndian(pszEntry, RTSTR_MAX, &pwszEntry, RT_ELEMENTS(uBuf.wszEntry), &cwcEntry);
+        rc = RTStrToUtf16BigEx(pszEntry, RTSTR_MAX, &pwszEntry, RT_ELEMENTS(uBuf.wszEntry), &cwcEntry);
         if (RT_FAILURE(rc))
             return rc;
         cbEntry = cwcEntry * 2;
