@@ -1267,8 +1267,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                   | CODEC_F00_09_CAP_DIGITAL
                                                   | CODEC_F00_09_CAP_CONNECTION_LIST
                                                   | CODEC_F00_09_CAP_STEREO;
-            pNode->digout.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT
-                                                  | CODEC_F00_0C_CAP_PRESENCE_DETECT;
+            pNode->digout.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;
 
             /* Connection list entries. */
             pNode->digout.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(CODEC_F00_0E_LIST_NID_SHORT, 3 /* Entries */);
