@@ -2569,7 +2569,7 @@ static DECLCALLBACK(int) vrbProcSetGPIOEnableMask(PHDACODEC pThis, uint32_t cmd,
 }
 
 /* F17 */
-static DECLCALLBACK(int) vrbProcGetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcGetGPIOUnsolicited(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
 
@@ -2577,13 +2577,13 @@ static DECLCALLBACK(int) vrbProcGetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         *pResp = pThis->paNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Warning: Unhandled get GPIO unsolisted command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled get GPIO unsolicited command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     return VINF_SUCCESS;
 }
 
 /* 717 */
-static DECLCALLBACK(int) vrbProcSetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
+static DECLCALLBACK(int) vrbProcSetGPIOUnsolicited(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
 
@@ -2591,7 +2591,7 @@ static DECLCALLBACK(int) vrbProcSetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     if (CODEC_NID(cmd) == STAC9220_NID_AFG)
         pu32Reg = &pThis->paNodes[1].afg.u32F17_param;
     else
-        LogRel2(("HDA: Warning: Unhandled set GPIO unsolisted command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
+        LogRel2(("HDA: Warning: Unhandled set GPIO unsolicited command for NID0x%02x: 0x%x\n", CODEC_NID(cmd), cmd));
 
     if (pu32Reg)
         hdaCodecSetRegisterU8(pu32Reg, cmd, 0);
@@ -2746,8 +2746,8 @@ static const CODECVERB g_aCodecVerbs[] =
     { 0x00071500, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOData            , "SetGPIOData           " },
     { 0x000F1600, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOEnableMask      , "GetGPIOEnableMask     " },
     { 0x00071600, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOEnableMask      , "SetGPIOEnableMask     " },
-    { 0x000F1700, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOUnsolisted      , "GetGPIOUnsolisted     " },
-    { 0x00071700, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOUnsolisted      , "SetGPIOUnsolisted     " },
+    { 0x000F1700, CODEC_VERB_8BIT_CMD , vrbProcGetGPIOUnsolicited     , "GetGPIOUnsolicited    " },
+    { 0x00071700, CODEC_VERB_8BIT_CMD , vrbProcSetGPIOUnsolicited     , "SetGPIOUnsolicited    " },
     { 0x000F1C00, CODEC_VERB_8BIT_CMD , vrbProcGetConfig              , "GetConfig             " },
     { 0x00071C00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig0             , "SetConfig0            " },
     { 0x00071D00, CODEC_VERB_8BIT_CMD , vrbProcSetConfig1             , "SetConfig1            " },
