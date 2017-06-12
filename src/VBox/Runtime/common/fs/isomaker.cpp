@@ -1305,10 +1305,10 @@ static PRTFSISOMAKERDIR rtFsIsoMakerFindSubdirBySpec(PRTFSISOMAKERDIR pDirObj, c
                 PRTFSISOMAKERNAMEDIR pDir = pDirName->pDir;
                 AssertStmt(pDir, continue);
 
-                uint32_t i = pDir->cChildren;
-                while (i-- > 0)
+                uint32_t iChild = pDir->cChildren;
+                while (iChild-- > 0)
                 {
-                    PRTFSISOMAKERNAME pChild = pDir->papChildren[i];
+                    PRTFSISOMAKERNAME pChild = pDir->papChildren[iChild];
                     if (   pChild->cchSpecNm == cchEntry
                         && pChild->pDir      != NULL
                         && RTStrNICmp(pChild->pszSpecNm, pszEntry, cchEntry) == 0)
