@@ -94,6 +94,7 @@ int main(int argc, char **argv)
     if (!pszFilter2)
     {
         RTPrintf("tstDir-3: cannot create match filter!\n");
+        RTStrFree(pszFilter1);
         return 1;
     }
 
@@ -112,8 +113,11 @@ int main(int argc, char **argv)
         RTPrintf("tstDir-3: filter '%s' failed! rc=%Rrc\n", pszFilter2, rc);
     if (!cMatch)
         RTPrintf("tstDir-3: filter '%s' gave wrong result count! cMatch=%u\n", pszFilter2, cMatch);
+    
+    RTStrFree(pszFilter2);
+    RTStrFree(pszFilter1);
 
     if (!rcRet)
-    RTPrintf("tstDir-3: OK\n");
+        RTPrintf("tstDir-3: OK\n");
     return rcRet;
 }
