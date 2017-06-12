@@ -703,6 +703,20 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
 
 
 
+/**
+ * Extended ISO maker command.
+ *
+ * This can be used as a ISO maker command that produces a image file, or
+ * alternatively for setting up a virtual ISO in memory.
+ *
+ * @returns IPRT status code
+ * @param   cArgs               Number of arguments.
+ * @param   papszArgs           Pointer to argument array.
+ * @param   phVfsFile           Where to return the virtual ISO.  Pass NULL to
+ *                              for normal operation (creates file on disk).
+ * @param   pErrInfo            Where to return extended error information in
+ *                              the virtual ISO mode.
+ */
 RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfsFile, PRTERRINFO pErrInfo)
 {
     /*
@@ -825,6 +839,13 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
 }
 
 
+/**
+ * ISO maker command (creates image file on disk).
+ *
+ * @returns IPRT status code
+ * @param   cArgs               Number of arguments.
+ * @param   papszArgs           Pointer to argument array.
+ */
 RTDECL(RTEXITCODE) RTFsIsoMakerCmd(unsigned cArgs, char **papszArgs)
 {
     int rc = RTFsIsoMakerCmdEx(cArgs, papszArgs, NULL, NULL);
