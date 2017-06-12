@@ -221,7 +221,7 @@ typedef ISO9660DIRREC const *PCISO9660DIRREC;
 #pragma pack(1)
 typedef struct ISO9660PATHREC
 {
-    /** 0x00: Length of this record in bytes. */
+    /** 0x00: Length of the achDirId field in bytes. */
     uint8_t             cbDirId;
     /** 0x01: Extended attribute record length in bytes? */
     uint8_t             cbExtAttr;
@@ -241,6 +241,10 @@ AssertCompileMemberOffset(ISO9660PATHREC, cbExtAttr,   0x01);
 AssertCompileMemberOffset(ISO9660PATHREC, offExtent,   0x02);
 AssertCompileMemberOffset(ISO9660PATHREC, idParentRec, 0x06);
 AssertCompileMemberOffset(ISO9660PATHREC, achDirId,   0x08);
+/** Pointer to an ISO 9660 path table record. */
+typedef ISO9660PATHREC *PISO9660PATHREC;
+/** Pointer to a const ISO 9660 path table record. */
+typedef ISO9660PATHREC const *PCISO9660PATHREC;
 
 
 /**

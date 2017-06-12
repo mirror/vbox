@@ -86,18 +86,30 @@
 #define RTFSISOMAKER_IS_UPPER_IN_D_CHARS(a_ch)  (RT_C_IS_ALNUM(a_ch) || (a_ch) == '_')
 
 
+/** Calculates the path table record size given the name length. */
+#define RTFSISOMAKER_CALC_PATHREC_SIZE(a_cbNameInDirRec) \
+    ( RT_UOFFSETOF(ISO9660PATHREC, achDirId[(a_cbNameInDirRec)]) + ((a_cbNameInDirRec) & 1) )
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** Pointer to an ISO maker object name space node. */
 typedef struct RTFSISOMAKERNAME *PRTFSISOMAKERNAME;
+/** Pointer to a const ISO maker object name space node. */
+typedef struct RTFSISOMAKERNAME const *PCRTFSISOMAKERNAME;
 /** Pointer to an ISO maker object name space node pointer. */
 typedef PRTFSISOMAKERNAME *PPRTFSISOMAKERNAME;
+
 /** Pointer to a common ISO image maker file system object. */
 typedef struct RTFSISOMAKEROBJ *PRTFSISOMAKEROBJ;
+/** Pointer to a const common ISO image maker file system object. */
+typedef struct RTFSISOMAKEROBJ const *PCRTFSISOMAKEROBJ;
+
 /** Pointer to a ISO maker file object. */
 typedef struct RTFSISOMAKERFILE *PRTFSISOMAKERFILE;
+/** Pointer to a const ISO maker file object. */
+typedef struct RTFSISOMAKERFILE const *PCRTFSISOMAKERFILE;
 
 
 /** @name RTFSISOMAKER_NAMESPACE_XXX - Namespace selector.
@@ -146,14 +158,20 @@ typedef struct RTFSISOMAKERNAMEDIR
     /** The path table identifier of this directory (ISO-9660).
     * This is set when finalizing the image.  */
     uint16_t                idPathTable;
+    /** The size of the first directory record (0x00 - '.'). */
+    uint8_t                 cbDirRec00;
+    /** The size of the second directory record (0x01 - '..'). */
+    uint8_t                 cbDirRec01;
     /** Pointer to back to the namespace node this belongs to (for the finalized
      *  entry list). */
     PRTFSISOMAKERNAME       pName;
     /** Entry in the list of finalized directories. */
     RTLISTNODE              FinalizedEntry;
 } RTFSISOMAKERNAMEDIR;
-/** Pointer to directory specfic name space node info. */
+/** Pointer to directory specfic namespace node info. */
 typedef RTFSISOMAKERNAMEDIR *PRTFSISOMAKERNAMEDIR;
+/** Pointer to const directory specfic namespace node info. */
+typedef const RTFSISOMAKERNAMEDIR *PCRTFSISOMAKERNAMEDIR;
 
 
 /**
@@ -1790,6 +1808,8 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
                 pDir->pName         = pName;
                 pDir->offPathTable  = UINT32_MAX;
                 pDir->idPathTable   = UINT16_MAX;
+                pDir->cbDirRec00    = 0;
+                pDir->cbDirRec01    = 0;
                 RTListInit(&pDir->FinalizedEntry);
                 pName->pDir = pDir;
 
@@ -2905,8 +2925,11 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
                entries, instead we use the directory entry in the parent directory
                with a 1 byte name (00 or 01). */
             Assert(pCurName->cbDirRec != 0);
-            uint32_t offInDir = pCurName->cbDirRec    - pCurName->cbNameInDirRec    + 1;
-            offInDir         += pParentName->cbDirRec - pParentName->cbNameInDirRec + 1;
+            Assert(pParentName->cbDirRec != 0);
+            pCurDir->cbDirRec00 = pCurName->cbDirRec    - pCurName->cbNameInDirRec    - !(pCurName->cbNameInDirRec    & 1) + 1;
+            pCurDir->cbDirRec01 = pParentName->cbDirRec - pParentName->cbNameInDirRec - !(pParentName->cbNameInDirRec & 1) + 1;
+
+            uint32_t offInDir   = (uint32_t)pCurDir->cbDirRec00 + pCurDir->cbDirRec01;
 
             /* Finalize the directory entries. */
             uint32_t            cbTransTbl  = 0;
@@ -2939,7 +2962,7 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
             /* Add to the path table size calculation. */
             pCurDir->offPathTable = cbPathTable;
             pCurDir->idPathTable  = idPathTable++;
-            cbPathTable += RT_OFFSETOF(ISO9660PATHREC, achDirId[pCurName->cbNameInDirRec]) + (pCurName->cbNameInDirRec & 1);
+            cbPathTable += RTFSISOMAKER_CALC_PATHREC_SIZE(pCurName->cbNameInDirRec);
         }
     }
 
@@ -3717,38 +3740,336 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
 }
 
 
-static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERNAMESPACE pNamespace,
-                                                 PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, bool fLittleEndian,
-                                                 uint32_t offInTable, uint8_t *pbBuf, size_t cbBuf)
+/**
+ * Generates ISO-9660 path table record into the specified buffer.
+ *
+ * @returns Number of bytes copied into the buffer.
+ * @param   pName       The directory namespace node.
+ * @param   fUnicode    Set if the name should be translated to big endian
+ *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   pbBuf       The buffer.  This is large enough to hold the path
+ *                      record (use RTFSISOMAKER_CALC_PATHREC_SIZE) and a zero
+ *                      RTUTF16 terminator if @a fUnicode is true.
+ */
+static uint32_t rtFsIsoMakerOutFile_GeneratePathRec(PRTFSISOMAKERNAME pName, bool fUnicode, bool fLittleEndian, uint8_t *pbBuf)
 {
-    RT_NOREF(pThis, pNamespace, pFinalizedDirs, fLittleEndian, offInTable, pbBuf, cbBuf);
-    return 0;
+    PISO9660PATHREC pPathRec = (PISO9660PATHREC)pbBuf;
+    pPathRec->cbDirId   = pName->cbNameInDirRec;
+    pPathRec->cbExtAttr = 0;
+    if (fLittleEndian)
+    {
+        pPathRec->offExtent   = RT_H2LE_U32(pName->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+        pPathRec->idParentRec = RT_H2LE_U16(pName->pParent ? pName->pParent->pDir->idPathTable : 0);
+    }
+    else
+    {
+        pPathRec->offExtent   = RT_H2BE_U32(pName->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+        pPathRec->idParentRec = RT_H2BE_U16(pName->pParent ? pName->pParent->pDir->idPathTable : 0);
+    }
+    if (!fUnicode)
+    {
+        memcpy(&pPathRec->achDirId[0], pName->szName, pName->cbNameInDirRec);
+        if (pName->cbNameInDirRec & 1)
+            pPathRec->achDirId[pName->cbNameInDirRec] = '\0';
+    }
+    else
+    {
+        /* Caller made sure there is space for a zero terminator character. */
+        PRTUTF16 pwszTmp   = (PRTUTF16)&pPathRec->achDirId[0];
+        size_t   cwcResult = 0;
+        int rc = RTStrToUtf16BigEx(pName->szName, RTSTR_MAX, &pwszTmp, pName->cbNameInDirRec / sizeof(RTUTF16) + 1, &cwcResult);
+        AssertRC(rc);
+        Assert(cwcResult * sizeof(RTUTF16) == pName->cbNameInDirRec);
+    }
+    return RTFSISOMAKER_CALC_PATHREC_SIZE(pName->cbNameInDirRec);
 }
 
 
-static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, uint8_t *pbBuf)
+/**
+ * Deals with situations where the destination buffer doesn't cover the whole
+ * path table record.
+ *
+ * @returns Number of bytes copied into the buffer.
+ * @param   pName       The directory namespace node.
+ * @param   fUnicode    Set if the name should be translated to big endian
+ *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   offInRec    The offset into the path table record.
+ * @param   pbBuf       The buffer.
+ * @param   cbBuf       The buffer size.
+ */
+static uint32_t rtFsIsoMakerOutFile_GeneratePathRecPartial(PRTFSISOMAKERNAME pName, bool fUnicode, bool fLittleEndian,
+                                                           uint32_t offInRec, uint8_t *pbBuf, size_t cbBuf)
 {
-    memset(pbBuf, pName->szName[0], sizeof(ISO9660DIRREC));
+    uint8_t abTmpRec[256];
+    size_t cbToCopy = rtFsIsoMakerOutFile_GeneratePathRec(pName, fUnicode, fLittleEndian, abTmpRec);
+    cbToCopy = RT_MIN(cbBuf, cbToCopy - offInRec);
+    memcpy(pbBuf, &abTmpRec[offInRec], cbToCopy);
+    return (uint32_t)cbToCopy;
+}
+
+
+/**
+ * Generate path table records.
+ *
+ * This will generate record up to the end of the table.  However, it will not
+ * supply the zero padding in the last sector, the caller is expected to take
+ * care of that.
+ *
+ * @returns Number of bytes written to the buffer.
+ * @param   pThis           The instance data for the VFS file.  We use this to
+ *                          keep hints about where we are and we which source
+ *                          file we've opened/created.
+ * @param   pFinalizedDirs  The finalized directory data for the namespace.
+ * @param   fUnicode        Set if the name should be translated to big endian
+ *                          UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   fLittleEndian   Set if we're generating little endian records, clear
+ *                          if big endian records.
+ * @param   offInTable      Offset into the path table.
+ * @param   pbBuf           The output buffer.
+ * @param   cbBuf           The buffer size.
+ */
+static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
+                                                bool fUnicode, bool fLittleEndian, uint32_t offInTable,
+                                                uint8_t *pbBuf, size_t cbBuf)
+{
+    /*
+     * Figure out which directory to start with.  We keep a hint in the instance.
+     */
+    PRTFSISOMAKERNAMEDIR pDir = pThis->pDirHint;
+    if (!pDir)
+    {
+        pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+        AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
+    }
+    if (offInTable - pDir->offPathTable < RTFSISOMAKER_CALC_PATHREC_SIZE(pDir->pName->cbNameInDirRec))
+    { /* hit */ }
+    /* Seek forwards: */
+    else if (offInTable > pDir->offPathTable)
+        do
+        {
+            pDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+            AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
+        } while (offInTable - pDir->offPathTable < RTFSISOMAKER_CALC_PATHREC_SIZE(pDir->pName->cbNameInDirRec));
+    /* Back to the start: */
+    else if (offInTable == 0)
+    {
+        pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+        AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
+    }
+    /* Seek backwards: */
+    else
+        do
+        {
+            pDir = RTListGetPrev(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+            AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
+        } while (offInTable - pDir->offPathTable < RTFSISOMAKER_CALC_PATHREC_SIZE(pDir->pName->cbNameInDirRec));
+
+    /*
+     * Generate content.
+     */
+    size_t cbDone = 0;
+    while (   cbBuf > 0
+           && pDir)
+    {
+        PRTFSISOMAKERNAME pName = pDir->pName;
+        uint8_t           cbRec = RTFSISOMAKER_CALC_PATHREC_SIZE(pName->cbNameInDirRec);
+        uint32_t          cbCopied;
+        if (   offInTable == pDir->offPathTable
+            && cbBuf      >= cbRec + fUnicode * 2U)
+            cbCopied = rtFsIsoMakerOutFile_GeneratePathRec(pName, fUnicode, fLittleEndian, pbBuf);
+        else
+            cbCopied = rtFsIsoMakerOutFile_GeneratePathRecPartial(pName, fUnicode, fLittleEndian,
+                                                                  offInTable - pDir->offPathTable, pbBuf, cbBuf);
+        cbDone     += cbCopied;
+        offInTable += cbCopied;
+        pbBuf      += cbCopied;
+        cbBuf      -= cbCopied;
+        pDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+    }
+
+    /*
+     * Update the hint.
+     */
+    pThis->pDirHint = pDir;
+
+    return cbDone;
+}
+
+
+/**
+ * Generates ISO-9660 directory record into the specified buffer.
+ *
+ * @returns Number of bytes copied into the buffer.
+ * @param   pName       The namespace node.
+ * @param   fUnicode    Set if the name should be translated to big endian
+ *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   pbBuf       The buffer.  This is at least pName->cbDirRec bytes big.
+ */
+static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf)
+{
+    /*
+     * Emit a standard ISO-9660 directory record.
+     */
+    PISO9660DIRREC          pDirRec = (PISO9660DIRREC)pbBuf;
+    PCRTFSISOMAKEROBJ       pObj    = pName->pObj;
+    PCRTFSISOMAKERNAMEDIR   pDir    = pName->pDir;
+    if (pDir)
+    {
+        pDirRec->offExtent.be       = RT_H2BE_U32(pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+        pDirRec->offExtent.le       = RT_H2LE_U32(pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
+        pDirRec->cbData.be          = RT_H2BE_U32(pDir->cbDir);
+        pDirRec->cbData.le          = RT_H2LE_U32(pDir->cbDir);
+        pDirRec->fFileFlags         = ISO9660_FILE_FLAGS_DIRECTORY;
+    }
+    else if (pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
+    {
+        PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
+        pDirRec->offExtent.be       = RT_H2BE_U32(pFile->offData / RTFSISOMAKER_SECTOR_SIZE);
+        pDirRec->offExtent.le       = RT_H2LE_U32(pFile->offData / RTFSISOMAKER_SECTOR_SIZE);
+        pDirRec->cbData.be          = RT_H2BE_U32(pFile->cbData);
+        pDirRec->cbData.le          = RT_H2LE_U32(pFile->cbData);
+        pDirRec->fFileFlags         = 0;
+    }
+    else
+    {
+        pDirRec->offExtent.be       = 0;
+        pDirRec->offExtent.le       = 0;
+        pDirRec->cbData.be          = 0;
+        pDirRec->cbData.le          = 0;
+        pDirRec->fFileFlags         = 0;
+    }
+    rtFsIsoMakerTimespecToIso9660RecTimestamp(&pObj->BirthTime, &pDirRec->RecTime);
+
+    pDirRec->cbDirRec               = pName->cbDirRec;
+    pDirRec->cExtAttrBlocks         = 0;
+    pDirRec->bFileUnitSize          = 0;
+    pDirRec->bInterleaveGapSize     = 0;
+    pDirRec->VolumeSeqNo.be         = RT_H2BE_U16_C(1);
+    pDirRec->VolumeSeqNo.le         = RT_H2BE_U16_C(1);
+    pDirRec->bFileIdLength          = pName->cbNameInDirRec;
+
+    if (!fUnicode)
+    {
+        memcpy(&pDirRec->achFileId[0], pName->szName, pName->cbNameInDirRec);
+        if (!(pName->cbNameInDirRec & 1))
+            pDirRec->achFileId[pName->cbNameInDirRec] = '\0';
+    }
+    else
+    {
+        /* Convert to big endian UTF-16.  We're using a separate buffer here
+           because of zero terminator (none in pDirRec) and misalignment. */
+        RTUTF16  wszTmp[128];
+        PRTUTF16 pwszTmp = &wszTmp[0];
+        size_t   cwcResult = 0;
+        int rc = RTStrToUtf16BigEx(pName->szName, RTSTR_MAX, &pwszTmp, RT_ELEMENTS(wszTmp), &cwcResult);
+        AssertRC(rc);
+        Assert(cwcResult * sizeof(RTUTF16) == pName->cbNameInDirRec);
+        memcpy(&pDirRec->achFileId[0], pwszTmp, pName->cbNameInDirRec);
+        pDirRec->achFileId[pName->cbNameInDirRec] = '\0';
+    }
+
+    /*
+     * Rock ridge fields if enabled.
+     */
+    /** @todo rock ridge. */
+
     return pName->cbDirRec;
 }
 
 
-static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pName, uint32_t off, uint8_t *pbBuf, size_t cbBuf)
+/**
+ * Deals with situations where the destination buffer doesn't cover the whole
+ * directory record.
+ *
+ * @returns Number of bytes copied into the buffer.
+ * @param   pName       The namespace node.
+ * @param   fUnicode    Set if the name should be translated to big endian
+ *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   off         The offset into the directory record.
+ * @param   pbBuf       The buffer.
+ * @param   cbBuf       The buffer size.
+ */
+static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pName, bool fUnicode,
+                                                          uint32_t off, uint8_t *pbBuf, size_t cbBuf)
 {
     Assert(off < pName->cbDirRec);
 
     uint8_t abTmpBuf[256];
-    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, pbBuf);
+    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
     cbToCopy = RT_MIN(cbBuf, cbToCopy - off);
     memcpy(pbBuf, &abTmpBuf[off], cbToCopy);
     return (uint32_t)cbToCopy;
 }
 
 
-static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
-                                                 uint64_t offUnsigned, uint8_t *pbBuf, size_t cbBuf)
+/**
+ * Generate a '.' or '..' directory record.
+ *
+ * This is the same as rtFsIsoMakerOutFile_GenerateDirRec, but with the filename
+ * reduced to 1 byte.
+ *
+ * @returns Number of bytes copied into the buffer.
+ * @param   pName       The directory namespace node.
+ * @param   fUnicode    Set if the name should be translated to big endian
+ *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   bDirId      The directory ID (0x00 or 0x01).
+ * @param   off         The offset into the directory record.
+ * @param   pbBuf       The buffer.
+ * @param   cbBuf       The buffer size.
+ */
+static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t bDirId,
+                                                          uint32_t off, uint8_t *pbBuf, size_t cbBuf)
 {
+    Assert(off < pName->cbDirRec);
+    Assert(pName->pDir);
 
+    /* Generate a regular directory record. */
+    uint8_t abTmpBuf[256];
+    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
+
+    /* Replace the filename part. */
+    PISO9660DIRREC pDirRec = (PISO9660DIRREC)abTmpBuf;
+    if (pDirRec->bFileIdLength != 1)
+    {
+        uint8_t offSysUse = pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1) + RT_OFFSETOF(ISO9660DIRREC, achFileId);
+        uint8_t cbSysUse  = pDirRec->cbDirRec - offSysUse;
+        if (cbSysUse > 0)
+            memmove(&pDirRec->achFileId[1], &pbBuf[offSysUse], cbSysUse);
+        pDirRec->bFileIdLength = 1;
+        cbToCopy = RT_OFFSETOF(ISO9660DIRREC, achFileId) + 1 + cbSysUse;
+        pDirRec->cbDirRec = (uint8_t)cbToCopy;
+    }
+    pDirRec->achFileId[0] = bDirId;
+
+    /* Do the copying. */
+    cbToCopy = RT_MIN(cbBuf, cbToCopy - off);
+    memcpy(pbBuf, &abTmpBuf[off], cbToCopy);
+    return (uint32_t)cbToCopy;
+}
+
+
+/**
+ * Read directory records.
+ *
+ * This locates the directory at @a offUnsigned and generates directory records
+ * for it.  Caller must repeat the call to get directory entries for the next
+ * directory should there be desire for that.
+ *
+ * @returns Number of bytes copied into @a pbBuf.
+ * @param   pThis           The instance data for the VFS file.  We use this to
+ *                          keep hints about where we are and we which source
+ *                          file we've opened/created.
+ * @param   pIsoMaker       The ISO maker instance.
+ * @param   pFinalizedDirs  The finalized directory data for the namespace.
+ * @param   fUnicode        Set if the name should be translated to big endian
+ *                          UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   offUnsigned     The ISO image byte offset of the requested data.
+ * @param   pbBuf           The output buffer.
+ * @param   cbBuf           How much to read.
+ */
+static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
+                                                 bool fUnicode, uint64_t offUnsigned, uint8_t *pbBuf, size_t cbBuf)
+{
     /*
      * Figure out which directory.  We keep a hint in the instance.
      */
@@ -3757,7 +4078,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
     if (!pDir)
     {
         pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
-        AssertReturn(pDir, 0);
+        AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
     }
     if ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE))
     { /* hit */ }
@@ -3766,20 +4087,20 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
         do
         {
             pDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
-            AssertReturn(pDir, 0);
+            AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
         } while ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
     /* Back to the start: */
     else if (pFinalizedDirs->offDirs / RTFSISOMAKER_SECTOR_SIZE == offUnsigned / RTFSISOMAKER_SECTOR_SIZE)
     {
         pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
-        AssertReturn(pDir, 0);
+        AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
     }
     /* Seek backwards: */
     else
         do
         {
             pDir = RTListGetPrev(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
-            AssertReturn(pDir, 0);
+            AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
         } while ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
 
     /*
@@ -3796,7 +4117,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
     {
         PRTFSISOMAKERNAME   pDirName      = pDir->pName;
         PRTFSISOMAKERNAME   pParentName   = pDirName->pParent ? pDirName->pParent : pDirName;
-        uint32_t            cbSpecialRecs = pDirName->cbDirRec + pParentName->cbDirRec;
+        uint32_t            cbSpecialRecs = (uint32_t)pDir->cbDirRec00 + pDir->cbDirRec01;
 
         /*
          * Special '.' and/or '..' entries requested.
@@ -3805,21 +4126,23 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
         if (offInDir < cbSpecialRecs)
         {
             /* do '.' */
-            if (offInDir < pDirName->cbDirRec)
+            if (offInDir < pDir->cbDirRec00)
             {
-                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pDirName, offInDir, pbBuf, cbBuf);
+                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateSpecialDirRec(pDirName, fUnicode, 0, offInDir, pbBuf, cbBuf);
                 cbDone   += cbCopied;
                 offInDir += cbCopied;
+                pbBuf    += cbCopied;
                 cbBuf    -= cbCopied;
             }
 
             /* do '..' */
             if (cbBuf > 0)
             {
-                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pParentName, offInDir - pDirName->cbDirRec,
-                                                                              pbBuf, cbBuf);
+                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateSpecialDirRec(pParentName, fUnicode, 1,
+                                                                              offInDir - pDir->cbDirRec00, pbBuf, cbBuf);
                 cbDone   += cbCopied;
                 offInDir += cbCopied;
+                pbBuf    += cbCopied;
                 cbBuf    -= cbCopied;
             }
 
@@ -3840,7 +4163,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
                     break;
                 iChild++;
             }
-            AssertReturn(iChild < pDir->cChildren, 0);
+            AssertReturnStmt(iChild < pDir->cChildren, *pbBuf = 0xff, 1);
         }
 
         /*
@@ -3853,12 +4176,14 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
             uint32_t cbCopied;
             if (   offInDir == pChild->offDirRec
                 && cbBuf    >= pChild->cbDirRec)
-                cbCopied = rtFsIsoMakerOutFile_GenerateDirRec(pChild, pbBuf);
+                cbCopied = rtFsIsoMakerOutFile_GenerateDirRec(pChild, fUnicode, pbBuf);
             else
-                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pChild, offInDir - pChild->offDirRec, pbBuf, cbBuf);
+                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pChild, fUnicode, offInDir - pChild->offDirRec, pbBuf, cbBuf);
             cbDone   += cbCopied;
             offInDir += cbCopied;
+            pbBuf    += cbCopied;
             cbBuf    -= cbCopied;
+            iChild++;
         }
 
         /*
@@ -3882,17 +4207,46 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
 }
 
 
+/**
+ * Read directory records or path table records.
+ *
+ * Will not necessarily fill the entire buffer.  Caller must call again to get
+ * more.
+ *
+ * @returns Number of bytes copied into @a pbBuf.
+ * @param   pThis           The instance data for the VFS file.  We use this to
+ *                          keep hints about where we are and we which source
+ *                          file we've opened/created.
+ * @param   pIsoMaker       The ISO maker instance.
+ * @param   pNamespace      The namespace.
+ * @param   pFinalizedDirs  The finalized directory data for the namespace.
+ * @param   offUnsigned     The ISO image byte offset of the requested data.
+ * @param   pbBuf           The output buffer.
+ * @param   cbBuf           How much to read.
+ */
 static size_t rtFsIsoMakerOutFile_ReadDirStructures(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERNAMESPACE pNamespace,
                                                     PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
-                                                    uint64_t off, uint8_t *pbBuf, size_t cbBuf)
+                                                    uint64_t offUnsigned, uint8_t *pbBuf, size_t cbBuf)
 {
-    if (off < pFinalizedDirs->offPathTableL)
-        return rtFsIsoMakerOutFile_ReadDirRecords(pThis, pFinalizedDirs, off, pbBuf, cbBuf);
-    if (off < pFinalizedDirs->offPathTableM)
-        return rtFsIsoMakerOutFile_ReadPathTable(pThis, pNamespace, pFinalizedDirs, true /*fLittleEndian*/,
-                                                 (uint32_t)(off - pFinalizedDirs->offPathTableL), pbBuf, cbBuf);
-    return rtFsIsoMakerOutFile_ReadPathTable(pThis, pNamespace, pFinalizedDirs, false /*fLittleEndian*/,
-                                             (uint32_t)(off - pFinalizedDirs->offPathTableM), pbBuf, cbBuf);
+    if (offUnsigned < pFinalizedDirs->offPathTableL)
+        return rtFsIsoMakerOutFile_ReadDirRecords(pThis, pFinalizedDirs, pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
+                                                  offUnsigned, pbBuf, cbBuf);
+
+    uint64_t offInTable;
+    if ((offInTable = offUnsigned - pFinalizedDirs->offPathTableL) < pFinalizedDirs->cbPathTable)
+        return rtFsIsoMakerOutFile_ReadPathTable(pThis, pFinalizedDirs, pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
+                                                 true /*fLittleEndian*/, (uint32_t)offInTable, pbBuf, cbBuf);
+
+    if ((offInTable = offUnsigned - pFinalizedDirs->offPathTableM) < pFinalizedDirs->cbPathTable)
+        return rtFsIsoMakerOutFile_ReadPathTable(pThis, pFinalizedDirs, pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
+                                                 false /*fLittleEndian*/, (uint32_t)offInTable, pbBuf, cbBuf);
+
+    /* ASSUME we're in the zero padding at the end of a path table. */
+    Assert(   offUnsigned - pFinalizedDirs->offPathTableL <  RT_ALIGN_32(pFinalizedDirs->cbPathTable, RTFSISOMAKER_SECTOR_SIZE)
+           || offUnsigned - pFinalizedDirs->offPathTableM <  RT_ALIGN_32(pFinalizedDirs->cbPathTable, RTFSISOMAKER_SECTOR_SIZE));
+    size_t cbZeros = RT_MIN(cbBuf, RTFSISOMAKER_SECTOR_SIZE - ((size_t)offUnsigned & RTFSISOMAKER_SECTOR_OFFSET_MASK));
+    memset(pbBuf, 0, cbZeros);
+    return cbZeros;
 }
 
 
