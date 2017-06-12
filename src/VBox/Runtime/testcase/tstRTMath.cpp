@@ -30,7 +30,7 @@ RT_C_DECLS_BEGIN
 extern uint64_t __udivmoddi4(uint64_t u64A, uint64_t u64B, uint64_t *pu64R);
 RT_C_DECLS_END
 
-struct {
+static struct {
     uint64_t u64A;
     uint64_t u64B;
     uint64_t u64Div;
