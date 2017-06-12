@@ -33,7 +33,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_fs    RTFsIsoMaker - ISO Image Maker
+/** @defgroup grp_rt_fsisomaker    RTFsIsoMaker - ISO Image Maker
  * @ingroup grp_rt_fs
  * @{
  */
