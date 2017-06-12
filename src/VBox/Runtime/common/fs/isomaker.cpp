@@ -2236,7 +2236,7 @@ static int rtFsIsoMakerObjRemoveWorker(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ 
         int rc2 = rtFsIsoMakerObjUnsetName(pThis, pNamespace, pObj);
         if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
             continue;
-            rc = rc2;
+        rc = rc2;
     }
 
     /*
