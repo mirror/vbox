@@ -2987,7 +2987,8 @@ static int rtFsFatDir_MaybeCreateLongNameAndShortAlias(PRTFSFATDIR pThis, const 
              * the name straight into the entry without constaints.
              */
             memset(&wszEntry[cwcEntry + 1], 0xff,
-                   RT_MIN(sizeof(wszEntry) - (cwcEntry + 1) * sizeof(RTUTF16), FATDIRNAMESLOT_CHARS_PER_SLOT));
+                   RT_MIN(sizeof(wszEntry) - (cwcEntry + 1) * sizeof(RTUTF16),
+                          FATDIRNAMESLOT_CHARS_PER_SLOT * sizeof(RTUTF16)));
 
             uint8_t const   bChecksum = rtFsFatDir_CalcChecksum(pDirEntry);
             size_t const    cSlots    = (cwcEntry + FATDIRNAMESLOT_CHARS_PER_SLOT - 1) / FATDIRNAMESLOT_CHARS_PER_SLOT;
