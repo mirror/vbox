@@ -87,6 +87,7 @@ PROGRAMS += \
 	tstRTList \
 	tstRTLockValidator \
 	tstLog \
+	tstRTMath \
 	tstRTMemEf \
 	tstRTMemCache \
 	tstRTMemPool \
@@ -692,6 +693,11 @@ tstRTCircBuf_SOURCES = tstRTCircBuf.cpp
 
 tstRTManifest_TEMPLATE = VBOXR3TSTEXE
 tstRTManifest_SOURCES = tstRTManifest.cpp
+
+tstRTMath_TEMPLATE = VBOXR3TSTEXE
+tstRTMath_SOURCES  = \
+	tstRTMath.cpp \
+	../common/math/gcc/udivmoddi4.c
 
 tstRTUri_TEMPLATE = VBOXR3TSTEXE
 tstRTUri_SOURCES = tstRTUri.cpp
