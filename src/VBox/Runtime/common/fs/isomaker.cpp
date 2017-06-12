@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_FS
 #include "internal/iprt.h"
-#include <iprt/fsvfs.h>
+#include <iprt/fsisomaker.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
