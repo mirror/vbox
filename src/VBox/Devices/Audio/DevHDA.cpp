@@ -194,6 +194,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_INTCTL_GIE              RT_BIT(31)  /* Global Interrupt Enable */
 #define HDA_INTCTL_CIE              RT_BIT(30)  /* Controller Interrupt Enable */
 /* Bits 0-29 correspond to streams 0-29. */
+#define HDA_STRMINT_MASK            0xFF        /* Streams 0-7 implemented. Applies to INTCTL and INTSTS. */
 
 #define HDA_REG_INTSTS              12 /* 0x24 */
 #define HDA_RMX_INTSTS              10
@@ -934,7 +935,6 @@ static void          hdaStreamMapReset(PHDASTREAMMAPPING pMapping);
 #ifdef IN_RING3
 static void          hdaDoTransfers(PHDASTATE pThis);
 #endif /* IN_RING3 */
-static int           hdaProcessInterrupt(PHDASTATE pThis);
 /** @} */
 
 /** @name BDLE (Buffer Descriptor List Entry) functions.
@@ -1344,24 +1344,20 @@ static void hdaUpdateINTSTS(PHDASTATE pThis)
 {
     uint32_t intSts = 0;
 
-    /** @todo r=michaln This is ignoring HDA_RIRBCTL_ROIC! */
-    if (/* Response Overrun Interrupt Status (ROIS aka RIRBOIS) */
-           (HDA_REG(pThis, RIRBSTS) & HDA_RIRBSTS_RIRBOIS)
-        /* Response Interrupt */
-        || (HDA_REG(pThis, RIRBSTS) & HDA_RIRBSTS_RINTFL)
+    /* Check controller interrupts (RIRB, STATEST) */
+    if (   (HDA_REG(pThis, RIRBSTS) & HDA_REG(pThis, RIRBCTL) & (HDA_RIRBCTL_ROIC | HDA_RIRBCTL_RINTCTL))
         /* SDIN State Change Status Flags (SCSF) */
         || (HDA_REG(pThis, STATESTS) & HDA_STATESTS_SCSF_MASK))
     {
         intSts |= HDA_INTSTS_CIS;   /* Set the Controller Interrupt Status (CIS). */
     }
 
-    /** @todo r=michaln The logic here ignores enable bits and is generally completely broken. */
+    /* For each stream, check if any interrupt status bit is set and enabled. */
     for (int iStrm = 0; iStrm < 8; ++iStrm)
     {
-        if (   (HDA_REG(pThis, INTCTL) & RT_BIT(iStrm))
-            && (HDA_STREAM_REG(pThis, STS, iStrm) & (HDA_SDSTS_DESE | HDA_SDSTS_FIFOE | HDA_SDSTS_BCIS)))
+        if (HDA_STREAM_REG(pThis, STS, iStrm) & HDA_STREAM_REG(pThis, CTL, iStrm) & (HDA_SDCTL_DEIE | HDA_SDCTL_FEIE  | HDA_SDCTL_IOCE))
         {
-            Log3Func(("[SD%d] interrupt set\n", iStrm));
+            Log3Func(("[SD%d] interrupt status set\n", iStrm));
             intSts |= RT_BIT(iStrm);
         }
     }
@@ -1370,26 +1366,30 @@ static void hdaUpdateINTSTS(PHDASTATE pThis)
         intSts |= HDA_INTSTS_GIS;   /* Set the Global Interrupt Status (GIS). */
 
     HDA_REG(pThis, INTSTS) = intSts;
-
     Log3Func(("INTSTS=%x\n", intSts));
 }
 
-static int hdaProcessInterrupt(PHDASTATE pThis)
+/* Update INTSTS register and the hardware interrupt signal. This function must be called
+ * after changing any interrupt status or enable bits.
+ */
+static int hdaUpdateInterrupt(PHDASTATE pThis)
 {
     hdaUpdateINTSTS(pThis);
 
     int iLevel = 0;
 
-    /* Global Interrupt Status (GIS) set? */
-    /** @todo r=michaln: This is wrong. It is possible to have GIS set when CIS and all stream interrupts are disabled. */
-    if (HDA_REG(pThis, INTSTS) & HDA_INTSTS_GIS)
-        iLevel = 1;
+    /* NB: It is possible to have GIS set even when CIE/SIEn are all zero; the GIS bit does
+     * not control the interrupt signal. See Figure 4 on page 54 of the HDA 1.0a spec.
+     */
+
+    /* If global interrupt enable (GIE) is set, check if any enabled interrupts are set. */
+    if (HDA_REG(pThis, INTCTL) & HDA_INTCTL_GIE)
+        if (HDA_REG(pThis, INTSTS) & HDA_REG(pThis, INTCTL) & (HDA_INTCTL_CIE | HDA_STRMINT_MASK))
+            iLevel = 1;
 
     Log3Func(("INTCTL=%x, INTSTS=%x, Level=%d\n", HDA_REG(pThis, INTCTL), HDA_REG(pThis, INTSTS), iLevel));
 
-    /* Global Interrupt Enable (GIE) set? */
-    if (HDA_REG(pThis, INTCTL) & HDA_INTCTL_GIE)
-        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, iLevel);
+    PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, iLevel);
 
     return VINF_SUCCESS;
 }
@@ -1610,13 +1610,10 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
 
     Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n", HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
 
-    if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RINTCTL)
-    {
-        HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
+    HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
 
-        pThis->u8RespIntCnt = 0;
-        rc = hdaProcessInterrupt(pThis);
-    }
+    pThis->u8RespIntCnt = 0;
+    rc = hdaUpdateInterrupt(pThis);
 
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
@@ -2070,7 +2067,7 @@ static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
 
     HDA_REG(pThis, STATESTS) &= ~(v & nv); /* Write of 1 clears corresponding bit. */
 
-    return hdaProcessInterrupt(pThis);
+    return hdaUpdateInterrupt(pThis);
 }
 
 static int hdaRegWriteINTCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -2081,18 +2078,7 @@ static int hdaRegWriteINTCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     HDA_REG(pThis, INTCTL) = u32Value;
 
-    /* Global Interrupt Enable (GIE) set? */
-    if (u32Value & HDA_INTCTL_GIE)
-    {
-        rc = hdaProcessInterrupt(pThis);
-    }
-    else
-    {
-        /* Make sure to lower interrupt line, as Global Interrupt Enable (GIE) is disabled. */
-        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0 /* iLevel */);
-
-        rc = VINF_SUCCESS;
-    }
+    rc = hdaUpdateInterrupt(pThis);
 
     return rc;
 }
@@ -2318,7 +2304,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     AssertRC(rc2);
 
     /* Make sure to handle interrupts here as well. */
-    hdaProcessInterrupt(pThis);
+    hdaUpdateInterrupt(pThis);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -2336,7 +2322,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     LogFunc(("SDSTS 0x%x -> 0x%x\n", v, HDA_REG_IND(pThis, iReg)));
 
-    hdaProcessInterrupt(pThis);
+    hdaUpdateInterrupt(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 }
 
@@ -3006,7 +2992,7 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     uint8_t v = HDA_REG(pThis, RIRBSTS);
     HDA_REG(pThis, RIRBSTS) &= ~(v & u32Value);
 
-    return hdaProcessInterrupt(pThis);
+    return hdaUpdateInterrupt(pThis);
 }
 
 #ifdef IN_RING3
@@ -4125,7 +4111,7 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
         HDA_STREAM_REG(pThis, STS, pStream->u8SD) |= HDA_SDSTS_BCIS;
         Log3Func(("[SD%RU8]: BCIS set\n", pStream->u8SD));
 
-        hdaProcessInterrupt(pThis);
+        hdaUpdateInterrupt(pThis);
     }
 
     if (RT_SUCCESS(rc))
