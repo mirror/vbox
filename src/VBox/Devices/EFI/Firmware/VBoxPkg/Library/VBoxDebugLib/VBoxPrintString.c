@@ -30,6 +30,7 @@
 *******************************************************************************/
 #include "VBoxDebugLib.h"
 #include "DevEFI.h"
+#include "iprt/asm.h"
 
 
 /**

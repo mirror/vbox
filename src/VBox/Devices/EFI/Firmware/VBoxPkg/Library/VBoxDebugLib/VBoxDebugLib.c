@@ -28,6 +28,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <Base.h>
+#include <Library/BaseLib.h>
 #include <Library/PrintLib.h>
 #include <Library/DebugLib.h>
 
@@ -37,6 +38,7 @@
 #include <Uefi/UefiSpec.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include "DevEFI.h"
+#include "iprt/asm.h"
 
 #if 0
 static EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *g_DevPath2Txt;
@@ -49,7 +51,7 @@ DebugPrint(IN UINTN ErrorLevel, IN CONST CHAR8 *Format, ...)
     CHAR8       szBuf[256];
     VA_LIST     va;
     UINTN       cch;
-    RTCCUINTREG SavedFlags;
+    BOOLEAN     InterruptState;
 
     /* No pool noise, please. */
     if (ErrorLevel == DEBUG_POOL)
@@ -66,16 +68,16 @@ DebugPrint(IN UINTN ErrorLevel, IN CONST CHAR8 *Format, ...)
         cch--;
     szBuf[cch] = '\0';
 
-    /* Output the log string. */
-    SavedFlags = ASMIntDisableFlags();
+    InterruptState = SaveAndDisableInterrupts();
 
+    /* Output the log string. */
     VBoxPrintString("dbg/");
     VBoxPrintHex(ErrorLevel, sizeof(ErrorLevel));
     VBoxPrintChar(' ');
     VBoxPrintString(szBuf);
     VBoxPrintChar('\n');
 
-    ASMSetFlags(SavedFlags);
+    SetInterruptState(InterruptState);
 }
 
 /**
@@ -90,7 +92,7 @@ VBoxLogWorker(const char *pszFormat, ...)
 {
     CHAR8       szBuf[384];
     VA_LIST     va;
-    RTCCUINTREG SavedFlags;
+    BOOLEAN     InterruptState;
 
     /* Format it. */
     VA_START(va, pszFormat);
@@ -98,13 +100,13 @@ VBoxLogWorker(const char *pszFormat, ...)
     VA_END(va);
     szBuf[sizeof(szBuf) - 1] = '\0';
 
-    /* Output the log string. */
-    SavedFlags = ASMIntDisableFlags();
+    InterruptState = SaveAndDisableInterrupts();
 
+    /* Output the log string. */
     VBoxPrintString(szBuf);
     VBoxPrintChar('\n');
 
-    ASMSetFlags(SavedFlags);
+    SetInterruptState(InterruptState);
 }
 
 /**
@@ -156,7 +158,7 @@ VBoxPanicMsgDecimalU32(uint32_t uValue)
 VOID EFIAPI
 DebugAssert(IN CONST CHAR8 *FileName, IN UINTN LineNumber, IN CONST CHAR8 *Description)
 {
-    RTCCUINTREG SavedFlags = ASMIntDisableFlags();
+    BOOLEAN InterruptState = SaveAndDisableInterrupts();
 
     ASMOutU8(EFI_PANIC_PORT, EFI_PANIC_CMD_START_MSG);
     VBoxPanicMsgString("EFI Assertion failed!"
@@ -168,7 +170,7 @@ DebugAssert(IN CONST CHAR8 *FileName, IN UINTN LineNumber, IN CONST CHAR8 *Descr
     VBoxPanicMsgString(Description ? Description : "<NULL>");
     ASMOutU8(EFI_PANIC_PORT, EFI_PANIC_CMD_END_MSG);
 
-    ASMSetFlags(SavedFlags);
+    SetInterruptState(InterruptState);
 }
 
 CHAR16 *VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)

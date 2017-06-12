@@ -29,9 +29,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <ctype.h>
 #include "VBoxDebugLib.h"
 #include "DevEFI.h"
-#include <iprt/ctype.h>
+#include "iprt/asm.h"
 
 
 /**
@@ -79,9 +80,7 @@ size_t VBoxPrintHexDump(const void *pv, size_t cb)
         /* the printable chars */
         cchPrinted += VBoxPrintString("  ");
         for (i = 0; i < 16 && i < cb; i++)
-            cchPrinted += vboxPrintHexDumpChar(pb[i] == ' '
-                                               ? ' '
-                                               : RT_C_IS_GRAPH(pb[i])
+            cchPrinted += vboxPrintHexDumpChar(isprint(pb[i])
                                                ? pb[i]
                                                : '.');
 
