@@ -26,6 +26,7 @@
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/fsvfs.h>
+#include <iprt/fsisomaker.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -90,6 +91,8 @@ static void printUsage(PRTSTREAM pStrm)
                  "                [--heads <value>]\n"
                  "                [--sectors-per-track <count>]\n"
                  "                [--media-byte <byte>]\n"
+                 "\n"
+                 "   createiso    [too-many-options]\n"
                  "\n"
                  "   repair       --filename <filename>\n"
                  "                [--dry-run]\n"
@@ -2004,6 +2007,12 @@ static int handleCreateFloppy(HandlerArg *a)
 }
 
 
+static int handleCreateIso(HandlerArg *a)
+{
+    return RTFsIsoMakerCmd(a->argc + 1, a->argv - 1);
+}
+
+
 static int handleClearResize(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
@@ -2166,6 +2175,7 @@ int main(int argc, char *argv[])
         { "createcache",  handleCreateCache  },
         { "createbase",   handleCreateBase   },
         { "createfloppy", handleCreateFloppy },
+        { "createiso",    handleCreateIso },
         { "repair",       handleRepair       },
         { "clearcomment", handleClearComment },
         { "resize",       handleClearResize  },
