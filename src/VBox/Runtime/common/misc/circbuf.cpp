@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -145,6 +145,22 @@ RTDECL(bool) RTCircBufIsWriting(PRTCIRCBUF pBuf)
     AssertPtrReturn(pBuf, 0);
 
     return ASMAtomicReadBool(&pBuf->fWriting);
+}
+
+RTDECL(size_t) RTCircBufOffsetRead(PRTCIRCBUF pBuf)
+{
+    /* Validate input. */
+    AssertPtrReturn(pBuf, 0);
+
+    return ASMAtomicReadZ(&pBuf->offRead);
+}
+
+RTDECL(size_t) RTCircBufOffsetWrite(PRTCIRCBUF pBuf)
+{
+    /* Validate input. */
+    AssertPtrReturn(pBuf, 0);
+
+    return ASMAtomicReadZ(&pBuf->offWrite);
 }
 
 RTDECL(void) RTCircBufAcquireReadBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void **ppvStart, size_t *pcbSize)

@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -598,6 +598,8 @@
 # define RTCircBufFree                                  RT_MANGLER(RTCircBufFree)
 # define RTCircBufIsReading                             RT_MANGLER(RTCircBufIsReading)
 # define RTCircBufIsWriting                             RT_MANGLER(RTCircBufIsWriting)
+# define RTCircBufOffsetRead                            RT_MANGLER(RTCircBufOffsetRead)
+# define RTCircBufOffsetWrite                           RT_MANGLER(RTCircBufOffsetWrite)
 # define RTCircBufReleaseReadBlock                      RT_MANGLER(RTCircBufReleaseReadBlock)
 # define RTCircBufReleaseWriteBlock                     RT_MANGLER(RTCircBufReleaseWriteBlock)
 # define RTCircBufReset                                 RT_MANGLER(RTCircBufReset)

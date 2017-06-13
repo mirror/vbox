@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -93,6 +93,20 @@ RTDECL(size_t) RTCircBufSize(PRTCIRCBUF pBuf);
 
 RTDECL(bool) RTCircBufIsReading(PRTCIRCBUF pBuf);
 RTDECL(bool) RTCircBufIsWriting(PRTCIRCBUF pBuf);
+
+/**
+ * Returns the current read offset (in bytes) within the buffer.
+ *
+ * @param   pBuf           The buffer to query.
+ */
+RTDECL(size_t) RTCircBufOffsetRead(PRTCIRCBUF pBuf);
+
+/**
+ * Returns the current write offset (in bytes) within the buffer.
+ *
+ * @param   pBuf           The buffer to query.
+ */
+RTDECL(size_t) RTCircBufOffsetWrite(PRTCIRCBUF pBuf);
 
 /**
  * Acquire a block of the circular buffer for reading.
