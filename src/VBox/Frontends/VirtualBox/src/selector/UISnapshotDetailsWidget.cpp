@@ -26,6 +26,7 @@
 # include <QGridLayout>
 # include <QLabel>
 # include <QLineEdit>
+# include <QPainter>
 # include <QPushButton>
 # include <QScrollArea>
 # include <QStackedLayout>
@@ -89,6 +90,11 @@ public:
 
     /** Returns the minimum size-hint. */
     QSize minimumSizeHint() const;
+
+protected:
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
 private:
 
@@ -209,6 +215,80 @@ QSize UISnapshotDetailsElement::minimumSizeHint() const
     return QSize(iIdealWidth, iIdealHeight);
 }
 
+void UISnapshotDetailsElement::paintEvent(QPaintEvent * /* pEvent */)
+{
+    /* Prepare painter: */
+    QPainter painter(this);
+
+    /* Prepare palette colors: */
+    const QPalette pal = palette();
+    QColor color0 = pal.color(QPalette::Window);
+    QColor color1 = pal.color(QPalette::Window).lighter(110);
+    color1.setAlpha(0);
+    QColor color2 = pal.color(QPalette::Window).darker(200);
+
+    /* Top-left corner: */
+    QRadialGradient grad1(QPointF(5, 5), 5);
+    {
+        grad1.setColorAt(0, color2);
+        grad1.setColorAt(1, color1);
+    }
+    /* Top-right corner: */
+    QRadialGradient grad2(QPointF(width() - 5, 5), 5);
+    {
+        grad2.setColorAt(0, color2);
+        grad2.setColorAt(1, color1);
+    }
+    /* Bottom-left corner: */
+    QRadialGradient grad3(QPointF(5, height() - 5), 5);
+    {
+        grad3.setColorAt(0, color2);
+        grad3.setColorAt(1, color1);
+    }
+    /* Botom-right corner: */
+    QRadialGradient grad4(QPointF(width() - 5, height() - 5), 5);
+    {
+        grad4.setColorAt(0, color2);
+        grad4.setColorAt(1, color1);
+    }
+
+    /* Top line: */
+    QLinearGradient grad5(QPointF(5, 0), QPointF(5, 5));
+    {
+        grad5.setColorAt(0, color1);
+        grad5.setColorAt(1, color2);
+    }
+    /* Bottom line: */
+    QLinearGradient grad6(QPointF(5, height()), QPointF(5, height() - 5));
+    {
+        grad6.setColorAt(0, color1);
+        grad6.setColorAt(1, color2);
+    }
+    /* Left line: */
+    QLinearGradient grad7(QPointF(0, height() - 5), QPointF(5, height() - 5));
+    {
+        grad7.setColorAt(0, color1);
+        grad7.setColorAt(1, color2);
+    }
+    /* Right line: */
+    QLinearGradient grad8(QPointF(width(), height() - 5), QPointF(width() - 5, height() - 5));
+    {
+        grad8.setColorAt(0, color1);
+        grad8.setColorAt(1, color2);
+    }
+
+    /* Paint shape/shadow: */
+    painter.fillRect(QRect(5,           5,            width() - 5 * 2, height() - 5 * 2), color0); // background
+    painter.fillRect(QRect(0,           0,            5,               5),                grad1);  // top-left corner
+    painter.fillRect(QRect(width() - 5, 0,            5,               5),                grad2);  // top-right corner
+    painter.fillRect(QRect(0,           height() - 5, 5,               5),                grad3);  // bottom-left corner
+    painter.fillRect(QRect(width() - 5, height() - 5, 5,               5),                grad4);  // bottom-right corner
+    painter.fillRect(QRect(5,           0,            width() - 5 * 2, 5),                grad5);  // top line
+    painter.fillRect(QRect(5,           height() - 5, width() - 5 * 2, 5),                grad6);  // bottom line
+    painter.fillRect(QRect(0,           5,            5,               height() - 5 * 2), grad7);  // left line
+    painter.fillRect(QRect(width() - 5, 5,            5,               height() - 5 * 2), grad8);  // right line
+}
+
 void UISnapshotDetailsElement::prepare()
 {
     /* Create layout: */
@@ -216,7 +296,7 @@ void UISnapshotDetailsElement::prepare()
     AssertPtrReturnVoid(layout());
     {
         /* Configure layout: */
-        layout()->setContentsMargins(0, 0, 0, 0);
+        layout()->setContentsMargins(5, 5, 5, 5);
 
         /* Create text-browser if requested, text-edit otherwise: */
         m_pTextEdit = m_fLinkSupport ? new QTextBrowser : new QTextEdit;
@@ -226,6 +306,7 @@ void UISnapshotDetailsElement::prepare()
             m_pTextEdit->setReadOnly(true);
             m_pTextEdit->setFocusPolicy(Qt::NoFocus);
             m_pTextEdit->setFrameShape(QFrame::NoFrame);
+            m_pTextEdit->viewport()->setAutoFillBackground(false);
             m_pTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             m_pTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             m_pTextEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
