@@ -47,6 +47,7 @@ static int tstSingle(RTTEST hTest)
         true,                                                               /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
+        0,                                                                  /* Alignment mask */
         44100,                                                              /* Hz */
         false                                                               /* Swap Endian */
     };
@@ -75,25 +76,46 @@ static int tstSingle(RTTEST hTest)
     int32_t samples32[2] = { 0xCC, 0xDD };
     /* int64_t samples64[2] = { 0xEE, 0xFF }; - unused */
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0, &samples8, sizeof(samples8), &cSamplesWritten));
+    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0 /* Offset */, &samples8, sizeof(samples8), &cSamplesWritten));
     RTTESTI_CHECK(cSamplesWritten == 0 /* Samples */);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 0);
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0, &samples16, sizeof(samples16), &cSamplesWritten));
+    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0 /* Offset */, &samples16, sizeof(samples16), &cSamplesWritten));
     RTTESTI_CHECK(cSamplesWritten == 1 /* Samples */);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 1);
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 2, &samples32, sizeof(samples32), &cSamplesWritten));
+    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 2 /* Offset */, &samples32, sizeof(samples32), &cSamplesWritten));
     RTTESTI_CHECK(cSamplesWritten == 2 /* Samples */);
-    cSamplesWrittenAbs = 0;
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 2);
 
     /* Beyond buffer. */
     RTTESTI_CHECK_RC(AudioMixBufWriteAt(&mb, AudioMixBufSize(&mb) + 1, &samples16, sizeof(samples16),
-                                        &cSamplesWritten), VINF_BUFFER_OVERFLOW);
-    /** @todo (bird): this was checking for VERR_BUFFER_OVERFLOW, which do you want
-     *        the function to actually return? */
+                                        &cSamplesWritten), VERR_BUFFER_OVERFLOW);
+
+    /* Offset wrap-around: When writing as much (or more) samples the mixing buffer can hold. */
+    size_t    cbSamples = cBufSize * sizeof(int16_t) * 2 /* Channels */;
+    RTTESTI_CHECK(cbSamples);
+    uint16_t *paSamples = (uint16_t *)RTMemAlloc(cbSamples);
+    RTTESTI_CHECK(paSamples);
+    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 0 /* Offset */, paSamples, cbSamples, &cSamplesWritten));
+    RTTESTI_CHECK(cSamplesWritten == cBufSize /* Samples */);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize);
+    RTTESTI_CHECK(AudioMixBufReadPos(&mb) == 0);
+    RTTESTI_CHECK(AudioMixBufWritePos(&mb) == 0);
+    RTMemFree(paSamples);
+    cbSamples = 0;
 
     /*
      * Circular writes.
      */
+    AudioMixBufReset(&mb);
+
+    RTTESTI_CHECK_RC_OK(AudioMixBufWriteAt(&mb, 2 /* Offset */, &samples32, sizeof(samples32), &cSamplesWritten));
+    RTTESTI_CHECK(cSamplesWritten == 2 /* Samples */);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == 2);
+
+    cSamplesWrittenAbs = AudioMixBufUsed(&mb);
+
     uint32_t cToWrite = AudioMixBufSize(&mb) - cSamplesWrittenAbs - 1; /* -1 as padding plus -2 samples for above. */
     for (uint32_t i = 0; i < cToWrite; i++)
     {
@@ -113,7 +135,7 @@ static int tstSingle(RTTEST hTest)
 
     /* Circular reads. */
     uint32_t cToRead = AudioMixBufSize(&mb) - cSamplesWrittenAbs - 1;
-    for (uint32_t i = 0; i < cToWrite; i++)
+    for (uint32_t i = 0; i < cToRead; i++)
     {
         RTTESTI_CHECK_RC_OK(AudioMixBufReadCirc(&mb, &samples16, sizeof(samples16), &cSamplesRead));
         RTTESTI_CHECK(cSamplesRead == 1);
@@ -122,7 +144,7 @@ static int tstSingle(RTTEST hTest)
     RTTESTI_CHECK(!AudioMixBufIsEmpty(&mb));
     RTTESTI_CHECK(AudioMixBufFree(&mb) == AudioMixBufSize(&mb) - cSamplesWrittenAbs - 1);
     RTTESTI_CHECK(AudioMixBufFreeBytes(&mb) == AUDIOMIXBUF_S2B(&mb, cBufSize - cSamplesWrittenAbs - 1));
-    RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize - cToRead + cSamplesWrittenAbs);
+    RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize - cToRead);
 
     RTTESTI_CHECK_RC_OK(AudioMixBufReadCirc(&mb, &samples16, sizeof(samples16), &cSamplesRead));
     RTTESTI_CHECK(cSamplesRead == 1);
@@ -138,8 +160,7 @@ static int tstSingle(RTTEST hTest)
 
 static int tstParentChild(RTTEST hTest)
 {
-    uint32_t cSamples = 16;
-    uint32_t cBufSize = RTRandU32Ex(cSamples /* Min */, 256 /* Max */);
+    uint32_t cParentBufSize = RTRandU32Ex(_1K /* Min */, _16K /* Max */); /* Enough room for random sizes */
 
     /* 44100Hz, 2 Channels, S16 */
     PDMAUDIOPCMPROPS cfg_p =
@@ -148,6 +169,7 @@ static int tstParentChild(RTTEST hTest)
         true,                                                               /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
+        0,                                                                  /* Alignment mask */
         44100,                                                              /* Hz */
         false                                                               /* Swap Endian */
     };
@@ -155,7 +177,7 @@ static int tstParentChild(RTTEST hTest)
     RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_p));
 
     PDMAUDIOMIXBUF parent;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cParentBufSize));
 
     /* 22050Hz, 2 Channels, S16 */
     PDMAUDIOPCMPROPS cfg_c1 = /* Upmixing to parent */
@@ -164,14 +186,18 @@ static int tstParentChild(RTTEST hTest)
         true,                                                               /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
+        0,                                                                  /* Alignment mask */
         22050,                                                              /* Hz */
         false                                                               /* Swap Endian */
     };
 
     RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_c1));
 
+    uint32_t cSamples      = 16;
+    uint32_t cChildBufSize = RTRandU32Ex(cSamples /* Min */, 64 /* Max */);
+
     PDMAUDIOMIXBUF child1;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child1, "Child1", &cfg_c1, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child1, "Child1", &cfg_c1, cChildBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child1, &parent));
 
     /* 48000Hz, 2 Channels, S16 */
@@ -181,6 +207,7 @@ static int tstParentChild(RTTEST hTest)
         true,                                                               /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
+        0,                                                                  /* Alignment mask */
         48000,                                                              /* Hz */
         false                                                               /* Swap Endian */
     };
@@ -188,7 +215,7 @@ static int tstParentChild(RTTEST hTest)
     RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_c2));
 
     PDMAUDIOMIXBUF child2;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child2, "Child2", &cfg_c2, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child2, "Child2", &cfg_c2, cChildBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child2, &parent));
 
     /*
@@ -202,41 +229,71 @@ static int tstParentChild(RTTEST hTest)
     uint32_t cSamplesChild1  = cSamples;
     uint32_t cSamplesChild2  = cSamples;
 
-    uint32_t t = RTRandU32() % 1024;
+    uint32_t t = RTRandU32() % 32;
 
-    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "%RU32 iterations total\n", t);
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG,
+                 "cParentBufSize=%RU32, cChildBufSize=%RU32, %RU32 samples -> %RU32 iterations total\n",
+                 cParentBufSize, cChildBufSize, cSamples, t);
 
     /*
      * Using AudioMixBufWriteAt for writing to children.
      */
     RTTestSubF(hTest, "2 Children -> Parent (AudioMixBufWriteAt)");
 
+    uint32_t cChildrenSamplesMixedTotal = 0;
+
     for (uint32_t i = 0; i < t; i++)
     {
         RTTestPrintf(hTest, RTTESTLVL_DEBUG, "i=%RU32\n", i);
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteAt(&child1, 0, &samples, sizeof(samples), &cSamplesWritten));
-        RTTESTI_CHECK_MSG_BREAK(cSamplesWritten == cSamplesChild1, ("Child1: Expected %RU32 written samples, got %RU32\n", cSamplesChild1, cSamplesWritten));
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufMixToParent(&child1, cSamplesWritten, &cSamplesMixed));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufLive(&child1) == cSamplesMixed, ("Child1: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufLive(&child1), cSamplesMixed));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child1) == AUDIOMIXBUF_S2S_RATIO(&parent, cSamplesMixed), ("Child1: Expected %RU32 used samples, got %RU32\n", AudioMixBufLive(&child1), AUDIOMIXBUF_S2S_RATIO(&parent, cSamplesMixed)));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&parent) == 0, ("Parent: Expected 0 used samples, got %RU32\n", AudioMixBufUsed(&parent)));
 
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteAt(&child2, 0, &samples, sizeof(samples), &cSamplesWritten));
-        RTTESTI_CHECK_MSG_BREAK(cSamplesWritten == cSamplesChild2, ("Child2: Expected %RU32 written samples, got %RU32\n", cSamplesChild2, cSamplesWritten));
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufMixToParent(&child2, cSamplesWritten, &cSamplesMixed));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufLive(&child2) == cSamplesMixed, ("Child2: Expected %RU32 mixed samples, got %RU32\n", AudioMixBufLive(&child2), AudioMixBufUsed(&parent)));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child2) == AUDIOMIXBUF_S2S_RATIO(&parent, cSamplesMixed), ("Child2: Expected %RU32 used samples, got %RU32\n", AudioMixBufLive(&child2), AUDIOMIXBUF_S2S_RATIO(&parent, cSamplesMixed)));
-        RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&parent) == 0, ("Parent2: Expected 0 used samples, got %RU32\n", AudioMixBufUsed(&parent)));
-    }
+        uint32_t cChild1Writes = RTRandU32() % 8;
 
-    RTTESTI_CHECK(AudioMixBufUsed(&parent) == AudioMixBufLive(&child1) + AudioMixBufLive(&child2));
+        for (uint32_t c1 = 0; c1 < cChild1Writes; c1++)
+        {
+            /* Child 1. */
+            RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteAt(&child1, 0, &samples, sizeof(samples), &cSamplesWritten));
+            RTTESTI_CHECK_MSG_BREAK(cSamplesWritten == cSamplesChild1, ("Child1: Expected %RU32 written samples, got %RU32\n", cSamplesChild1, cSamplesWritten));
+            RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufMixToParent(&child1, cSamplesWritten, &cSamplesMixed));
 
-    for (;;)
-    {
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufReadCirc(&parent, pvBuf, cbBuf, &cSamplesRead));
-        if (!cSamplesRead)
-            break;
-        AudioMixBufFinish(&parent, cSamplesRead);
+            cChildrenSamplesMixedTotal += cSamplesMixed;
+
+            RTTESTI_CHECK_MSG_BREAK(cSamplesWritten == cSamplesMixed, ("Child1: Expected %RU32 mixed samples, got %RU32\n", cSamplesWritten, cSamplesMixed));
+            RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child1) == 0, ("Child1: Expected %RU32 used samples, got %RU32\n", 0, AudioMixBufUsed(&child1)));
+        }
+
+        uint32_t cChild2Writes = RTRandU32() % 8;
+
+        for (uint32_t c2 = 0; c2 < cChild2Writes; c2++)
+        {
+            /* Child 2. */
+            RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufWriteAt(&child2, 0, &samples, sizeof(samples), &cSamplesWritten));
+            RTTESTI_CHECK_MSG_BREAK(cSamplesWritten == cSamplesChild2, ("Child2: Expected %RU32 written samples, got %RU32\n", cSamplesChild2, cSamplesWritten));
+            RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufMixToParent(&child2, cSamplesWritten, &cSamplesMixed));
+
+            cChildrenSamplesMixedTotal += cSamplesMixed;
+
+            RTTESTI_CHECK_MSG_BREAK(cSamplesWritten == cSamplesMixed, ("Child2: Expected %RU32 mixed samples, got %RU32\n", cSamplesWritten, cSamplesMixed));
+            RTTESTI_CHECK_MSG_BREAK(AudioMixBufUsed(&child2) == 0, ("Child2: Expected %RU32 used samples, got %RU32\n", 0, AudioMixBufUsed(&child2)));
+        }
+
+        /*
+         * Read out all samples from the parent buffer and also mark the just-read samples as finished
+         * so that both connected children buffers can keep track of their stuff.
+         */
+        uint32_t cParentSamples = AudioMixBufUsed(&parent);
+        while (cParentSamples)
+        {
+            RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufReadCirc(&parent, pvBuf, cbBuf, &cSamplesRead));
+            if (!cSamplesRead)
+                break;
+
+            AudioMixBufFinish(&parent, cSamplesRead);
+
+            RTTESTI_CHECK(cParentSamples >= cSamplesRead);
+            cParentSamples -= cSamplesRead;
+        }
+
+        RTTESTI_CHECK(cParentSamples == 0);
     }
 
     RTTESTI_CHECK(AudioMixBufUsed(&parent) == 0);
@@ -265,6 +322,7 @@ static int tstConversion8(RTTEST hTest)
         false,                                                             /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                 /* Channels */
+        0,                                                                  /* Alignment mask */
         44100,                                                             /* Hz */
         false                                                              /* Swap Endian */
     };
@@ -289,6 +347,7 @@ static int tstConversion8(RTTEST hTest)
         false,                                                             /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                 /* Channels */
+        0,                                                                 /* Alignment mask */
         22050,                                                             /* Hz */
         false                                                              /* Swap Endian */
     };
@@ -371,6 +430,7 @@ static int tstConversion16(RTTEST hTest)
         true,                                                               /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                  /* Channels */
+        0,                                                                  /* Alignment mask */
         44100,                                                              /* Hz */
         false                                                               /* Swap Endian */
     };
@@ -387,6 +447,7 @@ static int tstConversion16(RTTEST hTest)
         true,                                                               /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                  /* Channels */
+        0,                                                                  /* Alignment mask */
         22050,                                                              /* Hz */
         false                                                               /* Swap Endian */
     };
@@ -469,6 +530,7 @@ static int tstVolume(RTTEST hTest)
         true,                                                               /* Signed */
         PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
+        0,                                                                  /* Alignment mask */
         44100,                                                              /* Hz */
         false                                                               /* Swap Endian */
     };
