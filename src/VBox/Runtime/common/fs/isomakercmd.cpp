@@ -41,11 +41,40 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
+#include <iprt/path.h>
 #include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Maximum number of name specifiers we allow.  */
+#define RTFSISOMAKERCMD_MAX_NAMES                       8
+
+/** @name Name specifiers
+ * @{ */
+#define RTFSISOMAKERCMDNAME_PRIMARY_ISO                 RT_BIT_32(0)
+#define RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE      RT_BIT_32(1)
+#define RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL       RT_BIT_32(2)
+#define RTFSISOMAKERCMDNAME_JOLIET                      RT_BIT_32(3)
+#define RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE           RT_BIT_32(4)
+#define RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL            RT_BIT_32(5)
+#define RTFSISOMAKERCMDNAME_UDF                         RT_BIT_32(6)
+#define RTFSISOMAKERCMDNAME_UDF_TRANS_TBL               RT_BIT_32(7)
+#define RTFSISOMAKERCMDNAME_HFS                         RT_BIT_32(8)
+#define RTFSISOMAKERCMDNAME_HFS_TRANS_TBL               RT_BIT_32(9)
+
+#define RTFSISOMAKERCMDNAME_MAJOR_MASK \
+        (RTFSISOMAKERCMDNAME_PRIMARY_ISO | RTFSISOMAKERCMDNAME_JOLIET | RTFSISOMAKERCMDNAME_UDF | RTFSISOMAKERCMDNAME_HFS)
+#define RTFSISOMAKERCMDNAME_MINOR_MASK \
+        ( RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE | RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL \
+        | RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE      | RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL \
+        | RTFSISOMAKERCMDNAME_UDF_TRANS_TBL \
+        | RTFSISOMAKERCMDNAME_HFS_TRANS_TBL)
+/** @} */
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -57,6 +86,7 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER,
     RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,
     RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,
+    RTFSISOMAKERCMD_OPT_NAME_SETUP,
 
     /*
      * Compatibility options:
@@ -214,12 +244,46 @@ typedef struct RTFSISOMAKERCMDOPTS
      * when this is enabled. */
     bool                fRandomOutputReadBufferSize;
 
+    /** @name Processing of inputs
+     * @{ */
+    /** The namespaces (RTFSISOMAKER_NAMESPACE_XXX) we're currently adding
+     *  input to. */
+    uint32_t            fDstNamespaces;
+    /** The number of name specifiers we're currently operating with. */
+    uint32_t            cNameSpecifiers;
+    /** Name specifier configurations.
+     * For instance given "name0=name1=name2=name3=source-file" we will add
+     * source-file to the image with name0 as the name in the namespace and
+     * sub-name specified by aNameSpecifiers[0], name1 in aNameSpecifiers[1],
+     * and so on.  This allows exact control over which names a file will
+     * have in each namespace (primary-iso, joliet, udf, hfs) and sub-namespace
+     * (rock-ridge, trans.tbl).
+     */
+    uint32_t            afNameSpecifiers[RTFSISOMAKERCMD_MAX_NAMES];
+    /** @} */
 
     /** Number of items (files, directories, images, whatever) we've added. */
     uint32_t            cItemsAdded;
 } RTFSISOMAKERCMDOPTS;
 typedef RTFSISOMAKERCMDOPTS *PRTFSISOMAKERCMDOPTS;
 typedef RTFSISOMAKERCMDOPTS const *PCRTFSISOMAKERCMDOPTS;
+
+
+/**
+ * Parsed name.
+ */
+typedef struct RTFSISOMAKERCMDPARSEDNAME
+{
+    /** Copy of the corresponding RTFSISOMAKERCMDOPTS::afNameSpecifiers
+     * value. */
+    uint32_t            fNameSpecifiers;
+    /** The length of the specified path. */
+    uint32_t            cchPath;
+    /** Specified path. */
+    char                szPath[RTPATH_MAX];
+} RTFSISOMAKERCMDPARSEDNAME;
+/** Pointer to a parsed name. */
+typedef RTFSISOMAKERCMDPARSEDNAME *PRTFSISOMAKERCMDPARSEDNAME;
 
 
 /*********************************************************************************************************************************
@@ -237,271 +301,156 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--iprt-iso-maker-file-marker",   RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER,     RTGETOPT_REQ_NOTHING },
     { "--output-buffer-size",           RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,             RTGETOPT_REQ_UINT32  },
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
+    { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING },
 
 
     /*
      * genisoimage/mkisofs compatibility:
      */
-    { "--abstract",                     RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID,               RTGETOPT_REQ_STRING  },
-    { "-abstract",                      RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID,               RTGETOPT_REQ_STRING  },
+#define DD(a_szLong, a_chShort, a_fFlags) { a_szLong, a_chShort, a_fFlags  }, { "-" a_szLong, a_chShort, a_fFlags  }
+    DD("-abstract",                      RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID,               RTGETOPT_REQ_STRING ),
     { "--application-id",               'A',                                                RTGETOPT_REQ_STRING  },
-    { "--allow-limited-size",           RTFSISOMAKERCMD_OPT_ALLOW_LIMITED_SIZE,             RTGETOPT_REQ_NOTHING },
-    { "-allow-limited-size",            RTFSISOMAKERCMD_OPT_ALLOW_LIMITED_SIZE,             RTGETOPT_REQ_NOTHING },
-    { "--allow-leading-dots",           RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING },
-    { "-allow-leading-dots",            RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING },
-    { "--ldots",                        RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING },
-    { "-ldots",                         RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING },
-    { "--allow-lowercase",              RTFSISOMAKERCMD_OPT_ALLOW_LOWERCASE,                RTGETOPT_REQ_NOTHING },
-    { "-allow-lowercase",               RTFSISOMAKERCMD_OPT_ALLOW_LOWERCASE,                RTGETOPT_REQ_NOTHING },
-    { "--allow-multidot",               RTFSISOMAKERCMD_OPT_ALLOW_MULTI_DOT,                RTGETOPT_REQ_NOTHING },
-    { "-allow-multidot",                RTFSISOMAKERCMD_OPT_ALLOW_MULTI_DOT,                RTGETOPT_REQ_NOTHING },
-    { "--biblio",                       RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID,          RTGETOPT_REQ_STRING  },
-    { "-biblio",                        RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID,          RTGETOPT_REQ_STRING  },
-    { "--cache-inodes",                 RTFSISOMAKERCMD_OPT_DETECT_HARDLINKS,               RTGETOPT_REQ_NOTHING },
-    { "-cache-inodes",                  RTFSISOMAKERCMD_OPT_DETECT_HARDLINKS,               RTGETOPT_REQ_NOTHING },
-    { "--no-cache-inodes",              RTFSISOMAKERCMD_OPT_NO_DETECT_HARDLINKS,            RTGETOPT_REQ_NOTHING },
-    { "-no-cache-inodes",               RTFSISOMAKERCMD_OPT_NO_DETECT_HARDLINKS,            RTGETOPT_REQ_NOTHING },
-    { "--alpha-boot",                   RTFSISOMAKERCMD_OPT_ALPHA_BOOT,                     RTGETOPT_REQ_STRING  },
-    { "-alpha-boot",                    RTFSISOMAKERCMD_OPT_ALPHA_BOOT,                     RTGETOPT_REQ_STRING  },
-    { "--hppa-bootloader",              RTFSISOMAKERCMD_OPT_HPPA_BOOTLOADER,                RTGETOPT_REQ_STRING  },
-    { "-hppa-bootloader",               RTFSISOMAKERCMD_OPT_HPPA_BOOTLOADER,                RTGETOPT_REQ_STRING  },
-    { "--hppa-cmdline",                 RTFSISOMAKERCMD_OPT_HPPA_CMDLINE,                   RTGETOPT_REQ_STRING  },
-    { "-hppa-cmdline",                  RTFSISOMAKERCMD_OPT_HPPA_CMDLINE,                   RTGETOPT_REQ_STRING  },
-    { "--hppa-kernel-32",               RTFSISOMAKERCMD_OPT_HPPA_KERNEL_32,                 RTGETOPT_REQ_STRING  },
-    { "-hppa-kernel-32",                RTFSISOMAKERCMD_OPT_HPPA_KERNEL_32,                 RTGETOPT_REQ_STRING  },
-    { "--hppa-kernel-64",               RTFSISOMAKERCMD_OPT_HPPA_KERNEL_64,                 RTGETOPT_REQ_STRING  },
-    { "-hppa-kernel-64",                RTFSISOMAKERCMD_OPT_HPPA_KERNEL_64,                 RTGETOPT_REQ_STRING  },
-    { "--hppa-ramdisk",                 RTFSISOMAKERCMD_OPT_HPPA_RAMDISK,                   RTGETOPT_REQ_STRING  },
-    { "-hppa-ramdisk",                  RTFSISOMAKERCMD_OPT_HPPA_RAMDISK,                   RTGETOPT_REQ_STRING  },
-    { "--mips-boot",                    RTFSISOMAKERCMD_OPT_MIPS_BOOT,                      RTGETOPT_REQ_STRING  },
-    { "-mips-boot",                     RTFSISOMAKERCMD_OPT_MIPS_BOOT,                      RTGETOPT_REQ_STRING  },
-    { "--mipsel-boot",                  RTFSISOMAKERCMD_OPT_MIPSEL_BOOT,                    RTGETOPT_REQ_STRING  },
-    { "-mipsel-boot",                   RTFSISOMAKERCMD_OPT_MIPSEL_BOOT,                    RTGETOPT_REQ_STRING  },
-    { "--sparc-boot",                   'B',                                                RTGETOPT_REQ_STRING  },
-    { "-sparc-boot",                    'B',                                                RTGETOPT_REQ_STRING  },
+    DD("-allow-limited-size",           RTFSISOMAKERCMD_OPT_ALLOW_LIMITED_SIZE,             RTGETOPT_REQ_NOTHING ),
+    DD("-allow-leading-dots",           RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING ),
+    DD("-ldots",                        RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING ),
+    DD("-allow-lowercase",              RTFSISOMAKERCMD_OPT_ALLOW_LOWERCASE,                RTGETOPT_REQ_NOTHING ),
+    DD("-allow-multidot",               RTFSISOMAKERCMD_OPT_ALLOW_MULTI_DOT,                RTGETOPT_REQ_NOTHING ),
+    DD("-biblio",                       RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID,          RTGETOPT_REQ_STRING  ),
+    DD("-cache-inodes",                 RTFSISOMAKERCMD_OPT_DETECT_HARDLINKS,               RTGETOPT_REQ_NOTHING ),
+    DD("-no-cache-inodes",              RTFSISOMAKERCMD_OPT_NO_DETECT_HARDLINKS,            RTGETOPT_REQ_NOTHING ),
+    DD("-alpha-boot",                   RTFSISOMAKERCMD_OPT_ALPHA_BOOT,                     RTGETOPT_REQ_STRING  ),
+    DD("-hppa-bootloader",              RTFSISOMAKERCMD_OPT_HPPA_BOOTLOADER,                RTGETOPT_REQ_STRING  ),
+    DD("-hppa-cmdline",                 RTFSISOMAKERCMD_OPT_HPPA_CMDLINE,                   RTGETOPT_REQ_STRING  ),
+    DD("-hppa-kernel-32",               RTFSISOMAKERCMD_OPT_HPPA_KERNEL_32,                 RTGETOPT_REQ_STRING  ),
+    DD("-hppa-kernel-64",               RTFSISOMAKERCMD_OPT_HPPA_KERNEL_64,                 RTGETOPT_REQ_STRING  ),
+    DD("-hppa-ramdisk",                 RTFSISOMAKERCMD_OPT_HPPA_RAMDISK,                   RTGETOPT_REQ_STRING  ),
+    DD("-mips-boot",                    RTFSISOMAKERCMD_OPT_MIPS_BOOT,                      RTGETOPT_REQ_STRING  ),
+    DD("-mipsel-boot",                  RTFSISOMAKERCMD_OPT_MIPSEL_BOOT,                    RTGETOPT_REQ_STRING  ),
+    DD("-sparc-boot",                   'B',                                                RTGETOPT_REQ_STRING  ),
     { "--generic-boot",                 'G',                                                RTGETOPT_REQ_STRING  },
     { "--eltorito-boot",                'b',                                                RTGETOPT_REQ_STRING  },
-    { "--eltorito-alt-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_ALT_BOOT,              RTGETOPT_REQ_NOTHING },
-    { "--hard-disk-boot",               RTFSISOMAKERCMD_OPT_ELTORITO_HARD_DISK_BOOT,        RTGETOPT_REQ_NOTHING },
-    { "-hard-disk-boot",                RTFSISOMAKERCMD_OPT_ELTORITO_HARD_DISK_BOOT,        RTGETOPT_REQ_NOTHING },
-    { "--no-emulation-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_NO_EMULATION_BOOT,     RTGETOPT_REQ_NOTHING },
-    { "-no-emulation-boot",             RTFSISOMAKERCMD_OPT_ELTORITO_NO_EMULATION_BOOT,     RTGETOPT_REQ_NOTHING },
-    { "--no-boot",                      RTFSISOMAKERCMD_OPT_ELTORITO_NO_BOOT,               RTGETOPT_REQ_NOTHING },
-    { "-no-boot",                       RTFSISOMAKERCMD_OPT_ELTORITO_NO_BOOT,               RTGETOPT_REQ_NOTHING },
-    { "--boot-load-seg",                RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SEG,              RTGETOPT_REQ_UINT32  },
-    { "-boot-load-seg",                 RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SEG,              RTGETOPT_REQ_UINT32  },
-    { "--boot-load-size",               RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SIZE,             RTGETOPT_REQ_UINT32  },
-    { "-boot-load-size",                RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SIZE,             RTGETOPT_REQ_UINT32  },
-    { "--boot-info-table",              RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE,            RTGETOPT_REQ_STRING  },
-    { "-boot-info-table",               RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE,            RTGETOPT_REQ_STRING  },
+    DD("-eltorito-alt-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_ALT_BOOT,              RTGETOPT_REQ_NOTHING ),
+    DD("-hard-disk-boot",               RTFSISOMAKERCMD_OPT_ELTORITO_HARD_DISK_BOOT,        RTGETOPT_REQ_NOTHING ),
+    DD("-no-emulation-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_NO_EMULATION_BOOT,     RTGETOPT_REQ_NOTHING ),
+    DD("-no-boot",                      RTFSISOMAKERCMD_OPT_ELTORITO_NO_BOOT,               RTGETOPT_REQ_NOTHING ),
+    DD("-boot-load-seg",                RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SEG,              RTGETOPT_REQ_UINT32  ),
+    DD("-boot-load-size",               RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SIZE,             RTGETOPT_REQ_UINT32  ),
+    DD("-boot-info-table",              RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE,            RTGETOPT_REQ_STRING  ),
     { "--cd-extra",                     'C',                                                RTGETOPT_REQ_STRING  },
     { "--boot-catalog",                 'c',                                                RTGETOPT_REQ_STRING  },
-    { "--check-oldnames",               RTFSISOMAKERCMD_OPT_CHECK_OLD_NAMES,                RTGETOPT_REQ_NOTHING },
-    { "-check-oldnames",                RTFSISOMAKERCMD_OPT_CHECK_OLD_NAMES,                RTGETOPT_REQ_NOTHING },
-    { "--check-session",                RTFSISOMAKERCMD_OPT_CHECK_SESSION,                  RTGETOPT_REQ_STRING  },
-    { "-check-session",                 RTFSISOMAKERCMD_OPT_CHECK_SESSION,                  RTGETOPT_REQ_STRING  },
-    { "--copyright",                    RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID,              RTGETOPT_REQ_STRING  },
-    { "-copyright",                     RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID,              RTGETOPT_REQ_STRING  },
+    DD("-check-oldnames",                RTFSISOMAKERCMD_OPT_CHECK_OLD_NAMES,               RTGETOPT_REQ_NOTHING ),
+    DD("-check-session",                 RTFSISOMAKERCMD_OPT_CHECK_SESSION,                 RTGETOPT_REQ_STRING  ),
+    DD("-copyright",                     RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID,             RTGETOPT_REQ_STRING  ),
     { "--dont-append-dot",              'd',                                                RTGETOPT_REQ_NOTHING },
     { "--deep-directories",             'D',                                                RTGETOPT_REQ_NOTHING },
-    { "--dir-mode",                     RTFSISOMAKERCMD_OPT_DIR_MODE,                       RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
-    { "-dir-mode",                      RTFSISOMAKERCMD_OPT_DIR_MODE,                       RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
-    { "--dvd-video",                    RTFSISOMAKERCMD_OPT_DVD_VIDEO,                      RTGETOPT_REQ_NOTHING },
-    { "-dvd-video",                     RTFSISOMAKERCMD_OPT_DVD_VIDEO,                      RTGETOPT_REQ_NOTHING },
-    { "--follow-symlinks",              'f',                                                RTGETOPT_REQ_NOTHING },
-    { "-follow-symlinks",               'f',                                                RTGETOPT_REQ_NOTHING },
-    { "--file-mode",                    RTFSISOMAKERCMD_OPT_FILE_MODE,                      RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
-    { "-file-mode",                     RTFSISOMAKERCMD_OPT_FILE_MODE,                      RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
-    { "--gid",                          RTFSISOMAKERCMD_OPT_GID,                            RTGETOPT_REQ_UINT32  },
-    { "-gid",                           RTFSISOMAKERCMD_OPT_GID,                            RTGETOPT_REQ_UINT32  },
-    { "--gui",                          RTFSISOMAKERCMD_OPT_GUI,                            RTGETOPT_REQ_NOTHING },
-    { "-gui",                           RTFSISOMAKERCMD_OPT_GUI,                            RTGETOPT_REQ_NOTHING },
-    { "--graft-points",                 RTFSISOMAKERCMD_OPT_GRAFT_POINTS,                   RTGETOPT_REQ_NOTHING },
-    { "-graft-points",                  RTFSISOMAKERCMD_OPT_GRAFT_POINTS,                   RTGETOPT_REQ_NOTHING },
-    { "--hide",                         RTFSISOMAKERCMD_OPT_HIDE,                           RTGETOPT_REQ_STRING  },
-    { "-hide",                          RTFSISOMAKERCMD_OPT_HIDE,                           RTGETOPT_REQ_STRING  },
-    { "--hide-list",                    RTFSISOMAKERCMD_OPT_HIDE_LIST,                      RTGETOPT_REQ_STRING  },
-    { "-hide-list",                     RTFSISOMAKERCMD_OPT_HIDE_LIST,                      RTGETOPT_REQ_STRING  },
-    { "--hidden",                       RTFSISOMAKERCMD_OPT_HIDDEN,                         RTGETOPT_REQ_STRING  },
-    { "-hidden",                        RTFSISOMAKERCMD_OPT_HIDDEN,                         RTGETOPT_REQ_STRING  },
-    { "--hidden-list",                  RTFSISOMAKERCMD_OPT_HIDDEN_LIST,                    RTGETOPT_REQ_STRING  },
-    { "-hidden-list",                   RTFSISOMAKERCMD_OPT_HIDDEN_LIST,                    RTGETOPT_REQ_STRING  },
-    { "--hide-joliet",                  RTFSISOMAKERCMD_OPT_HIDE_JOLIET,                    RTGETOPT_REQ_STRING  },
-    { "-hide-joliet",                   RTFSISOMAKERCMD_OPT_HIDE_JOLIET,                    RTGETOPT_REQ_STRING  },
-    { "--hide-joliet-list",             RTFSISOMAKERCMD_OPT_HIDE_JOLIET_LIST,               RTGETOPT_REQ_STRING  },
-    { "-hide-joliet-list",              RTFSISOMAKERCMD_OPT_HIDE_JOLIET_LIST,               RTGETOPT_REQ_STRING  },
-    { "--hide-joliet-trans-tbl",        RTFSISOMAKERCMD_OPT_HIDE_JOLIET_TRANS_TBL,          RTGETOPT_REQ_NOTHING },
-    { "-hide-joliet-trans-tbl",         RTFSISOMAKERCMD_OPT_HIDE_JOLIET_TRANS_TBL,          RTGETOPT_REQ_NOTHING },
-    { "--hide-rr-moved",                RTFSISOMAKERCMD_OPT_HIDE_RR_MOVED,                  RTGETOPT_REQ_NOTHING },
-    { "-hide-rr-moved",                 RTFSISOMAKERCMD_OPT_HIDE_RR_MOVED,                  RTGETOPT_REQ_NOTHING },
-    { "--input-charset",                RTFSISOMAKERCMD_OPT_INPUT_CHARSET,                  RTGETOPT_REQ_STRING  },
-    { "-input-charset",                 RTFSISOMAKERCMD_OPT_INPUT_CHARSET,                  RTGETOPT_REQ_STRING  },
-    { "--output-charset",               RTFSISOMAKERCMD_OPT_OUTPUT_CHARSET,                 RTGETOPT_REQ_STRING  },
-    { "-output-charset",                RTFSISOMAKERCMD_OPT_OUTPUT_CHARSET,                 RTGETOPT_REQ_STRING  },
+    DD("-dir-mode",                     RTFSISOMAKERCMD_OPT_DIR_MODE,                       RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
+    DD("-dvd-video",                    RTFSISOMAKERCMD_OPT_DVD_VIDEO,                      RTGETOPT_REQ_NOTHING ),
+    DD("-follow-symlinks",              'f',                                                RTGETOPT_REQ_NOTHING ),
+    DD("-file-mode",                    RTFSISOMAKERCMD_OPT_FILE_MODE,                      RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
+    DD("-gid",                          RTFSISOMAKERCMD_OPT_GID,                            RTGETOPT_REQ_UINT32  ),
+    DD("-gui",                          RTFSISOMAKERCMD_OPT_GUI,                            RTGETOPT_REQ_NOTHING ),
+    DD("-graft-points",                 RTFSISOMAKERCMD_OPT_GRAFT_POINTS,                   RTGETOPT_REQ_NOTHING ),
+    DD("-hide",                         RTFSISOMAKERCMD_OPT_HIDE,                           RTGETOPT_REQ_STRING  ),
+    DD("-hide-list",                    RTFSISOMAKERCMD_OPT_HIDE_LIST,                      RTGETOPT_REQ_STRING  ),
+    DD("-hidden",                       RTFSISOMAKERCMD_OPT_HIDDEN,                         RTGETOPT_REQ_STRING  ),
+    DD("-hidden-list",                  RTFSISOMAKERCMD_OPT_HIDDEN_LIST,                    RTGETOPT_REQ_STRING  ),
+    DD("-hide-joliet",                  RTFSISOMAKERCMD_OPT_HIDE_JOLIET,                    RTGETOPT_REQ_STRING  ),
+    DD("-hide-joliet-list",             RTFSISOMAKERCMD_OPT_HIDE_JOLIET_LIST,               RTGETOPT_REQ_STRING  ),
+    DD("-hide-joliet-trans-tbl",        RTFSISOMAKERCMD_OPT_HIDE_JOLIET_TRANS_TBL,          RTGETOPT_REQ_NOTHING ),
+    DD("-hide-rr-moved",                RTFSISOMAKERCMD_OPT_HIDE_RR_MOVED,                  RTGETOPT_REQ_NOTHING ),
+    DD("-input-charset",                RTFSISOMAKERCMD_OPT_INPUT_CHARSET,                  RTGETOPT_REQ_STRING  ),
+    DD("-output-charset",               RTFSISOMAKERCMD_OPT_OUTPUT_CHARSET,                 RTGETOPT_REQ_STRING  ),
     { "--iso-level",                    RTFSISOMAKERCMD_OPT_ISO_LEVEL,                      RTGETOPT_REQ_UINT8   },
     { "--joliet",                       'J',                                                RTGETOPT_REQ_NOTHING },
-    { "--joliet-long",                  RTFSISOMAKERCMD_OPT_JOLIET_LONG,                    RTGETOPT_REQ_NOTHING },
-    { "-joliet-long",                   RTFSISOMAKERCMD_OPT_JOLIET_LONG,                    RTGETOPT_REQ_NOTHING },
-    { "--jcharset",                     RTFSISOMAKERCMD_OPT_JOLIET_CHARSET,                 RTGETOPT_REQ_STRING  },
-    { "-jcharset",                      RTFSISOMAKERCMD_OPT_JOLIET_CHARSET,                 RTGETOPT_REQ_STRING  },
+    DD("-joliet-long",                  RTFSISOMAKERCMD_OPT_JOLIET_LONG,                    RTGETOPT_REQ_NOTHING ),
+    DD("-jcharset",                     RTFSISOMAKERCMD_OPT_JOLIET_CHARSET,                 RTGETOPT_REQ_STRING  ),
     { "--long-names",                   'l',                                                RTGETOPT_REQ_NOTHING },
     { "--leading-dot",                  'L',                                                RTGETOPT_REQ_NOTHING },
-    { "--jigdo-jigdo",                  RTFSISOMAKERCMD_OPT_JIGDO_JIGDO,                    RTGETOPT_REQ_STRING  },
-    { "-jigdo-jigdo",                   RTFSISOMAKERCMD_OPT_JIGDO_JIGDO,                    RTGETOPT_REQ_STRING  },
-    { "--jigdo-template",               RTFSISOMAKERCMD_OPT_JIGDO_TEMPLATE,                 RTGETOPT_REQ_STRING  },
-    { "-jigdo-template",                RTFSISOMAKERCMD_OPT_JIGDO_TEMPLATE,                 RTGETOPT_REQ_STRING  },
-    { "--jigdo-min-file-size",          RTFSISOMAKERCMD_OPT_JIGDO_MIN_FILE_SIZE,            RTGETOPT_REQ_UINT64  },
-    { "-jigdo-min-file-size",           RTFSISOMAKERCMD_OPT_JIGDO_MIN_FILE_SIZE,            RTGETOPT_REQ_UINT64  },
-    { "--jigdo-force-md5",              RTFSISOMAKERCMD_OPT_JIGDO_FORCE_MD5,                RTGETOPT_REQ_STRING  },
-    { "-jigdo-force-md5",               RTFSISOMAKERCMD_OPT_JIGDO_FORCE_MD5,                RTGETOPT_REQ_STRING  },
-    { "--jigdo-exclude",                RTFSISOMAKERCMD_OPT_JIGDO_EXCLUDE,                  RTGETOPT_REQ_STRING  },
-    { "-jigdo-exclude",                 RTFSISOMAKERCMD_OPT_JIGDO_EXCLUDE,                  RTGETOPT_REQ_STRING  },
-    { "--jigdo-map",                    RTFSISOMAKERCMD_OPT_JIGDO_MAP,                      RTGETOPT_REQ_STRING  },
-    { "-jigdo-map",                     RTFSISOMAKERCMD_OPT_JIGDO_MAP,                      RTGETOPT_REQ_STRING  },
-    { "--md5-list",                     RTFSISOMAKERCMD_OPT_JIGDO_MD5_LIST,                 RTGETOPT_REQ_STRING  },
-    { "-md5-list",                      RTFSISOMAKERCMD_OPT_JIGDO_MD5_LIST,                 RTGETOPT_REQ_STRING  },
-    { "--jigdo-template-compress",      RTFSISOMAKERCMD_OPT_JIGDO_COMPRESS,                 RTGETOPT_REQ_STRING  },
-    { "-jigdo-template-compress",       RTFSISOMAKERCMD_OPT_JIGDO_COMPRESS,                 RTGETOPT_REQ_STRING  },
-    { "--log-file",                     RTFSISOMAKERCMD_OPT_LOG_FILE,                       RTGETOPT_REQ_STRING  },
-    { "-log-file",                      RTFSISOMAKERCMD_OPT_LOG_FILE,                       RTGETOPT_REQ_STRING  },
+    DD("-jigdo-jigdo",                  RTFSISOMAKERCMD_OPT_JIGDO_JIGDO,                    RTGETOPT_REQ_STRING  ),
+    DD("-jigdo-template",               RTFSISOMAKERCMD_OPT_JIGDO_TEMPLATE,                 RTGETOPT_REQ_STRING  ),
+    DD("-jigdo-min-file-size",          RTFSISOMAKERCMD_OPT_JIGDO_MIN_FILE_SIZE,            RTGETOPT_REQ_UINT64  ),
+    DD("-jigdo-force-md5",              RTFSISOMAKERCMD_OPT_JIGDO_FORCE_MD5,                RTGETOPT_REQ_STRING  ),
+    DD("-jigdo-exclude",                RTFSISOMAKERCMD_OPT_JIGDO_EXCLUDE,                  RTGETOPT_REQ_STRING  ),
+    DD("-jigdo-map",                    RTFSISOMAKERCMD_OPT_JIGDO_MAP,                      RTGETOPT_REQ_STRING  ),
+    DD("-md5-list",                     RTFSISOMAKERCMD_OPT_JIGDO_MD5_LIST,                 RTGETOPT_REQ_STRING  ),
+    DD("-jigdo-template-compress",      RTFSISOMAKERCMD_OPT_JIGDO_COMPRESS,                 RTGETOPT_REQ_STRING  ),
+    DD("-log-file",                     RTFSISOMAKERCMD_OPT_LOG_FILE,                       RTGETOPT_REQ_STRING  ),
     { "--exclude",                      'm',                                                RTGETOPT_REQ_STRING  },
     { "--exclude",                      'x',                                                RTGETOPT_REQ_STRING  },
-    { "--exclude-list",                 RTFSISOMAKERCMD_OPT_EXCLUDE_LIST,                   RTGETOPT_REQ_STRING  },
-    { "-exclude-list",                  RTFSISOMAKERCMD_OPT_EXCLUDE_LIST,                   RTGETOPT_REQ_STRING  },
-    { "--max-iso9660-filenames",        RTFSISOMAKERCMD_OPT_MAX_ISO9660_FILENAMES,          RTGETOPT_REQ_NOTHING },
-    { "-max-iso9660-filenames",         RTFSISOMAKERCMD_OPT_MAX_ISO9660_FILENAMES,          RTGETOPT_REQ_NOTHING },
+    DD("-exclude-list",                 RTFSISOMAKERCMD_OPT_EXCLUDE_LIST,                   RTGETOPT_REQ_STRING  ),
+    DD("-max-iso9660-filenames",        RTFSISOMAKERCMD_OPT_MAX_ISO9660_FILENAMES,          RTGETOPT_REQ_NOTHING ),
     { "--merge",                        'M',                                                RTGETOPT_REQ_STRING  },
-    { "--dev",                          'M',                                                RTGETOPT_REQ_STRING  },
-    { "-dev",                           'M',                                                RTGETOPT_REQ_STRING  },
+    DD("-dev",                          'M',                                                RTGETOPT_REQ_STRING  ),
     { "--omit-version-numbers",         'N',                                                RTGETOPT_REQ_NOTHING },
-    { "--new-dir-mode",                 RTFSISOMAKERCMD_OPT_NEW_DIR_MODE,                   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
-    { "-new-dir-mode",                  RTFSISOMAKERCMD_OPT_NEW_DIR_MODE,                   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
-    { "--nobak",                        RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING },
-    { "-nobak",                         RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING },
-    { "--no-bak",                       RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING },
-    { "-no-bak",                        RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING },
-    { "--force-rr",                     RTFSISOMAKERCMD_OPT_FORCE_RR,                       RTGETOPT_REQ_NOTHING },
-    { "-force-rr",                      RTFSISOMAKERCMD_OPT_FORCE_RR,                       RTGETOPT_REQ_NOTHING },
-    { "--no-rr",                        RTFSISOMAKERCMD_OPT_NO_RR,                          RTGETOPT_REQ_NOTHING },
-    { "-no-rr",                         RTFSISOMAKERCMD_OPT_NO_RR,                          RTGETOPT_REQ_NOTHING },
-    { "--no-split-symlink-components",  RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_COMPONENTS,    RTGETOPT_REQ_NOTHING },
-    { "-no-split-symlink-components",   RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_COMPONENTS,    RTGETOPT_REQ_NOTHING },
-    { "--no-split-symlink-fields",      RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_FIELDS,        RTGETOPT_REQ_NOTHING },
-    { "-no-split-symlink-fields",       RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_FIELDS,        RTGETOPT_REQ_NOTHING },
+    DD("-new-dir-mode",                 RTFSISOMAKERCMD_OPT_NEW_DIR_MODE,                   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
+    DD("-nobak",                        RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING ),
+    DD("-no-bak",                       RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING ),
+    DD("-force-rr",                     RTFSISOMAKERCMD_OPT_FORCE_RR,                       RTGETOPT_REQ_NOTHING ),
+    DD("-no-rr",                        RTFSISOMAKERCMD_OPT_NO_RR,                          RTGETOPT_REQ_NOTHING ),
+    DD("-no-split-symlink-components",  RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_COMPONENTS,    RTGETOPT_REQ_NOTHING ),
+    DD("-no-split-symlink-fields",      RTFSISOMAKERCMD_OPT_NO_SPLIT_SYMLINK_FIELDS,        RTGETOPT_REQ_NOTHING ),
     { "--output",                       'o',                                                RTGETOPT_REQ_STRING  },
-    { "--pad",                          RTFSISOMAKERCMD_OPT_PAD,                            RTGETOPT_REQ_NOTHING },
-    { "-pad",                           RTFSISOMAKERCMD_OPT_PAD,                            RTGETOPT_REQ_NOTHING },
-    { "--no-pad",                       RTFSISOMAKERCMD_OPT_NO_PAD,                         RTGETOPT_REQ_NOTHING },
-    { "-no-pad",                        RTFSISOMAKERCMD_OPT_NO_PAD,                         RTGETOPT_REQ_NOTHING },
-    { "--path-list",                    RTFSISOMAKERCMD_OPT_PATH_LIST,                      RTGETOPT_REQ_STRING  },
-    { "-path-list",                     RTFSISOMAKERCMD_OPT_PATH_LIST,                      RTGETOPT_REQ_STRING  },
-    { "--publisher",                    'P',                                                RTGETOPT_REQ_STRING  },
-    { "-publisher",                     'P',                                                RTGETOPT_REQ_STRING  },
+    DD("-pad",                          RTFSISOMAKERCMD_OPT_PAD,                            RTGETOPT_REQ_NOTHING ),
+    DD("-no-pad",                       RTFSISOMAKERCMD_OPT_NO_PAD,                         RTGETOPT_REQ_NOTHING ),
+    DD("-path-list",                    RTFSISOMAKERCMD_OPT_PATH_LIST,                      RTGETOPT_REQ_STRING  ),
+    DD("-publisher",                    'P',                                                RTGETOPT_REQ_STRING  ),
     { "--preparer",                     'p',                                                RTGETOPT_REQ_STRING  },
-    { "--print-size",                   RTFSISOMAKERCMD_OPT_PRINT_SIZE,                     RTGETOPT_REQ_NOTHING },
-    { "-print-size",                    RTFSISOMAKERCMD_OPT_PRINT_SIZE,                     RTGETOPT_REQ_NOTHING },
-    { "--quiet",                        RTFSISOMAKERCMD_OPT_QUIET,                          RTGETOPT_REQ_NOTHING },
-    { "-quiet",                         RTFSISOMAKERCMD_OPT_QUIET,                          RTGETOPT_REQ_NOTHING },
+    DD("-print-size",                   RTFSISOMAKERCMD_OPT_PRINT_SIZE,                     RTGETOPT_REQ_NOTHING ),
+    DD("-quiet",                        RTFSISOMAKERCMD_OPT_QUIET,                          RTGETOPT_REQ_NOTHING ),
     { "--rock-ridge",                   'R',                                                RTGETOPT_REQ_NOTHING },
     { "--rock-ridge-relaxed",           'r',                                                RTGETOPT_REQ_NOTHING },
-    { "--relaxed-filenames",            RTFSISOMAKERCMD_OPT_RELAXED_FILENAMES,              RTGETOPT_REQ_NOTHING },
-    { "-relaxed-filenames",             RTFSISOMAKERCMD_OPT_RELAXED_FILENAMES,              RTGETOPT_REQ_NOTHING },
-    { "--root",                         RTFSISOMAKERCMD_OPT_ROOT,                           RTGETOPT_REQ_STRING  },
-    { "-root",                          RTFSISOMAKERCMD_OPT_ROOT,                           RTGETOPT_REQ_STRING  },
-    { "--old-root",                     RTFSISOMAKERCMD_OPT_OLD_ROOT,                       RTGETOPT_REQ_STRING  },
-    { "-old-root",                      RTFSISOMAKERCMD_OPT_OLD_ROOT,                       RTGETOPT_REQ_STRING  },
-    { "--sort",                         RTFSISOMAKERCMD_OPT_SORT,                           RTGETOPT_REQ_STRING  },
-    { "-sort",                          RTFSISOMAKERCMD_OPT_SORT,                           RTGETOPT_REQ_STRING  },
-    { "--sparc-boot",                   RTFSISOMAKERCMD_OPT_SPARC_BOOT,                     RTGETOPT_REQ_STRING  },
-    { "-sparc-boot",                    RTFSISOMAKERCMD_OPT_SPARC_BOOT,                     RTGETOPT_REQ_STRING  },
-    { "--sparc-label",                  RTFSISOMAKERCMD_OPT_SPARC_LABEL,                    RTGETOPT_REQ_STRING  },
-    { "-sparc-label",                   RTFSISOMAKERCMD_OPT_SPARC_LABEL,                    RTGETOPT_REQ_STRING  },
-    { "--split-output",                 RTFSISOMAKERCMD_OPT_SPLIT_OUTPUT,                   RTGETOPT_REQ_NOTHING },
-    { "-split-output",                  RTFSISOMAKERCMD_OPT_SPLIT_OUTPUT,                   RTGETOPT_REQ_NOTHING },
-    { "--stream-media-size",            RTFSISOMAKERCMD_OPT_STREAM_MEDIA_SIZE,              RTGETOPT_REQ_UINT64  },
-    { "-stream-media-size",             RTFSISOMAKERCMD_OPT_STREAM_MEDIA_SIZE,              RTGETOPT_REQ_UINT64  },
-    { "--stream-file-name",             RTFSISOMAKERCMD_OPT_STREAM_FILE_NAME,               RTGETOPT_REQ_STRING  },
-    { "-stream-file-name",              RTFSISOMAKERCMD_OPT_STREAM_FILE_NAME,               RTGETOPT_REQ_STRING  },
-    { "--sunx86-boot",                  RTFSISOMAKERCMD_OPT_SUNX86_BOOT,                    RTGETOPT_REQ_STRING  },
-    { "-sunx86-boot",                   RTFSISOMAKERCMD_OPT_SUNX86_BOOT,                    RTGETOPT_REQ_STRING  },
-    { "--sunx86-label",                 RTFSISOMAKERCMD_OPT_SUNX86_LABEL,                   RTGETOPT_REQ_STRING  },
-    { "-sunx86-label",                  RTFSISOMAKERCMD_OPT_SUNX86_LABEL,                   RTGETOPT_REQ_STRING  },
-    { "--sysid",                        RTFSISOMAKERCMD_OPT_SYSTEM_ID,                      RTGETOPT_REQ_STRING  },
-    { "-sysid",                         RTFSISOMAKERCMD_OPT_SYSTEM_ID,                      RTGETOPT_REQ_STRING  },
+    DD("-relaxed-filenames",            RTFSISOMAKERCMD_OPT_RELAXED_FILENAMES,              RTGETOPT_REQ_NOTHING ),
+    DD("-root",                         RTFSISOMAKERCMD_OPT_ROOT,                           RTGETOPT_REQ_STRING  ),
+    DD("-old-root",                     RTFSISOMAKERCMD_OPT_OLD_ROOT,                       RTGETOPT_REQ_STRING  ),
+    DD("-sort",                         RTFSISOMAKERCMD_OPT_SORT,                           RTGETOPT_REQ_STRING  ),
+    DD("-sparc-boot",                   RTFSISOMAKERCMD_OPT_SPARC_BOOT,                     RTGETOPT_REQ_STRING  ),
+    DD("-sparc-label",                  RTFSISOMAKERCMD_OPT_SPARC_LABEL,                    RTGETOPT_REQ_STRING  ),
+    DD("-split-output",                 RTFSISOMAKERCMD_OPT_SPLIT_OUTPUT,                   RTGETOPT_REQ_NOTHING ),
+    DD("-stream-media-size",            RTFSISOMAKERCMD_OPT_STREAM_MEDIA_SIZE,              RTGETOPT_REQ_UINT64  ),
+    DD("-stream-file-name",             RTFSISOMAKERCMD_OPT_STREAM_FILE_NAME,               RTGETOPT_REQ_STRING  ),
+    DD("-sunx86-boot",                  RTFSISOMAKERCMD_OPT_SUNX86_BOOT,                    RTGETOPT_REQ_STRING  ),
+    DD("-sunx86-label",                 RTFSISOMAKERCMD_OPT_SUNX86_LABEL,                   RTGETOPT_REQ_STRING  ),
+    DD("-sysid",                        RTFSISOMAKERCMD_OPT_SYSTEM_ID,                      RTGETOPT_REQ_STRING  ),
     { "--trans-tbl",                    'T',                                                RTGETOPT_REQ_NOTHING },
-    { "--table-name",                   RTFSISOMAKERCMD_OPT_TRANS_TBL_NAME,                 RTGETOPT_REQ_STRING  },
-    { "-table-name",                    RTFSISOMAKERCMD_OPT_TRANS_TBL_NAME,                 RTGETOPT_REQ_STRING  },
-    { "--ucs-level",                    RTFSISOMAKERCMD_OPT_JOLIET_LEVEL,                   RTGETOPT_REQ_UINT8   },
-    { "-ucs-level",                     RTFSISOMAKERCMD_OPT_JOLIET_LEVEL,                   RTGETOPT_REQ_UINT8   },
-    { "--udf",                          RTFSISOMAKERCMD_OPT_UDF,                            RTGETOPT_REQ_NOTHING },
-    { "-udf",                           RTFSISOMAKERCMD_OPT_UDF,                            RTGETOPT_REQ_NOTHING },
-    { "--uid",                          RTFSISOMAKERCMD_OPT_UID,                            RTGETOPT_REQ_UINT32  },
-    { "-uid",                           RTFSISOMAKERCMD_OPT_UID,                            RTGETOPT_REQ_UINT32  },
-    { "--use-fileversion",              RTFSISOMAKERCMD_OPT_USE_FILE_VERSION,               RTGETOPT_REQ_NOTHING },
-    { "-use-fileversion",               RTFSISOMAKERCMD_OPT_USE_FILE_VERSION,               RTGETOPT_REQ_NOTHING },
+    DD("-table-name",                   RTFSISOMAKERCMD_OPT_TRANS_TBL_NAME,                 RTGETOPT_REQ_STRING  ),
+    DD("-ucs-level",                    RTFSISOMAKERCMD_OPT_JOLIET_LEVEL,                   RTGETOPT_REQ_UINT8   ),
+    DD("-udf",                          RTFSISOMAKERCMD_OPT_UDF,                            RTGETOPT_REQ_NOTHING ),
+    DD("-uid",                          RTFSISOMAKERCMD_OPT_UID,                            RTGETOPT_REQ_UINT32  ),
+    DD("-use-fileversion",              RTFSISOMAKERCMD_OPT_USE_FILE_VERSION,               RTGETOPT_REQ_NOTHING ),
     { "--untranslated-filenames",       'U',                                                RTGETOPT_REQ_NOTHING },
-    { "--no-iso-translate",             RTFSISOMAKERCMD_OPT_NO_ISO_TRANSLATE,               RTGETOPT_REQ_NOTHING },
-    { "-no-iso-translate",              RTFSISOMAKERCMD_OPT_NO_ISO_TRANSLATE,               RTGETOPT_REQ_NOTHING },
+    DD("-no-iso-translate",             RTFSISOMAKERCMD_OPT_NO_ISO_TRANSLATE,               RTGETOPT_REQ_NOTHING ),
     { "--volume-id",                    'V',                                                RTGETOPT_REQ_STRING  },
-    { "--volset",                       RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,                  RTGETOPT_REQ_STRING  },
-    { "-volset",                        RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,                  RTGETOPT_REQ_STRING  },
-    { "--volset-size",                  RTFSISOMAKERCMD_OPT_VOLUME_SET_SIZE,                RTGETOPT_REQ_UINT32  },
-    { "-volset-size",                   RTFSISOMAKERCMD_OPT_VOLUME_SET_SIZE,                RTGETOPT_REQ_UINT32  },
-    { "--volset-seqno",                 RTFSISOMAKERCMD_OPT_VOLUME_SET_SEQ_NO,              RTGETOPT_REQ_UINT32  },
-    { "-volset-seqno",                  RTFSISOMAKERCMD_OPT_VOLUME_SET_SEQ_NO,              RTGETOPT_REQ_UINT32  },
+    DD("-volset",                       RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,                  RTGETOPT_REQ_STRING  ),
+    DD("-volset-size",                  RTFSISOMAKERCMD_OPT_VOLUME_SET_SIZE,                RTGETOPT_REQ_UINT32  ),
+    DD("-volset-seqno",                 RTFSISOMAKERCMD_OPT_VOLUME_SET_SEQ_NO,              RTGETOPT_REQ_UINT32  ),
     { "--transpared-compression",       'z',                                                RTGETOPT_REQ_NOTHING },
 
     /* HFS and ISO-9660 apple extensions. */
-    { "--hfs",                          RTFSISOMAKERCMD_OPT_HFS_ENABLE,                     RTGETOPT_REQ_NOTHING },
-    { "-hfs",                           RTFSISOMAKERCMD_OPT_HFS_ENABLE,                     RTGETOPT_REQ_NOTHING },
-    { "--apple",                        RTFSISOMAKERCMD_OPT_APPLE,                          RTGETOPT_REQ_NOTHING },
-    { "-apple",                         RTFSISOMAKERCMD_OPT_APPLE,                          RTGETOPT_REQ_NOTHING },
-    { "--map",                          RTFSISOMAKERCMD_OPT_HFS_MAP,                        RTGETOPT_REQ_STRING  },
-    { "-map",                           RTFSISOMAKERCMD_OPT_HFS_MAP,                        RTGETOPT_REQ_STRING  },
-    { "--magic",                        RTFSISOMAKERCMD_OPT_HFS_MAGIC,                      RTGETOPT_REQ_STRING  },
-    { "-magic",                         RTFSISOMAKERCMD_OPT_HFS_MAGIC,                      RTGETOPT_REQ_STRING  },
-    { "--hfs-creator",                  RTFSISOMAKERCMD_OPT_HFS_CREATOR,                    RTGETOPT_REQ_STRING  },
-    { "-hfs-creator",                   RTFSISOMAKERCMD_OPT_HFS_CREATOR,                    RTGETOPT_REQ_STRING  },
-    { "--hfs-type",                     RTFSISOMAKERCMD_OPT_HFS_TYPE,                       RTGETOPT_REQ_STRING  },
-    { "-hfs-type",                      RTFSISOMAKERCMD_OPT_HFS_TYPE,                       RTGETOPT_REQ_STRING  },
-    { "--probe",                        RTFSISOMAKERCMD_OPT_HFS_PROBE,                      RTGETOPT_REQ_NOTHING },
-    { "-probe",                         RTFSISOMAKERCMD_OPT_HFS_PROBE,                      RTGETOPT_REQ_NOTHING },
-    { "--no-desktop",                   RTFSISOMAKERCMD_OPT_HFS_NO_DESKTOP,                 RTGETOPT_REQ_NOTHING },
-    { "-no-desktop",                    RTFSISOMAKERCMD_OPT_HFS_NO_DESKTOP,                 RTGETOPT_REQ_NOTHING },
-    { "--mac-name",                     RTFSISOMAKERCMD_OPT_HFS_MAC_NAME,                   RTGETOPT_REQ_NOTHING },
-    { "-mac-name",                      RTFSISOMAKERCMD_OPT_HFS_MAC_NAME,                   RTGETOPT_REQ_NOTHING },
-    { "--boot-hfs-file",                RTFSISOMAKERCMD_OPT_HFS_BOOT_FILE,                  RTGETOPT_REQ_STRING  },
-    { "-boot-hfs-file",                 RTFSISOMAKERCMD_OPT_HFS_BOOT_FILE,                  RTGETOPT_REQ_STRING  },
-    { "--part",                         RTFSISOMAKERCMD_OPT_HFS_PART,                       RTGETOPT_REQ_NOTHING },
-    { "-part",                          RTFSISOMAKERCMD_OPT_HFS_PART,                       RTGETOPT_REQ_NOTHING },
-    { "--auto",                         RTFSISOMAKERCMD_OPT_HFS_AUTO,                       RTGETOPT_REQ_STRING  },
-    { "-auto",                          RTFSISOMAKERCMD_OPT_HFS_AUTO,                       RTGETOPT_REQ_STRING  },
-    { "--cluster-size",                 RTFSISOMAKERCMD_OPT_HFS_CLUSTER_SIZE,               RTGETOPT_REQ_UINT32  },
-    { "-cluster-size",                  RTFSISOMAKERCMD_OPT_HFS_CLUSTER_SIZE,               RTGETOPT_REQ_UINT32  },
-    { "--hide-hfs",                     RTFSISOMAKERCMD_OPT_HFS_HIDE,                       RTGETOPT_REQ_STRING  },
-    { "-hide-hfs",                      RTFSISOMAKERCMD_OPT_HFS_HIDE,                       RTGETOPT_REQ_STRING  },
-    { "--hide-hfs-list",                RTFSISOMAKERCMD_OPT_HFS_HIDE_LIST,                  RTGETOPT_REQ_STRING  },
-    { "-hide-hfs-list",                 RTFSISOMAKERCMD_OPT_HFS_HIDE_LIST,                  RTGETOPT_REQ_STRING  },
-    { "--hfs-volid",                    RTFSISOMAKERCMD_OPT_HFS_VOL_ID,                     RTGETOPT_REQ_STRING  },
-    { "-hfs-volid",                     RTFSISOMAKERCMD_OPT_HFS_VOL_ID,                     RTGETOPT_REQ_STRING  },
-    { "--icon-position",                RTFSISOMAKERCMD_OPT_HFS_ICON_POSITION,              RTGETOPT_REQ_NOTHING },
-    { "-icon-position",                 RTFSISOMAKERCMD_OPT_HFS_ICON_POSITION,              RTGETOPT_REQ_NOTHING },
-    { "--root-info",                    RTFSISOMAKERCMD_OPT_HFS_ROOT_INFO,                  RTGETOPT_REQ_STRING  },
-    { "-root-info",                     RTFSISOMAKERCMD_OPT_HFS_ROOT_INFO,                  RTGETOPT_REQ_STRING  },
-    { "--prep-boot",                    RTFSISOMAKERCMD_OPT_HFS_PREP_BOOT,                  RTGETOPT_REQ_STRING  },
-    { "-prep-boot",                     RTFSISOMAKERCMD_OPT_HFS_PREP_BOOT,                  RTGETOPT_REQ_STRING  },
-    { "--chrp-boot",                    RTFSISOMAKERCMD_OPT_HFS_CHRP_BOOT,                  RTGETOPT_REQ_NOTHING },
-    { "-chrp-boot",                     RTFSISOMAKERCMD_OPT_HFS_CHRP_BOOT,                  RTGETOPT_REQ_NOTHING },
-    { "--input-hfs-charset",            RTFSISOMAKERCMD_OPT_HFS_INPUT_CHARSET,              RTGETOPT_REQ_STRING  },
-    { "-input-hfs-charset",             RTFSISOMAKERCMD_OPT_HFS_INPUT_CHARSET,              RTGETOPT_REQ_STRING  },
-    { "--output-hfs-charset",           RTFSISOMAKERCMD_OPT_HFS_OUTPUT_CHARSET,             RTGETOPT_REQ_STRING  },
-    { "-output-hfs-charset",            RTFSISOMAKERCMD_OPT_HFS_OUTPUT_CHARSET,             RTGETOPT_REQ_STRING  },
-    { "--hfs-unlock",                   RTFSISOMAKERCMD_OPT_HFS_UNLOCK,                     RTGETOPT_REQ_NOTHING },
-    { "-hfs-unlock",                    RTFSISOMAKERCMD_OPT_HFS_UNLOCK,                     RTGETOPT_REQ_NOTHING },
-    { "--hfs-bless",                    RTFSISOMAKERCMD_OPT_HFS_BLESS,                      RTGETOPT_REQ_STRING  },
-    { "-hfs-bless",                     RTFSISOMAKERCMD_OPT_HFS_BLESS,                      RTGETOPT_REQ_STRING  },
-    { "--hfs-parms",                    RTFSISOMAKERCMD_OPT_HFS_PARMS,                      RTGETOPT_REQ_STRING  },
-    { "-hfs-parms",                     RTFSISOMAKERCMD_OPT_HFS_PARMS,                      RTGETOPT_REQ_STRING  },
+    DD("-hfs",                          RTFSISOMAKERCMD_OPT_HFS_ENABLE,                     RTGETOPT_REQ_NOTHING ),
+    DD("-apple",                        RTFSISOMAKERCMD_OPT_APPLE,                          RTGETOPT_REQ_NOTHING ),
+    DD("-map",                          RTFSISOMAKERCMD_OPT_HFS_MAP,                        RTGETOPT_REQ_STRING  ),
+    DD("-magic",                        RTFSISOMAKERCMD_OPT_HFS_MAGIC,                      RTGETOPT_REQ_STRING  ),
+    DD("-hfs-creator",                  RTFSISOMAKERCMD_OPT_HFS_CREATOR,                    RTGETOPT_REQ_STRING  ),
+    DD("-hfs-type",                     RTFSISOMAKERCMD_OPT_HFS_TYPE,                       RTGETOPT_REQ_STRING  ),
+    DD("-probe",                        RTFSISOMAKERCMD_OPT_HFS_PROBE,                      RTGETOPT_REQ_NOTHING ),
+    DD("-no-desktop",                   RTFSISOMAKERCMD_OPT_HFS_NO_DESKTOP,                 RTGETOPT_REQ_NOTHING ),
+    DD("-mac-name",                     RTFSISOMAKERCMD_OPT_HFS_MAC_NAME,                   RTGETOPT_REQ_NOTHING ),
+    DD("-boot-hfs-file",                RTFSISOMAKERCMD_OPT_HFS_BOOT_FILE,                  RTGETOPT_REQ_STRING  ),
+    DD("-part",                         RTFSISOMAKERCMD_OPT_HFS_PART,                       RTGETOPT_REQ_NOTHING ),
+    DD("-auto",                         RTFSISOMAKERCMD_OPT_HFS_AUTO,                       RTGETOPT_REQ_STRING  ),
+    DD("-cluster-size",                 RTFSISOMAKERCMD_OPT_HFS_CLUSTER_SIZE,               RTGETOPT_REQ_UINT32  ),
+    DD("-hide-hfs",                     RTFSISOMAKERCMD_OPT_HFS_HIDE,                       RTGETOPT_REQ_STRING  ),
+    DD("-hide-hfs-list",                RTFSISOMAKERCMD_OPT_HFS_HIDE_LIST,                  RTGETOPT_REQ_STRING  ),
+    DD("-hfs-volid",                    RTFSISOMAKERCMD_OPT_HFS_VOL_ID,                     RTGETOPT_REQ_STRING  ),
+    DD("-icon-position",                RTFSISOMAKERCMD_OPT_HFS_ICON_POSITION,              RTGETOPT_REQ_NOTHING ),
+    DD("-root-info",                    RTFSISOMAKERCMD_OPT_HFS_ROOT_INFO,                  RTGETOPT_REQ_STRING  ),
+    DD("-prep-boot",                    RTFSISOMAKERCMD_OPT_HFS_PREP_BOOT,                  RTGETOPT_REQ_STRING  ),
+    DD("-chrp-boot",                    RTFSISOMAKERCMD_OPT_HFS_CHRP_BOOT,                  RTGETOPT_REQ_NOTHING ),
+    DD("-input-hfs-charset",            RTFSISOMAKERCMD_OPT_HFS_INPUT_CHARSET,              RTGETOPT_REQ_STRING  ),
+    DD("-output-hfs-charset",           RTFSISOMAKERCMD_OPT_HFS_OUTPUT_CHARSET,             RTGETOPT_REQ_STRING  ),
+    DD("-hfs-unlock",                   RTFSISOMAKERCMD_OPT_HFS_UNLOCK,                     RTGETOPT_REQ_NOTHING ),
+    DD("-hfs-bless",                    RTFSISOMAKERCMD_OPT_HFS_BLESS,                      RTGETOPT_REQ_STRING  ),
+    DD("-hfs-parms",                    RTFSISOMAKERCMD_OPT_HFS_PARMS,                      RTGETOPT_REQ_STRING  ),
     { "--cap",                          RTFSISOMAKERCMD_OPT_HFS_CAP,                        RTGETOPT_REQ_NOTHING },
     { "--netatalk",                     RTFSISOMAKERCMD_OPT_HFS_NETATALK,                   RTGETOPT_REQ_NOTHING },
     { "--double",                       RTFSISOMAKERCMD_OPT_HFS_DOUBLE,                     RTGETOPT_REQ_NOTHING },
@@ -516,6 +465,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--sfm",                          RTFSISOMAKERCMD_OPT_HFS_SFM,                        RTGETOPT_REQ_NOTHING },
     { "--osx-double",                   RTFSISOMAKERCMD_OPT_HFS_OSX_DOUBLE,                 RTGETOPT_REQ_NOTHING },
     { "--osx-hfs",                      RTFSISOMAKERCMD_OPT_HFS_OSX_HFS,                    RTGETOPT_REQ_NOTHING },
+#undef DD
 };
 
 
@@ -523,12 +473,12 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
  * Wrapper around RTErrInfoSetV / RTMsgErrorV.
  *
  * @returns @a rc
- * @param   pOpts               The CMD instance.
+ * @param   pOpts               The ISO maker command instance.
  * @param   rc                  The return code.
  * @param   pszFormat           The message format.
  * @param   ...                 The message format arguments.
  */
-static int rtFsIsoMakerErrorRc(PRTFSISOMAKERCMDOPTS pOpts, int rc, const char *pszFormat, ...)
+static int rtFsIsoMakerCmdErrorRc(PRTFSISOMAKERCMDOPTS pOpts, int rc, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -545,11 +495,11 @@ static int rtFsIsoMakerErrorRc(PRTFSISOMAKERCMDOPTS pOpts, int rc, const char *p
  * Wrapper around RTErrInfoSetV / RTMsgErrorV for displaying syntax errors.
  *
  * @returns VERR_INVALID_PARAMETER
- * @param   pOpts               The CMD instance.
+ * @param   pOpts               The ISO maker command instance.
  * @param   pszFormat           The message format.
  * @param   ...                 The message format arguments.
  */
-static int rtFsIsoMakerSyntaxError(PRTFSISOMAKERCMDOPTS pOpts, const char *pszFormat, ...)
+static int rtFsIsoMakerCmdSyntaxError(PRTFSISOMAKERCMDOPTS pOpts, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -565,7 +515,7 @@ static int rtFsIsoMakerSyntaxError(PRTFSISOMAKERCMDOPTS pOpts, const char *pszFo
 /**
  * Wrapper around RTPrintfV / RTLogRelPrintfV.
  *
- * @param   pOpts               The CMD instance.
+ * @param   pOpts               The ISO maker command instance.
  * @param   pszFormat           The message format.
  * @param   ...                 The message format arguments.
  */
@@ -584,7 +534,7 @@ static void rtFsIsoMakerPrintf(PRTFSISOMAKERCMDOPTS pOpts, const char *pszFormat
  * Deletes the state and returns @a rc.
  *
  * @returns @a rc.
- * @param   pOpts               The CMD instance to delete.
+ * @param   pOpts               The ISO maker command instance to delete.
  * @param   rc                  The status code to return.
  */
 static int rtFsIsoMakerCmdDeleteState(PRTFSISOMAKERCMDOPTS pOpts, int rc)
@@ -609,7 +559,7 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
  * Writes the image to file.
  *
  * @returns IPRT status code.
- * @param   pOpts               The CMD instance.
+ * @param   pOpts               The ISO maker command instance.
  * @param   hVfsSrcFile         The source file from the ISO maker.
  */
 static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile)
@@ -661,14 +611,14 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
                             offImage += cbToCopy;
                         else
                         {
-                            rc = rtFsIsoMakerErrorRc(pOpts, rc, "Error %Rrc writing %#zx bytes at offset %#RX64 to '%s'",
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc writing %#zx bytes at offset %#RX64 to '%s'",
                                                      rc, cbToCopy, offImage, pOpts->pszOutFile);
                             break;
                         }
                     }
                     else
                     {
-                        rc = rtFsIsoMakerErrorRc(pOpts, rc, "Error %Rrc read %#zx bytes at offset %#RX64", rc, cbToCopy, offImage);
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc read %#zx bytes at offset %#RX64", rc, cbToCopy, offImage);
                         break;
                     }
                 }
@@ -680,27 +630,346 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
                 {
                     rc = RTVfsFileFlush(hVfsDstFile);
                     if (RT_FAILURE(rc))
-                        rc = rtFsIsoMakerErrorRc(pOpts, rc, "RTVfsFileFlush failed on '%s': %Rrc", pOpts->pszOutFile, rc);
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsFileFlush failed on '%s': %Rrc", pOpts->pszOutFile, rc);
                 }
 
                 RTVfsFileRelease(hVfsDstFile);
             }
             else if (RTErrInfoIsSet(&ErrInfo.Core))
-                rc = rtFsIsoMakerErrorRc(pOpts, rc, "RTVfsChainOpenFile(%s) failed: %Rrc - %s",
+                rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsChainOpenFile(%s) failed: %Rrc - %s",
                                          pOpts->cbOutputReadBuffer, rc, ErrInfo.Core.pszMsg);
             else
-                rc = rtFsIsoMakerErrorRc(pOpts, rc, "RTVfsChainOpenFile(%s) failed: %Rrc", pOpts->cbOutputReadBuffer, rc);
+                rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsChainOpenFile(%s) failed: %Rrc", pOpts->cbOutputReadBuffer, rc);
 
             RTMemTmpFree(pvBuf);
         }
         else
-            rc = rtFsIsoMakerErrorRc(pOpts, rc, "RTMemTmpAlloc(%zu) failed: %Rrc", pOpts->cbOutputReadBuffer, rc);
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTMemTmpAlloc(%zu) failed: %Rrc", pOpts->cbOutputReadBuffer, rc);
     }
     else
-        rc = rtFsIsoMakerErrorRc(pOpts, rc, "RTVfsFileGetSize failed: %Rrc", rc);
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsFileGetSize failed: %Rrc", rc);
     return rc;
 }
 
+
+/**
+ * Formats @a fNameSpecifiers into a '+' separated list of names.
+ *
+ * @returns pszDst
+ * @param   fNameSpecifiers The name specifiers.
+ * @param   pszDst          The destination bufer.
+ * @param   cbDst           The size of the destination buffer.
+ */
+static char *rtFsIsoMakerCmdNameSpecifiersToString(uint32_t fNameSpecifiers, char *pszDst, size_t cbDst)
+{
+    static struct { const char *pszName; uint32_t cchName; uint32_t fSpec; } const s_aSpecs[] =
+    {
+        { RT_STR_TUPLE("primary"),           RTFSISOMAKERCMDNAME_PRIMARY_ISO            },
+        { RT_STR_TUPLE("primary-rock"),      RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE },
+        { RT_STR_TUPLE("primary-trans-tbl"), RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL  },
+        { RT_STR_TUPLE("joliet"),            RTFSISOMAKERCMDNAME_JOLIET                 },
+        { RT_STR_TUPLE("joliet-rock"),       RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE      },
+        { RT_STR_TUPLE("joliet-trans-tbl"),  RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL       },
+        { RT_STR_TUPLE("udf"),               RTFSISOMAKERCMDNAME_UDF                    },
+        { RT_STR_TUPLE("udf-trans-tbl"),     RTFSISOMAKERCMDNAME_UDF_TRANS_TBL          },
+        { RT_STR_TUPLE("hfs"),               RTFSISOMAKERCMDNAME_HFS                    },
+        { RT_STR_TUPLE("hfs-trans-tbl"),     RTFSISOMAKERCMDNAME_HFS_TRANS_TBL          },
+    };
+
+    Assert(cbDst > 0);
+    char *pszRet = pszDst;
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aSpecs); i++)
+        if (s_aSpecs[i].fSpec & fNameSpecifiers)
+        {
+            if (pszDst != pszRet && cbDst > 1)
+            {
+                *pszDst++ = '+';
+                cbDst--;
+            }
+            if (cbDst > s_aSpecs[i].cchName)
+            {
+                memcpy(pszDst, s_aSpecs[i].pszName, s_aSpecs[i].cchName);
+                cbDst  -= s_aSpecs[i].cchName;
+                pszDst += s_aSpecs[i].cchName;
+            }
+            else if (cbDst > 1)
+            {
+                memcpy(pszDst, s_aSpecs[i].pszName, cbDst - 1);
+                pszDst += cbDst - 1;
+                cbDst  = 1;
+            }
+
+            fNameSpecifiers &= ~s_aSpecs[i].fSpec;
+            if (!fNameSpecifiers)
+                break;
+        }
+    *pszDst = '\0';
+    return pszRet;
+}
+
+
+/**
+ * Parses the --name-setup option.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszSpec             The name setup specification.
+ */
+static int rtFsIsoMakerCmdOptNameSetup(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSpec)
+{
+    /*
+     * Comma separated list of one or more specifiers.
+     */
+    uint32_t fNamespaces    = 0;
+    uint32_t fPrevMajor     = 0;
+    uint32_t iNameSpecifier = 0;
+    uint32_t offSpec        = 0;
+    do
+    {
+        /*
+         * Parse up to the next colon or end of string.
+         */
+        uint32_t fNameSpecifier = 0;
+        char     ch;
+        while (  (ch = pszSpec[offSpec]) != '\0'
+               && ch != ',')
+        {
+            if (RT_C_IS_SPACE(ch) || ch == '+' || ch == '|') /* space, '+' and '|' are allowed as name separators. */
+                offSpec++;
+            else
+            {
+                /* Find the end of the name. */
+                uint32_t offEndSpec = offSpec + 1;
+                while (  (ch = pszSpec[offEndSpec]) != '\0'
+                       && ch != ','
+                       && ch != '+'
+                       && ch != '|'
+                       && !RT_C_IS_SPACE(ch))
+                    offEndSpec++;
+
+#define IS_EQUAL(a_sz) (cchName == sizeof(a_sz) - 1U && strncmp(pchName, a_sz, sizeof(a_sz) - 1U) == 0)
+                const char * const pchName = &pszSpec[offSpec];
+                uint32_t const     cchName = offEndSpec - offSpec;
+                /* major namespaces */
+                if (   IS_EQUAL("iso")
+                    || IS_EQUAL("primary")
+                    || IS_EQUAL("iso9660")
+                    || IS_EQUAL("iso-9660")
+                    || IS_EQUAL("primary-iso")
+                    || IS_EQUAL("iso-primary") )
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_PRIMARY_ISO;
+                    fNamespaces |= fPrevMajor = RTFSISOMAKER_NAMESPACE_ISO_9660;
+                }
+                else if (IS_EQUAL("joliet"))
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_JOLIET;
+                    fNamespaces |= fPrevMajor = RTFSISOMAKER_NAMESPACE_JOLIET;
+                }
+                else if (IS_EQUAL("udf"))
+                {
+#if 0
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_UDF;
+                    fNamespaces |= fPrevMajor = RTFSISOMAKER_NAMESPACE_UDF;
+#else
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "UDF support is currently not implemented");
+#endif
+                }
+                else if (IS_EQUAL("hfs") || IS_EQUAL("hfsplus"))
+                {
+#if 0
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_HFS;
+                    fNamespaces |= fPrevMajor = RTFSISOMAKER_NAMESPACE_HFS;
+#else
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "Hybrid HFS+ support is currently not implemented");
+#endif
+                }
+                /* rock ridge */
+                else if (   IS_EQUAL("rr")
+                         || IS_EQUAL("rock")
+                         || IS_EQUAL("rock-ridge"))
+                {
+                    if (fPrevMajor == RTFSISOMAKERCMDNAME_PRIMARY_ISO)
+                        fNameSpecifier |= RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE;
+                    else if (fPrevMajor == RTFSISOMAKERCMDNAME_JOLIET)
+                        fNameSpecifier |= RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE;
+                    else
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "unqualified rock-ridge name specifier");
+                }
+                else if (   IS_EQUAL("iso-rr")         || IS_EQUAL("iso-rock")         || IS_EQUAL("iso-rock-ridge")
+                         || IS_EQUAL("primary-rr")     || IS_EQUAL("primary-rock")     || IS_EQUAL("primary-rock-ridge")
+                         || IS_EQUAL("iso9660-rr")     || IS_EQUAL("iso9660-rock")     || IS_EQUAL("iso9660-rock-ridge")
+                         || IS_EQUAL("iso-9660-rr")    || IS_EQUAL("iso-9660-rock")    || IS_EQUAL("iso-9660-rock-ridge")
+                         || IS_EQUAL("primaryiso-rr")  || IS_EQUAL("primaryiso-rock")  || IS_EQUAL("primaryiso-rock-ridge")
+                         || IS_EQUAL("primary-iso-rr") || IS_EQUAL("primary-iso-rock") || IS_EQUAL("primary-iso-rock-ridge") )
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE;
+                    if (!(fNamespaces & RTFSISOMAKERCMDNAME_PRIMARY_ISO))
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "iso-9660-rock-ridge must come after the iso-9660 name specifier");
+                }
+                else if (IS_EQUAL("joliet-rr") || IS_EQUAL("joliet-rock") || IS_EQUAL("joliet-rock-ridge"))
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE;
+                    if (!(fNamespaces & RTFSISOMAKERCMDNAME_JOLIET))
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "joliet-rock-ridge must come after the joliet name specifier");
+                }
+                /* trans.tbl */
+                else if (IS_EQUAL("trans") || IS_EQUAL("trans-tbl"))
+                {
+                    if (fPrevMajor == RTFSISOMAKERCMDNAME_PRIMARY_ISO)
+                        fNameSpecifier |= RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL;
+                    else if (fPrevMajor == RTFSISOMAKERCMDNAME_JOLIET)
+                        fNameSpecifier |= RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL;
+                    else
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "unqualified trans-tbl name specifier");
+                }
+                else if (   IS_EQUAL("iso-trans")         || IS_EQUAL("iso-trans-tbl")
+                         || IS_EQUAL("primary-trans")     || IS_EQUAL("primary-trans-tbl")
+                         || IS_EQUAL("iso9660-trans")     || IS_EQUAL("iso9660-trans-tbl")
+                         || IS_EQUAL("iso-9660-trans")    || IS_EQUAL("iso-9660-trans-tbl")
+                         || IS_EQUAL("primaryiso-trans")  || IS_EQUAL("primaryiso-trans-tbl")
+                         || IS_EQUAL("primary-iso-trans") || IS_EQUAL("primary-iso-trans-tbl") )
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL;
+                    if (!(fNamespaces & RTFSISOMAKERCMDNAME_PRIMARY_ISO))
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "iso-9660-trans-tbl must come after the iso-9660 name specifier");
+                }
+                else if (IS_EQUAL("joliet-trans") || IS_EQUAL("joliet-trans-tbl"))
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL;
+                    if (!(fNamespaces & RTFSISOMAKERCMDNAME_JOLIET))
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "joliet-trans-tbl must come after the joliet name specifier");
+                }
+                else if (IS_EQUAL("udf-trans") || IS_EQUAL("udf-trans-tbl"))
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_UDF_TRANS_TBL;
+                    if (!(fNamespaces & RTFSISOMAKERCMDNAME_UDF))
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "udf-trans-tbl must come after the udf name specifier");
+                }
+                else if (IS_EQUAL("hfs-trans") || IS_EQUAL("hfs-trans-tbl"))
+                {
+                    fNameSpecifier |= RTFSISOMAKERCMDNAME_HFS_TRANS_TBL;
+                    if (!(fNamespaces & RTFSISOMAKERCMDNAME_HFS))
+                        return rtFsIsoMakerCmdSyntaxError(pOpts, "hfs-trans-tbl must come after the hfs name specifier");
+                }
+                else
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "unknown name specifier '%.*s'", cchName, pchName);
+#undef IS_EQUAL
+                offSpec = offEndSpec;
+            }
+        } /* while same specifier */
+
+        /*
+         * Check that it wasn't empty.
+         */
+        if (fNameSpecifier == 0)
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "name specifier #%u (0-based) is empty ", iNameSpecifier);
+
+        /*
+         * Complain if a major namespace name is duplicated.  The rock-ridge and
+         * trans.tbl names are simple to replace, the others affect the two former
+         * names and are therefore not allowed twice in the list.
+         */
+        uint32_t i = iNameSpecifier;
+        while (i-- > 0)
+        {
+            uint32_t fRepeated = (fNameSpecifier             & RTFSISOMAKERCMDNAME_MAJOR_MASK)
+                               & (pOpts->afNameSpecifiers[i] & RTFSISOMAKERCMDNAME_MAJOR_MASK);
+            if (fRepeated)
+            {
+                char szTmp[128];
+                return rtFsIsoMakerCmdSyntaxError(pOpts, "repeating name specifier%s: %s", RT_IS_POWER_OF_TWO(fRepeated) ? "" : "s",
+                                                  rtFsIsoMakerCmdNameSpecifiersToString(fRepeated, szTmp, sizeof(szTmp)));
+            }
+        }
+
+        /*
+         * Add it.
+         */
+        if (iNameSpecifier >= RT_ELEMENTS(pOpts->afNameSpecifiers))
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "too many name specifiers (max %d)", RT_ELEMENTS(pOpts->afNameSpecifiers));
+        pOpts->afNameSpecifiers[iNameSpecifier] = fNameSpecifier;
+    } while (pszSpec[offSpec] != '\0');
+
+    pOpts->cNameSpecifiers = iNameSpecifier;
+    pOpts->fDstNamespaces  = fNamespaces;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Processes a non-option argument.
+ *
+ * @returns
+ * @param   pOpts               .
+ * @param   pszSpec             .
+ */
+static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSpec)
+{
+    const char * const pszSpecIn = pszSpec;
+
+    /*
+     * Split it up by '='.  Because of the source, which comes last,
+     */
+    RTFSISOMAKERCMDPARSEDNAME   aParsedNames[RTFSISOMAKERCMD_MAX_NAMES + 1];
+    uint32_t                    cParsedNames = 0;
+    for (;;)
+    {
+        const char *pszEqual = strchr(pszSpec, '=');
+        size_t      cchName  = pszEqual ? pszEqual - pszSpec : strlen(pszSpec);
+        if (cchName >= sizeof(aParsedNames[cParsedNames].szPath))
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "name #%u (0-based) is too long: %s", cParsedNames, pszSpecIn);
+        if (cParsedNames >= pOpts->cNameSpecifiers + 1)
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "too many names specified (max %u + source): %s",
+                                              pOpts->cNameSpecifiers,  pszSpecIn);
+        memcpy(aParsedNames[cParsedNames].szPath, pszSpec, cchName);
+        aParsedNames[cParsedNames].szPath[cchName] = '\0';
+        aParsedNames[cParsedNames].cchPath = (uint32_t)cchName;
+        cParsedNames++;
+        if (!pszEqual)
+        {
+            if (!cchName)
+                return rtFsIsoMakerCmdSyntaxError(pOpts, "empty source file name: %s", pszSpecIn);
+            break;
+        }
+        pszSpec = pszEqual + 1;
+    }
+
+    /*
+     * If there are too few names specified, move the source and repeat the penultimate name.
+     */
+    if (cParsedNames < pOpts->cNameSpecifiers + 1)
+    {
+        aParsedNames[pOpts->cNameSpecifiers] = aParsedNames[cParsedNames - 1];
+        uint32_t iSrc = cParsedNames >= 2 ? cParsedNames - 2 : 0;
+        for (uint32_t iDst = cParsedNames; iDst < pOpts->cNameSpecifiers; iDst++)
+            aParsedNames[iDst] = aParsedNames[iSrc];
+        cParsedNames = pOpts->cNameSpecifiers + 1;
+    }
+
+    /* Copy the specifier flags. */
+    for (uint32_t i = 0; i < pOpts->cNameSpecifiers; i++)
+        aParsedNames[i].fNameSpecifiers = pOpts->afNameSpecifiers[i];
+
+    /*
+     * Deal with special source filenames used to remove/change stuff.
+     */
+    const char * const pszSrc = aParsedNames[cParsedNames - 1].szPath;
+    if (strcmp(pszSrc, ":remove:") == 0)
+    {
+
+    }
+    else
+    {
+        /*
+         * Regular source.
+         */
+
+    }
+
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -735,18 +1004,19 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     int rc = RTGetOptInit(&GetState, cArgs, papszArgs, g_aRtFsIsoMakerOptions, RT_ELEMENTS(g_aRtFsIsoMakerOptions),
                           1 /*iFirst*/, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
-        return rtFsIsoMakerErrorRc(&Opts, rc, "RTGetOpt failed: %Rrc", rc);
+        return rtFsIsoMakerCmdErrorRc(&Opts, rc, "RTGetOpt failed: %Rrc", rc);
 
     /* Create the ISO creator instance. */
     rc = RTFsIsoMakerCreate(&Opts.hIsoMaker);
     if (RT_FAILURE(rc))
-        return rtFsIsoMakerErrorRc(&Opts, rc, "RTFsIsoMakerCreate failed: %Rrc", rc);
+        return rtFsIsoMakerCmdErrorRc(&Opts, rc, "RTFsIsoMakerCreate failed: %Rrc", rc);
 
     /*
      * Parse parameters.  Parameters are position dependent.
      */
     RTGETOPTUNION ValueUnion;
-    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while (   RT_SUCCESS(rc)
+           && (rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (rc)
         {
@@ -754,11 +1024,15 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
              * Files and directories.
              */
             case VINF_GETOPT_NOT_OPTION:
+                rc = rtFsIsoMakerCmdAddSomething(&Opts, ValueUnion.psz);
                 break;
 
             /*
              * Options specific to our ISO maker.
              */
+            case RTFSISOMAKERCMD_OPT_NAME_SETUP:
+                rc = rtFsIsoMakerCmdOptNameSetup(&Opts, ValueUnion.psz);
+                break;
 
 
             /*
@@ -766,9 +1040,9 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
              */
             case 'o':
                 if (Opts.fVirtualImageMaker)
-                    return rtFsIsoMakerSyntaxError(&Opts, "The --output option is not allowed");
+                    return rtFsIsoMakerCmdSyntaxError(&Opts, "The --output option is not allowed");
                 if (Opts.pszOutFile)
-                    return rtFsIsoMakerSyntaxError(&Opts, "The --output option is specified more than once");
+                    return rtFsIsoMakerCmdSyntaxError(&Opts, "The --output option is specified more than once");
                 Opts.pszOutFile = ValueUnion.psz;
                 break;
 
@@ -785,15 +1059,15 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
 
             default:
                 if (rc > 0 && RT_C_IS_GRAPH(rc))
-                    rc = rtFsIsoMakerErrorRc(&Opts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: -%c", rc);
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: -%c", rc);
                 else if (rc > 0)
-                    rc = rtFsIsoMakerErrorRc(&Opts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: %i (%#x)", rc, rc);
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: %i (%#x)", rc, rc);
                 else if (rc == VERR_GETOPT_UNKNOWN_OPTION)
-                    rc = rtFsIsoMakerErrorRc(&Opts, rc, "Unknown option: '%s'", ValueUnion.psz);
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "Unknown option: '%s'", ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    rc = rtFsIsoMakerErrorRc(&Opts, rc, "%s: %Rrs\n", ValueUnion.pDef->pszLong, rc);
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%s: %Rrs\n", ValueUnion.pDef->pszLong, rc);
                 else
-                    rc = rtFsIsoMakerErrorRc(&Opts, rc, "%Rrs\n", rc);
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%Rrs\n", rc);
                 return rtFsIsoMakerCmdDeleteState(&Opts, rc);
         }
     }
@@ -801,10 +1075,13 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     /*
      * Check for mandatory options.
      */
-    if (!Opts.cItemsAdded)
-        rc = rtFsIsoMakerErrorRc(&Opts, VERR_NO_DATA, "Cowardly refuses to create empty ISO image");
-    else if (!Opts.pszOutFile && !Opts.fVirtualImageMaker)
-        rc = rtFsIsoMakerErrorRc(&Opts, VERR_INVALID_PARAMETER, "No output file specified (--output <file>)");
+    if (RT_SUCCESS(rc))
+    {
+        if (!Opts.cItemsAdded)
+            rc = rtFsIsoMakerCmdErrorRc(&Opts, VERR_NO_DATA, "Cowardly refuses to create empty ISO image");
+        else if (!Opts.pszOutFile && !Opts.fVirtualImageMaker)
+            rc = rtFsIsoMakerCmdErrorRc(&Opts, VERR_INVALID_PARAMETER, "No output file specified (--output <file>)");
+    }
     if (RT_SUCCESS(rc))
     {
         /*
@@ -829,10 +1106,10 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
                 }
             }
             else
-                rc = rtFsIsoMakerErrorRc(&Opts, rc, "RTFsIsoMakerCreateVfsOutputFile failed: %Rrc", rc);
+                rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "RTFsIsoMakerCreateVfsOutputFile failed: %Rrc", rc);
         }
         else
-            rc = rtFsIsoMakerErrorRc(&Opts, rc, "RTFsIsoMakerFinalize failed: %Rrc", rc);
+            rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "RTFsIsoMakerFinalize failed: %Rrc", rc);
     }
 
     return rtFsIsoMakerCmdDeleteState(&Opts, rc);
