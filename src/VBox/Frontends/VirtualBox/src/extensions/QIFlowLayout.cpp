@@ -136,6 +136,10 @@ int QIFlowLayout::relayout(const QRect &rect, bool fDoLayout) const
     LayoutDataList row;
     foreach (QLayoutItem *pItem, m_items)
     {
+        /* Skip items of zero width: */
+        if (pItem->sizeHint().width() == 0)
+            continue;
+
         /* Get item policy and width: */
         const ExpandPolicy enmPolicy = pItem->expandingDirections() & Qt::Horizontal ? ExpandPolicy_Dynamic : ExpandPolicy_Fixed;
         const int iWidth = pItem->sizeHint().width();
@@ -172,6 +176,7 @@ int QIFlowLayout::relayout(const QRect &rect, bool fDoLayout) const
         /* Acquire current row: */
         LayoutDataList &row = rows[i];
         /* Width expand delta is equal to total-width minus all spacing widths ... */
+        printf("row %d size: %d\n", i, row.size());
         int iExpandingWidth = contentsRect.width() - (row.size() - 1) * iSpaceX;
 
         /* Iterate through whole the row: */
