@@ -1789,30 +1789,3 @@ const PDMDRVREG g_DrvHostALSAAudio =
     PDM_DRVREG_VERSION
 };
 
-#if 0 /* unused */
-static struct audio_option alsa_options[] =
-{
-    {"DACSizeInUsec", AUD_OPT_BOOL, &s_ALSAConf.size_in_usec_out,
-     "DAC period/buffer size in microseconds (otherwise in frames)", NULL, 0},
-    {"DACPeriodSize", AUD_OPT_INT, &s_ALSAConf.period_size_out,
-     "DAC period size", &s_ALSAConf.period_size_out_overriden, 0},
-    {"DACBufferSize", AUD_OPT_INT, &s_ALSAConf.buffer_size_out,
-     "DAC buffer size", &s_ALSAConf.buffer_size_out_overriden, 0},
-
-    {"ADCSizeInUsec", AUD_OPT_BOOL, &s_ALSAConf.size_in_usec_in,
-     "ADC period/buffer size in microseconds (otherwise in frames)", NULL, 0},
-    {"ADCPeriodSize", AUD_OPT_INT, &s_ALSAConf.period_size_in,
-     "ADC period size", &s_ALSAConf.period_size_in_overriden, 0},
-    {"ADCBufferSize", AUD_OPT_INT, &s_ALSAConf.buffer_size_in,
-     "ADC buffer size", &s_ALSAConf.buffer_size_in_overriden, 0},
-
-    {"Threshold", AUD_OPT_INT, &s_ALSAConf.threshold,
-     "(undocumented)", NULL, 0},
-
-    {"DACDev", AUD_OPT_STR, &s_ALSAConf.pcm_name_out,
-     "DAC device name (for instance dmix)", NULL, 0},
-
-    {"ADCDev", AUD_OPT_STR, &s_ALSAConf.pcm_name_in,
-     "ADC device name", NULL, 0}
-};
-#endif
