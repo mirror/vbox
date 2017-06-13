@@ -176,7 +176,6 @@ int QIFlowLayout::relayout(const QRect &rect, bool fDoLayout) const
         /* Acquire current row: */
         LayoutDataList &row = rows[i];
         /* Width expand delta is equal to total-width minus all spacing widths ... */
-        printf("row %d size: %d\n", i, row.size());
         int iExpandingWidth = contentsRect.width() - (row.size() - 1) * iSpaceX;
 
         /* Iterate through whole the row: */
