@@ -56,25 +56,30 @@
 
 /** @name Name specifiers
  * @{ */
-#define RTFSISOMAKERCMDNAME_PRIMARY_ISO                 RT_BIT_32(0)
-#define RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE      RT_BIT_32(1)
-#define RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL       RT_BIT_32(2)
-#define RTFSISOMAKERCMDNAME_JOLIET                      RT_BIT_32(3)
-#define RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE           RT_BIT_32(4)
-#define RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL            RT_BIT_32(5)
-#define RTFSISOMAKERCMDNAME_UDF                         RT_BIT_32(6)
-#define RTFSISOMAKERCMDNAME_UDF_TRANS_TBL               RT_BIT_32(7)
-#define RTFSISOMAKERCMDNAME_HFS                         RT_BIT_32(8)
-#define RTFSISOMAKERCMDNAME_HFS_TRANS_TBL               RT_BIT_32(9)
+#define RTFSISOMAKERCMDNAME_PRIMARY_ISO                 RTFSISOMAKER_NAMESPACE_ISO_9660
+#define RTFSISOMAKERCMDNAME_JOLIET                      RTFSISOMAKER_NAMESPACE_JOLIET
+#define RTFSISOMAKERCMDNAME_UDF                         RTFSISOMAKER_NAMESPACE_UDF
+#define RTFSISOMAKERCMDNAME_HFS                         RTFSISOMAKER_NAMESPACE_HFS
+
+#define RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE      RT_BIT_32(16)
+#define RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE           RT_BIT_32(17)
+
+#define RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL            RT_BIT_32(20)
+#define RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL       RT_BIT_32(21)
+#define RTFSISOMAKERCMDNAME_UDF_TRANS_TBL               RT_BIT_32(22)
+#define RTFSISOMAKERCMDNAME_HFS_TRANS_TBL               RT_BIT_32(23)
 
 #define RTFSISOMAKERCMDNAME_MAJOR_MASK \
         (RTFSISOMAKERCMDNAME_PRIMARY_ISO | RTFSISOMAKERCMDNAME_JOLIET | RTFSISOMAKERCMDNAME_UDF | RTFSISOMAKERCMDNAME_HFS)
+
 #define RTFSISOMAKERCMDNAME_MINOR_MASK \
         ( RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE | RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL \
         | RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE      | RTFSISOMAKERCMDNAME_JOLIET_TRANS_TBL \
         | RTFSISOMAKERCMDNAME_UDF_TRANS_TBL \
         | RTFSISOMAKERCMDNAME_HFS_TRANS_TBL)
+AssertCompile((RTFSISOMAKERCMDNAME_MAJOR_MASK & RTFSISOMAKERCMDNAME_MINOR_MASK) == 0);
 /** @} */
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -284,6 +289,8 @@ typedef struct RTFSISOMAKERCMDPARSEDNAME
 } RTFSISOMAKERCMDPARSEDNAME;
 /** Pointer to a parsed name. */
 typedef RTFSISOMAKERCMDPARSEDNAME *PRTFSISOMAKERCMDPARSEDNAME;
+/** Pointer to a const parsed name. */
+typedef RTFSISOMAKERCMDPARSEDNAME const *PCRTFSISOMAKERCMDPARSEDNAME;
 
 
 /*********************************************************************************************************************************
@@ -899,15 +906,60 @@ static int rtFsIsoMakerCmdOptNameSetup(PRTFSISOMAKERCMDOPTS pOpts, const char *p
 
 
 /**
+ * Adds a file.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszSrc              The path to the source file.
+ * @param   paParsedNames       Array of parsed names, there are
+ *                              pOpts->cNameSpecifiers entries in the array.
+ */
+static int rtFsIsoMakerCmdAddFile(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc, PCRTFSISOMAKERCMDPARSEDNAME paParsedNames)
+{
+    uint32_t idxObj;
+    int rc = RTFsIsoMakerAddUnnamedFileWithSrcPath(pOpts->hIsoMaker, pszSrc, &idxObj);
+    if (RT_SUCCESS(rc))
+    {
+        pOpts->cItemsAdded++;
+
+        for (uint32_t i = 0; i < pOpts->cNameSpecifiers; i++)
+            if (paParsedNames[i].cchPath > 0)
+            {
+                if (paParsedNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK)
+                {
+                    rc = RTFsIsoMakerObjSetPath(pOpts->hIsoMaker, idxObj,
+                                                paParsedNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK,
+                                                paParsedNames[i].szPath);
+                    if (RT_FAILURE(rc))
+                    {
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error setting name '%s' on '%s': %Rrc",
+                                                    paParsedNames[i].szPath, pszSrc, rc);
+                        break;
+                    }
+                }
+                if (paParsedNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MINOR_MASK)
+                {
+                    /** @todo add APIs for this.   */
+                }
+            }
+    }
+    else
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding '%s': %Rrc", pszSrc, rc);
+    return rc;
+}
+
+
+/**
  * Processes a non-option argument.
  *
- * @returns
- * @param   pOpts               .
- * @param   pszSpec             .
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszSpec             The specification of what to add.
  */
 static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSpec)
 {
     const char * const pszSpecIn = pszSpec;
+    enum { kSpecialSrc_Normal, kSpecialSrc_Remove, kSpecialSrc_MustRemove } enmSpecialSrc = kSpecialSrc_Normal;
 
     /*
      * Split it up by '='.  Because of the source, which comes last,
@@ -916,21 +968,34 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
     uint32_t                    cParsedNames = 0;
     for (;;)
     {
-        const char *pszEqual = strchr(pszSpec, '=');
-        size_t      cchName  = pszEqual ? pszEqual - pszSpec : strlen(pszSpec);
-        if (cchName >= sizeof(aParsedNames[cParsedNames].szPath))
+        const char *pszEqual   = strchr(pszSpec, '=');
+        size_t      cchName    = pszEqual ? pszEqual - pszSpec : strlen(pszSpec);
+        bool        fNeedSlash = pszEqual && !RTPATH_IS_SLASH(*pszSpec) && cchName > 0;
+        if (cchName + fNeedSlash >= sizeof(aParsedNames[cParsedNames].szPath))
             return rtFsIsoMakerCmdSyntaxError(pOpts, "name #%u (0-based) is too long: %s", cParsedNames, pszSpecIn);
         if (cParsedNames >= pOpts->cNameSpecifiers + 1)
             return rtFsIsoMakerCmdSyntaxError(pOpts, "too many names specified (max %u + source): %s",
                                               pOpts->cNameSpecifiers,  pszSpecIn);
-        memcpy(aParsedNames[cParsedNames].szPath, pszSpec, cchName);
+        if (!fNeedSlash)
+            memcpy(aParsedNames[cParsedNames].szPath, pszSpec, cchName);
+        else
+        {
+            memcpy(&aParsedNames[cParsedNames].szPath[1], pszSpec, cchName);
+            aParsedNames[cParsedNames].szPath[0] = RTPATH_SLASH;
+            cchName++;
+        }
         aParsedNames[cParsedNames].szPath[cchName] = '\0';
         aParsedNames[cParsedNames].cchPath = (uint32_t)cchName;
         cParsedNames++;
+
         if (!pszEqual)
         {
             if (!cchName)
                 return rtFsIsoMakerCmdSyntaxError(pOpts, "empty source file name: %s", pszSpecIn);
+            if (cchName == 8 && strcmp(pszSpec, ":remove:") == 0)
+                enmSpecialSrc = kSpecialSrc_Remove;
+            else if (cchName == 13 && strcmp(pszSpec, ":must-remove:") == 0)
+                enmSpecialSrc = kSpecialSrc_MustRemove;
             break;
         }
         pszSpec = pszEqual + 1;
@@ -943,29 +1008,117 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
     {
         aParsedNames[pOpts->cNameSpecifiers] = aParsedNames[cParsedNames - 1];
         uint32_t iSrc = cParsedNames >= 2 ? cParsedNames - 2 : 0;
+
+        /* If the source is a input file name specifier, reduce it to something that starts with a slash. */
+        if (cParsedNames == 1)
+        {
+            if (RTVfsChainIsSpec(aParsedNames[iSrc].szPath))
+            {
+                char *pszFinalPath;
+                int rc = RTVfsChainQueryFinalPath(aParsedNames[iSrc].szPath, &pszFinalPath, NULL);
+                if (RT_FAILURE(rc))
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsChainQueryFinalPath failed with %Rrc on: %s", rc, pszSpecIn);
+                aParsedNames[iSrc].cchPath = (uint32_t)strlen(pszFinalPath);
+                if (RTPATH_IS_SLASH(*pszFinalPath))
+                    memcpy(aParsedNames[iSrc].szPath, pszFinalPath, aParsedNames[iSrc].cchPath + 1);
+                else
+                {
+                    memcpy(&aParsedNames[iSrc].szPath[1], pszFinalPath, aParsedNames[iSrc].cchPath + 1);
+                    aParsedNames[iSrc].szPath[0] = RTPATH_SLASH;
+                    aParsedNames[iSrc].cchPath++;
+                }
+                RTStrFree(pszFinalPath);
+            }
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+            else if (   RTPATH_IS_VOLSEP(aParsedNames[iSrc].szPath[1])
+                     && RT_C_IS_ALPHA(aParsedNames[iSrc].szPath[0]))
+            {
+                if (RTPATH_IS_SLASH(aParsedNames[iSrc].szPath[2]))
+                {
+                    memmove(&aParsedNames[iSrc].szPath[0], &aParsedNames[iSrc].szPath[2], aParsedNames[iSrc].cchPath - 1);
+                    aParsedNames[iSrc].cchPath -= 2;
+                }
+                else
+                {
+                    memmove(&aParsedNames[iSrc].szPath[1], &aParsedNames[iSrc].szPath[2], aParsedNames[iSrc].cchPath - 1);
+                    aParsedNames[iSrc].szPath[0] = RTPATH_SLASH;
+                    aParsedNames[iSrc].cchPath  -= 1;
+                }
+            }
+#endif
+            else if (!RTPATH_IS_SLASH(aParsedNames[iSrc].szPath[0]))
+            {
+                if (aParsedNames[iSrc].cchPath + 2 > sizeof(aParsedNames[iSrc].szPath))
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "name too long: %s", pszSpecIn);
+                memmove(&aParsedNames[iSrc].szPath[1], &aParsedNames[iSrc].szPath[0], aParsedNames[iSrc].cchPath + 1);
+                aParsedNames[iSrc].szPath[0] = RTPATH_SLASH;
+                aParsedNames[iSrc].cchPath++;
+            }
+        }
+
         for (uint32_t iDst = cParsedNames; iDst < pOpts->cNameSpecifiers; iDst++)
             aParsedNames[iDst] = aParsedNames[iSrc];
         cParsedNames = pOpts->cNameSpecifiers + 1;
     }
 
-    /* Copy the specifier flags. */
+    /*
+     * Copy the specifier flags and check that the paths all starts with slashes.
+     */
     for (uint32_t i = 0; i < pOpts->cNameSpecifiers; i++)
+    {
         aParsedNames[i].fNameSpecifiers = pOpts->afNameSpecifiers[i];
+        Assert(   aParsedNames[i].cchPath == 0
+               || RTPATH_IS_SLASH(aParsedNames[i].szPath[0]));
+    }
 
     /*
      * Deal with special source filenames used to remove/change stuff.
      */
-    const char * const pszSrc = aParsedNames[cParsedNames - 1].szPath;
-    if (strcmp(pszSrc, ":remove:") == 0)
+    if (   enmSpecialSrc == kSpecialSrc_Remove
+        || enmSpecialSrc == kSpecialSrc_MustRemove)
     {
-
+        const char *pszFirstNm = NULL;
+        uint32_t    cRemoved   = 0;
+        for (uint32_t i = 0; i < pOpts->cNameSpecifiers; i++)
+            if (   aParsedNames[i].cchPath > 0
+                && (aParsedNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK))
+            {
+                pszFirstNm = aParsedNames[i].szPath;
+                uint32_t idxObj = RTFsIsoMakerGetObjIdxForPath(pOpts->hIsoMaker,
+                                                               aParsedNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK,
+                                                               aParsedNames[i].szPath);
+                if (idxObj != UINT32_MAX)
+                {
+                    int rc = RTFsIsoMakerObjRemove(pOpts->hIsoMaker, idxObj);
+                    if (RT_FAILURE(rc))
+                        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to remove '%s': %Rrc", pszSpecIn, rc);
+                    cRemoved++;
+                }
+            }
+        if (   enmSpecialSrc == kSpecialSrc_MustRemove
+            && cRemoved == 0)
+            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_FOUND, "Failed to locate '%s' for removal", pszSpecIn);
     }
+    /*
+     * Add regular source.
+     */
     else
     {
-        /*
-         * Regular source.
-         */
-
+        const char     *pszSrc = aParsedNames[cParsedNames - 1].szPath;
+        RTFSOBJINFO     ObjInfo;
+        uint32_t        offError;
+        RTERRINFOSTATIC ErrInfo;
+        int rc = RTVfsChainQueryInfo(pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX,
+                                     RTPATH_F_FOLLOW_LINK, &offError, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_FAILURE(rc))
+            return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error query info on '%s': %Rrc", pszSrc, rc);
+        if (RTFS_IS_FILE(ObjInfo.Attr.fMode))
+            return rtFsIsoMakerCmdAddFile(pOpts, pszSrc, aParsedNames);
+        if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding directory '%s' failed: not implemented", pszSpecIn);
+        if (RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
+            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding symlink '%s' failed: not implemented", pszSpecIn);
+        return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding special file '%s' failed: not implemented", pszSpecIn);
     }
 
     return VINF_SUCCESS;
@@ -996,6 +1149,9 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     Opts.hIsoMaker              = NIL_RTFSISOMAKER;
     Opts.pErrInfo               = pErrInfo;
     Opts.fVirtualImageMaker     = phVfsFile != NULL;
+    Opts.cNameSpecifiers        = 1;
+    Opts.afNameSpecifiers[0]    = RTFSISOMAKERCMDNAME_MAJOR_MASK;
+    Opts.fDstNamespaces         = RTFSISOMAKERCMDNAME_MAJOR_MASK;
     if (phVfsFile)
         *phVfsFile = NIL_RTVFSFILE;
 

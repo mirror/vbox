@@ -56,7 +56,7 @@
 /** Asserts valid handle, returns @a a_rcRet if not. */
 #define RTFSISOMAKER_ASSER_VALID_HANDLE_RET_EX(a_pThis, a_rcRet) \
     do { AssertPtrReturn(a_pThis, a_rcRet); \
-         AssertPtrReturn((a_pThis)->uMagic == RTFSISOMAKERINT_MAGIC, a_rcRet); \
+         AssertReturn((a_pThis)->uMagic == RTFSISOMAKERINT_MAGIC, a_rcRet); \
     } while (0)
 
 /** Asserts valid handle, returns VERR_INVALID_HANDLE if not. */
@@ -524,8 +524,10 @@ typedef struct RTFSISOMAKEROUTPUTFILE
      * This is used when dealing with a RTFSISOMAKERSRCTYPE_VFS_FILE or
      * RTFSISOMAKERSRCTYPE_TRANS_TBL file. */
     RTVFSFILE               hVfsSrcFile;
-    /** Current directory hint. */
-    PRTFSISOMAKERNAMEDIR    pDirHint;
+    /** Current directory hint for the primary ISO namespace. */
+    PRTFSISOMAKERNAMEDIR    pDirHintPrimaryIso;
+    /** Current directory hint for the joliet namespace. */
+    PRTFSISOMAKERNAMEDIR    pDirHintJoliet;
 } RTFSISOMAKEROUTPUTFILE;
 /** Pointer to the instance data of an ISO maker output file. */
 typedef RTFSISOMAKEROUTPUTFILE *PRTFSISOMAKEROUTPUTFILE;
@@ -633,6 +635,7 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
     /*
      * Create the instance with defaults.
      */
+    int              rc;
     PRTFSISOMAKERINT pThis = (PRTFSISOMAKERINT)RTMemAllocZ(sizeof(*pThis));
     if (pThis)
     {
@@ -740,10 +743,23 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         RTListInit(&pThis->FinalizedFiles);
 
         RTTimeNow(&pThis->ImageCreationTime);
-        *phIsoMaker = pThis;
-        return VINF_SUCCESS;
+
+        /*
+         * Add the root directory node with idObj == 0.
+         */
+        PRTFSISOMAKERDIR pDirRoot;
+        rc = rtFsIsoMakerAddUnnamedDirWorker(pThis, &pDirRoot);
+        if (RT_SUCCESS(rc))
+        {
+            *phIsoMaker = pThis;
+            return VINF_SUCCESS;
+        }
+
+        RTMemFree(pThis);
     }
-    return VERR_NO_MEMORY;
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
 }
 
 
@@ -1590,7 +1606,7 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
                 memcpy(pszDst, pchSrc, cchSrc);
                 pszDst[cchSrc] = '\0';
                 *pcchDst     = cchSrc;
-                *pcbInDirRec = RTStrCalcUtf16Len(pszDst);
+                *pcbInDirRec = RTStrCalcUtf16Len(pszDst) * sizeof(RTUTF16);
                 return VINF_SUCCESS;
             }
 
@@ -1610,7 +1626,7 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
         *pszDst      = '\0';
         *pcchDst     = 0;
         *pcbInDirRec = 0;
-        AssertReturn(pParent, VERR_INTERNAL_ERROR_3);
+        AssertReturn(!pParent, VERR_INTERNAL_ERROR_3);
         return VINF_SUCCESS;
     }
 }
@@ -1748,7 +1764,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->cchSpecNm            = (uint16_t)cchSpec;
             pName->cchRockRidgeNm       = (uint16_t)cchSpec;
             pName->cchTransNm           = (uint16_t)cchSpec;
-            pName->uDepth               = pParent->uDepth + 1;
+            pName->uDepth               = pParent ? pParent->uDepth + 1 : 0;
             pName->fRockRidgeNmAlloced  = false;
             pName->fTransNmAlloced      = false;
 
@@ -1856,22 +1872,13 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
     PRTFSISOMAKERNAME pParent = pNamespace->pRoot;
     if (!pParent)
     {
-        PRTFSISOMAKERDIR pDir;
-        if (pThis->cObjects == 0)
-        {
-            rc = rtFsIsoMakerAddUnnamedDirWorker(pThis, &pDir);
-            AssertRCReturn(rc, rc);
-        }
-        else
-        {
-            pDir = RTListGetFirst(&pThis->ObjectHead, RTFSISOMAKERDIR, Core.Entry);
+        PRTFSISOMAKERDIR pDir = RTListGetFirst(&pThis->ObjectHead, RTFSISOMAKERDIR, Core.Entry);
 #ifdef RT_STRICT
-            Assert(pDir);
-            Assert(pDir->Core.idxObj == 0);
-            Assert(pDir->Core.enmType == RTFSISOMAKEROBJTYPE_DIR);
-            Assert(*rtFsIsoMakerObjGetNameForNamespace(&pDir->Core, pNamespace) == NULL);
+        Assert(pDir);
+        Assert(pDir->Core.idxObj == 0);
+        Assert(pDir->Core.enmType == RTFSISOMAKEROBJTYPE_DIR);
+        Assert(*rtFsIsoMakerObjGetNameForNamespace(&pDir->Core, pNamespace) == NULL);
 #endif
-        }
 
         rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pDir->Core, NULL /*pParent*/, "", 0, &pParent);
         AssertRCReturn(rc, rc);
@@ -1889,7 +1896,7 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
          */
         char ch;
         size_t cchComponent = 0;
-        while ((ch = pszPath[cchComponent]) != '\0' && RTPATH_IS_SLASH(ch))
+        while ((ch = pszPath[cchComponent]) != '\0' && !RTPATH_IS_SLASH(ch))
             cchComponent++;
         AssertReturn(cchComponent > 0, VERR_INTERNAL_ERROR_4);
 
@@ -2509,7 +2516,7 @@ static int rtFsIsoMakerAddUnnamedFileWorker(PRTFSISOMAKERINT pThis, PCRTFSOBJINF
     int rc = rtFsIsoMakerInitCommonObj(pThis, &pFile->Core, RTFSISOMAKEROBJTYPE_FILE, pObjInfo);
     if (RT_SUCCESS(rc))
     {
-        pFile->cbData       = pObjInfo->cbObject;
+        pFile->cbData       = pObjInfo ? pObjInfo->cbObject : 0;
         pThis->cbData += RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
         pFile->offData      = UINT64_MAX;
         pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_INVALID;
@@ -2887,7 +2894,7 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
          * Work thru the directories.
          */
         PRTFSISOMAKERNAMEDIR pCurDir;
-        RTListForEach(&pThis->PrimaryIsoDirs.FinalizedDirs, pCurDir, RTFSISOMAKERNAMEDIR, FinalizedEntry)
+        RTListForEach(&pFinalizedDirs->FinalizedDirs, pCurDir, RTFSISOMAKERNAMEDIR, FinalizedEntry)
         {
             PRTFSISOMAKERNAME pCurName    = pCurDir->pName;
             PRTFSISOMAKERNAME pParentName = pCurName->pParent ? pCurName->pParent : pCurName;
@@ -3009,6 +3016,8 @@ static int rtFsIsoMakerFinalizeDirectories(PRTFSISOMAKERINT pThis, uint64_t *pof
  */
 static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
 {
+    pThis->offFirstFile = *poffData;
+
     /*
      * We currently does not have any ordering prioritizing implemented, so we
      * just store files in the order they were added.
@@ -3349,7 +3358,7 @@ static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
     pPrimary->RootDir.DirRec.bFileUnitSize      = 0;
     pPrimary->RootDir.DirRec.bInterleaveGapSize = 0;
     pPrimary->RootDir.DirRec.VolumeSeqNo.be     = RT_H2BE_U16_C(1);
-    pPrimary->RootDir.DirRec.VolumeSeqNo.le     = RT_H2BE_U16_C(1);
+    pPrimary->RootDir.DirRec.VolumeSeqNo.le     = RT_H2LE_U16_C(1);
     pPrimary->RootDir.DirRec.bFileIdLength      = 1;
     pPrimary->RootDir.DirRec.achFileId[1]       = 0x00;
 
@@ -3375,7 +3384,7 @@ static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
         pJoliet->RootDir.DirRec.bFileUnitSize      = 0;
         pJoliet->RootDir.DirRec.bInterleaveGapSize = 0;
         pJoliet->RootDir.DirRec.VolumeSeqNo.be     = RT_H2BE_U16_C(1);
-        pJoliet->RootDir.DirRec.VolumeSeqNo.le     = RT_H2BE_U16_C(1);
+        pJoliet->RootDir.DirRec.VolumeSeqNo.le     = RT_H2LE_U16_C(1);
         pJoliet->RootDir.DirRec.bFileIdLength      = 1;
         pJoliet->RootDir.DirRec.achFileId[1]       = 0x00;
     }
@@ -3402,6 +3411,10 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
     int rc = rtFsIsoMakerFinalizeRemoveOrphans(pThis);
     if (RT_FAILURE(rc))
         return rc;
+    AssertReturn(pThis->cObjects > 0, VERR_NO_DATA);
+    AssertReturn(pThis->PrimaryIso.pRoot || pThis->PrimaryIso.uLevel == 0, VERR_NO_DATA);
+    AssertReturn(pThis->Joliet.pRoot     || pThis->Joliet.uLevel     == 0, VERR_NO_DATA);
+
     rc = rtFsIsoMakerFinalizePrepVolumeDescriptors(pThis);
     if (RT_FAILURE(rc))
         return rc;
@@ -3787,9 +3800,7 @@ static uint32_t rtFsIsoMakerOutFile_GeneratePathRecPartial(PRTFSISOMAKERNAME pNa
  * care of that.
  *
  * @returns Number of bytes written to the buffer.
- * @param   pThis           The instance data for the VFS file.  We use this to
- *                          keep hints about where we are and we which source
- *                          file we've opened/created.
+ * @param   ppDirHint       Pointer to the directory hint for the namespace.
  * @param   pFinalizedDirs  The finalized directory data for the namespace.
  * @param   fUnicode        Set if the name should be translated to big endian
  *                          UTF-16 / UCS-2, i.e. we're in the joliet namespace.
@@ -3799,14 +3810,14 @@ static uint32_t rtFsIsoMakerOutFile_GeneratePathRecPartial(PRTFSISOMAKERNAME pNa
  * @param   pbBuf           The output buffer.
  * @param   cbBuf           The buffer size.
  */
-static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
+static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
                                                 bool fUnicode, bool fLittleEndian, uint32_t offInTable,
                                                 uint8_t *pbBuf, size_t cbBuf)
 {
     /*
      * Figure out which directory to start with.  We keep a hint in the instance.
      */
-    PRTFSISOMAKERNAMEDIR pDir = pThis->pDirHint;
+    PRTFSISOMAKERNAMEDIR pDir = *ppDirHint;
     if (!pDir)
     {
         pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
@@ -3861,7 +3872,7 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKEROUTPUTFILE pThis, P
     /*
      * Update the hint.
      */
-    pThis->pDirHint = pDir;
+    *ppDirHint = pDir;
 
     return cbDone;
 }
@@ -3916,7 +3927,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
     pDirRec->bFileUnitSize          = 0;
     pDirRec->bInterleaveGapSize     = 0;
     pDirRec->VolumeSeqNo.be         = RT_H2BE_U16_C(1);
-    pDirRec->VolumeSeqNo.le         = RT_H2BE_U16_C(1);
+    pDirRec->VolumeSeqNo.le         = RT_H2LE_U16_C(1);
     pDirRec->bFileIdLength          = pName->cbNameInDirRec;
 
     if (!fUnicode)
@@ -3996,7 +4007,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
 
     /* Generate a regular directory record. */
     uint8_t abTmpBuf[256];
-    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
+    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf);
 
     /* Replace the filename part. */
     PISO9660DIRREC pDirRec = (PISO9660DIRREC)abTmpBuf;
@@ -4027,9 +4038,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
  * directory should there be desire for that.
  *
  * @returns Number of bytes copied into @a pbBuf.
- * @param   pThis           The instance data for the VFS file.  We use this to
- *                          keep hints about where we are and we which source
- *                          file we've opened/created.
+ * @param   ppDirHint       Pointer to the directory hint for the namespace.
  * @param   pIsoMaker       The ISO maker instance.
  * @param   pFinalizedDirs  The finalized directory data for the namespace.
  * @param   fUnicode        Set if the name should be translated to big endian
@@ -4038,14 +4047,14 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
  * @param   pbBuf           The output buffer.
  * @param   cbBuf           How much to read.
  */
-static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
+static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint, PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
                                                  bool fUnicode, uint64_t offUnsigned, uint8_t *pbBuf, size_t cbBuf)
 {
     /*
      * Figure out which directory.  We keep a hint in the instance.
      */
     uint64_t             offInDir64;
-    PRTFSISOMAKERNAMEDIR pDir = pThis->pDirHint;
+    PRTFSISOMAKERNAMEDIR pDir = *ppDirHint;
     if (!pDir)
     {
         pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
@@ -4077,7 +4086,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
     /*
      * Update the hint.
      */
-    pThis->pDirHint = pDir;
+    *ppDirHint = pDir;
 
     /*
      * Generate content.
@@ -4185,9 +4194,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
  * more.
  *
  * @returns Number of bytes copied into @a pbBuf.
- * @param   pThis           The instance data for the VFS file.  We use this to
- *                          keep hints about where we are and we which source
- *                          file we've opened/created.
+ * @param   ppDirHint       Pointer to the directory hint for the namespace.
  * @param   pIsoMaker       The ISO maker instance.
  * @param   pNamespace      The namespace.
  * @param   pFinalizedDirs  The finalized directory data for the namespace.
@@ -4195,21 +4202,24 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKEROUTPUTFILE pThis, 
  * @param   pbBuf           The output buffer.
  * @param   cbBuf           How much to read.
  */
-static size_t rtFsIsoMakerOutFile_ReadDirStructures(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERNAMESPACE pNamespace,
+static size_t rtFsIsoMakerOutFile_ReadDirStructures(PRTFSISOMAKERNAMEDIR *ppDirHint, PRTFSISOMAKERNAMESPACE pNamespace,
                                                     PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs,
                                                     uint64_t offUnsigned, uint8_t *pbBuf, size_t cbBuf)
 {
     if (offUnsigned < pFinalizedDirs->offPathTableL)
-        return rtFsIsoMakerOutFile_ReadDirRecords(pThis, pFinalizedDirs, pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
+        return rtFsIsoMakerOutFile_ReadDirRecords(ppDirHint, pFinalizedDirs,
+                                                  pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
                                                   offUnsigned, pbBuf, cbBuf);
 
     uint64_t offInTable;
     if ((offInTable = offUnsigned - pFinalizedDirs->offPathTableL) < pFinalizedDirs->cbPathTable)
-        return rtFsIsoMakerOutFile_ReadPathTable(pThis, pFinalizedDirs, pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
+        return rtFsIsoMakerOutFile_ReadPathTable(ppDirHint, pFinalizedDirs,
+                                                 pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
                                                  true /*fLittleEndian*/, (uint32_t)offInTable, pbBuf, cbBuf);
 
     if ((offInTable = offUnsigned - pFinalizedDirs->offPathTableM) < pFinalizedDirs->cbPathTable)
-        return rtFsIsoMakerOutFile_ReadPathTable(pThis, pFinalizedDirs, pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
+        return rtFsIsoMakerOutFile_ReadPathTable(ppDirHint, pFinalizedDirs,
+                                                 pNamespace->fNamespace == RTFSISOMAKER_NAMESPACE_JOLIET,
                                                  false /*fLittleEndian*/, (uint32_t)offInTable, pbBuf, cbBuf);
 
     /* ASSUME we're in the zero padding at the end of a path table. */
@@ -4286,14 +4296,14 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRT
          */
         else if (   offUnsigned >= pIsoMaker->JolietDirs.offDirs
                  && pIsoMaker->JolietDirs.offDirs < pIsoMaker->JolietDirs.offPathTableL)
-            cbDone = rtFsIsoMakerOutFile_ReadDirStructures(pThis, &pIsoMaker->Joliet, &pIsoMaker->JolietDirs,
+            cbDone = rtFsIsoMakerOutFile_ReadDirStructures(&pThis->pDirHintJoliet, &pIsoMaker->Joliet, &pIsoMaker->JolietDirs,
                                                            offUnsigned, pbBuf, cbBuf);
         /*
          * Primary ISO directory structures.
          */
         else if (offUnsigned >= pIsoMaker->PrimaryIsoDirs.offDirs)
-            cbDone = rtFsIsoMakerOutFile_ReadDirStructures(pThis, &pIsoMaker->PrimaryIso, &pIsoMaker->PrimaryIsoDirs,
-                                                           offUnsigned, pbBuf, cbBuf);
+            cbDone = rtFsIsoMakerOutFile_ReadDirStructures(&pThis->pDirHintPrimaryIso, &pIsoMaker->PrimaryIso,
+                                                           &pIsoMaker->PrimaryIsoDirs, offUnsigned, pbBuf, cbBuf);
         /** @todo Insert El Torito stuff here? Probably okay to let it be in the file
          *        area, right? */
         /*
@@ -4553,11 +4563,13 @@ RTDECL(int) RTFsIsoMakerCreateVfsOutputFile(RTFSISOMAKER hIsoMaker, PRTVFSFILE p
                           NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pFileData);
     if (RT_SUCCESS(rc))
     {
-        pFileData->pIsoMaker   = pThis;
-        pFileData->offCurPos   = 0;
-        pFileData->pFileHint   = NULL;
-        pFileData->hVfsSrcFile = NIL_RTVFSFILE;
-        pFileData->pDirHint    = NULL;
+        pFileData->pIsoMaker          = pThis;
+        pFileData->offCurPos          = 0;
+        pFileData->pFileHint          = NULL;
+        pFileData->hVfsSrcFile        = NIL_RTVFSFILE;
+        pFileData->pDirHintPrimaryIso = NULL;
+        pFileData->pDirHintJoliet     = NULL;
+        *phVfsFile = hVfsFile;
         return VINF_SUCCESS;
     }
 
