@@ -47,7 +47,7 @@ QIFlowLayout::~QIFlowLayout()
 {
     /* Delete all the children: */
     QLayoutItem *pItem = 0;
-    while (pItem = takeAt(0))
+    while ((pItem = takeAt(0)))
         delete pItem;
 }
 
