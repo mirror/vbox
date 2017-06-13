@@ -129,11 +129,11 @@ test_coredumps() {
 # Test if unattended updates are disabled. See
 #   http://ask.xmodulo.com/disable-automatic-updates-ubuntu.html
 test_unattended_updates_disabled() {
-    if grep "APT::Periodic::Unattended-Upgrade.*1" /etc/apt/apt.conf.d/* 2>/dev/null
+    if grep "APT::Periodic::Unattended-Upgrade.*1" /etc/apt/apt.conf.d/* 2>/dev/null; then
         echo "Unattended updates enabled?"
         return 1
     fi
-    if grep "APT::Periodic::Update-Package-List.*1" /etc/apt/apt.conf.d/* 2>/dev/null
+    if grep "APT::Periodic::Update-Package-List.*1" /etc/apt/apt.conf.d/* 2>/dev/null; then
         echo "Unattended package updates enabled?"
         return 1
     fi
