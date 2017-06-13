@@ -184,7 +184,7 @@ void hdaStreamPeriodEnd(PHDASTREAMPERIOD pPeriod)
 /**
  * Locks a stream period for serializing access.
  *
- * @return  @true if locking was successful, @false if not.
+ * @return  \c true if locking was successful, \c false if not.
  * @param   pPeriod             Stream period to lock.
  */
 bool hdaStreamPeriodLock(PHDASTREAMPERIOD pPeriod)
@@ -262,7 +262,7 @@ uint32_t hdaStreamPeriodGetRemainingFrames(PHDASTREAMPERIOD pPeriod)
 /**
  * Tells whether a given stream period has elapsed (time-wise) or not.
  *
- * @return  @true if the stream period has elapsed, @false if not.
+ * @return  \c true if the stream period has elapsed, \c false if not.
  * @param   pPeriod             Stream period to get status for.
  */
 bool hdaStreamPeriodHasElapsed(PHDASTREAMPERIOD pPeriod)
@@ -274,7 +274,7 @@ bool hdaStreamPeriodHasElapsed(PHDASTREAMPERIOD pPeriod)
  * Tells whether a given stream period has passed the given absolute wall clock (WALCLK)
  * time or not
  *
- * @return  @true if the stream period has passed the given time, @false if not.
+ * @return  \c true if the stream period has passed the given time, \c false if not.
  * @param   pPeriod             Stream period to get status for.
  * @param   u64WalClk           Absolute wall clock (WALCLK) time to check for.
  */
@@ -293,7 +293,7 @@ bool hdaStreamPeriodHasPassedAbsWalClk(PHDASTREAMPERIOD pPeriod, uint64_t u64Wal
 /**
  * Tells whether a given stream period has some required interrupts pending or not.
  *
- * @return  @true if period has interrupts pending, @false if not.
+ * @return  \c true if period has interrupts pending, \c false if not.
  * @param   pPeriod             Stream period to get status for.
  */
 bool hdaStreamPeriodNeedsInterrupt(PHDASTREAMPERIOD pPeriod)
@@ -358,7 +358,7 @@ void hdaStreamPeriodInc(PHDASTREAMPERIOD pPeriod, uint32_t framesInc)
 /**
  * Tells whether a given stream period is considered as complete or not.
  *
- * @return  @true if stream period is complete, @false if not.
+ * @return  \c true if stream period is complete, \c false if not.
  * @param   pPeriod             Stream period to report status for.
  *
  * @remark  A stream period is considered complete if it has 1) passed (elapsed) its calculated period time
