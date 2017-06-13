@@ -2263,16 +2263,16 @@ typedef SYSTEM_SESSION_PROCESS_INFORMATION *PSYSTEM_SESSION_PROCESS_INFORMATION;
 
 typedef struct _RTL_PROCESS_MODULE_INFORMATION
 {
-    HANDLE Section;
-    PVOID MappedBase;
-    PVOID ImageBase;
-    ULONG ImageSize;
-    ULONG Flags;
-    USHORT LoadOrderIndex;
-    USHORT InitOrderIndex;
-    USHORT LoadCount;
-    USHORT OffsetToFileName;
-    UCHAR  FullPathName[256];
+    HANDLE Section;                 /**< 0x00 / 0x00 */
+    PVOID MappedBase;               /**< 0x04 / 0x08 */
+    PVOID ImageBase;                /**< 0x08 / 0x10 */
+    ULONG ImageSize;                /**< 0x0c / 0x18 */
+    ULONG Flags;                    /**< 0x10 / 0x1c */
+    USHORT LoadOrderIndex;          /**< 0x14 / 0x20 */
+    USHORT InitOrderIndex;          /**< 0x16 / 0x22 */
+    USHORT LoadCount;               /**< 0x18 / 0x24 */
+    USHORT OffsetToFileName;        /**< 0x1a / 0x26 */
+    UCHAR  FullPathName[256];       /**< 0x1c / 0x28 */
 } RTL_PROCESS_MODULE_INFORMATION;
 typedef RTL_PROCESS_MODULE_INFORMATION *PRTL_PROCESS_MODULE_INFORMATION;
 
@@ -2280,7 +2280,7 @@ typedef RTL_PROCESS_MODULE_INFORMATION *PRTL_PROCESS_MODULE_INFORMATION;
 typedef struct _RTL_PROCESS_MODULES
 {
     ULONG NumberOfModules;
-    RTL_PROCESS_MODULE_INFORMATION Modules[1];
+    RTL_PROCESS_MODULE_INFORMATION Modules[1];  /**< 0x04 / 0x08 */
 } RTL_PROCESS_MODULES;
 typedef RTL_PROCESS_MODULES *PRTL_PROCESS_MODULES;
 
