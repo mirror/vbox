@@ -23,8 +23,9 @@
  *  - On Linux 4.6 and later guests, VBoxClient --vmsvga should be running as
  *    root and not as the logged-in user.  Dynamic resizing should work for all
  *    screens in any environment which handles kernel resize notifications,
- *    including at log-in screens.  Test GNOME Shell Wayland and GNOME Shell or
- *    Unity or KDE at the log-in screen and after log-in.
+ *    including at log-in screens.  Test GNOME Shell Wayland and GNOME Shell
+ *    under X.Org or Unity or KDE at the log-in screen and after log-in.
+ *  - Linux 4.10 changed the user-kernel-ABI introduced in 4.6: test both. 
  *  - On other guests (than Linux 4.6 or later) running X.Org Server 1.3 or
  *    later, VBoxClient --vmsvga should never be running as root, and should run
  *    (and dynamic resizing and screen enable/disable should work for all
@@ -97,7 +98,7 @@ static void drmConnect(struct DRMCONTEXT *pContext)
     if (pContext->hDevice != NIL_RTFILE)
         VBClFatalError(("%s called with bad argument\n", __func__));
     /* Try to open the SVGA DRM device. */
-    for (i = 0; i < 64; ++i)
+    for (i = 0; i < 128; ++i)
     {
         char szPath[64];
         struct DRMVERSION version;
@@ -105,9 +106,14 @@ static void drmConnect(struct DRMCONTEXT *pContext)
         int rc;
 
         /* Control devices for drm graphics driver control devices go from
-         * controlD64 to controlD127.  The driver takes resize hints via the
-         * control device. */
-        rc = RTStrPrintf(szPath, sizeof(szPath), "/dev/dri/controlD%u", i + 64);
+         * controlD64 to controlD127.  Render node devices go from renderD128
+         * to renderD192.  The driver takes resize hints via the control device
+         * on pre-4.10 kernels and on the render device on newer ones.  Try
+         * both types. */
+        if (i % 2 == 0)
+            rc = RTStrPrintf(szPath, sizeof(szPath), "/dev/dri/renderD%u", i / 2 + 128);
+        else
+            rc = RTStrPrintf(szPath, sizeof(szPath), "/dev/dri/controlD%u", i / 2 + 64);
         if (RT_FAILURE(rc))
             VBClFatalError(("RTStrPrintf of device path failed, rc=%Rrc\n", rc));
         rc = RTFileOpen(&hDevice, szPath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
