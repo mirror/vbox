@@ -2251,7 +2251,7 @@ typedef struct _SYSTEM_HANDLE_INFORMATION_EX
 } SYSTEM_HANDLE_INFORMATION_EX;
 typedef SYSTEM_HANDLE_INFORMATION_EX *PSYSTEM_HANDLE_INFORMATION_EX;
 
-/** Input to SystemSessionProcessInformation. */
+/** Returned by SystemSessionProcessInformation. */
 typedef struct _SYSTEM_SESSION_PROCESS_INFORMATION
 {
     ULONG SessionId;
@@ -2261,14 +2261,13 @@ typedef struct _SYSTEM_SESSION_PROCESS_INFORMATION
 } SYSTEM_SESSION_PROCESS_INFORMATION;
 typedef SYSTEM_SESSION_PROCESS_INFORMATION *PSYSTEM_SESSION_PROCESS_INFORMATION;
 
-/** Input to SystemModuleInformation. */
 typedef struct _RTL_PROCESS_MODULE_INFORMATION
 {
     HANDLE Section;
-    PVOID  MappedBase;
-    PVOID  ImageBase;
-    ULONG  ImageSize;
-    ULONG  Flags;
+    PVOID MappedBase;
+    PVOID ImageBase;
+    ULONG ImageSize;
+    ULONG Flags;
     USHORT LoadOrderIndex;
     USHORT InitOrderIndex;
     USHORT LoadCount;
@@ -2277,9 +2276,10 @@ typedef struct _RTL_PROCESS_MODULE_INFORMATION
 } RTL_PROCESS_MODULE_INFORMATION;
 typedef RTL_PROCESS_MODULE_INFORMATION *PRTL_PROCESS_MODULE_INFORMATION;
 
+/** Returned by SystemModuleInformation. */
 typedef struct _RTL_PROCESS_MODULES
 {
-    ULONG  NumberOfModules;
+    ULONG NumberOfModules;
     RTL_PROCESS_MODULE_INFORMATION Modules[1];
 } RTL_PROCESS_MODULES;
 typedef RTL_PROCESS_MODULES *PRTL_PROCESS_MODULES;
