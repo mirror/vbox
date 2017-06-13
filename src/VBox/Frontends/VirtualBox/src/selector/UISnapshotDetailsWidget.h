@@ -36,6 +36,7 @@ class QScrollArea;
 class QStackedLayout;
 class QTabWidget;
 class QTextEdit;
+class QVBoxLayout;
 class QWidget;
 class UISnapshotDetailsElement;
 
@@ -168,7 +169,7 @@ private:
     QTextEdit *m_pBrowserDescription;
 
     /** Holds the 'Details' layout instance. */
-    QGridLayout *m_pLayoutDetails;
+    QVBoxLayout *m_pLayoutDetails;
 
     /** Holds the details scroll-area instance. */
     QScrollArea *m_pScrollAreaDetails;

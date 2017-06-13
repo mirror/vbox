@@ -36,6 +36,7 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "QIFlowLayout.h"
 # include "UIConverter.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIIconPool.h"
@@ -565,9 +566,12 @@ void UISnapshotDetailsWidget::retranslateUi()
         /* Get the machine: */
         const CMachine comMachine = m_comSnapshot.GetMachine();
 
-        /* Translate the picture tool-tip: */
-        const QString strToolTip = m_pixmapScreenshot.isNull() ? QString() : tr("Click to enlarge the screenshot.");
-        m_details.value(DetailsElementType_Preview)->setToolTip(strToolTip);
+        /* Update the picture tool-tip and visibility: */
+        m_details.value(DetailsElementType_Preview)->setToolTip(tr("Click to enlarge the screenshot."));
+        if (!m_pixmapScreenshot.isNull() && m_details.value(DetailsElementType_Preview)->isHidden())
+            m_details.value(DetailsElementType_Preview)->setHidden(false);
+        else if (m_pixmapScreenshot.isNull() && !m_details.value(DetailsElementType_Preview)->isHidden())
+            m_details.value(DetailsElementType_Preview)->setHidden(true);
 
         /* Rebuild the details report: */
         foreach (const DetailsElementType &enmType, m_details.keys())
@@ -575,9 +579,6 @@ void UISnapshotDetailsWidget::retranslateUi()
     }
     else
     {
-        /* Clear the picture tool-tip: */
-        m_details.value(DetailsElementType_Preview)->setToolTip(QString());
-
         /* Clear the details report: */
         // WORKAROUND:
         // How stupid Qt *is* to wipe out registered icons not just on clear()
@@ -765,70 +766,129 @@ void UISnapshotDetailsWidget::prepareTabDetails()
         AssertPtrReturnVoid(pWidgetDetails);
         {
             /* Create 'Details' layout: */
-            m_pLayoutDetails = new QGridLayout(pWidgetDetails);
+            m_pLayoutDetails = new QVBoxLayout(pWidgetDetails);
             AssertPtrReturnVoid(m_pLayoutDetails);
             {
-                /* Configure layout: */
-                m_pLayoutDetails->setSpacing(5);
+                /* Create flow-layout 1: */
+                QIFlowLayout *pLayoutForm1 = new QIFlowLayout;
+                AssertPtrReturnVoid(pLayoutForm1);
+                {
+                    /* Create left widget: */
+                    QWidget *pWidgetLeft = new QWidget;
+                    AssertPtrReturnVoid(pWidgetLeft);
+                    {
+                        /* Create left layout: */
+                        QVBoxLayout *pLayoutLeft = new QVBoxLayout(pWidgetLeft);
+                        AssertPtrReturnVoid(pLayoutLeft);
+                        {
+                            /* Configure layout: */
+                            pLayoutLeft->setContentsMargins(0, 0, 0, 0);
 
-                /* Create 'General' element: */
-                m_details[DetailsElementType_General] = createDetailsElement(DetailsElementType_General);
-                AssertPtrReturnVoid(m_details[DetailsElementType_General]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_General], 0, 0);
+                            /* Create 'General' element: */
+                            m_details[DetailsElementType_General] = createDetailsElement(DetailsElementType_General);
+                            AssertPtrReturnVoid(m_details[DetailsElementType_General]);
+                            pLayoutLeft->addWidget(m_details[DetailsElementType_General]);
 
-                /* Create 'System' element: */
-                m_details[DetailsElementType_System] = createDetailsElement(DetailsElementType_System);
-                AssertPtrReturnVoid(m_details[DetailsElementType_System]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_System], 1, 0);
+                            /* Create 'System' element: */
+                            m_details[DetailsElementType_System] = createDetailsElement(DetailsElementType_System);
+                            AssertPtrReturnVoid(m_details[DetailsElementType_System]);
+                            pLayoutLeft->addWidget(m_details[DetailsElementType_System]);
+                        }
 
-                /* Create 'Preview' element: */
-                m_details[DetailsElementType_Preview] = createDetailsElement(DetailsElementType_Preview);
-                AssertPtrReturnVoid(m_details[DetailsElementType_Preview]);
-                connect(m_details[DetailsElementType_Preview], &UISnapshotDetailsElement::sigAnchorClicked,
-                        this, &UISnapshotDetailsWidget::sltHandleAnchorClicked);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Preview], 0, 1, 2, 1);
+                        /* Add to layout: */
+                        pLayoutForm1->addWidget(pWidgetLeft);
+                    }
 
-                /* Create 'Display' element: */
-                m_details[DetailsElementType_Display] = createDetailsElement(DetailsElementType_Display);
-                AssertPtrReturnVoid(m_details[DetailsElementType_Display]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Display], 2, 0, 1, 2);
+                    /* Create right widget: */
+                    QWidget *pWidgetRight = new QWidget;
+                    AssertPtrReturnVoid(pWidgetRight);
+                    {
+                        /* Create right layout: */
+                        QVBoxLayout *pLayoutRight = new QVBoxLayout(pWidgetRight);
+                        AssertPtrReturnVoid(pLayoutRight);
+                        {
+                            /* Configure layout: */
+                            pLayoutRight->setContentsMargins(0, 0, 0, 0);
 
-                /* Create 'Storage' element: */
-                m_details[DetailsElementType_Storage] = createDetailsElement(DetailsElementType_Storage);
-                AssertPtrReturnVoid(m_details[DetailsElementType_Storage]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Storage], 3, 0, 1, 2);
+                            /* Create 'Preview' element: */
+                            m_details[DetailsElementType_Preview] = createDetailsElement(DetailsElementType_Preview);
+                            AssertPtrReturnVoid(m_details[DetailsElementType_Preview]);
+                            connect(m_details[DetailsElementType_Preview], &UISnapshotDetailsElement::sigAnchorClicked,
+                                    this, &UISnapshotDetailsWidget::sltHandleAnchorClicked);
+                            pLayoutRight->addWidget(m_details[DetailsElementType_Preview]);
+                            pLayoutRight->addStretch();
+                        }
 
-                /* Create 'Audio' element: */
-                m_details[DetailsElementType_Audio] = createDetailsElement(DetailsElementType_Audio);
-                AssertPtrReturnVoid(m_details[DetailsElementType_Audio]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Audio], 4, 0, 1, 2);
+                        /* Add to layout: */
+                        pLayoutForm1->addWidget(pWidgetRight);
+                    }
 
-                /* Create 'Network' element: */
-                m_details[DetailsElementType_Network] = createDetailsElement(DetailsElementType_Network);
-                AssertPtrReturnVoid(m_details[DetailsElementType_Network]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Network], 5, 0, 1, 2);
+                    /* Add into layout: */
+                    m_pLayoutDetails->addLayout(pLayoutForm1);
+                }
 
-                /* Create 'Serial' element: */
-                m_details[DetailsElementType_Serial] = createDetailsElement(DetailsElementType_Serial);
-                AssertPtrReturnVoid(m_details[DetailsElementType_Serial]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Serial], 6, 0, 1, 2);
+                /* Create form layout 2: */
+                QIFlowLayout *pLayoutForm2 = new QIFlowLayout;
+                {
+                    /* Create 'Display' element: */
+                    m_details[DetailsElementType_Display] = createDetailsElement(DetailsElementType_Display);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_Display]);
+                    pLayoutForm2->addWidget(m_details[DetailsElementType_Display]);
+
+                    /* Create 'Audio' element: */
+                    m_details[DetailsElementType_Audio] = createDetailsElement(DetailsElementType_Audio);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_Audio]);
+                    pLayoutForm2->addWidget(m_details[DetailsElementType_Audio]);
+
+                    /* Add into layout: */
+                    m_pLayoutDetails->addLayout(pLayoutForm2);
+                }
+
+                /* Create form layout 3: */
+                QIFlowLayout *pLayoutForm3 = new QIFlowLayout;
+                {
+                    /* Create 'Storage' element: */
+                    m_details[DetailsElementType_Storage] = createDetailsElement(DetailsElementType_Storage);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_Storage]);
+                    pLayoutForm3->addWidget(m_details[DetailsElementType_Storage]);
+
+                    /* Create 'Network' element: */
+                    m_details[DetailsElementType_Network] = createDetailsElement(DetailsElementType_Network);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_Network]);
+                    pLayoutForm3->addWidget(m_details[DetailsElementType_Network]);
+
+                    /* Add into layout: */
+                    m_pLayoutDetails->addLayout(pLayoutForm3);
+                }
+
+                /* Create form layout 4: */
+                QIFlowLayout *pLayoutForm4 = new QIFlowLayout;
+                {
+                    /* Create 'Serial' element: */
+                    m_details[DetailsElementType_Serial] = createDetailsElement(DetailsElementType_Serial);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_Serial]);
+                    pLayoutForm4->addWidget(m_details[DetailsElementType_Serial]);
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
-                /* Create 'Parallel' element: */
-                m_details[DetailsElementType_Parallel] = createDetailsElement(DetailsElementType_Parallel);
-                AssertPtrReturnVoid(m_details[DetailsElementType_Parallel]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_Parallel], 7, 0, 1, 2);
+                    /* Create 'Parallel' element: */
+                    m_details[DetailsElementType_Parallel] = createDetailsElement(DetailsElementType_Parallel);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_Parallel]);
+                    pLayoutForm4->addWidget(m_details[DetailsElementType_Parallel]);
 #endif
 
-                /* Create 'USB' element: */
-                m_details[DetailsElementType_USB] = createDetailsElement(DetailsElementType_USB);
-                AssertPtrReturnVoid(m_details[DetailsElementType_USB]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_USB], 8, 0, 1, 2);
+                    /* Create 'USB' element: */
+                    m_details[DetailsElementType_USB] = createDetailsElement(DetailsElementType_USB);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_USB]);
+                    pLayoutForm4->addWidget(m_details[DetailsElementType_USB]);
 
-                /* Create 'SF' element: */
-                m_details[DetailsElementType_SF] = createDetailsElement(DetailsElementType_SF);
-                AssertPtrReturnVoid(m_details[DetailsElementType_SF]);
-                m_pLayoutDetails->addWidget(m_details[DetailsElementType_SF], 9, 0, 1, 2);
+                    /* Create 'SF' element: */
+                    m_details[DetailsElementType_SF] = createDetailsElement(DetailsElementType_SF);
+                    AssertPtrReturnVoid(m_details[DetailsElementType_SF]);
+                    pLayoutForm4->addWidget(m_details[DetailsElementType_SF]);
+
+                    /* Add into layout: */
+                    m_pLayoutDetails->addLayout(pLayoutForm4);
+                }
             }
 
             /* Add to scroll-area: */
