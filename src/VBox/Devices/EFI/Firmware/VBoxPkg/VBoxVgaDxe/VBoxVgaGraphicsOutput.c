@@ -185,21 +185,7 @@ Routine Description:
 
   ModeData = &Private->ModeData[ModeNumber];
 
-  if (Private->LineBuffer) {
-    gBS->FreePool (Private->LineBuffer);
-  }
-
-  Private->LineBuffer = NULL;
-  Private->LineBuffer = AllocatePool (ModeData->HorizontalResolution * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
-  if (Private->LineBuffer == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
   InitializeGraphicsMode (Private, &VBoxVgaVideoModes[ModeData->ModeNumber]);
-  if (Private->TmpBuf)
-    FreePool(Private->TmpBuf);
-  Private->TmpBuf = AllocatePool(ModeData->HorizontalResolution * ModeData->VerticalResolution * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
-  ASSERT(( Private->TmpBuf));
 
   This->Mode->Mode = ModeNumber;
   This->Mode->Info->HorizontalResolution = ModeData->HorizontalResolution;
@@ -258,20 +244,19 @@ Returns:
 
 --*/
 {
-  VBOX_VGA_PRIVATE_DATA  *Private;
-  EFI_TPL                         OriginalTPL;
-  UINTN                           DstY;
-  UINTN                           SrcY;
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL   *Blt;
-  UINTN                           X;
-  UINTN                           ScreenWidth;
-  UINTN                           Offset;
-  UINTN                           SourceOffset;
-  UINT32                          CurrentMode;
-  EFI_STATUS                      Status;
-  UINTN ScreenHeight;
+  VBOX_VGA_PRIVATE_DATA     *Private;
+  EFI_TPL                   OriginalTPL;
+  UINTN                     DstY;
+  UINTN                     SrcY;
+  UINT32                    CurrentMode;
+  UINTN                     ScreenWidth;
+  UINTN                     ScreenHeight;
+  EFI_STATUS                Status;
 
   Private = VBOX_VGA_PRIVATE_DATA_FROM_GRAPHICS_OUTPUT_THIS (This);
+  CurrentMode = This->Mode->Mode;
+  ScreenWidth = Private->ModeData[CurrentMode].HorizontalResolution;
+  ScreenHeight = Private->ModeData[CurrentMode].VerticalResolution;
 
   if ((BltOperation < 0) || (BltOperation >= EfiGraphicsOutputBltOperationMax)) {
     return EFI_INVALID_PARAMETER;
@@ -285,48 +270,35 @@ Returns:
   // is the number of bytes in each row of BltBuffer.  Since BltBuffer is Width pixels size,
   // the number of bytes in each row can be computed.
   //
-  /* vvl: Delta passed in bytes to use it for coordinate arithmetic
-     we need convert it to pixels value.
-   */
   if (Delta == 0) {
-    Delta = Width * 4;
+    Delta = Width * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL);
   }
-  Delta /= 4;
+  // code below assumes a Delta value in pixels, not bytes
+  Delta /= sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL);
 
-  //
-  // We need to fill the Virtual Screen buffer with the blt data.
-  // The virtual screen is upside down, as the first row is the bootom row of
-  // the image.
-  //
-
-  CurrentMode = This->Mode->Mode;
   //
   // Make sure the SourceX, SourceY, DestinationX, DestinationY, Width, and Height parameters
   // are valid for the operation and the current screen geometry.
   //
-  if (BltOperation == EfiBltVideoToBltBuffer) {
-    //
-    // Video to BltBuffer: Source is Video, destination is BltBuffer
-    //
-    if (SourceY + Height > Private->ModeData[CurrentMode].VerticalResolution) {
+  if (BltOperation == EfiBltVideoToBltBuffer || BltOperation == EfiBltVideoToVideo) {
+    if (SourceY + Height > ScreenHeight) {
       return EFI_INVALID_PARAMETER;
     }
 
-    if (SourceX + Width > Private->ModeData[CurrentMode].HorizontalResolution) {
-      return EFI_INVALID_PARAMETER;
-    }
-  } else {
-    //
-    // BltBuffer to Video: Source is BltBuffer, destination is Video
-    //
-    if (DestinationY + Height > Private->ModeData[CurrentMode].VerticalResolution) {
-      return EFI_INVALID_PARAMETER;
-    }
-
-    if (DestinationX + Width > Private->ModeData[CurrentMode].HorizontalResolution) {
+    if (SourceX + Width > ScreenWidth) {
       return EFI_INVALID_PARAMETER;
     }
   }
+  if (BltOperation == EfiBltBufferToVideo || BltOperation == EfiBltVideoToVideo || BltOperation == EfiBltVideoFill) {
+    if (DestinationY + Height > ScreenHeight) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if (DestinationX + Width > ScreenWidth) {
+      return EFI_INVALID_PARAMETER;
+    }
+  }
+
   //
   // We have to raise to TPL Notify, so we make an atomic write the frame buffer.
   // We would not want a timer based event (Cursor, ...) to come in while we are
@@ -340,93 +312,105 @@ Returns:
     // Video to BltBuffer: Source is Video, destination is BltBuffer
     //
     for (SrcY = SourceY, DstY = DestinationY; DstY < (Height + DestinationY) && BltBuffer; SrcY++, DstY++) {
+      /// @todo assumes that color depth is 32 (*4, EfiPciIoWidthUint32) and format matches EFI_GRAPHICS_OUTPUT_BLT_PIXEL
+      Status = Private->PciIo->Mem.Read (
+                                    Private->PciIo,
+                                    EfiPciIoWidthUint32,
+                                    0,
+                                    ((SrcY * ScreenWidth) + SourceX) * 4,
+                                    Width,
+                                    BltBuffer + (DstY * Delta) + DestinationX
+                                    );
+      ASSERT_EFI_ERROR((Status));
+    }
+    break;
 
-      Offset = (SrcY * Private->ModeData[CurrentMode].HorizontalResolution) + SourceX;
-        Status = Private->PciIo->Mem.Read (
-                              Private->PciIo,
-                              EfiPciIoWidthUint32,
-                              0,
-                              Offset * 4,
-                              Width,
-                              Private->LineBuffer
-                              );
-        ASSERT_EFI_ERROR((Status));
-
-      for (X = 0; X < Width; X++) {
-        Blt         = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) BltBuffer + (DstY * Delta) + (DestinationX + X);
-        *(UINT32 *)Blt = Private->LineBuffer[X];
-      }
+  case EfiBltBufferToVideo:
+    //
+    // BltBuffer to Video: Source is BltBuffer, destination is Video
+    //
+    for (SrcY = SourceY, DstY = DestinationY; SrcY < (Height + SourceY); SrcY++, DstY++) {
+      /// @todo assumes that color depth is 32 (*4, EfiPciIoWidthUint32) and format matches EFI_GRAPHICS_OUTPUT_BLT_PIXEL
+      Status = Private->PciIo->Mem.Write (
+                                    Private->PciIo,
+                                    EfiPciIoWidthUint32,
+                                    0,
+                                    ((DstY * ScreenWidth) + DestinationX) * 4,
+                                    Width,
+                                    BltBuffer + (SrcY * Delta) + SourceX
+                                    );
+      ASSERT_EFI_ERROR((Status));
     }
     break;
 
   case EfiBltVideoToVideo:
     //
-    // Perform hardware acceleration for Video to Video operations
+    // Video to Video: Source is Video, destination is Video
     //
-    ScreenWidth   = Private->ModeData[CurrentMode].HorizontalResolution;
-    ScreenHeight   = Private->ModeData[CurrentMode].VerticalResolution;
-    SourceOffset  = (SourceY * Private->ModeData[CurrentMode].HorizontalResolution) + (SourceX);
-    Offset        = (DestinationY * Private->ModeData[CurrentMode].HorizontalResolution) + (DestinationX);
-    VBoxVgaGraphicsOutputBlt(This, (EFI_GRAPHICS_OUTPUT_BLT_PIXEL*)Private->TmpBuf, EfiBltVideoToBltBuffer, SourceX, SourceY, 0, 0, ScreenWidth - SourceX, ScreenHeight - SourceY, 0);
-    VBoxVgaGraphicsOutputBlt(This, (EFI_GRAPHICS_OUTPUT_BLT_PIXEL*)Private->TmpBuf, EfiBltBufferToVideo, 0, 0, DestinationX, DestinationY, ScreenWidth - SourceX, ScreenHeight - SourceY, 0);
+    if (DestinationY <= SourceY) {
+      // forward copy
+      for (SrcY = SourceY, DstY = DestinationY; SrcY < (Height + SourceY); SrcY++, DstY++) {
+        /// @todo assumes that color depth is 32 (*4, EfiPciIoWidthUint32) and format matches EFI_GRAPHICS_OUTPUT_BLT_PIXEL
+        Status = Private->PciIo->CopyMem (
+                                    Private->PciIo,
+                                    EfiPciIoWidthUint32,
+                                    0,
+                                    ((DstY * ScreenWidth) + DestinationX) * 4,
+                                    0,
+                                    ((SrcY * ScreenWidth) + SourceX) * 4,
+                                    Width
+                                    );
+        ASSERT_EFI_ERROR((Status));
+      }
+    } else {
+      // reverse copy
+      for (SrcY = SourceY + Height - 1, DstY = DestinationY + Height - 1; SrcY >= SourceY && SrcY <= SourceY + Height - 1; SrcY--, DstY--) {
+        /// @todo assumes that color depth is 32 (*4, EfiPciIoWidthUint32) and format matches EFI_GRAPHICS_OUTPUT_BLT_PIXEL
+        Status = Private->PciIo->CopyMem (
+                                    Private->PciIo,
+                                    EfiPciIoWidthUint32,
+                                    0,
+                                    ((DstY * ScreenWidth) + DestinationX) * 4,
+                                    0,
+                                    ((SrcY * ScreenWidth) + SourceX) * 4,
+                                    Width
+                                    );
+        ASSERT_EFI_ERROR((Status));
+      }
+    }
     break;
 
   case EfiBltVideoFill:
-    Blt       = BltBuffer;
-
-    if (DestinationX == 0 && Width == Private->ModeData[CurrentMode].HorizontalResolution) {
-      Offset = DestinationY * Private->ModeData[CurrentMode].HorizontalResolution;
-        Status = Private->PciIo->Mem.Write (
-                              Private->PciIo,
-                              EfiPciIoWidthFillUint32,
-                              0,
-                              Offset * 4,
-                              (Width * Height),
-                              Blt
-                              );
-        ASSERT_EFI_ERROR((Status));
+    //
+    // Video Fill: Source is BltBuffer, destination is Video
+    //
+    if (DestinationX == 0 && Width == ScreenWidth) {
+      // @todo assumes that color depth is 32 (*4, EfiPciIoWidthFillUint32) and format matches EFI_GRAPHICS_OUTPUT_BLT_PIXEL
+      Status = Private->PciIo->Mem.Write (
+                                    Private->PciIo,
+                                    EfiPciIoWidthFillUint32,
+                                    0,
+                                    DestinationY * ScreenWidth * 4,
+                                    (Width * Height),
+                                    BltBuffer
+                                    );
+      ASSERT_EFI_ERROR((Status));
     } else {
       for (SrcY = SourceY, DstY = DestinationY; SrcY < (Height + SourceY); SrcY++, DstY++) {
-        Offset = (DstY * Private->ModeData[CurrentMode].HorizontalResolution) + DestinationX;
-          Status = Private->PciIo->Mem.Write (
-                                Private->PciIo,
-                                EfiPciIoWidthFillUint32,
-                                0,
-                                Offset * 4,
-                                Width,
-                                Blt
-                                );
-        ASSERT_EFI_ERROR((Status));
-      }
-    }
-    break;
-
-  case EfiBltBufferToVideo:
-    for (SrcY = SourceY, DstY = DestinationY; SrcY < (Height + SourceY); SrcY++, DstY++) {
-
-      for (X = 0; X < Width; X++) {
-        Blt =
-          (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) (
-              (UINT32 *) BltBuffer +
-              (SrcY * Delta) +
-              ((SourceX + X) )
-            );
-        Private->LineBuffer[X]  = *(UINT32 *)Blt;
-      }
-
-      Offset = (DstY * Private->ModeData[CurrentMode].HorizontalResolution) + DestinationX;
-
+        // @todo assumes that color depth is 32 (*4, EfiPciIoWidthFillUint32) and format matches EFI_GRAPHICS_OUTPUT_BLT_PIXEL
         Status = Private->PciIo->Mem.Write (
-                              Private->PciIo,
-                              EfiPciIoWidthUint32,
-                              0,
-                              Offset * 4,
-                              Width,
-                              Private->LineBuffer
-                              );
+                                      Private->PciIo,
+                                      EfiPciIoWidthFillUint32,
+                                      0,
+                                      ((DstY * ScreenWidth) + DestinationX) * 4,
+                                      Width,
+                                      BltBuffer
+                                      );
         ASSERT_EFI_ERROR((Status));
+      }
     }
     break;
+
   default:
     ASSERT (FALSE);
   }
@@ -443,7 +427,7 @@ VBoxVgaGraphicsOutputConstructor (
 {
   EFI_STATUS                   Status;
   EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
-  UINT32                        GopMode = 2; /* 1024x768 */
+  UINT32                        GopMode = 2;
 
   GraphicsOutput            = &Private->GraphicsOutput;
   GraphicsOutput->QueryMode = VBoxVgaGraphicsOutputQueryMode;
@@ -472,18 +456,20 @@ VBoxVgaGraphicsOutputConstructor (
   Private->GraphicsOutput.Mode->MaxMode = (UINT32) Private->MaxMode;
   Private->GraphicsOutput.Mode->Mode    = GRAPHICS_OUTPUT_INVALIDE_MODE_NUMBER;
   Private->HardwareNeedsStarting        = TRUE;
-  Private->LineBuffer                   = NULL;
 
   //
   // Initialize the hardware
   //
   VBoxVgaGetVmVariable(EFI_INFO_INDEX_GOP_MODE, (CHAR8 *)&GopMode, sizeof(GopMode));
+
   GraphicsOutput->SetMode (GraphicsOutput, GopMode);
+
   DrawLogo (
     Private,
     Private->ModeData[Private->GraphicsOutput.Mode->Mode].HorizontalResolution,
     Private->ModeData[Private->GraphicsOutput.Mode->Mode].VerticalResolution
     );
+
   PcdSet32(PcdVideoHorizontalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].HorizontalResolution);
   PcdSet32(PcdVideoVerticalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].VerticalResolution);
 

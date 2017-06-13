@@ -80,7 +80,7 @@
 #define VBOX_VGA_DEVICE_ID           0xbeef
 
 //
-// VirtualBox VGA Mode Data
+// VirtualBox VGA Graphical Mode Data
 //
 typedef struct {
   UINT32  ModeNumber;
@@ -111,10 +111,8 @@ typedef struct {
   UINTN                                 CurrentMode;
   UINTN                                 MaxMode;
   VBOX_VGA_MODE_DATA                    *ModeData;
-  UINT32                                *LineBuffer;
   BOOLEAN                               HardwareNeedsStarting;
   UINT32                                VRAMSize;
-  void         *TmpBuf;
 } VBOX_VGA_PRIVATE_DATA;
 
 ///
