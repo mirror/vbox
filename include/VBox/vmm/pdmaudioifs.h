@@ -611,6 +611,8 @@ typedef struct PDMAUDIOMIXBUF
     PPDMAUDIOMIXBUF           pParent;
     /** List of children mix buffers to keep in sync with (if being a parent buffer). */
     RTLISTANCHOR              lstChildren;
+    /** Number of children mix buffers kept in lstChildren. */
+    uint32_t                  cChildren;
     /** Intermediate structure for buffer conversion tasks. */
     PPDMAUDIOSTRMRATE         pRate;
     /** Internal representation of current volume used for mixing. */
