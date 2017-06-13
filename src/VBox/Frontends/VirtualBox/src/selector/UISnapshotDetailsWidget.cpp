@@ -198,12 +198,15 @@ void UISnapshotDetailsElement::setText(const QString &strText)
 
 QSize UISnapshotDetailsElement::minimumSizeHint() const
 {
-    /* Calculate minimum size-hint on the basis of margin, text-document ideal width and size: */
+    /* Calculate minimum size-hint on the basis of:
+     * 1. context and text-documnt margins, 2. text-document ideal width and height: */
+    int iTop = 0, iLeft = 0, iRight = 0, iBottom = 0;
+    layout()->getContentsMargins(&iTop, &iLeft, &iRight, &iBottom);
+    const QSize size = m_pTextEdit->document()->size().toSize();
     const int iDocumentMargin = (int)m_pTextEdit->document()->documentMargin();
-    const int iIdealWidth = (int)m_pTextEdit->document()->idealWidth() + 2 * iDocumentMargin;
-    QSize size = m_pTextEdit->document()->size().toSize();
-    size += QSize(2 * iDocumentMargin, 2 * iDocumentMargin);
-    return QSize(iIdealWidth, size.height());
+    const int iIdealWidth = (int)m_pTextEdit->document()->idealWidth() + 2 * iDocumentMargin + iLeft + iRight;
+    const int iIdealHeight = size.height() + 2 * iDocumentMargin + iTop + iBottom;
+    return QSize(iIdealWidth, iIdealHeight);
 }
 
 void UISnapshotDetailsElement::prepare()
