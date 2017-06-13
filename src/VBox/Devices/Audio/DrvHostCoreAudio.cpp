@@ -37,27 +37,11 @@
 #include <AudioToolbox/AudioConverter.h>
 #include <AudioToolbox/AudioToolbox.h>
 
-#if 0
-# include <iprt/file.h>
-# define DEBUG_DUMP_PCM_DATA
-# ifdef RT_OS_WINDOWS
-#  define DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
-# else
-#  define DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
-# endif
-#endif
-
 /* Enables utilizing the Core Audio converter unit for converting
  * input / output from/to our requested formats. That might be more
  * performant than using our own routines later down the road. */
 /** @todo Needs more investigation and testing first before enabling. */
 //# define VBOX_WITH_AUDIO_CA_CONVERTER
-
-#ifdef DEBUG_andy
-# undef  DEBUG_DUMP_PCM_DATA_PATH
-# define DEBUG_DUMP_PCM_DATA_PATH "/Users/anloeffl/Documents/"
-# undef  VBOX_WITH_AUDIO_CA_CONVERTER
-#endif
 
 /** @todo
  * - Maybe make sure the threads are immediately stopped if playing/recording stops.
@@ -1204,9 +1188,9 @@ static DECLCALLBACK(OSStatus) coreAudioConverterCb(AudioConverterRef            
             ioData->mBuffers[0].mDataByteSize   = cbAvail;
             ioData->mBuffers[0].mData           = pvAvail;
 
-#ifdef DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
             RTFILE fh;
-            int rc = RTFileOpen(&fh, DEBUG_DUMP_PCM_DATA_PATH "ca-converter-cb-input.pcm",
+            int rc = RTFileOpen(&fh,VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "caConverterCbInput.pcm",
                                 RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
             if (RT_SUCCESS(rc))
             {
@@ -1958,21 +1942,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
             /* Try to acquire the necessary block from the ring buffer. */
             RTCircBufAcquireReadBlock(pCAStream->pCircBuf, cbToWrite, (void **)&pvChunk, &cbChunk);
             if (cbChunk)
-            {
-#ifdef DEBUG_DUMP_PCM_DATA
-                RTFILE fh;
-                rc = RTFileOpen(&fh, DEBUG_DUMP_PCM_DATA_PATH "ca-capture.pcm",
-                                RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-                if (RT_SUCCESS(rc))
-                {
-                    RTFileWrite(fh, pvChunk, cbChunk, NULL);
-                    RTFileClose(fh);
-                }
-                else
-                    AssertFailed();
-#endif
                 memcpy((uint8_t *)pvBuf + cbReadTotal, pvChunk, cbChunk);
-            }
 
             /* Release the read buffer, so it could be used for new data. */
             RTCircBufReleaseReadBlock(pCAStream->pCircBuf, cbChunk);
@@ -2063,9 +2033,9 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
         memcpy(pvChunk, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk);
 
-#ifdef DEBUG_DUMP_PCM_DATA
+#ifdefVBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        rc = RTFileOpen(&fh, DEBUG_DUMP_PCM_DATA_PATH "ca-playback.pcm",
+        rc = RTFileOpen(&fh,VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ca-playback.pcm",
                         RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {

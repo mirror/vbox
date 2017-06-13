@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2015-2016 Oracle Corporation
+ * Copyright (C) 2015-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,20 +56,6 @@
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 #include "DrvAudio.h"
-
-#if 0
-/*
- * SB16_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
- * to a file on the host. Be sure to adjust SB16_DEBUG_DUMP_PCM_DATA_PATH
- * to your needs before using this!
- */
-# define SB16_DEBUG_DUMP_PCM_DATA
-# ifdef RT_OS_WINDOWS
-#  define SB16_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
-# else
-#  define SB16_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
-# endif
-#endif
 
 /** Current saved state version. */
 #define SB16_SAVE_STATE_VERSION         2
@@ -1662,9 +1648,9 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos, uint32_
         int rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
         AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
 
-#ifdef SB16_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        RTFileOpen(&fh, SB16_DEBUG_DUMP_PCM_DATA_PATH "sb16WriteAudio.pcm",
+        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "sb16WriteAudio.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, tmpbuf, cbToRead, NULL);
         RTFileClose(fh);
@@ -2512,6 +2498,10 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
     }
 #endif /* VBOX_WITH_AUDIO_SB16_CALLBACKS */
+
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "sb16WriteAudio.pcm");
+#endif
 
     return VINF_SUCCESS;
 }

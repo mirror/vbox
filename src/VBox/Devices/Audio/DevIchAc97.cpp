@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,20 +45,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-
-#ifdef DEBUG_andy
-/*
- * AC97_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
- * to a file on the host. Be sure to adjust AC97_DEBUG_DUMP_PCM_DATA_PATH
- * to your needs before using this!
- */
-# define AC97_DEBUG_DUMP_PCM_DATA
-# ifdef RT_OS_WINDOWS
-#  define AC97_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
-# else
-#  define AC97_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
-# endif
-#endif
 
 /** Current saved state version. */
 #define AC97_SSM_VERSION    1
@@ -884,9 +870,9 @@ static int ichac97StreamWrite(PAC97STATE pThis, PAC97STREAM pDstStream, PAUDMIXS
         int rc2 = AudioMixerSinkRead(pSrcMixSink, AUDMIXOP_COPY, pvDst, (uint32_t)cbDst, &cbRead);
         AssertRC(rc2);
 
-#ifdef AC97_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        RTFileOpen(&fh, AC97_DEBUG_DUMP_PCM_DATA_PATH "ichac97StreamWrite.pcm",
+        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ichac97StreamWrite.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, pvDst, cbRead, NULL);
         RTFileClose(fh);
@@ -932,9 +918,9 @@ static int ichac97StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIXSI
 
     if (cbSrc)
     {
-#ifdef AC97_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        RTFileOpen(&fh, AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm",
+        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, pvSrc, cbSrc, NULL);
         RTFileClose(fh);
@@ -2276,11 +2262,11 @@ static int ichac97DoDMA(PAC97STATE pThis, PAC97STREAM pStream, void *pvBuf, uint
         if (RT_FAILURE(rc))
             break;
 
-#ifdef AC97_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
         RTFileOpen(&fh,
                      pStream->u8SD == AC97SOUNDSOURCE_PO_INDEX
-                   ? AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97DMARead.pcm" : AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97DMAWrite.pcm",
+                   ? VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMARead.pcm" : VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMAWrite.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, (uint8_t *)pvBuf + cbTotal, cbChunk, NULL);
         RTFileClose(fh);
@@ -3670,11 +3656,11 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 #endif
 
-#ifdef AC97_DEBUG_DUMP_PCM_DATA
-    RTFileDelete(AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97DMARead.pcm");
-    RTFileDelete(AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97DMAWrite.pcm");
-    RTFileDelete(AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm");
-    RTFileDelete(AC97_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamWrite.pcm");
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMARead.pcm");
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97DMAWrite.pcm");
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm");
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamWrite.pcm");
 #endif
 
     LogFlowFuncLeaveRC(rc);

@@ -56,20 +56,6 @@
 //#define HDA_AS_PCI_EXPRESS
 #define VBOX_WITH_INTEL_HDA
 
-/*
- * HDA_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
- * to a file on the host. Be sure to adjust HDA_DEBUG_DUMP_PCM_DATA_PATH
- * to your needs before using this!
- */
-//#define HDA_DEBUG_DUMP_PCM_DATA
-#ifdef HDA_DEBUG_DUMP_PCM_DATA
-# ifdef RT_OS_WINDOWS
-#  define HDA_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
-# else
-#  define HDA_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
-# endif
-#endif
-
 #if defined(VBOX_WITH_HP_HDA)
 /* HP Pavilion dv4t-1300 */
 # define HDA_PCI_VENDOR_ID 0x103c
@@ -4037,11 +4023,11 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
                                    (uint8_t *)pvBuf + cbTotal, cbChunk);
             }
 
-#ifdef HDA_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
             RTFILE fh;
             RTFileOpen(&fh,
                          hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT
-                       ? HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm" : HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm",
+                       ? VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm" : VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm",
                        RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
             RTFileWrite(fh, (uint8_t *)pvBuf + cbTotal, cbChunk, NULL);
             RTFileClose(fh);
@@ -4171,9 +4157,9 @@ static int hdaStreamWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrit
         Assert(cbDst >= cbWritten);
         Log2Func(("[SD%RU8]: %zu/%zu bytes written\n", pStream->u8SD, cbWritten, cbDst));
 
-#ifdef HDA_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        RTFileOpen(&fh, HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm",
+        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, pvDst, cbWritten, NULL);
         RTFileClose(fh);
@@ -4228,9 +4214,9 @@ static int hdaStreamRead(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead,
     {
         Log2Func(("[SD%RU8]: Reading %zu bytes ...\n", pStream->u8SD, cbSrc));
 
-#ifdef HDA_DEBUG_DUMP_PCM_DATA
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
-        RTFileOpen(&fh, HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm",
+        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, pvSrc, cbSrc, NULL);
         RTFileClose(fh);
@@ -6510,11 +6496,11 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     }
 # endif
 
-#ifdef HDA_DEBUG_DUMP_PCM_DATA
-    RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm");
-    RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm");
-    RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm");
-    RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm");
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm");
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm");
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm");
+    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm");
 #endif
 
     LogFlowFuncLeaveRC(rc);
