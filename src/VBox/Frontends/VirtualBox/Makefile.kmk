@@ -298,6 +298,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIComboBox.h \
 	src/extensions/QIDialog.h \
 	src/extensions/QIFileDialog.h \
+	src/extensions/QIFlowLayout.h \
 	src/extensions/QILabel.h \
 	src/extensions/QILabelSeparator.h \
 	src/extensions/QIMainDialog.h \
@@ -603,6 +604,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QIDialog.cpp \
 	src/extensions/QIDialogButtonBox.cpp \
 	src/extensions/QIFileDialog.cpp \
+	src/extensions/QIFlowLayout.cpp \
 	src/extensions/QILabel.cpp \
 	src/extensions/QILabelSeparator.cpp \
 	src/extensions/QILineEdit.cpp \
