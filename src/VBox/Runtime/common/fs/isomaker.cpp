@@ -1868,6 +1868,10 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
 static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace, const char *pszPath,
                                           PPRTFSISOMAKERNAME ppParent, const char **ppszEntry, size_t *pcchEntry)
 {
+    *ppParent  = NULL; /* shut up gcc */
+    *ppszEntry = NULL; /* shut up gcc */
+    *pcchEntry = 0;    /* shut up gcc */
+
     int rc;
     AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INTERNAL_ERROR_4);
 
