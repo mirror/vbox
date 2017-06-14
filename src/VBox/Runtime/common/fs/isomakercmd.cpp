@@ -896,6 +896,13 @@ static int rtFsIsoMakerCmdOptNameSetup(PRTFSISOMAKERCMDOPTS pOpts, const char *p
         if (iNameSpecifier >= RT_ELEMENTS(pOpts->afNameSpecifiers))
             return rtFsIsoMakerCmdSyntaxError(pOpts, "too many name specifiers (max %d)", RT_ELEMENTS(pOpts->afNameSpecifiers));
         pOpts->afNameSpecifiers[iNameSpecifier] = fNameSpecifier;
+        iNameSpecifier++;
+
+        /*
+         * Next, if any.
+         */
+        if (pszSpec[offSpec] == ',')
+            offSpec++;
     } while (pszSpec[offSpec] != '\0');
 
     pOpts->cNameSpecifiers = iNameSpecifier;
@@ -1056,7 +1063,7 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
             }
         }
 
-        for (uint32_t iDst = cParsedNames; iDst < pOpts->cNameSpecifiers; iDst++)
+        for (uint32_t iDst = iSrc + 1; iDst < pOpts->cNameSpecifiers; iDst++)
             aParsedNames[iDst] = aParsedNames[iSrc];
         cParsedNames = pOpts->cNameSpecifiers + 1;
     }

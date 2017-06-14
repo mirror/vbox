@@ -674,6 +674,8 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
         }
         if (pShared)
         {
+            LogFlow(("rtFsIso9660File_New: cbObject=%#RX64 First Extent: off=%#RX64 cb=%#RX64\n",
+                     pShared->Core.cbObject, pShared->Core.FirstExtent.offDisk, pShared->Core.FirstExtent.cbExtent));
             pNewFile->offFile = 0;
             pNewFile->pShared = pShared;
             return VINF_SUCCESS;

@@ -1457,7 +1457,7 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
                                                       const char *pchSrc, size_t cchSrc, bool fIsDir,
                                                       char *pszDst, size_t cbDst, size_t *pcchDst, size_t *pcbInDirRec)
 {
-    AssertReturn(cbDst > ISO9660_MAX_NAME_LEN, VERR_INTERNAL_ERROR_3);
+    AssertReturn(cbDst > ISO9660_MAX_NAME_LEN + 2, VERR_INTERNAL_ERROR_3);
 
     /* Skip leading dots. */
     while (cchSrc > 0 && *pchSrc == '.')
@@ -1519,6 +1519,14 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
                     offDstDot = cchDst = rtFsIsoMakerCopyIso9660Name(pszDst, ISO9660_MAX_NAME_LEN, pchSrc, cchSrc);
             }
         }
+    }
+
+    /* Append version if not directory */
+    if (!fIsDir)
+    {
+        pszDst[cchDst++] = ';';
+        pszDst[cchDst++] = '1';
+        pszDst[cchDst]   = '\0';
     }
 
     /*
@@ -1915,7 +1923,7 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
 
         size_t offNext = cchComponent;
         while (RTPATH_IS_SLASH(ch))
-            ch = pszPath[offNext++];
+            ch = pszPath[++offNext];
 
         if (ch == '\0')
         {
@@ -1984,6 +1992,7 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
                         return rc;
                     AssertReturn(pChild != NULL, VERR_INTERNAL_ERROR_4);
                 }
+                pParent = pChild;
             }
         }
 
@@ -3858,7 +3867,7 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint,
         {
             pDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
             AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
-        } while (offInTable - pDir->offPathTable < RTFSISOMAKER_CALC_PATHREC_SIZE(pDir->pName->cbNameInDirRec));
+        } while (offInTable - pDir->offPathTable >= RTFSISOMAKER_CALC_PATHREC_SIZE(pDir->pName->cbNameInDirRec));
     /* Back to the start: */
     else if (offInTable == 0)
     {
@@ -3871,7 +3880,7 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint,
         {
             pDir = RTListGetPrev(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
             AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
-        } while (offInTable - pDir->offPathTable < RTFSISOMAKER_CALC_PATHREC_SIZE(pDir->pName->cbNameInDirRec));
+        } while (offInTable - pDir->offPathTable >= RTFSISOMAKER_CALC_PATHREC_SIZE(pDir->pName->cbNameInDirRec));
 
     /*
      * Generate content.
@@ -4095,7 +4104,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
         {
             pDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
             AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
-        } while ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
+        } while ((offInDir64 = offUnsigned - pDir->offDir) >= RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
     /* Back to the start: */
     else if (pFinalizedDirs->offDirs / RTFSISOMAKER_SECTOR_SIZE == offUnsigned / RTFSISOMAKER_SECTOR_SIZE)
     {
@@ -4108,7 +4117,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
         {
             pDir = RTListGetPrev(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
             AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
-        } while ((offInDir64 = offUnsigned - pDir->offDir) < RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
+        } while ((offInDir64 = offUnsigned - pDir->offDir) >= RT_ALIGN_32(pDir->cbDir, RTFSISOMAKER_SECTOR_SIZE));
 
     /*
      * Update the hint.
