@@ -86,9 +86,11 @@
 #define RTFSISOMAKER_IS_UPPER_IN_D_CHARS(a_ch)  (RT_C_IS_ALNUM(a_ch) || (a_ch) == '_')
 
 
-/** Calculates the path table record size given the name length. */
+/** Calculates the path table record size given the name length.
+ * @note  The root directory length is 1 (name byte is 0x00), we make sure this
+ *        is the case in rtFsIsoMakerNormalizeNameForNamespace. */
 #define RTFSISOMAKER_CALC_PATHREC_SIZE(a_cbNameInDirRec) \
-    ( RT_UOFFSETOF(ISO9660PATHREC, achDirId[(a_cbNameInDirRec)]) + ((a_cbNameInDirRec) & 1) )
+    ( RT_UOFFSETOF(ISO9660PATHREC, achDirId[(a_cbNameInDirRec) + ((a_cbNameInDirRec) & 1)]) )
 
 
 /*********************************************************************************************************************************
@@ -1639,10 +1641,14 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
     {
         /*
          * Root special case.
+         *
+         * For ISO-9660 and joliet, we enter it with a length of 1 byte.  The
+         * value byte value is zero.  The path tables we generate won't be
+         * accepted by windows unless we do this.
          */
         *pszDst      = '\0';
         *pcchDst     = 0;
-        *pcbInDirRec = 0;
+        *pcbInDirRec = pNamespace->fNamespace & (RTFSISOMAKER_NAMESPACE_ISO_9660 | RTFSISOMAKER_NAMESPACE_JOLIET) ? 1 : 0;
         AssertReturn(!pParent, VERR_INTERNAL_ERROR_3);
         return VINF_SUCCESS;
     }
@@ -1759,6 +1765,8 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
                                                    szName, sizeof(szName), &cchName, &cbNameInDirRec);
     if (RT_SUCCESS(rc))
     {
+        Assert(cbNameInDirRec > 0);
+
         size_t cbName = sizeof(RTFSISOMAKERNAME)
                       + cchName + 1
                       + cchSpec + 1;
@@ -2902,7 +2910,7 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
     }
 
     int      rc;
-    uint16_t idPathTable = 0;
+    uint16_t idPathTable = 1;
     uint32_t cbPathTable = 0;
     if (pNamespace->pRoot)
     {
@@ -3381,8 +3389,8 @@ static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
     pPrimary->VolumeSpaceSize.le        = RT_H2LE_U32(pThis->cbFinalizedImage / RTFSISOMAKER_SECTOR_SIZE);
     pPrimary->cbPathTable.be            = RT_H2BE_U32(pThis->PrimaryIsoDirs.cbPathTable);
     pPrimary->cbPathTable.le            = RT_H2LE_U32(pThis->PrimaryIsoDirs.cbPathTable);
-    pPrimary->offTypeLPathTable         = RT_H2LE_U32(pThis->PrimaryIsoDirs.offPathTableL);
-    pPrimary->offTypeMPathTable         = RT_H2BE_U32(pThis->PrimaryIsoDirs.offPathTableM);
+    pPrimary->offTypeLPathTable         = RT_H2LE_U32(pThis->PrimaryIsoDirs.offPathTableL / RTFSISOMAKER_SECTOR_SIZE);
+    pPrimary->offTypeMPathTable         = RT_H2BE_U32(pThis->PrimaryIsoDirs.offPathTableM / RTFSISOMAKER_SECTOR_SIZE);
     pPrimary->RootDir.DirRec.cbDirRec           = sizeof(pPrimary->RootDir);
     pPrimary->RootDir.DirRec.cExtAttrBlocks     = 0;
     pPrimary->RootDir.DirRec.offExtent.be       = RT_H2BE_U32(pThis->PrimaryIso.pRoot->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
@@ -3407,8 +3415,8 @@ static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
         pJoliet->VolumeSpaceSize            = pPrimary->VolumeSpaceSize;
         pJoliet->cbPathTable.be             = RT_H2BE_U32(pThis->JolietDirs.cbPathTable);
         pJoliet->cbPathTable.le             = RT_H2LE_U32(pThis->JolietDirs.cbPathTable);
-        pJoliet->offTypeLPathTable          = RT_H2LE_U32(pThis->JolietDirs.offPathTableL);
-        pJoliet->offTypeMPathTable          = RT_H2BE_U32(pThis->JolietDirs.offPathTableM);
+        pJoliet->offTypeLPathTable          = RT_H2LE_U32(pThis->JolietDirs.offPathTableL / RTFSISOMAKER_SECTOR_SIZE);
+        pJoliet->offTypeMPathTable          = RT_H2BE_U32(pThis->JolietDirs.offPathTableM / RTFSISOMAKER_SECTOR_SIZE);
         pJoliet->RootDir.DirRec.cbDirRec           = sizeof(pJoliet->RootDir);
         pJoliet->RootDir.DirRec.cExtAttrBlocks     = 0;
         pJoliet->RootDir.DirRec.offExtent.be       = RT_H2BE_U32(pThis->Joliet.pRoot->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
@@ -3782,12 +3790,12 @@ static uint32_t rtFsIsoMakerOutFile_GeneratePathRec(PRTFSISOMAKERNAME pName, boo
     if (fLittleEndian)
     {
         pPathRec->offExtent   = RT_H2LE_U32(pName->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
-        pPathRec->idParentRec = RT_H2LE_U16(pName->pParent ? pName->pParent->pDir->idPathTable : 0);
+        pPathRec->idParentRec = RT_H2LE_U16(pName->pParent ? pName->pParent->pDir->idPathTable : 1);
     }
     else
     {
         pPathRec->offExtent   = RT_H2BE_U32(pName->pDir->offDir / RTFSISOMAKER_SECTOR_SIZE);
-        pPathRec->idParentRec = RT_H2BE_U16(pName->pParent ? pName->pParent->pDir->idPathTable : 0);
+        pPathRec->idParentRec = RT_H2BE_U16(pName->pParent ? pName->pParent->pDir->idPathTable : 1);
     }
     if (!fUnicode)
     {
@@ -3802,7 +3810,9 @@ static uint32_t rtFsIsoMakerOutFile_GeneratePathRec(PRTFSISOMAKERNAME pName, boo
         size_t   cwcResult = 0;
         int rc = RTStrToUtf16BigEx(pName->szName, RTSTR_MAX, &pwszTmp, pName->cbNameInDirRec / sizeof(RTUTF16) + 1, &cwcResult);
         AssertRC(rc);
-        Assert(cwcResult * sizeof(RTUTF16) == pName->cbNameInDirRec);
+        Assert(   cwcResult * sizeof(RTUTF16) == pName->cbNameInDirRec
+               || (!pName->pParent && cwcResult == 0 && pName->cbNameInDirRec == 1) );
+
     }
     return RTFSISOMAKER_CALC_PATHREC_SIZE(pName->cbNameInDirRec);
 }
@@ -3984,7 +3994,8 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
         size_t   cwcResult = 0;
         int rc = RTStrToUtf16BigEx(pName->szName, RTSTR_MAX, &pwszTmp, RT_ELEMENTS(wszTmp), &cwcResult);
         AssertRC(rc);
-        Assert(cwcResult * sizeof(RTUTF16) == pName->cbNameInDirRec);
+        Assert(   cwcResult * sizeof(RTUTF16) == pName->cbNameInDirRec
+               || (!pName->pParent && cwcResult == 0 && pName->cbNameInDirRec == 1) );
         memcpy(&pDirRec->achFileId[0], pwszTmp, pName->cbNameInDirRec);
         pDirRec->achFileId[pName->cbNameInDirRec] = '\0';
     }

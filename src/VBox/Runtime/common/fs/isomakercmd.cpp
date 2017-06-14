@@ -92,6 +92,7 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,
     RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,
     RTFSISOMAKERCMD_OPT_NAME_SETUP,
+    RTFSISOMAKERCMD_OPT_NO_JOLIET,
 
     /*
      * Compatibility options:
@@ -308,7 +309,8 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--iprt-iso-maker-file-marker",   RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER,     RTGETOPT_REQ_NOTHING },
     { "--output-buffer-size",           RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,             RTGETOPT_REQ_UINT32  },
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
-    { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING },
+    { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
+    { "--no-joliet",                    RTFSISOMAKERCMD_OPT_NO_JOLIET,                      RTGETOPT_REQ_NOTHING },
 
 
     /*
@@ -1195,6 +1197,11 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
              */
             case RTFSISOMAKERCMD_OPT_NAME_SETUP:
                 rc = rtFsIsoMakerCmdOptNameSetup(&Opts, ValueUnion.psz);
+                break;
+            case RTFSISOMAKERCMD_OPT_NO_JOLIET:
+                rc = RTFsIsoMakerSetJolietUcs2Level(Opts.hIsoMaker, 0);
+                if (RT_FAILURE(rc))
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "Failed to disable joliet: %Rrc", rc);
                 break;
 
 
