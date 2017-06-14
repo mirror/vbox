@@ -92,7 +92,7 @@ static int tstSingle(RTTEST hTest)
                                         &cSamplesWritten), VERR_BUFFER_OVERFLOW);
 
     /* Offset wrap-around: When writing as much (or more) samples the mixing buffer can hold. */
-    size_t    cbSamples = cBufSize * sizeof(int16_t) * 2 /* Channels */;
+    uint32_t  cbSamples = cBufSize * sizeof(int16_t) * 2 /* Channels */;
     RTTESTI_CHECK(cbSamples);
     uint16_t *paSamples = (uint16_t *)RTMemAlloc(cbSamples);
     RTTESTI_CHECK(paSamples);
