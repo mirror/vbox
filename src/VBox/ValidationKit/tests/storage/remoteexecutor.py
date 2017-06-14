@@ -147,6 +147,8 @@ class RemoteExecutor(object):
         fRc = False;
         sOutput = None;
         if self.oTxsSession is not None:
+            reporter.log('Executing [remote]: %s %s %s' % (sExec, asArgs, sInput));
+            reporter.flushall();
             oStdOut = StdInOutBuffer();
             oStdErr = StdInOutBuffer();
             oStdIn = None;
@@ -159,6 +161,10 @@ class RemoteExecutor(object):
                                               oStdErr = oStdErr, cMsTimeout = cMsTimeout);
             sOutput = oStdOut.getOutput();
             sError = oStdErr.getOutput();
+            if fRc is False:
+                reporter.log('Exit code [remote]: %s (stdout: %s stderr: %s)' % (fRc, sOutput, sError));
+            else
+                reporter.log('Exit code [remote]: %s' % (fRc,));
         else:
             fRc, sOutput, sError = self._sudoExecuteSync([sExec, ] + list(asArgs), sInput);
         return (fRc, sOutput, sError);
