@@ -579,6 +579,12 @@ void UISnapshotDetailsWidget::retranslateUi()
         else if (m_pixmapScreenshot.isNull() && !m_details.value(DetailsElementType_Preview)->isHidden())
             m_details.value(DetailsElementType_Preview)->setHidden(true);
 
+        /* Update USB details visibility: */
+        const CUSBDeviceFilters &comFilters = comMachine.GetUSBDeviceFilters();
+        const bool fUSBMissing = comFilters.isNull() || !comMachine.GetUSBProxyAvailable();
+        if (fUSBMissing && !m_details.value(DetailsElementType_USB)->isHidden())
+            m_details.value(DetailsElementType_USB)->setHidden(true);
+
         /* Rebuild the details report: */
         foreach (const DetailsElementType &enmType, m_details.keys())
             m_details.value(enmType)->setText(detailsReport(comMachine, enmType));
