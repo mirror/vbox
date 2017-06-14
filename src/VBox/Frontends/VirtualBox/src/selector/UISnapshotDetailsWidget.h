@@ -127,6 +127,10 @@ private:
     /** Loads snapshot data. */
     void loadSnapshotData();
 
+    /** Revalidates changes for passed @a pWidget. */
+    void revalidate(QWidget *pWidget = 0);
+    /** Retranslates validation for passed @a pWidget. */
+    void retranslateValidation(QWidget *pWidget = 0);
     /** Notifies listeners about data changed or not. */
     void notify();
 
@@ -162,11 +166,15 @@ private:
     QLabel    *m_pLabelName;
     /** Holds the name editor instance. */
     QLineEdit *m_pEditorName;
+    /** Holds the name error pane. */
+    QLabel    *m_pErrorPaneName;
 
     /** Holds the description label instance. */
     QLabel    *m_pLabelDescription;
     /** Holds the description editor instance. */
     QTextEdit *m_pBrowserDescription;
+    /** Holds the description error pane. */
+    QLabel    *m_pErrorPaneDescription;
 
     /** Holds the 'Details' layout instance. */
     QVBoxLayout *m_pLayoutDetails;

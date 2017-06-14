@@ -521,8 +521,8 @@ UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     , m_pEmptyWidgetLabel(0)
     , m_pTabWidget(0)
     , m_pLayoutOptions(0)
-    , m_pLabelName(0), m_pEditorName(0)
-    , m_pLabelDescription(0), m_pBrowserDescription(0)
+    , m_pLabelName(0), m_pEditorName(0), m_pErrorPaneName(0)
+    , m_pLabelDescription(0), m_pBrowserDescription(0), m_pErrorPaneDescription(0)
     , m_pLayoutDetails(0)
     , m_pScrollAreaDetails(0)
 {
@@ -599,21 +599,22 @@ void UISnapshotDetailsWidget::retranslateUi()
         foreach (const DetailsElementType &enmType, m_details.keys())
             m_details.value(enmType)->setText("<empty>");
     }
+
+    /* Retranslate validation: */
+    retranslateValidation();
 }
 
 void UISnapshotDetailsWidget::sltHandleNameChange()
 {
     m_newData.m_strName = m_pEditorName->text();
-    // TODO: Validate
-    //revalidate(m_pErrorPaneName);
+    revalidate(m_pErrorPaneName);
     notify();
 }
 
 void UISnapshotDetailsWidget::sltHandleDescriptionChange()
 {
     m_newData.m_strDescription = m_pBrowserDescription->toPlainText();
-    // TODO: Validate
-    //revalidate(m_pErrorPaneName);
+    revalidate(m_pErrorPaneDescription);
     notify();
 }
 
@@ -701,6 +702,9 @@ void UISnapshotDetailsWidget::prepareTabOptions()
         m_pLayoutOptions = new QGridLayout(pWidget);
         AssertPtrReturnVoid(m_pLayoutOptions);
         {
+            /* Get the required icon metric: */
+            const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+
             /* Create name label: */
             m_pLabelName = new QLabel;
             AssertPtrReturnVoid(m_pLabelName);
@@ -711,20 +715,40 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pLabelName, 0, 0);
             }
-            /* Create name editor: */
-            m_pEditorName = new QLineEdit;
-            AssertPtrReturnVoid(m_pEditorName);
+            /* Create name layout: */
+            QHBoxLayout *pLayoutName = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutName);
             {
-                /* Configure editor: */
-                m_pLabelName->setBuddy(m_pEditorName);
-                QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-                policy.setHorizontalStretch(1);
-                m_pEditorName->setSizePolicy(policy);
-                connect(m_pEditorName, &QLineEdit::textChanged,
-                        this, &UISnapshotDetailsWidget::sltHandleNameChange);
+                /* Create name editor: */
+                m_pEditorName = new QLineEdit;
+                AssertPtrReturnVoid(m_pEditorName);
+                {
+                    /* Configure editor: */
+                    m_pLabelName->setBuddy(m_pEditorName);
+                    QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+                    policy.setHorizontalStretch(1);
+                    m_pEditorName->setSizePolicy(policy);
+                    connect(m_pEditorName, &QLineEdit::textChanged,
+                            this, &UISnapshotDetailsWidget::sltHandleNameChange);
+
+                    /* Add into layout: */
+                    pLayoutName->addWidget(m_pEditorName);
+                }
+                /* Create name error pane: */
+                m_pErrorPaneName = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneName);
+                {
+                    /* Configure error pane: */
+                    m_pErrorPaneName->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneName->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                .pixmap(QSize(iIconMetric, iIconMetric)));
+
+                    /* Add into layout: */
+                    pLayoutName->addWidget(m_pErrorPaneName);
+                }
 
                 /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pEditorName, 0, 1);
+                m_pLayoutOptions->addLayout(pLayoutName, 0, 1);
             }
 
             /* Create description label: */
@@ -737,22 +761,42 @@ void UISnapshotDetailsWidget::prepareTabOptions()
                 /* Add into layout: */
                 m_pLayoutOptions->addWidget(m_pLabelDescription, 1, 0);
             }
-            /* Create description browser: */
-            m_pBrowserDescription = new QTextEdit;
-            AssertPtrReturnVoid(m_pBrowserDescription);
+            /* Create description layout: */
+            QHBoxLayout *pLayoutDescription = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutDescription);
             {
-                /* Configure browser: */
-                m_pLabelDescription->setBuddy(m_pBrowserDescription);
-                m_pBrowserDescription->setTabChangesFocus(true);
-                m_pBrowserDescription->setAcceptRichText(false);
-                QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-                policy.setHorizontalStretch(1);
-                m_pBrowserDescription->setSizePolicy(policy);
-                connect(m_pBrowserDescription, &QTextEdit::textChanged,
-                        this, &UISnapshotDetailsWidget::sltHandleDescriptionChange);
+                /* Create description browser: */
+                m_pBrowserDescription = new QTextEdit;
+                AssertPtrReturnVoid(m_pBrowserDescription);
+                {
+                    /* Configure browser: */
+                    m_pLabelDescription->setBuddy(m_pBrowserDescription);
+                    m_pBrowserDescription->setTabChangesFocus(true);
+                    m_pBrowserDescription->setAcceptRichText(false);
+                    QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+                    policy.setHorizontalStretch(1);
+                    m_pBrowserDescription->setSizePolicy(policy);
+                    connect(m_pBrowserDescription, &QTextEdit::textChanged,
+                            this, &UISnapshotDetailsWidget::sltHandleDescriptionChange);
+
+                    /* Add into layout: */
+                    pLayoutDescription->addWidget(m_pBrowserDescription);
+                }
+                /* Create description error pane: */
+                m_pErrorPaneDescription = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneDescription);
+                {
+                    /* Configure error pane: */
+                    m_pErrorPaneDescription->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneDescription->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                       .pixmap(QSize(iIconMetric, iIconMetric)));
+
+                    /* Add into layout: */
+                    pLayoutDescription->addWidget(m_pErrorPaneDescription);
+                }
 
                 /* Add into layout: */
-                m_pLayoutOptions->addWidget(m_pBrowserDescription, 1, 1);
+                m_pLayoutOptions->addLayout(pLayoutDescription, 1, 1);
             }
         }
 
@@ -971,6 +1015,29 @@ void UISnapshotDetailsWidget::loadSnapshotData()
 
     /* Retranslate: */
     retranslateUi();
+}
+
+void UISnapshotDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
+{
+    if (!pWidget || pWidget == m_pErrorPaneName)
+    {
+        const bool fError = m_newData.m_strName.isEmpty();
+        m_pErrorPaneName->setVisible(fError);
+    }
+    if (!pWidget || pWidget == m_pErrorPaneDescription)
+    {
+        const bool fError = false;
+        m_pErrorPaneDescription->setVisible(fError);
+    }
+
+    /* Retranslate validation: */
+    retranslateValidation(pWidget);
+}
+
+void UISnapshotDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
+{
+    if (!pWidget || pWidget == m_pErrorPaneName)
+        m_pErrorPaneName->setToolTip(tr("Snapshot name is empty"));
 }
 
 void UISnapshotDetailsWidget::notify()
