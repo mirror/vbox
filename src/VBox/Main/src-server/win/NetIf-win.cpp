@@ -167,7 +167,7 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
                                     if (pPrefix->PrefixLength <= sizeof(pInfo->IPNetMask) * 8)
                                     {
                                         fIPFound = true;
-                                        ASMBitSetRange(&pInfo->IPNetMask, 0, pPrefix->PrefixLength);
+                                        RTNetPrefixToMaskIPv4(pPrefix->PrefixLength, &pInfo->IPNetMask);
                                     }
                                     else
                                         Log(("collectNetIfInfo: Unexpected IPv4 prefix length of %d\n",
@@ -1696,7 +1696,7 @@ static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES
                         && (ip & 0xF0) < 224)
                     {
                         uPrefixLenV4 = pPrefix->PrefixLength;
-                        ASMBitSetRange(&pInfo->IPNetMask, 0, pPrefix->PrefixLength);
+                        RTNetPrefixToMaskIPv4(pPrefix->PrefixLength, &pInfo->IPNetMask);
                     }
                     else
                         netIfLog(("netIfFillInfoWithAddressesXp: Unexpected IPv4 prefix length of %d\n",
@@ -1761,7 +1761,7 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
                     if (pAddrLh->OnLinkPrefixLength > 32)
                         netIfLog(("netIfFillInfoWithAddresses: Invalid IPv4 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
                     else
-                        ASMBitSetRange(&pInfo->IPNetMask, 0, pAddrLh->OnLinkPrefixLength);
+                        RTNetPrefixToMaskIPv4(pAddrLh->OnLinkPrefixLength, &pInfo->IPNetMask);
                 }
                 break;
             case AF_INET6:
