@@ -119,8 +119,8 @@ int hgsmi_buffer_submit(struct gen_pool *guest_pool, void *buf)
 {
 	phys_addr_t offset;
 
-	offset = gen_pool_virt_to_phys(guest_pool,
-			(unsigned long)buf - sizeof(HGSMIBUFFERHEADER));
+	offset = gen_pool_virt_to_phys(guest_pool, (unsigned long)buf -
+						   sizeof(HGSMIBUFFERHEADER));
 	outl(offset, VGA_PORT_HGSMI_GUEST);
 	/* Make the compiler aware that the host has changed memory. */
 	mb();
