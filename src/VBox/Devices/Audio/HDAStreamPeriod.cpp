@@ -33,7 +33,6 @@
 #include <VBox/vmm/pdmaudioifs.h>
 
 #include "HDAStreamPeriod.h"
-#include "DevHDA.h"
 
 #ifdef IN_RING3
 /**
