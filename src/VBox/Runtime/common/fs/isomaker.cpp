@@ -634,7 +634,7 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
     if (g_szPreparerIdJoliet[0] == '\0')
         RTStrPrintf(g_szPreparerIdJoliet, sizeof(g_szPreparerIdJoliet),
                     "IPRT ISO Maker v%s r%s", RTBldCfgVersion(), RTBldCfgRevisionStr());
-    if (g_szSystemId)
+    if (g_szSystemId[0] == '\0')
     {
         RTStrCopy(g_szSystemId, sizeof(g_szSystemId), RTBldCfgTargetDotArch());
         RTStrToUpper(g_szSystemId);
