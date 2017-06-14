@@ -1503,7 +1503,7 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
                         cchDst = ISO9660_MAX_NAME_LEN - 1 - RT_MIN(cchDstExt, 4);
                     offDstDot = cchDst;
                     pszDst[cchDst++] = '.';
-                    cchDst += rtFsIsoMakerCopyIso9660Name(pszDst, ISO9660_MAX_NAME_LEN - 1 - cchDst,
+                    cchDst += rtFsIsoMakerCopyIso9660Name(&pszDst[cchDst], ISO9660_MAX_NAME_LEN - 1 - cchDst,
                                                           pchSrcExt, cchSrcExt);
                 }
                 else
@@ -1734,8 +1734,8 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
     /*
      * Normalize the name for this namespace.
      */
-    size_t cchName;
-    size_t cbNameInDirRec;
+    size_t cchName        = 0;
+    size_t cbNameInDirRec = 0;
     char   szName[RTFSISOMAKER_MAX_NAME_BUF];
     int rc = rtFsIsoMakerNormalizeNameForNamespace(pThis, pNamespace, pParent, pchSpec, cchSpec,
                                                    pObj->enmType == RTFSISOMAKEROBJTYPE_DIR,
