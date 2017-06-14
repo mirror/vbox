@@ -46,6 +46,7 @@
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 #include "HDACodec.h"
+#include "HDAStreamPeriod.h"
 #include "DevHDACommon.h"
 #include "DrvAudio.h"
 
@@ -569,6 +570,8 @@ typedef struct HDASTREAMSTATE
     /** Timestamp of the last success DMA data transfer.
      *  Used to calculate the time actually elapsed between two transfers. */
     uint64_t                uTimerTS;
+    /** The stream's period. Need for timing. */
+    HDASTREAMPERIOD         Period;
     /** The stream's current configuration.
      *  Should match SDFMT. */
     PDMAUDIOSTREAMCFG       strmCfg;
@@ -699,7 +702,7 @@ typedef struct HDATAG
     uint8_t               uTag;
     uint8_t               Padding[7];
     /** Pointer to associated stream. */
-    R3PTRTYPE(PHDASTREAM) pStrm;
+    R3PTRTYPE(PHDASTREAM) pStream;
 } HDATAG, *PHDATAG;
 
 /**
@@ -883,7 +886,11 @@ typedef struct HDASTATE
     /** Audio mixer sink for microphone input. */
     HDAMIXERSINK                       SinkMicIn;
 #endif
+    /** The controller's base time stamp which the WALCLK register
+     *  derives its current value from. */
     uint64_t                           u64BaseTS;
+    /** Last updated WALCLK counter. */
+    uint64_t                           u64WalClk;
     /** Response Interrupt Count (RINTCNT). */
     uint8_t                            u8RespIntCnt;
     /** Padding for alignment. */
@@ -1040,6 +1047,14 @@ static void          hdaTimerMain(PHDASTATE pThis);
 #endif
 /** @} */
 
+/** @name Wall clock (WALCLK) functions.
+ * @{
+ */
+uint64_t          hdaWalClkGetCurrent(PHDASTATE pThis);
+#ifdef IN_RING3
+bool              hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce);
+#endif
+/** @} */
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -2204,15 +2219,147 @@ static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
     return VINF_SUCCESS;
 }
 
+/**
+ * Retrieves the currently set value for the wall clock.
+ *
+ * @return  IPRT status code.
+ * @return  Currently set wall clock value.
+ * @param   pThis               HDA state.
+ *
+ * @remark  Operation is atomic.
+ */
+uint64_t hdaWalClkGetCurrent(PHDASTATE pThis)
+{
+    return ASMAtomicReadU64(&pThis->u64WalClk);
+}
+
+#ifdef IN_RING3
+/**
+ * Returns the current maximum value the wall clock counter can be set to.
+ * This maximum value depends on all currently handled HDA streams and their own current timing.
+ *
+ * @return  Current maximum value the wall clock counter can be set to.
+ * @param   pThis               HDA state.
+ *
+ * @remark  Does not actually set the wall clock counter.
+ */
+uint64_t hdaWalClkGetMax(PHDASTATE pThis)
+{
+    const uint64_t u64WalClkCur       = ASMAtomicReadU64(&pThis->u64WalClk);
+    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkFront)->State.Period);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# error "Implement me!"
+#endif
+    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkLineIn)->State.Period);
+#ifdef VBOX_WITH_HDA_MIC_IN
+    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkMicIn)->State.Period);
+#endif
+
+    uint64_t u64WalClkNew = RT_MAX(u64WalClkCur, u64FrontAbsWalClk);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# error "Implement me!"
+#endif
+             u64WalClkNew = RT_MAX(u64WalClkNew, u64LineInAbsWalClk);
+#ifdef VBOX_WITH_HDA_MIC_IN
+             u64WalClkNew = RT_MAX(u64WalClkNew, u64MicInAbsWalClk);
+#endif
+
+    Log3Func(("%RU64 -> Front=%RU64, LineIn=%RU64 -> %RU64\n",
+              u64WalClkCur, u64FrontAbsWalClk, u64LineInAbsWalClk, u64WalClkNew));
+
+    return u64WalClkNew;
+}
+
+/**
+ * Sets the actual WALCLK register to the specified wall clock value.
+ * The specified wall clock value only will be set (unless fForce is set to \c @true) if all
+ * handled HDA streams have passed (in time) that value. This guarantees that the WALCLK
+ * register stays in sync with all handled HDA streams.
+ *
+ * @return  \c @true if the WALCLK register has been updated, \c @false if not.
+ * @param   pThis               HDA state.
+ * @param   u64WalClk           Wall clock value to set WALCLK register to.
+ * @param   fForce              Whether to force setting the wall clock value or not.
+ */
+bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
+{
+    const bool     fFrontPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaSinkGetStream(pThis, &pThis->SinkFront)->State.Period,
+                                                                           u64WalClk);
+    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkFront)->State.Period);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# error "Implement me!"
+#endif
+
+    const bool     fLineInPassed      = hdaStreamPeriodHasPassedAbsWalClk (&hdaSinkGetStream(pThis, &pThis->SinkLineIn)->State.Period, u64WalClk);
+    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkLineIn)->State.Period);
+#ifdef VBOX_WITH_HDA_MIC_IN
+    const bool     fMicInPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaSinkGetStream(pThis, &pThis->SinkMicIn)->State.Period,  u64WalClk);
+    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkMicIn)->State.Period);
+#endif
+
+#ifdef VBOX_STRICT
+    const uint64_t u64WalClkCur = ASMAtomicReadU64(&pThis->u64WalClk);
+#endif
+          uint64_t u64WalClkSet = u64WalClk;
+
+    /* Only drive the WALCLK register forward if all (active) stream periods have passed
+     * the specified point in time given by u64WalClk. */
+    if (  (   fFrontPassed
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# error "Implement me!"
+#endif
+           && fLineInPassed
+#ifdef VBOX_WITH_HDA_MIC_IN
+           && fMicInPassed
+#endif
+          )
+       || fForce)
+    {
+        if (!fForce)
+        {
+            /* Get the maximum value of all periods we need to handle.
+             * Not the most elegant solution, but works for now ... */
+            u64WalClk = RT_MAX(u64WalClkSet, u64FrontAbsWalClk);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# error "Implement me!"
+#endif
+            u64WalClk = RT_MAX(u64WalClkSet, u64LineInAbsWalClk);
+#ifdef VBOX_WITH_HDA_MIC_IN
+            u64WalClk = RT_MAX(u64WalClkSet, u64MicInAbsWalClk);
+#endif
+            AssertMsg(u64WalClkSet > u64WalClkCur,
+                      ("Setting WALCLK to a stale or backward value (%RU64 -> %RU64) isn't a good idea really. "
+                       "Good luck with stuck audio stuff.\n", u64WalClkCur, u64WalClkSet));
+        }
+
+        /* Set the new WALCLK value. */
+        ASMAtomicWriteU64(&pThis->u64WalClk, u64WalClkSet);
+    }
+
+    const uint64_t u64WalClkNew = hdaWalClkGetCurrent(pThis);
+
+    Log3Func(("Cur: %RU64, New: %RU64 (force %RTbool) -> %RU64 %s\n",
+              u64WalClkCur, u64WalClk, fForce,
+              u64WalClkNew, u64WalClkNew == u64WalClk ? "[OK]" : "[DELAYED]"));
+
+    return (u64WalClkNew == u64WalClk);
+}
+#endif /* IN_RING3 */
+
 static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF_PV(iReg);
+#ifdef IN_RING3
+    RT_NOREF(iReg);
 
-    /* HDA spec (1a): 3.3.16 WALCLK counter ticks with 24Mhz bitclock rate. */
-    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(pThis->CTX_SUFF(pDevIns))
-                                                   - pThis->u64BaseTS, 24, 1000);
-    LogFlowFunc(("%RU32\n", *pu32Value));
+    *pu32Value = RT_LO_U32(ASMAtomicReadU64(&pThis->u64WalClk));
+
+    Log3Func(("%RU32 (max @ %RU64)\n",*pu32Value, hdaWalClkGetMax(pThis)));
+
     return VINF_SUCCESS;
+#else
+    RT_NOREF(pThis, iReg, pu32Value);
+    return VINF_IOM_R3_MMIO_WRITE;
+#endif
 }
 
 static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -2351,10 +2498,10 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     LogFunc(("[SD%RU8]: Using stream tag=%RU8\n", uSD, uTag));
 
     /* Assign new values. */
-    pTag->uTag  = uTag;
-    pTag->pStrm = hdaStreamGetFromSD(pThis, uSD);
+    pTag->uTag    = uTag;
+    pTag->pStream = hdaStreamGetFromSD(pThis, uSD);
 
-    PHDASTREAM pStream = pTag->pStrm;
+    PHDASTREAM pStream = pTag->pStream;
     AssertPtr(pStream);
 
     if (fInReset)
@@ -3128,7 +3275,7 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 /**
  * Registers access handlers for a stream's BDLE DMA accesses.
  *
- * @returns @true if registration was successful, @false if not.
+ * @returns \c @true if registration was successful, \c @false if not.
  * @param   pThis               HDA state.
  * @param   pStream             HDA stream to register BDLE access handlers for.
  */

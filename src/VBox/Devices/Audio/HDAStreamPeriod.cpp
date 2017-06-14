@@ -98,7 +98,7 @@ void hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod,
 
     pPeriod->u8SD              = u8SD;
     pPeriod->u64StartWalClk    = 0;
-    pPeriod->u32Hz             = pStreamCfg->uHz;
+    pPeriod->u32Hz             = pStreamCfg->Props.uHz;
     pPeriod->u64DurationWalClk = hdaStreamPeriodFramesToWalClk(pPeriod, framesToTransfer);
     pPeriod->u64ElapsedWalClk  = 0;
     pPeriod->i64DelayWalClk    = 0;
