@@ -3600,7 +3600,7 @@ static int rtFsIsoMakerOutFile_ProduceTransTbl(PRTFSISOMAKEROUTPUTFILE pThis, PR
     while (cLeft-- > 0)
     {
         PRTFSISOMAKERNAME pChild = *ppChild++;
-        if (pChild->pszTransNm)
+        if (pChild->cchTransNm)
         {
             /** @todo TRANS.TBL codeset, currently using UTF-8 which is probably not it.
              *        However, nobody uses this stuff any more, so who cares. */
@@ -3671,7 +3671,7 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
         {
             pFile = RTListGetNext(&pIsoMaker->FinalizedFiles, pFile, RTFSISOMAKERFILE, FinalizedEntry);
             AssertReturn(pFile, VERR_INTERNAL_ERROR_3);
-        } while ((offInFile = offUnsigned - pFile->offData) < RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
+        } while ((offInFile = offUnsigned - pFile->offData) >= RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
     }
     else
     {
@@ -3680,7 +3680,7 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
         {
             pFile = RTListGetPrev(&pIsoMaker->FinalizedFiles, pFile, RTFSISOMAKERFILE, FinalizedEntry);
             AssertReturn(pFile, VERR_INTERNAL_ERROR_3);
-        } while ((offInFile = offUnsigned - pFile->offData) < RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
+        } while ((offInFile = offUnsigned - pFile->offData) >= RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
     }
 
     /*
@@ -3701,8 +3701,9 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
      */
     if (offInFile < pFile->cbData)
     {
-        int rc;
+        int    rc;
         size_t cbToRead = RT_MIN(cbBuf, pFile->cbData - offInFile);
+
         switch (pFile->enmSrcType)
         {
             case RTFSISOMAKERSRCTYPE_PATH:
@@ -3710,24 +3711,25 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
                 {
                     rc = RTVfsChainOpenFile(pFile->u.pszSrcPath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
                                             &pThis->hVfsSrcFile, NULL, NULL);
-                    if (RT_FAILURE(rc))
-                        return rc;
+                    AssertMsgRCReturn(rc, ("%s -> %Rrc\n", pFile->u.pszSrcPath, rc), rc);
                 }
                 rc = RTVfsFileReadAt(pThis->hVfsSrcFile, offInFile, pbBuf, cbToRead, NULL);
+                AssertRC(rc);
                 break;
 
             case RTFSISOMAKERSRCTYPE_VFS_FILE:
                 rc = RTVfsFileReadAt(pFile->u.hVfsFile, offInFile, pbBuf, cbToRead, NULL);
+                AssertRC(rc);
                 break;
 
             case RTFSISOMAKERSRCTYPE_TRANS_TBL:
                 if (pThis->hVfsSrcFile == NIL_RTVFSFILE)
                 {
                     rc = rtFsIsoMakerOutFile_ProduceTransTbl(pThis, pFile);
-                    if (RT_FAILURE(rc))
-                        return rc;
+                    AssertRCReturn(rc, rc);
                 }
-                rc = RTVfsFileReadAt(pFile->u.hVfsFile, offInFile, pbBuf, cbToRead, NULL);
+                rc = RTVfsFileReadAt(pThis->hVfsSrcFile, offInFile, pbBuf, cbToRead, NULL);
+                AssertRC(rc);
                 break;
 
             default:
@@ -3741,6 +3743,7 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
          * Check if we're into the zero padding at the end of the file now.
          */
         if (   cbToRead < cbBuf
+            && (pFile->cbData & RTFSISOMAKER_SECTOR_OFFSET_MASK)
             && offInFile + cbToRead == pFile->cbData)
         {
             cbBuf -= cbToRead;
@@ -3920,7 +3923,7 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint,
  * @returns Number of bytes copied into the buffer.
  * @param   pName       The namespace node.
  * @param   fUnicode    Set if the name should be translated to big endian
- *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ *                      UTF-16BE / UCS-2BE, i.e. we're in the joliet namespace.
  * @param   pbBuf       The buffer.  This is at least pName->cbDirRec bytes big.
  */
 static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf)
