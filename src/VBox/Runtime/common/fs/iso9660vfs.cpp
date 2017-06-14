@@ -1656,6 +1656,111 @@ static size_t rtFsIso9660VolGetStrippedLength(const char *pachField, size_t cchF
     return cchField;
 }
 
+/** Logging helper. */
+static char *rtFsIso9660VolGetMaybeUtf16Be(const char *pachField, size_t cchField, char *pszDst, size_t cbDst)
+{
+    /* Check the format by looking for zero bytes.  ISO-9660 doesn't allow zeros.
+       This doesn't have to be a UTF-16BE string.  */
+    size_t cFirstZeros  = 0;
+    size_t cSecondZeros = 0;
+    for (size_t off = 0; off < cchField; off += 2)
+    {
+        cFirstZeros  += pachField[off]     == '\0';
+        cSecondZeros += pachField[off + 1] == '\0';
+    }
+
+    int    rc     = VINF_SUCCESS;
+    char  *pszTmp = &pszDst[10];
+    size_t cchRet = 0;
+    if (cFirstZeros > cSecondZeros)
+    {
+        /* UTF-16BE / UTC-2BE: */
+        if (cchField & 1)
+        {
+            if (pachField[cchField - 1] == '\0' || pachField[cchField - 1] == ' ')
+                cchField--;
+            else
+                rc = VERR_INVALID_UTF16_ENCODING;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            while (   cchField >= 2
+                   && pachField[cchField - 1] == ' '
+                   && pachField[cchField - 2] == '\0')
+                cchField -= 2;
+
+            rc = RTUtf16BigToUtf8Ex((PCRTUTF16)pachField, cchField / sizeof(RTUTF16), &pszTmp, cbDst - 10 - 1, &cchRet);
+        }
+        if (RT_SUCCESS(rc))
+        {
+            pszDst[0] = 'U';
+            pszDst[1] = 'T';
+            pszDst[2] = 'F';
+            pszDst[3] = '-';
+            pszDst[4] = '1';
+            pszDst[5] = '6';
+            pszDst[6] = 'B';
+            pszDst[7] = 'E';
+            pszDst[8] = ':';
+            pszDst[9] = '\'';
+            pszDst[10 + cchRet] = '\'';
+            pszDst[10 + cchRet + 1] = '\0';
+        }
+        else
+            RTStrPrintf(pszDst, cbDst, "UTF-16BE: %.*Rhxs", cchField, pachField);
+    }
+    else if (cSecondZeros > 0)
+    {
+        /* Little endian UTF-16 / UCS-2 (ASSUMES host is little endian, sorry) */
+        if (cchField & 1)
+        {
+            if (pachField[cchField - 1] == '\0' || pachField[cchField - 1] == ' ')
+                cchField--;
+            else
+                rc = VERR_INVALID_UTF16_ENCODING;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            while (   cchField >= 2
+                   && pachField[cchField - 1] == '\0'
+                   && pachField[cchField - 2] == ' ')
+                cchField -= 2;
+
+            rc = RTUtf16ToUtf8Ex((PCRTUTF16)pachField, cchField / sizeof(RTUTF16), &pszTmp, cbDst - 10 - 1, &cchRet);
+        }
+        if (RT_SUCCESS(rc))
+        {
+            pszDst[0] = 'U';
+            pszDst[1] = 'T';
+            pszDst[2] = 'F';
+            pszDst[3] = '-';
+            pszDst[4] = '1';
+            pszDst[5] = '6';
+            pszDst[6] = 'L';
+            pszDst[7] = 'E';
+            pszDst[8] = ':';
+            pszDst[9] = '\'';
+            pszDst[10 + cchRet] = '\'';
+            pszDst[10 + cchRet + 1] = '\0';
+        }
+        else
+            RTStrPrintf(pszDst, cbDst, "UTF-16LE: %.*Rhxs", cchField, pachField);
+    }
+    else
+    {
+        /* ASSUME UTF-8/ASCII. */
+        while (   cchField > 0
+               && pachField[cchField - 1] == ' ')
+            cchField--;
+        int rc = RTStrValidateEncodingEx(pachField, cchField, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+        if (RT_SUCCESS(rc))
+            RTStrPrintf(pszDst, cbDst, "UTF-8: '%.*s'", cchField, pachField);
+        else
+            RTStrPrintf(pszDst, cbDst, "UNK-8: %.*Rhxs", cchField, pachField);
+    }
+    return pszDst;
+}
+
 
 /**
  * Logs the primary or supplementary volume descriptor
@@ -1666,9 +1771,10 @@ static void rtFsIso9660VolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVo
 {
     if (LogIs2Enabled())
     {
+        char szTmp[384];
         Log2(("ISO9660:  fVolumeFlags:              %#RX8\n", pVolDesc->fVolumeFlags));
-        Log2(("ISO9660:  achSystemId:               '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achSystemId, sizeof(pVolDesc->achSystemId)), pVolDesc->achSystemId));
-        Log2(("ISO9660:  achVolumeId:               '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achVolumeId, sizeof(pVolDesc->achVolumeId)), pVolDesc->achVolumeId));
+        Log2(("ISO9660:  achSystemId:               %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achSystemId, sizeof(pVolDesc->achSystemId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achVolumeId:               %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achVolumeId, sizeof(pVolDesc->achVolumeId), szTmp, sizeof(szTmp)) ));
         Log2(("ISO9660:  Unused73:                  {%#RX32,%#RX32}\n", RT_BE2H_U32(pVolDesc->Unused73.be), RT_LE2H_U32(pVolDesc->Unused73.le)));
         Log2(("ISO9660:  VolumeSpaceSize:           {%#RX32,%#RX32}\n", RT_BE2H_U32(pVolDesc->VolumeSpaceSize.be), RT_LE2H_U32(pVolDesc->VolumeSpaceSize.le)));
         Log2(("ISO9660:  abEscapeSequences:         '%.*s'\n", rtFsIso9660VolGetStrippedLength((char *)pVolDesc->abEscapeSequences, sizeof(pVolDesc->abEscapeSequences)), pVolDesc->abEscapeSequences));
@@ -1680,13 +1786,13 @@ static void rtFsIso9660VolLogPrimarySupplementaryVolDesc(PCISO9660SUPVOLDESC pVo
         Log2(("ISO9660:  offOptionalTypeLPathTable: %#RX32\n", RT_LE2H_U32(pVolDesc->offOptionalTypeLPathTable)));
         Log2(("ISO9660:  offTypeMPathTable:         %#RX32\n", RT_BE2H_U32(pVolDesc->offTypeMPathTable)));
         Log2(("ISO9660:  offOptionalTypeMPathTable: %#RX32\n", RT_BE2H_U32(pVolDesc->offOptionalTypeMPathTable)));
-        Log2(("ISO9660:  achVolumeSetId:            '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achVolumeSetId, sizeof(pVolDesc->achVolumeSetId)), pVolDesc->achVolumeSetId));
-        Log2(("ISO9660:  achPublisherId:            '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achPublisherId, sizeof(pVolDesc->achPublisherId)), pVolDesc->achPublisherId));
-        Log2(("ISO9660:  achDataPreparerId:         '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achDataPreparerId, sizeof(pVolDesc->achDataPreparerId)), pVolDesc->achDataPreparerId));
-        Log2(("ISO9660:  achApplicationId:          '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achApplicationId, sizeof(pVolDesc->achApplicationId)), pVolDesc->achApplicationId));
-        Log2(("ISO9660:  achCopyrightFileId:        '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achCopyrightFileId, sizeof(pVolDesc->achCopyrightFileId)), pVolDesc->achCopyrightFileId));
-        Log2(("ISO9660:  achAbstractFileId:         '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achAbstractFileId, sizeof(pVolDesc->achAbstractFileId)), pVolDesc->achAbstractFileId));
-        Log2(("ISO9660:  achBibliographicFileId:    '%.*s'\n", rtFsIso9660VolGetStrippedLength(pVolDesc->achBibliographicFileId, sizeof(pVolDesc->achBibliographicFileId)), pVolDesc->achBibliographicFileId));
+        Log2(("ISO9660:  achVolumeSetId:            %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achVolumeSetId, sizeof(pVolDesc->achVolumeSetId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achPublisherId:            %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achPublisherId, sizeof(pVolDesc->achPublisherId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achDataPreparerId:         %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achDataPreparerId, sizeof(pVolDesc->achDataPreparerId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achApplicationId:          %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achApplicationId, sizeof(pVolDesc->achApplicationId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achCopyrightFileId:        %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achCopyrightFileId, sizeof(pVolDesc->achCopyrightFileId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achAbstractFileId:         %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achAbstractFileId, sizeof(pVolDesc->achAbstractFileId), szTmp, sizeof(szTmp)) ));
+        Log2(("ISO9660:  achBibliographicFileId:    %s\n", rtFsIso9660VolGetMaybeUtf16Be(pVolDesc->achBibliographicFileId, sizeof(pVolDesc->achBibliographicFileId), szTmp, sizeof(szTmp)) ));
         Log2(("ISO9660:  BirthTime:                 %.4s-%.2s-%.2s %.2s:%.2s:%.2s.%.2s%+03d\n",
               pVolDesc->BirthTime.achYear,
               pVolDesc->BirthTime.achMonth,
