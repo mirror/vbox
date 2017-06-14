@@ -228,66 +228,69 @@ void UISnapshotDetailsElement::paintEvent(QPaintEvent * /* pEvent */)
     color1.setAlpha(0);
     QColor color2 = pal.color(QPalette::Window).darker(200);
 
+    /* Invent pixel metric: */
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+
     /* Top-left corner: */
-    QRadialGradient grad1(QPointF(5, 5), 5);
+    QRadialGradient grad1(QPointF(iMetric, iMetric), iMetric);
     {
         grad1.setColorAt(0, color2);
         grad1.setColorAt(1, color1);
     }
     /* Top-right corner: */
-    QRadialGradient grad2(QPointF(width() - 5, 5), 5);
+    QRadialGradient grad2(QPointF(width() - iMetric, iMetric), iMetric);
     {
         grad2.setColorAt(0, color2);
         grad2.setColorAt(1, color1);
     }
     /* Bottom-left corner: */
-    QRadialGradient grad3(QPointF(5, height() - 5), 5);
+    QRadialGradient grad3(QPointF(iMetric, height() - iMetric), iMetric);
     {
         grad3.setColorAt(0, color2);
         grad3.setColorAt(1, color1);
     }
     /* Botom-right corner: */
-    QRadialGradient grad4(QPointF(width() - 5, height() - 5), 5);
+    QRadialGradient grad4(QPointF(width() - iMetric, height() - iMetric), iMetric);
     {
         grad4.setColorAt(0, color2);
         grad4.setColorAt(1, color1);
     }
 
     /* Top line: */
-    QLinearGradient grad5(QPointF(5, 0), QPointF(5, 5));
+    QLinearGradient grad5(QPointF(iMetric, 0), QPointF(iMetric, iMetric));
     {
         grad5.setColorAt(0, color1);
         grad5.setColorAt(1, color2);
     }
     /* Bottom line: */
-    QLinearGradient grad6(QPointF(5, height()), QPointF(5, height() - 5));
+    QLinearGradient grad6(QPointF(iMetric, height()), QPointF(iMetric, height() - iMetric));
     {
         grad6.setColorAt(0, color1);
         grad6.setColorAt(1, color2);
     }
     /* Left line: */
-    QLinearGradient grad7(QPointF(0, height() - 5), QPointF(5, height() - 5));
+    QLinearGradient grad7(QPointF(0, height() - iMetric), QPointF(iMetric, height() - iMetric));
     {
         grad7.setColorAt(0, color1);
         grad7.setColorAt(1, color2);
     }
     /* Right line: */
-    QLinearGradient grad8(QPointF(width(), height() - 5), QPointF(width() - 5, height() - 5));
+    QLinearGradient grad8(QPointF(width(), height() - iMetric), QPointF(width() - iMetric, height() - iMetric));
     {
         grad8.setColorAt(0, color1);
         grad8.setColorAt(1, color2);
     }
 
     /* Paint shape/shadow: */
-    painter.fillRect(QRect(5,           5,            width() - 5 * 2, height() - 5 * 2), color0); // background
-    painter.fillRect(QRect(0,           0,            5,               5),                grad1);  // top-left corner
-    painter.fillRect(QRect(width() - 5, 0,            5,               5),                grad2);  // top-right corner
-    painter.fillRect(QRect(0,           height() - 5, 5,               5),                grad3);  // bottom-left corner
-    painter.fillRect(QRect(width() - 5, height() - 5, 5,               5),                grad4);  // bottom-right corner
-    painter.fillRect(QRect(5,           0,            width() - 5 * 2, 5),                grad5);  // top line
-    painter.fillRect(QRect(5,           height() - 5, width() - 5 * 2, 5),                grad6);  // bottom line
-    painter.fillRect(QRect(0,           5,            5,               height() - 5 * 2), grad7);  // left line
-    painter.fillRect(QRect(width() - 5, 5,            5,               height() - 5 * 2), grad8);  // right line
+    painter.fillRect(QRect(iMetric,           iMetric,            width() - iMetric * 2, height() - iMetric * 2), color0);
+    painter.fillRect(QRect(0,                 0,                  iMetric,               iMetric),                grad1);
+    painter.fillRect(QRect(width() - iMetric, 0,                  iMetric,               iMetric),                grad2);
+    painter.fillRect(QRect(0,                 height() - iMetric, iMetric,               iMetric),                grad3);
+    painter.fillRect(QRect(width() - iMetric, height() - iMetric, iMetric,               iMetric),                grad4);
+    painter.fillRect(QRect(iMetric,           0,                  width() - iMetric * 2, iMetric),                grad5);
+    painter.fillRect(QRect(iMetric,           height() - iMetric, width() - iMetric * 2, iMetric),                grad6);
+    painter.fillRect(QRect(0,                 iMetric,            iMetric,               height() - iMetric * 2), grad7);
+    painter.fillRect(QRect(width() - iMetric, iMetric,            iMetric,               height() - iMetric * 2), grad8);
 }
 
 void UISnapshotDetailsElement::prepare()
@@ -296,8 +299,11 @@ void UISnapshotDetailsElement::prepare()
     new QHBoxLayout(this);
     AssertPtrReturnVoid(layout());
     {
+        /* Invent pixel metric: */
+        const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+
         /* Configure layout: */
-        layout()->setContentsMargins(5, 5, 5, 5);
+        layout()->setContentsMargins(iMetric, iMetric, iMetric, iMetric);
 
         /* Create text-browser if requested, text-edit otherwise: */
         m_pTextEdit = m_fLinkSupport ? new QTextBrowser : new QTextEdit;
@@ -769,6 +775,9 @@ void UISnapshotDetailsWidget::prepareTabDetails()
             m_pLayoutDetails = new QVBoxLayout(pWidgetDetails);
             AssertPtrReturnVoid(m_pLayoutDetails);
             {
+                /* Configure layout: */
+                m_pLayoutDetails->setSpacing(5);
+
                 /* Create layout 1: */
                 QHBoxLayout *pLayout1 = new QHBoxLayout;
                 AssertPtrReturnVoid(pLayout1);
@@ -778,6 +787,7 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                     AssertPtrReturnVoid(pLayoutLeft);
                     {
                         /* Configure layout: */
+                        pLayoutLeft->setSpacing(5);
                         pLayoutLeft->setContentsMargins(0, 0, 0, 0);
 
                         /* Create 'General' element: */
@@ -820,6 +830,9 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                 /* Create layout 2: */
                 QIFlowLayout *pLayout2 = new QIFlowLayout;
                 {
+                    /* Configure layout: */
+                    pLayout2->setSpacing(5);
+
                     /* Create 'Display' element: */
                     m_details[DetailsElementType_Display] = createDetailsElement(DetailsElementType_Display);
                     AssertPtrReturnVoid(m_details[DetailsElementType_Display]);
