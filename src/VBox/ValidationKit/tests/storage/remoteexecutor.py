@@ -163,7 +163,7 @@ class RemoteExecutor(object):
             sError = oStdErr.getOutput();
             if fRc is False:
                 reporter.log('Exit code [remote]: %s (stdout: %s stderr: %s)' % (fRc, sOutput, sError));
-            else
+            else:
                 reporter.log('Exit code [remote]: %s' % (fRc,));
         else:
             fRc, sOutput, sError = self._sudoExecuteSync([sExec, ] + list(asArgs), sInput);
