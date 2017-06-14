@@ -1752,7 +1752,7 @@ static char *rtFsIso9660VolGetMaybeUtf16Be(const char *pachField, size_t cchFiel
         while (   cchField > 0
                && pachField[cchField - 1] == ' ')
             cchField--;
-        int rc = RTStrValidateEncodingEx(pachField, cchField, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+        rc = RTStrValidateEncodingEx(pachField, cchField, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
         if (RT_SUCCESS(rc))
             RTStrPrintf(pszDst, cbDst, "UTF-8: '%.*s'", cchField, pachField);
         else
