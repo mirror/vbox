@@ -117,7 +117,12 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg);
 int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl);
 
-#define HDA_SSM_VERSION   6
+/** Added (Controller): Base time stamp for correctly handling the WALCLK register on resume.
+  * Added (Streams):    Ring buffer. This is optional and can be skipped if (not) needed.
+  * Added (Streams):    Struct aSSMStreamStateFields7. */
+#define HDA_SSM_VERSION   7
+/** Saves the current BDLE state. */
+#define HDA_SSM_VERSION_6 6
 /** Introduced dynamic number of streams + stream identifiers for serialization.
  *  Bug: Did not save the BDLE states correctly.
  *  Those will be skipped on load then. */
