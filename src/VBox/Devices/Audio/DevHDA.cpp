@@ -103,7 +103,7 @@
 #endif
 
 /** Default timer frequency (in Hz). */
-#define HDA_TIMER_HZ            100
+#define HDA_TIMER_HZ            200
 
 /**
  * At the moment we support 4 input + 4 output streams max, which is 8 in total.
@@ -789,6 +789,34 @@ typedef struct HDADRIVER
 #endif
 } HDADRIVER;
 
+#ifdef DEBUG
+/** @todo Make STAM values out of this? */
+typedef struct HDASTATEDBGINFO
+{
+    /** Timestamp (in ns) of the last timer callback (hdaTimer).
+     * Used to calculate the time actually elapsed between two timer callbacks. */
+    uint64_t                           tsTimerLastCalledNs;
+    /** IRQ debugging information. */
+    struct
+    {
+        /** Timestamp (in ns) of last processed (asserted / deasserted) IRQ. */
+        uint64_t                       tsProcessedLastNs;
+        /** Timestamp (in ns) of last asserted IRQ. */
+        uint64_t                       tsAssertedNs;
+        /** How many IRQs have been asserted already. */
+        uint64_t                       cAsserted;
+        /** Accumulated elapsed time (in ns) of all IRQ being asserted. */
+        uint64_t                       tsAssertedTotalNs;
+        /** Timestamp (in ns) of last deasserted IRQ. */
+        uint64_t                       tsDeassertedNs;
+        /** How many IRQs have been deasserted already. */
+        uint64_t                       cDeasserted;
+        /** Accumulated elapsed time (in ns) of all IRQ being deasserted. */
+        uint64_t                       tsDeassertedTotalNs;
+    } IRQ;
+} HDASTATEDBGINFO, *PHDASTATEDBGINFO;
+#endif
+
 /**
  * ICH Intel HD Audio Controller state.
  */
@@ -852,10 +880,6 @@ typedef struct HDASTATE
     uint64_t                           cTimerTicks;
     /** The current timer expire time (in timer ticks). */
     uint64_t                           tsTimerExpire;
-    /** Timestamp of the last timer callback (hdaTimer).
-     * Used to calculate the time actually elapsed between two timer callbacks. */
-    uint64_t                           uTimerTS;
-    uint64_t                           uTimerMS;
 #endif
 #ifdef VBOX_WITH_STATISTICS
 # ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
@@ -893,8 +917,13 @@ typedef struct HDASTATE
     uint64_t                           u64WalClk;
     /** Response Interrupt Count (RINTCNT). */
     uint8_t                            u8RespIntCnt;
+    /** Current IRQ level. */
+    uint8_t                            u8IRQL;
     /** Padding for alignment. */
-    uint8_t                            au8Padding2[7];
+    uint8_t                            au8Padding2[6];
+#ifdef DEBUG
+    HDASTATEDBGINFO                    Dbg;
+#endif
 } HDASTATE;
 /** Pointer to the ICH Intel HD Audio Controller state. */
 typedef HDASTATE *PHDASTATE;
@@ -936,7 +965,6 @@ static int hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
-static int hdaRegWriteINTCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value);
 static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
@@ -1148,7 +1176,7 @@ static const struct HDAREGDESC
     { 0x00010, 0x00002, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadUnimpl, hdaRegWriteUnimpl  , HDA_REG_IDX(GSTS)         }, /* Global Status */
     { 0x00018, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteU16     , HDA_REG_IDX(OUTSTRMPAY)   }, /* Output Stream Payload Capability */
     { 0x0001A, 0x00002, 0x0000FFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU16   , hdaRegWriteUnimpl  , HDA_REG_IDX(INSTRMPAY)    }, /* Input Stream Payload Capability */
-    { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteINTCTL  , HDA_REG_IDX(INTCTL)       }, /* Interrupt Control */
+    { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(INTCTL)       }, /* Interrupt Control */
     { 0x00024, 0x00004, 0xC00000FF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteUnimpl  , HDA_REG_IDX(INTSTS)       }, /* Interrupt Status */
     { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE, hdaRegReadWALCLK, hdaRegWriteUnimpl  , HDA_REG_IDX_NOMEM(WALCLK) }, /* Wall Clock Counter */
     { 0x00034, 0x00004, 0x000000FF, 0x000000FF, HDA_RD_FLAG_NONE, hdaRegReadU32   , hdaRegWriteU32     , HDA_REG_IDX(SSYNC)        }, /* Stream Synchronization */
@@ -1454,21 +1482,25 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
 }
 #endif /* IN_RING3 */
 
-
-static void hdaUpdateINTSTS(PHDASTATE pThis)
+static uint32_t hdaGetINTSTS(PHDASTATE pThis)
 {
     uint32_t intSts = 0;
 
-    /* Check controller interrupts (RIRB, STATEST) */
+    /* Check controller interrupts (RIRB, STATEST). */
     if (   (HDA_REG(pThis, RIRBSTS) & HDA_REG(pThis, RIRBCTL) & (HDA_RIRBCTL_ROIC | HDA_RIRBCTL_RINTCTL))
-        /* SDIN State Change Status Flags (SCSF) */
+        /* SDIN State Change Status Flags (SCSF). */
         || (HDA_REG(pThis, STATESTS) & HDA_STATESTS_SCSF_MASK))
     {
-        intSts |= HDA_INTSTS_CIS;   /* Set the Controller Interrupt Status (CIS). */
+        intSts |= HDA_INTSTS_CIS; /* Set the Controller Interrupt Status (CIS). */
+    }
+
+    if (HDA_REG(pThis, STATESTS) & HDA_REG(pThis, WAKEEN))
+    {
+        intSts |= HDA_INTSTS_CIS; /* Touch Controller Interrupt Status (CIS). */
     }
 
     /* For each stream, check if any interrupt status bit is set and enabled. */
-    for (int iStrm = 0; iStrm < 8; ++iStrm)
+    for (uint8_t iStrm = 0; iStrm < HDA_MAX_STREAMS; ++iStrm)
     {
         if (HDA_STREAM_REG(pThis, STS, iStrm) & HDA_STREAM_REG(pThis, CTL, iStrm) & (HDA_SDCTL_DEIE | HDA_SDCTL_FEIE  | HDA_SDCTL_IOCE))
         {
@@ -1478,33 +1510,103 @@ static void hdaUpdateINTSTS(PHDASTATE pThis)
     }
 
     if (intSts)
-        intSts |= HDA_INTSTS_GIS;   /* Set the Global Interrupt Status (GIS). */
+        intSts |= HDA_INTSTS_GIS; /* Set the Global Interrupt Status (GIS). */
 
-    HDA_REG(pThis, INTSTS) = intSts;
-    Log3Func(("INTSTS=%x\n", intSts));
+    Log3Func(("-> 0x%x\n", intSts));
+
+    return intSts;
 }
 
-/* Update INTSTS register and the hardware interrupt signal. This function must be called
- * after changing any interrupt status or enable bits.
- */
-static int hdaUpdateInterrupt(PHDASTATE pThis)
+#ifndef DEBUG
+static int hdaProcessInterrupt(PHDASTATE pThis)
+#else
+static int hdaProcessInterrupt(PHDASTATE pThis, const char *pszSource)
+#endif
 {
-    hdaUpdateINTSTS(pThis);
+    HDA_REG(pThis, INTSTS) = hdaGetINTSTS(pThis);
 
-    int iLevel = 0;
+    Log3Func(("IRQL=%RU8\n", pThis->u8IRQL));
 
     /* NB: It is possible to have GIS set even when CIE/SIEn are all zero; the GIS bit does
      * not control the interrupt signal. See Figure 4 on page 54 of the HDA 1.0a spec.
      */
 
     /* If global interrupt enable (GIE) is set, check if any enabled interrupts are set. */
-    if (HDA_REG(pThis, INTCTL) & HDA_INTCTL_GIE)
-        if (HDA_REG(pThis, INTSTS) & HDA_REG(pThis, INTCTL) & (HDA_INTCTL_CIE | HDA_STRMINT_MASK))
-            iLevel = 1;
+    if (   (HDA_REG(pThis, INTCTL) & HDA_INTCTL_GIE)
+        && (HDA_REG(pThis, INTSTS) & HDA_REG(pThis, INTCTL) & (HDA_INTCTL_CIE | HDA_STRMINT_MASK)))
+    {
+        if (!pThis->u8IRQL)
+        {
+#ifdef DEBUG
+            if (!pThis->Dbg.IRQ.tsProcessedLastNs)
+                pThis->Dbg.IRQ.tsProcessedLastNs = RTTimeNanoTS();
 
-    Log3Func(("INTCTL=%x, INTSTS=%x, Level=%d\n", HDA_REG(pThis, INTCTL), HDA_REG(pThis, INTSTS), iLevel));
+            const uint64_t tsLastElapsedNs = RTTimeNanoTS() - pThis->Dbg.IRQ.tsProcessedLastNs;
 
-    PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, iLevel);
+            if (!pThis->Dbg.IRQ.tsAssertedNs)
+                pThis->Dbg.IRQ.tsAssertedNs = RTTimeNanoTS();
+
+            const uint64_t tsAssertedElapsedNs = RTTimeNanoTS() - pThis->Dbg.IRQ.tsAssertedNs;
+
+            pThis->Dbg.IRQ.cAsserted++;
+            pThis->Dbg.IRQ.tsAssertedTotalNs += tsAssertedElapsedNs;
+
+            const uint64_t avgAssertedUs = (pThis->Dbg.IRQ.tsAssertedTotalNs / pThis->Dbg.IRQ.cAsserted) / 1000;
+
+            if (avgAssertedUs > (1000 / HDA_TIMER_HZ) /* ms */ * 1000) /* Exceeds time slot? */
+                Log3Func(("Asserted (%s): %zuus elapsed (%zuus on average) -- %zuus alternation delay\n",
+                          pszSource, tsAssertedElapsedNs / 1000,
+                          avgAssertedUs,
+                          (pThis->Dbg.IRQ.tsDeassertedNs - pThis->Dbg.IRQ.tsAssertedNs) / 1000));
+#endif
+            Log3Func(("Asserted (%s): %RU64us between alternation (WALCLK=%RU64)\n",
+                      pszSource, tsLastElapsedNs / 1000, pThis->u64WalClk));
+
+            PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 1 /* Assert */);
+            pThis->u8IRQL = 1;
+
+#ifdef DEBUG
+            pThis->Dbg.IRQ.tsAssertedNs = RTTimeNanoTS();
+            pThis->Dbg.IRQ.tsProcessedLastNs = pThis->Dbg.IRQ.tsAssertedNs;
+#endif
+        }
+    }
+    else
+    {
+        if (pThis->u8IRQL)
+        {
+#ifdef DEBUG
+            if (!pThis->Dbg.IRQ.tsProcessedLastNs)
+                pThis->Dbg.IRQ.tsProcessedLastNs = RTTimeNanoTS();
+
+            const uint64_t tsLastElapsedNs = RTTimeNanoTS() - pThis->Dbg.IRQ.tsProcessedLastNs;
+
+            if (!pThis->Dbg.IRQ.tsDeassertedNs)
+                pThis->Dbg.IRQ.tsDeassertedNs = RTTimeNanoTS();
+
+            const uint64_t tsDeassertedElapsedNs = RTTimeNanoTS() - pThis->Dbg.IRQ.tsDeassertedNs;
+
+            pThis->Dbg.IRQ.cDeasserted++;
+            pThis->Dbg.IRQ.tsDeassertedTotalNs += tsDeassertedElapsedNs;
+
+            const uint64_t avgDeassertedUs = (pThis->Dbg.IRQ.tsDeassertedTotalNs / pThis->Dbg.IRQ.cDeasserted) / 1000;
+
+            if (avgDeassertedUs > (1000 / HDA_TIMER_HZ) /* ms */ * 1000) /* Exceeds time slot? */
+                Log3Func(("Deasserted (%s): %zuus elapsed (%zuus on average)\n",
+                          pszSource, tsDeassertedElapsedNs / 1000, avgDeassertedUs));
+
+            Log3Func(("Deasserted (%s): %RU64us between alternation (WALCLK=%RU64)\n",
+                      pszSource, tsLastElapsedNs / 1000, pThis->u64WalClk));
+#endif
+            PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0 /* Deassert */);
+            pThis->u8IRQL = 0;
+
+#ifdef DEBUG
+            pThis->Dbg.IRQ.tsDeassertedNs    = RTTimeNanoTS();
+            pThis->Dbg.IRQ.tsProcessedLastNs = pThis->Dbg.IRQ.tsDeassertedNs;
+#endif
+        }
+    }
 
     return VINF_SUCCESS;
 }
@@ -1723,12 +1825,24 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
 
     rc = hdaCmdSync(pThis, false);
 
-    Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n", HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
+    Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n",
+              HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
 
-    HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
+    if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_ROIC) /* Response Interrupt Control (ROIC) enabled? */
+    {
+        if (pThis->u8RespIntCnt)
+        {
+            pThis->u8RespIntCnt = 0;
 
-    pThis->u8RespIntCnt = 0;
-    rc = hdaUpdateInterrupt(pThis);
+            HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
+
+#ifndef DEBUG
+            rc = hdaProcessInterrupt(pThis);
+#else
+            rc = hdaProcessInterrupt(pThis, __FUNCTION__);
+#endif
+        }
+    }
 
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
@@ -1918,6 +2032,18 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
         /* First, enable or disable the stream and the stream's sink, if any. */
         if (pStream->pMixSink->pMixSink)
             rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
+    }
+
+    if (fEnable)
+    {
+        /* Begin a new period for this stream. */
+        int rc2 = hdaStreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
+        AssertRC(rc2);
+    }
+    else
+    {
+        /* Reset the period. */
+        hdaStreamPeriodReset(&pStream->State.Period);
     }
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -2190,20 +2316,7 @@ static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
 
     HDA_REG(pThis, STATESTS) &= ~(v & nv); /* Write of 1 clears corresponding bit. */
 
-    return hdaUpdateInterrupt(pThis);
-}
-
-static int hdaRegWriteINTCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
-{
-    RT_NOREF(iReg);
-
-    int rc;
-
-    HDA_REG(pThis, INTCTL) = u32Value;
-
-    rc = hdaUpdateInterrupt(pThis);
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
@@ -2454,6 +2567,43 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #endif /* IN_RING3 */
 }
 
+#ifdef IN_RING3
+/**
+ * Reschedules pending interrupts for all audio streams which have complete
+ * audio periods but did not have the chance to issue their (pending) interrupts yet.
+ *
+ * @param   pThis               The HDA device state.
+ */
+static void hdaReschedulePendingInterrupts(PHDASTATE pThis)
+{
+    bool fInterrupt = false;
+
+    for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
+    {
+        PHDASTREAM pStream = hdaStreamGetFromSD(pThis, i);
+
+        if (   hdaStreamPeriodIsComplete    (&pStream->State.Period)
+            && hdaStreamPeriodNeedsInterrupt(&pStream->State.Period)
+            && hdaWalClkSet(pThis, hdaStreamPeriodGetAbsElapsedWalClk(&pStream->State.Period), false /* fForce */))
+        {
+            fInterrupt = true;
+            break;
+        }
+    }
+
+    LogFunc(("fInterrupt=%RTbool\n", fInterrupt));
+
+    if (fInterrupt)
+    {
+#ifndef DEBUG
+        hdaProcessInterrupt(pThis);
+#else
+        hdaProcessInterrupt(pThis, __FUNCTION__);
+#endif
+    }
+}
+#endif
+
 static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
@@ -2552,14 +2702,17 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             }
 
             hdaStreamEnable(pThis, pStream, fRun /* fEnable */);
+
+            if (!fRun)
+            {
+                /* Make sure to (re-)schedule outstanding (delayed) interrupts. */
+                hdaReschedulePendingInterrupts(pThis);
+            }
         }
     }
 
     int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
     AssertRC(rc2);
-
-    /* Make sure to handle interrupts here as well. */
-    hdaUpdateInterrupt(pThis);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -2570,15 +2723,59 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
+#ifdef IN_RING3
     uint32_t v = HDA_REG_IND(pThis, iReg);
+
+    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, STS, iReg));
+    if (!pStream)
+    {
+        AssertMsgFailed(("[SD%RU8]: Warning: Writing SDSTS on non-attached stream (0x%x)\n",
+                         HDA_SD_NUM_FROM_REG(pThis, STS, iReg), u32Value));
+        return hdaRegWriteU16(pThis, iReg, u32Value);
+    }
 
     /* Clear (zero) FIFOE, DESE and BCIS bits when writing 1 to it (6.2.33). */
     HDA_REG_IND(pThis, iReg) &= ~(u32Value & v);
 
-    LogFunc(("SDSTS 0x%x -> 0x%x\n", v, HDA_REG_IND(pThis, iReg)));
+    /* Some guests tend to write SDnSTS even if the stream is not running.
+     * So make sure to check if the RUN bit is set first. */
+    const bool fInRun = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
 
-    hdaUpdateInterrupt(pThis);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+    Log3Func(("[SD%RU8] fRun=%RTbool %R[sdsts]\n", pStream->u8SD, fInRun, v));
+
+    PHDASTREAMPERIOD pPeriod = &pStream->State.Period;
+
+    if (hdaStreamPeriodLock(pPeriod))
+    {
+        const bool fNeedsInterrupt = hdaStreamPeriodNeedsInterrupt(pPeriod);
+        if (fNeedsInterrupt)
+            hdaStreamPeriodReleaseInterrupt(pPeriod);
+
+        if (hdaStreamPeriodIsComplete(pPeriod))
+        {
+            hdaStreamPeriodEnd(pPeriod);
+
+            if (fInRun)
+                hdaStreamPeriodBegin(pPeriod, hdaWalClkGetCurrent(pThis) /* Use current wall clock time */);
+        }
+
+        hdaStreamPeriodUnlock(pPeriod); /* Unlock before processing interrupt. */
+
+        if (fNeedsInterrupt)
+        {
+#ifndef DEBUG
+            hdaProcessInterrupt(pThis);
+#else
+            hdaProcessInterrupt(pThis, __FUNCTION__);
+#endif
+        }
+    }
+
+    return VINF_SUCCESS;
+#else /* IN_RING3 */
+    RT_NOREF(pThis, iReg, u32Value);
+    return VINF_IOM_R3_MMIO_WRITE;
+#endif /* !IN_RING3 */
 }
 
 static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -3267,7 +3464,11 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     uint8_t v = HDA_REG(pThis, RIRBSTS);
     HDA_REG(pThis, RIRBSTS) &= ~(v & u32Value);
 
-    return hdaUpdateInterrupt(pThis);
+#ifndef DEBUG
+    return hdaProcessInterrupt(pThis);
+#else
+    return hdaProcessInterrupt(pThis, __FUNCTION__);
+#endif
 }
 
 #ifdef IN_RING3
@@ -4173,7 +4374,7 @@ static void hdaTimerMaybeStart(PHDASTATE pThis)
         ASMAtomicXchgBool(&pThis->fTimerActive, true);
 
         /* Update current time timestamp. */
-        pThis->uTimerTS = TMTimerGet(pThis->pTimer);
+        pThis->tsTimerExpire = TMTimerGet(pThis->pTimer) + pThis->cTimerTicks;
 
         /* Start transfers. */
         hdaTimerMain(pThis);
@@ -4191,6 +4392,16 @@ static void hdaTimerStop(PHDASTATE pThis)
 
     /* Set timer flag. */
     ASMAtomicXchgBool(&pThis->fTimerActive, false);
+
+    /*
+     * Stop the timer, if any.
+     */
+    if (   pThis->pTimer
+        && TMTimerIsActive(pThis->pTimer))
+    {
+        int rc2 = TMTimerStop(pThis->pTimer);
+        AssertRC(rc2);
+    }
 }
 
 /**
@@ -4228,11 +4439,6 @@ static void hdaTimerMain(PHDASTATE pThis)
 
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
-    uint64_t cTicksNow = TMTimerGet(pThis->pTimer);
-
-    /* Update current time timestamp. */
-    pThis->uTimerTS = cTicksNow;
-
     /* Flag indicating whether to kick the timer again for a
      * new data processing round. */
     bool fKickTimer = false;
@@ -4254,15 +4460,12 @@ static void hdaTimerMain(PHDASTATE pThis)
         fKickTimer = true;
     }
 
-    pThis->uTimerMS = RTTimeMilliTS();
-
     if (   ASMAtomicReadBool(&pThis->fTimerActive)
         || fKickTimer)
     {
         /* Kick the timer again. */
-        uint64_t cTicks = pThis->cTimerTicks;
-        /** @todo adjust cTicks down by now much cbOutMin represents. */
-        TMTimerSet(pThis->pTimer, cTicksNow + cTicks);
+        pThis->tsTimerExpire += pThis->cTimerTicks;
+        TMTimerSet(pThis->pTimer, pThis->tsTimerExpire);
     }
     else
         LogRel2(("HDA: Stopping transfers\n"));
@@ -4691,7 +4894,11 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
         HDA_STREAM_REG(pThis, STS, pStream->u8SD) |= HDA_SDSTS_BCIS;
         Log3Func(("[SD%RU8]: BCIS set\n", pStream->u8SD));
 
-        hdaUpdateInterrupt(pThis);
+#ifndef DEBUG
+        hdaProcessInterrupt(pThis);
+#else
+        hdaProcessInterrupt(pThis, __FUNCTION__);
+#endif
     }
 
     if (RT_SUCCESS(rc))
@@ -7252,15 +7459,19 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 # ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     if (RT_SUCCESS(rc))
     {
-        /* Create the emulation timer. */
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, hdaTimer, pThis,
+        /* Create the emulation timer.
+         *
+         * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's HDA driver
+         *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
+         *        instead of the LPIB registers.
+         */
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaTimer, pThis,
                                     TMTIMER_FLAGS_NO_CRIT_SECT, "DevHDA", &pThis->pTimer);
         AssertRCReturn(rc, rc);
 
         if (RT_SUCCESS(rc))
         {
             pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimer) / uTimerHz;
-            pThis->uTimerTS    = TMTimerGet(pThis->pTimer);
             LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
         }
     }
