@@ -773,54 +773,44 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                 QHBoxLayout *pLayout1 = new QHBoxLayout;
                 AssertPtrReturnVoid(pLayout1);
                 {
-                    /* Create left widget: */
-                    QWidget *pWidgetLeft = new QWidget;
-                    AssertPtrReturnVoid(pWidgetLeft);
+                    /* Create left layout: */
+                    QIFlowLayout *pLayoutLeft = new QIFlowLayout;
+                    AssertPtrReturnVoid(pLayoutLeft);
                     {
-                        /* Create left layout: */
-                        QIFlowLayout *pLayoutLeft = new QIFlowLayout(pWidgetLeft);
-                        AssertPtrReturnVoid(pLayoutLeft);
-                        {
-                            /* Configure layout: */
-                            pLayoutLeft->setContentsMargins(0, 0, 0, 0);
+                        /* Configure layout: */
+                        pLayoutLeft->setContentsMargins(0, 0, 0, 0);
 
-                            /* Create 'General' element: */
-                            m_details[DetailsElementType_General] = createDetailsElement(DetailsElementType_General);
-                            AssertPtrReturnVoid(m_details[DetailsElementType_General]);
-                            pLayoutLeft->addWidget(m_details[DetailsElementType_General]);
+                        /* Create 'General' element: */
+                        m_details[DetailsElementType_General] = createDetailsElement(DetailsElementType_General);
+                        AssertPtrReturnVoid(m_details[DetailsElementType_General]);
+                        pLayoutLeft->addWidget(m_details[DetailsElementType_General]);
 
-                            /* Create 'System' element: */
-                            m_details[DetailsElementType_System] = createDetailsElement(DetailsElementType_System);
-                            AssertPtrReturnVoid(m_details[DetailsElementType_System]);
-                            pLayoutLeft->addWidget(m_details[DetailsElementType_System]);
-                        }
+                        /* Create 'System' element: */
+                        m_details[DetailsElementType_System] = createDetailsElement(DetailsElementType_System);
+                        AssertPtrReturnVoid(m_details[DetailsElementType_System]);
+                        pLayoutLeft->addWidget(m_details[DetailsElementType_System]);
 
                         /* Add to layout: */
-                        pLayout1->addWidget(pWidgetLeft);
+                        pLayout1->addLayout(pLayoutLeft);
                     }
 
-                    /* Create right widget: */
-                    QWidget *pWidgetRight = new QWidget;
-                    AssertPtrReturnVoid(pWidgetRight);
+                    /* Create right layout: */
+                    QVBoxLayout *pLayoutRight = new QVBoxLayout;
+                    AssertPtrReturnVoid(pLayoutRight);
                     {
-                        /* Create right layout: */
-                        QVBoxLayout *pLayoutRight = new QVBoxLayout(pWidgetRight);
-                        AssertPtrReturnVoid(pLayoutRight);
-                        {
-                            /* Configure layout: */
-                            pLayoutRight->setContentsMargins(0, 0, 0, 0);
+                        /* Configure layout: */
+                        pLayoutRight->setContentsMargins(0, 0, 0, 0);
 
-                            /* Create 'Preview' element: */
-                            m_details[DetailsElementType_Preview] = createDetailsElement(DetailsElementType_Preview);
-                            AssertPtrReturnVoid(m_details[DetailsElementType_Preview]);
-                            connect(m_details[DetailsElementType_Preview], &UISnapshotDetailsElement::sigAnchorClicked,
-                                    this, &UISnapshotDetailsWidget::sltHandleAnchorClicked);
-                            pLayoutRight->addWidget(m_details[DetailsElementType_Preview]);
-                            pLayoutRight->addStretch();
-                        }
+                        /* Create 'Preview' element: */
+                        m_details[DetailsElementType_Preview] = createDetailsElement(DetailsElementType_Preview);
+                        AssertPtrReturnVoid(m_details[DetailsElementType_Preview]);
+                        connect(m_details[DetailsElementType_Preview], &UISnapshotDetailsElement::sigAnchorClicked,
+                                this, &UISnapshotDetailsWidget::sltHandleAnchorClicked);
+                        pLayoutRight->addWidget(m_details[DetailsElementType_Preview]);
+                        pLayoutRight->addStretch();
 
                         /* Add to layout: */
-                        pLayout1->addWidget(pWidgetRight);
+                        pLayout1->addLayout(pLayoutRight);
                     }
 
                     /* Add into layout: */
@@ -875,6 +865,9 @@ void UISnapshotDetailsWidget::prepareTabDetails()
                     /* Add into layout: */
                     m_pLayoutDetails->addLayout(pLayout2);
                 }
+
+                /* Add stretch: */
+                m_pLayoutDetails->addStretch();
             }
 
             /* Add to scroll-area: */
