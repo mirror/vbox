@@ -3360,7 +3360,7 @@ static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
     pPrimary->RootDir.DirRec.VolumeSeqNo.be     = RT_H2BE_U16_C(1);
     pPrimary->RootDir.DirRec.VolumeSeqNo.le     = RT_H2LE_U16_C(1);
     pPrimary->RootDir.DirRec.bFileIdLength      = 1;
-    pPrimary->RootDir.DirRec.achFileId[1]       = 0x00;
+    pPrimary->RootDir.DirRec.achFileId[0]       = 0x00;
 
     /*
      * Initialize the joliet descriptor if included.
@@ -3386,7 +3386,7 @@ static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
         pJoliet->RootDir.DirRec.VolumeSeqNo.be     = RT_H2BE_U16_C(1);
         pJoliet->RootDir.DirRec.VolumeSeqNo.le     = RT_H2LE_U16_C(1);
         pJoliet->RootDir.DirRec.bFileIdLength      = 1;
-        pJoliet->RootDir.DirRec.achFileId[1]       = 0x00;
+        pJoliet->RootDir.DirRec.achFileId[0]       = 0x00;
     }
 
     return VINF_SUCCESS;
