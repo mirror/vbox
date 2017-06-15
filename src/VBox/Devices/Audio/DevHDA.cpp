@@ -5292,7 +5292,7 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
  */
 uint32_t hdaStreamGetDataSize(PHDASTREAM pStream)
 {
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, 0);
 
     if (!pStream->State.pCircBuf)
         return 0;
