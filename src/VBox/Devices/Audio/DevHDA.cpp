@@ -6364,7 +6364,7 @@ static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
     AssertRCReturn(rc, rc);
     Assert(pStrm->u8SD <= HDA_MAX_STREAMS);
 
-    rc = SSMR3PutStructEx(pSSM, &pStrm->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields6, NULL);
+    rc = SSMR3PutStructEx(pSSM, &pStrm->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
 #ifdef DEBUG /* Sanity checks. */
@@ -6408,6 +6408,72 @@ static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
         Assert(pBDLE->Desc.u32BufSize == 0);
     }
 #endif
+
+    uint32_t cbCircBufSize = 0;
+    uint32_t cbCircBufUsed = 0;
+
+    if (pStrm->State.pCircBuf)
+    {
+        cbCircBufSize = (uint32_t)RTCircBufSize(pStrm->State.pCircBuf);
+        cbCircBufUsed = (uint32_t)RTCircBufUsed(pStrm->State.pCircBuf);
+    }
+
+    rc = SSMR3PutU32(pSSM, cbCircBufSize);
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3PutU32(pSSM, cbCircBufUsed);
+    AssertRCReturn(rc, rc);
+
+    if (cbCircBufUsed)
+    {
+        /*
+         * We now need to get the circular buffer's data without actually modifying
+         * the internal read / used offsets -- otherwise we would end up with broken audio
+         * data after saving the state.
+         *
+         * So get the current read offset and serialize the buffer data manually based on that.
+         */
+        size_t cbCircBufOffRead = RTCircBufOffsetRead(pStrm->State.pCircBuf);
+
+        void  *pvBuf;
+        size_t cbBuf;
+        RTCircBufAcquireReadBlock(pStrm->State.pCircBuf, cbCircBufUsed, &pvBuf, &cbBuf);
+
+        if (cbBuf)
+        {
+            size_t cbToRead = cbCircBufUsed;
+            size_t cbEnd    = 0;
+
+            if (cbCircBufUsed > cbCircBufOffRead)
+                cbEnd = cbCircBufUsed - cbCircBufOffRead;
+
+            if (cbEnd) /* Save end of buffer first. */
+            {
+                rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf + cbCircBufSize - cbEnd /* End of buffer */, cbEnd);
+                AssertRCReturn(rc, rc);
+
+                Assert(cbToRead >= cbEnd);
+                cbToRead -= cbEnd;
+            }
+
+            if (cbToRead) /* Save remaining stuff at start of buffer (if any). */
+            {
+                rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf - cbCircBufUsed /* Start of buffer */, cbToRead);
+                AssertRCReturn(rc, rc);
+            }
+        }
+
+        RTCircBufReleaseReadBlock(pStrm->State.pCircBuf, 0 /* Don't advance read pointer -- see comment above */);
+    }
+
+    Log2Func(("[SD%RU8] LPIB=%RU32, CBL=%RU32, LVI=%RU32\n",
+              pStrm->u8SD,
+              HDA_STREAM_REG(pThis, LPIB, pStrm->u8SD), HDA_STREAM_REG(pThis, CBL, pStrm->u8SD), HDA_STREAM_REG(pThis, LVI, pStrm->u8SD)));
+
+#ifdef LOG_ENABLED
+    hdaBDLEDumpAll(pThis, pStrm->u64BDLBase, pStrm->u16LVI + 1);
+#endif
+
     return rc;
 }
 
@@ -6424,6 +6490,10 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /* Save MMIO registers. */
     SSMR3PutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
     SSMR3PutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
+
+    /* Save the controller's base timestamp (for handling the WALCLK register).
+     * This is needed to continue with correct time keeping on VM resume. */
+    SSMR3PutU64(pSSM, pThis->u64BaseTS);
 
     /* Save number of streams. */
     SSMR3PutU32(pSSM, HDA_MAX_STREAMS);
