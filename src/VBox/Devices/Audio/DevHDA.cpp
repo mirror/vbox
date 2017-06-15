@@ -1022,6 +1022,8 @@ static int           hdaStreamTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint
 DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, uint32_t u32LPIB);
 static void          hdaStreamLock(PHDASTREAM pStream);
 static void          hdaStreamUnlock(PHDASTREAM pStream);
+static int           hdaStreamRead(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead);
+//static int           hdaStreamWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 static bool          hdaStreamRegisterDMAHandlers(PHDASTATE pThis, PHDASTREAM pStream);
 static void          hdaStreamUnregisterDMAHandlers(PHDASTATE pThis, PHDASTREAM pStream);
@@ -5048,13 +5050,21 @@ static void hdaDoTransfers(PHDASTATE pThis)
             hdaStreamAsyncIONotify(pThis, pStreamFront);
 #else
             /* Read audio data from the HDA stream and write to the backends. */
-            rc2 = hdaStreamRead(pThis, pStream, cbToWrite, NULL /* pcbRead */);
+            rc2 = hdaStreamRead(pThis, pStreamFront, cbToWrite, NULL /* pcbRead */);
             AssertRC(rc2);
 #endif
         }
     }
 
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+#ifndef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    /*
+     * Update all mixer sinks here (synchronously).
+     * For async I/O this is done in the stream's specific async I/O thread.
+     */
+    rc2 = AudioMixerSinkUpdate(pThis->SinkFront.pMixSink);
+    AssertRC(rc2);
+
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     rc2 = AudioMixerSinkUpdate(pThis->SinkCenterLFE.pMixSink);
     AssertRC(rc2);
 
@@ -5067,7 +5077,8 @@ static void hdaDoTransfers(PHDASTATE pThis)
      * otherwise we have to use the interleaved streams support for getting the data
      * out of the Front sink (depending on the mapping layout).
      */
-#endif
+# endif /* VBOX_WITH_AUDIO_HDA_51_SURROUND */
+#endif /* !VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 }
 
 #ifdef DEBUG_andy
@@ -5289,6 +5300,7 @@ uint32_t hdaStreamGetDataSize(PHDASTREAM pStream)
     return (uint32_t)RTCircBufSize(pStream->State.pCircBuf);
 }
 
+#if 0
 /**
  * Writes audio data from a mixer sink into an HDA stream's DMA buffer.
  *
@@ -5349,6 +5361,7 @@ static int hdaStreamWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrit
 
     return VINF_SUCCESS;
 }
+#endif
 
 /**
  * Reads audio data from an HDA stream's DMA buffer and writes into a specified mixer sink.
