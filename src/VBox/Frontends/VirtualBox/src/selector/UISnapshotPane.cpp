@@ -579,7 +579,7 @@ void UISnapshotPane::showEvent(QShowEvent *pEvent)
     adjustTreeWidget();
 }
 
-void UISnapshotPane::sltMachineDataChange(QString strMachineID)
+void UISnapshotPane::sltHandleMachineDataChange(QString strMachineID)
 {
     /* Make sure it's our VM: */
     if (strMachineID != m_strMachineID)
@@ -592,7 +592,7 @@ void UISnapshotPane::sltMachineDataChange(QString strMachineID)
     currentStateItem()->recache();
 }
 
-void UISnapshotPane::sltMachineStateChange(QString strMachineID, KMachineState enmState)
+void UISnapshotPane::sltHandleMachineStateChange(QString strMachineID, KMachineState enmState)
 {
     /* Make sure it's our VM: */
     if (strMachineID != m_strMachineID)
@@ -606,7 +606,7 @@ void UISnapshotPane::sltMachineStateChange(QString strMachineID, KMachineState e
     currentStateItem()->setMachineState(enmState);
 }
 
-void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState enmState)
+void UISnapshotPane::sltHandleSessionStateChange(QString strMachineID, KSessionState enmState)
 {
     /* Make sure it's our VM: */
     if (strMachineID != m_strMachineID)
@@ -620,6 +620,17 @@ void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState e
 
     /* Update action states: */
     updateActionStates();
+}
+
+void UISnapshotPane::sltHandleSnapshotChange(QString strMachineID)
+{
+    /* Make sure it's our VM: */
+    if (strMachineID != m_strMachineID)
+        return;
+
+    // TODO: Refresh only necessary bits.
+    /* Refresh everything: */
+    refreshAll();
 }
 
 void UISnapshotPane::sltUpdateSnapshotsAge()
@@ -838,11 +849,19 @@ void UISnapshotPane::prepare()
 {
     /* Configure Main event connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
-            this, &UISnapshotPane::sltMachineDataChange);
+            this, &UISnapshotPane::sltHandleMachineDataChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
-            this, &UISnapshotPane::sltMachineStateChange);
+            this, &UISnapshotPane::sltHandleMachineStateChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
-            this, &UISnapshotPane::sltSessionStateChange);
+            this, &UISnapshotPane::sltHandleSessionStateChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
+            this, &UISnapshotPane::sltHandleSnapshotChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete,
+            this, &UISnapshotPane::sltHandleSnapshotChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange,
+            this, &UISnapshotPane::sltHandleSnapshotChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
+            this, &UISnapshotPane::sltHandleSnapshotChange);
 
     /* Create read-write locker: */
     m_pLockReadWrite = new QReadWriteLock;

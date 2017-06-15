@@ -85,11 +85,15 @@ private slots:
     /** @name Main event handlers.
       * @{ */
         /** Handles machine data change for machine with @a strMachineID. */
-        void sltMachineDataChange(QString strMachineID);
+        void sltHandleMachineDataChange(QString strMachineID);
         /** Handles machine @a enmState change for machine with @a strMachineID. */
-        void sltMachineStateChange(QString strMachineID, KMachineState enmState);
+        void sltHandleMachineStateChange(QString strMachineID, KMachineState enmState);
+
         /** Handles session @a enmState change for machine with @a strMachineID. */
-        void sltSessionStateChange(QString strMachineID, KSessionState enmState);
+        void sltHandleSessionStateChange(QString strMachineID, KSessionState enmState);
+
+        /** Handles any snapshot change for machine with @a strMachineID. */
+        void sltHandleSnapshotChange(QString strMachineID);
     /** @} */
 
     /** @name Timer event handlers.

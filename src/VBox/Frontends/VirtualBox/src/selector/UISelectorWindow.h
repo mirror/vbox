@@ -93,10 +93,10 @@ private slots:
     void sltShowSelectorWindowContextMenu(const QPoint &position);
 
     /** Handles signal about Chooser-pane index change.
-      * @param fRefreshDetails     brings whether details should be updated.
-      * @param fRefreshSnapshots   brings whether snapshots should be updated.
-      * @param fRefreshDescription brings whether description should be updated. */
-    void sltHandleChooserPaneIndexChange(bool fRefreshDetails = true, bool fRefreshSnapshots = true, bool fRefreshDescription = true);
+      * @param  fUpdateDetails  Brings whether details should be updated.
+      * @param  fUpdateTools    Brings whether tools should be updated. */
+    void sltHandleChooserPaneIndexChange(bool fUpdateDetails = true,
+                                         bool fUpdateTools = true);
 
     /** Handles signal about medium-enumeration finished. */
     void sltHandleMediumEnumerationFinish();
@@ -116,8 +116,6 @@ private slots:
       * @{ */
         /** Handles CVirtualBox event about state change for machine with @a strID. */
         void sltHandleStateChange(QString strID);
-        /** Handles CVirtualBox event about snapshot change for machine with @a strID. */
-        void sltHandleSnapshotChange(QString strID);
     /** @} */
 
     /** @name File menu stuff.
@@ -214,11 +212,6 @@ private:
     UIVMItem* currentItem() const;
     /** Returns a list of current-items. */
     QList<UIVMItem*> currentItems() const;
-
-    /** Updates snapshot related controls for passed @a pItem and @a comMachine. */
-    void updateSnapshots(UIVMItem *pItem, const CMachine &comMachine);
-    /** Locks snapshot related controls. */
-    void lockSnapshots();
 
     /** @name Event handling stuff.
       * @{ */

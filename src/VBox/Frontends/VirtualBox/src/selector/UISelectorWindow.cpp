@@ -210,7 +210,8 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
     }
 }
 
-void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, bool fRefreshSnapshots, bool)
+void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = true */,
+                                                       bool fUpdateTools /* = true */)
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
@@ -236,29 +237,24 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, boo
     /* Update action appearance: */
     updateActionsAppearance();
 
-    /* Refresh details-pane even if there are no items selected: */
-    if (fRefreshDetails)
+    /* Update Details-pane: */
+    if (fUpdateDetails)
         m_pPaneDetails->setItems(currentItems());
 
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
     {
-        /* Make sure at least details pane raised: */
+        /* Make sure at least Details-pane raised: */
         if (m_pContainerDetails->currentWidget() == m_pPaneDesktop)
             m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
 
-        if (fRefreshSnapshots)
-        {
-            updateSnapshots(pItem, pItem->machine());
-            /* Always hide snapshots-view if
-             * single group or more than one machine is selected: */
-            if (currentItems().size() > 1 || m_pPaneChooser->isSingleGroupSelected())
-                lockSnapshots();
-        }
+        /* Refresh Tools-pane if requested: */
+        if (fUpdateTools)
+            m_pPaneTools->setMachine(pItem->machine());
     }
     else
     {
-        /* Make sure desktop pane raised: */
+        /* Make sure Desktop-pane raised: */
         if (m_pContainerDetails->currentWidget() != m_pPaneDesktop)
             m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
 
@@ -289,8 +285,8 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, boo
                    .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
         }
 
-        /* Empty and disable other tabs: */
-        updateSnapshots(0, CMachine());
+        /* Refresh Tools-pane in any case: */
+        m_pPaneTools->setMachine(CMachine());
     }
 }
 
@@ -406,20 +402,6 @@ void UISelectorWindow::sltHandleStateChange(QString)
 
     /* Update actions: */
     updateActionsAppearance();
-}
-
-void UISelectorWindow::sltHandleSnapshotChange(QString strID)
-{
-    /* Get current item: */
-    UIVMItem *pItem = currentItem();
-
-    /* Make sure current item present: */
-    if (!pItem)
-        return;
-
-    /* If signal is for the current item: */
-    if (pItem->id() == strID)
-        updateSnapshots(pItem, pItem->machine());
 }
 
 void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
@@ -1083,7 +1065,7 @@ void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
     }
     else
     {
-        /* Raise the desktop pane with welcome text or error details: */
+        /* Raise the Desktop-pane with welcome text or error details: */
         m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
     }
 
@@ -1127,26 +1109,6 @@ QList<UIVMItem*> UISelectorWindow::currentItems() const
     return m_pPaneChooser->currentItems();
 }
 
-void UISelectorWindow::updateSnapshots(UIVMItem * /* pItem */, const CMachine &comMachine)
-{
-    /* Update snapshot pane availability: */
-    if (comMachine.isNotNull())
-        m_pSegmentedButton->setEnabled(SegmentType_Tools, true);
-    else
-        lockSnapshots();
-
-    /* Update tools pane finally: */
-    m_pPaneTools->setMachine(comMachine);
-}
-
-void UISelectorWindow::lockSnapshots()
-{
-    /* First switch to details pane: */
-    sltPerformSegmentedButtonSwitchToDetails();
-    /* Then lock the snapshot pane: */
-    m_pSegmentedButton->setEnabled(SegmentType_Tools, false);
-}
-
 void UISelectorWindow::retranslateUi()
 {
     /* Set window title: */
@@ -1167,7 +1129,7 @@ void UISelectorWindow::retranslateUi()
     m_pSegmentedButton->setTitle(SegmentType_Tools, QApplication::translate("UIDesktopPane", "&Tools"));
 
     /* Make sure details and snapshot panes are updated: */
-    sltHandleChooserPaneIndexChange();
+    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
 
 #if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
@@ -1331,14 +1293,11 @@ void UISelectorWindow::prepare()
     qApp->installEventFilter(this);
 #endif /* VBOX_WS_MAC */
 
-//#ifdef VBOX_WS_MAC
-//    /* Cocoa stuff should be async..
-//     * Do not ask me why but otherwise
-//     * it conflicts with native handlers. */
-//    QMetaObject::invokeMethod(this, "sltPerformSegmentedButtonSwitchToDetails", Qt::QueuedConnection);
-//#else /* !VBOX_WS_MAC */
+    /* Switch segmented-button to Details-pane: */
     sltPerformSegmentedButtonSwitchToDetails();
-//#endif /* !VBOX_WS_MAC */
+
+    /* Make sure current Chooser-pane index fetched: */
+    sltHandleChooserPaneIndexChange();
 }
 
 void UISelectorWindow::prepareIcon()
@@ -1814,20 +1773,20 @@ void UISelectorWindow::prepareWidgets()
     m_pToolBar->updateLayout();
 #endif
 
-    /* Prepare graphics VM list: */
+    /* Prepare Chooser-pane: */
     m_pPaneChooser = new UIGChooser(this);
 
-    /* Prepare graphics details: */
+    /* Prepare Details-pane: */
     m_pPaneDetails = new UIGDetails(this);
 
     /* Configure splitter colors: */
     m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
                                  m_pPaneDetails->palette().color(QPalette::Active, QPalette::Window));
 
-    /* Prepare desktop pane: */
+    /* Prepare Desktop-pane: */
     m_pPaneDesktop = new UIDesktopPane(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
 
-    /* Prepare tools pane: */
+    /* Prepare Tools-pane: */
     m_pPaneTools = new UIToolsPane(this);
 
     /* Create container: */
@@ -1964,10 +1923,6 @@ void UISelectorWindow::prepareConnections()
     /* Global event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltHandleStateChange(QString)));
     connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltHandleStateChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltHandleSnapshotChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltHandleSnapshotChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltHandleSnapshotChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)), this, SLOT(sltHandleSnapshotChange(QString)));
 }
 
 void UISelectorWindow::loadSettings()
