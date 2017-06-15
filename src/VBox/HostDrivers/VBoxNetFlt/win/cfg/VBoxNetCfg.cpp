@@ -1897,7 +1897,7 @@ static HRESULT netIfEnableStaticIpConfigV6(const GUID *pGuid, IN_BSTR aIPV6Addre
 static HRESULT netIfEnableStaticIpConfigV6(const GUID *pGuid, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     RTNETADDRIPV6 Mask;
-    int rc = prefixLength2IPv6Address(aIPV6MaskPrefixLength, &Mask);
+    int rc = RTNetPrefixToMaskIPv6(aIPV6MaskPrefixLength, &Mask);
     if (RT_SUCCESS(rc))
     {
         Bstr maskStr = composeIPv6Address(&Mask);

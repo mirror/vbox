@@ -24,7 +24,6 @@
 
 #define NETIF_WITHOUT_NETCFG
 
-#include <iprt/asm.h>
 #include <iprt/err.h>
 #include <list>
 
@@ -180,7 +179,7 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
                                     if (pPrefix->PrefixLength <= sizeof(pInfo->IPv6NetMask) * 8)
                                     {
                                         fIPv6Found = true;
-                                        ASMBitSetRange(&pInfo->IPv6NetMask, 0, pPrefix->PrefixLength);
+                                        RTNetPrefixToMaskIPv6(pPrefix->PrefixLength, &pInfo->IPv6NetMask);
                                     }
                                     else
                                         Log(("collectNetIfInfo: Unexpected IPv6 prefix length of %d\n",
@@ -1714,7 +1713,7 @@ static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES
                         && ipv6[0] != 0xFF)
                     {
                         uPrefixLenV6 = pPrefix->PrefixLength;
-                        ASMBitSetRange(&pInfo->IPv6NetMask, 0, pPrefix->PrefixLength);
+                        RTNetPrefixToMaskIPv6(pPrefix->PrefixLength, &pInfo->IPv6NetMask);
                     }
                     else
                         netIfLog(("netIfFillInfoWithAddressesXp: Unexpected IPv6 prefix length of %d\n",
@@ -1774,15 +1773,24 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
                     if (pAddrLh->OnLinkPrefixLength > 128)
                         netIfLog(("netIfFillInfoWithAddresses: Invalid IPv6 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
                     else
-                        ASMBitSetRange(&pInfo->IPv6NetMask, 0, pAddrLh->OnLinkPrefixLength);
+                        RTNetPrefixToMaskIPv6(pAddrLh->OnLinkPrefixLength, &pInfo->IPv6NetMask);
                 }
                 break;
         }
     }
-    netIfLog(("netIfFillInfoWithAddresses: %RTnaipv4/%u\n",
-              pInfo->IPAddress, ASMBitFirstClear(&pInfo->IPNetMask, sizeof(RTNETADDRIPV4)*8)));
-    netIfLog(("netIfFillInfoWithAddresses: %RTnaipv6/%u\n",
-              &pInfo->IPv6Address, composeIPv6PrefixLenghFromAddress(&pInfo->IPv6NetMask)));
+
+    if (fIPFound)
+    {
+        int iPrefixIPv4 = -1;
+        RTNetMaskToPrefixIPv4(&pInfo->IPNetMask, &iPrefixIPv4);
+        netIfLog(("netIfFillInfoWithAddresses: %RTnaipv4/%u\n", pInfo->IPAddress, iPrefixIPv4));
+    }
+    if (fIPv6Found)
+    {
+        int iPrefixIPv6 = -1;
+        RTNetMaskToPrefixIPv6(&pInfo->IPv6NetMask, &iPrefixIPv6);
+        netIfLog(("netIfFillInfoWithAddresses: %RTnaipv6/%u\n", &pInfo->IPv6Address, iPrefixIPv6));
+    }
 }
 
 #if (NTDDI_VERSION >= NTDDI_VISTA)

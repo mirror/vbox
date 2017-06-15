@@ -116,26 +116,6 @@ DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
     return Bstr(szTmp);
 }
 
-DECLINLINE(ULONG) composeIPv6PrefixLenghFromAddress(PRTNETADDRIPV6 aAddrPtr)
-{
-    int res = ASMBitFirstClear(aAddrPtr, sizeof(RTNETADDRIPV6)*8);
-    return res != -1 ? res : 128;
-}
-
-DECLINLINE(int) prefixLength2IPv6Address(ULONG cPrefix, PRTNETADDRIPV6 aAddrPtr)
-{
-    if (cPrefix > 128)
-        return VERR_INVALID_PARAMETER;
-    if (!aAddrPtr)
-        return VERR_INVALID_PARAMETER;
-
-    RT_ZERO(*aAddrPtr);
-
-    ASMBitSetRange(aAddrPtr, 0, cPrefix);
-
-    return VINF_SUCCESS;
-}
-
 DECLINLINE(Bstr) composeHardwareAddress(PRTMAC aMacPtr)
 {
     char szTmp[6*3];
