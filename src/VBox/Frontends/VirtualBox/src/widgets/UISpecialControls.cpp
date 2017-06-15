@@ -268,6 +268,11 @@ UIRoundRectSegmentedButton::~UIRoundRectSegmentedButton()
     qDeleteAll(m_pButtons);
 }
 
+int UIRoundRectSegmentedButton::count() const
+{
+    return m_pButtons.size();
+}
+
 void UIRoundRectSegmentedButton::setTitle(int iSegment, const QString &aTitle)
 {
     m_pButtons.at(iSegment)->setText(aTitle);

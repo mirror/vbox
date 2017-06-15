@@ -230,6 +230,8 @@ public:
     UIRoundRectSegmentedButton(QWidget *pParent, int aCount);
     ~UIRoundRectSegmentedButton();
 
+    int count() const;
+
     void setTitle(int iSegment, const QString &aTitle);
     void setToolTip(int iSegment, const QString &strTip);
     void setIcon(int iSegment, const QIcon &icon);

@@ -55,6 +55,7 @@ class UISelectorWindow : public QIWithRetranslateUI<QIMainWindow>
     {
         SegmentType_Details,
         SegmentType_Tools,
+        SegmentType_None,
     };
 
 public:

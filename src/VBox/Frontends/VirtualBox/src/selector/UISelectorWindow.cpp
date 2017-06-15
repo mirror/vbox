@@ -246,7 +246,7 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     {
         /* Make sure at least Details-pane raised: */
         if (m_pContainerDetails->currentWidget() == m_pPaneDesktop)
-            m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
+            sltPerformSegmentedButtonSwitch(SegmentType_Details);
 
         /* Refresh Tools-pane if requested: */
         if (fUpdateTools)
@@ -256,7 +256,7 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     {
         /* Make sure Desktop-pane raised: */
         if (m_pContainerDetails->currentWidget() != m_pPaneDesktop)
-            m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
+            sltPerformSegmentedButtonSwitch(SegmentType_None);
 
         /* Note that the machine becomes inaccessible (or if the last VM gets
          * deleted), we have to update all fields, ignoring input arguments. */
@@ -1084,7 +1084,8 @@ void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
 void UISelectorWindow::sltPerformSegmentedButtonSwitch(int iSegment)
 {
     /* Perform silent segmented-button switch: */
-    m_pSegmentedButton->setSelected(iSegment);
+    if (iSegment >= 0 && iSegment < m_pSegmentedButton->count())
+        m_pSegmentedButton->setSelected(iSegment);
     /* Manually handle that switch as well: */
     sltHandleSegmentedButtonSwitch(iSegment);
 }
