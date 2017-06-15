@@ -524,17 +524,17 @@ RTDECL(int) RTNetMaskToPrefixIPv6(PCRTNETADDRIPV6 pMask, int *piPrefix)
         int iBits;
         switch (pMask->au8[i])
         {
-        case 0x00: iBits = 0; break;
-        case 0x80: iBits = 1; break;
-        case 0xc0: iBits = 2; break;
-        case 0xe0: iBits = 3; break;
-        case 0xf0: iBits = 4; break;
-        case 0xf8: iBits = 5; break;
-        case 0xfc: iBits = 6; break;
-        case 0xfe: iBits = 7; break;
-        case 0xff: iBits = 8; break;
-        default:                /* non-contiguous mask */
-            return VERR_INVALID_PARAMETER;
+            case 0x00: iBits = 0; break;
+            case 0x80: iBits = 1; break;
+            case 0xc0: iBits = 2; break;
+            case 0xe0: iBits = 3; break;
+            case 0xf0: iBits = 4; break;
+            case 0xf8: iBits = 5; break;
+            case 0xfc: iBits = 6; break;
+            case 0xfe: iBits = 7; break;
+            case 0xff: iBits = 8; break;
+            default:                /* non-contiguous mask */
+                return VERR_INVALID_PARAMETER;
         }
 
         iPrefix += iBits;
