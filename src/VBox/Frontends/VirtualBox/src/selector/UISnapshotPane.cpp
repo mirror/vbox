@@ -98,7 +98,7 @@ public:
     /** Returns whether this is the "current state" item. */
     bool isCurrentStateItem() const { return m_fCurrentStateItem; }
 
-    /** Returns whether this is the current snapshot item. */
+    /** Returns whether this is the "current snapshot" item. */
     bool isCurrentSnapshotItem() const { return m_fCurrentSnapshotItem; }
     /** Defines whether this is the @a fCurrent snapshot item. */
     void setCurrentSnapshotItem(bool fCurrent);
@@ -137,9 +137,9 @@ private:
     /** Holds the machine COM wrapper. */
     CMachine   m_comMachine;
 
-    /** Holds the current snapshot ID. */
+    /** Holds the "current snapshot" ID. */
     QString  m_strSnapshotID;
-    /** Holds whether the current snapshot is online one. */
+    /** Holds whether the "current snapshot" is online one. */
     bool     m_fOnline;
 
     /** Holds the item timestamp. */
@@ -218,7 +218,7 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pT
     , m_comMachine(comMachine)
 {
     /* Set the bold font state
-     * for current state item: */
+     * for "current state" item: */
     QFont myFont = font(Column_Name);
     myFont.setBold(true);
     setFont(Column_Name, myFont);
@@ -235,7 +235,7 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem
     , m_comMachine(comMachine)
 {
     /* Set the bold font state
-     * for current state item: */
+     * for "current state" item: */
     QFont myFont = font(Column_Name);
     myFont.setBold(true);
     setFont(Column_Name, myFont);
@@ -262,7 +262,7 @@ void UISnapshotItem::setCurrentSnapshotItem(bool fCurrent)
     m_fCurrentSnapshotItem = fCurrent;
 
     /* Set/clear the bold font state
-     * for current snapshot item: */
+     * for "current snapshot" item: */
     QFont myFont = font(Column_Name);
     myFont.setBold(fCurrent);
     setFont(Column_Name, myFont);
@@ -470,6 +470,7 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     , m_pActionCloneSnapshot(0)
     , m_pSnapshotTree(0)
     , m_pCurrentSnapshotItem(0)
+    , m_pCurrentStateItem(0)
     , m_pDetailsWidget(0)
 {
     /* Prepare: */
@@ -490,15 +491,15 @@ void UISnapshotPane::setMachine(const CMachine &comMachine)
     /* Cache machine details: */
     if (m_comMachine.isNull())
     {
-        m_strMachineID = QString();
+        m_strMachineId = QString();
         m_enmSessionState = KSessionState_Null;
         m_fShapshotOperationsAllowed = false;
     }
     else
     {
-        m_strMachineID = comMachine.GetId();
+        m_strMachineId = comMachine.GetId();
         m_enmSessionState = comMachine.GetSessionState();
-        m_fShapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(m_strMachineID);
+        m_fShapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(m_strMachineId);
     }
 
     /* Refresh everything: */
@@ -579,37 +580,37 @@ void UISnapshotPane::showEvent(QShowEvent *pEvent)
     adjustTreeWidget();
 }
 
-void UISnapshotPane::sltHandleMachineDataChange(QString strMachineID)
+void UISnapshotPane::sltHandleMachineDataChange(QString strMachineId)
 {
     /* Make sure it's our VM: */
-    if (strMachineID != m_strMachineID)
+    if (strMachineId != m_strMachineId)
         return;
 
     /* Prevent snapshot editing in the meantime: */
     QWriteLocker locker(m_pLockReadWrite);
 
-    /* Recache current item data: */
-    currentStateItem()->recache();
+    /* Recache "current state" item data: */
+    m_pCurrentStateItem->recache();
 }
 
-void UISnapshotPane::sltHandleMachineStateChange(QString strMachineID, KMachineState enmState)
+void UISnapshotPane::sltHandleMachineStateChange(QString strMachineId, KMachineState enmState)
 {
     /* Make sure it's our VM: */
-    if (strMachineID != m_strMachineID)
+    if (strMachineId != m_strMachineId)
         return;
 
     /* Prevent snapshot editing in the meantime: */
     QWriteLocker locker(m_pLockReadWrite);
 
-    /* Recache current item data and machine-state: */
-    currentStateItem()->recache();
-    currentStateItem()->setMachineState(enmState);
+    /* Recache "current state" item data and machine-state: */
+    m_pCurrentStateItem->recache();
+    m_pCurrentStateItem->setMachineState(enmState);
 }
 
-void UISnapshotPane::sltHandleSessionStateChange(QString strMachineID, KSessionState enmState)
+void UISnapshotPane::sltHandleSessionStateChange(QString strMachineId, KSessionState enmState)
 {
     /* Make sure it's our VM: */
-    if (strMachineID != m_strMachineID)
+    if (strMachineId != m_strMachineId)
         return;
 
     /* Prevent snapshot editing in the meantime: */
@@ -622,10 +623,10 @@ void UISnapshotPane::sltHandleSessionStateChange(QString strMachineID, KSessionS
     updateActionStates();
 }
 
-void UISnapshotPane::sltHandleSnapshotChange(QString strMachineID)
+void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId)
 {
     /* Make sure it's our VM: */
-    if (strMachineID != m_strMachineID)
+    if (strMachineId != m_strMachineId)
         return;
 
     // TODO: Refresh only necessary bits.
@@ -663,7 +664,7 @@ void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
     /* If details-widget is visible: */
     if (m_pDetailsWidget->isVisible())
     {
-        /* Acquire current snapshot item: */
+        /* Acquire "current snapshot" item: */
         const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
         /* Update details-widget: */
         m_pDetailsWidget->setData(*pSnapshotItem, pSnapshotItem->snapshot());
@@ -679,7 +680,7 @@ void UISnapshotPane::sltCommitSnapshotDetailsChanges()
     /* Disable button first of all: */
     m_pActionCommitSnapshotDetails->setEnabled(false);
 
-    /* Acquire current snapshot item: */
+    /* Acquire "current snapshot" item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertPtr(pSnapshotItem);
     if (pSnapshotItem)
@@ -724,7 +725,7 @@ void UISnapshotPane::sltCommitSnapshotDetailsChanges()
 
 void UISnapshotPane::sltHandleCurrentItemChange()
 {
-    /* Acquire current snapshot item: */
+    /* Acquire "current snapshot" item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
 
     /* Make the current item visible: */
@@ -1065,19 +1066,19 @@ void UISnapshotPane::refreshAll()
 
         /* Populate snapshot tree: */
         populateSnapshots(comSnapshot, 0);
-        /* And make sure it has current snapshot item: */
+        /* And make sure it has "current snapshot" item: */
         Assert(m_pCurrentSnapshotItem);
 
-        /* Add the "current state" item as a child to current snapshot item: */
-        UISnapshotItem *pCsi = new UISnapshotItem(this, m_pCurrentSnapshotItem, m_comMachine);
-        pCsi->recache();
+        /* Add the "current state" item as a child to "current snapshot" item: */
+        m_pCurrentStateItem = new UISnapshotItem(this, m_pCurrentSnapshotItem, m_comMachine);
+        m_pCurrentStateItem->recache();
 
         /* Search for a previously selected item: */
         UISnapshotItem *pCurrentItem = findItem(strSelectedItem);
         if (pCurrentItem == 0)
             pCurrentItem = findItem(strFirstChildOfSelectedItem);
         if (pCurrentItem == 0)
-            pCurrentItem = currentStateItem();
+            pCurrentItem = m_pCurrentStateItem;
 
         /* Choose current item: */
         m_pSnapshotTree->scrollToItem(pCurrentItem);
@@ -1087,15 +1088,15 @@ void UISnapshotPane::refreshAll()
     /* If machine has no snapshots: */
     else
     {
-        /* There is no current snapshot item: */
+        /* There is no "current snapshot" item: */
         m_pCurrentSnapshotItem = 0;
 
         /* Add the "current state" item as a child of snapshot tree: */
-        UISnapshotItem *pCsi = new UISnapshotItem(this, m_pSnapshotTree, m_comMachine);
-        pCsi->recache();
+        m_pCurrentStateItem = new UISnapshotItem(this, m_pSnapshotTree, m_comMachine);
+        m_pCurrentStateItem->recache();
 
         /* Choose current item: */
-        m_pSnapshotTree->setCurrentItem(pCsi);
+        m_pSnapshotTree->setCurrentItem(m_pCurrentStateItem);
         sltHandleCurrentItemChange();
     }
 
@@ -1154,7 +1155,7 @@ void UISnapshotPane::cleanup()
 
 void UISnapshotPane::updateActionStates()
 {
-    /* Acquire current snapshot item: */
+    /* Acquire "current snapshot" item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
 
     /* Check whether another direct session is opened: */
@@ -1162,8 +1163,8 @@ void UISnapshotPane::updateActionStates()
 
     /* Acquire machine-state of the "current state" item: */
     KMachineState enmState = KMachineState_Null;
-    if (currentStateItem())
-        enmState = currentStateItem()->machineState();
+    if (m_pCurrentStateItem)
+        enmState = m_pCurrentStateItem->machineState();
 
     /* Determine whether taking or deleting snapshots is possible: */
     const bool fCanTakeDeleteSnapshot =    !fBusy
@@ -1228,9 +1229,9 @@ bool UISnapshotPane::takeSnapshot()
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_strMachineID);
+            comSession = vboxGlobal().openExistingSession(m_strMachineId);
         else
-            comSession = vboxGlobal().openSession(m_strMachineID);
+            comSession = vboxGlobal().openSession(m_strMachineId);
         if (comSession.isNull())
             break;
 
@@ -1323,7 +1324,7 @@ bool UISnapshotPane::deleteSnapshot()
     bool fSuccess = false;
     do
     {
-        /* Acquire current snapshot item: */
+        /* Acquire "current snapshot" item: */
         const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
@@ -1351,9 +1352,9 @@ bool UISnapshotPane::deleteSnapshot()
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_strMachineID);
+            comSession = vboxGlobal().openExistingSession(m_strMachineId);
         else
-            comSession = vboxGlobal().openSession(m_strMachineID);
+            comSession = vboxGlobal().openSession(m_strMachineId);
         if (comSession.isNull())
             break;
 
@@ -1400,7 +1401,7 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
     bool fSuccess = false;
     do
     {
-        /* Acquire current snapshot item: */
+        /* Acquire "current snapshot" item: */
         const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
@@ -1424,14 +1425,14 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
             if (iResultCode & AlertOption_CheckBox)
             {
                 /* Take snapshot of changed current state: */
-                m_pSnapshotTree->setCurrentItem(currentStateItem());
+                m_pSnapshotTree->setCurrentItem(m_pCurrentStateItem);
                 if (!takeSnapshot())
                     break;
             }
         }
 
         /* Open a direct session (this call will handle all errors): */
-        CSession comSession = vboxGlobal().openSession(m_strMachineID);
+        CSession comSession = vboxGlobal().openSession(m_strMachineId);
         if (comSession.isNull())
             break;
 
@@ -1474,7 +1475,7 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
 
 void UISnapshotPane::cloneSnapshot()
 {
-    /* Acquire current snapshot item: */
+    /* Acquire "current snapshot" item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertReturnVoid(pSnapshotItem);
 
@@ -1531,15 +1532,6 @@ UISnapshotItem *UISnapshotPane::findItem(const QString &strSnapshotID) const
 
     /* Null by default: */
     return 0;
-}
-
-UISnapshotItem *UISnapshotPane::currentStateItem() const
-{
-    /* Last child of the current snapshot item if any or first child of invisible root item otherwise: */
-    QTreeWidgetItem *pCsi = m_pCurrentSnapshotItem ?
-                            m_pCurrentSnapshotItem->child(m_pCurrentSnapshotItem->childCount() - 1) :
-                            m_pSnapshotTree->invisibleRootItem()->child(0);
-    return static_cast<UISnapshotItem*>(pCsi);
 }
 
 SnapshotAgeFormat UISnapshotPane::traverseSnapshotAge(QTreeWidgetItem *pItem) const
