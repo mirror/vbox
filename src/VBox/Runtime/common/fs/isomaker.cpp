@@ -1103,6 +1103,50 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
 }
 
 
+/**
+ * Sets the content of the system area, i.e. the first 32KB of the image.
+ *
+ * This can be used to put generic boot related stuff.
+ *
+ * @note    Other settings may overwrite parts of the content (yet to be
+ *          determined which).
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pvContent           The content to put in the system area.
+ * @param   cbContent           The size of the content.
+ * @param   off                 The offset into the system area.
+ */
+RTDECL(int) RTFsIsoMakerSetSysAreaContent(RTFSISOMAKER hIsoMaker, void const *pvContent, size_t cbContent, uint32_t off)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSER_VALID_HANDLE_RET(pThis);
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+    AssertReturn(cbContent > 0, VERR_OUT_OF_RANGE);
+    AssertReturn(cbContent <= _32K, VERR_OUT_OF_RANGE);
+    AssertReturn(off < _32K, VERR_OUT_OF_RANGE);
+    size_t cbSysArea = off + cbContent;
+    AssertReturn(cbSysArea <= _32K, VERR_OUT_OF_RANGE);
+
+    /*
+     * Adjust the allocation and copy over the new/additional content.
+     */
+    if (pThis->cbSysArea < cbSysArea)
+    {
+        void *pvNew = RTMemRealloc(pThis->pbSysArea, cbSysArea);
+        AssertReturn(pvNew, VERR_NO_MEMORY);
+        pThis->pbSysArea = (uint8_t *)pvNew;
+        memset(&pThis->pbSysArea[pThis->cbSysArea], 0, cbSysArea - pThis->cbSysArea);
+    }
+
+    memcpy(&pThis->pbSysArea[off], pvContent, cbContent);
+
+    return VINF_SUCCESS;
+}
+
 
 /*
  *

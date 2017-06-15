@@ -927,6 +927,7 @@
 # define RTFsIsoMakerSetJolietUcs2Level                 RT_MANGLER(RTFsIsoMakerSetJolietUcs2Level)
 # define RTFsIsoMakerSetRockRidgeLevel                  RT_MANGLER(RTFsIsoMakerSetRockRidgeLevel)
 # define RTFsIsoMakerSetJolietRockRidgeLevel            RT_MANGLER(RTFsIsoMakerSetJolietRockRidgeLevel)
+# define RTFsIsoMakerSetSysAreaContent                  RT_MANGLER(RTFsIsoMakerSetSysAreaContent)
 # define RTFsIsoMakerGetObjIdxForPath                   RT_MANGLER(RTFsIsoMakerGetObjIdxForPath)
 # define RTFsIsoMakerObjRemove                          RT_MANGLER(RTFsIsoMakerObjRemove)
 # define RTFsIsoMakerObjSetPath                         RT_MANGLER(RTFsIsoMakerObjSetPath)

@@ -115,6 +115,22 @@ RTDECL(int) RTFsIsoMakerSetRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel
 RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel);
 
 /**
+ * Sets the content of the system area, i.e. the first 32KB of the image.
+ *
+ * This can be used to put generic boot related stuff.
+ *
+ * @note    Other settings may overwrite parts of the content (yet to be
+ *          determined which).
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pvContent           The content to put in the system area.
+ * @param   cbContent           The size of the content.
+ * @param   off                 The offset into the system area.
+ */
+RTDECL(int) RTFsIsoMakerSetSysAreaContent(RTFSISOMAKER hIsoMaker, void const *pvContent, size_t cbContent, uint32_t off);
+
+/**
  * Resolves a path into a object ID.
  *
  * This will be doing the looking up using the specified object names rather
