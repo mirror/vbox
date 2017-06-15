@@ -360,7 +360,7 @@ typedef struct ISO9660BOOTRECORD
     uint8_t             abBootSystemSpecific[1977];
 } ISO9660BOOTRECORD;
 AssertCompileSize(ISO9660BOOTRECORD, ISO9660_SECTOR_SIZE);
-/** Pointer to a ISO 9660 boot record. */
+/** Pointer to an ISO 9660 boot record. */
 typedef ISO9660BOOTRECORD *PISO9660BOOTRECORD;
 /** Pointer to a const ISO 9660 boot record. */
 typedef ISO9660BOOTRECORD const *PCISO9660BOOTRECORD;
@@ -368,6 +368,37 @@ typedef ISO9660BOOTRECORD const *PCISO9660BOOTRECORD;
 /** The value of ISO9660BOOTRECORD::Hdr.uDescVersion. */
 #define ISO9660BOOTRECORD_VERSION           UINT8_C(1)
 
+
+/**
+ * ISO 9660 boot record (volume descriptor), El Torito variant.
+ */
+#pragma pack(1)
+typedef struct ISO9660BOOTRECORDELTORITO
+{
+    /** 0x000: The volume descriptor header.
+     * Type is ISO9660VOLDESC_TYPE_BOOT_RECORD and version
+     * ISO9660BOOTRECORD_VERSION. */
+    ISO9660VOLDESCHDR   Hdr;
+    /** 0x007: Boot system identifier string,
+     * zero padded ISO9660BOOTRECORDELTORITO_BOOT_SYSTEM_ID. */
+    char                achBootSystemId[32];
+    /** 0x027: Boot identifier - all zeros. */
+    char                achBootId[32];
+    /** 0x047: Boot catalog location (block offset), always (?) little endian.
+     * @note Misaligned. */
+    uint32_t            offBootCatalog;
+    /** 0x04b: Unused - all zeros. */
+    uint8_t             abBootSystemSpecific[1973];
+} ISO9660BOOTRECORDELTORITO;
+#pragma pack()
+AssertCompileSize(ISO9660BOOTRECORDELTORITO, ISO9660_SECTOR_SIZE);
+/** Pointer to an ISO 9660 El Torito boot record. */
+typedef ISO9660BOOTRECORDELTORITO *PISO9660BOOTRECORDELTORITO;
+/** Pointer to a const ISO 9660 El Torito boot record. */
+typedef ISO9660BOOTRECORDELTORITO const *PCISO9660BOOTRECORDELTORITO;
+
+/** The value of ISO9660BOOTRECORDELTORITO::achBootSystemId (zero padded). */
+#define ISO9660BOOTRECORDELTORITO_BOOT_SYSTEM_ID    "EL TORITO SPECIFICATION"
 
 
 /**
@@ -628,6 +659,243 @@ typedef ISO9660VOLPARTDESC const *PCISO9660VOLPARTDESC;
 #define ISO9660_JOLIET_ESC_SEQ_2_LEVEL_3    UINT8_C(0x45)   /**< Third escape sequence byte: level 3 */
 /** @} */
 
+
+/**
+ * El Torito boot catalog: Validation entry.
+ *
+ * This is the first entry in the boot catalog.  It is followed by a
+ * ISO9660ELTORITODEFAULTENTRY, which in turn is followed by a
+ * ISO9660ELTORITOSECTIONHEADER.
+ */
+typedef struct ISO9660ELTORITOVALIDATIONENTRY
+{
+    /** 0x00: The header ID (ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY). */
+    uint8_t             bHeaderId;
+    /** 0x01: The platform ID (ISO9660_ELTORITO_PLATFORM_ID_XXX). */
+    uint8_t             bPlatformId;
+    /** 0x02: Reserved, MBZ. */
+    uint16_t            u16Reserved;
+    /** 0x04: String ID of the developer of the CD/DVD-ROM. */
+    char                achId[24];
+    /** 0x1c: The checksum. */
+    uint16_t            u16Checksum;
+    /** 0x1e: Key byte 1 (ISO9660_ELTORITO_KEY_BYTE_1). */
+    uint8_t             bKey1;
+    /** 0x1f: Key byte 2 (ISO9660_ELTORITO_KEY_BYTE_2). */
+    uint8_t             bKey2;
+} ISO9660ELTORITOVALIDATIONENTRY;
+AssertCompileSize(ISO9660ELTORITOVALIDATIONENTRY, 0x20);
+/** Pointer to an El Torito validation entry. */
+typedef ISO9660ELTORITOVALIDATIONENTRY *PISO9660ELTORITOVALIDATIONENTRY;
+/** Pointer to a const El Torito validation entry. */
+typedef ISO9660ELTORITOVALIDATIONENTRY const *PCISO9660ELTORITOVALIDATIONENTRY;
+
+/** ISO9660ELTORITOVALIDATIONENTRY::bKey1 value. */
+#define ISO9660_ELTORITO_KEY_BYTE_1         UINT8_C(0x55)
+/** ISO9660ELTORITOVALIDATIONENTRY::bKey2 value. */
+#define ISO9660_ELTORITO_KEY_BYTE_2         UINT8_C(0xaa)
+
+
+/** @name ISO9660_ELTORITO_HEADER_ID_XXX - header IDs.
+ * @{ */
+/** Header ID for a ISO9660ELTORITOVALIDATIONENTRY. */
+#define ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY UINT8_C(0x01)
+/** Header ID for a ISO9660ELTORITOSECTIONHEADER. */
+#define ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER       UINT8_C(0x90)
+/** Header ID for the final ISO9660ELTORITOSECTIONHEADER. */
+#define ISO9660_ELTORITO_HEADER_ID_FINAL_SECTION_HEADER UINT8_C(0x91)
+/** @} */
+
+
+/** @name ISO9660_ELTORITO_PLATFORM_ID_XXX - El Torito Platform IDs
+ * @{ */
+#define ISO9660_ELTORITO_PLATFORM_ID_X86    UINT8_C(0x00)   /**< 80x86 */
+#define ISO9660_ELTORITO_PLATFORM_ID_PPC    UINT8_C(0x01)   /**< PowerPC */
+#define ISO9660_ELTORITO_PLATFORM_ID_MAC    UINT8_C(0x02)   /**< Mac */
+#define ISO9660_ELTORITO_PLATFORM_ID_EFI    UINT8_C(0xef)   /**< UEFI */
+/** @} */
+
+
+/**
+ * El Torito boot catalog: Section header entry.
+ *
+ * A non-final section header entry is followed by
+ * ISO9660ELTORITOSECTIONHEADER::cEntries ISO9660ELTORITOSECTIONTENTRY instances.
+ */
+typedef struct ISO9660ELTORITOSECTIONHEADER
+{
+    /** 0x00: Header ID - ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER or
+     * ISO9660_ELTORITO_HEADER_ID_FINAL_SECTION_HEADER (if final). */
+    uint8_t             bHeaderId;
+    /** 0x01: The platform ID (ISO9660_ELTORITO_PLATFORM_ID_XXX). */
+    uint8_t             bPlatformId;
+    /** 0x02: Number of entries in this section (i.e. following this header). */
+    uint16_t            cEntries;
+    /** 0x04: String ID for the section. */
+    char                achSectionId[28];
+} ISO9660ELTORITOSECTIONHEADER;
+AssertCompileSize(ISO9660ELTORITOSECTIONHEADER, 0x20);
+/** Pointer to an El Torito section header entry. */
+typedef ISO9660ELTORITOSECTIONHEADER *PISO9660ELTORITOSECTIONHEADER;
+/** Pointer to a const El Torito section header entry. */
+typedef ISO9660ELTORITOSECTIONHEADER const *PCISO9660ELTORITOSECTIONHEADER;
+
+
+/**
+ * El Torito boot catalog: Default (initial) entry.
+ *
+ * Followed by ISO9660ELTORITOSECTIONHEADER.
+ *
+ * Differs from ISO9660ELTORITOSECTIONENTRY in that it doesn't have a
+ * selection criteria and no media flags (only type).
+ */
+typedef struct ISO9660ELTORITODEFAULTENTRY
+{
+    /** 0x00: Boot indicator (ISO9660_ELTORITO_BOOT_INDICATOR_XXX). */
+    uint8_t             bBootIndicator;
+    /** 0x01: Boot media type.  The first four bits are defined by
+     * ISO9660_ELTORITO_BOOT_MEDIA_TYPE_XXX, whereas the top four bits MBZ. */
+    uint8_t             bBootMediaType;
+    /** 0x02: Load segment - load address divided by 0x10. */
+    uint16_t            uLoadSeg;
+    /** 0x04: System type from image partition table. */
+    uint8_t             bSystemType;
+    /** 0x05: Unused, MBZ. */
+    uint8_t             bUnused;
+    /** 0x06: Number of emulated 512 byte sectors to load. */
+    uint16_t            cEmulatedSectorsToLoad;
+    /** 0x08: Image location in the ISO (block offset), always (?) little endian. */
+    uint32_t            offBootImage;
+    /** 0x0c: Reserved, MBZ */
+    uint8_t             abReserved[20];
+} ISO9660ELTORITODEFAULTENTRY;
+AssertCompileSize(ISO9660ELTORITODEFAULTENTRY, 0x20);
+/** Pointer to an El Torito default (initial) entry. */
+typedef ISO9660ELTORITODEFAULTENTRY *PISO9660ELTORITODEFAULTENTRY;
+/** Pointer to a const El Torito default (initial) entry. */
+typedef ISO9660ELTORITODEFAULTENTRY const *PCISO9660ELTORITODEFAULTENTRY;
+
+
+/**
+ * El Torito boot catalg: Section entry.
+ */
+typedef struct ISO9660ELTORITOSECTIONENTRY
+{
+    /** 0x00: Boot indicator (ISO9660_ELTORITO_BOOT_INDICATOR_XXX). */
+    uint8_t             bBootIndicator;
+    /** 0x01: Boot media type and flags.  The first four bits are defined by
+     * ISO9660_ELTORITO_BOOT_MEDIA_TYPE_XXX and the top four bits by
+     * ISO9660_ELTORITO_BOOT_MEDIA_F_XXX. */
+    uint8_t             bBootMediaType;
+    /** 0x02: Load segment - load address divided by 0x10. */
+    uint16_t            uLoadSeg;
+    /** 0x04: System type from image partition table. */
+    uint8_t             bSystemType;
+    /** 0x05: Unused, MBZ. */
+    uint8_t             bUnused;
+    /** 0x06: Number of emulated 512 byte sectors to load. */
+    uint16_t            cEmulatedSectorsToLoad;
+    /** 0x08: Image location in the ISO (block offset), always (?) little endian. */
+    uint32_t            offBootImage;
+    /** 0x0c: Selection criteria type (ISO9660_ELTORITO_SEL_CRIT_TYPE_XXX). */
+    uint8_t             bSelectionCriteriaType;
+    /** 0x0c: Selection criteria specific data. */
+    uint8_t             abSelectionCriteria[19];
+} ISO9660ELTORITOSECTIONENTRY;
+AssertCompileSize(ISO9660ELTORITOSECTIONENTRY, 0x20);
+/** Pointer to an El Torito default (initial) entry. */
+typedef ISO9660ELTORITOSECTIONENTRY *PISO9660ELTORITOSECTIONENTRY;
+/** Pointer to a const El Torito default (initial) entry. */
+typedef ISO9660ELTORITOSECTIONENTRY const *PCISO9660ELTORITOSECTIONENTRY;
+
+
+/** @name  ISO9660_ELTORITO_BOOT_INDICATOR_XXX - Boot indicators.
+ * @{ */
+#define ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE        UINT8_C(0x88)
+#define ISO9660_ELTORITO_BOOT_INDICATOR_NOT_BOOTABLE    UINT8_C(0x00)
+/** @} */
+
+/** @name ISO9660_ELTORITO_BOOT_MEDIA_TYPE_XXX - Boot media types.
+ * @{ */
+#define ISO9660_ELTORITO_BOOT_MEDIA_TYPE_NO_EMULATION   UINT8_C(0x0)
+#define ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_2_MB  UINT8_C(0x1)
+#define ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_44_MB UINT8_C(0x2)
+#define ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_2_88_MB UINT8_C(0x3)
+#define ISO9660_ELTORITO_BOOT_MEDIA_TYPE_HARD_DISK      UINT8_C(0x4)
+#define ISO9660_ELTORITO_BOOT_MEDIA_TYPE_MASK           UINT8_C(0xf) /**< The media type mask. */
+/** @} */
+
+/** @name ISO9660_ELTORITO_BOOT_MEDIA_F_XXX - Boot media flags.
+ * These only applies to the section entry, not to the default (initial) entry.
+ * @{ */
+#define ISO9660_ELTORITO_BOOT_MEDIA_F_RESERVED          UINT8_C(0x10) /**< Reserved bit, MBZ. */
+#define ISO9660_ELTORITO_BOOT_MEDIA_F_CONTINUATION      UINT8_C(0x20) /**< Contiunation entry follows. */
+#define ISO9660_ELTORITO_BOOT_MEDIA_F_ATAPI_DRIVER      UINT8_C(0x40) /**< Image contains an ATAPI driver. */
+#define ISO9660_ELTORITO_BOOT_MEDIA_F_SCSI_DRIVERS      UINT8_C(0x80) /**< Image contains SCSI drivers. */
+#define ISO9660_ELTORITO_BOOT_MEDIA_F_MASK              UINT8_C(0xf0) /**< The media/entry flag mask. */
+/** @} */
+
+/** @name ISO9660_ELTORITO_SEL_CRIT_TYPE_XXX - Selection criteria type.
+ * @{ */
+#define ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE             UINT8_C(0x00) /**< No selection criteria */
+#define ISO9660_ELTORITO_SEL_CRIT_TYPE_LANG_AND_VERSION UINT8_C(0x01) /**< Language and version (IBM). */
+/** @} */
+
+
+/**
+ * El Torito boot catalog: Section entry extension.
+ *
+ * This is used for carrying additional selection criteria data.  It follows
+ * a ISO9660ELTORITOSECTIONENTRY.
+ */
+typedef struct ISO9660ELTORITOSECTIONENTRYEXT
+{
+    /** 0x00: Extension indicator (ISO9660_ELTORITO_SECTION_ENTRY_EXT_ID). */
+    uint8_t             bExtensionId;
+    /** 0x01: Selection criteria extension flags (ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_XXX). */
+    uint8_t             fFlags;
+    /** 0x02: Selection critiera data. */
+    uint8_t             abSelectionCriteria[30];
+} ISO9660ELTORITOSECTIONENTRYEXT;
+AssertCompileSize(ISO9660ELTORITOSECTIONENTRYEXT, 0x20);
+/** Pointer to an El Torito default (initial) entry. */
+typedef ISO9660ELTORITOSECTIONENTRYEXT *PISO9660ELTORITOSECTIONENTRYEXT;
+/** Pointer to a const El Torito default (initial) entry. */
+typedef ISO9660ELTORITOSECTIONENTRYEXT const *PCISO9660ELTORITOSECTIONENTRYEXT;
+
+/** Value of ISO9660ELTORITOSECTIONENTRYEXT::bExtensionId. */
+#define ISO9660_ELTORITO_SECTION_ENTRY_EXT_ID   UINT_C(0x44)
+
+/** @name ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_XXX - ISO9660ELTORITOSECTIONENTRYEXT::fFlags
+ * @{ */
+#define ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_MORE           UINT8_C(0x20) /**< Further extension entries follows.  */
+#define ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_UNUSED_MASK    UINT8_C(0xef) /**< Mask of all unused bits. */
+/** @} */
+
+
+/**
+ * Boot information table used by isolinux and GRUB2 El Torito boot files.
+ */
+typedef struct ISO9960SYSLINUXINFOTABLE
+{
+    /** 0x00/0x08: Offset of the primary volume descriptor (block offset). */
+    uint32_t            offPrimaryVolDesc;
+    /** 0x04/0x0c: Offset of the boot file (block offset). */
+    uint32_t            offBootFile;
+    /** 0x08/0x10: Size of the boot file in bytes. */
+    uint32_t            cbBootFile;
+    /** 0x0c/0x14: Boot file checksum.
+     * This is the sum of all the 32-bit words in the image, start at the end of
+     * this structure (i.e. offset 64). */
+    uint32_t            uChecksum;
+    /** 0x10/0x18: Reserved for future fun. */
+    uint32_t            auReserved[10];
+} ISO9960SYSLINUXINFOTABLE;
+AssertCompileSize(ISO9960SYSLINUXINFOTABLE, 56);
+/** Pointer to a syslinux boot information table.   */
+typedef ISO9960SYSLINUXINFOTABLE *PISO9960SYSLINUXINFOTABLE;
+/** Pointer to a const syslinux boot information table.   */
+typedef ISO9960SYSLINUXINFOTABLE const *PCISO9960SYSLINUXINFOTABLE;
 
 /** @} */
 
