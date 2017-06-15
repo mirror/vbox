@@ -510,3 +510,74 @@ RTDECL(bool) RTNetStrIsIPv6AddrAny(const char *pcszAddr)
     return true;
 }
 RT_EXPORT_SYMBOL(RTNetStrIsIPv6AddrAny);
+
+
+RTDECL(int) RTNetMaskToPrefixIPv6(PCRTNETADDRIPV6 pMask, int *piPrefix)
+{
+    AssertReturn(pMask != NULL, VERR_INVALID_PARAMETER);
+
+    int iPrefix = 0;
+    unsigned int i;
+
+    for (i = 0; i < RT_ELEMENTS(pMask->au8); ++i)
+    {
+        int iBits;
+        switch (pMask->au8[i])
+        {
+        case 0x00: iBits = 0; break;
+        case 0x80: iBits = 1; break;
+        case 0xc0: iBits = 2; break;
+        case 0xe0: iBits = 3; break;
+        case 0xf0: iBits = 4; break;
+        case 0xf8: iBits = 5; break;
+        case 0xfc: iBits = 6; break;
+        case 0xfe: iBits = 7; break;
+        case 0xff: iBits = 8; break;
+        default:                /* non-contiguous mask */
+            return VERR_INVALID_PARAMETER;
+        }
+
+        iPrefix += iBits;
+        if (iBits != 8)
+            break;
+    }
+
+    for (++i; i < RT_ELEMENTS(pMask->au8); ++i)
+        if (pMask->au8[i] != 0)
+            return VERR_INVALID_PARAMETER;
+
+    if (piPrefix != NULL)
+        *piPrefix = iPrefix;
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTNetMaskToPrefixIPv6);
+
+
+RTDECL(int) RTNetPrefixToMaskIPv6(int iPrefix, PRTNETADDRIPV6 pMask)
+{
+    AssertReturn(pMask != NULL, VERR_INVALID_PARAMETER);
+
+    if (RT_UNLIKELY(iPrefix < 0 || 128 < iPrefix))
+        return VERR_INVALID_PARAMETER;
+
+    for (unsigned int i = 0; i < RT_ELEMENTS(pMask->au32); ++i)
+    {
+        if (iPrefix == 0)
+        {
+            pMask->au32[i] = 0;
+        }
+        else if (iPrefix >= 32)
+        {
+            pMask->au32[i] = UINT32_C(0xffffffff);
+            iPrefix -= 32;
+        }
+        else
+        {
+            pMask->au32[i] = RT_H2N_U32(UINT32_C(0xffffffff) << (32 - iPrefix));
+            iPrefix = 0;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTNetPrefixToMaskIPv6);
