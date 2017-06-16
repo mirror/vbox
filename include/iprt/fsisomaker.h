@@ -147,6 +147,18 @@ RTDECL(int) RTFsIsoMakerSetSysAreaContent(RTFSISOMAKER hIsoMaker, void const *pv
 RTDECL(uint32_t) RTFsIsoMakerGetObjIdxForPath(RTFSISOMAKER hIsoMaker, uint32_t fNamespaces, const char *pszPath);
 
 /**
+ * Queries the configuration index of the boot catalog file object.
+ *
+ * The boot catalog file is created as necessary, thus this have to be a query
+ * rather than a getter since object creation may fail.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pidxObj             Where to return the configuration index.
+ */
+RTDECL(int) RTFsIsoMakerQueryObjIdxForBootCatalog(RTFSISOMAKER hIsoMaker, uint32_t *pidxObj);
+
+/**
  * Removes the specified object from the image.
  *
  * @returns IPRT status code.
@@ -188,6 +200,28 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
  */
 RTDECL(int) RTFsIsoMakerObjSetNameAndParent(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint32_t idxParentObj,
                                             uint32_t fNamespaces, const char *pszName);
+
+/**
+ * Enables or disable syslinux boot info table patching of a file.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxObj              The configuration index.
+ * @param   fEnable             Whether to enable or disable patching.
+ */
+RTDECL(int) RTFsIsoMakerObjEnableBootInfoTablePatching(RTFSISOMAKER hIsoMaker, uint32_t idxObj, bool fEnable);
+
+/**
+ * Gets the data size of an object.
+ *
+ * Currently only supported on file objects.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxObj              The configuration index.
+ * @param   pcbData             Where to return the size.
+ */
+RTDECL(int) RTFsIsoMakerObjQueryDataSize(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint64_t *pcbData);
 
 /**
  * Adds an unnamed directory to the image.

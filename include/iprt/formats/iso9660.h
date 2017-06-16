@@ -876,7 +876,7 @@ typedef ISO9660ELTORITOSECTIONENTRYEXT const *PCISO9660ELTORITOSECTIONENTRYEXT;
 /**
  * Boot information table used by isolinux and GRUB2 El Torito boot files.
  */
-typedef struct ISO9960SYSLINUXINFOTABLE
+typedef struct ISO9660SYSLINUXINFOTABLE
 {
     /** 0x00/0x08: Offset of the primary volume descriptor (block offset). */
     uint32_t            offPrimaryVolDesc;
@@ -890,12 +890,12 @@ typedef struct ISO9960SYSLINUXINFOTABLE
     uint32_t            uChecksum;
     /** 0x10/0x18: Reserved for future fun. */
     uint32_t            auReserved[10];
-} ISO9960SYSLINUXINFOTABLE;
-AssertCompileSize(ISO9960SYSLINUXINFOTABLE, 56);
+} ISO9660SYSLINUXINFOTABLE;
+AssertCompileSize(ISO9660SYSLINUXINFOTABLE, 56);
 /** Pointer to a syslinux boot information table.   */
-typedef ISO9960SYSLINUXINFOTABLE *PISO9960SYSLINUXINFOTABLE;
+typedef ISO9660SYSLINUXINFOTABLE *PISO9660SYSLINUXINFOTABLE;
 /** Pointer to a const syslinux boot information table.   */
-typedef ISO9960SYSLINUXINFOTABLE const *PCISO9960SYSLINUXINFOTABLE;
+typedef ISO9660SYSLINUXINFOTABLE const *PCISO9660SYSLINUXINFOTABLE;
 
 /** @} */
 
