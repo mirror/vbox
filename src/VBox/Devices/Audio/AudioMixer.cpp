@@ -1437,14 +1437,14 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         PPDMIAUDIOCONNECTOR pConn = pMixStream->pConn;
         AssertPtr(pConn);
 
-        uint32_t cProc = 0;
+        uint32_t csProc = 0;
 
         int rc2 = pConn->pfnStreamIterate(pConn, pStream);
         if (RT_SUCCESS(rc2))
         {
             if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
             {
-                rc = pConn->pfnStreamCapture(pConn, pStream, &cProc);
+                rc = pConn->pfnStreamCapture(pConn, pStream, &csProc);
                 if (RT_FAILURE(rc2))
                 {
                     LogFunc(("%s: Failed capturing stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
@@ -1453,12 +1453,12 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
                     continue;
                 }
 
-                if (cProc)
+                if (csProc)
                     pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
             }
             else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
             {
-                rc2 = pConn->pfnStreamPlay(pConn, pStream, &cProc);
+                rc2 = pConn->pfnStreamPlay(pConn, pStream, &csProc);
                 if (RT_FAILURE(rc2))
                 {
                     LogFunc(("%s: Failed playing stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
@@ -1492,7 +1492,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
             }
         }
 
-        Log3Func(("\t%s: cPlayed/cCaptured=%RU32, rc2=%Rrc\n", pStream->szName, cProc, rc2));
+        Log3Func(("\t%s: cPlayed/cCaptured=%RU32, rc2=%Rrc\n", pStream->szName, csProc, rc2));
     }
 
     Log3Func(("[%s] fPendingDisable=%RTbool, %RU8/%RU8 streams disabled\n",
