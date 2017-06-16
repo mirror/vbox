@@ -41,6 +41,7 @@
   MdeModulePkg/MdeModulePkg.dec
   UefiCpuPkg/UefiCpuPkg.dec
   OvmfPkg/OvmfPkg.dec
+  VBoxPkg/VBoxPkg.dec                           # VBox specific so the code can find some necessary headers
 
 [Guids]
   gEfiMemoryTypeInformationGuid

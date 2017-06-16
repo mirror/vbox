@@ -40,8 +40,9 @@
 #include "Cmos.h"
 
 #ifdef VBOX
-# define IN_RING0
-# include "../../../../DevEFI.h"
+# include "VBoxPkg.h"
+# include "DevEFI.h"
+# include "iprt/asm.h"
 #endif
 
 EFI_MEMORY_TYPE_INFORMATION mDefaultMemoryTypeInformation[] = {
@@ -75,11 +76,11 @@ GetVmVariable(UINT32 Variable, CHAR8 *pbBuf, UINT32 cbBuf)
 {
   UINT32 cbVar, offBuf;
 
-  IoWrite32(EFI_INFO_PORT, Variable);
-  cbVar = IoRead32(EFI_INFO_PORT);
+  ASMOutU32(EFI_INFO_PORT, Variable);
+  cbVar = ASMInU32(EFI_INFO_PORT);
 
   for (offBuf = 0; offBuf < cbVar && offBuf < cbBuf; offBuf++)
-    pbBuf[offBuf] = IoRead8(EFI_INFO_PORT);
+    pbBuf[offBuf] = ASMInU8(EFI_INFO_PORT);
 
   return cbVar;
 }
