@@ -330,7 +330,7 @@ typedef struct RTFSISOMAKEROBJ
 
     /** Used to make sure things like the boot catalog stays in the image even if
      * it's not mapped into any of the namespaces. */
-    bool                    fNotOrphan;
+    uint32_t                cNotOrphan;
 } RTFSISOMAKEROBJ;
 
 
@@ -454,7 +454,21 @@ typedef struct RTFSISOMAKERINT
      * @{ */
     /** The boot catalog file. */
     PRTFSISOMAKERFILE       pBootCatFile;
-
+    /** Per boot catalog entry data needed for updating offsets when finalizing. */
+    struct
+    {
+        /** The type (ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY,
+         * ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER,
+         * ISO9660_ELTORITO_HEADER_ID_FINAL_SECTION_HEADER,
+         * ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE or
+         * ISO9660_ELTORITO_BOOT_INDICATOR_NOT_BOOTABLE). */
+        uint8_t             bType;
+        /** Number of entries related to this one.  This is zero for unused entries,
+         *  2 for the validation entry, 2+ for section headers, and 1 for images. */
+        uint8_t             cEntries;
+        /** The boot file. */
+        PRTFSISOMAKERFILE   pBootFile;
+    }                       aBootCatEntries[64];
     /** @} */
 
     /** @name Finalized image stuff
@@ -2564,7 +2578,7 @@ static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pO
     pObj->pUdfName      = NULL;
     pObj->pHfsName      = NULL;
     pObj->idxObj        = pThis->cObjects++;
-    pObj->fNotOrphan    = false;
+    pObj->cNotOrphan    = 0;
     if (pObjInfo)
     {
         pObj->BirthTime         = pObjInfo->BirthTime;
@@ -2918,7 +2932,7 @@ static int rtFsIsoMakerEnsureBootCatFile(PRTFSISOMAKERINT pThis)
             pFile->enmSrcType       = RTFSISOMAKERSRCTYPE_VFS_FILE;
             pFile->u.hVfsFile       = hVfsFile;
             pFile->pBootInfoTable   = NULL;
-            pFile->Core.fNotOrphan  = true;
+            pFile->Core.cNotOrphan  = 1;
 
             /* Save file pointer and we're done. */
             pThis->pBootCatFile = pFile;
@@ -2960,6 +2974,177 @@ RTDECL(int) RTFsIsoMakerQueryObjIdxForBootCatalog(RTFSISOMAKER hIsoMaker, uint32
 }
 
 
+/**
+ * Set the validation entry of the boot catalog (this is the first entry).
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idPlatform          The platform ID
+ *                              (ISO9660_ELTORITO_PLATFORM_ID_XXX).
+ * @param   pszString           CD/DVD-ROM identifier.  Optional.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetValidationEntry(RTFSISOMAKER hIsoMaker, uint8_t idPlatform, const char *pszString)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    size_t cchString = 0;
+    if (pszString)
+    {
+        cchString = RTStrCalcLatin1Len(pszString);
+        AssertReturn(cchString < RT_SIZEOFMEMB(ISO9660ELTORITOVALIDATIONENTRY, achId), VERR_OUT_OF_RANGE);
+    }
+
+    /*
+     * Make sure we've got a boot file.
+     */
+    int rc = rtFsIsoMakerEnsureBootCatFile(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Construct the entry data.
+         */
+        ISO9660ELTORITOVALIDATIONENTRY Entry;
+        Entry.bHeaderId = ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY;
+        Entry.bPlatformId = idPlatform;
+        Entry.u16Reserved = 0;
+        RT_ZERO(Entry.achId);
+        if (cchString)
+        {
+            char *pszTmp = Entry.achId;
+            rc = RTStrToLatin1Ex(pszString, RTSTR_MAX, &pszTmp, sizeof(Entry.achId), NULL);
+            AssertRC(rc);
+        }
+        Entry.u16Checksum = 0;
+        Entry.bKey1 = ISO9660_ELTORITO_KEY_BYTE_1;
+        Entry.bKey2 = ISO9660_ELTORITO_KEY_BYTE_2;
+
+        /* Calc checksum. */
+        uint16_t uSum = 0;
+        uint16_t const *pu16Src = (uint16_t const *)&Entry;
+        uint16_t        cLeft   = sizeof(Entry) / sizeof(uint16_t);
+        while (cLeft-- > 0)
+        {
+            uSum += RT_LE2H_U16(*pu16Src);
+            pu16Src++;
+        }
+        Entry.u16Checksum = RT_H2LE_U16((uint16_t)0 - uSum);
+
+        /*
+         * Write the entry and update our internal tracker.
+         */
+        rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, 0, &Entry, sizeof(Entry), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->aBootCatEntries[0].bType    = ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY;
+            pThis->aBootCatEntries[0].cEntries = 2;
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Set the validation entry of the boot catalog (this is the first entry).
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxBootCat          The boot catalog entry.  Zero and two are
+ *                              invalid.  Must be less than 63.
+ * @param   idxImageObj         The configuration index of the boot image.
+ * @param   bBootMediaType      The media type and flag (not for entry 1)
+ *                              (ISO9660_ELTORITO_BOOT_MEDIA_TYPE_XXX,
+ *                              ISO9660_ELTORITO_BOOT_MEDIA_F_XXX).
+ * @param   bSystemType         The partitiona table system ID.
+ * @param   fBootable           Whether it's a bootable entry or if we just want
+ *                              the BIOS to setup the emulation without booting
+ *                              it.
+ * @param   uLoadSeg            The load address divided by 0x10 (i.e. the real
+ *                              mode segment number).
+ * @param   cSectorsToLoad      Number of emulated sectors to load.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t idxImageObj,
+                                               uint8_t bBootMediaType, uint8_t bSystemType, bool fBootable,
+                                               uint16_t uLoadSeg, uint16_t cSectorsToLoad)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)rtFsIsoMakerIndexToObj(pThis, idxImageObj);
+    AssertReturn(pFile, VERR_OUT_OF_RANGE);
+    AssertReturn((bBootMediaType & ISO9660_ELTORITO_BOOT_MEDIA_TYPE_MASK) <= ISO9660_ELTORITO_BOOT_MEDIA_TYPE_HARD_DISK,
+                 VERR_INVALID_PARAMETER);
+    AssertReturn(!(bBootMediaType & ISO9660_ELTORITO_BOOT_MEDIA_F_MASK) || idxBootCat != 1,
+                 VERR_INVALID_PARAMETER);
+
+    AssertReturn(idxBootCat != 0 && idxBootCat != 2 && idxBootCat < RT_ELEMENTS(pThis->aBootCatEntries) - 1U, VERR_OUT_OF_RANGE);
+
+    /*
+     * Make sure we've got a boot file.
+     */
+    int rc = rtFsIsoMakerEnsureBootCatFile(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Construct the entry.
+         */
+        ISO9660ELTORITOSECTIONENTRY Entry;
+        Entry.bBootIndicator            = fBootable ? ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE
+                                        :             ISO9660_ELTORITO_BOOT_INDICATOR_NOT_BOOTABLE;
+        Entry.bBootMediaType            = bBootMediaType;
+        Entry.uLoadSeg                  = RT_H2LE_U16(uLoadSeg);
+        Entry.bSystemType               = bSystemType;
+        Entry.bUnused                   = 0;
+        Entry.cEmulatedSectorsToLoad    = RT_H2LE_U16(cSectorsToLoad);
+        Entry.offBootImage              = 0;
+        Entry.bSelectionCriteriaType    = ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE;
+        RT_ZERO(Entry.abSelectionCriteria);
+
+        /*
+         * Write it and update our internal tracker.
+         */
+        rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, 32 * idxBootCat, &Entry, sizeof(Entry), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (pThis->aBootCatEntries[idxBootCat].pBootFile != pFile)
+            {
+                if (pThis->aBootCatEntries[idxBootCat].pBootFile)
+                    pThis->aBootCatEntries[idxBootCat].pBootFile->Core.cNotOrphan--;
+                pFile->Core.cNotOrphan++;
+                pThis->aBootCatEntries[idxBootCat].pBootFile = pFile;
+            }
+
+            pThis->aBootCatEntries[idxBootCat].bType    = Entry.bBootIndicator;
+            pThis->aBootCatEntries[idxBootCat].cEntries = 1;
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Set the validation entry of the boot catalog (this is the first entry).
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxBootCat          The boot catalog entry.
+ * @param   idPlatform          The platform ID
+ *                              (ISO9660_ELTORITO_PLATFORM_ID_XXX).
+ * @param   pszString           CD/DVD-ROM identifier.  Optional.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t cEntries,
+                                                     uint8_t idPlatform, const char *pszString)
+{
+    RT_NOREF(hIsoMaker, idxBootCat, cEntries, idPlatform, pszString);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+
 
 
 /*
@@ -2990,7 +3175,7 @@ static int rtFsIsoMakerFinalizeRemoveOrphans(PRTFSISOMAKERINT pThis)
                 || pCur->pJolietName
                 || pCur->pUdfName
                 || pCur->pHfsName
-                || pCur->fNotOrphan)
+                || pCur->cNotOrphan > 0)
             { /* likely */ }
             else
             {

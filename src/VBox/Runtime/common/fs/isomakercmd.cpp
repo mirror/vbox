@@ -284,6 +284,8 @@ typedef struct RTFSISOMKCMDELTORITOENTRY
                         Default;
     } u;
 } RTFSISOMKCMDELTORITOENTRY;
+/** Pointer to an el torito boot entry. */
+typedef RTFSISOMKCMDELTORITOENTRY *PRTFSISOMKCMDELTORITOENTRY;
 
 /**
  * ISO maker command options & state.
@@ -1334,7 +1336,7 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
                                                                Parsed.aNames[i].szPath);
                 if (idxObj != UINT32_MAX)
                 {
-                    int rc = RTFsIsoMakerObjRemove(pOpts->hIsoMaker, idxObj);
+                    rc = RTFsIsoMakerObjRemove(pOpts->hIsoMaker, idxObj);
                     if (RT_FAILURE(rc))
                         return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to remove '%s': %Rrc", pszSpec, rc);
                     cRemoved++;
@@ -1353,8 +1355,8 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
         RTFSOBJINFO     ObjInfo;
         uint32_t        offError;
         RTERRINFOSTATIC ErrInfo;
-        int rc = RTVfsChainQueryInfo(pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX,
-                                     RTPATH_F_FOLLOW_LINK, &offError, RTErrInfoInitStatic(&ErrInfo));
+        rc = RTVfsChainQueryInfo(pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX,
+                                 RTPATH_F_FOLLOW_LINK, &offError, RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
             return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainQueryInfo", pszSrc, rc, offError, &ErrInfo.Core);
 
@@ -1746,15 +1748,17 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
     /*
      * Locate and configure the boot images first.
      */
-    for (uint32_t idxBootCat = 1; idxBootCat < pOpts->cBootCatEntries; idxBootCat++)
-        if (   pOpts->aBootCatEntries[idxBootCat].enmType == RTFSISOMKCMDELTORITOENTRY::kEntryType_Default
-            || pOpts->aBootCatEntries[idxBootCat].enmType == RTFSISOMKCMDELTORITOENTRY::kEntryType_Section)
+    int rc;
+    PRTFSISOMKCMDELTORITOENTRY pBootCatEntry = &pOpts->aBootCatEntries[1];
+    for (uint32_t idxBootCat = 1; idxBootCat < pOpts->cBootCatEntries; idxBootCat++, pBootCatEntry++)
+        if (   pBootCatEntry->enmType == RTFSISOMKCMDELTORITOENTRY::kEntryType_Default
+            || pBootCatEntry->enmType == RTFSISOMKCMDELTORITOENTRY::kEntryType_Section)
         {
             /* Make sure we've got a boot image. */
-            uint32_t idxImageObj = pOpts->aBootCatEntries[idxBootCat].u.Section.idxImageObj;
+            uint32_t idxImageObj = pBootCatEntry->u.Section.idxImageObj;
             if (idxImageObj == UINT32_MAX)
             {
-                const char *pszBootImage = pOpts->aBootCatEntries[idxBootCat].u.Section.pszImageNameInIso;
+                const char *pszBootImage = pBootCatEntry->u.Section.pszImageNameInIso;
                 if (pszBootImage == NULL)
                     return rtFsIsoMakerCmdSyntaxError(pOpts, "No image name given for boot catalog entry #%u", idxBootCat);
 
@@ -1762,13 +1766,13 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
                 if (idxImageObj == UINT32_MAX)
                     return rtFsIsoMakerCmdSyntaxError(pOpts, "Unable to locate image for boot catalog entry #%u: %s",
                                                       idxBootCat, pszBootImage);
-                pOpts->aBootCatEntries[idxBootCat].u.Section.idxImageObj = idxImageObj;
+                pBootCatEntry->u.Section.idxImageObj = idxImageObj;
             }
 
             /* Enable patching it? */
-            if (pOpts->aBootCatEntries[idxBootCat].u.Section.fInsertBootInfoTable)
+            if (pBootCatEntry->u.Section.fInsertBootInfoTable)
             {
-                int rc = RTFsIsoMakerObjEnableBootInfoTablePatching(pOpts->hIsoMaker, idxImageObj, true);
+                rc = RTFsIsoMakerObjEnableBootInfoTablePatching(pOpts->hIsoMaker, idxImageObj, true);
                 if (RT_FAILURE(rc))
                     return rtFsIsoMakerCmdErrorRc(pOpts, rc,
                                                   "RTFsIsoMakerObjEnableBootInfoTablePatching failed on entry #%u: %Rrc\n",
@@ -1776,28 +1780,76 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
             }
 
             /* Figure out the floppy type given the object size. */
-            if (pOpts->aBootCatEntries[idxBootCat].u.Section.bBootMediaType == ISO9660_ELTORITO_BOOT_MEDIA_TYPE_MASK)
+            if (pBootCatEntry->u.Section.bBootMediaType == ISO9660_ELTORITO_BOOT_MEDIA_TYPE_MASK)
             {
                 uint64_t cbImage;
-                int rc = RTFsIsoMakerObjQueryDataSize(pOpts->hIsoMaker, idxImageObj, &cbImage);
+                rc = RTFsIsoMakerObjQueryDataSize(pOpts->hIsoMaker, idxImageObj, &cbImage);
                 if (RT_FAILURE(rc))
                     return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerObjGetDataSize failed on entry #%u: %Rrc\n",
                                                   idxBootCat, rc);
                 if (cbImage == 1228800)
-                    pOpts->aBootCatEntries[idxBootCat].u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_2_MB;
+                    pBootCatEntry->u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_2_MB;
                 else if (cbImage <= 1474560)
-                    pOpts->aBootCatEntries[idxBootCat].u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_44_MB;
+                    pBootCatEntry->u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_44_MB;
                 else if (cbImage <= 2949120)
-                    pOpts->aBootCatEntries[idxBootCat].u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_2_88_MB;
+                    pBootCatEntry->u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_2_88_MB;
                 else
-                    pOpts->aBootCatEntries[idxBootCat].u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_HARD_DISK;
+                    pBootCatEntry->u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_HARD_DISK;
             }
         }
 
     /*
      * Add the boot catalog entries.
      */
+    pBootCatEntry = &pOpts->aBootCatEntries[0];
+    for (uint32_t idxBootCat = 0; idxBootCat < pOpts->cBootCatEntries; idxBootCat++, pBootCatEntry++)
+        switch (pBootCatEntry->enmType)
+        {
+            case RTFSISOMKCMDELTORITOENTRY::kEntryType_Validation:
+                Assert(idxBootCat == 0);
+                rc = RTFsIsoMakerBootCatSetValidationEntry(pOpts->hIsoMaker, pBootCatEntry->u.Validation.idPlatform,
+                                                           pBootCatEntry->u.Validation.pszString);
+                if (RT_FAILURE(rc))
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerBootCatSetValidationEntry failed: %Rrc\n", rc);
+                break;
 
+            case RTFSISOMKCMDELTORITOENTRY::kEntryType_Default:
+            case RTFSISOMKCMDELTORITOENTRY::kEntryType_Section:
+                Assert(pBootCatEntry->enmType == RTFSISOMKCMDELTORITOENTRY::kEntryType_Default ? idxBootCat == 1 : idxBootCat > 2);
+                rc = RTFsIsoMakerBootCatSetSectionEntry(pOpts->hIsoMaker, idxBootCat,
+                                                        pBootCatEntry->u.Section.idxImageObj,
+                                                        pBootCatEntry->u.Section.bBootMediaType,
+                                                        pBootCatEntry->u.Section.bSystemType,
+                                                        pBootCatEntry->u.Section.fBootable,
+                                                        pBootCatEntry->u.Section.uLoadSeg,
+                                                        pBootCatEntry->u.Section.cSectorsToLoad);
+                if (RT_FAILURE(rc))
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerBootCatSetSectionEntry failed on entry #%u: %Rrc\n",
+                                                  idxBootCat, rc);
+                break;
+
+            case RTFSISOMKCMDELTORITOENTRY::kEntryType_SectionHeader:
+            {
+                uint32_t cEntries = 1;
+                while (   idxBootCat + cEntries < pOpts->cBootCatEntries
+                       && pBootCatEntry[cEntries].enmType != RTFSISOMKCMDELTORITOENTRY::kEntryType_SectionHeader)
+                    cEntries++;
+                cEntries--;
+
+                Assert(idxBootCat > 1);
+                rc = RTFsIsoMakerBootCatSetSectionHeaderEntry(pOpts->hIsoMaker, idxBootCat, cEntries,
+                                                              pBootCatEntry->u.SectionHeader.idPlatform,
+                                                              pBootCatEntry->u.SectionHeader.pszString);
+                if (RT_FAILURE(rc))
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc,
+                                                  "RTFsIsoMakerBootCatSetSectionHeaderEntry failed on entry #%u: %Rrc\n",
+                                                  idxBootCat, rc);
+                break;
+            }
+
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+        }
 
     return VINF_SUCCESS;
 }
@@ -2001,6 +2053,12 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
         else if (!Opts.pszOutFile && !Opts.fVirtualImageMaker)
             rc = rtFsIsoMakerCmdErrorRc(&Opts, VERR_INVALID_PARAMETER, "No output file specified (--output <file>)");
     }
+
+    /*
+     * Final actions.
+     */
+    if (RT_SUCCESS(rc))
+        rc = rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(&Opts);
     if (RT_SUCCESS(rc))
     {
         /*

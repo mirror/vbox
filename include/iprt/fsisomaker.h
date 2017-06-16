@@ -307,6 +307,54 @@ RTDECL(int) RTFsIsoMakerAddFileWithSrcPath(RTFSISOMAKER hIsoMaker, const char *p
  */
 RTDECL(int) RTFsIsoMakerAddFileWithVfsFile(RTFSISOMAKER hIsoMaker, const char *pszFile, RTVFSFILE hVfsFileSrc, uint32_t *pidxObj);
 
+
+/**
+ * Set the validation entry of the boot catalog (this is the first entry).
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idPlatform          The platform ID
+ *                              (ISO9660_ELTORITO_PLATFORM_ID_XXX).
+ * @param   pszString           CD/DVD-ROM identifier.  Optional.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetValidationEntry(RTFSISOMAKER hIsoMaker, uint8_t idPlatform, const char *pszString);
+
+/**
+ * Set the validation entry of the boot catalog (this is the first entry).
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxBootCat          The boot catalog entry.  Zero and two are
+ *                              invalid.  Must be less than 63.
+ * @param   idxImageObj         The configuration index of the boot image.
+ * @param   bBootMediaType      The media type and flag (not for entry 1)
+ *                              (ISO9660_ELTORITO_BOOT_MEDIA_TYPE_XXX,
+ *                              ISO9660_ELTORITO_BOOT_MEDIA_F_XXX).
+ * @param   bSystemType         The partitiona table system ID.
+ * @param   fBootable           Whether it's a bootable entry or if we just want
+ *                              the BIOS to setup the emulation without booting
+ *                              it.
+ * @param   uLoadSeg            The load address divided by 0x10 (i.e. the real
+ *                              mode segment number).
+ * @param   cSectorsToLoad      Number of emulated sectors to load.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t idxImageObj,
+                                               uint8_t bBootMediaType, uint8_t bSystemType, bool fBootable,
+                                               uint16_t uLoadSeg, uint16_t cSectorsToLoad);
+
+/**
+ * Set the validation entry of the boot catalog (this is the first entry).
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxBootCat          The boot catalog entry.
+ * @param   idPlatform          The platform ID
+ *                              (ISO9660_ELTORITO_PLATFORM_ID_XXX).
+ * @param   pszString           CD/DVD-ROM identifier.  Optional.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t cEntries,
+                                                     uint8_t idPlatform, const char *pszString);
+
 /**
  * Finalizes the image.
  *
