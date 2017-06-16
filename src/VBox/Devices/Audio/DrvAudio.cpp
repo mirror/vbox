@@ -2072,11 +2072,11 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
 /**
  * Dumps (raw) PCM audio data into a file by appending.
+ * Every driver instance will have an own prefix to not introduce writing races.
  *
- * @returns IPRT status code.
- * @param   pThis               Driver inststance.
+ * @param   pThis               Driver instance.
  * @param   pszPath             Path name to save file to. The path must exist.
- * @param   pszFileName         File name suffix to use.
+ * @param   pszSuffix           File name suffix to use.
  * @param   pvData              Pointer to PCM data to dump.
  * @param   cbData              Size (in bytes) of PCM data to dump.
  */
