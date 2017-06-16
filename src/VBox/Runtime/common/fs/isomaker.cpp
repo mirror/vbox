@@ -93,6 +93,20 @@
     ( RT_UOFFSETOF(ISO9660PATHREC, achDirId[(a_cbNameInDirRec) + ((a_cbNameInDirRec) & 1)]) )
 
 
+/** No validation entry in the boot catalog. */
+#define VERR_ISOMK_BOOT_CAT_NO_VALIDATION_ENTRY                 (-24900)
+/** No default entry in the boot catalog. */
+#define VERR_ISOMK_BOOT_CAT_NO_DEFAULT_ENTRY                    (-24901)
+/** Expected section header. */
+#define VERR_ISOMK_BOOT_CAT_EXPECTED_SECTION_HEADER             (-24902)
+/** Entry in a boot catalog section is empty. */
+#define VERR_ISOMK_BOOT_CAT_EMPTY_ENTRY                         (-24903)
+/** Entry in a boot catalog section is another section. */
+#define VERR_ISOMK_BOOT_CAT_INVALID_SECTION_SIZE                (-24904)
+/** Unsectioned boot catalog entry. */
+#define VERR_ISOMK_BOOT_CAT_ERRATIC_ENTRY                       (-24905)
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -487,9 +501,8 @@ typedef struct RTFSISOMAKERINT
     uint8_t                *pbVolDescs;
     /** Pointer to the primary volume descriptor. */
     PISO9660PRIMARYVOLDESC  pPrimaryVolDesc;
-    /** El Torito volume descriptor.
-     * @todo fix type  */
-    PISO9660BOOTRECORD      pElToritoDesc;
+    /** El Torito volume descriptor. */
+    PISO9660BOOTRECORDELTORITO pElToritoDesc;
     /** Pointer to the primary volume descriptor. */
     PISO9660SUPVOLDESC      pJolietVolDesc;
     /** Terminating ISO-9660 volume descriptor. */
@@ -2934,8 +2947,10 @@ static int rtFsIsoMakerEnsureBootCatFile(PRTFSISOMAKERINT pThis)
             pFile->pBootInfoTable   = NULL;
             pFile->Core.cNotOrphan  = 1;
 
-            /* Save file pointer and we're done. */
+            /* Save file pointer and allocate a volume descriptor. */
             pThis->pBootCatFile = pFile;
+            pThis->cVolumeDescriptors++;
+
             return VINF_SUCCESS;
         }
         RTVfsFileRelease(hVfsFile);
@@ -3139,8 +3154,61 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t 
 RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t cEntries,
                                                      uint8_t idPlatform, const char *pszString)
 {
-    RT_NOREF(hIsoMaker, idxBootCat, cEntries, idPlatform, pszString);
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+
+    AssertReturn(idxBootCat >= 2 && idxBootCat < RT_ELEMENTS(pThis->aBootCatEntries) - 1U, VERR_OUT_OF_RANGE);
+    AssertReturn(cEntries < RT_ELEMENTS(pThis->aBootCatEntries) - 2U - 1U, VERR_OUT_OF_RANGE);
+    AssertReturn(idxBootCat + cEntries + 1 < RT_ELEMENTS(pThis->aBootCatEntries), VERR_OUT_OF_RANGE);
+
+    size_t cchString = 0;
+    if (pszString)
+    {
+        cchString = RTStrCalcLatin1Len(pszString);
+        AssertReturn(cchString < RT_SIZEOFMEMB(ISO9660ELTORITOVALIDATIONENTRY, achId), VERR_OUT_OF_RANGE);
+    }
+
+    /*
+     * Make sure we've got a boot file.
+     */
+    int rc = rtFsIsoMakerEnsureBootCatFile(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Construct the entry data.
+         */
+        ISO9660ELTORITOSECTIONHEADER Entry;
+        Entry.bHeaderId   = ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER;
+        Entry.bPlatformId = idPlatform;
+        Entry.cEntries    = RT_H2LE_U16(cEntries);
+        RT_ZERO(Entry.achSectionId);
+        if (cchString)
+        {
+            char *pszTmp = Entry.achSectionId;
+            rc = RTStrToLatin1Ex(pszString, RTSTR_MAX, &pszTmp, sizeof(Entry.achSectionId), NULL);
+            AssertRC(rc);
+        }
+
+        /*
+         * Write the entry and update our internal tracker.
+         */
+        rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, 32 * idxBootCat, &Entry, sizeof(Entry), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (pThis->aBootCatEntries[idxBootCat].pBootFile != NULL)
+            {
+                pThis->aBootCatEntries[idxBootCat].pBootFile->Core.cNotOrphan--;
+                pThis->aBootCatEntries[idxBootCat].pBootFile = NULL;
+            }
+
+            pThis->aBootCatEntries[idxBootCat].bType    = ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER;
+            pThis->aBootCatEntries[idxBootCat].cEntries = cEntries + 1;
+        }
+    }
+    return rc;
 }
 
 
@@ -3193,18 +3261,117 @@ static int rtFsIsoMakerFinalizeRemoveOrphans(PRTFSISOMAKERINT pThis)
 
 
 /**
- * Finalizes the El Torito boot stuff.
+ * Finalizes the El Torito boot stuff, part 1.
  *
  * This includes generating the boot catalog data and fixing the location of all
  * related image files.
  *
  * @returns IPRT status code.
  * @param   pThis               The ISO maker instance.
- * @param   poffData            The data offset (in/out).
  */
-static int rtFsIsoMakerFinalizeBootStuff(PRTFSISOMAKERINT pThis, uint64_t *poffData)
+static int rtFsIsoMakerFinalizeBootStuffPart1(PRTFSISOMAKERINT pThis)
 {
-    RT_NOREF(pThis, poffData);
+    /*
+     * Anything?
+     */
+    if (!pThis->pBootCatFile)
+        return VINF_SUCCESS;
+
+    /*
+     * Validate the boot catalog file.
+     */
+    AssertReturn(pThis->aBootCatEntries[0].bType == ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY,
+                 VERR_ISOMK_BOOT_CAT_NO_VALIDATION_ENTRY);
+    AssertReturn(pThis->aBootCatEntries[1].pBootFile != NULL, VERR_ISOMK_BOOT_CAT_NO_DEFAULT_ENTRY);
+
+    /* Check any sections following the default one. */
+    uint32_t cEntries = 2;
+    while (   cEntries < RT_ELEMENTS(pThis->aBootCatEntries) - 1U
+           && pThis->aBootCatEntries[cEntries].cEntries > 0)
+    {
+        AssertReturn(pThis->aBootCatEntries[cEntries].bType == ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER,
+                     VERR_ISOMK_BOOT_CAT_EXPECTED_SECTION_HEADER);
+        for (uint32_t i = 1; i < pThis->aBootCatEntries[cEntries].cEntries; i++)
+            AssertReturn(pThis->aBootCatEntries[cEntries].pBootFile != NULL,
+                         pThis->aBootCatEntries[cEntries].cEntries == 0
+                         ? VERR_ISOMK_BOOT_CAT_EMPTY_ENTRY : VERR_ISOMK_BOOT_CAT_INVALID_SECTION_SIZE);
+        cEntries += pThis->aBootCatEntries[cEntries].cEntries;
+    }
+
+    /* Check that the remaining entries are empty. */
+    while (cEntries < RT_ELEMENTS(pThis->aBootCatEntries) - 1U)
+    {
+        AssertReturn(pThis->aBootCatEntries[cEntries].cEntries == 0, VERR_ISOMK_BOOT_CAT_ERRATIC_ENTRY);
+        cEntries++;
+    }
+
+    /*
+     * Move up the boot images and boot catalog to the start of the image.
+     */
+    for (uint32_t i = RT_ELEMENTS(pThis->aBootCatEntries) - 2; i > 0; i--)
+        if (pThis->aBootCatEntries[i].pBootFile)
+        {
+            RTListNodeRemove(&pThis->aBootCatEntries[i].pBootFile->Core.Entry);
+            RTListPrepend(&pThis->ObjectHead, &pThis->aBootCatEntries[i].pBootFile->Core.Entry);
+        }
+
+    /* The boot catalog comes first. */
+    RTListNodeRemove(&pThis->pBootCatFile->Core.Entry);
+    RTListPrepend(&pThis->ObjectHead, &pThis->pBootCatFile->Core.Entry);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Finalizes the El Torito boot stuff, part 1.
+ *
+ * This includes generating the boot catalog data and fixing the location of all
+ * related image files.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ISO maker instance.
+ */
+static int rtFsIsoMakerFinalizeBootStuffPart2(PRTFSISOMAKERINT pThis)
+{
+    /*
+     * Fill in the descriptor.
+     */
+    PISO9660BOOTRECORDELTORITO pDesc = pThis->pElToritoDesc;
+    pDesc->Hdr.bDescType    = ISO9660VOLDESC_TYPE_BOOT_RECORD;
+    pDesc->Hdr.bDescVersion = ISO9660PRIMARYVOLDESC_VERSION;
+    memcpy(pDesc->Hdr.achStdId, ISO9660VOLDESC_STD_ID, sizeof(pDesc->Hdr.achStdId));
+    memcpy(pDesc->achBootSystemId, RT_STR_TUPLE(ISO9660BOOTRECORDELTORITO_BOOT_SYSTEM_ID));
+    pDesc->offBootCatalog   = RT_H2LE_U32((uint32_t)(pThis->pBootCatFile->offData / RTFSISOMAKER_SECTOR_SIZE));
+
+    /*
+     * Update the image file locations.
+     */
+    uint32_t cEntries = 2;
+    for (uint32_t i = 1; i < RT_ELEMENTS(pThis->aBootCatEntries) - 1; i++)
+        if (pThis->aBootCatEntries[i].pBootFile)
+        {
+            uint32_t off = pThis->aBootCatEntries[i].pBootFile->offData / RTFSISOMAKER_SECTOR_SIZE;
+            off = RT_H2LE_U32(off);
+            int rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile,
+                                      i * 32 + RT_UOFFSETOF(ISO9660ELTORITOSECTIONENTRY, offBootImage),
+                                      &off, sizeof(off), NULL /*pcbWritten*/);
+            AssertRCReturn(rc, rc);
+            if (i == cEntries)
+                cEntries = i + 1;
+        }
+
+    /*
+     * Write end section.
+     */
+    ISO9660ELTORITOSECTIONHEADER Entry;
+    Entry.bHeaderId   = ISO9660_ELTORITO_HEADER_ID_FINAL_SECTION_HEADER;
+    Entry.bPlatformId = ISO9660_ELTORITO_PLATFORM_ID_X86;
+    Entry.cEntries    = 0;
+    RT_ZERO(Entry.achSectionId);
+    int rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, cEntries * 32, &Entry, sizeof(Entry), NULL /*pcbWritten*/);
+    AssertRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
@@ -3678,8 +3845,9 @@ static void rtFsIsoMakerTimespecToIso9660RecTimestamp(PCRTTIMESPEC pTime, PISO96
 /**
  * Allocate and prepare the volume descriptors.
  *
- * What's not done here gets done later by rtFsIsoMakerFinalizeBootStuff, or at
- * teh very end of the finalization by rtFsIsoMakerFinalizeVolumeDescriptors.
+ * What's not done here gets done later by rtFsIsoMakerFinalizeBootStuffPart2,
+ * or at teh very end of the finalization by
+ * rtFsIsoMakerFinalizeVolumeDescriptors.
  *
  * @returns IPRT status code
  * @param   pThis               The ISO maker instance.
@@ -3698,11 +3866,11 @@ static int rtFsIsoMakerFinalizePrepVolumeDescriptors(PRTFSISOMAKERINT pThis)
     pThis->pPrimaryVolDesc = (PISO9660PRIMARYVOLDESC)&pThis->pbVolDescs[offVolDescs];
     offVolDescs += RTFSISOMAKER_SECTOR_SIZE;
 
-    if (true)
+    if (!pThis->pBootCatFile)
         pThis->pElToritoDesc = NULL;
     else
     {
-        pThis->pElToritoDesc = (PISO9660BOOTRECORD)&pThis->pbVolDescs[offVolDescs];
+        pThis->pElToritoDesc = (PISO9660BOOTRECORDELTORITO)&pThis->pbVolDescs[offVolDescs];
         offVolDescs += RTFSISOMAKER_SECTOR_SIZE;
     }
 
@@ -3947,7 +4115,7 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
      * the descriptors.
      */
     uint64_t offData = _32K + pThis->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE;
-    rc = rtFsIsoMakerFinalizeBootStuff(pThis, &offData);
+    rc = rtFsIsoMakerFinalizeBootStuffPart1(pThis);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -3965,14 +4133,21 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
                 pThis->cbFinalizedImage = offData;
 
                 /*
-                 * Finally, finalize the volume descriptors as they depend on some of the
-                 * block allocations done in the previous steps.
+                 * Do a 2nd pass over the boot stuff to finalize locations.
                  */
-                rc = rtFsIsoMakerFinalizeVolumeDescriptors(pThis);
+                rc = rtFsIsoMakerFinalizeBootStuffPart2(pThis);
                 if (RT_SUCCESS(rc))
                 {
-                    pThis->fFinalized = true;
-                    return VINF_SUCCESS;
+                    /*
+                     * Finally, finalize the volume descriptors as they depend on some of the
+                     * block allocations done in the previous steps.
+                     */
+                    rc = rtFsIsoMakerFinalizeVolumeDescriptors(pThis);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pThis->fFinalized = true;
+                        return VINF_SUCCESS;
+                    }
                 }
             }
         }
