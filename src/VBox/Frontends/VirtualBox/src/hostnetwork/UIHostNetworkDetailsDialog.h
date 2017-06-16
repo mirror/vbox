@@ -43,7 +43,7 @@ struct UIDataHostNetworkInterface
         , m_strMask(QString())
         , m_fSupportedIPv6(false)
         , m_strAddress6(QString())
-        , m_strMaskLength6(QString())
+        , m_strPrefixLength6(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -56,7 +56,7 @@ struct UIDataHostNetworkInterface
                && (m_strMask == other.m_strMask)
                && (m_fSupportedIPv6 == other.m_fSupportedIPv6)
                && (m_strAddress6 == other.m_strAddress6)
-               && (m_strMaskLength6 == other.m_strMaskLength6)
+               && (m_strPrefixLength6 == other.m_strPrefixLength6)
                ;
     }
 
@@ -77,8 +77,8 @@ struct UIDataHostNetworkInterface
     bool m_fSupportedIPv6;
     /** Holds IPv6 interface address. */
     QString m_strAddress6;
-    /** Holds IPv6 interface mask length. */
-    QString m_strMaskLength6;
+    /** Holds IPv6 interface prefix length. */
+    QString m_strPrefixLength6;
 };
 
 

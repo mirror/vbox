@@ -99,8 +99,8 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pEditorNMv4->setToolTip(tr("Holds the host IPv4 network mask for this adapter."));
     m_pLabelIPv6->setText(tr("I&Pv6 Address:"));
     m_pEditorIPv6->setToolTip(tr("Holds the host IPv6 address for this adapter if IPv6 is supported."));
-    m_pLabelNMv6->setText(tr("IPv6 Network Mask &Length:"));
-    m_pEditorNMv6->setToolTip(tr("Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported."));
+    m_pLabelNMv6->setText(tr("IPv6 Prefix &Length:"));
+    m_pEditorNMv6->setToolTip(tr("Holds the host IPv6 prefix length for this adapter if IPv6 is supported."));
 
     /* Translate 'DHCP server' tab content: */
     m_pCheckBoxDHCP->setText(tr("&Enable Server"));
@@ -157,7 +157,7 @@ void UIHostNetworkDetailsDialog::sltTextChangedIPv6(const QString &strText)
 
 void UIHostNetworkDetailsDialog::sltTextChangedNMv6(const QString &strText)
 {
-    m_newData.m_interface.m_strMaskLength6 = strText;
+    m_newData.m_interface.m_strPrefixLength6 = strText;
     revalidate(m_pErrorPaneNMv6);
     notify();
 }
@@ -758,7 +758,7 @@ void UIHostNetworkDetailsDialog::loadDataForInterface()
 
     /* Load IPv6 interface fields: */
     m_pEditorIPv6->setText(m_newData.m_interface.m_strAddress6);
-    m_pEditorNMv6->setText(m_newData.m_interface.m_strMaskLength6);
+    m_pEditorNMv6->setText(m_newData.m_interface.m_strPrefixLength6);
 }
 
 void UIHostNetworkDetailsDialog::loadDataForDHCPServer()
@@ -844,7 +844,7 @@ void UIHostNetworkDetailsDialog::revalidate(QWidget *pWidget /* = 0 */)
     if (!pWidget || pWidget == m_pErrorPaneNMv6)
     {
         bool fIsMaskPrefixLengthNumber = false;
-        const int iMaskPrefixLength = m_newData.m_interface.m_strMaskLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
+        const int iMaskPrefixLength = m_newData.m_interface.m_strPrefixLength6.trimmed().toInt(&fIsMaskPrefixLengthNumber);
         const bool fError =    !m_newData.m_interface.m_fDHCPEnabled
                             && m_newData.m_interface.m_fSupportedIPv6
                             && (   !fIsMaskPrefixLengthNumber
@@ -904,7 +904,7 @@ void UIHostNetworkDetailsDialog::retranslateValidation(QWidget *pWidget /* = 0 *
                                         "IPv6 address.").arg(m_newData.m_interface.m_strName));
     if (!pWidget || pWidget == m_pErrorPaneNMv6)
         m_pErrorPaneNMv6->setToolTip(tr("Host interface <nobr><b>%1</b></nobr> does not currently have a valid "
-                                        "IPv6 network mask prefix length.").arg(m_newData.m_interface.m_strName));
+                                        "IPv6 prefix length.").arg(m_newData.m_interface.m_strName));
 
     /* Translate 'DHCP server' tab content: */
     if (!pWidget || pWidget == m_pErrorPaneDHCPAddress)
@@ -928,7 +928,7 @@ void UIHostNetworkDetailsDialog::notify()
 //               m_newData.m_interface.m_strAddress.toUtf8().constData(),
 //               m_newData.m_interface.m_strMask.toUtf8().constData(),
 //               m_newData.m_interface.m_strAddress6.toUtf8().constData(),
-//               m_newData.m_interface.m_strMaskLength6.toUtf8().constData(),
+//               m_newData.m_interface.m_strPrefixLength6.toUtf8().constData(),
 //               (int)m_newData.m_dhcpserver.m_fEnabled,
 //               m_newData.m_dhcpserver.m_strAddress.toUtf8().constData(),
 //               m_newData.m_dhcpserver.m_strMask.toUtf8().constData(),

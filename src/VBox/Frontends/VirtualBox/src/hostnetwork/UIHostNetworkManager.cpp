@@ -89,7 +89,7 @@ void UIItemHostNetwork::updateFields()
     setText(Column_IPv4, m_interface.m_strAddress.isEmpty() ? QString() :
                          QString("%1/%2").arg(m_interface.m_strAddress).arg(maskToCidr(m_interface.m_strMask)));
     setText(Column_IPv6, m_interface.m_strAddress6.isEmpty() || !m_interface.m_fSupportedIPv6 ? QString() :
-                         QString("%1/%2").arg(m_interface.m_strAddress6).arg(m_interface.m_strMaskLength6.toInt()));
+                         QString("%1/%2").arg(m_interface.m_strAddress6).arg(m_interface.m_strPrefixLength6.toInt()));
     setText(Column_DHCP, UIHostNetworkManager::tr("Enable", "DHCP Server"));
     setCheckState(Column_DHCP, m_dhcpserver.m_fEnabled ? Qt::Checked : Qt::Unchecked);
 
@@ -118,10 +118,10 @@ void UIItemHostNetwork::updateFields()
                                   .arg(m_interface.m_strAddress6.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "address") :
                                        m_interface.m_strAddress6) +
-                      strSubHeader.arg(UIHostNetworkManager::tr("IPv6 Network Mask Length"))
-                                  .arg(m_interface.m_strMaskLength6.isEmpty() ?
+                      strSubHeader.arg(UIHostNetworkManager::tr("IPv6 Prefix Length"))
+                                  .arg(m_interface.m_strPrefixLength6.isEmpty() ?
                                        UIHostNetworkManager::tr("Not set", "length") :
-                                       m_interface.m_strMaskLength6);
+                                       m_interface.m_strPrefixLength6);
     }
 
     /* DHCP server information: */
@@ -461,8 +461,8 @@ void UIHostNetworkManagerWidget::sltCommitHostNetworkDetailsChanges()
                 && newData.m_interface.m_fSupportedIPv6
                 && (   oldData.m_interface.m_fDHCPEnabled
                     || newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
-                    || newData.m_interface.m_strMaskLength6 != oldData.m_interface.m_strMaskLength6))
-                comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strMaskLength6.toULong());
+                    || newData.m_interface.m_strPrefixLength6 != oldData.m_interface.m_strPrefixLength6))
+                comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strPrefixLength6.toULong());
         }
 
         /* Show error message if necessary: */
@@ -949,7 +949,7 @@ void UIHostNetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &co
     if (comInterface.isOk())
         data.m_interface.m_strAddress6 = comInterface.GetIPV6Address();
     if (comInterface.isOk())
-        data.m_interface.m_strMaskLength6 = QString::number(comInterface.GetIPV6NetworkMaskPrefixLength());
+        data.m_interface.m_strPrefixLength6 = QString::number(comInterface.GetIPV6NetworkMaskPrefixLength());
 
     /* Get host interface network name for further activities: */
     QString strNetworkName;
