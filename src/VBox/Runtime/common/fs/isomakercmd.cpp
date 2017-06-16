@@ -1107,14 +1107,17 @@ static int rtFsIsoMakerCmdParseNameSpec(PRTFSISOMAKERCMDOPTS pOpts, const char *
         pParsed->aNames[pParsed->cNamesWithSrc].cchPath = (uint32_t)cchName;
         pParsed->cNamesWithSrc++;
 
-        if (!pszEqual && fWithSrc)
+        if (!pszEqual)
         {
-            if (!cchName)
-                return rtFsIsoMakerCmdSyntaxError(pOpts, "empty source file name: %s", pszSpecIn);
-            if (cchName == 8 && strcmp(pszSpec, ":remove:") == 0)
-                pParsed->enmSrcType = RTFSISOMKCMDPARSEDNAMES::kSrcType_Remove;
-            else if (cchName == 13 && strcmp(pszSpec, ":must-remove:") == 0)
-                pParsed->enmSrcType = RTFSISOMKCMDPARSEDNAMES::kSrcType_MustRemove;
+            if (fWithSrc)
+            {
+                if (!cchName)
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "empty source file name: %s", pszSpecIn);
+                if (cchName == 8 && strcmp(pszSpec, ":remove:") == 0)
+                    pParsed->enmSrcType = RTFSISOMKCMDPARSEDNAMES::kSrcType_Remove;
+                else if (cchName == 13 && strcmp(pszSpec, ":must-remove:") == 0)
+                    pParsed->enmSrcType = RTFSISOMKCMDPARSEDNAMES::kSrcType_MustRemove;
+            }
             break;
         }
         pszSpec = pszEqual + 1;
@@ -1900,6 +1903,8 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     Opts.fDstNamespaces         = RTFSISOMAKERCMDNAME_MAJOR_MASK;
     if (phVfsFile)
         *phVfsFile = NIL_RTVFSFILE;
+    for (uint32_t i = 0; i < RT_ELEMENTS(Opts.aBootCatEntries); i++)
+        Opts.aBootCatEntries[i].u.Section.idxImageObj = UINT32_MAX;
 
     /* Setup option parsing. */
     RTGETOPTSTATE GetState;

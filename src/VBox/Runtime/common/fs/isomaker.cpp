@@ -1446,7 +1446,7 @@ static int rtFsIsoMakerWalkPathBySpec(PRTFSISOMAKERNAMESPACE pNamespace, const c
          */
         char ch;
         size_t cchComponent = 0;
-        while ((ch = pszPath[cchComponent]) != '\0' && RTPATH_IS_SLASH(ch))
+        while ((ch = pszPath[cchComponent]) != '\0' && !RTPATH_IS_SLASH(ch))
             cchComponent++;
         if (!cchComponent)
         {
@@ -3299,12 +3299,21 @@ static int rtFsIsoMakerFinalizeBootStuffPart1(PRTFSISOMAKERINT pThis)
         cEntries += pThis->aBootCatEntries[cEntries].cEntries;
     }
 
+    /* Save for size setting. */
+    uint32_t const cEntriesInFile = cEntries + 1;
+
     /* Check that the remaining entries are empty. */
-    while (cEntries < RT_ELEMENTS(pThis->aBootCatEntries) - 1U)
+    while (cEntries < RT_ELEMENTS(pThis->aBootCatEntries))
     {
         AssertReturn(pThis->aBootCatEntries[cEntries].cEntries == 0, VERR_ISOMK_BOOT_CAT_ERRATIC_ENTRY);
         cEntries++;
     }
+
+    /*
+     * Fixate the size of the boot catalog file.
+     */
+    pThis->pBootCatFile->cbData = cEntriesInFile * 32;
+    pThis->cbData  += RT_ALIGN_32(cEntriesInFile * 32, RTFSISOMAKER_SECTOR_SIZE);
 
     /*
      * Move up the boot images and boot catalog to the start of the image.
@@ -4333,7 +4342,7 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
     }
     if ((offInFile = offUnsigned - pFile->offData) < RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE))
     { /* hit */ }
-    else if (offUnsigned > pFile->offData)
+    else if (offUnsigned >= pFile->offData)
     {
         /* Seek forwards. */
         do
