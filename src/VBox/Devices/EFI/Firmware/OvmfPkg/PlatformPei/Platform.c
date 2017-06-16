@@ -246,6 +246,8 @@ MemMapInitialization (
 #ifdef VBOX
   EFI_PHYSICAL_ADDRESS RsdPtr;
   EFI_PHYSICAL_ADDRESS AcpiTables;
+  UINT32 MCfgBase = 0;
+  UINT32 MCfgSize = 0;
 #endif
   //
   // Create Memory Type Information HOB
@@ -291,8 +293,6 @@ MemMapInitialization (
     // 0xFEE00000    LAPIC                          1 MB
     //
 #ifdef VBOX
-    UINT32 MCfgBase = 0;
-    UINT32 MCfgSize = 0;
     GetVmVariable(EFI_INFO_INDEX_MCFG_BASE, (CHAR8 *)&MCfgBase, sizeof(MCfgBase));
     GetVmVariable(EFI_INFO_INDEX_MCFG_SIZE, (CHAR8 *)&MCfgSize, sizeof(MCfgSize));
     if (TopOfLowRam < BASE_2GB)
