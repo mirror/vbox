@@ -1046,8 +1046,10 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
             if (fLog)
                 LogRel2(("PulseAudio: Default output sink is '%s'\n", cbCtx.pszDefaultSink));
 
+            LogRel(("PulseAudio: starting output sink enumeration\n")); /** @todo remove */
             rc = paWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, cbCtx.pszDefaultSink,
                                                                    paEnumSinkCb, &cbCtx));
+            LogRel(("PulseAudio: output sink enumeration done (rc=%Rrc)\n", rc)); /** @todo remove */
             if (   RT_FAILURE(rc)
                 && fLog)
             {
