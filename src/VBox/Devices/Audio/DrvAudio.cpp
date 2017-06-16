@@ -137,6 +137,8 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 
 # endif /* unused */
 
+static void drvAudioDbgPCMDumpA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData);
+
 #ifdef LOG_ENABLED
 /**
  * Converts an audio stream status to a string.
@@ -1315,6 +1317,10 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                 if (RT_FAILURE(rc))
                     break;
 
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+                drvAudioDbgPCMDumpA(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "PlayNonInterleaved.pcm",
+                                    auBuf, cbPlayed);
+#endif
                 AssertMsg(cbPlayed <= cbRead, ("Played more than available (%RU32 available but got %RU32)\n", cbRead, cbPlayed));
                 AssertMsg(cbPlayed % 2 == 0,
                           ("Backend for stream '%s' returned uneven played bytes count (csRead=%RU32, cbPlayed=%RU32)\n",
@@ -1595,6 +1601,10 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         }
         else if (cbCaptured)
         {
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+            drvAudioDbgPCMDumpA(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "CaptureNonInterleaved.pcm",
+                                auBuf, cbCaptured);
+#endif
             Assert(cbCaptured <= cbBuf);
             if (cbCaptured > cbBuf) /* Paranoia. */
                 cbCaptured = (uint32_t)cbBuf;
@@ -2058,6 +2068,46 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
     return rc;
 }
 #endif /* VBOX_WITH_AUDIO_ENUM */
+
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+/**
+ * Dumps (raw) PCM audio data into a file by appending.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver inststance.
+ * @param   pszPath             Path name to save file to. The path must exist.
+ * @param   pszFileName         File name suffix to use.
+ * @param   pvData              Pointer to PCM data to dump.
+ * @param   cbData              Size (in bytes) of PCM data to dump.
+ */
+static void drvAudioDbgPCMDumpA(PDRVAUDIO pThis,
+                                const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData)
+{
+    if (!pvData || !cbData)
+        return;
+
+    AssertPtr(pThis->pDrvIns);
+
+    char szFileName[64];
+    RTStrPrintf(szFileName, sizeof(szFileName), "drvAudio%RU32-%s", pThis->pDrvIns->iInstance, pszSuffix);
+
+    char szFilePath[RTPATH_MAX];
+    int rc2 = RTStrCopy(szFilePath, sizeof(szFilePath), pszPath);
+    AssertRC(rc2);
+    rc2 = RTPathAppend(szFilePath, sizeof(szFilePath), szFileName);
+    AssertRC(rc2);
+
+    RTFILE fh;
+    rc2 = RTFileOpen(&fh, szFilePath,
+                     RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    AssertRC(rc2);
+    if (RT_SUCCESS(rc2))
+    {
+        RTFileWrite(fh, pvData, cbData, NULL);
+        RTFileClose(fh);
+    }
+}
+#endif /* VBOX_AUDIO_DEBUG_DUMP_PCM_DATA */
 
 /**
  * Initializes the host backend and queries its initial configuration.
