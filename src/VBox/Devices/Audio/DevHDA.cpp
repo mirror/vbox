@@ -4992,9 +4992,6 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
 
     PHDASTREAMSTATEAIO pAIO = &pCtx->pStream->State.AIO;
 
-    PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
-    AssertPtr(pCircBuf);
-
     ASMAtomicXchgBool(&pAIO->fStarted, true);
 
     RTThreadUserSignal(hThreadSelf);
