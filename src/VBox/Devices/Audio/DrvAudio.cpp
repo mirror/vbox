@@ -137,7 +137,9 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 
 # endif /* unused */
 
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
 static void drvAudioDbgPCMDumpA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData);
+#endif
 
 #ifdef LOG_ENABLED
 /**
