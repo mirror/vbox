@@ -3335,6 +3335,12 @@ static int rtFsIsoMakerFinalizeBootStuffPart1(PRTFSISOMAKERINT pThis)
 static int rtFsIsoMakerFinalizeBootStuffPart2(PRTFSISOMAKERINT pThis)
 {
     /*
+     * Anything?
+     */
+    if (!pThis->pBootCatFile)
+        return VINF_SUCCESS;
+
+    /*
      * Fill in the descriptor.
      */
     PISO9660BOOTRECORDELTORITO pDesc = pThis->pElToritoDesc;
