@@ -52,6 +52,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
 	QCOW.cpp \
 	VHDX.cpp \
 	CUE.cpp \
+	VISO.cpp \
 	VCICache.cpp
 endif
 

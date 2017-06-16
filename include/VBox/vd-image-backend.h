@@ -328,7 +328,7 @@ typedef struct VDIMAGEBACKEND
     /**
      * Get the image flags of a disk image.
      *
-     * @returns image flags of disk image.
+     * @returns image flags of disk image (VD_IMAGE_FLAGS_XXX).
      * @param   pBackendData    Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(unsigned, pfnGetImageFlags, (void *pBackendData));
@@ -336,18 +336,20 @@ typedef struct VDIMAGEBACKEND
     /**
      * Get the open flags of a disk image.
      *
-     * @returns open flags of disk image.
+     * @returns open flags of disk image (VD_OPEN_FLAGS_XXX).
      * @param   pBackendData    Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(unsigned, pfnGetOpenFlags, (void *pBackendData));
 
     /**
-     * Set the open flags of a disk image. May cause the image to be locked
-     * in a different mode or be reopened (which can fail).
+     * Set the open flags of a disk image.
+     *
+     * May cause the image to be locked in a different mode or be reopened (which
+     * can fail).
      *
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   uOpenFlags      New open flags for this image.
+     * @param   uOpenFlags      New open flags for this image (VD_OPEN_FLAGS_XXX).
      */
     DECLR3CALLBACKMEMBER(int, pfnSetOpenFlags, (void *pBackendData, unsigned uOpenFlags));
 
