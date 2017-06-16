@@ -580,7 +580,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  # Disabled for AC'97 for now.
  #VBoxDD_DEFS  += VBOX_WITH_AUDIO_AC97_ASYNC_IO
- #VBoxDD_DEFS  += VBOX_WITH_AUDIO_HDA_ASYNC_IO
+ VBoxDD_DEFS  += VBOX_WITH_AUDIO_HDA_ASYNC_IO
 
  # Not yet enabled: Callbacks for the device emulation to let the backends
  #                  tell the emulation when and how to process data.

@@ -1032,13 +1032,14 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 #ifdef IN_RING3
 static void          hdaStreamDestroy(PHDASTATE pThis, PHDASTREAM pStream);
 static int           hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable);
-uint32_t             hdaStreamGetDataSize(PHDASTREAM pStream);
+uint32_t             hdaStreamGetUsed(PHDASTREAM pStream);
+uint32_t             hdaStreamGetFree(PHDASTREAM pStream);
 static int           hdaStreamTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcessMax);
 DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, uint32_t u32LPIB);
 static void          hdaStreamLock(PHDASTREAM pStream);
 static void          hdaStreamUnlock(PHDASTREAM pStream);
 static int           hdaStreamRead(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead);
-//static int           hdaStreamWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten);
+static int           hdaStreamWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten);
 static void          hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fAsync);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 static bool          hdaStreamRegisterDMAHandlers(PHDASTATE pThis, PHDASTREAM pStream);
@@ -4792,7 +4793,7 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCBTYPE enmType, void *pvCtx, 
  */
 static void hdaDoTransfers(PHDASTATE pThis)
 {
-    //PHDASTREAM pStreamLineIn  = hdaSinkGetStream(pThis, &pThis->SinkLineIn);
+    PHDASTREAM pStreamLineIn  = hdaSinkGetStream(pThis, &pThis->SinkLineIn);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     PHDASTREAM pStreamMicIn   = hdaSinkGetStream(pThis, &pThis->SinkMicIn);
 #endif
@@ -4801,7 +4802,11 @@ static void hdaDoTransfers(PHDASTATE pThis)
     /** @todo See note below. */
 #endif
 
-    hdaStreamUpdate(pThis, pStreamFront, true /* fSync */);
+    hdaStreamUpdate(pThis, pStreamFront,  true /* fInTimer */);
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+    hdaStreamUpdate(pThis, pStreamMicIn,  true /* fInTimer */);
+#endif
+    hdaStreamUpdate(pThis, pStreamLineIn, true /* fInTimer */);
 }
 
 #ifdef DEBUG_andy
@@ -4811,10 +4816,10 @@ static void hdaDoTransfers(PHDASTATE pThis)
 /**
  * Retrieves the available size of (buffered) audio data (in bytes) of a given HDA stream.
  *
- * @returns Data size (in bytes).
+ * @returns Available data (in bytes).
  * @param   pStream             HDA stream to retrieve size for.
  */
-uint32_t hdaStreamGetDataSize(PHDASTREAM pStream)
+uint32_t hdaStreamGetUsed(PHDASTREAM pStream)
 {
     AssertPtrReturn(pStream, 0);
 
@@ -4824,7 +4829,23 @@ uint32_t hdaStreamGetDataSize(PHDASTREAM pStream)
     return (uint32_t)RTCircBufUsed(pStream->State.pCircBuf);
 }
 
-#if 0
+/**
+ * Retrieves the free size of audio data (in bytes) of a given HDA stream.
+ *
+ * @returns Free data (in bytes).
+ * @param   pStream             HDA stream to retrieve size for.
+ */
+uint32_t hdaStreamGetFree(PHDASTREAM pStream)
+{
+    AssertPtrReturn(pStream, 0);
+
+    if (!pStream->State.pCircBuf)
+        return 0;
+
+    return (uint32_t)RTCircBufFree(pStream->State.pCircBuf);
+}
+
+
 /**
  * Writes audio data from a mixer sink into an HDA stream's DMA buffer.
  *
@@ -4885,7 +4906,6 @@ static int hdaStreamWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrit
 
     return VINF_SUCCESS;
 }
-#endif
 
 
 /**
@@ -4999,7 +5019,7 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
                 continue;
             }
 
-            hdaStreamUpdate(pThis, pStream, false /* fSync */);
+            hdaStreamUpdate(pThis, pStream, false /* fInTimer */);
 
             int rc3 = RTCritSectLeave(&pAIO->CritSect);
             AssertRC(rc3);
@@ -5410,10 +5430,10 @@ static int hdaStreamTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToP
  *
  * @param   pThis               HDA state.
  * @param   pStream             HDA stream to update.
- * @param   fSync               Whether to use this function in an synchronous
- *                              or asynchronous context.
+ * @param   fInTimer            Whether to this function was called from the timer
+ *                              context or an asynchronous I/O stream thread (if supported).
  */
-static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fSync)
+static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fInTimer)
 {
     PAUDMIXSINK pSink = NULL;
     if (   pStream->pMixSink
@@ -5422,7 +5442,7 @@ static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fSync)
         pSink = pStream->pMixSink->pMixSink;
     }
 
-    if (!pSink) /* No sink available? Bail out. */
+    if (!AudioMixerSinkIsActive(pSink)) /* No sink available? Bail out. */
         return;
 
     int rc2;
@@ -5432,9 +5452,11 @@ static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fSync)
         /* Is the sink ready to be written (guest output data) to? If so, by how much? */
         const uint32_t cbWritable = AudioMixerSinkGetWritable(pSink);
 
-        if (   fSync
+        if (   fInTimer
             && cbWritable)
         {
+            Log3Func(("[SD%RU8] cbWritable=%RU32\n", pStream->u8SD, cbWritable));
+
             /* When running synchronously, do the DMA data transfers here.
              * Otherwise this will be done in the device timer. */
             rc2 = hdaStreamTransfer(pThis, pStream, cbWritable);
@@ -5446,37 +5468,85 @@ static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fSync)
 #endif
         }
 
-        /* How much (guest output) data is available at the moment? */
-        AssertPtr(pStream->State.pCircBuf);
-        uint32_t cbToWrite = hdaStreamGetDataSize(pStream);
-
-        /* Do not write more than the sink can hold at the moment.
-         * The host sets the overall pace. */
-        if (cbToWrite > cbWritable)
-            cbToWrite = cbWritable;
-
-        if (cbToWrite)
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        if (!fInTimer)
         {
-            /* Read (guest output) data and write it to the stream's sink. */
-            rc2 = hdaStreamRead(pThis, pStream, cbToWrite, NULL /* pcbWritten */);
-            AssertRC(rc2);
-        }
+#endif
+            /* How much (guest output) data is available at the moment? */
+            uint32_t cbToRead = hdaStreamGetUsed(pStream);
 
-        if (fSync)
-        {
+            /* Do not write more than the sink can hold at the moment.
+             * The host sets the overall pace. */
+            if (cbToRead > cbWritable)
+                cbToRead = cbWritable;
+
+            if (cbToRead)
+            {
+                /* Read (guest output) data and write it to the stream's sink. */
+                rc2 = hdaStreamRead(pThis, pStream, cbToRead, NULL /* pcbRead */);
+                AssertRC(rc2);
+            }
+
             /* When running synchronously, update the associated sink here.
              * Otherwise this will be done in the device timer. */
             rc2 = AudioMixerSinkUpdate(pSink);
             AssertRC(rc2);
-        }
 
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        }
+#endif
     }
     else /* Input (SDI). */
     {
-#if 0
-        cbToProcess = (uint32_t)RTCircBufFree(pCircBuf);
-        if (cbToProcess)
-            rc2 = hdaStreamWrite(pThis, pStream, cbToProcess, &cbProcessed);
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        if (fInTimer)
+        {
+            rc2 = hdaStreamAsyncIONotify(pThis, pStream);
+            AssertRC(rc2);
+        }
+        else
+        {
+#endif
+            rc2 = AudioMixerSinkUpdate(pSink);
+            AssertRC(rc2);
+
+            /* Is the sink ready to be read (host input data) from? If so, by how much? */
+            const uint32_t cbReadable = AudioMixerSinkGetReadable(pSink);
+
+            Log3Func(("[SD%RU8] cbReadable=%RU32\n", pStream->u8SD, cbReadable));
+
+            /* How much (guest input) data is free at the moment? */
+            uint32_t cbToWrite = hdaStreamGetFree(pStream);
+
+            /* Do not read more than the sink can provide at the moment.
+             * The host sets the overall pace. */
+            if (cbToWrite > cbReadable)
+                cbToWrite = cbReadable;
+
+            if (cbToWrite)
+            {
+                /* Write (guest input) data to the stream which was read from stream's sink before. */
+                rc2 = hdaStreamWrite(pThis, pStream, cbToWrite, NULL /* pcbWritten */);
+                AssertRC(rc2);
+            }
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        }
+#endif
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        if (fInTimer)
+        {
+#endif
+            const uint32_t cbReadable = hdaStreamGetUsed(pStream);
+            if (cbReadable)
+            {
+                /* When running synchronously, do the DMA data transfers here.
+                 * Otherwise this will be done in the stream's async I/O thread. */
+                rc2 = hdaStreamTransfer(pThis, pStream, cbReadable);
+                AssertRC(rc2);
+            }
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        }
 #endif
     }
 }
