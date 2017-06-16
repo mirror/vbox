@@ -873,36 +873,34 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc))
         return 0;
 
-    if (   !(pSink->fStatus & AUDMIXSINK_STS_RUNNING)
-        || pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE)
-    {
-        return 0;
-    }
-
     uint32_t cbWritable = 0;
 
+    if (    (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+        && !(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
+    {
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
 # error "Implement me!"
 #else
-    /* The hosts sets the pace --
-     * so we try to find the minimum of writable data to all connected streams to this sink. */
-    PAUDMIXSTREAM pMixStream;
-    RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
-    {
-        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+        /* The hosts sets the pace --
+         * so we try to find the minimum of writable data to all connected streams to this sink. */
+        PAUDMIXSTREAM pMixStream;
+        RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
         {
-            Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
-            continue;
+            if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+            {
+                Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
+                continue;
+            }
+
+            const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
+
+            if (cbWritable < cbWritableStream)
+                cbWritable = cbWritableStream;
+
+            break; /** @todo For now the first stream sets the pace. */
         }
-
-        const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
-
-        if (cbWritable < cbWritableStream)
-            cbWritable = cbWritableStream;
-
-        break; /** @todo For now the first stream sets the pace. */
-    }
 #endif
+    }
 
     Log3Func(("[%s] cbWritable=%RU32\n", pSink->pszName, cbWritable));
 
