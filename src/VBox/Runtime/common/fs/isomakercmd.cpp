@@ -95,6 +95,8 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_NAME_SETUP,
     RTFSISOMAKERCMD_OPT_NO_JOLIET,
 
+    RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,
+    RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,
     RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12,
     RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,
     RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,
@@ -116,7 +118,6 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_DETECT_HARDLINKS,
     RTFSISOMAKERCMD_OPT_DIR_MODE,
     RTFSISOMAKERCMD_OPT_DVD_VIDEO,
-    RTFSISOMAKERCMD_OPT_ELTORITO_ALT_BOOT,
     RTFSISOMAKERCMD_OPT_ELTORITO_PLATFORM_ID,
     RTFSISOMAKERCMD_OPT_ELTORITO_HARD_DISK_BOOT,
     RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE,
@@ -233,6 +234,58 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_END
 } RTFSISOMAKERCMDOPT;
 
+
+/**
+ * El Torito boot entry.
+ */
+typedef struct RTFSISOMKCMDELTORITOENTRY
+{
+    /** The type of this entry.   */
+    enum
+    {
+        kEntryType_Invalid = 0,
+        kEntryType_Validation,      /**< Same as kEntryType_SectionHeader, just hardcoded #0. */
+        kEntryType_SectionHeader,
+        kEntryType_Default,         /**< Same as kEntryType_Section, just hardcoded #1. */
+        kEntryType_Section
+    }                   enmType;
+    /** Type specific data. */
+    union
+    {
+        struct
+        {
+            /** The platform ID (ISO9660_ELTORITO_PLATFORM_ID_XXX).    */
+            uint8_t     idPlatform;
+            /** Some string for the header. */
+            const char *pszString;
+        }               Validation,
+                        SectionHeader;
+        struct
+        {
+            /** The name of the boot image wihtin the ISO (-b option). */
+            const char *pszImageNameInIso;
+            /** The object ID of the image in the ISO.  This is set to UINT32_MAX when
+             * pszImageNameInIso is used (i.e. -b option) and we've delayed everything
+             * boot related till after all files have been added to the image. */
+            uint32_t    idImage;
+            /** Whether to insert boot info table into the image. */
+            bool        fInsertBootInfoTable;
+            /** Bootble or not.  Possible to make BIOS set up emulation w/o booting it. */
+            bool        fBootable;
+            /** The media type (ISO9660_ELTORITO_BOOT_MEDIA_TYPE_XXX) and flags
+             * (ISO9660_ELTORITO_BOOT_MEDIA_F_XXX). */
+            uint8_t     bBootMediaType;
+            /** File system / partition type. */
+            uint8_t     bSystemType;
+            /** Load address divided by 0x10. */
+            uint16_t    uLoadSeg;
+            /** Number of sectors (512) to load. */
+            uint16_t    cSectorsToLoad;
+        }               Section,
+                        Default;
+    } u;
+} RTFSISOMKCMDELTORITOENTRY;
+
 /**
  * ISO maker command options & state.
  */
@@ -276,13 +329,12 @@ typedef struct RTFSISOMAKERCMDOPTS
 
     /** @name Booting related options and state.
      * @{ */
-    /** The current El Torito boot entry, UINT32_MAX if none active.
-     * An entry starts when --eltorito-boot/-b is used the first time, or when
-     * --eltorito-alt-boot is used, or when --elptorito-platform-id is used
-     * with a different value after -b is specified. */
-    uint32_t            idEltoritoEntry;
-    /** The previous --eltorito-platform-id option. */
-    const char         *pszEltoritoPlatformId;
+    /** Number of boot catalog entries (aBootCatEntries). */
+    uint32_t                    cBootCatEntries;
+    /** Number of boot catalog entries we're done with (i.e. added to hIsoMaker). */
+    uint32_t                    cBootCatEntriesDone;
+    /** Boot catalog entries. */
+    RTFSISOMKCMDELTORITOENTRY   aBootCatEntries[64];
     /** @} */
 
     /** Number of items (files, directories, images, whatever) we've added. */
@@ -328,6 +380,11 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
     { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
     { "--no-joliet",                    RTFSISOMAKERCMD_OPT_NO_JOLIET,                      RTGETOPT_REQ_NOTHING },
+    { "--eltorito-new-entry",           RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING },
+    { "--eltorito-add-image",           RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,             RTGETOPT_REQ_NOTHING },
+    { "--eltorito-floppy-12",           RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12,             RTGETOPT_REQ_NOTHING },
+    { "--eltorito-floppy-144",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,            RTGETOPT_REQ_NOTHING },
+    { "--eltorito-floppy-288",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,            RTGETOPT_REQ_NOTHING },
 
 #define DD(a_szLong, a_chShort, a_fFlags) { a_szLong, a_chShort, a_fFlags  }, { "-" a_szLong, a_chShort, a_fFlags  }
 
@@ -337,7 +394,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
      */
     { "--generic-boot",                 'G',                                                RTGETOPT_REQ_STRING  },
     DD("-eltorito-boot",                'b',                                                RTGETOPT_REQ_STRING  ),
-    DD("-eltorito-alt-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_ALT_BOOT,              RTGETOPT_REQ_NOTHING ),
+    DD("-eltorito-alt-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING ),
     DD("-eltorito-platform-id",         RTFSISOMAKERCMD_OPT_ELTORITO_PLATFORM_ID,           RTGETOPT_REQ_STRING  ),
     DD("-hard-disk-boot",               RTFSISOMAKERCMD_OPT_ELTORITO_HARD_DISK_BOOT,        RTGETOPT_REQ_NOTHING ),
     DD("-no-emulation-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_NO_EMULATION_BOOT,     RTGETOPT_REQ_NOTHING ),
@@ -1236,54 +1293,303 @@ static int rtFsIsoMakerCmdOptGenericBoot(PRTFSISOMAKERCMDOPTS pOpts, const char 
 }
 
 
-static int rtFsIsoMakerCmdOptEltoritoBoot(PRTFSISOMAKERCMDOPTS pOpts, const char *pszBootImage)
-{
-    RT_NOREF(pOpts, pszBootImage);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int rtFsIsoMakerCmdOptEltoritoPlatformId(PRTFSISOMAKERCMDOPTS pOpts, const char *pszPlatformId)
-{
-    RT_NOREF(pOpts, pszPlatformId);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int rtFsIsoMakerCmdOptEltoritoSetNotBootable(PRTFSISOMAKERCMDOPTS pOpts)
-{
-    RT_NOREF(pOpts);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int rtFsIsoMakerCmdOptEltoritoSetMediaType(PRTFSISOMAKERCMDOPTS pOpts, uint8_t bMediaType)
-{
-    RT_NOREF(pOpts, bMediaType);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int rtFsIsoMakerCmdOptEltoritoSetLoadSegment(PRTFSISOMAKERCMDOPTS pOpts, uint16_t uSeg)
-{
-    RT_NOREF(pOpts, uSeg);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int rtFsIsoMakerCmdOptEltoritoSetLoadSectorCount(PRTFSISOMAKERCMDOPTS pOpts, uint16_t cSectors)
-{
-    RT_NOREF(pOpts, cSectors);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int rtFsIsoMakerCmdOptEltoritoEnableBootInfoTablePatching(PRTFSISOMAKERCMDOPTS pOpts)
-{
-    RT_NOREF(pOpts);
-    return VERR_NOT_IMPLEMENTED;
-}
-
+/**
+ * Deals with: --boot-catalog <path-spec>
+ *
+ * This enters the boot catalog into the namespaces of the image.  The path-spec
+ * is similar to what rtFsIsoMakerCmdAddSomething processes, only there isn't a
+ * source file part.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszGenericBootImage The generic boot image source.
+ */
 static int rtFsIsoMakerCmdOptEltoritoSetBootCatalogPath(PRTFSISOMAKERCMDOPTS pOpts, const char *pszBootCat)
 {
     RT_NOREF(pOpts, pszBootCat);
     return VERR_NOT_IMPLEMENTED;
 }
 
+
+/**
+ * Helper that makes sure we've got a validation boot entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ */
+static void rtFsIsoMakerCmdOptEltoritoEnsureValiidationEntry(PRTFSISOMAKERCMDOPTS pOpts)
+{
+    if (pOpts->cBootCatEntries == 0)
+    {
+        pOpts->aBootCatEntries[0].enmType                       = RTFSISOMKCMDELTORITOENTRY::kEntryType_Validation;
+        pOpts->aBootCatEntries[0].u.Validation.idPlatform       = ISO9660_ELTORITO_PLATFORM_ID_X86;
+        pOpts->aBootCatEntries[0].u.Validation.pszString        = NULL;
+        pOpts->cBootCatEntries = 1;
+    }
+}
+
+
+/**
+ * Helper that makes sure we've got a current boot entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   fForceNew           Whether to force a new entry.
+ * @param   pidxBootCat         Where to return the boot catalog index.
+ */
+static int rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(PRTFSISOMAKERCMDOPTS pOpts, bool fForceNew, uint32_t *pidxBootCat)
+{
+    rtFsIsoMakerCmdOptEltoritoEnsureValiidationEntry(pOpts);
+
+    uint32_t i = pOpts->cBootCatEntries;
+    if (i == 2 && fForceNew)
+    {
+        pOpts->aBootCatEntries[i].enmType                       = RTFSISOMKCMDELTORITOENTRY::kEntryType_SectionHeader;
+        pOpts->aBootCatEntries[i].u.SectionHeader.idPlatform    = pOpts->aBootCatEntries[0].u.Validation.idPlatform;
+        pOpts->aBootCatEntries[i].u.SectionHeader.pszString     = NULL;
+        pOpts->cBootCatEntries = ++i;
+    }
+
+    if (   i == 1
+        || fForceNew
+        || pOpts->aBootCatEntries[i - 1].enmType == RTFSISOMKCMDELTORITOENTRY::kEntryType_SectionHeader)
+    {
+        if (i >= RT_ELEMENTS(pOpts->aBootCatEntries))
+        {
+            *pidxBootCat = UINT32_MAX;
+            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_BUFFER_OVERFLOW, "Too many boot catalog entries");
+        }
+
+        pOpts->aBootCatEntries[i].enmType                       = i == 1 ? RTFSISOMKCMDELTORITOENTRY::kEntryType_Default
+                                                                :          RTFSISOMKCMDELTORITOENTRY::kEntryType_Section;
+        pOpts->aBootCatEntries[i].u.Section.pszImageNameInIso   = NULL;
+        pOpts->aBootCatEntries[i].u.Section.idImage             = UINT32_MAX;
+        pOpts->aBootCatEntries[i].u.Section.fInsertBootInfoTable = false;
+        pOpts->aBootCatEntries[i].u.Section.fBootable           = true;
+        pOpts->aBootCatEntries[i].u.Section.bBootMediaType      = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_MASK;
+        pOpts->aBootCatEntries[i].u.Section.bSystemType         = 1 /*FAT12*/;
+        pOpts->aBootCatEntries[i].u.Section.uLoadSeg            = 0x7c0;
+        pOpts->aBootCatEntries[i].u.Section.cSectorsToLoad      = 4;
+        pOpts->cBootCatEntries = ++i;
+    }
+
+    *pidxBootCat = i - 1;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deals with: --eltorito-add-image {file-spec}
+ *
+ * This differs from -b|--eltorito-boot in that it takes a source file
+ * specification identical to what rtFsIsoMakerCmdAddSomething processes instead
+ * of a reference to a file in the image.
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszGenericBootImage The generic boot image source.
+ */
+static int rtFsIsoMakerCmdOptEltoritoAddImage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszBootImageSpec)
+{
+    RT_NOREF(pOpts, pszBootImageSpec);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Deals with: -b|--eltorito-boot {file-in-iso}
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszGenericBootImage The generic boot image source.
+ */
+static int rtFsIsoMakerCmdOptEltoritoBoot(PRTFSISOMAKERCMDOPTS pOpts, const char *pszBootImage)
+{
+    uint32_t idxBootCat;
+    int rc = rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, false /*fForceNew*/, &idxBootCat);
+    if (RT_SUCCESS(rc))
+    {
+        if (   pOpts->aBootCatEntries[idxBootCat].u.Section.idImage != UINT32_MAX
+            || pOpts->aBootCatEntries[idxBootCat].u.Section.pszImageNameInIso != NULL)
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "boot image already given for current El Torito entry (%#u)", idxBootCat);
+
+        uint32_t idxObj = RTFsIsoMakerGetObjIdxForPath(pOpts->hIsoMaker, RTFSISOMAKER_NAMESPACE_ALL, pszBootImage);
+        pOpts->aBootCatEntries[idxBootCat].u.Section.idImage = idxObj;
+        if (idxObj == UINT32_MAX)
+            pOpts->aBootCatEntries[idxBootCat].u.Section.pszImageNameInIso = pszBootImage;
+    }
+    return rc;
+}
+
+
+/**
+ * Deals with: --eltorito-platform-id {x86|PPC|Mac|efi|number}
+ *
+ * Operates on the validation entry or a section header.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszPlatformId       The platform ID.
+ */
+static int rtFsIsoMakerCmdOptEltoritoPlatformId(PRTFSISOMAKERCMDOPTS pOpts, const char *pszPlatformId)
+{
+    /* Decode it. */
+    uint8_t idPlatform;
+    if (strcmp(pszPlatformId, "x86") == 0)
+        idPlatform = ISO9660_ELTORITO_PLATFORM_ID_X86;
+    else if (strcmp(pszPlatformId, "PPC") == 0)
+        idPlatform = ISO9660_ELTORITO_PLATFORM_ID_PPC;
+    else if (strcmp(pszPlatformId, "Mac") == 0)
+        idPlatform = ISO9660_ELTORITO_PLATFORM_ID_MAC;
+    else if (strcmp(pszPlatformId, "efi") == 0)
+        idPlatform = ISO9660_ELTORITO_PLATFORM_ID_EFI;
+    else
+    {
+        int rc = RTStrToUInt8Full(pszPlatformId, 0, &idPlatform);
+        if (rc != VINF_SUCCESS)
+            return rtFsIsoMakerCmdSyntaxError(pOpts, "invalid or unknown platform ID: %s", pszPlatformId);
+    }
+
+    /* If this option comes before anything related to the default entry, work
+       on the validation entry. */
+    if (pOpts->cBootCatEntries <= 1)
+    {
+        rtFsIsoMakerCmdOptEltoritoEnsureValiidationEntry(pOpts);
+        pOpts->aBootCatEntries[0].u.Validation.idPlatform = idPlatform;
+    }
+    /* Otherwise, work on the current section header, creating a new one if necessary. */
+    else
+    {
+        uint32_t idxBootCat = pOpts->cBootCatEntries - 1;
+        if (pOpts->aBootCatEntries[idxBootCat].enmType == RTFSISOMKCMDELTORITOENTRY::kEntryType_SectionHeader)
+            pOpts->aBootCatEntries[idxBootCat].u.SectionHeader.idPlatform = idPlatform;
+        else
+        {
+            idxBootCat++;
+            if (idxBootCat + 2 > RT_ELEMENTS(pOpts->aBootCatEntries))
+                return rtFsIsoMakerCmdErrorRc(pOpts, VERR_BUFFER_OVERFLOW, "Too many boot catalog entries");
+
+            pOpts->aBootCatEntries[idxBootCat].enmType                    = RTFSISOMKCMDELTORITOENTRY::kEntryType_SectionHeader;
+            pOpts->aBootCatEntries[idxBootCat].u.SectionHeader.idPlatform = idPlatform;
+            pOpts->aBootCatEntries[idxBootCat].u.SectionHeader.pszString  = NULL;
+            pOpts->cBootCatEntries = idxBootCat + 1;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deals with: -no-boot
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ */
+static int rtFsIsoMakerCmdOptEltoritoSetNotBootable(PRTFSISOMAKERCMDOPTS pOpts)
+{
+    uint32_t idxBootCat;
+    int rc = rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, false /*fForceNew*/, &idxBootCat);
+    if (RT_SUCCESS(rc))
+        pOpts->aBootCatEntries[idxBootCat].u.Section.fBootable = false;
+    return rc;
+}
+
+
+/**
+ * Deals with: -hard-disk-boot, -no-emulation-boot, --eltorito-floppy-12,
+ *             --eltorito-floppy-144, --eltorito-floppy-288
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   bMediaType          The media type.
+ */
+static int rtFsIsoMakerCmdOptEltoritoSetMediaType(PRTFSISOMAKERCMDOPTS pOpts, uint8_t bMediaType)
+{
+    uint32_t idxBootCat;
+    int rc = rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, false /*fForceNew*/, &idxBootCat);
+    if (RT_SUCCESS(rc))
+        pOpts->aBootCatEntries[idxBootCat].u.Section.bBootMediaType = bMediaType;
+    return rc;
+}
+
+
+/**
+ * Deals with: -boot-load-seg {seg}
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   uSeg                The load segment.
+ */
+static int rtFsIsoMakerCmdOptEltoritoSetLoadSegment(PRTFSISOMAKERCMDOPTS pOpts, uint16_t uSeg)
+{
+    uint32_t idxBootCat;
+    int rc = rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, false /*fForceNew*/, &idxBootCat);
+    if (RT_SUCCESS(rc))
+        pOpts->aBootCatEntries[idxBootCat].u.Section.uLoadSeg = uSeg;
+    return rc;
+}
+
+
+/**
+ * Deals with: -boot-load-size {sectors}
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   cSectors            Number of emulated sectors to load
+ */
+static int rtFsIsoMakerCmdOptEltoritoSetLoadSectorCount(PRTFSISOMAKERCMDOPTS pOpts, uint16_t cSectors)
+{
+    uint32_t idxBootCat;
+    int rc = rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, false /*fForceNew*/, &idxBootCat);
+    if (RT_SUCCESS(rc))
+        pOpts->aBootCatEntries[idxBootCat].u.Section.cSectorsToLoad = cSectors;
+    return rc;
+}
+
+
+/**
+ * Deals with: -boot-info-table
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ */
+static int rtFsIsoMakerCmdOptEltoritoEnableBootInfoTablePatching(PRTFSISOMAKERCMDOPTS pOpts)
+{
+    uint32_t idxBootCat;
+    int rc = rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, false /*fForceNew*/, &idxBootCat);
+    if (RT_SUCCESS(rc))
+        pOpts->aBootCatEntries[idxBootCat].u.Section.fInsertBootInfoTable = true;
+    return rc;
+}
+
+
+/**
+ * Deals with: --eltorito-new-entry, --eltorito-alt-boot
+ *
+ * This operates on the current eltorito boot catalog entry.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ */
+static int rtFsIsoMakerCmdOptEltoritoNewEntry(PRTFSISOMAKERCMDOPTS pOpts)
+{
+    uint32_t idxBootCat;
+    return rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, true /*fForceNew*/, &idxBootCat);
+}
 
 
 
@@ -1314,7 +1620,6 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     Opts.cNameSpecifiers        = 1;
     Opts.afNameSpecifiers[0]    = RTFSISOMAKERCMDNAME_MAJOR_MASK;
     Opts.fDstNamespaces         = RTFSISOMAKERCMDNAME_MAJOR_MASK;
-    Opts.idEltoritoEntry        = UINT32_MAX;
     if (phVfsFile)
         *phVfsFile = NIL_RTVFSFILE;
 
@@ -1370,14 +1675,17 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
                 rc = rtFsIsoMakerCmdOptGenericBoot(&Opts, ValueUnion.psz);
                 break;
 
+            case RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE:
+                rc = rtFsIsoMakerCmdOptEltoritoAddImage(&Opts, ValueUnion.psz);
+                break;
+
             case 'b': /* --eltorito-boot <boot.img> */
                 rc = rtFsIsoMakerCmdOptEltoritoBoot(&Opts, ValueUnion.psz);
                 break;
 
-            case RTFSISOMAKERCMD_OPT_ELTORITO_ALT_BOOT:
-                Opts.idEltoritoEntry = UINT32_MAX;
+            case RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY:
+                rc = rtFsIsoMakerCmdOptEltoritoNewEntry(&Opts);
                 break;
-
 
             case RTFSISOMAKERCMD_OPT_ELTORITO_PLATFORM_ID:
                 rc = rtFsIsoMakerCmdOptEltoritoPlatformId(&Opts, ValueUnion.psz);
