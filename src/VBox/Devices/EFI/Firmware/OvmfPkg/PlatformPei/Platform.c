@@ -39,6 +39,11 @@
 #include "Platform.h"
 #include "Cmos.h"
 
+#ifdef VBOX
+# define IN_RING0
+# include "../../../../DevEFI.h"
+#endif
+
 EFI_MEMORY_TYPE_INFORMATION mDefaultMemoryTypeInformation[] = {
   { EfiACPIMemoryNVS,       0x004 },
   { EfiACPIReclaimMemory,   0x008 },
@@ -63,6 +68,22 @@ EFI_PEI_PPI_DESCRIPTOR   mPpiBootMode[] = {
 EFI_BOOT_MODE mBootMode = BOOT_WITH_FULL_CONFIGURATION;
 
 BOOLEAN mS3Supported = FALSE;
+
+#ifdef VBOX
+static UINT32
+GetVmVariable(UINT32 Variable, CHAR8 *pbBuf, UINT32 cbBuf)
+{
+  UINT32 cbVar, offBuf;
+
+  IoWrite32(EFI_INFO_PORT, Variable);
+  cbVar = IoRead32(EFI_INFO_PORT);
+
+  for (offBuf = 0; offBuf < cbVar && offBuf < cbBuf; offBuf++)
+    pbBuf[offBuf] = IoRead8(EFI_INFO_PORT);
+
+  return cbVar;
+}
+#endif
 
 
 VOID
@@ -268,8 +289,22 @@ MemMapInitialization (
     // 0xFED00400    gap                         1023 KB
     // 0xFEE00000    LAPIC                          1 MB
     //
+#ifdef VBOX
+    UINT32 MCfgBase = 0;
+    UINT32 MCfgSize = 0;
+    GetVmVariable(EFI_INFO_INDEX_MCFG_BASE, (CHAR8 *)&MCfgBase, sizeof(MCfgBase));
+    GetVmVariable(EFI_INFO_INDEX_MCFG_SIZE, (CHAR8 *)&MCfgSize, sizeof(MCfgSize));
+    if (TopOfLowRam < BASE_2GB)
+      TopOfLowRam = BASE_2GB;
+    if (MCfgBase == 0)
+      MCfgBase = TopOfLowRam;   // backward compatibilit with old DevEFI
+    if (TopOfLowRam < MCfgBase)
+      AddIoMemoryRangeHob (TopOfLowRam, MCfgBase);
+    AddIoMemoryRangeHob (MCfgBase + MCfgSize, 0xFC000000);
+#else
     AddIoMemoryRangeHob (TopOfLowRam < BASE_2GB ?
                          BASE_2GB : TopOfLowRam, 0xFC000000);
+#endif
     AddIoMemoryBaseSizeHob (0xFEC00000, SIZE_4KB);
     AddIoMemoryBaseSizeHob (0xFED00000, SIZE_1KB);
     AddIoMemoryBaseSizeHob (PcdGet32(PcdCpuLocalApicBaseAddress), SIZE_1MB);
