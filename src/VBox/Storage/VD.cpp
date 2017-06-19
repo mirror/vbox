@@ -5466,6 +5466,13 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                  * incompatibility so that the file cannot be used. Stop here
                  * and signal success - the actual open will of course fail,
                  * but that will create a really sensible error message. */
+
+                    /** @todo r=bird: this bit of code is _certifiably_ _insane_ as it allows
+                     *        simple stuff like VERR_EOF to pass thru.  I've just amended it with
+                     *        disallowing VERR_EOF too, but someone needs to pick up the courage to
+                     *        fix this stuff properly or at least update the docs!
+                     *        (Parallels returns VERR_EOF, btw.) */
+
                 ||  (   rc != VERR_VD_GEN_INVALID_HEADER
                      && rc != VERR_VD_VDI_INVALID_HEADER
                      && rc != VERR_VD_VMDK_INVALID_HEADER
@@ -5477,7 +5484,9 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                      && rc != VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL
                      && rc != VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG
                      && rc != VERR_VD_PARALLELS_INVALID_HEADER
-                     && rc != VERR_VD_DMG_INVALID_HEADER))
+                     && rc != VERR_VD_DMG_INVALID_HEADER
+                     && rc != VERR_EOF /* bird for viso */
+                        ))
             {
                 /* Copy the name into the new string. */
                 char *pszFormat = RTStrDup(pBackend->pszBackendName);
