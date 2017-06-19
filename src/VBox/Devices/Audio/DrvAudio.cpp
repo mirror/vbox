@@ -138,7 +138,9 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 # endif /* unused */
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-static void drvAudioDbgPCMDumpA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData);
+static char *drvAudioDbgGetFileNameA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix);
+static void  drvAudioDbgPCMDelete(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix);
+static void  drvAudioDbgPCMDump(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData);
 #endif
 
 #ifdef LOG_ENABLED
@@ -968,6 +970,10 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         }
 #endif
 
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+        drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamWrite.pcm", pvBuf, cbBuf);
+#endif
+
 #ifdef VBOX_WITH_STATISTICS
         STAM_COUNTER_ADD(&pThis->Stats.TotalSamplesWritten, csWritten);
 #endif
@@ -1320,8 +1326,8 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                     break;
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-                drvAudioDbgPCMDumpA(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "PlayNonInterleaved.pcm",
-                                    auBuf, cbPlayed);
+                drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "PlayNonInterleaved.pcm",
+                                   auBuf, cbPlayed);
 #endif
                 AssertMsg(cbPlayed <= cbRead, ("Played more than available (%RU32 available but got %RU32)\n", cbRead, cbPlayed));
                 AssertMsg(cbPlayed % 2 == 0,
@@ -1604,8 +1610,8 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         else if (cbCaptured)
         {
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-            drvAudioDbgPCMDumpA(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "CaptureNonInterleaved.pcm",
-                                auBuf, cbCaptured);
+            drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "CaptureNonInterleaved.pcm",
+                               auBuf, cbCaptured);
 #endif
             Assert(cbCaptured <= cbBuf);
             if (cbCaptured > cbBuf) /* Paranoia. */
@@ -2073,23 +2079,15 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
 /**
- * Dumps (raw) PCM audio data into a file by appending.
- * Every driver instance will have an own prefix to not introduce writing races.
+ * Returns an unique file name for this given audio connector instance.
  *
+ * @return  Allocated file name. Must be free'd using RTStrFree().
  * @param   pThis               Driver instance.
- * @param   pszPath             Path name to save file to. The path must exist.
+ * @param   pszPath             Path name of the file to delete. The path must exist.
  * @param   pszSuffix           File name suffix to use.
- * @param   pvData              Pointer to PCM data to dump.
- * @param   cbData              Size (in bytes) of PCM data to dump.
  */
-static void drvAudioDbgPCMDumpA(PDRVAUDIO pThis,
-                                const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData)
+static char *drvAudioDbgGetFileNameA(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix)
 {
-    if (!pvData || !cbData)
-        return;
-
-    AssertPtr(pThis->pDrvIns);
-
     char szFileName[64];
     RTStrPrintf(szFileName, sizeof(szFileName), "drvAudio%RU32-%s", pThis->pDrvIns->iInstance, pszSuffix);
 
@@ -2099,15 +2097,57 @@ static void drvAudioDbgPCMDumpA(PDRVAUDIO pThis,
     rc2 = RTPathAppend(szFilePath, sizeof(szFilePath), szFileName);
     AssertRC(rc2);
 
+    return RTStrDup(szFilePath);
+}
+
+/**
+ * Deletes a PCM audio dump file.
+ *
+ * @param   pThis               Driver instance.
+ * @param   pszPath             Path name of the file to delete. The path must exist.
+ * @param   pszSuffix           File name suffix to use.
+ */
+static void drvAudioDbgPCMDelete(PDRVAUDIO pThis, const char *pszPath, const char *pszSuffix)
+{
+    char *pszFileName = drvAudioDbgGetFileNameA(pThis, pszPath, pszSuffix);
+    AssertPtr(pszFileName);
+
+    RTFileDelete(pszFileName);
+
+    RTStrFree(pszFileName);
+}
+
+/**
+ * Dumps (raw) PCM audio data into a file by appending.
+ * Every driver instance will have an own prefix to not introduce writing races.
+ *
+ * @param   pThis               Driver instance.
+ * @param   pszPath             Path name to save file to. The path must exist.
+ * @param   pszSuffix           File name suffix to use.
+ * @param   pvData              Pointer to PCM data to dump.
+ * @param   cbData              Size (in bytes) of PCM data to dump.
+ */
+static void drvAudioDbgPCMDump(PDRVAUDIO pThis,
+                               const char *pszPath, const char *pszSuffix, const void *pvData, size_t cbData)
+{
+    if (!pvData || !cbData)
+        return;
+
+    AssertPtr(pThis->pDrvIns);
+
+    char *pszFileName = drvAudioDbgGetFileNameA(pThis, pszPath, pszSuffix);
+    AssertPtr(pszFileName);
+
     RTFILE fh;
-    rc2 = RTFileOpen(&fh, szFilePath,
-                     RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    int rc2 = RTFileOpen(&fh, pszFileName, RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     AssertRC(rc2);
     if (RT_SUCCESS(rc2))
     {
         RTFileWrite(fh, pvData, cbData, NULL);
         RTFileClose(fh);
     }
+
+    RTStrFree(pszFileName);
 }
 #endif /* VBOX_AUDIO_DEBUG_DUMP_PCM_DATA */
 
@@ -2294,6 +2334,10 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             if (cRead)
             {
                 cbRead = AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cRead);
+
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+                drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamRead.pcm", pvBuf, cbRead);
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
                 STAM_COUNTER_ADD(&pThis->Stats.TotalBytesRead,       cbRead);
@@ -3150,6 +3194,13 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                                      STAMUNIT_NS_PER_CALL, "Profiling of input data processing.");
         PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
                                      STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
+#endif
+
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamRead.pcm");
+        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamWrite.pcm");
+        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "PlayNonInterleaved.pcm");
+        drvAudioDbgPCMDelete(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "CaptureNonInterleaved.pcm");
 #endif
     }
 
