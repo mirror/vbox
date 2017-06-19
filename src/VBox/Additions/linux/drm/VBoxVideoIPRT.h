@@ -108,10 +108,6 @@ extern int RTASSERTVAR[1];
 /** @name types for VirtualBox OS-independent code
  * @{ */
 
-/* HGSMI uses 32 bit offsets and sizes. */
-typedef uint32_t HGSMISIZE;
-typedef uint32_t HGSMIOFFSET;
-
 typedef void RTRECT;
 
 #define UINT32_C(val)		(val ## U)

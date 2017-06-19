@@ -28,9 +28,9 @@
 #define ___VBox_Graphics_HGSMIBase_h___
 
 #include <VBoxVideoIPRT.h>
+#include <HGSMIDefs.h>
 #include <HGSMIChannels.h>
 #include <HGSMIChSetup.h>
-#include <HGSMIDefs.h>
 #include <linux/genalloc.h>
 
 typedef struct gen_pool *PHGSMIGUESTCOMMANDCONTEXT;
