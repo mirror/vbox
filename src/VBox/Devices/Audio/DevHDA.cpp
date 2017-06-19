@@ -5470,17 +5470,17 @@ static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fInTimer)
         {
 #endif
             /* How much (guest output) data is available at the moment? */
-            uint32_t cbToRead = hdaStreamGetUsed(pStream);
+            uint32_t cbAvailable = hdaStreamGetUsed(pStream);
 
             /* Do not write more than the sink can hold at the moment.
              * The host sets the overall pace. */
-            if (cbToRead > cbWritable)
-                cbToRead = cbWritable;
+            if (cbAvailable > cbWritable)
+                cbAvailable = cbWritable;
 
-            if (cbToRead)
+            if (cbAvailable)
             {
                 /* Read (guest output) data and write it to the stream's sink. */
-                rc2 = hdaStreamRead(pThis, pStream, cbToRead, NULL /* pcbRead */);
+                rc2 = hdaStreamRead(pThis, pStream, cbAvailable, NULL /* pcbRead */);
                 AssertRC(rc2);
             }
 
@@ -5510,20 +5510,20 @@ static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fInTimer)
             /* Is the sink ready to be read (host input data) from? If so, by how much? */
             const uint32_t cbReadable = AudioMixerSinkGetReadable(pSink);
 
-            Log3Func(("[SD%RU8] cbReadable=%RU32\n", pStream->u8SD, cbReadable));
-
             /* How much (guest input) data is free at the moment? */
-            uint32_t cbToWrite = hdaStreamGetFree(pStream);
+            uint32_t cbFree = hdaStreamGetFree(pStream);
+
+            Log3Func(("[SD%RU8] cbReadable=%RU32, cbFree=%RU32\n", pStream->u8SD, cbReadable, cbFree));
 
             /* Do not read more than the sink can provide at the moment.
              * The host sets the overall pace. */
-            if (cbToWrite > cbReadable)
-                cbToWrite = cbReadable;
+            if (cbFree > cbReadable)
+                cbFree = cbReadable;
 
-            if (cbToWrite)
+            if (cbFree)
             {
                 /* Write (guest input) data to the stream which was read from stream's sink before. */
-                rc2 = hdaStreamWrite(pThis, pStream, cbToWrite, NULL /* pcbWritten */);
+                rc2 = hdaStreamWrite(pThis, pStream, cbFree, NULL /* pcbWritten */);
                 AssertRC(rc2);
             }
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
