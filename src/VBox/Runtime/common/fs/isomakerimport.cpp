@@ -447,14 +447,14 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                 && cchName > 2
                 && RT_C_IS_DIGIT(pThis->szNameBuf[cchName - 1]))
             {
-                uint32_t off = 2;
-                while (   off <= 5
-                       && off + 1 < cchName
-                       && RT_C_IS_DIGIT(pThis->szNameBuf[cchName - off]))
-                    off++;
-                if (   off + 1 < cchName
-                    && pThis->szNameBuf[cchName - off] == ';')
-                    pThis->szNameBuf[cchName - off] = '\0';
+                uint32_t offName = 2;
+                while (   offName <= 5
+                       && offName + 1 < cchName
+                       && RT_C_IS_DIGIT(pThis->szNameBuf[cchName - offName]))
+                    offName++;
+                if (   offName + 1 < cchName
+                    && pThis->szNameBuf[cchName - offName] == ';')
+                    pThis->szNameBuf[cchName - offName] = '\0';
             }
 
             /** @todo rock ridge. */
