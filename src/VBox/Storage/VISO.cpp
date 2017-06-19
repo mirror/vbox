@@ -31,6 +31,7 @@
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "VDBackends.h"
 #include "VDBackendsInline.h"
@@ -41,9 +42,9 @@
 *********************************************************************************************************************************/
 /** The maximum file size. */
 #if ARCH_BITS >= 64
-# define VISO_MAX_FILE_SIZE     _64M
+# define VISO_MAX_FILE_SIZE     _32M
 #else
-# define VISO_MAX_FILE_SIZE     _16M
+# define VISO_MAX_FILE_SIZE     _8M
 #endif
 
 
@@ -56,13 +57,16 @@
  */
 typedef struct VISOIMAGE
 {
-    /** The ISO maker output file handle. */
+    /** The ISO maker output file handle.
+     * This is NIL if in VD_OPEN_FLAGS_INFO mode. */
     RTVFSFILE           hIsoFile;
     /** The image size. */
     uint64_t            cbImage;
+    /** The UUID ofr the image. */
+    RTUUID              Uuid;
+
     /** Open flags passed by VD layer. */
     uint32_t            fOpenFlags;
-
     /** Image name (for debug).
      * Allocation follows the region list, no need to free. */
     const char         *pszFilename;
@@ -82,16 +86,120 @@ typedef VISOIMAGE *PVISOIMAGE;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-
 /** NULL-terminated array of supported file extensions. */
 static const VDFILEEXTENSION g_aVBoXIsoMakerFileExtensions[] =
 {
-    { "vbox-iso-maker", VDTYPE_OPTICAL_DISC },
+    //{ "vbox-iso-maker", VDTYPE_OPTICAL_DISC }, - clumsy.
     { "viso",           VDTYPE_OPTICAL_DISC },
     { NULL,             VDTYPE_INVALID      }
 };
 
 
+/**
+ * Parses the UUID that follows the marker argument.
+ *
+ * @returns IPRT status code.
+ * @param   pszMarker           The marker.
+ * @param   pUuid               Where to return the UUID.
+ */
+static int visoParseUuid(char *pszMarker, PRTUUID pUuid)
+{
+    /* Skip the marker. */
+    char ch;
+    while (   (ch = *pszMarker) != '\0'
+           && !RT_C_IS_SPACE(ch)
+           && ch != ':'
+           && ch != '=')
+        pszMarker++;
+
+    /* Skip chars before the value. */
+    if (   ch == ':'
+        || ch == '=')
+        ch = *++pszMarker;
+    else
+        while (RT_C_IS_SPACE(ch))
+            ch = *++pszMarker;
+    const char * const pszUuid = pszMarker;
+
+    /* Find the end of the UUID value. */
+    while (   ch != '\0'
+           && !RT_C_IS_SPACE(ch))
+        ch = *++pszMarker;
+
+    /* Validate the value (temporarily terminate the value string) */
+    *pszMarker = '\0';
+    int rc = RTUuidFromStr(pUuid, pszUuid);
+    if (RT_SUCCESS(rc))
+    {
+        *pszMarker = ch;
+        return VINF_SUCCESS;
+    }
+
+    /* Complain and return VERR_VD_IMAGE_CORRUPTED to indicate we've identified
+       the right image format, but the producer got something wrong. */
+    if (pszUuid != pszMarker)
+        LogRel(("visoParseUuid: Malformed UUID '%s': %Rrc\n", pszUuid, rc));
+    else
+        LogRel(("visoParseUuid: Empty/missing UUID!\n"));
+    *pszMarker = ch;
+
+    return VERR_VD_IMAGE_CORRUPTED;
+}
+
+
+static int visoProbeWorker(const char *pszFilename, PVDINTERFACEIOINT pIfIo, PRTUUID pUuid)
+{
+    PVDIOSTORAGE pStorage = NULL;
+    int rc = vdIfIoIntFileOpen(pIfIo, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &pStorage);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Read the first part of the file.
+         */
+        uint64_t cbFile = 0;
+        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
+        if (RT_SUCCESS(rc))
+        {
+            char   szChunk[_1K];
+            size_t cbToRead = (size_t)RT_MIN(sizeof(szChunk) - 1, cbFile);
+            rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0 /*off*/, szChunk, cbToRead);
+            if (RT_SUCCESS(rc))
+            {
+                szChunk[cbToRead] = '\0';
+
+                /*
+                 * Skip leading spaces and check for the eye-catcher.
+                 */
+                char *psz = szChunk;
+                while (RT_C_IS_SPACE(*psz))
+                    psz++;
+                if (strncmp(psz, RT_STR_TUPLE("--iprt-iso-maker-file-marker")) == 0)
+                {
+                    rc = visoParseUuid(psz, pUuid);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Check the file size.
+                         */
+                        if (cbFile <= VISO_MAX_FILE_SIZE)
+                            rc = VINF_SUCCESS;
+                        else
+                        {
+                            LogRel(("visoProbeWorker: VERR_VD_INVALID_SIZE - cbFile=%#RX64 cbMaxFile=%#RX64\n",
+                                    cbFile, (uint64_t)VISO_MAX_FILE_SIZE));
+                            rc = VERR_VD_INVALID_SIZE;
+                        }
+                    }
+                }
+                else
+                    rc = VERR_VD_GEN_INVALID_HEADER;
+            }
+        }
+        vdIfIoIntFileClose(pIfIo, pStorage);
+    }
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
 
 /**
  * @interface_method_impl{VDIMAGEBACKEND,pfnProbe}
@@ -113,119 +221,77 @@ static DECLCALLBACK(int) visoProbe(const char *pszFilename, PVDINTERFACE pVDIfsD
     RT_NOREF(pVDIfsDisk);
 
     /*
-     * Open the file.
+     * Share worker with visoOpen and visoSetFlags.
      */
-    PVDIOSTORAGE pStorage = NULL;
-    int rc = vdIfIoIntFileOpen(pIfIo, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &pStorage);
+    RTUUID UuidIgn;
+    int rc = visoProbeWorker(pszFilename, pIfIo, &UuidIgn);
     if (RT_SUCCESS(rc))
-    {
-        /*
-         * Read a chunk so we can look for the eye-catcher in the first line.
-         */
-        uint64_t cbFile = 0;
-        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
-        if (RT_SUCCESS(rc))
-        {
-            char szChunk[256];
-            size_t cbToRead = (size_t)RT_MIN(sizeof(szChunk) - 1, cbFile);
-            rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0 /*off*/, szChunk, cbToRead);
-            if (RT_SUCCESS(rc))
-            {
-                szChunk[cbToRead] = '\0';
-                const char *psz = szChunk;
-                while (RT_C_IS_SPACE(*psz))
-                    psz++;
-                if (strcmp(psz, "--iprt-iso-maker-file-marker") == 0)
-                {
-                    if (cbFile <= VISO_MAX_FILE_SIZE)
-                    {
-                        *penmType = VDTYPE_OPTICAL_DISC;
-                        rc = VINF_SUCCESS;
-                    }
-                    else
-                    {
-                        LogRel(("visoProbe: VERR_FILE_TOO_BIG - cbFile=%#RX64 cbMaxFile=%#RX64\n",
-                                cbFile, (uint64_t)VISO_MAX_FILE_SIZE));
-                        rc = VERR_FILE_TOO_BIG;
-                    }
-                }
-                else
-                    rc = VERR_VD_GEN_INVALID_HEADER;
-            }
-        }
-        vdIfIoIntFileClose(pIfIo, pStorage);
-    }
+        *penmType = VDTYPE_OPTICAL_DISC;
+
     LogFlowFunc(("returns %Rrc - *penmType=%d\n", rc, *penmType));
     return rc;
 }
 
+
 /**
- * @interface_method_impl{VDIMAGEBACKEND,pfnOpen}
+ * Worker for visoOpen and visoSetOpenFlags that creates a VFS file for the ISO.
+ *
+ * This also updates cbImage and the Uuid members.
+ *
+ * @returns
+ * @param   pThis               .
  */
-static DECLCALLBACK(int) visoOpen(const char *pszFilename, unsigned uOpenFlags, PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                                  VDTYPE enmType, void **ppBackendData)
+static int visoOpenWorker(PVISOIMAGE pThis)
 {
-    LogFlowFunc(("pszFilename='%s' fOpenFlags=%#x pVDIfsDisk=%p pVDIfsImage=%p enmType=%u ppBackendData=%p\n",
-                 pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, enmType, ppBackendData));
-
-    /*
-     * Validate input.
-     */
-    AssertPtrReturn(ppBackendData, VERR_INVALID_POINTER);
-    *ppBackendData = NULL;
-
-    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
-    AssertReturn(*pszFilename, VERR_INVALID_POINTER);
-
-    AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_FLAGS);
-
-    PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
-    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
-
-    PVDINTERFACEERROR pIfError = VDIfErrorGet(pVDIfsDisk);
-
-    AssertReturn(enmType == VDTYPE_OPTICAL_DISC, VERR_NOT_SUPPORTED);
-
     /*
      * Open the file and read it into memory.
      */
     PVDIOSTORAGE pStorage = NULL;
-    int rc = vdIfIoIntFileOpen(pIfIo, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &pStorage);
+    int rc = vdIfIoIntFileOpen(pThis->pIfIo, pThis->pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &pStorage);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Read the file into memory, prefixing it with a dummy command name.
+     */
+    uint64_t cbFile = 0;
+    rc = vdIfIoIntFileGetSize(pThis->pIfIo, pStorage, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Read the file into memory.
-         */
-        uint64_t cbFile = 0;
-        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
-        if (RT_SUCCESS(rc))
+        if (cbFile <= VISO_MAX_FILE_SIZE)
         {
-            uint64_t const cbMaxFile = ARCH_BITS >= 64 ? _64M : _16M;
-            if (cbFile <= cbMaxFile)
+            static char const s_szCmdPrefix[] = "VBox-Iso-Maker ";
+
+            char *pszContent = (char *)RTMemTmpAlloc(sizeof(s_szCmdPrefix) + cbFile);
+            if (pszContent)
             {
-                static char const s_szCmdPrefix[] = "VBox-Iso-Maker ";
-
-                char *pszContent = (char *)RTMemTmpAlloc(sizeof(s_szCmdPrefix) + cbFile);
-                if (pszContent)
+                char *pszReadDst = &pszContent[sizeof(s_szCmdPrefix) - 1];
+                rc = vdIfIoIntFileReadSync(pThis->pIfIo, pStorage, 0 /*off*/, pszReadDst, (size_t)cbFile);
+                if (RT_SUCCESS(rc))
                 {
-                    char *pszReadDst = &pszContent[sizeof(s_szCmdPrefix) - 1];
-                    rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0 /*off*/, pszReadDst, (size_t)cbFile);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pszReadDst[(size_t)cbFile] = '\0';
-                        memcpy(pszContent, s_szCmdPrefix, sizeof(s_szCmdPrefix) - 1);
+                    /*
+                     * Check the file marker and get the UUID that follows it.
+                     * Ignore leading blanks.
+                     */
+                    pszReadDst[(size_t)cbFile] = '\0';
+                    memcpy(pszContent, s_szCmdPrefix, sizeof(s_szCmdPrefix) - 1);
 
-                        while (RT_C_IS_SPACE(*pszReadDst))
-                            pszReadDst++;
-                        if (strcmp(pszReadDst, "--iprt-iso-maker-file-marker") == 0)
+                    while (RT_C_IS_SPACE(*pszReadDst))
+                        pszReadDst++;
+                    if (strncmp(pszReadDst, RT_STR_TUPLE("--iprt-iso-maker-file-marker")) == 0)
+                    {
+                        rc = visoParseUuid(pszReadDst, &pThis->Uuid);
+                        if (RT_SUCCESS(rc))
                         {
                             /*
                              * Convert it into an argument vector.
                              * Free the content afterwards to reduce memory pressure.
                              */
+                            uint32_t fGetOpt = strncmp(pszReadDst, RT_STR_TUPLE("--iprt-iso-maker-file-marker-ms")) != 0
+                                             ? RTGETOPTARGV_CNV_QUOTE_BOURNE_SH : RTGETOPTARGV_CNV_QUOTE_MS_CRT;
                             char **papszArgs;
                             int    cArgs;
-                            rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszContent, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
+                            rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszContent, fGetOpt, NULL);
 
                             RTMemTmpFree(pszContent);
                             pszContent = NULL;
@@ -250,68 +316,129 @@ static DECLCALLBACK(int) visoOpen(const char *pszFilename, unsigned uOpenFlags, 
                                     if (RT_SUCCESS(rc))
                                     {
                                         /*
-                                         * We're good! Just allocate and initialize the backend image instance data.
+                                         * Update the state.
                                          */
-                                        size_t     cbFilename = strlen(pszFilename);
-                                        PVISOIMAGE pThis;
-                                        pThis = (PVISOIMAGE)RTMemAllocZ(  RT_UOFFSETOF(VISOIMAGE, RegionList.aRegions[1])
-                                                                        + cbFilename);
-                                        if (pThis)
-                                        {
-                                            pThis->hIsoFile    = hVfsFile;
-                                            hVfsFile = NIL_RTVFSFILE;
-                                            pThis->cbImage     = cbImage;
-                                            pThis->fOpenFlags  = uOpenFlags;
-                                            pThis->pszFilename = (char *)memcpy(&pThis->RegionList.aRegions[1],
-                                                                                pszFilename, cbFilename);
-                                            pThis->pIfIo       = pIfIo;
-                                            pThis->pIfError    = pIfError;
+                                        pThis->cbImage = cbImage;
+                                        pThis->RegionList.aRegions[0].cRegionBlocksOrBytes = cbImage;
 
-                                            pThis->RegionList.fFlags   = 0;
-                                            pThis->RegionList.cRegions = 1;
-                                            pThis->RegionList.aRegions[0].offRegion            = 0;
-                                            pThis->RegionList.aRegions[0].cRegionBlocksOrBytes = pThis->cbImage;
-                                            pThis->RegionList.aRegions[0].cbBlock              = 2048;
-                                            pThis->RegionList.aRegions[0].enmDataForm          = VDREGIONDATAFORM_RAW;
-                                            pThis->RegionList.aRegions[0].enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
-                                            pThis->RegionList.aRegions[0].cbData               = 2048;
-                                            pThis->RegionList.aRegions[0].cbMetadata           = 0;
+                                        pThis->hIsoFile = hVfsFile;
+                                        hVfsFile = NIL_RTVFSFILE;
 
-                                            *ppBackendData = pThis;
-                                            rc = VINF_SUCCESS;
-                                        }
-                                        else
-                                            rc = VERR_NO_MEMORY;
+                                        rc = VINF_SUCCESS;
                                     }
+
                                     RTVfsFileRelease(hVfsFile);
                                 }
                                 else
                                 {
                                     /** @todo better error reporting!  */
+                                    if (RTErrInfoIsSet(&ErrInfo.Core))
+                                        LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc - %s\n", rc, ErrInfo.Core.pszMsg));
+                                    else
+                                        LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc\n", rc));
                                 }
                             }
                         }
-                        else
-                            rc = VERR_VD_GEN_INVALID_HEADER;
                     }
-
-                    RTMemTmpFree(pszContent);
+                    else
+                        rc = VERR_VD_GEN_INVALID_HEADER;
                 }
-                else
-                    rc = VERR_NO_TMP_MEMORY;
+
+                RTMemTmpFree(pszContent);
             }
             else
-            {
-                LogRel(("visoOpen: VERR_FILE_TOO_BIG - cbFile=%#RX64 cbMaxFile=%#RX64\n",
-                        cbFile, (uint64_t)VISO_MAX_FILE_SIZE));
-                rc = VERR_FILE_TOO_BIG;
-            }
+                rc = VERR_NO_TMP_MEMORY;
         }
-        vdIfIoIntFileClose(pIfIo, pStorage);
+        else
+        {
+            LogRel(("visoOpen: VERR_VD_INVALID_SIZE - cbFile=%#RX64 cbMaxFile=%#RX64\n",
+                    cbFile, (uint64_t)VISO_MAX_FILE_SIZE));
+            rc = VERR_VD_INVALID_SIZE;
+        }
     }
-    LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
+
+    vdIfIoIntFileClose(pThis->pIfIo, pStorage);
     return rc;
 }
+
+
+/**
+ * @interface_method_impl{VDIMAGEBACKEND,pfnOpen}
+ */
+static DECLCALLBACK(int) visoOpen(const char *pszFilename, unsigned uOpenFlags, PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                  VDTYPE enmType, void **ppBackendData)
+{
+    uint32_t const fOpenFlags = uOpenFlags;
+    LogFlowFunc(("pszFilename='%s' fOpenFlags=%#x pVDIfsDisk=%p pVDIfsImage=%p enmType=%u ppBackendData=%p\n",
+                 pszFilename, fOpenFlags, pVDIfsDisk, pVDIfsImage, enmType, ppBackendData));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(ppBackendData, VERR_INVALID_POINTER);
+    *ppBackendData = NULL;
+
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename, VERR_INVALID_POINTER);
+
+    AssertReturn(!(fOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_FLAGS);
+
+    PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+
+    PVDINTERFACEERROR pIfError = VDIfErrorGet(pVDIfsDisk);
+
+    AssertReturn(enmType == VDTYPE_OPTICAL_DISC, VERR_NOT_SUPPORTED);
+
+    /*
+     * Allocate and initialize the backend image instance data.
+     */
+    int         rc;
+    size_t      cbFilename = strlen(pszFilename) + 1;
+    PVISOIMAGE  pThis = (PVISOIMAGE)RTMemAllocZ(RT_UOFFSETOF(VISOIMAGE, RegionList.aRegions[1]) + cbFilename);
+    if (pThis)
+    {
+        pThis->hIsoFile    = NIL_RTVFSFILE;
+        pThis->cbImage     = 0;
+        pThis->fOpenFlags  = fOpenFlags;
+        pThis->pszFilename = (char *)memcpy(&pThis->RegionList.aRegions[1], pszFilename, cbFilename);
+        pThis->pIfIo       = pIfIo;
+        pThis->pIfError    = pIfError;
+
+        pThis->RegionList.fFlags   = 0;
+        pThis->RegionList.cRegions = 1;
+        pThis->RegionList.aRegions[0].offRegion            = 0;
+        pThis->RegionList.aRegions[0].cRegionBlocksOrBytes = 0;
+        pThis->RegionList.aRegions[0].cbBlock              = 2048;
+        pThis->RegionList.aRegions[0].enmDataForm          = VDREGIONDATAFORM_RAW;
+        pThis->RegionList.aRegions[0].enmMetadataForm      = VDREGIONMETADATAFORM_NONE;
+        pThis->RegionList.aRegions[0].cbData               = 2048;
+        pThis->RegionList.aRegions[0].cbMetadata           = 0;
+
+        /*
+         * Only go all the way if this isn't an info query.  Re-mastering an ISO
+         * can potentially be a lot of work and we don't want to go thru with it
+         * just because the GUI wants to display the image size.
+         */
+        if (!(fOpenFlags & VD_OPEN_FLAGS_INFO))
+            rc = visoOpenWorker(pThis);
+        else
+            rc = visoProbeWorker(pThis->pszFilename, pThis->pIfIo, &pThis->Uuid);
+        if (RT_SUCCESS(rc))
+        {
+            *ppBackendData = pThis;
+            LogFlowFunc(("returns VINF_SUCCESS (UUID=%RTuuid, pszFilename=%s)\n", &pThis->Uuid, pThis->pszFilename));
+            return VINF_SUCCESS;
+        }
+
+        RTMemFree(pThis);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 
 /**
  * @interface_method_impl{VDIMAGEBACKEND,pfnClose}
@@ -326,13 +453,16 @@ static DECLCALLBACK(int) visoClose(void *pBackendData, bool fDelete)
         if (fDelete)
             vdIfIoIntFileDelete(pThis->pIfIo, pThis->pszFilename);
 
-        RTVfsFileRelease(pThis->hIsoFile);
-        pThis->hIsoFile = NIL_RTVFSFILE;
+        if (pThis->hIsoFile != NIL_RTVFSFILE)
+        {
+            RTVfsFileRelease(pThis->hIsoFile);
+            pThis->hIsoFile = NIL_RTVFSFILE;
+        }
 
         RTMemFree(pThis);
     }
 
-    LogFlowFunc(("returns VINF_SUCCESS\n", VINF_SUCCESS));
+    LogFlowFunc(("returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
@@ -418,7 +548,6 @@ static DECLCALLBACK(unsigned) visoGetVersion(void *pBackendData)
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
     AssertPtrReturn(pThis, 0);
-    AssertReturn(pThis->hIsoFile != NIL_RTVFSFILE, 0);
     LogFlowFunc(("pThis=%#p -> 1\n", pThis));
     return 1;
 }
@@ -430,8 +559,7 @@ static DECLCALLBACK(uint64_t) visoGetFileSize(void *pBackendData)
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
     AssertPtrReturn(pThis, 0);
-    AssertReturn(pThis->hIsoFile != NIL_RTVFSFILE, 0);
-    LogFlowFunc(("pThis=%p -> %RX64\n", pThis, pThis->cbImage));
+    LogFlowFunc(("pThis=%p -> %RX64 (%s)\n", pThis, pThis->cbImage, pThis->hIsoFile == NIL_RTVFSFILE ? "fake!" : "real"));
     return pThis->cbImage;
 }
 
@@ -442,7 +570,6 @@ static DECLCALLBACK(int) visoGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPC
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
     AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-    AssertReturn(pThis->hIsoFile != NIL_RTVFSFILE, VERR_VD_NOT_OPENED);
     LogFlowFunc(("pThis=%p pPCHSGeometry=%p -> VERR_NOT_SUPPORTED\n", pThis, pPCHSGeometry));
     RT_NOREF(pPCHSGeometry);
     return VERR_NOT_SUPPORTED;
@@ -455,7 +582,6 @@ static DECLCALLBACK(int) visoSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pP
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
     AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-    AssertReturn(pThis->hIsoFile != NIL_RTVFSFILE, VERR_VD_NOT_OPENED);
     LogFlowFunc(("pThis=%p pPCHSGeometry=%p:{%u/%u/%u} -> VERR_VD_IMAGE_READ_ONLY\n",
                  pThis, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     RT_NOREF(pPCHSGeometry);
@@ -469,7 +595,6 @@ static DECLCALLBACK(int) visoGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLC
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
     AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-    AssertReturn(pThis->hIsoFile != NIL_RTVFSFILE, VERR_VD_NOT_OPENED);
     LogFlowFunc(("pThis=%p pLCHSGeometry=%p -> VERR_NOT_SUPPORTED\n", pThis, pLCHSGeometry));
     RT_NOREF(pLCHSGeometry);
     return VERR_NOT_SUPPORTED;
@@ -482,7 +607,6 @@ static DECLCALLBACK(int) visoSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pL
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
     AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-    AssertReturn(pThis->hIsoFile != NIL_RTVFSFILE, VERR_VD_NOT_OPENED);
     LogFlowFunc(("pThis=%p pLCHSGeometry=%p:{%u/%u/%u} -> VERR_VD_IMAGE_READ_ONLY\n",
                  pThis, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     RT_NOREF(pLCHSGeometry);
@@ -495,13 +619,11 @@ static DECLCALLBACK(int) visoSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pL
 static DECLCALLBACK(int) visoQueryRegions(void *pBackendData, PCVDREGIONLIST *ppRegionList)
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
-    LogFlowFunc(("pThis=%p ppRegionList=%p\n", pThis, ppRegionList));
-
     *ppRegionList = NULL;
     AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
-    AssertReturn(pThis->hIsoFile != NIL_RTVFSFILE, VERR_VD_NOT_OPENED);
 
     *ppRegionList = &pThis->RegionList;
+    LogFlowFunc(("returns VINF_SUCCESS (one region: 0 LB %RX64; pThis=%p)\n", pThis->RegionList.aRegions[0].cbData, pThis));
     return VINF_SUCCESS;
 }
 
@@ -524,7 +646,7 @@ static DECLCALLBACK(unsigned) visoGetImageFlags(void *pBackendData)
 {
     PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
     LogFlowFunc(("pThis=%p -> VD_IMAGE_FLAGS_NONE\n", pThis));
-    AssertPtr(pThis); NOREF(pThis);
+    AssertPtrReturn(pThis, VD_IMAGE_FLAGS_NONE);
     return VD_IMAGE_FLAGS_NONE;
 }
 
@@ -556,12 +678,29 @@ static DECLCALLBACK(int) visoSetOpenFlags(void *pBackendData, unsigned uOpenFlag
     AssertMsgReturn(!(uOpenFlags & ~fSupported), ("fOpenFlags=%#x\n", uOpenFlags), VERR_INVALID_FLAGS);
 
     /*
-     * No need to re-open the image, since it's always read-only and we ignore
-     * all the other flags.  Just remember them for the getter (visoGetOpenFlags).
+     * Only react if we switch from VD_OPEN_FLAGS_INFO to non-VD_OPEN_FLAGS_INFO mode,
+     * becuase that means we need to open the image.
+     */
+    if (   (pThis->fOpenFlags & VD_OPEN_FLAGS_INFO)
+        && !(uOpenFlags & VD_OPEN_FLAGS_INFO)
+        && pThis->hIsoFile == NIL_RTVFSFILE)
+    {
+        int rc = visoOpenWorker(pThis);
+        if (RT_FAILURE(rc))
+        {
+            LogFlowFunc(("returns %Rrc\n", rc));
+            return rc;
+        }
+    }
+
+    /*
+     * Update the flags.
      */
     pThis->fOpenFlags &= ~fSupported;
     pThis->fOpenFlags |= fSupported & uOpenFlags;
     pThis->fOpenFlags |= VD_OPEN_FLAGS_READONLY;
+    if (pThis->hIsoFile != NIL_RTVFSFILE)
+        pThis->fOpenFlags &= ~VD_OPEN_FLAGS_INFO;
 
     return VINF_SUCCESS;
 }
@@ -581,7 +720,13 @@ VD_BACKEND_CALLBACK_SET_COMMENT_DEF_NOT_SUPPORTED(visoSetComment, PVISOIMAGE);
 /**
  * @interface_method_impl{VDIMAGEBACKEND,pfnGetUuid}
  */
-VD_BACKEND_CALLBACK_GET_UUID_DEF_NOT_SUPPORTED(visoGetUuid);
+static DECLCALLBACK(int) visoGetUuid(void *pBackendData, PRTUUID pUuid)
+{
+    PVISOIMAGE pThis = (PVISOIMAGE)pBackendData;
+    *pUuid = pThis->Uuid;
+    LogFlowFunc(("returns VIF_SUCCESS (%RTuuid)\n", pUuid));
+    return VINF_SUCCESS;
+}
 
 /**
  * @interface_method_impl{VDIMAGEBACKEND,pfnSetUuid}
