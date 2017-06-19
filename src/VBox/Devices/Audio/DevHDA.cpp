@@ -4875,36 +4875,52 @@ static int hdaStreamWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrit
     PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
     AssertPtr(pCircBuf);
 
-    void *pvDst;
-    size_t cbDst;
+    int rc = VINF_SUCCESS;
 
-    uint32_t cbWritten = 0;
+    uint32_t cbWrittenTotal = 0;
+    uint32_t cbLeft         = RT_MIN(cbToWrite, (uint32_t)RTCircBufFree(pCircBuf));
 
-    RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvDst, &cbDst);
-
-    if (cbDst)
+    while (cbLeft)
     {
-        int rc2 = AudioMixerSinkRead(pSink->pMixSink, AUDMIXOP_COPY, pvDst, (uint32_t)cbDst, &cbWritten);
-        AssertRC(rc2);
+        void *pvDst;
+        size_t cbDst;
 
-        Assert(cbDst >= cbWritten);
-        Log2Func(("[SD%RU8]: %zu/%zu bytes written\n", pStream->u8SD, cbWritten, cbDst));
+        uint32_t cbRead = 0;
+
+        RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvDst, &cbDst);
+
+        if (cbDst)
+        {
+            rc = AudioMixerSinkRead(pSink->pMixSink, AUDMIXOP_COPY, pvDst, (uint32_t)cbDst, &cbRead);
+            AssertRC(rc);
+
+            Assert(cbDst >= cbRead);
+            Log2Func(("[SD%RU8]: %zu/%zu bytes read\n", pStream->u8SD, cbRead, cbDst));
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        RTFILE fh;
-        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm",
-                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, pvDst, cbWritten, NULL);
-        RTFileClose(fh);
+            RTFILE fh;
+            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm",
+                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+            RTFileWrite(fh, pvDst, cbRead, NULL);
+            RTFileClose(fh);
 #endif
+        }
+
+        RTCircBufReleaseWriteBlock(pCircBuf, cbRead);
+
+        if (RT_FAILURE(rc))
+            break;
+
+        Assert(cbLeft  >= cbRead);
+        cbLeft         -= cbRead;
+
+        cbWrittenTotal += cbRead;
     }
 
-    RTCircBufReleaseWriteBlock(pCircBuf, cbWritten);
-
     if (pcbWritten)
-        *pcbWritten = cbWritten;
+        *pcbWritten = cbWrittenTotal;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -4937,37 +4953,51 @@ static int hdaStreamRead(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead,
     PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
     AssertPtr(pCircBuf);
 
-    void *pvSrc;
-    size_t cbSrc;
+    int rc = VINF_SUCCESS;
 
-    uint32_t cbRead = 0;
+    uint32_t cbReadTotal = 0;
+    uint32_t cbLeft      = RT_MIN(cbToRead, (uint32_t)RTCircBufUsed(pCircBuf));
 
-    RTCircBufAcquireReadBlock(pCircBuf, cbToRead, &pvSrc, &cbSrc);
-
-    if (cbSrc)
+    while (cbLeft)
     {
-        Log2Func(("[SD%RU8]: Reading %zu bytes ...\n", pStream->u8SD, cbSrc));
+        void *pvSrc;
+        size_t cbSrc;
 
+        uint32_t cbWritten = 0;
+
+        RTCircBufAcquireReadBlock(pCircBuf, cbToRead, &pvSrc, &cbSrc);
+
+        if (cbSrc)
+        {
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        RTFILE fh;
-        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm",
-                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, pvSrc, cbSrc, NULL);
-        RTFileClose(fh);
+            RTFILE fh;
+            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm",
+                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+            RTFileWrite(fh, pvSrc, cbSrc, NULL);
+            RTFileClose(fh);
 #endif
-        int rc2 = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbRead);
-        AssertRC(rc2);
+            rc = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
+            AssertRC(rc);
 
-        Assert(cbSrc >= cbRead);
-        Log2Func(("[SD%RU8]: %zu/%zu bytes read\n", pStream->u8SD, cbRead, cbSrc));
+            Assert(cbSrc >= cbWritten);
+            Log2Func(("[SD%RU8]: %zu/%zu bytes read\n", pStream->u8SD, cbWritten, cbSrc));
+        }
+
+        RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
+
+        if (RT_FAILURE(rc))
+            break;
+
+        Assert(cbLeft  >= cbWritten);
+        cbLeft         -= cbWritten;
+
+        cbReadTotal    += cbWritten;
     }
 
-    RTCircBufReleaseReadBlock(pCircBuf, cbRead);
-
     if (pcbRead)
-        *pcbRead = cbRead;
+        *pcbRead = cbReadTotal;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
