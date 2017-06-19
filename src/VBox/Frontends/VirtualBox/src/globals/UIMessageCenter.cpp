@@ -63,6 +63,7 @@
 # include "CParallelPort.h"
 # include "CSerialPort.h"
 # include "CSharedFolder.h"
+# include "CSnapshot.h"
 # include "CStorageController.h"
 # include "CUSBController.h"
 # include "CUSBDeviceFilters.h"
@@ -962,6 +963,34 @@ void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QStr
           formatErrorInfo(progress));
 }
 
+void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
+                                               const QString &strName,
+                                               QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Error,
+          tr("Can't find snapshot named <b>%1</b>.")
+             .arg(strName),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotFindSnapshotById(const CMachine &comMachine,
+                                             const QString &strId,
+                                             QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Can't find snapshot with ID=<b>%1</b>.")
+             .arg(strId),
+          formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotAcquireSnapshotAttributes(const CSnapshot &comSnapshot,
+                                                      QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Can't acquire snapshot attributes."),
+          formatErrorInfo(comSnapshot));
+}
+
 void UIMessageCenter::cannotSaveSettings(const QString strDetails, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -1681,14 +1710,6 @@ void UIMessageCenter::cannotExportAppliance(const CProgress &progress, const QSt
           tr("Failed to export appliance <b>%1</b>.")
              .arg(strPath),
           formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotFindSnapshotByName(const CMachine &machine, const QString &strName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Can't find snapshot named <b>%1</b>.")
-             .arg(strName),
-          formatErrorInfo(machine));
 }
 
 void UIMessageCenter::cannotAddDiskEncryptionPassword(const CAppliance &appliance, QWidget *pParent /* = 0 */)

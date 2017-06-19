@@ -632,9 +632,90 @@ void UISnapshotPane::sltHandleSnapshotTake(QString strMachineId, QString strSnap
     LogRel(("GUI: Updating snapshot tree after TAKING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
             strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
 
-    // TODO: Refresh only necessary bits.
-    /* Refresh everything: */
-    refreshAll();
+    /* Prepare result: */
+    bool fSuccess = true;
+    {
+        /* Prevent snapshot editing in the meantime: */
+        QWriteLocker locker(m_pLockReadWrite);
+
+        /* Search for corresponding snapshot: */
+        CSnapshot comSnapshot = m_comMachine.FindSnapshot(strSnapshotId);
+        fSuccess = m_comMachine.isOk() && !comSnapshot.isNull();
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotFindSnapshotById(m_comMachine, strSnapshotId, this);
+        else
+        {
+            /* Where will be the newly created item located? */
+            UISnapshotItem *pParentItem = 0;
+
+            /* Acquire snapshot parent: */
+            CSnapshot comParentSnapshot = comSnapshot.GetParent();
+            if (comParentSnapshot.isNotNull())
+            {
+                /* Acquire parent snapshot id: */
+                const QString strParentSnapshotId = comParentSnapshot.GetId();
+                fSuccess = comParentSnapshot.isOk();
+
+                /* Show error message if necessary: */
+                if (!fSuccess)
+                    msgCenter().cannotAcquireSnapshotAttributes(comSnapshot, this);
+                else
+                {
+                    /* Search for an existing parent-item with such id: */
+                    pParentItem = findItem(strParentSnapshotId);
+                    fSuccess = pParentItem;
+                }
+            }
+
+            /* Make sure this parent-item is a parent of "current state" item as well: */
+            if (fSuccess)
+                fSuccess = qobject_cast<UISnapshotItem*>(m_pCurrentStateItem->parentItem()) == pParentItem;
+            /* Make sure this parent-item is a "current snapshot" item as well: */
+            if (fSuccess)
+                fSuccess = m_pCurrentSnapshotItem == pParentItem;
+
+            /* Create new item: */
+            if (fSuccess)
+            {
+                /* Delete "current state" item first of all: */
+                UISnapshotItem *pCurrentStateItem = m_pCurrentStateItem;
+                m_pCurrentStateItem = 0;
+                delete pCurrentStateItem;
+                pCurrentStateItem = 0;
+
+                /* Create "current snapshot" item for a newly taken snapshot: */
+                m_pCurrentSnapshotItem->setCurrentSnapshotItem(false);
+                m_pCurrentSnapshotItem = pParentItem
+                                       ? new UISnapshotItem(this, pParentItem, comSnapshot)
+                                       : new UISnapshotItem(this, m_pSnapshotTree, comSnapshot);
+                /* Mark it as editable: */
+                m_pCurrentSnapshotItem->setFlags(m_pCurrentSnapshotItem->flags() | Qt::ItemIsEditable);
+                /* Mark it as current: */
+                m_pCurrentSnapshotItem->setCurrentSnapshotItem(true);
+                /* And recache it's content: */
+                m_pCurrentSnapshotItem->recache();
+
+                /* Create "current state" item as a child of "current snapshot" item: */
+                m_pCurrentStateItem = new UISnapshotItem(this, m_pCurrentSnapshotItem, m_comMachine);
+                /* Recache it's content: */
+                m_pCurrentStateItem->recache();
+                /* And choose is as current one: */
+                m_pSnapshotTree->setCurrentItem(m_pCurrentStateItem);
+                sltHandleCurrentItemChange();
+
+                LogRel(("GUI: Snapshot tree update successful!\n"));
+            }
+        }
+    }
+
+    /* Just refresh everything as fallback: */
+    if (!fSuccess)
+    {
+        LogRel(("GUI: Snapshot tree update failed! Rebuilding from scratch...\n"));
+        refreshAll();
+    }
 }
 
 void UISnapshotPane::sltHandleSnapshotDelete(QString strMachineId, QString strSnapshotId)
