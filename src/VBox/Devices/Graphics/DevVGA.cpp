@@ -1785,7 +1785,7 @@ static const uint8_t cursor_glyph[32 * 4] = {
  * - flashing
  */
 static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
-        PDMIDISPLAYCONNECTOR *pDrv)
+                         PDMIDISPLAYCONNECTOR *pDrv)
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
     int cx_min, cx_max, linesize, x_incr;
@@ -2311,6 +2311,10 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool fFullUpdate, bool fFailOnRe
         uint32_t offSrcLine = offSrcStart + y * cbScanline;
         uint32_t offPage0   = offSrcLine & ~PAGE_OFFSET_MASK;
         uint32_t offPage1   = (offSrcLine + cbScanline - 1) & ~PAGE_OFFSET_MASK;
+        /** @todo r=klaus this assumes that a line is fully covered by 2 pages,
+         * irrespective of alignment. Not guaranteed for high res modes, i.e.
+         * anything wider than 1026 pixels @32bpp. Need to check the pages
+         * between the first and last one, too. */
         bool     fUpdate    = fFullUpdate | vga_is_dirty(pThis, offPage0) | vga_is_dirty(pThis, offPage1);
         if (offPage1 - offPage0 > PAGE_SIZE)
             /* if wide line, can use another page */
@@ -2360,7 +2364,7 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool fFullUpdate, bool fFailOnRe
  * graphic modes
  */
 static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
-                PDMIDISPLAYCONNECTOR *pDrv)
+                            PDMIDISPLAYCONNECTOR *pDrv)
 {
     int y1, y2, y, page_min, page_max, linesize, y_start, double_scan;
     int width, height, shift_control, line_offset, page0, page1, bwidth, bits;
@@ -2500,6 +2504,10 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
         }
         page0 = addr & ~PAGE_OFFSET_MASK;
         page1 = (addr + bwidth - 1) & ~PAGE_OFFSET_MASK;
+        /** @todo r=klaus this assumes that a line is fully covered by 2 pages,
+         * irrespective of alignment. Not guaranteed for high res modes, i.e.
+         * anything wider than 1026 pixels @32bpp. Need to check the pages
+         * between the first and last one, too. */
         bool update = full_update | vga_is_dirty(pThis, page0) | vga_is_dirty(pThis, page1);
         if (page1 - page0 > PAGE_SIZE) {
             /* if wide line, can use another page */
@@ -2555,18 +2563,46 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
     return VINF_SUCCESS;
 }
 
-static void vga_draw_blank(PVGASTATE pThis, int full_update, PDMIDISPLAYCONNECTOR *pDrv)
+/*
+ * blanked modes
+ */
+static int vga_draw_blank(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
+                          PDMIDISPLAYCONNECTOR *pDrv)
 {
     int i, w, val;
     uint8_t *d;
     uint32_t cbScanline = pDrv->cbScanline;
+    uint32_t page_min, page_max;
 
+    if (pThis->last_width != 0)
+    {
+        if (fFailOnResize)
+        {
+            /* The caller does not want to call the pfnResize. */
+            return VERR_TRY_AGAIN;
+        }
+        pThis->last_width = 0;
+        pThis->last_height = 0;
+        /* For blanking signal width=0, height=0, bpp=0 and cbLine=0 here.
+         * There is no screen content, which distinguishes it from text mode. */
+        pDrv->pfnResize(pDrv, 0, NULL, 0, 0, 0);
+    }
+    /* reset modified pages, i.e. everything */
+    if (reset_dirty && pThis->last_scr_height > 0)
+    {
+        page_min = (pThis->start_addr * 4) & ~PAGE_OFFSET_MASK;
+        /* round up page_max by one page, as otherwise this can be -PAGE_SIZE,
+         * which causes assertion trouble in vga_reset_dirty. */
+        page_max = (  pThis->start_addr * 4 + pThis->line_offset * pThis->last_scr_height
+                    - 1 + PAGE_SIZE) & ~PAGE_OFFSET_MASK;
+        vga_reset_dirty(pThis, page_min, page_max + PAGE_SIZE);
+    }
     if (pDrv->pbData == pThis->vram_ptrR3) /* Do not clear the VRAM itself. */
-        return;
+        return VINF_SUCCESS;
     if (!full_update)
-        return;
+        return VINF_SUCCESS;
     if (pThis->last_scr_width <= 0 || pThis->last_scr_height <= 0)
-        return;
+        return VINF_SUCCESS;
     if (pDrv->cBits == 8)
         val = pThis->rgb_to_pixel(0, 0, 0);
     else
@@ -2581,6 +2617,7 @@ static void vga_draw_blank(PVGASTATE pThis, int full_update, PDMIDISPLAYCONNECTO
         }
     }
     pDrv->pfnUpdateRect(pDrv, 0, 0, pThis->last_scr_width, pThis->last_scr_height);
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
@@ -2589,9 +2626,9 @@ static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint3
 }
 
 
-#define GMODE_TEXT     0
-#define GMODE_GRAPH    1
-#define GMODE_BLANK 2
+#define GMODE_TEXT      0
+#define GMODE_GRAPH     1
+#define GMODE_BLANK     2
 #ifdef VBOX_WITH_VMSVGA
 #define GMODE_SVGA      3
 #endif
@@ -2621,59 +2658,6 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
             break;
         }
 
-        if (fUpdateAll) {
-            /* A full update is requested. Special processing for a "blank" mode is required, because
-             * the request must process all pending resolution changes.
-             *
-             * Appropriate vga_draw_graphic or vga_draw_text function, which checks the resolution change,
-             * must be called even if the screen has been blanked, but then the function should do no actual
-             * screen update. To do this, pfnUpdateRect is replaced with a nop.
-             */
-            typedef DECLCALLBACK(void) FNUPDATERECT(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
-            typedef FNUPDATERECT *PFNUPDATERECT;
-
-            PFNUPDATERECT pfnUpdateRect = NULL;
-
-            /* Detect the "screen blank" conditions. */
-            int fBlank = 0;
-            if (!(pThis->ar_index & 0x20) || (pThis->sr[0x01] & 0x20)) {
-                fBlank = 1;
-            }
-
-            if (fBlank) {
-                /* Provide a void pfnUpdateRect callback. */
-                if (pDrv) {
-                    pfnUpdateRect = pDrv->pfnUpdateRect;
-                    pDrv->pfnUpdateRect = voidUpdateRect;
-                }
-            }
-
-            /* Do a complete redraw, which will pick up a new screen resolution. */
-#ifdef VBOX_WITH_VMSVGA
-            if (pThis->svga.fEnabled) {
-                *pcur_graphic_mode = GMODE_SVGA;
-                rc = vmsvga_draw_graphic(pThis, 1, fFailOnResize, reset_dirty, pDrv);
-            }
-            else
-#endif
-            if (pThis->gr[6] & 1) {
-                *pcur_graphic_mode = GMODE_GRAPH;
-                rc = vga_draw_graphic(pThis, 1, fFailOnResize, reset_dirty, pDrv);
-            } else {
-                *pcur_graphic_mode = GMODE_TEXT;
-                rc = vga_draw_text(pThis, 1, fFailOnResize, reset_dirty, pDrv);
-            }
-
-            if (fBlank) {
-                /* Set the current mode and restore the callback. */
-                *pcur_graphic_mode = GMODE_BLANK;
-                if (pDrv) {
-                    pDrv->pfnUpdateRect = pfnUpdateRect;
-                }
-            }
-            return rc;
-        }
-
 #ifdef VBOX_WITH_VMSVGA
         if (pThis->svga.fEnabled) {
             graphic_mode = GMODE_SVGA;
@@ -2683,9 +2667,9 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
         if (!(pThis->ar_index & 0x20) || (pThis->sr[0x01] & 0x20)) {
             graphic_mode = GMODE_BLANK;
         } else {
-            graphic_mode = pThis->gr[6] & 1;
+            graphic_mode = pThis->gr[6] & 1 ? GMODE_GRAPH : GMODE_TEXT;
         }
-        bool full_update = graphic_mode != *pcur_graphic_mode;
+        bool full_update = fUpdateAll || graphic_mode != *pcur_graphic_mode;
         if (full_update) {
             *pcur_graphic_mode = graphic_mode;
         }
@@ -2703,7 +2687,7 @@ static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResi
 #endif
         case GMODE_BLANK:
         default:
-            vga_draw_blank(pThis, full_update, pDrv);
+            rc = vga_draw_blank(pThis, full_update, fFailOnResize, reset_dirty, pDrv);
             break;
         }
     }

@@ -1077,6 +1077,17 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     /* Release the current source bitmap. */
     pFBInfo->pSourceBitmap.setNull();
 
+    /* VGA blanking is signaled as w=0, h=0, bpp=0 and cbLine=0, and it's
+     * best to keep the old resolution, as otherwise the window size would
+     * change before the new resolution is known. */
+    const bool fVGABlank = fVGAResize && uScreenId == VBOX_VIDEO_PRIMARY_SCREEN
+                        && w == 0 && h == 0 && bpp == 0 && cbLine == 0;
+    if (fVGABlank)
+    {
+        w = pFBInfo->w;
+        h = pFBInfo->h;
+    }
+
     /* Update the video mode information. */
     pFBInfo->w = w;
     pFBInfo->h = h;
@@ -1091,6 +1102,13 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         pFBInfo->yOrigin = yOrigin;
         pFBInfo->fDisabled = RT_BOOL(flags & VBVA_SCREEN_F_DISABLED);
         pFBInfo->fVBVAForceResize = false;
+    }
+    else
+    {
+        pFBInfo->flags = 0;
+        if (fVGABlank)
+            pFBInfo->flags |= VBVA_SCREEN_F_BLANK;
+        pFBInfo->fDisabled = false;
     }
 
     /* Prepare local vars for the notification code below. */
