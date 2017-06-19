@@ -2620,11 +2620,6 @@ static int vga_draw_blank(PVGASTATE pThis, bool full_update, bool fFailOnResize,
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
-{
-    NOREF(pInterface); NOREF(x); NOREF(y); NOREF(cx); NOREF(cy);
-}
-
 
 #define GMODE_TEXT      0
 #define GMODE_GRAPH     1
