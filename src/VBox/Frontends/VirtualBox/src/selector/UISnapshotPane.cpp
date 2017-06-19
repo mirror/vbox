@@ -781,9 +781,47 @@ void UISnapshotPane::sltHandleSnapshotRestore(QString strMachineId, QString strS
     LogRel(("GUI: Updating snapshot tree after RESTORING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
             strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
 
-    // TODO: Refresh only necessary bits.
-    /* Refresh everything: */
-    refreshAll();
+    /* Prepare result: */
+    bool fSuccess = true;
+    {
+        /* Prevent snapshot editing in the meantime: */
+        QWriteLocker locker(m_pLockReadWrite);
+
+        /* Search for an existing item with such id: */
+        UISnapshotItem *pItem = findItem(strSnapshotId);
+        fSuccess = pItem;
+
+        /* Choose this item as new "current snapshot": */
+        if (fSuccess)
+        {
+            /* Delete "current state" item first of all: */
+            UISnapshotItem *pCurrentStateItem = m_pCurrentStateItem;
+            m_pCurrentStateItem = 0;
+            delete pCurrentStateItem;
+            pCurrentStateItem = 0;
+
+            /* Move the "current snapshot" token from one to another: */
+            m_pCurrentSnapshotItem->setCurrentSnapshotItem(false);
+            m_pCurrentSnapshotItem = pItem;
+            m_pCurrentSnapshotItem->setCurrentSnapshotItem(true);
+
+            /* Create "current state" item as a child of "current snapshot" item: */
+            m_pCurrentStateItem = new UISnapshotItem(this, m_pCurrentSnapshotItem, m_comMachine);
+            m_pCurrentStateItem->recache();
+            /* And choose is as current one: */
+            m_pSnapshotTree->setCurrentItem(m_pCurrentStateItem);
+            sltHandleCurrentItemChange();
+
+            LogRel(("GUI: Snapshot tree update successful!\n"));
+        }
+    }
+
+    /* Just refresh everything as fallback: */
+    if (!fSuccess)
+    {
+        LogRel(("GUI: Snapshot tree update failed! Rebuilding from scratch...\n"));
+        refreshAll();
+    }
 }
 
 void UISnapshotPane::sltUpdateSnapshotsAge()
