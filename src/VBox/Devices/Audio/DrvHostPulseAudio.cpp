@@ -972,11 +972,19 @@ static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eo
     if (eol != 0)
         return;
 
+    if (!pCtx)
+        LogRel(("DEBUG: paEnumSourceCb return because of !pCtx\n"));
     AssertPtrReturnVoid(pCtx);
+    if (!pInfo)
+        LogRel(("DEBUG: paEnumSourceCb return because of !pInfo\n"));
     AssertPtrReturnVoid(pInfo);
 
     PPULSEAUDIOENUMCBCTX pCbCtx = (PPULSEAUDIOENUMCBCTX)pvUserData;
+    if (!pCbCtx)
+        LogRel(("DEBUG: paEnumSourceCb return because of !pCbCtx\n"));
     AssertPtrReturnVoid(pCbCtx);
+    if (!pCbCtx->pDrv)
+        LogRel(("DEBUG: paEnumSourceCb return because of !pCbCtx->pDrv\n"));
     AssertPtrReturnVoid(pCbCtx->pDrv);
 
     LogRel2(("PulseAudio: Using input source '%s'\n", pInfo->name));
@@ -991,13 +999,21 @@ static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eo
 
 static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *pvUserData)
 {
+    if (!pCtx)
+        LogRel(("DEBUG: paEnumServerCb return because of !pCtx\n"));
     AssertPtrReturnVoid(pCtx);
+    if (!pInfo)
+        LogRel(("DEBUG: paEnumServerCb return because of !pInfo\n"));
     AssertPtrReturnVoid(pInfo);
 
     PPULSEAUDIOENUMCBCTX pCbCtx = (PPULSEAUDIOENUMCBCTX)pvUserData;
+    if (!pCbCtx)
+        LogRel(("DEBUG: paEnumServerCb return because of !pCbCtx\n"));
     AssertPtrReturnVoid(pCbCtx);
 
     PDRVHOSTPULSEAUDIO pThis    = pCbCtx->pDrv;
+    if (!pCbCtx->pDrv)
+        LogRel(("DEBUG: paEnumServerCb return because of !pCbCtx->pDrv\n"));
     AssertPtrReturnVoid(pThis);
 
     if (pInfo->default_sink_name)
@@ -1038,7 +1054,9 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
 
     bool fLog = (fEnum & PULSEAUDIOENUMCBFLAGS_LOG);
 
+    LogRel(("PulseAudio: starting server enumeration\n")); /** @todo remove */
     int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &cbCtx));
+    LogRel(("PulseAudio: done server enumeration (rc=%Rrc)\n", rc));
     if (RT_SUCCESS(rc))
     {
         if (cbCtx.pszDefaultSink)
