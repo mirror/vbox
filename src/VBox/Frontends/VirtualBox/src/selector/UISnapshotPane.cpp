@@ -741,9 +741,35 @@ void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId, QString strSn
     LogRel(("GUI: Updating snapshot tree after CHANGING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
             strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
 
-    // TODO: Refresh only necessary bits.
-    /* Refresh everything: */
-    refreshAll();
+    /* Prepare result: */
+    bool fSuccess = true;
+    {
+        /* Prevent snapshot editing in the meantime: */
+        QWriteLocker locker(m_pLockReadWrite);
+
+        /* Search for an existing item with such id: */
+        UISnapshotItem *pItem = findItem(strSnapshotId);
+        fSuccess = pItem;
+
+        /* Update the item: */
+        if (fSuccess)
+        {
+            /* Recache it: */
+            pItem->recache();
+            /* And choose it again if it's current one (to update details-widget): */
+            if (UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem()) == pItem)
+                sltHandleCurrentItemChange();
+
+            LogRel(("GUI: Snapshot tree update successful!\n"));
+        }
+    }
+
+    /* Just refresh everything as fallback: */
+    if (!fSuccess)
+    {
+        LogRel(("GUI: Snapshot tree update failed! Rebuilding from scratch...\n"));
+        return refreshAll();
+    }
 }
 
 void UISnapshotPane::sltHandleSnapshotRestore(QString strMachineId, QString strSnapshotId)
