@@ -92,8 +92,14 @@ private slots:
         /** Handles session @a enmState change for machine with @a strMachineId. */
         void sltHandleSessionStateChange(QString strMachineId, KSessionState enmState);
 
-        /** Handles any snapshot change for machine with @a strMachineId. */
-        void sltHandleSnapshotChange(QString strMachineId);
+        /** Handles snapshot take event for machine with @a strMachineId. */
+        void sltHandleSnapshotTake(QString strMachineId, QString strSnapshotId);
+        /** Handles snapshot delete event for machine with @a strMachineId. */
+        void sltHandleSnapshotDelete(QString strMachineId, QString strSnapshotId);
+        /** Handles snapshot change event for machine with @a strMachineId. */
+        void sltHandleSnapshotChange(QString strMachineId, QString strSnapshotId);
+        /** Handles snapshot restore event for machine with @a strMachineId. */
+        void sltHandleSnapshotRestore(QString strMachineId, QString strSnapshotId);
     /** @} */
 
     /** @name Timer event handlers.

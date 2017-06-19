@@ -623,11 +623,56 @@ void UISnapshotPane::sltHandleSessionStateChange(QString strMachineId, KSessionS
     updateActionStates();
 }
 
-void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId)
+void UISnapshotPane::sltHandleSnapshotTake(QString strMachineId, QString strSnapshotId)
 {
     /* Make sure it's our VM: */
     if (strMachineId != m_strMachineId)
         return;
+
+    LogRel(("GUI: Updating snapshot tree after TAKING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
+            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
+
+    // TODO: Refresh only necessary bits.
+    /* Refresh everything: */
+    refreshAll();
+}
+
+void UISnapshotPane::sltHandleSnapshotDelete(QString strMachineId, QString strSnapshotId)
+{
+    /* Make sure it's our VM: */
+    if (strMachineId != m_strMachineId)
+        return;
+
+    LogRel(("GUI: Updating snapshot tree after DELETING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
+            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
+
+    // TODO: Refresh only necessary bits.
+    /* Refresh everything: */
+    refreshAll();
+}
+
+void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId, QString strSnapshotId)
+{
+    /* Make sure it's our VM: */
+    if (strMachineId != m_strMachineId)
+        return;
+
+    LogRel(("GUI: Updating snapshot tree after CHANGING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
+            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
+
+    // TODO: Refresh only necessary bits.
+    /* Refresh everything: */
+    refreshAll();
+}
+
+void UISnapshotPane::sltHandleSnapshotRestore(QString strMachineId, QString strSnapshotId)
+{
+    /* Make sure it's our VM: */
+    if (strMachineId != m_strMachineId)
+        return;
+
+    LogRel(("GUI: Updating snapshot tree after RESTORING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
+            strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
 
     // TODO: Refresh only necessary bits.
     /* Refresh everything: */
@@ -856,13 +901,13 @@ void UISnapshotPane::prepare()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
             this, &UISnapshotPane::sltHandleSessionStateChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
-            this, &UISnapshotPane::sltHandleSnapshotChange);
+            this, &UISnapshotPane::sltHandleSnapshotTake);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete,
-            this, &UISnapshotPane::sltHandleSnapshotChange);
+            this, &UISnapshotPane::sltHandleSnapshotDelete);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange,
             this, &UISnapshotPane::sltHandleSnapshotChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
-            this, &UISnapshotPane::sltHandleSnapshotChange);
+            this, &UISnapshotPane::sltHandleSnapshotRestore);
 
     /* Create read-write locker: */
     m_pLockReadWrite = new QReadWriteLock;
