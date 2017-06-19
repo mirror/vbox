@@ -944,6 +944,7 @@
 # define RTFsIsoMakerAddUnnamedFileWithVfsFile          RT_MANGLER(RTFsIsoMakerAddUnnamedFileWithVfsFile)
 # define RTFsIsoMakerAddFileWithSrcPath                 RT_MANGLER(RTFsIsoMakerAddFileWithSrcPath)
 # define RTFsIsoMakerAddFileWithVfsFile                 RT_MANGLER(RTFsIsoMakerAddFileWithVfsFile)
+# define RTFsIsoMakerImport                             RT_MANGLER(RTFsIsoMakerImport)
 # define RTFsIsoMakerFinalize                           RT_MANGLER(RTFsIsoMakerFinalize)
 # define RTFsIsoMakerCreateVfsOutputFile                RT_MANGLER(RTFsIsoMakerCreateVfsOutputFile)
 # define RTFsIsoMakerCmd                                RT_MANGLER(RTFsIsoMakerCmd)

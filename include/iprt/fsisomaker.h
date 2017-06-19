@@ -50,6 +50,9 @@ RT_C_DECLS_BEGIN
 #define RTFSISOMAKER_NAMESPACE_VALID_MASK   UINT32_C(0x0000000f)    /**< Valid namespace bits. */
 /** @} */
 
+/** Root directory configuration index. */
+#define RTFSISOMAKER_CFG_IDX_ROOT           UINT32_C(0)
+
 
 /**
  * Creates an ISO maker instance.
@@ -355,6 +358,34 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t 
  */
 RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t cEntries,
                                                      uint8_t idPlatform, const char *pszString);
+
+/**
+ * Imports an existing ISO.
+ *
+ * Just like other source files, the existing image must remain present and
+ * unmodified till the ISO maker is done with it.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pszIso              Path to the existing image to import / clone.
+ * @param   fFlags              Reserved for the future, MBZ.
+ * @param   pErrInfo            Where to return additional error information.
+ *                              Optional.
+ */
+RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags, PRTERRINFO pErrInfo);
+
+/** @name RTFSISOMK_IMPORT_F_XXX - Flags for RTFsIsoMakerImport.
+ * @{ */
+#define RTFSISOMK_IMPORT_F_NO_PRIMARY_ISO   RT_BIT_32(0)  /**< Skip the primary ISO-9660 namespace (rock ridge included). */
+#define RTFSISOMK_IMPORT_F_NO_JOLIET        RT_BIT_32(1)  /**< Skip the joliet namespace. */
+#define RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE    RT_BIT_32(2)  /**< Skip rock ridge (both primary and joliet). */
+#define RTFSISOMK_IMPORT_F_NO_UDF           RT_BIT_32(3)  /**< Skip the UDF namespace. */
+#define RTFSISOMK_IMPORT_F_NO_HFS           RT_BIT_32(4)  /**< Skip the HFS namespace. */
+#define RTFSISOMK_IMPORT_F_NO_BOOT          RT_BIT_32(5)  /**< Skip importing El Torito boot stuff. */
+#define RTFSISOMK_IMPORT_F_NO_SYS_AREA      RT_BIT_32(6)  /**< Skip importing the system area (first 32KB). */
+#define RTFSISOMK_IMPORT_F_VALID_MASK       UINT32_C(0x0000007f)
+/** @} */
+
 
 /**
  * Finalizes the image.
