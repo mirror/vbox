@@ -116,7 +116,7 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
 {
     LogFlowThisFunc(("uuid=%s aParent->uuid=%s\n", aId.toString().c_str(), (aParent) ? aParent->m->uuid.toString().c_str() : ""));
 
-    ComAssertRet(!aId.isZero() && aId.isValid() && !aName.isEmpty() && aMachine, E_INVALIDARG);
+    ComAssertRet(!aId.isZero() && aId.isValid() && aMachine, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
