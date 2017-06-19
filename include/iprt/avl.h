@@ -184,9 +184,9 @@ typedef uint32_t    AVLU32KEY;
 /** AVL Core node. */
 typedef struct _AVLU32NodeCore
 {
-    AVLU32KEY               Key;        /**< Key value. */
     struct _AVLU32NodeCore *pLeft;      /**< Pointer to left leaf node. */
     struct _AVLU32NodeCore *pRight;     /**< Pointer to right leaf node. */
+    AVLU32KEY               Key;        /**< Key value. */
     unsigned char           uchHeight;  /**< Height of this tree: max(height(left), height(right)) + 1 */
 } AVLU32NODECORE, *PAVLU32NODECORE, **PPAVLU32NODECORE;
 
