@@ -62,7 +62,6 @@ PROGRAMS += \
 	tstRTDvm \
 	tstEnv \
 	tstRTErrUnique \
-	tstRTFat \
 	tstFile \
 	tstRTFileAio \
 	tstRTFileAppend-1 \
@@ -335,9 +334,6 @@ tstEnv_SOURCES = tstEnv.cpp
 tstRTErrUnique_SOURCES = tstRTErrUnique.cpp
 tstRTErrUnique_INCS = $(IPRT_OUT_DIR)/
 tstRTErrUnique.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata.h # generate by ../Makefile.kmk
-
-tstRTFat_TEMPLATE = VBOXR3TSTEXE
-tstRTFat_SOURCES = tstRTFat.cpp
 
 tstFile_TEMPLATE = VBOXR3TSTEXE
 tstFile_SOURCES = tstFile.cpp
