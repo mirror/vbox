@@ -937,6 +937,7 @@ static int paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg)
 
 static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, void *pvUserData)
 {
+    LogRel(("DEBUG: paEnumSinkCb\n"));
     if (eol != 0)
     {
 //        LogRel(("DEBUG: paEnumSinkCb return EOL=1\n"));
@@ -963,6 +964,7 @@ static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, v
     pCbCtx->cDevOut++;
 
 //    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSinkCb\n"));
+    LogRel(("DEBUG: paEnumSinkCb signal mainloop\n"));
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
