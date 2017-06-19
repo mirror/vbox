@@ -2311,10 +2311,10 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool fFullUpdate, bool fFailOnRe
         uint32_t offSrcLine = offSrcStart + y * cbScanline;
         uint32_t offPage0   = offSrcLine & ~PAGE_OFFSET_MASK;
         uint32_t offPage1   = (offSrcLine + cbScanline - 1) & ~PAGE_OFFSET_MASK;
-        /** @todo r=klaus this assumes that a line is fully covered by 2 pages,
+        /** @todo r=klaus this assumes that a line is fully covered by 3 pages,
          * irrespective of alignment. Not guaranteed for high res modes, i.e.
-         * anything wider than 1026 pixels @32bpp. Need to check the pages
-         * between the first and last one, too. */
+         * anything wider than 2050 pixels @32bpp. Need to check all pages
+         * between the first and last one. */
         bool     fUpdate    = fFullUpdate | vga_is_dirty(pThis, offPage0) | vga_is_dirty(pThis, offPage1);
         if (offPage1 - offPage0 > PAGE_SIZE)
             /* if wide line, can use another page */
@@ -2504,10 +2504,10 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
         }
         page0 = addr & ~PAGE_OFFSET_MASK;
         page1 = (addr + bwidth - 1) & ~PAGE_OFFSET_MASK;
-        /** @todo r=klaus this assumes that a line is fully covered by 2 pages,
+        /** @todo r=klaus this assumes that a line is fully covered by 3 pages,
          * irrespective of alignment. Not guaranteed for high res modes, i.e.
-         * anything wider than 1026 pixels @32bpp. Need to check the pages
-         * between the first and last one, too. */
+         * anything wider than 2050 pixels @32bpp. Need to check all pages
+         * between the first and last one. */
         bool update = full_update | vga_is_dirty(pThis, page0) | vga_is_dirty(pThis, page1);
         if (page1 - page0 > PAGE_SIZE) {
             /* if wide line, can use another page */
