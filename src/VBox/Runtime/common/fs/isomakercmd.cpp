@@ -403,7 +403,12 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     /*
      * Unquie IPRT ISO maker options.
      */
-    { "--iprt-iso-maker-file-marker",   RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER,     RTGETOPT_REQ_NOTHING },
+    { "--iprt-iso-maker-file-marker",           RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
+    { "--iprt-iso-maker-file-marker-ms",        RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
+    { "--iprt-iso-maker-file-marker-ms-crt",    RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
+    { "--iprt-iso-maker-file-marker-bourne",    RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
+    { "--iprt-iso-maker-file-marker-bourne-sh", RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER, RTGETOPT_REQ_STRING },
+
     { "--output-buffer-size",           RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,             RTGETOPT_REQ_UINT32  },
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
     { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
@@ -1939,6 +1944,10 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
              */
             case RTFSISOMAKERCMD_OPT_NAME_SETUP:
                 rc = rtFsIsoMakerCmdOptNameSetup(&Opts, ValueUnion.psz);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER:
+                /* ignored */
                 break;
 
             /*
