@@ -5564,12 +5564,12 @@ static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fInTimer)
         if (fInTimer)
         {
 #endif
-            const uint32_t cbReadable = hdaStreamGetUsed(pStream);
-            if (cbReadable)
+            const uint32_t cbToTransfer = hdaStreamGetUsed(pStream);
+            if (cbToTransfer)
             {
                 /* When running synchronously, do the DMA data transfers here.
                  * Otherwise this will be done in the stream's async I/O thread. */
-                rc2 = hdaStreamTransfer(pThis, pStream, cbReadable);
+                rc2 = hdaStreamTransfer(pThis, pStream, cbToTransfer);
                 AssertRC(rc2);
             }
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
