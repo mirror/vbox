@@ -199,8 +199,10 @@ typedef struct DEVPCBIOS
     uint16_t        au16NetBootDev[NET_BOOT_DEVS];
     /** Number of logical CPUs in guest */
     uint16_t        cCpus;
-    uint32_t        u32McfgBase;
-    uint32_t        cbMcfgLength;
+    /* Physical address of PCI config space MMIO region. Currently unused. */
+    uint64_t        u64McfgBase;
+    /* Length of PCI config space MMIO region. Currently unused. */
+    uint64_t        cbMcfgLength;
 
     /** Firmware registration structure.   */
     PDMFWREG        FwReg;
@@ -1262,11 +1264,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
-    rc = CFGMR3QueryU32Def(pCfg, "McfgBase", &pThis->u32McfgBase, 0);
+    rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &pThis->u64McfgBase, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"\" as integer failed"));
-    rc = CFGMR3QueryU32Def(pCfg, "McfgLength", &pThis->cbMcfgLength, 0);
+    rc = CFGMR3QueryU64Def(pCfg, "McfgLength", &pThis->cbMcfgLength, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"McfgLength\" as integer failed"));

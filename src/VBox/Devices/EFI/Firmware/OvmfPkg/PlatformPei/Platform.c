@@ -246,8 +246,8 @@ MemMapInitialization (
 #ifdef VBOX
   EFI_PHYSICAL_ADDRESS RsdPtr;
   EFI_PHYSICAL_ADDRESS AcpiTables;
-  UINT32 MCfgBase = 0;
-  UINT32 MCfgSize = 0;
+  UINT64 McfgBase = 0;
+  UINT64 McfgSize = 0;
 #endif
   //
   // Create Memory Type Information HOB
@@ -293,15 +293,15 @@ MemMapInitialization (
     // 0xFEE00000    LAPIC                          1 MB
     //
 #ifdef VBOX
-    GetVmVariable(EFI_INFO_INDEX_MCFG_BASE, (CHAR8 *)&MCfgBase, sizeof(MCfgBase));
-    GetVmVariable(EFI_INFO_INDEX_MCFG_SIZE, (CHAR8 *)&MCfgSize, sizeof(MCfgSize));
+    GetVmVariable(EFI_INFO_INDEX_MCFG_BASE, (CHAR8 *)&McfgBase, sizeof(McfgBase));
+    GetVmVariable(EFI_INFO_INDEX_MCFG_SIZE, (CHAR8 *)&McfgSize, sizeof(McfgSize));
     if (TopOfLowRam < BASE_2GB)
       TopOfLowRam = BASE_2GB;
-    if (MCfgBase == 0)
-      MCfgBase = TopOfLowRam;   // backward compatibilit with old DevEFI
-    if (TopOfLowRam < MCfgBase)
-      AddIoMemoryRangeHob (TopOfLowRam, MCfgBase);
-    AddIoMemoryRangeHob (MCfgBase + MCfgSize, 0xFC000000);
+    if (McfgBase == 0)
+      McfgBase = TopOfLowRam;   // backward compatibilit with old DevEFI
+    if (TopOfLowRam < McfgBase)
+      AddIoMemoryRangeHob (TopOfLowRam, McfgBase);
+    AddIoMemoryRangeHob (McfgBase + McfgSize, 0xFC000000);
 #else
     AddIoMemoryRangeHob (TopOfLowRam < BASE_2GB ?
                          BASE_2GB : TopOfLowRam, 0xFC000000);

@@ -383,9 +383,9 @@ typedef struct ACPIState
 
     uint32_t            Alignment1;
 
-    /* Physical address of PCI config space MMIO region */
+    /** Physical address of PCI config space MMIO region */
     uint64_t            u64PciConfigMMioAddress;
-    /* Length of PCI config space MMIO region */
+    /** Length of PCI config space MMIO region */
     uint64_t            u64PciConfigMMioLength;
     /** Serial 0 IRQ number */
     uint8_t             uSerial0Irq;
