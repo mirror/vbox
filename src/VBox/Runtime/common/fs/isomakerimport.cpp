@@ -129,6 +129,9 @@ typedef struct RTFSISOMKIMPORTER
     /** Set if we've already seen a joliet volume descriptor. */
     bool                    fSeenJoliet;
 
+    /** Pointer to the import results structure (output). */
+    PRTFSISOMAKERIMPORTRESULTS pResults;
+
     /** Sector buffer for volume descriptors and such. */
     union
     {
@@ -203,11 +206,17 @@ typedef RTFSISOMKIMPORTER *PRTFSISOMKIMPORTER;
 /** Import ISO contains a too deep directory subtree. */
 #define VERR_ISOMK_IMPORT_TOO_DEEP_DIR_TREE             (-24921)
 
+/** Import ISO contains a bad directory record. */
 #define VERR_ISOMK_IMPORT_BAD_DIR_REC                   (-24922)
+/** Import ISO directory record with a mismatching volume sequence number. */
 #define VERR_ISOMK_IMPORT_DIR_REC_VOLUME_SEQ_NO         (-24923)
+/** Import ISO directory with an extent that is out of bounds. */
 #define VERR_ISOMK_IMPORT_DIR_REC_EXTENT_OUT_OF_BOUNDS  (-24924)
+/** Import ISO directory with a bad record length. */
 #define VERR_ISOMK_IMPORT_BAD_DIR_REC_LENGTH            (-24925)
+/** Import ISO directory with a bad name length. */
 #define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME_LENGTH   (-24926)
+/** Import ISO directory with a bad name. */
 #define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME          (-24927)
 
 
@@ -223,11 +232,18 @@ typedef RTFSISOMKIMPORTER *PRTFSISOMKIMPORTER;
  */
 static int rtFsIsoImpErrorV(PRTFSISOMKIMPORTER pThis, int rc, const char *pszFormat, va_list va)
 {
+    va_list vaCopy;
+    va_copy(vaCopy, va);
+    LogRel(("RTFsIsoMkImport error %Rrc: %N\n", rc, pszFormat, &vaCopy));
+    va_end(vaCopy);
+
     if (RT_SUCCESS(pThis->rc))
     {
         pThis->rc = rc;
         rc = RTErrInfoSetV(pThis->pErrInfo, rc, pszFormat, va);
     }
+
+    pThis->pResults->cErrors++;
     return rc;
 }
 
@@ -379,13 +395,14 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
     if (RT_FAILURE(rc))
         return rc;
 
-    pDirRec  = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
     cbChunk -= pDirRec->cbDirRec;
+    pDirRec  = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
 
     /*
      * Work our way thru all the directory records.
      */
-    Log3(("rtFsIsoImportProcessIso9660TreeWorker: Starting at @%#RX64 LB %#zx\n", off - cbChunk, cbChunk));
+    Log3(("rtFsIsoImportProcessIso9660TreeWorker: Starting at @%#RX64 LB %#RX32 (out of %#RX32) in %#x\n",
+          off - cbChunk, cbChunk, cbChunk + cbDir, idxDir));
     while (cbChunk > 0)
     {
         /*
@@ -404,7 +421,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             if (RT_FAILURE(rc))
                 return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", off, cbToRead);
 
-            Log3(("rtFsIsoImportProcessIso9660TreeWorker: Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#zx\n",
+            Log3(("rtFsIsoImportProcessIso9660TreeWorker: Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#RX32\n",
                   cbToRead, off, off - cbChunk, cbChunk + cbToRead));
             off     += cbToRead;
             cbDir   -= cbToRead;
@@ -426,7 +443,8 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                     Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Restart loop\n"));
                     continue;
                 }
-                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> jumped to @%#RX64 LB %#zx\n", off - cbChunk, cbChunk));
+                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> jumped %#RX32 to @%#RX64 LB %#RX32\n",
+                      cbSkip, off - cbChunk, cbChunk));
             }
             /* ASSUMES we're working in multiples of sectors! */
             else if (cbDir == 0)
@@ -439,7 +457,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                 if (RT_FAILURE(rc))
                     return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", off, cbToRead);
 
-                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#zx\n",
+                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#RX32\n",
                       cbToRead, off, off - cbChunk, cbChunk + cbToRead));
                 off     += cbToRead;
                 cbDir   -= cbToRead;
@@ -455,9 +473,10 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
         uint8_t const         cbSys = pDirRec->cbDirRec - RT_UOFFSETOF(ISO9660DIRREC, achFileId)
                                     - pDirRec->bFileIdLength - !(pDirRec->bFileIdLength & 1);
         uint8_t const * const pbSys = (uint8_t const *)&pDirRec->achFileId[pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1)];
-        Log3(("pDirRec=%p @%#010RX64 cb=%#04x ff=%#04x off=%#010RX32 cb=%#010RX32 cbSys=%#x id=%.*Rhxs\n",
-              pDirRec, off - cbChunk, pDirRec->cbDirRec, pDirRec->fFileFlags, ISO9660_GET_ENDIAN(&pDirRec->offExtent),
-              ISO9660_GET_ENDIAN(&pDirRec->cbData), cbSys, pDirRec->bFileIdLength, pDirRec->achFileId));
+        Log3(("pDirRec=&abBuf[%#07zx]: @%#010RX64 cb=%#04x ff=%#04x off=%#010RX32 cb=%#010RX32 cbSys=%#x id=%.*Rhxs\n",
+              (uintptr_t)pDirRec - (uintptr_t)&pThis->abBuf[0], off - cbChunk, pDirRec->cbDirRec, pDirRec->fFileFlags,
+              ISO9660_GET_ENDIAN(&pDirRec->offExtent), ISO9660_GET_ENDIAN(&pDirRec->cbData), cbSys,
+              pDirRec->bFileIdLength, pDirRec->achFileId));
         rc = rtFsIsoImportValidateDirRec(pThis, pDirRec, cbChunk);
         if (RT_FAILURE(rc))
             return rc;
@@ -495,7 +514,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                     && pThis->szNameBuf[cchName - offName] == ';')
                     pThis->szNameBuf[cchName - offName] = '\0';
             }
-            Log3(("  name='%s'\n", pThis->szNameBuf));
+            Log3(("  --> name='%s'\n", pThis->szNameBuf));
 
             /** @todo rock ridge. */
             if (cbSys > 0)
@@ -508,7 +527,12 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             PRTFSISOMKIMPBLOCK2FILE pBlock2File = NULL;
             uint32_t                idxObj      = UINT32_MAX;
             if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
+            {
                 rc = RTFsIsoMakerAddUnnamedDir(pThis->hIsoMaker, &idxObj);
+                Log3(("  --> added directory #%#x'\n", idxObj));
+                if (RT_SUCCESS(rc))
+                    pThis->pResults->cAddedDirs++;
+            }
             else
             {
                 /* Add the common source file if we haven't done that already. */
@@ -524,12 +548,21 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
 
                 pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
                 if (!pBlock2File)
+                {
                     rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
-                                                                 ISO9660_GET_ENDIAN(&pDirRec->offExtent) * ISO9660_SECTOR_SIZE,
+                                                                 ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)ISO9660_SECTOR_SIZE,
                                                                  ISO9660_GET_ENDIAN(&pDirRec->cbData), NULL /*pObjInfo*/, &idxObj);
+                    Log3(("  --> added new file #%#x\n", idxObj));
+                    if (RT_SUCCESS(rc))
+                    {
+                        pThis->pResults->cAddedFiles++;
+                        pThis->pResults->cbAddedDataBlocks += RT_ALIGN_32(ISO9660_GET_ENDIAN(&pDirRec->cbData), ISO9660_SECTOR_SIZE);
+                    }
+                }
                 else
                 {
                     idxObj = pBlock2File->idxObj;
+                    Log3(("  --> existing file #%#x'\n", idxObj));
                     rc = VINF_SUCCESS;
                 }
             }
@@ -540,6 +573,8 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                                                      pThis->szNameBuf);
                 if (RT_SUCCESS(rc))
                 {
+                    pThis->pResults->cAddedNames++;
+
                     /*
                      * Remember the data location if this is a file, if it's a
                      * directory push it onto the traversal stack.
@@ -624,9 +659,10 @@ static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t of
         PRTFSISOMKIMPDIR pNext = RTListRemoveLast(&TodoList, RTFSISOMKIMPDIR, Entry);
         if (!pNext)
             break;
-        cDepth      = pNext->cDepth;
-        cbDir       = pNext->cbDir;
+        idxDir      = pNext->idxObj;
         offDirBlock = pNext->offDirBlock;
+        cbDir       = pNext->cbDir;
+        cDepth      = pNext->cDepth;
         RTMemFree(pNext);
     }
 
@@ -890,20 +926,32 @@ static int rtFsIsoImportProcessElToritoDesc(PRTFSISOMKIMPORTER pThis, PISO9660BO
  *                              Optional.
  */
 RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags,
-                               uint32_t *poffError, PRTERRINFO pErrInfo)
+                               PRTFSISOMAKERIMPORTRESULTS pResults, PRTERRINFO pErrInfo)
 {
     /*
      * Validate input.
      */
+    AssertPtrReturn(pResults, VERR_INVALID_POINTER);
+    pResults->cAddedNames       = 0;
+    pResults->cAddedDirs        = 0;
+    pResults->cbAddedDataBlocks = 0;
+    pResults->cAddedFiles       = 0;
+    pResults->cBootCatEntries   = UINT32_MAX;
+    pResults->cbSysArea         = 0;
+    pResults->cErrors           = 0;
+    pResults->offError          = UINT32_MAX;
     AssertReturn(!(fFlags & ~RTFSISOMK_IMPORT_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     /*
      * Open the input file and start working on it.
      */
     RTVFSFILE hSrcFile;
-    int rc = RTVfsChainOpenFile(pszIso, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hSrcFile, poffError, pErrInfo);
+    int rc = RTVfsChainOpenFile(pszIso, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
+                                &hSrcFile, &pResults->offError, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
+    pResults->offError = UINT32_MAX;
+
 
     /*
      * Allocate and init the importer state.
@@ -923,6 +971,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
         //pThis->cVolumesInSet  = 0;
         //pThis->idPrimaryVol   = 0;
         //pThis->fSeenJoliet    = false;
+        pThis->pResults         = pResults;
 
         /*
          * Check if this looks like a plausible ISO by checking out the first volume descriptor.
@@ -947,7 +996,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
                 uint32_t cPrimaryVolDescs = 0;
                 uint32_t iElTorito        = UINT32_MAX;
                 uint32_t iVolDesc         = 0;
-                for (;; iVolDesc++)
+                for (;;)
                 {
                     switch (pThis->uSectorBuf.VolDescHdr.bDescType)
                     {
@@ -993,6 +1042,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
                     /*
                      * Read the next volume descriptor and check the signature.
                      */
+                    iVolDesc++;
                     if (iVolDesc >= 32)
                     {
                         rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_TOO_MANY_VOL_DESCS, "Parses at most 32 volume descriptors");
@@ -1035,8 +1085,15 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
                     {
                         if (!ASMMemIsAllU8(pThis->abBuf, _32K, 0))
                         {
+                            /* Drop zero sectors from the end. */
+                            uint32_t cbSysArea = _32K;
+                            while (   cbSysArea >= ISO9660_SECTOR_SIZE
+                                   && ASMMemIsAllU8(&pThis->abBuf[cbSysArea - ISO9660_SECTOR_SIZE], ISO9660_SECTOR_SIZE, 0))
+                                cbSysArea -= ISO9660_SECTOR_SIZE;
+
                             /** @todo HFS */
-                            rc = RTFsIsoMakerSetSysAreaContent(hIsoMaker, pThis->abBuf, _32K, 0);
+                            pThis->pResults->cbSysArea = cbSysArea;
+                            rc = RTFsIsoMakerSetSysAreaContent(hIsoMaker, pThis->abBuf, cbSysArea, 0);
                             if (RT_FAILURE(rc))
                                 rtFsIsoImpError(pThis, rc, "RTFsIsoMakerSetSysAreaContent failed: %Rrc", rc);
                         }

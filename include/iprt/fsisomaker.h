@@ -397,6 +397,33 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uin
                                                      uint8_t idPlatform, const char *pszString);
 
 /**
+ * ISO maker import results (RTFsIsoMakerImport).
+ */
+typedef struct RTFSISOMAKERIMPORTRESULTS
+{
+    /** Number of names added. */
+    uint32_t        cAddedNames;
+    /** Number of directories added. */
+    uint32_t        cAddedDirs;
+    /** Amount of added data blocks, files only. */
+    uint64_t        cbAddedDataBlocks;
+    /** Number of unique files added (unique in terms of data location). */
+    uint32_t        cAddedFiles;
+    /** Number of imported boot catalog entries. */
+    uint32_t        cBootCatEntries;
+    /** Number of system area bytes imported (from offset zero). */
+    uint32_t        cbSysArea;
+
+    /** Number of import errors. */
+    uint32_t        cErrors;
+    /** Where to return the offset of the failing path element.
+     *  Set to UINT32_MAX if not a VFS chaining error. */
+    uint32_t        offError;
+} RTFSISOMAKERIMPORTRESULTS;
+/** Pointer to ISO maker import results. */
+typedef RTFSISOMAKERIMPORTRESULTS *PRTFSISOMAKERIMPORTRESULTS;
+
+/**
  * Imports an existing ISO.
  *
  * Just like other source files, the existing image must remain present and
@@ -407,14 +434,12 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uin
  * @param   pszIso              Path to the existing image to import / clone.
  *                              This is fed to RTVfsChainOpenFile.
  * @param   fFlags              Reserved for the future, MBZ.
- * @param   poffError           Where to return the position in @a pszIso
- *                              causing trouble when opening it for reading.
- *                              Optional.
+ * @param   pResults            Where to return import results.
  * @param   pErrInfo            Where to return additional error information.
  *                              Optional.
  */
 RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags,
-                               uint32_t *poffError, PRTERRINFO pErrInfo);
+                               PRTFSISOMAKERIMPORTRESULTS pResults, PRTERRINFO pErrInfo);
 
 /** @name RTFSISOMK_IMPORT_F_XXX - Flags for RTFsIsoMakerImport.
  * @{ */

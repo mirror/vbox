@@ -1396,13 +1396,31 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
  */
 static int rtFsIsoMakerCmdOptImportIso(PRTFSISOMAKERCMDOPTS pOpts, const char *pszIsoSpec)
 {
-    uint32_t        offError = UINT32_MAX;
-    RTERRINFOSTATIC ErrInfo;
-    int rc = RTFsIsoMakerImport(pOpts->hIsoMaker, pszIsoSpec, 0 /*fFlags*/, &offError, RTErrInfoInitStatic(&ErrInfo));
+    RTFSISOMAKERIMPORTRESULTS   Results;
+    RTERRINFOSTATIC             ErrInfo;
+    int rc = RTFsIsoMakerImport(pOpts->hIsoMaker, pszIsoSpec, 0 /*fFlags*/, &Results, RTErrInfoInitStatic(&ErrInfo));
+
+    pOpts->cItemsAdded += Results.cAddedFiles;
+    pOpts->cItemsAdded += Results.cAddedDirs;
+    pOpts->cItemsAdded += Results.cBootCatEntries;
+    pOpts->cItemsAdded += Results.cbSysArea != 0 ? 1 : 0;
+
+    rtFsIsoMakerPrintf(pOpts, "ISO imported statistics for '%s'\n", pszIsoSpec);
+    rtFsIsoMakerPrintf(pOpts, "    cAddedNames:         %'14RU32\n", Results.cAddedNames);
+    rtFsIsoMakerPrintf(pOpts, "    cAddedDirs:          %'14RU32\n", Results.cAddedDirs);
+    rtFsIsoMakerPrintf(pOpts, "    cbAddedDataBlocks:   %'14RU64 bytes\n", Results.cbAddedDataBlocks);
+    rtFsIsoMakerPrintf(pOpts, "    cAddedFiles:         %'14RU32\n", Results.cAddedFiles);
+    if (Results.cBootCatEntries == UINT32_MAX)
+        rtFsIsoMakerPrintf(pOpts, "    cBootCatEntries:               none\n");
+    else
+        rtFsIsoMakerPrintf(pOpts, "    cBootCatEntries:     %'14RU32\n", Results.cBootCatEntries);
+    rtFsIsoMakerPrintf(pOpts, "    cbSysArea:           %'14RU32\n", Results.cbSysArea);
+    rtFsIsoMakerPrintf(pOpts, "    cErrors:             %'14RU32\n", Results.cErrors);
+
     if (RT_SUCCESS(rc))
         return rc;
-    if (offError != UINT32_MAX)
-        return rtFsIsoMakerCmdChainError(pOpts, "RTFsIsoMakerImport", pszIsoSpec, rc, offError, &ErrInfo.Core);
+    if (Results.offError != UINT32_MAX)
+        return rtFsIsoMakerCmdChainError(pOpts, "RTFsIsoMakerImport", pszIsoSpec, rc, Results.offError, &ErrInfo.Core);
     if (RTErrInfoIsSet(&ErrInfo.Core))
         return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerImport failed: %Rrc - %s", rc, ErrInfo.Core.pszMsg);
     return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerImport failed: %Rrc", rc);
