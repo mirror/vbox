@@ -304,7 +304,7 @@ in_real_mode:
                 ;; boot request or an attempt to reset the system via triple
                 ;; faulting the CPU or similar. Check reboot flag.
                 ;; NB: At this point, registers need not be preserved.
-               mov     ds, cs:[seg_40_value]
+                mov     ds, cs:[seg_40_value]
                 cmp     word ptr ds:[72h], 1234h
                 jnz     reset_sys       ; trigger system reset
 
