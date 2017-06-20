@@ -983,6 +983,13 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                      && pb[3] == 0x48
                      && pb[4] == 0x47
                     )
+                 || (   pb[0] == 0x42   /* _int13_harddisk_ext switch */
+                     && pb[1] == 0x61
+                     && pb[2] == 0x75
+                     && pb[3] == 0x61
+                     && pb[4] == 0x75
+                     && pb[5] == 0x61
+                    )
                  || (   pb[0] == 0x67   /* _pci16_function switch */
                      && pb[1] == 0x92
                      && pb[2] == 0x81
