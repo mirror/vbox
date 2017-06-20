@@ -4969,7 +4969,7 @@ static int hdaStreamRead(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead,
 
         uint32_t cbWritten = 0;
 
-        RTCircBufAcquireReadBlock(pCircBuf, cbToRead, &pvSrc, &cbSrc);
+        RTCircBufAcquireReadBlock(pCircBuf, cbLeft, &pvSrc, &cbSrc);
 
         if (cbSrc)
         {
