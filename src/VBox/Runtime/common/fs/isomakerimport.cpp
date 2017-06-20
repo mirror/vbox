@@ -126,6 +126,9 @@ typedef struct RTFSISOMKIMPORTER
     /** The primary volume sequence ID. */
     uint32_t                idPrimaryVol;
 
+    /** Set if we've already seen a joliet volume descriptor. */
+    bool                    fSeenJoliet;
+
     /** Sector buffer for volume descriptors and such. */
     union
     {
@@ -156,17 +159,32 @@ typedef RTFSISOMKIMPORTER *PRTFSISOMKIMPORTER;
 #define VERR_ISOMK_IMPORT_MULTIPLE_PRIMARY_VOL_DESCS    (-24908)
 /** Import ISO contains more than one el torito descriptor. */
 #define VERR_ISOMK_IMPORT_MULTIPLE_EL_TORITO_DESCS      (-24909)
+/** Import ISO contains more than one joliet volume descriptor. */
+#define VERR_ISOMK_IMPORT_MULTIPLE_JOLIET_VOL_DESCS     (-24908)
 /** Import ISO starts with supplementary volume descriptor before any
  * primary ones. */
 #define VERR_ISOMK_IMPORT_SUPPLEMENTARY_BEFORE_PRIMARY  (-24909)
+/** Import ISO contains an unsupported primary volume descriptor version. */
+#define VERR_IOSMK_IMPORT_PRIMARY_VOL_DESC_VER          (-24909)
 /** Import ISO contains a bad primary volume descriptor. */
 #define VERR_ISOMK_IMPORT_BAD_PRIMARY_VOL_DESC          (-24910)
+/** Import ISO contains an unsupported supplementary volume descriptor
+ *  version. */
+#define VERR_IOSMK_IMPORT_SUP_VOL_DESC_VER              (-24909)
+/** Import ISO contains a bad supplementary volume descriptor. */
+#define VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC              (-24910)
 /** Import ISO uses a logical block size other than 2KB. */
 #define VERR_ISOMK_IMPORT_LOGICAL_BLOCK_SIZE_NOT_2KB    (-24911)
 /** Import ISO contains more than volume. */
 #define VERR_ISOMK_IMPORT_MORE_THAN_ONE_VOLUME_IN_SET   (-24912)
 /** Import ISO uses invalid volume sequence number. */
 #define VERR_ISOMK_IMPORT_INVALID_VOLUMNE_SEQ_NO        (-24913)
+/** Import ISO has different volume space sizes of primary and supplementary
+ * volume descriptors. */
+#define VERR_ISOMK_IMPORT_VOLUME_SPACE_SIZE_MISMATCH    (-24913)
+/** Import ISO has different volume set sizes of primary and supplementary
+ * volume descriptors. */
+#define VERR_ISOMK_IMPORT_VOLUME_IN_SET_MISMATCH        (-24913)
 /** Import ISO contains a bad root directory record. */
 #define VERR_ISOMK_IMPORT_BAD_ROOT_DIR_REC              (-24914)
 /** Import ISO contains a zero sized root directory. */
@@ -367,6 +385,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
     /*
      * Work our way thru all the directory records.
      */
+    Log3(("rtFsIsoImportProcessIso9660TreeWorker: Starting at @%#RX64 LB %#zx\n", off - cbChunk, cbChunk));
     while (cbChunk > 0)
     {
         /*
@@ -379,11 +398,14 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
         {
             pDirRec = (PCISO9660DIRREC)memmove(&pThis->abBuf[ISO9660_SECTOR_SIZE - cbChunk], pDirRec, cbChunk);
 
+            Assert(!(off & (ISO9660_SECTOR_SIZE - 1)));
             uint32_t cbToRead = RT_MIN(cbDir, sizeof(pThis->abBuf) - ISO9660_SECTOR_SIZE);
             rc = RTVfsFileReadAt(pThis->hSrcFile, off, &pThis->abBuf[ISO9660_SECTOR_SIZE], cbToRead, NULL);
             if (RT_FAILURE(rc))
                 return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", off, cbToRead);
 
+            Log3(("rtFsIsoImportProcessIso9660TreeWorker: Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#zx\n",
+                  cbToRead, off, off - cbChunk, cbChunk + cbToRead));
             off     += cbToRead;
             cbDir   -= cbToRead;
             cbChunk += cbToRead;
@@ -400,15 +422,25 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                 cbChunk -= cbSkip;
                 if (   cbChunk <= UINT8_MAX
                     && cbDir == 0)
+                {
+                    Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Restart loop\n"));
                     continue;
+                }
+                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> jumped to @%#RX64 LB %#zx\n", off - cbChunk, cbChunk));
             }
+            /* ASSUMES we're working in multiples of sectors! */
+            else if (cbDir == 0)
+                break;
             else
             {
+                Assert(!(off & (ISO9660_SECTOR_SIZE - 1)));
                 uint32_t cbToRead = RT_MIN(cbDir, sizeof(pThis->abBuf));
                 rc = RTVfsFileReadAt(pThis->hSrcFile, off, pThis->abBuf, cbToRead, NULL);
                 if (RT_FAILURE(rc))
                     return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", off, cbToRead);
 
+                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#zx\n",
+                      cbToRead, off, off - cbChunk, cbChunk + cbToRead));
                 off     += cbToRead;
                 cbDir   -= cbToRead;
                 cbChunk += cbToRead;
@@ -420,8 +452,12 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
          * Validate the directory record.  Give up if not valid since we're
          * likely to get error with subsequent record too.
          */
-        Log3(("pDirRec=%p @%#010RX64 cb=%#04x ff=%#04x off=%#010RX32 cb=%#010RX32 id=%.*Rhxs\n", pDirRec, off - cbChunk, pDirRec->cbDirRec, pDirRec->fFileFlags,
-              ISO9660_GET_ENDIAN(&pDirRec->offExtent), ISO9660_GET_ENDIAN(&pDirRec->cbData), pDirRec->bFileIdLength, pDirRec->achFileId));
+        uint8_t const         cbSys = pDirRec->cbDirRec - RT_UOFFSETOF(ISO9660DIRREC, achFileId)
+                                    - pDirRec->bFileIdLength - !(pDirRec->bFileIdLength & 1);
+        uint8_t const * const pbSys = (uint8_t const *)&pDirRec->achFileId[pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1)];
+        Log3(("pDirRec=%p @%#010RX64 cb=%#04x ff=%#04x off=%#010RX32 cb=%#010RX32 cbSys=%#x id=%.*Rhxs\n",
+              pDirRec, off - cbChunk, pDirRec->cbDirRec, pDirRec->fFileFlags, ISO9660_GET_ENDIAN(&pDirRec->offExtent),
+              ISO9660_GET_ENDIAN(&pDirRec->cbData), cbSys, pDirRec->bFileIdLength, pDirRec->achFileId));
         rc = rtFsIsoImportValidateDirRec(pThis, pDirRec, cbChunk);
         if (RT_FAILURE(rc))
             return rc;
@@ -459,9 +495,13 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                     && pThis->szNameBuf[cchName - offName] == ';')
                     pThis->szNameBuf[cchName - offName] = '\0';
             }
+            Log3(("  name='%s'\n", pThis->szNameBuf));
 
             /** @todo rock ridge. */
-
+            if (cbSys > 0)
+            {
+                RT_NOREF(pbSys);
+            }
             /*
              * Add the object and enter it into the namespace.
              */
@@ -552,11 +592,14 @@ static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t of
     /*
      * Make sure we've got a root in the namespace.
      */
-    uint32_t idxDir = RTFsIsoMakerGetObjIdxForPath(pThis->hIsoMaker, RTFSISOMAKER_NAMESPACE_ISO_9660, "/");
+    uint32_t idxDir = RTFsIsoMakerGetObjIdxForPath(pThis->hIsoMaker,
+                                                   !fUnicode ? RTFSISOMAKER_NAMESPACE_ISO_9660 : RTFSISOMAKER_NAMESPACE_JOLIET,
+                                                    "/");
     if (idxDir == UINT32_MAX)
     {
         idxDir = RTFSISOMAKER_CFG_IDX_ROOT;
-        int rc = RTFsIsoMakerObjSetPath(pThis->hIsoMaker, RTFSISOMAKER_CFG_IDX_ROOT, RTFSISOMAKER_NAMESPACE_ISO_9660, "/");
+        int rc = RTFsIsoMakerObjSetPath(pThis->hIsoMaker, RTFSISOMAKER_CFG_IDX_ROOT,
+                                        !fUnicode ? RTFSISOMAKER_NAMESPACE_ISO_9660 : RTFSISOMAKER_NAMESPACE_JOLIET, "/");
         if (RT_FAILURE(rc))
             return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerObjSetPath failed on root dir: %Rrc", rc);
     }
@@ -664,7 +707,7 @@ static int rtFsIsoImportProcessPrimaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660PRI
      * Validate dual fields first.
      */
     if (pVolDesc->bFileStructureVersion != ISO9660_FILE_STRUCTURE_VERSION)
-        return rtFsIsoImpError(pThis, VERR_VFS_UNSUPPORTED_FORMAT,
+        return rtFsIsoImpError(pThis, VERR_IOSMK_IMPORT_PRIMARY_VOL_DESC_VER,
                                "Unsupported file structure version: %#x", pVolDesc->bFileStructureVersion);
 
     if (RT_LE2H_U16(pVolDesc->cbLogicalBlock.le) != RT_BE2H_U16(pVolDesc->cbLogicalBlock.be))
@@ -729,9 +772,95 @@ static int rtFsIsoImportProcessPrimaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660PRI
 }
 
 
-static int rtFsIsoImportProcessSupplementaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660SUPVOLDESC pSup)
+static int rtFsIsoImportProcessSupplementaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660SUPVOLDESC pVolDesc)
 {
-    RT_NOREF(pThis, pSup);
+    /*
+     * Validate dual fields first.
+     */
+    if (pVolDesc->bFileStructureVersion != ISO9660_FILE_STRUCTURE_VERSION)
+        return rtFsIsoImpError(pThis, VERR_IOSMK_IMPORT_SUP_VOL_DESC_VER,
+                               "Unsupported file structure version: %#x", pVolDesc->bFileStructureVersion);
+
+    if (RT_LE2H_U16(pVolDesc->cbLogicalBlock.le) != RT_BE2H_U16(pVolDesc->cbLogicalBlock.be))
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC,
+                               "Mismatching logical block size: {%#RX16,%#RX16}",
+                               RT_BE2H_U16(pVolDesc->cbLogicalBlock.be), RT_LE2H_U16(pVolDesc->cbLogicalBlock.le));
+    if (RT_LE2H_U32(pVolDesc->VolumeSpaceSize.le) != RT_BE2H_U32(pVolDesc->VolumeSpaceSize.be))
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC,
+                               "Mismatching volume space size: {%#RX32,%#RX32}",
+                               RT_BE2H_U32(pVolDesc->VolumeSpaceSize.be), RT_LE2H_U32(pVolDesc->VolumeSpaceSize.le));
+    if (RT_LE2H_U16(pVolDesc->cVolumesInSet.le) != RT_BE2H_U16(pVolDesc->cVolumesInSet.be))
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC,
+                               "Mismatching volumes in set: {%#RX16,%#RX16}",
+                               RT_BE2H_U16(pVolDesc->cVolumesInSet.be), RT_LE2H_U16(pVolDesc->cVolumesInSet.le));
+    if (RT_LE2H_U16(pVolDesc->VolumeSeqNo.le) != RT_BE2H_U16(pVolDesc->VolumeSeqNo.be))
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC,
+                               "Mismatching volume sequence no.: {%#RX16,%#RX16}",
+                               RT_BE2H_U16(pVolDesc->VolumeSeqNo.be), RT_LE2H_U16(pVolDesc->VolumeSeqNo.le));
+    if (RT_LE2H_U32(pVolDesc->cbPathTable.le) != RT_BE2H_U32(pVolDesc->cbPathTable.be))
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC,
+                               "Mismatching path table size: {%#RX32,%#RX32}",
+                               RT_BE2H_U32(pVolDesc->cbPathTable.be), RT_LE2H_U32(pVolDesc->cbPathTable.le));
+
+    /*
+     * Validate field values against our expectations.
+     */
+    if (ISO9660_GET_ENDIAN(&pVolDesc->cbLogicalBlock) != ISO9660_SECTOR_SIZE)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_LOGICAL_BLOCK_SIZE_NOT_2KB,
+                               "Unsupported block size: %#x", ISO9660_GET_ENDIAN(&pVolDesc->cbLogicalBlock));
+
+    if (ISO9660_GET_ENDIAN(&pVolDesc->cVolumesInSet) != pThis->cVolumesInSet)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_VOLUME_IN_SET_MISMATCH, "Volumes in set: %#x, expected %#x",
+                               ISO9660_GET_ENDIAN(&pVolDesc->cVolumesInSet), pThis->cVolumesInSet);
+
+    if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSeqNo) != pThis->idPrimaryVol)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_INVALID_VOLUMNE_SEQ_NO,
+                               "Unexpected volume sequence number: %#x (expected %#x)",
+                               ISO9660_GET_ENDIAN(&pVolDesc->VolumeSeqNo), pThis->idPrimaryVol);
+
+    if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize) != pThis->cBlocksInPrimaryVolumeSpace)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_INVALID_VOLUMNE_SEQ_NO,
+                               "Volume space size differs between primary and supplementary descriptors: %#x, primary %#x",
+                               ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize), pThis->cBlocksInPrimaryVolumeSpace);
+
+    /*
+     * Validate the root directory record.
+     */
+    int rc = rtFsIsoImportValidateRootDirRec(pThis, &pVolDesc->RootDir.DirRec);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Is this a joliet descriptor? Ignore if not.
+     */
+    uint8_t uJolietLevel = 0;
+    if (   pVolDesc->abEscapeSequences[0] == ISO9660_JOLIET_ESC_SEQ_0
+        && pVolDesc->abEscapeSequences[1] == ISO9660_JOLIET_ESC_SEQ_1)
+        switch (pVolDesc->abEscapeSequences[2])
+        {
+            case ISO9660_JOLIET_ESC_SEQ_2_LEVEL_1: uJolietLevel = 1; break;
+            case ISO9660_JOLIET_ESC_SEQ_2_LEVEL_2: uJolietLevel = 2; break;
+            case ISO9660_JOLIET_ESC_SEQ_2_LEVEL_3: uJolietLevel = 3; break;
+            default: Log(("rtFsIsoImportProcessSupplementaryDesc: last joliet escape sequence byte doesn't match: %#x\n",
+                          pVolDesc->abEscapeSequences[2]));
+        }
+    if (uJolietLevel == 0)
+        return VINF_SUCCESS;
+
+    /*
+     * Only one joliet descriptor.
+     */
+    if (pThis->fSeenJoliet)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MULTIPLE_JOLIET_VOL_DESCS,
+                               "More than one Joliet volume descriptor is not supported");
+    pThis->fSeenJoliet = true;
+
+    /*
+     * Process the directory tree.
+     */
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_JOLIET))
+        return rtFsIsoImportProcessIso9660Tree(pThis, ISO9660_GET_ENDIAN(&pVolDesc->RootDir.DirRec.offExtent),
+                                               ISO9660_GET_ENDIAN(&pVolDesc->RootDir.DirRec.cbData), true /*fUnicode*/);
     return VINF_SUCCESS;
 }
 
@@ -789,6 +918,11 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
         pThis->hSrcFile         = hSrcFile;
         pThis->idxSrcFile       = UINT32_MAX;
         //pThis->Block2FileRoot = NULL;
+        //pThis->cBlocksInPrimaryVolumeSpace = 0;
+        //pThis->cbPrimaryVolumeSpace = 0
+        //pThis->cVolumesInSet  = 0;
+        //pThis->idPrimaryVol   = 0;
+        //pThis->fSeenJoliet    = false;
 
         /*
          * Check if this looks like a plausible ISO by checking out the first volume descriptor.
