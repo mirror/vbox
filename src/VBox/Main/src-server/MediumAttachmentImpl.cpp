@@ -513,7 +513,7 @@ void MediumAttachment::i_updateName(const Utf8Str &aName)
 void MediumAttachment::i_updateMedium(const ComObjPtr<Medium> &aMedium)
 {
     Assert(isWriteLockOnCurrentThread());
-    Assert(!m->pMachine->i_isSnapshotMachine());
+    /* No assertion for a snapshot. Method used in deleting snapshot. */
 
     m->bd.backup();
     m->bd->pMedium = aMedium;
