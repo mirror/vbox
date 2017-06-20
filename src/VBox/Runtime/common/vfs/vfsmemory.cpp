@@ -511,7 +511,7 @@ static DECLCALLBACK(int) rtVfsMemFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
             cbThisWrite = (uint32_t)cbLeftToWrite;
         memcpy(&pExtent->abData[offDst], pbSrc, cbThisWrite);
 
-        offUnsigned   += cbLeftToWrite;
+        offUnsigned   += cbThisWrite;
         cbLeftToWrite -= cbThisWrite;
         if (!cbLeftToWrite)
             break;
