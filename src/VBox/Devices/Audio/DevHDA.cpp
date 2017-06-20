@@ -1299,7 +1299,7 @@ static SSMFIELD const g_aSSMStreamStateFields6[] =
     SSMFIELD_ENTRY_OLD(cBDLE,      sizeof(uint16_t)), /* Deprecated. */
     SSMFIELD_ENTRY(HDASTREAMSTATE, uCurBDLE),
     SSMFIELD_ENTRY_OLD(fStop,      1),                /* Deprecated; see SSMR3PutBool(). */
-    SSMFIELD_ENTRY_OLD(fActive,    1),
+    SSMFIELD_ENTRY_OLD(fRunning,   1),                /* Deprecated; using the HDA_SDCTL_RUN bit is sufficient. */
     SSMFIELD_ENTRY(HDASTREAMSTATE, fInReset),
     SSMFIELD_ENTRY_TERM()
 };
