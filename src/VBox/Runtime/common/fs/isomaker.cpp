@@ -239,6 +239,8 @@ typedef struct RTFSISOMAKERNAME
     /** Size of the directory record (ISO-9660).
      * This is set when the image is being finalized. */
     uint16_t                cbDirRec;
+    /** Same as cbDirRec but with end of sector zero padding added. */
+    uint16_t                cbDirRecWithZeroPad;
 
     /** The number of bytes the name requires in the directory record. */
     uint16_t                cbNameInDirRec;
@@ -1920,6 +1922,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->cHardlinks           = 1;
             pName->offDirRec            = UINT32_MAX;
             pName->cbDirRec             = 0;
+            pName->cbDirRecWithZeroPad  = 0;
 
             memcpy(pName->szName, szName, cchName);
             pName->szName[cchName] = '\0';
@@ -2192,6 +2195,8 @@ static int rtFsIsoMakerObjSetPathInOne(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAME
  */
 static int rtFsIsoMakerObjUnsetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace, PRTFSISOMAKEROBJ pObj)
 {
+    LogFlow(("rtFsIsoMakerObjUnsetName: idxObj=#%#x\n", pObj->idxObj));
+
     /*
      * First check if there is anything to do here at all.
      */
@@ -3612,7 +3617,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
     /* Calculate the minimal directory record size. */
     size_t cbDirRec  = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1);
     AssertReturn(cbDirRec <= UINT8_MAX, VERR_FILENAME_TOO_LONG);
-    pName->cbDirRec  = (uint8_t)cbDirRec;
+    pName->cbDirRecWithZeroPad = pName->cbDirRec = (uint8_t)cbDirRec;
 
     /*
      * Calculate additional rock ridge stuff, if it doesn't all fit write it
@@ -3700,6 +3705,16 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
                 rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, 0 /*uRootRockRidge*/);
                 AssertRCReturn(rc, rc);
 
+                if ((RTFSISOMAKER_SECTOR_SIZE - (offInDir & RTFSISOMAKER_SECTOR_OFFSET_MASK)) < pChild->cbDirRec)
+                {
+                    Assert(ppChild[-1] == pChild && &ppChild[-1] != pCurDir->papChildren);
+                    ppChild[-2]->cbDirRecWithZeroPad += RTFSISOMAKER_SECTOR_SIZE - (offInDir & RTFSISOMAKER_SECTOR_OFFSET_MASK);
+                    offInDir = (offInDir | RTFSISOMAKER_SECTOR_OFFSET_MASK) + 1; /* doesn't fit, skip to next sector. */
+                    Log4(("rtFsIsoMakerFinalizeDirectoriesInIsoNamespace: zero padding dir rec @%#x: %#x -> %#x; offset %#x -> %#x\n",
+                          ppChild[-2]->offDirRec, ppChild[-2]->cbDirRec, ppChild[-2]->cbDirRecWithZeroPad, pChild->offDirRec, offInDir));
+                    pChild->offDirRec = offInDir;
+                }
+
                 offInDir += pChild->cbDirRec;
                 if (pChild->cchTransNm)
                     cbTransTbl += 2 /* type & space*/
@@ -3725,6 +3740,9 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
             pCurDir->offPathTable = cbPathTable;
             pCurDir->idPathTable  = idPathTable++;
             cbPathTable += RTFSISOMAKER_CALC_PATHREC_SIZE(pCurName->cbNameInDirRec);
+
+            Log4(("rtFsIsoMakerFinalizeDirectoriesInIsoNamespace: idxObj=#%#x cbDir=%#08x cChildren=%#05x %s\n",
+                  pCurDir->pName->pObj->idxObj, pCurDir->cbDir, pCurDir->cChildren, pCurDir->pName->szName));
         }
     }
 
@@ -4860,7 +4878,18 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
      */
     /** @todo rock ridge. */
 
-    return pName->cbDirRec;
+    /*
+     * Do end-of-sector zero padding.
+     */
+    if (pName->cbDirRecWithZeroPad == pName->cbDirRec)
+    { /* likely */ }
+    else
+    {
+        Assert(pName->cbDirRecWithZeroPad >= pName->cbDirRec);
+        memset((uint8_t *)pDirRec + pName->cbDirRec, 0, pName->cbDirRecWithZeroPad - pName->cbDirRec);
+    }
+
+    return pName->cbDirRecWithZeroPad;
 }
 
 
@@ -4879,9 +4908,10 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
 static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pName, bool fUnicode,
                                                           uint32_t off, uint8_t *pbBuf, size_t cbBuf)
 {
-    Assert(off < pName->cbDirRec);
+    uint8_t abTmpBuf[256 * 2];
+    Assert(off < pName->cbDirRecWithZeroPad);
+    Assert(pName->cbDirRecWithZeroPad <= sizeof(abTmpBuf));
 
-    uint8_t abTmpBuf[256];
     size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
     cbToCopy = RT_MIN(cbBuf, cbToCopy - off);
     memcpy(pbBuf, &abTmpBuf[off], cbToCopy);
@@ -4911,8 +4941,11 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
     Assert(pName->pDir);
 
     /* Generate a regular directory record. */
-    uint8_t abTmpBuf[256];
+    uint8_t abTmpBuf[256 * 2];
+    Assert(off < pName->cbDirRecWithZeroPad);
     size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf);
+    Assert(cbToCopy == pName->cbDirRecWithZeroPad);
+    cbToCopy = pName->cbDirRec;
 
     /* Replace the filename part. */
     PISO9660DIRREC pDirRec = (PISO9660DIRREC)abTmpBuf;
@@ -5044,7 +5077,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
             while (iChild < pDir->cChildren)
             {
                 PRTFSISOMAKERNAME pChild = pDir->papChildren[iChild];
-                if ((offInDir - pChild->offDirRec) < pChild->cbDirRec)
+                if ((offInDir - pChild->offDirRec) < pChild->cbDirRecWithZeroPad)
                     break;
                 iChild++;
             }
@@ -5060,10 +5093,11 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
             PRTFSISOMAKERNAME pChild = pDir->papChildren[iChild];
             uint32_t cbCopied;
             if (   offInDir == pChild->offDirRec
-                && cbBuf    >= pChild->cbDirRec)
+                && cbBuf    >= pChild->cbDirRecWithZeroPad)
                 cbCopied = rtFsIsoMakerOutFile_GenerateDirRec(pChild, fUnicode, pbBuf);
             else
                 cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pChild, fUnicode, offInDir - pChild->offDirRec, pbBuf, cbBuf);
+
             cbDone   += cbCopied;
             offInDir += cbCopied;
             pbBuf    += cbCopied;

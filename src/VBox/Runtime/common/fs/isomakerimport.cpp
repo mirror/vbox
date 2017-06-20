@@ -529,7 +529,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
             {
                 rc = RTFsIsoMakerAddUnnamedDir(pThis->hIsoMaker, &idxObj);
-                Log3(("  --> added directory #%#x'\n", idxObj));
+                Log3(("  --> added directory #%#x\n", idxObj));
                 if (RT_SUCCESS(rc))
                     pThis->pResults->cAddedDirs++;
             }
