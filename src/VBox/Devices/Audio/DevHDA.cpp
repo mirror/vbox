@@ -6092,7 +6092,14 @@ static int hdaLoadExecPost(PHDASTATE pThis)
             bool fActive = RT_BOOL(HDA_STREAM_REG(pThis, CTL, i) & HDA_SDCTL_RUN);
             if (fActive)
             {
-                int rc2 = hdaStreamEnable(pThis, pStream, true /* fEnable */);
+                int rc2;
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+                /* Make sure to also create the async I/O thread before actually enabling the stream. */
+                rc2 = hdaStreamAsyncIOCreate(pThis, pStream);
+                AssertRC(rc2);
+#endif
+                rc2 = hdaStreamEnable(pThis, pStream, true /* fEnable */);
                 AssertRC(rc2);
 
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
