@@ -389,8 +389,14 @@ static int suplibOsStopService(void)
             else
             {
                 dwErr = GetLastError();
-                AssertMsgFailed(("ControlService failed with dwErr=%Rwa. status=%d\n", dwErr, Status.dwCurrentState));
-                rc = RTErrConvertFromWin32(dwErr);
+                if (   Status.dwCurrentState == SERVICE_STOP_PENDING
+                    && dwErr == ERROR_SERVICE_CANNOT_ACCEPT_CTRL)
+                    rc = VERR_RESOURCE_BUSY;    /* better than VERR_GENERAL_FAILURE */
+                else
+                {
+                    AssertMsgFailed(("ControlService failed with dwErr=%Rwa. status=%d\n", dwErr, Status.dwCurrentState));
+                    rc = RTErrConvertFromWin32(dwErr);
+                }
             }
             CloseServiceHandle(hService);
         }
