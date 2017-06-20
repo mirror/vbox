@@ -4202,8 +4202,12 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
     int rc;
 
     PHDAMIXERSINK pSink = hdaMixerControlToSink(pThis, enmMixerCtl);
-    if (pSink)
+    if (   pSink
+        && pSink->pMixSink)
     {
+        LogRel2(("HDA: Setting volume for mixer sink '%s' to %RU8/%RU8 (%s)\n",
+                 pSink->pMixSink->pszName, pVol->uLeft, pVol->uRight, pVol->fMuted ? "Muted" : "Unmuted"));
+
         /* Set the volume.
          * We assume that the codec already converted it to the correct range. */
         rc = AudioMixerSinkSetVolume(pSink->pMixSink, pVol);
