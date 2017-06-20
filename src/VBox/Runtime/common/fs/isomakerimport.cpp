@@ -474,6 +474,16 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                 rc = RTFsIsoMakerObjSetNameAndParent(pThis->hIsoMaker, idxObj, idxDir,
                                                      !fUnicode ? RTFSISOMAKER_NAMESPACE_ISO_9660 : RTFSISOMAKER_NAMESPACE_JOLIET,
                                                      pThis->szNameBuf);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Remember the data location if this is a file, if it's a
+                     * directory push it onto the traversal stack.
+                     */
+                }
+                else
+                    rtFsIsoImpError(pThis, rc, "Invalid name at %#RX64: %.Rhxs",
+                                    off - cbChunk, pDirRec->bFileIdLength, pDirRec->achFileId);
             }
         }
         else
