@@ -969,8 +969,7 @@ static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, v
     /** @todo Store sinks + channel mapping in callback context as soon as we have surround support. */
     pCbCtx->cDevOut++;
 
-//    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSinkCb\n"));
-    LogRel(("DEBUG: paEnumSinkCb signal mainloop\n"));
+    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSinkCb\n"));
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
@@ -1000,7 +999,7 @@ static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eo
     /** @todo Store sources + channel mapping in callback context as soon as we have surround support. */
     pCbCtx->cDevIn++;
 
-//    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSourceCb\n"));
+    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSourceCb\n"));
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
@@ -1037,8 +1036,7 @@ static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *
         pCbCtx->pszDefaultSource = RTStrDup(pInfo->default_source_name);
     }
 
-//    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumServerCb\n"));
-    LogRel(("DEBUG: paEnumServerCb signal mainloop\n"));
+    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumServerCb\n"));
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
 
@@ -1094,8 +1092,10 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
                 if (fLog)
                     LogRel2(("PulseAudio: Default input source is '%s'\n", cbCtx.pszDefaultSource));
 
+                LogRel(("PulseAudio: starting input sink enumeration\n"));
                 rc = paWaitFor(pThis, pa_context_get_source_info_by_name(pThis->pContext, cbCtx.pszDefaultSource,
                                                                          paEnumSourceCb, &cbCtx));
+                LogRel(("PulseAudio: input sink enumeration done (rc=%Rrc)\n", rc));
                 if (   RT_FAILURE(rc)
                     && fLog)
                 {
