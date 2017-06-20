@@ -185,6 +185,9 @@ private:
 
         /** Searches for smallest snapshot age starting with @a pItem as parent. */
         SnapshotAgeFormat traverseSnapshotAge(QTreeWidgetItem *pItem) const;
+
+        /** Expand all the children starting with @a pItem. */
+        void expandItemChildren(QTreeWidgetItem *pItem);
     /** @} */
 
     /** @name General variables.

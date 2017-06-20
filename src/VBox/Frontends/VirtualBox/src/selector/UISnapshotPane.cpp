@@ -728,9 +728,71 @@ void UISnapshotPane::sltHandleSnapshotDelete(QString strMachineId, QString strSn
     LogRel(("GUI: Updating snapshot tree after DELETING snapshot with MachineID={%s}, SnapshotID={%s}...\n",
             strMachineId.toUtf8().constData(), strSnapshotId.toUtf8().constData()));
 
-    // TODO: Refresh only necessary bits.
-    /* Refresh everything: */
-    refreshAll();
+    /* Prepare result: */
+    bool fSuccess = false;
+    {
+        /* Prevent snapshot editing in the meantime: */
+        QWriteLocker locker(m_pLockReadWrite);
+
+        /* Search for an existing item with such id: */
+        UISnapshotItem *pItem = findItem(strSnapshotId);
+        fSuccess = pItem;
+
+        /* Make sure item has no more than one child: */
+        if (fSuccess)
+            fSuccess = pItem->childCount() <= 1;
+
+        /* Detach child before deleting item: */
+        QTreeWidgetItem *pChild = 0;
+        if (fSuccess && pItem->childCount() == 1)
+            pChild = pItem->takeChild(0);
+
+        /* Check whether item has parent: */
+        QTreeWidgetItem *pParent = 0;
+        if (fSuccess)
+            pParent = pItem->QTreeWidgetItem::parent();
+
+        /* If item has child: */
+        if (pChild)
+        {
+            /* Determine where the item located: */
+            int iIndexOfChild = -1;
+            if (fSuccess)
+            {
+                if (pParent)
+                    iIndexOfChild = pParent->indexOfChild(pItem);
+                else
+                    iIndexOfChild = m_pSnapshotTree->indexOfTopLevelItem(pItem);
+                fSuccess = iIndexOfChild != -1;
+            }
+
+            /* And move child into this place: */
+            if (fSuccess)
+            {
+                if (pParent)
+                    pParent->insertChild(iIndexOfChild, pChild);
+                else
+                    m_pSnapshotTree->insertTopLevelItem(iIndexOfChild, pChild);
+                expandItemChildren(pChild);
+            }
+        }
+
+        /* Delete item finally: */
+        if (fSuccess)
+        {
+            delete pItem;
+            pItem = 0;
+
+            LogRel(("GUI: Snapshot tree update successful!\n"));
+        }
+    }
+
+    /* Just refresh everything as fallback: */
+    if (!fSuccess)
+    {
+        LogRel(("GUI: Snapshot tree update failed! Rebuilding from scratch...\n"));
+        refreshAll();
+    }
 }
 
 void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId, QString strSnapshotId)
@@ -1745,6 +1807,13 @@ SnapshotAgeFormat UISnapshotPane::traverseSnapshotAge(QTreeWidgetItem *pItem) co
 
     /* Return result: */
     return age;
+}
+
+void UISnapshotPane::expandItemChildren(QTreeWidgetItem *pItem)
+{
+    pItem ->setExpanded(true);
+    for (int i = 0; i < pItem->childCount(); ++i)
+        expandItemChildren(pItem->child(i));
 }
 
 #include "UISnapshotPane.moc"
