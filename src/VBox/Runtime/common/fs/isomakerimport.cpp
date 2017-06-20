@@ -548,6 +548,10 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
 
                 if (ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0) /* no data tracking for zero byte files */
                     pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
+/** @todo Check whether pBlock2File is already used in the current namespace as we don't
+ * support hardlinking at present.  Seeing trouble with \dists\trusty\restricted\binary-i386\Packages.gz
+ * on ubuntu-14.04.3-desktop-amd64.iso disappearing as it's probably identical
+ * to g:\dists\trusty\main\binary-i386\Packages.gz. */
                 if (!pBlock2File)
                 {
                     rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
