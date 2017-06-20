@@ -338,6 +338,7 @@ static void paContextCbStateChanged(pa_context *pCtx, void *pvUser)
             break;
 
         default:
+            LogRel(("paContextCbStateChanged: ignoring new state %d\n", pa_context_get_state(pCtx)));
             break;
     }
 }
@@ -1063,7 +1064,7 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
     bool fLog = (fEnum & PULSEAUDIOENUMCBFLAGS_LOG);
 
     LogRel(("PulseAudio: starting server enumeration\n")); /** @todo remove */
-    int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &cbCtx), true);
+    int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &cbCtx));
     LogRel(("PulseAudio: done server enumeration (rc=%Rrc)\n", rc));
     if (RT_SUCCESS(rc))
     {
@@ -1074,7 +1075,7 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
 
             LogRel(("PulseAudio: starting output sink enumeration\n")); /** @todo remove */
             rc = paWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, cbCtx.pszDefaultSink,
-                                                                   paEnumSinkCb, &cbCtx), true);
+                                                                   paEnumSinkCb, &cbCtx));
             LogRel(("PulseAudio: output sink enumeration done (rc=%Rrc)\n", rc)); /** @todo remove */
             if (   RT_FAILURE(rc)
                 && fLog)
