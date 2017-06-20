@@ -29,6 +29,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/time.h>
+#include <iprt/fs.h>
 
 
 RT_C_DECLS_BEGIN
@@ -279,6 +280,42 @@ RTDECL(int) RTFsIsoMakerAddUnnamedFileWithSrcPath(RTFSISOMAKER hIsoMaker, const 
  * @sa      RTFsIsoMakerAddUnnamedFileWithSrcPath, RTFsIsoMakerObjSetPath
  */
 RTDECL(int) RTFsIsoMakerAddUnnamedFileWithVfsFile(RTFSISOMAKER hIsoMaker, RTVFSFILE hVfsFileSrc, uint32_t *pidxObj);
+
+/**
+ * Adds an unnamed file to the image that's backed by a portion of a common
+ * source file.
+ *
+ * The file must explictly be entered into the desired namespaces.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxCommonSrc        The common source file index.
+ * @param   offData             The offset of the data in the source file.
+ * @param   cbData              The file size.
+ * @param   pObjInfo            Pointer to file info.  Optional.
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ * @sa      RTFsIsoMakerAddUnnamedFileWithSrcPath, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedFileWithCommonSrc(RTFSISOMAKER hIsoMaker, uint32_t idxCommonSrc,
+                                                    uint64_t offData, uint64_t cbData, PCRTFSOBJINFO pObjInfo, uint32_t *pidxObj);
+
+/**
+ * Adds a common source file.
+ *
+ * Using RTFsIsoMakerAddUnnamedFileWithCommonSrc a sections common source file
+ * can be referenced to make up other files.  The typical use case is when
+ * importing data from an existing ISO.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   hVfsFile            VFS handle of the common source.  (A reference
+ *                              is added, none consumed.)
+ * @param   pidxCommonSrc       Where to return the assigned common source
+ *                              index.  This is used to reference the file.
+ * @sa      RTFsIsoMakerAddUnnamedFileWithCommonSrc
+ */
+RTDECL(int) RTFsIsoMakerAddCommonSourceFile(RTFSISOMAKER hIsoMaker, RTVFSFILE hVfsFile, uint32_t *pidxCommonSrc);
 
 /**
  * Adds a file that's backed by a host file to the image in all namespaces and

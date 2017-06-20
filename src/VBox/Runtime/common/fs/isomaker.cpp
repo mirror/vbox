@@ -356,6 +356,7 @@ typedef enum RTFSISOMAKERSRCTYPE
     RTFSISOMAKERSRCTYPE_INVALID = 0,
     RTFSISOMAKERSRCTYPE_PATH,
     RTFSISOMAKERSRCTYPE_VFS_FILE,
+    RTFSISOMAKERSRCTYPE_COMMON,
     RTFSISOMAKERSRCTYPE_TRANS_TBL,
     RTFSISOMAKERSRCTYPE_END
 } RTFSISOMAKERSRCTYPE;
@@ -383,6 +384,14 @@ typedef struct RTFSISOMAKERFILE
         const char         *pszSrcPath;
         /** Source VFS file. */
         RTVFSFILE           hVfsFile;
+        /** Source is a part of a common VFS file. */
+        struct
+        {
+            /** The offset into the file */
+            uint64_t        offData;
+            /** The index of the common file. */
+            uint32_t        idxSrc;
+        } Common;
         /** The directory the translation table belongs to. */
         PRTFSISOMAKERNAME   pTransTblDir;
     } u;
@@ -463,6 +472,11 @@ typedef struct RTFSISOMAKERINT
     RTFMODE                 fDefaultFileMode;
     /** The default file mode mask. */
     RTFMODE                 fDefaultDirMode;
+
+    /** Number of common source files. */
+    uint32_t                cCommonSources;
+    /** Array of common source file handles. */
+    PRTVFSFILE              paCommonSources;
 
     /** @name Boot related stuff
      * @{ */
@@ -765,6 +779,9 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         pThis->fDefaultFileMode             = 0444 | RTFS_TYPE_FILE      | RTFS_DOS_ARCHIVED  | RTFS_DOS_READONLY;
         pThis->fDefaultDirMode              = 0555 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | RTFS_DOS_READONLY;
 
+        //pThis->cCommonSources             = 0;
+        //pThis->paCommonSources            = NULL;
+
         //pThis->pBootCatFile               = NULL;
 
         pThis->cbFinalizedImage             = UINT64_MAX;
@@ -838,6 +855,9 @@ DECLINLINE(void) rtFsIsoMakerObjDestroy(PRTFSISOMAKEROBJ pObj)
             case RTFSISOMAKERSRCTYPE_VFS_FILE:
                 RTVfsFileRelease(pFile->u.hVfsFile);
                 pFile->u.hVfsFile = NIL_RTVFSFILE;
+                break;
+
+            case RTFSISOMAKERSRCTYPE_COMMON:
                 break;
 
             case RTFSISOMAKERSRCTYPE_INVALID:
@@ -1015,6 +1035,15 @@ static void rtFsIsoMakerDestroy(PRTFSISOMAKERINT pThis)
         RTListNodeRemove(&pCur->Entry);
         rtFsIsoMakerObjDestroy(pCur);
     }
+
+    if (pThis->paCommonSources)
+    {
+        RTMemFree(pThis->paCommonSources);
+        pThis->paCommonSources = NULL;
+    }
+
+    pThis->uMagic = ~RTFSISOMAKERINT_MAGIC;
+    RTMemFree(pThis);
 }
 
 
@@ -2507,7 +2536,8 @@ RTDECL(int) RTFsIsoMakerObjEnableBootInfoTablePatching(RTFSISOMAKER hIsoMaker, u
     AssertReturn(pObj->enmType == RTFSISOMAKEROBJTYPE_FILE, VERR_WRONG_TYPE);
     PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
     AssertReturn(   pFile->enmSrcType == RTFSISOMAKERSRCTYPE_PATH
-                 || pFile->enmSrcType == RTFSISOMAKERSRCTYPE_VFS_FILE,
+                 || pFile->enmSrcType == RTFSISOMAKERSRCTYPE_VFS_FILE
+                 || pFile->enmSrcType == RTFSISOMAKERSRCTYPE_COMMON,
                  VERR_WRONG_TYPE);
 
     /*
@@ -2724,6 +2754,7 @@ static int rtFsIsoMakerAddUnnamedFileWorker(PRTFSISOMAKERINT pThis, PCRTFSOBJINF
         pFile->offData      = UINT64_MAX;
         pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_INVALID;
         pFile->u.pszSrcPath = NULL;
+        pFile->pBootInfoTable = NULL;
         RTListInit(&pFile->FinalizedEntry);
 
         *ppFile = pFile;
@@ -2772,9 +2803,8 @@ RTDECL(int) RTFsIsoMakerAddUnnamedFileWithSrcPath(RTFSISOMAKER hIsoMaker, const 
     rc = rtFsIsoMakerAddUnnamedFileWorker(pThis, &ObjInfo, cbSrcFile, &pFile);
     if (RT_SUCCESS(rc))
     {
-        pFile->enmSrcType     = RTFSISOMAKERSRCTYPE_PATH;
-        pFile->u.pszSrcPath   = (char *)memcpy(pFile + 1, pszSrcFile, cbSrcFile);
-        pFile->pBootInfoTable = NULL;
+        pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_PATH;
+        pFile->u.pszSrcPath = (char *)memcpy(pFile + 1, pszSrcFile, cbSrcFile);
 
         *pidxObj = pFile->Core.idxObj;
     }
@@ -2822,15 +2852,140 @@ RTDECL(int) RTFsIsoMakerAddUnnamedFileWithVfsFile(RTFSISOMAKER hIsoMaker, RTVFSF
     rc = rtFsIsoMakerAddUnnamedFileWorker(pThis, &ObjInfo, 0, &pFile);
     if (RT_SUCCESS(rc))
     {
-        pFile->enmSrcType     = RTFSISOMAKERSRCTYPE_VFS_FILE;
-        pFile->u.hVfsFile     = hVfsFileSrc;
-        pFile->pBootInfoTable = NULL;
+        pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_VFS_FILE;
+        pFile->u.hVfsFile   = hVfsFileSrc;
 
         *pidxObj = pFile->Core.idxObj;
     }
     else
         RTVfsFileRelease(hVfsFileSrc);
     return rc;
+}
+
+
+/**
+ * Adds an unnamed file to the image that's backed by a portion of a common
+ * source file.
+ *
+ * The file must explictly be entered into the desired namespaces.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxCommonSrc        The common source file index.
+ * @param   offData             The offset of the data in the source file.
+ * @param   cbData              The file size.
+ * @param   pObjInfo            Pointer to file info.  Optional.
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ * @sa      RTFsIsoMakerAddUnnamedFileWithSrcPath, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedFileWithCommonSrc(RTFSISOMAKER hIsoMaker, uint32_t idxCommonSrc,
+                                                    uint64_t offData, uint64_t cbData, PCRTFSOBJINFO pObjInfo, uint32_t *pidxObj)
+{
+    /*
+     * Validate and fake input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pidxObj, VERR_INVALID_POINTER);
+    *pidxObj = UINT32_MAX;
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+    AssertReturn(idxCommonSrc < pThis->cCommonSources, VERR_INVALID_PARAMETER);
+    AssertReturn(offData < (uint64_t)RTFOFF_MAX, VERR_OUT_OF_RANGE);
+    AssertReturn(cbData < (uint64_t)RTFOFF_MAX, VERR_OUT_OF_RANGE);
+    AssertReturn(offData + cbData < (uint64_t)RTFOFF_MAX, VERR_OUT_OF_RANGE);
+    RTFSOBJINFO ObjInfo;
+    if (!pObjInfo)
+    {
+        ObjInfo.cbObject            = cbData;
+        ObjInfo.cbAllocated         = cbData;
+        ObjInfo.BirthTime           = pThis->ImageCreationTime;
+        ObjInfo.ChangeTime          = pThis->ImageCreationTime;
+        ObjInfo.ModificationTime    = pThis->ImageCreationTime;
+        ObjInfo.AccessTime          = pThis->ImageCreationTime;
+        ObjInfo.Attr.fMode          = pThis->fDefaultFileMode;
+        ObjInfo.Attr.enmAdditional  = RTFSOBJATTRADD_UNIX;
+        ObjInfo.Attr.u.Unix.uid             = NIL_RTUID;
+        ObjInfo.Attr.u.Unix.gid             = NIL_RTGID;
+        ObjInfo.Attr.u.Unix.cHardlinks      = 1;
+        ObjInfo.Attr.u.Unix.INodeIdDevice   = 0;
+        ObjInfo.Attr.u.Unix.INodeId         = 0;
+        ObjInfo.Attr.u.Unix.fFlags          = 0;
+        ObjInfo.Attr.u.Unix.GenerationId    = 0;
+        ObjInfo.Attr.u.Unix.Device          = 0;
+    }
+    else
+    {
+        AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
+        AssertReturn(pObjInfo->Attr.enmAdditional == RTFSOBJATTRADD_UNIX, VERR_WRONG_TYPE);
+        AssertReturn((uint64_t)pObjInfo->cbObject == cbData, VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Create a file object for it.
+     */
+    PRTFSISOMAKERFILE pFile;
+    int rc = rtFsIsoMakerAddUnnamedFileWorker(pThis, pObjInfo, 0, &pFile);
+    if (RT_SUCCESS(rc))
+    {
+        pFile->enmSrcType       = RTFSISOMAKERSRCTYPE_COMMON;
+        pFile->u.Common.idxSrc  = idxCommonSrc;
+        pFile->u.Common.offData = offData;
+
+        *pidxObj = pFile->Core.idxObj;
+    }
+    return rc;
+}
+
+
+/**
+ * Adds a common source file.
+ *
+ * Using RTFsIsoMakerAddUnnamedFileWithCommonSrc a sections common source file
+ * can be referenced to make up other files.  The typical use case is when
+ * importing data from an existing ISO.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   hVfsFile            VFS handle of the common source.  (A reference
+ *                              is added, none consumed.)
+ * @param   pidxCommonSrc       Where to return the assigned common source
+ *                              index.  This is used to reference the file.
+ * @sa      RTFsIsoMakerAddUnnamedFileWithCommonSrc
+ */
+RTDECL(int) RTFsIsoMakerAddCommonSourceFile(RTFSISOMAKER hIsoMaker, RTVFSFILE hVfsFile, uint32_t *pidxCommonSrc)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pidxCommonSrc, VERR_INVALID_POINTER);
+    *pidxCommonSrc = UINT32_MAX;
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    /*
+     * Resize the common source array if necessary.
+     */
+    if ((pThis->cCommonSources & 15) == 0)
+    {
+        void *pvNew = RTMemRealloc(pThis->paCommonSources, (pThis->cCommonSources + 16) * sizeof(pThis->paCommonSources[0]));
+        AssertReturn(pvNew, VERR_NO_MEMORY);
+        pThis->paCommonSources = (PRTVFSFILE)pvNew;
+    }
+
+    /*
+     * Retain a reference to the source file, thereby validating the handle.
+     * Then add it to the array.
+     */
+    uint32_t cRefs = RTVfsFileRetain(hVfsFile);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
+    uint32_t idx = pThis->cCommonSources++;
+    pThis->paCommonSources[idx] = hVfsFile;
+
+    *pidxCommonSrc = idx;
+    return VINF_SUCCESS;
 }
 
 
@@ -2944,7 +3099,6 @@ static int rtFsIsoMakerEnsureBootCatFile(PRTFSISOMAKERINT pThis)
         {
             pFile->enmSrcType       = RTFSISOMAKERSRCTYPE_VFS_FILE;
             pFile->u.hVfsFile       = hVfsFile;
-            pFile->pBootInfoTable   = NULL;
             pFile->Core.cNotOrphan  = 1;
 
             /* Save file pointer and allocate a volume descriptor. */
@@ -3672,15 +3826,23 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
                  */
                 int rc;
                 RTVFSFILE hVfsFile;
+                uint64_t  offBase;
                 switch (pCurFile->enmSrcType)
                 {
                     case RTFSISOMAKERSRCTYPE_PATH:
                         rc = RTVfsChainOpenFile(pCurFile->u.pszSrcPath, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
                                                 &hVfsFile, NULL, NULL);
                         AssertMsgRCReturn(rc, ("%s -> %Rrc\n", pCurFile->u.pszSrcPath, rc), rc);
+                        offBase = 0;
                         break;
                     case RTFSISOMAKERSRCTYPE_VFS_FILE:
                         hVfsFile = pCurFile->u.hVfsFile;
+                        offBase = 0;
+                        rc = VINF_SUCCESS;
+                        break;
+                    case RTFSISOMAKERSRCTYPE_COMMON:
+                        hVfsFile = pThis->paCommonSources[pCurFile->u.Common.idxSrc];
+                        offBase  = pCurFile->u.Common.offData;
                         rc = VINF_SUCCESS;
                         break;
                     default:
@@ -3700,7 +3862,7 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
                     uint32_t cbRead = RT_MIN(sizeof(uBuf), cbLeft);
                     if (cbRead & 3)
                         RT_ZERO(uBuf);
-                    rc = RTVfsFileReadAt(hVfsFile, off, &uBuf, cbRead, NULL);
+                    rc = RTVfsFileReadAt(hVfsFile, offBase + off, &uBuf, cbRead, NULL);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -4397,6 +4559,12 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
 
             case RTFSISOMAKERSRCTYPE_VFS_FILE:
                 rc = RTVfsFileReadAt(pFile->u.hVfsFile, offInFile, pbBuf, cbToRead, NULL);
+                AssertRC(rc);
+                break;
+
+            case RTFSISOMAKERSRCTYPE_COMMON:
+                rc = RTVfsFileReadAt(pIsoMaker->paCommonSources[pFile->u.Common.idxSrc],
+                                     pFile->u.Common.offData + offInFile, pbBuf, cbToRead, NULL);
                 AssertRC(rc);
                 break;
 
