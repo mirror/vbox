@@ -5480,41 +5480,43 @@ static void hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream, bool fInTimer)
 
     if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
     {
-        /* Is the sink ready to be written (guest output data) to? If so, by how much? */
-        const uint32_t cbWritable = AudioMixerSinkGetWritable(pSink);
+        /* Is the HDA stream ready to be written (guest output data) to? If so, by how much? */
+        const uint32_t cbFree = hdaStreamGetFree(pStream);
 
         if (   fInTimer
-            && cbWritable)
+            && cbFree)
         {
-            Log3Func(("[SD%RU8] cbWritable=%RU32\n", pStream->u8SD, cbWritable));
+            Log3Func(("[SD%RU8] cbFree=%RU32\n", pStream->u8SD, cbFree));
 
-            /* When running synchronously, do the DMA data transfers here.
-             * Otherwise this will be done in the device timer. */
-            rc2 = hdaStreamTransfer(pThis, pStream, cbWritable);
+            /* Do the DMA transfer. */
+            rc2 = hdaStreamTransfer(pThis, pStream, cbFree);
             AssertRC(rc2);
-
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-            rc2 = hdaStreamAsyncIONotify(pThis, pStream);
-            AssertRC(rc2);
-#endif
         }
 
+        /* How much (guest output) data is available at the moment for the HDA stream? */
+        uint32_t cbUsed = hdaStreamGetUsed(pStream);
+
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-        if (!fInTimer)
+        if (   fInTimer
+            && cbUsed)
+        {
+            rc2 = hdaStreamAsyncIONotify(pThis, pStream);
+            AssertRC(rc2);
+        }
+        else
         {
 #endif
-            /* How much (guest output) data is available at the moment? */
-            uint32_t cbAvailable = hdaStreamGetUsed(pStream);
+            const uint32_t cbSinkWritable = AudioMixerSinkGetWritable(pSink);
 
             /* Do not write more than the sink can hold at the moment.
              * The host sets the overall pace. */
-            if (cbAvailable > cbWritable)
-                cbAvailable = cbWritable;
+            if (cbUsed > cbSinkWritable)
+                cbUsed = cbSinkWritable;
 
-            if (cbAvailable)
+            if (cbUsed)
             {
                 /* Read (guest output) data and write it to the stream's sink. */
-                rc2 = hdaStreamRead(pThis, pStream, cbAvailable, NULL /* pcbRead */);
+                rc2 = hdaStreamRead(pThis, pStream, cbUsed, NULL /* pcbRead */);
                 AssertRC(rc2);
             }
 
