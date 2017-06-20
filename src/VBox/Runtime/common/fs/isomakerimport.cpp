@@ -66,6 +66,10 @@ typedef struct RTFSISOMKIMPBLOCK2FILE
     AVLU32NODECORE          Core;
     /** The configuration index of the file. */
     uint32_t                idxObj;
+    /** Namespaces the file has been seen in already (RTFSISOMAKER_NAMESPACE_XXX). */
+    uint32_t                fNamespaces;
+    /** Pointer to the next file with the same block number. */
+    struct RTFSISOMKIMPBLOCK2FILE *pNext;
 } RTFSISOMKIMPBLOCK2FILE;
 /** Pointer to a block-2-file translation node. */
 typedef RTFSISOMKIMPBLOCK2FILE *PRTFSISOMKIMPBLOCK2FILE;
@@ -276,8 +280,192 @@ static int rtFsIsoImpError(PRTFSISOMKIMPORTER pThis, int rc, const char *pszForm
  */
 static DECLCALLBACK(int) rtFsIsoMakerImportDestroyData2File(PAVLU32NODECORE pNode, void *pvUser)
 {
+    PRTFSISOMKIMPBLOCK2FILE pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)pNode;
+    if (pBlock2File)
+    {
+        PRTFSISOMKIMPBLOCK2FILE pNext;
+        while ((pNext = pBlock2File->pNext) != NULL)
+        {
+            pBlock2File->pNext = pNext->pNext;
+            pNext->pNext = NULL;
+            RTMemFree(pNext);
+        }
+        RTMemFree(pNode);
+    }
+
     RT_NOREF(pvUser);
-    RTMemFree(pNode);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Adds a directory and names it given its ISO-9660 directory record and parent.
+ *
+ * @returns IPRT status code (safe to ignore).
+ * @param   pThis               The importer instance.
+ * @param   pDirRec             The directory record.
+ * @param   fNamespace          The namespace flag.
+ * @param   idxParent           Parent directory.
+ * @param   pszName             The name.
+ * @param   cDepth              The depth to add it with.
+ * @param   pTodoList           The todo list (for directories).
+ */
+static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec,
+                                                          uint32_t fNamespace, uint32_t idxParent, const char *pszName,
+                                                          uint8_t cDepth, PRTLISTANCHOR pTodoList)
+{
+    Assert(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY);
+    uint32_t idxObj;
+    int rc = RTFsIsoMakerAddUnnamedDir(pThis->hIsoMaker, &idxObj);
+    if (RT_SUCCESS(rc))
+    {
+        Log3(("  --> added directory #%#x\n", idxObj));
+        pThis->pResults->cAddedDirs++;
+
+        /*
+         * Enter the object into the namespace.
+         */
+        rc = RTFsIsoMakerObjSetNameAndParent(pThis->hIsoMaker, idxObj, idxParent, fNamespace, pszName);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pResults->cAddedNames++;
+
+            /*
+             * Push it onto the traversal stack.
+             */
+            PRTFSISOMKIMPDIR pImpDir = (PRTFSISOMKIMPDIR)RTMemAlloc(sizeof(*pImpDir));
+            if (pImpDir)
+            {
+                pImpDir->cbDir       = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+                pImpDir->offDirBlock = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
+                pImpDir->idxObj      = idxObj;
+                pImpDir->cDepth      = cDepth;
+                RTListAppend(pTodoList, &pImpDir->Entry);
+            }
+            else
+                rc = rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPDIR");
+        }
+        else
+            rc = rtFsIsoImpError(pThis, rc, "Error naming directory '%s'", pszName);
+    }
+    else
+        rc = rtFsIsoImpError(pThis, rc, "Error adding directory '%s': %Rrc", pszName, pDirRec->fFileFlags, rc);
+    return rc;
+}
+
+
+/**
+ * Adds a file and names it given its ISO-9660 directory record and parent.
+ *
+ * @returns IPRT status code (safe to ignore).
+ * @param   pThis               The importer instance.
+ * @param   pDirRec             The directory record.
+ * @param   fNamespace          The namespace flag.
+ * @param   idxParent           Parent directory.
+ * @param   pszName             The name.
+ */
+static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec,
+                                                     uint32_t fNamespace, uint32_t idxParent, const char *pszName)
+{
+    int rc;
+
+    /*
+     * First we must make sure the common source file has been added.
+     */
+    if (pThis->idxSrcFile != UINT32_MAX)
+    { /* likely */ }
+    else
+    {
+        rc = RTFsIsoMakerAddCommonSourceFile(pThis->hIsoMaker, pThis->hSrcFile, &pThis->idxSrcFile);
+        if (RT_FAILURE(rc))
+            return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerAddCommonSourceFile failed: %Rrc", rc);
+        Assert(pThis->idxSrcFile != UINT32_MAX);
+    }
+
+    /*
+     * Lookup the data block if the file has a non-zero length.   The aim is to
+     * find files across namespaces while bearing in mind that files in the same
+     * namespace may share data storage, i.e. what in a traditional unix file
+     * system would be called hardlinked.  Problem is that the core engine doesn't
+     * do hardlinking yet and assume each file has exactly one name per namespace.
+     */
+    uint32_t                idxObj          = UINT32_MAX;
+    PRTFSISOMKIMPBLOCK2FILE pBlock2File     = NULL;
+    PRTFSISOMKIMPBLOCK2FILE pBlock2FilePrev = NULL;
+    if (ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0) /* no data tracking for zero byte files */
+    {
+        pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
+        if (pBlock2File)
+        {
+            if (!(pBlock2File->fNamespaces & fNamespace))
+            {
+                pBlock2File->fNamespaces |= fNamespace;
+                idxObj = pBlock2File->idxObj;
+            }
+            else
+            {
+                do
+                {
+                    pBlock2FilePrev = pBlock2File;
+                    pBlock2File = pBlock2File->pNext;
+                } while (pBlock2File && (pBlock2File->fNamespaces & fNamespace));
+                if (pBlock2File)
+                {
+                    pBlock2File->fNamespaces |= fNamespace;
+                    idxObj = pBlock2File->idxObj;
+                }
+            }
+        }
+    }
+
+    /*
+     * If the above lookup didn't succeed, add a new file with a lookup record.
+     */
+    if (idxObj == UINT32_MAX)
+    {
+        rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
+                                                     ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)ISO9660_SECTOR_SIZE,
+                                                     ISO9660_GET_ENDIAN(&pDirRec->cbData), NULL /*pObjInfo*/, &idxObj);
+        if (RT_FAILURE(rc))
+            return rtFsIsoImpError(pThis, rc, "Error adding file '%s': %Rrc", pszName, rc);
+        Assert(idxObj != UINT32_MAX);
+
+        /* Update statistics. */
+        pThis->pResults->cAddedFiles++;
+        if (ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0)
+        {
+            pThis->pResults->cbAddedDataBlocks += RT_ALIGN_32(ISO9660_GET_ENDIAN(&pDirRec->cbData), ISO9660_SECTOR_SIZE);
+
+            /* Lookup record. */
+            pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTMemAlloc(sizeof(*pBlock2File));
+            AssertReturn(pBlock2File, rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPBLOCK2FILE"));
+
+            pBlock2File->idxObj      = idxObj;
+            pBlock2File->Core.Key    = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
+            pBlock2File->fNamespaces = fNamespace;
+            pBlock2File->pNext       = NULL;
+            if (!pBlock2FilePrev)
+            {
+                bool fRc = RTAvlU32Insert(&pThis->Block2FileRoot, &pBlock2File->Core);
+                Assert(fRc); RT_NOREF(fRc);
+            }
+            else
+            {
+                pBlock2FilePrev->pNext = pBlock2File;
+                pBlock2FilePrev->Core.pLeft  = NULL;
+                pBlock2FilePrev->Core.pRight = NULL;
+            }
+        }
+    }
+
+    /*
+     * Enter the object into the namespace.
+     */
+    rc = RTFsIsoMakerObjSetNameAndParent(pThis->hIsoMaker, idxObj, idxParent, fNamespace, pszName);
+    if (RT_SUCCESS(rc))
+        pThis->pResults->cAddedNames++;
+    else
+        return rtFsIsoImpError(pThis, rc, "Error adding directory '%s': %Rrc", pszName, pDirRec->fFileFlags, rc);
     return VINF_SUCCESS;
 }
 
@@ -403,6 +591,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
      */
     Log3(("rtFsIsoImportProcessIso9660TreeWorker: Starting at @%#RX64 LB %#RX32 (out of %#RX32) in %#x\n",
           off - cbChunk, cbChunk, cbChunk + cbDir, idxDir));
+    const uint32_t fNamespace = fUnicode ? RTFSISOMAKER_NAMESPACE_JOLIET : RTFSISOMAKER_NAMESPACE_ISO_9660;
     while (cbChunk > 0)
     {
         /*
@@ -521,101 +710,15 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             {
                 RT_NOREF(pbSys);
             }
+
             /*
              * Add the object.
              */
-            PRTFSISOMKIMPBLOCK2FILE pBlock2File = NULL;
-            uint32_t                idxObj      = UINT32_MAX;
             if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
-            {
-                rc = RTFsIsoMakerAddUnnamedDir(pThis->hIsoMaker, &idxObj);
-                Log3(("  --> added directory #%#x\n", idxObj));
-                if (RT_SUCCESS(rc))
-                    pThis->pResults->cAddedDirs++;
-            }
+                rtFsIsoImportProcessIso9660AddAndNameDirectory(pThis, pDirRec, fNamespace, idxDir,
+                                                               pThis->szNameBuf, cDepth + 1, pTodoList);
             else
-            {
-                /* Add the common source file if we haven't done that already. */
-                if (pThis->idxSrcFile != UINT32_MAX)
-                { /* likely */ }
-                else
-                {
-                    rc = RTFsIsoMakerAddCommonSourceFile(pThis->hIsoMaker, pThis->hSrcFile, &pThis->idxSrcFile);
-                    if (RT_FAILURE(rc))
-                        return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerAddCommonSourceFile failed: %Rrc", rc);
-                    Assert(pThis->idxSrcFile != UINT32_MAX);
-                }
-
-                if (ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0) /* no data tracking for zero byte files */
-                    pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
-/** @todo Check whether pBlock2File is already used in the current namespace as we don't
- * support hardlinking at present.  Seeing trouble with \dists\trusty\restricted\binary-i386\Packages.gz
- * on ubuntu-14.04.3-desktop-amd64.iso disappearing as it's probably identical
- * to g:\dists\trusty\main\binary-i386\Packages.gz. */
-                if (!pBlock2File)
-                {
-                    rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
-                                                                 ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)ISO9660_SECTOR_SIZE,
-                                                                 ISO9660_GET_ENDIAN(&pDirRec->cbData), NULL /*pObjInfo*/, &idxObj);
-                    Log3(("  --> added new file #%#x\n", idxObj));
-                    if (RT_SUCCESS(rc))
-                    {
-                        pThis->pResults->cAddedFiles++;
-                        pThis->pResults->cbAddedDataBlocks += RT_ALIGN_32(ISO9660_GET_ENDIAN(&pDirRec->cbData), ISO9660_SECTOR_SIZE);
-                    }
-                }
-                else
-                {
-                    idxObj = pBlock2File->idxObj;
-                    Log3(("  --> existing file #%#x'\n", idxObj));
-                    rc = VINF_SUCCESS;
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Enter the object into the namespace.
-                 */
-                rc = RTFsIsoMakerObjSetNameAndParent(pThis->hIsoMaker, idxObj, idxDir,
-                                                     !fUnicode ? RTFSISOMAKER_NAMESPACE_ISO_9660 : RTFSISOMAKER_NAMESPACE_JOLIET,
-                                                     pThis->szNameBuf);
-                if (RT_SUCCESS(rc))
-                {
-                    pThis->pResults->cAddedNames++;
-
-                    /*
-                     * Remember the data location if this is a file, if it's a
-                     * directory push it onto the traversal stack.
-                     */
-                    if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
-                    {
-                        PRTFSISOMKIMPDIR pImpDir = (PRTFSISOMKIMPDIR)RTMemAlloc(sizeof(*pImpDir));
-                        AssertReturn(pImpDir, rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPDIR"));
-                        pImpDir->cbDir       = ISO9660_GET_ENDIAN(&pDirRec->cbData);
-                        pImpDir->offDirBlock = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
-                        pImpDir->idxObj      = idxObj;
-                        pImpDir->cDepth      = cDepth + 1;
-                        RTListAppend(pTodoList, &pImpDir->Entry);
-                    }
-                    else if (   !pBlock2File
-                             && ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0 /* no data tracking for zero byte files */)
-                    {
-                        pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTMemAlloc(sizeof(*pBlock2File));
-                        AssertReturn(pBlock2File, rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPBLOCK2FILE"));
-                        pBlock2File->idxObj   = idxObj;
-                        pBlock2File->Core.Key = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
-                        bool fRc = RTAvlU32Insert(&pThis->Block2FileRoot, &pBlock2File->Core);
-                        Assert(fRc); RT_NOREF(fRc);
-                    }
-                }
-                else
-                    rtFsIsoImpError(pThis, rc, "Invalid name at %#RX64: %.Rhxs",
-                                    off - cbChunk, pDirRec->bFileIdLength, pDirRec->achFileId);
-            }
-            else
-                rtFsIsoImpError(pThis, rc, "Error adding '%s' (fFileFlags=%#x): %Rrc",
-                                pThis->szNameBuf, pDirRec->fFileFlags, rc);
+                rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, fNamespace, idxDir, pThis->szNameBuf);
         }
         else
             rtFsIsoImpError(pThis, rc, "Invalid name at %#RX64: %.Rhxs",
