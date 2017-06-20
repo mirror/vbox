@@ -86,6 +86,8 @@ typedef struct DRVHOSTPULSEAUDIO
     pa_context           *pContext;
     /** Shutdown indicator. */
     volatile bool         fAbortLoop;
+    /** Abort wait loop during enumeration. */
+    volatile bool         fAbortEnumLoop;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO         IHostAudio;
     /** Error count for not flooding the release log.
@@ -185,13 +187,10 @@ static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvContext)
 static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
 {
     if (!pThis)
-    {
-//        LogRel(("DEBUG: paSignalWaiter return because of !pThis\n"));
         return;
-    }
 
-//    LogRel(("DEBUG: paSignalWaiter set fLoopWait=true and calling pa_threaded_mainloop_signal()\n"));
     pThis->fAbortLoop = true;
+    pThis->fAbortEnumLoop = true;
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
 
@@ -273,12 +272,13 @@ static int paPulseToAudioProps(pa_sample_format_t pulsefmt, PPDMAUDIOPCMPROPS pP
 /**
  * Synchronously wait until an operation completed.
  */
-static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL cMsTimeout, bool fDebug)
+static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL cMsTimeout)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pOP,   VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
+    pThis->fAbortEnumLoop = false;
 
     uint64_t u64StartMs = RTTimeMilliTS();
     while (pa_operation_get_state(pOP) == PA_OPERATION_RUNNING)
@@ -286,11 +286,9 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
         if (!pThis->fAbortLoop)
         {
             AssertPtr(pThis->pMainLoop);
-            if (fDebug)
-                LogRel(("calling pa_threaded_mainloop_wait\n"));
             pa_threaded_mainloop_wait(pThis->pMainLoop);
-            if (fDebug)
-                LogRel(("return from pa_threaded_mainloop_wait\n"));
+            if (pThis->fAbortEnumLoop)
+                break;
         }
         pThis->fAbortLoop = false;
 
@@ -300,7 +298,6 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
             rc = VERR_TIMEOUT;
             break;
         }
-//        LogRel(("DEBUG: paWaitForEx next turn (elapsed=%RU64ms)\n", u64ElapsedMs));
     }
 
     pa_operation_unref(pOP);
@@ -309,9 +306,9 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
 }
 
 
-static int paWaitFor(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, bool fDebug = false)
+static int paWaitFor(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP)
 {
-    return paWaitForEx(pThis, pOP, 10 * 1000 /* 10s timeout */, fDebug);
+    return paWaitForEx(pThis, pOP, 10 * 1000 /* 10s timeout */);
 }
 
 
@@ -329,16 +326,11 @@ static void paContextCbStateChanged(pa_context *pCtx, void *pvUser)
     {
         case PA_CONTEXT_READY:
         case PA_CONTEXT_TERMINATED:
-            paSignalWaiter(pThis);
-            break;
-
         case PA_CONTEXT_FAILED:
-            LogRel(("PulseAudio: Audio context has failed, stopping\n"));
             paSignalWaiter(pThis);
             break;
 
         default:
-            LogRel(("paContextCbStateChanged: ignoring new state %d\n", pa_context_get_state(pCtx)));
             break;
     }
 }
@@ -552,7 +544,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
 static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    LogRel(("drvHostPulseAudioInit\n"));
 
     PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
 
@@ -654,7 +645,6 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         }
     }
 
-    LogRel(("drvHostPulseAudioInit done %Rrc\n", rc));
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -944,89 +934,74 @@ static int paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg)
 
 static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, void *pvUserData)
 {
-    LogRel(("DEBUG: paEnumSinkCb\n"));
-    if (eol != 0)
-    {
-        LogRel(("DEBUG: paEnumSinkCb return EOL=%d\n", eol));
+    if (eol > 0)
         return;
-    }
-    if (!pCtx)
-        LogRel(("DEBUG: paEnumSinkCb return because of !pCtx\n"));
-    AssertPtrReturnVoid(pCtx);
-    if (!pInfo)
-        LogRel(("DEBUG: paEnumSinkCb return because of !pInfo\n"));
-    AssertPtrReturnVoid(pInfo);
 
     PPULSEAUDIOENUMCBCTX pCbCtx = (PPULSEAUDIOENUMCBCTX)pvUserData;
-    if (!pCbCtx)
-        LogRel(("DEBUG: paEnumSinkCb return because of !pCbCtx\n"));
     AssertPtrReturnVoid(pCbCtx);
-    if (!pCbCtx->pDrv)
-        LogRel(("DEBUG: paEnumSinkCb return because of !pCbCtx->pDrv\n"));
-    AssertPtrReturnVoid(pCbCtx->pDrv);
+    PDRVHOSTPULSEAUDIO pThis = pCbCtx->pDrv;
+    AssertPtrReturnVoid(pThis);
+    if (eol < 0)
+    {
+        pThis->fAbortEnumLoop = true;
+        pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
+        return;
+    }
+
+    AssertPtrReturnVoid(pCtx);
+    AssertPtrReturnVoid(pInfo);
 
     LogRel2(("PulseAudio: Using output sink '%s'\n", pInfo->name));
 
     /** @todo Store sinks + channel mapping in callback context as soon as we have surround support. */
     pCbCtx->cDevOut++;
 
-    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSinkCb\n"));
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
 
 static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eol, void *pvUserData)
 {
-    if (eol != 0)
+    if (eol > 0)
+        return;
+
+    PPULSEAUDIOENUMCBCTX pCbCtx = (PPULSEAUDIOENUMCBCTX)pvUserData;
+    AssertPtrReturnVoid(pCbCtx);
+    PDRVHOSTPULSEAUDIO pThis = pCbCtx->pDrv;
+    AssertPtrReturnVoid(pThis);
+    if (eol < 0)
     {
-        LogRel(("DEBUG: paEnumSourceCb return EOL=%d\n", eol));
+        pThis->fAbortEnumLoop = true;
+        pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
         return;
     }
 
-    if (!pCtx)
-        LogRel(("DEBUG: paEnumSourceCb return because of !pCtx\n"));
     AssertPtrReturnVoid(pCtx);
-    if (!pInfo)
-        LogRel(("DEBUG: paEnumSourceCb return because of !pInfo\n"));
     AssertPtrReturnVoid(pInfo);
-
-    PPULSEAUDIOENUMCBCTX pCbCtx = (PPULSEAUDIOENUMCBCTX)pvUserData;
-    if (!pCbCtx)
-        LogRel(("DEBUG: paEnumSourceCb return because of !pCbCtx\n"));
-    AssertPtrReturnVoid(pCbCtx);
-    if (!pCbCtx->pDrv)
-        LogRel(("DEBUG: paEnumSourceCb return because of !pCbCtx->pDrv\n"));
-    AssertPtrReturnVoid(pCbCtx->pDrv);
 
     LogRel2(("PulseAudio: Using input source '%s'\n", pInfo->name));
 
     /** @todo Store sources + channel mapping in callback context as soon as we have surround support. */
     pCbCtx->cDevIn++;
 
-    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSourceCb\n"));
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
 
 static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *pvUserData)
 {
-    LogRel(("DEBUG: paEnumServerCb\n"));
-    if (!pCtx)
-        LogRel(("DEBUG: paEnumServerCb return because of !pCtx\n"));
     AssertPtrReturnVoid(pCtx);
-    if (!pInfo)
-        LogRel(("DEBUG: paEnumServerCb return because of !pInfo\n"));
-    AssertPtrReturnVoid(pInfo);
-
     PPULSEAUDIOENUMCBCTX pCbCtx = (PPULSEAUDIOENUMCBCTX)pvUserData;
-    if (!pCbCtx)
-        LogRel(("DEBUG: paEnumServerCb return because of !pCbCtx\n"));
     AssertPtrReturnVoid(pCbCtx);
-
-    PDRVHOSTPULSEAUDIO pThis    = pCbCtx->pDrv;
-    if (!pCbCtx->pDrv)
-        LogRel(("DEBUG: paEnumServerCb return because of !pCbCtx->pDrv\n"));
+    PDRVHOSTPULSEAUDIO pThis = pCbCtx->pDrv;
     AssertPtrReturnVoid(pThis);
+
+    if (!pInfo)
+    {
+        pThis->fAbortEnumLoop = true;
+        pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
+        return;
+    }
 
     if (pInfo->default_sink_name)
     {
@@ -1040,7 +1015,6 @@ static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *
         pCbCtx->pszDefaultSource = RTStrDup(pInfo->default_source_name);
     }
 
-    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumServerCb\n"));
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
 
@@ -1058,32 +1032,34 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
     Cfg.cMaxStreamsOut = UINT32_MAX;
     Cfg.cMaxStreamsIn  = UINT32_MAX;
 
-    PULSEAUDIOENUMCBCTX cbCtx;
-    RT_ZERO(cbCtx);
+    PULSEAUDIOENUMCBCTX CbCtx;
+    RT_ZERO(CbCtx);
 
-    cbCtx.pDrv   = pThis;
-    cbCtx.fFlags = fEnum;
+    CbCtx.pDrv   = pThis;
+    CbCtx.fFlags = fEnum;
 
     bool fLog = (fEnum & PULSEAUDIOENUMCBFLAGS_LOG);
 
-    LogRel(("PulseAudio: starting server enumeration\n")); /** @todo remove */
-    int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &cbCtx));
-    LogRel(("PulseAudio: done server enumeration (rc=%Rrc)\n", rc));
+    int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &CbCtx));
+    if (   RT_SUCCESS(rc)
+        && pThis->fAbortEnumLoop)
+        rc = VERR_AUDIO_BACKEND_INIT_FAILED; /* error code does not matter */
     if (RT_SUCCESS(rc))
     {
-        if (cbCtx.pszDefaultSink)
+        if (CbCtx.pszDefaultSink)
         {
             if (fLog)
-                LogRel2(("PulseAudio: Default output sink is '%s'\n", cbCtx.pszDefaultSink));
+                LogRel2(("PulseAudio: Default output sink is '%s'\n", CbCtx.pszDefaultSink));
 
-            LogRel(("PulseAudio: starting output sink enumeration\n")); /** @todo remove */
-            rc = paWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, cbCtx.pszDefaultSink,
-                                                                   paEnumSinkCb, &cbCtx));
-            LogRel(("PulseAudio: output sink enumeration done (rc=%Rrc)\n", rc)); /** @todo remove */
+            rc = paWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, CbCtx.pszDefaultSink,
+                                                                   paEnumSinkCb, &CbCtx));
+            if (   RT_SUCCESS(rc)
+                && pThis->fAbortEnumLoop)
+                rc = VERR_AUDIO_BACKEND_INIT_FAILED; /* error code does not matter */
             if (   RT_FAILURE(rc)
                 && fLog)
             {
-                LogRel(("PulseAudio: Error enumerating properties for default output sink '%s'\n", cbCtx.pszDefaultSink));
+                LogRel(("PulseAudio: Error enumerating properties for default output sink '%s'\n", CbCtx.pszDefaultSink));
             }
         }
         else if (fLog)
@@ -1091,19 +1067,17 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
 
         if (RT_SUCCESS(rc))
         {
-            if (cbCtx.pszDefaultSource)
+            if (CbCtx.pszDefaultSource)
             {
                 if (fLog)
-                    LogRel2(("PulseAudio: Default input source is '%s'\n", cbCtx.pszDefaultSource));
+                    LogRel2(("PulseAudio: Default input source is '%s'\n", CbCtx.pszDefaultSource));
 
-                LogRel(("PulseAudio: starting input sink enumeration\n"));
-                rc = paWaitFor(pThis, pa_context_get_source_info_by_name(pThis->pContext, cbCtx.pszDefaultSource,
-                                                                         paEnumSourceCb, &cbCtx));
-                LogRel(("PulseAudio: input sink enumeration done (rc=%Rrc)\n", rc));
+                rc = paWaitFor(pThis, pa_context_get_source_info_by_name(pThis->pContext, CbCtx.pszDefaultSource,
+                                                                         paEnumSourceCb, &CbCtx));
                 if (   RT_FAILURE(rc)
                     && fLog)
                 {
-                    LogRel(("PulseAudio: Error enumerating properties for default input source '%s'\n", cbCtx.pszDefaultSource));
+                    LogRel(("PulseAudio: Error enumerating properties for default input source '%s'\n", CbCtx.pszDefaultSource));
                 }
             }
             else if (fLog)
@@ -1114,24 +1088,24 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
         {
             if (fLog)
             {
-                LogRel2(("PulseAudio: Found %RU8 host playback device(s)\n",  cbCtx.cDevOut));
-                LogRel2(("PulseAudio: Found %RU8 host capturing device(s)\n", cbCtx.cDevIn));
+                LogRel2(("PulseAudio: Found %RU8 host playback device(s)\n",  CbCtx.cDevOut));
+                LogRel2(("PulseAudio: Found %RU8 host capturing device(s)\n", CbCtx.cDevIn));
             }
 
             if (pCfg)
                 memcpy(pCfg, &Cfg, sizeof(PDMAUDIOBACKENDCFG));
         }
 
-        if (cbCtx.pszDefaultSink)
+        if (CbCtx.pszDefaultSink)
         {
-            RTStrFree(cbCtx.pszDefaultSink);
-            cbCtx.pszDefaultSink = NULL;
+            RTStrFree(CbCtx.pszDefaultSink);
+            CbCtx.pszDefaultSink = NULL;
         }
 
-        if (cbCtx.pszDefaultSource)
+        if (CbCtx.pszDefaultSource)
         {
-            RTStrFree(cbCtx.pszDefaultSource);
-            cbCtx.pszDefaultSource = NULL;
+            RTStrFree(CbCtx.pszDefaultSource);
+            CbCtx.pszDefaultSource = NULL;
         }
     }
     else if (fLog)
@@ -1325,10 +1299,7 @@ static DECLCALLBACK(int) drvHostPulseAudioGetConfig(PPDMIHOSTAUDIO pInterface, P
 
     PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
 
-    LogRel(("drvHostPulseAudioGetConfig\n"));
-    int rc = paEnumerate(pThis, pBackendCfg, PULSEAUDIOENUMCBFLAGS_LOG /* fEnum */);
-    LogRel(("drvHostPulseAudioGetConfig done %Rrc\n", rc));
-    return rc;
+    return paEnumerate(pThis, pBackendCfg, PULSEAUDIOENUMCBFLAGS_LOG /* fEnum */);
 }
 
 
