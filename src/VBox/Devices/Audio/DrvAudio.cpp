@@ -939,18 +939,13 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
                   ("Writing to disabled guest output stream \"%s\" not possible (status is %s, host status %s)\n",
                    pGstStream->szName, pszGstSts, pszHstSts));
 #endif
-        pGstStream->Out.tsLastWriteMS = RTTimeMilliTS();
-
-        if (!AudioMixBufFreeBytes(&pGstStream->MixBuf))
-        {
-            LogRel2(("Audio: Guest stream '%s' full, expect stuttering audio output\n", pGstStream->szName));
-
-#ifdef DEBUG_andy
-            AssertMsgFailed(("[%s] Failed because guest stream full (guest status %s, host status %s): cbBuf=%RU32\n",
-                             pGstStream->szName, pszGstSts, pszHstSts, cbBuf));
-#endif
+        const uint32_t cbFree = AudioMixBufFreeBytes(&pGstStream->MixBuf);
+        if (!cbFree) /* No free guest side buffer space, bail out. */
             break;
-        }
+
+        /* Do not attempt to write more than the guest side currently can handle. */
+        if (cbBuf > cbFree)
+            cbBuf = cbFree;
 
         uint32_t csWritten = 0;
         rc = AudioMixBufWriteCirc(&pGstStream->MixBuf, pvBuf, cbBuf, &csWritten);
