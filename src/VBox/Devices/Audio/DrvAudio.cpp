@@ -1677,24 +1677,26 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream,
 
     for (;;)
     {
-        uint32_t csReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pHstStream->pvBackend);
-        if (!csReadable)
+        uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pHstStream->pvBackend);
+        if (!cbReadable) /* Nothing to read on the backend side? Bail out. */
             break;
 
-        uint32_t csFree = AudioMixBufFree(&pHstStream->MixBuf);
-        if (!csFree)
+        const uint32_t cbFree = AudioMixBufFreeBytes(&pHstStream->MixBuf);
+        if (!cbFree) /* No space left in the host stream? */
             break;
 
-        if (csFree < csReadable) /* More data captured than we can read? */
-        {
-            /** @todo Warn? */
-        }
+        if (cbReadable > cbFree) /* Don't capture more than the host stream currently can hold. */
+            cbReadable = cbFree;
 
         PPDMAUDIOSAMPLE paSamples;
         uint32_t csWritable;
-        rc = AudioMixBufPeekMutable(&pHstStream->MixBuf, csReadable, &paSamples, &csWritable);
-        if (RT_FAILURE(rc))
+        rc = AudioMixBufPeekMutable(&pHstStream->MixBuf, AUDIOMIXBUF_B2S(&pHstStream->MixBuf, cbReadable),
+                                    &paSamples, &csWritable);
+        if (   RT_FAILURE(rc)
+            || !csWritable)
+        {
             break;
+        }
 
         uint32_t csCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pHstStream->pvBackend,
