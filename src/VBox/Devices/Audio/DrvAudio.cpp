@@ -1556,6 +1556,14 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
     return rc;
 }
 
+/**
+ * Captures non-interleaved input from a host stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver instance.
+ * @param   pHstStream          Host stream to capture from.
+ * @param   pcsCaptured         Number of (host) audio samples captured. Optional.
+ */
 static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream, uint32_t *pcsCaptured)
 {
     AssertPtrReturn(pThis,      VERR_INVALID_POINTER);
@@ -1638,6 +1646,18 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
     return rc;
 }
 
+/**
+ * Captures raw input from a host stream.
+ * Raw input means that the backend directly operates on PDMAUDIOSAMPLE structs without
+ * no data layout processing done in between.
+ *
+ * Needed for e.g. the VRDP audio backend (in Main).
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver instance.
+ * @param   pHstStream          Host stream to capture from.
+ * @param   pcsCaptured         Number of (host) audio samples captured. Optional.
+ */
 static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream, uint32_t *pcsCaptured)
 {
     AssertPtrReturn(pThis,      VERR_INVALID_POINTER);
@@ -1785,13 +1805,20 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
 
         if (RT_SUCCESS(rc))
         {
+            Log3Func(("[%s] %RU32 samples captured, rc=%Rrc\n", pHstStream->szName, csCaptured, rc));
+
 #ifdef VBOX_WITH_STATISTICS
             STAM_COUNTER_ADD(&pThis->Stats.TotalSamplesIn,        csCaptured);
             STAM_COUNTER_ADD(&pHstStream->In.StatSamplesCaptured, csCaptured);
 #endif
         }
-        else
+        else if (RT_UNLIKELY(RT_FAILURE(rc)))
+        {
+#ifdef DEBUG_andy
+            AssertFailed();
+#endif
             LogRel2(("Audio: Capturing stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
+        }
 
     } while (0);
 
