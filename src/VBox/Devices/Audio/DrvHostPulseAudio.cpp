@@ -273,7 +273,7 @@ static int paPulseToAudioProps(pa_sample_format_t pulsefmt, PPDMAUDIOPCMPROPS pP
 /**
  * Synchronously wait until an operation completed.
  */
-static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL cMsTimeout)
+static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL cMsTimeout, bool fDebug)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pOP,   VERR_INVALID_POINTER);
@@ -286,7 +286,11 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
         if (!pThis->fAbortLoop)
         {
             AssertPtr(pThis->pMainLoop);
+            if (fDebug)
+                LogRel(("calling pa_threaded_mainloop_wait\n"));
             pa_threaded_mainloop_wait(pThis->pMainLoop);
+            if (fDebug)
+                LogRel(("return from pa_threaded_mainloop_wait\n"));
         }
         pThis->fAbortLoop = false;
 
@@ -305,9 +309,9 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
 }
 
 
-static int paWaitFor(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP)
+static int paWaitFor(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, bool fDebug = false)
 {
-    return paWaitForEx(pThis, pOP, 10 * 1000 /* 10s timeout */);
+    return paWaitForEx(pThis, pOP, 10 * 1000 /* 10s timeout */, fDebug);
 }
 
 
@@ -1059,7 +1063,7 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
     bool fLog = (fEnum & PULSEAUDIOENUMCBFLAGS_LOG);
 
     LogRel(("PulseAudio: starting server enumeration\n")); /** @todo remove */
-    int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &cbCtx));
+    int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &cbCtx), true);
     LogRel(("PulseAudio: done server enumeration (rc=%Rrc)\n", rc));
     if (RT_SUCCESS(rc))
     {
@@ -1070,7 +1074,7 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
 
             LogRel(("PulseAudio: starting output sink enumeration\n")); /** @todo remove */
             rc = paWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, cbCtx.pszDefaultSink,
-                                                                   paEnumSinkCb, &cbCtx));
+                                                                   paEnumSinkCb, &cbCtx), true);
             LogRel(("PulseAudio: output sink enumeration done (rc=%Rrc)\n", rc)); /** @todo remove */
             if (   RT_FAILURE(rc)
                 && fLog)
