@@ -326,7 +326,8 @@ static int rtFsIsoImportValidateDotDirRec(PRTFSISOMKIMPORTER pThis, PCISO9660DIR
 
 
 static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint32_t idxDir,
-                                                 uint32_t offDirBlock, uint32_t cbDir, uint8_t cDepth, bool fUnicode)
+                                                 uint32_t offDirBlock, uint32_t cbDir, uint8_t cDepth, bool fUnicode,
+                                                 PRTLISTANCHOR pTodoList)
 {
     /*
      * Restrict the depth to try avoid loops.
@@ -419,6 +420,8 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
          * Validate the directory record.  Give up if not valid since we're
          * likely to get error with subsequent record too.
          */
+        Log3(("pDirRec=%p @%#010RX64 cb=%#04x ff=%#04x off=%#010RX32 cb=%#010RX32 id=%.*Rhxs\n", pDirRec, off - cbChunk, pDirRec->cbDirRec, pDirRec->fFileFlags,
+              ISO9660_GET_ENDIAN(&pDirRec->offExtent), ISO9660_GET_ENDIAN(&pDirRec->cbData), pDirRec->bFileIdLength, pDirRec->achFileId));
         rc = rtFsIsoImportValidateDirRec(pThis, pDirRec, cbChunk);
         if (RT_FAILURE(rc))
             return rc;
@@ -462,12 +465,33 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             /*
              * Add the object and enter it into the namespace.
              */
-            uint32_t idxObj = UINT32_MAX;
+            PRTFSISOMKIMPBLOCK2FILE pBlock2File = NULL;
+            uint32_t                idxObj      = UINT32_MAX;
             if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
                 rc = RTFsIsoMakerAddUnnamedDir(pThis->hIsoMaker, &idxObj);
             else
             {
-                rc = VERR_NOT_IMPLEMENTED; /** @todo need new file add function  */
+                /* Add the common source file if we haven't done that already. */
+                if (pThis->idxSrcFile != UINT32_MAX)
+                { /* likely */ }
+                else
+                {
+                    rc = RTFsIsoMakerAddCommonSourceFile(pThis->hIsoMaker, pThis->hSrcFile, &pThis->idxSrcFile);
+                    if (RT_FAILURE(rc))
+                        return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerAddCommonSourceFile failed: %Rrc", rc);
+                    Assert(pThis->idxSrcFile != UINT32_MAX);
+                }
+
+                pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
+                if (!pBlock2File)
+                    rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
+                                                                 ISO9660_GET_ENDIAN(&pDirRec->offExtent) * ISO9660_SECTOR_SIZE,
+                                                                 ISO9660_GET_ENDIAN(&pDirRec->cbData), NULL /*pObjInfo*/, &idxObj);
+                else
+                {
+                    idxObj = pBlock2File->idxObj;
+                    rc = VINF_SUCCESS;
+                }
             }
             if (RT_SUCCESS(rc))
             {
@@ -480,15 +504,43 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                      * Remember the data location if this is a file, if it's a
                      * directory push it onto the traversal stack.
                      */
+                    if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
+                    {
+                        PRTFSISOMKIMPDIR pImpDir = (PRTFSISOMKIMPDIR)RTMemAlloc(sizeof(*pImpDir));
+                        AssertReturn(pImpDir, rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPDIR"));
+                        pImpDir->cbDir       = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+                        pImpDir->offDirBlock = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
+                        pImpDir->idxObj      = idxObj;
+                        pImpDir->cDepth      = cDepth + 1;
+                        RTListAppend(pTodoList, &pImpDir->Entry);
+                    }
+                    else if (!pBlock2File)
+                    {
+                        pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTMemAlloc(sizeof(*pBlock2File));
+                        AssertReturn(pBlock2File, rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPBLOCK2FILE"));
+                        pBlock2File->idxObj   = idxObj;
+                        pBlock2File->Core.Key = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
+                        bool fRc = RTAvlU32Insert(&pThis->Block2FileRoot, &pBlock2File->Core);
+                        Assert(fRc); RT_NOREF(fRc);
+                    }
                 }
                 else
                     rtFsIsoImpError(pThis, rc, "Invalid name at %#RX64: %.Rhxs",
                                     off - cbChunk, pDirRec->bFileIdLength, pDirRec->achFileId);
             }
+            else
+                rtFsIsoImpError(pThis, rc, "Error adding '%s' (fFileFlags=%#x): %Rrc",
+                                pThis->szNameBuf, pDirRec->fFileFlags, rc);
         }
         else
             rtFsIsoImpError(pThis, rc, "Invalid name at %#RX64: %.Rhxs",
                             off - cbChunk, pDirRec->bFileIdLength, pDirRec->achFileId);
+
+        /*
+         * Advance to the next directory record.
+         */
+        cbChunk -= pDirRec->cbDirRec;
+        pDirRec = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
     }
 
     return VINF_SUCCESS;
@@ -503,6 +555,7 @@ static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t of
     uint32_t idxDir = RTFsIsoMakerGetObjIdxForPath(pThis->hIsoMaker, RTFSISOMAKER_NAMESPACE_ISO_9660, "/");
     if (idxDir == UINT32_MAX)
     {
+        idxDir = RTFSISOMAKER_CFG_IDX_ROOT;
         int rc = RTFsIsoMakerObjSetPath(pThis->hIsoMaker, RTFSISOMAKER_CFG_IDX_ROOT, RTFSISOMAKER_NAMESPACE_ISO_9660, "/");
         if (RT_FAILURE(rc))
             return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerObjSetPath failed on root dir: %Rrc", rc);
@@ -518,7 +571,7 @@ static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t of
     RTListInit(&TodoList);
     for (;;)
     {
-        int rc2 = rtFsIsoImportProcessIso9660TreeWorker(pThis, idxDir, offDirBlock, cbDir, cDepth, fUnicode);
+        int rc2 = rtFsIsoImportProcessIso9660TreeWorker(pThis, idxDir, offDirBlock, cbDir, cDepth, fUnicode, &TodoList);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
 
@@ -699,11 +752,16 @@ static int rtFsIsoImportProcessElToritoDesc(PRTFSISOMKIMPORTER pThis, PISO9660BO
  * @returns IRPT status code.
  * @param   hIsoMaker           The ISO maker handle.
  * @param   pszIso              Path to the existing image to import / clone.
+ *                              This is fed to RTVfsChainOpenFile.
  * @param   fFlags              Reserved for the future, MBZ.
+ * @param   poffError           Where to return the position in @a pszIso
+ *                              causing trouble when opening it for reading.
+ *                              Optional.
  * @param   pErrInfo            Where to return additional error information.
  *                              Optional.
  */
-RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags, PRTERRINFO pErrInfo)
+RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags,
+                               uint32_t *poffError, PRTERRINFO pErrInfo)
 {
     /*
      * Validate input.
@@ -714,8 +772,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
      * Open the input file and start working on it.
      */
     RTVFSFILE hSrcFile;
-    uint32_t offError;
-    int rc = RTVfsChainOpenFile(pszIso, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hSrcFile, &offError, pErrInfo);
+    int rc = RTVfsChainOpenFile(pszIso, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hSrcFile, poffError, pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -94,6 +94,7 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,
     RTFSISOMAKERCMD_OPT_NAME_SETUP,
     RTFSISOMAKERCMD_OPT_NO_JOLIET,
+    RTFSISOMAKERCMD_OPT_IMPORT_ISO,
 
     RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,
     RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,
@@ -413,6 +414,8 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
     { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
     { "--no-joliet",                    RTFSISOMAKERCMD_OPT_NO_JOLIET,                      RTGETOPT_REQ_NOTHING },
+    { "--import-iso",                   RTFSISOMAKERCMD_OPT_IMPORT_ISO,                     RTGETOPT_REQ_STRING  },
+
     { "--eltorito-new-entry",           RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING },
     { "--eltorito-add-image",           RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,             RTGETOPT_REQ_NOTHING },
     { "--eltorito-floppy-12",           RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12,             RTGETOPT_REQ_NOTHING },
@@ -1385,6 +1388,28 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
 
 
 /**
+ * Deals with the --import-iso {iso-file-spec} options.
+ *
+ * @returns IPRT status code
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszIsoSpec          The ISO path specifier.
+ */
+static int rtFsIsoMakerCmdOptImportIso(PRTFSISOMAKERCMDOPTS pOpts, const char *pszIsoSpec)
+{
+    uint32_t        offError = UINT32_MAX;
+    RTERRINFOSTATIC ErrInfo;
+    int rc = RTFsIsoMakerImport(pOpts->hIsoMaker, pszIsoSpec, 0 /*fFlags*/, &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
+        return rc;
+    if (offError != UINT32_MAX)
+        return rtFsIsoMakerCmdChainError(pOpts, "RTFsIsoMakerImport", pszIsoSpec, rc, offError, &ErrInfo.Core);
+    if (RTErrInfoIsSet(&ErrInfo.Core))
+        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerImport failed: %Rrc - %s", rc, ErrInfo.Core.pszMsg);
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerImport failed: %Rrc", rc);
+}
+
+
+/**
  * Deals with: -G|--generic-boot {file}
  *
  * This concers content the first 16 sectors of the image.  We start loading the
@@ -1948,6 +1973,10 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
 
             case RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER:
                 /* ignored */
+                break;
+
+            case RTFSISOMAKERCMD_OPT_IMPORT_ISO:
+                rc = rtFsIsoMakerCmdOptImportIso(&Opts, ValueUnion.psz);
                 break;
 
             /*

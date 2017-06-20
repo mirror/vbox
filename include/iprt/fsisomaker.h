@@ -405,11 +405,16 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uin
  * @returns IRPT status code.
  * @param   hIsoMaker           The ISO maker handle.
  * @param   pszIso              Path to the existing image to import / clone.
+ *                              This is fed to RTVfsChainOpenFile.
  * @param   fFlags              Reserved for the future, MBZ.
+ * @param   poffError           Where to return the position in @a pszIso
+ *                              causing trouble when opening it for reading.
+ *                              Optional.
  * @param   pErrInfo            Where to return additional error information.
  *                              Optional.
  */
-RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags, PRTERRINFO pErrInfo);
+RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint32_t fFlags,
+                               uint32_t *poffError, PRTERRINFO pErrInfo);
 
 /** @name RTFSISOMK_IMPORT_F_XXX - Flags for RTFsIsoMakerImport.
  * @{ */
