@@ -947,7 +947,7 @@ static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, v
     LogRel(("DEBUG: paEnumSinkCb\n"));
     if (eol != 0)
     {
-//        LogRel(("DEBUG: paEnumSinkCb return EOL=1\n"));
+        LogRel(("DEBUG: paEnumSinkCb return EOL!=0\n"));
         return;
     }
     if (!pCtx)
@@ -978,7 +978,10 @@ static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, v
 static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eol, void *pvUserData)
 {
     if (eol != 0)
+    {
+        LogRel(("DEBUG: paEnumSourceCb return EOL!=0\n"));
         return;
+    }
 
     if (!pCtx)
         LogRel(("DEBUG: paEnumSourceCb return because of !pCtx\n"));
