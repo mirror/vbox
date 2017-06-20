@@ -522,7 +522,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                 RT_NOREF(pbSys);
             }
             /*
-             * Add the object and enter it into the namespace.
+             * Add the object.
              */
             PRTFSISOMKIMPBLOCK2FILE pBlock2File = NULL;
             uint32_t                idxObj      = UINT32_MAX;
@@ -546,7 +546,8 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                     Assert(pThis->idxSrcFile != UINT32_MAX);
                 }
 
-                pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
+                if (ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0) /* no data tracking for zero byte files */
+                    pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
                 if (!pBlock2File)
                 {
                     rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
@@ -566,8 +567,12 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                     rc = VINF_SUCCESS;
                 }
             }
+
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * Enter the object into the namespace.
+                 */
                 rc = RTFsIsoMakerObjSetNameAndParent(pThis->hIsoMaker, idxObj, idxDir,
                                                      !fUnicode ? RTFSISOMAKER_NAMESPACE_ISO_9660 : RTFSISOMAKER_NAMESPACE_JOLIET,
                                                      pThis->szNameBuf);
@@ -589,7 +594,8 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                         pImpDir->cDepth      = cDepth + 1;
                         RTListAppend(pTodoList, &pImpDir->Entry);
                     }
-                    else if (!pBlock2File)
+                    else if (   !pBlock2File
+                             && ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0 /* no data tracking for zero byte files */)
                     {
                         pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTMemAlloc(sizeof(*pBlock2File));
                         AssertReturn(pBlock2File, rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPBLOCK2FILE"));

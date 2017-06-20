@@ -2913,6 +2913,7 @@ RTDECL(int) RTFsIsoMakerAddUnnamedFileWithCommonSrc(RTFSISOMAKER hIsoMaker, uint
         ObjInfo.Attr.u.Unix.fFlags          = 0;
         ObjInfo.Attr.u.Unix.GenerationId    = 0;
         ObjInfo.Attr.u.Unix.Device          = 0;
+        pObjInfo = &ObjInfo;
     }
     else
     {
@@ -3402,6 +3403,8 @@ static int rtFsIsoMakerFinalizeRemoveOrphans(PRTFSISOMAKERINT pThis)
             { /* likely */ }
             else
             {
+                Log4(("rtFsIsoMakerFinalizeRemoveOrphans: %#x cbData=%#RX64\n", pCur->idxObj,
+                      pCur->enmType == RTFSISOMAKEROBJTYPE_FILE ? ((PRTFSISOMAKERFILE)(pCur))->cbData : 0));
                 int rc = rtFsIsoMakerObjRemoveWorker(pThis, pCur);
                 if (RT_SUCCESS(rc))
                     cRemoved++;
@@ -3814,6 +3817,7 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
                 pCurFile->offData = *poffData;
                 *poffData += RT_ALIGN_64(pCurFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
                 RTListAppend(&pThis->FinalizedFiles, &pCurFile->FinalizedEntry);
+                Log4(("rtFsIsoMakerFinalizeData: %#x @%#RX64 cbData=%#RX64\n", pCurFile->Core.idxObj, pCurFile->offData, pCurFile->cbData));
             }
 
             /*
