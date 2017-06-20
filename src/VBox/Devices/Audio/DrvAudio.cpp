@@ -2284,13 +2284,13 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,   VERR_INVALID_POINTER);
     AssertReturn(cbBuf,      VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    /* pcbRead is optional. */
 
     AssertMsg(pStream->enmDir == PDMAUDIODIR_IN,
               ("Stream '%s' is not an input stream and therefore cannot be read from (direction is 0x%x)\n",
                pStream->szName, pStream->enmDir));
 
-    uint32_t cbRead = 0;
+    uint32_t cbReadTotal = 0;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_FAILURE(rc))
@@ -2316,35 +2316,51 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
         PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
         AssertPtr(pGstStream);
 
-        pGstStream->In.tsLastReadMS = RTTimeMilliTS();
-
         /*
          * Read from the parent buffer (that is, the guest buffer) which
          * should have the audio data in the format the guest needs.
          */
-        uint32_t cRead;
-        rc = AudioMixBufReadCirc(&pGstStream->MixBuf, pvBuf, cbBuf, &cRead);
-        if (RT_SUCCESS(rc))
-        {
-            if (cRead)
-            {
-                cbRead = AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cRead);
+        uint32_t cReadTotal = 0;
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-                drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamRead.pcm", pvBuf, cbRead);
+        uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2S(&pGstStream->MixBuf, cbBuf), AudioMixBufUsed(&pGstStream->MixBuf));
+        while (cToRead)
+        {
+            uint32_t cRead;
+            rc = AudioMixBufReadCirc(&pGstStream->MixBuf, (uint8_t *)pvBuf + AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cReadTotal),
+                                     AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cToRead), &cRead);
+            if (RT_FAILURE(rc))
+                break;
+
+#if defined (VBOX_WITH_STATISTICS) || defined (VBOX_AUDIO_DEBUG_DUMP_PCM_DATA)
+            const uint32_t cbRead = AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cRead);
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
-                STAM_COUNTER_ADD(&pThis->Stats.TotalBytesRead,       cbRead);
-                STAM_COUNTER_ADD(&pGstStream->In.StatBytesTotalRead, cbRead);
+            STAM_COUNTER_ADD(&pThis->Stats.TotalBytesRead,       cbRead);
+            STAM_COUNTER_ADD(&pGstStream->In.StatBytesTotalRead, cbRead);
 #endif
-                AudioMixBufFinish(&pGstStream->MixBuf, cRead);
-            }
+            Assert(cToRead >= cRead);
+            cToRead -= cRead;
+
+            cReadTotal += cRead;
+        }
+
+        if (cReadTotal)
+        {
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+            drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamRead.pcm",
+                               pvBuf, AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cReadTotal));
+#endif
+            AudioMixBufFinish(&pGstStream->MixBuf, cReadTotal);
+
+            pGstStream->In.tsLastReadMS = RTTimeMilliTS();
+
+            cbReadTotal = AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cReadTotal);
         }
 
     } while (0);
 
-    Log3Func(("[%s] cbRead=%RU32, rc=%Rrc\n", pStream->szName, cbRead, rc));
+    Log3Func(("[%s] cbReadTotal=%RU32, rc=%Rrc\n", pStream->szName, cbReadTotal, rc));
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2353,7 +2369,7 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
     if (RT_SUCCESS(rc))
     {
         if (pcbRead)
-            *pcbRead = cbRead;
+            *pcbRead = cbReadTotal;
     }
 
     return rc;
