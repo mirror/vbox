@@ -36,6 +36,7 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "QIDialogButtonBox.h"
 # include "QIFlowLayout.h"
 # include "UIConverter.h"
 # include "UIDesktopWidgetWatchdog.h"
@@ -523,6 +524,7 @@ UISnapshotDetailsWidget::UISnapshotDetailsWidget(QWidget *pParent /* = 0 */)
     , m_pLayoutOptions(0)
     , m_pLabelName(0), m_pEditorName(0), m_pErrorPaneName(0)
     , m_pLabelDescription(0), m_pBrowserDescription(0), m_pErrorPaneDescription(0)
+    , m_pButtonBox(0)
     , m_pLayoutDetails(0)
     , m_pScrollAreaDetails(0)
 {
@@ -562,9 +564,21 @@ void UISnapshotDetailsWidget::retranslateUi()
     m_pEmptyWidgetLabel->setText("<p>You have the <b>Current State</b> item selected.<br>"
                                  "Press <b>Take</b> button if you wish to take a new snapshot.</p>");
     m_pTabWidget->setTabText(0, tr("&Attributes"));
-    m_pTabWidget->setTabText(1, tr("D&etails"));
+    m_pTabWidget->setTabText(1, tr("&Information"));
     m_pLabelName->setText(tr("&Name:"));
     m_pLabelDescription->setText(tr("&Description:"));
+    m_pEditorName->setToolTip(tr("Holds the snapshot name."));
+    m_pBrowserDescription->setToolTip(tr("Holds the snapshot description."));
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Discard"));
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current snapshot details"));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Discard changes in current snapshot details"));
+    m_pButtonBox->button(QDialogButtonBox::Ok)->
+        setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->
+        setToolTip(tr("Discard Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
 
     /* And if snapshot is valid: */
     if (!m_comSnapshot.isNull())
@@ -608,14 +622,14 @@ void UISnapshotDetailsWidget::sltHandleNameChange()
 {
     m_newData.m_strName = m_pEditorName->text();
     revalidate(m_pErrorPaneName);
-    notify();
+    updateButtonStates();
 }
 
 void UISnapshotDetailsWidget::sltHandleDescriptionChange()
 {
     m_newData.m_strDescription = m_pBrowserDescription->toPlainText();
     revalidate(m_pErrorPaneDescription);
-    notify();
+    updateButtonStates();
 }
 
 void UISnapshotDetailsWidget::sltHandleAnchorClicked(const QUrl &link)
@@ -632,6 +646,25 @@ void UISnapshotDetailsWidget::sltHandleAnchorClicked(const QUrl &link)
         pViewer->show();
         pViewer->activateWindow();
     }
+}
+
+void UISnapshotDetailsWidget::sltHandleChangeAccepted()
+{
+    /* Disable buttons first of all: */
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setEnabled(false);
+
+    /* Notify listeners: */
+    emit sigDataChangeAccepted();
+}
+
+void UISnapshotDetailsWidget::sltHandleChangeRejected()
+{
+    /* Reset new data to old: */
+    m_newData = m_oldData;
+
+    /* Load snapshot data: */
+    loadSnapshotData();
 }
 
 void UISnapshotDetailsWidget::prepare()
@@ -797,6 +830,19 @@ void UISnapshotDetailsWidget::prepareTabOptions()
 
                 /* Add into layout: */
                 m_pLayoutOptions->addLayout(pLayoutDescription, 1, 1);
+            }
+
+            /* Create button-box: */
+            m_pButtonBox = new QIDialogButtonBox;
+            AssertPtrReturnVoid(m_pButtonBox);
+            {
+                /* Configure button-box: */
+                m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+                connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISnapshotDetailsWidget::sltHandleChangeAccepted);
+                connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISnapshotDetailsWidget::sltHandleChangeRejected);
+
+                /* Add into layout: */
+                m_pLayoutOptions->addWidget(m_pButtonBox, 2, 0, 1, 2);
             }
         }
 
@@ -1015,6 +1061,9 @@ void UISnapshotDetailsWidget::loadSnapshotData()
 
     /* Retranslate: */
     retranslateUi();
+
+    /* Update button states finally: */
+    updateButtonStates();
 }
 
 void UISnapshotDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
@@ -1040,14 +1089,16 @@ void UISnapshotDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
         m_pErrorPaneName->setToolTip(tr("Snapshot name is empty"));
 }
 
-void UISnapshotDetailsWidget::notify()
+void UISnapshotDetailsWidget::updateButtonStates()
 {
 //    if (m_oldData != m_newData)
 //        printf("Snapshot: %s, %s\n",
 //               m_newData.m_strName.toUtf8().constData(),
 //               m_newData.m_strDescription.toUtf8().constData());
 
-    emit sigDataChanged(m_oldData != m_newData);
+    /* Update 'Apply' / 'Discard' button states: */
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
 }
 
 QString UISnapshotDetailsWidget::detailsReport(const CMachine &comMachine, DetailsElementType enmType)

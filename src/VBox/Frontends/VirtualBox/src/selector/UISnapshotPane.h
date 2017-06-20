@@ -118,8 +118,8 @@ private slots:
         void sltDeleteSnapshot() { deleteSnapshot(); }
         /** Handles command to make snapshot details @a fVisible. */
         void sltToggleSnapshotDetailsVisibility(bool fVisible);
-        /** Handles command to commit snapshot details changes. */
-        void sltCommitSnapshotDetailsChanges();
+        /** Handles command to apply snapshot details changes. */
+        void sltApplySnapshotDetailsChanges();
         /** Proposes to clone the snapshot. */
         void sltCloneSnapshot() { cloneSnapshot(); }
     /** @} */
@@ -226,8 +226,6 @@ private:
         QAction   *m_pActionRestoreSnapshot;
         /** Holds the Show Snapshot Details action instance. */
         QAction   *m_pActionShowSnapshotDetails;
-        /** Holds the Commit Snapshot Details action instance. */
-        QAction   *m_pActionCommitSnapshotDetails;
         /** Holds the Clone Snapshot action instance. */
         QAction   *m_pActionCloneSnapshot;
 

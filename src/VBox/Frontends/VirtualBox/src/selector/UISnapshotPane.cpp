@@ -466,7 +466,6 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent /* = 0 */)
     , m_pActionDeleteSnapshot(0)
     , m_pActionRestoreSnapshot(0)
     , m_pActionShowSnapshotDetails(0)
-    , m_pActionCommitSnapshotDetails(0)
     , m_pActionCloneSnapshot(0)
     , m_pSnapshotTree(0)
     , m_pCurrentSnapshotItem(0)
@@ -521,7 +520,6 @@ void UISnapshotPane::retranslateUi()
     m_pActionDeleteSnapshot->setText(tr("&Delete"));
     m_pActionRestoreSnapshot->setText(tr("&Restore"));
     m_pActionShowSnapshotDetails->setText(tr("D&etails..."));
-    m_pActionCommitSnapshotDetails->setText(tr("&Apply..."));
     m_pActionCloneSnapshot->setText(tr("&Clone..."));
     /* Translate actions tool-tips: */
     m_pActionTakeSnapshot->setToolTip(tr("Take Snapshot (%1)")
@@ -532,8 +530,6 @@ void UISnapshotPane::retranslateUi()
                                          .arg(m_pActionRestoreSnapshot->shortcut().toString()));
     m_pActionShowSnapshotDetails->setToolTip(tr("Open Snapshot Details (%1)")
                                              .arg(m_pActionShowSnapshotDetails->shortcut().toString()));
-    m_pActionCommitSnapshotDetails->setToolTip(tr("Apply Changes in Snapshot Details (%1)")
-                                               .arg(m_pActionCommitSnapshotDetails->shortcut().toString()));
     m_pActionCloneSnapshot->setToolTip(tr("Clone Virtual Machine (%1)")
                                        .arg(m_pActionCloneSnapshot->shortcut().toString()));
     /* Translate actions status-tips: */
@@ -541,7 +537,6 @@ void UISnapshotPane::retranslateUi()
     m_pActionDeleteSnapshot->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
     m_pActionRestoreSnapshot->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
     m_pActionShowSnapshotDetails->setStatusTip(tr("Open pane with the selected snapshot details"));
-    m_pActionCommitSnapshotDetails->setStatusTip(tr("Apply changes in snapshot details pane"));
     m_pActionCloneSnapshot->setStatusTip(tr("Clone selected virtual machine"));
 
     /* Translate toolbar: */
@@ -913,7 +908,6 @@ void UISnapshotPane::sltUpdateSnapshotsAge()
 void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
 {
     /* Show/hide commit action and details-widget: */
-    m_pActionCommitSnapshotDetails->setVisible(fVisible);
     m_pDetailsWidget->setVisible(fVisible);
     /* If details-widget is visible: */
     if (m_pDetailsWidget->isVisible())
@@ -925,14 +919,11 @@ void UISnapshotPane::sltToggleSnapshotDetailsVisibility(bool fVisible)
     }
 }
 
-void UISnapshotPane::sltCommitSnapshotDetailsChanges()
+void UISnapshotPane::sltApplySnapshotDetailsChanges()
 {
     /* Make sure nothing being edited in the meantime: */
     if (!m_pLockReadWrite->tryLockForWrite())
         return;
-
-    /* Disable button first of all: */
-    m_pActionCommitSnapshotDetails->setEnabled(false);
 
     /* Acquire "current snapshot" item: */
     const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
@@ -1018,7 +1009,6 @@ void UISnapshotPane::sltHandleContextMenuRequest(const QPoint &position)
         menu.addSeparator();
         menu.addAction(m_pActionRestoreSnapshot);
         menu.addAction(m_pActionShowSnapshotDetails);
-        menu.addAction(m_pActionCommitSnapshotDetails);
         menu.addSeparator();
         menu.addAction(m_pActionCloneSnapshot);
     }
@@ -1220,19 +1210,6 @@ void UISnapshotPane::prepareToolbar()
             m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
         }
 
-        /* Add Commit Snapshot Details action: */
-        m_pActionCommitSnapshotDetails = m_pToolBar->addAction(UIIconPool::iconSetFull(":/snapshot_commit_details_22px.png",
-                                                                                       ":/snapshot_commit_details_16px.png",
-                                                                                       ":/snapshot_commit_details_disabled_22px.png",
-                                                                                       ":/snapshot_commit_details_disabled_16px.png"),
-                                                               QString(), this, &UISnapshotPane::sltCommitSnapshotDetailsChanges);
-        {
-            connect(m_pActionShowSnapshotDetails, &QAction::toggled,
-                    m_pActionCommitSnapshotDetails, &QAction::setVisible);
-            m_pActionCommitSnapshotDetails->setShortcut(QString("Ctrl+Return"));
-            m_pActionCommitSnapshotDetails->setVisible(false);
-        }
-
         m_pToolBar->addSeparator();
 
         /* Add Clone Snapshot action: */
@@ -1279,8 +1256,8 @@ void UISnapshotPane::prepareDetailsWidget()
     {
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
-        connect(m_pDetailsWidget, &UISnapshotDetailsWidget::sigDataChanged,
-                m_pActionCommitSnapshotDetails, &QAction::setEnabled);
+        connect(m_pDetailsWidget, &UISnapshotDetailsWidget::sigDataChangeAccepted,
+                this, &UISnapshotPane::sltApplySnapshotDetailsChanges);
 
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidget);
@@ -1459,11 +1436,6 @@ void UISnapshotPane::updateActionStates()
     /* Update 'Show Details' action: */
     m_pActionShowSnapshotDetails->setEnabled(
         pSnapshotItem
-    );
-
-    /* Update 'Commit Details' action: */
-    m_pActionCommitSnapshotDetails->setEnabled(
-        false
     );
 
     /* Update 'Clone' action: */

@@ -38,6 +38,7 @@ class QTabWidget;
 class QTextEdit;
 class QVBoxLayout;
 class QWidget;
+class QIDialogButtonBox;
 class UISnapshotDetailsElement;
 
 
@@ -78,8 +79,8 @@ class UISnapshotDetailsWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    /** Notifies listeners about data changed and whether it @a fDiffers. */
-    void sigDataChanged(bool fDiffers);
+    /** Notifies listeners about data change accepted and should be applied. */
+    void sigDataChangeAccepted();
 
 public:
 
@@ -108,6 +109,11 @@ private slots:
     /** Handles snapshot details anchor clicks. */
     void sltHandleAnchorClicked(const QUrl &link);
 
+    /** Handles snapshot details change accepting. */
+    void sltHandleChangeAccepted();
+    /** Handles snapshot details change rejecting. */
+    void sltHandleChangeRejected();
+
 private:
 
     /** Prepares all. */
@@ -131,8 +137,8 @@ private:
     void revalidate(QWidget *pWidget = 0);
     /** Retranslates validation for passed @a pWidget. */
     void retranslateValidation(QWidget *pWidget = 0);
-    /** Notifies listeners about data changed or not. */
-    void notify();
+    /** Updates button states. */
+    void updateButtonStates();
 
     /** Returns a details report on a given @a comMachine. */
     QString detailsReport(const CMachine &comMachine, DetailsElementType enmType);
@@ -175,6 +181,9 @@ private:
     QTextEdit *m_pBrowserDescription;
     /** Holds the description error pane. */
     QLabel    *m_pErrorPaneDescription;
+
+    /** Holds the button-box instance. */
+    QIDialogButtonBox *m_pButtonBox;
 
     /** Holds the 'Details' layout instance. */
     QVBoxLayout *m_pLayoutDetails;
