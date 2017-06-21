@@ -361,7 +361,7 @@ static void testSessionWait(const char *pszExecPath)
 
         /*
          * Wait for the server thread to indicate that it has processed one
-         * connection, the shut it all down.
+         * connection, then shut it all down.
          */
         if (RT_SUCCESS(rc))
             RTTESTI_CHECK_RC_OK(RTThreadUserWait(hListenThread, RT_MS_1MIN / 2));
@@ -639,7 +639,7 @@ static void testSessionData(const char *pszExecPath)
 
         /*
          * Wait for the server thread to indicate that it has processed one
-         * connection, the shut it all down.
+         * connection, then shut it all down.
          */
         if (RT_SUCCESS(rc))
             RTTESTI_CHECK_RC_OK(RTThreadUserWait(hListenThread, RT_MS_1MIN * 3));
@@ -838,7 +838,7 @@ static void testSessionPerf(const char *pszExecPath)
 
         /*
          * Wait for the server thread to indicate that it has processed one
-         * connection, the shut it all down.
+         * connection, then shut it all down.
          */
         if (RT_SUCCESS(rc))
             RTTESTI_CHECK_RC_OK(RTThreadUserWait(hListenThread, RT_MS_1MIN / 2));
