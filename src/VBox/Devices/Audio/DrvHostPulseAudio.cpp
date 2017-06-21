@@ -276,6 +276,7 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pOP,   VERR_INVALID_POINTER);
+    NOREF(fDebug);
 
     int rc = VINF_SUCCESS;
     pThis->fAbortEnumLoop = false;
