@@ -929,9 +929,6 @@ typedef struct HDASTATE
     /** Audio mixer sink for microphone input. */
     HDAMIXERSINK                       SinkMicIn;
 #endif
-    /** The controller's base time stamp which the WALCLK register
-     *  derives its current value from. */
-    uint64_t                           u64BaseTS;
     /** Last updated WALCLK counter. */
     uint64_t                           u64WalClk;
     /** Response Interrupt Count (RINTCNT). */
@@ -1310,6 +1307,16 @@ static SSMFIELD const g_aSSMStreamStateFields7[] =
     SSMFIELD_ENTRY(HDASTREAMSTATE, uCurBDLE),
     SSMFIELD_ENTRY(HDASTREAMSTATE, fInReset),
     SSMFIELD_ENTRY(HDASTREAMSTATE, uTimerTS),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** HDASTREAMPERIOD field descriptors for the v7 saved state. */
+static SSMFIELD const g_aSSMStreamPeriodFields7[] =
+{
+    SSMFIELD_ENTRY(HDASTREAMPERIOD, u64StartWalClk),
+    SSMFIELD_ENTRY(HDASTREAMPERIOD, u64ElapsedWalClk),
+    SSMFIELD_ENTRY(HDASTREAMPERIOD, framesTransferred),
+    SSMFIELD_ENTRY(HDASTREAMPERIOD, cIntPending),
     SSMFIELD_ENTRY_TERM()
 };
 #endif
@@ -1950,24 +1957,53 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     pStream->u32CBL     = HDA_STREAM_REG(pThis, CBL, pStream->u8SD);
     pStream->u16FIFOS   = HDA_STREAM_REG(pThis, FIFOS, pStream->u8SD) + 1;
 
-    RT_ZERO(pStream->State.BDLE);
-    pStream->State.uCurBDLE = 0;
-
-    if (pStream->State.pCircBuf)
-        RTCircBufReset(pStream->State.pCircBuf);
-
     /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
     hdaStreamUpdateLPIB(pThis, pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
 
     int rc = hdaSDFMTToStrmCfg(HDA_STREAM_REG(pThis, FMT, uSD), &pStream->State.strmCfg);
     if (RT_FAILURE(rc))
+    {
         LogRel(("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
+        return rc;
+    }
 
-    /* Reset stream map. */
-    hdaStreamMapReset(&pStream->State.Mapping);
+    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.strmCfg;
 
-    /* (Re-)init the stream's period. */
-    hdaStreamPeriodInit(&pStream->State.Period, pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.strmCfg);
+    /* Set the stream's direction. */
+    pCfg->enmDir = hdaGetDirFromSD(pStream->u8SD);
+
+    /* The the stream's name, based on the direction. */
+    switch (pCfg->enmDir)
+    {
+        case PDMAUDIODIR_IN:
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+#  error "Implement me!"
+# else
+            pCfg->DestSource.Source = PDMAUDIORECSOURCE_LINE;
+            RTStrCopy(pCfg->szName, sizeof(pCfg->szName), "Line In");
+# endif
+            break;
+
+        case PDMAUDIODIR_OUT:
+            /* Destination(s) will be set in hdaAddStreamOut(),
+             * based on the channels / stream layout. */
+            break;
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    /*
+     * Initialize the stream mapping in any case, regardless if
+     * we support surround audio or not. This is needed to handle
+     * the supported channels within a single audio stream, e.g. mono/stereo.
+     *
+     * In other words, the stream mapping *always* knows the real
+     * number of channels in a single audio stream.
+     */
+    rc = hdaStreamMapInit(&pStream->State.Mapping, pCfg);
+    AssertRCReturn(rc, rc);
 
     LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16, rc=%Rrc\n",
              pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS, rc));
@@ -2023,9 +2059,21 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     hdaStreamUnregisterDMAHandlers(pThis, pStream);
 #endif
 
+    RT_ZERO(pStream->State.BDLE);
+    pStream->State.uCurBDLE = 0;
+
+    if (pStream->State.pCircBuf)
+        RTCircBufReset(pStream->State.pCircBuf);
+
+    /* Reset stream map. */
+    hdaStreamMapReset(&pStream->State.Mapping);
+
     /* (Re-)initialize the stream with current values. */
     int rc2 = hdaStreamInit(pThis, pStream, uSD);
     AssertRC(rc2);
+
+    /* Reset the stream's period. */
+    hdaStreamPeriodReset(&pStream->State.Period);
 
 #ifdef DEBUG
     pStream->Dbg.cReadsTotal      = 0;
@@ -2064,13 +2112,6 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
 
     int rc = VINF_SUCCESS;
 
-    hdaStreamLock(pStream);
-
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    hdaStreamAsyncIOLock(pStream);
-    hdaStreamAsyncIOEnable(pStream, fEnable);
-#endif
-
     if (pStream->pMixSink) /* Stream attached to a sink? */
     {
         AUDMIXSINKCMD enmCmd = fEnable
@@ -2081,38 +2122,7 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
             rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
     }
 
-    if (fEnable)
-    {
-        /* (Re-)initialize the stream with current values. */
-        int rc2 = hdaStreamInit(pThis, pStream, pStream->u8SD);
-        AssertRC(rc2);
-
-        /* Begin a new period for this stream. */
-        rc2 = hdaStreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
-        AssertRC(rc2);
-    }
-    else
-    {
-        /* Reset the period. */
-        hdaStreamPeriodReset(&pStream->State.Period);
-    }
-
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    hdaStreamAsyncIOUnlock(pStream);
-#endif
-
-    /* Make sure to leave the lock before (eventually) starting the timer. */
-    hdaStreamUnlock(pStream);
-
-#ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
-    /* Second, see if we need to start or stop the timer. */
-    if (!fEnable)
-        hdaTimerMaybeStop(pThis);
-    else
-        hdaTimerMaybeStart(pThis);
-#endif
-
-    LogFunc(("[SD%RU8]: cStreamsActive=%RU8, rc=%Rrc\n", pStream->u8SD, pThis->cStreamsActive, rc));
+    LogFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
     return rc;
 }
 
@@ -2669,8 +2679,15 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
         hdaStreamLock(pStream);
 
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        hdaStreamAsyncIOLock(pStream);
+        hdaStreamAsyncIOEnable(pStream, false /* fEnable */);
+#endif
         hdaStreamReset(pThis, pStream, pStream->u8SD);
 
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        hdaStreamAsyncIOUnlock(pStream);
+#endif
         hdaStreamUnlock(pStream);
     }
     else
@@ -2683,13 +2700,51 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             Assert(!fReset && !fInReset);
             LogFunc(("[SD%RU8]: State changed (fRun=%RTbool)\n", pStream->u8SD, fRun));
 
+            hdaStreamLock(pStream);
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+            hdaStreamAsyncIOLock(pStream);
+            hdaStreamAsyncIOEnable(pStream, fRun /* fEnable */);
+#endif
+            /* (Re-)initialize the stream with current values. */
+            int rc2 = hdaStreamInit(pThis, pStream, pStream->u8SD);
+            AssertRC(rc2);
+
+            /* Enable/disable the stream. */
             hdaStreamEnable(pThis, pStream, fRun /* fEnable */);
 
-            if (!fRun)
+            if (fRun)
+            {
+                /* (Re-)init the stream's period. */
+                hdaStreamPeriodInit(&pStream->State.Period,
+                                    pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.strmCfg);
+
+                /* Begin a new period for this stream. */
+                rc2 = hdaStreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
+                AssertRC(rc2);
+            }
+            else
             {
                 /* Make sure to (re-)schedule outstanding (delayed) interrupts. */
                 hdaReschedulePendingInterrupts(pThis);
+
+                /* Reset the period. */
+                hdaStreamPeriodReset(&pStream->State.Period);
             }
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+            hdaStreamAsyncIOUnlock(pStream);
+#endif
+            /* Make sure to leave the lock before (eventually) starting the timer. */
+            hdaStreamUnlock(pStream);
+
+#ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
+            /* See if we need to start or stop the timer. */
+            if (!fRun)
+                hdaTimerMaybeStop(pThis);
+            else
+                hdaTimerMaybeStart(pThis);
+#endif
         }
     }
 
@@ -2985,6 +3040,13 @@ static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg)
     return rc;
 }
 
+/**
+ * Adds an audio output stream to the device setup using the given configuration.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Device state.
+ * @param   pCfg                Stream configuration to use for adding a stream.
+ */
 static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -3109,6 +3171,13 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     return rc;
 }
 
+/**
+ * Adds an audio input stream to the device setup using the given configuration.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Device state.
+ * @param   pCfg                Stream configuration to use for adding a stream.
+ */
 static int hdaAddStreamIn(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -3146,6 +3215,53 @@ static int hdaAddStreamIn(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+/**
+ * Adds an audio stream to the device setup using the given configuration.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Device state.
+ * @param   pCfg                Stream configuration to use for adding a stream.
+ */
+static int hdaAddStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    PHDADRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
+    {
+        int rc2;
+
+        switch (pCfg->enmDir)
+        {
+            case PDMAUDIODIR_OUT:
+                rc2 = hdaAddStreamOut(pThis, pCfg);
+                break;
+
+            case PDMAUDIODIR_IN:
+                rc2 = hdaAddStreamIn(pThis, pCfg);
+                break;
+
+            default:
+                rc2 = VERR_NOT_SUPPORTED;
+                AssertFailed();
+                break;
+        }
+
+        if (   RT_FAILURE(rc2)
+            && (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)) /* We only care about primary drivers here, the rest may fail. */
+        {
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+            /* Keep going. */
+        }
+    }
+
+    return rc;
+}
 #endif /* IN_RING3 */
 
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -3159,102 +3275,19 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
-    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.strmCfg;
+    int rc = hdaRegWriteU16(pThis, iReg, u32Value);
+    AssertRC(rc);
 
-    int rc = hdaSDFMTToStrmCfg(u32Value, pCfg);
-    if (RT_FAILURE(rc))
-        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-
-    LogFunc(("[SD%RU8]: Hz=%RU32, Channels=%RU8, cBits=%RU8\n",
-             pStream->u8SD, pCfg->Props.uHz, pCfg->Props.cChannels, pCfg->Props.cBits));
-
-    /* Set audio direction. */
-    pCfg->enmDir = hdaGetDirFromSD(pStream->u8SD);
-    switch (pCfg->enmDir)
-    {
-        case PDMAUDIODIR_IN:
-# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-#  error "Implement me!"
-# else
-            pCfg->DestSource.Source = PDMAUDIORECSOURCE_LINE;
-            RTStrCopy(pCfg->szName, sizeof(pCfg->szName), "Line In");
-# endif
-            break;
-
-        case PDMAUDIODIR_OUT:
-            /* Destination(s) will be set in hdaAddStreamOut(),
-             * based on the channels / stream layout. */
-            break;
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
-    }
-
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    rc = hdaStreamInit(pThis, pStream, pStream->u8SD);
     if (RT_SUCCESS(rc))
     {
-        rc = hdaStreamAsyncIOCreate(pThis, pStream);
-        AssertRC(rc);
+        /* Add the stream to the device setup. */
+        rc = hdaAddStream(pThis, &pStream->State.strmCfg);
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        if (RT_SUCCESS(rc))
+            rc = hdaStreamAsyncIOCreate(pThis, pStream);
     }
 #endif
-
-    /*
-     * Initialize the stream mapping in any case, regardless if
-     * we support surround audio or not. This is needed to handle
-     * the supported channels within a single audio stream, e.g. mono/stereo.
-     *
-     * In other words, the stream mapping *always* knows the real
-     * number of channels in a single audio stream.
-     */
-    if (RT_SUCCESS(rc))
-    {
-        rc = hdaStreamMapInit(&pStream->State.Mapping, pCfg);
-        AssertRC(rc);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        PHDADRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-        {
-            int rc2;
-            switch (pCfg->enmDir)
-            {
-                case PDMAUDIODIR_OUT:
-                    rc2 = hdaAddStreamOut(pThis, pCfg);
-                    break;
-
-                case PDMAUDIODIR_IN:
-                    rc2 = hdaAddStreamIn(pThis, pCfg);
-                    break;
-
-                default:
-                    rc2 = VERR_NOT_SUPPORTED;
-                    AssertFailed();
-                    break;
-            }
-
-            if (   RT_FAILURE(rc2)
-                && (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)) /* We only care about primary drivers here, the rest may fail. */
-            {
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-                /* Keep going. */
-            }
-        }
-
-        /* If (re-)opening the stream by the codec above failed, don't write the new
-         * format to the register so that the guest is aware it didn't work. */
-        if (RT_SUCCESS(rc))
-        {
-            rc = hdaRegWriteU16(pThis, iReg, u32Value);
-            AssertRC(rc);
-        }
-        else
-            LogFunc(("[SD%RU8]: (Re-)Opening stream failed with rc=%Rrc\n", pStream->u8SD, rc));
-    }
-
     return VINF_SUCCESS; /* Never return failure. */
 #else /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -5948,6 +5981,10 @@ static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
                           0 /*fFlags*/, g_aSSMBDLEStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
+    rc = SSMR3PutStructEx(pSSM, &pStrm->State.Period, sizeof(HDASTREAMPERIOD),
+                          0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
+    AssertRCReturn(rc, rc);
+
 #ifdef VBOX_STRICT /* Sanity checks. */
     PHDABDLE pBDLE = &pStrm->State.BDLE;
     if (u64BaseDMA)
@@ -6051,9 +6088,9 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
     SSMR3PutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
 
-    /* Save the controller's base timestamp (for handling the WALCLK register).
-     * This is needed to continue with correct time keeping on VM resume. */
-    SSMR3PutU64(pSSM, pThis->u64BaseTS);
+    /* Load controller-specifc internals. */
+    SSMR3PutU64(pSSM, pThis->u64WalClk);
+    SSMR3PutU8(pSSM, pThis->u8IRQL);
 
     /* Save number of streams. */
     SSMR3PutU32(pSSM, HDA_MAX_STREAMS);
@@ -6087,22 +6124,36 @@ static int hdaLoadExecPost(PHDASTATE pThis)
         PHDASTREAM pStream = hdaStreamGetFromSD(pThis, i);
         if (pStream)
         {
-            hdaStreamEnable(pThis, pStream, false /* fEnable */);
+            int rc2;
 
             bool fActive = RT_BOOL(HDA_STREAM_REG(pThis, CTL, i) & HDA_SDCTL_RUN);
             if (fActive)
             {
-                int rc2;
-
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
                 /* Make sure to also create the async I/O thread before actually enabling the stream. */
                 rc2 = hdaStreamAsyncIOCreate(pThis, pStream);
                 AssertRC(rc2);
+
+                /* ... and enabling it. */
+                hdaStreamAsyncIOEnable(pStream, true /* fEnable */);
 #endif
+                /* (Re-)initialize the stream with current values. */
+                rc2 = hdaStreamInit(pThis, pStream, pStream->u8SD);
+                AssertRC(rc2);
+
+                /* Resume the stream's period. */
+                hdaStreamPeriodResume(&pStream->State.Period);
+
+                /* (Re-)enable the stream. */
                 rc2 = hdaStreamEnable(pThis, pStream, true /* fEnable */);
                 AssertRC(rc2);
 
+                /* Add the stream to the device setup. */
+                rc2 = hdaAddStream(pThis, &pStream->State.strmCfg);
+                AssertRC(rc2);
+
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
+                /* (Re-)install the DMA handler. */
                 hdaStreamRegisterDMAHandlers(pThis, pStream);
 #endif
                 fStartTimer = true;
@@ -6111,16 +6162,9 @@ static int hdaLoadExecPost(PHDASTATE pThis)
     }
 
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
-    if (   fStartTimer
-        && pThis->pTimer
-        && !TMTimerIsActive(pThis->pTimer))
-    {
-        pThis->tsTimerExpire = TMTimerGet(pThis->pTimer) + pThis->cTimerTicks;
-
-        /* Resume timer. */
-        int rc2 = TMTimerSet(pThis->pTimer, pThis->tsTimerExpire);
-        AssertRC(rc2);
-    }
+    /* Start the timer if one of the above streams were active during taking the saved state. */
+    if (fStartTimer)
+        hdaTimerMaybeStart(pThis);
 #endif
 
     LogFlowFuncLeaveRC(rc);
@@ -6469,8 +6513,14 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     /*
      * Load controller-specifc internals.
      */
-    rc = SSMR3GetU64(pSSM, &pThis->u64BaseTS);
-    AssertRC(rc);
+    if (SSMR3HandleRevision(pSSM) >= 116273) /* Don't annoy other team mates (forgot this for state v7). */
+    {
+        rc = SSMR3GetU64(pSSM, &pThis->u64WalClk);
+        AssertRC(rc);
+
+        rc = SSMR3GetU8(pSSM, &pThis->u8IRQL);
+        AssertRC(rc);
+    }
 
     /*
      * Load streams.
@@ -6521,6 +6571,19 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         AssertRC(rc);
 
         Log2Func(("[SD%RU8] %R[bdle]\n", pStrm->u8SD, &pStrm->State.BDLE));
+
+        /*
+         * Load period state.
+         */
+        hdaStreamPeriodInit(&pStrm->State.Period,
+                            pStrm->u8SD, pStrm->u16LVI, pStrm->u32CBL, &pStrm->State.strmCfg);
+
+        if (SSMR3HandleRevision(pSSM) >= 116273) /* Don't annoy other team mates (forgot this for state v7). */
+        {
+            rc = SSMR3GetStructEx(pSSM, &pStrm->State.Period, sizeof(HDASTREAMPERIOD),
+                                  0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
+            AssertRC(rc);
+        }
 
         /*
          * Load internal (FIFO) buffer.
@@ -6975,8 +7038,6 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
         RT_BZERO(pThis->pu64RirbBuf, pThis->cbRirbBuf);
     else
         pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
-
-    pThis->u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
     for (uint8_t uSD = 0; uSD < HDA_MAX_STREAMS; ++uSD)
     {
