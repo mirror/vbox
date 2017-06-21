@@ -923,6 +923,7 @@
 # define RTFsIsoMakerCreate                             RT_MANGLER(RTFsIsoMakerCreate)
 # define RTFsIsoMakerRetain                             RT_MANGLER(RTFsIsoMakerRetain)
 # define RTFsIsoMakerRelease                            RT_MANGLER(RTFsIsoMakerRelease)
+# define RTFsIsoMakerBootCatSetFile                     RT_MANGLER(RTFsIsoMakerBootCatSetFile)
 # define RTFsIsoMakerBootCatSetValidationEntry          RT_MANGLER(RTFsIsoMakerBootCatSetValidationEntry)
 # define RTFsIsoMakerBootCatSetSectionEntry             RT_MANGLER(RTFsIsoMakerBootCatSetSectionEntry)
 # define RTFsIsoMakerBootCatSetSectionHeaderEntry       RT_MANGLER(RTFsIsoMakerBootCatSetSectionHeaderEntry)

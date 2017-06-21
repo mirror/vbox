@@ -660,6 +660,9 @@ typedef ISO9660VOLPARTDESC const *PCISO9660VOLPARTDESC;
 /** @} */
 
 
+/** The size of an El Torito boot catalog entry. */
+#define ISO9660_ELTORITO_ENTRY_SIZE         UINT32_C(0x20)
+
 /**
  * El Torito boot catalog: Validation entry.
  *
@@ -684,7 +687,7 @@ typedef struct ISO9660ELTORITOVALIDATIONENTRY
     /** 0x1f: Key byte 2 (ISO9660_ELTORITO_KEY_BYTE_2). */
     uint8_t             bKey2;
 } ISO9660ELTORITOVALIDATIONENTRY;
-AssertCompileSize(ISO9660ELTORITOVALIDATIONENTRY, 0x20);
+AssertCompileSize(ISO9660ELTORITOVALIDATIONENTRY, ISO9660_ELTORITO_ENTRY_SIZE);
 /** Pointer to an El Torito validation entry. */
 typedef ISO9660ELTORITOVALIDATIONENTRY *PISO9660ELTORITOVALIDATIONENTRY;
 /** Pointer to a const El Torito validation entry. */
@@ -734,7 +737,7 @@ typedef struct ISO9660ELTORITOSECTIONHEADER
     /** 0x04: String ID for the section. */
     char                achSectionId[28];
 } ISO9660ELTORITOSECTIONHEADER;
-AssertCompileSize(ISO9660ELTORITOSECTIONHEADER, 0x20);
+AssertCompileSize(ISO9660ELTORITOSECTIONHEADER, ISO9660_ELTORITO_ENTRY_SIZE);
 /** Pointer to an El Torito section header entry. */
 typedef ISO9660ELTORITOSECTIONHEADER *PISO9660ELTORITOSECTIONHEADER;
 /** Pointer to a const El Torito section header entry. */
@@ -769,7 +772,7 @@ typedef struct ISO9660ELTORITODEFAULTENTRY
     /** 0x0c: Reserved, MBZ */
     uint8_t             abReserved[20];
 } ISO9660ELTORITODEFAULTENTRY;
-AssertCompileSize(ISO9660ELTORITODEFAULTENTRY, 0x20);
+AssertCompileSize(ISO9660ELTORITODEFAULTENTRY, ISO9660_ELTORITO_ENTRY_SIZE);
 /** Pointer to an El Torito default (initial) entry. */
 typedef ISO9660ELTORITODEFAULTENTRY *PISO9660ELTORITODEFAULTENTRY;
 /** Pointer to a const El Torito default (initial) entry. */
@@ -802,7 +805,7 @@ typedef struct ISO9660ELTORITOSECTIONENTRY
     /** 0x0c: Selection criteria specific data. */
     uint8_t             abSelectionCriteria[19];
 } ISO9660ELTORITOSECTIONENTRY;
-AssertCompileSize(ISO9660ELTORITOSECTIONENTRY, 0x20);
+AssertCompileSize(ISO9660ELTORITOSECTIONENTRY, ISO9660_ELTORITO_ENTRY_SIZE);
 /** Pointer to an El Torito default (initial) entry. */
 typedef ISO9660ELTORITOSECTIONENTRY *PISO9660ELTORITOSECTIONENTRY;
 /** Pointer to a const El Torito default (initial) entry. */
@@ -857,14 +860,14 @@ typedef struct ISO9660ELTORITOSECTIONENTRYEXT
     /** 0x02: Selection critiera data. */
     uint8_t             abSelectionCriteria[30];
 } ISO9660ELTORITOSECTIONENTRYEXT;
-AssertCompileSize(ISO9660ELTORITOSECTIONENTRYEXT, 0x20);
+AssertCompileSize(ISO9660ELTORITOSECTIONENTRYEXT, ISO9660_ELTORITO_ENTRY_SIZE);
 /** Pointer to an El Torito default (initial) entry. */
 typedef ISO9660ELTORITOSECTIONENTRYEXT *PISO9660ELTORITOSECTIONENTRYEXT;
 /** Pointer to a const El Torito default (initial) entry. */
 typedef ISO9660ELTORITOSECTIONENTRYEXT const *PCISO9660ELTORITOSECTIONENTRYEXT;
 
 /** Value of ISO9660ELTORITOSECTIONENTRYEXT::bExtensionId. */
-#define ISO9660_ELTORITO_SECTION_ENTRY_EXT_ID   UINT_C(0x44)
+#define ISO9660_ELTORITO_SECTION_ENTRY_EXT_ID   UINT8_C(0x44)
 
 /** @name ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_XXX - ISO9660ELTORITOSECTIONENTRYEXT::fFlags
  * @{ */

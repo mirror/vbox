@@ -377,10 +377,15 @@ RTDECL(int) RTFsIsoMakerBootCatSetValidationEntry(RTFSISOMAKER hIsoMaker, uint8_
  * @param   uLoadSeg            The load address divided by 0x10 (i.e. the real
  *                              mode segment number).
  * @param   cSectorsToLoad      Number of emulated sectors to load.
+ * @param   bSelCritType        The selection criteria type, if none pass
+ *                              ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE.
+ * @param   pvSelCritData       Pointer to the selection criteria data.
+ * @param   cbSelCritData       Size of the selection criteria data.
  */
 RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t idxImageObj,
                                                uint8_t bBootMediaType, uint8_t bSystemType, bool fBootable,
-                                               uint16_t uLoadSeg, uint16_t cSectorsToLoad);
+                                               uint16_t uLoadSeg, uint16_t cSectorsToLoad,
+                                               uint8_t bSelCritType, void const *pvSelCritData, size_t cbSelCritData);
 
 /**
  * Set the validation entry of the boot catalog (this is the first entry).
@@ -395,6 +400,21 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t 
  */
 RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t cEntries,
                                                      uint8_t idPlatform, const char *pszString);
+
+/**
+ * Sets the boot catalog backing file.
+ *
+ * The content of the given file will be discarded and replaced with the boot
+ * catalog, the naming and file attributes (other than size) will be retained.
+ *
+ * This API exists mainly to assist when importing ISOs.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxObj              The configuration index of the file.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetFile(RTFSISOMAKER hIsoMaker, uint32_t idxObj);
+
 
 /**
  * ISO maker import results (RTFsIsoMakerImport).

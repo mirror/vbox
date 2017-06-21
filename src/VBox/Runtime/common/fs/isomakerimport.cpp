@@ -112,6 +112,10 @@ typedef struct RTFSISOMKIMPORTER
 
     /** The source file. */
     RTVFSFILE               hSrcFile;
+    /** The size of the source file. */
+    uint64_t                cbSrcFile;
+    /** The number of 2KB blocks in the source file. */
+    uint64_t                cBlocksInSrcFile;
     /** The import source index of hSrcFile in hIsoMaker.  UINT32_MAX till adding
      * the first file. */
     uint32_t                idxSrcFile;
@@ -154,74 +158,6 @@ typedef struct RTFSISOMKIMPORTER
 } RTFSISOMKIMPORTER;
 /** Pointer to an ISO maker ISO importer state. */
 typedef RTFSISOMKIMPORTER *PRTFSISOMKIMPORTER;
-
-
-/** Requested to import an unknown ISO format. */
-#define VERR_ISOMK_IMPORT_UNKNOWN_FORMAT                (-24906)
-/** Too many volume descriptors in the import ISO. */
-#define VERR_ISOMK_IMPORT_TOO_MANY_VOL_DESCS            (-24907)
-/** Import ISO contains a bad volume descriptor header.   */
-#define VERR_ISOMK_IMPORT_INVALID_VOL_DESC_HDR          (-24907)
-/** Import ISO contains more than one primary volume descriptor. */
-#define VERR_ISOMK_IMPORT_MULTIPLE_PRIMARY_VOL_DESCS    (-24908)
-/** Import ISO contains more than one el torito descriptor. */
-#define VERR_ISOMK_IMPORT_MULTIPLE_EL_TORITO_DESCS      (-24909)
-/** Import ISO contains more than one joliet volume descriptor. */
-#define VERR_ISOMK_IMPORT_MULTIPLE_JOLIET_VOL_DESCS     (-24908)
-/** Import ISO starts with supplementary volume descriptor before any
- * primary ones. */
-#define VERR_ISOMK_IMPORT_SUPPLEMENTARY_BEFORE_PRIMARY  (-24909)
-/** Import ISO contains an unsupported primary volume descriptor version. */
-#define VERR_IOSMK_IMPORT_PRIMARY_VOL_DESC_VER          (-24909)
-/** Import ISO contains a bad primary volume descriptor. */
-#define VERR_ISOMK_IMPORT_BAD_PRIMARY_VOL_DESC          (-24910)
-/** Import ISO contains an unsupported supplementary volume descriptor
- *  version. */
-#define VERR_IOSMK_IMPORT_SUP_VOL_DESC_VER              (-24909)
-/** Import ISO contains a bad supplementary volume descriptor. */
-#define VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC              (-24910)
-/** Import ISO uses a logical block size other than 2KB. */
-#define VERR_ISOMK_IMPORT_LOGICAL_BLOCK_SIZE_NOT_2KB    (-24911)
-/** Import ISO contains more than volume. */
-#define VERR_ISOMK_IMPORT_MORE_THAN_ONE_VOLUME_IN_SET   (-24912)
-/** Import ISO uses invalid volume sequence number. */
-#define VERR_ISOMK_IMPORT_INVALID_VOLUMNE_SEQ_NO        (-24913)
-/** Import ISO has different volume space sizes of primary and supplementary
- * volume descriptors. */
-#define VERR_ISOMK_IMPORT_VOLUME_SPACE_SIZE_MISMATCH    (-24913)
-/** Import ISO has different volume set sizes of primary and supplementary
- * volume descriptors. */
-#define VERR_ISOMK_IMPORT_VOLUME_IN_SET_MISMATCH        (-24913)
-/** Import ISO contains a bad root directory record. */
-#define VERR_ISOMK_IMPORT_BAD_ROOT_DIR_REC              (-24914)
-/** Import ISO contains a zero sized root directory. */
-#define VERR_ISOMK_IMPORT_ZERO_SIZED_ROOT_DIR           (-24915)
-/** Import ISO contains a root directory with a mismatching volume sequence
- *  number. */
-#define VERR_ISOMK_IMPORT_ROOT_VOLUME_SEQ_NO            (-24916)
-/** Import ISO contains a root directory with an out of bounds data extent. */
-#define VERR_ISOMK_IMPORT_ROOT_DIR_EXTENT_OUT_OF_BOUNDS (-24917)
-/** Import ISO contains a root directory with a bad record length. */
-#define VERR_ISOMK_IMPORT_BAD_ROOT_DIR_REC_LENGTH       (-24918)
-/** Import ISO contains a root directory without the directory flag set. */
-#define VERR_ISOMK_IMPORT_ROOT_DIR_WITHOUT_DIR_FLAG     (-24919)
-/** Import ISO contains a root directory with multiple extents. */
-#define VERR_ISOMK_IMPORT_ROOT_DIR_IS_MULTI_EXTENT      (-24920)
-/** Import ISO contains a too deep directory subtree. */
-#define VERR_ISOMK_IMPORT_TOO_DEEP_DIR_TREE             (-24921)
-
-/** Import ISO contains a bad directory record. */
-#define VERR_ISOMK_IMPORT_BAD_DIR_REC                   (-24922)
-/** Import ISO directory record with a mismatching volume sequence number. */
-#define VERR_ISOMK_IMPORT_DIR_REC_VOLUME_SEQ_NO         (-24923)
-/** Import ISO directory with an extent that is out of bounds. */
-#define VERR_ISOMK_IMPORT_DIR_REC_EXTENT_OUT_OF_BOUNDS  (-24924)
-/** Import ISO directory with a bad record length. */
-#define VERR_ISOMK_IMPORT_BAD_DIR_REC_LENGTH            (-24925)
-/** Import ISO directory with a bad name length. */
-#define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME_LENGTH   (-24926)
-/** Import ISO directory with a bad name. */
-#define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME          (-24927)
 
 
 
@@ -1014,10 +950,347 @@ static int rtFsIsoImportProcessSupplementaryDesc(PRTFSISOMKIMPORTER pThis, PISO9
 }
 
 
-static int rtFsIsoImportProcessElToritoDesc(PRTFSISOMKIMPORTER pThis, PISO9660BOOTRECORDELTORITO pElTorito)
+/**
+ * Processes a boot catalog default or section entry.
+ *
+ * @returns IPRT status code (ignored).
+ * @param   pThis       The ISO importer instance.
+ * @param   iEntry      The boot catalog entry number. This is 1 for
+ *                      the default entry, and 3+ for section entries.
+ * @param   cMaxEntries Maximum number of entries.
+ * @param   pEntry      The entry to process.
+ * @param   pcSkip      Where to return the number of extension entries to skip.
+ */
+static int rtFsIsoImportProcessElToritoSectionEntry(PRTFSISOMKIMPORTER pThis, uint32_t iEntry, uint32_t cMaxEntries,
+                                                    PCISO9660ELTORITOSECTIONENTRY pEntry, uint32_t *pcSkip)
 {
-    RT_NOREF(pThis, pElTorito);
-    return VINF_SUCCESS;
+    *pcSkip = 0;
+
+    /*
+     * Check the boot indicator type for entry 1.
+     */
+    if (   pEntry->bBootIndicator != ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE
+        && pEntry->bBootIndicator != ISO9660_ELTORITO_BOOT_INDICATOR_NOT_BOOTABLE)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_BOOT_IND,
+                               "Default boot catalog entry has an invalid boot indicator: %#x", pEntry->bBootIndicator);
+
+    /*
+     * Check the media type and flags.
+     */
+    uint32_t cbDefaultSize;
+    uint8_t  bMediaType   = pEntry->bBootMediaType;
+    switch (bMediaType & ISO9660_ELTORITO_BOOT_MEDIA_TYPE_MASK)
+    {
+        case ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_2_MB:
+            cbDefaultSize = 512 * 80 * 15 * 2;
+            break;
+
+        case ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_44_MB:
+            cbDefaultSize = 512 * 80 * 18 * 2;
+            break;
+
+        case ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_2_88_MB:
+            cbDefaultSize = 512 * 80 * 36 * 2;
+            break;
+
+        case ISO9660_ELTORITO_BOOT_MEDIA_TYPE_NO_EMULATION:
+        case ISO9660_ELTORITO_BOOT_MEDIA_TYPE_HARD_DISK:
+            cbDefaultSize = 0;
+            break;
+
+        default:
+            return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_INVALID_BOOT_MEDIA_TYPE,
+                                   "Boot catalog entry #%#x has an invalid boot media type: %#x", bMediaType);
+    }
+
+    if (iEntry == 1)
+    {
+        if (bMediaType & ISO9660_ELTORITO_BOOT_MEDIA_F_MASK)
+        {
+            rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_FLAGS,
+                            "Boot catalog entry #%#x has an invalid boot media type: %#x", bMediaType);
+            bMediaType &= ~ISO9660_ELTORITO_BOOT_MEDIA_F_MASK;
+        }
+    }
+    else
+    {
+        if (bMediaType & ISO9660_ELTORITO_BOOT_MEDIA_F_RESERVED)
+        {
+            rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_RESERVED_FLAG,
+                            "Boot catalog entry #%#x has an invalid boot media type: %#x", bMediaType);
+            bMediaType &= ~ISO9660_ELTORITO_BOOT_MEDIA_F_RESERVED;
+        }
+    }
+
+    /*
+     * Complain if bUnused is used.
+     */
+    if (pEntry->bUnused != 0)
+        rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_USES_UNUSED_FIELD,
+                        "Boot catalog entry #%#x has a non-zero unused field: %#x", pEntry->bUnused);
+
+    /*
+     * Check out the boot image offset and turn that into an index of a file
+     */
+    uint32_t offBootImage = RT_LE2H_U32(pEntry->offBootImage);
+    if (offBootImage >= pThis->cBlocksInSrcFile)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_IMAGE_OUT_OF_BOUNDS,
+                               "Boot catalog entry #%#x has an out of bound boot image block number: %#RX32, max %#RX32",
+                               offBootImage, pThis->cBlocksInPrimaryVolumeSpace);
+
+    int                     rc;
+    uint32_t                idxImageObj;
+    PRTFSISOMKIMPBLOCK2FILE pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, offBootImage);
+    if (pBlock2File)
+        idxImageObj = pBlock2File->idxObj;
+    else
+    {
+        if (cbDefaultSize == 0)
+        {
+            pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32GetBestFit(&pThis->Block2FileRoot, offBootImage, true /*fAbove*/);
+            if (pBlock2File)
+                cbDefaultSize = RT_MIN(pBlock2File->Core.Key - offBootImage, UINT32_MAX / ISO9660_SECTOR_SIZE + 1)
+                              * ISO9660_SECTOR_SIZE;
+            else if (offBootImage < pThis->cBlocksInSrcFile)
+                cbDefaultSize = RT_MIN(pThis->cBlocksInSrcFile - offBootImage, UINT32_MAX / ISO9660_SECTOR_SIZE + 1)
+                              * ISO9660_SECTOR_SIZE;
+            else
+                return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_UNKNOWN_IMAGE_SIZE,
+                                       "Boot catalog entry #%#x has an invalid boot media type: %#x", bMediaType);
+        }
+
+        if (pThis->idxSrcFile != UINT32_MAX)
+        {
+            rc = RTFsIsoMakerAddCommonSourceFile(pThis->hIsoMaker, pThis->hSrcFile, &pThis->idxSrcFile);
+            if (RT_FAILURE(rc))
+                return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerAddCommonSourceFile failed: %Rrc", rc);
+            Assert(pThis->idxSrcFile != UINT32_MAX);
+        }
+
+        rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
+                                                     offBootImage * (uint64_t)ISO9660_SECTOR_SIZE,
+                                                     cbDefaultSize, NULL, &idxImageObj);
+        if (RT_FAILURE(rc))
+            return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerAddUnnamedFileWithCommonSrc failed on boot entry #%#x: %Rrc",
+                                   iEntry, rc);
+    }
+
+    /*
+     * Deal with selection criteria. Use the last sector of abBuf to gather it
+     * into a single data chunk.
+     */
+    size_t   cbSelCrit = 0;
+    uint8_t *pbSelCrit = &pThis->abBuf[sizeof(pThis->abBuf) - ISO9660_SECTOR_SIZE];
+    if (pEntry->bSelectionCriteriaType != ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE)
+    {
+        memcpy(pbSelCrit, pEntry->abSelectionCriteria, sizeof(pEntry->abSelectionCriteria));
+        cbSelCrit = sizeof(pEntry->abSelectionCriteria);
+
+        if (   (bMediaType & ISO9660_ELTORITO_BOOT_MEDIA_F_CONTINUATION)
+            && iEntry + 1 < cMaxEntries)
+        {
+            uint32_t                         iExtEntry = iEntry + 1;
+            PCISO9660ELTORITOSECTIONENTRYEXT pExtEntry = (PCISO9660ELTORITOSECTIONENTRYEXT)pEntry;
+            for (;;)
+            {
+                pExtEntry++;
+
+                if (pExtEntry->bExtensionId != ISO9660_ELTORITO_SECTION_ENTRY_EXT_ID)
+                {
+                    rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_INVALID_ID,
+                                    "Invalid header ID for extension entry #%#x: %#x", iExtEntry, pExtEntry->bExtensionId);
+                    break;
+                }
+                *pcSkip += 1;
+
+                memcpy(&pbSelCrit[cbSelCrit], pExtEntry->abSelectionCriteria, sizeof(pExtEntry->abSelectionCriteria));
+                cbSelCrit += sizeof(pExtEntry->abSelectionCriteria);
+
+                if (pExtEntry->fFlags & ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_UNUSED_MASK)
+                    rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_UNDEFINED_FLAGS,
+                                    "Boot catalog extension entry #%#x uses undefined flags: %#x", iExtEntry, pExtEntry->fFlags);
+
+                iExtEntry++;
+                if (!(pExtEntry->fFlags & ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_MORE))
+                    break;
+                if (iExtEntry >= cMaxEntries)
+                {
+                    rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_END_OF_SECTOR,
+                                    "Boot catalog extension entry #%#x sets the MORE flag, but we have reached the end of the boot catalog sector");
+                    break;
+                }
+            }
+            Assert(*pcSkip = iExtEntry - iEntry);
+        }
+        else if (bMediaType & ISO9660_ELTORITO_BOOT_MEDIA_F_CONTINUATION)
+            rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_EOS,
+                            "Boot catalog extension entry #%#x sets the MORE flag, but we have reached the end of the boot catalog sector");
+    }
+    else if (bMediaType & ISO9660_ELTORITO_BOOT_MEDIA_F_CONTINUATION)
+        rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_WITH_NONE,
+                        "Boot catalog entry #%#x uses the continuation flag with selection criteria NONE", iEntry);
+
+    /*
+     * Add the entry.
+     */
+    rc = RTFsIsoMakerBootCatSetSectionEntry(pThis->hIsoMaker, iEntry, idxImageObj, bMediaType, pEntry->bSystemType,
+                                            pEntry->bBootIndicator == ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE,
+                                            pEntry->uLoadSeg, pEntry->cEmulatedSectorsToLoad,
+                                            pEntry->bSelectionCriteriaType, pbSelCrit, cbSelCrit);
+    if (RT_FAILURE(rc))
+        rtFsIsoImpError(pThis, rc, "RTFsIsoMakerBootCatSetSectionEntry failed for entry #%#x: %Rrc", iEntry, rc);
+    return rc;
+}
+
+
+
+/**
+ * Processes a boot catalog section header entry.
+ *
+ * @returns IPRT status code (ignored).
+ * @param   pThis       The ISO importer instance.
+ * @param   iEntry      The boot catalog entry number.
+ * @param   pEntry      The entry to process.
+ */
+static int rtFsIsoImportProcessElToritoSectionHeader(PRTFSISOMKIMPORTER pThis, uint32_t iEntry,
+                                                     PCISO9660ELTORITOSECTIONHEADER pEntry, char pszId[32])
+{
+    Assert(pEntry->bHeaderId == ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER);
+
+    /* Deal with the string. ASSUME it doesn't contain zeros in non-terminal positions. */
+    if (pEntry->achSectionId[0] == '\0')
+        pszId = NULL;
+    else
+    {
+        memcpy(pszId, pEntry->achSectionId, sizeof(pEntry->achSectionId));
+        pszId[sizeof(pEntry->achSectionId)] = '\0';
+    }
+
+    int rc = RTFsIsoMakerBootCatSetSectionHeaderEntry(pThis->hIsoMaker, iEntry, RT_LE2H_U16(pEntry->cEntries),
+                                                      pEntry->bPlatformId, pszId);
+    if (RT_FAILURE(rc))
+        rtFsIsoImpError(pThis, rc,
+                        "RTFsIsoMakerBootCatSetSectionHeaderEntry failed for entry #%#x (bPlatformId=%#x cEntries=%#x): %Rrc",
+                        iEntry, RT_LE2H_U16(pEntry->cEntries), pEntry->bPlatformId, rc);
+    return rc;
+}
+
+
+/**
+ * Processes a El Torito volume descriptor.
+ *
+ * @returns IPRT status code (ignorable).
+ * @param   pThis       The ISO importer instance.
+ * @param   pVolDesc    The volume descriptor to process.
+ */
+static int rtFsIsoImportProcessElToritoDesc(PRTFSISOMKIMPORTER pThis, PISO9660BOOTRECORDELTORITO pVolDesc)
+{
+    /*
+     * Read the boot catalog into the abBuf.
+     */
+    uint32_t offBootCatalog = RT_LE2H_U32(pVolDesc->offBootCatalog);
+    if (offBootCatalog >= pThis->cBlocksInPrimaryVolumeSpace)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_BAD_OUT_OF_BOUNDS,
+                               "Boot catalog block number is out of bounds: %#RX32, max %#RX32",
+                               offBootCatalog, pThis->cBlocksInPrimaryVolumeSpace);
+
+    int rc = RTVfsFileReadAt(pThis->hSrcFile, offBootCatalog * (uint64_t)ISO9660_SECTOR_SIZE,
+                             pThis->abBuf, ISO9660_SECTOR_SIZE, NULL);
+    if (RT_FAILURE(rc))
+        return rtFsIsoImpError(pThis, rc,  "Error reading boot catalog at block #%#RX32: %Rrc", offBootCatalog, rc);
+
+
+    /*
+     * Process the 'validation entry'.
+     */
+    PCISO9660ELTORITOVALIDATIONENTRY pValEntry = (PCISO9660ELTORITOVALIDATIONENTRY)&pThis->abBuf[0];
+    if (pValEntry->bHeaderId != ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_HEADER_ID,
+                               "Invalid boot catalog validation entry header ID: %#x, expected %#x",
+                               pValEntry->bHeaderId, ISO9660_ELTORITO_HEADER_ID_VALIDATION_ENTRY);
+
+    if (   pValEntry->bKey1     != ISO9660_ELTORITO_KEY_BYTE_1
+        || pValEntry->bKey2     != ISO9660_ELTORITO_KEY_BYTE_2)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_KEYS,
+                               "Invalid boot catalog validation entry keys: %#x %#x, expected %#x %#x",
+                               pValEntry->bKey1, pValEntry->bKey2, ISO9660_ELTORITO_KEY_BYTE_1, ISO9660_ELTORITO_KEY_BYTE_2);
+
+    /* Check the checksum (should sum up to be zero). */
+    uint16_t        uChecksum = 0;
+    uint16_t const *pu16      = (uint16_t const *)pValEntry;
+    size_t          cLeft     = sizeof(*pValEntry) / sizeof(uint16_t);
+    while (cLeft-- > 0)
+    {
+        uChecksum += RT_LE2H_U16(*pu16);
+        pu16++;
+    }
+    if (uChecksum != 0)
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_CHECKSUM,
+                               "Invalid boot catalog validation entry checksum: %#x, expected 0", uChecksum);
+
+    /* The string ID.  ASSUME no leading zeros in valid strings. */
+    const char *pszId = NULL;
+    char        szId[32];
+    if (pValEntry->achId[0] != '\0')
+    {
+        memcpy(szId, pValEntry->achId, sizeof(pValEntry->achId));
+        szId[sizeof(pValEntry->achId)] = '\0';
+        pszId = szId;
+    }
+
+    /*
+     * Before we tell the ISO maker about the validation entry, we need to sort
+     * out the file backing the boot catalog.  This isn't fatal if it fails.
+     */
+    PRTFSISOMKIMPBLOCK2FILE pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, offBootCatalog);
+    if (pBlock2File)
+    {
+        rc = RTFsIsoMakerBootCatSetFile(pThis->hIsoMaker, pBlock2File->idxObj);
+        if (RT_FAILURE(rc))
+            rtFsIsoImpError(pThis, rc, "RTFsIsoMakerBootCatSetFile failed: %Rrc", rc);
+    }
+
+    /*
+     * Set the validation entry.
+     */
+    rc = RTFsIsoMakerBootCatSetValidationEntry(pThis->hIsoMaker, pValEntry->bPlatformId, pszId);
+    if (RT_FAILURE(rc))
+        return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerBootCatSetValidationEntry(,%#x,%s) failed: %Rrc",
+                               pValEntry->bPlatformId, pszId);
+
+    /*
+     * Process the default entry and any subsequent entries.
+     */
+    bool           fSeenFinal  = false;
+    uint32_t const cMaxEntries = ISO9660_SECTOR_SIZE / ISO9660_ELTORITO_ENTRY_SIZE;
+    for (uint32_t iEntry = 1; iEntry < cMaxEntries; iEntry++)
+    {
+        uint8_t const *pbEntry  = &pThis->abBuf[iEntry * ISO9660_ELTORITO_ENTRY_SIZE];
+        uint8_t const  idHeader = *pbEntry;
+        if (   iEntry == 1 /* default*/
+            || idHeader == ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE
+            || idHeader == ISO9660_ELTORITO_BOOT_INDICATOR_NOT_BOOTABLE)
+        {
+            uint32_t cSkip = 0;
+            rtFsIsoImportProcessElToritoSectionEntry(pThis, iEntry, cMaxEntries, (PCISO9660ELTORITOSECTIONENTRY)pbEntry, &cSkip);
+            iEntry += cSkip;
+        }
+        else if (idHeader == ISO9660_ELTORITO_HEADER_ID_SECTION_HEADER)
+            rtFsIsoImportProcessElToritoSectionHeader(pThis, iEntry, (PCISO9660ELTORITOSECTIONHEADER)pbEntry, szId);
+        else if (idHeader == ISO9660_ELTORITO_HEADER_ID_FINAL_SECTION_HEADER)
+        {
+            fSeenFinal = true;
+            break;
+        }
+        else
+            rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_UNKNOWN_HEADER_ID,
+                            "Unknown boot catalog header ID for entry #%#x: %#x", iEntry, idHeader);
+    }
+
+    if (!fSeenFinal)
+        rc = rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BOOT_CAT_MISSING_FINAL_OR_TOO_BIG,
+                             "Boot catalog is probably larger than a sector, or it's missing the final section header entry");
+    return rc;
 }
 
 
@@ -1065,190 +1338,199 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
         return rc;
     pResults->offError = UINT32_MAX;
 
-
     /*
-     * Allocate and init the importer state.
+     * Get the file size.
      */
-    PRTFSISOMKIMPORTER pThis = (PRTFSISOMKIMPORTER)RTMemAllocZ(sizeof(*pThis));
-    if (pThis)
+    uint64_t cbSrcFile = 0;
+    rc = RTVfsFileGetSize(hSrcFile, &cbSrcFile);
+    if (RT_SUCCESS(rc))
     {
-        pThis->hIsoMaker        = hIsoMaker;
-        pThis->fFlags           = fFlags;
-        pThis->rc               = VINF_SUCCESS;
-        pThis->pErrInfo         = pErrInfo;
-        pThis->hSrcFile         = hSrcFile;
-        pThis->idxSrcFile       = UINT32_MAX;
-        //pThis->Block2FileRoot = NULL;
-        //pThis->cBlocksInPrimaryVolumeSpace = 0;
-        //pThis->cbPrimaryVolumeSpace = 0
-        //pThis->cVolumesInSet  = 0;
-        //pThis->idPrimaryVol   = 0;
-        //pThis->fSeenJoliet    = false;
-        pThis->pResults         = pResults;
-
         /*
-         * Check if this looks like a plausible ISO by checking out the first volume descriptor.
+         * Allocate and init the importer state.
          */
-        rc = RTVfsFileReadAt(hSrcFile, _32K, &pThis->uSectorBuf.PrimVolDesc, sizeof(pThis->uSectorBuf.PrimVolDesc), NULL);
-        if (RT_SUCCESS(rc))
+        PRTFSISOMKIMPORTER pThis = (PRTFSISOMKIMPORTER)RTMemAllocZ(sizeof(*pThis));
+        if (pThis)
         {
-            if (   pThis->uSectorBuf.VolDescHdr.achStdId[0] == ISO9660VOLDESC_STD_ID_0
-                && pThis->uSectorBuf.VolDescHdr.achStdId[1] == ISO9660VOLDESC_STD_ID_1
-                && pThis->uSectorBuf.VolDescHdr.achStdId[2] == ISO9660VOLDESC_STD_ID_2
-                && pThis->uSectorBuf.VolDescHdr.achStdId[3] == ISO9660VOLDESC_STD_ID_3
-                && pThis->uSectorBuf.VolDescHdr.achStdId[4] == ISO9660VOLDESC_STD_ID_4
-                && (   pThis->uSectorBuf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_PRIMARY
-                    || pThis->uSectorBuf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_BOOT_RECORD) )
+            pThis->hIsoMaker        = hIsoMaker;
+            pThis->fFlags           = fFlags;
+            pThis->rc               = VINF_SUCCESS;
+            pThis->pErrInfo         = pErrInfo;
+            pThis->hSrcFile         = hSrcFile;
+            pThis->cbSrcFile        = cbSrcFile;
+            pThis->cBlocksInSrcFile = cbSrcFile / ISO9660_SECTOR_SIZE;
+            pThis->idxSrcFile       = UINT32_MAX;
+            //pThis->Block2FileRoot = NULL;
+            //pThis->cBlocksInPrimaryVolumeSpace = 0;
+            //pThis->cbPrimaryVolumeSpace = 0
+            //pThis->cVolumesInSet  = 0;
+            //pThis->idPrimaryVol   = 0;
+            //pThis->fSeenJoliet    = false;
+            pThis->pResults         = pResults;
+
+            /*
+             * Check if this looks like a plausible ISO by checking out the first volume descriptor.
+             */
+            rc = RTVfsFileReadAt(hSrcFile, _32K, &pThis->uSectorBuf.PrimVolDesc, sizeof(pThis->uSectorBuf.PrimVolDesc), NULL);
+            if (RT_SUCCESS(rc))
             {
-                /*
-                 * Process the volume descriptors using the sector buffer, starting
-                 * with the one we've already got sitting there.  We postpone processing
-                 * the el torito one till after the others, so we can name files and size
-                 * referenced in it.
-                 */
-                uint32_t cPrimaryVolDescs = 0;
-                uint32_t iElTorito        = UINT32_MAX;
-                uint32_t iVolDesc         = 0;
-                for (;;)
+                if (   pThis->uSectorBuf.VolDescHdr.achStdId[0] == ISO9660VOLDESC_STD_ID_0
+                    && pThis->uSectorBuf.VolDescHdr.achStdId[1] == ISO9660VOLDESC_STD_ID_1
+                    && pThis->uSectorBuf.VolDescHdr.achStdId[2] == ISO9660VOLDESC_STD_ID_2
+                    && pThis->uSectorBuf.VolDescHdr.achStdId[3] == ISO9660VOLDESC_STD_ID_3
+                    && pThis->uSectorBuf.VolDescHdr.achStdId[4] == ISO9660VOLDESC_STD_ID_4
+                    && (   pThis->uSectorBuf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_PRIMARY
+                        || pThis->uSectorBuf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_BOOT_RECORD) )
                 {
-                    switch (pThis->uSectorBuf.VolDescHdr.bDescType)
+                    /*
+                     * Process the volume descriptors using the sector buffer, starting
+                     * with the one we've already got sitting there.  We postpone processing
+                     * the el torito one till after the others, so we can name files and size
+                     * referenced in it.
+                     */
+                    uint32_t cPrimaryVolDescs = 0;
+                    uint32_t iElTorito        = UINT32_MAX;
+                    uint32_t iVolDesc         = 0;
+                    for (;;)
                     {
-                        case ISO9660VOLDESC_TYPE_PRIMARY:
-                            cPrimaryVolDescs++;
-                            if (cPrimaryVolDescs == 1)
-                                rtFsIsoImportProcessPrimaryDesc(pThis, &pThis->uSectorBuf.PrimVolDesc);
-                            else
-                                rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MULTIPLE_PRIMARY_VOL_DESCS,
-                                                "Only a single primary volume descriptor is currently supported");
-                            break;
-
-                        case ISO9660VOLDESC_TYPE_SUPPLEMENTARY:
-                            if (cPrimaryVolDescs > 0)
-                                rtFsIsoImportProcessSupplementaryDesc(pThis, &pThis->uSectorBuf.SupVolDesc);
-                            else
-                                rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_SUPPLEMENTARY_BEFORE_PRIMARY,
-                                                "Primary volume descriptor expected before any supplementary descriptors!");
-                            break;
-
-                        case ISO9660VOLDESC_TYPE_BOOT_RECORD:
-                            if (strcmp(pThis->uSectorBuf.ElToritoDesc.achBootSystemId,
-                                       ISO9660BOOTRECORDELTORITO_BOOT_SYSTEM_ID) == 0)
-                            {
-                                if (iElTorito == UINT32_MAX)
-                                    iElTorito = iVolDesc;
+                        switch (pThis->uSectorBuf.VolDescHdr.bDescType)
+                        {
+                            case ISO9660VOLDESC_TYPE_PRIMARY:
+                                cPrimaryVolDescs++;
+                                if (cPrimaryVolDescs == 1)
+                                    rtFsIsoImportProcessPrimaryDesc(pThis, &pThis->uSectorBuf.PrimVolDesc);
                                 else
-                                    rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MULTIPLE_EL_TORITO_DESCS,
-                                                    "Only a single El Torito descriptor exepcted!");
-                            }
-                            break;
+                                    rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MULTIPLE_PRIMARY_VOL_DESCS,
+                                                    "Only a single primary volume descriptor is currently supported");
+                                break;
 
-                        case ISO9660VOLDESC_TYPE_PARTITION:
-                            /* ignore for now */
-                            break;
+                            case ISO9660VOLDESC_TYPE_SUPPLEMENTARY:
+                                if (cPrimaryVolDescs > 0)
+                                    rtFsIsoImportProcessSupplementaryDesc(pThis, &pThis->uSectorBuf.SupVolDesc);
+                                else
+                                    rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_SUPPLEMENTARY_BEFORE_PRIMARY,
+                                                    "Primary volume descriptor expected before any supplementary descriptors!");
+                                break;
 
-                        case ISO9660VOLDESC_TYPE_TERMINATOR:
-                            AssertFailed();
+                            case ISO9660VOLDESC_TYPE_BOOT_RECORD:
+                                if (strcmp(pThis->uSectorBuf.ElToritoDesc.achBootSystemId,
+                                           ISO9660BOOTRECORDELTORITO_BOOT_SYSTEM_ID) == 0)
+                                {
+                                    if (iElTorito == UINT32_MAX)
+                                        iElTorito = iVolDesc;
+                                    else
+                                        rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MULTIPLE_EL_TORITO_DESCS,
+                                                        "Only a single El Torito descriptor exepcted!");
+                                }
+                                break;
+
+                            case ISO9660VOLDESC_TYPE_PARTITION:
+                                /* ignore for now */
+                                break;
+
+                            case ISO9660VOLDESC_TYPE_TERMINATOR:
+                                AssertFailed();
+                                break;
+                        }
+
+
+                        /*
+                         * Read the next volume descriptor and check the signature.
+                         */
+                        iVolDesc++;
+                        if (iVolDesc >= 32)
+                        {
+                            rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_TOO_MANY_VOL_DESCS, "Parses at most 32 volume descriptors");
+                            break;
+                        }
+
+                        rc = RTVfsFileReadAt(hSrcFile, _32K + iVolDesc * ISO9660_SECTOR_SIZE,
+                                             &pThis->uSectorBuf, sizeof(pThis->uSectorBuf), NULL);
+                        if (RT_FAILURE(rc))
+                        {
+                            rtFsIsoImpError(pThis, rc, "Error reading the volume descriptor #%u at %#RX32: %Rrc",
+                                            iVolDesc, _32K + iVolDesc * ISO9660_SECTOR_SIZE, rc);
+                            break;
+                        }
+
+                        if (   pThis->uSectorBuf.VolDescHdr.achStdId[0] != ISO9660VOLDESC_STD_ID_0
+                            || pThis->uSectorBuf.VolDescHdr.achStdId[1] != ISO9660VOLDESC_STD_ID_1
+                            || pThis->uSectorBuf.VolDescHdr.achStdId[2] != ISO9660VOLDESC_STD_ID_2
+                            || pThis->uSectorBuf.VolDescHdr.achStdId[3] != ISO9660VOLDESC_STD_ID_3
+                            || pThis->uSectorBuf.VolDescHdr.achStdId[4] != ISO9660VOLDESC_STD_ID_4)
+                        {
+                            rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_INVALID_VOL_DESC_HDR,
+                                            "Invalid volume descriptor header #%u at %#RX32: %.*Rhxs",
+                                            iVolDesc, _32K + iVolDesc * ISO9660_SECTOR_SIZE,
+                                            (int)sizeof(pThis->uSectorBuf.VolDescHdr), &pThis->uSectorBuf.VolDescHdr);
+                            break;
+                        }
+                        /** @todo UDF support. */
+                        if (pThis->uSectorBuf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_TERMINATOR)
                             break;
                     }
-
 
                     /*
-                     * Read the next volume descriptor and check the signature.
+                     * Process the system area.
                      */
-                    iVolDesc++;
-                    if (iVolDesc >= 32)
+                    if (RT_SUCCESS(pThis->rc) || pThis->idxSrcFile != UINT32_MAX)
                     {
-                        rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_TOO_MANY_VOL_DESCS, "Parses at most 32 volume descriptors");
-                        break;
-                    }
-
-                    rc = RTVfsFileReadAt(hSrcFile, _32K + iVolDesc * ISO9660_SECTOR_SIZE,
-                                         &pThis->uSectorBuf, sizeof(pThis->uSectorBuf), NULL);
-                    if (RT_FAILURE(rc))
-                    {
-                        rtFsIsoImpError(pThis, rc, "Error reading the volume descriptor #%u at %#RX32: %Rrc",
-                                        iVolDesc, _32K + iVolDesc * ISO9660_SECTOR_SIZE, rc);
-                        break;
-                    }
-
-                    if (   pThis->uSectorBuf.VolDescHdr.achStdId[0] != ISO9660VOLDESC_STD_ID_0
-                        || pThis->uSectorBuf.VolDescHdr.achStdId[1] != ISO9660VOLDESC_STD_ID_1
-                        || pThis->uSectorBuf.VolDescHdr.achStdId[2] != ISO9660VOLDESC_STD_ID_2
-                        || pThis->uSectorBuf.VolDescHdr.achStdId[3] != ISO9660VOLDESC_STD_ID_3
-                        || pThis->uSectorBuf.VolDescHdr.achStdId[4] != ISO9660VOLDESC_STD_ID_4)
-                    {
-                        rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_INVALID_VOL_DESC_HDR,
-                                        "Invalid volume descriptor header #%u at %#RX32: %.*Rhxs",
-                                        iVolDesc, _32K + iVolDesc * ISO9660_SECTOR_SIZE,
-                                        (int)sizeof(pThis->uSectorBuf.VolDescHdr), &pThis->uSectorBuf.VolDescHdr);
-                        break;
-                    }
-                    /** @todo UDF support. */
-                    if (pThis->uSectorBuf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_TERMINATOR)
-                        break;
-                }
-
-                /*
-                 * Process the system area.
-                 */
-                if (RT_SUCCESS(pThis->rc) || pThis->idxSrcFile != UINT32_MAX)
-                {
-                    rc = RTVfsFileReadAt(hSrcFile, 0, pThis->abBuf, _32K, NULL);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (!ASMMemIsAllU8(pThis->abBuf, _32K, 0))
+                        rc = RTVfsFileReadAt(hSrcFile, 0, pThis->abBuf, _32K, NULL);
+                        if (RT_SUCCESS(rc))
                         {
-                            /* Drop zero sectors from the end. */
-                            uint32_t cbSysArea = _32K;
-                            while (   cbSysArea >= ISO9660_SECTOR_SIZE
-                                   && ASMMemIsAllU8(&pThis->abBuf[cbSysArea - ISO9660_SECTOR_SIZE], ISO9660_SECTOR_SIZE, 0))
-                                cbSysArea -= ISO9660_SECTOR_SIZE;
+                            if (!ASMMemIsAllU8(pThis->abBuf, _32K, 0))
+                            {
+                                /* Drop zero sectors from the end. */
+                                uint32_t cbSysArea = _32K;
+                                while (   cbSysArea >= ISO9660_SECTOR_SIZE
+                                       && ASMMemIsAllU8(&pThis->abBuf[cbSysArea - ISO9660_SECTOR_SIZE], ISO9660_SECTOR_SIZE, 0))
+                                    cbSysArea -= ISO9660_SECTOR_SIZE;
 
-                            /** @todo HFS */
-                            pThis->pResults->cbSysArea = cbSysArea;
-                            rc = RTFsIsoMakerSetSysAreaContent(hIsoMaker, pThis->abBuf, cbSysArea, 0);
-                            if (RT_FAILURE(rc))
-                                rtFsIsoImpError(pThis, rc, "RTFsIsoMakerSetSysAreaContent failed: %Rrc", rc);
+                                /** @todo HFS */
+                                pThis->pResults->cbSysArea = cbSysArea;
+                                rc = RTFsIsoMakerSetSysAreaContent(hIsoMaker, pThis->abBuf, cbSysArea, 0);
+                                if (RT_FAILURE(rc))
+                                    rtFsIsoImpError(pThis, rc, "RTFsIsoMakerSetSysAreaContent failed: %Rrc", rc);
+                            }
                         }
+                        else
+                            rtFsIsoImpError(pThis, rc, "Error reading the system area (0..32KB): %Rrc", rc);
                     }
-                    else
-                        rtFsIsoImpError(pThis, rc, "Error reading the system area (0..32KB): %Rrc", rc);
-                }
 
-                /*
-                 * Do the El Torito descriptor.
-                 */
-                if (   iElTorito != UINT32_MAX
-                    && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_BOOT)
-                    && (RT_SUCCESS(pThis->rc) || pThis->idxSrcFile != UINT32_MAX))
-                {
-                    rc = RTVfsFileReadAt(hSrcFile, _32K + iElTorito * ISO9660_SECTOR_SIZE,
-                                         &pThis->uSectorBuf, sizeof(pThis->uSectorBuf), NULL);
-                    if (RT_SUCCESS(rc))
-                        rtFsIsoImportProcessElToritoDesc(pThis, &pThis->uSectorBuf.ElToritoDesc);
-                    else
-                        rtFsIsoImpError(pThis, rc, "Error reading the El Torito volume descriptor at %#RX32: %Rrc",
-                                        _32K + iElTorito * ISO9660_SECTOR_SIZE, rc);
-                }
+                    /*
+                     * Do the El Torito descriptor.
+                     */
+                    if (   iElTorito != UINT32_MAX
+                        && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_BOOT)
+                        && (RT_SUCCESS(pThis->rc) || pThis->idxSrcFile != UINT32_MAX))
+                    {
+                        rc = RTVfsFileReadAt(hSrcFile, _32K + iElTorito * ISO9660_SECTOR_SIZE,
+                                             &pThis->uSectorBuf, sizeof(pThis->uSectorBuf), NULL);
+                        if (RT_SUCCESS(rc))
+                            rtFsIsoImportProcessElToritoDesc(pThis, &pThis->uSectorBuf.ElToritoDesc);
+                        else
+                            rtFsIsoImpError(pThis, rc, "Error reading the El Torito volume descriptor at %#RX32: %Rrc",
+                                            _32K + iElTorito * ISO9660_SECTOR_SIZE, rc);
+                    }
 
-                /*
-                 * Return the first error status.
-                 */
-                rc = pThis->rc;
+                    /*
+                     * Return the first error status.
+                     */
+                    rc = pThis->rc;
+                }
+                else
+                    rc = RTErrInfoSetF(pErrInfo, VERR_ISOMK_IMPORT_UNKNOWN_FORMAT, "Invalid volume descriptor header: %.*Rhxs",
+                                       (int)sizeof(pThis->uSectorBuf.VolDescHdr), &pThis->uSectorBuf.VolDescHdr);
             }
-            else
-                rc = RTErrInfoSetF(pErrInfo, VERR_ISOMK_IMPORT_UNKNOWN_FORMAT, "Invalid volume descriptor header: %.*Rhxs",
-                                   (int)sizeof(pThis->uSectorBuf.VolDescHdr), &pThis->uSectorBuf.VolDescHdr);
-        }
 
-        /*
-         * Destroy the state.
-         */
-        RTAvlU32Destroy(&pThis->Block2FileRoot, rtFsIsoMakerImportDestroyData2File, NULL);
-        RTMemFree(pThis);
+            /*
+             * Destroy the state.
+             */
+            RTAvlU32Destroy(&pThis->Block2FileRoot, rtFsIsoMakerImportDestroyData2File, NULL);
+            RTMemFree(pThis);
+        }
+        else
+            rc = VERR_NO_MEMORY;
     }
-    else
-        rc = VERR_NO_MEMORY;
     RTVfsFileRelease(hSrcFile);
     return rc;
 

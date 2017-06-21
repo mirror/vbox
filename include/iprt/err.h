@@ -2671,6 +2671,134 @@ RT_C_DECLS_END
 #define VERR_VFS_UNSUPPORTED_FORMAT                 (-24803)
 /** @} */
 
+/** @name RTFsIsoMaker status codes.
+ * @{ */
+/** No validation entry in the boot catalog. */
+#define VERR_ISOMK_BOOT_CAT_NO_VALIDATION_ENTRY         (-25000)
+/** No default entry in the boot catalog. */
+#define VERR_ISOMK_BOOT_CAT_NO_DEFAULT_ENTRY            (-25001)
+/** Expected section header. */
+#define VERR_ISOMK_BOOT_CAT_EXPECTED_SECTION_HEADER     (-25002)
+/** Entry in a boot catalog section is empty. */
+#define VERR_ISOMK_BOOT_CAT_EMPTY_ENTRY                 (-25003)
+/** Entry in a boot catalog section is another section. */
+#define VERR_ISOMK_BOOT_CAT_INVALID_SECTION_SIZE        (-25004)
+/** Unsectioned boot catalog entry. */
+#define VERR_ISOMK_BOOT_CAT_ERRATIC_ENTRY               (-25005)
+
+/** Requested to import an unknown ISO format. */
+#define VERR_ISOMK_IMPORT_UNKNOWN_FORMAT                (-25100)
+/** Too many volume descriptors in the import ISO. */
+#define VERR_ISOMK_IMPORT_TOO_MANY_VOL_DESCS            (-25101)
+/** Import ISO contains a bad volume descriptor header.   */
+#define VERR_ISOMK_IMPORT_INVALID_VOL_DESC_HDR          (-25102)
+/** Import ISO contains more than one primary volume descriptor. */
+#define VERR_ISOMK_IMPORT_MULTIPLE_PRIMARY_VOL_DESCS    (-25103)
+/** Import ISO contains more than one el torito descriptor. */
+#define VERR_ISOMK_IMPORT_MULTIPLE_EL_TORITO_DESCS      (-25104)
+/** Import ISO contains more than one joliet volume descriptor. */
+#define VERR_ISOMK_IMPORT_MULTIPLE_JOLIET_VOL_DESCS     (-25105)
+/** Import ISO starts with supplementary volume descriptor before any
+ * primary ones. */
+#define VERR_ISOMK_IMPORT_SUPPLEMENTARY_BEFORE_PRIMARY  (-25106)
+/** Import ISO contains an unsupported primary volume descriptor version. */
+#define VERR_IOSMK_IMPORT_PRIMARY_VOL_DESC_VER          (-25107)
+/** Import ISO contains a bad primary volume descriptor. */
+#define VERR_ISOMK_IMPORT_BAD_PRIMARY_VOL_DESC          (-25108)
+/** Import ISO contains an unsupported supplementary volume descriptor
+ *  version. */
+#define VERR_IOSMK_IMPORT_SUP_VOL_DESC_VER              (-25109)
+/** Import ISO contains a bad supplementary volume descriptor. */
+#define VERR_ISOMK_IMPORT_BAD_SUP_VOL_DESC              (-25110)
+/** Import ISO uses a logical block size other than 2KB. */
+#define VERR_ISOMK_IMPORT_LOGICAL_BLOCK_SIZE_NOT_2KB    (-25111)
+/** Import ISO contains more than volume. */
+#define VERR_ISOMK_IMPORT_MORE_THAN_ONE_VOLUME_IN_SET   (-25112)
+/** Import ISO uses invalid volume sequence number. */
+#define VERR_ISOMK_IMPORT_INVALID_VOLUMNE_SEQ_NO        (-25113)
+/** Import ISO has different volume space sizes of primary and supplementary
+ * volume descriptors. */
+#define VERR_ISOMK_IMPORT_VOLUME_SPACE_SIZE_MISMATCH    (-25114)
+/** Import ISO has different volume set sizes of primary and supplementary
+ * volume descriptors. */
+#define VERR_ISOMK_IMPORT_VOLUME_IN_SET_MISMATCH        (-25115)
+/** Import ISO contains a bad root directory record. */
+#define VERR_ISOMK_IMPORT_BAD_ROOT_DIR_REC              (-25116)
+/** Import ISO contains a zero sized root directory. */
+#define VERR_ISOMK_IMPORT_ZERO_SIZED_ROOT_DIR           (-25117)
+/** Import ISO contains a root directory with a mismatching volume sequence
+ *  number. */
+#define VERR_ISOMK_IMPORT_ROOT_VOLUME_SEQ_NO            (-25118)
+/** Import ISO contains a root directory with an out of bounds data extent. */
+#define VERR_ISOMK_IMPORT_ROOT_DIR_EXTENT_OUT_OF_BOUNDS (-25119)
+/** Import ISO contains a root directory with a bad record length. */
+#define VERR_ISOMK_IMPORT_BAD_ROOT_DIR_REC_LENGTH       (-25120)
+/** Import ISO contains a root directory without the directory flag set. */
+#define VERR_ISOMK_IMPORT_ROOT_DIR_WITHOUT_DIR_FLAG     (-25121)
+/** Import ISO contains a root directory with multiple extents. */
+#define VERR_ISOMK_IMPORT_ROOT_DIR_IS_MULTI_EXTENT      (-25122)
+/** Import ISO contains a too deep directory subtree. */
+#define VERR_ISOMK_IMPORT_TOO_DEEP_DIR_TREE             (-25123)
+/** Import ISO contains a bad directory record. */
+#define VERR_ISOMK_IMPORT_BAD_DIR_REC                   (-25124)
+/** Import ISO directory record with a mismatching volume sequence number. */
+#define VERR_ISOMK_IMPORT_DIR_REC_VOLUME_SEQ_NO         (-25125)
+/** Import ISO directory with an extent that is out of bounds. */
+#define VERR_ISOMK_IMPORT_DIR_REC_EXTENT_OUT_OF_BOUNDS  (-25126)
+/** Import ISO directory with a bad record length. */
+#define VERR_ISOMK_IMPORT_BAD_DIR_REC_LENGTH            (-25127)
+/** Import ISO directory with a bad name length. */
+#define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME_LENGTH   (-25128)
+/** Import ISO directory with a bad name. */
+#define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME          (-25129)
+/** The boot catalog block in the import ISO is out of bounds. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_OUT_OF_BOUNDS                (-25130)
+/** The boot catalog block in the import ISO has an incorrect validation
+ *  header ID. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_HEADER_ID         (-25131)
+/** The boot catalog validation entry in the import ISO has incorrect keys. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_KEYS              (-25132)
+/** The boot catalog validation entry in the import ISO has an incorrect checksum. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_CHECKSUM          (-25133)
+/** A boot catalog entry in the import ISO has an unknown type. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_UNKNOWN_HEADER_ID                (-25134)
+/** A boot catalog entry in the import ISO has an invalid boot media type. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_INVALID_BOOT_MEDIA_TYPE          (-25135)
+/** The default boot catalog entry in the import ISO has invalid flags set. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_FLAGS          (-25136)
+/** A boot catalog entry in the import ISO has reserved flag set. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_RESERVED_FLAG              (-25137)
+/** A boot catalog entry in the import ISO is using the unused field. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_USES_UNUSED_FIELD          (-25138)
+/** A boot catalog entry in the import ISO points to a block after the end of
+ * the image input file. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_IMAGE_OUT_OF_BOUNDS        (-25139)
+/** A boot catalog entry in the import ISO has an image with an
+ * indeterminate size. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_UNKNOWN_IMAGE_SIZE         (-25140)
+/** The boot catalog in the import ISO is larger than a sector or it is
+ *  missing the final section header entry. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_MISSING_FINAL_OR_TOO_BIG         (-25141)
+/** The default boot catalog entry in the import ISO an invalid boot
+ *  indicator value. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_BOOT_IND       (-25142)
+/** A boot catalog extension entry in the import ISO was either flagged
+ *  incorrectly in the previous entry or has an invalid header ID. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_INVALID_ID             (-25143)
+/** A boot catalog extension entry in the import ISO uses undefined flags
+ *  which will be lost. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_UNDEFINED_FLAGS        (-25144)
+/** A boot catalog extension entry in the import ISO indicates more entries when
+ *  we reached the end of the boot catalog sector. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_END_OF_SECTOR          (-25145)
+/** A boot catalog entry in the import ISO sets the continuation flag when using
+ * NONE as the selection criteria type. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_WITH_NONE     (-25146)
+/** A boot catalog entry in the import ISO sets the continuation flag when
+ *  we reached the ned of the boot catalog secotr. */
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_EOS           (-25147)
+/** @} */
+
 /* SED-END */
 
 /** @} */

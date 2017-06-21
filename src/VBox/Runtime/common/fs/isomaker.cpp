@@ -93,19 +93,6 @@
     ( RT_UOFFSETOF(ISO9660PATHREC, achDirId[(a_cbNameInDirRec) + ((a_cbNameInDirRec) & 1)]) )
 
 
-/** No validation entry in the boot catalog. */
-#define VERR_ISOMK_BOOT_CAT_NO_VALIDATION_ENTRY                 (-24900)
-/** No default entry in the boot catalog. */
-#define VERR_ISOMK_BOOT_CAT_NO_DEFAULT_ENTRY                    (-24901)
-/** Expected section header. */
-#define VERR_ISOMK_BOOT_CAT_EXPECTED_SECTION_HEADER             (-24902)
-/** Entry in a boot catalog section is empty. */
-#define VERR_ISOMK_BOOT_CAT_EMPTY_ENTRY                         (-24903)
-/** Entry in a boot catalog section is another section. */
-#define VERR_ISOMK_BOOT_CAT_INVALID_SECTION_SIZE                (-24904)
-/** Unsectioned boot catalog entry. */
-#define VERR_ISOMK_BOOT_CAT_ERRATIC_ENTRY                       (-24905)
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -2359,6 +2346,16 @@ RTDECL(uint32_t) RTFsIsoMakerGetObjIdxForPath(RTFSISOMAKER hIsoMaker, uint32_t f
 static int rtFsIsoMakerObjRemoveWorker(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj)
 {
     /*
+     * Don't allow removing trans.tbl files and the boot catalog.
+     */
+    if (pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
+    {
+        PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
+        AssertReturn(pFile->enmSrcType != RTFSISOMAKERSRCTYPE_TRANS_TBL, VERR_ACCESS_DENIED);
+        AssertReturn(pFile != pThis->pBootCatFile, VERR_ACCESS_DENIED);
+    }
+
+    /*
      * Remove the object from all name spaces.
      */
     int rc = VINF_SUCCESS;
@@ -3150,6 +3147,90 @@ RTDECL(int) RTFsIsoMakerQueryObjIdxForBootCatalog(RTFSISOMAKER hIsoMaker, uint32
 
 
 /**
+ * Sets the boot catalog backing file.
+ *
+ * The content of the given file will be discarded and replaced with the boot
+ * catalog, the naming and file attributes (other than size) will be retained.
+ *
+ * This API exists mainly to assist when importing ISOs.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxObj              The configuration index of the file.
+ */
+RTDECL(int) RTFsIsoMakerBootCatSetFile(RTFSISOMAKER hIsoMaker, uint32_t idxObj)
+{
+    /*
+     * Validate and translate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+
+    PRTFSISOMAKEROBJ pObj = rtFsIsoMakerIndexToObj(pThis, idxObj);
+    AssertReturn(pObj, VERR_OUT_OF_RANGE);
+    AssertReturn(pObj->enmType == RTFSISOMAKEROBJTYPE_FILE, VERR_WRONG_TYPE);
+    PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
+    AssertReturn(   pFile->enmSrcType == RTFSISOMAKERSRCTYPE_PATH
+                 || pFile->enmSrcType == RTFSISOMAKERSRCTYPE_COMMON
+                 || pFile->enmSrcType == RTFSISOMAKERSRCTYPE_VFS_FILE,
+                 VERR_WRONG_TYPE);
+
+    /*
+     * To reduce the possible combinations here, make sure there is a boot cat
+     * file that we're "replacing".
+     */
+    int rc = rtFsIsoMakerEnsureBootCatFile(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Grab a reference to the boot cat memory VFS so we can destroy it
+         * later using regular destructors.
+         */
+        PRTFSISOMAKERFILE pOldFile = pThis->pBootCatFile;
+        RTVFSFILE         hVfsFile = pOldFile->u.hVfsFile;
+        uint32_t          cRefs    = RTVfsFileRetain(hVfsFile);
+        if (cRefs != UINT32_MAX)
+        {
+            /*
+             * Try remove the existing boot file.
+             */
+            pOldFile->Core.cNotOrphan--;
+            pThis->pBootCatFile = NULL;
+            rc = rtFsIsoMakerObjRemoveWorker(pThis, &pOldFile->Core);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Just morph pFile into a boot catalog file.
+                 */
+                if (pFile->enmSrcType)
+                {
+                    RTVfsFileRelease(pFile->u.hVfsFile);
+                    pFile->u.hVfsFile = NIL_RTVFSFILE;
+                }
+
+                pThis->cbData -= RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
+                pFile->cbData     = 0;
+                pFile->Core.cNotOrphan++;
+                pFile->enmSrcType = RTFSISOMAKERSRCTYPE_VFS_FILE;
+                pFile->u.hVfsFile = hVfsFile;
+
+                pThis->pBootCatFile = pFile;
+
+                return VINF_SUCCESS;
+            }
+
+            pThis->pBootCatFile = pOldFile;
+            pOldFile->Core.cNotOrphan++;
+            RTVfsFileRelease(hVfsFile);
+        }
+        else
+            rc = VERR_INTERNAL_ERROR_2;
+    }
+    return rc;
+}
+
+
+/**
  * Set the validation entry of the boot catalog (this is the first entry).
  *
  * @returns IPRT status code.
@@ -3239,10 +3320,15 @@ RTDECL(int) RTFsIsoMakerBootCatSetValidationEntry(RTFSISOMAKER hIsoMaker, uint8_
  * @param   uLoadSeg            The load address divided by 0x10 (i.e. the real
  *                              mode segment number).
  * @param   cSectorsToLoad      Number of emulated sectors to load.
+ * @param   bSelCritType        The selection criteria type, if none pass
+ *                              ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE.
+ * @param   pvSelCritData       Pointer to the selection criteria data.
+ * @param   cbSelCritData       Size of the selection criteria data.
  */
 RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t idxBootCat, uint32_t idxImageObj,
                                                uint8_t bBootMediaType, uint8_t bSystemType, bool fBootable,
-                                               uint16_t uLoadSeg, uint16_t cSectorsToLoad)
+                                               uint16_t uLoadSeg, uint16_t cSectorsToLoad,
+                                               uint8_t bSelCritType, void const *pvSelCritData, size_t cbSelCritData)
 {
     /*
      * Validate input.
@@ -3258,6 +3344,28 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t 
 
     AssertReturn(idxBootCat != 0 && idxBootCat != 2 && idxBootCat < RT_ELEMENTS(pThis->aBootCatEntries) - 1U, VERR_OUT_OF_RANGE);
 
+    size_t cExtEntries = 0;
+    if (bSelCritType == ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE)
+        AssertReturn(cbSelCritData == 0, VERR_INVALID_PARAMETER);
+    else
+    {
+        AssertReturn(idxBootCat > 2, VERR_INVALID_PARAMETER);
+        if (cbSelCritData > 0)
+        {
+            AssertPtrReturn(pvSelCritData, VERR_INVALID_POINTER);
+
+            if (cbSelCritData <= RT_SIZEOFMEMB(ISO9660ELTORITOSECTIONENTRY, abSelectionCriteria))
+                cExtEntries = 0;
+            else
+            {
+                cExtEntries = (cbSelCritData - RT_SIZEOFMEMB(ISO9660ELTORITOSECTIONENTRY, abSelectionCriteria)
+                               + RT_SIZEOFMEMB(ISO9660ELTORITOSECTIONENTRYEXT, abSelectionCriteria) - 1)
+                            / RT_SIZEOFMEMB(ISO9660ELTORITOSECTIONENTRYEXT, abSelectionCriteria);
+                AssertReturn(cExtEntries + 1 < RT_ELEMENTS(pThis->aBootCatEntries) - 1, VERR_TOO_MUCH_DATA);
+            }
+        }
+    }
+
     /*
      * Make sure we've got a boot file.
      */
@@ -3267,22 +3375,31 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t 
         /*
          * Construct the entry.
          */
-        ISO9660ELTORITOSECTIONENTRY Entry;
-        Entry.bBootIndicator            = fBootable ? ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE
-                                        :             ISO9660_ELTORITO_BOOT_INDICATOR_NOT_BOOTABLE;
-        Entry.bBootMediaType            = bBootMediaType;
-        Entry.uLoadSeg                  = RT_H2LE_U16(uLoadSeg);
-        Entry.bSystemType               = bSystemType;
-        Entry.bUnused                   = 0;
-        Entry.cEmulatedSectorsToLoad    = RT_H2LE_U16(cSectorsToLoad);
-        Entry.offBootImage              = 0;
-        Entry.bSelectionCriteriaType    = ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE;
-        RT_ZERO(Entry.abSelectionCriteria);
+        union
+        {
+            ISO9660ELTORITOSECTIONENTRY     Entry;
+            ISO9660ELTORITOSECTIONENTRYEXT  ExtEntry;
+        } u;
+        u.Entry.bBootIndicator            = fBootable ? ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE
+                                          :             ISO9660_ELTORITO_BOOT_INDICATOR_NOT_BOOTABLE;
+        u.Entry.bBootMediaType            = bBootMediaType;
+        u.Entry.uLoadSeg                  = RT_H2LE_U16(uLoadSeg);
+        u.Entry.bSystemType               = cExtEntries == 0
+                                          ? bSystemType & ~ISO9660_ELTORITO_BOOT_MEDIA_F_CONTINUATION
+                                          : bSystemType | ISO9660_ELTORITO_BOOT_MEDIA_F_CONTINUATION;
+        u.Entry.bUnused                   = 0;
+        u.Entry.cEmulatedSectorsToLoad    = RT_H2LE_U16(cSectorsToLoad);
+        u.Entry.offBootImage              = 0;
+        u.Entry.bSelectionCriteriaType    = bSelCritType;
+        RT_ZERO(u.Entry.abSelectionCriteria);
+        if (cbSelCritData > 0)
+            memcpy(u.Entry.abSelectionCriteria, pvSelCritData, RT_MIN(cbSelCritData, sizeof(u.Entry.abSelectionCriteria)));
 
         /*
          * Write it and update our internal tracker.
          */
-        rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, 32 * idxBootCat, &Entry, sizeof(Entry), NULL);
+        rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, ISO9660_ELTORITO_ENTRY_SIZE * idxBootCat,
+                              &u.Entry, sizeof(u.Entry), NULL);
         if (RT_SUCCESS(rc))
         {
             if (pThis->aBootCatEntries[idxBootCat].pBootFile != pFile)
@@ -3293,8 +3410,54 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionEntry(RTFSISOMAKER hIsoMaker, uint32_t 
                 pThis->aBootCatEntries[idxBootCat].pBootFile = pFile;
             }
 
-            pThis->aBootCatEntries[idxBootCat].bType    = Entry.bBootIndicator;
+            pThis->aBootCatEntries[idxBootCat].bType    = u.Entry.bBootIndicator;
             pThis->aBootCatEntries[idxBootCat].cEntries = 1;
+        }
+
+        /*
+         * Do add further extension entries with selection criteria.
+         */
+        if (cExtEntries)
+        {
+            uint8_t const *pbSrc = (uint8_t const *)pvSelCritData;
+            size_t         cbSrc = cbSelCritData;
+            pbSrc += sizeof(u.Entry.abSelectionCriteria);
+            cbSrc -= sizeof(u.Entry.abSelectionCriteria);
+
+            while (cbSrc > 0)
+            {
+                u.ExtEntry.bExtensionId = ISO9660_ELTORITO_SECTION_ENTRY_EXT_ID;
+                if (cbSrc > sizeof(u.ExtEntry.abSelectionCriteria))
+                {
+                    u.ExtEntry.fFlags = ISO9660_ELTORITO_SECTION_ENTRY_EXT_F_MORE;
+                    memcpy(u.ExtEntry.abSelectionCriteria, pbSrc, sizeof(u.ExtEntry.abSelectionCriteria));
+                    pbSrc += sizeof(u.ExtEntry.abSelectionCriteria);
+                    cbSrc -= sizeof(u.ExtEntry.abSelectionCriteria);
+                }
+                else
+                {
+                    u.ExtEntry.fFlags = 0;
+                    RT_ZERO(u.ExtEntry.abSelectionCriteria);
+                    memcpy(u.ExtEntry.abSelectionCriteria, pbSrc, cbSrc);
+                    cbSrc = 0;
+                }
+
+                idxBootCat++;
+                rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, ISO9660_ELTORITO_ENTRY_SIZE * idxBootCat,
+                                      &u.Entry, sizeof(u.Entry), NULL);
+                if (RT_FAILURE(rc))
+                    break;
+
+                /* update the internal tracker. */
+                if (pThis->aBootCatEntries[idxBootCat].pBootFile)
+                {
+                    pThis->aBootCatEntries[idxBootCat].pBootFile->Core.cNotOrphan--;
+                    pThis->aBootCatEntries[idxBootCat].pBootFile = NULL;
+                }
+
+                pThis->aBootCatEntries[idxBootCat].bType    = ISO9660_ELTORITO_SECTION_ENTRY_EXT_ID;
+                pThis->aBootCatEntries[idxBootCat].cEntries = 1;
+            }
         }
     }
     return rc;
@@ -3356,7 +3519,8 @@ RTDECL(int) RTFsIsoMakerBootCatSetSectionHeaderEntry(RTFSISOMAKER hIsoMaker, uin
         /*
          * Write the entry and update our internal tracker.
          */
-        rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, 32 * idxBootCat, &Entry, sizeof(Entry), NULL);
+        rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, ISO9660_ELTORITO_ENTRY_SIZE * idxBootCat,
+                              &Entry, sizeof(Entry), NULL);
         if (RT_SUCCESS(rc))
         {
             if (pThis->aBootCatEntries[idxBootCat].pBootFile != NULL)
@@ -3474,8 +3638,8 @@ static int rtFsIsoMakerFinalizeBootStuffPart1(PRTFSISOMAKERINT pThis)
     /*
      * Fixate the size of the boot catalog file.
      */
-    pThis->pBootCatFile->cbData = cEntriesInFile * 32;
-    pThis->cbData  += RT_ALIGN_32(cEntriesInFile * 32, RTFSISOMAKER_SECTOR_SIZE);
+    pThis->pBootCatFile->cbData = cEntriesInFile * ISO9660_ELTORITO_ENTRY_SIZE;
+    pThis->cbData  += RT_ALIGN_32(cEntriesInFile * ISO9660_ELTORITO_ENTRY_SIZE, RTFSISOMAKER_SECTOR_SIZE);
 
     /*
      * Move up the boot images and boot catalog to the start of the image.
@@ -3532,7 +3696,7 @@ static int rtFsIsoMakerFinalizeBootStuffPart2(PRTFSISOMAKERINT pThis)
             uint32_t off = pThis->aBootCatEntries[i].pBootFile->offData / RTFSISOMAKER_SECTOR_SIZE;
             off = RT_H2LE_U32(off);
             int rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile,
-                                      i * 32 + RT_UOFFSETOF(ISO9660ELTORITOSECTIONENTRY, offBootImage),
+                                      i * ISO9660_ELTORITO_ENTRY_SIZE + RT_UOFFSETOF(ISO9660ELTORITOSECTIONENTRY, offBootImage),
                                       &off, sizeof(off), NULL /*pcbWritten*/);
             AssertRCReturn(rc, rc);
             if (i == cEntries)
@@ -3547,7 +3711,8 @@ static int rtFsIsoMakerFinalizeBootStuffPart2(PRTFSISOMAKERINT pThis)
     Entry.bPlatformId = ISO9660_ELTORITO_PLATFORM_ID_X86;
     Entry.cEntries    = 0;
     RT_ZERO(Entry.achSectionId);
-    int rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, cEntries * 32, &Entry, sizeof(Entry), NULL /*pcbWritten*/);
+    int rc = RTVfsFileWriteAt(pThis->pBootCatFile->u.hVfsFile, cEntries * ISO9660_ELTORITO_ENTRY_SIZE,
+                              &Entry, sizeof(Entry), NULL /*pcbWritten*/);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
