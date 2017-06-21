@@ -43,6 +43,7 @@
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/mm.h>
@@ -2135,6 +2136,13 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
     pVM->rem.s.Env.pVCpu = pVCpu;
     pCtx = pVM->rem.s.pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+
+    Assert(pCtx);
+    if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+    {
+        AssertMsgFailed(("Bad scheduling - can't exec. nested-guest in REM!\n"));
+        return VERR_NOT_SUPPORTED;
+    }
 
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
