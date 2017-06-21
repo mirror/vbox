@@ -293,6 +293,12 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
                 LogRel(("PulseAudio: pa_threaded_mainloop_wait done\n"));
             if (pThis->fAbortEnumLoop)
                 break;
+            if (   !pThis->pContext
+                || pa_context_get_state(pThis->pContext) != PA_CONTEXT_READY)
+            {
+                LogRel(("PulseAudio: pa_context_get_state context not ready\n"));
+                break;
+            }
         }
         pThis->fAbortLoop = false;
 
