@@ -3202,7 +3202,7 @@ RTDECL(int) RTFsIsoMakerBootCatSetFile(RTFSISOMAKER hIsoMaker, uint32_t idxObj)
                 /*
                  * Just morph pFile into a boot catalog file.
                  */
-                if (pFile->enmSrcType)
+                if (pFile->enmSrcType == RTFSISOMAKERSRCTYPE_VFS_FILE)
                 {
                     RTVfsFileRelease(pFile->u.hVfsFile);
                     pFile->u.hVfsFile = NIL_RTVFSFILE;

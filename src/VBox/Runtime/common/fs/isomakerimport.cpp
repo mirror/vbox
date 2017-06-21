@@ -1137,7 +1137,9 @@ static int rtFsIsoImportProcessElToritoSectionEntry(PRTFSISOMKIMPORTER pThis, ui
                                             pEntry->bBootIndicator == ISO9660_ELTORITO_BOOT_INDICATOR_BOOTABLE,
                                             pEntry->uLoadSeg, pEntry->cEmulatedSectorsToLoad,
                                             pEntry->bSelectionCriteriaType, pbSelCrit, cbSelCrit);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        pThis->pResults->cBootCatEntries += 1 + *pcSkip;
+    else
         rtFsIsoImpError(pThis, rc, "RTFsIsoMakerBootCatSetSectionEntry failed for entry #%#x: %Rrc", iEntry, rc);
     return rc;
 }
@@ -1168,7 +1170,9 @@ static int rtFsIsoImportProcessElToritoSectionHeader(PRTFSISOMKIMPORTER pThis, u
 
     int rc = RTFsIsoMakerBootCatSetSectionHeaderEntry(pThis->hIsoMaker, iEntry, RT_LE2H_U16(pEntry->cEntries),
                                                       pEntry->bPlatformId, pszId);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        pThis->pResults->cBootCatEntries++;
+    else
         rtFsIsoImpError(pThis, rc,
                         "RTFsIsoMakerBootCatSetSectionHeaderEntry failed for entry #%#x (bPlatformId=%#x cEntries=%#x): %Rrc",
                         iEntry, RT_LE2H_U16(pEntry->cEntries), pEntry->bPlatformId, rc);
@@ -1257,6 +1261,8 @@ static int rtFsIsoImportProcessElToritoDesc(PRTFSISOMKIMPORTER pThis, PISO9660BO
     if (RT_FAILURE(rc))
         return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerBootCatSetValidationEntry(,%#x,%s) failed: %Rrc",
                                pValEntry->bPlatformId, pszId);
+    Assert(pThis->pResults->cBootCatEntries == UINT32_MAX);
+    pThis->pResults->cBootCatEntries = 0;
 
     /*
      * Process the default entry and any subsequent entries.
