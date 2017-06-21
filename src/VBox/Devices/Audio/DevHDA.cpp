@@ -3275,6 +3275,13 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
+    /* Write the wanted stream format into the register in any case.
+     *
+     * This is important for e.g. MacOS guests, as those try to initialize streams which are not reported
+     * by the device emulation (wants 4 channels, only have 2 channels at the moment).
+     *
+     * When ignoring those (invalid) formats, this leads to MacOS thinking that the device is malfunctioning
+     * and therefore disabling the device completely. */
     int rc = hdaRegWriteU16(pThis, iReg, u32Value);
     AssertRC(rc);
 
