@@ -168,7 +168,7 @@ private:
         /** Proposes to take a snapshot. */
         bool takeSnapshot(bool fAutomatically = false);
         /** Proposes to delete the snapshot. */
-        bool deleteSnapshot();
+        bool deleteSnapshot(bool fAutomatically = false);
         /** Proposes to restore the snapshot. */
         bool restoreSnapshot(bool fSuppressNonCriticalWarnings = false);
         /** Proposes to clone the snapshot. */

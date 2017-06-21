@@ -1089,6 +1089,13 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
             else
                 restoreSnapshot(true /* suppress non-critical warnings */);
         }
+        /* Handle Ctrl+Shift+DoubleClick: */
+        else if (QApplication::keyboardModifiers() == (Qt::KeyboardModifiers)(Qt::ControlModifier | Qt::ShiftModifier))
+        {
+            /* As snapshot-delete procedure: */
+            if (!pSnapshotItem->isCurrentStateItem())
+                deleteSnapshot(true /* automatically */);
+        }
         /* Handle other kinds of DoubleClick: */
         else
         {
@@ -1563,7 +1570,7 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
     return fSuccess;
 }
 
-bool UISnapshotPane::deleteSnapshot()
+bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
 {
     /* Simulate try-catch block: */
     bool fSuccess = false;
@@ -1582,7 +1589,7 @@ bool UISnapshotPane::deleteSnapshot()
             break;
 
         /* Ask if user really wants to remove the selected snapshot: */
-        if (!msgCenter().confirmSnapshotRemoval(comSnapshot.GetName()))
+        if (!fAutomatically && !msgCenter().confirmSnapshotRemoval(comSnapshot.GetName()))
             break;
 
         /** @todo check available space on the target filesystem etc etc. */
