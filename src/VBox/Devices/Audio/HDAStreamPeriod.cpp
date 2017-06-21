@@ -181,6 +181,34 @@ void hdaStreamPeriodEnd(PHDASTREAMPERIOD pPeriod)
 }
 
 /**
+ * Pauses a period. All values remain intact.
+ *
+ * @param   pPeriod             Stream period to pause.
+ */
+void hdaStreamPeriodPause(PHDASTREAMPERIOD pPeriod)
+{
+    AssertMsg((pPeriod->fStatus & HDASTREAMPERIOD_FLAG_ACTIVE), ("Period %p already in inactive state\n", pPeriod));
+
+    pPeriod->fStatus &= ~HDASTREAMPERIOD_FLAG_ACTIVE;
+
+    Log3Func(("[SD%RU8]\n", pPeriod->u8SD));
+}
+
+/**
+ * Resumes a formerly paused period.
+ *
+ * @param   pPeriod             Stream period to resume.
+ */
+void hdaStreamPeriodResume(PHDASTREAMPERIOD pPeriod)
+{
+    AssertMsg(!(pPeriod->fStatus & HDASTREAMPERIOD_FLAG_ACTIVE), ("Period %p already in active state\n", pPeriod));
+
+    pPeriod->fStatus |= HDASTREAMPERIOD_FLAG_ACTIVE;
+
+    Log3Func(("[SD%RU8]\n", pPeriod->u8SD));
+}
+
+/**
  * Locks a stream period for serializing access.
  *
  * @return  true if locking was successful, false if not.

@@ -88,6 +88,8 @@ void     hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod, uint8_t u8SD, uint16_t u1
 void     hdaStreamPeriodReset(PHDASTREAMPERIOD pPeriod);
 int      hdaStreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk);
 void     hdaStreamPeriodEnd(PHDASTREAMPERIOD pPeriod);
+void     hdaStreamPeriodPause(PHDASTREAMPERIOD pPeriod);
+void     hdaStreamPeriodResume(PHDASTREAMPERIOD pPeriod);
 bool     hdaStreamPeriodLock(PHDASTREAMPERIOD pPeriod);
 void     hdaStreamPeriodUnlock(PHDASTREAMPERIOD pPeriod);
 uint64_t hdaStreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrames);
