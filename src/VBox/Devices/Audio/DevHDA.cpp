@@ -6088,7 +6088,7 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
     SSMR3PutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
 
-    /* Load controller-specifc internals. */
+    /* Save controller-specifc internals. */
     SSMR3PutU64(pSSM, pThis->u64WalClk);
     SSMR3PutU8(pSSM, pThis->u8IRQL);
 
