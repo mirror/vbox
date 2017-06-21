@@ -1084,7 +1084,9 @@ void UISnapshotPane::sltHandleItemDoubleClick(QTreeWidgetItem *pItem)
         if (QApplication::keyboardModifiers() == Qt::ControlModifier)
         {
             /* As snapshot-restore procedure: */
-            if (pSnapshotItem->snapshot().isNotNull())
+            if (pSnapshotItem->isCurrentStateItem())
+                takeSnapshot(true /* automatically */);
+            else
                 restoreSnapshot(true /* suppress non-critical warnings */);
         }
         /* Handle other kinds of DoubleClick: */
@@ -1178,7 +1180,7 @@ void UISnapshotPane::prepareToolbar()
                                                                               ":/snapshot_take_disabled_16px.png"),
                                                       QString(), this, &UISnapshotPane::sltTakeSnapshot);
         {
-            m_pActionTakeSnapshot->setShortcut(QString("Ctrl+Shift+S"));
+            m_pActionTakeSnapshot->setShortcut(QString("Ctrl+Shift+T"));
         }
 
         /* Add Delete Snapshot action: */
@@ -1452,7 +1454,7 @@ void UISnapshotPane::updateActionStates()
     );
 }
 
-bool UISnapshotPane::takeSnapshot()
+bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
 {
     /* Simulate try-catch block: */
     bool fSuccess = false;
@@ -1473,63 +1475,74 @@ bool UISnapshotPane::takeSnapshot()
             /* Get corresponding machine object: */
             CMachine comMachine = comSession.GetMachine();
 
-            /* Create take-snapshot dialog: */
-            QWidget *pDlgParent = windowManager().realParentWindow(this);
-            QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, m_comMachine);
-            windowManager().registerNewParent(pDlg, pDlgParent);
-
-            /* Assign corresponding icon: */
-            QPixmap pixmap = vboxGlobal().vmUserPixmapDefault(m_comMachine);
-            if (pixmap.isNull())
-                pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_comMachine.GetOSTypeId());
-            pDlg->setPixmap(pixmap);
-
-            /* Search for the max available snapshot index: */
-            int iMaxSnapShotIndex = 0;
-            QString strSnapshotName = tr("Snapshot %1");
-            QRegExp regExp(QString("^") + strSnapshotName.arg("([0-9]+)") + QString("$"));
+            /* Search for a maximum available snapshot index: */
+            int iMaximumIndex = 0;
+            const QString strNameTemplate = tr("Snapshot %1");
+            const QRegExp reName(QString("^") + strNameTemplate.arg("([0-9]+)") + QString("$"));
             QTreeWidgetItemIterator iterator(m_pSnapshotTree);
             while (*iterator)
             {
-                QString strSnapshot = static_cast<UISnapshotItem*>(*iterator)->text(Column_Name);
-                int iPos = regExp.indexIn(strSnapshot);
-                if (iPos != -1)
-                    iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
+                const QString strName = static_cast<UISnapshotItem*>(*iterator)->text(Column_Name);
+                const int iPosition = reName.indexIn(strName);
+                if (iPosition != -1)
+                    iMaximumIndex = reName.cap(1).toInt() > iMaximumIndex
+                                  ? reName.cap(1).toInt()
+                                  : iMaximumIndex;
                 ++iterator;
             }
-            /* Assign corresponding snapshot name: */
-            pDlg->setName(strSnapshotName.arg(iMaxSnapShotIndex + 1));
 
-            /* Show Take Snapshot dialog: */
-            if (pDlg->exec() != QDialog::Accepted)
+            /* Prepare final snapshot name/description: */
+            QString strFinalName = strNameTemplate.arg(iMaximumIndex + 1);
+            QString strFinalDescription;
+
+            /* Should we take snapshot manually? */
+            if (!fAutomatically)
             {
-                /* Cleanup dialog if it wasn't destroyed in own loop: */
-                if (pDlg)
-                    delete pDlg;
-                break;
+                /* Create take-snapshot dialog: */
+                QWidget *pDlgParent = windowManager().realParentWindow(this);
+                QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, comMachine);
+                windowManager().registerNewParent(pDlg, pDlgParent);
+
+                /* Assign corresponding icon: */
+                QPixmap pixmap = vboxGlobal().vmUserPixmapDefault(comMachine);
+                if (pixmap.isNull())
+                    pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(comMachine.GetOSTypeId());
+                pDlg->setPixmap(pixmap);
+
+                /* Assign corresponding snapshot name: */
+                pDlg->setName(strFinalName);
+
+                /* Show Take Snapshot dialog: */
+                if (pDlg->exec() != QDialog::Accepted)
+                {
+                    /* Cleanup dialog if it wasn't destroyed in own loop: */
+                    if (pDlg)
+                        delete pDlg;
+                    break;
+                }
+
+                /* Acquire final snapshot name/description: */
+                strFinalName = pDlg->name().trimmed();
+                strFinalDescription = pDlg->description();
+
+                /* Cleanup dialog: */
+                delete pDlg;
             }
 
-            /* Acquire real snapshot name/description: */
-            const QString strRealSnapshotName = pDlg->name().trimmed();
-            const QString strRealSnapshotDescription = pDlg->description();
-
-            /* Cleanup dialog: */
-            delete pDlg;
-
             /* Take snapshot: */
-            QString strSnapshotID;
-            CProgress comProgress = comMachine.TakeSnapshot(strRealSnapshotName, strRealSnapshotDescription, true, strSnapshotID);
+            QString strSnapshotId;
+            CProgress comProgress = comMachine.TakeSnapshot(strFinalName, strFinalDescription, true, strSnapshotId);
             if (!comMachine.isOk())
             {
-                msgCenter().cannotTakeSnapshot(comMachine, m_comMachine.GetName());
+                msgCenter().cannotTakeSnapshot(comMachine, comMachine.GetName());
                 break;
             }
 
             /* Show snapshot taking progress: */
-            msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_create_90px.png");
+            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_snapshot_create_90px.png");
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
-                msgCenter().cannotTakeSnapshot(comProgress, m_comMachine.GetName());
+                msgCenter().cannotTakeSnapshot(comProgress, comMachine.GetName());
                 break;
             }
 

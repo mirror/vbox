@@ -166,7 +166,7 @@ private:
         void updateActionStates();
 
         /** Proposes to take a snapshot. */
-        bool takeSnapshot();
+        bool takeSnapshot(bool fAutomatically = false);
         /** Proposes to delete the snapshot. */
         bool deleteSnapshot();
         /** Proposes to restore the snapshot. */
