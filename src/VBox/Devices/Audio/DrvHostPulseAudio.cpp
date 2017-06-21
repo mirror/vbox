@@ -290,8 +290,8 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
 //            if (fDebug)
 //                LogRel(("PulseAudio: pa_threaded_mainloop_wait\n"));
             pa_threaded_mainloop_wait(pThis->pMainLoop);
-//            if (fDebug)
-//                LogRel(("PulseAudio: pa_threaded_mainloop_wait done\n"));
+            if (fDebug)
+                LogRel(("PulseAudio: pa_threaded_mainloop_wait done\n"));
             if (pThis->fAbortEnumLoop)
                 break;
             if (   !pThis->pContext
@@ -342,6 +342,7 @@ static void paContextCbStateChanged(pa_context *pCtx, void *pvUser)
             break;
 
         default:
+            LogRel(("PulseAudio: ignoring state change %d\n", pa_context_get_state(pCtx)));
             break;
     }
 }
