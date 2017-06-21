@@ -2032,7 +2032,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
  * Performs and schedules necessary updates following a CR3 load or reload when
  * using nested or extended paging.
  *
- * This API is an alternative to PDMFlushTLB that avoids actually flushing the
+ * This API is an alternative to PGMFlushTLB that avoids actually flushing the
  * TLB and triggering a SyncCR3.
  *
  * This will normally involve mapping the guest PD or nPDPT
