@@ -113,6 +113,7 @@
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/patm.h>
@@ -172,6 +173,7 @@ static DECLCALLBACK(int)  cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVer
 static DECLCALLBACK(int)  cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -980,6 +982,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
                                  &cpumR3InfoAll, DBGFINFO_FLAGS_ALL_EMTS);
     DBGFR3InfoRegisterInternalEx(pVM, "cpumguest",        "Displays the guest cpu state.",
                                  &cpumR3InfoGuest, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpumguesthwvirt",   "Displays the guest hwvirt. cpu state.",
+                                 &cpumR3InfoGuestHwvirt, DBGFINFO_FLAGS_ALL_EMTS);
     DBGFR3InfoRegisterInternalEx(pVM, "cpumhyper",        "Displays the hypervisor cpu state.",
                                  &cpumR3InfoHyper, DBGFINFO_FLAGS_ALL_EMTS);
     DBGFR3InfoRegisterInternalEx(pVM, "cpumhost",         "Displays the host cpu state.",
@@ -2096,6 +2100,7 @@ static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 {
     cpumR3InfoGuest(pVM, pHlp, pszArgs);
     cpumR3InfoGuestInstr(pVM, pHlp, pszArgs);
+    cpumR3InfoGuestHwvirt(pVM, pHlp, pszArgs);
     cpumR3InfoHyper(pVM, pHlp, pszArgs);
     cpumR3InfoHost(pVM, pHlp, pszArgs);
 }
@@ -2147,7 +2152,7 @@ static void cpumR3InfoParseArg(const char *pszArgs, CPUMDUMPTYPE *penmType, cons
  *
  * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helper functions.
- * @param   pszArgs     Arguments, ignored.
+ * @param   pszArgs     Arguments.
  */
 static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
@@ -2165,6 +2170,110 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     cpumR3InfoOne(pVM, pCtx, CPUMCTX2CORE(pCtx), pHlp, enmType, "");
 }
 
+
+/**
+ * Display the guest's hardware-virtualization cpu state.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+    /*
+     * Figure out what to dump.
+     *
+     * In the future we may need to dump everything whether or not we're actively in nested-guest mode
+     * or not, hence the reason why we use a mask to determine what needs dumping. Currently, we only
+     * dump hwvirt. state when the guest CPU is executing a nested-guest.
+     */
+    /** @todo perhaps make this configurable through pszArgs, depending on how much
+     *        noise we wish to accept when nested hwvirt. isn't used. */
+#define CPUMHWVIRTDUMP_NONE     (0)
+#define CPUMHWVIRTDUMP_SVM      RT_BIT(0)
+#define CPUMHWVIRTDUMP_VMX      RT_BIT(1)
+#define CPUMHWVIRTDUMP_COMMON   RT_BIT(2)
+#define CPUMHWVIRTDUMP_LAST     CPUMHWVIRTDUMP_VMX
+#define CPUMHWVIRTDUMP_ALL      (CPUMHWVIRTDUMP_COMMON | CPUMHWVIRTDUMP_VMX | CPUMHWVIRTDUMP_SVM)
+
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    static const char *const s_aHwvirtModes[] = { "No/inactive", "SVM", "VMX", "Common" };
+    uint8_t const idxHwvirtState = CPUMIsGuestInSvmNestedHwVirtMode(pCtx) ? CPUMHWVIRTDUMP_SVM
+                                 : CPUMIsGuestInVmxNestedHwVirtMode(pCtx) ? CPUMHWVIRTDUMP_VMX : CPUMHWVIRTDUMP_NONE;
+    AssertCompile(CPUMHWVIRTDUMP_LAST <= RT_ELEMENTS(s_aHwvirtModes));
+    Assert(idxHwvirtState < RT_ELEMENTS(s_aHwvirtModes));
+    const char *pcszHwvirtMode   = s_aHwvirtModes[idxHwvirtState];
+    uint32_t const fDumpState    = idxHwvirtState; /* | CPUMHWVIRTDUMP_ALL */
+
+    /*
+     * Dump it.
+     */
+    pHlp->pfnPrintf(pHlp, "VCPU[%u] hardware virtualization state:\n", pVCpu->idCpu);
+
+    if (fDumpState & CPUMHWVIRTDUMP_COMMON)
+        pHlp->pfnPrintf(pHlp, "fLocalForcedActions            = %#RX32\n",  pCtx->hwvirt.fLocalForcedActions);
+    pHlp->pfnPrintf(pHlp, "%s hwvirt state%s\n", pcszHwvirtMode, fDumpState ? ":" : "");
+    if (fDumpState & CPUMHWVIRTDUMP_SVM)
+    {
+        pHlp->pfnPrintf(pHlp, "  uMsrHSavePa                = %#RX64\n",    pCtx->hwvirt.svm.uMsrHSavePa);
+        pHlp->pfnPrintf(pHlp, "  GCPhysVmcb                 = %#RGp\n",     pCtx->hwvirt.svm.GCPhysVmcb);
+        pHlp->pfnPrintf(pHlp, "  VmcbCtrl:\n");
+        HMR3InfoSvmVmcbCtrl(pHlp, &pCtx->hwvirt.svm.VmcbCtrl, "    " /* pszPrefix */);
+        pHlp->pfnPrintf(pHlp, "  HostState:\n");
+        pHlp->pfnPrintf(pHlp, "    uEferMsr                   = %#RX64\n",  pCtx->hwvirt.svm.HostState.uEferMsr);
+        pHlp->pfnPrintf(pHlp, "    uCr0                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uCr0);
+        pHlp->pfnPrintf(pHlp, "    uCr4                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uCr4);
+        pHlp->pfnPrintf(pHlp, "    uCr3                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uCr3);
+        pHlp->pfnPrintf(pHlp, "    uRip                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRip);
+        pHlp->pfnPrintf(pHlp, "    uRsp                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRsp);
+        pHlp->pfnPrintf(pHlp, "    uRax                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRax);
+        pHlp->pfnPrintf(pHlp, "    rflags                     = %#RX64\n",  pCtx->hwvirt.svm.HostState.rflags.u64);
+        PCPUMSELREG pSel = &pCtx->hwvirt.svm.HostState.es;
+        pHlp->pfnPrintf(pHlp, "    es                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
+                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->fFlags);
+        pSel = &pCtx->hwvirt.svm.HostState.cs;
+        pHlp->pfnPrintf(pHlp, "    cs                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
+                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->fFlags);
+        pSel = &pCtx->hwvirt.svm.HostState.ss;
+        pHlp->pfnPrintf(pHlp, "    ss                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
+                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->fFlags);
+        pSel = &pCtx->hwvirt.svm.HostState.ds;
+        pHlp->pfnPrintf(pHlp, "    ds                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
+                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->fFlags);
+        pHlp->pfnPrintf(pHlp, "    gdtr                       = %016RX64:%04x\n", pCtx->hwvirt.svm.HostState.gdtr.pGdt,
+                        pCtx->hwvirt.svm.HostState.gdtr.cbGdt);
+        pHlp->pfnPrintf(pHlp, "    idtr                       = %016RX64:%04x\n", pCtx->hwvirt.svm.HostState.idtr.pIdt,
+                        pCtx->hwvirt.svm.HostState.idtr.cbIdt);
+        pHlp->pfnPrintf(pHlp, "  fGif                       = %u\n",        pCtx->hwvirt.svm.fGif);
+        pHlp->pfnPrintf(pHlp, "  cPauseFilter               = %RU16\n",     pCtx->hwvirt.svm.cPauseFilter);
+        pHlp->pfnPrintf(pHlp, "  cPauseFilterThreshold      = %RU32\n",     pCtx->hwvirt.svm.cPauseFilterThreshold);
+        pHlp->pfnPrintf(pHlp, "  fInterceptEvents           = %u\n",        pCtx->hwvirt.svm.fInterceptEvents);
+        pHlp->pfnPrintf(pHlp, "  pvMsrBitmapR3              = %p\n",        pCtx->hwvirt.svm.pvMsrBitmapR3);
+        pHlp->pfnPrintf(pHlp, "  pvMsrBitmapR0              = %RKv\n",      pCtx->hwvirt.svm.pvMsrBitmapR0);
+        pHlp->pfnPrintf(pHlp, "  pvIoBitmapR3               = %p\n",        pCtx->hwvirt.svm.pvIoBitmapR3);
+        pHlp->pfnPrintf(pHlp, "  pvIoBitmapR0               = %RKv\n",      pCtx->hwvirt.svm.pvIoBitmapR0);
+    }
+
+    /** @todo Intel.  */
+#if 0
+    if (fDumpState & CPUMHWVIRTDUMP_VMX)
+    {
+    }
+#endif
+
+#undef CPUMHWVIRTDUMP_NONE
+#undef CPUMHWVIRTDUMP_COMMON
+#undef CPUMHWVIRTDUMP_SVM
+#undef CPUMHWVIRTDUMP_VMX
+#undef CPUMHWVIRTDUMP_LAST
+#undef CPUMHWVIRTDUMP_ALL
+}
 
 /**
  * Display the current guest instruction

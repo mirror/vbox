@@ -276,6 +276,7 @@ static FNSVMEXITHANDLER hmR0SvmExitStgi;
 static FNSVMEXITHANDLER hmR0SvmExitVmload;
 static FNSVMEXITHANDLER hmR0SvmExitVmsave;
 static FNSVMEXITHANDLER hmR0SvmExitInvlpga;
+static FNSVMEXITHANDLER hmR0SvmExitVmrun;
 #endif
 /** @} */
 
@@ -588,7 +589,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
 {
     uint16_t offMsrpm;
     uint32_t uMsrpmBit;
-    int rc = hmSvmGetMsrpmOffsetAndBit(uMsr, &offMsrpm, &uMsrpmBit);
+    int rc = HMSvmGetMsrpmOffsetAndBit(uMsr, &offMsrpm, &uMsrpmBit);
     AssertRC(rc);
 
     Assert(uMsrpmBit < 0x3fff);
@@ -2439,7 +2440,7 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
 
     uint8_t   uVector     = Event.n.u8Vector;
     uint8_t   uVectorType = Event.n.u3Type;
-    TRPMEVENT enmTrapType = hmSvmEventToTrpmEventType(&Event);
+    TRPMEVENT enmTrapType = HMSvmEventToTrpmEventType(&Event);
 
     Log4(("HM event->TRPM: uVector=%#x enmTrapType=%d\n", uVector, uVectorType));
 
@@ -2966,10 +2967,13 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 {
     HMSVM_ASSERT_PREEMPT_SAFE();
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+#if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM)
     /* Nested Hw. virt through SVM R0 execution is not yet implemented, IEM only, we shouldn't get here. */
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
         return VINF_EM_RESCHEDULE_REM;
+    }
 #endif
 
     /* Check force flag actions that might require us to go back to ring-3. */
@@ -3639,15 +3643,16 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_VMLOAD:   return hmR0SvmExitVmload(pVCpu, pCtx, pSvmTransient);
                 case SVM_EXIT_VMSAVE:   return hmR0SvmExitVmsave(pVCpu, pCtx, pSvmTransient);
                 case SVM_EXIT_INVLPGA:  return hmR0SvmExitInvlpga(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_VMRUN:    return hmR0SvmExitVmrun(pVCpu, pCtx, pSvmTransient);
 #else
                 case SVM_EXIT_CLGI:
                 case SVM_EXIT_STGI:
                 case SVM_EXIT_VMLOAD:
                 case SVM_EXIT_VMSAVE:
                 case SVM_EXIT_INVLPGA:
+                case SVM_EXIT_VMRUN:
 #endif
                 case SVM_EXIT_RSM:
-                case SVM_EXIT_VMRUN:
                 case SVM_EXIT_SKINIT:
                     return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
 
@@ -5806,6 +5811,20 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpga(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpga); */
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
     VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpga(pVCpu, cbInstr);
+    return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+/**
+ * \#VMEXIT handler for STGI (SVM_EXIT_VMRUN). Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    /** @todo Stat. */
+    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmrun); */
+    uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedVmrun(pVCpu, cbInstr);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT */

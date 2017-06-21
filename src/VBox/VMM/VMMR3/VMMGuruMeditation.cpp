@@ -653,6 +653,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
         {
             DBGFR3Info(pVM->pUVM, "cpumguest", NULL, pHlp);
             DBGFR3Info(pVM->pUVM, "cpumguestinstr", NULL, pHlp);
+            DBGFR3Info(pVM->pUVM, "cpumguesthwvirt", NULL, pHlp);
             break;
         }
 
@@ -674,17 +675,18 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
         const char *pszArgs;
     } const     aInfo[] =
     {
-        { "mappings",       NULL },
-        { "hma",            NULL },
-        { "cpumguest",      "verbose" },
-        { "cpumguestinstr", "verbose" },
-        { "cpumhyper",      "verbose" },
-        { "cpumhost",       "verbose" },
-        { "mode",           "all" },
-        { "cpuid",          "verbose" },
-        { "handlers",       "phys virt hyper stats" },
-        { "timers",         NULL },
-        { "activetimers",   NULL },
+        { "mappings",        NULL },
+        { "hma",             NULL },
+        { "cpumguest",       "verbose" },
+        { "cpumguesthwvirt", "verbose" },
+        { "cpumguestinstr",  "verbose" },
+        { "cpumhyper",       "verbose" },
+        { "cpumhost",        "verbose" },
+        { "mode",            "all" },
+        { "cpuid",           "verbose" },
+        { "handlers",        "phys virt hyper stats" },
+        { "timers",          NULL },
+        { "activetimers",    NULL },
     };
     for (unsigned i = 0; i < RT_ELEMENTS(aInfo); i++)
     {
@@ -701,7 +703,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     /* All other info items */
     DBGFR3InfoMulti(pVM,
                     "*",
-                    "mappings|hma|cpum|cpumguest|cpumguestinstr|cpumhyper|cpumhost|mode|cpuid"
+                    "mappings|hma|cpum|cpumguest|cpumguesthwvirt|cpumguestinstr|cpumhyper|cpumhost|mode|cpuid"
                     "|pgmpd|pgmcr3|timers|activetimers|handlers|help",
                     "!!\n"
                     "!! {%s}\n"

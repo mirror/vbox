@@ -1959,14 +1959,22 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 &&  !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             {
                 bool     fIntrEnabled;
-                PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #ifdef VBOX_WITH_RAW_MODE
-                fIntrEnabled = PATMAreInterruptsEnabled(pVM); RT_NOREF(pCtx);
-#elif defined(VBOX_WITH_NESTED_HWVIRT)
-                if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-                    fIntrEnabled = HMSvmNstGstCanTakePhysInterrupt(pVCpu, pCtx);
-                else
-                    fIntrEnabled = pCtx->eflags.Bits.u1IF;
+                fIntrEnabled = PATMAreInterruptsEnabled(pVM);
+#else
+                fIntrEnabled = true;
+#endif
+                /** @todo Can we centralize this under CPUMCanInjectInterrupt()? */
+                PCPUMCTX pCtx = pVCpu->em.s.pCtx;
+#ifdef VBOX_WITH_NESTED_HWVIRT
+                fIntrEnabled &= pCtx->hwvirt.svm.fGif;
+                if (fIntrEnabled)
+                {
+                    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+                        fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pCtx);
+                    else
+                        fIntrEnabled = pCtx->eflags.Bits.u1IF;
+                }
 #else
                 fIntrEnabled = pCtx->eflags.Bits.u1IF;
 #endif
@@ -1979,7 +1987,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #ifdef VBOX_WITH_NESTED_HWVIRT
                         if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_INTR))
                         {
-                            VBOXSTRICTRC rcStrict = HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INTR, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+                            VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
                             if (rcStrict == VINF_SVM_VMEXIT)
                                 rc2 = VINF_EM_RESCHEDULE;
                             else
@@ -1996,7 +2004,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                             /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                             /** @todo this really isn't nice, should properly handle this */
                             rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
-                            if (pVM->em.s.fIemExecutesAll && (rc2 == VINF_EM_RESCHEDULE_REM || rc2 == VINF_EM_RESCHEDULE_HM || rc2 == VINF_EM_RESCHEDULE_RAW))
+                            if (pVM->em.s.fIemExecutesAll && (   rc2 == VINF_EM_RESCHEDULE_REM
+                                                              || rc2 == VINF_EM_RESCHEDULE_HM
+                                                              || rc2 == VINF_EM_RESCHEDULE_RAW))
                                 rc2 = VINF_EM_RESCHEDULE;
 #ifdef VBOX_STRICT
                             rcIrq = rc2;
@@ -2012,11 +2022,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         /*
                          * Check nested-guest virtual interrupts.
                          */
-                        if (HMSvmNstGstCanTakeVirtInterrupt(pVCpu, pCtx))
+                        if (CPUMCanSvmNstGstTakeVirtIntr(pCtx))
                         {
                             if (CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_VINTR))
                             {
-                                VBOXSTRICTRC rcStrict = HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VINTR, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+                                VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
                                 if (rcStrict == VINF_SVM_VMEXIT)
                                     rc2 = VINF_EM_RESCHEDULE;
                                 else
@@ -2033,8 +2043,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                                  * Prepare the nested-guest interrupt for injection.
                                  */
                                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
-                                uint8_t uNstGstVector = HMSvmNstGstGetInterrupt(pCtx);
+                                uint8_t uNstGstVector = CPUMGetSvmNstGstInterrupt(pCtx);
                                 TRPMAssertTrap(pVCpu, uNstGstVector, TRPM_HARDWARE_INT);
+                                Log(("EM: Asserting nested-guest virt. hardware intr: %#x\n", uNstGstVector));
                                 /** @todo reschedule to HM/REM later, when the HMR0 nested-guest execution is
                                  *  done. For now just reschedule to IEM. */
                                 rc2 = VINF_EM_RESCHEDULE;

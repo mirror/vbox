@@ -30,6 +30,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/hm_svm.h>
+#include <VBox/vmm/trpm.h>
 #include <iprt/mp.h>
 
 
@@ -139,6 +140,8 @@ typedef enum HM64ON32OP
     HM64ON32OP_32BIT_HACK = 0x7fffffff
 } HM64ON32OP;
 
+/** @name All-context HM API.
+ * @{ */
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
@@ -147,6 +150,13 @@ VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family,
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 VMM_INT_DECL(void)              HMHypercallsEnable(PVMCPU pVCpu);
 VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
+/** @} */
+
+/** @name All-context SVM helpers.
+ * @{ */
+VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
+VMM_INT_DECL(int)               HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint32_t *puMsrpmBit);
+/** @} */
 
 /** @name Nested hardware virtualization.
  * @{
@@ -258,7 +268,7 @@ VMMR3_INT_DECL(int)             HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, 
 VMMR3_INT_DECL(int)             HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR3_INT_DECL(bool)            HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(bool)            HMR3IsVmxPreemptionTimerUsed(PVM pVM);
-
+VMMR3_INT_DECL(void)            HMR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, const char *pszPrefix);
 /** @} */
 #endif /* IN_RING3 */
 
