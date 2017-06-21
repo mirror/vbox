@@ -135,6 +135,51 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
 RTDECL(int) RTFsIsoMakerSetSysAreaContent(RTFSISOMAKER hIsoMaker, void const *pvContent, size_t cbContent, uint32_t off);
 
 /**
+ * String properties settable thru RTFsIsoMakerSetStringProp.
+ */
+typedef enum RTFSISOMAKERSTRINGPROP
+{
+    /** The customary invalid zero value.   */
+    RTFSISOMAKERSTRINGPROP_INVALID = 0,
+    /** The system identifier. */
+    RTFSISOMAKERSTRINGPROP_SYSTEM_ID,
+    /** The volume identifier(label). */
+    RTFSISOMAKERSTRINGPROP_VOLUME_ID,
+    /** The volume set identifier. */
+    RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID,
+    /** The publisher ID (root file reference if it starts with '_'). */
+    RTFSISOMAKERSTRINGPROP_PUBLISHER_ID,
+    /** The data preparer ID (root file reference if it starts with '_'). */
+    RTFSISOMAKERSTRINGPROP_DATA_PREPARER_ID,
+    /** The application ID (root file reference if it starts with '_'). */
+    RTFSISOMAKERSTRINGPROP_APPLICATION_ID,
+    /** The copyright file ID. */
+    RTFSISOMAKERSTRINGPROP_COPYRIGHT_FILE_ID,
+    /** The abstract file ID. */
+    RTFSISOMAKERSTRINGPROP_ABSTRACT_FILE_ID,
+    /** The bibliographic file ID. */
+    RTFSISOMAKERSTRINGPROP_BIBLIOGRAPHIC_FILE_ID,
+    /** End of valid string property values. */
+    RTFSISOMAKERSTRINGPROP_END,
+    /** Make sure it's a 32-bit type. */
+    RTFSISOMAKERSTRINGPROP_32BIT_HACK = 0x7fffffff
+} RTFSISOMAKERSTRINGPROP;
+
+/**
+ * Sets a string property in one or more namespaces.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker       The ISO maker handle.
+ * @param   enmStringProp   The string property to set.
+ * @param   fNamespaces     The namespaces to set it in.
+ * @param   pszValue        The value to set it to.  NULL is treated like an
+ *                          empty string.  The value will be silently truncated
+ *                          to fit the available space.
+ */
+RTDECL(int) RTFsIsoMakerSetStringProp(RTFSISOMAKER hIsoMaker, RTFSISOMAKERSTRINGPROP enmStringProp,
+                                      uint32_t fNamespaces, const char *pszValue);
+
+/**
  * Resolves a path into a object ID.
  *
  * This will be doing the looking up using the specified object names rather
@@ -463,14 +508,35 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
 
 /** @name RTFSISOMK_IMPORT_F_XXX - Flags for RTFsIsoMakerImport.
  * @{ */
-#define RTFSISOMK_IMPORT_F_NO_PRIMARY_ISO   RT_BIT_32(0)  /**< Skip the primary ISO-9660 namespace (rock ridge included). */
-#define RTFSISOMK_IMPORT_F_NO_JOLIET        RT_BIT_32(1)  /**< Skip the joliet namespace. */
-#define RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE    RT_BIT_32(2)  /**< Skip rock ridge (both primary and joliet). */
-#define RTFSISOMK_IMPORT_F_NO_UDF           RT_BIT_32(3)  /**< Skip the UDF namespace. */
-#define RTFSISOMK_IMPORT_F_NO_HFS           RT_BIT_32(4)  /**< Skip the HFS namespace. */
-#define RTFSISOMK_IMPORT_F_NO_BOOT          RT_BIT_32(5)  /**< Skip importing El Torito boot stuff. */
-#define RTFSISOMK_IMPORT_F_NO_SYS_AREA      RT_BIT_32(6)  /**< Skip importing the system area (first 32KB). */
-#define RTFSISOMK_IMPORT_F_VALID_MASK       UINT32_C(0x0000007f)
+#define RTFSISOMK_IMPORT_F_NO_PRIMARY_ISO       RT_BIT_32(0)  /**< Skip the primary ISO-9660 namespace (rock ridge included). */
+#define RTFSISOMK_IMPORT_F_NO_JOLIET            RT_BIT_32(1)  /**< Skip the joliet namespace. */
+#define RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE        RT_BIT_32(2)  /**< Skip rock ridge (both primary and joliet). */
+#define RTFSISOMK_IMPORT_F_NO_UDF               RT_BIT_32(3)  /**< Skip the UDF namespace. */
+#define RTFSISOMK_IMPORT_F_NO_HFS               RT_BIT_32(4)  /**< Skip the HFS namespace. */
+#define RTFSISOMK_IMPORT_F_NO_BOOT              RT_BIT_32(5)  /**< Skip importing El Torito boot stuff. */
+#define RTFSISOMK_IMPORT_F_NO_SYS_AREA          RT_BIT_32(6)  /**< Skip importing the system area (first 32KB). */
+
+#define RTFSISOMK_IMPORT_F_NO_SYSTEM_ID         RT_BIT_32(7)  /**< Don't import the system ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_VOLUME_ID         RT_BIT_32(8)  /**< Don't import the volume ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_VOLUME_SET_ID     RT_BIT_32(9)  /**< Don't import the volume set ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_PUBLISHER_ID      RT_BIT_32(10) /**< Don't import the publisher ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_DATA_PREPARER_ID     RT_BIT_32(11) /**< Do import the data preparer ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_APPLICATION_ID       RT_BIT_32(12) /**< Do import the application ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_COPYRIGHT_FID     RT_BIT_32(13) /**< Don't import the copyright file ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_ABSTRACT_FID      RT_BIT_32(14) /**< Don't import the abstract file ID primary descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_BIBLIO_FID        RT_BIT_32(15) /**< Don't import the bibliographic file ID primary descriptor field. */
+
+#define RTFSISOMK_IMPORT_F_NO_J_SYSTEM_ID       RT_BIT_32(16) /**< Don't import the system ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_J_VOLUME_ID       RT_BIT_32(17) /**< Don't import the volume ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_J_VOLUME_SET_ID   RT_BIT_32(18) /**< Don't import the volume set ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_J_PUBLISHER_ID    RT_BIT_32(19) /**< Don't import the publisher ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_J_DATA_PREPARER_ID   RT_BIT_32(20) /**< Do import the data preparer ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_J_APPLICATION_ID     RT_BIT_32(21) /**< Do import the application ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_J_COPYRIGHT_FID   RT_BIT_32(22) /**< Don't import the copyright file ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_J_ABSTRACT_FID    RT_BIT_32(23) /**< Don't import the abstract file ID joliet descriptor field. */
+#define RTFSISOMK_IMPORT_F_NO_J_BIBLIO_FID      RT_BIT_32(24) /**< Don't import the bibliographic file ID joliet descriptor field. */
+
+#define RTFSISOMK_IMPORT_F_VALID_MASK           UINT32_C(0x01ffffff)
 /** @} */
 
 

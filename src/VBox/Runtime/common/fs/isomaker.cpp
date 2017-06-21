@@ -273,10 +273,10 @@ typedef struct RTFSISOMAKERNAMESPACE
     char                   *pszVolumeSetId;
     /** The publisher ID or (root) file reference (ISO9660PRIMARYVOLDESC::achPublisherId).  Empty if NULL.  */
     char                   *pszPublisherId;
-    /** The data preperer ID or (root) file reference (ISO9660PRIMARYVOLDESC::achDataPreparerId).
-     * Defaults to g_szPreparerIdPrimaryIso or g_szPreparerIdJoliet. */
+    /* The data preperer ID or (root) file reference (ISO9660PRIMARYVOLDESC::achDataPreparerId). Empty if NULL. */
     char                   *pszDataPreparerId;
-    /** The application ID or (root) file reference (ISO9660PRIMARYVOLDESC::achApplicationId). None if NULL. */
+    /* The application ID or (root) file reference (ISO9660PRIMARYVOLDESC::achApplicationId).
+     * Defaults to g_szAppIdPrimaryIso or g_szAppIdJoliet. */
     char                   *pszApplicationId;
     /** The copyright (root) file identifier (ISO9660PRIMARYVOLDESC::achCopyrightFileId).  None if NULL. */
     char                   *pszCopyrightFileId;
@@ -627,10 +627,10 @@ static const uint8_t g_aidxRTFsIsoNamespaceFlagToIdx[] =
 
 /** The default translation table filename. */
 static const char   g_szTransTbl[] = "TRANS.TBL";
-/** The default data preparer ID for the primary ISO-9660 volume descriptor. */
-static char         g_szPreparerIdPrimaryIso[64] = "";
-/** The default data preparer ID for the joliet volume descriptor. */
-static char         g_szPreparerIdJoliet[64]     = "";
+/** The default application ID for the primary ISO-9660 volume descriptor. */
+static char         g_szAppIdPrimaryIso[64] = "";
+/** The default application ID for the joliet volume descriptor. */
+static char         g_szAppIdJoliet[64]     = "";
 /** The default system ID the primary ISO-9660 volume descriptor. */
 static char         g_szSystemId[64] = "";
 
@@ -671,11 +671,11 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
     AssertReturn(g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[RTFSISOMAKER_NAMESPACE_HFS]].fNamespace      == RTFSISOMAKER_NAMESPACE_HFS,
                  VERR_INTERNAL_ERROR_5);
 
-    if (g_szPreparerIdPrimaryIso[0] == '\0')
-        RTStrPrintf(g_szPreparerIdPrimaryIso, sizeof(g_szPreparerIdPrimaryIso), "IPRT ISO MAKER V%u.%u.%u R%s",
+    if (g_szAppIdPrimaryIso[0] == '\0')
+        RTStrPrintf(g_szAppIdPrimaryIso, sizeof(g_szAppIdPrimaryIso), "IPRT ISO MAKER V%u.%u.%u R%s",
                     RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild(), RTBldCfgRevisionStr());
-    if (g_szPreparerIdJoliet[0] == '\0')
-        RTStrPrintf(g_szPreparerIdJoliet, sizeof(g_szPreparerIdJoliet),
+    if (g_szAppIdJoliet[0] == '\0')
+        RTStrPrintf(g_szAppIdJoliet, sizeof(g_szAppIdJoliet),
                     "IPRT ISO Maker v%s r%s", RTBldCfgVersion(), RTBldCfgRevisionStr());
     if (g_szSystemId[0] == '\0')
     {
@@ -701,12 +701,12 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         pThis->PrimaryIso.uRockRidgeLevel   = 1;
         pThis->PrimaryIso.pszTransTbl       = (char *)g_szTransTbl;
         pThis->PrimaryIso.pszSystemId       = g_szSystemId;
-        //pThis->PrimaryIso.pszVolumeId       = NULL;
-        //pThis->PrimaryIso.pszSetVolumeId    = NULL;
-        //pThis->PrimaryIso.pszPublisherId    = NULL;
-        pThis->PrimaryIso.pszDataPreparerId = g_szPreparerIdPrimaryIso;
-        //pThis->PrimaryIso.pszApplicationId  = NULL;
-        //pThis->PrimaryIso.pszCopyrightFileId= NULL;
+        //pThis->PrimaryIso.pszVolumeId     = NULL;
+        //pThis->PrimaryIso.pszSetVolumeId  = NULL;
+        //pThis->PrimaryIso.pszPublisherId  = NULL;
+        //pThis->PrimaryIso.pszDataPreparerId = NULL;
+        pThis->PrimaryIso.pszApplicationId  = g_szAppIdPrimaryIso;
+        //pThis->PrimaryIso.pszCopyrightFileId = NULL;
         //pThis->PrimaryIso.pszAbstractFileId = NULL;
         //pThis->PrimaryIso.pszBibliographicFileId = NULL;
 
@@ -719,8 +719,8 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->Joliet.pszVolumeId         = NULL;
         //pThis->Joliet.pszSetVolumeId      = NULL;
         //pThis->Joliet.pszPublisherId      = NULL;
-        pThis->Joliet.pszDataPreparerId     = g_szPreparerIdJoliet;
-        //pThis->Joliet.pszApplicationId    = NULL;
+        //pThis->Joliet.pszDataPreparerId   = NULL;
+        pThis->Joliet.pszApplicationId      = g_szAppIdJoliet;
         //pThis->Joliet.pszCopyrightFileId  = NULL;
         //pThis->Joliet.pszAbstractFileId   = NULL;
         //pThis->Joliet.pszBibliographicFileId = NULL;
@@ -939,7 +939,7 @@ static void rtFsIsoMakerDestroyTree(PRTFSISOMAKERNAMESPACE pNamespace)
     if (pNamespace->pszTransTbl)
     {
         if (pNamespace->pszTransTbl != g_szTransTbl)
-            RTMemFree(pNamespace->pszTransTbl);
+            RTStrFree(pNamespace->pszTransTbl);
         pNamespace->pszTransTbl = NULL;
     }
 
@@ -949,57 +949,57 @@ static void rtFsIsoMakerDestroyTree(PRTFSISOMAKERNAMESPACE pNamespace)
     if (pNamespace->pszSystemId)
     {
         if (pNamespace->pszSystemId != g_szSystemId)
-            RTMemFree(pNamespace->pszSystemId);
+            RTStrFree(pNamespace->pszSystemId);
         pNamespace->pszSystemId = NULL;
     }
 
     if (pNamespace->pszVolumeId)
     {
-        RTMemFree(pNamespace->pszVolumeId);
+        RTStrFree(pNamespace->pszVolumeId);
         pNamespace->pszVolumeId = NULL;
     }
 
     if (pNamespace->pszVolumeSetId)
     {
-        RTMemFree(pNamespace->pszVolumeSetId);
+        RTStrFree(pNamespace->pszVolumeSetId);
         pNamespace->pszVolumeSetId = NULL;
     }
 
     if (pNamespace->pszPublisherId)
     {
-        RTMemFree(pNamespace->pszPublisherId);
+        RTStrFree(pNamespace->pszPublisherId);
         pNamespace->pszPublisherId = NULL;
     }
 
     if (pNamespace->pszDataPreparerId)
     {
-        if (   pNamespace->pszDataPreparerId != g_szPreparerIdPrimaryIso
-            && pNamespace->pszDataPreparerId != g_szPreparerIdJoliet)
-            RTMemFree(pNamespace->pszDataPreparerId);
+        RTStrFree(pNamespace->pszDataPreparerId);
         pNamespace->pszDataPreparerId = NULL;
     }
 
     if (pNamespace->pszApplicationId)
     {
-        RTMemFree(pNamespace->pszApplicationId);
+        if (   pNamespace->pszApplicationId != g_szAppIdPrimaryIso
+            && pNamespace->pszApplicationId != g_szAppIdJoliet)
+            RTStrFree(pNamespace->pszApplicationId);
         pNamespace->pszApplicationId = NULL;
     }
 
     if (pNamespace->pszCopyrightFileId)
     {
-        RTMemFree(pNamespace->pszCopyrightFileId);
+        RTStrFree(pNamespace->pszCopyrightFileId);
         pNamespace->pszCopyrightFileId = NULL;
     }
 
     if (pNamespace->pszAbstractFileId)
     {
-        RTMemFree(pNamespace->pszAbstractFileId);
+        RTStrFree(pNamespace->pszAbstractFileId);
         pNamespace->pszAbstractFileId = NULL;
     }
 
     if (pNamespace->pszBibliographicFileId)
     {
-        RTMemFree(pNamespace->pszBibliographicFileId);
+        RTStrFree(pNamespace->pszBibliographicFileId);
         pNamespace->pszBibliographicFileId = NULL;
     }
 }
@@ -1209,6 +1209,84 @@ RTDECL(int) RTFsIsoMakerSetSysAreaContent(RTFSISOMAKER hIsoMaker, void const *pv
 
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Sets a string property in one or more namespaces.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker       The ISO maker handle.
+ * @param   enmStringProp   The string property to set.
+ * @param   fNamespaces     The namespaces to set it in.
+ * @param   pszValue        The value to set it to.  NULL is treated like an
+ *                          empty string.  The value will be silently truncated
+ *                          to fit the available space.
+ */
+RTDECL(int) RTFsIsoMakerSetStringProp(RTFSISOMAKER hIsoMaker, RTFSISOMAKERSTRINGPROP enmStringProp,
+                                      uint32_t fNamespaces, const char *pszValue)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertReturn(    enmStringProp > RTFSISOMAKERSTRINGPROP_INVALID
+                  && enmStringProp < RTFSISOMAKERSTRINGPROP_END, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fNamespaces & ~RTFSISOMAKER_NAMESPACE_VALID_MASK), VERR_INVALID_FLAGS);
+    if (pszValue)
+    {
+        AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
+        if (*pszValue == '\0')
+            pszValue = NULL;
+    }
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    /*
+     * Work the namespaces.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
+        if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
+        {
+            PRTFSISOMAKERNAMESPACE pNamespace = (PRTFSISOMAKERNAMESPACE)((uintptr_t)pThis + g_aRTFsIsoNamespaces[i].offNamespace);
+            if (pNamespace->uLevel > 0)
+            {
+                /* Get a pointer to the field. */
+                char **ppszValue;
+                switch (enmStringProp)
+                {
+                    case RTFSISOMAKERSTRINGPROP_SYSTEM_ID:              ppszValue = &pNamespace->pszSystemId; break;
+                    case RTFSISOMAKERSTRINGPROP_VOLUME_ID:              ppszValue = &pNamespace->pszVolumeId; break;
+                    case RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID:          ppszValue = &pNamespace->pszVolumeSetId; break;
+                    case RTFSISOMAKERSTRINGPROP_PUBLISHER_ID:           ppszValue = &pNamespace->pszPublisherId; break;
+                    case RTFSISOMAKERSTRINGPROP_DATA_PREPARER_ID:       ppszValue = &pNamespace->pszDataPreparerId; break;
+                    case RTFSISOMAKERSTRINGPROP_APPLICATION_ID:         ppszValue = &pNamespace->pszApplicationId; break;
+                    case RTFSISOMAKERSTRINGPROP_COPYRIGHT_FILE_ID:      ppszValue = &pNamespace->pszCopyrightFileId; break;
+                    case RTFSISOMAKERSTRINGPROP_ABSTRACT_FILE_ID:       ppszValue = &pNamespace->pszAbstractFileId; break;
+                    case RTFSISOMAKERSTRINGPROP_BIBLIOGRAPHIC_FILE_ID:  ppszValue = &pNamespace->pszBibliographicFileId; break;
+                    default:                                            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+                }
+
+                /* Free the old value. */
+                char *pszOld = *ppszValue;
+                if (   pszOld
+                    && pszOld != g_szAppIdPrimaryIso
+                    && pszOld != g_szAppIdJoliet
+                    && pszOld != g_szSystemId)
+                    RTStrFree(pszOld);
+
+                /* Set the new value. */
+                if (!pszValue)
+                    *ppszValue = NULL;
+                else
+                {
+                    *ppszValue = RTStrDup(pszValue);
+                    AssertReturn(*ppszValue, VERR_NO_STR_MEMORY);
+                }
+            }
+        }
+    return VINF_SUCCESS;
+}
+
 
 
 /*

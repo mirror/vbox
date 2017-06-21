@@ -933,6 +933,7 @@
 # define RTFsIsoMakerSetRockRidgeLevel                  RT_MANGLER(RTFsIsoMakerSetRockRidgeLevel)
 # define RTFsIsoMakerSetJolietRockRidgeLevel            RT_MANGLER(RTFsIsoMakerSetJolietRockRidgeLevel)
 # define RTFsIsoMakerSetSysAreaContent                  RT_MANGLER(RTFsIsoMakerSetSysAreaContent)
+# define RTFsIsoMakerSetStringProp                      RT_MANGLER(RTFsIsoMakerSetStringProp)
 # define RTFsIsoMakerGetObjIdxForPath                   RT_MANGLER(RTFsIsoMakerGetObjIdxForPath)
 # define RTFsIsoMakerObjEnableBootInfoTablePatching     RT_MANGLER(RTFsIsoMakerObjEnableBootInfoTablePatching)
 # define RTFsIsoMakerObjQueryDataSize                   RT_MANGLER(RTFsIsoMakerObjQueryDataSize)

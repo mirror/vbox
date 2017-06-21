@@ -720,6 +720,109 @@ static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t of
 
 
 /**
+ * Imports a UTF-16BE string property from the joliet volume descriptor.
+ *
+ * The fields are normally space filled and padded, but we also consider zero
+ * bytes are fillers.  If the field only contains padding, the string property
+ * will remain unchanged.
+ *
+ * @returns IPRT status code (ignorable).
+ * @param   pThis               The importer instance.
+ * @param   pachField           Pointer to the field.  The structure type
+ *                              is 'char' for hysterical raisins, while the
+ *                              real type is 'RTUTF16'.
+ * @param   cchField            The field length.
+ * @param   enmStringProp       The corresponding string property.
+ *
+ * @note    Clobbers pThis->pbBuf!
+ */
+static int rtFsIsoImportUtf16BigStringField(PRTFSISOMKIMPORTER pThis, const char *pachField, size_t cchField,
+                                            RTFSISOMAKERSTRINGPROP enmStringProp)
+{
+    /*
+     * Scan the field from the end as this way we know the result length if we find anything.
+     */
+    PCRTUTF16 pwcField = (PCRTUTF16)pachField;
+    size_t    cwcField = cchField / sizeof(RTUTF16); /* ignores any odd field byte  */
+    size_t    off      = cwcField;
+    while (off-- > 0)
+    {
+        RTUTF16 wc = RT_BE2H_U16(pwcField[off]);
+        if (wc == ' ' || wc == '\0')
+        { /* likely */ }
+        else
+        {
+            /*
+             * Convert to UTF-16.
+             */
+            char *pszCopy = (char *)pThis->abBuf;
+            int rc = RTUtf16BigToUtf8Ex(pwcField, off + 1, &pszCopy, sizeof(pThis->abBuf), NULL);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTFsIsoMakerSetStringProp(pThis->hIsoMaker, enmStringProp, RTFSISOMAKER_NAMESPACE_JOLIET, pszCopy);
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
+                return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerSetStringProp failed setting field %d to '%s': %Rrc",
+                                       enmStringProp, pszCopy, rc);
+            }
+            return rtFsIsoImpError(pThis, rc, "RTUtf16BigToUtf8Ex failed converting field %d to UTF-8: %Rrc - %.*Rhxs",
+                                   enmStringProp, rc, off * sizeof(RTUTF16), pwcField);
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Imports a string property from the primary volume descriptor.
+ *
+ * The fields are normally space filled and padded, but we also consider zero
+ * bytes are fillers.  If the field only contains padding, the string property
+ * will remain unchanged.
+ *
+ * @returns IPRT status code (ignorable).
+ * @param   pThis               The importer instance.
+ * @param   pachField           Pointer to the field.
+ * @param   cchField            The field length.
+ * @param   enmStringProp       The corresponding string property.
+ *
+ * @note    Clobbers pThis->pbBuf!
+ */
+static int rtFsIsoImportAsciiStringField(PRTFSISOMKIMPORTER pThis, const char *pachField, size_t cchField,
+                                         RTFSISOMAKERSTRINGPROP enmStringProp)
+{
+    /*
+     * Scan the field from the end as this way we know the result length if we find anything.
+     */
+    size_t off = cchField;
+    while (off-- > 0)
+    {
+        char ch = pachField[off];
+        if (ch == ' ' || ch == '\0')
+        { /* likely */ }
+        else
+        {
+            /*
+             * Make a copy of the string in abBuf, purge the encoding.
+             */
+            off++;
+            char *pszCopy = (char *)pThis->abBuf;
+            memcpy(pszCopy, pachField, off);
+            pszCopy[off] = '\0';
+            RTStrPurgeEncoding(pszCopy);
+
+            int rc = RTFsIsoMakerSetStringProp(pThis->hIsoMaker, enmStringProp, RTFSISOMAKER_NAMESPACE_ISO_9660, pszCopy);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+            return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerSetStringProp failed setting field %d to '%s': %Rrc",
+                                   enmStringProp, pszCopy, rc);
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Validates a root directory record.
  *
  * @returns IPRT status code (safe to ignore, see pThis->rc).
@@ -779,8 +882,7 @@ static int rtFsIsoImportValidateRootDirRec(PRTFSISOMKIMPORTER pThis, PCISO9660DI
 
 
 /**
- * Processes a primary volume descriptor, importing all files described by its
- * namespace.
+ * Processes a primary volume descriptor, importing all files and stuff.
  *
  * @returns IPRT status code (safe to ignore, see pThis->rc).
  * @param   pThis               The importer instance.
@@ -846,7 +948,38 @@ static int rtFsIsoImportProcessPrimaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660PRI
     if (RT_SUCCESS(rc))
     {
         /*
-         * Process the directory tree.  Start by establishing a root directory.
+         * Import stuff if present and not opted out.
+         */
+        if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_SYSTEM_ID))
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achSystemId, sizeof(pVolDesc->achSystemId),
+                                          RTFSISOMAKERSTRINGPROP_SYSTEM_ID);
+        if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_VOLUME_ID))
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achVolumeId, sizeof(pVolDesc->achVolumeId),
+                                          RTFSISOMAKERSTRINGPROP_VOLUME_ID);
+        if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_VOLUME_SET_ID))
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achVolumeSetId, sizeof(pVolDesc->achVolumeSetId),
+                                          RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID);
+        if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_PUBLISHER_ID))
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achPublisherId, sizeof(pVolDesc->achPublisherId),
+                                          RTFSISOMAKERSTRINGPROP_PUBLISHER_ID);
+        if (pThis->fFlags & RTFSISOMK_IMPORT_F_DATA_PREPARER_ID)
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achDataPreparerId, sizeof(pVolDesc->achDataPreparerId),
+                                          RTFSISOMAKERSTRINGPROP_DATA_PREPARER_ID);
+        if (pThis->fFlags & RTFSISOMK_IMPORT_F_APPLICATION_ID)
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achApplicationId, sizeof(pVolDesc->achApplicationId),
+                                          RTFSISOMAKERSTRINGPROP_APPLICATION_ID);
+        if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_COPYRIGHT_FID))
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achCopyrightFileId, sizeof(pVolDesc->achCopyrightFileId),
+                                          RTFSISOMAKERSTRINGPROP_COPYRIGHT_FILE_ID);
+        if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ABSTRACT_FID))
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achAbstractFileId, sizeof(pVolDesc->achAbstractFileId),
+                                          RTFSISOMAKERSTRINGPROP_ABSTRACT_FILE_ID);
+        if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_BIBLIO_FID))
+            rtFsIsoImportAsciiStringField(pThis, pVolDesc->achBibliographicFileId, sizeof(pVolDesc->achBibliographicFileId),
+                                          RTFSISOMAKERSTRINGPROP_BIBLIOGRAPHIC_FILE_ID);
+
+        /*
+         * Process the directory tree.
          */
         if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_PRIMARY_ISO))
             rc = rtFsIsoImportProcessIso9660Tree(pThis, ISO9660_GET_ENDIAN(&pVolDesc->RootDir.DirRec.offExtent),
@@ -857,6 +990,14 @@ static int rtFsIsoImportProcessPrimaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660PRI
 }
 
 
+/**
+ * Processes a secondary volume descriptor, if it is joliet we'll importing all
+ * the files and stuff.
+ *
+ * @returns IPRT status code (safe to ignore, see pThis->rc).
+ * @param   pThis               The importer instance.
+ * @param   pVolDesc            The primary volume descriptor.
+ */
 static int rtFsIsoImportProcessSupplementaryDesc(PRTFSISOMKIMPORTER pThis, PISO9660SUPVOLDESC pVolDesc)
 {
     /*
@@ -939,6 +1080,37 @@ static int rtFsIsoImportProcessSupplementaryDesc(PRTFSISOMKIMPORTER pThis, PISO9
         return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MULTIPLE_JOLIET_VOL_DESCS,
                                "More than one Joliet volume descriptor is not supported");
     pThis->fSeenJoliet = true;
+
+    /*
+     * Import stuff if present and not opted out.
+     */
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_SYSTEM_ID))
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achSystemId, sizeof(pVolDesc->achSystemId),
+                                         RTFSISOMAKERSTRINGPROP_SYSTEM_ID);
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_J_VOLUME_ID))
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achVolumeId, sizeof(pVolDesc->achVolumeId),
+                                         RTFSISOMAKERSTRINGPROP_VOLUME_ID);
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_J_VOLUME_SET_ID))
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achVolumeSetId, sizeof(pVolDesc->achVolumeSetId),
+                                         RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID);
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_J_PUBLISHER_ID))
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achPublisherId, sizeof(pVolDesc->achPublisherId),
+                                         RTFSISOMAKERSTRINGPROP_PUBLISHER_ID);
+    if (pThis->fFlags & RTFSISOMK_IMPORT_F_J_DATA_PREPARER_ID)
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achDataPreparerId, sizeof(pVolDesc->achDataPreparerId),
+                                         RTFSISOMAKERSTRINGPROP_DATA_PREPARER_ID);
+    if (pThis->fFlags & RTFSISOMK_IMPORT_F_J_APPLICATION_ID)
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achApplicationId, sizeof(pVolDesc->achApplicationId),
+                                         RTFSISOMAKERSTRINGPROP_APPLICATION_ID);
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_J_COPYRIGHT_FID))
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achCopyrightFileId, sizeof(pVolDesc->achCopyrightFileId),
+                                         RTFSISOMAKERSTRINGPROP_COPYRIGHT_FILE_ID);
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_J_ABSTRACT_FID))
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achAbstractFileId, sizeof(pVolDesc->achAbstractFileId),
+                                         RTFSISOMAKERSTRINGPROP_ABSTRACT_FILE_ID);
+    if (!(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_J_BIBLIO_FID))
+        rtFsIsoImportUtf16BigStringField(pThis, pVolDesc->achBibliographicFileId, sizeof(pVolDesc->achBibliographicFileId),
+                                         RTFSISOMAKERSTRINGPROP_BIBLIOGRAPHIC_FILE_ID);
 
     /*
      * Process the directory tree.

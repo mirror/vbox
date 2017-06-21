@@ -229,6 +229,7 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_UDF,
     RTFSISOMAKERCMD_OPT_UID,
     RTFSISOMAKERCMD_OPT_USE_FILE_VERSION,
+    RTFSISOMAKERCMD_OPT_VOLUME_ID,
     RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,
     RTFSISOMAKERCMD_OPT_VOLUME_SET_SEQ_NO,
     RTFSISOMAKERCMD_OPT_VOLUME_SET_SIZE,
@@ -426,8 +427,8 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
 
     /*
      * genisoimage/mkisofs compatibility options we've implemented:
-     *
      */
+    /* booting: */
     { "--generic-boot",                 'G',                                                RTGETOPT_REQ_STRING  },
     DD("-eltorito-boot",                'b',                                                RTGETOPT_REQ_STRING  ),
     DD("-eltorito-alt-boot",            RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING ),
@@ -440,21 +441,27 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-boot-info-table",              RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE,            RTGETOPT_REQ_STRING  ),
     { "--boot-catalog",                 'c',                                                RTGETOPT_REQ_STRING  },
 
+    /* String props: */
+    DD("-abstract",                     RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID,               RTGETOPT_REQ_STRING ),
+    { "--application-id",               'A',                                                RTGETOPT_REQ_STRING  },
+    DD("-biblio",                       RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID,          RTGETOPT_REQ_STRING  ),
+    DD("-copyright",                     RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID,             RTGETOPT_REQ_STRING  ),
+    DD("-publisher",                    'P',                                                RTGETOPT_REQ_STRING  ),
+    { "--preparer",                     'p',                                                RTGETOPT_REQ_STRING  },
+    DD("-sysid",                        RTFSISOMAKERCMD_OPT_SYSTEM_ID,                      RTGETOPT_REQ_STRING  ),
+    { "--volume-id",                    RTFSISOMAKERCMD_OPT_VOLUME_ID,                      RTGETOPT_REQ_STRING  }, /* should've been '-V' */
+    DD("-volset",                       RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,                  RTGETOPT_REQ_STRING  ),
 
     /*
      * genisoimage/mkisofs compatibility:
      */
-    DD("-abstract",                      RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID,               RTGETOPT_REQ_STRING ),
-    { "--application-id",               'A',                                                RTGETOPT_REQ_STRING  },
     DD("-allow-limited-size",           RTFSISOMAKERCMD_OPT_ALLOW_LIMITED_SIZE,             RTGETOPT_REQ_NOTHING ),
     DD("-allow-leading-dots",           RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING ),
     DD("-ldots",                        RTFSISOMAKERCMD_OPT_ALLOW_LEADING_DOTS,             RTGETOPT_REQ_NOTHING ),
     DD("-allow-lowercase",              RTFSISOMAKERCMD_OPT_ALLOW_LOWERCASE,                RTGETOPT_REQ_NOTHING ),
     DD("-allow-multidot",               RTFSISOMAKERCMD_OPT_ALLOW_MULTI_DOT,                RTGETOPT_REQ_NOTHING ),
-    DD("-biblio",                       RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID,          RTGETOPT_REQ_STRING  ),
     DD("-cache-inodes",                 RTFSISOMAKERCMD_OPT_DETECT_HARDLINKS,               RTGETOPT_REQ_NOTHING ),
     DD("-no-cache-inodes",              RTFSISOMAKERCMD_OPT_NO_DETECT_HARDLINKS,            RTGETOPT_REQ_NOTHING ),
-
     DD("-alpha-boot",                   RTFSISOMAKERCMD_OPT_ALPHA_BOOT,                     RTGETOPT_REQ_STRING  ),
     DD("-hppa-bootloader",              RTFSISOMAKERCMD_OPT_HPPA_BOOTLOADER,                RTGETOPT_REQ_STRING  ),
     DD("-hppa-cmdline",                 RTFSISOMAKERCMD_OPT_HPPA_CMDLINE,                   RTGETOPT_REQ_STRING  ),
@@ -467,7 +474,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--cd-extra",                     'C',                                                RTGETOPT_REQ_STRING  },
     DD("-check-oldnames",                RTFSISOMAKERCMD_OPT_CHECK_OLD_NAMES,               RTGETOPT_REQ_NOTHING ),
     DD("-check-session",                 RTFSISOMAKERCMD_OPT_CHECK_SESSION,                 RTGETOPT_REQ_STRING  ),
-    DD("-copyright",                     RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID,             RTGETOPT_REQ_STRING  ),
     { "--dont-append-dot",              'd',                                                RTGETOPT_REQ_NOTHING },
     { "--deep-directories",             'D',                                                RTGETOPT_REQ_NOTHING },
     DD("-dir-mode",                     RTFSISOMAKERCMD_OPT_DIR_MODE,                       RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
@@ -520,8 +526,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-pad",                          RTFSISOMAKERCMD_OPT_PAD,                            RTGETOPT_REQ_NOTHING ),
     DD("-no-pad",                       RTFSISOMAKERCMD_OPT_NO_PAD,                         RTGETOPT_REQ_NOTHING ),
     DD("-path-list",                    RTFSISOMAKERCMD_OPT_PATH_LIST,                      RTGETOPT_REQ_STRING  ),
-    DD("-publisher",                    'P',                                                RTGETOPT_REQ_STRING  ),
-    { "--preparer",                     'p',                                                RTGETOPT_REQ_STRING  },
     DD("-print-size",                   RTFSISOMAKERCMD_OPT_PRINT_SIZE,                     RTGETOPT_REQ_NOTHING ),
     DD("-quiet",                        RTFSISOMAKERCMD_OPT_QUIET,                          RTGETOPT_REQ_NOTHING ),
     { "--rock-ridge",                   'R',                                                RTGETOPT_REQ_NOTHING },
@@ -537,7 +541,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-stream-file-name",             RTFSISOMAKERCMD_OPT_STREAM_FILE_NAME,               RTGETOPT_REQ_STRING  ),
     DD("-sunx86-boot",                  RTFSISOMAKERCMD_OPT_SUNX86_BOOT,                    RTGETOPT_REQ_STRING  ),
     DD("-sunx86-label",                 RTFSISOMAKERCMD_OPT_SUNX86_LABEL,                   RTGETOPT_REQ_STRING  ),
-    DD("-sysid",                        RTFSISOMAKERCMD_OPT_SYSTEM_ID,                      RTGETOPT_REQ_STRING  ),
     { "--trans-tbl",                    'T',                                                RTGETOPT_REQ_NOTHING },
     DD("-table-name",                   RTFSISOMAKERCMD_OPT_TRANS_TBL_NAME,                 RTGETOPT_REQ_STRING  ),
     DD("-ucs-level",                    RTFSISOMAKERCMD_OPT_JOLIET_LEVEL,                   RTGETOPT_REQ_UINT8   ),
@@ -546,8 +549,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-use-fileversion",              RTFSISOMAKERCMD_OPT_USE_FILE_VERSION,               RTGETOPT_REQ_NOTHING ),
     { "--untranslated-filenames",       'U',                                                RTGETOPT_REQ_NOTHING },
     DD("-no-iso-translate",             RTFSISOMAKERCMD_OPT_NO_ISO_TRANSLATE,               RTGETOPT_REQ_NOTHING ),
-    { "--volume-id",                    'V',                                                RTGETOPT_REQ_STRING  },
-    DD("-volset",                       RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,                  RTGETOPT_REQ_STRING  ),
     DD("-volset-size",                  RTFSISOMAKERCMD_OPT_VOLUME_SET_SIZE,                RTGETOPT_REQ_UINT32  ),
     DD("-volset-seqno",                 RTFSISOMAKERCMD_OPT_VOLUME_SET_SEQ_NO,              RTGETOPT_REQ_UINT32  ),
     { "--transpared-compression",       'z',                                                RTGETOPT_REQ_NOTHING },
@@ -639,10 +640,10 @@ static int rtFsIsoMakerCmdChainError(PRTFSISOMAKERCMDOPTS pOpts, const char *psz
             rc = rtFsIsoMakerCmdErrorRc(pOpts, rc,
                                         "%s failed with rc=%Rrc: %s\n"
                                         "    '%s'\n"
-                                        "     %*s^\n",
+                                        "     %*s^",
                                         pszFunction, rc, pErrInfo->pszMsg, pszSpec, offError, "");
         else
-            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s failed to open '%s': %Rrc: %s\n",
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s failed to open '%s': %Rrc: %s",
                                         pszFunction, pszSpec, rc, pErrInfo->pszMsg);
     }
     else
@@ -651,10 +652,10 @@ static int rtFsIsoMakerCmdChainError(PRTFSISOMAKERCMDOPTS pOpts, const char *psz
             rc = rtFsIsoMakerCmdErrorRc(pOpts, rc,
                                         "%s failed with rc=%Rrc:\n"
                                         "    '%s'\n"
-                                        "     %*s^\n",
+                                        "     %*s^",
                                         pszFunction, rc, pszSpec, offError, "");
         else
-            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s failed to open '%s': %Rrc\n", pszFunction, pszSpec, rc);
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s failed to open '%s': %Rrc", pszFunction, pszSpec, rc);
     }
     return rc;
 }
@@ -1826,7 +1827,7 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
                 rc = RTFsIsoMakerObjEnableBootInfoTablePatching(pOpts->hIsoMaker, idxImageObj, true);
                 if (RT_FAILURE(rc))
                     return rtFsIsoMakerCmdErrorRc(pOpts, rc,
-                                                  "RTFsIsoMakerObjEnableBootInfoTablePatching failed on entry #%u: %Rrc\n",
+                                                  "RTFsIsoMakerObjEnableBootInfoTablePatching failed on entry #%u: %Rrc",
                                                   idxBootCat, rc);
             }
 
@@ -1836,7 +1837,7 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
                 uint64_t cbImage;
                 rc = RTFsIsoMakerObjQueryDataSize(pOpts->hIsoMaker, idxImageObj, &cbImage);
                 if (RT_FAILURE(rc))
-                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerObjGetDataSize failed on entry #%u: %Rrc\n",
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerObjGetDataSize failed on entry #%u: %Rrc",
                                                   idxBootCat, rc);
                 if (cbImage == 1228800)
                     pBootCatEntry->u.Section.bBootMediaType = ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_2_MB;
@@ -1861,7 +1862,7 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
                 rc = RTFsIsoMakerBootCatSetValidationEntry(pOpts->hIsoMaker, pBootCatEntry->u.Validation.idPlatform,
                                                            pBootCatEntry->u.Validation.pszString);
                 if (RT_FAILURE(rc))
-                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerBootCatSetValidationEntry failed: %Rrc\n", rc);
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerBootCatSetValidationEntry failed: %Rrc", rc);
                 break;
 
             case RTFSISOMKCMDELTORITOENTRY::kEntryType_Default:
@@ -1876,7 +1877,7 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
                                                         pBootCatEntry->u.Section.cSectorsToLoad,
                                                         ISO9660_ELTORITO_SEL_CRIT_TYPE_NONE, NULL, 0);
                 if (RT_FAILURE(rc))
-                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerBootCatSetSectionEntry failed on entry #%u: %Rrc\n",
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerBootCatSetSectionEntry failed on entry #%u: %Rrc",
                                                   idxBootCat, rc);
                 break;
 
@@ -1894,7 +1895,7 @@ static int rtFsIsoMakerCmdOptEltoritoCommitBootCatalog(PRTFSISOMAKERCMDOPTS pOpt
                                                               pBootCatEntry->u.SectionHeader.pszString);
                 if (RT_FAILURE(rc))
                     return rtFsIsoMakerCmdErrorRc(pOpts, rc,
-                                                  "RTFsIsoMakerBootCatSetSectionHeaderEntry failed on entry #%u: %Rrc\n",
+                                                  "RTFsIsoMakerBootCatSetSectionHeaderEntry failed on entry #%u: %Rrc",
                                                   idxBootCat, rc);
                 break;
             }
@@ -1921,6 +1922,22 @@ static int rtFsIsoMakerCmdOptEltoritoNewEntry(PRTFSISOMAKERCMDOPTS pOpts)
     return rtFsIsoMakerCmdOptEltoritoEnsureSectionEntry(pOpts, true /*fForceNew*/, &idxBootCat);
 }
 
+
+/**
+ * Sets a string property in all namespaces.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszValue            The new string value.
+ * @param   enmStringProp        The string property.
+ */
+static int rtFsIsoMakerCmdOptSetStringProp(PRTFSISOMAKERCMDOPTS pOpts, const char *pszValue, RTFSISOMAKERSTRINGPROP enmStringProp)
+{
+    int rc = RTFsIsoMakerSetStringProp(pOpts->hIsoMaker, enmStringProp, RTFSISOMAKER_NAMESPACE_ALL, pszValue);
+    if (RT_FAILURE(rc))
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set string property %d to '%s': %Rrc", enmStringProp, pszValue, rc);
+    return rc;
+}
 
 
 /**
@@ -2067,6 +2084,44 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
                 rc = rtFsIsoMakerCmdOptEltoritoSetBootCatalogPath(&Opts, ValueUnion.psz);
                 break;
 
+            /*
+             * Image/namespace property related options.
+             */
+            case RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_ABSTRACT_FILE_ID);
+                break;
+
+            case 'A': /* --application-id */
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_APPLICATION_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_BIBLIOGRAPHIC_FILE_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_COPYRIGHT_FILE_ID);
+                break;
+
+            case 'P': /* -publisher */
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_PUBLISHER_ID);
+                break;
+
+            case 'p': /* --preparer*/
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_DATA_PREPARER_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_SYSTEM_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_SYSTEM_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_VOLUME_ID: /* (should've been '-V') */
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_VOLUME_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_VOLUME_SET_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID);
+                break;
 
             /*
              * Options compatible with other ISO makers.
@@ -2098,9 +2153,9 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
                 else if (rc == VERR_GETOPT_UNKNOWN_OPTION)
                     rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "Unknown option: '%s'", ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%s: %Rrs\n", ValueUnion.pDef->pszLong, rc);
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%s: %Rrs", ValueUnion.pDef->pszLong, rc);
                 else
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%Rrs\n", rc);
+                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%Rrs", rc);
                 return rtFsIsoMakerCmdDeleteState(&Opts, rc);
         }
     }
