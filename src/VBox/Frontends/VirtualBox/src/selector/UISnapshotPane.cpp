@@ -555,6 +555,9 @@ void UISnapshotPane::retranslateUi()
                                << tr("Name", "snapshot")
                                << tr("Taken", "snapshot");
     m_pSnapshotTree->setHeaderLabels(fields);
+
+    /* Refresh whole the tree: */
+    refreshAll();
 }
 
 void UISnapshotPane::resizeEvent(QResizeEvent *pEvent)
@@ -832,7 +835,7 @@ void UISnapshotPane::sltHandleSnapshotChange(QString strMachineId, QString strSn
     if (!fSuccess)
     {
         LogRel(("GUI: Snapshot tree update failed! Rebuilding from scratch...\n"));
-        return refreshAll();
+        refreshAll();
     }
 }
 
@@ -1502,7 +1505,7 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
             QString strFinalName = strNameTemplate.arg(iMaximumIndex + 1);
             QString strFinalDescription;
 
-            /* Should we take snapshot manually? */
+            /* In manual mode we should show take snapshot dialog: */
             if (!fAutomatically)
             {
                 /* Create take-snapshot dialog: */
@@ -1588,7 +1591,7 @@ bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
         if (comSnapshot.isNull())
             break;
 
-        /* Ask if user really wants to remove the selected snapshot: */
+        /* In manual mode we should ask if user really wants to remove the selected snapshot: */
         if (!fAutomatically && !msgCenter().confirmSnapshotRemoval(comSnapshot.GetName()))
             break;
 
@@ -1647,7 +1650,7 @@ bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
     return fSuccess;
 }
 
-bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = false */)
+bool UISnapshotPane::restoreSnapshot(bool fAutomatically /* = false */)
 {
     /* Simulate try-catch block: */
     bool fSuccess = false;
@@ -1665,8 +1668,8 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
         if (comSnapshot.isNull())
             break;
 
-        /* If non-critical warnings are not hidden or current state is changed: */
-        if (!fSuppressNonCriticalWarnings && m_comMachine.GetCurrentStateModified())
+        /* In manual mode we should check whether current state is changed: */
+        if (!fAutomatically && m_comMachine.GetCurrentStateModified())
         {
             /* Ask if user really wants to restore the selected snapshot: */
             int iResultCode = msgCenter().confirmSnapshotRestoring(comSnapshot.GetName(), m_comMachine.GetCurrentStateModified());
