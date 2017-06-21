@@ -221,6 +221,8 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedStgi(PVMCPU pVCpu, uint8_t cbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmload(PVMCPU pVCpu, uint8_t cbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmsave(PVMCPU pVCpu, uint8_t cbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedInvlpga(PVMCPU pVCpu, uint8_t cbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmrun(PVMCPU pVCpu, uint8_t cbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2);
 #endif
 /** @}  */
 

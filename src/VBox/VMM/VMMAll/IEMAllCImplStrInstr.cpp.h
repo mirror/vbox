@@ -1217,6 +1217,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
             return rcStrict;
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
     /*
      * Check SVM nested-guest IO intercept.
      */
@@ -1233,6 +1234,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
             return rcStrict;
         }
     }
+#endif
 
     OP_TYPE        *puMem;
     rcStrict = iemMemMap(pVCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, pCtx->ADDR_rDI, IEM_ACCESS_DATA_W);
@@ -1287,6 +1289,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             return rcStrict;
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
     /*
      * Check SVM nested-guest IO intercept.
      */
@@ -1303,6 +1306,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             return rcStrict;
         }
     }
+#endif
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
@@ -1488,6 +1492,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
             return rcStrict;
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
     /*
      * Check SVM nested-guest IO intercept.
      */
@@ -1504,6 +1509,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
             return rcStrict;
         }
     }
+#endif
 
     OP_TYPE uValue;
     rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pVCpu, &uValue, iEffSeg, pCtx->ADDR_rSI);
@@ -1548,6 +1554,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             return rcStrict;
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
     /*
      * Check SVM nested-guest IO intercept.
      */
@@ -1564,6 +1571,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             return rcStrict;
         }
     }
+#endif
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
