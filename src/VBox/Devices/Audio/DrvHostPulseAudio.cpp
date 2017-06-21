@@ -286,11 +286,11 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
         if (!pThis->fAbortLoop)
         {
             AssertPtr(pThis->pMainLoop);
-            if (fDebug)
-                LogRel(("PulseAudio: pa_threaded_mainloop_wait\n"));
+//            if (fDebug)
+//                LogRel(("PulseAudio: pa_threaded_mainloop_wait\n"));
             pa_threaded_mainloop_wait(pThis->pMainLoop);
-            if (fDebug)
-                LogRel(("PulseAudio: pa_threaded_mainloop_wait done\n"));
+//            if (fDebug)
+//                LogRel(("PulseAudio: pa_threaded_mainloop_wait done\n"));
             if (pThis->fAbortEnumLoop)
                 break;
             if (   !pThis->pContext
