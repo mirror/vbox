@@ -2555,6 +2555,7 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
 VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
 {
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+    Assert(pCtx->hwvirt.svm.fGif);
 
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
     X86EFLAGS fEFlags;
@@ -2563,7 +2564,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
     else
         fEFlags.u = pCtx->eflags.u;
 
-    return pCtx->hwvirt.svm.fGif && fEFlags.Bits.u1IF;
+    return fEFlags.Bits.u1IF;
 }
 
 
