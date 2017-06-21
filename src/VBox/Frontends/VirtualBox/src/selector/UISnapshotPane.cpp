@@ -775,6 +775,12 @@ void UISnapshotPane::sltHandleSnapshotDelete(QString strMachineId, QString strSn
         /* Delete item finally: */
         if (fSuccess)
         {
+            if (pItem == m_pCurrentSnapshotItem)
+            {
+                m_pCurrentSnapshotItem = UISnapshotItem::toSnapshotItem(pParent);
+                if (m_pCurrentSnapshotItem)
+                    m_pCurrentSnapshotItem->setCurrentSnapshotItem(true);
+            }
             delete pItem;
             pItem = 0;
 
@@ -1640,7 +1646,7 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
             break;
 
         /* If non-critical warnings are not hidden or current state is changed: */
-        if (!fSuppressNonCriticalWarnings || m_comMachine.GetCurrentStateModified())
+        if (!fSuppressNonCriticalWarnings && m_comMachine.GetCurrentStateModified())
         {
             /* Ask if user really wants to restore the selected snapshot: */
             int iResultCode = msgCenter().confirmSnapshotRestoring(comSnapshot.GetName(), m_comMachine.GetCurrentStateModified());
