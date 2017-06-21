@@ -9141,7 +9141,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation type="unfinished"></translation>

@@ -55,8 +55,8 @@
 # include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
-# include "VBoxTakeSnapshotDlg.h"
 # include "UISettingsDialogSpecific.h"
+# include "UITakeSnapshotDialog.h"
 # include "UIVMLogViewer.h"
 # include "UIConverter.h"
 # include "UIModalWindowManager.h"
@@ -1551,17 +1551,17 @@ void UIMachineLogic::sltTakeSnapshot()
 
     /* Create take-snapshot dialog: */
     QWidget *pDlgParent = windowManager().realParentWindow(activeMachineWindow());
-    QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, machine());
+    QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, machine());
     windowManager().registerNewParent(pDlg, pDlgParent);
 
     /* Assign corresponding icon: */
     if (uisession() && uisession()->machineWindowIcon())
-        pDlg->mLbIcon->setPixmap(uisession()->machineWindowIcon()->pixmap(QSize(32, 32)));
+        pDlg->setPixmap(uisession()->machineWindowIcon()->pixmap(QSize(32, 32)));
 
     /* Search for the max available filter index: */
-    QString strNameTemplate = VBoxTakeSnapshotDlg::tr("Snapshot %1");
+    QString strNameTemplate = UITakeSnapshotDialog::tr("Snapshot %1");
     int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine(), machine().FindSnapshot(QString()), strNameTemplate);
-    pDlg->mLeName->setText(strNameTemplate.arg(++ iMaxSnapshotIndex));
+    pDlg->setName(strNameTemplate.arg(++ iMaxSnapshotIndex));
 
     /* Exec the dialog: */
     bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
@@ -1571,8 +1571,8 @@ void UIMachineLogic::sltTakeSnapshot()
         return;
 
     /* Acquire variables: */
-    QString strSnapshotName = pDlg->mLeName->text().trimmed();
-    QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
+    QString strSnapshotName = pDlg->name().trimmed();
+    QString strSnapshotDescription = pDlg->description();
 
     /* Destroy dialog early: */
     delete pDlg;

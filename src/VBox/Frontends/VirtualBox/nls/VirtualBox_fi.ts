@@ -15331,7 +15331,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Luo palautuspiste virtuaalikoneesta</translation>

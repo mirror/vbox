@@ -9141,7 +9141,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>取得虛擬機器的快照</translation>

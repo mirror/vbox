@@ -650,7 +650,7 @@
 #include "UISettingsSelector.h"
 #include "UISnapshotDetailsWidget.h"
 #include "UISnapshotPane.h"
-#include "VBoxTakeSnapshotDlg.h"
+#include "UITakeSnapshotDialog.h"
 #ifdef RT_OS_DARWIN
 # include "VBoxUtils-darwin.h"
 #endif

@@ -19962,7 +19962,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Crea una istantanea della macchina virtuale</translation>

@@ -17868,7 +17868,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Spara ögonblicksbild av den virtuella maskinen</translation>

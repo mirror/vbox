@@ -14474,7 +14474,7 @@ medium</comment>
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>យក​រូបថត​របស់ម៉ាស៊ីន​និម្មិត</translation>

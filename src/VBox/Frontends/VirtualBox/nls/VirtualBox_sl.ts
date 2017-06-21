@@ -9328,7 +9328,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Zajemi ponetek stanja navideznega računalnika</translation>

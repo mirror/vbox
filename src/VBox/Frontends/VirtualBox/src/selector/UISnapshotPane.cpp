@@ -41,10 +41,10 @@
 # include "UIModalWindowManager.h"
 # include "UISnapshotDetailsWidget.h"
 # include "UISnapshotPane.h"
+# include "UITakeSnapshotDialog.h"
 # include "UIToolBar.h"
 # include "UIVirtualBoxEventHandler.h"
 # include "UIWizardCloneVM.h"
-# include "VBoxTakeSnapshotDlg.h"
 
 /* COM includes: */
 # include "CConsole.h"
@@ -1475,14 +1475,14 @@ bool UISnapshotPane::takeSnapshot()
 
             /* Create take-snapshot dialog: */
             QWidget *pDlgParent = windowManager().realParentWindow(this);
-            QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, m_comMachine);
+            QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, m_comMachine);
             windowManager().registerNewParent(pDlg, pDlgParent);
 
-            // TODO: Assign corresponding icon through sub-dialog API: */
+            /* Assign corresponding icon: */
             QPixmap pixmap = vboxGlobal().vmUserPixmapDefault(m_comMachine);
             if (pixmap.isNull())
                 pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_comMachine.GetOSTypeId());
-            pDlg->mLbIcon->setPixmap(pixmap);
+            pDlg->setPixmap(pixmap);
 
             /* Search for the max available snapshot index: */
             int iMaxSnapShotIndex = 0;
@@ -1497,8 +1497,8 @@ bool UISnapshotPane::takeSnapshot()
                     iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
                 ++iterator;
             }
-            // TODO: Assign corresponding snapshot name through sub-dialog API: */
-            pDlg->mLeName->setText(strSnapshotName.arg(iMaxSnapShotIndex + 1));
+            /* Assign corresponding snapshot name: */
+            pDlg->setName(strSnapshotName.arg(iMaxSnapShotIndex + 1));
 
             /* Show Take Snapshot dialog: */
             if (pDlg->exec() != QDialog::Accepted)
@@ -1510,8 +1510,8 @@ bool UISnapshotPane::takeSnapshot()
             }
 
             /* Acquire real snapshot name/description: */
-            const QString strRealSnapshotName = pDlg->mLeName->text().trimmed();
-            const QString strRealSnapshotDescription = pDlg->mTeDescription->toPlainText();
+            const QString strRealSnapshotName = pDlg->name().trimmed();
+            const QString strRealSnapshotDescription = pDlg->description();
 
             /* Cleanup dialog: */
             delete pDlg;

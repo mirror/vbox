@@ -19014,7 +19014,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Cancel·la</translation>

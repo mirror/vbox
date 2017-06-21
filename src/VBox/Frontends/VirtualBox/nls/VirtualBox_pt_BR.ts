@@ -20024,7 +20024,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Criar Snapshot de Máquina Virtual</translation>

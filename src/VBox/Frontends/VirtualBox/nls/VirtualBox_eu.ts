@@ -14062,9 +14062,9 @@
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
-        <location filename="../src/VBoxTakeSnapshotDlg.ui" line="+26"/>
+        <location filename="../src/UITakeSnapshotDialog.ui" line="+26"/>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Hartu Makina Birtualaren Berehalako bat</translation>
     </message>
@@ -14079,7 +14079,7 @@
         <translation>Berehalakoaren &amp;Azalpena</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="+72"/>
+        <location filename="../src/UITakeSnapshotDialog.cpp" line="+72"/>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
             <numerusform>Kontuz: Ekinean dagoen makina baten berehalako bat hartzen ari zara berari %n irudi aldaezin erantsita dituela. Berehalako honetatik lanean ari zaren bitartean irudi aldaezinak ez dira berrezarriko datuak galtzea saihesteko.</numerusform>

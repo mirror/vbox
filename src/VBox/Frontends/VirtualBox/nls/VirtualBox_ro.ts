@@ -16550,7 +16550,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Salvează instantaneu al mașinii virtuale</translation>

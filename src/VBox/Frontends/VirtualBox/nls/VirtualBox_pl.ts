@@ -17101,7 +17101,7 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków gościa.&lt;/qt&gt;</translati
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Tworzenie migawki maszyny wirtualnej</translation>

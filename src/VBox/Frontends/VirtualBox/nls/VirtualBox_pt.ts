@@ -16569,7 +16569,7 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
     </message>
 </context>
 <context>
-    <name>VBoxTakeSnapshotDlg</name>
+    <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
         <translation>Criar Captura da Máquina Virtual</translation>
