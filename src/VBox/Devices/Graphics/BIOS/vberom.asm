@@ -48,7 +48,6 @@ public  _vbe_has_vbe_display
 
 public	vbe_biosfn_return_current_mode
 public	vbe_biosfn_display_window_control
-public	vbe_biosfn_set_get_logical_scan_line_length
 public	vbe_biosfn_set_get_display_start
 public	vbe_biosfn_set_get_dac_palette_format
 public	vbe_biosfn_set_get_palette_data
@@ -305,39 +304,6 @@ endif
   pop  ax
   ret
 
-dispi_set_virt_width:
-  call vga_set_virt_width
-  push dx
-  push ax
-  mov  dx, VBE_DISPI_IOPORT_INDEX
-  mov  ax, VBE_DISPI_INDEX_VIRT_WIDTH
-  out_dx_ax
-  pop  ax
-  mov  dx, VBE_DISPI_IOPORT_DATA
-  out_dx_ax
-  pop  dx
-  ret
-
-dispi_get_virt_width:
-  push dx
-  mov  dx, VBE_DISPI_IOPORT_INDEX
-  mov  ax, VBE_DISPI_INDEX_VIRT_WIDTH
-  out_dx_ax
-  mov  dx, VBE_DISPI_IOPORT_DATA
-  in_ax_dx
-  pop  dx
-  ret
-
-dispi_get_virt_height:
-  push dx
-  mov  dx, VBE_DISPI_IOPORT_INDEX
-  mov  ax, VBE_DISPI_INDEX_VIRT_HEIGHT
-  out_dx_ax
-  mov  dx, VBE_DISPI_IOPORT_DATA
-  in_ax_dx
-  pop  dx
-  ret
-
 _vga_compat_setup:
   push ax
   push dx
@@ -568,80 +534,6 @@ get_display_window:
   ret
 vbe_05_failed:
   mov  ax, 014Fh
-  ret
-
-
-; Function 06h - Set/Get Logical Scan Line Length
-;
-; Input:
-;              AX      = 4F06h
-;              BL      = 00h Set Scan Line Length in Pixels
-;                      = 01h Get Scan Line Length
-;                      = 02h Set Scan Line Length in Bytes
-;                      = 03h Get Maximum Scan Line Length
-;              CX      = If BL=00h Desired Width in Pixels
-;                        If BL=02h Desired Width in Bytes
-;                        (Ignored for Get Functions)
-;
-; Output:
-;              AX      = VBE Return Status
-;              BX      = Bytes Per Scan Line
-;              CX      = Actual Pixels Per Scan Line
-;                        (truncated to nearest complete pixel)
-;              DX      = Maximum Number of Scan Lines
-;
-vbe_biosfn_set_get_logical_scan_line_length:
-  mov  ax, cx
-  cmp  bl, 1
-  je   get_logical_scan_line_length
-  cmp  bl, 2
-  je   set_logical_scan_line_bytes
-  jb   set_logical_scan_line_pixels
-  mov  ax, 0100h
-  ret
-set_logical_scan_line_bytes:
-  push ax
-  call dispi_get_bpp
-  xor  bh, bh
-  mov  bl, ah
-  or   bl, bl
-  pop  ax
-  jnz  no_4bpp_1
-if VBOX_BIOS_CPU gt 8086
-  shl  ax, 3
-else
-  shl  ax, 1
-  shl  ax, 1
-  shl  ax, 1
-endif
-  mov  bl, 1
-no_4bpp_1:
-  xor  dx, dx
-  div  bx
-set_logical_scan_line_pixels:
-  call dispi_set_virt_width
-get_logical_scan_line_length:
-  call dispi_get_bpp
-  xor  bh, bh
-  mov  bl, ah
-  call dispi_get_virt_width
-  mov  cx, ax
-  or   bl, bl
-  jnz  no_4bpp_2
-if VBOX_BIOS_CPU gt 8086
-  shr  ax, 3
-else
-  shr  ax, 1
-  shr  ax, 1
-  shr  ax, 1
-endif
-  mov  bl, 1
-no_4bpp_2:
-  mul  bx
-  mov  bx, ax
-  call dispi_get_virt_height
-  mov  dx, ax
-  mov  ax, 004Fh
   ret
 
 

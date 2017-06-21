@@ -129,6 +129,33 @@ static void dispi_set_bpp(uint16_t bpp)
     out_w(VBE_DISPI_IOPORT_DATA, bpp);
 }
 
+static uint16_t dispi_get_bpp(void)
+{
+    out_w(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
+    return in_w(VBE_DISPI_IOPORT_DATA);
+}
+
+static void dispi_set_virt_width(uint16_t vwidth)
+{
+#ifdef VGA_DEBUG
+    printf("vbe_set_virt_width: %04x\n", vwidth);
+#endif
+    out_w(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_WIDTH);
+    out_w(VBE_DISPI_IOPORT_DATA, vwidth);
+}
+
+static uint16_t dispi_get_virt_width(void)
+{
+    out_w(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_WIDTH);
+    return in_w(VBE_DISPI_IOPORT_DATA);
+}
+
+static uint16_t dispi_get_virt_height(void)
+{
+    out_w(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_HEIGHT);
+    return in_w(VBE_DISPI_IOPORT_DATA);
+}
+
 uint16_t in_word(uint16_t port, uint16_t addr)
 {
     outw(port, addr);
@@ -682,6 +709,69 @@ void vbe_biosfn_save_restore_state(uint16_t STACK_BASED *AX, uint16_t CX, uint16
 #endif
         if (CX & 8)
             vbe_biosfn_restore_video_state(ES, val);
+        break;
+    default:
+        // function failed
+        result = 0x100;
+        break;
+    }
+    *AX = result;
+}
+
+/** Function 06h - Set/Get Logical Scan Line Length
+ *
+ *  Input:
+ *              AX      = 4F06h
+ *              BL      = 00h Set Scan Line Length in Pixels
+ *                      = 01h Get Scan Line Length
+ *                      = 02h Set Scan Line Length in Bytes
+ *                      = 03h Get Maximum Scan Line Length
+ *              CX      = If BL=00h Desired Width in Pixels
+ *                        If BL=02h Desired Width in Bytes
+ *                        (Ignored for Get Functions)
+ *
+ *  Output:
+ *              AX      = VBE Return Status
+ *              BX      = Bytes Per Scan Line
+ *              CX      = Actual Pixels Per Scan Line (truncated to
+ *                        nearest complete pixel)
+ *              DX      = Maximum Number of Scan Lines
+ */
+void vbe_biosfn_get_set_scanline_length(uint16_t STACK_BASED *AX, uint16_t STACK_BASED *BX,
+                                        uint16_t STACK_BASED *CX, uint16_t STACK_BASED *DX)
+{
+    uint16_t    val;
+    uint16_t    result;
+    uint8_t     bpp;
+    uint8_t     subfn;
+
+    bpp    = dispi_get_bpp();
+    result = 0x004F;
+    val    = *CX;
+    subfn  = *BX & 0xFF;
+#ifdef VGA_DEBUG
+    printf("VBE get/set scanline len fn=%x, CX=%x\n", subfn, *CX);
+#endif
+    switch(subfn) {
+    case 0x02:
+        if (bpp == 4)
+            val = val * 8;
+        else
+            val = val / (bpp / 8);
+        /* fall through */
+    case 0x00:
+        dispi_set_virt_width(val);
+        /* fall through */
+    case 0x01:
+        val = dispi_get_virt_width();
+        *CX = val;                          /* Width in pixels. */
+        if (bpp == 4)
+            val = val / 8;
+        else
+            val = val * (bpp / 8);
+        val = (val + 3) & ~3;
+        *BX = val;                          /* Bytes per scanline. */
+        *DX = dispi_get_virt_height();      /* Height in lines. */
         break;
     default:
         // function failed

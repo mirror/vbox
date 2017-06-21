@@ -47,7 +47,6 @@ ifdef VBE
 ; Implemented in separate assembly module
 extrn	vbe_biosfn_return_current_mode:near
 extrn	vbe_biosfn_display_window_control:near
-extrn	vbe_biosfn_set_get_logical_scan_line_length:near
 extrn	vbe_biosfn_set_get_display_start:near
 extrn	vbe_biosfn_set_get_dac_palette_format:near
 extrn	vbe_biosfn_set_get_palette_data:near
@@ -166,13 +165,8 @@ int10_test_4F:
   jmp   int10_end
 int10_test_vbe_05:
   cmp   al, 5
-  jne   int10_test_vbe_06
-  call  vbe_biosfn_display_window_control
-  jmp   int10_end
-int10_test_vbe_06:
-  cmp   al, 6
   jne   int10_test_vbe_07
-  call  vbe_biosfn_set_get_logical_scan_line_length
+  call  vbe_biosfn_display_window_control
   jmp   int10_end
 int10_test_vbe_07:
   cmp   al, 7

@@ -2099,6 +2099,7 @@ extern void vbe_biosfn_return_controller_information(uint16_t STACK_BASED *AX, u
 extern void vbe_biosfn_return_mode_information(uint16_t STACK_BASED *AX, uint16_t CX, uint16_t ES, uint16_t DI);
 extern void vbe_biosfn_set_mode(uint16_t STACK_BASED *AX, uint16_t BX, uint16_t ES, uint16_t DI);
 extern void vbe_biosfn_save_restore_state(uint16_t STACK_BASED *AX, uint16_t CX, uint16_t DX, uint16_t ES, uint16_t STACK_BASED *BX);
+extern void vbe_biosfn_get_set_scanline_length(uint16_t STACK_BASED *AX, uint16_t STACK_BASED *BX, uint16_t STACK_BASED *CX, uint16_t STACK_BASED *DX);
 
 // --------------------------------------------------------------------------------------------
 /*
@@ -2293,6 +2294,9 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
           break;
          case 0x04:
           vbe_biosfn_save_restore_state(&AX, CX, DX, ES, &BX);
+          break;
+         case 0x06:
+          vbe_biosfn_get_set_scanline_length(&AX, &BX, &CX, &DX);
           break;
          case 0x09:
           //FIXME
