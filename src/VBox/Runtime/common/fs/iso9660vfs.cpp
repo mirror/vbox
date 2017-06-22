@@ -933,6 +933,7 @@ static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, u
 }
 
 
+#ifdef RT_STRICT
 /**
  * Checks if @a pNext is an extent of @a pFirst.
  *
@@ -953,6 +954,7 @@ DECLINLINE(bool) rtFsIso9660Dir_IsDirRecNextExtent(PCISO9660DIRREC pFirst, PCISO
     }
     return false;
 }
+#endif /* RT_STRICT */
 
 
 /**
