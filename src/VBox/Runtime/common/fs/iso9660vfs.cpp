@@ -416,6 +416,8 @@ static void rtFsIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIME
  * @note    The RTFSISO9660CORE::pParentDir and RTFSISO9660CORE::Clusters members are
  *          properly initialized elsewhere.
  *
+ * @returns IRPT status code.  Either VINF_SUCCESS or VERR_NO_MEMORY, the latter
+ *          only if @a cDirRecs is above 1.
  * @param   pCore           The structure to initialize.
  * @param   pDirRec         The primary directory record.
  * @param   cDirRecs        Number of directory records.
@@ -423,8 +425,8 @@ static void rtFsIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIME
  * @param   uVersion        The file version number.
  * @param   pVol            The volume.
  */
-static void rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                                           uint64_t offDirRec, uint32_t uVersion, PRTFSISO9660VOL pVol)
+static int rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
+                                          uint64_t offDirRec, uint32_t uVersion, PRTFSISO9660VOL pVol)
 {
     Assert(cDirRecs == 1); RT_NOREF(cDirRecs);
 
@@ -447,6 +449,53 @@ static void rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRR
     pCore->BirthTime  = pCore->ModificationTime;
     pCore->AccessTime = pCore->ModificationTime;
     pCore->ChangeTime = pCore->ModificationTime;
+
+    /*
+     * Deal with multiple extents.
+     */
+    if (RT_LIKELY(cDirRecs == 1))
+    { /* done */ }
+    else
+    {
+        PRTFSISO9660EXTENT pCurExtent = &pCore->FirstExtent;
+        while (cDirRecs > 1)
+        {
+            offDirRec += pDirRec->cbDirRec;
+            pDirRec = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
+            if (pDirRec->cbDirRec != 0)
+            {
+                uint64_t offDisk = ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)pVol->cbBlock;
+                uint32_t cbExtent  = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+                pCore->cbObject += cbExtent;
+
+                if (pCurExtent->offDisk + pCurExtent->cbExtent == offDisk)
+                    pCurExtent->cbExtent += cbExtent;
+                else
+                {
+                    void *pvNew = RTMemRealloc(pCore->paExtents, pCore->cExtents * sizeof(pCore->paExtents[0]));
+                    if (pvNew)
+                        pCore->paExtents = (PRTFSISO9660EXTENT)pvNew;
+                    else
+                    {
+                        RTMemFree(pCore->paExtents);
+                        return VERR_NO_MEMORY;
+                    }
+                    pCurExtent = &pCore->paExtents[pCore->cExtents - 1];
+                    pCurExtent->cbExtent = cbExtent;
+                    pCurExtent->offDisk  = offDisk;
+                    pCore->cExtents++;
+                }
+                cDirRecs--;
+            }
+            else
+            {
+                size_t cbSkip = (offDirRec + pVol->cbSector) & ~(pVol->cbSector - 1U);
+                offDirRec += cbSkip;
+                pDirRec = (PCISO9660DIRREC)((uintptr_t)pDirRec + cbSkip);
+            }
+        }
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -835,8 +884,14 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
                 /*
                  * Initialize it all so rtFsIso9660File_Close doesn't trip up in anyway.
                  */
-                rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, uVersion, pThis);
-                rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                rc = rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, uVersion, pThis);
+                if (RT_SUCCESS(rc))
+                    rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                else
+                {
+                    RTMemFree(pShared);
+                    pShared = NULL;
+                }
             }
         }
         if (pShared)
@@ -875,6 +930,28 @@ static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, u
         }
     }
     return NULL;
+}
+
+
+/**
+ * Checks if @a pNext is an extent of @a pFirst.
+ *
+ * @returns true if @a pNext is the next extent, false if not
+ * @param   pFirst      The directory record describing the first or the
+ *                      previous extent.
+ * @param   pNext       The directory record alleged to be the next extent.
+ */
+DECLINLINE(bool) rtFsIso9660Dir_IsDirRecNextExtent(PCISO9660DIRREC pFirst, PCISO9660DIRREC pNext)
+{
+    if (RT_LIKELY(pNext->bFileIdLength == pFirst->bFileIdLength))
+    {
+        if (RT_LIKELY((pNext->fFileFlags | ISO9660_FILE_FLAGS_MULTI_EXTENT) == pFirst->fFileFlags))
+        {
+            if (RT_LIKELY(memcmp(pNext->achFileId, pFirst->achFileId, pNext->bFileIdLength) == 0))
+                return true;
+        }
+    }
+    return false;
 }
 
 
@@ -1058,8 +1135,6 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
         else
         {
             /* Try match the filename. */
-            /** @todo deal with multi-extent filenames, or however that
-             *        works... */
             if (fIsUtf16)
             {
                 if (RT_LIKELY(!rtFsIso9660Dir_IsEntryEqualUtf16Big(pDirRec, uBuf.wszEntry, cbEntry, cwcEntry, puVersion)))
@@ -1085,8 +1160,35 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
 
             *poffDirRec = pThis->Core.FirstExtent.offDisk + offEntryInDir;
             *ppDirRec   = pDirRec;
-            *pcDirRecs  = 1;
             *pfMode     = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
+
+            /*
+             * Deal with the unlikely scenario of multi extent records.
+             */
+            if (!(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT))
+                *pcDirRecs = 1;
+            else
+            {
+                offEntryInDir += pDirRec->cbDirRec;
+
+                uint32_t cDirRecs = 1;
+                while (offEntryInDir + RT_UOFFSETOF(ISO9660DIRREC, achFileId) <= cbDir)
+                {
+                    PCISO9660DIRREC pDirRec2 = (PCISO9660DIRREC)&pThis->pbDir[offEntryInDir];
+                    if (pDirRec2->cbDirRec != 0)
+                    {
+                        Assert(rtFsIso9660Dir_IsDirRecNextExtent(pDirRec, pDirRec2));
+                        cDirRecs++;
+                        if (!(pDirRec2->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT))
+                            break;
+                        offEntryInDir += pDirRec2->cbDirRec;
+                    }
+                    else
+                        offEntryInDir = (offEntryInDir + pThis->Core.pVol->cbSector) & ~(pThis->Core.pVol->cbSector - 1U);
+                }
+
+                *pcDirRecs = cDirRecs;
+            }
             return VINF_SUCCESS;
         }
     }
@@ -1413,8 +1515,12 @@ static DECLCALLBACK(int) rtFsIso9660Dir_QueryEntryInfo(void *pvThis, const char 
          */
         RTFSISO9660CORE TmpObj;
         RT_ZERO(TmpObj);
-        rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, uVersion, pShared->Core.pVol);
-        rc = rtFsIso9660Core_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
+        rc = rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, uVersion, pShared->Core.pVol);
+        if (RT_SUCCESS(rc))
+        {
+            rc = rtFsIso9660Core_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
+            RTMemFree(TmpObj.paExtents);
+        }
     }
     return rc;
 }
@@ -1560,15 +1666,45 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
              */
             RTFSISO9660CORE TmpObj;
             RT_ZERO(TmpObj);
-            rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, 1/*cDirRecs*/, /** @todo multi-extent stuff */
+            rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, 1 /* cDirRecs - see below why 1 */,
                                            pThis->offDir + pShared->Core.FirstExtent.offDisk, uVersion, pShared->Core.pVol);
             int rc = rtFsIso9660Core_QueryInfo(&TmpObj, &pDirEntry->Info, enmAddAttr);
 
             /*
-             * Update the location and return.
+             * Update the directory location and handle multi extent records.
+             *
+             * Multi extent records only affect the file size and the directory location,
+             * so we deal with it here instead of involving * rtFsIso9660Core_InitFromDirRec
+             * which would potentially require freeing memory and such.
              */
-            Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x: %s (rc=%Rrc)\n", pThis->offDir, pDirEntry->szName, rc));
-            pThis->offDir += pDirRec->cbDirRec;
+            if (!(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT))
+            {
+                Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x: %s (rc=%Rrc)\n", pThis->offDir, pDirEntry->szName, rc));
+                pThis->offDir += pDirRec->cbDirRec;
+            }
+            else
+            {
+                uint32_t cExtents = 1;
+                uint32_t offDir   = pThis->offDir + pDirRec->cbDirRec;
+                while (offDir + RT_UOFFSETOF(ISO9660DIRREC, achFileId) <= pShared->cbDir)
+                {
+                    PCISO9660DIRREC pDirRec2 = (PCISO9660DIRREC)&pShared->pbDir[offDir];
+                    if (pDirRec2->cbDirRec != 0)
+                    {
+                        pDirEntry->Info.cbObject += ISO9660_GET_ENDIAN(&pDirRec2->cbData);
+                        offDir += pDirRec2->cbDirRec;
+                        cExtents++;
+                        if (!(pDirRec2->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT))
+                            break;
+                    }
+                    else
+                        offDir = (offDir + pShared->Core.pVol->cbSector) & ~(pShared->Core.pVol->cbSector - 1U);
+                }
+                Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x, %u extents ending at %#07x: %s (rc=%Rrc)\n",
+                      pThis->offDir, cExtents, offDir, pDirEntry->szName, rc));
+                pThis->offDir = offDir;
+            }
+
             return rc;
         }
     }
@@ -1734,13 +1870,14 @@ static void rtFsIso9660DirShrd_LogContent(PRTFSISO9660DIRSHRD pThis)
  * @param   pThis           The FAT volume instance.
  * @param   pParentDir      The parent directory.  This is NULL for the root
  *                          directory.
- * @param   pDirRec         The directory record.
+ * @param   pDirRec         The directory record.  Will access @a cDirRecs
+ *                          records.
  * @param   cDirRecs        Number of directory records if more than one.
  * @param   offDirRec       The byte offset of the directory record.
  * @param   ppShared        Where to return the shared directory structure.
  */
-static int  rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
-                                   uint32_t cDirRecs, uint64_t offDirRec, PRTFSISO9660DIRSHRD *ppShared)
+static int rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec,
+                                  uint32_t cDirRecs, uint64_t offDirRec, PRTFSISO9660DIRSHRD *ppShared)
 {
     /*
      * Allocate a new structure and initialize it.
@@ -1749,29 +1886,33 @@ static int  rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pP
     PRTFSISO9660DIRSHRD pShared = (PRTFSISO9660DIRSHRD)RTMemAllocZ(sizeof(*pShared));
     if (pShared)
     {
-        rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, 0 /*uVersion*/, pThis);
-        RTListInit(&pShared->OpenChildren);
-        pShared->cbDir              = ISO9660_GET_ENDIAN(&pDirRec->cbData);
-        pShared->pbDir              = (uint8_t *)RTMemAllocZ(pShared->cbDir + 256);
-        if (pShared->pbDir)
+        rc = rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, 0 /*uVersion*/, pThis);
+        if (RT_SUCCESS(rc))
         {
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
-            if (RT_SUCCESS(rc))
+            RTListInit(&pShared->OpenChildren);
+            pShared->cbDir = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+            pShared->pbDir = (uint8_t *)RTMemAllocZ(pShared->cbDir + 256);
+            if (pShared->pbDir)
             {
+                rc = RTVfsFileReadAt(pThis->hVfsBacking, pShared->Core.FirstExtent.offDisk, pShared->pbDir, pShared->cbDir, NULL);
+                if (RT_SUCCESS(rc))
+                {
 #ifdef LOG_ENABLED
-                rtFsIso9660DirShrd_LogContent(pShared);
+                    rtFsIso9660DirShrd_LogContent(pShared);
 #endif
 
-                /*
-                 * Link into parent directory so we can use it to update
-                 * our directory entry.
-                 */
-                if (pParentDir)
-                    rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
-                *ppShared = pShared;
-                return VINF_SUCCESS;
+                    /*
+                     * Link into parent directory so we can use it to update
+                     * our directory entry.
+                     */
+                    if (pParentDir)
+                        rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
+                    *ppShared = pShared;
+                    return VINF_SUCCESS;
+                }
             }
         }
+        RTMemFree(pShared);
     }
     *ppShared = NULL;
     return rc;
