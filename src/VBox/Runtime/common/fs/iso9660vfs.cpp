@@ -35,6 +35,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -86,7 +87,7 @@ typedef struct RTFSISO9660CORE
     /** Reference counter.   */
     uint32_t volatile   cRefs;
     /** The parent directory (not released till all children are close). */
-    PRTFSISO9660DIRSHRD     pParentDir;
+    PRTFSISO9660DIRSHRD pParentDir;
     /** The byte offset of the first directory record. */
     uint64_t            offDirRec;
     /** Attributes. */
@@ -103,6 +104,8 @@ typedef struct RTFSISO9660CORE
     RTTIMESPEC          BirthTime;
     /** Pointer to the volume. */
     PRTFSISO9660VOL     pVol;
+    /** The version number. */
+    uint32_t            uVersion;
     /** Number of extents. */
     uint32_t            cExtents;
     /** The first extent. */
@@ -219,6 +222,165 @@ static int  rtFsIso9660Dir_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
 static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, uint64_t offDirRec);
 
 
+/**
+ * Returns the length of the version suffix in the given name.
+ *
+ * @returns Number of UTF16-BE chars in the version suffix.
+ * @param   pawcName        The name to examine.
+ * @param   cwcName         The length of the name.
+ * @param   puValue         Where to return the value.
+ */
+static size_t rtFsIso9660GetVersionLengthUtf16Big(PCRTUTF16 pawcName, size_t cwcName, uint32_t *puValue)
+{
+    *puValue = 0;
+
+    /* -1: */
+    if (cwcName <= 2)
+        return 0;
+    RTUTF16 wc1 = RT_BE2H_U16(pawcName[cwcName - 1]);
+    if (!RT_C_IS_DIGIT(wc1))
+        return 0;
+    Assert(wc1 < 0x3a); /* ASSUMES the RT_C_IS_DIGIT macro works just fine on wide chars too. */
+
+    /* -2: */
+    RTUTF16 wc2 = RT_BE2H_U16(pawcName[cwcName - 2]);
+    if (wc2 == ';')
+    {
+        *puValue = wc1 - '0';
+        return 2;
+    }
+    if (!RT_C_IS_DIGIT(wc2) || cwcName <= 3)
+        return 0;
+
+    /* -3: */
+    RTUTF16 wc3 = RT_BE2H_U16(pawcName[cwcName - 3]);
+    if (wc3 == ';')
+    {
+        *puValue = (wc1 - '0')
+                 + (wc2 - '0') * 10;
+        return 3;
+    }
+    if (!RT_C_IS_DIGIT(wc3) || cwcName <= 4)
+        return 0;
+
+    /* -4: */
+    RTUTF16 wc4 = RT_BE2H_U16(pawcName[cwcName - 4]);
+    if (wc4 == ';')
+    {
+        *puValue = (wc1 - '0')
+                 + (wc2 - '0') * 10
+                 + (wc3 - '0') * 100;
+        return 4;
+    }
+    if (!RT_C_IS_DIGIT(wc4) || cwcName <= 5)
+        return 0;
+
+    /* -5: */
+    RTUTF16 wc5 = RT_BE2H_U16(pawcName[cwcName - 5]);
+    if (wc5 == ';')
+    {
+        *puValue = (wc1 - '0')
+                 + (wc2 - '0') * 10
+                 + (wc3 - '0') * 100
+                 + (wc4 - '0') * 1000;
+        return 5;
+    }
+    if (!RT_C_IS_DIGIT(wc5) || cwcName <= 6)
+        return 0;
+
+    /* -6: */
+    RTUTF16 wc6 = RT_BE2H_U16(pawcName[cwcName - 6]);
+    if (wc6 == ';')
+    {
+        *puValue = (wc1 - '0')
+                 + (wc2 - '0') * 10
+                 + (wc3 - '0') * 100
+                 + (wc4 - '0') * 1000
+                 + (wc5 - '0') * 10000;
+        return 6;
+    }
+    return 0;
+}
+
+
+/**
+ * Returns the length of the version suffix in the given name.
+ *
+ * @returns Number of chars in the version suffix.
+ * @param   pachName        The name to examine.
+ * @param   cchName         The length of the name.
+ * @param   puValue         Where to return the value.
+ */
+static size_t rtFsIso9660GetVersionLengthAscii(const char *pachName, size_t cchName, uint32_t *puValue)
+{
+    *puValue = 0;
+
+    /* -1: */
+    if (cchName <= 2)
+        return 0;
+    char ch1 = pachName[cchName - 1];
+    if (!RT_C_IS_DIGIT(ch1))
+        return 0;
+
+    /* -2: */
+    char ch2 = pachName[cchName - 2];
+    if (ch2 == ';')
+    {
+        *puValue = ch1 - '0';
+        return 2;
+    }
+    if (!RT_C_IS_DIGIT(ch2) || cchName <= 3)
+        return 0;
+
+    /* -3: */
+    char ch3 = pachName[cchName - 3];
+    if (ch3 == ';')
+    {
+        *puValue = (ch1 - '0')
+                 + (ch2 - '0') * 10;
+        return 3;
+    }
+    if (!RT_C_IS_DIGIT(ch3) || cchName <= 4)
+        return 0;
+
+    /* -4: */
+    char ch4 = pachName[cchName - 4];
+    if (ch4 == ';')
+    {
+        *puValue = (ch1 - '0')
+                 + (ch2 - '0') * 10
+                 + (ch3 - '0') * 100;
+        return 4;
+    }
+    if (!RT_C_IS_DIGIT(ch4) || cchName <= 5)
+        return 0;
+
+    /* -5: */
+    char ch5 = pachName[cchName - 5];
+    if (ch5 == ';')
+    {
+        *puValue = (ch1 - '0')
+                 + (ch2 - '0') * 10
+                 + (ch3 - '0') * 100
+                 + (ch4 - '0') * 1000;
+        return 5;
+    }
+    if (!RT_C_IS_DIGIT(ch5) || cchName <= 6)
+        return 0;
+
+    /* -6: */
+    if (pachName[cchName - 6] == ';')
+    {
+        *puValue = (ch1 - '0')
+                 + (ch2 - '0') * 10
+                 + (ch3 - '0') * 100
+                 + (ch4 - '0') * 1000
+                 + (ch5 - '0') * 10000;
+        return 6;
+    }
+    return 0;
+}
+
 
 /**
  * Converts a ISO 9660 binary timestamp into an IPRT timesspec.
@@ -258,10 +420,11 @@ static void rtFsIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIME
  * @param   pDirRec         The primary directory record.
  * @param   cDirRecs        Number of directory records.
  * @param   offDirRec       The offset of the primary directory record.
+ * @param   uVersion        The file version number.
  * @param   pVol            The volume.
  */
 static void rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                                           uint64_t offDirRec, PRTFSISO9660VOL pVol)
+                                           uint64_t offDirRec, uint32_t uVersion, PRTFSISO9660VOL pVol)
 {
     Assert(cDirRecs == 1); RT_NOREF(cDirRecs);
 
@@ -275,6 +438,7 @@ static void rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRR
     if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_HIDDEN)
         pCore->fAttrib |= RTFS_DOS_HIDDEN;
     pCore->cbObject             = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+    pCore->uVersion             = uVersion;
     pCore->cExtents             = 1;
     pCore->FirstExtent.cbExtent = pCore->cbObject;
     pCore->FirstExtent.offDisk  = (ISO9660_GET_ENDIAN(&pDirRec->offExtent) + pDirRec->cExtAttrBlocks) * (uint64_t)pVol->cbBlock;
@@ -310,7 +474,7 @@ static int rtFsIso9660Core_QueryInfo(PRTFSISO9660CORE pCore, PRTFSOBJINFO pObjIn
             pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
             pObjInfo->Attr.u.Unix.INodeId       = 0; /* Could probably use the directory entry offset. */
             pObjInfo->Attr.u.Unix.fFlags        = 0;
-            pObjInfo->Attr.u.Unix.GenerationId  = 0;
+            pObjInfo->Attr.u.Unix.GenerationId  = pCore->uVersion;
             pObjInfo->Attr.u.Unix.Device        = 0;
             break;
         case RTFSOBJATTRADD_UNIX_OWNER:
@@ -641,10 +805,13 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIos9660FileOps =
  * @param   offEntryInDir   The byte offset of the directory entry in the parent
  *                          directory.
  * @param   fOpen           RTFILE_O_XXX flags.
+ * @param   uVersion        The file version number (since the caller already
+ *                          parsed the filename, we don't want to repeat the
+ *                          effort here).
  * @param   phVfsFile       Where to return the file handle.
  */
 static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParentDir, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
-                               uint64_t offDirRec, uint64_t fOpen, PRTVFSFILE phVfsFile)
+                               uint64_t offDirRec, uint64_t fOpen, uint32_t uVersion, PRTVFSFILE phVfsFile)
 {
     AssertPtr(pParentDir);
 
@@ -668,7 +835,7 @@ static int rtFsIso9660File_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pParen
                 /*
                  * Initialize it all so rtFsIso9660File_Close doesn't trip up in anyway.
                  */
-                rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, pThis);
+                rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, uVersion, pThis);
                 rtFsIso9660DirShrd_AddOpenChild(pParentDir, &pShared->Core);
             }
         }
@@ -712,6 +879,109 @@ static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, u
 
 
 /**
+ * Worker for rtFsIso9660Dir_FindEntry that compares a UTF-16BE name with a
+ * directory record.
+ *
+ * @returns true if equal, false if not.
+ * @param   pDirRec             The directory record.
+ * @param   pwszEntry           The UTF-16BE string to compare with.
+ * @param   cbEntry             The compare string length in bytes (sans zero
+ *                              terminator).
+ * @param   cwcEntry            The compare string length in RTUTF16 units.
+ * @param   puVersion           Where to return any file version number.
+ */
+DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualUtf16Big(PCISO9660DIRREC pDirRec, PCRTUTF16 pwszEntry, size_t cbEntry,
+                                                            size_t cwcEntry, uint32_t *puVersion)
+{
+    /* ASSUME directories cannot have any version tags. */
+    if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
+    {
+        if (RT_LIKELY(pDirRec->bFileIdLength != cbEntry))
+            return false;
+        if (RT_LIKELY(RTUtf16BigNICmp((PCRTUTF16)pDirRec->achFileId, pwszEntry, cwcEntry) != 0))
+            return false;
+    }
+    else
+    {
+        size_t cbNameDelta = (size_t)pDirRec->bFileIdLength - cbEntry;
+        if (RT_LIKELY(cbNameDelta > (size_t)12 /* ;12345 */))
+            return false;
+        if (cbNameDelta == 0)
+        {
+            if (RT_LIKELY(RTUtf16BigNICmp((PCRTUTF16)pDirRec->achFileId, pwszEntry, cwcEntry) != 0))
+                return false;
+            *puVersion = 1;
+        }
+        else
+        {
+            if (RT_LIKELY(RT_MAKE_U16(pDirRec->achFileId[cbEntry + 1], pDirRec->achFileId[cbEntry]) != ';'))
+                return false;
+            if (RT_LIKELY(RTUtf16BigNICmp((PCRTUTF16)pDirRec->achFileId, pwszEntry, cwcEntry) != 0))
+                return false;
+            uint32_t uVersion;
+            size_t  cwcVersion = rtFsIso9660GetVersionLengthUtf16Big((PCRTUTF16)pDirRec->achFileId,
+                                                                     pDirRec->bFileIdLength, &uVersion);
+            if (RT_LIKELY(cwcVersion * sizeof(RTUTF16) == cbNameDelta))
+                *puVersion = uVersion;
+            else
+                return false;
+        }
+    }
+    return true;
+}
+
+
+/**
+ * Worker for rtFsIso9660Dir_FindEntry that compares an ASCII name with a
+ * directory record.
+ *
+ * @returns true if equal, false if not.
+ * @param   pDirRec             The directory record.
+ * @param   pszEntry            The uppercased ASCII string to compare with.
+ * @param   cchEntry            The length of the compare string.
+ * @param   puVersion           Where to return any file version number.
+ */
+DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec, const char *pszEntry, size_t cchEntry,
+                                                         uint32_t *puVersion)
+{
+    /* ASSUME directories cannot have any version tags. */
+    if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
+    {
+        if (RT_LIKELY(pDirRec->bFileIdLength != cchEntry))
+            return false;
+        if (RT_LIKELY(memcmp(pDirRec->achFileId, pszEntry, cchEntry) != 0))
+            return false;
+    }
+    else
+    {
+        size_t cchNameDelta = (size_t)pDirRec->bFileIdLength - cchEntry;
+        if (RT_LIKELY(cchNameDelta > (size_t)6 /* ;12345 */))
+            return false;
+        if (cchNameDelta == 0)
+        {
+            if (RT_LIKELY(memcmp(pDirRec->achFileId, pszEntry, cchEntry) != 0))
+                return false;
+            *puVersion = 1;
+        }
+        else
+        {
+            if (RT_LIKELY(pDirRec->achFileId[cchEntry] != ';'))
+                return false;
+            if (RT_LIKELY(memcmp(pDirRec->achFileId, pszEntry, cchEntry) != 0))
+                return false;
+            uint32_t uVersion;
+            size_t  cchVersion = rtFsIso9660GetVersionLengthAscii(pDirRec->achFileId, pDirRec->bFileIdLength, &uVersion);
+            if (RT_LIKELY(cchVersion == cchNameDelta))
+                *puVersion = uVersion;
+            else
+                return false;
+        }
+    }
+    return true;
+}
+
+
+/**
  * Locates a directory entry in a directory.
  *
  * @returns IPRT status code.
@@ -725,15 +995,17 @@ static PRTFSISO9660CORE rtFsIso9660Dir_LookupShared(PRTFSISO9660DIRSHRD pThis, u
  * @param   pcDirRecs       Where to return the number of directory records
  *                          related to this entry.
  * @param   pfMode          Where to return the file type, rock ridge adjusted.
+ * @param   puVersion       Where to return the file version number.
  */
-static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEntry,
-                                    uint64_t *poffDirRec, PCISO9660DIRREC *ppDirRec, uint32_t *pcDirRecs, PRTFMODE pfMode)
+static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEntry,  uint64_t *poffDirRec,
+                                    PCISO9660DIRREC *ppDirRec, uint32_t *pcDirRecs, PRTFMODE pfMode, uint32_t *puVersion)
 {
     /* Set return values. */
     *poffDirRec = UINT64_MAX;
     *ppDirRec   = NULL;
     *pcDirRecs  = 1;
     *pfMode     = UINT32_MAX;
+    *puVersion  = 0;
 
     /*
      * If we're in UTF-16BE mode, convert the input name to UTF-16BE.  Otherwise try
@@ -786,13 +1058,11 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
         else
         {
             /* Try match the filename. */
-            /** @todo deal with multi-extend filenames, or however that works... */
+            /** @todo deal with multi-extent filenames, or however that
+             *        works... */
             if (fIsUtf16)
             {
-                if (   ((size_t)pDirRec->bFileIdLength - cbEntry) > (size_t)12 /* ;12345 */
-                    || RTUtf16BigNICmp((PCRTUTF16)pDirRec->achFileId, uBuf.wszEntry, cwcEntry) != 0
-                    || (   (size_t)pDirRec->bFileIdLength != cbEntry
-                        && RT_MAKE_U16(pDirRec->achFileId[cbEntry + 1], pDirRec->achFileId[cbEntry]) != ';') )
+                if (RT_LIKELY(!rtFsIso9660Dir_IsEntryEqualUtf16Big(pDirRec, uBuf.wszEntry, cbEntry, cwcEntry, puVersion)))
                 {
                     /* Advance */
                     offEntryInDir += pDirRec->cbDirRec;
@@ -801,10 +1071,7 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
             }
             else
             {
-                if (   ((size_t)pDirRec->bFileIdLength - cchUpper) > (size_t)6 /* ;12345 */
-                     || memcmp(pDirRec->achFileId, uBuf.s.szUpper, cchUpper) != 0
-                     || (   (size_t)pDirRec->bFileIdLength != cchUpper
-                         && pDirRec->achFileId[cchUpper] != ';') )
+                if (RT_LIKELY(!rtFsIso9660Dir_IsEntryEqualAscii(pDirRec, uBuf.s.szUpper, cchUpper, puVersion)))
                 {
                     /** @todo check rock. */
                     if (1)
@@ -821,7 +1088,6 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
             *pcDirRecs  = 1;
             *pfMode     = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
             return VINF_SUCCESS;
-
         }
     }
 
@@ -949,7 +1215,8 @@ static DECLCALLBACK(int) rtFsIso9660Dir_TraversalOpen(void *pvThis, const char *
         uint64_t            offDirRec;
         uint32_t            cDirRecs;
         RTFMODE             fMode;
-        rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+        uint32_t            uVersion;
+        rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
         Log2(("rtFsIso9660Dir_TraversalOpen: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
         if (RT_SUCCESS(rc))
         {
@@ -1009,14 +1276,15 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenFile(void *pvThis, const char *pszFi
     uint64_t        offDirRec;
     uint32_t        cDirRecs;
     RTFMODE         fMode;
-    int rc = rtFsIso9660Dir_FindEntry(pShared, pszFilename, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+    uint32_t        uVersion;
+    int rc = rtFsIso9660Dir_FindEntry(pShared, pszFilename, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
     Log2(("rtFsIso9660Dir_OpenFile: FindEntry(,%s,) -> %Rrc\n", pszFilename, rc));
     if (RT_SUCCESS(rc))
     {
         switch (fMode & RTFS_TYPE_MASK)
         {
             case RTFS_TYPE_FILE:
-                rc = rtFsIso9660File_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, fOpen, phVfsFile);
+                rc = rtFsIso9660File_New(pShared->Core.pVol, pShared, pDirRec, cDirRecs, offDirRec, fOpen, uVersion, phVfsFile);
                 break;
 
             case RTFS_TYPE_SYMLINK:
@@ -1057,7 +1325,8 @@ static DECLCALLBACK(int) rtFsIso9660Dir_OpenDir(void *pvThis, const char *pszSub
     uint64_t        offDirRec;
     uint32_t        cDirRecs;
     RTFMODE         fMode;
-    int rc = rtFsIso9660Dir_FindEntry(pShared, pszSubDir, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+    uint32_t        uVersion;
+    int rc = rtFsIso9660Dir_FindEntry(pShared, pszSubDir, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
     Log2(("rtFsIso9660Dir_OpenDir: FindEntry(,%s,) -> %Rrc\n", pszSubDir, rc));
     if (RT_SUCCESS(rc))
     {
@@ -1133,7 +1402,8 @@ static DECLCALLBACK(int) rtFsIso9660Dir_QueryEntryInfo(void *pvThis, const char 
     uint64_t            offDirRec;
     uint32_t            cDirRecs;
     RTFMODE             fMode;
-    int rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode);
+    uint32_t            uVersion;
+    int rc = rtFsIso9660Dir_FindEntry(pShared, pszEntry, &offDirRec, &pDirRec, &cDirRecs, &fMode, &uVersion);
     Log2(("rtFsIso9660Dir_QueryEntryInfo: FindEntry(,%s,) -> %Rrc\n", pszEntry, rc));
     if (RT_SUCCESS(rc))
     {
@@ -1143,7 +1413,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_QueryEntryInfo(void *pvThis, const char 
          */
         RTFSISO9660CORE TmpObj;
         RT_ZERO(TmpObj);
-        rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, pShared->Core.pVol);
+        rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, cDirRecs, offDirRec, uVersion, pShared->Core.pVol);
         rc = rtFsIso9660Core_QueryInfo(&TmpObj, pObjInfo, enmAddAttr);
     }
     return rc;
@@ -1202,12 +1472,14 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
             /*
              * Do names first as they may cause overflows.
              */
+            uint32_t uVersion = 0;
             if (   pDirRec->bFileIdLength == 1
                 && pDirRec->achFileId[0]  == '\0')
             {
                 if (*pcbDirEntry < RT_UOFFSETOF(RTDIRENTRYEX, szName) + 2)
                 {
                     *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + 2;
+                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW (dot)\n"));
                     return VERR_BUFFER_OVERFLOW;
                 }
                 pDirEntry->cbName    = 1;
@@ -1220,6 +1492,7 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
                 if (*pcbDirEntry < RT_UOFFSETOF(RTDIRENTRYEX, szName) + 3)
                 {
                     *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + 3;
+                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW (dot-dot)\n"));
                     return VERR_BUFFER_OVERFLOW;
                 }
                 pDirEntry->cbName    = 2;
@@ -1229,52 +1502,51 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
             }
             else if (pShared->Core.pVol->fIsUtf16)
             {
-                /* UTF-16BE -> UTF-8 conversion is a bit tedious since we don't have the necessary IPRT APIs yet. */
-                PCRTUTF16 pwcSrc    = (PCRTUTF16)&pDirRec->achFileId[0];
-                PCRTUTF16 pwcSrcEnd = &pwcSrc[pDirRec->bFileIdLength / sizeof(RTUTF16)];
+                PCRTUTF16 pawcSrc   = (PCRTUTF16)&pDirRec->achFileId[0];
+                size_t    cwcSrc    = pDirRec->bFileIdLength / sizeof(RTUTF16);
+                size_t    cwcVer    = !(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
+                                    ? rtFsIso9660GetVersionLengthUtf16Big(pawcSrc, cwcSrc, &uVersion) : 0;
+                size_t    cchNeeded = 0;
                 size_t    cbDst     = *pcbDirEntry - RT_UOFFSETOF(RTDIRENTRYEX, szName);
-                size_t    offDst    = 0;
-                while ((uintptr_t)pwcSrc < (uintptr_t)pwcSrcEnd)
+                char     *pszDst    = pDirEntry->szName;
+
+                int rc = RTUtf16BigToUtf8Ex(pawcSrc, cwcSrc - cwcVer, &pszDst, cbDst, &cchNeeded);
+                if (RT_SUCCESS(rc))
+                    pDirEntry->cbName = (uint16_t)cchNeeded;
+                else if (rc == VERR_BUFFER_OVERFLOW)
                 {
-                    RTUNICP uc;
-                    int rc = RTUtf16BigGetCpEx(&pwcSrc, &uc);
-                    if (RT_FAILURE(rc))
-                        uc = '?';
-                    else if (!uc)
-                        break;
-                    size_t cchCp = RTStrCpSize(uc);
-                    if (offDst + cchCp < cbDst)
-                    {
-                        RTStrPutCp(&pDirEntry->szName[offDst], uc);
-                        offDst += cchCp;
-                    }
+                    *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + cchNeeded + 1;
+                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW - cbDst=%zu cchNeeded=%zu (UTF-16BE)\n", cbDst, cchNeeded));
+                    return VERR_BUFFER_OVERFLOW;
+                }
+                else
+                {
+                    ssize_t cchNeeded2 = RTStrPrintf2(pszDst, cbDst, "bad-name-%#x", pThis->offDir);
+                    if (cchNeeded2 >= 0)
+                        pDirEntry->cbName = (uint16_t)cchNeeded2;
                     else
                     {
-                        /* Buffer overflow.  Figure out how much we really need. */
-                        offDst += cchCp;
-                        while ((uintptr_t)pwcSrc < (uintptr_t)pwcSrcEnd)
-                        {
-                            RTUtf16BigGetCpEx(&pwcSrc, &uc);
-                            offDst += RTStrCpSize(uc);
-                        }
-                        *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + offDst + 1;
+                        *pcbDirEntry = RT_UOFFSETOF(RTDIRENTRYEX, szName) + (size_t)-cchNeeded2;
                         return VERR_BUFFER_OVERFLOW;
                     }
                 }
-                pDirEntry->szName[offDst] = '\0';
-                pDirEntry->cbName = (uint16_t)offDst;
             }
             else
             {
                 /* This is supposed to be upper case ASCII, however, purge the encoding anyway. */
-                size_t cbNeeded = RT_UOFFSETOF(RTDIRENTRYEX, szName) + pDirRec->bFileIdLength + 1;
+                size_t cchVer   = !(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
+                                ? rtFsIso9660GetVersionLengthAscii(pDirRec->achFileId, pDirRec->bFileIdLength, &uVersion) : 0;
+                size_t cchName  = pDirRec->bFileIdLength - cchVer;
+                size_t cbNeeded = RT_UOFFSETOF(RTDIRENTRYEX, szName) + cchName + 1;
                 if (*pcbDirEntry < cbNeeded)
                 {
+                    Log3(("rtFsIso9660Dir_ReadDir: VERR_BUFFER_OVERFLOW - cbDst=%zu cbNeeded=%zu (ASCII)\n", *pcbDirEntry, cbNeeded));
                     *pcbDirEntry = cbNeeded;
                     return VERR_BUFFER_OVERFLOW;
                 }
-                pDirEntry->cbName = pDirRec->bFileIdLength;
-                memcpy(pDirEntry->szName, pDirRec->achFileId, pDirRec->bFileIdLength);
+                pDirEntry->cbName = (uint16_t)cchName;
+                memcpy(pDirEntry->szName, pDirRec->achFileId, cchName);
+                pDirEntry->szName[cchName] = '\0';
                 RTStrPurgeEncoding(pDirEntry->szName);
 
                 /** @todo check for rock ridge names here.   */
@@ -1289,17 +1561,19 @@ static DECLCALLBACK(int) rtFsIso9660Dir_ReadDir(void *pvThis, PRTDIRENTRYEX pDir
             RTFSISO9660CORE TmpObj;
             RT_ZERO(TmpObj);
             rtFsIso9660Core_InitFromDirRec(&TmpObj, pDirRec, 1/*cDirRecs*/, /** @todo multi-extent stuff */
-                                           pThis->offDir + pShared->Core.FirstExtent.offDisk, pShared->Core.pVol);
+                                           pThis->offDir + pShared->Core.FirstExtent.offDisk, uVersion, pShared->Core.pVol);
             int rc = rtFsIso9660Core_QueryInfo(&TmpObj, &pDirEntry->Info, enmAddAttr);
 
             /*
              * Update the location and return.
              */
+            Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x: %s (rc=%Rrc)\n", pThis->offDir, pDirEntry->szName, rc));
             pThis->offDir += pDirRec->cbDirRec;
             return rc;
         }
     }
 
+    Log3(("rtFsIso9660Dir_ReadDir: offDir=%#07x: VERR_NO_MORE_FILES\n", pThis->offDir));
     return VERR_NO_MORE_FILES;
 }
 
@@ -1475,7 +1749,7 @@ static int  rtFsIso9660DirShrd_New(PRTFSISO9660VOL pThis, PRTFSISO9660DIRSHRD pP
     PRTFSISO9660DIRSHRD pShared = (PRTFSISO9660DIRSHRD)RTMemAllocZ(sizeof(*pShared));
     if (pShared)
     {
-        rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, pThis);
+        rtFsIso9660Core_InitFromDirRec(&pShared->Core, pDirRec, cDirRecs, offDirRec, 0 /*uVersion*/, pThis);
         RTListInit(&pShared->OpenChildren);
         pShared->cbDir              = ISO9660_GET_ENDIAN(&pDirRec->cbData);
         pShared->pbDir              = (uint8_t *)RTMemAllocZ(pShared->cbDir + 256);
