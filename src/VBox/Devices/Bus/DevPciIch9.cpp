@@ -95,7 +95,6 @@ typedef struct
 static void ich9pciSetIrqInternal(PDEVPCIROOT pPciRoot, uint8_t uDevFn, PPDMPCIDEV pPciDev,
                                   int iIrq, int iLevel, uint32_t uTagSrc);
 #ifdef IN_RING3
-static void ich9pcibridgeReset(PPDMDEVINS pDevIns);
 DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t uBus);
 static void ich9pciBiosInitAllDevicesOnBus(PDEVPCIROOT pPciRoot, uint8_t uBus);
 static bool ich9pciBiosInitAllDevicesPrefetchableOnBus(PDEVPCIROOT pPciRoot, uint8_t uBus, bool fUse64Bit, bool fDryrun);
@@ -134,7 +133,7 @@ PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, 
      * We change iIrq here according to the spec and call the SetIrq function
      * of our parent passing the device which asserted the interrupt instead of the device of the bridge.
      */
-    PDEVPCIBUS    pBus          = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    PDEVPCIBUS     pBus          = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     PPDMPCIDEV     pPciDevBus    = pPciDev;
     int            iIrqPinBridge = iIrq;
     uint8_t        uDevFnBridge  = 0;
@@ -1461,9 +1460,9 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
 static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS     pBus  = &pThis->PciBus;
-    uint32_t        u32;
-    int             rc;
+    PDEVPCIBUS  pBus  = &pThis->PciBus;
+    uint32_t    u32;
+    int         rc;
 
     /* We ignore this version as there's no saved state with it anyway */
     if (uVersion <= VBOX_ICH9PCI_SAVED_STATE_VERSION_NOMSI)
@@ -3001,7 +3000,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Init data.
      */
     PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS     pBus     = &pPciRoot->PciBus;
+    PDEVPCIBUS  pBus     = &pPciRoot->PciBus;
     /* Zero out everything */
     memset(pPciRoot, 0, sizeof(*pPciRoot));
     /* And fill values */
@@ -3180,8 +3179,13 @@ static void ich9pciResetDevice(PPDMPCIDEV pDev)
         PCIIORegion* pRegion = &pDev->Int.s.aIORegions[iRegion];
         if (pRegion->size == 0)
             continue;
+        bool const f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                            == PCI_ADDRESS_SPACE_BAR64;
 
         ich9pciUnmapRegion(pDev, iRegion);
+
+        if (f64Bit)
+            iRegion++;
     }
 
     if (pciDevIsPassthrough(pDev))
@@ -3208,27 +3212,28 @@ static void ich9pciResetDevice(PPDMPCIDEV pDev)
         /* Reset MSI message control. */
         if (pciDevIsMsiCapable(pDev))
         {
-            /* Extracted from MsiPciConfigWrite(). */
-            pDev->abConfig[pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL] &= 0x8e;
+            ich9pciSetWord(pDev, pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL,
+                           ich9pciGetWord(pDev, pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL) & 0xff8e);
         }
 
         /* Reset MSI-X message control. */
         if (pciDevIsMsixCapable(pDev))
         {
-            /* Extracted from MsixPciConfigWrite(); no side effects. */
-            pDev->abConfig[pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL + 1] &= 0x3f;
+            ich9pciSetWord(pDev, pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL,
+                           ich9pciGetWord(pDev, pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL) & 0x3fff);
         }
     }
 }
 
 
 /**
- * @copydoc FNPDMDEVRESET
+ * Recursive worker for ich9pciReset.
+ *
+ * @param   pDevIns     ICH9 bridge (root or PCI-to-PCI) instance.
  */
-static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
+static void ich9pciResetBridge(PPDMDEVINS pDevIns)
 {
-    PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS     pBus     = &pPciRoot->PciBus;
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
 
     /* PCI-specific reset for each device. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
@@ -3240,9 +3245,31 @@ static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
     {
         if (pBus->papBridgesR3[iBridge])
-            ich9pcibridgeReset(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns));
+            ich9pciResetBridge(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns));
     }
 
+    /* Reset topology config for non-root bridge. Last thing to do, otherwise
+     * the secondary and subordinate are instantly unreachable. */
+    if (pBus->iBus != 0)
+    {
+        ich9pciSetByte(&pBus->PciDev, VBOX_PCI_PRIMARY_BUS, 0);
+        ich9pciSetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS, 0);
+        ich9pciSetByte(&pBus->PciDev, VBOX_PCI_SUBORDINATE_BUS, 0);
+        /* Not resetting the address decoders of the bridge to 0, since the
+         * PCI-to-PCI Bridge spec says that there is no default value. */
+    }
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
+{
+    /* Reset everything under the root bridge. */
+    ich9pciResetBridge(pDevIns);
+
+    /* Do a fresh Fake PCI BIOS setup. */
     ich9pciFakePCIBIOS(pDevIns);
 }
 
@@ -3511,26 +3538,6 @@ static DECLCALLBACK(int) ich9pcibridgeDestruct(PPDMDEVINS pDevIns)
         pBus->papBridgesR3 = NULL;
     }
     return VINF_SUCCESS;
-}
-
-/**
- * @copydoc FNPDMDEVRESET
- */
-static void ich9pcibridgeReset(PPDMDEVINS pDevIns)
-{
-    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-
-    /* Reset config space to default values. */
-    ich9pciSetByte(&pBus->PciDev, VBOX_PCI_PRIMARY_BUS, 0);
-    ich9pciSetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS, 0);
-    ich9pciSetByte(&pBus->PciDev, VBOX_PCI_SUBORDINATE_BUS, 0);
-
-    /* PCI-specific reset for each device. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
-    {
-        if (pBus->apDevices[i])
-            ich9pciResetDevice(pBus->apDevices[i]);
-    }
 }
 
 
