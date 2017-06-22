@@ -1976,7 +1976,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         fIntrEnabled = pCtx->eflags.Bits.u1IF;
                 }
 #else
-                fIntrEnabled = pCtx->eflags.Bits.u1IF;
+                fIntrEnabled &= pCtx->eflags.Bits.u1IF;
 #endif
                 if (fIntrEnabled)
                 {
