@@ -555,11 +555,12 @@ static NTSTATUS vboxVidPnSourceModeSetFromArray(D3DKMDT_HVIDPNSOURCEMODESET hVid
         Status = pVidPnModeSetInterface->pfnAddMode(hVidPnModeSet, pVidPnModeInfo);
         if (!NT_SUCCESS(Status))
         {
-            WARN(("pfnAddMode failed, Status 0x%x", Status));
+            WARN(("pfnAddMode (%d x %d) failed, Status 0x%x", size.cx, size.cy, Status));
             VBoxVidPnDumpSourceMode("SourceMode: ", pVidPnModeInfo, "\n");
             NTSTATUS rcNt2 = pVidPnModeSetInterface->pfnReleaseModeInfo(hVidPnModeSet, pVidPnModeInfo);
             AssertNtStatusSuccess(rcNt2);
-            return Status;
+            // Continue adding modes into modeset even if a mode was rejected
+            continue;
         }
     }
 
@@ -615,11 +616,12 @@ static NTSTATUS vboxVidPnTargetModeSetFromArray(D3DKMDT_HVIDPNTARGETMODESET hVid
         Status = pVidPnModeSetInterface->pfnAddMode(hVidPnModeSet, pVidPnModeInfo);
         if (!NT_SUCCESS(Status))
         {
-            WARN(("pfnAddMode failed, Status 0x%x", Status));
+            WARN(("pfnAddMode (%d x %d) failed, Status 0x%x", size.cx, size.cy, Status));
             VBoxVidPnDumpTargetMode("TargetMode: ", pVidPnModeInfo, "\n");
             NTSTATUS rcNt2 = pVidPnModeSetInterface->pfnReleaseModeInfo(hVidPnModeSet, pVidPnModeInfo);
             AssertNtStatusSuccess(rcNt2);
-            return Status;
+            // Continue adding modes into modeset even if a mode was rejected
+            continue;
         }
     }
 
@@ -678,6 +680,7 @@ static NTSTATUS vboxVidPnMonitorModeSetFromArray(D3DKMDT_HMONITORSOURCEMODESET h
             WARN(("pfnAddMode (%d x %d) failed, Status 0x%x", size.cx, size.cy, Status));
             NTSTATUS rcNt2 = pVidPnModeSetInterface->pfnReleaseModeInfo(hVidPnModeSet, pVidPnModeInfo);
             AssertNtStatusSuccess(rcNt2);
+            // Continue adding modes into modeset even if a mode was rejected
             continue;
         }
 
