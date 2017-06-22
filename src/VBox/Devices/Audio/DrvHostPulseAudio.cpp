@@ -817,7 +817,10 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
                   cbToRead, cbToWrite,
                   pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf, pStreamPA->pu8PeekBuf));
 
-        if (cbToWrite)
+        if (   cbToWrite
+            /* Only copy data if it's not a data hole (see above). */
+            && pStreamPA->pu8PeekBuf
+            && pStreamPA->cbPeekBuf)
         {
             memcpy((uint8_t *)pvBuf + cbReadTotal, pStreamPA->pu8PeekBuf + pStreamPA->offPeekBuf, cbToWrite);
 
@@ -1125,7 +1128,7 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
     }
     else if (fLog)
         LogRel(("PulseAudio: Error enumerating PulseAudio server properties\n"));
-    
+
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
 
     LogFlowFuncLeaveRC(rc);
