@@ -5807,7 +5807,7 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
                     uBuf.szFileVersion[RT_ELEMENTS(uBuf.wszFileVersion)] = '\0';
 #define VER_IN_RANGE(a_pszFirst, a_pszLast) \
     (RTStrVersionCompare(uBuf.szFileVersion, a_pszFirst) >= 0 && RTStrVersionCompare(uBuf.szFileVersion, a_pszLast) <= 0)
-                    if (   VER_IN_RANGE("7.4.0.0000", "999999999.9.9.9999")
+                    if (   VER_IN_RANGE("7.3.2.0000", "999999999.9.9.9999")
                         || VER_IN_RANGE("7.3.1.1000", "7.3.1.3000")
                         || VER_IN_RANGE("7.3.0.3000", "7.3.0.999999999")
                         || VER_IN_RANGE("7.2.1.3000", "7.2.999999999.999999999") )
