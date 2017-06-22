@@ -428,8 +428,6 @@ static void rtFsIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIME
 static int rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRREC pDirRec, uint32_t cDirRecs,
                                           uint64_t offDirRec, uint32_t uVersion, PRTFSISO9660VOL pVol)
 {
-    Assert(cDirRecs == 1); RT_NOREF(cDirRecs);
-
     RTListInit(&pCore->Entry);
     pCore->cRefs                = 1;
     pCore->pParentDir           = NULL;
@@ -1006,6 +1004,10 @@ DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualUtf16Big(PCISO9660DIRREC pDir
                 return false;
         }
     }
+
+    /* (No need to check for dot and dot-dot here, because cbEntry must be a
+       multiple of two.) */
+    Assert(!(cbEntry & 1));
     return true;
 }
 
@@ -1056,7 +1058,12 @@ DECL_FORCE_INLINE(bool) rtFsIso9660Dir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec
                 return false;
         }
     }
-    return true;
+
+    /* Don't match the 'dot' and 'dot-dot' directory records. */
+    if (RT_LIKELY(   pDirRec->bFileIdLength != 1
+                  || (uint8_t)pDirRec->achFileId[0] > (uint8_t)0x01))
+        return true;
+    return false;
 }
 
 
