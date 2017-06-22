@@ -956,17 +956,12 @@ static void recalculate_data(PVGASTATE pThis, bool fVirtHeightOnly)
         pThis->vbe_start_addr  = RT_MIN(offStart, pThis->vram_size);
     }
 
-    /* The VBE_DISPI_INDEX_VIRT_HEIGHT is used to prevent setting resolution bigger than VRAM permits
-     * it is used instead of VBE_DISPI_INDEX_YRES *only* in case
-     * pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] < pThis->vbe_regs[VBE_DISPI_INDEX_YRES]
-     * We can not simply do pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = cVirtHeight since
-     * the cVirtHeight we calculated can exceed the 16bit value range
-     * instead we'll check if it's bigger than pThis->vbe_regs[VBE_DISPI_INDEX_YRES], and if yes,
-     * assign the pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] with a dummy UINT16_MAX value
-     * that is always bigger than pThis->vbe_regs[VBE_DISPI_INDEX_YRES]
-     * to just ensure the pThis->vbe_regs[VBE_DISPI_INDEX_YRES] is always used */
-    pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = (cVirtHeight >= (uint32_t)pThis->vbe_regs[VBE_DISPI_INDEX_YRES])
-                                                 ? UINT16_MAX : (uint16_t)cVirtHeight;
+    /* The VBE_DISPI_INDEX_VIRT_HEIGHT is used to prevent setting resolution bigger than
+     * the VRAM size permits. It is used instead of VBE_DISPI_INDEX_YRES *only* in case
+     * pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] < pThis->vbe_regs[VBE_DISPI_INDEX_YRES].
+     * Note that VBE_DISPI_INDEX_VIRT_HEIGHT has to be clipped to UINT16_MAX, which happens
+     * with small resolutions and big VRAM. */
+    pThis->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = cVirtHeight >= UINT16_MAX ? UINT16_MAX : (uint16_t)cVirtHeight;
 }
 
 static void vbe_ioport_write_index(PVGASTATE pThis, uint32_t addr, uint32_t val)
