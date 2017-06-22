@@ -1052,6 +1052,7 @@ static RTEXITCODE rtCmdLsAddOne(PRTCMDLSCOLLECTION pCollection, const char *pszE
         pEntry->pszTarget = NULL; /** @todo symbolic links. */
         pEntry->cchName   = cchEntry;
         memcpy(pEntry->szName, pszEntry, cchEntry);
+        pEntry->szName[cchEntry] = '\0';
 
         pCollection->papEntries[pCollection->cEntries++] = pEntry;
         pCollection->cbTotalAllocated += pEntry->Info.cbAllocated;
