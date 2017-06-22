@@ -6337,7 +6337,7 @@ static int hdaLoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion
             if (RT_FAILURE(rc))
                 break;
 
-            LogRel2(("hdaLoadExec: cStreams=%RU32\n", cStreams));
+            cStreams = RT_CLAMP(cStreams, 0, HDA_MAX_STREAMS); /* Sanity. */
 
             /* Load stream states. */
             for (uint32_t i = 0; i < cStreams; i++)
@@ -6535,6 +6535,8 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     uint32_t cStreams;
     rc = SSMR3GetU32(pSSM, &cStreams);
     AssertRC(rc);
+
+    cStreams = RT_CLAMP(cStreams, 0, HDA_MAX_STREAMS); /* Sanity. */
 
     Log2Func(("cStreams=%RU32\n", cStreams));
 
