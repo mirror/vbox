@@ -480,11 +480,13 @@ static void continue_dma8(PSB16STATE pThis)
 
         streamCfg.enmDir          = PDMAUDIODIR_OUT;
         streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
+        streamCfg.enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-        streamCfg.Props.uHz             = pThis->freq;
-        streamCfg.Props.cChannels       = 1 << pThis->fmt_stereo;
-        streamCfg.Props.cBits           = pThis->fmt_bits;
-        streamCfg.Props.fSigned         = RT_BOOL(pThis->fmt_signed);
+        streamCfg.Props.uHz       = pThis->freq;
+        streamCfg.Props.cChannels = 1 << pThis->fmt_stereo;
+        streamCfg.Props.cBits     = pThis->fmt_bits;
+        streamCfg.Props.fSigned   = RT_BOOL(pThis->fmt_signed);
+        streamCfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(streamCfg.Props.cBits, streamCfg.Props.cChannels);
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
@@ -620,11 +622,13 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
 
         streamCfg.enmDir          = PDMAUDIODIR_OUT;
         streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
+        streamCfg.enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
         streamCfg.Props.uHz       = pThis->freq;
         streamCfg.Props.cChannels = 1 << pThis->fmt_stereo;
         streamCfg.Props.cBits     = pThis->fmt_bits;
         streamCfg.Props.fSigned   = RT_BOOL(pThis->fmt_signed);
+        streamCfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(streamCfg.Props.cBits, streamCfg.Props.cChannels);
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
@@ -1155,11 +1159,13 @@ static void sb16ResetLegacy(PSB16STATE pThis)
 
     streamCfg.enmDir          = PDMAUDIODIR_OUT;
     streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
+    streamCfg.enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
     streamCfg.Props.uHz       = pThis->freq;
     streamCfg.Props.cChannels = 1; /* Mono */
     streamCfg.Props.cBits     = 8;
     streamCfg.Props.fSigned   = false;
+    streamCfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(streamCfg.Props.cBits, streamCfg.Props.cChannels);
 
     int rc2 = sb16OpenOut(pThis, &streamCfg);
     AssertRC(rc2);
@@ -2012,11 +2018,13 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
 
             streamCfg.enmDir          = PDMAUDIODIR_OUT;
             streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
+            streamCfg.enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            streamCfg.Props.uHz             = pThis->freq;
-            streamCfg.Props.cChannels       = 1 << pThis->fmt_stereo;
-            streamCfg.Props.cBits           = pThis->fmt_bits;
-            streamCfg.Props.fSigned         = RT_BOOL(pThis->fmt_signed);
+            streamCfg.Props.uHz       = pThis->freq;
+            streamCfg.Props.cChannels = 1 << pThis->fmt_stereo;
+            streamCfg.Props.cBits     = pThis->fmt_bits;
+            streamCfg.Props.fSigned   = RT_BOOL(pThis->fmt_signed);
+            streamCfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(streamCfg.Props.cBits, streamCfg.Props.cChannels);
 
             int rc = sb16OpenOut(pThis, &streamCfg);
             AssertRC(rc);
@@ -2121,6 +2129,7 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     CfgHost.Props.cChannels = pCfg->Props.cChannels;
     CfgHost.Props.cBits     = pCfg->Props.cBits;
     CfgHost.Props.fSigned   = pCfg->Props.fSigned;
+    CfgHost.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(CfgHost.Props.cBits, CfgHost.Props.cChannels);
 
     RTStrPrintf(CfgHost.szName, sizeof(CfgHost.szName), "sb16.po");
 
