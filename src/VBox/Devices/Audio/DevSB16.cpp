@@ -89,7 +89,7 @@ typedef struct SB16DRIVER
     /** Pointer to SB16 controller (state). */
     R3PTRTYPE(PSB16STATE)              pSB16State;
     /** Driver flags. */
-    PDMAUDIODRVFLAGS                   Flags;
+    PDMAUDIODRVFLAGS                   fFlags;
     uint32_t                           PaddingFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
@@ -244,9 +244,9 @@ static int sb16AttachInternal(PPDMDEVINS pDevIns, PSB16DRIVER pDrv, unsigned uLU
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)
-                pDrv->Flags |= PDMAUDIODRVFLAGS_PRIMARY;
+                pDrv->fFlags |= PDMAUDIODRVFLAGS_PRIMARY;
 
-            LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->Flags));
+            LogFunc(("LUN#%RU8: pCon=%p, drvFlags=0x%x\n", uLUN, pDrv->pConnector, pDrv->fFlags));
 
             /* Attach to driver list if not attached yet. */
             if (!pDrv->fAttached)
@@ -1854,7 +1854,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
                 }
             }
 
-            if (pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY)
+            if (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)
             {
                 /* Only do the next DMA transfer if we're able to write the entire
                  * next data block. */
@@ -2436,7 +2436,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
          * Only primary drivers are critical for the VM to run. Everything else
          * might not worth showing an own error message box in the GUI.
          */
-        if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
+        if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
             continue;
 
         PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
@@ -2468,8 +2468,6 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             pThis->cTimerTicksIO = TMTimerGetFreq(pThis->pTimerIO) / uTimerHz;
             pThis->uTimerTSIO    = TMTimerGet(pThis->pTimerIO);
             LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicksIO, uTimerHz));
-
-            sb16TimerMaybeStart(pThis);
         }
         else
             AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
@@ -2484,7 +2482,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         {
             /* Only register primary driver.
              * The device emulation does the output multiplexing then. */
-            if (pDrv->Flags != PDMAUDIODRVFLAGS_PRIMARY)
+            if (pDrv->fFlags != PDMAUDIODRVFLAGS_PRIMARY)
                 continue;
 
             PDMAUDIOCALLBACK AudioCallbacks[2];
