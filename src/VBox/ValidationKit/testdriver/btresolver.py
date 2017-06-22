@@ -461,7 +461,8 @@ class BacktraceResolverOsSolaris(BacktraceResolverOs):
             asItems = sLine.split();
             if     len(asItems) == 4 \
                and asItems[3].startswith('/opt/VirtualBox') \
-               and asItems[2] == 'r-x--':
+               and (   asItems[2] == 'r-x--' \
+                    or asItems[2] == 'r-x----'):
                 fFound = False;
                 sBinaryFile = os.path.basename(asItems[3]);
                 for _, sBinary in asListBinaries:
