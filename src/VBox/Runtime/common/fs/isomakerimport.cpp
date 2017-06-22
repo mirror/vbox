@@ -238,15 +238,17 @@ static DECLCALLBACK(int) rtFsIsoMakerImportDestroyData2File(PAVLU32NODECORE pNod
  * Adds a directory and names it given its ISO-9660 directory record and parent.
  *
  * @returns IPRT status code (safe to ignore).
- * @param   pThis               The importer instance.
- * @param   pDirRec             The directory record.
- * @param   fNamespace          The namespace flag.
- * @param   idxParent           Parent directory.
- * @param   pszName             The name.
- * @param   cDepth              The depth to add it with.
- * @param   pTodoList           The todo list (for directories).
+ * @param   pThis       The importer instance.
+ * @param   pDirRec     The directory record.
+ * @param   cbData      The actual directory data size.  (Always same as in the
+ *                      directory record, but this what we do for files below.)
+ * @param   fNamespace  The namespace flag.
+ * @param   idxParent   Parent directory.
+ * @param   pszName     The name.
+ * @param   cDepth      The depth to add it with.
+ * @param   pTodoList   The todo list (for directories).
  */
-static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec,
+static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, uint64_t cbData,
                                                           uint32_t fNamespace, uint32_t idxParent, const char *pszName,
                                                           uint8_t cDepth, PRTLISTANCHOR pTodoList)
 {
@@ -272,7 +274,8 @@ static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pTh
             PRTFSISOMKIMPDIR pImpDir = (PRTFSISOMKIMPDIR)RTMemAlloc(sizeof(*pImpDir));
             if (pImpDir)
             {
-                pImpDir->cbDir       = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+                Assert((uint32_t)cbData == cbData /* no multi-extents for dirs makes it this far */);
+                pImpDir->cbDir       = (uint32_t)cbData;
                 pImpDir->offDirBlock = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
                 pImpDir->idxObj      = idxObj;
                 pImpDir->cDepth      = cDepth;
@@ -294,13 +297,14 @@ static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pTh
  * Adds a file and names it given its ISO-9660 directory record and parent.
  *
  * @returns IPRT status code (safe to ignore).
- * @param   pThis               The importer instance.
- * @param   pDirRec             The directory record.
- * @param   fNamespace          The namespace flag.
- * @param   idxParent           Parent directory.
- * @param   pszName             The name.
+ * @param   pThis       The importer instance.
+ * @param   pDirRec     The directory record.
+ * @param   cbData      The actual file data size.
+ * @param   fNamespace  The namespace flag.
+ * @param   idxParent   Parent directory.
+ * @param   pszName     The name.
  */
-static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec,
+static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, uint64_t cbData,
                                                      uint32_t fNamespace, uint32_t idxParent, const char *pszName)
 {
     int rc;
@@ -328,7 +332,7 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
     uint32_t                idxObj          = UINT32_MAX;
     PRTFSISOMKIMPBLOCK2FILE pBlock2File     = NULL;
     PRTFSISOMKIMPBLOCK2FILE pBlock2FilePrev = NULL;
-    if (ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0) /* no data tracking for zero byte files */
+    if (cbData > 0) /* no data tracking for zero byte files */
     {
         pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTAvlU32Get(&pThis->Block2FileRoot, ISO9660_GET_ENDIAN(&pDirRec->offExtent));
         if (pBlock2File)
@@ -361,16 +365,16 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
     {
         rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
                                                      ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)ISO9660_SECTOR_SIZE,
-                                                     ISO9660_GET_ENDIAN(&pDirRec->cbData), NULL /*pObjInfo*/, &idxObj);
+                                                     cbData, NULL /*pObjInfo*/, &idxObj);
         if (RT_FAILURE(rc))
             return rtFsIsoImpError(pThis, rc, "Error adding file '%s': %Rrc", pszName, rc);
         Assert(idxObj != UINT32_MAX);
 
         /* Update statistics. */
         pThis->pResults->cAddedFiles++;
-        if (ISO9660_GET_ENDIAN(&pDirRec->cbData) > 0)
+        if (cbData > 0)
         {
-            pThis->pResults->cbAddedDataBlocks += RT_ALIGN_32(ISO9660_GET_ENDIAN(&pDirRec->cbData), ISO9660_SECTOR_SIZE);
+            pThis->pResults->cbAddedDataBlocks += RT_ALIGN_64(cbData, ISO9660_SECTOR_SIZE);
 
             /* Lookup record. */
             pBlock2File = (PRTFSISOMKIMPBLOCK2FILE)RTMemAlloc(sizeof(*pBlock2File));
@@ -449,11 +453,18 @@ static int rtFsIsoImportValidateDirRec(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC
 
     if (pDirRec->cbDirRec < RT_OFFSETOF(ISO9660DIRREC, achFileId) + pDirRec->bFileIdLength)
         return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_DIR_REC_LENGTH,
-                               "Root dir record size is too small: %#x (min %#x)",
+                               "Dir record size is too small: %#x (min %#x)",
                                pDirRec->cbDirRec, RT_OFFSETOF(ISO9660DIRREC, achFileId) + pDirRec->bFileIdLength);
     if (pDirRec->cbDirRec > cbMax)
         return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_BAD_DIR_REC_LENGTH,
-                               "Root dir record size is too big: %#x (max %#x)", pDirRec->cbDirRec, cbMax);
+                               "Dir record size is too big: %#x (max %#x)", pDirRec->cbDirRec, cbMax);
+
+    if (   (pDirRec->fFileFlags & (ISO9660_FILE_FLAGS_MULTI_EXTENT | ISO9660_FILE_FLAGS_DIRECTORY))
+        ==                        (ISO9660_FILE_FLAGS_MULTI_EXTENT | ISO9660_FILE_FLAGS_DIRECTORY))
+        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_DIR_WITH_MORE_EXTENTS,
+                               "Multi-extent directories are not supported (cbData=%#RX32 offExtent=%#RX32)",
+                               ISO9660_GET_ENDIAN(&pDirRec->cbData), ISO9660_GET_ENDIAN(&pDirRec->offExtent));
+
     return VINF_SUCCESS;
 }
 
@@ -463,7 +474,7 @@ static int rtFsIsoImportValidateDirRec(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC
  *
  * @returns IPRT status code (safe to ignore, see pThis->rc).
  * @param   pThis               The importer instance.
- * @param   pDirRec             The root directory record to validate.
+ * @param   pDirRec             The dot directory record to validate.
  * @param   cbMax               The maximum size.
  * @param   bName               The name byte (0x00: '.', 0x01: '..').
  */
@@ -483,6 +494,117 @@ static int rtFsIsoImportValidateDotDirRec(PRTFSISOMKIMPORTER pThis, PCISO9660DIR
 }
 
 
+/**
+ * rtFsIsoImportProcessIso9660TreeWorker helper that reads more data.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The importer instance.
+ * @param   ppDirRec    Pointer to the directory record pointer (in/out).
+ * @param   pcbChunk    Pointer to the cbChunk variable (in/out).
+ * @param   pcbDir      Pointer to the cbDir variable (in/out).  This indicates
+ *                      how much we've left to read from the directory.
+ * @param   poffNext    Pointer to the offNext variable (in/out).  This
+ *                      indicates where the next chunk of directory data is in
+ *                      the input file.
+ */
+static int rtFsIsoImportProcessIso9660TreeWorkerReadMore(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC *ppDirRec,
+                                                         uint32_t *pcbChunk, uint32_t *pcbDir, uint64_t *poffNext)
+{
+    uint32_t cbChunk = *pcbChunk;
+    *ppDirRec = (PCISO9660DIRREC)memmove(&pThis->abBuf[ISO9660_SECTOR_SIZE - cbChunk], *ppDirRec, cbChunk);
+
+    Assert(!(*poffNext & (ISO9660_SECTOR_SIZE - 1)));
+    uint32_t cbToRead = RT_MIN(*pcbDir, sizeof(pThis->abBuf) - ISO9660_SECTOR_SIZE);
+    int rc = RTVfsFileReadAt(pThis->hSrcFile, *poffNext, &pThis->abBuf[ISO9660_SECTOR_SIZE], cbToRead, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        Log3(("rtFsIsoImportProcessIso9660TreeWorker: Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#RX32\n",
+              cbToRead, *poffNext, *poffNext - cbChunk, cbChunk + cbToRead));
+        *poffNext += cbToRead;
+        *pcbDir   -= cbToRead;
+        *pcbChunk  = cbChunk + cbToRead;
+        return VINF_SUCCESS;
+    }
+    return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", *poffNext, cbToRead);
+}
+
+
+/**
+ * rtFsIsoImportProcessIso9660TreeWorker helper that deals with skipping to the
+ * next sector when cbDirRec is zero.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NO_MORE_FILES when we reaches the end of the directory.
+ * @param   pThis       The importer instance.
+ * @param   ppDirRec    Pointer to the directory record pointer (in/out).
+ * @param   pcbChunk    Pointer to the cbChunk variable (in/out).  Indicates how
+ *                      much we've left to process starting and pDirRec.
+ * @param   pcbDir      Pointer to the cbDir variable (in/out).  This indicates
+ *                      how much we've left to read from the directory.
+ * @param   poffNext    Pointer to the offNext variable (in/out).  This
+ *                      indicates where the next chunk of directory data is in
+ *                      the input file.
+ */
+static int rtFsIsoImportProcessIso9660TreeWorkerHandleZeroSizedDirRec(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC *ppDirRec,
+                                                                      uint32_t *pcbChunk, uint32_t *pcbDir, uint64_t *poffNext)
+{
+    uint32_t cbChunk  = *pcbChunk;
+    uint64_t offChunk = *poffNext - cbChunk;
+    uint32_t cbSkip   = ISO9660_SECTOR_SIZE - ((uint32_t)offChunk & (ISO9660_SECTOR_SIZE - 1));
+    if (cbSkip < cbChunk)
+    {
+        *ppDirRec = (PCISO9660DIRREC)((uintptr_t)*ppDirRec + cbSkip);
+        *pcbChunk = cbChunk -= cbSkip;
+        if (   cbChunk > UINT8_MAX
+            || *pcbDir == 0)
+        {
+            Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> jumped %#RX32 to @%#RX64 LB %#RX32\n",
+                  cbSkip, *poffNext - cbChunk, cbChunk));
+            return VINF_SUCCESS;
+        }
+        Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> jumped %#RX32 to @%#RX64 LB %#RX32, but needs to read more\n",
+              cbSkip, *poffNext - cbChunk, cbChunk));
+        return rtFsIsoImportProcessIso9660TreeWorkerReadMore(pThis, ppDirRec, pcbChunk, pcbDir, poffNext);
+    }
+
+    /* ASSUMES we're working in multiples of sectors! */
+    if (*pcbDir == 0)
+    {
+        *pcbChunk = 0;
+        return VERR_NO_MORE_FILES;
+    }
+
+    /* End of chunk, read the next sectors. */
+    Assert(!(*poffNext & (ISO9660_SECTOR_SIZE - 1)));
+    uint32_t cbToRead = RT_MIN(*pcbDir, sizeof(pThis->abBuf));
+    int rc = RTVfsFileReadAt(pThis->hSrcFile, *poffNext, pThis->abBuf, cbToRead, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#RX32\n",
+              cbToRead, *poffNext, *poffNext - cbChunk, cbChunk + cbToRead));
+        *poffNext += cbToRead;
+        *pcbDir   -= cbToRead;
+        *pcbChunk  = cbChunk + cbToRead;
+        *ppDirRec  = (PCISO9660DIRREC)&pThis->abBuf[0];
+        return VINF_SUCCESS;
+    }
+    return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", *poffNext, cbToRead);
+}
+
+
+/**
+ * Deals with a single directory.
+ *
+ * @returns IPRT status code (safe to ignore, see pThis->rc).
+ * @param   pThis               The importer instance.
+ * @param   idxDir              The configuration index for the directory.
+ * @param   offDirBlock         The offset of the directory data.
+ * @param   cbDir               The size of the directory data.
+ * @param   cDepth              The depth of the directory.
+ * @param   fUnicode            Set if it's a unicode (UTF-16BE) encoded
+ *                              directory.
+ * @param   pTodoList           The todo-list to add sub-directories to.
+ */
 static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint32_t idxDir,
                                                  uint32_t offDirBlock, uint32_t cbDir, uint8_t cDepth, bool fUnicode,
                                                  PRTLISTANCHOR pTodoList)
@@ -497,13 +619,13 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
      * Read the first chunk into the big buffer.
      */
     uint32_t cbChunk = RT_MIN(cbDir, sizeof(pThis->abBuf));
-    uint64_t off     = (uint64_t)offDirBlock * ISO9660_SECTOR_SIZE;
-    int rc = RTVfsFileReadAt(pThis->hSrcFile, off, pThis->abBuf, cbChunk, NULL);
+    uint64_t offNext = (uint64_t)offDirBlock * ISO9660_SECTOR_SIZE;
+    int rc = RTVfsFileReadAt(pThis->hSrcFile, offNext, pThis->abBuf, cbChunk, NULL);
     if (RT_FAILURE(rc))
-        return rtFsIsoImpError(pThis, rc, "Error reading directory at %#RX64 (%#RX32 / %#RX32): %Rrc", off, cbChunk, cbDir);
+        return rtFsIsoImpError(pThis, rc, "Error reading directory at %#RX64 (%#RX32 / %#RX32): %Rrc", offNext, cbChunk, cbDir);
 
-    cbDir -= cbChunk;
-    off   += cbChunk;
+    cbDir   -= cbChunk;
+    offNext += cbChunk;
 
     /*
      * Skip the current and parent directory entries.
@@ -526,9 +648,10 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
      * Work our way thru all the directory records.
      */
     Log3(("rtFsIsoImportProcessIso9660TreeWorker: Starting at @%#RX64 LB %#RX32 (out of %#RX32) in %#x\n",
-          off - cbChunk, cbChunk, cbChunk + cbDir, idxDir));
+          offNext - cbChunk, cbChunk, cbChunk + cbDir, idxDir));
     const uint32_t fNamespace = fUnicode ? RTFSISOMAKER_NAMESPACE_JOLIET : RTFSISOMAKER_NAMESPACE_ISO_9660;
-    while (cbChunk > 0)
+    while (   cbChunk > 0
+           || cbDir   > 0)
     {
         /*
          * Do we need to read some more?
@@ -538,57 +661,25 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
         { /* No, we don't. */ }
         else
         {
-            pDirRec = (PCISO9660DIRREC)memmove(&pThis->abBuf[ISO9660_SECTOR_SIZE - cbChunk], pDirRec, cbChunk);
-
-            Assert(!(off & (ISO9660_SECTOR_SIZE - 1)));
-            uint32_t cbToRead = RT_MIN(cbDir, sizeof(pThis->abBuf) - ISO9660_SECTOR_SIZE);
-            rc = RTVfsFileReadAt(pThis->hSrcFile, off, &pThis->abBuf[ISO9660_SECTOR_SIZE], cbToRead, NULL);
+            rc = rtFsIsoImportProcessIso9660TreeWorkerReadMore(pThis, &pDirRec, &cbChunk, &cbDir, &offNext);
             if (RT_FAILURE(rc))
-                return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", off, cbToRead);
-
-            Log3(("rtFsIsoImportProcessIso9660TreeWorker: Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#RX32\n",
-                  cbToRead, off, off - cbChunk, cbChunk + cbToRead));
-            off     += cbToRead;
-            cbDir   -= cbToRead;
-            cbChunk += cbToRead;
+                return rc;
         }
 
         /* If null length, skip to the next sector.  May have to read some then. */
-        if (pDirRec->cbDirRec == 0)
+        if (pDirRec->cbDirRec != 0)
+        { /* likely */ }
+        else
         {
-            uint64_t offChunk = off - cbChunk;
-            uint32_t cbSkip   = ISO9660_SECTOR_SIZE - ((uint32_t)offChunk & (ISO9660_SECTOR_SIZE - 1));
-            if (cbSkip < cbChunk)
+            rc = rtFsIsoImportProcessIso9660TreeWorkerHandleZeroSizedDirRec(pThis, &pDirRec, &cbChunk, &cbDir, &offNext);
+            if (RT_FAILURE(rc))
             {
-                pDirRec  = (PCISO9660DIRREC)((uintptr_t)pDirRec + cbSkip);
-                cbChunk -= cbSkip;
-                if (   cbChunk <= UINT8_MAX
-                    && cbDir == 0)
-                {
-                    Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Restart loop\n"));
-                    continue;
-                }
-                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> jumped %#RX32 to @%#RX64 LB %#RX32\n",
-                      cbSkip, off - cbChunk, cbChunk));
+                if (rc == VERR_NO_MORE_FILES)
+                    break;
+                return rc;
             }
-            /* ASSUMES we're working in multiples of sectors! */
-            else if (cbDir == 0)
-                break;
-            else
-            {
-                Assert(!(off & (ISO9660_SECTOR_SIZE - 1)));
-                uint32_t cbToRead = RT_MIN(cbDir, sizeof(pThis->abBuf));
-                rc = RTVfsFileReadAt(pThis->hSrcFile, off, pThis->abBuf, cbToRead, NULL);
-                if (RT_FAILURE(rc))
-                    return rtFsIsoImpError(pThis, rc, "Error reading %#RX32 bytes at %#RX64 (dir): %Rrc", off, cbToRead);
-
-                Log3(("rtFsIsoImportProcessIso9660TreeWorker: cbDirRec=0 --> Read %#zx more bytes @%#RX64, now got @%#RX64 LB %#RX32\n",
-                      cbToRead, off, off - cbChunk, cbChunk + cbToRead));
-                off     += cbToRead;
-                cbDir   -= cbToRead;
-                cbChunk += cbToRead;
-                pDirRec = (PCISO9660DIRREC)&pThis->abBuf[0];
-            }
+            if (pDirRec->cbDirRec == 0)
+                continue;
         }
 
         /*
@@ -599,12 +690,17 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                                     - pDirRec->bFileIdLength - !(pDirRec->bFileIdLength & 1);
         uint8_t const * const pbSys = (uint8_t const *)&pDirRec->achFileId[pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1)];
         Log3(("pDirRec=&abBuf[%#07zx]: @%#010RX64 cb=%#04x ff=%#04x off=%#010RX32 cb=%#010RX32 cbSys=%#x id=%.*Rhxs\n",
-              (uintptr_t)pDirRec - (uintptr_t)&pThis->abBuf[0], off - cbChunk, pDirRec->cbDirRec, pDirRec->fFileFlags,
+              (uintptr_t)pDirRec - (uintptr_t)&pThis->abBuf[0], offNext - cbChunk, pDirRec->cbDirRec, pDirRec->fFileFlags,
               ISO9660_GET_ENDIAN(&pDirRec->offExtent), ISO9660_GET_ENDIAN(&pDirRec->cbData), cbSys,
               pDirRec->bFileIdLength, pDirRec->achFileId));
         rc = rtFsIsoImportValidateDirRec(pThis, pDirRec, cbChunk);
         if (RT_FAILURE(rc))
             return rc;
+
+        /* This early calculation of the next record is due to multi-extent
+           handling further down. */
+        uint32_t        cbChunkNew  = cbChunk - pDirRec->cbDirRec;
+        PCISO9660DIRREC pDirRecNext = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
 
         /*
          * Convert the name into the name buffer (szNameBuf).
@@ -648,29 +744,135 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             }
 
             /*
-             * Add the object.
+             * Deal with multi-extent files (usually large ones).  We currently only
+             * handle files where the data is in single continuous chunk and only split
+             * up into multiple directory records because of data type limitations.
              */
-            if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
-                rtFsIsoImportProcessIso9660AddAndNameDirectory(pThis, pDirRec, fNamespace, idxDir,
-                                                               pThis->szNameBuf, cDepth + 1, pTodoList);
+            uint8_t  abDirRecCopy[256];
+            uint64_t cbData = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+            if (!(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT))
+            { /* likely */ }
             else
-                rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, fNamespace, idxDir, pThis->szNameBuf);
+            {
+                if (cbData & (ISO9660_SECTOR_SIZE - 1))
+                    return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MISALIGNED_MULTI_EXTENT,
+                                           "The size of non-final multi-extent record #0x0 isn't block aligned: %#RX64", cbData);
+
+                /* Make a copy of the first directory record so we don't overwrite
+                   it when reading in more records below.  */
+                pDirRec = (PCISO9660DIRREC)memcpy(abDirRecCopy, pDirRec, pDirRec->cbDirRec);
+
+                /* Process extent records. */
+                uint32_t cDirRecs     = 1;
+                uint32_t offNextBlock = ISO9660_GET_ENDIAN(&pDirRec->offExtent)
+                                      + ISO9660_GET_ENDIAN(&pDirRec->cbData) / ISO9660_SECTOR_SIZE;
+                while (   cbChunkNew > 0
+                       || cbDir > 0)
+                {
+                    /* Read more? Skip? */
+                    if (   cbChunkNew <= UINT8_MAX
+                        && cbDir != 0)
+                    {
+                        rc = rtFsIsoImportProcessIso9660TreeWorkerReadMore(pThis, &pDirRecNext, &cbChunkNew, &cbDir, &offNext);
+                        if (RT_FAILURE(rc))
+                            return rc;
+                    }
+                    if (pDirRecNext->cbDirRec == 0)
+                    {
+                        rc = rtFsIsoImportProcessIso9660TreeWorkerHandleZeroSizedDirRec(pThis, &pDirRecNext, &cbChunkNew,
+                                                                                        &cbDir, &offNext);
+                        if (RT_FAILURE(rc))
+                        {
+                            if (rc == VERR_NO_MORE_FILES)
+                                break;
+                            return rc;
+                        }
+                        if (pDirRecNext->cbDirRec == 0)
+                            continue;
+                    }
+
+                    /* Check the next record. */
+                    rc = rtFsIsoImportValidateDirRec(pThis, pDirRecNext, cbChunkNew);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                    if (pDirRecNext->bFileIdLength != pDirRec->bFileIdLength)
+                        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MISMATCHING_MULTI_EXTENT_REC,
+                                               "Multi-extent record #%#x differs from the first: bFileIdLength is %#x, expected %#x",
+                                               cDirRecs, pDirRecNext->bFileIdLength, pDirRec->bFileIdLength);
+                    if (memcmp(pDirRecNext->achFileId, pDirRec->achFileId, pDirRec->bFileIdLength) != 0)
+                        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MISMATCHING_MULTI_EXTENT_REC,
+                                               "Multi-extent record #%#x differs from the first: achFileId is %.*Rhxs, expected %.*Rhxs",
+                                               cDirRecs, pDirRecNext->bFileIdLength, pDirRecNext->achFileId,
+                                               pDirRec->bFileIdLength, pDirRec->achFileId);
+                    if (ISO9660_GET_ENDIAN(&pDirRecNext->VolumeSeqNo) != ISO9660_GET_ENDIAN(&pDirRec->VolumeSeqNo))
+                        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MISMATCHING_MULTI_EXTENT_REC,
+                                               "Multi-extent record #%#x differs from the first: VolumeSeqNo is %#x, expected %#x",
+                                               cDirRecs, ISO9660_GET_ENDIAN(&pDirRecNext->VolumeSeqNo),
+                                               ISO9660_GET_ENDIAN(&pDirRec->VolumeSeqNo));
+                    if (   (pDirRecNext->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT)
+                        && (ISO9660_GET_ENDIAN(&pDirRecNext->cbData) & (ISO9660_SECTOR_SIZE - 1)) )
+                        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MISALIGNED_MULTI_EXTENT,
+                                               "The size of non-final multi-extent record #%#x isn't block aligned: %#RX32",
+                                               cDirRecs, ISO9660_GET_ENDIAN(&pDirRecNext->cbData));
+
+                    /* Check that the data is contiguous, then add the data.  */
+                    if (ISO9660_GET_ENDIAN(&pDirRecNext->offExtent) == offNextBlock)
+                        cbData += ISO9660_GET_ENDIAN(&pDirRecNext->cbData);
+                    else
+                        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_NON_CONTIGUOUS_MULTI_EXTENT,
+                                               "Multi-extent record #%#x isn't contiguous: offExtent=%#RX32, expected %#RX32",
+                                               cDirRecs, ISO9660_GET_ENDIAN(&pDirRecNext->offExtent), offNextBlock);
+
+                    /* Advance. */
+                    cDirRecs++;
+                    bool fDone  = !(pDirRecNext->fFileFlags & ISO9660_FILE_FLAGS_MULTI_EXTENT);
+                    offNext    += ISO9660_GET_ENDIAN(&pDirRecNext->cbData) / ISO9660_SECTOR_SIZE;
+                    cbChunkNew -= pDirRecNext->cbDirRec;
+                    pDirRecNext = (PCISO9660DIRREC)((uintptr_t)pDirRecNext + pDirRecNext->cbDirRec);
+                    if (fDone)
+                        break;
+                }
+            }
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Add the object.
+                 */
+                if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
+                    rtFsIsoImportProcessIso9660AddAndNameDirectory(pThis, pDirRec, cbData, fNamespace, idxDir,
+                                                                   pThis->szNameBuf, cDepth + 1, pTodoList);
+                else
+                    rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, cbData, fNamespace, idxDir, pThis->szNameBuf);
+            }
         }
         else
             rtFsIsoImpError(pThis, rc, "Invalid name at %#RX64: %.Rhxs",
-                            off - cbChunk, pDirRec->bFileIdLength, pDirRec->achFileId);
+                            offNext - cbChunk, pDirRec->bFileIdLength, pDirRec->achFileId);
 
         /*
          * Advance to the next directory record.
          */
-        cbChunk -= pDirRec->cbDirRec;
-        pDirRec = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
+        cbChunk = cbChunkNew;
+        pDirRec = pDirRecNext;
     }
 
     return VINF_SUCCESS;
 }
 
 
+/**
+ * Deals with a directory tree.
+ *
+ * This is implemented by tracking directories that needs to be processed in a
+ * todo list, so no recursive calls, however it uses a bit of heap.
+ *
+ * @returns IPRT status code (safe to ignore, see pThis->rc).
+ * @param   pThis               The importer instance.
+ * @param   offDirBlock         The offset of the root directory data.
+ * @param   cbDir               The size of the root directory data.
+ * @param   fUnicode            Set if it's a unicode (UTF-16BE) encoded
+ *                              directory.
+ */
 static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t offDirBlock, uint32_t cbDir, bool fUnicode)
 {
     /*

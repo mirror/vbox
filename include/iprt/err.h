@@ -2741,62 +2741,78 @@ RT_C_DECLS_END
 #define VERR_ISOMK_IMPORT_TOO_DEEP_DIR_TREE             (-25123)
 /** Import ISO contains a bad directory record. */
 #define VERR_ISOMK_IMPORT_BAD_DIR_REC                   (-25124)
-/** Import ISO directory record with a mismatching volume sequence number. */
+/** Import ISO contains a directory record with a mismatching volume sequence
+ *  number. */
 #define VERR_ISOMK_IMPORT_DIR_REC_VOLUME_SEQ_NO         (-25125)
-/** Import ISO directory with an extent that is out of bounds. */
+/** Import ISO contains a directory with an extent that is out of bounds. */
 #define VERR_ISOMK_IMPORT_DIR_REC_EXTENT_OUT_OF_BOUNDS  (-25126)
-/** Import ISO directory with a bad record length. */
+/** Import ISO contains a directory with a bad record length. */
 #define VERR_ISOMK_IMPORT_BAD_DIR_REC_LENGTH            (-25127)
-/** Import ISO directory with a bad name length. */
+/** Import ISO contains a '.' or '..' directory record with a bad name
+ *  length. */
 #define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME_LENGTH   (-25128)
-/** Import ISO directory with a bad name. */
+/** Import ISO contains a '.' or '..' directory record with a bad name. */
 #define VERR_ISOMK_IMPORT_DOT_DIR_REC_BAD_NAME          (-25129)
+/** Import ISO contains a directory with a more than one extent, that's
+ * currently not supported. */
+#define VERR_ISOMK_IMPORT_DIR_WITH_MORE_EXTENTS         (-25130)
+/** Import ISO contains a multi-extent directory record that differs
+ *  significantly from first record. */
+#define VERR_ISOMK_IMPORT_MISMATCHING_MULTI_EXTENT_REC  (-25131)
+/** Import ISO contains a non-final multi-extent directory record with a
+ *  size that isn't block aligned. */
+#define VERR_ISOMK_IMPORT_MISALIGNED_MULTI_EXTENT       (-25132)
+/** Import ISO contains a non-contigiuous multi-extent data, this is
+ * currently not supported. */
+#define VERR_ISOMK_IMPORT_NON_CONTIGUOUS_MULTI_EXTENT   (-25133)
+
 /** The boot catalog block in the import ISO is out of bounds. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_OUT_OF_BOUNDS                (-25130)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_OUT_OF_BOUNDS                (-25140)
 /** The boot catalog block in the import ISO has an incorrect validation
  *  header ID. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_HEADER_ID         (-25131)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_HEADER_ID         (-25141)
 /** The boot catalog validation entry in the import ISO has incorrect keys. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_KEYS              (-25132)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_KEYS              (-25142)
 /** The boot catalog validation entry in the import ISO has an incorrect checksum. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_CHECKSUM          (-25133)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_BAD_VALIDATION_CHECKSUM          (-25143)
 /** A boot catalog entry in the import ISO has an unknown type. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_UNKNOWN_HEADER_ID                (-25134)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_UNKNOWN_HEADER_ID                (-25144)
 /** A boot catalog entry in the import ISO has an invalid boot media type. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_INVALID_BOOT_MEDIA_TYPE          (-25135)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_INVALID_BOOT_MEDIA_TYPE          (-25145)
 /** The default boot catalog entry in the import ISO has invalid flags set. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_FLAGS          (-25136)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_FLAGS          (-25146)
 /** A boot catalog entry in the import ISO has reserved flag set. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_RESERVED_FLAG              (-25137)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_RESERVED_FLAG              (-25147)
 /** A boot catalog entry in the import ISO is using the unused field. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_USES_UNUSED_FIELD          (-25138)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_USES_UNUSED_FIELD          (-25148)
 /** A boot catalog entry in the import ISO points to a block after the end of
  * the image input file. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_IMAGE_OUT_OF_BOUNDS        (-25139)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_IMAGE_OUT_OF_BOUNDS        (-25149)
 /** A boot catalog entry in the import ISO has an image with an
  * indeterminate size. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_UNKNOWN_IMAGE_SIZE         (-25140)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_UNKNOWN_IMAGE_SIZE         (-25150)
 /** The boot catalog in the import ISO is larger than a sector or it is
  *  missing the final section header entry. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_MISSING_FINAL_OR_TOO_BIG         (-25141)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_MISSING_FINAL_OR_TOO_BIG         (-25151)
 /** The default boot catalog entry in the import ISO an invalid boot
  *  indicator value. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_BOOT_IND       (-25142)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_DEF_ENTRY_INVALID_BOOT_IND       (-25152)
 /** A boot catalog extension entry in the import ISO was either flagged
  *  incorrectly in the previous entry or has an invalid header ID. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_INVALID_ID             (-25143)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_INVALID_ID             (-25153)
 /** A boot catalog extension entry in the import ISO uses undefined flags
  *  which will be lost. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_UNDEFINED_FLAGS        (-25144)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_UNDEFINED_FLAGS        (-25154)
 /** A boot catalog extension entry in the import ISO indicates more entries when
  *  we reached the end of the boot catalog sector. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_END_OF_SECTOR          (-25145)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_EXT_ENTRY_END_OF_SECTOR          (-25155)
 /** A boot catalog entry in the import ISO sets the continuation flag when using
  * NONE as the selection criteria type. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_WITH_NONE     (-25146)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_WITH_NONE     (-25156)
 /** A boot catalog entry in the import ISO sets the continuation flag when
  *  we reached the ned of the boot catalog secotr. */
-#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_EOS           (-25147)
+#define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_EOS           (-25157)
+
 /** @} */
 
 /* SED-END */
