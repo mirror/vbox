@@ -167,10 +167,10 @@ HRESULT HostNetworkInterface::updateConfig()
         m.realIPAddress = m.IPAddress = info.IPAddress.u;
         m.realNetworkMask = m.networkMask = info.IPNetMask.u;
         m.dhcpEnabled = info.bDhcpEnabled;
-        m.realIPV6Address = m.IPV6Address = composeIPv6Address(&info.IPv6Address);
+        m.realIPV6Address = m.IPV6Address = Bstr(Utf8StrFmt("%RTnaipv6", &info.IPv6Address));
         RTNetMaskToPrefixIPv6(&info.IPv6NetMask, &iPrefixIPv6);
         m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
-        m.hardwareAddress = composeHardwareAddress(&info.MACAddress);
+        m.hardwareAddress = Bstr(Utf8StrFmt("%RTmac", &info.MACAddress));
 #ifdef RT_OS_WINDOWS
         m.mediumType = (HostNetworkInterfaceMediumType)info.enmMediumType;
         m.status = (HostNetworkInterfaceStatus)info.enmStatus;
@@ -226,11 +226,11 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
 
     m.realIPAddress = m.IPAddress = pIf->IPAddress.u;
     m.realNetworkMask = m.networkMask = pIf->IPNetMask.u;
-    m.realIPV6Address = m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
+    m.realIPV6Address = m.IPV6Address = Bstr(Utf8StrFmt("%RTnaipv6", &pIf->IPv6Address));
     RTNetMaskToPrefixIPv6(&pIf->IPv6NetMask, &iPrefixIPv6);
     m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
     m.dhcpEnabled = pIf->bDhcpEnabled;
-    m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
+    m.hardwareAddress = Bstr(Utf8StrFmt("%RTmac", &pIf->MACAddress));
 #ifdef RT_OS_WINDOWS
     m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
     m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;

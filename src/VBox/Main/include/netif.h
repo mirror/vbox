@@ -97,29 +97,6 @@ int NetIfGetLinkSpeed(const char *pcszIfName, uint32_t *puMbits);
 int NetIfDhcpRediscover(VirtualBox *pVBox, HostNetworkInterface * pIf);
 int NetIfAdpCtlOut(const char *pszName, const char *pszCmd, char *pszBuffer, size_t cBufSize);
 
-DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
-{
-    /* We can't use %RTnaipv6 because that function is too clever, i.e. it
-     * shows abbreviations which the GUI isn't able to parse. */
-    return aAddrPtr->s.Lo || aAddrPtr->s.Hi
-        ? Bstr(Utf8StrFmt("%02x%02x:%02x%02x:%02x%02x:%02x%02x:"
-                          "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                          aAddrPtr->au8[0], aAddrPtr->au8[1],
-                          aAddrPtr->au8[2], aAddrPtr->au8[3],
-                          aAddrPtr->au8[4], aAddrPtr->au8[5],
-                          aAddrPtr->au8[6], aAddrPtr->au8[7],
-                          aAddrPtr->au8[8], aAddrPtr->au8[9],
-                          aAddrPtr->au8[10], aAddrPtr->au8[11],
-                          aAddrPtr->au8[12], aAddrPtr->au8[13],
-                          aAddrPtr->au8[14], aAddrPtr->au8[15]))
-        : Bstr("");
-}
-
-DECLINLINE(Bstr) composeHardwareAddress(PRTMAC aMacPtr)
-{
-    return Bstr(Utf8StrFmt("%RTmac", aMacPtr));
-}
-
 DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
 {
     /* Get the index from the name */
