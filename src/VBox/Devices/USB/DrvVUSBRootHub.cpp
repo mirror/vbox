@@ -981,33 +981,11 @@ static DECLCALLBACK(int) vusbRhSetFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterf
 
 
 /** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnGetPeriodicFrameRate} */
-static DECLCALLBACK(uint32_t) vusbRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR pInterface)
+static DECLCALLBACK(uint32_t) vusbRhGetPriodicFrameRate(PVUSBIROOTHUBCONNECTOR pInterface)
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
 
     return pThis->uFrameRate;
-}
-
-/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnGetPeriodicFrameRate} */
-static DECLCALLBACK(uint32_t) vusbRhUpdateIsocFrameDelta(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice,
-                                                         int EndPt, VUSBDIRECTION enmDir, uint16_t uNewFrame, uint8_t uBits)
-{
-    PVUSBROOTHUB    pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
-    AssertReturn(pRh, 0);
-    PVUSBDEV        pDev = (PVUSBDEV)pDevice;
-    PVUSBPIPE       pPipe = &pDev->aPipes[EndPt];
-    uint32_t        *puLastFrame;
-    int32_t         uFrameDelta;
-    uint32_t        uMaxVal = 1 << uBits;
-
-    puLastFrame  = enmDir == VUSBDIRECTION_IN ? &pPipe->uLastFrameIn : &pPipe->uLastFrameOut;
-    uFrameDelta  = uNewFrame - *puLastFrame;
-    *puLastFrame = uNewFrame;
-    /* Take care of wrap-around. */
-    if (uFrameDelta < 0)
-        uFrameDelta += uMaxVal;
-
-    return (uint16_t)uFrameDelta;
 }
 
 /* -=-=-=-=-=- VUSB Device methods (for the root hub) -=-=-=-=-=- */
@@ -1152,7 +1130,7 @@ static int vusbRhHubOpAttach(PVUSBHUB pHub, PVUSBDEV pDev)
         pDev->pNext = pRh->pDevices;
         pRh->pDevices = pDev;
         RTCritSectLeave(&pRh->CritSectDevices);
-        LogRel(("VUSB: Attached '%s' to port %d on %s (%sSpeed)\n", pDev->pUsbIns->pszName,
+        LogRel(("VUSB: Attached '%s' to port %d on %s (%sSpeed)\n", pDev->pUsbIns->pszName, 
                 iPort, pHub->pszName, vusbGetSpeedString(pDev->pUsbIns->enmSpeed)));
     }
     else
@@ -1344,8 +1322,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnAttachDevice               = vusbRhAttachDevice;
     pThis->IRhConnector.pfnDetachDevice               = vusbRhDetachDevice;
     pThis->IRhConnector.pfnSetPeriodicFrameProcessing = vusbRhSetFrameProcessing;
-    pThis->IRhConnector.pfnGetPeriodicFrameRate       = vusbRhGetPeriodicFrameRate;
-    pThis->IRhConnector.pfnUpdateIsocFrameDelta       = vusbRhUpdateIsocFrameDelta;
+    pThis->IRhConnector.pfnGetPeriodicFrameRate       = vusbRhGetPriodicFrameRate;
     pThis->hSniffer                                   = VUSBSNIFFER_NIL;
     pThis->cbHci                                      = 0;
     pThis->cbHciTd                                    = 0;
