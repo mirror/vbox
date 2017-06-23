@@ -1188,7 +1188,6 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
         if (cbToWrite > cbBuf)
             cbToWrite = cbBuf;
 
-        Assert(cbToWrite % 2 == 0);
         memcpy(pStreamALSA->pvBuf, pvBuf, cbToWrite);
 
         snd_pcm_sframes_t csWritten = 0;
