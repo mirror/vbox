@@ -990,7 +990,7 @@ static DECLCALLBACK(uint32_t) vusbRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR 
 
 /** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnUpdateIsocFrameDelta} */
 static DECLCALLBACK(uint32_t) vusbRhUpdateIsocFrameDelta(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice,
-                                                         int EndPt, VUSBDIRECTION enmDir, uint16_t uNewFrame, uint8_t uBits)
+                                                         int EndPt, VUSBDIRECTION enmDir, uint16_t uNewFrameID, uint8_t uBits)
 {
     PVUSBROOTHUB    pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     AssertReturn(pRh, 0);
@@ -1001,8 +1001,8 @@ static DECLCALLBACK(uint32_t) vusbRhUpdateIsocFrameDelta(PVUSBIROOTHUBCONNECTOR 
     uint32_t        uMaxVal = 1 << uBits;
 
     puLastFrame  = enmDir == VUSBDIRECTION_IN ? &pPipe->uLastFrameIn : &pPipe->uLastFrameOut;
-    uFrameDelta  = uNewFrame - *puLastFrame;
-    *puLastFrame = uNewFrame;
+    uFrameDelta  = uNewFrameID - *puLastFrame;
+    *puLastFrame = uNewFrameID;
     /* Take care of wrap-around. */
     if (uFrameDelta < 0)
         uFrameDelta += uMaxVal;
