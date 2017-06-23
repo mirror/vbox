@@ -1325,10 +1325,11 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                                    auBuf, cbPlayed);
 #endif
                 AssertMsg(cbPlayed <= cbRead, ("Played more than available (%RU32 available but got %RU32)\n", cbRead, cbPlayed));
+#if 0 /** @todo Also handle mono channels. Needs fixing */
                 AssertMsg(cbPlayed % 2 == 0,
                           ("Backend for stream '%s' returned uneven played bytes count (csRead=%RU32, cbPlayed=%RU32)\n",
-                           pHstStream->szName, csRead, cbPlayed));
-
+                           pHstStream->szName, csRead, cbPlayed));*/
+#endif
                 csPlayedTotal += AUDIOMIXBUF_B2S(&pHstStream->MixBuf, cbPlayed);
                 Assert(cbLeft >= cbPlayed);
                 cbLeft        -= cbPlayed;
