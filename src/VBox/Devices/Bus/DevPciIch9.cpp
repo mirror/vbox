@@ -3268,9 +3268,6 @@ static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
 {
     /* Reset everything under the root bridge. */
     ich9pciResetBridge(pDevIns);
-
-    /* Do a fresh Fake PCI BIOS setup. */
-    ich9pciFakePCIBIOS(pDevIns);
 }
 
 

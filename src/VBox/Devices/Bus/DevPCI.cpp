@@ -1211,15 +1211,6 @@ static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnReset}
- */
-static DECLCALLBACK(void) pciR3Reset(PPDMDEVINS pDevIns)
-{
-    pciR3FakePCIBIOS(pDevIns);
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -1436,7 +1427,7 @@ const PDMDEVREG g_DevicePCI =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    pciR3Reset,
+    NULL,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
