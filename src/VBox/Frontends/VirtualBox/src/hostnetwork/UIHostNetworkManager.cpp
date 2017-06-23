@@ -1021,16 +1021,16 @@ UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
 void UIHostNetworkManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
 {
     /* Disable buttons first of all: */
-    buttonBox()->button(QDialogButtonBox::Reset)->setEnabled(false);
-    buttonBox()->button(QDialogButtonBox::Save)->setEnabled(false);
+    button(ButtonType_Reset)->setEnabled(false);
+    button(ButtonType_Apply)->setEnabled(false);
 
     /* Compare with known buttons: */
-    if (pButton == buttonBox()->button(QDialogButtonBox::Reset))
+    if (pButton == button(ButtonType_Reset))
         emit sigDataChangeRejected();
 
     else
 
-    if (pButton == buttonBox()->button(QDialogButtonBox::Save))
+    if (pButton == button(ButtonType_Apply))
         emit sigDataChangeAccepted();
 }
 
@@ -1040,21 +1040,18 @@ void UIHostNetworkManager::retranslateUi()
     setWindowTitle(tr("Host Network Manager"));
 
     /* Translate buttons: */
-    buttonBox()->button(QDialogButtonBox::Reset)->setText(tr("Reset"));
-    buttonBox()->button(QDialogButtonBox::Save)->setText(tr("Apply"));
-    buttonBox()->button(QDialogButtonBox::Close)->setText(tr("Close"));
-    buttonBox()->button(QDialogButtonBox::Reset)->setStatusTip(tr("Reset changes in current host network details"));
-    buttonBox()->button(QDialogButtonBox::Save)->setStatusTip(tr("Apply changes in current host network details"));
-    buttonBox()->button(QDialogButtonBox::Close)->setStatusTip(tr("Close dialog without saving"));
-    buttonBox()->button(QDialogButtonBox::Reset)->setShortcut(QString("Ctrl+Backspace"));
-    buttonBox()->button(QDialogButtonBox::Save)->setShortcut(QString("Ctrl+Return"));
-    //buttonBox()->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape); /* done in base-class */
-    buttonBox()->button(QDialogButtonBox::Reset)->
-        setToolTip(tr("Reset Changes (%1)").arg(buttonBox()->button(QDialogButtonBox::Reset)->shortcut().toString()));
-    buttonBox()->button(QDialogButtonBox::Save)->
-        setToolTip(tr("Apply Changes (%1)").arg(buttonBox()->button(QDialogButtonBox::Save)->shortcut().toString()));
-    buttonBox()->button(QDialogButtonBox::Close)->
-        setToolTip(tr("Close Window (%1)").arg(buttonBox()->button(QDialogButtonBox::Close)->shortcut().toString()));
+    button(ButtonType_Reset)->setText(tr("Reset"));
+    button(ButtonType_Apply)->setText(tr("Apply"));
+    button(ButtonType_Close)->setText(tr("Close"));
+    button(ButtonType_Reset)->setStatusTip(tr("Reset changes in current host network details"));
+    button(ButtonType_Apply)->setStatusTip(tr("Apply changes in current host network details"));
+    button(ButtonType_Close)->setStatusTip(tr("Close dialog without saving"));
+    button(ButtonType_Reset)->setShortcut(QString("Ctrl+Backspace"));
+    button(ButtonType_Apply)->setShortcut(QString("Ctrl+Return"));
+    //button(ButtonType_Close)->setShortcut(Qt::Key_Escape); /* done in base-class */
+    button(ButtonType_Reset)->setToolTip(tr("Reset Changes (%1)").arg(button(ButtonType_Reset)->shortcut().toString()));
+    button(ButtonType_Apply)->setToolTip(tr("Apply Changes (%1)").arg(button(ButtonType_Apply)->shortcut().toString()));
+    button(ButtonType_Close)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
 }
 
 void UIHostNetworkManager::configure()
@@ -1089,13 +1086,13 @@ void UIHostNetworkManager::configureButtonBox()
 {
     /* Configure button-box: */
     connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
-            buttonBox()->button(QDialogButtonBox::Save), &QPushButton::setVisible);
+            button(ButtonType_Apply), &QPushButton::setVisible);
     connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
-            buttonBox()->button(QDialogButtonBox::Reset), &QPushButton::setVisible);
+            button(ButtonType_Reset), &QPushButton::setVisible);
     connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged,
-            buttonBox()->button(QDialogButtonBox::Save), &QPushButton::setEnabled);
+            button(ButtonType_Apply), &QPushButton::setEnabled);
     connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged,
-            buttonBox()->button(QDialogButtonBox::Reset), &QPushButton::setEnabled);
+            button(ButtonType_Reset), &QPushButton::setEnabled);
     connect(buttonBox(), &QIDialogButtonBox::clicked,
             this, &UIHostNetworkManager::sltHandleButtonBoxClick);
 }

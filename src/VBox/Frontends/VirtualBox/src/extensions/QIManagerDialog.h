@@ -20,8 +20,13 @@
 
 /* Qt includes: */
 #include <QMainWindow>
+#include <QMap>
+
+/* Other VBox includes: */
+#include <iprt/cdefs.h>
 
 /* Forward declarations: */
+class QPushButton;
 class QIDialogButtonBox;
 class QIManagerDialog;
 #ifdef VBOX_WS_MAC
@@ -34,6 +39,16 @@ enum EmbedTo
 {
     EmbedTo_Dialog,
     EmbedTo_Stack
+};
+
+
+/** Dialog button types. */
+enum ButtonType
+{
+    ButtonType_Invalid = 0,
+    ButtonType_Reset   = RT_BIT(0),
+    ButtonType_Apply   = RT_BIT(1),
+    ButtonType_Close   = RT_BIT(2),
 };
 
 
@@ -132,6 +147,8 @@ protected:
         virtual QWidget *widget() { return m_pWidget; }
         /** Returns the button-box instance. */
         QIDialogButtonBox *buttonBox() { return m_pButtonBox; }
+        /** Returns button of passed @a enmType. */
+        QPushButton *button(ButtonType enmType) { return m_buttons.value(enmType); }
     /** @} */
 
     /** @name Event-handling stuff.
@@ -165,6 +182,9 @@ private:
       * @{ */
         /** Holds the dialog button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
+
+        /** Holds the button-box button references. */
+        QMap<ButtonType, QPushButton*> m_buttons;
     /** @} */
 
     /** Allow factory access to private/protected members: */

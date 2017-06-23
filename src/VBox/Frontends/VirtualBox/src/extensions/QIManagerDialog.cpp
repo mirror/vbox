@@ -139,12 +139,26 @@ void QIManagerDialog::prepareButtonBox()
     AssertPtrReturnVoid(m_pButtonBox);
     {
         /* Configure button-box: */
+#ifdef VBOX_WS_MAC
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Apply |  QDialogButtonBox::Close);
+#else
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Save |  QDialogButtonBox::Close);
-        m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        m_pButtonBox->button(QDialogButtonBox::Reset)->hide();
-        m_pButtonBox->button(QDialogButtonBox::Save)->hide();
-        m_pButtonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
-        m_pButtonBox->button(QDialogButtonBox::Save)->setEnabled(false);
+#endif
+        m_buttons[ButtonType_Reset] = m_pButtonBox->button(QDialogButtonBox::Reset);
+#ifdef VBOX_WS_MAC
+        m_buttons[ButtonType_Apply] = m_pButtonBox->button(QDialogButtonBox::Apply);
+#else
+        m_buttons[ButtonType_Apply] = m_pButtonBox->button(QDialogButtonBox::Save);
+#endif
+        m_buttons[ButtonType_Close] = m_pButtonBox->button(QDialogButtonBox::Close);
+        /* Assign shortcuts: */
+        button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
+        /* Hide 'Reset' and 'Apply' initially: */
+        button(ButtonType_Reset)->hide();
+        button(ButtonType_Apply)->hide();
+        /* Disable 'Reset' and 'Apply' initially: */
+        button(ButtonType_Reset)->setEnabled(false);
+        button(ButtonType_Apply)->setEnabled(false);
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::sigClose);
 
         /* Configure button-box: */
