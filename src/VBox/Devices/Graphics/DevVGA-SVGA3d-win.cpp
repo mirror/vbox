@@ -1226,7 +1226,7 @@ static int vmsvga3dSurfaceTrackUsage(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pCo
     if (pSurface->pSharedObjectTree == NULL)
         return VINF_SUCCESS;
 
-    Log(("vmsvga3dSurfaceTrackUsage: track usage of surface id=%x (cid=%x)\n", pSurface->id, pContext->id));
+    Log(("vmsvga3dSurfaceTrackUsage: track usage of sid=%x (cid=%d) for cid=%d\n", pSurface->id, pSurface->idAssociatedContext, pContext->id));
 
     /* Release the previous query object. */
     if (pSurface->pQuery)
@@ -1496,11 +1496,21 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
 
             if (fDestTexture)
             {
-                Assert(!pSurfaceDest->bounce.pTexture);
-                hr = pSurfaceDest->u.pTexture->LockRect(dest.mipmap, /* texture level */
-                                                        &LockedDestRect,
-                                                        &Rect,
-                                                        0);
+                if (pSurfaceDest->bounce.pTexture)
+                {
+                    /* pSurfaceDest->u.pTexture can't be locked, see vmsvga3dBackCreateTexture */
+                    hr = pSurfaceDest->bounce.pTexture->LockRect(dest.mipmap, /* texture level */
+                                                            &LockedDestRect,
+                                                            &Rect,
+                                                            0);
+                }
+                else
+                {
+                    hr = pSurfaceDest->u.pTexture->LockRect(dest.mipmap, /* texture level */
+                                                            &LockedDestRect,
+                                                            &Rect,
+                                                            0);
+                }
             }
             else
                 hr = pSurfaceDest->u.pSurface->LockRect(&LockedDestRect,
@@ -1523,7 +1533,30 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         if (pSurfaceDest->u.pSurface)
         {
             if (fDestTexture)
-                hr = pSurfaceDest->u.pTexture->UnlockRect(dest.mipmap /* Texture level */);
+            {
+                if (pSurfaceDest->bounce.pTexture)
+                {
+                    hr = pSurfaceDest->bounce.pTexture->UnlockRect(dest.mipmap /* Texture level */);
+
+                    /** @todo stricter checks for associated context */
+                    PVMSVGA3DCONTEXT pContext = NULL;
+                    const uint32_t cid = pSurfaceDest->idAssociatedContext;
+                    if (   cid < pState->cContexts
+                        && pState->papContexts[cid]->id == cid)
+                        pContext = pState->papContexts[cid];
+                    else
+                        AssertFailed();
+
+                    if (pContext)
+                    {
+                        /* Copy the new content to the actual texture object. */
+                        HRESULT hr2 = pContext->pDevice->UpdateTexture(pSurfaceDest->bounce.pTexture, pSurfaceDest->u.pTexture);
+                        AssertMsg(hr2 == D3D_OK, ("UpdateTexture failed with %x\n", hr2)); RT_NOREF(hr2);
+                    }
+                }
+                else
+                    hr = pSurfaceDest->u.pTexture->UnlockRect(dest.mipmap /* Texture level */);
+            }
             else
                 hr = pSurfaceDest->u.pSurface->UnlockRect();
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceCopy: Unlock failed with %x\n", hr), VERR_INTERNAL_ERROR);
@@ -1629,56 +1662,57 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
         AssertMsg(hr == D3D_OK, ("vmsvga3dBackCreateTexture: SetAutoGenFilterType failed with %x\n", hr));
     }
 
-    if (pSurface->fDirty)
+    /*
+     * Always initialize all mipmap levels using the in memory data
+     * to make sure that the just created texture has the up-to-date content.
+     * The OpenGL backend does this too.
+     */
+    Log(("vmsvga3dBackCreateTexture: sync texture\n"));
+    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
     {
-        Log(("vmsvga3dBackCreateTexture: sync dirty texture\n"));
+        D3DLOCKED_RECT LockedRect;
+
+        hr = pTexture->LockRect(i, /* texture level */
+                                &LockedRect,
+                                NULL,   /* entire texture */
+                                0);
+
+        AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        Log(("vmsvga3dBackCreateTexture: sync texture mipmap level %d (pitch %x vs %x)\n", i, LockedRect.Pitch, pSurface->pMipmapLevels[i].cbSurfacePitch));
+
+        uint8_t *pDest = (uint8_t *)LockedRect.pBits;
+        uint8_t *pSrc  = (uint8_t *)pSurface->pMipmapLevels[i].pSurfaceData;
+        for (uint32_t j = 0; j < pSurface->pMipmapLevels[i].size.height; j++)
+        {
+            memcpy(pDest, pSrc, pSurface->pMipmapLevels[i].cbSurfacePitch);
+
+            pDest += LockedRect.Pitch;
+            pSrc  += pSurface->pMipmapLevels[i].cbSurfacePitch;
+        }
+
+        hr = pTexture->UnlockRect(i /* texture level */);
+        AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: UnlockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        pSurface->pMipmapLevels[i].fDirty = false;
+    }
+
+    if (pSurface->bounce.pTexture)
+    {
+        Log(("vmsvga3dBackCreateTexture: sync dirty texture from bounce buffer\n"));
+
+        hr = pContext->pDevice->UpdateTexture(pSurface->bounce.pTexture, pSurface->u.pTexture);
+        AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: UpdateTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+        /* We will now use the bounce texture for all memory accesses, so free our surface memory buffer. */
         for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
         {
-            if (pSurface->pMipmapLevels[i].fDirty)
-            {
-                D3DLOCKED_RECT LockedRect;
-
-                hr = pTexture->LockRect(i, /* texture level */
-                                        &LockedRect,
-                                        NULL,   /* entire texture */
-                                        0);
-
-                AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-                Log(("vmsvga3dBackCreateTexture: sync dirty texture mipmap level %d (pitch %x vs %x)\n", i, LockedRect.Pitch, pSurface->pMipmapLevels[i].cbSurfacePitch));
-
-                uint8_t *pDest = (uint8_t *)LockedRect.pBits;
-                uint8_t *pSrc  = (uint8_t *)pSurface->pMipmapLevels[i].pSurfaceData;
-                for (uint32_t j = 0; j < pSurface->pMipmapLevels[i].size.height; j++)
-                {
-                    memcpy(pDest, pSrc, pSurface->pMipmapLevels[i].cbSurfacePitch);
-
-                    pDest += LockedRect.Pitch;
-                    pSrc  += pSurface->pMipmapLevels[i].cbSurfacePitch;
-                }
-
-                hr = pTexture->UnlockRect(i /* texture level */);
-                AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: UnlockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-                pSurface->pMipmapLevels[i].fDirty = false;
-            }
+            RTMemFree(pSurface->pMipmapLevels[i].pSurfaceData);
+            pSurface->pMipmapLevels[i].pSurfaceData = NULL;
         }
-        if (pSurface->bounce.pTexture)
-        {
-            Log(("vmsvga3dBackCreateTexture: sync dirty texture from bounce buffer\n"));
-
-            hr = pContext->pDevice->UpdateTexture(pSurface->bounce.pTexture, pSurface->u.pTexture);
-            AssertMsgReturn(hr == D3D_OK, ("vmsvga3dBackCreateTexture: UpdateTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-            /* We will now use the bounce texture for all memory accesses, so free our surface memory buffer. */
-            for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
-            {
-                RTMemFree(pSurface->pMipmapLevels[i].pSurfaceData);
-                pSurface->pMipmapLevels[i].pSurfaceData = NULL;
-            }
-        }
-        pSurface->fDirty = false;
     }
+    pSurface->fDirty = false;
+
     pSurface->flags              |= SVGA3D_SURFACE_HINT_TEXTURE;
     pSurface->idAssociatedContext = idAssociatedContext;
     return VINF_SUCCESS;
