@@ -1029,8 +1029,8 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 #ifdef IN_RING3
 static void          hdaStreamDestroy(PHDASTATE pThis, PHDASTREAM pStream);
 static int           hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable);
-uint32_t             hdaStreamGetUsed(PHDASTREAM pStream);
-uint32_t             hdaStreamGetFree(PHDASTREAM pStream);
+static uint32_t      hdaStreamGetUsed(PHDASTREAM pStream);
+static uint32_t      hdaStreamGetFree(PHDASTREAM pStream);
 static int           hdaStreamTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcessMax);
 DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, uint32_t u32LPIB);
 static void          hdaStreamLock(PHDASTREAM pStream);
@@ -4863,7 +4863,7 @@ static void hdaDoTransfers(PHDASTATE pThis)
  * @returns Available data (in bytes).
  * @param   pStream             HDA stream to retrieve size for.
  */
-uint32_t hdaStreamGetUsed(PHDASTREAM pStream)
+static uint32_t hdaStreamGetUsed(PHDASTREAM pStream)
 {
     AssertPtrReturn(pStream, 0);
 
@@ -4879,7 +4879,7 @@ uint32_t hdaStreamGetUsed(PHDASTREAM pStream)
  * @returns Free data (in bytes).
  * @param   pStream             HDA stream to retrieve size for.
  */
-uint32_t hdaStreamGetFree(PHDASTREAM pStream)
+static uint32_t hdaStreamGetFree(PHDASTREAM pStream)
 {
     AssertPtrReturn(pStream, 0);
 
