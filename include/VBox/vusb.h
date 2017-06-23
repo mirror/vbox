@@ -839,6 +839,11 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @returns Delta between currently and previously scheduled frame.
      * @retval  0 if no previous frame was set.
      * @param   pInterface  Pointer to this struct.
+     * @param   pDevice     Pointer to a USB device.
+     * @param   EndPt       Endpoint number.
+     * @param   enmDir      Endpoint direction.
+     * @param   uNewFrameID The frame ID of a new transfer.
+     * @param   uBits       The number of significant bits in frame ID.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnUpdateIsocFrameDelta, (PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice,
                                                              int EndPt, VUSBDIRECTION enmDir, uint16_t uNewFrameID, uint8_t uBits));
