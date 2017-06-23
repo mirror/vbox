@@ -360,7 +360,6 @@ static int sb16Reattach(PSB16STATE pThis, PSB16DRIVER pDrv, uint8_t uLUN, const 
     return rc;
 }
 
-
 static int magic_of_irq(int irq)
 {
     switch (irq)
@@ -431,23 +430,6 @@ static void sb16Control(PSB16STATE pThis, int hold)
 
     PDMDevHlpDMASetDREQ(pThis->pDevInsR3, dma, hold);
 
-    if (hold)
-    {
-#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
-        pThis->cStreamsActive++;
-        sb16TimerMaybeStart(pThis);
-#endif
-        PDMDevHlpDMASchedule(pThis->pDevInsR3);
-    }
-#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
-    else
-    {
-        if (pThis->cStreamsActive)
-            pThis->cStreamsActive--;
-        sb16TimerMaybeStop(pThis);
-    }
-#endif
-
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
@@ -458,6 +440,27 @@ static void sb16Control(PSB16STATE pThis, int hold)
                                                      hold == 1 ? PDMAUDIOSTREAMCMD_ENABLE : PDMAUDIOSTREAMCMD_DISABLE);
         LogFlowFunc(("%s: rc=%Rrc\n", pDrv->Out.pStream->szName, rc2)); NOREF(rc2);
     }
+
+    if (hold)
+    {
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
+        pThis->cStreamsActive++;
+        sb16TimerMaybeStart(pThis);
+#else
+# error "Implement me!"
+#endif
+        PDMDevHlpDMASchedule(pThis->pDevInsR3);
+    }
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
+    else
+    {
+        if (pThis->cStreamsActive)
+            pThis->cStreamsActive--;
+        sb16TimerMaybeStop(pThis);
+    }
+#else
+# error "Implement me!"
+#endif
 }
 
 static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvThis)
@@ -1636,7 +1639,8 @@ static IO_READ_PROTO(mixer_read)
     return VINF_SUCCESS;
 }
 
-static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos, uint32_t dma_len, int len)
+static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
+                          uint32_t dma_len, int len)
 {
     uint8_t  tmpbuf[_4K]; /** @todo Have a buffer on the heap. */
     uint32_t cbToWrite = len;
@@ -1644,45 +1648,58 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos, uint32_
 
     while (cbToWrite)
     {
-        uint32_t cbToRead;
-        uint32_t cbRead;
-
-        cbToRead = RT_MIN(dma_len - dma_pos, cbToWrite);
+        uint32_t cbToRead = RT_MIN(dma_len - dma_pos, cbToWrite);
         if (cbToRead > sizeof(tmpbuf))
             cbToRead = sizeof(tmpbuf);
 
-        int rc = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
-        AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
+        uint32_t cbRead = 0;
+        int rc2 = PDMDevHlpDMAReadMemory(pThis->pDevInsR3, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
+        AssertMsgRC(rc2, (" from DMA failed: %Rrc\n", rc2));
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        RTFILE fh;
-        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "sb16WriteAudio.pcm",
-                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, tmpbuf, cbToRead, NULL);
-        RTFileClose(fh);
+        if (cbRead)
+        {
+            RTFILE fh;
+            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "sb16WriteAudio.pcm",
+                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+            RTFileWrite(fh, tmpbuf, cbRead, NULL);
+            RTFileClose(fh);
+        }
 #endif
         /*
          * Write data to the backends.
          */
         uint32_t cbWritten = 0;
 
+        /* Just multiplex the output to the connected backends.
+         * No need to utilize the virtual mixer here (yet). */
         PSB16DRIVER pDrv;
         RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
         {
-            int rc2 = pDrv->pConnector->pfnStreamWrite(pDrv->pConnector, pDrv->Out.pStream, tmpbuf, cbToRead, &cbWritten);
-            if (RT_FAILURE(rc2))
-                LogFlowFunc(("Failed writing to stream '%s': %Rrc\n", &pDrv->Out.pStream->szName, rc2));
+            uint32_t cbWrittenToStream = 0;
+            rc2 = pDrv->pConnector->pfnStreamWrite(pDrv->pConnector, pDrv->Out.pStream, tmpbuf, cbRead, &cbWrittenToStream);
+
+            LogFlowFunc(("\tLUN#%RU8: rc=%Rrc, cbWrittenToStream=%RU32\n", pDrv->uLUN, rc2, cbWrittenToStream));
+
+            /* The primary driver sets the overall pace. */
+            if (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)
+            {
+                cbWritten = cbWrittenToStream;
+
+                if (RT_FAILURE(rc2))
+                    break;
+            }
         }
 
-        LogFlowFunc(("\tcbToRead=%RU32, cbToWrite=%RU32, cbWritten=%RU32, cbLeft=%RU32, rc=%Rrc\n",
-                     cbToRead, cbToWrite, cbWritten, cbToWrite - cbWrittenTotal, rc));
+        LogFlowFunc(("\tcbToRead=%RU32, cbToWrite=%RU32, cbWritten=%RU32, cbLeft=%RU32\n",
+                     cbToRead, cbToWrite, cbWritten, cbToWrite - cbWrittenTotal));
 
-        Assert(cbToWrite >= cbToRead);
-        cbToWrite      -= cbToRead;
-        dma_pos         = (dma_pos + cbToRead) % dma_len;
-        cbWrittenTotal += cbToRead;
+        Assert(cbToWrite >= cbWritten);
+        cbToWrite      -= cbWritten;
+        dma_pos         = (dma_pos + cbWritten) % dma_len;
+        cbWrittenTotal += cbWritten;
 
-        if (!cbRead)
+        if (!cbWritten)
             break;
     }
 
@@ -1705,15 +1722,35 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     if (pThis->left_till_irq < 0)
         pThis->left_till_irq = pThis->block_size;
 
-    free = dma_len;
+    uint32_t cbOutMin = UINT32_MAX;
 
-    if (free <= 0)
-        return dma_pos;
+    PSB16DRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
+    {
+        uint32_t cbOut = pDrv->pConnector->pfnStreamGetWritable(pDrv->pConnector, pDrv->Out.pStream);
+
+        if (cbOut < cbOutMin)
+            cbOutMin = cbOut;
+    }
+
+    LogFlowFunc(("cbOutMin=%RU32\n", cbOutMin));
+    if (cbOutMin == UINT32_MAX)
+    {
+        free = dma_len;
+    }
+    else
+    {
+        free = cbOutMin & ~pThis->align; /** @todo int vs. uint32. */
+        if ((free <= 0) || !dma_len)
+            return dma_pos;
+    }
 
     copy = free;
     till = pThis->left_till_irq;
 
-    Log3Func(("pos %d/%d free %5d till %5d\n", dma_pos, dma_len, free, till));
+#ifdef DEBUG_SB16_MOST
+    LogFlowFunc(("pos:%06d %d till:%d len:%d\n", dma_pos, free, till, dma_len));
+#endif
 
     if (copy >= till)
     {
@@ -1856,9 +1893,8 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
             if (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)
             {
-                /* Only do the next DMA transfer if we're able to write the entire
-                 * next data block. */
-                fDoTransfer = pConn->pfnStreamGetWritable(pConn, pStream) >= (uint32_t)pThis->block_size;
+                /* Only do the next DMA transfer if we're able to write the remaining data block. */
+                fDoTransfer = pConn->pfnStreamGetWritable(pConn, pStream) > (unsigned)pThis->left_till_irq;
             }
         }
 
@@ -1880,6 +1916,11 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         /* Kick the timer at least one more time. */
         fKickTimer = true;
     }
+
+    /*
+     * Recording.
+     */
+    /** @todo Implement recording. */
 
     if (fKickTimer)
     {
@@ -2342,7 +2383,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
 #ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
     uint16_t uTimerHz;
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 25 /* Hz */);
+    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 100 /* Hz */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("SB16 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
