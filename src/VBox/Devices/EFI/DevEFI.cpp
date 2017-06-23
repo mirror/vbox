@@ -1756,7 +1756,7 @@ static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
     uint32_t u32Chunks = 0;
     if (cbRamSize > 16 * _1M)
     {
-        u32Low = RT_MIN(cbBelow4GB, UINT32_C(0xffe00000));
+        u32Low = RT_MIN(cbBelow4GB, UINT32_C(0xfe000000));
         u32Chunks = (u32Low - 16U * _1M) / _64K;
     }
     cmosWrite(pDevIns, 0x34, RT_BYTE1(u32Chunks));

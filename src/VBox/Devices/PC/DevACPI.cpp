@@ -3150,11 +3150,11 @@ static int acpiR3PlantTables(ACPIState *pThis)
             LogRel(("ACPI: NOT enabling 64-bit prefetch root bus resource (min/%#018RX64 >= max/%#018RX64)\n",
                    u64PciPref64Min, pThis->u64PciPref64Max-1));
     }
-    if (cbBelow4GB > UINT32_C(0xffe00000)) /* See MEM3. */
+    if (cbBelow4GB > UINT32_C(0xfe000000)) /* See MEM3. */
     {
         /* Note: This is also enforced by DevPcBios.cpp. */
-        LogRel(("ACPI: Clipping cbRamLow=%#RX64 down to 0xffe00000.\n", cbBelow4GB));
-        cbBelow4GB = UINT32_C(0xffe00000);
+        LogRel(("ACPI: Clipping cbRamLow=%#RX64 down to 0xfe000000.\n", cbBelow4GB));
+        cbBelow4GB = UINT32_C(0xfe000000);
     }
     pThis->cbRamLow = cbBelow4GB;
 

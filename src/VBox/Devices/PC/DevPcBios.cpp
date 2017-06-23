@@ -742,12 +742,12 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x31, RT_BYTE2(u32));  /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB
-       and below 4GB (as it can only hold 4GB+16M). We have to chop off the
-       top 2MB or it conflict with what the ACPI tables return. (Should these
+       and below 4GB (as it can only hold 4GB-16M). We have to chop off the
+       top 32MB or it conflict with what the ACPI tables return. (Should these
        be adjusted, we still have to chop it at 0xfffc0000 or it'll conflict
        with the high BIOS mapping.) */
     if (cbRamSize > 16 * _1M)
-        u32 = (RT_MIN(cbBelow4GB, UINT32_C(0xffe00000)) - 16U * _1M) / _64K;
+        u32 = (RT_MIN(cbBelow4GB, UINT32_C(0xfe000000)) - 16U * _1M) / _64K;
     else
         u32 = 0;
     pcbiosCmosWrite(pDevIns, 0x34, RT_BYTE1(u32));
