@@ -22,12 +22,15 @@
 #include <QWidget>
 
 /* GUI includes: */
+#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QAbstractButton;
 class QCheckBox;
 class QLabel;
 class QRadioButton;
+class QIDialogButtonBox;
 class QILineEdit;
 class QITabWidget;
 
@@ -164,10 +167,15 @@ signals:
     /** Notifies listeners about data changed and whether it @a fDiffers. */
     void sigDataChanged(bool fDiffers);
 
+    /** Notifies listeners about data change rejected and should be reseted. */
+    void sigDataChangeRejected();
+    /** Notifies listeners about data change accepted and should be applied. */
+    void sigDataChangeAccepted();
+
 public:
 
     /** Constructs host network details dialog for the passed @a pParent and @a data. */
-    UIHostNetworkDetailsDialog(QWidget *pParent = 0);
+    UIHostNetworkDetailsDialog(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the host network data. */
     const UIDataHostNetwork &data() const { return m_newData; }
@@ -208,6 +216,9 @@ private slots:
         void sltTextChangedLowerAddress(const QString &strText);
         /** Handles DHCP server upper address text change. */
         void sltTextChangedUpperAddress(const QString &strText);
+
+        /** Handles button-box button click. */
+        void sltHandleButtonBoxClick(QAbstractButton *pButton);
     /** @} */
 
 private:
@@ -240,12 +251,15 @@ private:
         void revalidate(QWidget *pWidget = 0);
         /** Retranslates validation for passed @a pWidget. */
         void retranslateValidation(QWidget *pWidget = 0);
-        /** Notifies listeners about data changed or not. */
-        void notify();
+        /** Updates button states. */
+        void updateButtonStates();
     /** @} */
 
     /** @name General variables.
       * @{ */
+        /** Holds the parent widget embedding type. */
+        const EmbedTo m_enmEmbedding;
+
         /** Holds the old data copy. */
         UIDataHostNetwork  m_oldData;
         /** Holds the new data copy. */
@@ -293,6 +307,9 @@ private:
         QILineEdit   *m_pEditorNMv6;
         /** Holds the IPv6 network mask error pane. */
         QLabel       *m_pErrorPaneNMv6;
+
+        /** Holds the interface button-box instance. */
+        QIDialogButtonBox *m_pButtonBoxInterface;
     /** @} */
 
     /** @name DHCP server variables.
@@ -327,6 +344,9 @@ private:
         QILineEdit *m_pEditorDHCPUpperAddress;
         /** Holds the DHCP upper address error pane. */
         QLabel     *m_pErrorPaneDHCPUpperAddress;
+
+        /** Holds the server button-box instance. */
+        QIDialogButtonBox *m_pButtonBoxServer;
     /** @} */
 };
 

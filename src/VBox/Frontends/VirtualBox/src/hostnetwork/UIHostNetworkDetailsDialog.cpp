@@ -22,12 +22,14 @@
 /* Qt includes: */
 # include <QCheckBox>
 # include <QLabel>
+# include <QPushButton>
 # include <QRadioButton>
 # include <QRegExpValidator>
 # include <QStyleOption>
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "QIDialogButtonBox.h"
 # include "QILineEdit.h"
 # include "QITabWidget.h"
 # include "UIHostNetworkDetailsDialog.h"
@@ -41,8 +43,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent /* = 0 */)
+UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QWidget>(pParent)
+    , m_enmEmbedding(enmEmbedding)
     , m_pTabWidget(0)
     , m_pButtonAutomatic(0), m_pErrorPaneAutomatic(0)
     , m_pButtonManual(0), m_pErrorPaneManual(0)
@@ -50,11 +53,13 @@ UIHostNetworkDetailsDialog::UIHostNetworkDetailsDialog(QWidget *pParent /* = 0 *
     , m_pLabelNMv4(0), m_pEditorNMv4(0), m_pErrorPaneNMv4(0)
     , m_pLabelIPv6(0), m_pEditorIPv6(0), m_pErrorPaneIPv6(0)
     , m_pLabelNMv6(0), m_pEditorNMv6(0), m_pErrorPaneNMv6(0)
+    , m_pButtonBoxInterface(0)
     , m_pCheckBoxDHCP(0)
     , m_pLabelDHCPAddress(0), m_pEditorDHCPAddress(0), m_pErrorPaneDHCPAddress(0)
     , m_pLabelDHCPMask(0), m_pEditorDHCPMask(0), m_pErrorPaneDHCPMask(0)
     , m_pLabelDHCPLowerAddress(0), m_pEditorDHCPLowerAddress(0), m_pErrorPaneDHCPLowerAddress(0)
     , m_pLabelDHCPUpperAddress(0), m_pEditorDHCPUpperAddress(0), m_pErrorPaneDHCPUpperAddress(0)
+    , m_pButtonBoxServer(0)
 {
     /* Prepare: */
     prepare();
@@ -101,6 +106,19 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pEditorIPv6->setToolTip(tr("Holds the host IPv6 address for this adapter if IPv6 is supported."));
     m_pLabelNMv6->setText(tr("IPv6 Prefix &Length:"));
     m_pEditorNMv6->setToolTip(tr("Holds the host IPv6 prefix length for this adapter if IPv6 is supported."));
+    if (m_pButtonBoxInterface)
+    {
+        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setText(tr("Reset"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setText(tr("Apply"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setShortcut(Qt::Key_Escape);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setShortcut(QString("Ctrl+Return"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setStatusTip(tr("Reset changes in current interface details"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setStatusTip(tr("Apply changes in current interface details"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->
+            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->shortcut().toString()));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->
+            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->shortcut().toString()));
+    }
 
     /* Translate 'DHCP server' tab content: */
     m_pCheckBoxDHCP->setText(tr("&Enable Server"));
@@ -113,6 +131,19 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pEditorDHCPLowerAddress->setToolTip(tr("Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
     m_pLabelDHCPUpperAddress->setText(tr("&Upper Address Bound:"));
     m_pEditorDHCPUpperAddress->setToolTip(tr("Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
+    if (m_pButtonBoxServer)
+    {
+        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setText(tr("Reset"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setText(tr("Apply"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setShortcut(Qt::Key_Escape);
+        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setShortcut(QString("Ctrl+Return"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setStatusTip(tr("Reset changes in current DHCP server details"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setStatusTip(tr("Apply changes in current DHCP server details"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->
+            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Discard)->shortcut().toString()));
+        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->
+            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Apply)->shortcut().toString()));
+    }
 
     /* Retranslate validation: */
     retranslateValidation();
@@ -123,7 +154,7 @@ void UIHostNetworkDetailsDialog::sltToggledButtonAutomatic(bool fChecked)
     m_newData.m_interface.m_fDHCPEnabled = fChecked;
     loadDataForInterface();
     revalidate();
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltToggledButtonManual(bool fChecked)
@@ -131,35 +162,35 @@ void UIHostNetworkDetailsDialog::sltToggledButtonManual(bool fChecked)
     m_newData.m_interface.m_fDHCPEnabled = !fChecked;
     loadDataForInterface();
     revalidate();
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedIPv4(const QString &strText)
 {
     m_newData.m_interface.m_strAddress = strText;
     revalidate(m_pErrorPaneIPv4);
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedNMv4(const QString &strText)
 {
     m_newData.m_interface.m_strMask = strText;
     revalidate(m_pErrorPaneNMv4);
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedIPv6(const QString &strText)
 {
     m_newData.m_interface.m_strAddress6 = strText;
     revalidate(m_pErrorPaneIPv6);
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedNMv6(const QString &strText)
 {
     m_newData.m_interface.m_strPrefixLength6 = strText;
     revalidate(m_pErrorPaneNMv6);
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltStatusChangedServer(int iChecked)
@@ -167,35 +198,65 @@ void UIHostNetworkDetailsDialog::sltStatusChangedServer(int iChecked)
     m_newData.m_dhcpserver.m_fEnabled = (bool)iChecked;
     loadDataForDHCPServer();
     revalidate();
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedAddress(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strAddress = strText;
     revalidate(m_pErrorPaneDHCPAddress);
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedMask(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strMask = strText;
     revalidate(m_pErrorPaneDHCPMask);
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedLowerAddress(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strLowerAddress = strText;
     revalidate(m_pErrorPaneDHCPLowerAddress);
-    notify();
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::sltTextChangedUpperAddress(const QString &strText)
 {
     m_newData.m_dhcpserver.m_strUpperAddress = strText;
     revalidate(m_pErrorPaneDHCPUpperAddress);
-    notify();
+    updateButtonStates();
+}
+
+void UIHostNetworkDetailsDialog::sltHandleButtonBoxClick(QAbstractButton *pButton)
+{
+    /* Disable buttons first of all: */
+    if (m_pButtonBoxInterface)
+    {
+        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setEnabled(false);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setEnabled(false);
+    }
+    if (m_pButtonBoxServer)
+    {
+        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setEnabled(false);
+        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setEnabled(false);
+    }
+
+    /* Compare with known buttons: */
+    if (   (   m_pButtonBoxInterface
+            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Discard))
+        || (   m_pButtonBoxServer
+            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Discard)))
+        emit sigDataChangeRejected();
+
+    else
+
+    if (   (   m_pButtonBoxInterface
+            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Apply))
+        || (   m_pButtonBoxServer
+            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Apply)))
+        emit sigDataChangeAccepted();
 }
 
 void UIHostNetworkDetailsDialog::prepare()
@@ -205,6 +266,9 @@ void UIHostNetworkDetailsDialog::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+
+    /* Update button states finally: */
+    updateButtonStates();
 }
 
 void UIHostNetworkDetailsDialog::prepareThis()
@@ -507,6 +571,20 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 /* Add into layout: */
                 pLayoutInterface->addItem(pSpacer2, 6, 0, 1, 3);
             }
+
+            /* If parent embedded into stack: */
+            if (m_enmEmbedding == EmbedTo_Stack)
+            {
+                /* Create button-box: */
+                m_pButtonBoxInterface = new QIDialogButtonBox;
+                AssertPtrReturnVoid(m_pButtonBoxInterface);
+                /* Configure button-box: */
+                m_pButtonBoxInterface->setStandardButtons(QDialogButtonBox::Discard | QDialogButtonBox::Apply);
+                connect(m_pButtonBoxInterface, &QIDialogButtonBox::clicked, this, &UIHostNetworkDetailsDialog::sltHandleButtonBoxClick);
+
+                /* Add into layout: */
+                pLayoutInterface->addWidget(m_pButtonBoxInterface, 7, 0, 1, 3);
+            }
         }
         /* Add to tab-widget: */
         m_pTabWidget->addTab(pTabInterface, QString());
@@ -728,6 +806,20 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 /* Add into layout: */
                 pLayoutDHCPServer->addItem(pSpacer2, 5, 0, 1, 3);
             }
+
+            /* If parent embedded into stack: */
+            if (m_enmEmbedding == EmbedTo_Stack)
+            {
+                /* Create button-box: */
+                m_pButtonBoxServer = new QIDialogButtonBox;
+                AssertPtrReturnVoid(m_pButtonBoxServer);
+                /* Configure button-box: */
+                m_pButtonBoxServer->setStandardButtons(QDialogButtonBox::Discard | QDialogButtonBox::Apply);
+                connect(m_pButtonBoxServer, &QIDialogButtonBox::clicked, this, &UIHostNetworkDetailsDialog::sltHandleButtonBoxClick);
+
+                /* Add into layout: */
+                pLayoutDHCPServer->addWidget(m_pButtonBoxServer, 6, 0, 1, 3);
+            }
         }
         /* Add to tab-widget: */
         m_pTabWidget->addTab(pTabDHCPServer, QString());
@@ -921,7 +1013,7 @@ void UIHostNetworkDetailsDialog::retranslateValidation(QWidget *pWidget /* = 0 *
                                                     "DHCP server upper address bound.").arg(m_newData.m_interface.m_strName));
 }
 
-void UIHostNetworkDetailsDialog::notify()
+void UIHostNetworkDetailsDialog::updateButtonStates()
 {
 //    if (m_oldData != m_newData)
 //        printf("Interface: %s, %s, %s, %s;  DHCP server: %d, %s, %s, %s, %s\n",
@@ -935,6 +1027,19 @@ void UIHostNetworkDetailsDialog::notify()
 //               m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData(),
 //               m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData());
 
+    /* Update 'Apply' / 'Reset' button states: */
+    if (m_pButtonBoxInterface)
+    {
+        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setEnabled(m_oldData != m_newData);
+    }
+    if (m_pButtonBoxServer)
+    {
+        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setEnabled(m_oldData != m_newData);
+    }
+
+    /* Notify listeners as well: */
     emit sigDataChanged(m_oldData != m_newData);
 }
 

@@ -42,6 +42,13 @@ class UIHostNetworkManagerWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about host network details widget @a fVisible. */
+    void sigHostNetworkDetailsVisibilityChanged(bool fVisible);
+    /** Notifies listeners about host network details data @a fDiffers. */
+    void sigHostNetworkDetailsDataChanged(bool fDiffers);
+
 public:
 
     /** Constructs Host Network Manager widget. */
@@ -69,6 +76,16 @@ protected:
         virtual void showEvent(QShowEvent *pEvent) /* override */;
     /** @} */
 
+public slots:
+
+    /** @name Menu/action stuff.
+      * @{ */
+        /** Handles command to reset host network details changes. */
+        void sltResetHostNetworkDetailsChanges();
+        /** Handles command to apply host network details changes. */
+        void sltApplyHostNetworkDetailsChanges();
+    /** @} */
+
 private slots:
 
     /** @name Menu/action stuff.
@@ -79,8 +96,6 @@ private slots:
         void sltRemoveHostNetwork();
         /** Handles command to make host network details @a fVisible. */
         void sltToggleHostNetworkDetailsVisibility(bool fVisible);
-        /** Handles command to commit host network details changes. */
-        void sltCommitHostNetworkDetailsChanges();
     /** @} */
 
     /** @name Tree-widget stuff.
@@ -152,8 +167,6 @@ private:
         QAction   *m_pActionRemove;
         /** Holds the Details action instance. */
         QAction   *m_pActionDetails;
-        /** Holds the Commit action instance. */
-        QAction   *m_pActionCommit;
     /** @} */
 
     /** @name Splitter variables.
@@ -182,7 +195,22 @@ class UIHostNetworkManager : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
-protected:
+signals:
+
+    /** Notifies listeners about data change rejected and should be reseted. */
+    void sigDataChangeRejected();
+    /** Notifies listeners about data change accepted and should be applied. */
+    void sigDataChangeAccepted();
+
+private slots:
+
+    /** @name Button-box stuff.
+      * @{ */
+        /** Handles button-box button click. */
+        void sltHandleButtonBoxClick(QAbstractButton *pButton);
+    /** @} */
+
+private:
 
     /** Constructs Host Network Manager dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to. */
@@ -200,6 +228,8 @@ protected:
         virtual void configure() /* override */;
         /** Configures central-widget. */
         virtual void configureCentralWidget() /* override */;
+        /** Configures button-box. */
+        virtual void configureButtonBox() /* override */;
         /** Perform final preparations. */
         virtual void finalize() /* override */;
     /** @} */

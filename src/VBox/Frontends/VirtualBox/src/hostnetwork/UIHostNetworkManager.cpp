@@ -197,7 +197,6 @@ UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, QWi
     , m_pActionAdd(0)
     , m_pActionRemove(0)
     , m_pActionDetails(0)
-    , m_pActionCommit(0)
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
 {
@@ -229,12 +228,6 @@ void UIHostNetworkManagerWidget::retranslateUi()
         m_pActionDetails->setText(UIHostNetworkManager::tr("&Details..."));
         m_pActionDetails->setToolTip(UIHostNetworkManager::tr("Open Host-only Network Details (%1)").arg(m_pActionDetails->shortcut().toString()));
         m_pActionDetails->setStatusTip(UIHostNetworkManager::tr("Open pane with the selected host-only network details"));
-    }
-    if (m_pActionCommit)
-    {
-        m_pActionCommit->setText(UIHostNetworkManager::tr("&Apply..."));
-        m_pActionCommit->setToolTip(UIHostNetworkManager::tr("Apply Changes in Host-only Network Details (%1)").arg(m_pActionCommit->shortcut().toString()));
-        m_pActionCommit->setStatusTip(UIHostNetworkManager::tr("Apply changes in host-only network details pane"));
     }
 
     /* Adjust toolbar: */
@@ -273,6 +266,132 @@ void UIHostNetworkManagerWidget::showEvent(QShowEvent *pEvent)
 
     /* Adjust tree-widget: */
     sltAdjustTreeWidget();
+}
+
+void UIHostNetworkManagerWidget::sltResetHostNetworkDetailsChanges()
+{
+    /* Just push the current item data there again: */
+    sltHandleCurrentItemChange();
+}
+
+void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
+{
+    /* Get network item: */
+    UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
+    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+    /* Get item data: */
+    UIDataHostNetwork oldData = *pItem;
+    UIDataHostNetwork newData = m_pDetailsWidget->data();
+
+    /* Get host for further activities: */
+    CHost comHost = vboxGlobal().host();
+
+    /* Find corresponding interface: */
+    CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
+
+    /* Show error message if necessary: */
+    if (!comHost.isOk() || comInterface.isNull())
+        msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
+    else
+    {
+        /* Save automatic interface configuration: */
+        if (newData.m_interface.m_fDHCPEnabled)
+        {
+            if (   comInterface.isOk()
+                && !oldData.m_interface.m_fDHCPEnabled)
+                comInterface.EnableDynamicIPConfig();
+        }
+        /* Save manual interface configuration: */
+        else
+        {
+            /* Save IPv4 interface configuration: */
+            if (   comInterface.isOk()
+                && (   oldData.m_interface.m_fDHCPEnabled
+                    || newData.m_interface.m_strAddress != oldData.m_interface.m_strAddress
+                    || newData.m_interface.m_strMask != oldData.m_interface.m_strMask))
+                comInterface.EnableStaticIPConfig(newData.m_interface.m_strAddress, newData.m_interface.m_strMask);
+            /* Save IPv6 interface configuration: */
+            if (   comInterface.isOk()
+                && newData.m_interface.m_fSupportedIPv6
+                && (   oldData.m_interface.m_fDHCPEnabled
+                    || newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
+                    || newData.m_interface.m_strPrefixLength6 != oldData.m_interface.m_strPrefixLength6))
+                comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strPrefixLength6.toULong());
+        }
+
+        /* Show error message if necessary: */
+        if (!comInterface.isOk())
+            msgCenter().cannotSaveHostNetworkInterfaceParameter(comInterface, this);
+        else
+        {
+            /* Get network name for further activities: */
+            const QString strNetworkName = comInterface.GetNetworkName();
+
+            /* Show error message if necessary: */
+            if (!comInterface.isOk())
+                msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
+            else
+            {
+                /* Get VBox for further activities: */
+                CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+                /* Find corresponding DHCP server (create if necessary): */
+                CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
+                if (!comVBox.isOk() || comServer.isNull())
+                    comServer = comVBox.CreateDHCPServer(strNetworkName);
+
+                /* Show error message if necessary: */
+                if (!comVBox.isOk() || comServer.isNull())
+                    msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
+                else
+                {
+                    /* Save whether DHCP server is enabled: */
+                    if (   comServer.isOk()
+                        && newData.m_dhcpserver.m_fEnabled != oldData.m_dhcpserver.m_fEnabled)
+                        comServer.SetEnabled(newData.m_dhcpserver.m_fEnabled);
+                    /* Save DHCP server configuration: */
+                    if (   comServer.isOk()
+                        && newData.m_dhcpserver.m_fEnabled
+                        && (   newData.m_dhcpserver.m_strAddress != oldData.m_dhcpserver.m_strAddress
+                            || newData.m_dhcpserver.m_strMask != oldData.m_dhcpserver.m_strMask
+                            || newData.m_dhcpserver.m_strLowerAddress != oldData.m_dhcpserver.m_strLowerAddress
+                            || newData.m_dhcpserver.m_strUpperAddress != oldData.m_dhcpserver.m_strUpperAddress))
+                        comServer.SetConfiguration(newData.m_dhcpserver.m_strAddress, newData.m_dhcpserver.m_strMask,
+                                                   newData.m_dhcpserver.m_strLowerAddress, newData.m_dhcpserver.m_strUpperAddress);
+
+                    /* Show error message if necessary: */
+                    if (!comServer.isOk())
+                        msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+                }
+            }
+        }
+
+        /* Find corresponding interface again (if necessary): */
+        if (!comInterface.isOk())
+        {
+            comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
+
+            /* Show error message if necessary: */
+            if (!comHost.isOk() || comInterface.isNull())
+                msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
+        }
+
+        /* If interface is Ok now: */
+        if (comInterface.isNotNull() && comInterface.isOk())
+        {
+            /* Update interface in the tree: */
+            UIDataHostNetwork data;
+            loadHostNetwork(comInterface, data);
+            updateItemForNetworkHost(data, true, pItem);
+
+            /* Make sure current item fetched: */
+            sltHandleCurrentItemChange();
+
+            /* Adjust tree-widget: */
+            sltAdjustTreeWidget();
+        }
+    }
 }
 
 void UIHostNetworkManagerWidget::sltAddHostNetwork()
@@ -413,130 +532,8 @@ void UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVis
 {
     /* Show/hide details area and Apply button: */
     m_pDetailsWidget->setVisible(fVisible);
-    m_pActionCommit->setVisible(fVisible);
-}
-
-void UIHostNetworkManagerWidget::sltCommitHostNetworkDetailsChanges()
-{
-    /* Disable button first of all: */
-    m_pActionCommit->setEnabled(false);
-
-    /* Get network item: */
-    UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidget->currentItem());
-    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
-
-    /* Get item data: */
-    UIDataHostNetwork oldData = *pItem;
-    UIDataHostNetwork newData = m_pDetailsWidget->data();
-
-    /* Get host for further activities: */
-    CHost comHost = vboxGlobal().host();
-
-    /* Find corresponding interface: */
-    CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
-
-    /* Show error message if necessary: */
-    if (!comHost.isOk() || comInterface.isNull())
-        msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
-    else
-    {
-        /* Save automatic interface configuration: */
-        if (newData.m_interface.m_fDHCPEnabled)
-        {
-            if (   comInterface.isOk()
-                && !oldData.m_interface.m_fDHCPEnabled)
-                comInterface.EnableDynamicIPConfig();
-        }
-        /* Save manual interface configuration: */
-        else
-        {
-            /* Save IPv4 interface configuration: */
-            if (   comInterface.isOk()
-                && (   oldData.m_interface.m_fDHCPEnabled
-                    || newData.m_interface.m_strAddress != oldData.m_interface.m_strAddress
-                    || newData.m_interface.m_strMask != oldData.m_interface.m_strMask))
-                comInterface.EnableStaticIPConfig(newData.m_interface.m_strAddress, newData.m_interface.m_strMask);
-            /* Save IPv6 interface configuration: */
-            if (   comInterface.isOk()
-                && newData.m_interface.m_fSupportedIPv6
-                && (   oldData.m_interface.m_fDHCPEnabled
-                    || newData.m_interface.m_strAddress6 != oldData.m_interface.m_strAddress6
-                    || newData.m_interface.m_strPrefixLength6 != oldData.m_interface.m_strPrefixLength6))
-                comInterface.EnableStaticIPConfigV6(newData.m_interface.m_strAddress6, newData.m_interface.m_strPrefixLength6.toULong());
-        }
-
-        /* Show error message if necessary: */
-        if (!comInterface.isOk())
-            msgCenter().cannotSaveHostNetworkInterfaceParameter(comInterface, this);
-        else
-        {
-            /* Get network name for further activities: */
-            const QString strNetworkName = comInterface.GetNetworkName();
-
-            /* Show error message if necessary: */
-            if (!comInterface.isOk())
-                msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
-            else
-            {
-                /* Get VBox for further activities: */
-                CVirtualBox comVBox = vboxGlobal().virtualBox();
-
-                /* Find corresponding DHCP server (create if necessary): */
-                CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
-                if (!comVBox.isOk() || comServer.isNull())
-                    comServer = comVBox.CreateDHCPServer(strNetworkName);
-
-                /* Show error message if necessary: */
-                if (!comVBox.isOk() || comServer.isNull())
-                    msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
-                else
-                {
-                    /* Save whether DHCP server is enabled: */
-                    if (   comServer.isOk()
-                        && newData.m_dhcpserver.m_fEnabled != oldData.m_dhcpserver.m_fEnabled)
-                        comServer.SetEnabled(newData.m_dhcpserver.m_fEnabled);
-                    /* Save DHCP server configuration: */
-                    if (   comServer.isOk()
-                        && newData.m_dhcpserver.m_fEnabled
-                        && (   newData.m_dhcpserver.m_strAddress != oldData.m_dhcpserver.m_strAddress
-                            || newData.m_dhcpserver.m_strMask != oldData.m_dhcpserver.m_strMask
-                            || newData.m_dhcpserver.m_strLowerAddress != oldData.m_dhcpserver.m_strLowerAddress
-                            || newData.m_dhcpserver.m_strUpperAddress != oldData.m_dhcpserver.m_strUpperAddress))
-                        comServer.SetConfiguration(newData.m_dhcpserver.m_strAddress, newData.m_dhcpserver.m_strMask,
-                                                   newData.m_dhcpserver.m_strLowerAddress, newData.m_dhcpserver.m_strUpperAddress);
-
-                    /* Show error message if necessary: */
-                    if (!comServer.isOk())
-                        msgCenter().cannotSaveDHCPServerParameter(comServer, this);
-                }
-            }
-        }
-
-        /* Find corresponding interface again (if necessary): */
-        if (!comInterface.isOk())
-        {
-            comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
-
-            /* Show error message if necessary: */
-            if (!comHost.isOk() || comInterface.isNull())
-                msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
-        }
-
-        /* If interface is Ok now: */
-        if (comInterface.isNotNull() && comInterface.isOk())
-        {
-            /* Update interface in the tree: */
-            UIDataHostNetwork data;
-            loadHostNetwork(comInterface, data);
-            updateItemForNetworkHost(data, true, pItem);
-
-            /* Make sure current item fetched: */
-            sltHandleCurrentItemChange();
-
-            /* Adjust tree-widget: */
-            sltAdjustTreeWidget();
-        }
-    }
+    /* Notify external lsiteners: */
+    emit sigHostNetworkDetailsVisibilityChanged(fVisible);
 }
 
 void UIHostNetworkManagerWidget::sltAdjustTreeWidget()
@@ -657,8 +654,6 @@ void UIHostNetworkManagerWidget::sltHandleCurrentItemChange()
         m_pActionRemove->setEnabled(pItem);
     if (m_pActionDetails)
         m_pActionDetails->setEnabled(pItem);
-    if (m_pActionCommit)
-        m_pActionCommit->setEnabled(false);
 
     /* If there is an item => update details data: */
     if (pItem)
@@ -681,8 +676,6 @@ void UIHostNetworkManagerWidget::sltHandleContextMenuRequest(const QPoint &pos)
             menu.addAction(m_pActionRemove);
         if (m_pActionDetails)
             menu.addAction(m_pActionDetails);
-        if (m_pActionCommit)
-            menu.addAction(m_pActionCommit);
     }
     else
     {
@@ -755,22 +748,6 @@ void UIHostNetworkManagerWidget::prepareActions()
         connect(m_pActionDetails, &QAction::toggled, this, &UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
     }
 
-    /* Create 'Apply' action: */
-    m_pActionCommit = new QAction(this);
-    AssertPtrReturnVoid(m_pActionCommit);
-    {
-        /* Configure 'Apply' action: */
-        m_pActionCommit->setVisible(false);
-        m_pActionCommit->setShortcut(QKeySequence("Ctrl+Return"));
-        m_pActionCommit->setIcon(UIIconPool::iconSetFull(":/commit_host_iface_22px.png",
-                                                         ":/commit_host_iface_16px.png",
-                                                         ":/commit_host_iface_disabled_22px.png",
-                                                         ":/commit_host_iface_disabled_16px.png"));
-        if (m_pActionDetails)
-            connect(m_pActionDetails, &QAction::toggled, m_pActionCommit, &QAction::setVisible);
-        connect(m_pActionCommit, &QAction::triggered, this, &UIHostNetworkManagerWidget::sltCommitHostNetworkDetailsChanges);
-    }
-
     /* Prepare menu: */
     prepareMenu();
 }
@@ -788,8 +765,6 @@ void UIHostNetworkManagerWidget::prepareMenu()
             m_pMenu->addAction(m_pActionRemove);
         if (m_pActionDetails)
             m_pMenu->addAction(m_pActionDetails);
-        if (m_pActionCommit)
-            m_pMenu->addAction(m_pActionCommit);
     }
 }
 
@@ -831,12 +806,10 @@ void UIHostNetworkManagerWidget::prepareToolBar()
             m_pToolBar->addAction(m_pActionAdd);
         if (m_pActionRemove)
             m_pToolBar->addAction(m_pActionRemove);
-        if ((m_pActionAdd || m_pActionRemove) && (m_pActionDetails || m_pActionCommit))
+        if ((m_pActionAdd || m_pActionRemove) && m_pActionDetails)
             m_pToolBar->addSeparator();
         if (m_pActionDetails)
             m_pToolBar->addAction(m_pActionDetails);
-        if (m_pActionCommit)
-            m_pToolBar->addAction(m_pActionCommit);
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
         if (m_enmEmbedding == EmbedTo_Stack)
@@ -884,15 +857,18 @@ void UIHostNetworkManagerWidget::prepareTreeWidget()
 void UIHostNetworkManagerWidget::prepareDetailsWidget()
 {
     /* Create details-widget: */
-    m_pDetailsWidget = new UIHostNetworkDetailsDialog;
+    m_pDetailsWidget = new UIHostNetworkDetailsDialog(m_enmEmbedding);
     AssertPtrReturnVoid(m_pDetailsWidget);
     {
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        if (m_pActionCommit)
-            connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
-                    m_pActionCommit, &QAction::setEnabled);
+        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
+                this, &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged);
+        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChangeRejected,
+                this, &UIHostNetworkManagerWidget::sltResetHostNetworkDetailsChanges);
+        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChangeAccepted,
+                this, &UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
 
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidget);
@@ -1042,10 +1018,43 @@ UIHostNetworkManager::UIHostNetworkManager(QWidget *pCenterWidget)
 {
 }
 
+void UIHostNetworkManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
+{
+    /* Disable buttons first of all: */
+    buttonBox()->button(QDialogButtonBox::Reset)->setEnabled(false);
+    buttonBox()->button(QDialogButtonBox::Save)->setEnabled(false);
+
+    /* Compare with known buttons: */
+    if (pButton == buttonBox()->button(QDialogButtonBox::Reset))
+        emit sigDataChangeRejected();
+
+    else
+
+    if (pButton == buttonBox()->button(QDialogButtonBox::Save))
+        emit sigDataChangeAccepted();
+}
+
 void UIHostNetworkManager::retranslateUi()
 {
     /* Translate window title: */
     setWindowTitle(tr("Host Network Manager"));
+
+    /* Translate buttons: */
+    buttonBox()->button(QDialogButtonBox::Reset)->setText(tr("Reset"));
+    buttonBox()->button(QDialogButtonBox::Save)->setText(tr("Apply"));
+    buttonBox()->button(QDialogButtonBox::Close)->setText(tr("Close"));
+    buttonBox()->button(QDialogButtonBox::Reset)->setStatusTip(tr("Reset changes in current host network details"));
+    buttonBox()->button(QDialogButtonBox::Save)->setStatusTip(tr("Apply changes in current host network details"));
+    buttonBox()->button(QDialogButtonBox::Close)->setStatusTip(tr("Close dialog without saving"));
+    buttonBox()->button(QDialogButtonBox::Reset)->setShortcut(QString("Ctrl+Backspace"));
+    buttonBox()->button(QDialogButtonBox::Save)->setShortcut(QString("Ctrl+Return"));
+    //buttonBox()->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape); /* done in base-class */
+    buttonBox()->button(QDialogButtonBox::Reset)->
+        setToolTip(tr("Reset Changes (%1)").arg(buttonBox()->button(QDialogButtonBox::Reset)->shortcut().toString()));
+    buttonBox()->button(QDialogButtonBox::Save)->
+        setToolTip(tr("Apply Changes (%1)").arg(buttonBox()->button(QDialogButtonBox::Save)->shortcut().toString()));
+    buttonBox()->button(QDialogButtonBox::Close)->
+        setToolTip(tr("Close Window (%1)").arg(buttonBox()->button(QDialogButtonBox::Close)->shortcut().toString()));
 }
 
 void UIHostNetworkManager::configure()
@@ -1066,9 +1075,29 @@ void UIHostNetworkManager::configureCentralWidget()
 #ifdef VBOX_WS_MAC
         setWidgetToolbar(pWidget->toolbar());
 #endif
+        connect(this, &UIHostNetworkManager::sigDataChangeRejected,
+                pWidget, &UIHostNetworkManagerWidget::sltResetHostNetworkDetailsChanges);
+        connect(this, &UIHostNetworkManager::sigDataChangeAccepted,
+                pWidget, &UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
+
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
+}
+
+void UIHostNetworkManager::configureButtonBox()
+{
+    /* Configure button-box: */
+    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
+            buttonBox()->button(QDialogButtonBox::Save), &QPushButton::setVisible);
+    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsVisibilityChanged,
+            buttonBox()->button(QDialogButtonBox::Reset), &QPushButton::setVisible);
+    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged,
+            buttonBox()->button(QDialogButtonBox::Save), &QPushButton::setEnabled);
+    connect(widget(), &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged,
+            buttonBox()->button(QDialogButtonBox::Reset), &QPushButton::setEnabled);
+    connect(buttonBox(), &QIDialogButtonBox::clicked,
+            this, &UIHostNetworkManager::sltHandleButtonBoxClick);
 }
 
 void UIHostNetworkManager::finalize()
