@@ -1790,7 +1790,7 @@ static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmC
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
 
     /*
-     * Plan some structures in RAM.
+     * Plant some structures in RAM.
      */
     FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->cbDmiTables, pThis->cNumDmiTables);
     if (pThis->u8IOAPIC)
