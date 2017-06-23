@@ -570,15 +570,15 @@ void UISnapshotDetailsWidget::retranslateUi()
     m_pEditorName->setToolTip(tr("Holds the snapshot name."));
     m_pBrowserDescription->setToolTip(tr("Holds the snapshot description."));
     m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Discard"));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
     m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
     m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
     m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current snapshot details"));
-    m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Discard changes in current snapshot details"));
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current snapshot details"));
     m_pButtonBox->button(QDialogButtonBox::Ok)->
         setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
     m_pButtonBox->button(QDialogButtonBox::Cancel)->
-        setToolTip(tr("Discard Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+        setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
 
     /* And if snapshot is valid: */
     if (!m_comSnapshot.isNull())
@@ -735,6 +735,12 @@ void UISnapshotDetailsWidget::prepareTabOptions()
         m_pLayoutOptions = new QGridLayout(pWidget);
         AssertPtrReturnVoid(m_pLayoutOptions);
         {
+#ifdef VBOX_WS_MAC
+            /* Configure layout: */
+            m_pLayoutOptions->setSpacing(10);
+            m_pLayoutOptions->setContentsMargins(10, 10, 10, 10);
+#endif
+
             /* Get the required icon metric: */
             const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
 
@@ -873,6 +879,9 @@ void UISnapshotDetailsWidget::prepareTabDetails()
             {
                 /* Configure layout: */
                 m_pLayoutDetails->setSpacing(5);
+#ifdef VBOX_WS_MAC
+                m_pLayoutDetails->setContentsMargins(10, 10, 10, 10);
+#endif
 
                 /* Create layout 1: */
                 QHBoxLayout *pLayout1 = new QHBoxLayout;
@@ -1096,7 +1105,7 @@ void UISnapshotDetailsWidget::updateButtonStates()
 //               m_newData.m_strName.toUtf8().constData(),
 //               m_newData.m_strDescription.toUtf8().constData());
 
-    /* Update 'Apply' / 'Discard' button states: */
+    /* Update 'Apply' / 'Reset' button states: */
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
     m_pButtonBox->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
 }

@@ -108,16 +108,16 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pEditorNMv6->setToolTip(tr("Holds the host IPv6 prefix length for this adapter if IPv6 is supported."));
     if (m_pButtonBoxInterface)
     {
-        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setText(tr("Reset"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setText(tr("Apply"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setShortcut(Qt::Key_Escape);
-        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setStatusTip(tr("Reset changes in current interface details"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setStatusTip(tr("Apply changes in current interface details"));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->shortcut().toString()));
-        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->shortcut().toString()));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current interface details"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current interface details"));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->
+            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->
+            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 
     /* Translate 'DHCP server' tab content: */
@@ -133,16 +133,16 @@ void UIHostNetworkDetailsDialog::retranslateUi()
     m_pEditorDHCPUpperAddress->setToolTip(tr("Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter."));
     if (m_pButtonBoxServer)
     {
-        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setText(tr("Reset"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setText(tr("Apply"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setShortcut(Qt::Key_Escape);
-        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setShortcut(QString("Ctrl+Return"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setStatusTip(tr("Reset changes in current DHCP server details"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setStatusTip(tr("Apply changes in current DHCP server details"));
-        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->
-            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Discard)->shortcut().toString()));
-        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->
-            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Apply)->shortcut().toString()));
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current DHCP server details"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current DHCP server details"));
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->
+            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->
+            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
 
     /* Retranslate validation: */
@@ -234,28 +234,28 @@ void UIHostNetworkDetailsDialog::sltHandleButtonBoxClick(QAbstractButton *pButto
     /* Disable buttons first of all: */
     if (m_pButtonBoxInterface)
     {
-        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setEnabled(false);
-        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setEnabled(false);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setEnabled(false);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setEnabled(false);
     }
     if (m_pButtonBoxServer)
     {
-        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setEnabled(false);
-        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setEnabled(false);
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setEnabled(false);
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setEnabled(false);
     }
 
     /* Compare with known buttons: */
     if (   (   m_pButtonBoxInterface
-            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Discard))
+            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Cancel))
         || (   m_pButtonBoxServer
-            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Discard)))
+            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Cancel)))
         emit sigDataChangeRejected();
 
     else
 
     if (   (   m_pButtonBoxInterface
-            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Apply))
+            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Ok))
         || (   m_pButtonBoxServer
-            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Apply)))
+            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Ok)))
         emit sigDataChangeAccepted();
 }
 
@@ -311,6 +311,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
         {
 #ifdef VBOX_WS_MAC
             /* Configure layout: */
+            pLayoutInterface->setSpacing(10);
             pLayoutInterface->setContentsMargins(10, 10, 10, 10);
 #endif
 
@@ -579,7 +580,7 @@ void UIHostNetworkDetailsDialog::prepareTabInterface()
                 m_pButtonBoxInterface = new QIDialogButtonBox;
                 AssertPtrReturnVoid(m_pButtonBoxInterface);
                 /* Configure button-box: */
-                m_pButtonBoxInterface->setStandardButtons(QDialogButtonBox::Discard | QDialogButtonBox::Apply);
+                m_pButtonBoxInterface->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
                 connect(m_pButtonBoxInterface, &QIDialogButtonBox::clicked, this, &UIHostNetworkDetailsDialog::sltHandleButtonBoxClick);
 
                 /* Add into layout: */
@@ -603,6 +604,7 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
         {
 #ifdef VBOX_WS_MAC
             /* Configure layout: */
+            pLayoutDHCPServer->setSpacing(10);
             pLayoutDHCPServer->setContentsMargins(10, 10, 10, 10);
 #endif
 
@@ -814,7 +816,7 @@ void UIHostNetworkDetailsDialog::prepareTabDHCPServer()
                 m_pButtonBoxServer = new QIDialogButtonBox;
                 AssertPtrReturnVoid(m_pButtonBoxServer);
                 /* Configure button-box: */
-                m_pButtonBoxServer->setStandardButtons(QDialogButtonBox::Discard | QDialogButtonBox::Apply);
+                m_pButtonBoxServer->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
                 connect(m_pButtonBoxServer, &QIDialogButtonBox::clicked, this, &UIHostNetworkDetailsDialog::sltHandleButtonBoxClick);
 
                 /* Add into layout: */
@@ -1030,13 +1032,13 @@ void UIHostNetworkDetailsDialog::updateButtonStates()
     /* Update 'Apply' / 'Reset' button states: */
     if (m_pButtonBoxInterface)
     {
-        m_pButtonBoxInterface->button(QDialogButtonBox::Discard)->setEnabled(m_oldData != m_newData);
-        m_pButtonBoxInterface->button(QDialogButtonBox::Apply)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
     }
     if (m_pButtonBoxServer)
     {
-        m_pButtonBoxServer->button(QDialogButtonBox::Discard)->setEnabled(m_oldData != m_newData);
-        m_pButtonBoxServer->button(QDialogButtonBox::Apply)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
+        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
     }
 
     /* Notify listeners as well: */
