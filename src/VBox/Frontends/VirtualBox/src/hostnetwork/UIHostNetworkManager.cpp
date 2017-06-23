@@ -1048,16 +1048,13 @@ void UIHostNetworkManager::retranslateUi()
     setWindowTitle(tr("Host Network Manager"));
 }
 
-void UIHostNetworkManager::prepareDialog()
+void UIHostNetworkManager::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/host_iface_manager_32px.png", ":/host_iface_manager_16px.png"));
-
-    /* Apply language settings: */
-    retranslateUi();
 }
 
-void UIHostNetworkManager::prepareWidget()
+void UIHostNetworkManager::configureCentralWidget()
 {
     /* Create widget: */
     UIHostNetworkManagerWidget *pWidget = new UIHostNetworkManagerWidget(EmbedTo_Dialog, this);
@@ -1072,5 +1069,16 @@ void UIHostNetworkManager::prepareWidget()
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
+}
+
+void UIHostNetworkManager::finalize()
+{
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+UIHostNetworkManagerWidget *UIHostNetworkManager::widget()
+{
+    return qobject_cast<UIHostNetworkManagerWidget*>(QIManagerDialog::widget());
 }
 

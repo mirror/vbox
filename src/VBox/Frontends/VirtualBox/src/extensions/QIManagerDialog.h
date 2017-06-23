@@ -79,10 +79,42 @@ protected:
 
     /** @name Prepare/cleanup cascade.
       * @{ */
-        /** Prepares dialog. */
-        virtual void prepareDialog() {}
-        /** Prepares widget. */
-        virtual void prepareWidget() {}
+        /** Prepares all.
+          * @note Normally you no need to reimplement it. */
+        void prepare();
+        /** Configures all.
+          * @note Injected into prepare(), reimplement to configure all there. */
+        virtual void configure() {}
+        /** Prepares central-widget.
+          * @note Injected into prepare(), normally you no need to reimplement it. */
+        void prepareCentralWidget();
+        /** Configures central-widget.
+          * @note Injected into prepareCentralWidget(), reimplement to configure central-widget there. */
+        virtual void configureCentralWidget() {}
+        /** Prepares button-box.
+          * @note Injected into prepareCentralWidget(), normally you no need to reimplement it. */
+        void prepareButtonBox();
+        /** Configures button-box.
+          * @note Injected into prepareButtonBox(), reimplement to configure button-box there. */
+        virtual void configureButtonBox() {}
+        /** Prepares menu-bar.
+          * @note Injected into prepare(), normally you no need to reimplement it. */
+        void prepareMenuBar();
+#ifdef VBOX_WS_MAC
+        /** Prepares toolbar.
+          * @note Injected into prepare(), normally you no need to reimplement it. */
+        void prepareToolBar();
+#endif
+        /** Performs final preparations.
+          * @note Injected into prepare(), reimplement to postprocess all there. */
+        virtual void finalize() {}
+
+        /** Cleanup menu-bar.
+          * @note Injected into cleanup(), normally you no need to reimplement it. */
+        void cleanupMenuBar();
+        /** Cleanups all.
+          * @note Normally you no need to reimplement it. */
+        void cleanup();
     /** @} */
 
     /** @name Widget stuff.
@@ -95,6 +127,11 @@ protected:
         /** Defines the @a pWidgetToolbar instance. */
         void setWidgetToolbar(UIToolBar *pWidgetToolbar) { m_pWidgetToolbar = pWidgetToolbar; }
 #endif
+
+        /** Returns the widget. */
+        virtual QWidget *widget() { return m_pWidget; }
+        /** Returns the button-box instance. */
+        QIDialogButtonBox *buttonBox() { return m_pButtonBox; }
     /** @} */
 
     /** @name Event-handling stuff.
@@ -104,27 +141,6 @@ protected:
     /** @} */
 
 private:
-
-    /** @name Prepare/cleanup cascade.
-      * @{ */
-        /** Prepares all. */
-        void prepare();
-        /** Prepares central-widget. */
-        void prepareCentralWidget();
-        /** Prepares button-box. */
-        void prepareButtonBox();
-        /** Prepares menu-bar. */
-        void prepareMenuBar();
-#ifdef VBOX_WS_MAC
-        /** Prepares toolbar. */
-        void prepareToolBar();
-#endif
-
-        /** Cleanup menu-bar. */
-        void cleanupMenuBar();
-        /** Cleanups all. */
-        void cleanup();
-    /** @} */
 
     /** @name General stuff.
       * @{ */

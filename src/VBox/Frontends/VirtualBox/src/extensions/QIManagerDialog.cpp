@@ -31,7 +31,6 @@
 #  include "UIToolBar.h"
 #  include "UIWindowMenuManager.h"
 # endif /* VBOX_WS_MAC */
-# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -70,14 +69,6 @@ QIManagerDialog::QIManagerDialog(QWidget *pCenterWidget)
 {
 }
 
-void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
-{
-    /* Ignore the event itself: */
-    pEvent->ignore();
-    /* But tell the listener to close us: */
-    emit sigClose();
-}
-
 void QIManagerDialog::prepare()
 {
     /* Tell the application we are not that important: */
@@ -99,8 +90,9 @@ void QIManagerDialog::prepare()
     /* Resize to initial size: */
     resize(proposedSize);
 
-    /* Prepare dialog: */
-    prepareDialog();
+    /* Configure: */
+    configure();
+
     /* Prepare central-widget: */
     prepareCentralWidget();
     /* Prepare menu-bar: */
@@ -109,6 +101,9 @@ void QIManagerDialog::prepare()
     /* Prepare toolbar: */
     prepareToolBar();
 #endif
+
+    /* Finalize: */
+    finalize();
 
     /* Center according requested widget: */
     VBoxGlobal::centerWidget(this, pCenterWidget, false);
@@ -128,8 +123,9 @@ void QIManagerDialog::prepareCentralWidget()
             centralWidget()->layout()->setContentsMargins(5, 5, 5, 5);
             centralWidget()->layout()->setSpacing(10);
 
-            /* Prepare widget: */
-            prepareWidget();
+            /* Configure central-widget: */
+            configureCentralWidget();
+
             /* Prepare button-box: */
             prepareButtonBox();
         }
@@ -143,10 +139,16 @@ void QIManagerDialog::prepareButtonBox()
     AssertPtrReturnVoid(m_pButtonBox);
     {
         /* Configure button-box: */
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Save |  QDialogButtonBox::Close);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
+        m_pButtonBox->button(QDialogButtonBox::Reset)->hide();
+        m_pButtonBox->button(QDialogButtonBox::Save)->hide();
+        m_pButtonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
+        m_pButtonBox->button(QDialogButtonBox::Save)->setEnabled(false);
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::sigClose);
+
+        /* Configure button-box: */
+        configureButtonBox();
 
         /* Add into layout: */
         centralWidget()->layout()->addWidget(m_pButtonBox);
@@ -189,5 +191,13 @@ void QIManagerDialog::cleanup()
 {
     /* Cleanup menu-bar: */
     cleanupMenuBar();
+}
+
+void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
+{
+    /* Ignore the event itself: */
+    pEvent->ignore();
+    /* But tell the listener to close us: */
+    emit sigClose();
 }
 
