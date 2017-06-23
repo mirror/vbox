@@ -333,7 +333,6 @@ static void paContextCbStateChanged(pa_context *pCtx, void *pvUser)
             break;
 
         default:
-            LogRel(("PulseAudio: ignoring state change %d\n", pa_context_get_state(pCtx)));
             break;
     }
 }
@@ -1051,10 +1050,8 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
-    LogRel(("PulseAudio: starting server enumeration\n"));
     pThis->fEnumOpSuccess = false;
     int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &CbCtx));
-    LogRel(("PulseAudio: server enumeration done rc=%Rrc success=%d\n", rc, pThis->fEnumOpSuccess));
     if (RT_SUCCESS(rc) && !pThis->fEnumOpSuccess)
         rc = VERR_AUDIO_BACKEND_INIT_FAILED; /* error code does not matter */
     if (RT_SUCCESS(rc))
@@ -1064,11 +1061,9 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
             if (fLog)
                 LogRel2(("PulseAudio: Default output sink is '%s'\n", CbCtx.pszDefaultSink));
 
-            LogRel(("PulseAudio: starting sink enumeration\n"));
             pThis->fEnumOpSuccess = false;
             rc = paWaitFor(pThis, pa_context_get_sink_info_by_name(pThis->pContext, CbCtx.pszDefaultSink,
                                                                    paEnumSinkCb, &CbCtx));
-            LogRel(("PulseAudio: sink enumeration done rc=%Rrc success=%d\n", rc, pThis->fEnumOpSuccess));
             if (RT_SUCCESS(rc) && !pThis->fEnumOpSuccess)
                 rc = VERR_AUDIO_BACKEND_INIT_FAILED; /* error code does not matter */
             if (   RT_FAILURE(rc)
@@ -1087,11 +1082,9 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
                 if (fLog)
                     LogRel2(("PulseAudio: Default input source is '%s'\n", CbCtx.pszDefaultSource));
 
-                LogRel(("PulseAudio: starting source enumeration\n"));
                 pThis->fEnumOpSuccess = false;
                 rc = paWaitFor(pThis, pa_context_get_source_info_by_name(pThis->pContext, CbCtx.pszDefaultSource,
                                                                          paEnumSourceCb, &CbCtx));
-                LogRel(("PulseAudio: source enumeration done rc=%Rrc success=%d\n", rc, pThis->fEnumOpSuccess));
                 if (   (RT_FAILURE(rc) || !pThis->fEnumOpSuccess)
                     && fLog)
                 {
