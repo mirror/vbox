@@ -2685,6 +2685,9 @@ RT_C_DECLS_END
 #define VERR_ISOMK_BOOT_CAT_INVALID_SECTION_SIZE        (-25004)
 /** Unsectioned boot catalog entry. */
 #define VERR_ISOMK_BOOT_CAT_ERRATIC_ENTRY               (-25005)
+/** The file is too big for the current ISO level (4GB+ sized files
+ * requires ISO level 3). */
+#define VERR_ISOMK_FILE_TOO_BIG_REQ_ISO_LEVEL_3         (-25006)
 
 /** Requested to import an unknown ISO format. */
 #define VERR_ISOMK_IMPORT_UNKNOWN_FORMAT                (-25100)

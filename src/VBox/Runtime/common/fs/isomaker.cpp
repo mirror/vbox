@@ -63,21 +63,24 @@
 #define RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(a_pThis) RTFSISOMAKER_ASSERT_VALID_HANDLE_RET_EX(a_pThis, VERR_INVALID_HANDLE)
 
 /** The sector size. */
-#define RTFSISOMAKER_SECTOR_SIZE            _2K
+#define RTFSISOMAKER_SECTOR_SIZE                _2K
 /** The sector offset mask. */
-#define RTFSISOMAKER_SECTOR_OFFSET_MASK     (_2K - 1)
+#define RTFSISOMAKER_SECTOR_OFFSET_MASK         (_2K - 1)
 /** Maximum number of objects. */
-#define RTFSISOMAKER_MAX_OBJECTS            _16M
+#define RTFSISOMAKER_MAX_OBJECTS                _16M
 /** Maximum number of objects per directory. */
-#define RTFSISOMAKER_MAX_OBJECTS_PER_DIR    _256K /**< @todo check limit */
+#define RTFSISOMAKER_MAX_OBJECTS_PER_DIR        _256K /**< @todo check limit */
+
+/** Number of bytes to store per dir record when using multiple extents. */
+#define RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE    UINT32_C(0xfffff800)
 
 /** UTF-8 name buffer.  */
-#define RTFSISOMAKER_MAX_NAME_BUF           768
+#define RTFSISOMAKER_MAX_NAME_BUF               768
 
 /** TRANS.TBL left padding length.
  * We keep the amount of padding low to avoid wasing memory when generating
  * these long obsolete files. */
-#define RTFSISOMAKER_TRANS_TBL_LEFT_PAD     12
+#define RTFSISOMAKER_TRANS_TBL_LEFT_PAD         12
 
 /** Tests if @a a_ch is in the set of d-characters. */
 #define RTFSISOMAKER_IS_IN_D_CHARS(a_ch)        (RT_C_IS_UPPER(a_ch) || RT_C_IS_DIGIT(a_ch) || (a_ch) == '_')
@@ -226,8 +229,11 @@ typedef struct RTFSISOMAKERNAME
     /** Size of the directory record (ISO-9660).
      * This is set when the image is being finalized. */
     uint16_t                cbDirRec;
-    /** Same as cbDirRec but with end of sector zero padding added. */
-    uint16_t                cbDirRecWithZeroPad;
+    /** Number of directory records needed to cover the entire file size.  */
+    uint16_t                cDirRecs;
+    /** The total directory record size (cbDirRec * cDirRecs), including end of
+     *  sector zero padding. */
+    uint16_t                cbDirRecTotal;
 
     /** The number of bytes the name requires in the directory record. */
     uint16_t                cbNameInDirRec;
@@ -1910,6 +1916,19 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
     Assert(cchSpec < _32K);
 
     /*
+     * If this is a file, check the size against the ISO level.
+     * This ASSUMES that only files which size we already know will be 4GB+ sized.
+     */
+    if (   (pNamespace->fNamespace & RTFSISOMAKER_NAMESPACE_ISO_9660)
+        && pNamespace->uLevel < 3
+        && pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
+    {
+        PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
+        if (pFile->cbData >= _4G)
+            return VERR_ISOMK_FILE_TOO_BIG_REQ_ISO_LEVEL_3;
+    }
+
+    /*
      * If the object is already named, unset that name before continuing.
      */
     if (*rtFsIsoMakerObjGetNameForNamespace(pObj, pNamespace))
@@ -1987,7 +2006,8 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->cHardlinks           = 1;
             pName->offDirRec            = UINT32_MAX;
             pName->cbDirRec             = 0;
-            pName->cbDirRecWithZeroPad  = 0;
+            pName->cDirRecs             = 1;
+            pName->cbDirRecTotal        = 0;
 
             memcpy(pName->szName, szName, cchName);
             pName->szName[cchName] = '\0';
@@ -3860,7 +3880,15 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
     /* Calculate the minimal directory record size. */
     size_t cbDirRec  = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1);
     AssertReturn(cbDirRec <= UINT8_MAX, VERR_FILENAME_TOO_LONG);
-    pName->cbDirRecWithZeroPad = pName->cbDirRec = (uint8_t)cbDirRec;
+
+    pName->cbDirRec = (uint8_t)cbDirRec;
+    pName->cDirRecs = 1;
+    if (pName->pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
+    {
+        PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pName->pObj;
+        if (pFile->cbData > UINT32_MAX)
+            pName->cDirRecs = (pFile->cbData + RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE - 1) / RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE;
+    }
 
     /*
      * Calculate additional rock ridge stuff, if it doesn't all fit write it
@@ -3872,6 +3900,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
         RT_NOREF(uRootRockRidge);
     }
 
+    pName->cbDirRecTotal = pName->cbDirRec * pName->cDirRecs;
     return VINF_SUCCESS;
 }
 
@@ -3948,17 +3977,22 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
                 rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, 0 /*uRootRockRidge*/);
                 AssertRCReturn(rc, rc);
 
-                if ((RTFSISOMAKER_SECTOR_SIZE - (offInDir & RTFSISOMAKER_SECTOR_OFFSET_MASK)) < pChild->cbDirRec)
+                if ((RTFSISOMAKER_SECTOR_SIZE - (offInDir & RTFSISOMAKER_SECTOR_OFFSET_MASK)) < pChild->cbDirRecTotal)
                 {
                     Assert(ppChild[-1] == pChild && &ppChild[-1] != pCurDir->papChildren);
-                    ppChild[-2]->cbDirRecWithZeroPad += RTFSISOMAKER_SECTOR_SIZE - (offInDir & RTFSISOMAKER_SECTOR_OFFSET_MASK);
-                    offInDir = (offInDir | RTFSISOMAKER_SECTOR_OFFSET_MASK) + 1; /* doesn't fit, skip to next sector. */
-                    Log4(("rtFsIsoMakerFinalizeDirectoriesInIsoNamespace: zero padding dir rec @%#x: %#x -> %#x; offset %#x -> %#x\n",
-                          ppChild[-2]->offDirRec, ppChild[-2]->cbDirRec, ppChild[-2]->cbDirRecWithZeroPad, pChild->offDirRec, offInDir));
-                    pChild->offDirRec = offInDir;
+                    if (   pChild->cDirRecs == 1
+                        || pChild->cDirRecs <= RTFSISOMAKER_SECTOR_SIZE / pChild->cbDirRec)
+                    {
+                        ppChild[-2]->cbDirRecTotal += RTFSISOMAKER_SECTOR_SIZE - (offInDir & RTFSISOMAKER_SECTOR_OFFSET_MASK);
+                        offInDir = (offInDir | RTFSISOMAKER_SECTOR_OFFSET_MASK) + 1; /* doesn't fit, skip to next sector. */
+                        Log4(("rtFsIsoMakerFinalizeDirectoriesInIsoNamespace: zero padding dir rec @%#x: %#x -> %#x; offset %#x -> %#x\n",
+                              ppChild[-2]->offDirRec, ppChild[-2]->cbDirRec, ppChild[-2]->cbDirRecTotal, pChild->offDirRec, offInDir));
+                        pChild->offDirRec = offInDir;
+                    }
+                    /* else: too complicated and ulikely, so whatever. */
                 }
 
-                offInDir += pChild->cbDirRec;
+                offInDir += pChild->cbDirRecTotal;
                 if (pChild->cchTransNm)
                     cbTransTbl += 2 /* type & space*/
                                +  RT_MAX(pChild->cchName, RTFSISOMAKER_TRANS_TBL_LEFT_PAD)
@@ -5046,11 +5080,15 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint,
 /**
  * Generates ISO-9660 directory record into the specified buffer.
  *
- * @returns Number of bytes copied into the buffer.
+ * The caller must deal with multi-extent copying and end of sector zero
+ * padding.
+ *
+ * @returns Number of bytes copied into the buffer (pName->cbDirRec).
  * @param   pName       The namespace node.
  * @param   fUnicode    Set if the name should be translated to big endian
  *                      UTF-16BE / UCS-2BE, i.e. we're in the joliet namespace.
- * @param   pbBuf       The buffer.  This is at least pName->cbDirRec bytes big.
+ * @param   pbBuf       The buffer.  This is at least pName->cbDirRec bytes big
+ *                      (i.e. at most 256 bytes).
  */
 static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf)
 {
@@ -5121,18 +5159,74 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
      */
     /** @todo rock ridge. */
 
+    return pName->cbDirRec;
+}
+
+
+/**
+ * Generates ISO-9660 directory records into the specified buffer.
+ *
+ * @returns Number of bytes copied into the buffer.
+ * @param   pName       The namespace node.
+ * @param   fUnicode    Set if the name should be translated to big endian
+ *                      UTF-16BE / UCS-2BE, i.e. we're in the joliet namespace.
+ * @param   pbBuf       The buffer.  This is at least pName->cbDirRecTotal bytes
+ *                      big.
+ */
+static uint32_t rtFsIsoMakerOutFile_GenerateDirRecDirect(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf)
+{
     /*
-     * Do end-of-sector zero padding.
+     * Normally there is just a single record without any zero padding.
      */
-    if (pName->cbDirRecWithZeroPad == pName->cbDirRec)
-    { /* likely */ }
-    else
+    uint32_t cbReturn = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
+    if (RT_LIKELY(pName->cbDirRecTotal == cbReturn))
+        return cbReturn;
+    Assert(cbReturn < pName->cbDirRecTotal);
+
+    /*
+     * Deal with multiple records.
+     */
+    if (pName->cDirRecs > 1)
     {
-        Assert(pName->cbDirRecWithZeroPad >= pName->cbDirRec);
-        memset((uint8_t *)pDirRec + pName->cbDirRec, 0, pName->cbDirRecWithZeroPad - pName->cbDirRec);
+        Assert(pName->pObj->enmType == RTFSISOMAKEROBJTYPE_FILE);
+        PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pName->pObj;
+
+        /* Set max size and duplicate the first directory record cDirRecs - 1 times. */
+        uint32_t const cbOne   = cbReturn;
+        PISO9660DIRREC pDirRec = (PISO9660DIRREC)pbBuf;
+        pDirRec->cbData.be   = RT_H2BE_U32_C(RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE);
+        pDirRec->cbData.le   = RT_H2LE_U32_C(RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE);
+        pDirRec->fFileFlags |= ISO9660_FILE_FLAGS_MULTI_EXTENT;
+
+        PISO9660DIRREC pCurDirRec = pDirRec;
+        uint32_t       offExtent  = (uint32_t)(pFile->offData / RTFSISOMAKER_SECTOR_SIZE);
+        Assert(offExtent == ISO9660_GET_ENDIAN(&pDirRec->offExtent));
+        for (uint32_t iDirRec = 1; iDirRec < pName->cDirRecs; iDirRec++)
+        {
+            pCurDirRec = (PISO9660DIRREC)memcpy(&pbBuf[cbReturn], pDirRec, cbOne);
+
+            offExtent += RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE / RTFSISOMAKER_SECTOR_SIZE;
+            pCurDirRec->offExtent.le = RT_H2LE_U32(offExtent);
+
+            cbReturn += cbOne;
+            iDirRec++;
+        }
+        Assert(cbReturn <= pName->cbDirRecTotal);
+
+        /* Adjust the size in the final record. */
+        uint32_t cbDataLast = (uint32_t)(pFile->cbData % RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE);
+        pCurDirRec->cbData.be   = RT_H2BE_U32(cbDataLast);
+        pCurDirRec->cbData.le   = RT_H2LE_U32(cbDataLast);
+        pCurDirRec->fFileFlags &= ~ISO9660_FILE_FLAGS_MULTI_EXTENT;
     }
 
-    return pName->cbDirRecWithZeroPad;
+    /*
+     * Do end of sector zero padding.
+     */
+    if (cbReturn < pName->cbDirRecTotal)
+        memset(&pbBuf[cbReturn], 0, (uint32_t)pName->cbDirRecTotal - cbReturn);
+
+    return pName->cbDirRecTotal;
 }
 
 
@@ -5151,14 +5245,104 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
 static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pName, bool fUnicode,
                                                           uint32_t off, uint8_t *pbBuf, size_t cbBuf)
 {
-    uint8_t abTmpBuf[256 * 2];
-    Assert(off < pName->cbDirRecWithZeroPad);
-    Assert(pName->cbDirRecWithZeroPad <= sizeof(abTmpBuf));
+    Assert(off < pName->cbDirRecTotal);
 
-    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
-    cbToCopy = RT_MIN(cbBuf, cbToCopy - off);
-    memcpy(pbBuf, &abTmpBuf[off], cbToCopy);
-    return (uint32_t)cbToCopy;
+    /*
+     * This is reasonably simple when there is only one directory record and
+     * without any padding.
+     */
+    uint8_t abTmpBuf[256];
+    Assert(pName->cbDirRec <= sizeof(abTmpBuf));
+    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
+    Assert(cbOne == pName->cbDirRec);
+    if (cbOne == pName->cbDirRecTotal)
+    {
+        uint32_t cbToCopy = RT_MIN((uint32_t)cbBuf, cbOne - off);
+        memcpy(pbBuf, &abTmpBuf[off], cbToCopy);
+        return cbToCopy;
+    }
+    Assert(cbOne < pName->cbDirRecTotal);
+
+    /*
+     * Single record and zero padding?
+     */
+    uint32_t cbCopied = 0;
+    if (pName->cDirRecs == 1)
+    {
+        /* Anything from the record to copy? */
+        if (off < cbOne)
+        {
+            cbCopied = RT_MIN((uint32_t)cbBuf, cbOne - off);
+            memcpy(pbBuf, &abTmpBuf[off], cbCopied);
+            pbBuf += cbCopied;
+            cbBuf -= cbCopied;
+            off   += cbCopied;
+        }
+
+        /* Anything from the zero padding? */
+        if (off >= cbOne && cbBuf > 0)
+        {
+            uint32_t cbToZero = RT_MIN((uint32_t)cbBuf, (uint32_t)pName->cbDirRecTotal - off);
+            memset(pbBuf, 0, cbToZero);
+            cbCopied += cbToZero;
+        }
+    }
+    /*
+     * Multi-extent stuff.  Need to modify the cbData member as we copy.
+     */
+    else
+    {
+        Assert(pName->pObj->enmType == RTFSISOMAKEROBJTYPE_FILE);
+        PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pName->pObj;
+
+        /* Max out the size. */
+        PISO9660DIRREC pDirRec = (PISO9660DIRREC)abTmpBuf;
+        pDirRec->cbData.be   = RT_H2BE_U32_C(RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE);
+        pDirRec->cbData.le   = RT_H2LE_U32_C(RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE);
+        pDirRec->fFileFlags |= ISO9660_FILE_FLAGS_MULTI_EXTENT;
+
+        /* Copy directory records. */
+        uint32_t offDirRec = pName->offDirRec;
+        uint32_t offExtent = pFile->offData / RTFSISOMAKER_SECTOR_SIZE;
+        for (uint32_t i = 0; i < pName->cDirRecs && cbBuf > 0; i++)
+        {
+            uint32_t const offInRec = off - offDirRec;
+            if (offInRec < cbOne)
+            {
+                /* Update the record. */
+                pDirRec->offExtent.be = RT_H2BE_U32(offExtent);
+                pDirRec->offExtent.le = RT_H2LE_U32(offExtent);
+                if (i + 1 == pName->cDirRecs)
+                {
+                    uint32_t cbDataLast = pFile->cbData % RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE;
+                    pDirRec->cbData.be   = RT_H2BE_U32(cbDataLast);
+                    pDirRec->cbData.le   = RT_H2LE_U32(cbDataLast);
+                    pDirRec->fFileFlags &= ~ISO9660_FILE_FLAGS_MULTI_EXTENT;
+                }
+
+                /* Copy chunk. */
+                uint32_t cbToCopy = RT_MIN((uint32_t)cbBuf, cbOne - offInRec);
+                memcpy(pbBuf, &abTmpBuf[offInRec], cbToCopy);
+                cbCopied += cbToCopy;
+                pbBuf    += cbToCopy;
+                cbBuf    -= cbToCopy;
+                off      += cbToCopy;
+            }
+
+            offDirRec += cbOne;
+            offExtent += RTFSISOMAKER_MAX_ISO9660_EXTENT_SIZE / RTFSISOMAKER_SECTOR_SIZE;
+        }
+
+        /* Anything from the zero padding? */
+        if (off >= offDirRec && cbBuf > 0)
+        {
+            uint32_t cbToZero = RT_MIN((uint32_t)cbBuf, (uint32_t)pName->cbDirRecTotal - offDirRec);
+            memset(pbBuf, 0, cbToZero);
+            cbCopied += cbToZero;
+        }
+    }
+
+    return cbCopied;
 }
 
 
@@ -5184,11 +5368,10 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
     Assert(pName->pDir);
 
     /* Generate a regular directory record. */
-    uint8_t abTmpBuf[256 * 2];
-    Assert(off < pName->cbDirRecWithZeroPad);
+    uint8_t abTmpBuf[256];
+    Assert(off < pName->cbDirRec);
     size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf);
-    Assert(cbToCopy == pName->cbDirRecWithZeroPad);
-    cbToCopy = pName->cbDirRec;
+    Assert(cbToCopy == pName->cbDirRec);
 
     /* Replace the filename part. */
     PISO9660DIRREC pDirRec = (PISO9660DIRREC)abTmpBuf;
@@ -5320,7 +5503,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
             while (iChild < pDir->cChildren)
             {
                 PRTFSISOMAKERNAME pChild = pDir->papChildren[iChild];
-                if ((offInDir - pChild->offDirRec) < pChild->cbDirRecWithZeroPad)
+                if ((offInDir - pChild->offDirRec) < pChild->cbDirRecTotal)
                     break;
                 iChild++;
             }
@@ -5336,8 +5519,8 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
             PRTFSISOMAKERNAME pChild = pDir->papChildren[iChild];
             uint32_t cbCopied;
             if (   offInDir == pChild->offDirRec
-                && cbBuf    >= pChild->cbDirRecWithZeroPad)
-                cbCopied = rtFsIsoMakerOutFile_GenerateDirRec(pChild, fUnicode, pbBuf);
+                && cbBuf    >= pChild->cbDirRecTotal)
+                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecDirect(pChild, fUnicode, pbBuf);
             else
                 cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pChild, fUnicode, offInDir - pChild->offDirRec, pbBuf, cbBuf);
 

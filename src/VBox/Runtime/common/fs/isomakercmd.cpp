@@ -445,7 +445,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-abstract",                     RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID,               RTGETOPT_REQ_STRING ),
     { "--application-id",               'A',                                                RTGETOPT_REQ_STRING  },
     DD("-biblio",                       RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID,          RTGETOPT_REQ_STRING  ),
-    DD("-copyright",                     RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID,             RTGETOPT_REQ_STRING  ),
+    DD("-copyright",                    RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID,              RTGETOPT_REQ_STRING  ),
     DD("-publisher",                    'P',                                                RTGETOPT_REQ_STRING  ),
     { "--preparer",                     'p',                                                RTGETOPT_REQ_STRING  },
     DD("-sysid",                        RTFSISOMAKERCMD_OPT_SYSTEM_ID,                      RTGETOPT_REQ_STRING  ),
@@ -1403,7 +1403,7 @@ static int rtFsIsoMakerCmdOptImportIso(PRTFSISOMAKERCMDOPTS pOpts, const char *p
 
     pOpts->cItemsAdded += Results.cAddedFiles;
     pOpts->cItemsAdded += Results.cAddedDirs;
-    pOpts->cItemsAdded += Results.cBootCatEntries;
+    pOpts->cItemsAdded += Results.cBootCatEntries != UINT32_MAX ? Results.cBootCatEntries : 0;
     pOpts->cItemsAdded += Results.cbSysArea != 0 ? 1 : 0;
 
     rtFsIsoMakerPrintf(pOpts, "ISO imported statistics for '%s'\n", pszIsoSpec);

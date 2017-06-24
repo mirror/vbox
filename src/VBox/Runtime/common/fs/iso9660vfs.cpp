@@ -649,7 +649,6 @@ static DECLCALLBACK(int) rtFsIso9660File_Read(void *pvThis, RTFOFF off, PCRTSGBU
      */
     else
     {
-
         return VERR_NOT_IMPLEMENTED; /** @todo multi-extent stuff . */
     }
 
