@@ -2326,9 +2326,9 @@ BOOL InstallWindowsService(const WCHAR* wszVBoxDir,
     dirLen = RTUtf16Len(wszVBoxDir);
     moduleLen = RTUtf16Len(wszServiceModule);
 
-    if (dirLen + moduleLen >= MAX_PATH + QUOTES_SPACE ||
-        !RT_SUCCESS(RTUtf16Copy(szFilePath + 1, MAX_PATH + QUOTES_SPACE - 1, wszVBoxDir)) ||
-        !RT_SUCCESS(RTUtf16Copy(szFilePath + dirLen + 1, MAX_PATH + QUOTES_SPACE - dirLen - 1, wszServiceModule)))
+    if (   dirLen + moduleLen + 2 >= MAX_PATH + QUOTES_SPACE
+        || !RT_SUCCESS(RTUtf16Copy(szFilePath + 1, MAX_PATH + QUOTES_SPACE - 1, wszVBoxDir)) 
+        || !RT_SUCCESS(RTUtf16Copy(szFilePath + dirLen + 1, MAX_PATH + QUOTES_SPACE - dirLen - 1, wszServiceModule)))
     {
         LogWarnFunc(("Error: The path to a windows service module is too long\n"));
         return FALSE;
@@ -2347,12 +2347,10 @@ BOOL InstallWindowsService(const WCHAR* wszVBoxDir,
         return FALSE;
     }
 
-    hService = CreateService(
-        hSCM, wszServiceName, wszServiceDisplayName,
-        SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
-        SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
-        szFilePath, NULL, NULL, L"RPCSS\0", NULL, NULL);
-
+    hService = CreateService(hSCM, wszServiceName, wszServiceDisplayName,
+                             SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
+                             SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
+                             szFilePath, NULL, NULL, L"RPCSS\0", NULL, NULL);
     if (hService == NULL)
     {
         CloseServiceHandle(hSCM);
@@ -2365,7 +2363,7 @@ BOOL InstallWindowsService(const WCHAR* wszVBoxDir,
     if (!ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &sd))
     {
         LogWarnFunc(("Error: could not set service description. code: %x\n",
-            GetLastError()));
+                    GetLastError()));
         Assert(0);
     }
 
