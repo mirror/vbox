@@ -900,6 +900,9 @@ typedef ISO9660SYSLINUXINFOTABLE *PISO9660SYSLINUXINFOTABLE;
 /** Pointer to a const syslinux boot information table.   */
 typedef ISO9660SYSLINUXINFOTABLE const *PCISO9660SYSLINUXINFOTABLE;
 
+/** The file offset of the isolinux boot info table. */
+#define ISO9660SYSLINUXINFOTABLE_OFFSET     8
+
 /** @} */
 
 #endif

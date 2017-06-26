@@ -125,6 +125,8 @@ typedef struct RTFSISOMKIMPORTER
      * the 2nd namespace (joliet, udf, hfs) so that we avoid duplicating data. */
     AVLU32TREE              Block2FileRoot;
 
+    /** The block offset of the primary volume descriptor. */
+    uint32_t                offPrimaryVolDesc;
     /** The primary volume space size in blocks. */
     uint32_t                cBlocksInPrimaryVolumeSpace;
     /** The primary volume space size in bytes. */
@@ -1325,6 +1327,34 @@ static int rtFsIsoImportProcessSupplementaryDesc(PRTFSISOMKIMPORTER pThis, PISO9
 
 
 /**
+ * Checks out an El Torito boot image to see if it requires info table patching.
+ *
+ * @returns IPRT status code (ignored).
+ * @param   pThis           The ISO importer instance.
+ * @param   idxImageObj     The configuration index of the image.
+ * @param   offBootImage    The block offset of the image.
+ */
+static int rtFsIsoImportProcessElToritoImage(PRTFSISOMKIMPORTER pThis, uint32_t idxImageObj, uint32_t offBootImage)
+{
+    ISO9660SYSLINUXINFOTABLE InfoTable;
+    int rc = RTVfsFileReadAt(pThis->hSrcFile, offBootImage * (uint64_t)ISO9660_SECTOR_SIZE + ISO9660SYSLINUXINFOTABLE_OFFSET,
+                             &InfoTable, sizeof(InfoTable), NULL);
+    if (RT_SUCCESS(rc))
+    {
+        if (   RT_LE2H_U32(InfoTable.offBootFile) == offBootImage
+            && RT_LE2H_U32(InfoTable.offPrimaryVolDesc) == pThis->offPrimaryVolDesc
+            && ASMMemIsAllU8(&InfoTable.auReserved[0], sizeof(InfoTable.auReserved), 0) )
+        {
+            rc = RTFsIsoMakerObjEnableBootInfoTablePatching(pThis->hIsoMaker, idxImageObj, true /*fEnable*/);
+            if (RT_FAILURE(rc))
+                return rtFsIsoImpError(pThis, rc, "RTFsIsoMakerObjEnableBootInfoTablePatching failed: %Rrc", rc);
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Processes a boot catalog default or section entry.
  *
  * @returns IPRT status code (ignored).
@@ -1512,7 +1542,10 @@ static int rtFsIsoImportProcessElToritoSectionEntry(PRTFSISOMKIMPORTER pThis, ui
                                             pEntry->uLoadSeg, pEntry->cEmulatedSectorsToLoad,
                                             pEntry->bSelectionCriteriaType, pbSelCrit, cbSelCrit);
     if (RT_SUCCESS(rc))
+    {
         pThis->pResults->cBootCatEntries += 1 + *pcSkip;
+        rc = rtFsIsoImportProcessElToritoImage(pThis, idxImageObj, offBootImage);
+    }
     else
         rtFsIsoImpError(pThis, rc, "RTFsIsoMakerBootCatSetSectionEntry failed for entry #%#x: %Rrc", iEntry, rc);
     return rc;
@@ -1777,7 +1810,10 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
                             case ISO9660VOLDESC_TYPE_PRIMARY:
                                 cPrimaryVolDescs++;
                                 if (cPrimaryVolDescs == 1)
+                                {
+                                    pThis->offPrimaryVolDesc = _32K / ISO9660_SECTOR_SIZE + iVolDesc;
                                     rtFsIsoImportProcessPrimaryDesc(pThis, &pThis->uSectorBuf.PrimVolDesc);
+                                }
                                 else
                                     rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_MULTIPLE_PRIMARY_VOL_DESCS,
                                                     "Only a single primary volume descriptor is currently supported");
