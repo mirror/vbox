@@ -2990,7 +2990,7 @@ static void acpiR3SetupMadt(ACPIState *pThis, RTGCPHYS32 addr)
     isos[1].u8Bus      = 0; /* Must be 0 */
     isos[1].u8Source   = 9; /* IRQ9 */
     isos[1].u32GSI     = 9; /* connected to pin 9 */
-    isos[1].u16Flags   = 0xd; /* active high, level triggered */
+    isos[1].u16Flags   = 0xf; /* active low, level triggered */
     Assert(NUMBER_OF_IRQ_SOURCE_OVERRIDES == 2);
 
     madt.header_addr()->u8Checksum = acpiR3Checksum(madt.data(), madt.size());
