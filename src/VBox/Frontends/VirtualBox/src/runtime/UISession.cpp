@@ -538,115 +538,52 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
      * First try updating the Guest Additions directly without mounting the .ISO. */
     bool fDoMount = false;
 
-    /* Auto-update in GUI currently is disabled. */
+    /* Auto-update through GUI is currently disabled. */
 #ifndef VBOX_WITH_ADDITIONS_AUTOUPDATE_UI
     fDoMount = true;
 #else /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
-    QVector<KAdditionsUpdateFlag> aFlagsUpdate;
+    /* Initiate installation progress: */
     QVector<QString> aArgs;
-    CProgress progressInstall = guest().UpdateGuestAdditions(strSource,
-                                                             aArgs, aFlagsUpdate);
-    bool fResult = guest().isOk();
-    if (fResult)
+    QVector<KAdditionsUpdateFlag> aFlagsUpdate;
+    CProgress comProgressInstall = guest().UpdateGuestAdditions(strSource, aArgs, aFlagsUpdate);
+    if (guest().isOk() && comProgressInstall.isNotNull())
     {
-        msgCenter().showModalProgressDialog(progressInstall, tr("Updating Guest Additions"),
+        /* Show installation progress: */
+        msgCenter().showModalProgressDialog(comProgressInstall, tr("Updating Guest Additions"),
                                             ":/progress_install_guest_additions_90px.png",
                                             0, 500 /* 500ms delay. */);
-        if (progressInstall.GetCanceled())
+        if (comProgressInstall.GetCanceled())
             return;
 
-        HRESULT rc = progressInstall.GetResultCode();
-        if (!progressInstall.isOk() || rc != S_OK)
+        /* Check whether progress result isn't Ok: */
+        const HRESULT rc = comProgressInstall.GetResultCode();
+        if (!comProgressInstall.isOk() || rc != S_OK)
         {
-            /* If we got back a VBOX_E_NOT_SUPPORTED we don't complain (guest OS
-             * simply isn't supported yet), so silently fall back to "old" .ISO
-             * mounting method. */
+            /* If we got back a VBOX_E_NOT_SUPPORTED we don't complain (guest OS simply isn't
+             * supported yet), so silently fall back to "old" .ISO mounting method. */
             if (   !SUCCEEDED_WARNING(rc)
                 && rc != VBOX_E_NOT_SUPPORTED)
             {
-                msgCenter().cannotUpdateGuestAdditions(progressInstall);
+                msgCenter().cannotUpdateGuestAdditions(comProgressInstall);
 
-                /* Log the error message in the release log. */
-                QString strErr = progressInstall.GetErrorInfo().GetText();
+                /* Throw the error message into release log as well: */
+                const QString &strErr = comProgressInstall.GetErrorInfo().GetText();
                 if (!strErr.isEmpty())
                     LogRel(("%s\n", strErr.toLatin1().constData()));
             }
-            fDoMount = true; /* Since automatic updating failed, fall back to .ISO mounting. */
+
+            /* Since automatic updating failed, fall back to .ISO mounting: */
+            fDoMount = true;
         }
     }
 #endif /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
 
-    /* Do we still want mounting? */
+    /* Check whether we still want mounting? */
     if (!fDoMount)
         return;
 
-    /* Open corresponding medium: */
-    QString strMediumID;
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    CMedium image = vbox.OpenMedium(strSource, KDeviceType_DVD, KAccessMode_ReadWrite, false /* fForceNewUuid */);
-    if (vbox.isOk() && !image.isNull())
-        strMediumID = image.GetId();
-    else
-    {
-        msgCenter().cannotOpenMedium(vbox, UIMediumType_DVD, strSource, mainMachineWindow());
-        return;
-    }
-
-    /* Make sure GA medium ID is valid: */
-    AssertReturnVoid(!strMediumID.isNull());
-
-    /* Search for a suitable storage slots: */
-    QList<ExactStorageSlot> freeStorageSlots;
-    QList<ExactStorageSlot> busyStorageSlots;
-    foreach (const CStorageController &controller, machine().GetStorageControllers())
-    {
-        foreach (const CMediumAttachment &attachment, machine().GetMediumAttachmentsOfController(controller.GetName()))
-        {
-            /* Look for an optical device: */
-            if (attachment.GetType() == KDeviceType_DVD)
-            {
-                /* Append storage slot to corresponding list: */
-                if (attachment.GetMedium().isNull())
-                    freeStorageSlots << ExactStorageSlot(controller.GetName(), controller.GetBus(),
-                                                         attachment.GetPort(), attachment.GetDevice());
-                else
-                    busyStorageSlots << ExactStorageSlot(controller.GetName(), controller.GetBus(),
-                                                         attachment.GetPort(), attachment.GetDevice());
-            }
-        }
-    }
-
-    /* Make sure at least one storage slot found: */
-    QList<ExactStorageSlot> storageSlots = freeStorageSlots + busyStorageSlots;
-    if (storageSlots.isEmpty())
-    {
-        msgCenter().cannotMountGuestAdditions(machineName());
-        return;
-    }
-
-    /* Try to find UIMedium among cached: */
-    UIMedium medium = vboxGlobal().medium(strMediumID);
-    if (medium.isNull())
-    {
-        /* Create new one if necessary: */
-        medium = UIMedium(image, UIMediumType_DVD, KMediumState_Created);
-        vboxGlobal().createMedium(medium);
-    }
-
-    /* Try to mount medium to first storage slot: */
-    bool fMounted = false;
-    while (!storageSlots.isEmpty() && !fMounted)
-    {
-        const ExactStorageSlot storageSlot = storageSlots.takeFirst();
-        machine().MountMedium(storageSlot.controller, storageSlot.port, storageSlot.device, medium.medium(), false /* force */);
-        if (machine().isOk())
-            fMounted = true;
-    }
-    if (!machine().isOk())
-    {
-        msgCenter().cannotRemountMedium(machine(), medium, true /* mount? */,
-                                        false /* retry? */, mainMachineWindow());
-    }
+    /* Mount medium add-hoc: */
+    mountAdHocImage(KDeviceType_DVD, UIMediumType_DVD, strSource);
 }
 
 void UISession::sltCloseRuntimeUI()
