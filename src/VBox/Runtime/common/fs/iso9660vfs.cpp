@@ -2088,7 +2088,7 @@ static char *rtFsIso9660VolGetMaybeUtf16Be(const char *pachField, size_t cchFiel
        This doesn't have to be a UTF-16BE string.  */
     size_t cFirstZeros  = 0;
     size_t cSecondZeros = 0;
-    for (size_t off = 0; off < cchField; off += 2)
+    for (size_t off = 0; off + 1 < cchField; off += 2)
     {
         cFirstZeros  += pachField[off]     == '\0';
         cSecondZeros += pachField[off + 1] == '\0';
