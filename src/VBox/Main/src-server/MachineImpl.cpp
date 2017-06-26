@@ -12658,7 +12658,7 @@ HRESULT SessionMachine::init(Machine *aMachine)
 #ifdef VBOX_WITH_UNATTENDED
     /* create another unattended object that will be mutable */
     unconst(mUnattended).createObject();
-    mUnattended->init(this, aMachine->mUnattended);
+    mUnattended->initWithUnattended(this, aMachine->mUnattended);
 #endif
 
     /* default is to delete saved state on Saved -> PoweredOff transition */
