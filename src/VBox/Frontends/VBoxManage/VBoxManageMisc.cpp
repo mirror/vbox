@@ -1266,152 +1266,188 @@ RTEXITCODE handleExtPack(HandlerArg *a)
     return RTEXITCODE_SUCCESS;
 }
 
-static const RTGETOPTDEF g_aUnattendedInstallOptions[] =
-{
-    { "--user",           'u', RTGETOPT_REQ_STRING },
-    { "-user",            'u', RTGETOPT_REQ_STRING },
-    { "--password",       'p', RTGETOPT_REQ_STRING },
-    { "-password",        'p', RTGETOPT_REQ_STRING },
-    { "--key",            'k', RTGETOPT_REQ_STRING },
-    { "-key",             'k', RTGETOPT_REQ_STRING },
-    { "--isopath",        'i', RTGETOPT_REQ_STRING },
-    { "-isopath",         'i', RTGETOPT_REQ_STRING },
-    { "--addisopath",     'a', RTGETOPT_REQ_STRING },
-    { "-addisopath",      'a', RTGETOPT_REQ_STRING },
-    { "-imageindex",      'm', RTGETOPT_REQ_UINT16 },
-    { "--imageindex",     'm', RTGETOPT_REQ_UINT16 },
-    { "-settingfile",     's', RTGETOPT_REQ_STRING },
-    { "--settingfile",    's', RTGETOPT_REQ_STRING },
-};
-
 RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 {
-    HRESULT rc;
+    /*
+     * Options.
+     */
     Bstr vboxAdditionsIsoPath;
     Bstr isoPath;
     Bstr user;
     Bstr password;
     Bstr productKey;
     Bstr group("group");
-    Bstr uuid = Guid(a->argv[0]).toUtf16().raw();
     Bstr machineName;
-    BOOL bInstallGuestAdditions;
+    BOOL fInstallGuestAdditions;
     Bstr fileWithSettings;
-    unsigned short imageIndex = 1;//applied only to Windows installation
+    unsigned short imageIndex = 1; // applied only to Windows installation
+    int cSpecificOptions = 0;
+    Bstr sessionType = "headless";
+
+    /*
+     * Parse options.
+     */
+    if (a->argc <= 1)
+        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID.");
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--user",                 'u', RTGETOPT_REQ_STRING },
+        { "--password",             'p', RTGETOPT_REQ_STRING },
+        { "--key",                  'k', RTGETOPT_REQ_STRING },
+        { "--iso-path",             'i', RTGETOPT_REQ_STRING },
+        { "--additions-iso-path",   'a', RTGETOPT_REQ_STRING },
+        { "--image-index",          'm', RTGETOPT_REQ_UINT16 },
+        { "--settings-file",        's', RTGETOPT_REQ_STRING },
+        { "--session-type",         'S', RTGETOPT_REQ_STRING },
+    };
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     int c;
     RTGETOPTUNION ValueUnion;
-    RTGETOPTSTATE GetState;
-
-    // start at 2(third) argument because 0(first) is <uuid\vmname>, 1(second) is <usedata\usefile>
-    RTGetOptInit(&GetState, a->argc, a->argv, g_aUnattendedInstallOptions, RT_ELEMENTS(g_aUnattendedInstallOptions),
-                 2, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-
-    if (!strcmp(a->argv[1], "usefile"))
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        while ((c = RTGetOpt(&GetState, &ValueUnion)))
+        switch (c)
         {
-            switch (c)
-            {
-                case 's':   // --a file with data prepared by user
-                    fileWithSettings = ValueUnion.psz;
-                    break;
-                default:
-                    return errorGetOpt(USAGE_UNATTENDEDINSTALL, c, &ValueUnion);
-            }
+            case VINF_GETOPT_NOT_OPTION:
+                if (machineName.isNotEmpty())
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID given more than once!");
+                machineName = ValueUnion.psz;
+                if (machineName.isEmpty())
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID is empty!");
+                break;
+
+            case 's':   // --settings-file <a file with data prepared by user>
+                if (cSpecificOptions > 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--settings-file cannot be mixed with the other options");
+                fileWithSettings = ValueUnion.psz;
+                cSpecificOptions = -1;
+                break;
+
+            case 'u':   // --user
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--user cannot be mixed with --settings-file");
+                user = ValueUnion.psz;
+                cSpecificOptions++;
+                break;
+
+            case 'p':   // --password
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--password cannot be mixed with --settings-file");
+                password = ValueUnion.psz;
+                cSpecificOptions++;
+                break;
+
+            case 'k':   // --key
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--key cannot be mixed with --settings-file");
+                productKey = ValueUnion.psz;
+                cSpecificOptions++;
+                break;
+
+            case 'a':   // --additions-iso-path
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--additions-iso-path cannot be mixed with --settings-file");
+                vboxAdditionsIsoPath = ValueUnion.psz;
+                cSpecificOptions++;
+                break;
+
+            case 'i':   // --iso-path
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--iso-path cannot be mixed with --settings-file");
+                isoPath = ValueUnion.psz;
+                cSpecificOptions++;
+                break;
+
+            case 'm':   // --image-index
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--image-index cannot be mixed with --settings-file");
+                imageIndex = ValueUnion.u16;
+                cSpecificOptions++;
+                break;
+
+            case 'S':   // --sesion-type
+                sessionType = ValueUnion.psz;
+                break;
+
+            default:
+                return errorGetOpt(USAGE_UNATTENDEDINSTALL, c, &ValueUnion);
         }
-
-        /* check for required options */
-        if (fileWithSettings.isEmpty())
-            return errorSyntax(USAGE_UNATTENDEDINSTALL, "One of needed parameters has been missed");
     }
-    else if(!strcmp(a->argv[1], "usedata"))
+
+    /*
+     * Check for required stuff.
+     */
+    if (machineName.isEmpty())
+        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID");
+
+    if (cSpecificOptions > 0)
     {
-        while ((c = RTGetOpt(&GetState, &ValueUnion)))
-        {
-            switch (c)
-            {
-                case 'u':   // --user
-                    user = ValueUnion.psz;
-                    break;
-
-                case 'p':   // --password
-                    password = ValueUnion.psz;
-                    break;
-
-                case 'k':   // --key
-                    productKey = ValueUnion.psz;
-                    break;
-
-                case 'a':   // --addisopath
-                    vboxAdditionsIsoPath = ValueUnion.psz;
-                    break;
-
-                case 'i':   // --isopath
-                    isoPath = ValueUnion.psz;
-                    break;
-                case 'm':   // --image index
-                    imageIndex = ValueUnion.u8;
-                    break;
-                default:
-                    return errorGetOpt(USAGE_UNATTENDEDINSTALL, c, &ValueUnion);
-            }
-        }
-
-        /* check for required options */
-        if (user.isEmpty() || password.isEmpty() || isoPath.isEmpty())
-            return errorSyntax(USAGE_UNATTENDEDINSTALL, "One of needed parameters has been missed");
+        if (user.isEmpty())
+            return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --user option");
+        if (password.isEmpty())
+            return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --password option");
+        if (isoPath.isEmpty())
+            return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso-path option");
     }
-    else
-    {
-        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Unknown subcommand. Must be \"usefile\" or \"usedata\" ");
-    }
+    else if (fileWithSettings.isEmpty())
+        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Requires either --file or --user & --password & --iso-path");
+
+    /*
+     * Prepare.
+     */
 
     /* try to find the given machine */
+    HRESULT rc;
     ComPtr<IMachine> machine;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(), machine.asOutParam()));
+    CHECK_ERROR(a->virtualBox, FindMachine(machineName.raw(), machine.asOutParam()));
     if (FAILED(rc))
         return RTEXITCODE_FAILURE;
 
     CHECK_ERROR_RET(machine, COMGETTER(Name)(machineName.asOutParam()), RTEXITCODE_FAILURE);
+    Bstr bstrUuid;
+    CHECK_ERROR_RET(machine, COMGETTER(Id)(bstrUuid.asOutParam()), RTEXITCODE_FAILURE);
     /* open a session for the VM */
     CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
 
-    ComPtr<IConsole> console;
-    ComPtr<IMachine> sessionMachine;
-    ComPtr<IUnattended> unAttended;
-
     /* get the associated console */
+    ComPtr<IConsole> console;
     CHECK_ERROR(a->session, COMGETTER(Console)(console.asOutParam()));
     if (console)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%s' is currently running", Utf8Str(uuid).c_str());
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%ls' is currently running", machineName.raw());
 
     /* ... and session machine */
+    ComPtr<IMachine> sessionMachine;
     CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
 
-    BSTR installedOSBSTR;
+    /* Get the OS type name of the VM. */
+    BSTR bstrInstalledOS;
+    CHECK_ERROR_RET(sessionMachine, COMGETTER(OSTypeId)(&bstrInstalledOS), RTEXITCODE_FAILURE);
+    Utf8Str strInstalledOS(bstrInstalledOS);
 
-    CHECK_ERROR_RET(sessionMachine, COMGETTER(OSTypeId)(&installedOSBSTR), RTEXITCODE_FAILURE);
-
-    Utf8Str installedOSStr(installedOSBSTR);
-
-    do {
+    do
+    {
         RTPrintf("Start unattended installation OS %s on virtual machine '%ls'.\n"
                  "UUID: %s\n",
-                 installedOSStr.c_str(),
+                 strInstalledOS.c_str(),
                  machineName.raw(),
-                 Utf8Str(uuid).c_str());
+                 Utf8Str(bstrUuid).c_str());
 
+        /*
+         * Instantiate and configure the unattended installer.
+         */
+        ComPtr<IUnattended> unAttended;
         CHECK_ERROR_BREAK(machine, COMGETTER(Unattended)(unAttended.asOutParam()));
 
         if (fileWithSettings.isEmpty())//may use also this condition (!strcmp(a->argv[1], "usedata"))
         {
             CHECK_ERROR_BREAK(unAttended, COMSETTER(Group)(group.raw()));
 
-            if (installedOSStr.contains("Windows") && productKey.isEmpty())
-            {
-                return errorSyntax(USAGE_UNATTENDEDINSTALL, "Product key has been missed.");
-            }
+            if (strInstalledOS.contains("Windows") && productKey.isEmpty())
+                return errorSyntax(USAGE_UNATTENDEDINSTALL, "A product key is required (--key).");
 
             CHECK_ERROR_BREAK(unAttended, COMSETTER(VboxAdditionsIsoPath)(vboxAdditionsIsoPath.raw()));
 
@@ -1423,30 +1459,30 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
             CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(productKey.raw()));
 
-            bool fInstallGuestAdditions = (vboxAdditionsIsoPath.isEmpty()) ? false: true;
+            bool fInstallGuestAdditions = vboxAdditionsIsoPath.isNotEmpty();
             CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(fInstallGuestAdditions));
 
             CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(imageIndex));
             CHECK_ERROR_BREAK(unAttended,Preparation());
             CHECK_ERROR_BREAK(unAttended,ConstructScript());
             CHECK_ERROR_BREAK(unAttended,ConstructMedia());
-            CHECK_ERROR_BREAK(unAttended,ReconstructVM());
-            CHECK_ERROR_BREAK(unAttended,RunInstallation());
-
         }
         else
         {
             CHECK_ERROR_BREAK(unAttended, COMSETTER(FileWithPreparedData)(fileWithSettings.raw()));
             CHECK_ERROR_BREAK(unAttended,Preparation());
-            CHECK_ERROR_BREAK(unAttended,ReconstructVM());
-            CHECK_ERROR_BREAK(unAttended,RunInstallation());
         }
+        CHECK_ERROR_BREAK(unAttended,ReconstructVM());
+        CHECK_ERROR_BREAK(unAttended,RunInstallation());
 
+
+        /*
+         * Start the VM.
+         */
         a->session->UnlockMachine();
 
         {
             Bstr env;
-            Bstr sessionType = "headless";//"gui";
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
             /* make sure the VM process will start on the same display as VBoxManage */
@@ -1460,26 +1496,25 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             env = str;
 #endif
             ComPtr<IProgress> progress;
-            CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(),
-                                                 env.raw(), progress.asOutParam()));
+            CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(), env.raw(), progress.asOutParam()));
             if (SUCCEEDED(rc) && !progress.isNull())
             {
-                RTPrintf("Waiting for VM \"%s\" to power on...\n", Utf8Str(uuid).c_str());
+                RTPrintf("Waiting for VM \"%s\" to power on...\n", Utf8Str(bstrUuid).c_str());
                 CHECK_ERROR(progress, WaitForCompletion(-1));
                 if (SUCCEEDED(rc))
                 {
-                    BOOL completed = true;
-                    CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
+                    BOOL fCompleted = true;
+                    CHECK_ERROR(progress, COMGETTER(Completed)(&fCompleted));
                     if (SUCCEEDED(rc))
                     {
-                        ASSERT(completed);
+                        ASSERT(fCompleted);
 
                         LONG iRc;
                         CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
                         if (SUCCEEDED(rc))
                         {
                             if (SUCCEEDED(iRc))
-                                RTPrintf("VM \"%s\" has been successfully started.\n", Utf8Str(uuid).c_str());
+                                RTPrintf("VM \"%s\" has been successfully started.\n", Utf8Str(bstrUuid).c_str());
                             else
                             {
                                 ProgressErrorInfo info(progress);
@@ -1492,42 +1527,44 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             }
         }
 
-        vboxAdditionsIsoPath.setNull();
-        isoPath.setNull();
-        user.setNull();
-        password.setNull();
-        productKey.setNull();
-        group.setNull();
-        bInstallGuestAdditions = false;
-        imageIndex = 0;
-        fileWithSettings.setNull();
-
+        /*
+         * Retrieve and display the parameters actually used.
+         */
         CHECK_ERROR_BREAK(unAttended, COMGETTER(FileWithPreparedData)(fileWithSettings.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Group)(group.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(VboxAdditionsIsoPath)(vboxAdditionsIsoPath.asOutParam()));
+        fInstallGuestAdditions = false;
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(InstallGuestAdditions)(&fInstallGuestAdditions));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(IsoPath)(isoPath.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(User)(user.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Password)(password.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ProductKey)(productKey.asOutParam()));
+        imageIndex = 0;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&imageIndex));
-        RTPrintf("Got values:\n fileWithSettings: %s\n user: %s\n password: %s\n productKey: %s\n image index: %d\n "
-                 "isoPath: %s\n vboxAdditionsIsoPath: %s\n",
+        RTPrintf("Got values:\n"
+                 " fileWithSettings:      %s\n "
+                 " user:                  %s\n"
+                 " password:              %s\n"
+                 " productKey:            %s\n"
+                 " image index:           %u\n"
+                 " isoPath:               %s\n"
+                 " vboxAdditionsIsoPath:  %s\n"
+                 " installGuestAdditions: %RTbool",
                  Utf8Str(fileWithSettings).c_str(),
                  Utf8Str(user).c_str(),
                  Utf8Str(password).c_str(),
                  Utf8Str(productKey).c_str(),
                  imageIndex,
                  Utf8Str(isoPath).c_str(),
-                 Utf8Str(vboxAdditionsIsoPath).c_str()
-                 );
-    }
-    while (0);
+                 Utf8Str(vboxAdditionsIsoPath).c_str(),
+                 fInstallGuestAdditions);
+    } while (0);
 
     RTPrintf("Unattended installation OS %s has been running on virtual machine '%ls'.\n"
-             "UUID: %s\n",
-             installedOSStr.c_str(),
+             "UUID: %ls\n",
+             strInstalledOS.c_str(),
              machineName.raw(),
-             Utf8Str(uuid).c_str());
+             bstrUuid.raw());
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

@@ -1021,19 +1021,19 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
     }
 
     if (fCategory & USAGE_UNATTENDEDINSTALL)
-    {
         RTStrmPrintf(pStrm,
                            "%s unattended %s      <uuid|vmname>\n"
-                     "                            usefile --file <file>\n"
-                     "                            usedata\n"
-                     "                            --user <username>\n"
+                     "                            --settings-file <file>\n"
+                     "                            [--session-type <type>]\n"
+                           "%s unattended %s      <uuid|vmname>\n"
+                     "                            --user <user>\n"
                      "                            --password <password>\n"
-                     "                            --key <key>\n"
-                     "                            --isopath <OS ISO path>\n"
-                     "                            [--addisopath <additions ISO path>]\n"
-                     "                            [--imageindex <number>]\n"
-                     "\n", SEP);
-    }
+                     "                            --iso-path <path>\n"
+                     "                            [--key <CD-key>]\n"
+                     "                            [--additions-iso-path <path>]\n"
+                     "                            [--image-index <index>]\n"
+                     "                            [--session-type <type>]\n"
+                     "\n", SEP, SEP);
 
     if (fCategory & USAGE_DISCARDSTATE)
         RTStrmPrintf(pStrm,
