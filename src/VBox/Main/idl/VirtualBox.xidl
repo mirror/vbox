@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (C) 2006-2016 Oracle Corporation
+    Copyright (C) 2006-2017 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -575,6 +575,12 @@
           Machine changes: NVMe storage controller, paravirt debug options, CPU
           profile and BIOS/CPU APIC settings.
           VirtualBox.xml: Add support for additional USB device sources (e.g. USB/IP)
+      -->
+    </const>
+    <const name="v1_17" value="19">
+      <desc>Settings version "1.17", written by VirtualBox 5.2.x.</desc>
+      <!--
+          So far absolutely no change to v1_16.
       -->
     </const>
 

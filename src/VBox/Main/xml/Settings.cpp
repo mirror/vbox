@@ -392,7 +392,9 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const 
                 sv = SettingsVersion_v1_15;
             else if (ulMinor == 16)
                 sv = SettingsVersion_v1_16;
-            else if (ulMinor > 16)
+            else if (ulMinor == 17)
+                sv = SettingsVersion_v1_17;
+            else if (ulMinor > 17)
                 sv = SettingsVersion_Future;
         }
         else if (ulMajor > 1)
@@ -1010,6 +1012,10 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.16";
             break;
 
+        case SettingsVersion_v1_17:
+            pcszVersion = "1.17";
+            break;
+
         default:
             // catch human error: the assertion below will trigger in debug
             // or dbgopt builds, so hopefully this will get noticed sooner in
@@ -1032,8 +1038,8 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
                 // for "forgotten settings" this may not be the best choice,
                 // but as it's an omission of someone who changed this file
                 // it's the only generic possibility.
-                pcszVersion = "1.16";
-                m->sv = SettingsVersion_v1_16;
+                pcszVersion = "1.17";
+                m->sv = SettingsVersion_v1_17;
             }
             break;
     }
