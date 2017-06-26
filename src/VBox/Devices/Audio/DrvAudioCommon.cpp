@@ -786,16 +786,14 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps1, const PPDMAUDI
  *
  * Returns @c true if properties are valid, @c false if not.
  * @param   pProps              PCM properties to check.
- *
- * @remarks Does *not* support surround (> 2 channels) yet! This is intentional, as
- *          we consider surround support as experimental / not enabled by default for now.
  */
 bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, false);
 
-    bool fValid = (   pProps->cChannels == 1
-                   || pProps->cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
+    /* Minimum 1 channel (mono), maximum 7.1 (= 8) channels. */
+    bool fValid = (   pProps->cChannels >= 1
+                   && pProps->cChannels <= 8);
 
     if (fValid)
     {
@@ -873,9 +871,6 @@ int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTRE
  *
  * Returns @c true if configuration is valid, @c false if not.
  * @param   pCfg                Stream configuration to check.
- *
- * @remarks Does *not* support surround (> 2 channels) yet! This is intentional, as
- *          we consider surround support as experimental / not enabled by default for now.
  */
 bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg)
 {
