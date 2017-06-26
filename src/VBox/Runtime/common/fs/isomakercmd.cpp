@@ -418,7 +418,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--import-iso",                   RTFSISOMAKERCMD_OPT_IMPORT_ISO,                     RTGETOPT_REQ_STRING  },
 
     { "--eltorito-new-entry",           RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING },
-    { "--eltorito-add-image",           RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,             RTGETOPT_REQ_NOTHING },
+    { "--eltorito-add-image",           RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,             RTGETOPT_REQ_STRING },
     { "--eltorito-floppy-12",           RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12,             RTGETOPT_REQ_NOTHING },
     { "--eltorito-floppy-144",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,            RTGETOPT_REQ_NOTHING },
     { "--eltorito-floppy-288",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,            RTGETOPT_REQ_NOTHING },
@@ -438,7 +438,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-no-boot",                      RTFSISOMAKERCMD_OPT_ELTORITO_NO_BOOT,               RTGETOPT_REQ_NOTHING ),
     DD("-boot-load-seg",                RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SEG,              RTGETOPT_REQ_UINT16  ),
     DD("-boot-load-size",               RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SIZE,             RTGETOPT_REQ_UINT16  ),
-    DD("-boot-info-table",              RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE,            RTGETOPT_REQ_STRING  ),
+    DD("-boot-info-table",              RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE,            RTGETOPT_REQ_NOTHING ),
     { "--boot-catalog",                 'c',                                                RTGETOPT_REQ_STRING  },
 
     /* String props: */
@@ -595,6 +595,12 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--osx-hfs",                      RTFSISOMAKERCMD_OPT_HFS_OSX_HFS,                    RTGETOPT_REQ_NOTHING },
 #undef DD
 };
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char **papszArgs, unsigned cDepth);
 
 
 /**
@@ -1941,6 +1947,291 @@ static int rtFsIsoMakerCmdOptSetStringProp(PRTFSISOMAKERCMDOPTS pOpts, const cha
 
 
 /**
+ * Loads an argument file (e.g. a .iso-file) and parses it.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszFileSpec         The file to parse.
+ * @param   cDepth              The current nesting depth.
+ */
+static int rtFsIsoMakerCmdParseArgumentFile(PRTFSISOMAKERCMDOPTS pOpts, const char *pszFileSpec, unsigned cDepth)
+{
+    if (cDepth > 2)
+        return rtFsIsoMakerCmdErrorRc(pOpts, VERR_INVALID_PARAMETER, "Too many nested argument files!");
+
+    /*
+     * Read the file into memory.
+     */
+    RTERRINFOSTATIC ErrInfo;
+    uint32_t        offError;
+    RTVFSFILE       hVfsFile;
+    int rc = RTVfsChainOpenFile(pszFileSpec, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFile,
+                                &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_FAILURE(rc))
+        return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainOpenFile", pszFileSpec, rc, offError, &ErrInfo.Core);
+
+    uint64_t cbFile = 0;
+    rc = RTVfsFileGetSize(hVfsFile, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        if (cbFile < _2M)
+        {
+            char *pszContent = (char *)RTMemTmpAllocZ((size_t)cbFile + 1);
+            if (pszContent)
+            {
+                rc = RTVfsFileRead(hVfsFile, pszContent, (size_t)cbFile, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Check that it's valid UTF-8 and turn it into an argument vector.
+                     */
+                    rc = RTStrValidateEncodingEx(pszContent, (size_t)cbFile + 1,
+                                                 RTSTR_VALIDATE_ENCODING_EXACT_LENGTH | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                    if (RT_SUCCESS(rc))
+                    {
+                        uint32_t fGetOpt = strstr(pszContent, "--iprt-iso-maker-file-marker-ms") == NULL
+                                         ? RTGETOPTARGV_CNV_QUOTE_BOURNE_SH : RTGETOPTARGV_CNV_QUOTE_MS_CRT;
+                        fGetOpt |= RTGETOPTARGV_CNV_MODIFY_INPUT;
+                        char **papszArgs;
+                        int    cArgs;
+                        rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszContent, fGetOpt, NULL);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Parse them.
+                             */
+                            rc = rtFsIsoMakerCmdParse(pOpts, cArgs, papszArgs, cDepth + 1);
+
+                            RTGetOptArgvFreeEx(papszArgs, fGetOpt);
+                        }
+                        else
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s: RTGetOptArgvFromString failed: %Rrc", pszFileSpec, rc);
+
+                    }
+                    else
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s: invalid encoding", pszFileSpec);
+                }
+                else
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s: error to read it into memory: %Rrc", pszFileSpec, rc);
+                RTMemTmpFree(pszContent);
+            }
+            else
+                rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "%s: failed to allocte %zu bytes for reading",
+                                            pszFileSpec, (size_t)cbFile + 1);
+        }
+        else
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_FILE_TOO_BIG, "%s: file is too big: %'RU64 bytes, max 2MB", pszFileSpec, cbFile);
+    }
+    else
+        rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s: RTVfsFileGetSize failed: %Rrc", pszFileSpec, rc);
+    RTVfsFileRelease(hVfsFile);
+    return rc;
+}
+
+
+/**
+ * Parses the given command line options.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   cArgs               Number of arguments in papszArgs.
+ * @param   papszArgs           The argument vector to parse.
+ */
+static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char **papszArgs, unsigned cDepth)
+{
+    /* Setup option parsing. */
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, g_aRtFsIsoMakerOptions, RT_ELEMENTS(g_aRtFsIsoMakerOptions),
+                          cDepth == 0 ? 1 : 0 /*iFirst*/, 0 /*fFlags*/);
+    if (RT_FAILURE(rc))
+        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTGetOpt failed: %Rrc", rc);
+
+    /*
+     * Parse parameters.  Parameters are position dependent.
+     */
+    RTGETOPTUNION ValueUnion;
+    while (   RT_SUCCESS(rc)
+           && (rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            /*
+             * Files and directories.
+             */
+            case VINF_GETOPT_NOT_OPTION:
+                if (   *ValueUnion.psz != '@'
+                    || strchr(ValueUnion.psz, '='))
+                    rc = rtFsIsoMakerCmdAddSomething(pOpts, ValueUnion.psz);
+                else
+                    rc = rtFsIsoMakerCmdParseArgumentFile(pOpts, ValueUnion.psz + 1, cDepth);
+                break;
+
+            /*
+             * Options specific to our ISO maker.
+             */
+            case RTFSISOMAKERCMD_OPT_NAME_SETUP:
+                rc = rtFsIsoMakerCmdOptNameSetup(pOpts, ValueUnion.psz);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER:
+                /* ignored */
+                break;
+
+            case RTFSISOMAKERCMD_OPT_IMPORT_ISO:
+                rc = rtFsIsoMakerCmdOptImportIso(pOpts, ValueUnion.psz);
+                break;
+
+            /*
+             * Joliet related options.
+             */
+            case RTFSISOMAKERCMD_OPT_NO_JOLIET:
+                rc = RTFsIsoMakerSetJolietUcs2Level(pOpts->hIsoMaker, 0);
+                if (RT_FAILURE(rc))
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to disable joliet: %Rrc", rc);
+                break;
+
+
+            /*
+             * Boot related options.
+             */
+            case 'G': /* --generic-boot <file> */
+                rc = rtFsIsoMakerCmdOptGenericBoot(pOpts, ValueUnion.psz);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE:
+                rc = rtFsIsoMakerCmdOptEltoritoAddImage(pOpts, ValueUnion.psz);
+                break;
+
+            case 'b': /* --eltorito-boot <boot.img> */
+                rc = rtFsIsoMakerCmdOptEltoritoBoot(pOpts, ValueUnion.psz);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY:
+                rc = rtFsIsoMakerCmdOptEltoritoNewEntry(pOpts);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_PLATFORM_ID:
+                rc = rtFsIsoMakerCmdOptEltoritoPlatformId(pOpts, ValueUnion.psz);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_NO_BOOT:
+                rc = rtFsIsoMakerCmdOptEltoritoSetNotBootable(pOpts);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12:
+                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(pOpts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_2_MB);
+                break;
+            case RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144:
+                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(pOpts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_44_MB);
+                break;
+            case RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288:
+                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(pOpts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_2_88_MB);
+                break;
+            case RTFSISOMAKERCMD_OPT_ELTORITO_HARD_DISK_BOOT:
+                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(pOpts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_HARD_DISK);
+                break;
+            case RTFSISOMAKERCMD_OPT_ELTORITO_NO_EMULATION_BOOT:
+                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(pOpts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_NO_EMULATION);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SEG:
+                rc = rtFsIsoMakerCmdOptEltoritoSetLoadSegment(pOpts, ValueUnion.u16);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SIZE:
+                rc = rtFsIsoMakerCmdOptEltoritoSetLoadSectorCount(pOpts, ValueUnion.u16);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE:
+                rc = rtFsIsoMakerCmdOptEltoritoEnableBootInfoTablePatching(pOpts);
+                break;
+
+            case 'c': /* --boot-catalog <cd-path> */
+                rc = rtFsIsoMakerCmdOptEltoritoSetBootCatalogPath(pOpts, ValueUnion.psz);
+                break;
+
+            /*
+             * Image/namespace property related options.
+             */
+            case RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_ABSTRACT_FILE_ID);
+                break;
+
+            case 'A': /* --application-id */
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_APPLICATION_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_BIBLIOGRAPHIC_FILE_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_COPYRIGHT_FILE_ID);
+                break;
+
+            case 'P': /* -publisher */
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_PUBLISHER_ID);
+                break;
+
+            case 'p': /* --preparer*/
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_DATA_PREPARER_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_SYSTEM_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_SYSTEM_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_VOLUME_ID: /* (should've been '-V') */
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_VOLUME_ID);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_VOLUME_SET_ID:
+                rc = rtFsIsoMakerCmdOptSetStringProp(pOpts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID);
+                break;
+
+            /*
+             * Options compatible with other ISO makers.
+             */
+            case 'o':
+                if (pOpts->fVirtualImageMaker)
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "The --output option is not allowed");
+                if (pOpts->pszOutFile)
+                    return rtFsIsoMakerCmdSyntaxError(pOpts, "The --output option is specified more than once");
+                pOpts->pszOutFile = ValueUnion.psz;
+                break;
+
+            /*
+             * Standard bits.
+             */
+            case 'h':
+                rtFsIsoMakerCmdUsage(pOpts, papszArgs[0]);
+                return pOpts->fVirtualImageMaker ? VERR_NOT_FOUND : VINF_SUCCESS;
+
+            case 'V':
+                rtFsIsoMakerPrintf(pOpts, "%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
+                return pOpts->fVirtualImageMaker ? VERR_NOT_FOUND : VINF_SUCCESS;
+
+            default:
+                if (rc > 0 && RT_C_IS_GRAPH(rc))
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: -%c", rc);
+                else if (rc > 0)
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: %i (%#x)", rc, rc);
+                else if (rc == VERR_GETOPT_UNKNOWN_OPTION)
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Unknown option: '%s'", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s: %Rrs", ValueUnion.pDef->pszLong, rc);
+                else
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "%Rrs", rc);
+                return rc;
+        }
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Extended ISO maker command.
  *
  * This can be used as a ISO maker command that produces a image file, or
@@ -1972,197 +2263,15 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     for (uint32_t i = 0; i < RT_ELEMENTS(Opts.aBootCatEntries); i++)
         Opts.aBootCatEntries[i].u.Section.idxImageObj = UINT32_MAX;
 
-    /* Setup option parsing. */
-    RTGETOPTSTATE GetState;
-    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, g_aRtFsIsoMakerOptions, RT_ELEMENTS(g_aRtFsIsoMakerOptions),
-                          1 /*iFirst*/, 0 /*fFlags*/);
-    if (RT_FAILURE(rc))
-        return rtFsIsoMakerCmdErrorRc(&Opts, rc, "RTGetOpt failed: %Rrc", rc);
-
     /* Create the ISO creator instance. */
-    rc = RTFsIsoMakerCreate(&Opts.hIsoMaker);
+    int rc = RTFsIsoMakerCreate(&Opts.hIsoMaker);
     if (RT_FAILURE(rc))
         return rtFsIsoMakerCmdErrorRc(&Opts, rc, "RTFsIsoMakerCreate failed: %Rrc", rc);
 
     /*
-     * Parse parameters.  Parameters are position dependent.
+     * Parse the command line and check for mandatory options.
      */
-    RTGETOPTUNION ValueUnion;
-    while (   RT_SUCCESS(rc)
-           && (rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
-    {
-        switch (rc)
-        {
-            /*
-             * Files and directories.
-             */
-            case VINF_GETOPT_NOT_OPTION:
-                rc = rtFsIsoMakerCmdAddSomething(&Opts, ValueUnion.psz);
-                break;
-
-            /*
-             * Options specific to our ISO maker.
-             */
-            case RTFSISOMAKERCMD_OPT_NAME_SETUP:
-                rc = rtFsIsoMakerCmdOptNameSetup(&Opts, ValueUnion.psz);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER:
-                /* ignored */
-                break;
-
-            case RTFSISOMAKERCMD_OPT_IMPORT_ISO:
-                rc = rtFsIsoMakerCmdOptImportIso(&Opts, ValueUnion.psz);
-                break;
-
-            /*
-             * Joliet related options.
-             */
-            case RTFSISOMAKERCMD_OPT_NO_JOLIET:
-                rc = RTFsIsoMakerSetJolietUcs2Level(Opts.hIsoMaker, 0);
-                if (RT_FAILURE(rc))
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "Failed to disable joliet: %Rrc", rc);
-                break;
-
-
-            /*
-             * Boot related options.
-             */
-            case 'G': /* --generic-boot <file> */
-                rc = rtFsIsoMakerCmdOptGenericBoot(&Opts, ValueUnion.psz);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE:
-                rc = rtFsIsoMakerCmdOptEltoritoAddImage(&Opts, ValueUnion.psz);
-                break;
-
-            case 'b': /* --eltorito-boot <boot.img> */
-                rc = rtFsIsoMakerCmdOptEltoritoBoot(&Opts, ValueUnion.psz);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY:
-                rc = rtFsIsoMakerCmdOptEltoritoNewEntry(&Opts);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_PLATFORM_ID:
-                rc = rtFsIsoMakerCmdOptEltoritoPlatformId(&Opts, ValueUnion.psz);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_NO_BOOT:
-                rc = rtFsIsoMakerCmdOptEltoritoSetNotBootable(&Opts);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_12:
-                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(&Opts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_2_MB);
-                break;
-            case RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144:
-                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(&Opts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_1_44_MB);
-                break;
-            case RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288:
-                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(&Opts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_FLOPPY_2_88_MB);
-                break;
-            case RTFSISOMAKERCMD_OPT_ELTORITO_HARD_DISK_BOOT:
-                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(&Opts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_HARD_DISK);
-                break;
-            case RTFSISOMAKERCMD_OPT_ELTORITO_NO_EMULATION_BOOT:
-                rc = rtFsIsoMakerCmdOptEltoritoSetMediaType(&Opts, ISO9660_ELTORITO_BOOT_MEDIA_TYPE_NO_EMULATION);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SEG:
-                rc = rtFsIsoMakerCmdOptEltoritoSetLoadSegment(&Opts, ValueUnion.u16);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_LOAD_SIZE:
-                rc = rtFsIsoMakerCmdOptEltoritoSetLoadSectorCount(&Opts, ValueUnion.u16);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_ELTORITO_INFO_TABLE:
-                rc = rtFsIsoMakerCmdOptEltoritoEnableBootInfoTablePatching(&Opts);
-                break;
-
-            case 'c': /* --boot-catalog <cd-path> */
-                rc = rtFsIsoMakerCmdOptEltoritoSetBootCatalogPath(&Opts, ValueUnion.psz);
-                break;
-
-            /*
-             * Image/namespace property related options.
-             */
-            case RTFSISOMAKERCMD_OPT_ABSTRACT_FILE_ID:
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_ABSTRACT_FILE_ID);
-                break;
-
-            case 'A': /* --application-id */
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_APPLICATION_ID);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_BIBLIOGRAPHIC_FILE_ID:
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_BIBLIOGRAPHIC_FILE_ID);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_COPYRIGHT_FILE_ID:
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_COPYRIGHT_FILE_ID);
-                break;
-
-            case 'P': /* -publisher */
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_PUBLISHER_ID);
-                break;
-
-            case 'p': /* --preparer*/
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_DATA_PREPARER_ID);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_SYSTEM_ID:
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_SYSTEM_ID);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_VOLUME_ID: /* (should've been '-V') */
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_VOLUME_ID);
-                break;
-
-            case RTFSISOMAKERCMD_OPT_VOLUME_SET_ID:
-                rc = rtFsIsoMakerCmdOptSetStringProp(&Opts, ValueUnion.psz, RTFSISOMAKERSTRINGPROP_VOLUME_SET_ID);
-                break;
-
-            /*
-             * Options compatible with other ISO makers.
-             */
-            case 'o':
-                if (Opts.fVirtualImageMaker)
-                    return rtFsIsoMakerCmdSyntaxError(&Opts, "The --output option is not allowed");
-                if (Opts.pszOutFile)
-                    return rtFsIsoMakerCmdSyntaxError(&Opts, "The --output option is specified more than once");
-                Opts.pszOutFile = ValueUnion.psz;
-                break;
-
-            /*
-             * Standard bits.
-             */
-            case 'h':
-                rtFsIsoMakerCmdUsage(&Opts, papszArgs[0]);
-                return rtFsIsoMakerCmdDeleteState(&Opts, Opts.fVirtualImageMaker ? VERR_NOT_FOUND : VINF_SUCCESS);
-
-            case 'V':
-                rtFsIsoMakerPrintf(&Opts, "%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
-                return rtFsIsoMakerCmdDeleteState(&Opts, Opts.fVirtualImageMaker ? VERR_NOT_FOUND : VINF_SUCCESS);
-
-            default:
-                if (rc > 0 && RT_C_IS_GRAPH(rc))
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: -%c", rc);
-                else if (rc > 0)
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, VERR_GETOPT_UNKNOWN_OPTION, "Unhandled option: %i (%#x)", rc, rc);
-                else if (rc == VERR_GETOPT_UNKNOWN_OPTION)
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "Unknown option: '%s'", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%s: %Rrs", ValueUnion.pDef->pszLong, rc);
-                else
-                    rc = rtFsIsoMakerCmdErrorRc(&Opts, rc, "%Rrs", rc);
-                return rtFsIsoMakerCmdDeleteState(&Opts, rc);
-        }
-    }
-
-    /*
-     * Check for mandatory options.
-     */
+    rc = rtFsIsoMakerCmdParse(&Opts, cArgs, papszArgs, 0);
     if (RT_SUCCESS(rc))
     {
         if (!Opts.cItemsAdded)

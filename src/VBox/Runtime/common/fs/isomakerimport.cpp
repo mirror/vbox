@@ -1543,6 +1543,11 @@ static int rtFsIsoImportProcessElToritoSectionEntry(PRTFSISOMKIMPORTER pThis, ui
                                             pEntry->bSelectionCriteriaType, pbSelCrit, cbSelCrit);
     if (RT_SUCCESS(rc))
     {
+uint64_t cbImage = 0;
+RTFsIsoMakerObjQueryDataSize(pThis->hIsoMaker, idxImageObj, &cbImage);
+LogRel(("ISO import: boot catalog #%#x: bMediaType=%#x (%#x) bSystemType=%#x idxImageObj=%#x size=%#RX64\n",
+        iEntry, bMediaType, pEntry->bBootMediaType, pEntry->bSystemType, idxImageObj, cbImage));
+
         pThis->pResults->cBootCatEntries += 1 + *pcSkip;
         rc = rtFsIsoImportProcessElToritoImage(pThis, idxImageObj, offBootImage);
     }

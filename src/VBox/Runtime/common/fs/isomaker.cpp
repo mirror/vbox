@@ -1558,7 +1558,7 @@ static int rtFsIsoMakerWalkPathBySpec(PRTFSISOMAKERNAMESPACE pNamespace, const c
 
         size_t offNext = cchComponent;
         while (RTPATH_IS_SLASH(ch))
-            ch = pszPath[offNext++];
+            ch = pszPath[++offNext];
 
         /*
          * Deal with dot and dot-dot.
@@ -4181,7 +4181,7 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
                 /*
                  * Populate the structure.
                  */
-                pCurFile->pBootInfoTable->offPrimaryVolDesc = RT_H2LE_U32(16 * RTFSISOMAKER_SECTOR_SIZE);
+                pCurFile->pBootInfoTable->offPrimaryVolDesc = RT_H2LE_U32(16);
                 pCurFile->pBootInfoTable->offBootFile       = RT_H2LE_U32((uint32_t)(pCurFile->offData / RTFSISOMAKER_SECTOR_SIZE));
                 pCurFile->pBootInfoTable->cbBootFile        = RT_H2LE_U32((uint32_t)pCurFile->cbData);
                 pCurFile->pBootInfoTable->uChecksum         = RT_H2LE_U32(uChecksum);
