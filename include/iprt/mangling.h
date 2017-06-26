@@ -955,6 +955,7 @@
 # define RTFsIsoMakerCmdEx                              RT_MANGLER(RTFsIsoMakerCmdEx)
 # define RTGetOpt                                       RT_MANGLER(RTGetOpt)
 # define RTGetOptArgvFree                               RT_MANGLER(RTGetOptArgvFree)
+# define RTGetOptArgvFreeEx                             RT_MANGLER(RTGetOptArgvFreeEx)
 # define RTGetOptArgvFromString                         RT_MANGLER(RTGetOptArgvFromString)
 # define RTGetOptArgvToString                           RT_MANGLER(RTGetOptArgvToString)
 # define RTGetOptArgvToUtf16String                      RT_MANGLER(RTGetOptArgvToUtf16String)

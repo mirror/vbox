@@ -411,7 +411,8 @@ RTDECL(RTEXITCODE) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion);
  * @returns IPRT status code.
  *
  * @param   ppapszArgv      Where to return the argument vector.  This must be
- *                          freed by calling RTGetOptArgvFree.
+ *                          freed by calling RTGetOptArgvFreeEx or
+ *                          RTGetOptArgvFree.
  * @param   pcArgs          Where to return the argument count.
  * @param   pszCmdLine      The string to parse.
  * @param   fFlags          A combination of the RTGETOPTARGV_CNV_XXX flags,
@@ -431,6 +432,15 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
 RTDECL(void) RTGetOptArgvFree(char **papszArgv);
 
 /**
+ * Frees and argument vector returned by RTGetOptStringToArgv, taking
+ * RTGETOPTARGV_CNV_MODIFY_INPUT into account.
+ *
+ * @param   papszArgv       Argument vector.  NULL is fine.
+ * @param   fFlags          The flags passed to RTGetOptStringToArgv.
+ */
+RTDECL(void) RTGetOptArgvFreeEx(char **papszArgv, uint32_t fFlags);
+
+/**
  * Turns an argv array into a command line string.
  *
  * This is useful for calling CreateProcess on Windows, but can also be used for
@@ -447,16 +457,22 @@ RTDECL(void) RTGetOptArgvFree(char **papszArgv);
  */
 RTDECL(int) RTGetOptArgvToString(char **ppszCmdLine, const char * const *papszArgv, uint32_t fFlags);
 
-/** @name RTGetOptArgvToString and RTGetOptArgvToUtf16String flags
+/** @name RTGetOptArgvToString, RTGetOptArgvToUtf16String and
+ *        RTGetOptArgvFromString flags
  * @{ */
 /** Quote strings according to the Microsoft CRT rules. */
-#define RTGETOPTARGV_CNV_QUOTE_MS_CRT       UINT32_C(0)
+#define RTGETOPTARGV_CNV_QUOTE_MS_CRT       UINT32_C(0x00000000)
 /** Quote strings according to the Unix Bourne Shell. */
-#define RTGETOPTARGV_CNV_QUOTE_BOURNE_SH    UINT32_C(1)
+#define RTGETOPTARGV_CNV_QUOTE_BOURNE_SH    UINT32_C(0x00000001)
 /** Don't quote any strings at all. */
-#define RTGETOPTARGV_CNV_UNQUOTED           UINT32_C(2)
+#define RTGETOPTARGV_CNV_UNQUOTED           UINT32_C(0x00000002)
 /** Mask for the quoting style. */
-#define RTGETOPTARGV_CNV_QUOTE_MASK         UINT32_C(3)
+#define RTGETOPTARGV_CNV_QUOTE_MASK         UINT32_C(0x00000003)
+/** Allow RTGetOptArgvFromString to modifying the command line input string.
+ * @note Must use RTGetOptArgvFreeEx to free. */
+#define RTGETOPTARGV_CNV_MODIFY_INPUT       UINT32_C(0x00000004)
+/** Valid bits. */
+#define RTGETOPTARGV_CNV_VALID_MASK         UINT32_C(0x00000007)
 /** @} */
 
 /**
