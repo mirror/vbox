@@ -238,8 +238,8 @@ static DECLCALLBACK(int) visoProbe(const char *pszFilename, PVDINTERFACE pVDIfsD
  *
  * This also updates cbImage and the Uuid members.
  *
- * @returns
- * @param   pThis               .
+ * @returns VBox status code.
+ * @param   pThis               The VISO image instance.
  */
 static int visoOpenWorker(PVISOIMAGE pThis)
 {
@@ -284,60 +284,71 @@ static int visoOpenWorker(PVISOIMAGE pThis)
                         if (RT_SUCCESS(rc))
                         {
                             /*
-                             * Convert it into an argument vector.
-                             * Free the content afterwards to reduce memory pressure.
+                             * Make sure it's valid UTF-8 before letting
                              */
-                            uint32_t fGetOpt = strncmp(pszReadDst, RT_STR_TUPLE("--iprt-iso-maker-file-marker-ms")) != 0
-                                             ? RTGETOPTARGV_CNV_QUOTE_BOURNE_SH : RTGETOPTARGV_CNV_QUOTE_MS_CRT;
-                            char **papszArgs;
-                            int    cArgs;
-                            rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszContent, fGetOpt, NULL);
-
-                            RTMemTmpFree(pszContent);
-                            pszContent = NULL;
-
+                            rc = RTStrValidateEncodingEx(pszContent, sizeof(s_szCmdPrefix) + cbFile,
+                                                         RTSTR_VALIDATE_ENCODING_EXACT_LENGTH
+                                                         | RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
                             if (RT_SUCCESS(rc))
                             {
                                 /*
-                                 * Try instantiate the ISO image maker.
-                                 * Free the argument vector afterward to reduce memory pressure.
+                                 * Convert it into an argument vector.
+                                 * Free the content afterwards to reduce memory pressure.
                                  */
-                                RTVFSFILE       hVfsFile;
-                                RTERRINFOSTATIC ErrInfo;
-                                rc = RTFsIsoMakerCmdEx(cArgs, papszArgs, &hVfsFile, RTErrInfoInitStatic(&ErrInfo));
-
-                                RTGetOptArgvFree(papszArgs);
-                                papszArgs = NULL;
+                                uint32_t fGetOpt = strncmp(pszReadDst, RT_STR_TUPLE("--iprt-iso-maker-file-marker-ms")) != 0
+                                                 ? RTGETOPTARGV_CNV_QUOTE_BOURNE_SH : RTGETOPTARGV_CNV_QUOTE_MS_CRT;
+                                fGetOpt |= RTGETOPTARGV_CNV_MODIFY_INPUT;
+                                char **papszArgs;
+                                int    cArgs;
+                                rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszContent, fGetOpt, NULL);
 
                                 if (RT_SUCCESS(rc))
                                 {
-                                    uint64_t cbImage;
-                                    rc = RTVfsFileGetSize(hVfsFile, &cbImage);
+                                    /*
+                                     * Try instantiate the ISO image maker.
+                                     * Free the argument vector afterward to reduce memory pressure.
+                                     */
+                                    RTVFSFILE       hVfsFile;
+                                    RTERRINFOSTATIC ErrInfo;
+                                    rc = RTFsIsoMakerCmdEx(cArgs, papszArgs, &hVfsFile, RTErrInfoInitStatic(&ErrInfo));
+
+                                    RTGetOptArgvFreeEx(papszArgs, fGetOpt);
+                                    papszArgs = NULL;
+
                                     if (RT_SUCCESS(rc))
                                     {
-                                        /*
-                                         * Update the state.
-                                         */
-                                        pThis->cbImage = cbImage;
-                                        pThis->RegionList.aRegions[0].cRegionBlocksOrBytes = cbImage;
+                                        uint64_t cbImage;
+                                        rc = RTVfsFileGetSize(hVfsFile, &cbImage);
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            /*
+                                             * Update the state.
+                                             */
+                                            pThis->cbImage = cbImage;
+                                            pThis->RegionList.aRegions[0].cRegionBlocksOrBytes = cbImage;
 
-                                        pThis->hIsoFile = hVfsFile;
-                                        hVfsFile = NIL_RTVFSFILE;
+                                            pThis->hIsoFile = hVfsFile;
+                                            hVfsFile = NIL_RTVFSFILE;
 
-                                        rc = VINF_SUCCESS;
+                                            rc = VINF_SUCCESS;
+                                        }
+
+                                        RTVfsFileRelease(hVfsFile);
                                     }
-
-                                    RTVfsFileRelease(hVfsFile);
-                                }
-                                else
-                                {
-                                    /** @todo better error reporting!  */
-                                    if (RTErrInfoIsSet(&ErrInfo.Core))
+                                    else if (RTErrInfoIsSet(&ErrInfo.Core))
+                                    {
                                         LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc - %s\n", rc, ErrInfo.Core.pszMsg));
+                                        vdIfError(pThis->pIfError, rc, RT_SRC_POS, "VISO: %s", ErrInfo.Core.pszMsg);
+                                    }
                                     else
+                                    {
                                         LogRel(("visoOpenWorker: RTFsIsoMakerCmdEx failed: %Rrc\n", rc));
+                                        vdIfError(pThis->pIfError, rc, RT_SRC_POS, "VISO: RTFsIsoMakerCmdEx failed: %Rrc", rc);
+                                    }
                                 }
                             }
+                            else
+                                vdIfError(pThis->pIfError, rc, RT_SRC_POS, "VISO: Invalid file encoding");
                         }
                     }
                     else
