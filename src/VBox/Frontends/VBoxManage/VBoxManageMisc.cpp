@@ -1276,6 +1276,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     Bstr user;
     Bstr password;
     Bstr productKey;
+    Bstr auxiliaryCDPath;
+    Bstr auxiliaryFloppyPath;
     Bstr group("group");
     Bstr machineName;
     Bstr fileWithSettings;
@@ -1296,6 +1298,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--key",                  'k', RTGETOPT_REQ_STRING },
         { "--iso-path",             'i', RTGETOPT_REQ_STRING },
         { "--additions-iso-path",   'a', RTGETOPT_REQ_STRING },
+        { "--auxiliary-cd-path",    'c', RTGETOPT_REQ_STRING },
+        { "--auxiliary-floppy-path",'f', RTGETOPT_REQ_STRING },
         { "--image-index",          'm', RTGETOPT_REQ_UINT16 },
         { "--settings-file",        's', RTGETOPT_REQ_STRING },
         { "--session-type",         'S', RTGETOPT_REQ_STRING },
@@ -1358,6 +1362,20 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 if (cSpecificOptions < 0)
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "--iso-path cannot be mixed with --settings-file");
                 isoPath = ValueUnion.psz;
+                cSpecificOptions++;
+                break;
+
+            case 'f':  // --auxiliary-floppy-path
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--auxiliary-floppy-path cannot be mixed with --settings-file");
+                auxiliaryFloppyPath = ValueUnion.psz;
+                cSpecificOptions++;
+                break;
+
+            case 'c':  // --auxiliary-cd-path
+                if (cSpecificOptions < 0)
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "--auxiliary-cd-path cannot be mixed with --settings-file");
+                auxiliaryCDPath = ValueUnion.psz;
                 cSpecificOptions++;
                 break;
 
@@ -1448,18 +1466,14 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             if (strInstalledOS.contains("Windows") && productKey.isEmpty())
                 return errorSyntax(USAGE_UNATTENDEDINSTALL, "A product key is required (--key).");
 
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(AdditionsIsoPath)(vboxAdditionsIsoPath.raw()));
-
             CHECK_ERROR_BREAK(unAttended, COMSETTER(IsoPath)(isoPath.raw()));
-
             CHECK_ERROR_BREAK(unAttended, COMSETTER(User)(user.raw()));
-
             CHECK_ERROR_BREAK(unAttended, COMSETTER(Password)(password.raw()));
-
             CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(productKey.raw()));
-
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(AuxiliaryCDPath)(auxiliaryCDPath.raw()));
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(AuxiliaryFloppyPath)(auxiliaryFloppyPath.raw()));
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(AdditionsIsoPath)(vboxAdditionsIsoPath.raw()));
             CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(vboxAdditionsIsoPath.isNotEmpty()));
-
             CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(imageIndex));
             CHECK_ERROR_BREAK(unAttended,Preparation());
             CHECK_ERROR_BREAK(unAttended,ConstructScript());
@@ -1537,6 +1551,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR_BREAK(unAttended, COMGETTER(User)(user.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Password)(password.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ProductKey)(productKey.asOutParam()));
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(AuxiliaryCDPath)(auxiliaryCDPath.asOutParam()));
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(AuxiliaryFloppyPath)(auxiliaryFloppyPath.asOutParam()));
         imageIndex = 0;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&imageIndex));
         RTPrintf("Got values:\n"
