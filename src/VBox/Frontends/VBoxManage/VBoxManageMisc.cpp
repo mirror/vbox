@@ -1278,7 +1278,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     Bstr productKey;
     Bstr group("group");
     Bstr machineName;
-    BOOL fInstallGuestAdditions;
     Bstr fileWithSettings;
     unsigned short imageIndex = 1; // applied only to Windows installation
     int cSpecificOptions = 0;
@@ -1459,8 +1458,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
             CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(productKey.raw()));
 
-            bool fInstallGuestAdditions = vboxAdditionsIsoPath.isNotEmpty();
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(fInstallGuestAdditions));
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(vboxAdditionsIsoPath.isNotEmpty()));
 
             CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(imageIndex));
             CHECK_ERROR_BREAK(unAttended,Preparation());
@@ -1533,7 +1531,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR_BREAK(unAttended, COMGETTER(FileWithPreparedData)(fileWithSettings.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Group)(group.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(VboxAdditionsIsoPath)(vboxAdditionsIsoPath.asOutParam()));
-        fInstallGuestAdditions = false;
+        BOOL fInstallGuestAdditions = FALSE;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(InstallGuestAdditions)(&fInstallGuestAdditions));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(IsoPath)(isoPath.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(User)(user.asOutParam()));
