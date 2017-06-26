@@ -49,47 +49,65 @@ UIWizardFirstRun::UIWizardFirstRun(QWidget *pParent, const CMachine &machine)
 
 bool UIWizardFirstRun::insertMedium()
 {
-    /* Get 'vbox' global object: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    /* Determine machine 'OS type': */
-    const CGuestOSType &osType = vbox.GetGuestOSType(m_machine.GetOSTypeId());
-    /* Determine recommended controller's 'bus' & 'type': */
-    KStorageBus dvdCtrBus = osType.GetRecommendedDVDStorageBus();
-    KStorageControllerType dvdCtrType = osType.GetRecommendedDVDStorageController();
-    /* Declare null 'dvd' attachment: */
-    CMediumAttachment cda;
-    /* Enumerate attachments vector: */
-    const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachments();
-    for (int i = 0; i < attachments.size(); ++i)
+    /* Prepare result: */
+    bool fSuccess = true;
+
+    /* Get global VBox object: */
+    CVirtualBox comVbox = vboxGlobal().virtualBox();
+    /* Get machine OS type: */
+    const CGuestOSType &comOsType = comVbox.GetGuestOSType(m_machine.GetOSTypeId());
+    /* Get recommended controller bus & type: */
+    const KStorageBus enmRecommendedDvdBus = comOsType.GetRecommendedDVDStorageBus();
+    const KStorageControllerType enmRecommendedDvdType = comOsType.GetRecommendedDVDStorageController();
+
+    /* Prepare null medium attachment: */
+    CMediumAttachment comAttachment;
+    /* Search for an attachment of required bus & type: */
+    foreach (const CMediumAttachment &comCurrentAttachment, m_machine.GetMediumAttachments())
     {
-        /* Get current attachment: */
-        const CMediumAttachment &attachment = attachments[i];
-        /* Determine attachment's controller: */
-        const CStorageController &controller = m_machine.GetStorageControllerByName(attachment.GetController());
-        /* If controller's 'bus' & 'type' are recommended and attachment's 'type' is 'dvd': */
-        if (controller.GetBus() == dvdCtrBus &&
-            controller.GetControllerType() == dvdCtrType &&
-            attachment.GetType() == KDeviceType_DVD)
+        /* Determine current attachment's controller: */
+        const CStorageController &comCurrentController = m_machine.GetStorageControllerByName(comCurrentAttachment.GetController());
+        /* If current controller bus & type are recommended and attachment type is 'dvd': */
+        if (   comCurrentController.GetBus() == enmRecommendedDvdBus
+            && comCurrentController.GetControllerType() == enmRecommendedDvdType
+            && comCurrentAttachment.GetType() == KDeviceType_DVD)
         {
             /* Remember attachment: */
-            cda = attachment;
+            comAttachment = comCurrentAttachment;
             break;
         }
     }
-    AssertMsg(!cda.isNull(), ("Storage Controller is NOT properly configured!\n"));
+    AssertMsgReturn(!comAttachment.isNull(), ("Storage Controller is NOT properly configured!\n"), false);
+
+    // In place where the UIWizardFirstRun is currently being opened
+    // we doesn't have to open direct or shared session because it's
+    // already opened for the VM which being cached in this wizard.
+
     /* Get chosen 'dvd' medium to mount: */
-    QString mediumId = field("id").toString();
-    UIMedium vmedium = vboxGlobal().medium(mediumId);
-    CMedium medium = vmedium.medium(); /// @todo r=dj can this be cached somewhere?
+    const QString strMediumId = field("id").toString();
+    const UIMedium guiMedium = vboxGlobal().medium(strMediumId);
+    const CMedium comMedium = guiMedium.medium();
+
     /* Mount medium to the predefined port/device: */
-    m_machine.MountMedium(cda.GetController(), cda.GetPort(), cda.GetDevice(), medium, false /* force */);
-    if (m_machine.isOk())
-        return true;
+    m_machine.MountMedium(comAttachment.GetController(), comAttachment.GetPort(), comAttachment.GetDevice(), comMedium, false /* force */);
+    fSuccess = m_machine.isOk();
+
+    /* Show error message if necessary: */
+    if (!fSuccess)
+        msgCenter().cannotRemountMedium(m_machine, guiMedium, true /* mount? */, false /* retry? */, this);
     else
     {
-        msgCenter().cannotRemountMedium(m_machine, vmedium, true /* mount? */, false /* retry? */, this);
-        return false;
+        /* Save machine settings: */
+        m_machine.SaveSettings();
+        fSuccess = m_machine.isOk();
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            msgCenter().cannotSaveMachineSettings(m_machine, this);
     }
+
+    /* Return result: */
+    return fSuccess;
 }
 
 void UIWizardFirstRun::retranslateUi()
