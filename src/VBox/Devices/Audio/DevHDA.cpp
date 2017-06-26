@@ -1425,7 +1425,7 @@ static void hdaStreamUnlock(PHDASTREAM pStream)
 DECLINLINE(PHDASTREAM) hdaStreamGetFromSD(PHDASTATE pThis, uint8_t uSD)
 {
     AssertPtrReturn(pThis, NULL);
-    AssertReturn(uSD <= HDA_MAX_STREAMS, NULL);
+    AssertReturn(uSD < HDA_MAX_STREAMS, NULL);
 
     if (uSD >= HDA_MAX_STREAMS)
     {
@@ -1466,7 +1466,7 @@ DECLINLINE(PHDASTREAM) hdaSinkGetStream(PHDASTATE pThis, PHDAMIXERSINK pSink)
  */
 DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
 {
-    AssertReturn(uSD <= HDA_MAX_STREAMS, PDMAUDIODIR_UNKNOWN);
+    AssertReturn(uSD < HDA_MAX_STREAMS, PDMAUDIODIR_UNKNOWN);
 
     if (uSD < HDA_MAX_SDI)
         return PDMAUDIODIR_IN;
@@ -2022,7 +2022,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
 {
     AssertPtrReturnVoid(pThis);
     AssertPtrReturnVoid(pStream);
-    AssertReturnVoid(uSD <= HDA_MAX_STREAMS);
+    AssertReturnVoid(uSD < HDA_MAX_STREAMS);
 
 # ifdef VBOX_STRICT
     AssertReleaseMsg(!RT_BOOL(HDA_STREAM_REG(pThis, CTL, uSD) & HDA_SDCTL_RUN),
@@ -5320,7 +5320,7 @@ static int hdaStreamTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToP
     }
 
     /* Sanity checks. */
-    Assert(pStream->u8SD <= HDA_MAX_STREAMS);
+    Assert(pStream->u8SD < HDA_MAX_STREAMS);
     Assert(pStream->u64BDLBase);
     Assert(pStream->u32CBL);
 
@@ -5964,7 +5964,7 @@ static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
     /* Save stream ID. */
     int rc = SSMR3PutU8(pSSM, pStrm->u8SD);
     AssertRCReturn(rc, rc);
-    Assert(pStrm->u8SD <= HDA_MAX_STREAMS);
+    Assert(pStrm->u8SD < HDA_MAX_STREAMS);
 
     rc = SSMR3PutStructEx(pSSM, &pStrm->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
