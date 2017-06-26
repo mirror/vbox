@@ -124,7 +124,10 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
 void UIMachineWindowNormal::sltHandleSessionInitialized()
 {
     /* Update virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_FeaturesStuff);
+    updateAppearanceOf(  UIVisualElement_FeaturesStuff
+                       | UIVisualElement_HDStuff
+                       | UIVisualElement_CDStuff
+                       | UIVisualElement_FDStuff);
 }
 
 #ifndef RT_OS_DARWIN
