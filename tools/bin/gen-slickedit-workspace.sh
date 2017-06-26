@@ -572,9 +572,9 @@ my_generate_usercpp_h()
 #define RT_C_DECLS_END
 #define RT_NO_THROW
 #define RT_THROW(type) throw(type)
-#define RT_GCC_EXTENSION'
-#define RT_COMPILER_GROKS_64BIT_BITFIELDS'
-#define RT_COMPILER_WITH_80BIT_LONG_DOUBLE'
+#define RT_GCC_EXTENSION
+#define RT_COMPILER_GROKS_64BIT_BITFIELDS
+#define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 
 #define ATL_NO_VTABLE
 #define BEGIN_COM_MAP(a)
@@ -645,6 +645,8 @@ EOF
 #define RT_SRC_POS_DECL                 const char *pszFile, unsigned iLine, const char *pszFunction
 #define RT_SRC_POS_ARGS                 pszFile, iLine, pszFunction
 #define RTCALL
+#define RT_IPRT_FORMAT_ATTR(a_iFmt, a_iArgs)
+#define RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a_iFmt, a_iArgs)
 #define DECLINLINE(type)                inline type
 #define DECL_FORCE_INLINE(type)         inline type
 #define DECL_INVALID(type)              type
