@@ -398,7 +398,7 @@ private:
     /* Common helpers: */
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
     bool preprocessInitialization();
-    bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediumType, const QString &strImage);
+    bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediumType, const QString &strMediumName);
     bool postprocessInitialization();
     int countOfVisibleWindows();
     /** Loads VM settings. */

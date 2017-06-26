@@ -2031,54 +2031,97 @@ bool UISession::preprocessInitialization()
     return true;
 }
 
-bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediumType, const QString &strImage)
+bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediumType, const QString &strMediumName)
 {
-    /* The 'none' image name means ejecting what ever is in the drive,
-     * so leave the image variables null. */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    UIMedium uiImage;
-    if (strImage != "none")
+    /* Get VBox: */
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
+
+    /* Prepare medium to mount: */
+    UIMedium guiMedium;
+
+    /* The 'none' medium name means ejecting what ever is in the drive,
+     * in that case => leave the guiMedium variable null. */
+    if (strMediumName != "none")
     {
-        /* Open the image: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMedium vboxImage = vbox.OpenMedium(strImage, enmDeviceType, KAccessMode_ReadWrite, false /* fForceNewUuid */);
-        if (!vbox.isOk() || vboxImage.isNull())
+        /* Open the medium: */
+        const CMedium comMedium = comVBox.OpenMedium(strMediumName, enmDeviceType, KAccessMode_ReadWrite, false /* fForceNewUuid */);
+        if (!comVBox.isOk() || comMedium.isNull())
         {
-            msgCenter().cannotOpenMedium(vbox, enmMediumType, strImage);
+            msgCenter().cannotOpenMedium(comVBox, enmMediumType, strMediumName);
             return false;
         }
 
-        /* Work the cache and use the cached image if possible: */
-        uiImage = vboxGlobal().medium(vboxImage.GetId());
-        if (uiImage.isNull())
+        /* Make sure medium ID is valid: */
+        const QString strMediumId = comMedium.GetId();
+        AssertReturn(!strMediumId.isNull(), false);
+
+        /* Try to find UIMedium among cached: */
+        guiMedium = vboxGlobal().medium(strMediumId);
+        if (guiMedium.isNull())
         {
-            uiImage = UIMedium(vboxImage, enmMediumType, KMediumState_Created);
-            vboxGlobal().createMedium(uiImage);
+            /* Cache new one if necessary: */
+            guiMedium = UIMedium(comMedium, enmMediumType, KMediumState_Created);
+            vboxGlobal().createMedium(guiMedium);
         }
     }
-    if (vbox.isOk())
+
+    /* Search for a suitable storage slots: */
+    QList<ExactStorageSlot> aFreeStorageSlots;
+    QList<ExactStorageSlot> aBusyStorageSlots;
+    foreach (const CStorageController &comController, machine().GetStorageControllers())
     {
-        /* Find suitable storage controller: */
-        foreach (const CStorageController &controller, machine().GetStorageControllers())
+        foreach (const CMediumAttachment &comAttachment, machine().GetMediumAttachmentsOfController(comController.GetName()))
         {
-            foreach (const CMediumAttachment &attachment, machine().GetMediumAttachmentsOfController(controller.GetName()))
+            /* Look for an optical devices only: */
+            if (comAttachment.GetType() == enmDeviceType)
             {
-                if (attachment.GetType() == enmDeviceType)
-                {
-                    /* Mount the image: */
-                    machine().MountMedium(controller.GetName(), attachment.GetPort(), attachment.GetDevice(), uiImage.medium(), true /* force */);
-                    if (machine().isOk())
-                        return true;
-                    msgCenter().cannotRemountMedium(machine(), uiImage, !uiImage.isNull() /* mount */, false /* retry */);
-                    return false;
-                }
+                /* Append storage slot to corresponding list: */
+                if (comAttachment.GetMedium().isNull())
+                    aFreeStorageSlots << ExactStorageSlot(comController.GetName(), comController.GetBus(),
+                                                          comAttachment.GetPort(), comAttachment.GetDevice());
+                else
+                    aBusyStorageSlots << ExactStorageSlot(comController.GetName(), comController.GetBus(),
+                                                          comAttachment.GetPort(), comAttachment.GetDevice());
             }
         }
-        msgCenter().cannotRemountMedium(machine(), uiImage, !uiImage.isNull() /* mount */, false /* retry */);
     }
-    else
-        msgCenter().cannotOpenMedium(vbox, enmMediumType, strImage);
-    return false;
+
+    /* Make sure at least one storage slot found: */
+    QList<ExactStorageSlot> sStorageSlots = aFreeStorageSlots + aBusyStorageSlots;
+    if (sStorageSlots.isEmpty())
+    {
+        msgCenter().cannotMountGuestAdditions(machineName());
+        return false;
+    }
+
+    /* Try to mount medium into first available storage slot: */
+    while (!sStorageSlots.isEmpty())
+    {
+        const ExactStorageSlot storageSlot = sStorageSlots.takeFirst();
+        machine().MountMedium(storageSlot.controller, storageSlot.port, storageSlot.device, guiMedium.medium(), false /* force */);
+        if (machine().isOk())
+            break;
+    }
+
+    /* Show error message if necessary: */
+    if (!machine().isOk())
+    {
+        msgCenter().cannotRemountMedium(machine(), guiMedium, true /* mount? */, false /* retry? */, mainMachineWindow());
+        return false;
+    }
+
+    /* Save machine settings: */
+    machine().SaveSettings();
+
+    /* Show error message if necessary: */
+    if (!machine().isOk())
+    {
+        msgCenter().cannotSaveMachineSettings(machine(), mainMachineWindow());
+        return false;
+    }
+
+    /* True by default: */
+    return true;
 }
 
 bool UISession::postprocessInitialization()
