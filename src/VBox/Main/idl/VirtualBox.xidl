@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="b2225882-297e-459c-bc80-e3d067c46ebb"
+    uuid="47f28e07-4cb5-4d24-1e1f-42f827f70fb0"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="4"
     >
@@ -3782,27 +3782,12 @@
     <attribute name="group" type="wstring">
       <desc>
         A group this VM belongs to.
-    </desc>
-
-    </attribute>
-
-    <attribute name="additionsIsoPath" type="wstring">
-      <desc>
-        Guest Additions ISO image path
       </desc>
     </attribute>
 
     <attribute name="isoPath" type="wstring">
       <desc>
         Guest operating system ISO image
-      </desc>
-    </attribute>
-
-    <attribute name="fileWithPreparedData" type="wstring">
-      <desc>
-        A path to the file with data prepared by user.
-        The internal rule is "name = value" like "isoPath = /correct/path/to/the/iso"
-        One line - one parameter
       </desc>
     </attribute>
 
@@ -3825,6 +3810,12 @@
       </desc>
     </attribute>
 
+    <attribute name="additionsIsoPath" type="wstring">
+      <desc>
+        Guest Additions ISO image path
+      </desc>
+    </attribute>
+
     <attribute name="installGuestAdditions" type="boolean">
       <desc>
         specifies if the Oracle VirtualBox additions should be installed or not.
@@ -3833,10 +3824,34 @@
         Currently not implemented.
       </desc>
     </attribute>
+
+    <attribute name="auxiliaryCDPath" type="wstring">
+      <desc>
+        The path of any auxiliary CD image we might be creating.  Related
+        temporary files will appear in the same directory.
+      </desc>
+    </attribute>
+
+    <attribute name="auxiliaryFloppyPath" type="wstring">
+      <desc>
+        Where to store the auxiliary floppy we might be creating.
+      </desc>
+    </attribute>
+
     <attribute name="imageIndex" type="unsigned short">
       <desc>
         The image index on installation CD/DVD used to install.
         Used only with Windows installation CD/DVD
+      </desc>
+    </attribute>
+
+    <attribute name="fileWithPreparedData" type="wstring">
+      <!-- bird: Would make more sense to make this a method for loading settings from a given file, i.e.
+                 immediate feedback and ability to tweak it afterwards. -->
+      <desc>
+        A path to the file with data prepared by user.
+        The internal rule is "name = value" like "isoPath = /correct/path/to/the/iso"
+        One line - one parameter
       </desc>
     </attribute>
 
