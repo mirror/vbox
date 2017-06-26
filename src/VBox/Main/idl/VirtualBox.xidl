@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="ba702c0a-af6c-4598-b20c-247fb9e46406"
+    uuid="b2225882-297e-459c-bc80-e3d067c46ebb"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="4"
     >
@@ -3786,7 +3786,7 @@
 
     </attribute>
 
-    <attribute name="vboxAdditionsIsoPath" type="wstring">
+    <attribute name="additionsIsoPath" type="wstring">
       <desc>
         Guest Additions ISO image path
       </desc>
