@@ -1369,7 +1369,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 cSpecificOptions++;
                 break;
 
-            case 'S':   // --sesion-type
+            case 'S':   // --session-type
                 sessionType = ValueUnion.psz;
                 break;
 
