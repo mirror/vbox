@@ -331,6 +331,7 @@ static int visoOpenWorker(PVISOIMAGE pThis)
                                             hVfsFile = NIL_RTVFSFILE;
 
                                             rc = VINF_SUCCESS;
+                                            LogRel(("VISO: %'RU64 bytes (%#RX64) - %s\n", cbImage, cbImage, pThis->pszFilename));
                                         }
 
                                         RTVfsFileRelease(hVfsFile);
