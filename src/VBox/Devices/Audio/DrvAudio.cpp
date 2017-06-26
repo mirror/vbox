@@ -1627,13 +1627,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
                 csCapturedTotal += csCaptured;
         }
         else /* Nothing captured -- bail out. */
-        {
-#ifdef VBOX_STRICT
-            AssertMsgFailed(("[%s] Captured anything, even if announced readable data (%RU32 captured samples so far) -- backend buggy?\n",
-                             pHstStream->szName, csCapturedTotal));
-#endif
             break;
-        }
 
         if (RT_FAILURE(rc))
             break;
@@ -1716,13 +1710,7 @@ static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream,
             csCapturedTotal += csCaptured;
         }
         else /* Nothing captured -- bail out. */
-        {
-#ifdef VBOX_STRICT
-            AssertMsgFailed(("[%s] Captured anything, even if announced readable data (%RU32 captured samples so far) -- backend buggy?\n",
-                             pHstStream->szName, csCapturedTotal));
-#endif
             break;
-        }
 
         if (RT_FAILURE(rc))
             break;
