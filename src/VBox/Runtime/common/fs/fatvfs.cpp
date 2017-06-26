@@ -2422,7 +2422,7 @@ static bool rtFsFatDir_StringTo8Dot3(char *pszName8Dot3, const char *pszName)
             break;
         }
     }
-    memset(&pszName8Dot3[0], 0, 12+1);
+    memset(&pszName8Dot3[0], 0, 8+3+1);
     return false;
 }
 
