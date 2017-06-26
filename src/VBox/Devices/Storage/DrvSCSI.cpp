@@ -1363,7 +1363,8 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Try attach driver below and query it's media interface.
      */
     rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
-    AssertMsgReturn(RT_SUCCESS(rc), ("Attaching driver below failed rc=%Rrc\n", rc), rc);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Query the media interface.
