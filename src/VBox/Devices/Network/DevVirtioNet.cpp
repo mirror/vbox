@@ -1156,7 +1156,6 @@ DECLINLINE(void) vnetCompleteChecksum(uint8_t *pBuf, size_t cbSize, uint16_t uSt
 static int vnetTransmitFrame(PVNETSTATE pThis, PPDMSCATTERGATHER pSgBuf, PPDMNETWORKGSO pGso, PVNETHDR pHdr)
 {
     vnetPacketDump(pThis, (uint8_t *)pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, "--> Outgoing");
-    LogRel(("vnet: Outgoing %spacket %d bytes, csum_start=%x\n", pGso?"GSO ":"", pSgBuf->cbUsed, pHdr->u16CSumStart));
     if (pGso)
     {
         /* Some guests (RHEL) may report HdrLen excluding transport layer header! */
