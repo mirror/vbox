@@ -2288,7 +2288,6 @@ BOOL IsInstalledWindowsService(const WCHAR* wszServiceName)
     SC_HANDLE hService;
 
     hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-
     if (hSCM != NULL)
     {
         hService = OpenService(hSCM, wszServiceName, SERVICE_QUERY_CONFIG);
@@ -2327,7 +2326,7 @@ BOOL InstallWindowsService(const WCHAR* wszVBoxDir,
     moduleLen = RTUtf16Len(wszServiceModule);
 
     if (   dirLen + moduleLen + 2 >= MAX_PATH + QUOTES_SPACE
-        || !RT_SUCCESS(RTUtf16Copy(szFilePath + 1, MAX_PATH + QUOTES_SPACE - 1, wszVBoxDir)) 
+        || !RT_SUCCESS(RTUtf16Copy(szFilePath + 1, MAX_PATH + QUOTES_SPACE - 1, wszVBoxDir))
         || !RT_SUCCESS(RTUtf16Copy(szFilePath + dirLen + 1, MAX_PATH + QUOTES_SPACE - dirLen - 1, wszServiceModule)))
     {
         LogWarnFunc(("Error: The path to a windows service module is too long\n"));
@@ -2384,7 +2383,6 @@ BOOL UninstallWindowsService(const WCHAR* wszServiceName)
         return TRUE;
 
     hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-
     if (hSCM == NULL)
     {
         LogWarnFunc(("Error: Could not open Service Manager\n"));
@@ -2393,7 +2391,6 @@ BOOL UninstallWindowsService(const WCHAR* wszServiceName)
     }
 
     hService = OpenService(hSCM, wszServiceName, SERVICE_STOP | DELETE);
-
     if (hService == NULL)
     {
         CloseServiceHandle(hSCM);
@@ -2407,9 +2404,9 @@ BOOL UninstallWindowsService(const WCHAR* wszServiceName)
     if (!bRet)
     {
         DWORD dwError = GetLastError();
-        if (!((dwError == ERROR_SERVICE_NOT_ACTIVE) ||
-            (dwError == ERROR_SERVICE_CANNOT_ACCEPT_CTRL
-                && status.dwCurrentState == SERVICE_STOP_PENDING)))
+        if (!(   dwError == ERROR_SERVICE_NOT_ACTIVE
+              || (   dwError == ERROR_SERVICE_CANNOT_ACCEPT_CTRL
+                  && status.dwCurrentState == SERVICE_STOP_PENDING)))
         {
             CloseServiceHandle(hSCM);
             hSCM = NULL;
