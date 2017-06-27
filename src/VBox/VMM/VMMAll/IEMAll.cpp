@@ -11372,6 +11372,11 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FTW  = 0xff; \
     } while (0)
 
+/** Switches the FPU state from MMX mode (FTW=0xffff). */
+#define IEM_MC_FPU_FROM_MMX_MODE() do { \
+        IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FTW  = 0; \
+    } while (0)
+
 #define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg) \
     do { (a_u64Value) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.aRegs[(a_iMReg)].mmx; } while (0)
 #define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg) \

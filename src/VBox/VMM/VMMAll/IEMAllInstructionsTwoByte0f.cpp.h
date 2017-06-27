@@ -966,7 +966,20 @@ FNIEMOP_DEF(iemOp_nop_Ev_GrpP)
 
 
 /** Opcode 0x0f 0x0e. */
-FNIEMOP_STUB(iemOp_femms);
+FNIEMOP_DEF(iemOp_femms)
+{
+    IEMOP_MNEMONIC(femms, "femms");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(0,0);
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
+    IEM_MC_FPU_FROM_MMX_MODE();
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0x0f 0x0f. */
@@ -4339,7 +4352,21 @@ FNIEMOP_DEF(iemOp_pcmpeqd_Vx_Wx)
 
 
 /** Opcode      0x0f 0x77 - emms (vex has vzeroall and vzeroupper here) */
-FNIEMOP_STUB(iemOp_emms);
+FNIEMOP_DEF(iemOp_emms)
+{
+    IEMOP_MNEMONIC(emms, "emms");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(0,0);
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
+    IEM_MC_FPU_FROM_MMX_MODE();
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 /*  Opcode 0x66 0x0f 0x77 - invalid */
 /*  Opcode 0xf3 0x0f 0x77 - invalid */
 /*  Opcode 0xf2 0x0f 0x77 - invalid */
