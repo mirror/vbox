@@ -198,14 +198,14 @@ size_t Utf8Str::parseKeyValue(Utf8Str &a_rKey, Utf8Str &a_rValue, size_t a_offSt
        Note! The skipping allows us to pass the return value of a parseKeyValue()
              call as offStart to the next call. */
     size_t offEnd;
-    while (   a_offStart == (offEnd = find(a_rPairSeparator.c_str(), a_offStart))
+    while (   a_offStart == (offEnd = find(&a_rPairSeparator, a_offStart))
            && offEnd != npos)
         a_offStart++;
 
     /* Look for a key/value separator before the end of the pair.
        ASSUMES npos value returned by find when the substring is not found is
        really high. */
-    size_t offKeyValueSep = find(a_rKeyValueSeparator.c_str(), a_offStart);
+    size_t offKeyValueSep = find(&a_rKeyValueSeparator, a_offStart);
     if (offKeyValueSep < offEnd)
     {
         a_rKey = substr(a_offStart, offKeyValueSep - a_offStart);
