@@ -763,8 +763,30 @@ public:
      */
     Utf8Str& stripSuffix();
 
-    // Parse key=value pairs from string
-    size_t parseKeyValue(Utf8Str &key, Utf8Str &value, size_t pos = 0, const Utf8Str &pairSeparator = ",", const Utf8Str &keyValueSeparator = "=") const;
+    /**
+     * Parses key=value pairs.
+     *
+     * @returns offset of the @a a_rPairSeparator following the returned value.
+     * @retval  npos is returned if there are no more key/value pairs, or if the
+     *          final key/value pair isn't followed by a @a a_rPairSeparator.
+     *
+     * @param   a_rKey                  Reference to variable that should receive
+     *                                  the key substring.  This is set to null if
+     *                                  no key/value found.  (It's also possible the
+     *                                  key is an empty string, so be careful.)
+     * @param   a_rValue                Reference to variable that should receive
+     *                                  the value substring.  This is set to null if
+     *                                  no key/value found.  (It's also possible the
+     *                                  value is an empty string, so be careful.)
+     * @param   a_offStart              The offset to start searching from.  This is
+     *                                  typically 0 for the first call, and the
+     *                                  return value of the previous call for the
+     *                                  subsequent ones.
+     * @param   a_rPairSeparator        The pair separator string.
+     * @param   a_rKeyValueSeparator    The key/value separator string.
+     */
+    size_t parseKeyValue(Utf8Str &a_rKey, Utf8Str &a_rValue, size_t a_offStart = 0,
+                         const Utf8Str &a_rPairSeparator = ",", const Utf8Str &a_rKeyValueSeparator = "=") const;
 
     /**
      *  Static immutable empty-string object. May be used for comparison purposes.

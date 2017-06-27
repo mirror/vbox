@@ -191,23 +191,33 @@ Utf8Str& Utf8Str::stripSuffix()
     return *this;
 }
 
-size_t Utf8Str::parseKeyValue(Utf8Str &key, Utf8Str &value, size_t pos, const Utf8Str &pairSeparator, const Utf8Str &keyValueSeparator) const
+size_t Utf8Str::parseKeyValue(Utf8Str &a_rKey, Utf8Str &a_rValue, size_t a_offStart /* = 0*/,
+                              const Utf8Str &a_rPairSeparator /*= ","*/, const Utf8Str &a_rKeyValueSeparator /*= "="*/) const
 {
-    size_t start = pos;
-    while(start == (pos = find(pairSeparator.c_str(), pos)))
-        start = ++pos;
+    /* Find the end of the next pair, skipping empty pairs.
+       Note! The skipping allows us to pass the return value of a parseKeyValue()
+             call as offStart to the next call. */
+    size_t offEnd;
+    while (   a_offStart == (offEnd = find(a_rPairSeparator.c_str(), a_offStart))
+           && offEnd != npos)
+        a_offStart++;
 
-    size_t kvSepPos = find(keyValueSeparator.c_str(), start);
-    if (kvSepPos < pos)
+    /* Look for a key/value separator before the end of the pair.
+       ASSUMES npos value returned by find when the substring is not found is
+       really high. */
+    size_t offKeyValueSep = find(a_rKeyValueSeparator.c_str(), a_offStart);
+    if (offKeyValueSep < offEnd)
     {
-        key = substr(start, kvSepPos - start);
-        value = substr(kvSepPos + 1, pos - kvSepPos - 1);
+        a_rKey   = substr(a_offStart, offKeyValueSep - a_offStart);
+        a_rValue = substr(offKeyValueSep + 1, offEnd - offKeyValueSep - 1);
     }
     else
     {
-        key = value = "";
+        a_rKey.setNull();
+        a_rValue.setNull();
     }
-    return pos;
+
+    return offEnd;
 }
 
 /**
