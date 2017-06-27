@@ -758,6 +758,27 @@ public:
     size_t count(const RTCString *pStr, CaseSensitivity cs = CaseSensitive) const;
 
     /**
+     * Strips leading and trailing spaces.
+     *
+     * @returns this
+     */
+    RTCString &strip();
+
+    /**
+     * Strips leading spaces.
+     *
+     * @returns this
+     */
+    RTCString &stripLeft();
+
+    /**
+     * Strips trailing spaces.
+     *
+     * @returns this
+     */
+    RTCString &stripRight();
+
+    /**
      * Returns a substring of @a this as a new Utf8Str.
      *
      * Works exactly like its equivalent in std::string. With the default

@@ -32,6 +32,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/cpp/ministring.h>
+#include <iprt/ctype.h>
 
 
 /*********************************************************************************************************************************
@@ -280,6 +281,51 @@ size_t RTCString::count(const RTCString *pStr, CaseSensitivity cs = CaseSensitiv
 
 }
 #endif
+
+
+RTCString &RTCString::strip()
+{
+    stripRight();
+    return stripLeft();
+}
+
+
+RTCString &RTCString::stripLeft()
+{
+    char        *psz = m_psz;
+    size_t const cch = m_cch;
+    size_t       off = 0;
+    while (off < cch && RT_C_IS_SPACE(psz[off]))
+        off++;
+    if (off > 0)
+    {
+        if (off != cch)
+        {
+            memmove(psz, &psz[off], cch - off + 1);
+            m_cch = cch - off;
+        }
+        else
+            setNull();
+    }
+    return *this;
+}
+
+
+RTCString &RTCString::stripRight()
+{
+    char  *psz = m_psz;
+    size_t cch = m_cch;
+    while (cch > 0 && RT_C_IS_SPACE(psz[cch - 1]))
+        cch--;
+    if (m_cch != cch)
+    {
+        m_cch = cch;
+        psz[cch] = '\0';
+    }
+    return *this;
+}
+
+
 
 RTCString RTCString::substrCP(size_t pos /*= 0*/, size_t n /*= npos*/) const
 {
