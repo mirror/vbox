@@ -1300,7 +1300,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
     pCtx->hwvirt.svm.fGif = 0;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 #if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-    EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
+    return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
 #endif
     return VINF_SUCCESS;
 }
