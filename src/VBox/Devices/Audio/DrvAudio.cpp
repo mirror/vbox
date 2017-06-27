@@ -1317,8 +1317,11 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                 uint32_t cbPlayed = 0;
                 rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
                                                          auBuf, cbRead, &cbPlayed);
-                if (RT_FAILURE(rc))
+                if (   RT_FAILURE(rc)
+                    || !cbPlayed)
+                {
                     break;
+                }
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
                 drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "PlayNonInterleaved.pcm",
@@ -1399,15 +1402,20 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
             if (   RT_SUCCESS(rc)
                 && csRead)
             {
-                uint32_t csPlayedChunk;
+                uint32_t csPlayed;
 
+                /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames
+                 *       rather on bytes. */
                 Assert(csRead <= RT_ELEMENTS(aSampleBuf));
                 rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
-                                                         aSampleBuf, csRead, &csPlayedChunk);
-                if (RT_FAILURE(rc))
+                                                         aSampleBuf, csRead, &csPlayed);
+                if (   RT_FAILURE(rc)
+                    || !csPlayed)
+                {
                     break;
+                }
 
-                csPlayedTotal += csPlayedChunk;
+                csPlayedTotal += csPlayed;
                 Assert(csPlayedTotal <= csToPlay);
 
                 Assert(csLeft >= csRead);
