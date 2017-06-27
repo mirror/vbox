@@ -199,16 +199,42 @@ RTCString &RTCString::appendCodePoint(RTUNICP uc)
     return *this;
 }
 
-size_t RTCString::find(const char *pcszFind, size_t pos /*= 0*/) const
+size_t RTCString::find(const char *pszNeedle, size_t offStart /*= 0*/) const
 {
-    if (pos < length())
+    if (offStart < length())
     {
         const char *pszThis = c_str();
         if (pszThis)
         {
-            const char *pszHit = strstr(pszThis + pos, pcszFind);
-            if (pszHit)
-                return pszHit - pszThis;
+            if (pszNeedle && *pszNeedle != '\0')
+            {
+                const char *pszHit = strstr(pszThis + offStart, pszNeedle);
+                if (pszHit)
+                    return pszHit - pszThis;
+            }
+        }
+    }
+
+    return npos;
+}
+
+size_t RTCString::find(const RTCString *pStrNeedle, size_t offStart /*= 0*/) const
+{
+    if (offStart < length())
+    {
+        const char *pszThis = c_str();
+        if (pszThis)
+        {
+            if (pStrNeedle)
+            {
+                const char *pszNeedle = pStrNeedle->c_str();
+                if (pszNeedle && *pszNeedle != '\0')
+                {
+                    const char *pszHit = strstr(pszThis + offStart, pszNeedle);
+                    if (pszHit)
+                        return pszHit - pszThis;
+                }
+            }
         }
     }
 

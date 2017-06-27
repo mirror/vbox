@@ -693,16 +693,33 @@ public:
     /**
      * Find the given substring.
      *
-     * Looks for pcszFind in "this" starting at "pos" and returns its position
-     * as a byte (not codepoint) offset, counting from the beginning of "this" at 0.
+     * Looks for @a pszNeedle in @a this starting at @a offStart and returns its
+     * position as a byte (not codepoint) offset, counting from the beginning of
+     * @a this as 0.
      *
-     * @param   pcszFind        The substring to find.
-     * @param   pos             The (byte) offset into the string buffer to start
+     * @param   pszNeedle       The substring to find.
+     * @param   offStart        The (byte) offset into the string buffer to start
      *                          searching.
      *
-     * @returns 0 based position of pcszFind. npos if not found.
+     * @returns 0 based position of pszNeedle. npos if not found.
      */
-    size_t find(const char *pcszFind, size_t pos = 0) const;
+    size_t find(const char *pszNeedle, size_t offStart = 0) const;
+
+    /**
+     * Find the given substring.
+     *
+     * Looks for @a pStrNeedle in @a this starting at @a offStart and returns its
+     * position as a byte (not codepoint) offset, counting from the beginning of
+     * @a this as 0.
+     *
+     * @param   pStrNeedle      The substring to find.
+     * @param   offStart        The (byte) offset into the string buffer to start
+     *                          searching.
+     *
+     * @returns 0 based position of pStrNeedle. npos if not found or pStrNeedle is
+     *          NULL or an empty string.
+     */
+    size_t find(const RTCString *pStrNeedle, size_t offStart = 0) const;
 
     /**
      * Replaces all occurences of cFind with cReplace in the member string.
