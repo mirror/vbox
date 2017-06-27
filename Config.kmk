@@ -2866,6 +2866,7 @@ endif
 #               Probably useful, but impractical, just like the next one.
 #      -wd4264: 'int VRDPOutputCtx::SendPacket(void)' : no override available for virtual member function from base 'VRDPOutputCtx'; function is hidden
 #      -wd4738: storing 32-bit float result in memory, possible loss of performance
+#      -wd4371: UIActionPool.h(393) : warning C4371: 'UIActionPool::PointerToFunction' : layout of class may have changed from a previous version of the compiler due to better packing of member 'UIActionPool::PointerToFunction::ptfr'
 # Want to enable these:
 #      -wd4242: '=' : conversion from 'uint32_t' to 'uint8_t', possible loss of data
 #      -wd4244: 'conversion' conversion from 'type1' to 'type2', possible loss of data
@@ -2873,7 +2874,7 @@ endif
 #               Cannot generate copy-ctor or copy-assignment operator when UDT contains a zero-sized array
 VBOX_VCC_WARN_ALL ?= -W4 -Wall -wd4065 -wd4996 -wd4127 -wd4706 -wd4201 -wd4214 -wd4510 -wd4512 -wd4610 \
 	-wd4514 -wd4820 -wd4365 -wd4987 -wd4710 -wd4061 -wd4986 -wd4191 -wd4574 -wd4917 -wd4711 -wd4611 -wd4571 -wd4324 -wd4505 \
-	-wd4263 -wd4264 -wd4738 -wd4200
+	-wd4263 -wd4264 -wd4738 -wd4200 -wd4371
 if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  #    -wd4350: behavior change: 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc(const std::_Wrap_alloc<std::allocator<char>> &) throw()' called instead of 'std::_Wrap_alloc<std::allocator<char>>::_Wrap_alloc<std::_Wrap_alloc<std::allocator<char>>>(_Other &) throw()'
  #    -wd4435: iprt/cpp/xml.h(185) : warning C4435: 'xml::Input' : Object layout under /vd2 will change due to virtual base 'xml::Stream'
@@ -5911,7 +5912,6 @@ ifdef VBOX_WITH_QTGUI
   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
   #    -wd4640: qmetatype.h(2210): warning C4640: 'f' : construction of local static object is not thread-safe [too bad]
   #    -wd4350: behavior change: 'int QStringList::indexOf(const QRegExp &,int) const' called instead of 'int QStringList::indexOf(QRegExp &,int) const'
-  #    -wd4371: UIActionPool.h(393) : warning C4371: 'UIActionPool::PointerToFunction' : layout of class may have changed from a previous version of the compiler due to better packing of member 'UIActionPool::PointerToFunction::ptfr'
   #    -wd4121: UIActionPool.h(393) : warning C4121: 'UIActionPool::PointerToFunction' : alignment of a member was sensitive to packing
   #    -wd4718: qmap.h(222) : warning C4718: 'QMapNode<enum DetailsElementType,bool>::destroySubTree' : recursive call has no side effects, deleting
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 -wd4350 -wd4371 -wd4121 -wd4718 $(VBOX_VCC_WERR)
