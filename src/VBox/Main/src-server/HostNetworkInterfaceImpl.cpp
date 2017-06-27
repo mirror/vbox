@@ -167,7 +167,10 @@ HRESULT HostNetworkInterface::updateConfig()
         m.realIPAddress = m.IPAddress = info.IPAddress.u;
         m.realNetworkMask = m.networkMask = info.IPNetMask.u;
         m.dhcpEnabled = info.bDhcpEnabled;
-        m.realIPV6Address = m.IPV6Address = Bstr(Utf8StrFmt("%RTnaipv6", &info.IPv6Address));
+        if (info.IPv6Address.s.Lo || info.IPv6Address.s.Hi)
+            m.realIPV6Address = m.IPV6Address = Bstr(Utf8StrFmt("%RTnaipv6", &info.IPv6Address));
+        else
+            m.realIPV6Address = m.IPV6Address = Bstr("");
         RTNetMaskToPrefixIPv6(&info.IPv6NetMask, &iPrefixIPv6);
         m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
         m.hardwareAddress = Bstr(Utf8StrFmt("%RTmac", &info.MACAddress));
@@ -226,7 +229,10 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
 
     m.realIPAddress = m.IPAddress = pIf->IPAddress.u;
     m.realNetworkMask = m.networkMask = pIf->IPNetMask.u;
-    m.realIPV6Address = m.IPV6Address = Bstr(Utf8StrFmt("%RTnaipv6", &pIf->IPv6Address));
+    if (pIf->IPv6Address.s.Lo || pIf->IPv6Address.s.Hi)
+        m.realIPV6Address = m.IPV6Address = Bstr(Utf8StrFmt("%RTnaipv6", &pIf->IPv6Address));
+    else
+        m.realIPV6Address = m.IPV6Address = Bstr("");
     RTNetMaskToPrefixIPv6(&pIf->IPv6NetMask, &iPrefixIPv6);
     m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
     m.dhcpEnabled = pIf->bDhcpEnabled;
