@@ -94,7 +94,7 @@ static struct VBEGLTLS *getTls(void)
     if (RT_LIKELY(pTls))
         return pTls;
     pTls = (struct VBEGLTLS *)malloc(sizeof(*pTls));
-    if (!VALID_PTR(pTls))
+    if (!pTls)
         return NULL;
     pTls->cErr = EGL_SUCCESS;
     pTls->enmAPI = EGL_NONE;
