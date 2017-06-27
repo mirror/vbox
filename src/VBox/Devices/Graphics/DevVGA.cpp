@@ -1262,7 +1262,7 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
         /* odd/even mode (aka text mode mapping) */
         plane = (pThis->gr[4] & 2) | (addr & 1);
         /* See the comment for a similar line in vga_mem_writeb. */
-        RTGCPHYS off = ((addr & ~1) << 2) | plane;
+        RTGCPHYS off = ((addr & ~1) * 4) | plane;
         VERIFY_VRAM_READ_OFF_RETURN(pThis, off, *prc);
 #ifdef VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3
         ret = !pThis->svga.fEnabled           ? pThis->CTX_SUFF(vram_ptr)[off]
@@ -1383,7 +1383,7 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
              * that is multiply by the number of planes,
              * and select the plane byte in the vram offset.
              */
-            addr = ((addr & ~1) << 2) | plane;
+            addr = ((addr & ~1) * 4) | plane;
             VERIFY_VRAM_WRITE_OFF_RETURN(pThis, addr);
 #ifdef VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3
             if (!pThis->svga.fEnabled)
@@ -1528,7 +1528,7 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
                                                       | (val & write_mask);
 #endif
         Log3(("vga: latch: [0x%x] mask=0x%08x val=0x%08x\n", addr * 4, write_mask, val));
-        vga_set_dirty(pThis, (addr << 2));
+        vga_set_dirty(pThis, (addr * 4));
     }
 
     return VINF_SUCCESS;
@@ -3254,7 +3254,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
             {
                 unsigned plane = (pThis->gr[4] & 2) | (GCPhysAddr & 1);
                 if (pThis->sr[2] & (1 << plane)) {
-                    RTGCPHYS PhysAddr2 = ((GCPhysAddr & ~1) << 2) | plane;
+                    RTGCPHYS PhysAddr2 = ((GCPhysAddr & ~1) * 4) | plane;
                     pThis->CTX_SUFF(vram_ptr)[PhysAddr2] = aVal[i];
                     vga_set_dirty(pThis, PhysAddr2);
                 }
@@ -3328,7 +3328,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
             while (cItems-- > 0)
             {
                 ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] = (((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] & ~write_mask) | (aVal[0] & write_mask);
-                vga_set_dirty(pThis, GCPhysAddr << 2);
+                vga_set_dirty(pThis, GCPhysAddr * 4);
                 GCPhysAddr++;
             }
         }
@@ -3338,11 +3338,11 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
             while (cItems-- > 0)
             {
                 ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] = (((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] & ~write_mask) | (aVal[0] & write_mask);
-                vga_set_dirty(pThis, GCPhysAddr << 2);
+                vga_set_dirty(pThis, GCPhysAddr * 4);
                 GCPhysAddr++;
 
                 ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] = (((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] & ~write_mask) | (aVal[1] & write_mask);
-                vga_set_dirty(pThis, GCPhysAddr << 2);
+                vga_set_dirty(pThis, GCPhysAddr * 4);
                 GCPhysAddr++;
             }
         }
@@ -3354,7 +3354,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
                 for (i = 0; i < cbItem; i++)
                 {
                     ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] = (((uint32_t *)pThis->CTX_SUFF(vram_ptr))[GCPhysAddr] & ~write_mask) | (aVal[i] & write_mask);
-                    vga_set_dirty(pThis, GCPhysAddr << 2);
+                    vga_set_dirty(pThis, GCPhysAddr * 4);
                     GCPhysAddr++;
                 }
         }
