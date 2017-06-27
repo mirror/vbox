@@ -816,15 +816,18 @@ static bool rtZipTarReaderExpectingMoreHeaders(PRTZIPTARREADER pThis)
  */
 static bool rtZipTarReaderIsAtEnd(PRTZIPTARREADER pThis)
 {
-    /* Turns out our own tar writer code doesn't get this crap right.
-       Kludge our way around it. */
-    if (!pThis->cZeroHdrs)
-        return pThis->enmPrevType == RTZIPTARTYPE_GNU ? true /* IPRT tar.cpp */ : false;
-
-    /* Here is a kludge to try deal with archivers not putting at least two
-       zero headers at the end.  Afraid it may require further relaxing
-       later on, but let's try be strict about things for now. */
-    return pThis->cZeroHdrs >= (pThis->enmPrevType == RTZIPTARTYPE_POSIX ? 2U : 1U);
+    /*
+     * In theory there shall always be two zero headers at the end of the
+     * archive, but life isn't that simple.   We've been creating archives
+     * without any zero headers at the end ourselves for a long long time
+     * (old tar.cpp).
+     *
+     * So, we're fine if the state is 'FIRST' or 'ZERO' here, but we'll barf
+     * if we're in the middle of a multi-header stream (long GNU names, sparse
+     * files, PAX, etc).
+     */
+    return pThis->enmState == RTZIPTARREADERSTATE_FIRST
+        || pThis->enmState == RTZIPTARREADERSTATE_ZERO;
 }
 
 
