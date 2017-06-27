@@ -153,7 +153,7 @@ Machine::Data::~Data()
 Machine::HWData::HWData()
 {
     /* default values for a newly created machine */
-    mHWVersion = "2"; /** @todo get the default from the schema if that is possible. */
+    mHWVersion = Utf8StrFmt("%d", SchemaDefs::DefaultHardwareVersion)
     mMemorySize = 128;
     mCPUCount = 1;
     mCPUHotPlugEnabled = false;
@@ -1384,7 +1384,7 @@ HRESULT Machine::setHardwareVersion(const com::Utf8Str &aHardwareVersion)
     /* check known version */
     Utf8Str hwVersion = aHardwareVersion;
     if (    hwVersion.compare("1") != 0
-        &&  hwVersion.compare("2") != 0)
+        &&  hwVersion.compare("2") != 0)    // VBox 2.1.x and later (VMMDev heap)
         return setError(E_INVALIDARG,
                         tr("Invalid hardware version: %s\n"), aHardwareVersion.c_str());
 
@@ -10285,12 +10285,12 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
     try
     {
         /* The hardware version attribute (optional).
-            Automatically upgrade from 1 to 2 when there is no saved state. (ugly!) */
+           Automatically upgrade from 1 to current default hardware version
+           when there is no saved state. (ugly!) */
         if (    mHWData->mHWVersion == "1"
              && mSSData->strStateFilePath.isEmpty()
            )
-            mHWData->mHWVersion = "2";  /** @todo Is this safe, to update mHWVersion here? If not some
-                                            other point needs to be found where this can be done. */
+            mHWData->mHWVersion = Utf8StrFmt("%d", SchemaDefs::DefaultHardwareVersion);
 
         data.strVersion = mHWData->mHWVersion;
         data.uuid = mHWData->mHardwareUUID;

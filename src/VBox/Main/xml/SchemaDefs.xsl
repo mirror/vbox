@@ -42,7 +42,7 @@
     <xsl:param name="member"/>
     <xsl:param name="select"/>
     <xsl:if test="$select">
-      <xsl:value-of select="concat($member, ' = ', $select, ',&#x0A;')"/>
+      <xsl:value-of select="concat('        ', $member, ' = ', $select, ',&#x0A;')"/>
     </xsl:if>
 </xsl:template>
 
@@ -124,69 +124,76 @@ namespace SchemaDefs
   </xsl:for-each>
 
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MinGuestRAM'"/>
+    <xsl:with-param name="member" select="'MinGuestRAM'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TMemory']/xsd:attribute[@name='RAMSize']//xsd:minInclusive/@value
     "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MaxGuestRAM'"/>
+    <xsl:with-param name="member" select="'MaxGuestRAM'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TMemory']/xsd:attribute[@name='RAMSize']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MinGuestVRAM'"/>
+    <xsl:with-param name="member" select="'MinGuestVRAM'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TDisplay']/xsd:attribute[@name='VRAMSize']//xsd:minInclusive/@value
     "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MaxGuestVRAM'"/>
+    <xsl:with-param name="member" select="'MaxGuestVRAM'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TDisplay']/xsd:attribute[@name='VRAMSize']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MinCPUCount'"/>
+    <xsl:with-param name="member" select="'MinCPUCount'"/>
     <xsl:with-param name="select" select="
       xsd:simpleType[@name='TCPUCount']//xsd:minInclusive/@value
     "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MaxCPUCount'"/>
+    <xsl:with-param name="member" select="'MaxCPUCount'"/>
     <xsl:with-param name="select" select="
       xsd:simpleType[@name='TCPUCount']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MaxGuestMonitors'"/>
+    <xsl:with-param name="member" select="'MaxGuestMonitors'"/>
     <xsl:with-param name="select" select="
       xsd:simpleType[@name='TMonitorCount']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        SerialPortCount'"/>
+    <xsl:with-param name="member" select="'SerialPortCount'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TUARTPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
     "/>
   </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        ParallelPortCount'"/>
+    <xsl:with-param name="member" select="'ParallelPortCount'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TLPTPort']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
     "/>
   </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        MaxBootPosition'"/>
+    <xsl:with-param name="member" select="'MaxBootPosition'"/>
     <xsl:with-param name="select" select="
       xsd:complexType[@name='TBoot']//xsd:element[@name='Order']//xsd:attribute[@name='position']//xsd:maxInclusive/@value
+    "/>
+  </xsl:call-template>
+
+  <xsl:call-template name="defineEnumMember">
+    <xsl:with-param name="member" select="'DefaultHardwareVersion'"/>
+    <xsl:with-param name="select" select="
+      xsd:complexType[@name='THardware']/xsd:attribute[@name='version']/@default
     "/>
   </xsl:call-template>
 
