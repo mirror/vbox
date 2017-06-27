@@ -1332,22 +1332,20 @@ HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
 
     LogFlowThisFunc(("aName=\"%s\",aBaseFolder=\"%s\"\n", strName.c_str(), strBase.c_str()));
 
-    Guid id;
+    com::Guid id;
     bool fDirectoryIncludesUUID = false;
     if (!aCreateFlags.isEmpty())
     {
         size_t uPos = 0;
-        do {
-
-            com::Utf8Str strKey, strValue;
-            uPos = aCreateFlags.parseKeyValue(strKey, strValue, uPos);
-
+        com::Utf8Str strKey;
+        com::Utf8Str strValue;
+        while ((uPos = aCreateFlags.parseKeyValue(strKey, strValue, uPos)) != com::Utf8Str::npos)
+        {
             if (strKey == "UUID")
                 id = strValue.c_str();
             else if (strKey == "directoryIncludesUUID")
                 fDirectoryIncludesUUID = (strValue == "1");
-
-        } while (uPos != com::Utf8Str::npos);
+        }
     }
 
     if (id.isZero())

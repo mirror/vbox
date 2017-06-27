@@ -208,7 +208,9 @@ size_t Utf8Str::parseKeyValue(Utf8Str &a_rKey, Utf8Str &a_rValue, size_t a_offSt
     size_t offKeyValueSep = find(a_rKeyValueSeparator.c_str(), a_offStart);
     if (offKeyValueSep < offEnd)
     {
-        a_rKey   = substr(a_offStart, offKeyValueSep - a_offStart);
+        a_rKey = substr(a_offStart, offKeyValueSep - a_offStart);
+        if (offEnd == npos)
+            offEnd = m_cch; /* No confusing npos when returning strings. */
         a_rValue = substr(offKeyValueSep + 1, offEnd - offKeyValueSep - 1);
     }
     else

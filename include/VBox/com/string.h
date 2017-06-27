@@ -767,8 +767,7 @@ public:
      * Parses key=value pairs.
      *
      * @returns offset of the @a a_rPairSeparator following the returned value.
-     * @retval  npos is returned if there are no more key/value pairs, or if the
-     *          final key/value pair isn't followed by a @a a_rPairSeparator.
+     * @retval  npos is returned if there are no more key/value pairs.
      *
      * @param   a_rKey                  Reference to variable that should receive
      *                                  the key substring.  This is set to null if
