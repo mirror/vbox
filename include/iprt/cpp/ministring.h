@@ -289,7 +289,7 @@ public:
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 
     /**
-     * Assigns a copy of pcsz to "this".
+     * Assigns a copy of pcsz to @a this.
      *
      * @param   pcsz            The source string.
      *
@@ -309,7 +309,7 @@ public:
     }
 
     /**
-     * Assigns a copy of s to "this".
+     * Assigns a copy of s to @a this.
      *
      * @param   s               The source string.
      *
@@ -357,7 +357,7 @@ public:
     RTCString &printfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
     /**
-     * Appends the string "that" to "this".
+     * Appends the string @a that to @a this.
      *
      * @param   that            The string to append.
      *
@@ -368,7 +368,7 @@ public:
     RTCString &append(const RTCString &that);
 
     /**
-     * Appends the string "that" to "this".
+     * Appends the string @a that to @a this.
      *
      * @param   pszThat         The C string to append.
      *
@@ -379,7 +379,7 @@ public:
     RTCString &append(const char *pszThat);
 
     /**
-     * Appends the given character to "this".
+     * Appends the given character to @a this.
      *
      * @param   ch              The character to append.
      *
@@ -390,7 +390,7 @@ public:
     RTCString &append(char ch);
 
     /**
-     * Appends the given unicode code point to "this".
+     * Appends the given unicode code point to @a this.
      *
      * @param   uc              The unicode code point to append.
      *
@@ -758,7 +758,7 @@ public:
     size_t count(const RTCString *pStr, CaseSensitivity cs = CaseSensitive) const;
 
     /**
-     * Returns a substring of "this" as a new Utf8Str.
+     * Returns a substring of @a this as a new Utf8Str.
      *
      * Works exactly like its equivalent in std::string. With the default
      * parameters "0" and "npos", this always copies the entire string. The
@@ -766,7 +766,8 @@ public:
      * to ensure that the offsets do not copy invalid UTF-8 sequences. When
      * used in conjunction with find() and length(), this will work.
      *
-     * @param   pos             Index of first byte offset to copy from "this", counting from 0.
+     * @param   pos             Index of first byte offset to copy from @a this,
+     *                          counting from 0.
      * @param   n               Number of bytes to copy, starting with the one at "pos".
      *                          The copying will stop if the null terminator is encountered before
      *                          n bytes have been copied.
@@ -777,11 +778,11 @@ public:
     }
 
     /**
-     * Returns a substring of "this" as a new Utf8Str. As opposed to substr(),
-     * this variant takes codepoint offsets instead of byte offsets.
+     * Returns a substring of @a this as a new Utf8Str. As opposed to substr(), this
+     * variant takes codepoint offsets instead of byte offsets.
      *
      * @param   pos             Index of first unicode codepoint to copy from
-     *                          "this", counting from 0.
+     *                          @a this, counting from 0.
      * @param   n               Number of unicode codepoints to copy, starting with
      *                          the one at "pos".  The copying will stop if the null
      *                          terminator is encountered before n codepoints have
@@ -790,7 +791,7 @@ public:
     RTCString substrCP(size_t pos = 0, size_t n = npos) const;
 
     /**
-     * Returns true if "this" ends with "that".
+     * Returns true if @a this ends with @a that.
      *
      * @param   that    Suffix to test for.
      * @param   cs      Case sensitivity selector.
@@ -799,7 +800,7 @@ public:
     bool endsWith(const RTCString &that, CaseSensitivity cs = CaseSensitive) const;
 
     /**
-     * Returns true if "this" begins with "that".
+     * Returns true if @a this begins with @a that.
      * @param   that    Prefix to test for.
      * @param   cs      Case sensitivity selector.
      * @returns true if match, false if mismatch.
@@ -807,13 +808,22 @@ public:
     bool startsWith(const RTCString &that, CaseSensitivity cs = CaseSensitive) const;
 
     /**
-     * Returns true if "this" contains "that" (strstr).
+     * Returns true if @a this contains @a that (strstr).
      *
      * @param   that    Substring to look for.
      * @param   cs      Case sensitivity selector.
-     * @returns true if match, false if mismatch.
+     * @returns true if found, false if not found.
      */
     bool contains(const RTCString &that, CaseSensitivity cs = CaseSensitive) const;
+
+    /**
+     * Returns true if @a this contains @a pszNeedle (strstr).
+     *
+     * @param   pszNeedle   Substring to look for.
+     * @param   cs          Case sensitivity selector.
+     * @returns true if found, false if not found.
+     */
+    bool contains(const char *pszNeedle, CaseSensitivity cs = CaseSensitive) const;
 
     /**
      * Attempts to convert the member string into a 32-bit integer.

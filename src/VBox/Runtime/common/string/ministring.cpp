@@ -371,6 +371,15 @@ bool RTCString::contains(const RTCString &that, CaseSensitivity cs /*= CaseSensi
     return ::RTStrIStr(m_psz, that.m_psz) != NULL;
 }
 
+bool RTCString::contains(const char *pszNeedle, CaseSensitivity cs /*= CaseSensitive*/) const
+{
+    /** @todo r-bird: Not checking for NULL strings like startsWith does (and
+     *        endsWith only does half way). */
+    if (cs == CaseSensitive)
+        return ::RTStrStr(m_psz, pszNeedle) != NULL;
+    return ::RTStrIStr(m_psz, pszNeedle) != NULL;
+}
+
 int RTCString::toInt(uint64_t &i) const
 {
     if (!m_psz)
