@@ -538,7 +538,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
     rc = RTNetStrToIPv6Addr(com::Utf8Str(m.realIPV6Address).c_str(), &AddrOld, &pszZoneIgnored);
     if (RT_SUCCESS(rc))
     {
-        fAddrChanged = (memcmp(&AddrNew, &AddrOld, sizeof(RTNETADDRIPV6)) == 0);
+        fAddrChanged = (AddrNew.s.Lo != AddrOld.s.Lo || AddrNew.s.Hi != AddrOld.s.Hi);
     }
     else
     {
