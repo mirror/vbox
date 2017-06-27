@@ -1275,7 +1275,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         fGimHvVsIf = RT_BOOL(strVal.toUInt32());
                     else if (strKey == "hypercallinterface")
                         fGimHvHypercallIf = RT_BOOL(strVal.toUInt32());
-                    else
+                    else if (strKey.isNotEmpty() || strVal.isNotEmpty())
                     {
                         AssertMsgFailed(("Unrecognized Hyper-V debug option '%s'\n", strKey.c_str()));
                         return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
