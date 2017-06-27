@@ -153,7 +153,7 @@ Machine::Data::~Data()
 Machine::HWData::HWData()
 {
     /* default values for a newly created machine */
-    mHWVersion = Utf8StrFmt("%d", SchemaDefs::DefaultHardwareVersion)
+    mHWVersion = Utf8StrFmt("%d", SchemaDefs::DefaultHardwareVersion);
     mMemorySize = 128;
     mCPUCount = 1;
     mCPUHotPlugEnabled = false;
