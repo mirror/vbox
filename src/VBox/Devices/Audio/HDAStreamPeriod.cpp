@@ -120,7 +120,7 @@ void hdaStreamPeriodReset(PHDASTREAMPERIOD pPeriod)
     Log3Func(("[SD%RU8]\n", pPeriod->u8SD));
 
     if (pPeriod->cIntPending)
-        LogFunc(("Warning: %RU8 interrupts for stream #%RU8 still pending -- so a period reset might trigger audio hangs\n",
+        LogRelMax(50, ("DevHDA: Warning: %RU8 interrupts for stream #%RU8 still pending -- so a period reset might trigger audio hangs\n",
                  pPeriod->cIntPending, pPeriod->u8SD));
 
     pPeriod->fStatus          &= ~HDASTREAMPERIOD_FLAG_ACTIVE;
