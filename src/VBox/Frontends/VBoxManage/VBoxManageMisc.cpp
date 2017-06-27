@@ -1280,7 +1280,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     Bstr group("group");
     Bstr bstrMachineName;
     Bstr bstrSettingsFile;
-    unsigned short imageIndex = 1; // applied only to Windows installation
+    ULONG idxImage = 1; // applied only to Windows installation
     Bstr bstrSessionType = "headless";
 
     /*
@@ -1297,7 +1297,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--iso-path",             'i', RTGETOPT_REQ_STRING },
         { "--additions-iso-path",   'a', RTGETOPT_REQ_STRING },
         { "--auxiliary-base-path",  'x', RTGETOPT_REQ_STRING },
-        { "--image-index",          'm', RTGETOPT_REQ_UINT16 },
+        { "--image-index",          'm', RTGETOPT_REQ_UINT32 },
         { "--settings-file",        's', RTGETOPT_REQ_STRING },
         { "--session-type",         'S', RTGETOPT_REQ_STRING },
     };
@@ -1349,7 +1349,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 break;
 
             case 'm':   // --image-index
-                imageIndex = ValueUnion.u16;
+                idxImage = ValueUnion.u32;
                 break;
 
             case 'S':   // --session-type
@@ -1433,7 +1433,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(bstrProductKey.raw()));
         CHECK_ERROR_BREAK(unAttended, COMSETTER(AdditionsIsoPath)(bstrAdditionsIsoPath.raw()));
         CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(bstrAdditionsIsoPath.isNotEmpty()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(imageIndex));
+        CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(idxImage));
         CHECK_ERROR_BREAK(unAttended, COMSETTER(AuxiliaryBasePath)(bstrAuxiliaryBasePath.raw()));
 
         CHECK_ERROR_BREAK(unAttended,Prepare());
@@ -1506,8 +1506,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Password)(bstrPassword.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ProductKey)(bstrProductKey.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(AuxiliaryBasePath)(bstrAuxiliaryBasePath.asOutParam()));
-        imageIndex = 0;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&imageIndex));
+        idxImage = 0;
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&idxImage));
         RTPrintf("Got values:\n"
                  " user:                  %ls\n"
                  " password:              %ls\n"
@@ -1520,7 +1520,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  bstrUser.raw(),
                  bstrPassword.raw(),
                  bstrProductKey.raw(),
-                 imageIndex,
+                 idxImage,
                  bstrIsoPath.raw(),
                  bstrAdditionsIsoPath.raw(),
                  fInstallGuestAdditions,

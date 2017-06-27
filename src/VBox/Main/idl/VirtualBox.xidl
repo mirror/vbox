@@ -3837,7 +3837,7 @@
       </desc>
     </attribute>
 
-    <attribute name="imageIndex" type="unsigned short">
+    <attribute name="imageIndex" type="unsigned long">
       <desc>
         The image index on installation CD/DVD used to install.
         Used only with Windows installation CD/DVD
