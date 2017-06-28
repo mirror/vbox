@@ -3324,8 +3324,6 @@ static void ich9pciResetBridge(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
 {
-    PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-
     /* Reset everything under the root bridge. */
     ich9pciResetBridge(pDevIns);
 }
