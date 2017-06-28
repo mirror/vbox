@@ -609,18 +609,6 @@ typedef struct PDMPCIBUSREG
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
 
-    /**
-     * Called to perform the job of the bios.
-     *
-     * This is only called for the first PCI Bus - it is expected to
-     * service all the PCI buses.
-     *
-     * @returns VBox status.
-     * @param   pDevIns     Device instance of the first bus.
-     * @remarks Caller enters the PDM critical section.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnFakePCIBIOSR3,(PPDMDEVINS pDevIns));
-
     /** The name of the SetIrq RC entry point. */
     const char         *pszSetIrqRC;
 
@@ -632,7 +620,7 @@ typedef struct PDMPCIBUSREG
 typedef PDMPCIBUSREG *PPDMPCIBUSREG;
 
 /** Current PDMPCIBUSREG version number. */
-#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 6, 0)
+#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 7, 0)
 
 /**
  * PCI Bus RC helpers.

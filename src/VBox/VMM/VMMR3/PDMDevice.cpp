@@ -423,22 +423,8 @@ int pdmR3DevInitComplete(PVM pVM)
     int rc;
 
     /*
-     *
-     * PCI BIOS Fake and Init Complete.
-     *
+     * Iterate thru the device instances and work the callback.
      */
-    if (pVM->pdm.s.aPciBuses[0].pDevInsR3)
-    {
-        pdmLock(pVM);
-        rc = pVM->pdm.s.aPciBuses[0].pfnFakePCIBIOSR3(pVM->pdm.s.aPciBuses[0].pDevInsR3);
-        pdmUnlock(pVM);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("PCI BIOS fake failed rc=%Rrc\n", rc));
-            return rc;
-        }
-    }
-
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
         if (pDevIns->pReg->pfnInitComplete)

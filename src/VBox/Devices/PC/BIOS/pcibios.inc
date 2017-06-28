@@ -95,6 +95,16 @@ pcibios_init_sel_reg:
 pcibios_init_iomem_bases:
 		push	bp
 		mov	bp, sp
+ifdef VBOX
+		mov	eax,19200509 
+		mov	dx,410h
+		out	dx,  eax
+else
+; This incomplete PCI resource setup code is less functional than the PCI
+; resource assignment created by the fake PCI BIOS and is therefore disabled.
+; Blindly enabling everything on the root bus (including bus mastering!) can
+; only be called buggy. It causes the trouble with AMD PCNet which it then
+; tries to work around, but that still contains a race.
 		mov	eax, 0E0000000h	; base for memory init
 		push	eax
 		mov	ax, 0D000h	; base for i/o init
@@ -110,7 +120,7 @@ pci_init_io_loop1:
 		cmp	ax, 0FFFFh
 		jz	next_pci_dev
 
-ifndef VBOX ; This currently breaks restoring a previously saved state. */
+ifndef VBOX ; This currently breaks restoring a previously saved state.
 		mov	dl, 4	; disable i/o and memory space access
 		call	pcibios_init_sel_reg
 		mov	dx, PCI_CFG2
@@ -200,6 +210,7 @@ next_pci_dev:
 		inc	bx
 		cmp	bx, 0100h
 		jne	pci_init_io_loop1
+endif ; !VBOX
 		mov	sp, bp
 		pop	bp
 		ret
@@ -229,6 +240,9 @@ pcibios_init_irqs:
 		push	bp
 		mov	ax, 0F000h
 		mov	ds, ax
+ifndef VBOX
+; this code works OK, but it's unnecessary effort since the fake PCI BIOS
+; already configured the IRQ lines and the ELCR correctly
 		mov	dx, 04D0h ;; reset ELCR1 + ELCR2
 		mov	al, 0
 		out	dx, al
@@ -281,7 +295,7 @@ pci_init_irq_loop2:
 pci_test_int_pin:
 		mov	dl, 3Ch
 		call pcibios_init_sel_reg
-		mov	dx, PCI_CFG2 + 1 ; TODO: was #0x0cfd - is that right?
+		mov	dx, PCI_CFG2 + 1 ; access config space at 3Dh
 		in	al, dx
 		and	al, 7
 		jz	next_pci_func
@@ -331,6 +345,7 @@ next_pir_entry:
 		mov	sp, bp
 		pop	bx
 pci_init_end:
+endif
 		pop		bp
 		pop		ds
 		ret

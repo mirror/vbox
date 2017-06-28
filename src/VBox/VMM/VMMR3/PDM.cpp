@@ -1644,19 +1644,6 @@ VMMR3_INT_DECL(void) PDMR3MemSetup(PVM pVM, bool fAtReset)
             PDMCritSectLeave(pDevIns->pCritSectRoR3);
         }
 
-    /*
-     * Run Fake PCI BIOS after reset.
-     */
-    if (fAtReset && pVM->pdm.s.aPciBuses[0].pDevInsR3)
-    {
-        pdmLock(pVM);
-        int rc = pVM->pdm.s.aPciBuses[0].pfnFakePCIBIOSR3(pVM->pdm.s.aPciBuses[0].pDevInsR3);
-        pdmUnlock(pVM);
-        if (RT_FAILURE(rc))
-            AssertMsgFailed(("PCI BIOS fake failed rc=%Rrc\n", rc));
-    }
-
-
     LogFlow(("PDMR3MemSetup: returns void\n"));
 }
 
