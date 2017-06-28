@@ -103,35 +103,36 @@ RTCString &RTCString::printfV(const char *pszFormat, va_list va)
 
 RTCString &RTCString::append(const RTCString &that)
 {
-    size_t cchThat = that.length();
-    if (cchThat)
-    {
-        size_t cchThis = length();
-        size_t cchBoth = cchThis + cchThat;
-
-        if (cchBoth >= m_cbAllocated)
-        {
-            reserve(RT_ALIGN_Z(cchBoth + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
-            // calls realloc(cchBoth + 1) and sets m_cbAllocated; may throw bad_alloc.
-#ifndef RT_EXCEPTIONS_ENABLED
-            AssertRelease(capacity() > cchBoth);
-#endif
-        }
-
-        memcpy(m_psz + cchThis, that.m_psz, cchThat);
-        m_psz[cchBoth] = '\0';
-        m_cch = cchBoth;
-    }
-    return *this;
+    Assert(&that != this);
+    return appendWorker(that.c_str(), that.length());
 }
 
 RTCString &RTCString::append(const char *pszThat)
 {
-    size_t cchThat = strlen(pszThat);
-    if (cchThat)
+    return appendWorker(pszThat, strlen(pszThat));
+}
+
+RTCString &RTCString::append(const RTCString &rThat, size_t offStart, size_t cchMax /*= RTSTR_MAX*/)
+{
+    if (offStart < rThat.length())
+    {
+        size_t cchLeft = rThat.length() - offStart;
+        return appendWorker(rThat.c_str() + offStart, RT_MIN(cchLeft, cchMax));
+    }
+    return *this;
+}
+
+RTCString &RTCString::append(const char *pszThat, size_t cchMax)
+{
+    return appendWorker(pszThat, RTStrNLen(pszThat, cchMax));
+}
+
+RTCString &RTCString::appendWorker(const char *pszSrc, size_t cchSrc)
+{
+    if (cchSrc)
     {
         size_t cchThis = length();
-        size_t cchBoth = cchThis + cchThat;
+        size_t cchBoth = cchThis + cchSrc;
 
         if (cchBoth >= m_cbAllocated)
         {
@@ -142,7 +143,7 @@ RTCString &RTCString::append(const char *pszThat)
 #endif
         }
 
-        memcpy(&m_psz[cchThis], pszThat, cchThat);
+        memcpy(&m_psz[cchThis], pszSrc, cchSrc);
         m_psz[cchBoth] = '\0';
         m_cch = cchBoth;
     }

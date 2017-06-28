@@ -368,7 +368,7 @@ public:
     RTCString &append(const RTCString &that);
 
     /**
-     * Appends the string @a that to @a this.
+     * Appends the string @a pszThat to @a this.
      *
      * @param   pszThat         The C string to append.
      *
@@ -377,6 +377,32 @@ public:
      * @returns Reference to the object.
      */
     RTCString &append(const char *pszThat);
+
+    /**
+     * Appends the a substring from @a rThat to @a this.
+     *
+     * @param   pszThat         The C string to append.
+     * @param   offStart        The start of the substring to append (byte offset,
+     *                          not codepoint).
+     * @param   cchMax          The maximum number of bytes to append.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @returns Reference to the object.
+     */
+    RTCString &append(const RTCString &rThat, size_t offStart, size_t cchMax = RTSTR_MAX);
+
+    /**
+     * Appends the first @a cchMax chars from string @a pszThat to @a this.
+     *
+     * @param   pszThat         The C string to append.
+     * @param   cchMax          The maximum number of bytes to append.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @returns Reference to the object.
+     */
+    RTCString &append(const char *pszThat, size_t cchMax);
 
     /**
      * Appends the given character to @a this.
@@ -1035,6 +1061,19 @@ protected:
             m_psz = NULL;
         }
     }
+
+    /**
+     * Appends exactly @a cchSrc chars from @a pszSrc to @a this.
+     *
+     * This is an internal worker for the append() methods.
+     *
+     * @param   pszSrc          The source string.
+     * @param   cchSrc          The source string length (exact).
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @returns Reference to the object.
+     */
+    RTCString &appendWorker(const char *pszSrc, size_t cchSrc);
 
     static DECLCALLBACK(size_t) printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars);
 
