@@ -381,7 +381,7 @@ public:
     /**
      * Appends the a substring from @a rThat to @a this.
      *
-     * @param   pszThat         The C string to append.
+     * @param   rThat           The string to append a substring from.
      * @param   offStart        The start of the substring to append (byte offset,
      *                          not codepoint).
      * @param   cchMax          The maximum number of bytes to append.
