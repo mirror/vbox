@@ -15979,6 +15979,25 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 
 
 /**
+ * Interface for HM and EM to emulate the INVLPG instruction.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   GCPtrPage   The effective address of the page to invalidate.
+ *
+ * @remarks In ring-0 not all of the state needs to be synced in.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpg(PVMCPU pVCpu, uint8_t cbInstr, RTGCPTR GCPtrPage)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_1(iemCImpl_invlpg, GCPtrPage);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
  * Checks if IEM is in the process of delivering an event (interrupt or
  * exception).
  *
