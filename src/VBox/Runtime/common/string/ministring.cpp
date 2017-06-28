@@ -149,7 +149,7 @@ RTCString &RTCString::append(const char *pszThat)
     return *this;
 }
 
-RTCString& RTCString::append(char ch)
+RTCString &RTCString::append(char ch)
 {
     Assert((unsigned char)ch < 0x80);                  /* Don't create invalid UTF-8. */
     if (ch)
