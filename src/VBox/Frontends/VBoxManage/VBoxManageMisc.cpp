@@ -1515,7 +1515,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  " image index:           %u\n"
                  " isoPath:               %ls\n"
                  " additionsIsoPath:      %ls\n"
-                 " installGuestAdditions: %RTbool",
+                 " installGuestAdditions: %RTbool\n"
                  " auxiliaryBasePath:     %ls",
                  bstrUser.raw(),
                  bstrPassword.raw(),
