@@ -2266,6 +2266,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
     {
     }
 #endif
+    pHlp->pfnPrintf(pHlp, "\n");
 
 #undef CPUMHWVIRTDUMP_NONE
 #undef CPUMHWVIRTDUMP_COMMON
