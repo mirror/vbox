@@ -1006,7 +1006,7 @@ static DECLCALLBACK(int) ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *
                 case AC97SOUNDSOURCE_PI_INDEX:
                 case AC97SOUNDSOURCE_MC_INDEX:
                 {
-                    cbToProcess = RTCircBufFree(pCircBuf);
+                    cbToProcess = (uint32_t)RTCircBufFree(pCircBuf);
                     if (cbToProcess)
                         rc2 = ichac97StreamWrite(pThis, pStream, pMixSink, (uint32_t)cbToProcess, &cbProcessed);
                     break;
@@ -1015,7 +1015,7 @@ static DECLCALLBACK(int) ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *
                 /* Output. */
                 case AC97SOUNDSOURCE_PO_INDEX:
                 {
-                    cbToProcess = RTCircBufUsed(pCircBuf);
+                    cbToProcess = (uint32_t)RTCircBufUsed(pCircBuf);
                     if (cbToProcess)
                         rc2 = ichac97StreamRead(pThis, pStream, pMixSink, (uint32_t)cbToProcess, &cbProcessed);
                     break;
