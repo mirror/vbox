@@ -443,7 +443,6 @@
     GEN_CHECK_OFF_DOT(PDM, aPciBuses[0].pfnSetIrqR3);
     GEN_CHECK_OFF_DOT(PDM, aPciBuses[0].pfnRegisterR3);
     GEN_CHECK_OFF_DOT(PDM, aPciBuses[0].pfnIORegionRegisterR3);
-    GEN_CHECK_OFF_DOT(PDM, aPciBuses[0].pfnFakePCIBIOSR3);
     GEN_CHECK_OFF_DOT(PDM, aPciBuses[0].pDevInsR0);
     GEN_CHECK_OFF_DOT(PDM, aPciBuses[0].pfnSetIrqR0);
     GEN_CHECK_OFF_DOT(PDM, aPciBuses[0].pDevInsRC);
