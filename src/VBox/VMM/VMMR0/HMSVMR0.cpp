@@ -4571,10 +4571,20 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(!pVM->hm.s.fNestedPaging);
-
-    /** @todo Decode Assist. */
-    int rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, pCtx);    /* Updates RIP if successful. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
+
+    if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
+    {
+        Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
+        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        uint8_t const cbInstr   = pVmcb->ctrl.u64NextRIP - pCtx->rip;
+        RTGCPTR const GCPtrPage = pVmcb->ctrl.u64ExitInfo1;
+        VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpg(pVCpu, cbInstr, GCPtrPage);
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+        return VBOXSTRICTRC_VAL(rcStrict);
+    }
+
+    int rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, pCtx);    /* Updates RIP if successful. */
     Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     return rc;
@@ -4671,14 +4681,31 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     Log4(("hmR0SvmExitReadCRx: CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0]);
 
-    /** @todo Decode Assist. */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
+    {
+        Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
+        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        bool const fMovCRx = RT_BOOL(pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_MASK);
+        if (fMovCRx)
+        {
+            uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pCtx->rip;
+            uint8_t const iCrReg  = pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0;
+            uint8_t const iGReg   = pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_GPR_NUMBER;
+            VBOXSTRICTRC rcStrict = IEMExecDecodedMovCRxRead(pVCpu, cbInstr, iGReg, iCrReg);
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+            return VBOXSTRICTRC_VAL(rcStrict);
+        }
+        /* else: SMSW instruction, fall back below to IEM for this. */
+    }
+
     VBOXSTRICTRC rc2 = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
     int rc = VBOXSTRICTRC_VAL(rc2);
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3,
               ("hmR0SvmExitReadCRx: EMInterpretInstruction failed rc=%Rrc\n", rc));
     Assert((pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0) <= 15);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0]);
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     return rc;
 }
@@ -4691,23 +4718,45 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /** @todo Decode Assist. */
-    VBOXSTRICTRC rcStrict = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(pCtx), NULL);
-    if (RT_UNLIKELY(   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
-                    || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED))
-        rcStrict = VERR_EM_INTERPRETER;
+    uint8_t const iCrReg = pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0;
+    Assert(iCrReg <= 15);
+
+    VBOXSTRICTRC rcStrict;
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    bool fDecodedInstr = false;
+    if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
+    {
+        Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
+        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        bool const fMovCRx = RT_BOOL(pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_MASK);
+        if (fMovCRx)
+        {
+            uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pCtx->rip;
+            uint8_t const iGReg   = pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_GPR_NUMBER;
+            rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, cbInstr, iCrReg, iGReg);
+            fDecodedInstr = true;
+        }
+        /* else: LMSW or CLTS instruction, fall back below to IEM for this. */
+    }
+
+    if (!fDecodedInstr)
+    {
+        rcStrict = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(pCtx), NULL);
+        if (RT_UNLIKELY(   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                        || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+            rcStrict = VERR_EM_INTERPRETER;
+    }
+
     if (rcStrict == VINF_SUCCESS)
     {
-        /* RIP has been updated by EMInterpretInstruction(). */
-        Assert((pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0) <= 15);
-        switch (pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0)
+        switch (iCrReg)
         {
             case 0:     /* CR0. */
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
                 break;
 
             case 3:     /* CR3. */
-                Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+                Assert(!pVM->hm.s.fNestedPaging);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR3);
                 break;
 
@@ -4721,7 +4770,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
             default:
                 AssertMsgFailed(("hmR0SvmExitWriteCRx: Invalid/Unexpected Write-CRx exit. u64ExitCode=%#RX64 %#x\n",
-                                 pSvmTransient->u64ExitCode, pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0));
+                                 pSvmTransient->u64ExitCode, iCrReg));
                 break;
         }
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);

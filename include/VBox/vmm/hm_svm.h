@@ -296,13 +296,21 @@
 #define SVM_EXIT1_MSR_WRITE                   0x1
 /** @} */
 
-/** @name SVMVMCB.u64ExitInfo1 for Mov CRX accesses.
+/** @name SVMVMCB.u64ExitInfo1 for Mov CRx accesses.
  * @{
  */
-/** The access was via Mov CRx instruction bit number. */
+/** The mask of whether the access was via a Mov CRx instruction. */
 #define SVM_EXIT1_MOV_CRX_MASK                RT_BIT_64(63)
+/** The mask for the GPR number of the Mov CRx instruction.  */
+#define SVM_EXIT1_MOV_CRX_GPR_NUMBER          0xf
 /** @} */
 
+/** @name SVMVMCB.u64ExitInfo1 for Mov DRx accesses.
+ * @{
+ */
+/** The mask for the GPR number of the Mov DRx instruction.  */
+#define SVM_EXIT1_MOV_DRX_GPR_NUMBER          0xf
+/** @} */
 
 /** @name SVMVMCB.ctrl.u64InterceptCtrl
  * @{
