@@ -1765,7 +1765,7 @@ static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_
 
             cbRegSize64 = cbRegSize32;
         }
-        Log2Func(("%s: Size of region %u for device %d on bus %d is %lld\n", iRegion, uDevFn, uBus, cbRegSize64));
+        Log2Func(("Size of region %u for device %d on bus %d is %lld\n", iRegion, uDevFn, uBus, cbRegSize64));
 
         if (cbRegSize64)
         {
@@ -1870,7 +1870,7 @@ static bool ich9pciBiosInitDevicePrefetchableBARs(PDEVPCIROOT pPciRoot, uint8_t 
 
             cbRegSize64 = cbRegSize32;
         }
-        Log2Func(("%s: Size of region %u for device %d on bus %d is %lld\n", iRegion, uDevFn, uBus, cbRegSize64));
+        Log2Func(("Size of region %u for device %d on bus %d is %lld\n", iRegion, uDevFn, uBus, cbRegSize64));
 
         if (cbRegSize64)
         {

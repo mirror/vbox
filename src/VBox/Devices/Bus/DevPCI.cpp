@@ -726,7 +726,7 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                         }
                         else
                         {
-                            LogFunc(("%s: Start address of %s region %u is %#x\n", (fIsPio ? "I/O" : "MMIO"), i, uNew));
+                            LogFunc(("Start address of %s region %u is %#x\n", (fIsPio ? "I/O" : "MMIO"), i, uNew));
                             pci_set_io_region_addr(pGlobals, uBus, uDevFn, i, uNew);
                             if (fIsPio)
                                 fActiveIORegion = true;
