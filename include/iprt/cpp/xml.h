@@ -954,6 +954,7 @@ private:
     friend class XmlMemParser;
     friend class XmlFileParser;
     friend class XmlMemWriter;
+    friend class XmlStringWriter;
     friend class XmlFileWriter;
 
     void refreshInternals();
@@ -1013,11 +1014,9 @@ private:
     static int CloseCallback (void *aCtxt);
 };
 
-/*
- * XmlMemParser
- *
+/**
+ * XmlMemWriter
  */
-
 class RT_DECL_CLASS XmlMemWriter
 {
 public:
@@ -1030,11 +1029,32 @@ private:
     void* m_pBuf;
 };
 
-/*
- * XmlFileWriter
- *
- */
 
+/**
+ * XmlStringWriter - writes the XML to an RTCString instance.
+ */
+class RT_DECL_CLASS XmlStringWriter
+{
+public:
+    XmlStringWriter();
+
+    int write(const Document &rDoc, RTCString *pStrDst);
+
+private:
+    static int WriteCallbackForSize(void *pvUser, const char *pachBuf, int cbToWrite);
+    static int WriteCallbackForReal(void *pvUser, const char *pachBuf, int cbToWrite);
+    static int CloseCallback(void *pvUser);
+
+    /** Pointer to the destination string while we're in the write() call.   */
+    RTCString  *m_pStrDst;
+    /** Set by WriteCallback if we cannot grow the destination string. */
+    bool        m_fOutOfMemory;
+};
+
+
+/**
+ * XmlFileWriter
+ */
 class RT_DECL_CLASS XmlFileWriter
 {
 public:
