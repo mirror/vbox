@@ -125,7 +125,7 @@ pci_routing_table:
   dw 0DEF8h ;; IRQ bitmap INTD#
   db 3 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-  ;; 5th slot entry: 4rd PCI slot
+  ;; 5th slot entry: 4th PCI slot
   db 0 ;; pci bus number
   db 028h ;; pci device number (bit 7-3)
   db 60h ;; link value INTA#
@@ -138,7 +138,7 @@ pci_routing_table:
   dw 0DEF8h ;; IRQ bitmap INTD#
   db 4 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-  ;; 6th slot entry: 5rd PCI slot
+  ;; 6th slot entry: 5th PCI slot
   db 0 ;; pci bus number
   db 030h ;; pci device number (bit 7-3)
   db 61h ;; link value INTA#
