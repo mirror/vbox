@@ -359,64 +359,60 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     if (uisession()->isGuestScreenUnDrawable())
         return;
 
-    /* If machine-window is visible: */
-    if (uisession()->isScreenVisible(m_uScreenId))
+    /* Get old frame-buffer size: */
+    const QSize frameBufferSizeOld = QSize(frameBuffer()->width(),
+                                           frameBuffer()->height());
+
+    /* Perform frame-buffer mode-change: */
+    frameBuffer()->handleNotifyChange(iWidth, iHeight);
+
+    /* Get new frame-buffer size: */
+    const QSize frameBufferSizeNew = QSize(frameBuffer()->width(),
+                                           frameBuffer()->height());
+
+    /* For 'scale' mode: */
+    if (visualStateType() == UIVisualStateType_Scale)
     {
-        /* Get old frame-buffer size: */
-        const QSize frameBufferSizeOld = QSize(frameBuffer()->width(),
-                                               frameBuffer()->height());
+        /* Assign new frame-buffer logical-size: */
+        frameBuffer()->setScaledSize(size());
 
-        /* Perform frame-buffer mode-change: */
-        frameBuffer()->handleNotifyChange(iWidth, iHeight);
+        /* Forget the last full-screen size: */
+        uisession()->setLastFullScreenSize(screenId(), QSize(-1, -1));
+    }
+    /* For other than 'scale' mode: */
+    else
+    {
+        /* Adjust maximum-size restriction for machine-view: */
+        setMaximumSize(sizeHint());
 
-        /* Get new frame-buffer size: */
-        const QSize frameBufferSizeNew = QSize(frameBuffer()->width(),
-                                               frameBuffer()->height());
-
-        /* For 'scale' mode: */
-        if (visualStateType() == UIVisualStateType_Scale)
-        {
-            /* Assign new frame-buffer logical-size: */
-            frameBuffer()->setScaledSize(size());
-
-            /* Forget the last full-screen size: */
+        /* Disable the resize hint override hack and forget the last full-screen size: */
+        m_sizeHintOverride = QSize(-1, -1);
+        if (visualStateType() == UIVisualStateType_Normal)
             uisession()->setLastFullScreenSize(screenId(), QSize(-1, -1));
-        }
-        /* For other than 'scale' mode: */
-        else
-        {
-            /* Adjust maximum-size restriction for machine-view: */
-            setMaximumSize(sizeHint());
 
-            /* Disable the resize hint override hack and forget the last full-screen size: */
-            m_sizeHintOverride = QSize(-1, -1);
-            if (visualStateType() == UIVisualStateType_Normal)
-                uisession()->setLastFullScreenSize(screenId(), QSize(-1, -1));
+        /* Force machine-window update own layout: */
+        QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
 
-            /* Force machine-window update own layout: */
-            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+        /* Update machine-view sliders: */
+        updateSliders();
 
-            /* Update machine-view sliders: */
-            updateSliders();
+        /* By some reason Win host forgets to update machine-window central-widget
+         * after main-layout was updated, let's do it for all the hosts: */
+        machineWindow()->centralWidget()->update();
 
-            /* By some reason Win host forgets to update machine-window central-widget
-             * after main-layout was updated, let's do it for all the hosts: */
-            machineWindow()->centralWidget()->update();
+        /* Normalize 'normal' machine-window geometry if necessary: */
+        if (visualStateType() == UIVisualStateType_Normal &&
+            frameBufferSizeNew != frameBufferSizeOld)
+            machineWindow()->normalizeGeometry(true /* adjust position */);
+    }
 
-            /* Normalize 'normal' machine-window geometry if necessary: */
-            if (visualStateType() == UIVisualStateType_Normal &&
-                frameBufferSizeNew != frameBufferSizeOld)
-                machineWindow()->normalizeGeometry(true /* adjust position */);
-        }
-
-        /* Perform frame-buffer rescaling: */
-        frameBuffer()->performRescale();
+    /* Perform frame-buffer rescaling: */
+    frameBuffer()->performRescale();
 
 #ifdef VBOX_WS_MAC
-        /* Update MacOS X dock icon size: */
-        machineLogic()->updateDockIconSize(screenId(), iWidth, iHeight);
+    /* Update MacOS X dock icon size: */
+    machineLogic()->updateDockIconSize(screenId(), iWidth, iHeight);
 #endif /* VBOX_WS_MAC */
-    }
 
     /* Notify frame-buffer resize: */
     emit sigFrameBufferResize();

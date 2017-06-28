@@ -524,6 +524,9 @@ void UIMachineWindowNormal::showInNecessaryMode()
     /* Show in normal mode: */
     show();
 
+    /* Normalize machine-window geometry: */
+    normalizeGeometry(true /* adjust position */);
+
     /* Make sure machine-view have focus: */
     m_pMachineView->setFocus();
 }
