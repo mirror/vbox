@@ -4721,7 +4721,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     uint8_t const iCrReg = pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0;
     Assert(iCrReg <= 15);
 
-    VBOXSTRICTRC rcStrict;
+    VBOXSTRICTRC rcStrict = VERR_SVM_IPE_5;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     bool fDecodedInstr = false;
     if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
