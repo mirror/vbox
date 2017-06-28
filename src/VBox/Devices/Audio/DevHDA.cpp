@@ -867,10 +867,6 @@ typedef struct HDASTATE
     /** DMA base address.
      *  Made out of DPLBASE + DPUBASE (3.3.32 + 3.3.33). */
     uint64_t                           u64DPBase;
-    /** DMA position buffer enable bit. */
-    bool                               fDMAPosition;
-    /** Padding for alignment. */
-    uint8_t                            u8Padding0[7];
     /** Pointer to CORB buffer. */
     R3PTRTYPE(uint32_t *)              pu32CorbBuf;
     /** Size in bytes of CORB buffer. */
@@ -881,8 +877,8 @@ typedef struct HDASTATE
     R3PTRTYPE(uint64_t *)              pu64RirbBuf;
     /** Size in bytes of RIRB buffer. */
     uint32_t                           cbRirbBuf;
-    /** Indicates if HDA controller is in reset mode. */
-    bool                               fInReset;
+    /** DMA position buffer enable bit. */
+    bool                               fDMAPosition;
     /** Flag whether the R0 part is enabled. */
     bool                               fR0Enabled;
     /** Flag whether the RC part is enabled. */
@@ -958,7 +954,7 @@ typedef struct HDACALLBACKCTX
 *********************************************************************************************************************************/
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 #ifdef IN_RING3
-static FNPDMDEVRESET hdaReset;
+static void hdaGctlReset(PHDASTATE pThis);
 #endif
 
 /** @name Register read/write stubs.
@@ -2325,12 +2321,7 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
         /* Set the CRST bit to indicate that we're leaving reset mode. */
         HDA_REG(pThis, GCTL) |= HDA_GCTL_CRST;
-
-        if (pThis->fInReset)
-        {
-            LogFunc(("Guest leaving HDA reset\n"));
-            pThis->fInReset = false;
-        }
+        LogFunc(("Guest leaving HDA reset\n"));
     }
     else
     {
@@ -2342,9 +2333,8 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
         /* Clear the CRST bit to indicate that we're in reset state. */
         HDA_REG(pThis, GCTL) &= ~HDA_GCTL_CRST;
-        pThis->fInReset = true;
 
-        hdaReset(pThis->CTX_SUFF(pDevIns));
+        hdaGctlReset(pThis);
 #else
         return VINF_IOM_R3_MMIO_WRITE;
 #endif
@@ -3480,6 +3470,7 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 #ifdef IN_RING3
+
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 /**
  * Registers access handlers for a stream's BDLE DMA accesses.
@@ -4762,6 +4753,117 @@ static int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite, 
 }
 
 /**
+ * Soft reset of the device triggered via GCTL.
+ *
+ * @param   pThis   HDA state.
+ *
+ */
+static void hdaGctlReset(PHDASTATE pThis)
+{
+    LogFlowFuncEnter();
+
+# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
+    /*
+     * Stop the timer, if any.
+     */
+    hdaTimerStop(pThis);
+
+    pThis->cStreamsActive = 0;
+# endif
+
+    memset(pThis->au32Regs, 0, sizeof(pThis->au32Regs));
+    /* See 6.2.1. */
+    HDA_REG(pThis, GCAP)     = HDA_MAKE_GCAP(HDA_MAX_SDO /* Ouput streams */,
+                                             HDA_MAX_SDI /* Input streams */,
+                                             0           /* Bidirectional output streams */,
+                                             0           /* Serial data out signals */,
+                                             1           /* 64-bit */);
+    HDA_REG(pThis, VMIN)     = 0x00;                     /* see 6.2.2 */
+    HDA_REG(pThis, VMAJ)     = 0x01;                     /* see 6.2.3 */
+    /* Announce the full 60 words output payload. */
+    HDA_REG(pThis, OUTPAY)   = 0x003C;                   /* see 6.2.4 */
+    /* Announce the full 29 words input payload. */
+    HDA_REG(pThis, INPAY)    = 0x001D;                   /* see 6.2.5 */
+    HDA_REG(pThis, CORBSIZE) = 0x42;                     /* see 6.2.1 */
+    HDA_REG(pThis, RIRBSIZE) = 0x42;                     /* see 6.2.1 */
+
+    /*
+     * Stop any audio currently playing and/or recording.
+     */
+    if (pThis->SinkFront.pMixSink)
+        AudioMixerSinkReset(pThis->SinkFront.pMixSink);
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+    if (pThis->SinkMicIn.pMixSink)
+        AudioMixerSinkReset(pThis->SinkMicIn.pMixSink);
+# endif
+    if (pThis->SinkLineIn.pMixSink)
+        AudioMixerSinkReset(pThis->SinkLineIn.pMixSink);
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    if (pThis->SinkCenterLFE.pMixSink)
+        AudioMixerSinkReset(pThis->SinkCenterLFE.pMixSink);
+    if (pThis->SinkRear.pMixSink)
+        AudioMixerSinkReset(pThis->SinkRear.pMixSink);
+# endif
+
+    /*
+     * Reset the codec.
+     */
+    if (   pThis->pCodec
+        && pThis->pCodec->pfnReset)
+    {
+        pThis->pCodec->pfnReset(pThis->pCodec);
+    }
+
+    /*
+     * Set some sensible defaults for which HDA sinks
+     * are connected to which stream number.
+     *
+     * We use SD0 for input and SD4 for output by default.
+     * These stream numbers can be changed by the guest dynamically lateron.
+     */
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
+#endif
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
+
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
+    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
+#endif
+
+    pThis->cbCorbBuf = 256 * sizeof(uint32_t); /** @todo Use a define here. */
+
+    if (pThis->pu32CorbBuf)
+        RT_BZERO(pThis->pu32CorbBuf, pThis->cbCorbBuf);
+    else
+        pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
+
+    pThis->cbRirbBuf = 256 * sizeof(uint64_t); /** @todo Use a define here. */
+    if (pThis->pu64RirbBuf)
+        RT_BZERO(pThis->pu64RirbBuf, pThis->cbRirbBuf);
+    else
+        pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
+
+    for (uint8_t uSD = 0; uSD < HDA_MAX_STREAMS; ++uSD)
+    {
+        /* Remove the RUN bit from SDnCTL in case the stream was in a running state before. */
+        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN;
+        hdaStreamReset(pThis, &pThis->aStreams[uSD], uSD);
+    }
+
+    /* Clear stream tags <-> objects mapping table. */
+    RT_ZERO(pThis->aTags);
+
+    /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
+    HDA_REG(pThis, STATESTS) = 0x1;
+
+    LogFlowFuncLeave();
+    LogRel(("HDA: Reset\n"));
+}
+
+
+/**
  * Timer callback which handles the audio data transfers on a periodic basis.
  *
  * @param   pDevIns             Device instance.
@@ -5653,7 +5755,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     Log3Func(("offReg=%#x cb=%#x\n", offReg, cb));
     Assert(cb == 4); Assert((offReg & 3) == 0);
 
-    if (pThis->fInReset && idxRegDsc != HDA_REG_GCTL)
+    if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
         LogFunc(("Access to registers except GCTL is blocked while reset\n"));
 
     if (idxRegDsc == -1)
@@ -5723,7 +5825,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
 DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, char const *pszLog)
 {
-    if (pThis->fInReset && idxRegDsc != HDA_REG_GCTL)
+    if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
     {
         Log(("hdaWriteReg: Warning: Access to %s is blocked while controller is in reset mode\n", g_aHdaRegMap[idxRegDsc].abbrev));
         LogRel2(("HDA: Warning: Access to register %s is blocked while controller is in reset mode\n",
@@ -6951,120 +7053,27 @@ static DECLCALLBACK(void *) hdaQueryInterface(struct PDMIBASE *pInterface, const
 
 /* PDMDEVREG */
 
+
 /**
- * Reset notification.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance data.
- *
- * @remark  The original sources didn't install a reset handler, but it seems to
- *          make sense to me so we'll do it.
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
     LogFlowFuncEnter();
-
-# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
-    /*
-     * Stop the timer, if any.
+     /*
+     * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
+     * hdaReset shouldn't affects these registers.
      */
-    hdaTimerStop(pThis);
+    HDA_REG(pThis, WAKEEN)  = 0x0;
 
-    pThis->cStreamsActive = 0;
-# endif
+    hdaGctlReset(pThis);
 
-    /* See 6.2.1. */
-    HDA_REG(pThis, GCAP)     = HDA_MAKE_GCAP(HDA_MAX_SDO /* Ouput streams */,
-                                             HDA_MAX_SDI /* Input streams */,
-                                             0           /* Bidirectional output streams */,
-                                             0           /* Serial data out signals */,
-                                             1           /* 64-bit */);
-    HDA_REG(pThis, VMIN)     = 0x00;                     /* see 6.2.2 */
-    HDA_REG(pThis, VMAJ)     = 0x01;                     /* see 6.2.3 */
-    /* Announce the full 60 words output payload. */
-    HDA_REG(pThis, OUTPAY)   = 0x003C;                   /* see 6.2.4 */
-    /* Announce the full 29 words input payload. */
-    HDA_REG(pThis, INPAY)    = 0x001D;                   /* see 6.2.5 */
-    HDA_REG(pThis, CORBSIZE) = 0x42;                     /* see 6.2.1 */
-    HDA_REG(pThis, RIRBSIZE) = 0x42;                     /* see 6.2.1 */
-    HDA_REG(pThis, CORBRP)   = 0x0;
-    HDA_REG(pThis, RIRBWP)   = 0x0;
-
-    /*
-     * Stop any audio currently playing and/or recording.
+    /* Indicate that HDA is not in reset. The firmware is supposed to (un)reset HDA,
+     * but we can take a shortcut.
      */
-    if (pThis->SinkFront.pMixSink)
-        AudioMixerSinkReset(pThis->SinkFront.pMixSink);
-# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    if (pThis->SinkMicIn.pMixSink)
-        AudioMixerSinkReset(pThis->SinkMicIn.pMixSink);
-# endif
-    if (pThis->SinkLineIn.pMixSink)
-        AudioMixerSinkReset(pThis->SinkLineIn.pMixSink);
-# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    if (pThis->SinkCenterLFE.pMixSink)
-        AudioMixerSinkReset(pThis->SinkCenterLFE.pMixSink);
-    if (pThis->SinkRear.pMixSink)
-        AudioMixerSinkReset(pThis->SinkRear.pMixSink);
-# endif
-
-    /*
-     * Reset the codec.
-     */
-    if (   pThis->pCodec
-        && pThis->pCodec->pfnReset)
-    {
-        pThis->pCodec->pfnReset(pThis->pCodec);
-    }
-
-    /*
-     * Set some sensible defaults for which HDA sinks
-     * are connected to which stream number.
-     *
-     * We use SD0 for input and SD4 for output by default.
-     * These stream numbers can be changed by the guest dynamically lateron.
-     */
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
-#endif
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
-
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
-    hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
-#endif
-
-    pThis->cbCorbBuf = 256 * sizeof(uint32_t); /** @todo Use a define here. */
-
-    if (pThis->pu32CorbBuf)
-        RT_BZERO(pThis->pu32CorbBuf, pThis->cbCorbBuf);
-    else
-        pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
-
-    pThis->cbRirbBuf = 256 * sizeof(uint64_t); /** @todo Use a define here. */
-    if (pThis->pu64RirbBuf)
-        RT_BZERO(pThis->pu64RirbBuf, pThis->cbRirbBuf);
-    else
-        pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
-
-    for (uint8_t uSD = 0; uSD < HDA_MAX_STREAMS; ++uSD)
-    {
-        /* Remove the RUN bit from SDnCTL in case the stream was in a running state before. */
-        HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_RUN;
-        hdaStreamReset(pThis, &pThis->aStreams[uSD], uSD);
-    }
-
-    /* Clear stream tags <-> objects mapping table. */
-    RT_ZERO(pThis->aTags);
-
-    /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
-    HDA_REG(pThis, STATESTS) = 0x1;
-
-    LogFlowFuncLeave();
-    LogRel(("HDA: Reset\n"));
+    HDA_REG(pThis, GCTL)    = HDA_GCTL_CRST;
 }
 
 /**
@@ -7668,13 +7677,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_SUCCESS(rc))
     {
         hdaReset(pDevIns);
-
-        /*
-         * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
-         * hdaReset shouldn't affects these registers.
-         */
-        HDA_REG(pThis, WAKEEN)   = 0x0;
-        HDA_REG(pThis, STATESTS) = 0x0;
 
         /*
          * Debug and string formatter types.
