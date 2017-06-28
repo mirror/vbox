@@ -337,24 +337,21 @@ setup()
     4.* | 6.* | 7.* | 1.?.* | 1.1[0-6].* )
         blacklist_vboxvideo="yes"
         ;;
-    *)
-        if test -f /etc/modprobe.d/blacklist-vboxvideo.conf; then
-            rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
-            # We do not want to load the driver if X.Org Server is already
-            # running, as without a driver the server will touch the hardware
-            # directly, causing problems.
-            ps -Af | grep -q '[X]org' || ${MODPROBE} vboxvideo
-        fi
-        ;;
     esac
     case "$oracle_release" in
         Oracle*release\ 6.* )
             # relevant for OL6/UEK4 but cannot hurt for other kernels
             blacklist_vboxvideo="yes"
-            ;;
     esac
-    test -n "${blacklist_vboxvideo}" &&
+    if test -n "${blacklist_vboxvideo}"; then
         echo "blacklist vboxvideo" > /etc/modprobe.d/blacklist-vboxvideo.conf
+    elif test -f /etc/modprobe.d/blacklist-vboxvideo.conf; then
+        rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
+        # We do not want to load the driver if X.Org Server is already
+        # running, as without a driver the server will touch the hardware
+        # directly, causing problems.
+        ps -Af | grep -q '[X]org' || ${MODPROBE} vboxvideo
+    fi
     test -n "${dox11config}" &&
         echo "Installing $xserver_version modules" >&2
     case "$vboxvideo_src" in
