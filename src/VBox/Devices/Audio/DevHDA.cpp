@@ -48,7 +48,7 @@
 #include "AudioMixer.h"
 #include "HDACodec.h"
 # if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
-#include "HDAStreamChannel.h"
+#  include "HDAStreamChannel.h"
 # endif
 #include "HDAStreamMap.h"
 #include "HDAStreamPeriod.h"
