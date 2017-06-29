@@ -28,7 +28,7 @@
 # include "QIDialogButtonBox.h"
 # include "QITreeWidget.h"
 # include "UIIconPool.h"
-# include "UIHostNetworkDetailsDialog.h"
+# include "UIHostNetworkDetailsWidget.h"
 # include "UIHostNetworkManager.h"
 # include "UIHostNetworkUtils.h"
 # include "UIMessageCenter.h"
@@ -857,17 +857,17 @@ void UIHostNetworkManagerWidget::prepareTreeWidget()
 void UIHostNetworkManagerWidget::prepareDetailsWidget()
 {
     /* Create details-widget: */
-    m_pDetailsWidget = new UIHostNetworkDetailsDialog(m_enmEmbedding);
+    m_pDetailsWidget = new UIHostNetworkDetailsWidget(m_enmEmbedding);
     AssertPtrReturnVoid(m_pDetailsWidget);
     {
         /* Configure details-widget: */
         m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChanged,
+        connect(m_pDetailsWidget, &UIHostNetworkDetailsWidget::sigDataChanged,
                 this, &UIHostNetworkManagerWidget::sigHostNetworkDetailsDataChanged);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChangeRejected,
+        connect(m_pDetailsWidget, &UIHostNetworkDetailsWidget::sigDataChangeRejected,
                 this, &UIHostNetworkManagerWidget::sltResetHostNetworkDetailsChanges);
-        connect(m_pDetailsWidget, &UIHostNetworkDetailsDialog::sigDataChangeAccepted,
+        connect(m_pDetailsWidget, &UIHostNetworkDetailsWidget::sigDataChangeAccepted,
                 this, &UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges);
 
         /* Add into layout: */

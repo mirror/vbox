@@ -31,7 +31,7 @@ class QAbstractButton;
 class QTreeWidgetItem;
 class QIDialogButtonBox;
 class QITreeWidget;
-class UIHostNetworkDetailsDialog;
+class UIHostNetworkDetailsWidget;
 class UIItemHostNetwork;
 class UIToolBar;
 struct UIDataHostNetwork;
@@ -174,7 +174,7 @@ private:
         /** Holds the tree-widget instance. */
         QITreeWidget *m_pTreeWidget;
         /** Holds the details-widget instance. */
-        UIHostNetworkDetailsDialog *m_pDetailsWidget;
+        UIHostNetworkDetailsWidget *m_pDetailsWidget;
     /** @} */
 };
 

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIHostNetworkDetailsDialog class declaration.
+ * VBox Qt GUI - UIHostNetworkDetailsWidget class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIHostNetworkDetailsDialog_h___
-#define ___UIHostNetworkDetailsDialog_h___
+#ifndef ___UIHostNetworkDetailsWidget_h___
+#define ___UIHostNetworkDetailsWidget_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -158,7 +158,7 @@ struct UIDataHostNetwork
 
 
 /** Host Network Manager: Host network details widget. */
-class UIHostNetworkDetailsDialog : public QIWithRetranslateUI2<QWidget>
+class UIHostNetworkDetailsWidget : public QIWithRetranslateUI2<QWidget>
 {
     Q_OBJECT;
 
@@ -175,7 +175,7 @@ signals:
 public:
 
     /** Constructs host network details dialog for the passed @a pParent and @a data. */
-    UIHostNetworkDetailsDialog(EmbedTo enmEmbedding, QWidget *pParent = 0);
+    UIHostNetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the host network data. */
     const UIDataHostNetwork &data() const { return m_newData; }
@@ -350,5 +350,5 @@ private:
     /** @} */
 };
 
-#endif /* !___UIHostNetworkDetailsDialog_h___ */
+#endif /* !___UIHostNetworkDetailsWidget_h___ */
 
