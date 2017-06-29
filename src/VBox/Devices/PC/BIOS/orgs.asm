@@ -1763,12 +1763,13 @@ iret_modify_cf:
                 push    bp
                 mov     bp, sp
                 and     byte ptr [bp + 6], 0FEh
+                or      word ptr [bp + 6], 0200h
                 pop     bp
                 iret
 carry_set:
                 push    bp
                 mov     bp, sp
-                or      byte ptr [bp + 6], 1
+                or      word ptr [bp + 6], 0201h
                 pop     bp
                 iret
 

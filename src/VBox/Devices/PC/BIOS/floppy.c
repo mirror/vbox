@@ -473,6 +473,8 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
 
     BX_DEBUG_INT13_FL("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
 
+    SET_IF();   /* INT 13h always returns with interrupts enabled. */
+
     switch ( GET_AH() ) {
     case 0x00: // diskette controller reset
         BX_DEBUG_INT13_FL("floppy f00\n");

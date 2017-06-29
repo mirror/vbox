@@ -14,6 +14,12 @@
 - Keystroke check (INT 16h, fn 01h/10h) always enables interrupts on return.
   DOS POWER.EXE depends on that in some situations.
 
+- MS-DOS 5.0/V setup assumes that INT 13h always returns with interrupts
+  enabled.
+
+- INT 15h also always returns with interrupts enabled (even for unsupported
+  functions).
+
 - MS-DOS 6.2/V is a rare user of the INT 15h keyboard intercept routines.
 
 - Some software uses the model byte at F000:FFFE to determine the system

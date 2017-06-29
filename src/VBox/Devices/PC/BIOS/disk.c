@@ -132,6 +132,8 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 
     BX_DEBUG_INT13_HD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
 
+    SET_IF();   /* INT 13h always returns with interrupts enabled. */
+
     bios_dsk = read_word(0x0040,0x000E) :> &EbdaData->bdisk;
     write_byte(0x0040, 0x008e, 0);  // clear completion flag
 
