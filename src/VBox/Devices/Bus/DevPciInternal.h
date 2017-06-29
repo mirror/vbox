@@ -180,6 +180,8 @@ typedef DEVPCIROOT *PDEVPCIROOT;
     DEVINS_2_DEVPCIBUS(pDevIns)->CTX_SUFF(pPciHlp)->pfnUnlock(pDevIns)
 
 
+#ifdef IN_RING3
+
 DECLCALLBACK(void) devpciR3RootRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 DECLCALLBACK(void) devpciR3BusRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 DECLCALLBACK(void) devpciR3InfoPci(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -195,6 +197,41 @@ DECLCALLBACK(void)     devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDM
 void devpciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig);
 int  devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGION paIoRegions, bool fNewState);
 void devpciR3ResetDevice(PPDMPCIDEV pDev);
+void devpciR3BiosInitSetRegionAddress(PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, int iRegion, uint64_t addr);
+uint32_t devpciR3GetCfg(PPDMPCIDEV pPciDev, int32_t iRegister, int cb);
+void devpciR3SetCfg(PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32, int cb);
+
+DECLINLINE(uint8_t) devpciR3GetByte(PPDMPCIDEV pPciDev, int32_t iRegister)
+{
+    return (uint8_t)devpciR3GetCfg(pPciDev, iRegister, 1);
+}
+
+DECLINLINE(uint16_t) devpciR3GetWord(PPDMPCIDEV pPciDev, int32_t iRegister)
+{
+    return (uint16_t)devpciR3GetCfg(pPciDev, iRegister, 2);
+}
+
+DECLINLINE(uint32_t) devpciR3GetDWord(PPDMPCIDEV pPciDev, int32_t iRegister)
+{
+    return (uint32_t)devpciR3GetCfg(pPciDev, iRegister, 4);
+}
+
+DECLINLINE(void) devpciR3SetByte(PPDMPCIDEV pPciDev, int32_t iRegister, uint8_t u8)
+{
+    devpciR3SetCfg(pPciDev, iRegister, u8, 1);
+}
+
+DECLINLINE(void) devpciR3SetWord(PPDMPCIDEV pPciDev, int32_t iRegister, uint16_t u16)
+{
+    devpciR3SetCfg(pPciDev, iRegister, u16, 2);
+}
+
+DECLINLINE(void) devpciR3SetDWord(PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32)
+{
+    devpciR3SetCfg(pPciDev, iRegister, u32, 4);
+}
+
+#endif /* IN_RING3 */
 
 #endif
 
