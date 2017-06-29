@@ -201,6 +201,84 @@ RTCString &RTCString::appendCodePoint(RTUNICP uc)
     return *this;
 }
 
+
+RTCString &RTCString::replace(size_t offStart, size_t cchLength, const RTCString &rStrReplacement)
+{
+    return replaceWorker(offStart, cchLength, rStrReplacement.c_str(), rStrReplacement.length());
+}
+
+RTCString &RTCString::replace(size_t offStart, size_t cchLength, const RTCString &rStrReplacement,
+                              size_t offReplacement, size_t cchReplacement)
+{
+    Assert(this != &rStrReplacement);
+    if (cchReplacement > 0)
+    {
+        if (offReplacement < rStrReplacement.length())
+        {
+            size_t cchMaxReplacement = rStrReplacement.length() - offReplacement;
+            return replaceWorker(offStart, cchLength, rStrReplacement.c_str() + offReplacement,
+                                 RT_MIN(cchReplacement, cchMaxReplacement));
+        }
+        /* Our non-standard handling of out_of_range situations. */
+        AssertMsgFailed(("offReplacement=%zu (cchReplacement=%zu) rStrReplacement.length()=%zu\n",
+                         offReplacement, cchReplacement, rStrReplacement.length()));
+    }
+    return replaceWorker(offStart, cchLength, "", 0);
+}
+
+RTCString &RTCString::replace(size_t offStart, size_t cchLength, const char *pszReplacement)
+{
+    return replaceWorker(offStart, cchLength, pszReplacement, strlen(pszReplacement));
+}
+
+RTCString &RTCString::replace(size_t offStart, size_t cchLength, const char *pszReplacement, size_t cchReplacement)
+{
+    return replaceWorker(offStart, cchLength, pszReplacement, RTStrNLen(pszReplacement, cchReplacement));
+}
+
+RTCString &RTCString::replaceWorker(size_t offStart, size_t cchLength, const char *pszSrc, size_t cchSrc)
+{
+    /*
+     * Our non-standard handling of out_of_range situations.
+     */
+    size_t const cchOldLength = length();
+    AssertMsgReturn(offStart < cchOldLength, ("offStart=%zu (cchLength=%zu); length()=%zu\n", offStart, cchLength, cchOldLength),
+                    *this);
+
+    /*
+     * Correct the length parameter.
+     */
+    size_t cchMaxLength = cchOldLength - offStart;
+    if (cchMaxLength < cchLength)
+        cchLength = cchMaxLength;
+
+    /*
+     * Adjust string allocation if necessary.
+     */
+    size_t cchNew = cchOldLength - cchLength + cchSrc;
+    if (cchNew >= m_cbAllocated)
+    {
+        reserve(RT_ALIGN_Z(cchNew + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
+        // calls realloc(cchBoth + 1) and sets m_cbAllocated; may throw bad_alloc.
+#ifndef RT_EXCEPTIONS_ENABLED
+        AssertRelease(capacity() > cchNew);
+#endif
+    }
+
+    /*
+     * Make the change.
+     */
+    size_t cchAfter = cchOldLength - offStart - cchLength;
+    if (cchAfter > 0)
+        memmove(&m_psz[offStart + cchSrc], &m_psz[offStart + cchLength], cchAfter);
+    memcpy(&m_psz[offStart], pszSrc, cchSrc);
+    m_psz[cchNew] = '\0';
+    m_cch = cchNew;
+
+    return *this;
+}
+
+
 size_t RTCString::find(const char *pszNeedle, size_t offStart /*= 0*/) const
 {
     if (offStart < length())

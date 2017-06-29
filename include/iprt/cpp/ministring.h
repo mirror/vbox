@@ -501,6 +501,79 @@ public:
     }
 
     /**
+     * Replaces a span of @a this string with a replacement string.
+     *
+     * @returns Reference to the object.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   rStrReplacement The replacement string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @note    Non-standard behaviour if offStart is beyond the end of the string.
+     *          No change will occure and strict builds hits a debug assertion.
+     */
+    RTCString &replace(size_t offStart, size_t cchLength, const RTCString &rStrReplacement);
+
+    /**
+     * Replaces a span of @a this string with a replacement substring.
+     *
+     * @returns Reference to the object.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   rStrReplacement The string from which a substring is taken.
+     * @param   offReplacement  The offset into @a rStrReplacement where the
+     *                          replacement substring starts.
+     * @param   cchReplacment   The maximum length of the replacement substring.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @note    Non-standard behaviour if offStart or offReplacement is beyond the
+     *          end of the repective strings.  No change is made in the former case,
+     *          while we consider it an empty string in the latter.  In both
+     *          situation a debug assertion is raised in strict builds.
+     */
+    RTCString &replace(size_t offStart, size_t cchLength, const RTCString &rStrReplacement,
+                       size_t offReplacement, size_t cchReplacement);
+
+    /**
+     * Replaces a span of @a this string with the replacement string.
+     *
+     * @returns Reference to the object.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   pszReplacement  The replacement string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @note    Non-standard behaviour if offStart is beyond the end of the string.
+     *          No change will occure and strict builds hits a debug assertion.
+     */
+    RTCString &replace(size_t offStart, size_t cchLength, const char *pszReplacement);
+
+    /**
+     * Replaces a span of @a this string with the replacement string.
+     *
+     * @returns Reference to the object.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   pszReplacement  The replacement string.
+     * @param   cchReplacement  How much of @a pszReplacement to use at most.  If a
+     *                          zero terminator is found before reaching this value,
+     *                          we'll stop there.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @note    Non-standard behaviour if offStart is beyond the end of the string.
+     *          No change will occure and strict builds hits a debug assertion.
+     */
+    RTCString &replace(size_t offStart, size_t cchLength, const char *pszReplacement, size_t cchReplacement);
+
+    /**
      * Index operator.
      *
      * Returns the byte at the given index, or a null byte if the index is not
@@ -1067,13 +1140,28 @@ protected:
      *
      * This is an internal worker for the append() methods.
      *
+     * @returns Reference to the object.
      * @param   pszSrc          The source string.
      * @param   cchSrc          The source string length (exact).
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
      *
-     * @returns Reference to the object.
      */
     RTCString &appendWorker(const char *pszSrc, size_t cchSrc);
+
+    /**
+     * Replaces exatly @a cchLength chars at @a offStart with @a cchSrc from @a
+     * pszSrc.
+     *
+     * @returns Reference to the object.
+     * @param   offStart        Where in @a this string to start replacing.
+     * @param   cchLength       How much following @a offStart to replace.  npos is
+     *                          accepted.
+     * @param   pszSrc          The replacement string.
+     * @param   cchSrc          The exactly length of the replacement string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     */
+    RTCString &replaceWorker(size_t offStart, size_t cchLength, const char *pszSrc, size_t cchSrc);
 
     static DECLCALLBACK(size_t) printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars);
 
