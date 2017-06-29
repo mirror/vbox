@@ -2780,6 +2780,36 @@ static void devpciR3InfoIndent(PCDBGFINFOHLP pHlp, unsigned iIndentLvl)
         pHlp->pfnPrintf(pHlp, "    ");
 }
 
+static const char *devpciR3InInfoPciBusClassName(uint8_t iBaseClass)
+{
+    static const char *s_szBaseClass[] =
+    {
+        /* 00h */ "unknown",
+        /* 01h */ "mass storage controller",
+        /* 02h */ "network controller",
+        /* 03h */ "display controller",
+        /* 04h */ "multimedia controller",
+        /* 05h */ "memory controller",
+        /* 06h */ "bridge device",
+        /* 07h */ "simple communication controllers",
+        /* 08h */ "base system peripherals",
+        /* 09h */ "input devices",
+        /* 0Ah */ "docking stations",
+        /* 0Bh */ "processors",
+        /* 0Ch */ "serial bus controllers",
+        /* 0Dh */ "wireless controller",
+        /* 0Eh */ "intelligent I/O controllers",
+        /* 0Fh */ "satellite communication controllers",
+        /* 10h */ "encryption/decryption controllers",
+        /* 11h */ "data acquisition and signal processing controllers"
+    };
+    if (iBaseClass < RT_ELEMENTS(s_szBaseClass))
+        return s_szBaseClass[iBaseClass];
+    if (iBaseClass < 0xFF)
+        return "reserved";
+    return "device does not fit in any defined classes";
+}
+
 
 /**
  * Recursive worker for devpciR3InfoPci.
@@ -2824,6 +2854,11 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                 pHlp->pfnPrintf(pHlp, " (INTA#->IRQ%d)", 0x10 + ich9pciSlot2ApicIrq(iDev >> 3, 0));
             }
             pHlp->pfnPrintf(pHlp, "\n");
+            devpciR3InfoIndent(pHlp, iIndentLvl + 2);
+            uint8_t uClassBase = ich9pciGetByte(pPciDev, VBOX_PCI_CLASS_BASE);
+            uint8_t uClassSub  = ich9pciGetByte(pPciDev, VBOX_PCI_CLASS_SUB);
+            pHlp->pfnPrintf(pHlp, "Class base/sub: %02x%02x (%s)\n",
+                            uClassBase, uClassSub, devpciR3InInfoPciBusClassName(uClassBase));
 
             if (pciDevIsMsiCapable(pPciDev) || pciDevIsMsixCapable(pPciDev))
             {
