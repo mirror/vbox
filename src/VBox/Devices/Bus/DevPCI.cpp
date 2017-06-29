@@ -1711,8 +1711,8 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     PCIDevSetClassBase( &pBus->PciDev,   0x06); /* PCI_bridge */
     PCIDevSetClassProg( &pBus->PciDev,   0x01); /* Supports subtractive decoding. */
     PCIDevSetHeaderType(&pBus->PciDev,   0x01); /* Single function device which adheres to the PCI-to-PCI bridge spec. */
-    PCIDevSetCommand(   &pBus->PciDev,   0x00);
-    PCIDevSetStatus(    &pBus->PciDev,   0x20); /* 66MHz Capable. */
+    PCIDevSetCommand(   &pBus->PciDev, 0x0000);
+    PCIDevSetStatus(    &pBus->PciDev, 0x0020); /* 66MHz Capable. */
     PCIDevSetInterruptLine(&pBus->PciDev, 0x00); /* This device does not assert interrupts. */
 
     /*

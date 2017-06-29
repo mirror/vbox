@@ -4023,7 +4023,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetDeviceId(&pThis->dev, 0x7113); /* 82371AB */
 
     /* See p. 50 of PIIX4 manual */
-    PCIDevSetCommand(&pThis->dev, 0x01);
+    PCIDevSetCommand(&pThis->dev, PCI_COMMAND_IOACCESS);
     PCIDevSetStatus(&pThis->dev, 0x0280);
 
     PCIDevSetRevisionId(&pThis->dev, 0x08);

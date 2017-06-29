@@ -4026,7 +4026,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     PCIDevSetVendorId         (&pThis->dev, 0x104b); /* BusLogic */
     PCIDevSetDeviceId         (&pThis->dev, 0x1040); /* BT-958 */
-    PCIDevSetCommand          (&pThis->dev, 0x0003);
+    PCIDevSetCommand          (&pThis->dev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS);
     PCIDevSetRevisionId       (&pThis->dev, 0x01);
     PCIDevSetClassProg        (&pThis->dev, 0x00); /* SCSI */
     PCIDevSetClassSub         (&pThis->dev, 0x00); /* SCSI */
