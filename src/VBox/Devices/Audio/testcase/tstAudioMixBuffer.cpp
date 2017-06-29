@@ -45,9 +45,9 @@ static int tstSingle(RTTEST hTest)
     {
         16,                                                                 /* Bits */
         true,                                                               /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
         44100,                                                              /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         false                                                               /* Swap Endian */
     };
 
@@ -166,9 +166,9 @@ static int tstParentChild(RTTEST hTest)
     {
         16,                                                                 /* Bits */
         true,                                                               /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
         44100,                                                              /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         false                                                               /* Swap Endian */
     };
 
@@ -182,9 +182,9 @@ static int tstParentChild(RTTEST hTest)
     {
         16,                                                                 /* Bits */
         true,                                                               /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
         22050,                                                              /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         false                                                               /* Swap Endian */
     };
 
@@ -202,9 +202,9 @@ static int tstParentChild(RTTEST hTest)
     {
         16,                                                                 /* Bits */
         true,                                                               /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
         48000,                                                              /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         false                                                               /* Swap Endian */
     };
 
@@ -316,9 +316,9 @@ static int tstConversion8(RTTEST hTest)
     {
         8,                                                                 /* Bits */
         false,                                                             /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                 /* Channels */
         44100,                                                             /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
         false                                                              /* Swap Endian */
     };
 
@@ -340,9 +340,9 @@ static int tstConversion8(RTTEST hTest)
     {
         8,                                                                 /* Bits */
         false,                                                             /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                 /* Channels */
         22050,                                                             /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
         false                                                              /* Swap Endian */
     };
 
@@ -422,9 +422,9 @@ static int tstConversion16(RTTEST hTest)
     {
         16,                                                                 /* Bits */
         true,                                                               /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                  /* Channels */
         44100,                                                              /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
         false                                                               /* Swap Endian */
     };
 
@@ -438,9 +438,9 @@ static int tstConversion16(RTTEST hTest)
     {
         16,                                                                 /* Bits */
         true,                                                               /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
         1,                                                                  /* Channels */
         22050,                                                              /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
         false                                                               /* Swap Endian */
     };
 
@@ -520,9 +520,9 @@ static int tstVolume(RTTEST hTest)
     {
         16,                                                                 /* Bits */
         true,                                                               /* Signed */
-        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         2,                                                                  /* Channels */
         44100,                                                              /* Hz */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
         false                                                               /* Swap Endian */
     };
 
