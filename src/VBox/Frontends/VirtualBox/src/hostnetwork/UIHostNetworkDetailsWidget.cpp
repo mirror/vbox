@@ -44,7 +44,7 @@
 
 
 UIHostNetworkDetailsWidget::UIHostNetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI2<QWidget>(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
     , m_pTabWidget(0)
     , m_pButtonAutomatic(0), m_pErrorPaneAutomatic(0)

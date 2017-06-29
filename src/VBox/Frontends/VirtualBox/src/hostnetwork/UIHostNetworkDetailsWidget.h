@@ -158,7 +158,7 @@ struct UIDataHostNetwork
 
 
 /** Host Network Manager: Host network details widget. */
-class UIHostNetworkDetailsWidget : public QIWithRetranslateUI2<QWidget>
+class UIHostNetworkDetailsWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 

@@ -227,7 +227,7 @@ void UIHostNetworkManagerWidget::retranslateUi()
     {
         m_pActionDetails->setText(UIHostNetworkManager::tr("&Details..."));
         m_pActionDetails->setToolTip(UIHostNetworkManager::tr("Open Host-only Network Details (%1)").arg(m_pActionDetails->shortcut().toString()));
-        m_pActionDetails->setStatusTip(UIHostNetworkManager::tr("Open pane with the selected host-only network details"));
+        m_pActionDetails->setStatusTip(UIHostNetworkManager::tr("Open pane with selected host-only network details"));
     }
 
     /* Adjust toolbar: */
