@@ -347,6 +347,10 @@ typedef struct PDMAUDIOPCMPROPS
     uint8_t     cBits;
     /** Signed or unsigned sample. */
     bool        fSigned;
+    /** Number of audio channels. */
+    uint8_t     cChannels;
+    /** Sample frequency in Hertz (Hz). */
+    uint32_t    uHz;
     /** Shift count used for faster calculation of various
      *  values, such as the alignment, bytes to samples and so on.
      *  Depends on number of stream channels and the stream format
@@ -355,10 +359,6 @@ typedef struct PDMAUDIOPCMPROPS
      ** @todo Use some RTAsmXXX functions instead?
      */
     uint8_t     cShift;
-    /** Number of audio channels. */
-    uint8_t     cChannels;
-    /** Sample frequency in Hertz (Hz). */
-    uint32_t    uHz;
     /** Whether the endianness is swapped or not. */
     bool        fSwapEndian;
 } PDMAUDIOPCMPROPS, *PPDMAUDIOPCMPROPS;
