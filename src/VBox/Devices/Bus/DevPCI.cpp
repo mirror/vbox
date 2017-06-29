@@ -448,85 +448,18 @@ static void pciR3Piix3Reset(PIIX3ISABRIDGE *d)
     pci_conf[0xae] = 0x00;
 }
 
-static void pci_config_writel(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr, uint32_t val)
-{
-    pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
-        (uDevFn << 8) | addr;
-    pci_data_write(pGlobals, 0, val, 4);
-}
-
-static void pci_config_writew(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr, uint32_t val)
-{
-    pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
-        (uDevFn << 8) | (addr & ~3);
-    pci_data_write(pGlobals, addr & 3, val, 2);
-}
-
-static void pci_config_writeb(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr, uint32_t val)
-{
-    pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
-        (uDevFn << 8) | (addr & ~3);
-    pci_data_write(pGlobals, addr & 3, val, 1);
-}
-
-static uint32_t pci_config_readl(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr)
-{
-    pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
-        (uDevFn << 8) | addr;
-    uint32_t u32Val;
-    int rc = pci_data_read(pGlobals, 0, 4, &u32Val);
-    AssertRC(rc);
-    return u32Val;
-}
-
-static uint32_t pci_config_readw(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr)
-{
-    pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
-        (uDevFn << 8) | (addr & ~3);
-    uint32_t u32Val;
-    int rc = pci_data_read(pGlobals, addr & 3, 2, &u32Val);
-    AssertRC(rc);
-    return u32Val;
-}
-
-static uint32_t pci_config_readb(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr)
-{
-    pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
-        (uDevFn << 8) | (addr & ~3);
-    uint32_t u32Val;
-    int rc = pci_data_read(pGlobals, addr & 3, 1, &u32Val);
-    AssertRC(rc);
-    return u32Val;
-}
-
 /* host irqs corresponding to PCI irqs A-D */
 static const uint8_t pci_irqs[4] = { 11, 9, 11, 9 }; /* bird: added const */
 
-static void pci_set_io_region_addr(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, int region_num, uint32_t addr)
-{
-    uint32_t ofs;
-
-    if ( region_num == PCI_ROM_SLOT )
-        ofs = 0x30;
-    else
-        ofs = 0x10 + region_num * 4;
-
-    Log(("Set region address: %02x:%02x.%d region %d address=%lld\n",
-         uBus, uDevFn >> 3, uDevFn & 7, region_num, addr));
-
-    /* Write address of the device. */
-    pci_config_writel(pGlobals, uBus, uDevFn, ofs, addr);
-}
-
-static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions)
+static void pci_bios_init_device(PDEVPCIROOT pGlobals, PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, uint8_t cBridgeDepth, uint8_t *paBridgePositions)
 {
     uint32_t *paddr;
-    int i, pin, pic_irq;
+    int pin, pic_irq;
     uint16_t devclass, vendor_id, device_id;
 
-    devclass  = pci_config_readw(pGlobals, uBus, uDevFn, PCI_CLASS_DEVICE);
-    vendor_id = pci_config_readw(pGlobals, uBus, uDevFn, PCI_VENDOR_ID);
-    device_id = pci_config_readw(pGlobals, uBus, uDevFn, PCI_DEVICE_ID);
+    devclass  = devpciR3GetWord(pPciDev, PCI_CLASS_DEVICE);
+    vendor_id = devpciR3GetWord(pPciDev, PCI_VENDOR_ID);
+    device_id = devpciR3GetWord(pPciDev, PCI_DEVICE_ID);
 
     /* Check if device is present. */
     if (vendor_id != 0xffff)
@@ -538,50 +471,50 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                     && (device_id == 0x7010 || device_id == 0x7111 || device_id == 0x269e))
                 {
                     /* PIIX3, PIIX4 or ICH6 IDE */
-                    pci_config_writew(pGlobals, uBus, uDevFn, 0x40, 0x8000); /* enable IDE0 */
-                    pci_config_writew(pGlobals, uBus, uDevFn, 0x42, 0x8000); /* enable IDE1 */
+                    devpciR3SetWord(pPciDev, 0x40, 0x8000); /* enable IDE0 */
+                    devpciR3SetWord(pPciDev, 0x42, 0x8000); /* enable IDE1 */
                     goto default_map;
                 }
                 else
                 {
                     /* IDE: we map it as in ISA mode */
-                    pci_set_io_region_addr(pGlobals, uBus, uDevFn, 0, 0x1f0);
-                    pci_set_io_region_addr(pGlobals, uBus, uDevFn, 1, 0x3f4);
-                    pci_set_io_region_addr(pGlobals, uBus, uDevFn, 2, 0x170);
-                    pci_set_io_region_addr(pGlobals, uBus, uDevFn, 3, 0x374);
-                    pci_config_writeb(pGlobals, uBus, uDevFn, PCI_COMMAND,
-                                      pci_config_readb(pGlobals, uBus, uDevFn, PCI_COMMAND)
-                                      | PCI_COMMAND_IOACCESS);
+                    devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 0, 0x1f0);
+                    devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 1, 0x3f4);
+                    devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 2, 0x170);
+                    devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 3, 0x374);
+                    devpciR3SetWord(pPciDev, PCI_COMMAND,
+                                      devpciR3GetWord(pPciDev, PCI_COMMAND)
+                                    | PCI_COMMAND_IOACCESS);
                 }
                 break;
             case 0x0300:
                 if (vendor_id != 0x80ee)
                     goto default_map;
                 /* VGA: map frame buffer to default Bochs VBE address */
-                pci_set_io_region_addr(pGlobals, uBus, uDevFn, 0, 0xE0000000);
+                devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 0, 0xe0000000);
                 /*
                  * Legacy VGA I/O ports are implicitly decoded by a VGA class device. But
                  * only the framebuffer (i.e., a memory region) is explicitly registered via
-                 * pci_set_io_region_addr, so don't forget to enable I/O decoding.
+                 * devpciR3BiosInitSetRegionAddress, so don't forget to enable I/O decoding.
                  */
-                pci_config_writeb(pGlobals, uBus, uDevFn, PCI_COMMAND,
-                                  pci_config_readb(pGlobals, uBus, uDevFn, PCI_COMMAND)
-                                  | PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS);
+                devpciR3SetWord(pPciDev, PCI_COMMAND,
+                                  devpciR3GetWord(pPciDev, PCI_COMMAND)
+                                | PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS);
                 break;
             case 0x0800:
                 /* PIC */
-                vendor_id = pci_config_readw(pGlobals, uBus, uDevFn, PCI_VENDOR_ID);
-                device_id = pci_config_readw(pGlobals, uBus, uDevFn, PCI_DEVICE_ID);
+                vendor_id = devpciR3GetWord(pPciDev, PCI_VENDOR_ID);
+                device_id = devpciR3GetWord(pPciDev, PCI_DEVICE_ID);
                 if (vendor_id == 0x1014)
                 {
                     /* IBM */
                     if (device_id == 0x0046 || device_id == 0xFFFF)
                     {
                         /* MPIC & MPIC2 */
-                        pci_set_io_region_addr(pGlobals, uBus, uDevFn, 0, 0x80800000 + 0x00040000);
-                        pci_config_writeb(pGlobals, uBus, uDevFn, PCI_COMMAND,
-                                          pci_config_readb(pGlobals, uBus, uDevFn, PCI_COMMAND)
-                                          | PCI_COMMAND_MEMACCESS);
+                        devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 0, 0x80800000 + 0x00040000);
+                        devpciR3SetWord(pPciDev, PCI_COMMAND,
+                                          devpciR3GetWord(pPciDev, PCI_COMMAND)
+                                        | PCI_COMMAND_MEMACCESS);
                     }
                 }
                 break;
@@ -590,24 +523,24 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                     && (device_id == 0x0017 || device_id == 0x0022))
                 {
                     /* macio bridge */
-                    pci_set_io_region_addr(pGlobals, uBus, uDevFn, 0, 0x80800000);
-                    pci_config_writeb(pGlobals, uBus, uDevFn, PCI_COMMAND,
-                                      pci_config_readb(pGlobals, uBus, uDevFn, PCI_COMMAND)
-                                      | PCI_COMMAND_MEMACCESS);
+                    devpciR3BiosInitSetRegionAddress(pBus, pPciDev, 0, 0x80800000);
+                    devpciR3SetWord(pPciDev, PCI_COMMAND,
+                                      devpciR3GetWord(pPciDev, PCI_COMMAND)
+                                    | PCI_COMMAND_MEMACCESS);
                 }
                 break;
             case 0x0604:
             {
                 /* Init PCI-to-PCI bridge. */
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_PRIMARY_BUS, uBus);
+                devpciR3SetByte(pPciDev, VBOX_PCI_PRIMARY_BUS, pBus->iBus);
 
                 AssertMsg(pGlobals->uPciBiosBus < 255, ("Too many bridges on the bus\n"));
                 pGlobals->uPciBiosBus++;
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SECONDARY_BUS, pGlobals->uPciBiosBus);
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, 0xff); /* Temporary until we know how many other bridges are behind this one. */
+                devpciR3SetByte(pPciDev, VBOX_PCI_SECONDARY_BUS, pGlobals->uPciBiosBus);
+                devpciR3SetByte(pPciDev, VBOX_PCI_SUBORDINATE_BUS, 0xff); /* Temporary until we know how many other bridges are behind this one. */
 
                 /* Add position of this bridge into the array. */
-                paBridgePositions[cBridgeDepth+1] = (uDevFn >> 3);
+                paBridgePositions[cBridgeDepth+1] = (pPciDev->uDevFn >> 3);
 
                 /*
                  * The I/O range for the bridge must be aligned to a 4KB boundary.
@@ -617,24 +550,29 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                 if ((pGlobals->uPciBiosIo % _4K) != 0)
                     pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, _4K);
                 LogFunc(("Aligned I/O start address. New address %#x\n", pGlobals->uPciBiosIo));
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_BASE, (pGlobals->uPciBiosIo >> 8) & 0xf0);
+                devpciR3SetByte(pPciDev, VBOX_PCI_IO_BASE, (pGlobals->uPciBiosIo >> 8) & 0xf0);
 
                 /* The MMIO range for the bridge must be aligned to a 1MB boundary. */
                 if ((pGlobals->uPciBiosMmio % _1M) != 0)
                     pGlobals->uPciBiosMmio = RT_ALIGN_32(pGlobals->uPciBiosMmio, _1M);
                 LogFunc(("Aligned MMIO start address. New address %#x\n", pGlobals->uPciBiosMmio));
-                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_MEMORY_BASE, (pGlobals->uPciBiosMmio >> 16) & UINT32_C(0xffff0));
+                devpciR3SetWord(pPciDev, VBOX_PCI_MEMORY_BASE, (pGlobals->uPciBiosMmio >> 16) & UINT32_C(0xffff0));
 
                 /* Save values to compare later to. */
                 uint32_t u32IoAddressBase = pGlobals->uPciBiosIo;
                 uint32_t u32MMIOAddressBase = pGlobals->uPciBiosMmio;
 
                 /* Init devices behind the bridge and possibly other bridges as well. */
-                for (int iDev = 0; iDev <= 255; iDev++)
-                    pci_bios_init_device(pGlobals, uBus + 1, iDev, cBridgeDepth + 1, paBridgePositions);
+                PDEVPCIBUS pChildBus = PDMINS_2_DATA(pPciDev->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
+                for (uint32_t uDevFn = 0; uDevFn < RT_ELEMENTS(pChildBus->apDevices); uDevFn++)
+                {
+                    PPDMPCIDEV pChildPciDev = pChildBus->apDevices[uDevFn];
+                    if (pChildPciDev)
+                        pci_bios_init_device(pGlobals, pChildBus, pChildPciDev, cBridgeDepth + 1, paBridgePositions);
+                }
 
                 /* The number of bridges behind the this one is now available. */
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uPciBiosBus);
+                devpciR3SetByte(pPciDev, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uPciBiosBus);
 
                 /*
                  * Set I/O limit register. If there is no device with I/O space behind the bridge
@@ -647,7 +585,7 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                     /* The upper boundary must be one byte less than a 4KB boundary. */
                     pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, _4K);
                 }
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pGlobals->uPciBiosIo >> 8) & 0xf0) - 1);
+                devpciR3SetByte(pPciDev, VBOX_PCI_IO_LIMIT, ((pGlobals->uPciBiosIo >> 8) & 0xf0) - 1);
 
                 /* Same with the MMIO limit register but with 1MB boundary here. */
                 if ((u32MMIOAddressBase != pGlobals->uPciBiosMmio) && ((pGlobals->uPciBiosMmio % _1M) != 0))
@@ -655,17 +593,17 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                     /* The upper boundary must be one byte less than a 1MB boundary. */
                     pGlobals->uPciBiosMmio = RT_ALIGN_32(pGlobals->uPciBiosMmio, _1M);
                 }
-                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_MEMORY_LIMIT, ((pGlobals->uPciBiosMmio >> 16) & UINT32_C(0xfff0)) - 1);
+                devpciR3SetWord(pPciDev, VBOX_PCI_MEMORY_LIMIT, ((pGlobals->uPciBiosMmio >> 16) & UINT32_C(0xfff0)) - 1);
 
                 /*
                  * Set the prefetch base and limit registers. We currently have no device with a prefetchable region
                  * which may be behind a bridge. That's why it is unconditionally disabled here atm by writing a higher value into
                  * the base register than in the limit register.
                  */
-                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, 0xfff0);
-                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, 0x0);
-                pci_config_writel(pGlobals, uBus, uDevFn, VBOX_PCI_PREF_BASE_UPPER32, 0x00);
-                pci_config_writel(pGlobals, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, 0x00);
+                devpciR3SetWord(pPciDev, VBOX_PCI_PREF_MEMORY_BASE, 0xfff0);
+                devpciR3SetWord(pPciDev, VBOX_PCI_PREF_MEMORY_LIMIT, 0x0);
+                devpciR3SetDWord(pPciDev, VBOX_PCI_PREF_BASE_UPPER32, 0x00);
+                devpciR3SetDWord(pPciDev, VBOX_PCI_PREF_LIMIT_UPPER32, 0x00);
                 break;
             }
             default:
@@ -678,16 +616,16 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                  * PCI_NUM_REGIONS is 7 because of the rom region but there are only 6 base address register defined by the PCI spec.
                  * Leaving only PCI_NUM_REGIONS would cause reading another and enabling a memory region which does not exist.
                  */
-                for(i = 0; i < (PCI_NUM_REGIONS-1); i++)
+                for (unsigned i = 0; i < (PCI_NUM_REGIONS-1); i++)
                 {
                     uint32_t u32Size;
                     uint8_t  u8RessourceType;
                     uint32_t u32Address = 0x10 + i * 4;
 
                     /* Calculate size. */
-                    u8RessourceType = pci_config_readb(pGlobals, uBus, uDevFn, u32Address);
-                    pci_config_writel(pGlobals, uBus, uDevFn, u32Address, UINT32_C(0xffffffff));
-                    u32Size = pci_config_readl(pGlobals, uBus, uDevFn, u32Address);
+                    u8RessourceType = devpciR3GetByte(pPciDev, u32Address);
+                    devpciR3SetDWord(pPciDev, u32Address, UINT32_C(0xffffffff));
+                    u32Size = devpciR3GetDWord(pPciDev, u32Address);
                     bool fIsPio = ((u8RessourceType & PCI_COMMAND_IOACCESS) == PCI_COMMAND_IOACCESS);
                     /* Clear resource information depending on resource type. */
                     if (fIsPio) /* I/O */
@@ -704,7 +642,7 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                     else
                         u32Size = (~u32Size) + 1;
 
-                    Log2Func(("Size of region %u for device %d on bus %d is %u\n", i, uDevFn, uBus, u32Size));
+                    Log2Func(("Size of region %u for device %d on bus %d is %u\n", i, pPciDev->uDevFn, pBus->iBus, u32Size));
 
                     if (u32Size)
                     {
@@ -720,14 +658,14 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                         if (!uNew || (uNew <= UINT32_C(0xffffffff) && uNew + u32Size - 1 >= UINT32_C(0xfec00000)))
                         {
                             LogRel(("PCI: no space left for BAR%u of device %u/%u/%u (vendor=%#06x device=%#06x)\n",
-                                    i, uBus, uDevFn >> 3, uDevFn & 7, vendor_id, device_id)); /** @todo make this a VM start failure later. */
+                                    i, pBus->iBus, pPciDev->uDevFn >> 3, pPciDev->uDevFn & 7, vendor_id, device_id)); /** @todo make this a VM start failure later. */
                             /* Undo the mapping mess caused by the size probing. */
-                            pci_config_writel(pGlobals, uBus, uDevFn, u32Address, UINT32_C(0));
+                            devpciR3SetDWord(pPciDev, u32Address, UINT32_C(0));
                         }
                         else
                         {
                             LogFunc(("Start address of %s region %u is %#x\n", (fIsPio ? "I/O" : "MMIO"), i, uNew));
-                            pci_set_io_region_addr(pGlobals, uBus, uDevFn, i, uNew);
+                            devpciR3BiosInitSetRegionAddress(pBus, pPciDev, i, uNew);
                             if (fIsPio)
                                 fActiveIORegion = true;
                             else
@@ -739,20 +677,20 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                 }
 
                 /* Update the command word appropriately. */
-                pci_config_writeb(pGlobals, uBus, uDevFn, PCI_COMMAND,
-                                  pci_config_readb(pGlobals, uBus, uDevFn, PCI_COMMAND)
-                                  | (fActiveMemRegion ? PCI_COMMAND_MEMACCESS : 0)
-                                  | (fActiveIORegion ? PCI_COMMAND_IOACCESS : 0));
+                devpciR3SetWord(pPciDev, PCI_COMMAND,
+                                  devpciR3GetWord(pPciDev, PCI_COMMAND)
+                                | (fActiveMemRegion ? PCI_COMMAND_MEMACCESS : 0)
+                                | (fActiveIORegion ? PCI_COMMAND_IOACCESS : 0));
 
                 break;
             }
         }
 
         /* map the interrupt */
-        pin = pci_config_readb(pGlobals, uBus, uDevFn, PCI_INTERRUPT_PIN);
+        pin = devpciR3GetByte(pPciDev, PCI_INTERRUPT_PIN);
         if (pin != 0)
         {
-            uint8_t uBridgeDevFn = uDevFn;
+            uint8_t uBridgeDevFn = pPciDev->uDevFn;
             pin--;
 
             /* We need to go up to the host bus to see which irq this device will assert there. */
@@ -764,9 +702,9 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                 cBridgeDepth--;
             }
 
-            pin = pci_slot_get_pirq(uDevFn, pin);
+            pin = pci_slot_get_pirq(pPciDev->uDevFn, pin);
             pic_irq = pci_irqs[pin];
-            pci_config_writeb(pGlobals, uBus, uDevFn, PCI_INTERRUPT_LINE, pic_irq);
+            devpciR3SetByte(pPciDev, PCI_INTERRUPT_LINE, pic_irq);
         }
     }
 }
@@ -780,7 +718,6 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
  */
 static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
 {
-    unsigned        i;
     uint8_t         elcr[2]    = {0, 0};
     PDEVPCIROOT     pGlobals   = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     PVM             pVM        = PDMDevHlpGetVM(pDevIns); Assert(pVM);
@@ -801,13 +738,14 @@ static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     /*
      * Activate IRQ mappings.
      */
-    for (i = 0; i < 4; i++)
+    PPDMPCIDEV pPIIX3 = &pGlobals->Piix3.PIIX3State.dev;
+    for (unsigned i = 0; i < 4; i++)
     {
         uint8_t irq = pci_irqs[i];
         /* Set to trigger level. */
         elcr[irq >> 3] |= (1 << (irq & 7));
         /* Activate irq remapping in PIIX3. */
-        pci_config_writeb(pGlobals, 0, pGlobals->Piix3.PIIX3State.dev.uDevFn, 0x60 + i, irq);
+        devpciR3SetByte(pPIIX3, 0x60 + i, irq);
     }
 
     /* Tell to the PIC. */
@@ -823,14 +761,19 @@ static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     /*
      * Init the devices.
      */
-    for (i = 0; i < 256; i++)
+    PDEVPCIBUS pBus = &pGlobals->PciBus;
+    for (uint32_t uDevFn = 0; uDevFn < RT_ELEMENTS(pBus->apDevices); uDevFn++)
     {
+        PPDMPCIDEV pPciDev = pBus->apDevices[uDevFn];
         uint8_t aBridgePositions[256];
 
-        memset(aBridgePositions, 0, sizeof(aBridgePositions));
-        Log2(("PCI: Initializing device %d (%#x)\n",
-              i, 0x80000000 | (i << 8)));
-        pci_bios_init_device(pGlobals, 0, i, 0, aBridgePositions);
+        if (pPciDev)
+        {
+            memset(aBridgePositions, 0, sizeof(aBridgePositions));
+            Log2(("PCI: Initializing device %d (%#x)\n",
+                  uDevFn, 0x80000000 | (uDevFn << 8)));
+            pci_bios_init_device(pGlobals, pBus, pPciDev, 0, aBridgePositions);
+        }
     }
 
     return VINF_SUCCESS;
@@ -977,12 +920,12 @@ static int pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
     /*
      * Iterate thru all the devices.
      */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
+    for (uint32_t uDevFn = 0; uDevFn < RT_ELEMENTS(pBus->apDevices); uDevFn++)
     {
-        PPDMPCIDEV pDev = pBus->apDevices[i];
+        PPDMPCIDEV pDev = pBus->apDevices[uDevFn];
         if (pDev)
         {
-            SSMR3PutU32(pSSM, i);
+            SSMR3PutU32(pSSM, uDevFn);
             SSMR3PutMem(pSSM, pDev->abConfig, sizeof(pDev->abConfig));
 
             SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
@@ -1004,7 +947,6 @@ static int pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    uint32_t    i;
     PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
 
     /*
@@ -1016,9 +958,9 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Save IRQ states.
      */
-    for (i = 0; i < RT_ELEMENTS(pThis->Piix3.auPciLegacyIrqLevels); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->Piix3.auPciLegacyIrqLevels); i++)
         SSMR3PutU32(pSSM, pThis->Piix3.auPciLegacyIrqLevels[i]);
-    for (i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
         SSMR3PutU32(pSSM, pThis->auPciApicIrqLevels[i]);
 
     SSMR3PutU32(pSSM, pThis->Piix3.iAcpiIrqLevel);
@@ -1045,7 +987,6 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     uint32_t    u32;
-    uint32_t    i;
     int         rc;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -1058,9 +999,9 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
      * The register value is restored afterwards so we can do proper
      * LogRels in devpciR3CommonRestoreConfig.
      */
-    for (i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
+    for (uint32_t uDevFn = 0; uDevFn < RT_ELEMENTS(pBus->apDevices); uDevFn++)
     {
-        PPDMPCIDEV pDev = pBus->apDevices[i];
+        PPDMPCIDEV pDev = pBus->apDevices[uDevFn];
         if (pDev)
         {
             uint16_t u16 = PCIDevGetCommand(pDev);
@@ -1073,7 +1014,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
     /*
      * Iterate all the devices.
      */
-    for (i = 0;; i++)
+    for (uint32_t uDevFn = 0;; uDevFn++)
     {
         /* index / terminator */
         rc = SSMR3GetU32(pSSM, &u32);
@@ -1082,22 +1023,22 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
         if (u32 == UINT32_MAX)
             break;
         if (    u32 >= RT_ELEMENTS(pBus->apDevices)
-            ||  u32 < i)
+            ||  u32 < uDevFn)
         {
-            AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
+            AssertMsgFailed(("u32=%#x uDevFn=%#x\n", u32, uDevFn));
             return rc;
         }
 
         /* skip forward to the device checking that no new devices are present. */
-        for (; i < u32; i++)
+        for (; uDevFn < u32; uDevFn++)
         {
-            if (pBus->apDevices[i])
+            if (pBus->apDevices[uDevFn])
             {
-                LogRel(("PCI: New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pBus->apDevices[i]->pszNameR3,
-                        PCIDevGetVendorId(pBus->apDevices[i]), PCIDevGetDeviceId(pBus->apDevices[i])));
+                LogRel(("PCI: New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", uDevFn, pBus->apDevices[uDevFn]->pszNameR3,
+                        PCIDevGetVendorId(pBus->apDevices[uDevFn]), PCIDevGetDeviceId(pBus->apDevices[uDevFn])));
                 if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                     return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("New device in slot %#x, %s (vendor=%#06x device=%#06x)"),
-                                            i, pBus->apDevices[i]->pszNameR3, PCIDevGetVendorId(pBus->apDevices[i]), PCIDevGetDeviceId(pBus->apDevices[i]));
+                                            uDevFn, pBus->apDevices[uDevFn]->pszNameR3, PCIDevGetVendorId(pBus->apDevices[uDevFn]), PCIDevGetDeviceId(pBus->apDevices[uDevFn]));
             }
         }
 
@@ -1133,14 +1074,14 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
         }
 
         /* check that it's still around. */
-        PPDMPCIDEV pDev = pBus->apDevices[i];
+        PPDMPCIDEV pDev = pBus->apDevices[uDevFn];
         if (!pDev)
         {
-            LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
+            LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", uDevFn,
                     PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
             if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x has been removed! vendor=%#06x device=%#06x"),
-                                        i, PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp));
+                                        uDevFn, PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp));
             continue;
         }
 
@@ -1149,7 +1090,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
             || DevTmp.abConfig[1] != pDev->abConfig[1])
             return SSMR3SetCfgError(pSSM, RT_SRC_POS,
                                     N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
-                                    i, pDev->pszNameR3, DevTmp.abConfig, pDev->abConfig);
+                                    uDevFn, pDev->pszNameR3, DevTmp.abConfig, pDev->abConfig);
 
         /* commit the loaded device config. */
         rc = devpciR3CommonRestoreRegions(pSSM, pDev, DevTmp.Int.s.aIORegions,
@@ -1226,15 +1167,16 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PPDMPCIDEV pPIIX3 = &pGlobals->Piix3.PIIX3State.dev;
     NOREF(pszArgs);
 
-    uint16_t router = pGlobals->Piix3.PIIX3State.dev.uDevFn;
+    uint16_t router = pPIIX3->uDevFn;
     pHlp->pfnPrintf(pHlp, "PCI interrupt router at: %02X:%02X:%X\n",
                     router >> 8, (router >> 3) & 0x1f, router & 0x7);
 
     for (int i = 0; i < 4; ++i)
     {
-        uint8_t irq_map = pci_config_readb(pGlobals, 0, router, 0x60 + i);
+        uint8_t irq_map = devpciR3GetByte(pPIIX3, 0x60 + i);
         if (irq_map & 0x80)
             pHlp->pfnPrintf(pHlp, "PIRQ%c disabled\n", 'A' + i);
         else
@@ -1443,10 +1385,10 @@ static DECLCALLBACK(void) pciR3Reset(PPDMDEVINS pDevIns)
     PDEVPCIBUS  pBus     = &pGlobals->PciBus;
 
     /* PCI-specific reset for each device. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
+    for (uint32_t uDevFn = 0; uDevFn < RT_ELEMENTS(pBus->apDevices); uDevFn++)
     {
-        if (pBus->apDevices[i])
-            devpciR3ResetDevice(pBus->apDevices[i]);
+        if (pBus->apDevices[uDevFn])
+            devpciR3ResetDevice(pBus->apDevices[uDevFn]);
     }
 
     pciR3Piix3Reset(&pGlobals->Piix3.PIIX3State);
