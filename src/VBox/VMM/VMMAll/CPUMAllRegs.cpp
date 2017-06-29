@@ -2559,7 +2559,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
 
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
     X86EFLAGS fEFlags;
-    if (!pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
+    if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
         fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
     else
         fEFlags.u = pCtx->eflags.u;
