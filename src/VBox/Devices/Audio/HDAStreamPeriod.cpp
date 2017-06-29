@@ -32,6 +32,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
+#include "DrvAudio.h"
 #include "HDAStreamPeriod.h"
 
 #ifdef IN_RING3
@@ -81,6 +82,12 @@ void hdaStreamPeriodDestroy(PHDASTREAMPERIOD pPeriod)
 void hdaStreamPeriodInit(PHDASTREAMPERIOD pPeriod,
                          uint8_t u8SD, uint16_t u16LVI, uint32_t u32CBL, PPDMAUDIOSTREAMCFG pStreamCfg)
 {
+
+    /* Sanity. */
+    AssertReturnVoid(u16LVI);
+    AssertReturnVoid(u32CBL);
+    AssertReturnVoid(DrvAudioHlpStreamCfgIsValid(pStreamCfg));
+
     /*
      * Linux guests (at least Ubuntu):
      * 17632 bytes (CBL) / 4 (frame size) = 4408 frames / 4 (LVI) = 1102 frames per period
