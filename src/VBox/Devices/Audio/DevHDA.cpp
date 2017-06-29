@@ -101,14 +101,6 @@
 # error "Please specify your HDA device vendor/device IDs"
 #endif
 
-/** @todo r=bird: Looking at what the linux driver (accidentally?) does when
- * updating CORBWP, I belive that the ICH6 datahsheet is wrong and that CORBRP
- * is read only except for bit 15 like the HDA spec states.
- *
- * Btw. the CORBRPRST implementation is incomplete according to both docs (sw
- * writes 1, hw sets it to 1 (after completion), sw reads 1, sw writes 0). */
-#define BIRD_THINKS_CORBRP_IS_MOSTLY_RO
-
 /* Make sure that interleaving streams support is enabled if the 5.1 surround code is being used. */
 #if defined (VBOX_WITH_AUDIO_HDA_51_SURROUND) && !defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT)
 # define VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
@@ -2383,13 +2375,10 @@ static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     RT_NOREF_PV(iReg);
 
     if (u32Value & HDA_CORBRP_RST)
-    {
-        HDA_REG(pThis, CORBRP) = 0;
-    }
-#ifndef BIRD_THINKS_CORBRP_IS_MOSTLY_RO
+        HDA_REG(pThis, CORBRP) = HDA_CORBRP_RST;    /* Clears the pointer. */
     else
-        return hdaRegWriteU8(pThis, iReg, u32Value);
-#endif
+        HDA_REG(pThis, CORBRP) &= ~HDA_CORBRP_RST;  /* Only CORBRP_RST bit is writable. */
+
     return VINF_SUCCESS;
 }
 
