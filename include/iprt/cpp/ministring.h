@@ -526,7 +526,7 @@ public:
      * @param   rStrReplacement The string from which a substring is taken.
      * @param   offReplacement  The offset into @a rStrReplacement where the
      *                          replacement substring starts.
-     * @param   cchReplacment   The maximum length of the replacement substring.
+     * @param   cchReplacement   The maximum length of the replacement substring.
      *
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
      *
