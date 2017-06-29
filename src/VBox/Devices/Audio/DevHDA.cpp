@@ -1593,6 +1593,8 @@ static void hdaReschedulePendingInterrupts(PHDASTATE pThis)
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
     {
         PHDASTREAM pStream = hdaStreamGetFromSD(pThis, i);
+        if (!pStream)
+            continue;
 
         if (   hdaStreamPeriodIsComplete    (&pStream->State.Period)
             && hdaStreamPeriodNeedsInterrupt(&pStream->State.Period)
