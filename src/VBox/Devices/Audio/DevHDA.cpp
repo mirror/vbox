@@ -1000,7 +1000,7 @@ static int hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
  * @{
  */
 #ifdef IN_RING3
-static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg);
+static int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps);
 #endif
 /** @} */
 
@@ -1061,7 +1061,7 @@ static void              hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable
  * @{
  */
 #ifdef IN_RING3
-static int           hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOSTREAMCFG pCfg);
+static int           hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps);
 static void          hdaStreamMapDestroy(PHDASTREAMMAPPING pMapping);
 static void          hdaStreamMapReset(PHDASTREAMMAPPING pMapping);
 #endif /* IN_RING3 */
@@ -1956,14 +1956,14 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
     hdaStreamUpdateLPIB(pThis, pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
 
-    int rc = hdaSDFMTToStrmCfg(HDA_STREAM_REG(pThis, FMT, uSD), &pStream->State.strmCfg);
+    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.strmCfg;
+
+    int rc = hdaSDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &pCfg->Props);
     if (RT_FAILURE(rc))
     {
         LogRel(("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
         return rc;
     }
-
-    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.strmCfg;
 
     /* Set the stream's direction. */
     pCfg->enmDir = hdaGetDirFromSD(pStream->u8SD);
@@ -1976,6 +1976,7 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
 #  error "Implement me!"
 # else
             pCfg->DestSource.Source = PDMAUDIORECSOURCE_LINE;
+            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
             RTStrCopy(pCfg->szName, sizeof(pCfg->szName), "Line In");
 # endif
             break;
@@ -1998,7 +1999,7 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
      * In other words, the stream mapping *always* knows the real
      * number of channels in a single audio stream.
      */
-    rc = hdaStreamMapInit(&pStream->State.Mapping, pCfg);
+    rc = hdaStreamMapInit(&pStream->State.Mapping, &pCfg->Props);
     AssertRCReturn(rc, rc);
 
     LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16, rc=%Rrc\n",
@@ -2954,9 +2955,16 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 #ifdef IN_RING3
-static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg)
+/**
+ * Converts an HDA stream's SDFMT register into a given PCM properties structure.
+ *
+ * @return  IPRT status code.
+ * @param   u32SDFMT            The HDA stream's SDFMT value to convert.
+ * @param   pProps              PCM properties structure to hold converted result on success.
+ */
+static int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
 {
-    AssertPtrReturn(pStrmCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
 
 # define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
 
@@ -3017,13 +3025,13 @@ static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg)
 
     if (RT_SUCCESS(rc))
     {
-        RT_ZERO(pStrmCfg->Props);
+        RT_BZERO(pProps, sizeof(PDMAUDIOPCMPROPS));
 
-        pStrmCfg->Props.uHz       = u32Hz * u32HzMult / u32HzDiv;
-        pStrmCfg->Props.cChannels = (u32SDFMT & 0xf) + 1;
-        pStrmCfg->Props.cBits     = cBits;
-        pStrmCfg->Props.fSigned   = true;
-        pStrmCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pStrmCfg->Props.cBits, pStrmCfg->Props.cChannels);
+        pProps->cBits     = cBits;
+        pProps->fSigned   = true;
+        pProps->cChannels = (u32SDFMT & 0xf) + 1;
+        pProps->uHz       = u32Hz * u32HzMult / u32HzDiv;
+        pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
     }
 
 # undef EXTRACT_VALUE
@@ -3061,7 +3069,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
      */
 
     /** @todo Make the following configurable through mixer API and/or CFGM? */
-    switch (pCfg->cChannels)
+    switch (pCfg->Props.cChannels)
     {
         case 3:  /* 2.1: Front (Stereo) + LFE. */
         {
@@ -3107,9 +3115,9 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     if (rc == VERR_NOT_SUPPORTED)
     {
-        LogRel(("HDA: Unsupported channel count (%RU8), falling back to stereo channels\n", pCfg->Props.cChannels));
-        pCfg->Props.cChannels = 2;
+        LogRel2(("HDA: Unsupported channel count (%RU8), falling back to stereo channels\n", pCfg->Props.cChannels));
 
+        /* Fall back to 2 channels (see below in fUseFront block). */
         rc = VINF_SUCCESS;
     }
 
@@ -3121,8 +3129,12 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         if (fUseFront)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Front");
+
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
+            pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
             pCfg->Props.cChannels = 2;
+            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_FRONT);
             if (RT_SUCCESS(rc))
@@ -3134,8 +3146,12 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             && (fUseCenter || fUseLFE))
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Center/LFE");
+
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_CENTER_LFE;
+            pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
             pCfg->Props.cChannels = (fUseCenter && fUseLFE) ? 2 : 1;
+            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_CENTER_LFE);
             if (RT_SUCCESS(rc))
@@ -3146,8 +3162,12 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             && fUseRear)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Rear");
+
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_REAR;
+            pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
             pCfg->Props.cChannels = 2;
+            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_REAR);
             if (RT_SUCCESS(rc))
@@ -3720,39 +3740,37 @@ static int hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, ui
 
 #ifdef IN_RING3
 /**
- * Initializes a stream mapping structure according to the given stream configuration.
+ * Initializes a stream mapping structure according to the given PCM properties.
  *
  * @return  IPRT status code.
  * @param   pMapping            Pointer to mapping to initialize.
- * @param   pCfg                Pointer to stream configuration to use.
+ * @param   pProps              Pointer to PCM properties to use for initialization.
  */
-static int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOSTREAMCFG pCfg)
+static int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pMapping, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pProps,   VERR_INVALID_POINTER);
 
-    AssertReturn(pCfg->Props.cChannels, VERR_INVALID_PARAMETER);
+    if (!DrvAudioHlpPCMPropsAreValid(pProps))
+        return VERR_INVALID_PARAMETER;
 
     hdaStreamMapReset(pMapping);
 
-    pMapping->paChannels = (PPDMAUDIOSTREAMCHANNEL)RTMemAlloc(sizeof(PDMAUDIOSTREAMCHANNEL) * pCfg->Props.cChannels);
+    pMapping->paChannels = (PPDMAUDIOSTREAMCHANNEL)RTMemAlloc(sizeof(PDMAUDIOSTREAMCHANNEL) * pProps->cChannels);
     if (!pMapping->paChannels)
         return VERR_NO_MEMORY;
 
-    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
-        return VERR_INVALID_PARAMETER;
-
     int rc = VINF_SUCCESS;
 
-    Assert(RT_IS_POWER_OF_TWO(pCfg->Props.cBits));
+    Assert(RT_IS_POWER_OF_TWO(pProps->cBits));
 
     /** @todo We assume all channels in a stream have the same format. */
     PPDMAUDIOSTREAMCHANNEL pChan = pMapping->paChannels;
-    for (uint8_t i = 0; i < pCfg->Props.cChannels; i++)
+    for (uint8_t i = 0; i < pProps->cChannels; i++)
     {
         pChan->uChannel = i;
-        pChan->cbStep   = (pCfg->Props.cBits / 2);
-        pChan->cbFrame  = pChan->cbStep * pCfg->Props.cChannels;
+        pChan->cbStep   = (pProps->cBits / 2);
+        pChan->cbFrame  = pChan->cbStep * pProps->cChannels;
         pChan->cbFirst  = i * pChan->cbStep;
         pChan->cbOff    = pChan->cbFirst;
 
@@ -3775,7 +3793,7 @@ static int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOSTREAMCFG pCfg)
 
     if (RT_SUCCESS(rc))
     {
-        pMapping->cChannels = pCfg->Props.cChannels;
+        pMapping->cChannels = pProps->cChannels;
 #ifdef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
         pMapping->enmLayout = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
 #else
@@ -3938,7 +3956,13 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
     LogFunc(("Sink=%s, Stream=%s\n", pSink->pMixSink->pszName, pCfg->szName));
 
     if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+    {
+        LogRel(("HDA: Invalid stream configuration used for sink #%RU8: %RU8 bit, %RU8 channel(s) @ %RU32Hz\n",
+                pSink->uSD, pCfg->Props.cBits, pCfg->Props.cChannels, pCfg->Props.uHz));
+
+        AssertFailed(); /* Should not happen. */
         return VERR_INVALID_PARAMETER;
+    }
 
     int rc = AudioMixerSinkSetFormat(pSink->pMixSink, &pCfg->Props);
     if (RT_FAILURE(rc))
@@ -6549,13 +6573,6 @@ static int hdaLoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion
 #ifdef LOG_ENABLED
                     hdaBDLEDumpAll(pThis, pStrm->u64BDLBase, pStrm->u16LVI + 1);
 #endif
-                }
-
-                rc = hdaSDFMTToStrmCfg(HDA_STREAM_REG(pThis, FMT, uStreamID), &pStrm->State.strmCfg);
-                if (RT_FAILURE(rc))
-                {
-                    LogRel(("HDA: Stream #%RU8: Loading format failed, rc=%Rrc\n", uStreamID, rc));
-                    /* Continue. */
                 }
 
             } /* for cStreams */

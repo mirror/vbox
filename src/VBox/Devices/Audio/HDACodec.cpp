@@ -3290,18 +3290,20 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
         PDMAUDIOSTREAMCFG strmCfg;
         RT_ZERO(strmCfg);
 
-        strmCfg.Props.uHz       = 44100;
-        strmCfg.Props.cChannels = 2;
-        strmCfg.Props.cBits     = 16;
-        strmCfg.Props.fSigned   = true;
-
         /* Note: Adding the default input/output streams is *not* critical for the overall
          *       codec construction result. */
 
         /*
          * Output streams.
          */
-        strmCfg.enmDir = PDMAUDIODIR_OUT;
+        strmCfg.enmDir    = PDMAUDIODIR_OUT;
+        strmCfg.enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
+        strmCfg.Props.cBits     = 16;
+        strmCfg.Props.fSigned   = true;
+        strmCfg.Props.cChannels = 2;
+        strmCfg.Props.uHz       = 44100;
+        strmCfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(strmCfg.Props.cBits, strmCfg.Props.cChannels);
 
         /* Front. */
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Front");
@@ -3330,7 +3332,16 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
         /*
          * Input streams.
          */
-        strmCfg.enmDir = PDMAUDIODIR_IN;
+        RT_ZERO(strmCfg);
+
+        strmCfg.enmDir    = PDMAUDIODIR_IN;
+        strmCfg.enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+
+        strmCfg.Props.cBits     = 16;
+        strmCfg.Props.fSigned   = true;
+        strmCfg.Props.cChannels = 2;
+        strmCfg.Props.uHz       = 44100;
+        strmCfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(strmCfg.Props.cBits, strmCfg.Props.cChannels);
 
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Microphone In");
