@@ -3056,8 +3056,8 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e 's/^[[:alpha:]]\+ \+//' \
 			-e '/LOCAL/d' \
 			-e 's/^[[:alpha:]]\+ \+//' \
-                       -e '/^HIDDEN [[:xdigit:]]\+ RT/bkeep-hidden' \
-                       -e '/^HIDDEN [[:xdigit:]]\+ g_[a-z0-9]*RT/bkeep-hidden' \
+			-e '/^HIDDEN [[:xdigit:]]\+ RT/bkeep-hidden' \
+			-e '/^HIDDEN [[:xdigit:]]\+ g_[a-z0-9]*RT/bkeep-hidden' \
 			-e '/^HIDDEN/d' \
 			-e ':keep-hidden' \
 			-e 's/^[[:alpha:]]\+ \+//' \
@@ -3085,17 +3085,18 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^_ZnwjPv/d' \
 			-e '/^_ZnwmPv/d' \
 			-e '/^_ZNSt9bad_allocC1Ev/d' \
+			-e '/^_ZNSt9bad_allocC[12]ERKS_/d' \
 			-e '/^_ZNSt9exceptionC2Ev/d' \
 			-e '/^_ZNSt9exceptionC[12]ERKS_/d' \
 			\
 			-e '/^_ZN[a-zA-Z]*St[[:digit:]]*_*[lL]ist/d' \
-                       -e '/^_ZN[a-zA-Z]*[[:digit:]]*__gnu_cxx/d' \
-                       -e '/^_ZNSa.*ElementNode.*/d' \
-                       -e '/^_ZSt.*ElementNode.*/d' \
+			-e '/^_ZN[a-zA-Z]*[[:digit:]]*__gnu_cxx/d' \
+			-e '/^_ZNSa.*ElementNode.*/d' \
+			-e '/^_ZSt.*ElementNode.*/d' \
 			\
 			-e '/^_Z[[:digit:]]\+dbus/d' \
 			-e '/^_Z13RTDBusLoadLibv/d' \
-                       \
+			\
 			-e '/^g_[ac]VTG/d' \
 			-e '/^g_VTGObjHeader/d' \
 			-e '/^g_VTGProbeData/d' \
