@@ -20,7 +20,10 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <list>
+#include <errno.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -44,6 +47,8 @@ typedef __uint8_t u8;
 # include <sys/ioccom.h>
 #endif
 
+#define NOREF(x) (void)x
+
 /** @todo Error codes must be moved to some header file */
 #define ADPCTLERR_BAD_NAME         2
 #define ADPCTLERR_NO_CTL_DEV       3
@@ -65,18 +70,7 @@ typedef VBOXNETADPREQ *PVBOXNETADPREQ;
 
 #define VBOXADPCTL_IFCONFIG_PATH1 "/sbin/ifconfig"
 #define VBOXADPCTL_IFCONFIG_PATH2 "/bin/ifconfig"
-static char *g_pszIfConfig;
 
-#if defined(RT_OS_LINUX)
-# define VBOXADPCTL_DEL_CMD "del"
-# define VBOXADPCTL_ADD_CMD "add"
-#elif defined(RT_OS_SOLARIS)
-# define VBOXADPCTL_DEL_CMD "removeif"
-# define VBOXADPCTL_ADD_CMD "addif"
-#else
-# define VBOXADPCTL_DEL_CMD "delete"
-# define VBOXADPCTL_ADD_CMD "add"
-#endif
 
 static void showUsage(void)
 {
@@ -85,34 +79,310 @@ static void showUsage(void)
     fprintf(stderr, "     | VBoxNetAdpCtl <adapter> remove\n");
 }
 
-static void setPathIfConfig(void)
+
+/*
+ * A wrapper on standard list that provides '<<' operator for adding several list members in a single
+ * line dynamically. For example: "CmdList(arg1) << arg2 << arg3" produces a list with three members.
+ */
+class CmdList
 {
-    struct stat s;
-    if (   !stat(VBOXADPCTL_IFCONFIG_PATH1, &s)
-        && S_ISREG(s.st_mode))
-        g_pszIfConfig = (char*)VBOXADPCTL_IFCONFIG_PATH1;
-    else
-        g_pszIfConfig = (char*)VBOXADPCTL_IFCONFIG_PATH2;
+public:
+    /** Creates an empty list. */
+    CmdList() {};
+    /** Creates a list with a single member. */
+    CmdList(const char *pcszCommand) { m_list.push_back(pcszCommand); };
+    /** Provides access to the underlying standard list. */
+    const std::list<const char *>& getList(void) const { return m_list; };
+    /** Adds a member to the list. */
+    CmdList& operator<<(const char *pcszArgument);
+private:
+    std::list<const char *>m_list;
+};
+
+CmdList& CmdList::operator<<(const char *pcszArgument)
+{
+    m_list.push_back(pcszArgument);
+    return *this;
 }
 
-static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
-                           const char *pcszArg2 = NULL,
-                           const char *pcszArg3 = NULL,
-                           const char *pcszArg4 = NULL,
-                           const char *pcszArg5 = NULL)
+/** Simple helper to distinguish IPv4 and IPv6 addresses. */
+inline bool isAddrV6(const char *pcszAddress)
 {
-    const char * const argv[] =
+    return !!(strchr(pcszAddress, ':'));
+}
+
+
+/*********************************************************************************************************************************
+*   Generic address commands.                                                                                                    *
+*********************************************************************************************************************************/
+
+/**
+ * The base class for all address manipulation commands. While being an abstract class,
+ * it provides a generic implementation of 'set' and 'remove' methods, which rely on
+ * pure virtual methods like 'addV4' and 'removeV4' to perform actual command execution.
+ */
+class AddressCommand
+{
+public:
+    AddressCommand() : m_pszPath(0) {};
+    virtual ~AddressCommand() {};
+
+    /** returns true if underlying command (executable) is present in the system. */
+    bool isAvailable(void)
+        { struct stat s; return (!stat(m_pszPath, &s) && S_ISREG(s.st_mode)); };
+
+    /*
+     * Someday we may want to support several IP addresses per adapter, but for now we
+     * have 'set' method only, which replaces all addresses with the one specifed.
+     *
+     * virtual int add(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0) = 0;
+     */
+    /** replace existing address(es) */
+    virtual int set(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0);
+    /** remove address */
+    virtual int remove(const char *pcszAdapter, const char *pcszAddress);
+protected:
+    /** IPv4-specific handler used by generic implementation of 'set' method if 'setV4' is not supported. */
+    virtual int addV4(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0) = 0;
+    /** IPv6-specific handler used by generic implementation of 'set' method. */
+    virtual int addV6(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0) = 0;
+    /** IPv4-specific handler used by generic implementation of 'set' method. */
+    virtual int setV4(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0) = 0;
+    /** IPv4-specific handler used by generic implementation of 'remove' method. */
+    virtual int removeV4(const char *pcszAdapter, const char *pcszAddress) = 0;
+    /** IPv6-specific handler used by generic implementation of 'remove' method. */
+    virtual int removeV6(const char *pcszAdapter, const char *pcszAddress) = 0;
+    /** Composes the argument list of command that obtains all addresses assigned to the adapter. */
+    virtual CmdList getShowCommand(const char *pcszAdapter) const = 0;
+
+    /** Prepares an array of C strings needed for 'exec' call. */
+    char * const * allocArgv(const CmdList& commandList);
+    /** Hides process creation details. To be used in derived classes. */
+    int execute(CmdList& commandList);
+
+    /** A path to executable command. */
+    const char *m_pszPath;
+private:
+    /** Removes all previously asssigned addresses of a particular protocol family. */
+    int removeAddresses(const char *pcszAdapter, const char *pcszFamily);
+};
+
+/*
+ * A generic implementation of 'ifconfig' command for all platforms.
+ */
+class CmdIfconfig : public AddressCommand
+{
+public:
+    CmdIfconfig()
+        {
+            struct stat s;
+            if (   !stat(VBOXADPCTL_IFCONFIG_PATH1, &s)
+                && S_ISREG(s.st_mode))
+                m_pszPath = (char*)VBOXADPCTL_IFCONFIG_PATH1;
+            else
+                m_pszPath = (char*)VBOXADPCTL_IFCONFIG_PATH2;
+        };
+
+protected:
+    /** Returns platform-specific subcommand to add an address. */
+    virtual const char *addCmdArg(void) const = 0;
+    /** Returns platform-specific subcommand to remove an address. */
+    virtual const char *delCmdArg(void) const = 0;
+    virtual CmdList getShowCommand(const char *pcszAdapter) const
+        { return CmdList(pcszAdapter); };
+    virtual int addV4(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
+        { return ENOTSUP; NOREF(pcszAdapter); NOREF(pcszAddress); NOREF(pcszNetmask); };
+    virtual int addV6(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
+        {
+            return execute(CmdList(pcszAdapter) << "inet6" << addCmdArg() << pcszAddress);
+            NOREF(pcszNetmask);
+        };
+    virtual int setV4(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
+        {
+            if (!pcszNetmask)
+                return execute(CmdList(pcszAdapter) << pcszAddress);
+            return execute(CmdList(pcszAdapter) << pcszAddress << "netmask" << pcszNetmask);
+        };
+    virtual int removeV4(const char *pcszAdapter, const char *pcszAddress)
+        { return execute(CmdList(pcszAdapter) << delCmdArg() << pcszAddress); };
+    virtual int removeV6(const char *pcszAdapter, const char *pcszAddress)
+        { return execute(CmdList(pcszAdapter) << "inet6" << delCmdArg() << pcszAddress); };
+};
+
+
+/*********************************************************************************************************************************
+*   Platform-specific commands                                                                                                   *
+*********************************************************************************************************************************/
+
+class CmdIfconfigLinux : public CmdIfconfig
+{
+protected:
+    virtual int removeV4(const char *pcszAdapter, const char *pcszAddress)
+        { return execute(CmdList(pcszAdapter) << "0.0.0.0"); NOREF(pcszAddress); };
+    virtual const char *addCmdArg(void) const { return "add"; };
+    virtual const char *delCmdArg(void) const { return "del"; };
+};
+
+class CmdIfconfigDarwin : public CmdIfconfig
+{
+protected:
+    virtual const char *addCmdArg(void) const { return "add"; };
+    virtual const char *delCmdArg(void) const { return "delete"; };
+};
+
+class CmdIfconfigSolaris : public CmdIfconfig
+{
+public:
+    virtual int set(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
+        {
+            const char *pcszFamily = isAddrV6(pcszAddress) ? "inet6" : "inet";
+            if (execute(CmdList(pcszAdapter) << pcszFamily))
+                execute(CmdList(pcszAdapter) << pcszFamily << "plumb" << "up");
+            return CmdIfconfig::set(pcszAdapter, pcszAddress, pcszNetmask);
+        };
+protected:
+    /* We can umplumb IPv4 interfaces only! */
+    virtual int removeV4(const char *pcszAdapter, const char *pcszAddress)
+        {
+            int rc = CmdIfconfig::removeV4(pcszAdapter, pcszAddress);
+            execute(CmdList(pcszAdapter) << "inet" << "unplumb");
+            return rc;
+        };
+    virtual const char *addCmdArg(void) const { return "addif"; };
+    virtual const char *delCmdArg(void) const { return "removeif"; };
+};
+
+
+/*
+ * Linux-specific implementation of 'ip' command, as other platforms do not support it.
+ */
+class CmdIpLinux : public AddressCommand
+{
+public:
+    CmdIpLinux() { pszBuffer = 0; m_pszPath = "/sbin/ip"; };
+    virtual ~CmdIpLinux() { delete pszBuffer; };
+    /**
+     * IPv4 and IPv6 syntax is the same, so we override `remove` instead of implementing
+     * family-specific commands. It would be easier to use the same body in both
+     * 'removeV4' and 'removeV6', so we override 'remove' to illustrate how to do common
+     * implementation.
+     */
+    virtual int remove(const char *pcszAdapter, const char *pcszAddress)
+        { return execute(CmdList("addr") << "del" << pcszAddress << "dev" << pcszAdapter); };
+protected:
+    virtual int addV4(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
+        {
+            return execute(CmdList("addr") << "add" << combine(pcszAddress, pcszNetmask) <<
+                           "dev" << pcszAdapter);
+        };
+    virtual int addV6(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
+        {
+            return execute(CmdList("addr") << "add" << pcszAddress << "dev" << pcszAdapter);
+            NOREF(pcszNetmask);
+        };
+    /**
+     * Our command does not support 'replacing' addresses. Reporting this fact to generic implementation
+     * of 'set' causes it to remove all assigned addresses, then 'add' the new one.
+     */
+    virtual int setV4(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
+        { return ENOTSUP; NOREF(pcszAdapter); NOREF(pcszAddress); NOREF(pcszNetmask); };
+    /** We use family-agnostic command syntax. See 'remove' above. */
+    virtual int removeV4(const char *pcszAdapter, const char *pcszAddress)
+        { return ENOTSUP; NOREF(pcszAdapter); NOREF(pcszAddress); };
+    /** We use family-agnostic command syntax. See 'remove' above. */
+    virtual int removeV6(const char *pcszAdapter, const char *pcszAddress)
+        { return ENOTSUP; NOREF(pcszAdapter); NOREF(pcszAddress); };
+    virtual CmdList getShowCommand(const char *pcszAdapter) const
+        { return CmdList("addr") << "show" << "dev" << pcszAdapter; };
+private:
+    /** Converts address and network mask into a single string in CIDR notation (like 192.168.1.1/24) */
+    const char *combine(const char *pcszAddress, const char *pcszNetmask);
+
+    char *pszBuffer;
+};
+
+const char * CmdIpLinux::combine(const char *pcszAddress, const char *pcszNetmask)
+{
+    delete pszBuffer;
+    if (pcszNetmask)
     {
-        g_pszIfConfig,
-        pcszAdapterName,
-        pcszArg1, /* [address family] */
-        pcszArg2, /* address */
-        pcszArg3, /* ['netmask'] */
-        pcszArg4, /* [network mask] */
-        pcszArg5, /* [network mask] */
-        NULL  /* terminator */
-    };
-    char * const envp[] = { (char*)"LC_ALL=C", NULL };
+        unsigned cBits = 0;
+        unsigned m[4];
+        if (sscanf(pcszNetmask, "%u.%u.%u.%u", &m[0], &m[1], &m[2], &m[3]) == 4)
+        {
+            for (int i = 0; i < 4 && m[i]; ++i)
+            {
+                int mask = m[i];
+                while (mask & 0x80)
+                {
+                    cBits++;
+                    mask <<= 1;
+                }
+            }
+            pszBuffer = new char[strlen(pcszAddress) + 4]; // '/xx\0'
+            sprintf(pszBuffer, "%s/%u", pcszAddress, cBits);
+            return pszBuffer;
+        }
+    }
+    return pcszAddress;
+}
+
+
+
+/*********************************************************************************************************************************
+*   Generic address command implementations                                                                                      *
+*********************************************************************************************************************************/
+
+int AddressCommand::set(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask)
+{
+    if (isAddrV6(pcszAddress))
+    {
+        removeAddresses(pcszAdapter, "inet6");
+        return addV6(pcszAdapter, pcszAddress, pcszNetmask);
+    }
+    int rc = setV4(pcszAdapter, pcszAddress, pcszNetmask);
+    if (rc == ENOTSUP)
+    {
+        removeAddresses(pcszAdapter, "inet");
+        rc = addV4(pcszAdapter, pcszAddress, pcszNetmask);
+    }
+    return rc;
+}
+
+int AddressCommand::remove(const char *pcszAdapter, const char *pcszAddress)
+{
+    if (isAddrV6(pcszAddress))
+        return removeV6(pcszAdapter, pcszAddress);
+    return removeV4(pcszAdapter, pcszAddress);
+}
+
+/*
+ * Allocate an array of exec arguments. In addition to arguments provided
+ * we need to include the full path to the executable as well as "terminating"
+ * null pointer marking the end of the array.
+ */
+char * const * AddressCommand::allocArgv(const CmdList& list)
+{
+    int i = 0;
+    std::list<const char *>::const_iterator it;
+    const char **argv = (const char **)calloc(list.getList().size() + 2, sizeof(const char *));
+    if (argv)
+    {
+        argv[i++] = m_pszPath;
+        for (it = list.getList().begin(); it != list.getList().end(); ++it)
+            argv[i++] = *it;
+        argv[i++] = NULL;
+    }
+    return (char * const*)argv;
+}
+
+int AddressCommand::execute(CmdList& list)
+{
+    char * const pEnv[] = { (char*)"LC_ALL=C", NULL };
+    char * const* argv = allocArgv(list);
+    if (argv == NULL)
+        return EXIT_FAILURE;
+
     int rc = EXIT_SUCCESS;
     pid_t childPid = fork();
     switch (childPid)
@@ -122,7 +392,7 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
             rc = EXIT_FAILURE;
             break;
         case 0: /* Child process. */
-            if (execve(argv[0], (char * const*)argv, envp) == -1)
+            if (execve(argv[0], argv, pEnv) == -1)
                 rc = EXIT_FAILURE;
             break;
         default: /* Parent process. */
@@ -130,30 +400,31 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
             break;
     }
 
+    free((void*)argv);
     return rc;
 }
 
 #define MAX_ADDRESSES 128
 #define MAX_ADDRLEN   64
 
-static bool removeAddresses(char *pszAdapterName)
+int AddressCommand::removeAddresses(const char *pcszAdapter, const char *pcszFamily)
 {
     char szBuf[1024];
     char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
-    int rc;
+    int rc = EXIT_SUCCESS;
     int fds[2];
-    char * const argv[] = { g_pszIfConfig, pszAdapterName, NULL };
+    char * const * argv = allocArgv(getShowCommand(pcszAdapter));
     char * const envp[] = { (char*)"LC_ALL=C", NULL };
 
     memset(aszAddresses, 0, sizeof(aszAddresses));
 
     rc = pipe(fds);
     if (rc < 0)
-        return false;
+        return errno;
 
     pid_t pid = fork();
     if (pid < 0)
-        return false;
+        return errno;
 
     if (pid == 0)
     {
@@ -162,8 +433,9 @@ static bool removeAddresses(char *pszAdapterName)
         close(STDOUT_FILENO);
         rc = dup2(fds[1], STDOUT_FILENO);
         if (rc >= 0)
-            execve(argv[0], argv, envp);
-        return false;
+            if (execve(argv[0], argv, envp) == -1)
+                return errno;
+        return rc;
     }
 
     /* parent */
@@ -177,36 +449,166 @@ static bool removeAddresses(char *pszAdapterName)
     {
         int cbSkipWS = strspn(szBuf, " \t");
         char *pszWord = strtok(szBuf + cbSkipWS, " ");
-        /* We are concerned with IPv6 address lines only. */
-        if (!pszWord || strcmp(pszWord, "inet6"))
+        /* We are concerned with particular family address lines only. */
+        if (!pszWord || strcmp(pszWord, pcszFamily))
             continue;
-#ifdef RT_OS_LINUX
+
         pszWord = strtok(NULL, " ");
-        /* Skip "addr:". */
-        if (!pszWord || strcmp(pszWord, "addr:"))
-            continue;
-#endif
-        pszWord = strtok(NULL, " ");
-        /* Skip link-local addresses. */
+
+        /* Skip "addr:" word if present. */
+        if (pszWord && !strcmp(pszWord, "addr:"))
+            pszWord = strtok(NULL, " ");
+
+        /* Skip link-local address lines. */
         if (!pszWord || !strncmp(pszWord, "fe80", 4))
             continue;
         strncpy(aszAddresses[cAddrs++], pszWord, MAX_ADDRLEN-1);
     }
     fclose(fp);
 
-    for (int i = 0; i < cAddrs; i++)
-    {
-        if (executeIfconfig(pszAdapterName, "inet6",
-                            VBOXADPCTL_DEL_CMD, aszAddresses[i]) != EXIT_SUCCESS)
-            return false;
-    }
+    for (int i = 0; i < cAddrs && rc == EXIT_SUCCESS; i++)
+        rc = remove(pcszAdapter, aszAddresses[i]);
 
-    return true;
+    return rc;
 }
 
 
-#ifndef RT_OS_SOLARIS
-static int doIOCtl(unsigned long iCmd, VBOXNETADPREQ *pReq)
+/*********************************************************************************************************************************
+*   Adapter creation/removal implementations                                                                                     *
+*********************************************************************************************************************************/
+
+/*
+ * A generic implementation of adapter creation/removal ioctl calls.
+ */
+class Adapter
+{
+public:
+    int add(char *pszNameInOut);
+    int remove(const char *pcszName);
+    int checkName(const char *pcszNameIn, char *pszNameOut);
+protected:
+    virtual int doIOCtl(unsigned long iCmd, VBOXNETADPREQ *pReq);
+};
+
+/*
+ * Solaris does not support dynamic creation/removal of adapters.
+ */
+class AdapterSolaris : public Adapter
+{
+protected:
+    virtual int doIOCtl(unsigned long iCmd, VBOXNETADPREQ *pReq)
+        { return 1 /*ENOTSUP*/; NOREF(iCmd); NOREF(pReq); };
+};
+
+#if defined(RT_OS_LINUX)
+/*
+ * Linux implementation provides a 'workaround' to obtain adapter speed.
+ */
+class AdapterLinux : public Adapter
+{
+public:
+    int getSpeed(const char *pszName, unsigned *puSpeed);
+};
+
+int AdapterLinux::getSpeed(const char *pszName, unsigned *puSpeed)
+{
+    struct ifreq IfReq;
+    struct ethtool_value EthToolVal;
+    struct ethtool_cmd EthToolReq;
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0)
+    {
+        fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
+                "speed for %s: ", pszName);
+        perror("VBoxNetAdpCtl: failed to open control socket");
+        return ADPCTLERR_SOCKET_FAILED;
+    }
+    /* Get link status first. */
+    memset(&EthToolVal, 0, sizeof(EthToolVal));
+    memset(&IfReq, 0, sizeof(IfReq));
+    snprintf(IfReq.ifr_name, sizeof(IfReq.ifr_name), "%s", pszName);
+
+    EthToolVal.cmd = ETHTOOL_GLINK;
+    IfReq.ifr_data = (caddr_t)&EthToolVal;
+    int rc = ioctl(fd, SIOCETHTOOL, &IfReq);
+    if (rc == 0)
+    {
+        if (EthToolVal.data)
+        {
+            memset(&IfReq, 0, sizeof(IfReq));
+            snprintf(IfReq.ifr_name, sizeof(IfReq.ifr_name), "%s", pszName);
+            EthToolReq.cmd = ETHTOOL_GSET;
+            IfReq.ifr_data = (caddr_t)&EthToolReq;
+            rc = ioctl(fd, SIOCETHTOOL, &IfReq);
+            if (rc == 0)
+            {
+                *puSpeed = EthToolReq.speed;
+            }
+            else
+            {
+                fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
+                        "speed for %s: ", pszName);
+                perror("VBoxNetAdpCtl: ioctl failed");
+                rc = ADPCTLERR_IOCTL_FAILED;
+            }
+        }
+        else
+            *puSpeed = 0;
+    }
+    else
+    {
+        fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
+                "status for %s: ", pszName);
+        perror("VBoxNetAdpCtl: ioctl failed");
+        rc = ADPCTLERR_IOCTL_FAILED;
+    }
+
+    close(fd);
+    return rc;
+}
+#endif /* defined(RT_OS_LINUX) */
+
+int Adapter::add(char *pszName /* in/out */)
+{
+    VBOXNETADPREQ Req;
+    memset(&Req, '\0', sizeof(Req));
+    snprintf(Req.szName, sizeof(Req.szName), "%s", pszName);
+    int rc = doIOCtl(VBOXNETADP_CTL_ADD, &Req);
+    if (rc == 0)
+        strncpy(pszName, Req.szName, VBOXNETADP_MAX_NAME_LEN);
+    return rc;
+}
+
+int Adapter::remove(const char *pcszName)
+{
+    VBOXNETADPREQ Req;
+    memset(&Req, '\0', sizeof(Req));
+    snprintf(Req.szName, sizeof(Req.szName), "%s", pcszName);
+    return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
+}
+
+int Adapter::checkName(const char *pcszNameIn, char *pszNameOut)
+{
+    int iAdapterIndex = -1;
+
+    if (   strlen(pcszNameIn) >= VBOXNETADP_MAX_NAME_LEN
+        || sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
+        || iAdapterIndex < 0 || iAdapterIndex >= VBOXNETADP_MAX_INSTANCES )
+    {
+        fprintf(stderr, "VBoxNetAdpCtl: Setting configuration for '%s' is not supported.\n", pcszNameIn);
+        return ADPCTLERR_BAD_NAME;
+    }
+    sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
+    if (strcmp(pszNameOut, pcszNameIn))
+    {
+        fprintf(stderr, "VBoxNetAdpCtl: Invalid adapter name '%s'.\n", pcszNameIn);
+        return ADPCTLERR_BAD_NAME;
+    }
+
+    return 0;
+}
+
+int Adapter::doIOCtl(unsigned long iCmd, VBOXNETADPREQ *pReq)
 {
     int fd = open(VBOXNETADP_CTL_DEV_NAME, O_RDWR);
     if (fd == -1)
@@ -232,42 +634,77 @@ static int doIOCtl(unsigned long iCmd, VBOXNETADPREQ *pReq)
 
     return rc;
 }
-#endif /* !RT_OS_SOLARIS */
 
+/*********************************************************************************************************************************
+*   Main logic, argument parsing, etc.                                                                                           *
+*********************************************************************************************************************************/
 
-static int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
+#if defined(RT_OS_LINUX)
+static CmdIfconfigLinux g_ifconfig;
+static AdapterLinux g_adapter;
+#elif defined(RT_OS_SOLARIS)
+static CmdIfconfigSolaris g_ifconfig;
+static AdapterSolaris g_adapter;
+#else
+static CmdIfconfigDarwin g_ifconfig;
+static Adapter g_adapter;
+#endif
+
+static AddressCommand& chooseAddressCommand()
 {
-    int iAdapterIndex = -1;
-
-    if (   strlen(pcszNameIn) >= VBOXNETADP_MAX_NAME_LEN
-        || sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
-        || iAdapterIndex < 0 || iAdapterIndex >= VBOXNETADP_MAX_INSTANCES )
-    {
-        fprintf(stderr, "VBoxNetAdpCtl: Setting configuration for '%s' is not supported.\n", pcszNameIn);
-        return ADPCTLERR_BAD_NAME;
-    }
-    sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
-    if (strcmp(pszNameOut, pcszNameIn))
-    {
-        fprintf(stderr, "VBoxNetAdpCtl: Invalid adapter name '%s'.\n", pcszNameIn);
-        return ADPCTLERR_BAD_NAME;
-    }
-
-    return 0;
+#if defined(RT_OS_LINUX)
+    static CmdIpLinux g_ip;
+    if (g_ip.isAvailable())
+        return g_ip;
+#endif
+    return g_ifconfig;
 }
 
 int main(int argc, char *argv[])
 {
     char szAdapterName[VBOXNETADP_MAX_NAME_LEN];
-    char *pszAdapterName = NULL;
-    const char *pszAddress = NULL;
-    const char *pszNetworkMask = NULL;
-    const char *pszOption = NULL;
     int rc = EXIT_SUCCESS;
-    bool fRemove = false;
-    VBOXNETADPREQ Req;
 
-    setPathIfConfig();
+    AddressCommand& cmd = chooseAddressCommand();
+
+    if (argc < 2)
+    {
+        fprintf(stderr, "Insufficient number of arguments\n\n");
+        showUsage();
+        return 1;
+    }
+    else if (argc == 2 && !strcmp("add", argv[1]))
+    {
+        /* Create a new interface */
+        *szAdapterName = '\0';
+        rc = g_adapter.add(szAdapterName);
+        if (rc == 0)
+            puts(szAdapterName);
+        return rc;
+    }
+#ifdef RT_OS_LINUX
+    else if (argc == 3 && !strcmp("speed", argv[2]))
+    {
+        /*
+         * This ugly hack is needed for retrieving the link speed on
+         * pre-2.6.33 kernels (see @bugref{6345}).
+         */
+        if (strlen(argv[1]) >= IFNAMSIZ)
+        {
+            showUsage();
+            return -1;
+        }
+        unsigned uSpeed = 0;
+        rc = g_adapter.getSpeed(argv[1], &uSpeed);
+        if (!rc)
+            printf("%u", uSpeed);
+        return rc;
+    }
+#endif
+    
+    rc = g_adapter.checkName(argv[1], szAdapterName);
+    if (rc)
+        return rc;
 
     switch (argc)
     {
@@ -280,10 +717,7 @@ int main(int argc, char *argv[])
                 showUsage();
                 return 1;
             }
-            pszOption = "netmask";
-            pszNetworkMask = argv[4];
-            pszAdapterName = argv[1];
-            pszAddress = argv[2];
+            rc = cmd.set(argv[1], argv[2], argv[4]);
             break;
         }
 
@@ -296,192 +730,35 @@ int main(int argc, char *argv[])
                 showUsage();
                 return 1;
             }
-            fRemove = true;
-            pszAdapterName = argv[1];
-            pszAddress = argv[2];
+            rc = cmd.remove(argv[1], argv[2]);
             break;
         }
 
         case 3:
         {
-            pszAdapterName = argv[1];
-            memset(&Req, '\0', sizeof(Req));
-#ifdef RT_OS_LINUX
-            if (strcmp("speed", argv[2]) == 0)
-            {
-                /*
-                 * This ugly hack is needed for retrieving the link speed on
-                 * pre-2.6.33 kernels (see @bugref{6345}).
-                 */
-                if (strlen(pszAdapterName) >= IFNAMSIZ)
-                {
-                    showUsage();
-                    return -1;
-                }
-                struct ifreq IfReq;
-                struct ethtool_value EthToolVal;
-                struct ethtool_cmd EthToolReq;
-                int fd = socket(AF_INET, SOCK_DGRAM, 0);
-                if (fd < 0)
-                {
-                    fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
-                            "speed for %s: ", pszAdapterName);
-                    perror("VBoxNetAdpCtl: failed to open control socket");
-                    return ADPCTLERR_SOCKET_FAILED;
-                }
-                /* Get link status first. */
-                memset(&EthToolVal, 0, sizeof(EthToolVal));
-                memset(&IfReq, 0, sizeof(IfReq));
-                snprintf(IfReq.ifr_name, sizeof(IfReq.ifr_name), "%s", pszAdapterName);
-
-                EthToolVal.cmd = ETHTOOL_GLINK;
-                IfReq.ifr_data = (caddr_t)&EthToolVal;
-                rc = ioctl(fd, SIOCETHTOOL, &IfReq);
-                if (rc == 0)
-                {
-                    if (EthToolVal.data)
-                    {
-                        memset(&IfReq, 0, sizeof(IfReq));
-                        snprintf(IfReq.ifr_name, sizeof(IfReq.ifr_name), "%s", pszAdapterName);
-                        EthToolReq.cmd = ETHTOOL_GSET;
-                        IfReq.ifr_data = (caddr_t)&EthToolReq;
-                        rc = ioctl(fd, SIOCETHTOOL, &IfReq);
-                        if (rc == 0)
-                        {
-                            printf("%u", EthToolReq.speed);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
-                                    "speed for %s: ", pszAdapterName);
-                            perror("VBoxNetAdpCtl: ioctl failed");
-                            rc = ADPCTLERR_IOCTL_FAILED;
-                        }
-                    }
-                    else
-                        printf("0");
-                }
-                else
-                {
-                    fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
-                            "status for %s: ", pszAdapterName);
-                    perror("VBoxNetAdpCtl: ioctl failed");
-                    rc = ADPCTLERR_IOCTL_FAILED;
-                }
-
-                close(fd);
-                return rc;
-            }
-#endif
-            rc = checkAdapterName(pszAdapterName, szAdapterName);
-            if (rc)
-                return rc;
-            snprintf(Req.szName, sizeof(Req.szName), "%s", szAdapterName);
-            pszAddress = argv[2];
-            if (strcmp("remove", pszAddress) == 0)
+            if (strcmp("remove", argv[2]) == 0)
             {
                 /* Remove an existing interface */
-#ifdef RT_OS_SOLARIS
-                return 1;
-#else
-                return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
-#endif
+                rc = g_adapter.remove(argv[1]);
             }
-            else if (strcmp("add", pszAddress) == 0)
+            else if (strcmp("add", argv[2]) == 0)
             {
                 /* Create an interface with given name */
-#ifdef RT_OS_SOLARIS
-                return 1;
-#else
-                rc = doIOCtl(VBOXNETADP_CTL_ADD, &Req);
+                rc = g_adapter.add(szAdapterName);
                 if (rc == 0)
-                    puts(Req.szName);
-#endif
-                return rc;
+                    puts(szAdapterName);
             }
+            else
+                rc = cmd.set(argv[1], argv[2]);
             break;
         }
 
-        case 2:
-        {
-            /* Create a new interface */
-            if (strcmp("add", argv[1]) == 0)
-            {
-#ifdef RT_OS_SOLARIS
-                return 1;
-#else
-                memset(&Req, '\0', sizeof(Req));
-                rc = doIOCtl(VBOXNETADP_CTL_ADD, &Req);
-                if (rc == 0)
-                    puts(Req.szName);
-#endif
-                return rc;
-            }
-        }
-        /* fall thru */
-
         default:
             fprintf(stderr, "Invalid number of arguments.\n\n");
-            /* fall thru */
-        case 1:
             showUsage();
             return 1;
     }
 
-    rc = checkAdapterName(pszAdapterName, szAdapterName);
-    if (rc)
-        return rc;
-
-    pszAdapterName = szAdapterName;
-
-    if (fRemove)
-    {
-        if (strchr(pszAddress, ':'))
-            rc = executeIfconfig(pszAdapterName, "inet6", VBOXADPCTL_DEL_CMD, pszAddress);
-        else
-        {
-#if defined(RT_OS_LINUX)
-            rc = executeIfconfig(pszAdapterName, "0.0.0.0");
-#else
-            rc = executeIfconfig(pszAdapterName, VBOXADPCTL_DEL_CMD, pszAddress);
-#endif
-
-#ifdef RT_OS_SOLARIS
-            /* On Solaris we can unplumb the ipv4 interface */
-            executeIfconfig(pszAdapterName, "inet", "unplumb");
-#endif
-        }
-    }
-    else
-    {
-        /* We are setting/replacing address. */
-        if (strchr(pszAddress, ':'))
-        {
-#ifdef RT_OS_SOLARIS
-            /* On Solaris we need to plumb the interface first if it's not already plumbed. */
-            if (executeIfconfig(pszAdapterName, "inet6") != 0)
-                executeIfconfig(pszAdapterName, "inet6", "plumb", "up");
-#endif
-            /*
-             * Before we set IPv6 address we'd like to remove
-             * all previously assigned addresses except the
-             * self-assigned one.
-             */
-            if (!removeAddresses(pszAdapterName))
-                rc = EXIT_FAILURE;
-            else
-                rc = executeIfconfig(pszAdapterName, "inet6", VBOXADPCTL_ADD_CMD, pszAddress, pszOption, pszNetworkMask);
-        }
-        else
-        {
-#ifdef RT_OS_SOLARIS
-            /* On Solaris we need to plumb the interface first if it's not already plumbed. */
-            if (executeIfconfig(pszAdapterName, "inet") != 0)
-                executeIfconfig(pszAdapterName, "plumb", "up");
-#endif
-            rc = executeIfconfig(pszAdapterName, pszAddress, pszOption, pszNetworkMask);
-        }
-    }
     return rc;
 }
 
