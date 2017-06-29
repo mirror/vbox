@@ -2352,13 +2352,13 @@ DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMP
 
 
 /**
- * Worker for ich9pciResetDevice and devpciR3UpdateMappings that unmaps a region.
+ * Worker for devpciR3ResetDevice and devpciR3UpdateMappings that unmaps a region.
  *
  * @returns VBox status code.
  * @param   pDev                The PCI device.
  * @param   iRegion             The region to unmap.
  */
-static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
+static int devpciR3UnmapRegion(PPDMPCIDEV pDev, int iRegion)
 {
     PCIIORegion *pRegion = &pDev->Int.s.aIORegions[iRegion];
     AssertReturn(pRegion->size != 0, VINF_SUCCESS);
@@ -2481,7 +2481,7 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
                          pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK,
                          pPciDev->pszNameR3, iRegion, pRegion->addr, uNew, cbRegion, cbRegion));
 
-                ich9pciUnmapRegion(pPciDev, iRegion);
+                devpciR3UnmapRegion(pPciDev, iRegion);
                 pRegion->addr = uNew;
                 if (uNew != INVALID_PCI_ADDRESS)
                 {
@@ -3264,7 +3264,7 @@ static DECLCALLBACK(int) ich9pciDestruct(PPDMDEVINS pDevIns)
 }
 
 
-static void ich9pciResetDevice(PPDMPCIDEV pDev)
+void devpciR3ResetDevice(PPDMPCIDEV pDev)
 {
     /* Clear regions */
     for (int iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
@@ -3275,7 +3275,7 @@ static void ich9pciResetDevice(PPDMPCIDEV pDev)
         bool const f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
                             == PCI_ADDRESS_SPACE_BAR64;
 
-        ich9pciUnmapRegion(pDev, iRegion);
+        devpciR3UnmapRegion(pDev, iRegion);
 
         if (f64Bit)
             iRegion++;
@@ -3332,7 +3332,7 @@ static void ich9pciResetBridge(PPDMDEVINS pDevIns)
     for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
         if (pBus->apDevices[i])
-            ich9pciResetDevice(pBus->apDevices[i]);
+            devpciR3ResetDevice(pBus->apDevices[i]);
     }
 
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
