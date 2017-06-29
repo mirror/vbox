@@ -151,6 +151,11 @@ uint32_t pci_read_config_dword(uint8_t bus, uint8_t dev_fn, uint8_t reg)
 #endif
 }
 
+void pci_write_config_word(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint16_t val)
+{
+    pci_write_cfgw((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_WORD, (bus << 8) | dev_fn, reg, val);
+}
+
 #if 0 /* Disabled to save space because they are not needed. Might become useful in the future. */
 /**
  * Returns the bus/device/function of a PCI device with
@@ -171,11 +176,6 @@ uint16_t pci_find_device(uint16_t v_id, uint16_t d_id)
 void pci_write_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint8_t val)
 {
     pci_write_cfgb((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_BYTE, (bus << 8) | dev_fn, reg, val);
-}
-
-void pci_write_config_word(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint16_t val)
-{
-    pci_write_cfgw((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_WORD, (bus << 8) | dev_fn, reg, val);
 }
 
 void pci_write_config_dword(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint32_t val)
