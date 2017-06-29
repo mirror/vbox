@@ -1824,7 +1824,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
     Log3Func(("CORB(RP:%x, WP:%x) RIRBWP:%x\n",
               HDA_REG(pThis, CORBRP), HDA_REG(pThis, CORBWP), HDA_REG(pThis, RIRBWP)));
 
-    if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_ROIC) /* Response Interrupt Control (ROIC) enabled? */
+    if (HDA_REG(pThis, RIRBCTL) & HDA_RIRBCTL_RINTCTL) /* Response Interrupt Control (RINTCTL) enabled? */
     {
         if (pThis->u8RespIntCnt)
         {
@@ -2387,7 +2387,7 @@ static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #ifdef IN_RING3
     int rc = hdaRegWriteU8(pThis, iReg, u32Value);
     AssertRC(rc);
-    if (   HDA_REG(pThis, CORBWP) != HDA_REG(pThis, CORBRP)
+    if (   (uint8_t)HDA_REG(pThis, CORBWP) != (uint8_t)HDA_REG(pThis, CORBRP)
         && (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
     {
         return hdaCORBCmdProcess(pThis);
@@ -2415,7 +2415,7 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     rc = hdaRegWriteU16(pThis, iReg, u32Value);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
-    if (HDA_REG(pThis, CORBWP) == HDA_REG(pThis, CORBRP))
+    if ((uint8_t)HDA_REG(pThis, CORBWP) == (uint8_t)HDA_REG(pThis, CORBRP))
         return VINF_SUCCESS;
     if (!(HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA))
         return VINF_SUCCESS;
