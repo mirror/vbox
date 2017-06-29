@@ -614,11 +614,13 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     {
         CfgHost.DestSource.Source = pCfg->DestSource.Source;
         CfgHost.enmDir            = PDMAUDIODIR_IN;
+        CfgHost.enmLayout         = pCfg->enmLayout;
     }
     else
     {
         CfgHost.DestSource.Dest = pCfg->DestSource.Dest;
         CfgHost.enmDir          = PDMAUDIODIR_OUT;
+        CfgHost.enmLayout       = pCfg->enmLayout;
     }
 
     RTStrPrintf(CfgHost.szName, sizeof(CfgHost.szName), "%s", pCfg->szName);
