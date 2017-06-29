@@ -47,6 +47,10 @@
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
 #include "HDACodec.h"
+# if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
+#include "HDAStreamChannel.h"
+# endif
+#include "HDAStreamMap.h"
 #include "HDAStreamPeriod.h"
 #include "DevHDACommon.h"
 #include "DrvAudio.h"
@@ -523,21 +527,6 @@ typedef struct HDABDLE
      *  Not part of the actual BDLE registers. */
     HDABDLESTATE State;
 } HDABDLE, *PHDABDLE;
-
-/**
- * Structure for keeping an audio stream data mapping.
- */
-typedef struct HDASTREAMMAPPING
-{
-    /** The stream's layout. */
-    PDMAUDIOSTREAMLAYOUT              enmLayout;
-    /** Number of audio channels in this stream. */
-    uint8_t                           cChannels;
-    /** Array of audio channels. */
-    R3PTRTYPE(PPDMAUDIOSTREAMCHANNEL) paChannels;
-    /** Circular buffer holding for holding audio data for this mapping. */
-    R3PTRTYPE(PRTCIRCBUF)             pCircBuf;
-} HDASTREAMMAPPING, *PHDASTREAMMAPPING;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 /**
@@ -1055,16 +1044,6 @@ static void              hdaStreamAsyncIOUnlock(PHDASTREAM pStream);
 static void              hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable);
 # endif
 #endif
-/** @} */
-
-/** @name Stream mapping functions.
- * @{
- */
-#ifdef IN_RING3
-static int           hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps);
-static void          hdaStreamMapDestroy(PHDASTREAMMAPPING pMapping);
-static void          hdaStreamMapReset(PHDASTREAMMAPPING pMapping);
-#endif /* IN_RING3 */
 /** @} */
 
 /** @name HDA device functions.
@@ -2122,122 +2101,6 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
     LogFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
     return rc;
 }
-
-# if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
-static int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvBuf, size_t cbBuf)
-{
-    AssertPtrReturn(pChan, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,    VERR_INVALID_PARAMETER);
-
-    AssertRelease(pChan->cbOff <= cbBuf);
-
-    const uint8_t *pu8Buf = (const uint8_t *)pvBuf;
-
-    size_t         cbSrc = cbBuf - pChan->cbOff;
-    const uint8_t *pvSrc = &pu8Buf[pChan->cbOff];
-
-    size_t         cbDst;
-    uint8_t       *pvDst;
-    RTCircBufAcquireWriteBlock(pChan->Data.pCircBuf, cbBuf, (void **)&pvDst, &cbDst);
-
-    cbSrc = RT_MIN(cbSrc, cbDst);
-
-    while (cbSrc)
-    {
-        AssertBreak(cbDst >= cbSrc);
-
-        /* Enough data for at least one next frame? */
-        if (cbSrc < pChan->cbFrame)
-            break;
-
-        memcpy(pvDst, pvSrc, pChan->cbFrame);
-
-        /* Advance to next channel frame in stream. */
-        pvSrc        += pChan->cbStep;
-        Assert(cbSrc >= pChan->cbStep);
-        cbSrc        -= pChan->cbStep;
-
-        /* Advance destination by one frame. */
-        pvDst        += pChan->cbFrame;
-        Assert(cbDst >= pChan->cbFrame);
-        cbDst        -= pChan->cbFrame;
-
-        /* Adjust offset. */
-        pChan->cbOff += pChan->cbFrame;
-    }
-
-    RTCircBufReleaseWriteBlock(pChan->Data.pCircBuf, cbDst);
-
-    return VINF_SUCCESS;
-}
-# endif /* defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND) */
-
-# if 0 /** @todo hdaStreamChannelAdvance is unused */
-static int hdaStreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv)
-{
-    AssertPtrReturn(pChan, VERR_INVALID_POINTER);
-
-    if (!cbAdv)
-        return VINF_SUCCESS;
-
-    return VINF_SUCCESS;
-}
-# endif
-
-static int hdaStreamChannelDataInit(PPDMAUDIOSTREAMCHANNELDATA pChanData, uint32_t fFlags)
-{
-    int rc = RTCircBufCreate(&pChanData->pCircBuf, 256); /** @todo Make this configurable? */
-    if (RT_SUCCESS(rc))
-    {
-        pChanData->fFlags = fFlags;
-    }
-
-    return rc;
-}
-
-/**
- * Frees a stream channel data block again.
- *
- * @param   pChanData           Pointer to channel data to free.
- */
-static void hdaStreamChannelDataDestroy(PPDMAUDIOSTREAMCHANNELDATA pChanData)
-{
-    if (!pChanData)
-        return;
-
-    if (pChanData->pCircBuf)
-    {
-        RTCircBufDestroy(pChanData->pCircBuf);
-        pChanData->pCircBuf = NULL;
-    }
-
-    pChanData->fFlags = PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE;
-}
-
-# if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
-
-static int hdaStreamChannelAcquireData(PPDMAUDIOSTREAMCHANNELDATA pChanData, void *pvData, size_t *pcbData)
-{
-    AssertPtrReturn(pChanData, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbData,   VERR_INVALID_POINTER);
-
-    RTCircBufAcquireReadBlock(pChanData->pCircBuf, 256 /** @todo Make this configurarble? */, &pvData, &pChanData->cbAcq);
-
-    *pcbData = pChanData->cbAcq;
-    return VINF_SUCCESS;
-}
-
-static int hdaStreamChannelReleaseData(PPDMAUDIOSTREAMCHANNELDATA pChanData)
-{
-    AssertPtrReturn(pChanData, VERR_INVALID_POINTER);
-    RTCircBufReleaseReadBlock(pChanData->pCircBuf, pChanData->cbAcq);
-
-    return VINF_SUCCESS;
-}
-
-# endif /* defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND) */
 #endif /* IN_RING3 */
 
 /* Register access handlers. */
@@ -3737,116 +3600,6 @@ static int hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, ui
 
     return VINF_SUCCESS;
 }
-
-#ifdef IN_RING3
-/**
- * Initializes a stream mapping structure according to the given PCM properties.
- *
- * @return  IPRT status code.
- * @param   pMapping            Pointer to mapping to initialize.
- * @param   pProps              Pointer to PCM properties to use for initialization.
- */
-static int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
-{
-    AssertPtrReturn(pMapping, VERR_INVALID_POINTER);
-    AssertPtrReturn(pProps,   VERR_INVALID_POINTER);
-
-    if (!DrvAudioHlpPCMPropsAreValid(pProps))
-        return VERR_INVALID_PARAMETER;
-
-    hdaStreamMapReset(pMapping);
-
-    pMapping->paChannels = (PPDMAUDIOSTREAMCHANNEL)RTMemAlloc(sizeof(PDMAUDIOSTREAMCHANNEL) * pProps->cChannels);
-    if (!pMapping->paChannels)
-        return VERR_NO_MEMORY;
-
-    int rc = VINF_SUCCESS;
-
-    Assert(RT_IS_POWER_OF_TWO(pProps->cBits));
-
-    /** @todo We assume all channels in a stream have the same format. */
-    PPDMAUDIOSTREAMCHANNEL pChan = pMapping->paChannels;
-    for (uint8_t i = 0; i < pProps->cChannels; i++)
-    {
-        pChan->uChannel = i;
-        pChan->cbStep   = (pProps->cBits / 2);
-        pChan->cbFrame  = pChan->cbStep * pProps->cChannels;
-        pChan->cbFirst  = i * pChan->cbStep;
-        pChan->cbOff    = pChan->cbFirst;
-
-        int rc2 = hdaStreamChannelDataInit(&pChan->Data, PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-
-        if (RT_FAILURE(rc))
-            break;
-
-        pChan++;
-    }
-
-    if (   RT_SUCCESS(rc)
-        /* Create circular buffer if not created yet. */
-        && !pMapping->pCircBuf)
-    {
-        rc = RTCircBufCreate(&pMapping->pCircBuf, _4K); /** @todo Make size configurable? */
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        pMapping->cChannels = pProps->cChannels;
-#ifdef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
-        pMapping->enmLayout = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
-#else
-        pMapping->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-#endif
-    }
-
-    return rc;
-}
-
-
-/**
- * Destroys a given stream mapping.
- *
- * @param   pMapping            Pointer to mapping to destroy.
- */
-static void hdaStreamMapDestroy(PHDASTREAMMAPPING pMapping)
-{
-    hdaStreamMapReset(pMapping);
-
-    if (pMapping->pCircBuf)
-    {
-        RTCircBufDestroy(pMapping->pCircBuf);
-        pMapping->pCircBuf = NULL;
-    }
-}
-
-
-/**
- * Resets a given stream mapping.
- *
- * @param   pMapping            Pointer to mapping to reset.
- */
-static void hdaStreamMapReset(PHDASTREAMMAPPING pMapping)
-{
-    AssertPtrReturnVoid(pMapping);
-
-    pMapping->enmLayout = PDMAUDIOSTREAMLAYOUT_UNKNOWN;
-
-    if (pMapping->cChannels)
-    {
-        for (uint8_t i = 0; i < pMapping->cChannels; i++)
-            hdaStreamChannelDataDestroy(&pMapping->paChannels[i].Data);
-
-        AssertPtr(pMapping->paChannels);
-        RTMemFree(pMapping->paChannels);
-        pMapping->paChannels = NULL;
-
-        pMapping->cChannels = 0;
-    }
-}
-#endif /* IN_RING3 */
-
 
 /**
  * Returns the number of outstanding stream data bytes which need to be processed
