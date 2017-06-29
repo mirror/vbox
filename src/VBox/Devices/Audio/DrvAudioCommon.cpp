@@ -886,8 +886,11 @@ bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg)
 
     bool fValid = (   pCfg->enmDir == PDMAUDIODIR_IN
                    || pCfg->enmDir == PDMAUDIODIR_OUT);
-
     AssertMsg(fValid, ("Stream direction not set / invalid\n"));
+
+    fValid &= (   pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED
+               || pCfg->enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
+    AssertMsg(fValid, ("Stream layout not set / invalid\n"));
 
     if (fValid)
         fValid = DrvAudioHlpPCMPropsAreValid(&pCfg->Props);
