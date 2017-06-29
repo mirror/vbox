@@ -544,7 +544,11 @@ check_open_watcom()
   if [ -z "$WATCOM" ]; then
     WATCOM=`/bin/ls -rd1 $PWD/tools/common/openwatcom/* 2> /dev/null | head -1`
     if [ -z "$WATCOM" ]; then
-      log_failure "Open Watcom was not found"
+      if [ $OSE -eq 0 -a $OS = "linux" ]; then
+        log_failure "Open Watcom was not found"
+        exit 1
+      fi
+      log_failure "Open Watcom was not found, using alternative BIOS sources"
       cnf_append "VBOX_WITH_OPEN_WATCOM" ""
       return 0;
     fi
