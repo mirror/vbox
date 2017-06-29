@@ -55,173 +55,89 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/** QTreeWidgetItem extension representing Medium Manager item. */
+/** QITreeWidgetItem extension representing Medium Manager item. */
 class UIMediumItem : public QITreeWidgetItem
 {
 public:
 
-    /** Constructor for top-level item. */
-    UIMediumItem(const UIMedium &medium, QITreeWidget *pParent)
-        : QITreeWidgetItem(pParent)
-        , m_medium(medium)
-    { refresh(); }
+    /** Constructs top-level item.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent tree reference. */
+    UIMediumItem(const UIMedium &guiMedium, QITreeWidget *pParent);
+    /** Constructs sub-level item.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent item reference. */
+    UIMediumItem(const UIMedium &guiMedium, UIMediumItem *pParent);
 
-    /** Constructor for child item. */
-    UIMediumItem(const UIMedium &medium, UIMediumItem *pParent)
-        : QITreeWidgetItem(pParent)
-        , m_medium(medium)
-    { refresh(); }
-
-    /** Copy UIMedium wrapped by <i>this</i> item. */
+    /** Copies UIMedium wrapped by <i>this</i> item. */
     virtual bool copy() = 0;
-    /** Modify UIMedium wrapped by <i>this</i> item. */
+    /** Modifies UIMedium wrapped by <i>this</i> item. */
     virtual bool modify() = 0;
-    /** Remove UIMedium wrapped by <i>this</i> item. */
+    /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() = 0;
-    /** Release UIMedium wrapped by <i>this</i> item. */
-    virtual bool release()
-    {
-        /* Refresh: */
-        refreshAll();
+    /** Releases UIMedium wrapped by <i>this</i> item. */
+    virtual bool release();
 
-        /* Make sure medium was not released yet: */
-        if (medium().curStateMachineIds().isEmpty())
-            return true;
-
-        /* Confirm release: */
-        if (!msgCenter().confirmMediumRelease(medium(), treeWidget()))
-            return false;
-
-        /* Release: */
-        foreach (const QString &strMachineID, medium().curStateMachineIds())
-            if (!releaseFrom(strMachineID))
-                return false;
-
-        /* True by default: */
-        return true;
-    }
-
-    /** Refresh item fully. */
-    void refreshAll()
-    {
-        m_medium.refresh();
-        refresh();
-    }
+    /** Refreshes item fully. */
+    void refreshAll();
 
     /** Returns UIMedium wrapped by <i>this</i> item. */
-    const UIMedium& medium() const { return m_medium; }
+    const UIMedium &medium() const { return m_guiMedium; }
     /** Defines UIMedium wrapped by <i>this</i> item. */
-    void setMedium(const UIMedium &medium)
-    {
-        m_medium = medium;
-        refresh();
-    }
+    void setMedium(const UIMedium &guiMedium);
 
     /** Returns UIMediumType of the wrapped UIMedium. */
-    UIMediumType mediumType() const { return m_medium.type(); }
+    UIMediumType mediumType() const { return m_guiMedium.type(); }
 
     /** Returns KMediumState of the wrapped UIMedium. */
-    KMediumState state() const { return m_medium.state(); }
+    KMediumState state() const { return m_guiMedium.state(); }
 
     /** Returns QString <i>ID</i> of the wrapped UIMedium. */
-    QString id() const { return m_medium.id(); }
-
+    QString id() const { return m_guiMedium.id(); }
     /** Returns QString <i>location</i> of the wrapped UIMedium. */
-    QString location() const { return m_medium.location(); }
+    QString location() const { return m_guiMedium.location(); }
 
     /** Returns QString <i>hard-disk format</i> of the wrapped UIMedium. */
-    QString hardDiskFormat() const { return m_medium.hardDiskFormat(); }
+    QString hardDiskFormat() const { return m_guiMedium.hardDiskFormat(); }
     /** Returns QString <i>hard-disk type</i> of the wrapped UIMedium. */
-    QString hardDiskType() const { return m_medium.hardDiskType(); }
+    QString hardDiskType() const { return m_guiMedium.hardDiskType(); }
 
     /** Returns QString <i>storage details</i> of the wrapped UIMedium. */
-    QString details() const { return m_medium.storageDetails(); }
+    QString details() const { return m_guiMedium.storageDetails(); }
     /** Returns QString <i>encryption password ID</i> of the wrapped UIMedium. */
-    QString encryptionPasswordID() const { return m_medium.encryptionPasswordID(); }
+    QString encryptionPasswordID() const { return m_guiMedium.encryptionPasswordID(); }
 
     /** Returns QString <i>tool-tip</i> of the wrapped UIMedium. */
-    QString toolTip() const { return m_medium.toolTip(); }
+    QString toolTip() const { return m_guiMedium.toolTip(); }
 
     /** Returns QString <i>usage</i> of the wrapped UIMedium. */
-    QString usage() const { return m_medium.usage(); }
-    /** Returns whether wrapped UIMedium is used or not. */
-    bool isUsed() const { return m_medium.isUsed(); }
-    /** Returns whether wrapped UIMedium is used in snapshots or not. */
-    bool isUsedInSnapshots() const { return m_medium.isUsedInSnapshots(); }
+    QString usage() const { return m_guiMedium.usage(); }
+    /** Returns whether wrapped UIMedium is used. */
+    bool isUsed() const { return m_guiMedium.isUsed(); }
+    /** Returns whether wrapped UIMedium is used in snapshots. */
+    bool isUsedInSnapshots() const { return m_guiMedium.isUsedInSnapshots(); }
 
-    /** Operator< reimplementation used for sorting purposes. */
-    bool operator<(const QTreeWidgetItem &other) const
-    {
-        int column = treeWidget()->sortColumn();
-        ULONG64 thisValue = vboxGlobal().parseSize(      text(column));
-        ULONG64 thatValue = vboxGlobal().parseSize(other.text(column));
-        return thisValue && thatValue ? thisValue < thatValue : QTreeWidgetItem::operator<(other);
-    }
+    /** Returns whether <i>this</i> item is less than @a other one. */
+    bool operator<(const QTreeWidgetItem &other) const;
 
 protected:
 
-    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
-    virtual bool releaseFrom(CMachine machine) = 0;
+    /** Release UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
+    virtual bool releaseFrom(CMachine comMachine) = 0;
 
     /** Returns default text. */
-    virtual QString defaultText() const /* override */
-    {
-        return UIMediumManager::tr("%1, %2: %3, %4: %5", "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text")
-                                   .arg(text(0))
-                                   .arg(parentTree()->headerItem()->text(1)).arg(text(1))
-                                   .arg(parentTree()->headerItem()->text(2)).arg(text(2));
-    }
+    virtual QString defaultText() const /* override */;
 
 private:
 
-    /** Refresh item information such as icon, text and tool-tip. */
-    void refresh()
-    {
-        /* Fill-in columns: */
-        setIcon(0, m_medium.icon());
-        setText(0, m_medium.name());
-        setText(1, m_medium.logicalSize());
-        setText(2, m_medium.size());
-        /* All columns get the same tooltip: */
-        QString strToolTip = m_medium.toolTip();
-        for (int i = 0; i < treeWidget()->columnCount(); ++i)
-            setToolTip(i, strToolTip);
-    }
+    /** Refreshes item information such as icon, text and tool-tip. */
+    void refresh();
 
-    /** Release UIMedium wrapped by <i>this</i> item from virtual machine with @a strMachineID. */
-    bool releaseFrom(const QString &strMachineID)
-    {
-        /* Open session: */
-        CSession session = vboxGlobal().openSession(strMachineID);
-        if (session.isNull())
-            return false;
+    /** Releases UIMedium wrapped by <i>this</i> item from virtual machine with @a strMachineId. */
+    bool releaseFrom(const QString &strMachineId);
 
-        /* Get machine: */
-        CMachine machine = session.GetMachine();
-
-        /* Prepare result: */
-        bool fSuccess = false;
-
-        /* Release medium from machine: */
-        if (releaseFrom(machine))
-        {
-            /* Save machine settings: */
-            machine.SaveSettings();
-            if (!machine.isOk())
-                msgCenter().cannotSaveMachineSettings(machine, treeWidget());
-            else
-                fSuccess = true;
-        }
-
-        /* Close session: */
-        session.UnlockMachine();
-
-        /* Return result: */
-        return fSuccess;
-    }
-
-    /** UIMedium wrapped by <i>this</i> item. */
-    UIMedium m_medium;
+    /** Holds the UIMedium wrapped by <i>this</i> item. */
+    UIMedium m_guiMedium;
 };
 
 
@@ -230,174 +146,30 @@ class UIMediumItemHD : public UIMediumItem
 {
 public:
 
-    /** Constructor for top-level item. */
-    UIMediumItemHD(const UIMedium &medium, QITreeWidget *pParent)
-        : UIMediumItem(medium, pParent)
-    {}
-
-    /** Constructor for child item. */
-    UIMediumItemHD(const UIMedium &medium, UIMediumItem *pParent)
-        : UIMediumItem(medium, pParent)
-    {}
+    /** Constructs top-level item.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent tree reference. */
+    UIMediumItemHD(const UIMedium &guiMedium, QITreeWidget *pParent);
+    /** Constructs sub-level item.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent item reference. */
+    UIMediumItemHD(const UIMedium &guiMedium, UIMediumItem *pParent);
 
 protected:
 
-    /** Copy UIMedium wrapped by <i>this</i> item. */
-    bool copy()
-    {
-        /* Show Clone VD wizard: */
-        UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
-        pWizard->prepare();
-        pWizard->exec();
-
-        /* Delete if still exists: */
-        if (pWizard)
-            delete pWizard;
-
-        /* True by default: */
-        return true;
-    }
-
-    /** Modify UIMedium wrapped by <i>this</i> item. */
-    bool modify()
-    {
-        /* False by default: */
-        bool fResult = false;
-
-        /* Show Modify VD dialog: */
-        UISafePointerDialog pDialog = new UIMediumTypeChangeDialog(treeWidget(), id());
-        if (pDialog->exec() == QDialog::Accepted)
-        {
-            /* Update medium-item: */
-            refreshAll();
-            /* Change to passed: */
-            fResult = true;
-        }
-
-        /* Delete if still exists: */
-        if (pDialog)
-            delete pDialog;
-
-        /* Return result: */
-        return fResult;
-    }
-
-    /** Remove UIMedium wrapped by <i>this</i> item. */
-    bool remove()
-    {
-        /* Confirm medium removal: */
-        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
-            return false;
-
-        /* Remember some of hard-disk attributes: */
-        CMedium hardDisk = medium().medium();
-        QString strMediumID = id();
-
-        /* Propose to remove medium storage: */
-        if (!maybeRemoveStorage())
-            return false;
-
-        /* Close hard-disk: */
-        hardDisk.Close();
-        if (!hardDisk.isOk())
-        {
-            msgCenter().cannotCloseMedium(medium(), hardDisk, treeWidget());
-            return false;
-        }
-
-        /* Remove UIMedium finally: */
-        vboxGlobal().deleteMedium(strMediumID);
-
-        /* True by default: */
-        return true;
-    }
-
-    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
-    bool releaseFrom(CMachine machine)
-    {
-        /* Enumerate attachments: */
-        CMediumAttachmentVector attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
-        {
-            /* Skip non-hard-disks: */
-            if (attachment.GetType() != KDeviceType_HardDisk)
-                continue;
-
-            /* Skip unrelated hard-disks: */
-            if (attachment.GetMedium().GetId() != id())
-                continue;
-
-            /* Remember controller: */
-            CStorageController controller = machine.GetStorageControllerByName(attachment.GetController());
-
-            /* Try to detach device: */
-            machine.DetachDevice(attachment.GetController(), attachment.GetPort(), attachment.GetDevice());
-            if (!machine.isOk())
-            {
-                /* Return failure: */
-                msgCenter().cannotDetachDevice(machine, UIMediumType_HardDisk, location(),
-                                               StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()),
-                                               treeWidget());
-                return false;
-            }
-
-            /* Return success: */
-            return true;
-        }
-
-        /* False by default: */
-        return false;
-    }
+    /** Copies UIMedium wrapped by <i>this</i> item. */
+    virtual bool copy() /* override */;
+    /** Modifies UIMedium wrapped by <i>this</i> item. */
+    virtual bool modify() /* override */;
+    /** Removes UIMedium wrapped by <i>this</i> item. */
+    virtual bool remove() /* override */;
+    /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
+    virtual bool releaseFrom(CMachine comMachine) /* override */;
 
 private:
 
     /** Proposes user to remove CMedium storage wrapped by <i>this</i> item. */
-    bool maybeRemoveStorage()
-    {
-        /* Remember some of hard-disk attributes: */
-        CMedium hardDisk = medium().medium();
-        QString strLocation = location();
-
-        /* We don't want to try to delete inaccessible storage as it will most likely fail.
-         * Note that UIMessageCenter::confirmMediumRemoval() is aware of that and
-         * will give a corresponding hint. Therefore, once the code is changed below,
-         * the hint should be re-checked for validity. */
-        bool fDeleteStorage = false;
-        qulonglong uCapability = 0;
-        QVector<KMediumFormatCapabilities> capabilities = hardDisk.GetMediumFormat().GetCapabilities();
-        foreach (KMediumFormatCapabilities capability, capabilities)
-            uCapability |= capability;
-        if (state() != KMediumState_Inaccessible && uCapability & KMediumFormatCapabilities_File)
-        {
-            int rc = msgCenter().confirmDeleteHardDiskStorage(strLocation, treeWidget());
-            if (rc == AlertButton_Cancel)
-                return false;
-            fDeleteStorage = rc == AlertButton_Choice1;
-        }
-
-        /* If user wish to delete storage: */
-        if (fDeleteStorage)
-        {
-            /* Prepare delete storage progress: */
-            CProgress progress = hardDisk.DeleteStorage();
-            if (!hardDisk.isOk())
-            {
-                msgCenter().cannotDeleteHardDiskStorage(hardDisk, strLocation, treeWidget());
-                return false;
-            }
-            /* Show delete storage progress: */
-            msgCenter().showModalProgressDialog(progress, UIMediumManager::tr("Removing medium..."),
-                                                ":/progress_media_delete_90px.png", treeWidget());
-            if (!progress.isOk() || progress.GetResultCode() != 0)
-            {
-                msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, treeWidget());
-                return false;
-            }
-        }
-
-        /* True by default: */
-        return true;
-    }
+    bool maybeRemoveStorage();
 };
 
 /** UIMediumItem extension representing optical-disk item. */
@@ -405,82 +177,21 @@ class UIMediumItemCD : public UIMediumItem
 {
 public:
 
-    /** Constructor for top-level item. */
-    UIMediumItemCD(const UIMedium &medium, QITreeWidget *pParent)
-        : UIMediumItem(medium, pParent)
-    {}
+    /** Constructs top-level item.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent tree reference. */
+    UIMediumItemCD(const UIMedium &guiMedium, QITreeWidget *pParent);
 
 protected:
 
-    /** Copy UIMedium wrapped by <i>this</i> item. */
-    bool copy()
-    {
-        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-    }
-
-    /** Modify UIMedium wrapped by <i>this</i> item. */
-    bool modify()
-    {
-        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-    }
-
-    /** Remove UIMedium wrapped by <i>this</i> item. */
-    bool remove()
-    {
-        /* Confirm medium removal: */
-        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
-            return false;
-
-        /* Remember some of optical-disk attributes: */
-        CMedium image = medium().medium();
-        QString strMediumID = id();
-
-        /* Close optical-disk: */
-        image.Close();
-        if (!image.isOk())
-        {
-            msgCenter().cannotCloseMedium(medium(), image, treeWidget());
-            return false;
-        }
-
-        /* Remove UIMedium finally: */
-        vboxGlobal().deleteMedium(strMediumID);
-
-        /* True by default: */
-        return true;
-    }
-
-    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
-    bool releaseFrom(CMachine machine)
-    {
-        /* Enumerate attachments: */
-        CMediumAttachmentVector attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
-        {
-            /* Skip non-optical-disks: */
-            if (attachment.GetType() != KDeviceType_DVD)
-                continue;
-
-            /* Skip unrelated optical-disks: */
-            if (attachment.GetMedium().GetId() != id())
-                continue;
-
-            /* Try to unmount device: */
-            machine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
-            if (!machine.isOk())
-            {
-                /* Return failure: */
-                msgCenter().cannotRemountMedium(machine, medium(), false /* mount? */, false /* retry? */, treeWidget());
-                return false;
-            }
-
-            /* Return success: */
-            return true;
-        }
-
-        /* Return failure: */
-        return false;
-    }
+    /** Copies UIMedium wrapped by <i>this</i> item. */
+    virtual bool copy() /* override */;
+    /** Modifies UIMedium wrapped by <i>this</i> item. */
+    virtual bool modify() /* override */;
+    /** Removes UIMedium wrapped by <i>this</i> item. */
+    virtual bool remove() /* override */;
+    /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
+    virtual bool releaseFrom(CMachine comMachine) /* override */;
 };
 
 /** UIMediumItem extension representing floppy-disk item. */
@@ -488,82 +199,21 @@ class UIMediumItemFD : public UIMediumItem
 {
 public:
 
-    /** Constructor for top-level item. */
-    UIMediumItemFD(const UIMedium &medium, QITreeWidget *pParent)
-        : UIMediumItem(medium, pParent)
-    {}
+    /** Constructs top-level item.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent tree reference. */
+    UIMediumItemFD(const UIMedium &guiMedium, QITreeWidget *pParent);
 
 protected:
 
-    /** Copy UIMedium wrapped by <i>this</i> item. */
-    bool copy()
-    {
-        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-    }
-
-    /** Modify UIMedium wrapped by <i>this</i> item. */
-    bool modify()
-    {
-        AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-    }
-
-    /** Remove UIMedium wrapped by <i>this</i> item. */
-    bool remove()
-    {
-        /* Confirm medium removal: */
-        if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
-            return false;
-
-        /* Remember some of floppy-disk attributes: */
-        CMedium image = medium().medium();
-        QString strMediumID = id();
-
-        /* Close floppy-disk: */
-        image.Close();
-        if (!image.isOk())
-        {
-            msgCenter().cannotCloseMedium(medium(), image, treeWidget());
-            return false;
-        }
-
-        /* Remove UIMedium finally: */
-        vboxGlobal().deleteMedium(strMediumID);
-
-        /* True by default: */
-        return true;
-    }
-
-    /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
-    bool releaseFrom(CMachine machine)
-    {
-        /* Enumerate attachments: */
-        CMediumAttachmentVector attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
-        {
-            /* Skip non-floppy-disks: */
-            if (attachment.GetType() != KDeviceType_Floppy)
-                continue;
-
-            /* Skip unrelated floppy-disks: */
-            if (attachment.GetMedium().GetId() != id())
-                continue;
-
-            /* Try to unmount device: */
-            machine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
-            if (!machine.isOk())
-            {
-                /* Return failure: */
-                msgCenter().cannotRemountMedium(machine, medium(), false /* mount? */, false /* retry? */, treeWidget());
-                return false;
-            }
-
-            /* Return success: */
-            return true;
-        }
-
-        /* Return failure: */
-        return false;
-    }
+    /** Copies UIMedium wrapped by <i>this</i> item. */
+    virtual bool copy() /* override */;
+    /** Modifies UIMedium wrapped by <i>this</i> item. */
+    virtual bool modify() /* override */;
+    /** Removes UIMedium wrapped by <i>this</i> item. */
+    virtual bool remove() /* override */;
+    /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
+    virtual bool releaseFrom(CMachine comMachine) /* override */;
 };
 
 
@@ -651,6 +301,437 @@ private:
     /** Progress-bar itself. */
     QProgressBar *m_pProgressBar;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIMediumItem implementation.                                                                                           *
+*********************************************************************************************************************************/
+
+UIMediumItem::UIMediumItem(const UIMedium &guiMedium, QITreeWidget *pParent)
+    : QITreeWidgetItem(pParent)
+    , m_guiMedium(guiMedium)
+{
+    refresh();
+}
+
+UIMediumItem::UIMediumItem(const UIMedium &guiMedium, UIMediumItem *pParent)
+    : QITreeWidgetItem(pParent)
+    , m_guiMedium(guiMedium)
+{
+    refresh();
+}
+
+bool UIMediumItem::release()
+{
+    /* Refresh medium and item: */
+    m_guiMedium.refresh();
+    refresh();
+
+    /* Make sure medium was not released yet: */
+    if (medium().curStateMachineIds().isEmpty())
+        return true;
+
+    /* Confirm release: */
+    if (!msgCenter().confirmMediumRelease(medium(), treeWidget()))
+        return false;
+
+    /* Release: */
+    foreach (const QString &strMachineId, medium().curStateMachineIds())
+        if (!releaseFrom(strMachineId))
+            return false;
+
+    /* True by default: */
+    return true;
+}
+
+void UIMediumItem::refreshAll()
+{
+    m_guiMedium.refresh();
+    refresh();
+}
+
+void UIMediumItem::setMedium(const UIMedium &guiMedium)
+{
+    m_guiMedium = guiMedium;
+    refresh();
+}
+
+bool UIMediumItem::operator<(const QTreeWidgetItem &other) const
+{
+    int iColumn = treeWidget()->sortColumn();
+    ULONG64 uThisValue = vboxGlobal().parseSize(      text(iColumn));
+    ULONG64 uThatValue = vboxGlobal().parseSize(other.text(iColumn));
+    return uThisValue && uThatValue ? uThisValue < uThatValue : QTreeWidgetItem::operator<(other);
+}
+
+QString UIMediumItem::defaultText() const
+{
+    return UIMediumManager::tr("%1, %2: %3, %4: %5", "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text")
+                               .arg(text(0))
+                               .arg(parentTree()->headerItem()->text(1)).arg(text(1))
+                               .arg(parentTree()->headerItem()->text(2)).arg(text(2));
+}
+
+void UIMediumItem::refresh()
+{
+    /* Fill-in columns: */
+    setIcon(0, m_guiMedium.icon());
+    setText(0, m_guiMedium.name());
+    setText(1, m_guiMedium.logicalSize());
+    setText(2, m_guiMedium.size());
+    /* All columns get the same tooltip: */
+    QString strToolTip = m_guiMedium.toolTip();
+    for (int i = 0; i < treeWidget()->columnCount(); ++i)
+        setToolTip(i, strToolTip);
+}
+
+bool UIMediumItem::releaseFrom(const QString &strMachineId)
+{
+    /* Open session: */
+    CSession session = vboxGlobal().openSession(strMachineId);
+    if (session.isNull())
+        return false;
+
+    /* Get machine: */
+    CMachine machine = session.GetMachine();
+
+    /* Prepare result: */
+    bool fSuccess = false;
+
+    /* Release medium from machine: */
+    if (releaseFrom(machine))
+    {
+        /* Save machine settings: */
+        machine.SaveSettings();
+        if (!machine.isOk())
+            msgCenter().cannotSaveMachineSettings(machine, treeWidget());
+        else
+            fSuccess = true;
+    }
+
+    /* Close session: */
+    session.UnlockMachine();
+
+    /* Return result: */
+    return fSuccess;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIMediumItemHD implementation.                                                                                         *
+*********************************************************************************************************************************/
+
+UIMediumItemHD::UIMediumItemHD(const UIMedium &guiMedium, QITreeWidget *pParent)
+    : UIMediumItem(guiMedium, pParent)
+{
+}
+
+UIMediumItemHD::UIMediumItemHD(const UIMedium &guiMedium, UIMediumItem *pParent)
+    : UIMediumItem(guiMedium, pParent)
+{
+}
+
+bool UIMediumItemHD::copy()
+{
+    /* Show Clone VD wizard: */
+    UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
+    pWizard->prepare();
+    pWizard->exec();
+
+    /* Delete if still exists: */
+    if (pWizard)
+        delete pWizard;
+
+    /* True by default: */
+    return true;
+}
+
+bool UIMediumItemHD::modify()
+{
+    /* False by default: */
+    bool fResult = false;
+
+    /* Show Modify VD dialog: */
+    UISafePointerDialog pDialog = new UIMediumTypeChangeDialog(treeWidget(), id());
+    if (pDialog->exec() == QDialog::Accepted)
+    {
+        /* Update medium-item: */
+        refreshAll();
+        /* Change to passed: */
+        fResult = true;
+    }
+
+    /* Delete if still exists: */
+    if (pDialog)
+        delete pDialog;
+
+    /* Return result: */
+    return fResult;
+}
+
+bool UIMediumItemHD::remove()
+{
+    /* Confirm medium removal: */
+    if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+        return false;
+
+    /* Remember some of hard-disk attributes: */
+    CMedium hardDisk = medium().medium();
+    QString strMediumID = id();
+
+    /* Propose to remove medium storage: */
+    if (!maybeRemoveStorage())
+        return false;
+
+    /* Close hard-disk: */
+    hardDisk.Close();
+    if (!hardDisk.isOk())
+    {
+        msgCenter().cannotCloseMedium(medium(), hardDisk, treeWidget());
+        return false;
+    }
+
+    /* Remove UIMedium finally: */
+    vboxGlobal().deleteMedium(strMediumID);
+
+    /* True by default: */
+    return true;
+}
+
+bool UIMediumItemHD::releaseFrom(CMachine comMachine)
+{
+    /* Enumerate attachments: */
+    CMediumAttachmentVector attachments = comMachine.GetMediumAttachments();
+    foreach (const CMediumAttachment &attachment, attachments)
+    {
+        /* Skip non-hard-disks: */
+        if (attachment.GetType() != KDeviceType_HardDisk)
+            continue;
+
+        /* Skip unrelated hard-disks: */
+        if (attachment.GetMedium().GetId() != id())
+            continue;
+
+        /* Remember controller: */
+        CStorageController controller = comMachine.GetStorageControllerByName(attachment.GetController());
+
+        /* Try to detach device: */
+        comMachine.DetachDevice(attachment.GetController(), attachment.GetPort(), attachment.GetDevice());
+        if (!comMachine.isOk())
+        {
+            /* Return failure: */
+            msgCenter().cannotDetachDevice(comMachine, UIMediumType_HardDisk, location(),
+                                           StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()),
+                                           treeWidget());
+            return false;
+        }
+
+        /* Return success: */
+        return true;
+    }
+
+    /* False by default: */
+    return false;
+}
+
+bool UIMediumItemHD::maybeRemoveStorage()
+{
+    /* Remember some of hard-disk attributes: */
+    CMedium hardDisk = medium().medium();
+    QString strLocation = location();
+
+    /* We don't want to try to delete inaccessible storage as it will most likely fail.
+     * Note that UIMessageCenter::confirmMediumRemoval() is aware of that and
+     * will give a corresponding hint. Therefore, once the code is changed below,
+     * the hint should be re-checked for validity. */
+    bool fDeleteStorage = false;
+    qulonglong uCapability = 0;
+    QVector<KMediumFormatCapabilities> capabilities = hardDisk.GetMediumFormat().GetCapabilities();
+    foreach (KMediumFormatCapabilities capability, capabilities)
+        uCapability |= capability;
+    if (state() != KMediumState_Inaccessible && uCapability & KMediumFormatCapabilities_File)
+    {
+        int rc = msgCenter().confirmDeleteHardDiskStorage(strLocation, treeWidget());
+        if (rc == AlertButton_Cancel)
+            return false;
+        fDeleteStorage = rc == AlertButton_Choice1;
+    }
+
+    /* If user wish to delete storage: */
+    if (fDeleteStorage)
+    {
+        /* Prepare delete storage progress: */
+        CProgress progress = hardDisk.DeleteStorage();
+        if (!hardDisk.isOk())
+        {
+            msgCenter().cannotDeleteHardDiskStorage(hardDisk, strLocation, treeWidget());
+            return false;
+        }
+        /* Show delete storage progress: */
+        msgCenter().showModalProgressDialog(progress, UIMediumManager::tr("Removing medium..."),
+                                            ":/progress_media_delete_90px.png", treeWidget());
+        if (!progress.isOk() || progress.GetResultCode() != 0)
+        {
+            msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, treeWidget());
+            return false;
+        }
+    }
+
+    /* True by default: */
+    return true;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIMediumItemCD implementation.                                                                                         *
+*********************************************************************************************************************************/
+
+UIMediumItemCD::UIMediumItemCD(const UIMedium &guiMedium, QITreeWidget *pParent)
+    : UIMediumItem(guiMedium, pParent)
+{
+}
+
+bool UIMediumItemCD::copy()
+{
+    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+}
+
+bool UIMediumItemCD::modify()
+{
+    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+}
+
+bool UIMediumItemCD::remove()
+{
+    /* Confirm medium removal: */
+    if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+        return false;
+
+    /* Remember some of optical-disk attributes: */
+    CMedium image = medium().medium();
+    QString strMediumID = id();
+
+    /* Close optical-disk: */
+    image.Close();
+    if (!image.isOk())
+    {
+        msgCenter().cannotCloseMedium(medium(), image, treeWidget());
+        return false;
+    }
+
+    /* Remove UIMedium finally: */
+    vboxGlobal().deleteMedium(strMediumID);
+
+    /* True by default: */
+    return true;
+}
+
+bool UIMediumItemCD::releaseFrom(CMachine comMachine)
+{
+    /* Enumerate attachments: */
+    CMediumAttachmentVector attachments = comMachine.GetMediumAttachments();
+    foreach (const CMediumAttachment &attachment, attachments)
+    {
+        /* Skip non-optical-disks: */
+        if (attachment.GetType() != KDeviceType_DVD)
+            continue;
+
+        /* Skip unrelated optical-disks: */
+        if (attachment.GetMedium().GetId() != id())
+            continue;
+
+        /* Try to unmount device: */
+        comMachine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
+        if (!comMachine.isOk())
+        {
+            /* Return failure: */
+            msgCenter().cannotRemountMedium(comMachine, medium(), false /* mount? */, false /* retry? */, treeWidget());
+            return false;
+        }
+
+        /* Return success: */
+        return true;
+    }
+
+    /* Return failure: */
+    return false;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIMediumItemFD implementation.                                                                                         *
+*********************************************************************************************************************************/
+
+UIMediumItemFD::UIMediumItemFD(const UIMedium &guiMedium, QITreeWidget *pParent)
+    : UIMediumItem(guiMedium, pParent)
+{
+}
+
+bool UIMediumItemFD::copy()
+{
+    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+}
+
+bool UIMediumItemFD::modify()
+{
+    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
+}
+
+bool UIMediumItemFD::remove()
+{
+    /* Confirm medium removal: */
+    if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
+        return false;
+
+    /* Remember some of floppy-disk attributes: */
+    CMedium image = medium().medium();
+    QString strMediumID = id();
+
+    /* Close floppy-disk: */
+    image.Close();
+    if (!image.isOk())
+    {
+        msgCenter().cannotCloseMedium(medium(), image, treeWidget());
+        return false;
+    }
+
+    /* Remove UIMedium finally: */
+    vboxGlobal().deleteMedium(strMediumID);
+
+    /* True by default: */
+    return true;
+}
+
+bool UIMediumItemFD::releaseFrom(CMachine comMachine)
+{
+    /* Enumerate attachments: */
+    CMediumAttachmentVector attachments = comMachine.GetMediumAttachments();
+    foreach (const CMediumAttachment &attachment, attachments)
+    {
+        /* Skip non-floppy-disks: */
+        if (attachment.GetType() != KDeviceType_Floppy)
+            continue;
+
+        /* Skip unrelated floppy-disks: */
+        if (attachment.GetMedium().GetId() != id())
+            continue;
+
+        /* Try to unmount device: */
+        comMachine.MountMedium(attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
+        if (!comMachine.isOk())
+        {
+            /* Return failure: */
+            msgCenter().cannotRemountMedium(comMachine, medium(), false /* mount? */, false /* retry? */, treeWidget());
+            return false;
+        }
+
+        /* Return success: */
+        return true;
+    }
+
+    /* Return failure: */
+    return false;
+}
 
 
 /*********************************************************************************************************************************

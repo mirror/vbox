@@ -24,17 +24,17 @@
 #include "UIMediumDefs.h"
 
 /* Forward declarations: */
+class QFrame;
+class QLabel;
+class QTabWidget;
+class QTreeWidgetItem;
+class QIDialogButtonBox;
+class QILabel;
+class QITreeWidget;
+class UIEnumerationProgressBar;
 class UIMedium;
 class UIMediumItem;
 class UIToolBar;
-class UIEnumerationProgressBar;
-class QTabWidget;
-class QITreeWidget;
-class QTreeWidgetItem;
-class QFrame;
-class QLabel;
-class QILabel;
-class QIDialogButtonBox;
 
 
 /** Functor interface allowing to check if passed UIMediumItem is suitable. */
