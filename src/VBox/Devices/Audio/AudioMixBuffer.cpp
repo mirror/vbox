@@ -448,8 +448,8 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
     DECLCALLBACK(int64_t) audioMixBufClipFrom##_aName(_aType aVal) \
     { \
         if (_aSigned) \
-            return ((int64_t) aVal) << (32 - _aShift); \
-        return ((int64_t) aVal - ((_aMax >> 1) + 1)) << (32 - _aShift); \
+            return (int64_t) (((uint64_t) ((int64_t) aVal                     )) << (32 - _aShift)); \
+        return     (int64_t) (((uint64_t) ((int64_t) aVal - ((_aMax >> 1) + 1))) << (32 - _aShift)); \
     } \
     \
     /* Clips a single sample value to a specific output value. */ \
