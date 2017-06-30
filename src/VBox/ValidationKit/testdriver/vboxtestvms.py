@@ -178,7 +178,7 @@ class TestVm(object):
     def __init__(self, oSet, sVmName, sHd = None, sKind = None, acCpusSup = None, asVirtModesSup = None, # pylint: disable=R0913
                  fIoApic = None, fPae = None, sNic0AttachType = None, sHddControllerType = 'IDE Controller',
                  sFloppy = None, fVmmDevTestingPart = None, fVmmDevTestingMmio = False, asParavirtModesSup = None,
-                 fRandomPvPMode = False, sFirmwareType = 'bios'):
+                 fRandomPvPMode = False, sFirmwareType = 'bios', sChipsetType = 'piix3'):
         self.oSet                    = oSet;
         self.sVmName                 = sVmName;
         self.sHd                     = sHd;          # Relative to the testrsrc root.
@@ -198,6 +198,7 @@ class TestVm(object):
         self.fVmmDevTestingPart      = fVmmDevTestingPart;
         self.fVmmDevTestingMmio      = fVmmDevTestingMmio;
         self.sFirmwareType           = sFirmwareType;
+        self.sChipsetType            = sChipsetType;
 
         self.fSnapshotRestoreCurrent = False;        # Whether to restore execution on the current snapshot.
         self.fSkip                   = False;        # All VMs are included in the configured set by default.
@@ -695,7 +696,8 @@ class TestVmSet(object):
                                             sFloppy            = oTestVm.sFloppy,
                                             fVmmDevTestingPart = oTestVm.fVmmDevTestingPart,
                                             fVmmDevTestingMmio = oTestVm.fVmmDevTestingPart,
-                                            sFirmwareType = oTestVm.sFirmwareType);
+                                            sFirmwareType = oTestVm.sFirmwareType,
+                                            sChipsetType = oTestVm.sChipsetType);
             if oVM is None:
                 return False;
 
@@ -867,6 +869,11 @@ class TestVmManager(object):
                          sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
         oSet.aoTestVms.append(oTestVm);
 
+        oTestVm = TestVm(oSet, 'tst-win10-64-efi-ich9', sHd = '4.2/efi/win10-efi-amd64.vdi',
+                         sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+                         sChipsetType = 'ich9');
+        oSet.aoTestVms.append(oTestVm);
+
         oTestVm = TestVm(oSet, 'tst-ubuntu-15_10-64-efi', sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
                          sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
         oSet.aoTestVms.append(oTestVm);
@@ -919,6 +926,10 @@ class TestVmManager(object):
                          sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True);
         oSet.aoTestVms.append(oTestVm);
 
+        oTestVm = TestVm(oSet, 'tst-win8-64-ich9', sHd = '4.2/win8-64/t-win8-64.vdi',
+                         sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True, sChipsetType = 'ich9');
+        oSet.aoTestVms.append(oTestVm);
+
         return oSet;
 
     def getSmokeVmSet(self):
@@ -934,6 +945,11 @@ class TestVmManager(object):
 
         oTestVm = TestVm(oSet, 'tst-win10-64-efi', sHd = '4.2/efi/win10-efi-amd64.vdi',
                          sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi');
+        oSet.aoTestVms.append(oTestVm);
+
+        oTestVm = TestVm(oSet, 'tst-win10-64-efi-ich9', sHd = '4.2/efi/win10-efi-amd64.vdi',
+                         sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
+                         sChipsetType = 'ich9');
         oSet.aoTestVms.append(oTestVm);
 
         oTestVm = TestVm(oSet, 'tst-ubuntu-15_10-64-efi', sHd = '4.2/efi/ubuntu-15_10-efi-amd64.vdi',
@@ -968,6 +984,11 @@ class TestVmManager(object):
         oTestVm = TestVm(oSet, 'tst-sol11u1', sHd = '4.2/nat/sol11u1/t-sol11u1.vdi',
                          sKind = 'Solaris11_64', acCpusSup = range(1, 33), sNic0AttachType = 'nat',
                          fIoApic = True, sHddControllerType = 'SATA Controller');
+        oSet.aoTestVms.append(oTestVm);
+
+        oTestVm = TestVm(oSet, 'tst-sol11u1-ich9', sHd = '4.2/nat/sol11u1/t-sol11u1.vdi',
+                         sKind = 'Solaris11_64', acCpusSup = range(1, 33), sNic0AttachType = 'nat',
+                         fIoApic = True, sHddControllerType = 'SATA Controller', sChipsetType = 'ich9');
         oSet.aoTestVms.append(oTestVm);
 
         oTestVm = TestVm(oSet, 'tst-nt4sp6', sHd = '4.2/nt4sp6/t-nt4sp6.vdi',
@@ -1008,6 +1029,10 @@ class TestVmManager(object):
 
         oTestVm = TestVm(oSet, 'tst-win8-64', sHd = '4.2/win8-64/t-win8-64.vdi',
                          sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True);
+        oSet.aoTestVms.append(oTestVm);
+
+        oTestVm = TestVm(oSet, 'tst-win8-64-ich9', sHd = '4.2/win8-64/t-win8-64.vdi',
+                         sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True, sChipsetType = 'ich9');
         oSet.aoTestVms.append(oTestVm);
 
         return oSet;

@@ -1171,6 +1171,22 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def setChipsetType(self, eType):
+        """
+        Sets the chipset type.
+        Returns True on success and False on failure.  Error information is logged.
+        """
+        fRc = True;
+        try:
+            self.o.machine.chipsetType = eType;
+        except:
+            reporter.errorXcpt('failed to set chipsetType=%s for "%s"' % (eType, self.sName));
+            fRc = False;
+        else:
+            reporter.log('set chipsetType=%s for "%s"' % (eType, self.sName));
+        self.oTstDrv.processPendingEvents();
+        return fRc;
+
     def setupBootLogo(self, fEnable, cMsLogoDisplay = 0):
         """
         Sets up the boot logo.  fEnable toggles the fade and boot menu
