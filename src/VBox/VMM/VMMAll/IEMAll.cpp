@@ -14807,7 +14807,8 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
 /** @todo adjust for VINF_EM_RAW_EMULATE_INSTR   */
             int32_t const rcPassUp = pVCpu->iem.s.rcPassUp;
 #ifdef VBOX_WITH_NESTED_HWVIRT
-            if (rcStrict == VINF_SVM_VMEXIT)
+            if (   rcStrict == VINF_SVM_VMEXIT
+                && rcPassUp == VINF_SUCCESS)
                 rcStrict = VINF_SUCCESS;
             else
 #endif
@@ -15370,7 +15371,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
             pVCpu->iem.s.cLongJumps++;
-            /** @todo Why isn't iemExecStatusCodeFiddling called here always? */
 #  ifdef VBOX_WITH_NESTED_HWVIRT
             /*
              * When a nested-guest causes an exception intercept when fetching memory
@@ -15395,6 +15395,16 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &IEM_GET_CTX(pVCpu)->gs));
 # endif
     }
+#  ifdef VBOX_WITH_NESTED_HWVIRT
+    else
+    {
+        /*
+         * When a nested-guest causes an exception intercept (e.g. #PF) when fetching
+         * code as part of instruction execution, we need this to fix-up VINF_SVM_VMEXIT.
+         */
+        rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    }
+#  endif
 
     /*
      * Maybe re-enter raw-mode and log.
