@@ -484,7 +484,7 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
             }
         }
     }
-    Log7Func((": LEAVE new provider=%p\n", this, mVMMStatsProvider));
+    Log7Func(("[%p}: LEAVE new provider=%p\n", this, mVMMStatsProvider));
 }
 
 void CollectorGuestManager::destroyUnregistered()
