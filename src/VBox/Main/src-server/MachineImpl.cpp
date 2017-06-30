@@ -7184,9 +7184,26 @@ HRESULT Machine::getUnattended(ComPtr<IUnattended> &aUnattended)
 {
 #ifdef VBOX_WITH_UNATTENDED
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    aUnattended = mUnattended;
-
+    if (mUnattended.isNotNull())
+        aUnattended = mUnattended;
+    else
+    {
+        /* Do on-demand creation. */
+        alock.release();
+        AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+        if (mUnattended.isNull())
+        {
+            unconst(mUnattended).createObject();
+            HRESULT hrc = mUnattended->init(this);
+            if (FAILED(hrc))
+            {
+                mUnattended->uninit();
+                unconst(mUnattended).setNull();
+                return hrc;
+            }
+        }
+        aUnattended = mUnattended;
+    }
     return S_OK;
 #else
     NOREF(aUnattended);
@@ -8379,6 +8396,9 @@ HRESULT Machine::initDataAndChildObjects()
     /* initialize mOSTypeId */
     mUserData->s.strOsType = mParent->i_getUnknownOSType()->i_id();
 
+/** @todo r=bird: init() methods never fails, right? Why don't we make them
+ *        return void then! */
+
     /* create associated BIOS settings object */
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
@@ -8422,11 +8442,7 @@ HRESULT Machine::initDataAndChildObjects()
     mBandwidthControl->init(this);
 
 #ifdef VBOX_WITH_UNATTENDED
-    /* create the unattended object (always present) */
-    /** @todo r=bird: Why don't we create this when the IUnattended instance
-     *        is queried? */
-    unconst(mUnattended).createObject();
-    mUnattended->init(this);
+    Assert(mUnattended.isNull()); /* Created on-demand. */
 #endif
 
     return S_OK;
@@ -12656,14 +12672,6 @@ HRESULT SessionMachine::init(Machine *aMachine)
     /* create another bandwidth control object that will be mutable */
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this, aMachine->mBandwidthControl);
-
-#ifdef VBOX_WITH_UNATTENDED
-    /* create another unattended object that will be mutable */
-    /** @todo r=bird: Why don't we create this when the IUnattended instance
-     *        is queried? */
-    unconst(mUnattended).createObject();
-    mUnattended->initWithUnattended(this, aMachine->mUnattended);
-#endif
 
     /* default is to delete saved state on Saved -> PoweredOff transition */
     mRemoveSavedState = true;
