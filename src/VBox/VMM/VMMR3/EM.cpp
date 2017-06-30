@@ -1959,13 +1959,14 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 &&  !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             {
                 bool     fIntrEnabled;
+                PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #ifdef VBOX_WITH_RAW_MODE
-                fIntrEnabled = PATMAreInterruptsEnabled(pVM);
+                /* We cannot just inspect EFLAGS when nested hw.virt is enabled (see e.g. CPUMCanSvmNstGstTakePhysIntr). */
+                fIntrEnabled = !PATMIsPatchGCAddr(pVM, pCtx->eip);
 #else
                 fIntrEnabled = true;
 #endif
                 /** @todo Can we centralize this under CPUMCanInjectInterrupt()? */
-                PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #ifdef VBOX_WITH_NESTED_HWVIRT
                 fIntrEnabled &= pCtx->hwvirt.svm.fGif;
                 if (fIntrEnabled)
