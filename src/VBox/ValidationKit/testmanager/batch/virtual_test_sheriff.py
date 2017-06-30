@@ -474,6 +474,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_Install_Hang                         = ( 'Host',              'Install hang' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
+    ktReason_OSInstall_Sata_no_BM                      = (' O/S Install',       'SATA bustmaster bit not set' );
     ktReason_Panic_BootManagerC000000F                 = ( 'Panic',             'Hardware Changed' );
     ktReason_BootManager_Image_corrupt                 = ( 'Unknown',           'BOOTMGR Image corrupt' );
     ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
@@ -852,7 +853,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
         ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' ),
-        ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' )
+        ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
+        ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' )
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
