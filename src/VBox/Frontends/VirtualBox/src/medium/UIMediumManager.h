@@ -161,7 +161,7 @@ private:
         /** Prepares tab-widget's tree-widget. */
         void prepareTreeWidget(UIMediumType type, int iColumns);
         /** Prepares tab-widget's information-container. */
-        void prepareInformationContainer(UIMediumType type, int iFields);
+        void prepareInformationContainer(UIMediumType enmType, int cFields);
 //        /** Prepares progress-bar. */
 //        void prepareProgressBar();
 
@@ -181,14 +181,8 @@ private:
         void updateActionIcons();
         /** Updates tab icons according last @a action happened with @a pItem. */
         void updateTabIcons(UIMediumItem *pItem, Action action);
-        /** Updates information fields of passed medium @a type. */
-        void updateInformationFields(UIMediumType type = UIMediumType_Invalid);
-        /** Updates information fields for hard-drive tab. */
-        void updateInformationFieldsHD();
-        /** Updates information fields for optical-disk tab. */
-        void updateInformationFieldsCD();
-        /** Updates information fields for floppy-disk tab. */
-        void updateInformationFieldsFD();
+        /** Updates information fields of passed medium @a enmType. */
+        void updateInformationFields(UIMediumType enmType = UIMediumType_Invalid);
     /** @} */
 
     /** @name Widget operation stuff.
@@ -208,12 +202,12 @@ private:
         QITreeWidget *treeWidget(UIMediumType type) const;
         /** Returns item for passed medium @a type. */
         UIMediumItem *mediumItem(UIMediumType type) const;
-        /** Returns information-container for passed medium @a type. */
-        QFrame *infoContainer(UIMediumType type) const;
-        /** Returns information-label for passed medium @a type and @a iLabelIndex. */
-        QLabel *infoLabel(UIMediumType type, int iLabelIndex) const;
-        /** Returns information-field for passed medium @a type and @a iFieldIndex. */
-        QILabel *infoField(UIMediumType type, int iFieldIndex) const;
+        /** Returns information-container for passed medium @a enmType. */
+        QFrame *infoContainer(UIMediumType enmType) const;
+        /** Returns information-label for passed medium @a enmType and @a iIndex. */
+        QLabel *infoLabel(UIMediumType enmType, int iIndex) const;
+        /** Returns information-field for passed medium @a enmType and @a iIndex. */
+        QILabel *infoField(UIMediumType enmType, int iIndex) const;
 
         /** Returns medium type for passed @a pTreeWidget. */
         UIMediumType mediumType(QITreeWidget *pTreeWidget) const;
@@ -248,9 +242,6 @@ private:
 
         /** Casts passed QTreeWidgetItem @a pItem to UIMediumItem if possible. */
         static UIMediumItem *toMediumItem(QTreeWidgetItem *pItem);
-
-        /** Formats information-field content. */
-        static QString formatFieldText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
     /** @} */
 
     /** @name General variables.
@@ -271,11 +262,11 @@ private:
         /** Holds the map of tree-widget instances. */
         QMap<int, QITreeWidget*>     m_trees;
         /** Holds the map of information-container instances. */
-        QMap<int, QFrame*>           m_containers;
+        QMap<UIMediumType, QFrame*>           m_containers;
         /** Holds the map of information-container label instances. */
-        QMap<int, QList<QLabel*> >   m_labels;
+        QMap<UIMediumType, QList<QLabel*> >   m_labels;
         /** Holds the information-container field instances. */
-        QMap<int, QList<QILabel*> >  m_fields;
+        QMap<UIMediumType, QList<QILabel*> >  m_fields;
         /** Holds whether hard-drive tab-widget have inaccessible item. */
         bool                         m_fInaccessibleHD;
         /** Holds whether optical-disk tab-widget have inaccessible item. */

@@ -55,8 +55,65 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Virtual Media Manager: Medium details data structure. */
+struct UIDataMediumDetails
+{
+    /** Constructs data. */
+    UIDataMediumDetails()
+        : m_aDetails(QStringList())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataMediumDetails &other) const
+    {
+        return true
+               && (m_aDetails == other.m_aDetails)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataMediumDetails &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataMediumDetails &other) const { return !equal(other); }
+
+    /** Holds the details list. */
+    QStringList m_aDetails;
+};
+
+
+/** Virtual Media Manager: Medium data structure. */
+struct UIDataMedium
+{
+    /** Constructs data. */
+    UIDataMedium()
+        : m_enmType(UIMediumType_Invalid)
+        , m_details(UIDataMediumDetails())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataMedium &other) const
+    {
+        return true
+               && (m_enmType == other.m_enmType)
+               && (m_details == other.m_details)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataMedium &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataMedium &other) const { return !equal(other); }
+
+    /** Holds the medium type. */
+    UIMediumType m_enmType;
+
+    /** Holds the details data. */
+    UIDataMediumDetails m_details;
+};
+
+
 /** QITreeWidgetItem extension representing Medium Manager item. */
-class UIMediumItem : public QITreeWidgetItem
+class UIMediumItem : public QITreeWidgetItem, public UIDataMedium
 {
 public:
 
@@ -135,6 +192,9 @@ private:
 
     /** Releases UIMedium wrapped by <i>this</i> item from virtual machine with @a strMachineId. */
     bool releaseFrom(const QString &strMachineId);
+
+    /** Formats field text. */
+    static QString formatFieldText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
 
     /** Holds the UIMedium wrapped by <i>this</i> item. */
     UIMedium m_guiMedium;
@@ -383,6 +443,41 @@ void UIMediumItem::refresh()
     QString strToolTip = m_guiMedium.toolTip();
     for (int i = 0; i < treeWidget()->columnCount(); ++i)
         setToolTip(i, strToolTip);
+
+    /* Gather medium data: */
+    m_enmType = m_guiMedium.type();
+    /* Gather medium details data: */
+    m_details.m_aDetails.clear();
+    switch (m_enmType)
+    {
+        case UIMediumType_HardDisk:
+        {
+            m_details.m_aDetails << hardDiskType();
+            m_details.m_aDetails << formatFieldText(location(), true, "end");
+            m_details.m_aDetails << hardDiskFormat();
+            m_details.m_aDetails << details();
+            m_details.m_aDetails << (usage().isNull() ?
+                                     formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
+                                     formatFieldText(usage()));
+            m_details.m_aDetails << (encryptionPasswordID().isNull() ?
+                                     formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Encrypted</i>"), false) :
+                                     formatFieldText(encryptionPasswordID()));
+            m_details.m_aDetails << id();
+            break;
+        }
+        case UIMediumType_DVD:
+        case UIMediumType_Floppy:
+        {
+            m_details.m_aDetails << formatFieldText(location(), true, "end");
+            m_details.m_aDetails << (usage().isNull() ?
+                                     formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
+                                     formatFieldText(usage()));
+            m_details.m_aDetails << id();
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 bool UIMediumItem::releaseFrom(const QString &strMachineId)
@@ -414,6 +509,18 @@ bool UIMediumItem::releaseFrom(const QString &strMachineId)
 
     /* Return result: */
     return fSuccess;
+}
+
+/* static */
+QString UIMediumItem::formatFieldText(const QString &strText, bool fCompact /* = true */,
+                                      const QString &strElipsis /* = "middle" */)
+{
+    QString strCompactString = QString("<compact elipsis=\"%1\">").arg(strElipsis);
+    QString strInfo = QString("<nobr>%1%2%3</nobr>")
+                              .arg(fCompact ? strCompactString : "")
+                              .arg(strText.isEmpty() ? UIMediumManager::tr("--", "no info") : strText)
+                              .arg(fCompact ? "</compact>" : "");
+    return strInfo;
 }
 
 
@@ -1063,7 +1170,7 @@ void UIMediumManagerWidget::sltModifyMedium()
 
     /* Update HD information-panes: */
     if (fResult)
-        updateInformationFieldsHD();
+        updateInformationFields(UIMediumType_HardDisk);
 }
 
 void UIMediumManagerWidget::sltRefreshAll()
@@ -1467,12 +1574,11 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
     }
 }
 
-void UIMediumManagerWidget::prepareInformationContainer(UIMediumType type, int iFields)
+void UIMediumManagerWidget::prepareInformationContainer(UIMediumType enmType, int cFields)
 {
     /* Create information-container: */
-    int iIndex = tabIndex(type);
-    m_containers.insert(iIndex, new QFrame);
-    QFrame *pInformationContainer = infoContainer(type);
+    m_containers[enmType] = new QFrame;
+    QFrame *pInformationContainer = infoContainer(enmType);
     AssertPtrReturnVoid(pInformationContainer);
     {
         /* Configure information-container: */
@@ -1488,15 +1594,15 @@ void UIMediumManagerWidget::prepareInformationContainer(UIMediumType type, int i
             pInformationContainerLayout->setContentsMargins(5, 5, 5, 5);
             pInformationContainerLayout->setColumnStretch(1, 1);
             /* Create information-container labels & fields: */
-            for (int i = 0; i < iFields; ++i)
+            for (int i = 0; i < cFields; ++i)
             {
                 /* Create information-label: */
-                m_labels[iIndex] << new QLabel;
-                QLabel *pLabel = infoLabel(type, i);
+                m_labels[enmType] << new QLabel;
+                QLabel *pLabel = infoLabel(enmType, i);
                 AssertPtrReturnVoid(pLabel);
                 /* Create information-field: */
-                m_fields[iIndex] << new QILabel;
-                QILabel *pField = infoField(type, i);
+                m_fields[enmType] << new QILabel;
+                QILabel *pField = infoField(enmType, i);
                 AssertPtrReturnVoid(pField);
                 {
                     /* Configure information-field: */
@@ -1509,7 +1615,7 @@ void UIMediumManagerWidget::prepareInformationContainer(UIMediumType type, int i
             }
         }
         /* Add information-container into tab layout: */
-        tab(type)->layout()->addWidget(pInformationContainer);
+        tab(enmType)->layout()->addWidget(pInformationContainer);
     }
 }
 
@@ -1767,136 +1873,32 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
     }
 }
 
-void UIMediumManagerWidget::updateInformationFields(UIMediumType type /* = UIMediumType_Invalid */)
+void UIMediumManagerWidget::updateInformationFields(UIMediumType enmType /* = UIMediumType_Invalid */)
 {
-    /* Make sure type is valid: */
-    if (type == UIMediumType_Invalid)
-        type = currentMediumType();
+    /* Make sure passed medium type is valid: */
+    if (enmType == UIMediumType_Invalid)
+        enmType = currentMediumType();
 
-    /* Depending on required type: */
-    switch (type)
+    /* Which medium types should we update? */
+    const QList<UIMediumType> aTypes = enmType == UIMediumType_All
+                                     ? m_fields.keys()
+                                     : QList<UIMediumType>() << enmType;
+
+    /* For each requested type: */
+    foreach (UIMediumType enmType, aTypes)
     {
-        case UIMediumType_HardDisk: updateInformationFieldsHD(); break;
-        case UIMediumType_DVD:      updateInformationFieldsCD(); break;
-        case UIMediumType_Floppy:   updateInformationFieldsFD(); break;
-        case UIMediumType_All:
-            updateInformationFieldsHD();
-            updateInformationFieldsCD();
-            updateInformationFieldsFD();
-            break;
-        default: break;
+        /* Get current medium-item: */
+        UIMediumItem *pCurrentItem = currentMediumItem();
+
+        /* Get information-fields just to acquire their number: */
+        const QList<QILabel*> aFields = m_fields.value(enmType, QList<QILabel*>());
+        /* For each field => clear the contents: */
+        for (int i = 0; i < aFields.size(); ++i)
+            if (pCurrentItem)
+                infoField(enmType, i)->setText(pCurrentItem->m_details.m_aDetails.value(i, QString()));
+            else
+                infoField(enmType, i)->clear();
     }
-}
-
-void UIMediumManagerWidget::updateInformationFieldsHD()
-{
-    /* Get current hard-drive medium-item: */
-    UIMediumItem *pCurrentItem = mediumItem(UIMediumType_HardDisk);
-
-    /* If current item is not set: */
-    if (!pCurrentItem)
-    {
-        /* Just clear information panes: */
-        for (int i = 0; i < m_fields[tabIndex(UIMediumType_HardDisk)].size(); ++i)
-            infoField(UIMediumType_HardDisk, i)->clear();
-    }
-    /* If current item is set: */
-    else
-    {
-        /* Acquire required details: */
-        const QString strDetails = pCurrentItem->details();
-        const QString strUsage = pCurrentItem->usage().isNull() ?
-                                 formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
-                                 formatFieldText(pCurrentItem->usage());
-        const QString strEncryptionPasswordID = pCurrentItem->encryptionPasswordID().isNull() ?
-                                                formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Encrypted</i>"), false) :
-                                                formatFieldText(pCurrentItem->encryptionPasswordID());
-        const QString strID = pCurrentItem->id();
-        if (infoField(UIMediumType_HardDisk, 0))
-            infoField(UIMediumType_HardDisk, 0)->setText(pCurrentItem->hardDiskType());
-        if (infoField(UIMediumType_HardDisk, 1))
-            infoField(UIMediumType_HardDisk, 1)->setText(formatFieldText(pCurrentItem->location(), true, "end"));
-        if (infoField(UIMediumType_HardDisk, 2))
-            infoField(UIMediumType_HardDisk, 2)->setText(pCurrentItem->hardDiskFormat());
-        if (infoField(UIMediumType_HardDisk, 3))
-            infoField(UIMediumType_HardDisk, 3)->setText(strDetails);
-        if (infoField(UIMediumType_HardDisk, 4))
-            infoField(UIMediumType_HardDisk, 4)->setText(strUsage);
-        if (infoField(UIMediumType_HardDisk, 5))
-            infoField(UIMediumType_HardDisk, 5)->setText(strEncryptionPasswordID);
-        if (infoField(UIMediumType_HardDisk, 6))
-            infoField(UIMediumType_HardDisk, 6)->setText(strID);
-    }
-
-    /* Enable/disable information-panes container: */
-    if (infoContainer(UIMediumType_HardDisk))
-        infoContainer(UIMediumType_HardDisk)->setEnabled(pCurrentItem);
-}
-
-void UIMediumManagerWidget::updateInformationFieldsCD()
-{
-    /* Get current optical medium-item: */
-    UIMediumItem *pCurrentItem = mediumItem(UIMediumType_DVD);
-
-    /* If current item is not set: */
-    if (!pCurrentItem)
-    {
-        /* Just clear information panes: */
-        for (int i = 0; i < m_fields[tabIndex(UIMediumType_DVD)].size(); ++i)
-            infoField(UIMediumType_DVD, i)->clear();
-    }
-    /* If current item is set: */
-    else
-    {
-        /* Update required details: */
-        QString strUsage = pCurrentItem->usage().isNull() ?
-                           formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
-                           formatFieldText(pCurrentItem->usage());
-        const QString strID = pCurrentItem->id();
-        if (infoField(UIMediumType_DVD, 0))
-            infoField(UIMediumType_DVD, 0)->setText(formatFieldText(pCurrentItem->location(), true, "end"));
-        if (infoField(UIMediumType_DVD, 1))
-            infoField(UIMediumType_DVD, 1)->setText(strUsage);
-        if (infoField(UIMediumType_DVD, 2))
-            infoField(UIMediumType_DVD, 2)->setText(strID);
-    }
-
-    /* Enable/disable information-panes container: */
-    if (infoContainer(UIMediumType_DVD))
-        infoContainer(UIMediumType_DVD)->setEnabled(pCurrentItem);
-}
-
-void UIMediumManagerWidget::updateInformationFieldsFD()
-{
-    /* Get current floppy medium-item: */
-    UIMediumItem *pCurrentItem = mediumItem(UIMediumType_Floppy);
-
-    /* If current item is not set: */
-    if (!pCurrentItem)
-    {
-        /* Just clear information panes: */
-        for (int i = 0; i < m_fields[tabIndex(UIMediumType_Floppy)].size(); ++i)
-            infoField(UIMediumType_Floppy, i)->clear();
-    }
-    /* If current item is set: */
-    else
-    {
-        /* Update required details: */
-        QString strUsage = pCurrentItem->usage().isNull() ?
-                           formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
-                           formatFieldText(pCurrentItem->usage());
-        const QString strID = pCurrentItem->id();
-        if (infoField(UIMediumType_Floppy, 0))
-            infoField(UIMediumType_Floppy, 0)->setText(formatFieldText(pCurrentItem->location(), true, "end"));
-        if (infoField(UIMediumType_Floppy, 1))
-            infoField(UIMediumType_Floppy, 1)->setText(strUsage);
-        if (infoField(UIMediumType_Floppy, 2))
-            infoField(UIMediumType_Floppy, 2)->setText(strID);
-    }
-
-    /* Enable/disable information-panes container: */
-    if (infoContainer(UIMediumType_Floppy))
-        infoContainer(UIMediumType_Floppy)->setEnabled(pCurrentItem);
 }
 
 UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
@@ -2138,53 +2140,28 @@ UIMediumItem* UIMediumManagerWidget::mediumItem(UIMediumType type) const
     return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
 }
 
-QFrame* UIMediumManagerWidget::infoContainer(UIMediumType type) const
+QFrame *UIMediumManagerWidget::infoContainer(UIMediumType enmType) const
 {
-    /* Determine tab index for passed medium type: */
-    int iIndex = tabIndex(type);
-
-    /* Return information-container for known tab index: */
-    if (iIndex >= 0 && iIndex < m_iTabCount)
-        return m_containers.value(iIndex, 0);
-
-    /* Null by default: */
-    return 0;
+    /* Return information-container for known medium type: */
+    return m_containers.value(enmType, 0);
 }
 
-QLabel* UIMediumManagerWidget::infoLabel(UIMediumType type, int iLabelIndex) const
+QLabel *UIMediumManagerWidget::infoLabel(UIMediumType enmType, int iIndex) const
 {
-    /* Determine tab index for passed medium type: */
-    int iIndex = tabIndex(type);
+    /* Look for corresponding information-label list for known medium type: */
+    const QList<QLabel*> labels = m_labels.value(enmType, QList<QLabel*>());
 
-    /* Look for corresponding information-label list for known tab index: */
-    if (iIndex >= 0 && iIndex < m_iTabCount)
-    {
-        const QList<QLabel*> labels = m_labels.value(iIndex, QList<QLabel*>());
-
-        /* Return information-label for known index: */
-        return labels.value(iLabelIndex, 0);
-    }
-
-    /* Null by default: */
-    return 0;
+    /* Return information-label for known index: */
+    return labels.value(iIndex, 0);
 }
 
-QILabel* UIMediumManagerWidget::infoField(UIMediumType type, int iFieldIndex) const
+QILabel *UIMediumManagerWidget::infoField(UIMediumType enmType, int iIndex) const
 {
-    /* Determine tab index for passed medium type: */
-    int iIndex = tabIndex(type);
+    /* Look for corresponding information-field list for known medium type: */
+    const QList<QILabel*> fields = m_fields.value(enmType, QList<QILabel*>());
 
-    /* Look for corresponding information-field list for known tab index: */
-    if (iIndex >= 0 && iIndex < m_iTabCount)
-    {
-        const QList<QILabel*> fields = m_fields.value(iIndex, QList<QILabel*>());
-
-        /* Return information-field for known index: */
-        return fields.value(iFieldIndex, 0);
-    }
-
-    /* Null by default: */
-    return 0;
+    /* Return information-field for known index: */
+    return fields.value(iIndex, 0);
 }
 
 UIMediumType UIMediumManagerWidget::mediumType(QITreeWidget *pTreeWidget) const
@@ -2348,20 +2325,6 @@ UIMediumItem* UIMediumManagerWidget::toMediumItem(QTreeWidgetItem *pItem)
 {
     /* Cast passed QTreeWidgetItem to UIMediumItem if possible: */
     return pItem && pItem->type() == QITreeWidgetItem::ItemType ? static_cast<UIMediumItem*>(pItem) : 0;
-}
-
-/* static */
-QString UIMediumManagerWidget::formatFieldText(const QString &strText, bool fCompact /* = true */,
-                                         const QString &strElipsis /* = "middle" */)
-{
-    QString compactString = QString("<compact elipsis=\"%1\">").arg(strElipsis);
-    QString strInfo = QString("<nobr>%1%2%3</nobr>")
-                              .arg(fCompact ? compactString : "")
-                              .arg(strText.isEmpty() ?
-                                   UIMediumManager::tr("--", "no info") :
-                                   strText)
-                              .arg(fCompact ? "</compact>" : "");
-    return strInfo;
 }
 
 
