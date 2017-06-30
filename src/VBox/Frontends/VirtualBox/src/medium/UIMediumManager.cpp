@@ -772,31 +772,31 @@ void UIMediumManagerWidget::retranslateUi()
     if (m_pActionCopy)
     {
         m_pActionCopy->setText(UIMediumManager::tr("&Copy..."));
-        m_pActionCopy->setToolTip(m_pActionCopy->text().remove('&') + QString(" (%1)").arg(m_pActionCopy->shortcut().toString()));
-        m_pActionCopy->setStatusTip(UIMediumManager::tr("Copy an existing disk image file"));
+        m_pActionCopy->setToolTip(tr("Copy Disk Image File (%1)").arg(m_pActionCopy->shortcut().toString()));
+        m_pActionCopy->setStatusTip(UIMediumManager::tr("Copy selected disk image file"));
     }
     if (m_pActionRemove)
     {
-        m_pActionRemove->setText(UIMediumManager::tr("R&emove"));
-        m_pActionRemove->setToolTip(m_pActionRemove->text().remove('&') + QString(" (%1)").arg(m_pActionRemove->shortcut().toString()));
-        m_pActionRemove->setStatusTip(UIMediumManager::tr("Remove the selected disk image file"));
+        m_pActionRemove->setText(UIMediumManager::tr("&Remove..."));
+        m_pActionRemove->setToolTip(tr("Remove Disk Image File (%1)").arg(m_pActionRemove->shortcut().toString()));
+        m_pActionRemove->setStatusTip(UIMediumManager::tr("Remove selected disk image file"));
     }
     if (m_pActionRelease)
     {
-        m_pActionRelease->setText(UIMediumManager::tr("Re&lease"));
-        m_pActionRelease->setToolTip(m_pActionRelease->text().remove('&') + QString(" (%1)").arg(m_pActionRelease->shortcut().toString()));
-        m_pActionRelease->setStatusTip(UIMediumManager::tr("Release the selected disk image file by detaching it from the machines"));
+        m_pActionRelease->setText(UIMediumManager::tr("Re&lease..."));
+        m_pActionRelease->setToolTip(tr("Release Disk Image File (%1)").arg(m_pActionRelease->shortcut().toString()));
+        m_pActionRelease->setStatusTip(UIMediumManager::tr("Release selected disk image file by detaching it from machines"));
     }
     if (m_pActionModify)
     {
         m_pActionModify->setText(UIMediumManager::tr("&Modify..."));
-        m_pActionModify->setToolTip(m_pActionModify->text().remove('&') + QString(" (%1)").arg(m_pActionModify->shortcut().toString()));
-        m_pActionModify->setStatusTip(UIMediumManager::tr("Modify the attributes of the selected disk image file"));
+        m_pActionModify->setToolTip(tr("Modify Disk Image File (%1)").arg(m_pActionModify->shortcut().toString()));
+        m_pActionModify->setStatusTip(UIMediumManager::tr("Modify the attributes of selected disk image file"));
     }
     if (m_pActionRefresh)
     {
         m_pActionRefresh->setText(UIMediumManager::tr("Re&fresh"));
-        m_pActionRefresh->setToolTip(m_pActionRefresh->text().remove('&') + QString(" (%1)").arg(m_pActionRefresh->shortcut().toString()));
+        m_pActionRefresh->setToolTip(tr("Refresh Disk Image Files (%1)").arg(m_pActionRefresh->shortcut().toString()));
         m_pActionRefresh->setStatusTip(UIMediumManager::tr("Refresh the list of disk image files"));
     }
 
@@ -1215,7 +1215,7 @@ void UIMediumManagerWidget::prepareActions()
     AssertPtrReturnVoid(m_pActionCopy);
     {
         /* Configure copy-action: */
-        m_pActionCopy->setShortcut(QKeySequence("Ctrl+O"));
+        m_pActionCopy->setShortcut(QKeySequence("Ctrl+C"));
         connect(m_pActionCopy, SIGNAL(triggered()), this, SLOT(sltCopyMedium()));
     }
 
@@ -1224,7 +1224,7 @@ void UIMediumManagerWidget::prepareActions()
     AssertPtrReturnVoid(m_pActionRemove);
     {
         /* Configure remove-action: */
-        m_pActionRemove->setShortcut(QKeySequence(QKeySequence::Delete));
+        m_pActionRemove->setShortcut(QKeySequence("Ctrl+R"));
         connect(m_pActionRemove, SIGNAL(triggered()), this, SLOT(sltRemoveMedium()));
     }
 
