@@ -43,6 +43,9 @@
 #include "DisplayUtils.h"
 #include "MachineImplCloneVM.h"
 #include "AutostartDb.h"
+#ifdef VBOX_WITH_UNATTENDED
+# include "UnattendedImpl.h"
+#endif
 #include "SystemPropertiesImpl.h"
 
 // generated header

@@ -40,9 +40,6 @@
 # include "PerformanceImpl.h"
 # include "ThreadTask.h"
 #endif
-#ifdef VBOX_WITH_UNATTENDED
-# include "UnattendedImpl.h"
-#endif
 
 // generated header
 #include "SchemaDefs.h"
@@ -81,6 +78,9 @@ class SharedFolder;
 class HostUSBDevice;
 class StorageController;
 class SessionMachine;
+#ifdef VBOX_WITH_UNATTENDED
+class Unattended;
+#endif
 
 // Machine class
 ////////////////////////////////////////////////////////////////////////////////
