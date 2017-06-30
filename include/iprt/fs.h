@@ -233,6 +233,8 @@ typedef enum RTFSTYPE
      * limiting the file size (except, perhaps for the 64KB cluster case on
      * non-Windows hosts). */
     RTFSTYPE_FAT,
+    /** Extended File Allocation Table, main target are flash drives. */
+    RTFSTYPE_EXFAT,
 
     /* Solaris: */
     /** Zettabyte File System.  */
