@@ -169,8 +169,8 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
                                         RTNetPrefixToMaskIPv4(pPrefix->PrefixLength, &pInfo->IPNetMask);
                                     }
                                     else
-                                        Log(("collectNetIfInfo: Unexpected IPv4 prefix length of %d\n",
-                                             pPrefix->PrefixLength));
+                                        LogFunc(("Unexpected IPv4 prefix length of %d\n",
+                                                 pPrefix->PrefixLength));
                                 }
                                 break;
                             case AF_INET6:
@@ -182,14 +182,14 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
                                         RTNetPrefixToMaskIPv6(pPrefix->PrefixLength, &pInfo->IPv6NetMask);
                                     }
                                     else
-                                        Log(("collectNetIfInfo: Unexpected IPv6 prefix length of %d\n",
-                                             pPrefix->PrefixLength));
+                                        LogFunc(("Unexpected IPv6 prefix length of %d\n",
+                                                pPrefix->PrefixLength));
                                 }
                                 break;
                         }
                     }
                     if (sizeof(pInfo->MACAddress) != pAdapter->PhysicalAddressLength)
-                        Log(("collectNetIfInfo: Unexpected physical address length: %u\n", pAdapter->PhysicalAddressLength));
+                        LogFunc(("Unexpected physical address length: %u\n", pAdapter->PhysicalAddressLength));
                     else
                         memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
                     pInfo->enmMediumType = NETIF_T_ETHERNET;
@@ -985,8 +985,8 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
             Info.Uuid = *guidIfCopy.raw();
             rc = collectNetIfInfo(name, guidIfCopy, &Info, iDefaultInterface);
             if (RT_FAILURE(rc))
-                LogRel(("vboxNetWinAddComponent: collectNetIfInfo() -> %Rrc\n", rc));
-            Log(("vboxNetWinAddComponent: adding %ls\n", lpszName));
+                LogRelFunc(("collectNetIfInfo() -> %Rrc\n", rc));
+            LogFunc(("adding %ls\n", lpszName));
             /* create a new object and add it to the list */
             ComObjPtr<HostNetworkInterface> iface;
             iface.createObject();
@@ -1001,16 +1001,16 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
             }
             else
             {
-                LogRel(("vboxNetWinAddComponent: HostNetworkInterface::init() -> %Rrc\n", rc));
-                Assert(0);
+                LogRelFunc(("HostNetworkInterface::init() -> %Rrc\n", rc));
+                AssertComRC(rc);
             }
         }
         else
-            LogRel(("vboxNetWinAddComponent: failed to get device instance GUID (0x%x)\n", hr));
+            LogRelFunc(("failed to get device instance GUID (0x%x)\n", hr));
         CoTaskMemFree(lpszName);
     }
     else
-        LogRel(("vboxNetWinAddComponent: failed to get device display name (0x%x)\n", hr));
+        LogRelFunc(("failed to get device display name (0x%x)\n", hr));
 
     return rc;
 }
@@ -1037,9 +1037,9 @@ static int netIfListHostAdapters(INetCfg *pNc, std::list<ComObjPtr<HostNetworkIn
             ULONG uComponentStatus;
             hr = pMpNcc->GetDisplayName(&pwszName);
             if (hr == S_OK)
-                Log(("netIfListHostAdapters: %ls\n", pwszName));
+                LogFunc(("%ls\n", pwszName));
             else
-                LogRel(("netIfListHostAdapters: failed to get device display name (0x%x)\n", hr));
+                LogRelFunc(("failed to get device display name (0x%x)\n", hr));
             hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
             if (hr == S_OK)
             {
@@ -1050,7 +1050,7 @@ static int netIfListHostAdapters(INetCfg *pNc, std::list<ComObjPtr<HostNetworkIn
                     Assert(hr == S_OK);
                     if (hr == S_OK)
                     {
-                        Log(("netIfListHostAdapters: id = %ls\n", pId));
+                        LogFunc(("id = %ls\n", pId));
                         if (!_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                         {
                             vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly, -1);
@@ -1058,11 +1058,11 @@ static int netIfListHostAdapters(INetCfg *pNc, std::list<ComObjPtr<HostNetworkIn
                         CoTaskMemFree(pId);
                     }
                     else
-                        LogRel(("netIfListHostAdapters: failed to get device id (0x%x)\n", hr));
+                        LogRelFunc(("failed to get device id (0x%x)\n", hr));
                 }
             }
             else
-                LogRel(("netIfListHostAdapters: failed to get device status (0x%x)\n", hr));
+                LogRelFunc(("failed to get device status (0x%x)\n", hr));
             pMpNcc->Release();
         }
         Assert(hr == S_OK || hr == S_FALSE);
@@ -1070,7 +1070,7 @@ static int netIfListHostAdapters(INetCfg *pNc, std::list<ComObjPtr<HostNetworkIn
         pEnumComponent->Release();
     }
     else
-        LogRel(("netIfListHostAdapters: EnumComponents error (0x%x)\n", hr));
+        LogRelFunc(("EnumComponents error (0x%x)\n", hr));
 #endif /* #  if defined VBOX_WITH_NETFLT */
     return VINF_SUCCESS;
 }
@@ -1451,7 +1451,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 }
 
 
-#define netIfLog Log
+#define netIfLog LogFunc
 
 struct BoundAdapter
 {
@@ -1468,7 +1468,7 @@ static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdap
     IEnumNetCfgComponent  *pEnumComponent;
 
     if ((hr = pNetCfg->EnumComponents(&GUID_DEVCLASS_NET, &pEnumComponent)) != S_OK)
-        LogRel(("netIfGetUnboundHostOnlyAdapters: failed to enumerate network adapter components (0x%x)\n", hr));
+        LogRelFunc(("failed to enumerate network adapter components (0x%x)\n", hr));
     else
     {
         while ((hr = pEnumComponent->Next(1, &pMiniport, NULL)) == S_OK)
@@ -1478,21 +1478,21 @@ static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdap
             struct BoundAdapter adapter;
             memset(&adapter, 0, sizeof(adapter));
             if ((hr = pMiniport->GetDisplayName(&adapter.pName)) != S_OK)
-                LogRel(("netIfGetUnboundHostOnlyAdapters: failed to get device display name (0x%x)\n", hr));
+                LogRelFunc(("failed to get device display name (0x%x)\n", hr));
             else if ((hr = pMiniport->GetDeviceStatus(&uComponentStatus)) != S_OK)
-                netIfLog(("netIfGetUnboundHostOnlyAdapters: failed to get device status (0x%x)\n", hr));
+                netIfLog(("failed to get device status (0x%x)\n", hr));
             else if (uComponentStatus != 0)
-                netIfLog(("netIfGetUnboundHostOnlyAdapters: wrong device status (0x%x)\n", uComponentStatus));
+                netIfLog(("wrong device status (0x%x)\n", uComponentStatus));
             else if ((hr = pMiniport->GetId(&adapter.pHwId)) != S_OK)
-                LogRel(("netIfGetUnboundHostOnlyAdapters: failed to get device id (0x%x)\n", hr));
+                LogRelFunc(("failed to get device id (0x%x)\n", hr));
             else if (_wcsnicmp(adapter.pHwId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
-                netIfLog(("netIfGetUnboundHostOnlyAdapters: not host-only id = %ls, ignored\n", adapter.pHwId));
+                netIfLog(("not host-only id = %ls, ignored\n", adapter.pHwId));
             else if ((hr = pMiniport->GetInstanceGuid(&guid)) != S_OK)
-                LogRel(("netIfGetUnboundHostOnlyAdapters: failed to get instance id (0x%x)\n", hr));
+                LogRelFunc(("failed to get instance id (0x%x)\n", hr));
             else
             {
                 adapter.guid = *(Guid(guid).raw());
-                netIfLog(("netIfGetUnboundHostOnlyAdapters: guid=%RTuuid, name=%ls id = %ls\n", &adapter.guid, adapter.pName, adapter.pHwId));
+                netIfLog(("guid=%RTuuid, name=%ls id = %ls\n", &adapter.guid, adapter.pName, adapter.pHwId));
                 adapters.push_back(adapter);
                 adapter.pName = adapter.pHwId = NULL; /* do not free, will be done later */
             }
@@ -1506,7 +1506,7 @@ static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdap
 
         pEnumComponent->Release();
     }
-    netIfLog(("netIfGetUnboundHostOnlyAdapters: return\n"));
+    netIfLog(("return\n"));
     return VINF_SUCCESS;
 }
 
@@ -1517,7 +1517,7 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
     LPWSTR               lpszApp;
     HRESULT              hr;
 
-    netIfLog(("netIfGetBoundAdapters: building the list of interfaces\n"));
+    netIfLog(("building the list of interfaces\n"));
     /* we are using the INetCfg API for getting the list of miniports */
     hr = VBoxNetCfgWinQueryINetCfg(&pNetCfg, FALSE,
                        VBOX_APP_NAME,
@@ -1526,25 +1526,25 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
     Assert(hr == S_OK);
     if (hr != S_OK)
     {
-        LogRel(("netIfGetBoundAdapters: failed to query INetCfg (0x%x)\n", hr));
+        LogRelFunc(("failed to query INetCfg (0x%x)\n", hr));
         return hr;
     }
 
     if ((hr = pNetCfg->FindComponent(L"oracle_VBoxNetLwf", &pFilter)) != S_OK
         /* fall back to NDIS5 miniport lookup */
         && (hr = pNetCfg->FindComponent(L"sun_VBoxNetFlt", &pFilter)))
-        LogRel(("netIfGetBoundAdapters: could not find either 'oracle_VBoxNetLwf' or 'sun_VBoxNetFlt' components (0x%x)\n", hr));
+        LogRelFunc(("could not find either 'oracle_VBoxNetLwf' or 'sun_VBoxNetFlt' components (0x%x)\n", hr));
     else
     {
         INetCfgComponentBindings *pFilterBindings;
         if ((pFilter->QueryInterface(IID_INetCfgComponentBindings, (PVOID*)&pFilterBindings)) != S_OK)
-            LogRel(("netIfGetBoundAdapters: failed to query INetCfgComponentBindings (0x%x)\n", hr));
+            LogRelFunc(("failed to query INetCfgComponentBindings (0x%x)\n", hr));
         else
         {
             IEnumNetCfgBindingPath *pEnumBp;
             INetCfgBindingPath     *pBp;
             if ((pFilterBindings->EnumBindingPaths(EBP_BELOW, &pEnumBp)) != S_OK)
-                LogRel(("netIfGetBoundAdapters: failed to enumerate binding paths (0x%x)\n", hr));
+                LogRelFunc(("failed to enumerate binding paths (0x%x)\n", hr));
             else
             {
                 pEnumBp->Reset();
@@ -1555,12 +1555,12 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                     if (pBp->IsEnabled() != S_OK)
                     {
                         /** @todo some id of disabled path could be useful. */
-                        netIfLog(("netIfGetBoundAdapters: INetCfgBindingPath is disabled (0x%x)\n", hr));
+                        netIfLog(("INetCfgBindingPath is disabled (0x%x)\n", hr));
                         pBp->Release();
                         continue;
                     }
                     if ((pBp->EnumBindingInterfaces(&pEnumBi)) != S_OK)
-                        LogRel(("netIfGetBoundAdapters: failed to enumerate binding interfaces (0x%x)\n", hr));
+                        LogRelFunc(("failed to enumerate binding interfaces (0x%x)\n", hr));
                     else
                     {
                         hr = pEnumBi->Reset();
@@ -1568,39 +1568,39 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                         {
                             INetCfgComponent *pAdapter;
                             if ((hr = pBi->GetLowerComponent(&pAdapter)) != S_OK)
-                                LogRel(("netIfGetBoundAdapters: failed to get lower component (0x%x)\n", hr));
+                                LogRelFunc(("failed to get lower component (0x%x)\n", hr));
                             else
                             {
                                 LPWSTR pwszName = NULL;
                                 if ((hr = pAdapter->GetDisplayName(&pwszName)) != S_OK)
-                                    LogRel(("netIfGetBoundAdapters: failed to get display name (0x%x)\n", hr));
+                                    LogRelFunc(("failed to get display name (0x%x)\n", hr));
                                 else
                                 {
                                     ULONG uStatus;
                                     DWORD dwChars;
                                     if ((hr = pAdapter->GetDeviceStatus(&uStatus)) != S_OK)
-                                        netIfLog(("netIfGetBoundAdapters: %ls: failed to get device status (0x%x)\n",
+                                        netIfLog(("%ls: failed to get device status (0x%x)\n",
                                                   pwszName, hr));
                                     else if ((hr = pAdapter->GetCharacteristics(&dwChars)) != S_OK)
-                                        netIfLog(("netIfGetBoundAdapters: %ls: failed to get device characteristics (0x%x)\n",
+                                        netIfLog(("%ls: failed to get device characteristics (0x%x)\n",
                                                   pwszName, hr));
                                     else if (uStatus != 0)
-                                        netIfLog(("netIfGetBoundAdapters: %ls: wrong status 0x%x\n",
+                                        netIfLog(("%ls: wrong status 0x%x\n",
                                                   pwszName, uStatus));
                                     else if (dwChars & NCF_HIDDEN)
-                                        netIfLog(("netIfGetBoundAdapters: %ls: wrong characteristics 0x%x\n",
+                                        netIfLog(("%ls: wrong characteristics 0x%x\n",
                                                   pwszName, dwChars));
                                     else
                                     {
                                         GUID guid;
                                         LPWSTR pwszHwId = NULL;
                                         if ((hr = pAdapter->GetId(&pwszHwId)) != S_OK)
-                                            LogRel(("netIfGetBoundAdapters: %ls: failed to get hardware id (0x%x)\n",
+                                            LogRelFunc(("%ls: failed to get hardware id (0x%x)\n",
                                                       pwszName, hr));
                                         else if (!_wcsnicmp(pwszHwId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
-                                            netIfLog(("netIfGetBoundAdapters: host-only adapter %ls, ignored\n", pwszName));
+                                            netIfLog(("host-only adapter %ls, ignored\n", pwszName));
                                         else if ((hr = pAdapter->GetInstanceGuid(&guid)) != S_OK)
-                                            LogRel(("netIfGetBoundAdapters: %ls: failed to get instance GUID (0x%x)\n",
+                                            LogRelFunc(("%ls: failed to get instance GUID (0x%x)\n",
                                                       pwszName, hr));
                                         else
                                         {
@@ -1609,7 +1609,7 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                                             adapter.pHwId    = pwszHwId;
                                             adapter.guid     = *(Guid(guid).raw());
                                             adapter.pAdapter = NULL;
-                                            netIfLog(("netIfGetBoundAdapters: guid=%RTuuid, name=%ls, hwid=%ls, status=%x, chars=%x\n",
+                                            netIfLog(("guid=%RTuuid, name=%ls, hwid=%ls, status=%x, chars=%x\n",
                                                       &adapter.guid, pwszName, pwszHwId, uStatus, dwChars));
                                             boundAdapters.push_back(adapter);
                                             pwszName = pwszHwId = NULL; /* do not free, will be done later */
@@ -1649,6 +1649,10 @@ static HRESULT netIfGetBoundAdaptersFallback(std::list<BoundAdapter> &boundAdapt
 }
 #endif
 
+/**
+ * Walk through the list of adpater addresses and extract the required
+ * information. XP and older don't not have the OnLinkPrefixLength field.
+ */
 static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES pAdapter)
 {
     PIP_ADAPTER_UNICAST_ADDRESS pAddr;
@@ -1689,7 +1693,7 @@ static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES
                 if (!uPrefixLenV4)
                 {
                     ULONG ip = ((PSOCKADDR_IN)(pPrefix->Address.lpSockaddr))->sin_addr.s_addr;
-                    netIfLog(("netIfFillInfoWithAddressesXp: prefix=%RTnaipv4 len=%u\n", ip, pPrefix->PrefixLength));
+                    netIfLog(("prefix=%RTnaipv4 len=%u\n", ip, pPrefix->PrefixLength));
                     if (   pPrefix->PrefixLength < sizeof(pInfo->IPNetMask) * 8
                         && pPrefix->PrefixLength > 0
                         && (ip & 0xF0) < 224)
@@ -1698,7 +1702,7 @@ static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES
                         RTNetPrefixToMaskIPv4(pPrefix->PrefixLength, &pInfo->IPNetMask);
                     }
                     else
-                        netIfLog(("netIfFillInfoWithAddressesXp: Unexpected IPv4 prefix length of %d\n",
+                        netIfLog(("Unexpected IPv4 prefix length of %d\n",
                              pPrefix->PrefixLength));
                 }
                 break;
@@ -1706,8 +1710,7 @@ static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES
                 if (!uPrefixLenV6)
                 {
                     PBYTE ipv6 = ((PSOCKADDR_IN6)(pPrefix->Address.lpSockaddr))->sin6_addr.s6_addr;
-                    netIfLog(("netIfFillInfoWithAddressesXp: prefix=%RTnaipv6 len=%u\n",
-                              ipv6, pPrefix->PrefixLength));
+                    netIfLog(("prefix=%RTnaipv6 len=%u\n", ipv6, pPrefix->PrefixLength));
                     if (   pPrefix->PrefixLength < sizeof(pInfo->IPv6NetMask) * 8
                         && pPrefix->PrefixLength > 0
                         && ipv6[0] != 0xFF)
@@ -1716,24 +1719,25 @@ static void netIfFillInfoWithAddressesXp(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES
                         RTNetPrefixToMaskIPv6(pPrefix->PrefixLength, &pInfo->IPv6NetMask);
                     }
                     else
-                        netIfLog(("netIfFillInfoWithAddressesXp: Unexpected IPv6 prefix length of %d\n",
-                             pPrefix->PrefixLength));
+                        netIfLog(("Unexpected IPv6 prefix length of %d\n", pPrefix->PrefixLength));
                 }
                 break;
         }
     }
-    netIfLog(("netIfFillInfoWithAddressesXp: %RTnaipv4/%u\n",
-              pInfo->IPAddress, uPrefixLenV4));
-    netIfLog(("netIfFillInfoWithAddressesXp: %RTnaipv6/%u\n",
-              &pInfo->IPv6Address, uPrefixLenV6));
+    netIfLog(("%RTnaipv4/%u\n", pInfo->IPAddress, uPrefixLenV4));
+    netIfLog(("%RTnaipv6/%u\n", &pInfo->IPv6Address, uPrefixLenV6));
 }
 
-static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES pAdapter)
+/**
+ * Walk through the list of adpater addresses and extract the required
+ * information. XP and older don't not have the OnLinkPrefixLength field.
+ */
+static void netIfFillInfoWithAddressesVista(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES pAdapter)
 {
     PIP_ADAPTER_UNICAST_ADDRESS pAddr;
 
     if (sizeof(pInfo->MACAddress) != pAdapter->PhysicalAddressLength)
-        netIfLog(("netIfFillInfoWithAddresses: Unexpected physical address length: %u\n", pAdapter->PhysicalAddressLength));
+        netIfLog(("Unexpected physical address length: %u\n", pAdapter->PhysicalAddressLength));
     else
         memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
 
@@ -1741,12 +1745,6 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
     bool fIPv6Found = false;
     for (pAddr = pAdapter->FirstUnicastAddress; pAddr; pAddr = pAddr->Next)
     {
-        if (pAddr->Length < sizeof(IP_ADAPTER_UNICAST_ADDRESS_LH))
-        {
-            netIfLog(("netIfFillInfoWithAddresses: unicast address is too small (%u < %u), fall back to XP implementation\n",
-                      pAddr->Length, sizeof(IP_ADAPTER_UNICAST_ADDRESS_LH)));
-            return netIfFillInfoWithAddressesXp(pInfo, pAdapter);
-        }
         PIP_ADAPTER_UNICAST_ADDRESS_LH pAddrLh = (PIP_ADAPTER_UNICAST_ADDRESS_LH)pAddr;
         switch (pAddrLh->Address.lpSockaddr->sa_family)
         {
@@ -1758,7 +1756,7 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
                            &((struct sockaddr_in *)pAddrLh->Address.lpSockaddr)->sin_addr.s_addr,
                            sizeof(pInfo->IPAddress));
                     if (pAddrLh->OnLinkPrefixLength > 32)
-                        netIfLog(("netIfFillInfoWithAddresses: Invalid IPv4 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
+                        netIfLog(("Invalid IPv4 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
                     else
                         RTNetPrefixToMaskIPv4(pAddrLh->OnLinkPrefixLength, &pInfo->IPNetMask);
                 }
@@ -1771,7 +1769,7 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
                            ((struct sockaddr_in6 *)pAddrLh->Address.lpSockaddr)->sin6_addr.s6_addr,
                            sizeof(pInfo->IPv6Address));
                     if (pAddrLh->OnLinkPrefixLength > 128)
-                        netIfLog(("netIfFillInfoWithAddresses: Invalid IPv6 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
+                        netIfLog(("Invalid IPv6 prefix length of %d\n", pAddrLh->OnLinkPrefixLength));
                     else
                         RTNetPrefixToMaskIPv6(pAddrLh->OnLinkPrefixLength, &pInfo->IPv6NetMask);
                 }
@@ -1783,13 +1781,13 @@ static void netIfFillInfoWithAddresses(PNETIFINFO pInfo, PIP_ADAPTER_ADDRESSES p
     {
         int iPrefixIPv4 = -1;
         RTNetMaskToPrefixIPv4(&pInfo->IPNetMask, &iPrefixIPv4);
-        netIfLog(("netIfFillInfoWithAddresses: %RTnaipv4/%u\n", pInfo->IPAddress, iPrefixIPv4));
+        netIfLog(("%RTnaipv4/%u\n", pInfo->IPAddress, iPrefixIPv4));
     }
     if (fIPv6Found)
     {
         int iPrefixIPv6 = -1;
         RTNetMaskToPrefixIPv6(&pInfo->IPv6NetMask, &iPrefixIPv6);
-        netIfLog(("netIfFillInfoWithAddresses: %RTnaipv6/%u\n", &pInfo->IPv6Address, iPrefixIPv6));
+        netIfLog(("%RTnaipv6/%u\n", &pInfo->IPv6Address, iPrefixIPv6));
     }
 }
 
@@ -1820,7 +1818,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
     }
     if (dwRc != NO_ERROR)
     {
-        LogRel(("NetIfList: GetAdaptersAddresses failed (0x%x)\n", dwRc));
+        LogRelFunc(("GetAdaptersAddresses failed (0x%x)\n", dwRc));
         hr = HRESULT_FROM_WIN32(dwRc);
     }
     else
@@ -1832,7 +1830,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
             hr = netIfGetBoundAdaptersFallback(boundAdapters);
 #endif
         if (hr != S_OK)
-            LogRel(("NetIfList: netIfGetBoundAdapters failed (0x%x)\n", hr));
+            LogRelFunc(("netIfGetBoundAdapters failed (0x%x)\n", hr));
         else
         {
             PIP_ADAPTER_ADDRESSES pAdapter;
@@ -1842,12 +1840,12 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                 char *pszUuid = RTStrDup(pAdapter->AdapterName);
                 if (!pszUuid)
                 {
-                    LogRel(("NetIfList: out of memory\n"));
+                    LogRelFunc(("out of memory\n"));
                     break;
                 }
                 size_t len = strlen(pszUuid) - 1;
                 if (pszUuid[0] != '{' || pszUuid[len] != '}')
-                    LogRel(("NetIfList: ignoring invalid GUID %s\n", pAdapter->AdapterName));
+                    LogRelFunc(("ignoring invalid GUID %s\n", pAdapter->AdapterName));
                 else
                 {
                     std::list<BoundAdapter>::iterator it;
@@ -1876,7 +1874,14 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                     info.enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
                     info.bIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
                     info.bDhcpEnabled = pAdapter->Flags & IP_ADAPTER_DHCP_ENABLED;
-                    netIfFillInfoWithAddresses(&info, pAdapter);
+                    OSVERSIONINFOEX OSInfoEx;
+                    RT_ZERO(OSInfoEx);
+                    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+                    if (   GetVersionEx((LPOSVERSIONINFO)&OSInfoEx)
+                        && OSInfoEx.dwMajorVersion < 6)
+                        netIfFillInfoWithAddressesXp(&info, pAdapter);
+                    else
+                        netIfFillInfoWithAddressesVista(&info, pAdapter);
                 }
                 else
                     info.enmStatus = NETIF_S_DOWN;
@@ -1891,7 +1896,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                         enmType == HostNetworkInterfaceType_HostOnly ? "host-only" : "unknown"));
                 int rc = iface->init((*it).pName, enmType, &info);
                 if (FAILED(rc))
-                    LogRel(("NetIfList: HostNetworkInterface::init() -> %Rrc\n", rc));
+                    LogRelFunc(("HostNetworkInterface::init() -> %Rrc\n", rc));
                 else
                 {
                     if (info.bIsDefault)
