@@ -15,6 +15,8 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+# X-Start-Before is a Debian Addition which we use when converting to
+# a systemd unit.  X-Service-Type is our own invention, also for systemd.
 
 # chkconfig: 345 10 90
 # description: VirtualBox Linux Additions kernel modules
@@ -25,6 +27,8 @@
 # Required-Stop:
 # Default-Start:  2 3 4 5
 # Default-Stop:   0 1 6
+# X-Start-Before: display-manager
+# X-Service-Type: oneshot
 # Description:    VirtualBox Linux Additions kernel modules
 ### END INIT INFO
 
@@ -249,20 +253,18 @@ start()
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations
     rm -f /etc/ld.so.conf.d/00vboxvideo.conf
+    rm -Rf /var/lib/VBoxGuestAdditions/lib
     if /usr/bin/VBoxClient --check3d 2>/dev/null; then
         mkdir -p /var/lib/VBoxGuestAdditions/lib
         ln -sf "${INSTALL_DIR}/lib/VBoxOGL.so" /var/lib/VBoxGuestAdditions/lib/libGL.so.1
-        ln -sf "${INSTALL_DIR}/lib/VBoxEGL.so" /var/lib/VBoxGuestAdditions/lib/libEGL.so.1
         # SELinux for the OpenGL libraries, so that gdm can load them during the
         # acceleration support check.  This prevents an "Oh no, something has gone
         # wrong!" error when starting EL7 guests.
         if test -e /etc/selinux/config; then
             if command -v semanage > /dev/null; then
                 semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
-                semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
             fi
             chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
-            chcon -h  -t lib_t  "/var/lib/VBoxGuestAdditions/lib/libEGL.so.1"
         fi
         echo "/var/lib/VBoxGuestAdditions/lib" > /etc/ld.so.conf.d/00vboxvideo.conf
     fi

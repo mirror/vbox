@@ -124,19 +124,23 @@ systemd_wrap_init_script()
         { echo "$self: systemd unit path not found" >&2 && return 1; }
     description=`sed -n 's/# *Short-Description: *\(.*\)/\1/p' "${script}"`
     required=`sed -n 's/# *Required-Start: *\(.*\)/\1/p' "${script}" | sed 's/\$[a-z]*//'`
+    startbefore=`sed -n 's/# *X-Start-Before: *\(.*\)/\1/p' "${script}" | sed 's/\$[a-z]*//'`
     runlevels=`sed -n 's/# *Default-Start: *\(.*\)/\1/p' "${script}"`
-    before=`for i in ${runlevels}; do printf "runlevel${i}.target "; done`
+    servicetype=`sed -n 's/# *X-Service-Type: *\(.*\)/\1/p' "${script}"`
+    test -z "${servicetype}" && servicetype="forking"
+    targets=`for i in ${runlevels}; do printf "runlevel${i}.target "; done`
+    before=`for i in ${startbefore}; do printf "${i}.service "; done`
     after=`for i in ${required}; do printf "${i}.service "; done`
     cat > "${unit_path}/${name}.service" << EOF
 [Unit]
 SourcePath=${script}
 Description=${description}
-Before=${before}shutdown.target
+Before=${targets}shutdown.target ${before}
 After=${after}
 Conflicts=shutdown.target
 
 [Service]
-Type=forking
+Type=${servicetype}
 Restart=no
 TimeoutSec=5min
 IgnoreSIGPIPE=no
