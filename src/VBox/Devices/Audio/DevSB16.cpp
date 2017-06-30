@@ -2165,6 +2165,7 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     CfgHost.enmDir          = PDMAUDIODIR_OUT;
     CfgHost.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
+    CfgHost.enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
     CfgHost.Props.uHz       = pCfg->Props.uHz;
     CfgHost.Props.cChannels = pCfg->Props.cChannels;
