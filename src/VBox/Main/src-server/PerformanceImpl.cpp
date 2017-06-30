@@ -528,8 +528,7 @@ void PerformanceCollector::registerBaseMetric(pm::BaseMetric *baseMetric)
     if (!SUCCEEDED(autoCaller.rc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Log7(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__,
-          (void *)baseMetric->getObject(), baseMetric->getName()));
+    Log7Func(("{%p}: obj=%p name=%s\n", this, (void *)baseMetric->getObject(), baseMetric->getName()));
     m.baseMetrics.push_back(baseMetric);
     //LogFlowThisFuncLeave();
 }
@@ -541,7 +540,7 @@ void PerformanceCollector::registerMetric(pm::Metric *metric)
     if (!SUCCEEDED(autoCaller.rc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Log7(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)metric->getObject(), metric->getName()));
+    Log7Func(("{%p}: obj=%p name=%s\n", this, (void *)metric->getObject(), metric->getName()));
     m.metrics.push_back(metric);
     //LogFlowThisFuncLeave();
 }
@@ -563,8 +562,7 @@ void PerformanceCollector::unregisterBaseMetricsFor(const ComPtr<IUnknown> &aObj
             (*it)->unregister();
             ++n;
         }
-    Log7(("{%p} " LOG_FN_FMT ": obj=%p, name=%s, marked %d metrics\n",
-          this, __PRETTY_FUNCTION__, (void *)aObject, name.c_str(), n));
+    Log7Func(("{%p}: obj=%p, name=%s, marked %d metrics\n", this, (void *)aObject, name.c_str(), n));
     //LogFlowThisFuncLeave();
 }
 
@@ -577,7 +575,7 @@ void PerformanceCollector::unregisterMetricsFor(const ComPtr<IUnknown> &aObject,
     pm::Filter filter(name, aObject);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Log7(("{%p} " LOG_FN_FMT ": obj=%p, name=%s\n", this, __PRETTY_FUNCTION__, (void *)aObject, name.c_str()));
+    Log7Func(("{%p}: obj=%p, name=%s\n", this, (void *)aObject, name.c_str()));
     MetricList::iterator it;
     for (it = m.metrics.begin(); it != m.metrics.end();)
         if (filter.match((*it)->getObject(), (*it)->getName()))
@@ -665,7 +663,7 @@ DECLCALLBACK(void) PerformanceCollector::staticSamplerCallback(RTTIMERLR hTimerL
  */
 void PerformanceCollector::samplerCallback(uint64_t iTick)
 {
-    Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
+    Log4Func(("{%p}: ENTER\n", this));
     /* No locking until stage 3!*/
 
     pm::CollectorHints hints;
@@ -682,7 +680,7 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
 
     if (toBeCollected.size() == 0)
     {
-        Log4(("{%p} " LOG_FN_FMT ": LEAVE (nothing to collect)\n", this, __PRETTY_FUNCTION__));
+        Log4Func(("{%p}: LEAVE (nothing to collect)\n", this));
         return;
     }
 
@@ -700,10 +698,10 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
      * again to see if any base metrics are marked as unregistered.
      * Those should be destroyed now.
      */
-    Log7(("{%p} " LOG_FN_FMT ": before remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__, toBeCollected.size()));
+    Log7Func(("{%p}: before remove_if: toBeCollected.size()=%d\n", this, toBeCollected.size()));
     toBeCollected.remove_if(std::mem_fun(&pm::BaseMetric::isUnregistered));
-    Log7(("{%p} " LOG_FN_FMT ": after remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__, toBeCollected.size()));
-    Log7(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
+    Log7Func(("{%p}: after remove_if: toBeCollected.size()=%d\n", this, toBeCollected.size()));
+    Log7Func(("{%p}: before remove_if: m.baseMetrics.size()=%d\n", this, m.baseMetrics.size()));
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
         if ((*it)->isUnregistered())
         {
@@ -712,7 +710,7 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
         }
         else
             ++it;
-    Log7(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
+    Log7Func(("{%p}: after remove_if: m.baseMetrics.size()=%d\n", this, m.baseMetrics.size()));
     /*
      * Now when we have destroyed all base metrics that could
      * try to pull data from unregistered CollectorGuest objects
@@ -723,7 +721,7 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
     /* Finally, collect the data */
     std::for_each(toBeCollected.begin(), toBeCollected.end(),
                   std::mem_fun(&pm::BaseMetric::collect));
-    Log4(("{%p} " LOG_FN_FMT ": LEAVE\n", this, __PRETTY_FUNCTION__));
+    Log4Func(("{%p}: LEAVE\n", this));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

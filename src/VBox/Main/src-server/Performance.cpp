@@ -114,14 +114,14 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
     RTMpGetOnlineSet(&OnlineSet);
     for (RTCPUID iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
     {
-        Log7(("{%p} " LOG_FN_FMT ": Checking if CPU %d is member of online set...\n", this, __PRETTY_FUNCTION__, (int)iCpu));
+        Log7Func(("{%p}: Checking if CPU %d is member of online set...\n", this, (int)iCpu));
         if (RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
         {
-            Log7(("{%p} " LOG_FN_FMT ": Getting frequency for CPU %d...\n", this, __PRETTY_FUNCTION__, (int)iCpu));
+            Log7Func(("{%p}: Getting frequency for CPU %d...\n", this, (int)iCpu));
             uint32_t uMHz = RTMpGetCurFrequency(RTMpCpuIdFromSetIndex(iCpu));
             if (uMHz != 0)
             {
-                Log7(("{%p} " LOG_FN_FMT ": CPU %d %u MHz\n", this, __PRETTY_FUNCTION__, (int)iCpu, uMHz));
+                Log7Func(("{%p}: CPU %d %u MHz\n", this, (int)iCpu, uMHz));
                 u64TotalMHz += uMHz;
                 cCpus++;
             }
@@ -193,7 +193,7 @@ void CGRQEnable::debugPrint(void *aObject, const char *aFunction, const char *aT
     NOREF(aObject);
     NOREF(aFunction);
     NOREF(aText);
-    Log7(("{%p} " LOG_FN_FMT ": CGRQEnable(mask=0x%x) %s\n", aObject, aFunction, mMask, aText));
+    Log7((LOG_FN_FMT ": {%p}: CGRQEnable(mask=0x%x) %s\n", aObject, aFunction, mMask, aText));
 }
 
 HRESULT CGRQDisable::execute()
@@ -207,7 +207,7 @@ void CGRQDisable::debugPrint(void *aObject, const char *aFunction, const char *a
     NOREF(aObject);
     NOREF(aFunction);
     NOREF(aText);
-    Log7(("{%p} " LOG_FN_FMT ": CGRQDisable(mask=0x%x) %s\n", aObject, aFunction, mMask, aText));
+    Log7((LOG_FN_FMT ": {%p}: CGRQDisable(mask=0x%x) %s\n", aObject, aFunction, mMask, aText));
 }
 
 HRESULT CGRQAbort::execute()
@@ -220,7 +220,7 @@ void CGRQAbort::debugPrint(void *aObject, const char *aFunction, const char *aTe
     NOREF(aObject);
     NOREF(aFunction);
     NOREF(aText);
-    Log7(("{%p} " LOG_FN_FMT ": CGRQAbort %s\n", aObject, aFunction, aText));
+    Log7((LOG_FN_FMT ": {%p}: CGRQAbort %s\n", aObject, aFunction, aText));
 }
 
 CollectorGuest::CollectorGuest(Machine *machine, RTPROCESS process) :
@@ -259,8 +259,8 @@ int CollectorGuest::enableVMMStats(bool mCollectVMMStats)
 
         /* enable statistics collection; this is a remote call (!) */
         ret = directControl->EnableVMMStatistics(mCollectVMMStats);
-        Log7(("{%p} " LOG_FN_FMT ": %sable VMM stats (%s)\n",
-              this, __PRETTY_FUNCTION__, mCollectVMMStats ? "En" : "Dis", SUCCEEDED(ret) ? "success" : "failed"));
+        Log7Func(("{%p}: %sable VMM stats (%s)\n",
+              this, mCollectVMMStats ? "En" : "Dis", SUCCEEDED(ret) ? "success" : "failed"));
     }
 
     return ret;
@@ -311,8 +311,8 @@ HRESULT CollectorGuest::enableInternal(ULONG mask)
         if (ret == S_OK)
         {
             ret = mGuest->COMSETTER(StatisticsUpdateInterval)(1 /* 1 sec */);
-            Log7(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 1 sec (%s)\n",
-                  this, __PRETTY_FUNCTION__, SUCCEEDED(ret) ? "success" : "failed"));
+            Log7Func(("{%p}: Set guest statistics update interval to 1 sec (%s)\n",
+                  this, SUCCEEDED(ret) ? "success" : "failed"));
         }
     }
     if ((mask & VMSTATS_VMM_RAM) == VMSTATS_VMM_RAM)
@@ -335,8 +335,8 @@ int CollectorGuest::disableInternal(ULONG mask)
         Assert(mGuest && mConsole);
         HRESULT ret = mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
         NOREF(ret);
-        Log7(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 0 sec (%s)\n",
-              this, __PRETTY_FUNCTION__, SUCCEEDED(ret) ? "success" : "failed"));
+        Log7Func(("{%p}: Set guest statistics update interval to 0 sec (%s)\n",
+              this, SUCCEEDED(ret) ? "success" : "failed"));
         invalidate(VMSTATS_ALL);
     }
 
@@ -351,7 +351,7 @@ int CollectorGuest::enqueueRequest(CollectorGuestRequest *aRequest)
         return mManager->enqueueRequest(aRequest);
     }
 
-    Log7(("{%p} " LOG_FN_FMT ": Attempted enqueue guest request when mManager is null\n", this, __PRETTY_FUNCTION__));
+    Log7Func(("{%p}: Attempted enqueue guest request when mManager is null\n", this));
     return E_POINTER;
 }
 
@@ -401,7 +401,7 @@ CollectorGuestManager::CollectorGuestManager()
                             this, 0, RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE,
                             "CGMgr");
     NOREF(rc);
-    Log7(("{%p} " LOG_FN_FMT ": RTThreadCreate returned %Rrc (mThread=%p)\n", this, __PRETTY_FUNCTION__, rc, mThread));
+    Log7Func(("{%p}: RTThreadCreate returned %Rrc (mThread=%p)\n", this, rc, mThread));
 }
 
 CollectorGuestManager::~CollectorGuestManager()
@@ -412,9 +412,9 @@ CollectorGuestManager::~CollectorGuestManager()
     if (SUCCEEDED(rc))
     {
         /* We wait only if we were able to put the abort request to a queue */
-        Log7(("{%p} " LOG_FN_FMT ": Waiting for CGM request processing thread to stop...\n", this, __PRETTY_FUNCTION__));
+        Log7Func(("{%p}: Waiting for CGM request processing thread to stop...\n", this));
         rc = RTThreadWait(mThread, 1000 /* 1 sec */, &rcThread);
-        Log7(("{%p} " LOG_FN_FMT ": RTThreadWait returned %u (thread exit code: %u)\n", this, __PRETTY_FUNCTION__, rc, rcThread));
+        Log7Func(("{%p}: RTThreadWait returned %u (thread exit code: %u)\n", this, rc, rcThread));
     }
 }
 
@@ -428,14 +428,14 @@ void CollectorGuestManager::registerGuest(CollectorGuest* pGuest)
      */
     if (!mVMMStatsProvider)
         mVMMStatsProvider = pGuest;
-    Log7(("{%p} " LOG_FN_FMT ": Registered guest=%p provider=%p\n", this, __PRETTY_FUNCTION__, pGuest, mVMMStatsProvider));
+    Log7Func(("{%p}: Registered guest=%p provider=%p\n", this, pGuest, mVMMStatsProvider));
 }
 
 void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
 {
     int rc = S_OK;
 
-    Log7(("{%p} " LOG_FN_FMT ": About to unregister guest=%p provider=%p\n", this, __PRETTY_FUNCTION__, pGuest, mVMMStatsProvider));
+    Log7Func(("{%p}: About to unregister guest=%p provider=%p\n", this, pGuest, mVMMStatsProvider));
     //mGuests.remove(pGuest); => destroyUnregistered()
     pGuest->unregister();
     if (pGuest == mVMMStatsProvider)
@@ -484,7 +484,7 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
             }
         }
     }
-    Log7(("{%p} " LOG_FN_FMT ": LEAVE new provider=%p\n", this, __PRETTY_FUNCTION__, mVMMStatsProvider));
+    Log7Func((": LEAVE new provider=%p\n", this, mVMMStatsProvider));
 }
 
 void CollectorGuestManager::destroyUnregistered()
@@ -496,8 +496,8 @@ void CollectorGuestManager::destroyUnregistered()
         {
             delete *it;
             it = mGuests.erase(it);
-            Log7(("{%p} " LOG_FN_FMT ": Number of guests after erasing unregistered is %d\n",
-                  this, __PRETTY_FUNCTION__, mGuests.size()));
+            Log7Func(("{%p}: Number of guests after erasing unregistered is %d\n",
+                     this, mGuests.size()));
         }
         else
             ++it;
@@ -522,12 +522,12 @@ int CollectorGuestManager::enqueueRequest(CollectorGuestRequest *aRequest)
          * the previous request. Half a second is an eternity for processes
          * and is barely noticable by humans.
          */
-        Log7(("{%p} " LOG_FN_FMT ": Suspecting %s is stalled. Waiting for .5 sec...\n",
-              this, __PRETTY_FUNCTION__, aRequest->getGuest()->getVMName().c_str()));
+        Log7Func(("{%p}: Suspecting %s is stalled. Waiting for .5 sec...\n",
+              this, aRequest->getGuest()->getVMName().c_str()));
         RTThreadSleep(500 /* ms */);
         if (aRequest->getGuest() == mGuestBeingCalled) {
-            Log7(("{%p} " LOG_FN_FMT ": Request processing stalled for %s\n",
-                  this, __PRETTY_FUNCTION__, aRequest->getGuest()->getVMName().c_str()));
+            Log7Func(("{%p}: Request processing stalled for %s\n",
+                     this, aRequest->getGuest()->getVMName().c_str()));
             /* Request execution got stalled for this guest -- report an error */
             return E_FAIL;
         }
@@ -544,7 +544,7 @@ DECLCALLBACK(int) CollectorGuestManager::requestProcessingThread(RTTHREAD /* aTh
 
     HRESULT rc = S_OK;
 
-    Log7(("{%p} " LOG_FN_FMT ": Starting request processing loop...\n", mgr, __PRETTY_FUNCTION__));
+    Log7Func(("{%p}: Starting request processing loop...\n", mgr));
     while ((pReq = mgr->mQueue.pop()) != NULL)
     {
 #ifdef DEBUG
@@ -557,9 +557,9 @@ DECLCALLBACK(int) CollectorGuestManager::requestProcessingThread(RTTHREAD /* aTh
         if (rc == E_ABORT)
             break;
         if (FAILED(rc))
-            Log7(("{%p} " LOG_FN_FMT ": request::execute returned %u\n", mgr, __PRETTY_FUNCTION__, rc));
+            Log7Func(("{%p}: request::execute returned %u\n", mgr, rc));
     }
-    Log7(("{%p} " LOG_FN_FMT ": Exiting request processing loop... rc=%u\n", mgr, __PRETTY_FUNCTION__, rc));
+    Log7Func(("{%p}: Exiting request processing loop... rc=%u\n", mgr, rc));
 
     return VINF_SUCCESS;
 }
@@ -574,8 +574,8 @@ bool BaseMetric::collectorBeat(uint64_t nowAt)
         if (mLastSampleTaken == 0)
         {
             mLastSampleTaken = nowAt;
-            Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n",
-                        this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
+            Log4Func(("{%p}: Collecting %s for obj(%p)...\n",
+                      this, getName(), (void *)mObject));
             return true;
         }
         /*
@@ -591,12 +591,12 @@ bool BaseMetric::collectorBeat(uint64_t nowAt)
              * should have taken the measurement at.
              */
             mLastSampleTaken += mPeriod * 1000;
-            Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n",
-                        this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
+            Log4Func(("{%p}: Collecting %s for obj(%p)...\n",
+                        this, getName(), (void *)mObject));
             return true;
         }
-        Log4(("{%p} " LOG_FN_FMT ": Enabled but too early to collect %s for obj(%p)\n",
-              this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
+        Log4Func(("{%p}: Enabled but too early to collect %s for obj(%p)\n",
+                 this, getName(), (void *)mObject));
     }
     return false;
 }
@@ -955,8 +955,8 @@ void HostRamVmm::collect()
     CollectorGuest *provider = mCollectorGuestManager->getVMMStatsProvider();
     if (provider)
     {
-        Log7(("{%p} " LOG_FN_FMT ": provider=%p enabled=%RTbool valid=%RTbool...\n",
-              this, __PRETTY_FUNCTION__, provider, provider->isEnabled(), provider->isValid(VMSTATS_VMM_RAM) ));
+        Log7Func(("{%p}: provider=%p enabled=%RTbool valid=%RTbool...\n",
+              this, provider, provider->isEnabled(), provider->isValid(VMSTATS_VMM_RAM) ));
         if (provider->isValid(VMSTATS_VMM_RAM))
         {
             /* Provider is ready, get updated stats */
@@ -979,8 +979,8 @@ void HostRamVmm::collect()
         mBalloonedCurrent = 0;
         mSharedCurrent    = 0;
     }
-    Log7(("{%p} " LOG_FN_FMT ": mAllocCurrent=%u mFreeCurrent=%u mBalloonedCurrent=%u mSharedCurrent=%u\n",
-          this, __PRETTY_FUNCTION__, mAllocCurrent, mFreeCurrent, mBalloonedCurrent, mSharedCurrent));
+    Log7Func(("{%p}: mAllocCurrent=%u mFreeCurrent=%u mBalloonedCurrent=%u mSharedCurrent=%u\n",
+             this, mAllocCurrent, mFreeCurrent, mBalloonedCurrent, mSharedCurrent));
     mAllocVMM->put(mAllocCurrent);
     mFreeVMM->put(mFreeCurrent);
     mBalloonVMM->put(mBalloonedCurrent);

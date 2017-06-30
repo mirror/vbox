@@ -12407,7 +12407,7 @@ void Machine::i_registerMetrics(PerformanceCollector *aCollector, Machine *aMach
     /* Guest metrics collector */
     mCollectorGuest = new pm::CollectorGuest(aMachine, pid);
     aCollector->registerGuest(mCollectorGuest);
-    Log7(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n", this, __PRETTY_FUNCTION__, mCollectorGuest));
+    Log7Func(("{%p}: mCollectorGuest=%p\n", this, mCollectorGuest));
 
     /* Create sub metrics */
     pm::SubMetric *guestLoadUser = new pm::SubMetric("Guest/CPU/Load/User",
@@ -12770,7 +12770,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
      */
     i_unregisterMetrics(mParent->i_performanceCollector(), mPeer);
     /* The guest must be unregistered after its metrics (@bugref{5949}). */
-    Log7(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n", this, __PRETTY_FUNCTION__, mCollectorGuest));
+    Log7Func(("{%p}: mCollectorGuest=%p\n", this, mCollectorGuest));
     if (mCollectorGuest)
     {
         mParent->i_performanceCollector()->unregisterGuest(mCollectorGuest);
