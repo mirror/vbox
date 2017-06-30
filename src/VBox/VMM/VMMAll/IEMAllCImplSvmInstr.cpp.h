@@ -675,12 +675,12 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
                 /** @todo NRIP: Software interrupts can only be pushed properly if we support
                  *        NRIP for the nested-guest to calculate the instruction length
                  *        below. */
-                LogFlow(("iemSvmVmrun: InjectingEvent: uVector=%u enmType=%d uErrorCode=%u cr2=%#RX64\n", uVector, enmType,
-                         uErrorCode, pCtx->cr2));
+                LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 uVector=%#x enmType=%d uErrorCode=%u cr2=%#RX64\n",
+                         pCtx->cs.Sel, pCtx->rip, uVector, enmType,uErrorCode, pCtx->cr2));
                 rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
             }
             else
-                LogFlow(("iemSvmVmrun: Entering nested-guest at %04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 efer=%#RX64 efl=%#RX64\n",
+                LogFlow(("iemSvmVmrun: Entered nested-guest: %04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 efer=%#RX64 efl=%#x\n",
                          pCtx->cs.Sel, pCtx->rip, pCtx->cr0, pCtx->cr3, pCtx->cr4, pCtx->msrEFER, pCtx->rflags.u64));
 
             return rcStrict;
@@ -1132,13 +1132,11 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     }
 
     VBOXSTRICTRC rcStrict = iemSvmVmrun(pVCpu, pCtx, cbInstr, GCPhysVmcb);
-    if (rcStrict == VINF_SVM_VMEXIT)
+    if (rcStrict == VERR_SVM_VMEXIT_FAILED)
     {
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        rcStrict = VINF_SUCCESS;
-    }
-    else if (rcStrict == VERR_SVM_VMEXIT_FAILED)
+        Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
         rcStrict = iemInitiateCpuShutdown(pVCpu);
+    }
     return rcStrict;
 }
 
