@@ -124,6 +124,13 @@ public:
     virtual bool isWriteLockOnCurrentThread() const = 0;
 
     /**
+     * Returns @c true if the current thread holds a read lock on this
+     * read/write semaphore. Intended for debugging only as it isn't always
+     * accurate given @a fWannaHear.
+     */
+    virtual bool isReadLockedOnCurrentThread(bool fWannaHear = true) const = 0;
+
+    /**
      * Returns the current write lock level of this semaphore. The lock level
      * determines the number of nested #lockWrite() calls on the given
      * semaphore handle.
@@ -163,6 +170,7 @@ public:
     virtual ~RWLockHandle();
 
     virtual bool isWriteLockOnCurrentThread() const;
+    virtual bool isReadLockedOnCurrentThread(bool fWannaHear = true) const;
 
     virtual void lockWrite(LOCKVAL_SRC_POS_DECL);
     virtual void unlockWrite();
@@ -201,6 +209,7 @@ public:
     WriteLockHandle(VBoxLockingClass lockClass);
     virtual ~WriteLockHandle();
     virtual bool isWriteLockOnCurrentThread() const;
+    virtual bool isReadLockedOnCurrentThread(bool fWannaHear = true) const;
 
     virtual void lockWrite(LOCKVAL_SRC_POS_DECL);
     virtual void unlockWrite();
@@ -253,6 +262,17 @@ public:
     {
         LockHandle *h = lockHandle();
         return h ? h->isWriteLockOnCurrentThread() : false;
+    }
+
+    /**
+     * Equivalent to <tt>#lockHandle()->isReadLockedOnCurrentThread()</tt>.
+     * Returns @c false if lockHandle() returns @c NULL.
+     * @note Use with care, simple debug assertions and similar only.
+     */
+    bool isReadLockedOnCurrentThread(bool fWannaHear = true)
+    {
+        LockHandle *h = lockHandle();
+        return h ? h->isReadLockedOnCurrentThread(fWannaHear) : false;
     }
 };
 
@@ -572,6 +592,8 @@ public:
 
     bool isWriteLockOnCurrentThread() const;
     uint32_t writeLockLevel() const;
+
+    bool isReadLockedOnCurrentThread(bool fWannaHear = true) const;
 
 private:
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoWriteLock); /* Shuts up MSC warning C4625. */

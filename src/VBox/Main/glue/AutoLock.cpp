@@ -229,6 +229,15 @@ RWLockHandle::RWLockHandle(VBoxLockingClass lockClass)
 
 }
 
+/*virtual*/ bool RWLockHandle::isReadLockedOnCurrentThread(bool fWannaHear) const
+{
+#ifdef GLUE_USE_CRITSECTRW
+    return RTCritSectRwIsReadOwner(&m->CritSect, fWannaHear);
+#else
+    return RTSemRWIsReadOwner(m->sem, fWannaHear);
+#endif
+}
+
 /*virtual*/ void RWLockHandle::lockRead(LOCKVAL_SRC_POS_DECL)
 {
 #ifdef GLUE_USE_CRITSECTRW
@@ -326,6 +335,12 @@ WriteLockHandle::~WriteLockHandle()
 #else
     RTCritSectEnter(&m->sem);
 #endif
+}
+
+/*virtual*/ bool WriteLockHandle::isReadLockedOnCurrentThread(bool fWannaHear) const
+{
+    RT_NOREF(fWannaHear);
+    return RTCritSectIsOwner(&m->sem);
 }
 
 /*virtual*/ void WriteLockHandle::unlockWrite()
@@ -658,6 +673,18 @@ bool AutoWriteLock::isWriteLockOnCurrentThread() const
 uint32_t AutoWriteLock::writeLockLevel() const
 {
     return m->aHandles[0] ? m->aHandles[0]->writeLockLevel() : 0;
+}
+
+/**
+ * Returns @c true if the current thread holds a write lock on the managed
+ * read/write semaphore. Returns @c false if the managed semaphore is @c
+ * NULL.
+ *
+ * @note Intended for debugging only (esp. considering fWannaHear).
+ */
+bool AutoWriteLock::isReadLockedOnCurrentThread(bool fWannaHear) const
+{
+    return m->aHandles[0] ? m->aHandles[0]->isReadLockedOnCurrentThread(fWannaHear) : false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
