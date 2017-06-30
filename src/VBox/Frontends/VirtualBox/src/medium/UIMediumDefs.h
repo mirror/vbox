@@ -34,11 +34,11 @@ namespace UIMediumDefs
     /** UIMedium types. */
     enum UIMediumType
     {
-        UIMediumType_Invalid,
         UIMediumType_HardDisk,
         UIMediumType_DVD,
         UIMediumType_Floppy,
-        UIMediumType_All
+        UIMediumType_All,
+        UIMediumType_Invalid
     };
 
     /** Converts global medium type (KDeviceType) to local (UIMediumType). */

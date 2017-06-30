@@ -1382,7 +1382,7 @@ void UIMediumManagerWidget::prepareTabWidget()
     {
         /* Create tabs: */
         for (int i = 0; i < m_iTabCount; ++i)
-            prepareTab(mediumType(i));
+            prepareTab((UIMediumType)i);
         /* Configure tab-widget: */
         m_pTabWidget->setFocusPolicy(Qt::TabFocus);
         m_pTabWidget->setTabIcon(tabIndex(UIMediumType_HardDisk), m_iconHD);
@@ -2194,7 +2194,7 @@ UIMediumType UIMediumManagerWidget::mediumType(QITreeWidget *pTreeWidget) const
 
     /* Return medium type for known tab index: */
     if (iIndex >= 0 && iIndex < m_iTabCount)
-        return mediumType(iIndex);
+        return (UIMediumType)iIndex;
 
     /* Invalid by default: */
     AssertFailedReturn(UIMediumType_Invalid);
@@ -2207,7 +2207,7 @@ UIMediumType UIMediumManagerWidget::currentMediumType() const
         return UIMediumType_Invalid;
 
     /* Return current medium type: */
-    return mediumType(m_pTabWidget->currentIndex());
+    return (UIMediumType)m_pTabWidget->currentIndex();
 }
 
 QITreeWidget* UIMediumManagerWidget::currentTreeWidget() const
@@ -2256,22 +2256,6 @@ int UIMediumManagerWidget::tabIndex(UIMediumType type)
 
     /* -1 by default: */
     return -1;
-}
-
-/* static */
-UIMediumType UIMediumManagerWidget::mediumType(int iIndex)
-{
-    /* Return medium type corresponding to known tab index: */
-    switch (iIndex)
-    {
-        case 0: return UIMediumType_HardDisk;
-        case 1: return UIMediumType_DVD;
-        case 2: return UIMediumType_Floppy;
-        default: break;
-    }
-
-    /* Invalid by default: */
-    return UIMediumType_Invalid;
 }
 
 /* static */

@@ -233,8 +233,6 @@ private:
       * @{ */
         /** Returns tab index for passed UIMediumType. */
         static int tabIndex(UIMediumType type);
-        /** Returns UIMediumType for passed tab index. */
-        static UIMediumType mediumType(int iIndex);
 
         /** Performs search for the @a pTree child which corresponds to the @a condition but not @a pException. */
         static UIMediumItem *searchItem(QITreeWidget *pTree,
