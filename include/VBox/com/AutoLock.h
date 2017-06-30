@@ -269,7 +269,7 @@ public:
      * Returns @c false if lockHandle() returns @c NULL.
      * @note Use with care, simple debug assertions and similar only.
      */
-    bool isReadLockedOnCurrentThread(bool fWannaHear = true)
+    bool isReadLockedOnCurrentThread(bool fWannaHear = true) const
     {
         LockHandle *h = lockHandle();
         return h ? h->isReadLockedOnCurrentThread(fWannaHear) : false;
