@@ -90,6 +90,12 @@ public:
     static const char *OSTypeId(VBOXOSTYPE aOSType);
 
     /**
+     * Maps an OS type ID string to index into sOSTypes.
+     * @returns index on success, UINT32_MAX if not found.
+     */
+    static uint32_t getOSTypeIndexFromId(const char *pszId);
+
+    /**
      * Get the network adapter limit for each chipset type.
      */
     static uint32_t getMaxNetworkAdapters(ChipsetType_T aChipsetType);

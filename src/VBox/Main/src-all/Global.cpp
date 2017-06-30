@@ -529,6 +529,21 @@ const char *Global::OSTypeId(VBOXOSTYPE aOSType)
     return sOSTypes[0].id;
 }
 
+/**
+ * Maps an OS type ID string to index into sOSTypes.
+ *
+ * @returns index on success, UINT32_MAX if not found.
+ * @param   pszId       The OS type ID string.
+ */
+/* static */ uint32_t Global::getOSTypeIndexFromId(const char *pszId)
+{
+    size_t const cOSTypes = Global::cOSTypes;
+    for (size_t i = 0; i < cOSTypes; ++i)
+        if (!RTStrICmp(pszId, Global::sOSTypes[i].id))
+            return (uint32_t)i;
+    return UINT32_MAX;
+}
+
 /*static*/ uint32_t Global::getMaxNetworkAdapters(ChipsetType_T aChipsetType)
 {
     switch (aChipsetType)
