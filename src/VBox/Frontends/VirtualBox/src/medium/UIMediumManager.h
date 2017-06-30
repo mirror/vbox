@@ -106,12 +106,12 @@ private slots:
       * @{ */
         /** Handles command to copy medium. */
         void sltCopyMedium();
-        /** Handles command to modify medium. */
-        void sltModifyMedium();
         /** Handles command to remove medium. */
         void sltRemoveMedium();
         /** Handles command to release medium. */
         void sltReleaseMedium();
+        /** Handles command to modify medium. */
+        void sltModifyMedium();
         /** Handles command to refresh medium. */
         void sltRefreshAll();
     /** @} */
@@ -308,12 +308,12 @@ private:
         QMenu     *m_pMenu;
         /** Holds the Copy action instance. */
         QAction   *m_pActionCopy;
-        /** Holds the Modify action instance. */
-        QAction   *m_pActionModify;
         /** Holds the Remove action instance. */
         QAction   *m_pActionRemove;
         /** Holds the Release action instance. */
         QAction   *m_pActionRelease;
+        /** Holds the Modify action instance. */
+        QAction   *m_pActionModify;
         /** Holds the Refresh action instance. */
         QAction   *m_pActionRefresh;
     /** @} */
