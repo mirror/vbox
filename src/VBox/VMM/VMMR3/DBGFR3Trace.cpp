@@ -438,7 +438,7 @@ static DECLCALLBACK(void) dbgfR3TraceInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 {
     RTTRACEBUF hTraceBuf = pVM->hTraceBufR3;
     if (hTraceBuf == NIL_RTTRACEBUF)
-        pHlp->pfnPrintf(pHlp, "Tracing is disable\n");
+        pHlp->pfnPrintf(pHlp, "Tracing is disabled\n");
     else
     {
         pHlp->pfnPrintf(pHlp, "Trace buffer %p - %u entries of %u bytes\n",
