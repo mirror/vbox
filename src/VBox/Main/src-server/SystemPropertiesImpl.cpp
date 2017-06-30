@@ -927,22 +927,7 @@ HRESULT SystemProperties::setAutostartDatabasePath(const com::Utf8Str &aAutostar
 
 HRESULT SystemProperties::getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditionsISO)
 {
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->strDefaultAdditionsISO.isEmpty())
-    {
-        /* no guest additions, check if it showed up in the mean time */
-        alock.release();
-        {
-            AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
-            ErrorInfoKeeper eik;
-            (void)setDefaultAdditionsISO("");
-        }
-        alock.acquire();
-    }
-    aDefaultAdditionsISO = m->strDefaultAdditionsISO;
-
-    return S_OK;
+    return i_getDefaultAdditionsISO(aDefaultAdditionsISO);
 }
 
 HRESULT SystemProperties::setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdditionsISO)
@@ -1147,6 +1132,28 @@ int SystemProperties::i_loadVDPlugin(const char *pszPluginLibrary)
 int SystemProperties::i_unloadVDPlugin(const char *pszPluginLibrary)
 {
     return VDPluginUnloadFromFilename(pszPluginLibrary);
+}
+
+/**
+ * Internally usable version of getDefaultAdditionsISO.
+ */
+HRESULT SystemProperties::i_getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditionsISO)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (m->strDefaultAdditionsISO.isEmpty())
+    {
+        /* no guest additions, check if it showed up in the mean time */
+        alock.release();
+        AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+        if (m->strDefaultAdditionsISO.isEmpty())
+        {
+            ErrorInfoKeeper eik;
+            (void)setDefaultAdditionsISO("");
+        }
+        alock.acquire();
+    }
+    aDefaultAdditionsISO = m->strDefaultAdditionsISO;
+    return S_OK;
 }
 
 // private methods

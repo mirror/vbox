@@ -55,6 +55,8 @@ public:
     int i_loadVDPlugin(const char *pszPluginLibrary);
     int i_unloadVDPlugin(const char *pszPluginLibrary);
 
+    HRESULT i_getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditionsISO);
+
 private:
 
     // wrapped ISystemProperties properties
