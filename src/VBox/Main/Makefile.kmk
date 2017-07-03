@@ -478,7 +478,6 @@ VBoxSVC_SOURCES = \
 	src-server/UnattendedImpl.cpp \
 	src-server/UnattendedInstaller.cpp \
 	src-server/UnattendedScript.cpp \
-	src-server/UnattendedHelper.cpp \
 	,) \
 	src-server/USBControllerImpl.cpp \
 	src-server/USBDeviceFiltersImpl.cpp \
