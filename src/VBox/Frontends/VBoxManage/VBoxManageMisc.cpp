@@ -1271,17 +1271,19 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     /*
      * Options.
      */
-    Bstr bstrAdditionsIsoPath;
-    Bstr bstrIsoPath;
-    Bstr bstrUser;
-    Bstr bstrPassword;
-    Bstr bstrProductKey;
-    Bstr bstrAuxiliaryBasePath;
-    Bstr group("group");
-    Bstr bstrMachineName;
-    Bstr bstrSettingsFile;
-    ULONG idxImage = 1; // applied only to Windows installation
-    Bstr bstrSessionType = "headless";
+    const char *pszIsoPath           = NULL;
+    const char *pszUser              = NULL;
+    const char *pszPassword          = NULL;
+    const char *pszGroup             = NULL;
+    const char *pszProductKey        = NULL;
+    const char *pszAdditionsIsoPath  = NULL;
+    int         fInstallAdditions    = -1;
+    const char *pszAuxiliaryBasePath = NULL;
+    const char *pszMachineName       = NULL;
+    const char *pszSettingsFile      = NULL;
+    bool        fSetImageIdx         = false;
+    uint32_t    idxImage             = 0;
+    const char *pszSessionType       = "headless";
 
     /*
      * Parse options.
@@ -1291,10 +1293,13 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
+        { "--iso-path",             'i', RTGETOPT_REQ_STRING },
         { "--user",                 'u', RTGETOPT_REQ_STRING },
         { "--password",             'p', RTGETOPT_REQ_STRING },
+        { "--group",                'g', RTGETOPT_REQ_STRING },
         { "--key",                  'k', RTGETOPT_REQ_STRING },
-        { "--iso-path",             'i', RTGETOPT_REQ_STRING },
+        { "--install-additions",    'A', RTGETOPT_REQ_NOTHING },
+        { "--no-install-additions", 'N', RTGETOPT_REQ_NOTHING },
         { "--additions-iso-path",   'a', RTGETOPT_REQ_STRING },
         { "--auxiliary-base-path",  'x', RTGETOPT_REQ_STRING },
         { "--image-index",          'm', RTGETOPT_REQ_UINT32 },
@@ -1313,47 +1318,58 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         switch (c)
         {
             case VINF_GETOPT_NOT_OPTION:
-                if (bstrMachineName.isNotEmpty())
+                if (pszMachineName)
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID given more than once!");
-                bstrMachineName = ValueUnion.psz;
-                if (bstrMachineName.isEmpty())
+                pszMachineName = ValueUnion.psz;
+                if (*pszMachineName == '\0')
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID is empty!");
                 break;
 
             case 's':   // --settings-file <key value file>
-                bstrSettingsFile = ValueUnion.psz;
+                pszSettingsFile = ValueUnion.psz;
                 break;
 
             case 'u':   // --user
-                bstrUser = ValueUnion.psz;
+                pszUser = ValueUnion.psz;
                 break;
 
             case 'p':   // --password
-                bstrPassword = ValueUnion.psz;
+                pszPassword = ValueUnion.psz;
+                break;
+
+            case 'g':   // --group
+                pszGroup = ValueUnion.psz;
                 break;
 
             case 'k':   // --key
-                bstrProductKey = ValueUnion.psz;
+                pszProductKey = ValueUnion.psz;
                 break;
 
+            case 'A':   // --install-additions
+                fInstallAdditions = true;
+                break;
+            case 'N':   // --no-install-additions
+                fInstallAdditions = false;
+                break;
             case 'a':   // --additions-iso-path
-                bstrAdditionsIsoPath = ValueUnion.psz;
+                pszAdditionsIsoPath = ValueUnion.psz;
                 break;
 
             case 'i':   // --iso-path
-                bstrIsoPath = ValueUnion.psz;
+                pszIsoPath = ValueUnion.psz;
                 break;
 
             case 'x':  // --auxiliary-base-path
-                bstrAuxiliaryBasePath = ValueUnion.psz;
+                pszAuxiliaryBasePath = ValueUnion.psz;
                 break;
 
             case 'm':   // --image-index
                 idxImage = ValueUnion.u32;
+                fSetImageIdx = true;
                 break;
 
             case 'S':   // --session-type
-                bstrSessionType = ValueUnion.psz;
+                pszSessionType = ValueUnion.psz;
                 break;
 
             default:
@@ -1364,16 +1380,16 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     /*
      * Check for required stuff.
      */
-    if (bstrMachineName.isEmpty())
+    if (pszMachineName == NULL)
         return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID");
 
-    if (bstrSettingsFile.isEmpty())
+    if (!pszSettingsFile)
     {
-        if (bstrUser.isEmpty())
+        if (!pszUser)
             return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --user (or --settings-file) option");
-        if (bstrPassword.isEmpty())
+        if (!pszPassword)
             return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --password (or --settings-file) option");
-        if (bstrIsoPath.isEmpty())
+        if (!pszIsoPath)
             return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso-path (or --settings-file) option");
     }
 
@@ -1384,6 +1400,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     /* try to find the given machine */
     HRESULT rc;
     ComPtr<IMachine> machine;
+    Bstr bstrMachineName = pszMachineName;
     CHECK_ERROR(a->virtualBox, FindMachine(bstrMachineName.raw(), machine.asOutParam()));
     if (FAILED(rc))
         return RTEXITCODE_FAILURE;
@@ -1423,25 +1440,33 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         ComPtr<IUnattended> unAttended;
         CHECK_ERROR_BREAK(machine, COMGETTER(Unattended)(unAttended.asOutParam()));
 
-        if (bstrSettingsFile.isNotEmpty())
-            CHECK_ERROR_BREAK(unAttended, LoadSettings(bstrSettingsFile.raw()));
+        if (pszSettingsFile)
+            CHECK_ERROR_BREAK(unAttended, LoadSettings(Bstr(pszSettingsFile).raw()));
 
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(Group)(group.raw()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(IsoPath)(bstrIsoPath.raw()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(User)(bstrUser.raw()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(Password)(bstrPassword.raw()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(bstrProductKey.raw()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(AdditionsIsoPath)(bstrAdditionsIsoPath.raw()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(bstrAdditionsIsoPath.isNotEmpty()));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(idxImage));
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(AuxiliaryBasePath)(bstrAuxiliaryBasePath.raw()));
+        if (pszIsoPath)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(IsoPath)(Bstr(pszIsoPath).raw()));
+        if (pszUser)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(User)(Bstr(pszUser).raw()));
+        if (pszPassword)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(Password)(Bstr(pszPassword).raw()));
+        if (pszGroup)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(Group)(Bstr(pszGroup).raw()));
+        if (pszProductKey)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(Bstr(pszProductKey).raw()));
+        if (pszAdditionsIsoPath)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(AdditionsIsoPath)(Bstr(pszAdditionsIsoPath).raw()));
+        if (fInstallAdditions >= 0)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(fInstallAdditions != (int)false));
+        if (fSetImageIdx)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(idxImage));
+        if (pszAuxiliaryBasePath)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(AuxiliaryBasePath)(Bstr(pszAuxiliaryBasePath).raw()));
 
         CHECK_ERROR_BREAK(unAttended,Prepare());
         CHECK_ERROR_BREAK(unAttended,ConstructScript());
         CHECK_ERROR_BREAK(unAttended,ConstructMedia());
         CHECK_ERROR_BREAK(unAttended,ReconfigureVM());
         CHECK_ERROR_BREAK(unAttended,Done());
-
 
         /*
          * Start the VM.
@@ -1463,7 +1488,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             env = str;
 #endif
             ComPtr<IProgress> progress;
-            CHECK_ERROR(machine, LaunchVMProcess(a->session, bstrSessionType.raw(), env.raw(), progress.asOutParam()));
+            CHECK_ERROR(machine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), env.raw(), progress.asOutParam()));
             if (SUCCEEDED(rc) && !progress.isNull())
             {
                 RTPrintf("Waiting for VM \"%s\" to power on...\n", Utf8Str(bstrUuid).c_str());
@@ -1497,20 +1522,28 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         /*
          * Retrieve and display the parameters actually used.
          */
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(Group)(group.asOutParam()));
+        Bstr bstrGroup;
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(Group)(bstrGroup.asOutParam()));
+        Bstr bstrAdditionsIsoPath;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(AdditionsIsoPath)(bstrAdditionsIsoPath.asOutParam()));
         BOOL fInstallGuestAdditions = FALSE;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(InstallGuestAdditions)(&fInstallGuestAdditions));
+        Bstr bstrIsoPath;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(IsoPath)(bstrIsoPath.asOutParam()));
+        Bstr bstrUser;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(User)(bstrUser.asOutParam()));
+        Bstr bstrPassword;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Password)(bstrPassword.asOutParam()));
+        Bstr bstrProductKey;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ProductKey)(bstrProductKey.asOutParam()));
+        Bstr bstrAuxiliaryBasePath;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(AuxiliaryBasePath)(bstrAuxiliaryBasePath.asOutParam()));
-        idxImage = 0;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&idxImage));
+        ULONG idxImageActual = 0;
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&idxImageActual));
         RTPrintf("Got values:\n"
                  " user:                  %ls\n"
                  " password:              %ls\n"
+                 " group:                 %ls\n"
                  " productKey:            %ls\n"
                  " image index:           %u\n"
                  " isoPath:               %ls\n"
@@ -1519,8 +1552,9 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  " auxiliaryBasePath:     %ls",
                  bstrUser.raw(),
                  bstrPassword.raw(),
+                 bstrGroup.raw(),
                  bstrProductKey.raw(),
-                 idxImage,
+                 idxImageActual,
                  bstrIsoPath.raw(),
                  bstrAdditionsIsoPath.raw(),
                  fInstallGuestAdditions,
