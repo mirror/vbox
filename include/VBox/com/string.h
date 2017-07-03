@@ -781,7 +781,9 @@ public:
      *                                  typically 0 for the first call, and the
      *                                  return value of the previous call for the
      *                                  subsequent ones.
-     * @param   a_rPairSeparator        The pair separator string.
+     * @param   a_rPairSeparator        The pair separator string.  If this is an
+     *                                  empty string, the whole string will be
+     *                                  considered as a single key/value pair.
      * @param   a_rKeyValueSeparator    The key/value separator string.
      */
     size_t parseKeyValue(Utf8Str &a_rKey, Utf8Str &a_rValue, size_t a_offStart = 0,
