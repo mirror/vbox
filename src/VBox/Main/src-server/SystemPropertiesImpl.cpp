@@ -1140,7 +1140,9 @@ int SystemProperties::i_unloadVDPlugin(const char *pszPluginLibrary)
 HRESULT SystemProperties::i_getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditionsISO)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (m->strDefaultAdditionsISO.isEmpty())
+    if (m->strDefaultAdditionsISO.isNotEmpty())
+        aDefaultAdditionsISO = m->strDefaultAdditionsISO;
+    else
     {
         /* no guest additions, check if it showed up in the mean time */
         alock.release();
@@ -1150,9 +1152,8 @@ HRESULT SystemProperties::i_getDefaultAdditionsISO(com::Utf8Str &aDefaultAdditio
             ErrorInfoKeeper eik;
             (void)setDefaultAdditionsISO("");
         }
-        alock.acquire();
+        aDefaultAdditionsISO = m->strDefaultAdditionsISO;
     }
-    aDefaultAdditionsISO = m->strDefaultAdditionsISO;
     return S_OK;
 }
 
