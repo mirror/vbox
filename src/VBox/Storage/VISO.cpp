@@ -190,6 +190,8 @@ static int visoProbeWorker(const char *pszFilename, PVDINTERFACEIOINT pIfIo, PRT
                             rc = VERR_VD_INVALID_SIZE;
                         }
                     }
+                    else
+                        rc = VERR_VD_IMAGE_CORRUPTED;
                 }
                 else
                     rc = VERR_VD_GEN_INVALID_HEADER;
@@ -227,6 +229,10 @@ static DECLCALLBACK(int) visoProbe(const char *pszFilename, PVDINTERFACE pVDIfsD
     int rc = visoProbeWorker(pszFilename, pIfIo, &UuidIgn);
     if (RT_SUCCESS(rc))
         *penmType = VDTYPE_OPTICAL_DISC;
+    else if (rc == VERR_VD_IMAGE_CORRUPTED || rc == VERR_VD_INVALID_SIZE)
+        *penmType = VDTYPE_OPTICAL_DISC;
+    else
+        rc = VERR_VD_GEN_INVALID_HEADER; /* Caller has strict, though undocument, status code expectations. */
 
     LogFlowFunc(("returns %Rrc - *penmType=%d\n", rc, *penmType));
     return rc;
