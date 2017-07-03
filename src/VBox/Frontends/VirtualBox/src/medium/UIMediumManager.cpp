@@ -39,7 +39,6 @@
 # include "QIDialogButtonBox.h"
 # include "UIToolBar.h"
 # include "UIIconPool.h"
-# include "UIMediumTypeChangeDialog.h"
 # include "UIMedium.h"
 
 /* COM includes: */
@@ -56,7 +55,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/** QITreeWidgetItem extension representing Medium Manager item. */
+/** QITreeWidgetItem extension representing Media Manager item. */
 class UIMediumItem : public QITreeWidgetItem, public UIDataMedium
 {
 public:
@@ -72,8 +71,6 @@ public:
 
     /** Copies UIMedium wrapped by <i>this</i> item. */
     virtual bool copy() = 0;
-    /** Modifies UIMedium wrapped by <i>this</i> item. */
-    virtual bool modify() = 0;
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() = 0;
     /** Releases UIMedium wrapped by <i>this</i> item. */
@@ -163,8 +160,6 @@ protected:
 
     /** Copies UIMedium wrapped by <i>this</i> item. */
     virtual bool copy() /* override */;
-    /** Modifies UIMedium wrapped by <i>this</i> item. */
-    virtual bool modify() /* override */;
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() /* override */;
     /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
@@ -190,8 +185,6 @@ protected:
 
     /** Copies UIMedium wrapped by <i>this</i> item. */
     virtual bool copy() /* override */;
-    /** Modifies UIMedium wrapped by <i>this</i> item. */
-    virtual bool modify() /* override */;
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() /* override */;
     /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
@@ -212,8 +205,6 @@ protected:
 
     /** Copies UIMedium wrapped by <i>this</i> item. */
     virtual bool copy() /* override */;
-    /** Modifies UIMedium wrapped by <i>this</i> item. */
-    virtual bool modify() /* override */;
     /** Removes UIMedium wrapped by <i>this</i> item. */
     virtual bool remove() /* override */;
     /** Releases UIMedium wrapped by <i>this</i> item from virtual @a comMachine. */
@@ -390,6 +381,8 @@ void UIMediumItem::refresh()
 
     /* Gather medium data: */
     m_enmType = m_guiMedium.type();
+    /* Gather medium options data: */
+    m_options.m_enmType = m_guiMedium.medium().GetType(); /// @todo: Cache it in UIMedium class!
     /* Gather medium details data: */
     m_details.m_aFields.clear();
     switch (m_enmType)
@@ -508,29 +501,6 @@ bool UIMediumItemHD::copy()
 
     /* True by default: */
     return true;
-}
-
-bool UIMediumItemHD::modify()
-{
-    /* False by default: */
-    bool fResult = false;
-
-    /* Show Modify VD dialog: */
-    UISafePointerDialog pDialog = new UIMediumTypeChangeDialog(treeWidget(), id());
-    if (pDialog->exec() == QDialog::Accepted)
-    {
-        /* Update medium-item: */
-        refreshAll();
-        /* Change to passed: */
-        fResult = true;
-    }
-
-    /* Delete if still exists: */
-    if (pDialog)
-        delete pDialog;
-
-    /* Return result: */
-    return fResult;
 }
 
 bool UIMediumItemHD::remove()
@@ -660,11 +630,6 @@ bool UIMediumItemCD::copy()
     AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
 }
 
-bool UIMediumItemCD::modify()
-{
-    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-}
-
 bool UIMediumItemCD::remove()
 {
     /* Confirm medium removal: */
@@ -732,11 +697,6 @@ UIMediumItemFD::UIMediumItemFD(const UIMedium &guiMedium, QITreeWidget *pParent)
 }
 
 bool UIMediumItemFD::copy()
-{
-    AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
-}
-
-bool UIMediumItemFD::modify()
 {
     AssertMsgFailedReturn(("That functionality in not supported!\n"), false);
 }
@@ -819,7 +779,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pContextMenu(0)
     , m_pMenu(0)
     , m_pActionCopy(0), m_pActionRemove(0)
-    , m_pActionRelease(0), m_pActionModify(0)
+    , m_pActionRelease(0), m_pActionDetails(0)
     , m_pActionRefresh(0)
     , m_pProgressBar(0)
 {
@@ -852,11 +812,11 @@ void UIMediumManagerWidget::retranslateUi()
         m_pActionRelease->setToolTip(tr("Release Disk Image File (%1)").arg(m_pActionRelease->shortcut().toString()));
         m_pActionRelease->setStatusTip(UIMediumManager::tr("Release selected disk image file by detaching it from machines"));
     }
-    if (m_pActionModify)
+    if (m_pActionDetails)
     {
-        m_pActionModify->setText(UIMediumManager::tr("&Modify..."));
-        m_pActionModify->setToolTip(tr("Modify Disk Image File (%1)").arg(m_pActionModify->shortcut().toString()));
-        m_pActionModify->setStatusTip(UIMediumManager::tr("Modify the attributes of selected disk image file"));
+        m_pActionDetails->setText(UIMediumManager::tr("&Details..."));
+        m_pActionDetails->setToolTip(tr("Open Disk Image File Details (%1)").arg(m_pActionDetails->shortcut().toString()));
+        m_pActionDetails->setStatusTip(UIMediumManager::tr("Open pane with selected disk image file details"));
     }
     if (m_pActionRefresh)
     {
@@ -938,6 +898,41 @@ void UIMediumManagerWidget::showEvent(QShowEvent *pEvent)
     /* Focus current tree-widget: */
     if (currentTreeWidget())
         currentTreeWidget()->setFocus();
+}
+
+void UIMediumManagerWidget::sltResetMediumDetailsChanges()
+{
+    /* Push the current item data into details-widget: */
+    sltHandleCurrentTabChanged();
+}
+
+void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
+{
+    /* Get current medium-item: */
+    UIMediumItem *pMediumItem = currentMediumItem();
+    AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
+    AssertReturnVoid(!pMediumItem->id().isNull());
+
+    /* Get item data: */
+    UIDataMedium oldData = *pMediumItem;
+    UIDataMedium newData = m_pDetailsWidget->data();
+
+    /* Search for corresponding medium: */
+    CMedium comMedium = vboxGlobal().medium(pMediumItem->id()).medium();
+
+    /* Try to assign new medium type: */
+    if (newData.m_options.m_enmType != oldData.m_options.m_enmType)
+        comMedium.SetType(newData.m_options.m_enmType);
+
+    /* Show error message if necessary: */
+    if (!comMedium.isOk())
+        msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmType, newData.m_options.m_enmType, this);
+
+    /* Recache current item: */
+    pMediumItem->refreshAll();
+
+    /* Push the current item data into details-widget: */
+    sltHandleCurrentTabChanged();
 }
 
 void UIMediumManagerWidget::sltHandleMediumCreated(const QString &strMediumID)
@@ -1084,19 +1079,13 @@ void UIMediumManagerWidget::sltReleaseMedium()
         refetchCurrentChosenMediumItem();
 }
 
-void UIMediumManagerWidget::sltModifyMedium()
+void UIMediumManagerWidget::sltToggleMediumDetailsVisibility(bool fVisible)
 {
-    /* Get current medium-item: */
-    UIMediumItem *pMediumItem = currentMediumItem();
-    AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
-    AssertReturnVoid(!pMediumItem->id().isNull());
-
-    /* Modify current medium-item: */
-    bool fResult = pMediumItem->modify();
-
-    /* Update current information-panes: */
-    if (fResult)
-        refetchCurrentChosenMediumItem();
+    /* Toggle medium details visibility: */
+    if (m_pDetailsWidget)
+        m_pDetailsWidget->setVisible(fVisible);
+    /* Notify external lsiteners: */
+    emit sigMediumDetailsVisibilityChanged(fVisible);
 }
 
 void UIMediumManagerWidget::sltRefreshAll()
@@ -1135,16 +1124,6 @@ void UIMediumManagerWidget::sltHandleCurrentItemChanged()
 
     /* Re-fetch current medium-item of required type: */
     refetchCurrentMediumItem(mediumType(pTreeWidget));
-}
-
-void UIMediumManagerWidget::sltHandleDoubleClick()
-{
-    /* Skip for non-hard-drives: */
-    if (currentMediumType() != UIMediumType_HardDisk)
-        return;
-
-    /* Call for modify-action: */
-    sltModifyMedium();
 }
 
 void UIMediumManagerWidget::sltHandleContextMenuCall(const QPoint &position)
@@ -1249,7 +1228,7 @@ void UIMediumManagerWidget::prepareActions()
     {
         /* Configure copy-action: */
         m_pActionCopy->setShortcut(QKeySequence("Ctrl+C"));
-        connect(m_pActionCopy, SIGNAL(triggered()), this, SLOT(sltCopyMedium()));
+        connect(m_pActionCopy, &QAction::triggered, this, &UIMediumManagerWidget::sltCopyMedium);
     }
 
     /* Create 'Remove' action: */
@@ -1258,7 +1237,7 @@ void UIMediumManagerWidget::prepareActions()
     {
         /* Configure remove-action: */
         m_pActionRemove->setShortcut(QKeySequence("Ctrl+R"));
-        connect(m_pActionRemove, SIGNAL(triggered()), this, SLOT(sltRemoveMedium()));
+        connect(m_pActionRemove, &QAction::triggered, this, &UIMediumManagerWidget::sltRemoveMedium);
     }
 
     /* Create 'Release' action: */
@@ -1267,16 +1246,17 @@ void UIMediumManagerWidget::prepareActions()
     {
         /* Configure release-action: */
         m_pActionRelease->setShortcut(QKeySequence("Ctrl+L"));
-        connect(m_pActionRelease, SIGNAL(triggered()), this, SLOT(sltReleaseMedium()));
+        connect(m_pActionRelease, &QAction::triggered, this, &UIMediumManagerWidget::sltReleaseMedium);
     }
 
-    /* Create 'Modify' action: */
-    m_pActionModify = new QAction(this);
-    AssertPtrReturnVoid(m_pActionModify);
+    /* Create 'Details' action: */
+    m_pActionDetails = new QAction(this);
+    AssertPtrReturnVoid(m_pActionDetails);
     {
         /* Configure modify-action: */
-        m_pActionModify->setShortcut(QKeySequence("Ctrl+Space"));
-        connect(m_pActionModify, SIGNAL(triggered()), this, SLOT(sltModifyMedium()));
+        m_pActionDetails->setCheckable(true);
+        m_pActionDetails->setShortcut(QKeySequence("Ctrl+Space"));
+        connect(m_pActionDetails, &QAction::toggled, this, &UIMediumManagerWidget::sltToggleMediumDetailsVisibility);
     }
 
     /* Create 'Refresh' action: */
@@ -1285,7 +1265,7 @@ void UIMediumManagerWidget::prepareActions()
     {
         /* Configure refresh-action: */
         m_pActionRefresh->setShortcut(QKeySequence(QKeySequence::Refresh));
-        connect(m_pActionRefresh, SIGNAL(triggered()), this, SLOT(sltRefreshAll()));
+        connect(m_pActionRefresh, &QAction::triggered, this, &UIMediumManagerWidget::sltRefreshAll);
     }
 
     /* Update action icons: */
@@ -1309,13 +1289,13 @@ void UIMediumManagerWidget::prepareMenu()
         if (m_pActionRemove)
             m_pMenu->addAction(m_pActionRemove);
         if (   (m_pActionCopy || m_pActionRemove)
-            && (m_pActionRelease || m_pActionModify))
+            && (m_pActionRelease || m_pActionDetails))
             m_pMenu->addSeparator();
         if (m_pActionRelease)
             m_pMenu->addAction(m_pActionRelease);
-        if (m_pActionModify)
-            m_pMenu->addAction(m_pActionModify);
-        if (   (m_pActionRelease || m_pActionModify)
+        if (m_pActionDetails)
+            m_pMenu->addAction(m_pActionDetails);
+        if (   (m_pActionRelease || m_pActionDetails)
             && (m_pActionRefresh))
             m_pMenu->addSeparator();
         if (m_pActionRefresh)
@@ -1335,12 +1315,12 @@ void UIMediumManagerWidget::prepareContextMenu()
         if (m_pActionRemove)
             m_pContextMenu->addAction(m_pActionRemove);
         if (   (m_pActionCopy || m_pActionRemove)
-            && (m_pActionRelease || m_pActionModify))
+            && (m_pActionRelease || m_pActionDetails))
             m_pContextMenu->addSeparator();
         if (m_pActionRelease)
             m_pContextMenu->addAction(m_pActionRelease);
-        if (m_pActionModify)
-            m_pContextMenu->addAction(m_pActionModify);
+        if (m_pActionDetails)
+            m_pContextMenu->addAction(m_pActionDetails);
     }
 }
 
@@ -1383,13 +1363,13 @@ void UIMediumManagerWidget::prepareToolBar()
         if (m_pActionRemove)
             m_pToolBar->addAction(m_pActionRemove);
         if (   (m_pActionCopy || m_pActionRemove)
-            && (m_pActionModify || m_pActionRelease))
+            && (m_pActionRelease || m_pActionDetails))
             m_pToolBar->addSeparator();
         if (m_pActionRelease)
             m_pToolBar->addAction(m_pActionRelease);
-        if (m_pActionModify)
-            m_pToolBar->addAction(m_pActionModify);
-        if (   (m_pActionModify || m_pActionRelease)
+        if (m_pActionDetails)
+            m_pToolBar->addAction(m_pActionDetails);
+        if (   (m_pActionRelease || m_pActionDetails)
             && (m_pActionRefresh))
             m_pToolBar->addSeparator();
         if (m_pActionRefresh)
@@ -1487,8 +1467,9 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
         pTreeWidget->setSortingEnabled(true);
         connect(pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChanged()));
-        connect(pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-                this, SLOT(sltHandleDoubleClick()));
+        if (m_pActionDetails)
+            connect(pTreeWidget, &QITreeWidget::itemDoubleClicked,
+                    m_pActionDetails, &QAction::setChecked);
         connect(pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleContextMenuCall(const QPoint&)));
         connect(pTreeWidget, SIGNAL(resized(const QSize&, const QSize&)),
@@ -1507,7 +1488,14 @@ void UIMediumManagerWidget::prepareDetailsWidget()
     AssertPtrReturnVoid(m_pDetailsWidget);
     {
         /* Configure details-widget: */
+        m_pDetailsWidget->setVisible(false);
         m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        connect(m_pDetailsWidget, &UIMediumDetailsWidget::sigDataChanged,
+                this, &UIMediumManagerWidget::sigMediumDetailsDataChanged);
+        connect(m_pDetailsWidget, &UIMediumDetailsWidget::sigDataChangeRejected,
+                this, &UIMediumManagerWidget::sltResetMediumDetailsChanges);
+        connect(m_pDetailsWidget, &UIMediumDetailsWidget::sigDataChangeAccepted,
+                this, &UIMediumManagerWidget::sltApplyMediumDetailsChanges);
 
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidget);
@@ -1635,11 +1623,10 @@ void UIMediumManagerWidget::updateActions()
         bool fActionEnabledRelease = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Release);
         m_pActionRelease->setEnabled(fActionEnabledRelease);
     }
-    if (m_pActionModify)
+    if (m_pActionDetails)
     {
-        bool fActionEnabledModify = currentMediumType() == UIMediumType_HardDisk &&
-                                    fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Modify);
-        m_pActionModify->setEnabled(fActionEnabledModify);
+        bool fActionEnabledDetails = true;
+        m_pActionDetails->setEnabled(fActionEnabledDetails);
     }
 }
 
@@ -1671,11 +1658,11 @@ void UIMediumManagerWidget::updateActionIcons()
                                                           QString(":/%1_release_16px.png").arg(strPrefix),
                                                           QString(":/%1_release_disabled_22px.png").arg(strPrefix),
                                                           QString(":/%1_release_disabled_16px.png").arg(strPrefix)));
-    if (m_pActionModify)
-        m_pActionModify->setIcon(UIIconPool::iconSetFull(QString(":/%1_modify_22px.png").arg(strPrefix),
-                                                         QString(":/%1_modify_16px.png").arg(strPrefix),
-                                                         QString(":/%1_modify_disabled_22px.png").arg(strPrefix),
-                                                         QString(":/%1_modify_disabled_16px.png").arg(strPrefix)));
+    if (m_pActionDetails)
+        m_pActionDetails->setIcon(UIIconPool::iconSetFull(QString(":/%1_modify_22px.png").arg(strPrefix),
+                                                          QString(":/%1_modify_16px.png").arg(strPrefix),
+                                                          QString(":/%1_modify_disabled_22px.png").arg(strPrefix),
+                                                          QString(":/%1_modify_disabled_16px.png").arg(strPrefix)));
     if (m_pActionRefresh && m_pActionRefresh->icon().isNull())
         m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_22px.png", ":/refresh_16px.png",
                                                           ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
@@ -2191,10 +2178,38 @@ UIMediumManager::UIMediumManager(QWidget *pCenterWidget)
 {
 }
 
+void UIMediumManager::sltHandleButtonBoxClick(QAbstractButton *pButton)
+{
+    /* Disable buttons first of all: */
+    button(ButtonType_Reset)->setEnabled(false);
+    button(ButtonType_Apply)->setEnabled(false);
+
+    /* Compare with known buttons: */
+    if (pButton == button(ButtonType_Reset))
+        emit sigDataChangeRejected();
+    else
+    if (pButton == button(ButtonType_Apply))
+        emit sigDataChangeAccepted();
+}
+
 void UIMediumManager::retranslateUi()
 {
     /* Translate window title: */
     setWindowTitle(tr("Virtual Media Manager"));
+
+    /* Translate buttons: */
+    button(ButtonType_Reset)->setText(tr("Reset"));
+    button(ButtonType_Apply)->setText(tr("Apply"));
+    button(ButtonType_Close)->setText(tr("Close"));
+    button(ButtonType_Reset)->setStatusTip(tr("Reset changes in current medium details"));
+    button(ButtonType_Apply)->setStatusTip(tr("Apply changes in current medium details"));
+    button(ButtonType_Close)->setStatusTip(tr("Close dialog without saving"));
+    button(ButtonType_Reset)->setShortcut(QString("Ctrl+Backspace"));
+    button(ButtonType_Apply)->setShortcut(QString("Ctrl+Return"));
+    button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
+    button(ButtonType_Reset)->setToolTip(tr("Reset Changes (%1)").arg(button(ButtonType_Reset)->shortcut().toString()));
+    button(ButtonType_Apply)->setToolTip(tr("Apply Changes (%1)").arg(button(ButtonType_Apply)->shortcut().toString()));
+    button(ButtonType_Close)->setToolTip(tr("Close Window (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
 }
 
 void UIMediumManager::configure()
@@ -2215,9 +2230,29 @@ void UIMediumManager::configureCentralWidget()
 #ifdef VBOX_WS_MAC
         setWidgetToolbar(pWidget->toolbar());
 #endif
+        connect(this, &UIMediumManager::sigDataChangeRejected,
+                pWidget, &UIMediumManagerWidget::sltResetMediumDetailsChanges);
+        connect(this, &UIMediumManager::sigDataChangeAccepted,
+                pWidget, &UIMediumManagerWidget::sltApplyMediumDetailsChanges);
+
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
+}
+
+void UIMediumManager::configureButtonBox()
+{
+    /* Configure button-box: */
+    connect(widget(), &UIMediumManagerWidget::sigMediumDetailsVisibilityChanged,
+            button(ButtonType_Apply), &QPushButton::setVisible);
+    connect(widget(), &UIMediumManagerWidget::sigMediumDetailsVisibilityChanged,
+            button(ButtonType_Reset), &QPushButton::setVisible);
+    connect(widget(), &UIMediumManagerWidget::sigMediumDetailsDataChanged,
+            button(ButtonType_Apply), &QPushButton::setEnabled);
+    connect(widget(), &UIMediumManagerWidget::sigMediumDetailsDataChanged,
+            button(ButtonType_Reset), &QPushButton::setEnabled);
+    connect(buttonBox(), &QIDialogButtonBox::clicked,
+            this, &UIMediumManager::sltHandleButtonBoxClick);
 }
 
 void UIMediumManager::finalize()

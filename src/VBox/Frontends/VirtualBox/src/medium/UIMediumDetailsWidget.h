@@ -30,11 +30,39 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
-class QFrame;
+class QAbstractButton;
+class QComboBox;
 class QLabel;
 class QStackedLayout;
 class QWidget;
 class QILabel;
+class QITabWidget;
+
+
+/** Virtual Media Manager: Medium options data structure. */
+struct UIDataMediumOptions
+{
+    /** Constructs data. */
+    UIDataMediumOptions()
+        : m_enmType(KMediumType_Normal)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataMediumOptions &other) const
+    {
+        return true
+               && (m_enmType == other.m_enmType)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataMediumOptions &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataMediumOptions &other) const { return !equal(other); }
+
+    /** Holds the type. */
+    KMediumType m_enmType;
+};
 
 
 /** Virtual Media Manager: Medium details data structure. */
@@ -73,12 +101,14 @@ struct UIDataMedium
     /** Constructs data. */
     UIDataMedium()
         : m_enmType(UIMediumType_Invalid)
+        , m_options(UIDataMediumOptions())
         , m_details(UIDataMediumDetails())
     {}
 
     /** Constructs data with passed @enmType. */
     UIDataMedium(UIMediumType enmType)
         : m_enmType(enmType)
+        , m_options(UIDataMediumOptions())
         , m_details(UIDataMediumDetails())
     {}
 
@@ -86,6 +116,7 @@ struct UIDataMedium
     bool equal(const UIDataMedium &other) const
     {
         return true
+               && (m_options == other.m_options)
                && (m_details == other.m_details)
                ;
     }
@@ -98,6 +129,8 @@ struct UIDataMedium
     /** Holds the medium type. */
     UIMediumType m_enmType;
 
+    /** Holds the medium options. */
+    UIDataMediumOptions m_options;
     /** Holds the details data. */
     UIDataMediumDetails m_details;
 };
@@ -107,6 +140,16 @@ struct UIDataMedium
 class UIMediumDetailsWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about data changed and whether it @a fDiffers. */
+    void sigDataChanged(bool fDiffers);
+
+    /** Notifies listeners about data change rejected and should be reseted. */
+    void sigDataChangeRejected();
+    /** Notifies listeners about data change accepted and should be applied. */
+    void sigDataChangeAccepted();
 
 public:
 
@@ -127,6 +170,17 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
+private slots:
+
+    /** @name Options stuff.
+      * @{ */
+        /** Handles type change. */
+        void sltTypeIndexChanged(int iIndex);
+
+        /** Handles button-box button click. */
+        void sltHandleButtonBoxClick(QAbstractButton *pButton);
+    /** @} */
+
 private:
 
     /** @name Prepare/cleanup cascade.
@@ -135,8 +189,10 @@ private:
         void prepare();
         /** Prepares this. */
         void prepareThis();
-        /** Prepares frame. */
-        void prepareFrame();
+        /** Prepares tab-widget. */
+        void prepareTabWidget();
+        /** Prepares 'Options' tab. */
+        void prepareTabOptions();
         /** Prepares 'Details' tab. */
         void prepareTabDetails();
         /** Prepares information-container. */
@@ -145,10 +201,20 @@ private:
 
     /** @name Loading stuff.
       * @{ */
-        /** Loads data. */
-        void loadData();
-        /** Load details. */
-        void loadDetails();
+        /** Load options data. */
+        void loadDataForOptions();
+        /** Load details data. */
+        void loadDataForDetails();
+    /** @} */
+
+    /** @name Options stuff.
+      * @{ */
+        /** Revalidates changes for passed @a pWidget. */
+        void revalidate(QWidget *pWidget = 0);
+        /** Retranslates validation for passed @a pWidget. */
+        void retranslateValidation(QWidget *pWidget = 0);
+        /** Updates button states. */
+        void updateButtonStates();
     /** @} */
 
     /** @name Details stuff.
@@ -170,8 +236,22 @@ private:
         UIDataMedium  m_oldData;
         /** Holds the new data copy. */
         UIDataMedium  m_newData;
-        /** Holds the frame. */
-        QFrame       *m_pFrame;
+
+        /** Holds the tab-widget. */
+        QITabWidget *m_pTabWidget;
+    /** @} */
+
+    /** @name Options variables.
+      * @{ */
+        /** Holds the type label. */
+        QLabel    *m_pLabelType;
+        /** Holds the type combo-box. */
+        QComboBox *m_pComboBoxType;
+        /** Holds the automatic interface configuration error pane. */
+        QLabel    *m_pErrorPaneType;
+
+        /** Holds the button-box instance. */
+        QIDialogButtonBox *m_pButtonBox;
     /** @} */
 
     /** @name Details variables.

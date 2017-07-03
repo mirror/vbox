@@ -24,7 +24,7 @@
 #include "UIMediumDefs.h"
 
 /* Forward declarations: */
-class QFrame;
+class QAbstractButton;
 class QLabel;
 class QTabWidget;
 class QTreeWidgetItem;
@@ -59,9 +59,16 @@ class UIMediumManagerWidget : public QIWithRetranslateUI<QWidget>
     /** Item action types. */
     enum Action { Action_Add, Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
 
+signals:
+
+    /** Notifies listeners about medium details-widget @a fVisible. */
+    void sigMediumDetailsVisibilityChanged(bool fVisible);
+    /** Notifies listeners about medium details data @a fDiffers. */
+    void sigMediumDetailsDataChanged(bool fDiffers);
+
 public:
 
-    /** Constructs Virtual Medium Manager widget. */
+    /** Constructs Virtual Media Manager widget. */
     UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the menu. */
@@ -81,6 +88,16 @@ protected:
 
         /** Handles @a pShow event. */
         virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** @} */
+
+public slots:
+
+    /** @name Details-widget stuff.
+      * @{ */
+        /** Handles command to reset medium details changes. */
+        void sltResetMediumDetailsChanges();
+        /** Handles command to apply medium details changes. */
+        void sltApplyMediumDetailsChanges();
     /** @} */
 
 private slots:
@@ -111,8 +128,8 @@ private slots:
         void sltRemoveMedium();
         /** Handles command to release medium. */
         void sltReleaseMedium();
-        /** Handles command to modify medium. */
-        void sltModifyMedium();
+        /** Handles command to make medium details @a fVisible. */
+        void sltToggleMediumDetailsVisibility(bool fVisible);
         /** Handles command to refresh medium. */
         void sltRefreshAll();
     /** @} */
@@ -123,8 +140,6 @@ private slots:
         void sltHandleCurrentTabChanged();
         /** Handles item change case. */
         void sltHandleCurrentItemChanged();
-        /** Handles item double-click case. */
-        void sltHandleDoubleClick();
         /** Handles item context-menu-call case. */
         void sltHandleContextMenuCall(const QPoint &position);
     /** @} */
@@ -157,12 +172,12 @@ private:
         void prepareToolBar();
         /** Prepares tab-widget. */
         void prepareTabWidget();
-        /** Prepares details-widget. */
-        void prepareDetailsWidget();
         /** Prepares tab-widget's tab. */
         void prepareTab(UIMediumType type);
         /** Prepares tab-widget's tree-widget. */
         void prepareTreeWidget(UIMediumType type, int iColumns);
+        /** Prepares details-widget. */
+        void prepareDetailsWidget();
 //        /** Prepares progress-bar. */
 //        void prepareProgressBar();
 
@@ -242,7 +257,7 @@ private:
         /** Holds the widget embedding type. */
         const EmbedTo m_enmEmbedding;
 
-        /** Holds whether Virtual Medium Manager should preserve current item change. */
+        /** Holds whether Virtual Media Manager should preserve current item change. */
         bool m_fPreventChangeCurrentItem;
     /** @} */
 
@@ -294,8 +309,8 @@ private:
         QAction   *m_pActionRemove;
         /** Holds the Release action instance. */
         QAction   *m_pActionRelease;
-        /** Holds the Modify action instance. */
-        QAction   *m_pActionModify;
+        /** Holds the Details action instance. */
+        QAction   *m_pActionDetails;
         /** Holds the Refresh action instance. */
         QAction   *m_pActionRefresh;
     /** @} */
@@ -308,7 +323,7 @@ private:
 };
 
 
-/** QIManagerDialogFactory extension used as a factory for Virtual Medium Manager dialog. */
+/** QIManagerDialogFactory extension used as a factory for Virtual Media Manager dialog. */
 class UIMediumManagerFactory : public QIManagerDialogFactory
 {
 protected:
@@ -324,7 +339,22 @@ class UIMediumManager : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
-protected:
+signals:
+
+    /** Notifies listeners about data change rejected and should be reseted. */
+    void sigDataChangeRejected();
+    /** Notifies listeners about data change accepted and should be applied. */
+    void sigDataChangeAccepted();
+
+private slots:
+
+    /** @name Button-box stuff.
+      * @{ */
+        /** Handles button-box button click. */
+        void sltHandleButtonBoxClick(QAbstractButton *pButton);
+    /** @} */
+
+private:
 
     /** Constructs Host Network Manager dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to. */
@@ -342,6 +372,8 @@ protected:
         virtual void configure() /* override */;
         /** Configures central-widget. */
         virtual void configureCentralWidget() /* override */;
+        /** Configures button-box. */
+        virtual void configureButtonBox() /* override */;
         /** Perform final preparations. */
         virtual void finalize() /* override */;
     /** @} */
