@@ -228,8 +228,8 @@ binary: rpm/build-stamp
 	    -e 's|%INSTMOD%|$(instmod)|g' \
 	    -e 's|%LIBASOUND%|$(if $(filter lib64,$(rpmlib)),libasound.so.2()(64bit),libasound.so.2)|g' \
 	    -e 's|%INITSCRIPTS%|$(if $(filter fedora,$(rpmspec)),initscripts,)|g' \
-	    -e "s|%WEBSVC%|$(if $(NOWEBSVC),false,true)|g" \
-	    -e 's|%NETTOOLS%|$(if $(filter fedora18 fedora19 fedora20 fedora21 el5 openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114,$(rpmspec)),net-tools,iproute)|g" \
+	    -e 's|%WEBSVC%|$(if $(NOWEBSVC),false,true)|g' \
+	    -e 's|%NETTOOLS%|$(if $(filter fedora18 fedora19 fedora20 fedora21 el5 openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114,$(rpmspec)),net-tools,iproute)|g' \
 	    rpm/VirtualBox.tmpl.spec > $(archdir)/VirtualBox.spec
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
 	cp ../../../../tools/linux.$(chrarch)/bin/chrpath rpm/$(rpmname) || true
