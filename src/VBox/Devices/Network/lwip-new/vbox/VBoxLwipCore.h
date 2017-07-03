@@ -19,8 +19,8 @@
 #define __VBOXLWIPCORE_H__
 
 
-typedef DECLCALLBACK(void) FNRT1(void *);
-typedef FNRT1 *PFNRT1;
+typedef DECLCALLBACKPTR(void, PFNRT1)(void *);
+
 /**
  * initiliazes LWIP core, and do callback on tcp/ip thread
  */
