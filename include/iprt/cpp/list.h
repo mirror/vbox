@@ -134,6 +134,7 @@ class RTCListHelper
 public:
     static inline void      set(T2 *p, size_t i, const T1 &v) { p[i] = v; }
     static inline T1 &      at(T2 *p, size_t i) { return p[i]; }
+    static inline const T1 &atConst(T2 const *p, size_t i) { return p[i]; }
     static inline size_t    find(T2 *p, const T1 &v, size_t cElements)
     {
         size_t i = cElements;
@@ -160,6 +161,7 @@ class RTCListHelper<T1, T1*>
 public:
     static inline void      set(T1 **p, size_t i, const T1 &v) { p[i] = new T1(v); }
     static inline T1 &      at(T1 **p, size_t i) { return *p[i]; }
+    static inline const T1 &atConst(T1 * const *p, size_t i) { return *p[i]; }
     static inline size_t    find(T1 **p, const T1 &v, size_t cElements)
     {
         size_t i = cElements;
@@ -406,6 +408,25 @@ public:
     }
 
     /**
+     * Append a default item to the list.
+     *
+     * @return  a mutable reference to the item
+     * @throws  std::bad_alloc
+     */
+    GET_RTYPE append()
+    {
+        m_guard.enterWrite();
+        if (m_cElements == m_cCapacity)
+            growArray(m_cCapacity + kDefaultCapacity);
+        RTCListHelper<T, ITYPE>::set(m_pArray, m_cElements, T());
+        GET_RTYPE rRet = RTCListHelper<T, ITYPE>::at(m_pArray, m_cElements);
+        ++m_cElements;
+        m_guard.leaveWrite();
+
+        return rRet;
+    }
+
+    /**
      * Append an item to the list.
      *
      * @param   val   The new item.
@@ -627,10 +648,28 @@ public:
     }
 
     /**
-     * Return the item at position @a i or default value if out of range.
+     * Return the item at position @a i as immutable reference.
+     *
+     * @param   i     The position of the item to return.  This better not be out of
+     *                bounds, however should it be the last element of the array
+     *                will be return and strict builds will raise an assertion.
+     *                Should the array be empty, a crash is very likely.
+     * @return   The item at position @a i.
+     */
+    const T &operator[](size_t i) const
+    {
+        m_guard.enterRead();
+        AssertMsgStmt(i < m_cElements, ("i=%zu m_cElements=%zu\n", i, m_cElements), i = m_cElements - 1);
+        const T &rRet = RTCListHelper<T, ITYPE>::atConst(m_pArray, i);
+        m_guard.leaveRead();
+        return rRet;
+    }
+
+    /**
+     * Return a copy of the item at position @a i or default value if out of range.
      *
      * @param   i              The position of the item to return.
-     * @return  The item at position @a i or default value.
+     * @return  Copy of the item at position @a i or default value.
      */
     T value(size_t i) const
     {
@@ -646,11 +685,11 @@ public:
     }
 
     /**
-     * Return the item at position @a i, or @a defaultVal if out of range.
+     * Return a copy of the item at position @a i, or @a defaultVal if out of range.
      *
      * @param   i              The position of the item to return.
      * @param   defaultVal     The value to return in case @a i is invalid.
-     * @return  The item at position @a i or @a defaultVal.
+     * @return  Copy of the item at position @a i or @a defaultVal.
      */
     T value(size_t i, const T &defaultVal) const
     {
