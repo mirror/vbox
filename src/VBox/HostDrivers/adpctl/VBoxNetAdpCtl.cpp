@@ -319,8 +319,9 @@ const char * CmdIpLinux::combine(const char *pcszAddress, const char *pcszNetmas
                     mask <<= 1;
                 }
             }
-            pszBuffer = new char[strlen(pcszAddress) + 4]; // '/xx\0'
-            sprintf(pszBuffer, "%s/%u", pcszAddress, cBits);
+            const size_t cbBuf = strlen(pcszAddress) + 4;
+            pszBuffer = new char[cbBuf]; // '/xx\0'
+            snprintf(pszBuffer, cbBuf, "%s/%u", pcszAddress, cBits);
             return pszBuffer;
         }
     }
@@ -485,7 +486,7 @@ class Adapter
 public:
     int add(char *pszNameInOut);
     int remove(const char *pcszName);
-    int checkName(const char *pcszNameIn, char *pszNameOut);
+    int checkName(const char *pcszNameIn, char *pszNameOut, size_t cbNameOut);
 protected:
     virtual int doIOCtl(unsigned long iCmd, VBOXNETADPREQ *pReq);
 };
@@ -587,7 +588,7 @@ int Adapter::remove(const char *pcszName)
     return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
 }
 
-int Adapter::checkName(const char *pcszNameIn, char *pszNameOut)
+int Adapter::checkName(const char *pcszNameIn, char *pszNameOut, size_t cbNameOut)
 {
     int iAdapterIndex = -1;
 
@@ -598,7 +599,7 @@ int Adapter::checkName(const char *pcszNameIn, char *pszNameOut)
         fprintf(stderr, "VBoxNetAdpCtl: Setting configuration for '%s' is not supported.\n", pcszNameIn);
         return ADPCTLERR_BAD_NAME;
     }
-    sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
+    snprintf(pszNameOut, cbNameOut, "vboxnet%d", iAdapterIndex);
     if (strcmp(pszNameOut, pcszNameIn))
     {
         fprintf(stderr, "VBoxNetAdpCtl: Invalid adapter name '%s'.\n", pcszNameIn);
@@ -701,8 +702,8 @@ int main(int argc, char *argv[])
         return rc;
     }
 #endif
-    
-    rc = g_adapter.checkName(argv[1], szAdapterName);
+
+    rc = g_adapter.checkName(argv[1], szAdapterName, sizeof(szAdapterName));
     if (rc)
         return rc;
 
