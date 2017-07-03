@@ -29,6 +29,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIMediumDetailsWidget.h"
 # include "UIMediumManager.h"
 # include "UIWizardCloneVD.h"
 # include "UIMessageCenter.h"
@@ -53,63 +54,6 @@
 # endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-
-/** Virtual Media Manager: Medium details data structure. */
-struct UIDataMediumDetails
-{
-    /** Constructs data. */
-    UIDataMediumDetails()
-        : m_aDetails(QStringList())
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataMediumDetails &other) const
-    {
-        return true
-               && (m_aDetails == other.m_aDetails)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataMediumDetails &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataMediumDetails &other) const { return !equal(other); }
-
-    /** Holds the details list. */
-    QStringList m_aDetails;
-};
-
-
-/** Virtual Media Manager: Medium data structure. */
-struct UIDataMedium
-{
-    /** Constructs data. */
-    UIDataMedium()
-        : m_enmType(UIMediumType_Invalid)
-        , m_details(UIDataMediumDetails())
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataMedium &other) const
-    {
-        return true
-               && (m_enmType == other.m_enmType)
-               && (m_details == other.m_details)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataMedium &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataMedium &other) const { return !equal(other); }
-
-    /** Holds the medium type. */
-    UIMediumType m_enmType;
-
-    /** Holds the details data. */
-    UIDataMediumDetails m_details;
-};
 
 
 /** QITreeWidgetItem extension representing Medium Manager item. */
@@ -447,32 +391,45 @@ void UIMediumItem::refresh()
     /* Gather medium data: */
     m_enmType = m_guiMedium.type();
     /* Gather medium details data: */
-    m_details.m_aDetails.clear();
+    m_details.m_aFields.clear();
     switch (m_enmType)
     {
         case UIMediumType_HardDisk:
         {
-            m_details.m_aDetails << hardDiskType();
-            m_details.m_aDetails << formatFieldText(location(), true, "end");
-            m_details.m_aDetails << hardDiskFormat();
-            m_details.m_aDetails << details();
-            m_details.m_aDetails << (usage().isNull() ?
+            m_details.m_aLabels << UIMediumManager::tr("Type:");
+            m_details.m_aLabels << UIMediumManager::tr("Location:");
+            m_details.m_aLabels << UIMediumManager::tr("Format:");
+            m_details.m_aLabels << UIMediumManager::tr("Storage details:");
+            m_details.m_aLabels << UIMediumManager::tr("Attached to:");
+            m_details.m_aLabels << UIMediumManager::tr("Encrypted with key:");
+            m_details.m_aLabels << UIMediumManager::tr("UUID:");
+
+            m_details.m_aFields << hardDiskType();
+            m_details.m_aFields << formatFieldText(location(), true, "end");
+            m_details.m_aFields << hardDiskFormat();
+            m_details.m_aFields << details();
+            m_details.m_aFields << (usage().isNull() ?
                                      formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
                                      formatFieldText(usage()));
-            m_details.m_aDetails << (encryptionPasswordID().isNull() ?
+            m_details.m_aFields << (encryptionPasswordID().isNull() ?
                                      formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Encrypted</i>"), false) :
                                      formatFieldText(encryptionPasswordID()));
-            m_details.m_aDetails << id();
+            m_details.m_aFields << id();
+
             break;
         }
         case UIMediumType_DVD:
         case UIMediumType_Floppy:
         {
-            m_details.m_aDetails << formatFieldText(location(), true, "end");
-            m_details.m_aDetails << (usage().isNull() ?
+            m_details.m_aLabels << UIMediumManager::tr("Location:");
+            m_details.m_aLabels << UIMediumManager::tr("Attached to:");
+            m_details.m_aLabels << UIMediumManager::tr("UUID:");
+
+            m_details.m_aFields << formatFieldText(location(), true, "end");
+            m_details.m_aFields << (usage().isNull() ?
                                      formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
                                      formatFieldText(usage()));
-            m_details.m_aDetails << id();
+            m_details.m_aFields << id();
             break;
         }
         default:
@@ -857,6 +814,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_iconHD(UIIconPool::iconSet(":/hd_16px.png", ":/hd_disabled_16px.png"))
     , m_iconCD(UIIconPool::iconSet(":/cd_16px.png", ":/cd_disabled_16px.png"))
     , m_iconFD(UIIconPool::iconSet(":/fd_16px.png", ":/fd_disabled_16px.png"))
+    , m_pDetailsWidget(0)
     , m_pToolBar(0)
     , m_pContextMenu(0)
     , m_pMenu(0)
@@ -935,22 +893,6 @@ void UIMediumManagerWidget::retranslateUi()
         pTreeWidgetHD->headerItem()->setText(2, UIMediumManager::tr("Actual Size"));
     }
 
-    /* Translate HD information-labels: */
-    if (infoLabel(UIMediumType_HardDisk, 0))
-        infoLabel(UIMediumType_HardDisk, 0)->setText(UIMediumManager::tr("Type:"));
-    if (infoLabel(UIMediumType_HardDisk, 1))
-        infoLabel(UIMediumType_HardDisk, 1)->setText(UIMediumManager::tr("Location:"));
-    if (infoLabel(UIMediumType_HardDisk, 2))
-        infoLabel(UIMediumType_HardDisk, 2)->setText(UIMediumManager::tr("Format:"));
-    if (infoLabel(UIMediumType_HardDisk, 3))
-        infoLabel(UIMediumType_HardDisk, 3)->setText(UIMediumManager::tr("Storage details:"));
-    if (infoLabel(UIMediumType_HardDisk, 4))
-        infoLabel(UIMediumType_HardDisk, 4)->setText(UIMediumManager::tr("Attached to:"));
-    if (infoLabel(UIMediumType_HardDisk, 5))
-        infoLabel(UIMediumType_HardDisk, 5)->setText(UIMediumManager::tr("Encrypted with key:"));
-    if (infoLabel(UIMediumType_HardDisk, 6))
-        infoLabel(UIMediumType_HardDisk, 6)->setText(UIMediumManager::tr("UUID:"));
-
     /* Translate CD tree-widget: */
     QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
     if (pTreeWidgetCD)
@@ -959,14 +901,6 @@ void UIMediumManagerWidget::retranslateUi()
         pTreeWidgetCD->headerItem()->setText(1, UIMediumManager::tr("Size"));
     }
 
-    /* Translate CD information-labels: */
-    if (infoLabel(UIMediumType_DVD, 0))
-        infoLabel(UIMediumType_DVD, 0)->setText(UIMediumManager::tr("Location:"));
-    if (infoLabel(UIMediumType_DVD, 1))
-        infoLabel(UIMediumType_DVD, 1)->setText(UIMediumManager::tr("Attached to:"));
-    if (infoLabel(UIMediumType_DVD, 2))
-        infoLabel(UIMediumType_DVD, 2)->setText(UIMediumManager::tr("UUID:"));
-
     /* Translate FD tree-widget: */
     QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
     if (pTreeWidgetFD)
@@ -974,14 +908,6 @@ void UIMediumManagerWidget::retranslateUi()
         pTreeWidgetFD->headerItem()->setText(0, UIMediumManager::tr("Name"));
         pTreeWidgetFD->headerItem()->setText(1, UIMediumManager::tr("Size"));
     }
-
-    /* Translate FD information-labels: */
-    if (infoLabel(UIMediumType_Floppy, 0))
-        infoLabel(UIMediumType_Floppy, 0)->setText(UIMediumManager::tr("Location:"));
-    if (infoLabel(UIMediumType_Floppy, 1))
-        infoLabel(UIMediumType_Floppy, 1)->setText(UIMediumManager::tr("Attached to:"));
-    if (infoLabel(UIMediumType_Floppy, 2))
-        infoLabel(UIMediumType_Floppy, 2)->setText(UIMediumManager::tr("UUID:"));
 
     /* Translate progress-bar: */
     if (m_pProgressBar)
@@ -1168,9 +1094,9 @@ void UIMediumManagerWidget::sltModifyMedium()
     /* Modify current medium-item: */
     bool fResult = pMediumItem->modify();
 
-    /* Update HD information-panes: */
+    /* Update current information-panes: */
     if (fResult)
-        updateInformationFields(UIMediumType_HardDisk);
+        refetchCurrentChosenMediumItem();
 }
 
 void UIMediumManagerWidget::sltRefreshAll()
@@ -1194,6 +1120,9 @@ void UIMediumManagerWidget::sltHandleCurrentTabChanged()
     /* Update action icons: */
     updateActionIcons();
 
+    /* Raise the required information-container: */
+    if (m_pDetailsWidget)
+        m_pDetailsWidget->setCurrentType(currentMediumType());
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
 }
@@ -1269,9 +1198,6 @@ void UIMediumManagerWidget::prepare()
 
     /* Apply language settings: */
     retranslateUi();
-
-    /* Initialize information-panes: */
-    updateInformationFields(UIMediumType_All);
 
     /* Start medium-enumeration (if necessary): */
     if (!vboxGlobal().isMediumEnumerationInProgress())
@@ -1436,6 +1362,8 @@ void UIMediumManagerWidget::prepareWidgets()
         prepareToolBar();
         /* Prepare tab-widget: */
         prepareTabWidget();
+        /* Prepare details-widget: */
+        prepareDetailsWidget();
     }
 }
 
@@ -1518,8 +1446,6 @@ void UIMediumManagerWidget::prepareTab(UIMediumType type)
         {
             /* Prepare tree-widget: */
             prepareTreeWidget(type, type == UIMediumType_HardDisk ? 3 : 2);
-            /* Prepare information-container: */
-            prepareInformationContainer(type, type == UIMediumType_HardDisk ? 7 : 3);
         }
     }
 }
@@ -1574,48 +1500,17 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
     }
 }
 
-void UIMediumManagerWidget::prepareInformationContainer(UIMediumType enmType, int cFields)
+void UIMediumManagerWidget::prepareDetailsWidget()
 {
-    /* Create information-container: */
-    m_containers[enmType] = new QFrame;
-    QFrame *pInformationContainer = infoContainer(enmType);
-    AssertPtrReturnVoid(pInformationContainer);
+    /* Create details-widget: */
+    m_pDetailsWidget = new UIMediumDetailsWidget(m_enmEmbedding);
+    AssertPtrReturnVoid(m_pDetailsWidget);
     {
-        /* Configure information-container: */
-        pInformationContainer->setFrameShape(QFrame::Box);
-        pInformationContainer->setFrameShadow(QFrame::Sunken);
-        /* Create information-container layout: */
-        new QGridLayout(pInformationContainer);
-        QGridLayout *pInformationContainerLayout = qobject_cast<QGridLayout*>(pInformationContainer->layout());
-        AssertPtrReturnVoid(pInformationContainerLayout);
-        {
-            /* Configure information-container layout: */
-            pInformationContainerLayout->setVerticalSpacing(0);
-            pInformationContainerLayout->setContentsMargins(5, 5, 5, 5);
-            pInformationContainerLayout->setColumnStretch(1, 1);
-            /* Create information-container labels & fields: */
-            for (int i = 0; i < cFields; ++i)
-            {
-                /* Create information-label: */
-                m_labels[enmType] << new QLabel;
-                QLabel *pLabel = infoLabel(enmType, i);
-                AssertPtrReturnVoid(pLabel);
-                /* Create information-field: */
-                m_fields[enmType] << new QILabel;
-                QILabel *pField = infoField(enmType, i);
-                AssertPtrReturnVoid(pField);
-                {
-                    /* Configure information-field: */
-                    pField->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed));
-                    pField->setFullSizeSelection(true);
-                }
-                /* Add information-container labels & fields into container layout: */
-                pInformationContainerLayout->addWidget(pLabel, i, 0);
-                pInformationContainerLayout->addWidget(pField, i, 1);
-            }
-        }
-        /* Add information-container into tab layout: */
-        tab(enmType)->layout()->addWidget(pInformationContainer);
+        /* Configure details-widget: */
+        m_pDetailsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+
+        /* Add into layout: */
+        layout()->addWidget(m_pDetailsWidget);
     }
 }
 
@@ -1698,8 +1593,9 @@ void UIMediumManagerWidget::refetchCurrentMediumItem(UIMediumType type)
     /* Update actions: */
     updateActions();
 
-    /* Update corresponding information-panes: */
-    updateInformationFields(type);
+    /* Update details-widget: */
+    if (m_pDetailsWidget)
+        m_pDetailsWidget->setData(pMediumItem ? *pMediumItem : UIDataMedium(type));
 }
 
 void UIMediumManagerWidget::refetchCurrentChosenMediumItem()
@@ -1870,34 +1766,6 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
         }
 
         case Action_Copy: case Action_Modify: case Action_Release: break; /* Shut up MSC */
-    }
-}
-
-void UIMediumManagerWidget::updateInformationFields(UIMediumType enmType /* = UIMediumType_Invalid */)
-{
-    /* Make sure passed medium type is valid: */
-    if (enmType == UIMediumType_Invalid)
-        enmType = currentMediumType();
-
-    /* Which medium types should we update? */
-    const QList<UIMediumType> aTypes = enmType == UIMediumType_All
-                                     ? m_fields.keys()
-                                     : QList<UIMediumType>() << enmType;
-
-    /* For each requested type: */
-    foreach (UIMediumType enmType, aTypes)
-    {
-        /* Get current medium-item: */
-        UIMediumItem *pCurrentItem = currentMediumItem();
-
-        /* Get information-fields just to acquire their number: */
-        const QList<QILabel*> aFields = m_fields.value(enmType, QList<QILabel*>());
-        /* For each field => clear the contents: */
-        for (int i = 0; i < aFields.size(); ++i)
-            if (pCurrentItem)
-                infoField(enmType, i)->setText(pCurrentItem->m_details.m_aDetails.value(i, QString()));
-            else
-                infoField(enmType, i)->clear();
     }
 }
 
@@ -2138,30 +2006,6 @@ UIMediumItem* UIMediumManagerWidget::mediumItem(UIMediumType type) const
     QITreeWidget *pTreeWidget = treeWidget(type);
     /* Return corresponding medium-item: */
     return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
-}
-
-QFrame *UIMediumManagerWidget::infoContainer(UIMediumType enmType) const
-{
-    /* Return information-container for known medium type: */
-    return m_containers.value(enmType, 0);
-}
-
-QLabel *UIMediumManagerWidget::infoLabel(UIMediumType enmType, int iIndex) const
-{
-    /* Look for corresponding information-label list for known medium type: */
-    const QList<QLabel*> labels = m_labels.value(enmType, QList<QLabel*>());
-
-    /* Return information-label for known index: */
-    return labels.value(iIndex, 0);
-}
-
-QILabel *UIMediumManagerWidget::infoField(UIMediumType enmType, int iIndex) const
-{
-    /* Look for corresponding information-field list for known medium type: */
-    const QList<QILabel*> fields = m_fields.value(enmType, QList<QILabel*>());
-
-    /* Return information-field for known index: */
-    return fields.value(iIndex, 0);
 }
 
 UIMediumType UIMediumManagerWidget::mediumType(QITreeWidget *pTreeWidget) const

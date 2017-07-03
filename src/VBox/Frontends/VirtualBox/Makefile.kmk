@@ -336,6 +336,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/VBoxUtils.h \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
 	src/hostnetwork/UIHostNetworkManager.h \
+	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumManager.h \
 	src/runtime/UIActionPoolRuntime.h \
@@ -646,6 +647,7 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMedium.cpp \
+	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/objects/UIRichTextString.cpp \

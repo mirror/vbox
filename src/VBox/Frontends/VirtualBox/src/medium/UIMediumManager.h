@@ -33,6 +33,7 @@ class QILabel;
 class QITreeWidget;
 class UIEnumerationProgressBar;
 class UIMedium;
+class UIMediumDetailsWidget;
 class UIMediumItem;
 class UIToolBar;
 
@@ -156,12 +157,12 @@ private:
         void prepareToolBar();
         /** Prepares tab-widget. */
         void prepareTabWidget();
+        /** Prepares details-widget. */
+        void prepareDetailsWidget();
         /** Prepares tab-widget's tab. */
         void prepareTab(UIMediumType type);
         /** Prepares tab-widget's tree-widget. */
         void prepareTreeWidget(UIMediumType type, int iColumns);
-        /** Prepares tab-widget's information-container. */
-        void prepareInformationContainer(UIMediumType enmType, int cFields);
 //        /** Prepares progress-bar. */
 //        void prepareProgressBar();
 
@@ -181,8 +182,6 @@ private:
         void updateActionIcons();
         /** Updates tab icons according last @a action happened with @a pItem. */
         void updateTabIcons(UIMediumItem *pItem, Action action);
-        /** Updates information fields of passed medium @a enmType. */
-        void updateInformationFields(UIMediumType enmType = UIMediumType_Invalid);
     /** @} */
 
     /** @name Widget operation stuff.
@@ -202,12 +201,6 @@ private:
         QITreeWidget *treeWidget(UIMediumType type) const;
         /** Returns item for passed medium @a type. */
         UIMediumItem *mediumItem(UIMediumType type) const;
-        /** Returns information-container for passed medium @a enmType. */
-        QFrame *infoContainer(UIMediumType enmType) const;
-        /** Returns information-label for passed medium @a enmType and @a iIndex. */
-        QLabel *infoLabel(UIMediumType enmType, int iIndex) const;
-        /** Returns information-field for passed medium @a enmType and @a iIndex. */
-        QILabel *infoField(UIMediumType enmType, int iIndex) const;
 
         /** Returns medium type for passed @a pTreeWidget. */
         UIMediumType mediumType(QITreeWidget *pTreeWidget) const;
@@ -261,12 +254,6 @@ private:
         const int                    m_iTabCount;
         /** Holds the map of tree-widget instances. */
         QMap<int, QITreeWidget*>     m_trees;
-        /** Holds the map of information-container instances. */
-        QMap<UIMediumType, QFrame*>           m_containers;
-        /** Holds the map of information-container label instances. */
-        QMap<UIMediumType, QList<QLabel*> >   m_labels;
-        /** Holds the information-container field instances. */
-        QMap<UIMediumType, QList<QILabel*> >  m_fields;
         /** Holds whether hard-drive tab-widget have inaccessible item. */
         bool                         m_fInaccessibleHD;
         /** Holds whether optical-disk tab-widget have inaccessible item. */
@@ -285,6 +272,12 @@ private:
         QString                      m_strCurrentIdCD;
         /** Holds current floppy-disk tree-view item ID. */
         QString                      m_strCurrentIdFD;
+    /** @} */
+
+    /** @name Details-widget variables.
+      * @{ */
+        /** Holds the medium details-widget instance. */
+        UIMediumDetailsWidget *m_pDetailsWidget;
     /** @} */
 
     /** @name Toolbar and menu variables.
