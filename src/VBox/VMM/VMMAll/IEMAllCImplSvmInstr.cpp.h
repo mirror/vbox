@@ -501,10 +501,10 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
              */
             /* EFER, CR0 and CR4. */
             uint64_t uValidEfer;
-            rc = CPUMQueryValidatedGuestEfer(pVM, VmcbNstGst.u64CR0, 0 /* uOldEfer */, VmcbNstGst.u64EFER, &uValidEfer);
+            rc = CPUMQueryValidatedGuestEfer(pVM, VmcbNstGst.u64CR0, VmcbNstGst.u64EFER, VmcbNstGst.u64EFER, &uValidEfer);
             if (RT_FAILURE(rc))
             {
-                Log(("iemSvmVmrun: EFER invalid uOldEfer=%#RX64 uValidEfer=%#RX64 -> #VMEXIT\n", VmcbNstGst.u64EFER, uValidEfer));
+                Log(("iemSvmVmrun: EFER invalid uOldEfer=%#RX64 -> #VMEXIT\n", VmcbNstGst.u64EFER));
                 return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
             }
             bool const fSvm                     = RT_BOOL(uValidEfer & MSR_K6_EFER_SVME);
