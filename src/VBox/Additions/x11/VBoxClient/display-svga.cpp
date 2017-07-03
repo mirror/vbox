@@ -326,6 +326,11 @@ static void x11GetScreenInfo(struct X11CONTEXT *pContext)
         VBClFatalError(("%s failed to set resolution\n", __func__));
 }
 
+static const char *getPidFilePath()
+{
+    return ".vboxclient-display-svga.pid";
+}
+
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
     (void)ppInterface;
@@ -356,9 +361,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to request display change events, rc=%Rrc\n", rc));
-    rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
-    if (rc == VERR_RESOURCE_BUSY)  /* Someone else has already acquired it. */
-        return VINF_SUCCESS;
+    rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to register resizing support, rc=%Rrc\n", rc));
     for (;;)
@@ -413,11 +416,10 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
 struct VBCLSERVICE interface =
 {
-    NULL,  /* No pidfile needed, as we use acquire capability for exclusion. */
+    getPidFilePath,
     VBClServiceDefaultHandler, /* Init */
     run,
-    VBClServiceDefaultCleanup,
-    true  /* fDaemonise */
+    VBClServiceDefaultCleanup
 }, *pInterface = &interface;
 
 struct VBCLSERVICE **VBClDisplaySVGAService()

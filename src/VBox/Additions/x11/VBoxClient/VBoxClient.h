@@ -41,7 +41,7 @@ extern void VBClCleanUp();
  * service per invocation. */
 struct VBCLSERVICE
 {
-    /** Get the services default path to pidfile, relative to $HOME.  Optional */
+    /** Get the services default path to pidfile, relative to $HOME */
     /** @todo Should this also have a component relative to the X server number?
      */
     const char *(*getPidFilePath)(void);
@@ -54,9 +54,6 @@ struct VBCLSERVICE
      * to @a pause and @a resume are guaranteed to finish before this is called.
      */
     void (*cleanup)(struct VBCLSERVICE **ppInterface);
-    /** Should the service daemonise?  Only checked if @a getPidFilePath is NULL. */
-    /** @todo clean this up along with the pidfile handling. */
-    bool fDaemonise;
 };
 
 /** Default handler for various struct VBCLSERVICE member functions. */
