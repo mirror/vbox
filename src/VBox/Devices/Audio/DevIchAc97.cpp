@@ -2338,9 +2338,21 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * Port I/O Handler for IN operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ * @returns VERR_IOM_IOPORT_UNUSED if the port is really unused and a ~0 value should be returned.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   pu32Val     Where to store the result.  This is always a 32-bit
+ *                      variable regardless of what @a cbVal might say.
+ * @param   cbVal       Number of bytes read.
+ * @remarks Caller enters the device critical section.
  */
-static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
+                                               uint32_t *pu32Val, unsigned cbVal)
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
@@ -2497,7 +2509,16 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * Port I/O Handler for OUT operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the OUT operation.
+ * @param   u32Val      The value to output.
+ * @param   cbVal       The value size in bytes.
+ * @remarks Caller enters the device critical section.
  */
 static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
                                                 uint32_t u32Val, unsigned cbVal)
@@ -2674,7 +2695,18 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * Port I/O Handler for IN operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ * @returns VERR_IOM_IOPORT_UNUSED if the port is really unused and a ~0 value should be returned.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   pu32Val     Where to store the result.  This is always a 32-bit
+ *                      variable regardless of what @a cbVal might say.
+ * @param   cbVal       Number of bytes read.
+ * @remarks Caller enters the device critical section.
  */
 static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32Val, unsigned cbVal)
 {
@@ -2727,9 +2759,19 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * Port I/O Handler for OUT operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the OUT operation.
+ * @param   u32Val      The value to output.
+ * @param   cbVal       The value size in bytes.
+ * @remarks Caller enters the device critical section.
  */
-static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
+                                               uint32_t u32Val, unsigned cbVal)
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
