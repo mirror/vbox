@@ -192,7 +192,7 @@ public:
 
         u.f = value;
 
-        for (int8_t i = 3; i >= 0; i--) /* Converts values to big endian. */
+        for (int i = 3; i >= 0; i--) /* Converts values to big endian. */
             write(&u.u8[i], 1);
 
         return *this;
