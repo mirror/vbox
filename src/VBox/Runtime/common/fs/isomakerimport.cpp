@@ -157,10 +157,54 @@ typedef struct RTFSISOMKIMPORTER
 
     /** A somewhat larger buffer. */
     uint8_t             abBuf[_64K];
+
+    /** The SUSP skip into system area offset. */
+    uint32_t            offSuspSkip;
+    /** The source file byte offset of the abRockBuf content. */
+    uint64_t            offRockBuf;
+    /** Name buffer for rock ridge.  */
+    char                szRockNameBuf[_2K];
+    /** A buffer for reading rock ridge continuation blocks into   */
+    uint8_t             abRockBuf[ISO9660_SECTOR_SIZE];
 } RTFSISOMKIMPORTER;
 /** Pointer to an ISO maker ISO importer state. */
 typedef RTFSISOMKIMPORTER *PRTFSISOMKIMPORTER;
 
+
+/*
+ * The following is also found in iso9660vfs.cpp:
+ * The following is also found in iso9660vfs.cpp:
+ * The following is also found in iso9660vfs.cpp:
+ */
+
+/**
+ * Converts a ISO 9660 binary timestamp into an IPRT timesspec.
+ *
+ * @param   pTimeSpec       Where to return the IRPT time.
+ * @param   pIso9660        The ISO 9660 binary timestamp.
+ */
+static void rtFsIsoImpIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIMESTAMP pIso9660)
+{
+    RTTIME Time;
+    Time.fFlags         = RTTIME_FLAGS_TYPE_UTC;
+    Time.offUTC         = 0;
+    Time.i32Year        = pIso9660->bYear + 1900;
+    Time.u8Month        = RT_MIN(RT_MAX(pIso9660->bMonth, 1), 12);
+    Time.u8MonthDay     = RT_MIN(RT_MAX(pIso9660->bDay, 1), 31);
+    Time.u8WeekDay      = UINT8_MAX;
+    Time.u16YearDay     = 0;
+    Time.u8Hour         = RT_MIN(pIso9660->bHour, 23);
+    Time.u8Minute       = RT_MIN(pIso9660->bMinute, 59);
+    Time.u8Second       = RT_MIN(pIso9660->bSecond, 59);
+    Time.u32Nanosecond  = 0;
+    RTTimeImplode(pTimeSpec, RTTimeNormalize(&Time));
+
+    /* Only apply the UTC offset if it's within reasons. */
+    if (RT_ABS(pIso9660->offUtc) <= 13*4)
+        RTTimeSpecSubSeconds(pTimeSpec, pIso9660->offUtc * 15 * 60 * 60);
+}
+
+/* end of duplicated static functions. */
 
 
 /**
@@ -409,6 +453,66 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
     else
         return rtFsIsoImpError(pThis, rc, "Error adding directory '%s': %Rrc", pszName, pDirRec->fFileFlags, rc);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Parses rock ridge information if present in the directory entry.
+ *
+ * @param   pThis               The importer instance.
+ * @param   pObjInfo            The object information to improve upon.
+ * @param   pbSys               The system area of the directory record.
+ * @param   cbSys               The number of bytes present in the sys area.
+ */
+static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORTER pThis, PRTFSOBJINFO pObjInfo,
+                                                                uint8_t const *pbSys, size_t cbSys)
+{
+    RT_NOREF(pObjInfo);
+
+    /*
+     * Skip and check the signature of the first record.
+     */
+    if (pThis->offSuspSkip)
+    {
+        if (cbSys <= pThis->offSuspSkip)
+            return;
+        pbSys += pThis->offSuspSkip;
+        cbSys -= pThis->offSuspSkip;
+    }
+    if (cbSys < 4)
+        return;
+#if 0
+    while (cbSys >= 4)
+    {
+
+
+        /* SUSP: */
+        if (pbSys[0] == 'C' && pbSys[1] == 'E')
+        {
+        }
+        else if (pbSys[0] == 'P' && pbSys[1] == 'D')
+        else if (pbSys[0] == 'S' && pbSys[1] == 'P')
+        else if (pbSys[0] == 'S' && pbSys[1] == 'T')
+        else if (pbSys[0] == 'E' && pbSys[1] == 'R')
+        else if (pbSys[0] == 'E' && pbSys[1] == 'S')
+        /* RRIP */
+        else if (pbSys[0] == 'R' && pbSys[1] == 'R')
+        else if (pbSys[0] == 'P' && pbSys[1] == 'X')
+        else if (pbSys[0] == 'P' && pbSys[1] == 'N')
+        else if (pbSys[0] == 'S' && pbSys[1] == 'L')
+        else if (pbSys[0] == 'N' && pbSys[1] == 'M')
+        else if (pbSys[0] == 'C' && pbSys[1] == 'L')
+        else if (pbSys[0] == 'P' && pbSys[1] == 'L')
+        else if (pbSys[0] == 'R' && pbSys[1] == 'E')
+        else if (pbSys[0] == 'T' && pbSys[1] == 'F')
+        else if (pbSys[0] == 'S' && pbSys[1] == 'F')
+        /* other stuff */
+        else if (pbSys[0] == 'A' && pbSys[1] == 'A')
+        else if (pbSys[0] == 'A' && pbSys[1] == 'B')
+        else if (pbSys[0] == 'A' && pbSys[1] == 'S')
+
+    }
+#endif
 }
 
 
@@ -704,6 +808,27 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
         uint32_t        cbChunkNew  = cbChunk - pDirRec->cbDirRec;
         PCISO9660DIRREC pDirRecNext = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);
 
+        /* Start Collecting object info. */
+        RTFSOBJINFO ObjInfo;
+        ObjInfo.cbObject           = ISO9660_GET_ENDIAN(&pDirRec->cbData);
+        ObjInfo.cbAllocated        = ObjInfo.cbObject;
+        rtFsIsoImpIso9660DateTime2TimeSpec(&ObjInfo.AccessTime, &pDirRec->RecTime);
+        ObjInfo.ModificationTime   = ObjInfo.AccessTime;
+        ObjInfo.ChangeTime         = ObjInfo.AccessTime;
+        ObjInfo.BirthTime          = ObjInfo.AccessTime;
+        ObjInfo.Attr.fMode         = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY
+                                   ? RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | 0555
+                                   : RTFS_TYPE_FILE      | RTFS_DOS_ARCHIVED  | 0444;
+        ObjInfo.Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
+        ObjInfo.Attr.u.Unix.uid             = NIL_RTUID;
+        ObjInfo.Attr.u.Unix.gid             = NIL_RTGID;
+        ObjInfo.Attr.u.Unix.cHardlinks      = 1;
+        ObjInfo.Attr.u.Unix.INodeIdDevice   = 0;
+        ObjInfo.Attr.u.Unix.INodeId         = 0;
+        ObjInfo.Attr.u.Unix.fFlags          = 0;
+        ObjInfo.Attr.u.Unix.GenerationId    = 0;
+        ObjInfo.Attr.u.Unix.Device          = 0;
+
         /*
          * Convert the name into the name buffer (szNameBuf).
          */
@@ -722,7 +847,6 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
         if (RT_SUCCESS(rc))
         {
             /* Drop the version from the name. */
-            /** @todo preserve the file version on import. */
             size_t cchName = strlen(pThis->szNameBuf);
             if (   !(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
                 && cchName > 2
@@ -735,15 +859,16 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                     offName++;
                 if (   offName + 1 < cchName
                     && pThis->szNameBuf[cchName - offName] == ';')
+                {
+                    RTStrToUInt32Full(&pThis->szNameBuf[cchName - offName + 1], 10, &ObjInfo.Attr.u.Unix.GenerationId);
                     pThis->szNameBuf[cchName - offName] = '\0';
+                }
             }
             Log3(("  --> name='%s'\n", pThis->szNameBuf));
 
-            /** @todo rock ridge. */
+            pThis->szRockNameBuf[0] = '\0';
             if (cbSys > 0)
-            {
-                RT_NOREF(pbSys);
-            }
+                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys);
 
             /*
              * Deal with multi-extent files (usually large ones).  We currently only
@@ -877,6 +1002,8 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
  */
 static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t offDirBlock, uint32_t cbDir, bool fUnicode)
 {
+    pThis->offSuspSkip = 0;
+
     /*
      * Make sure we've got a root in the namespace.
      */
@@ -1784,6 +1911,8 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
             //pThis->idPrimaryVol   = 0;
             //pThis->fSeenJoliet    = false;
             pThis->pResults         = pResults;
+            pThis->offSuspSkip      = 0;
+            pThis->offRockBuf       = UINT64_MAX;
 
             /*
              * Check if this looks like a plausible ISO by checking out the first volume descriptor.
