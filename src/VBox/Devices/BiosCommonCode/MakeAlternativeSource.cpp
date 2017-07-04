@@ -1021,13 +1021,19 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                      && pb[7] == 0xa0
                      && pb[8] == 0xe2
                      && pb[9] == 0xa0)
+                 || (   pb[0] == 0xf0   /* switch for apm_worker */
+                     && pb[1] == 0xa0
+                     && pb[2] == 0xf2
+                     && pb[3] == 0xa0
+                     && pb[4] == 0xf6
+                     && pb[5] == 0xa0)
                  || (   pb[0] == 0xd4
                      && pb[1] == 0xc6
                      && pb[2] == 0xc5
                      && pb[3] == 0xba
                      && pb[4] == 0xb8
                      && pb[5] == 0xb6)
-                 || (   pb[0] == 0xec  /* _int15_function switch */
+                 || (   pb[0] == 0xec   /* _int15_function switch */
                      && pb[1] == 0xe9
                      && pb[2] == 0xd8
                      && pb[3] == 0xc1
@@ -1039,6 +1045,12 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                      && pb[3] == 0x66
                      && pb[4] == 0x66
                      && pb[5] == 0x66)
+                 || (   pb[0] == 0xf0   /* int15_function_mouse switch */
+                     && pb[1] == 0x75
+                     && pb[2] == 0x66
+                     && pb[3] == 0x76
+                     && pb[4] == 0xe9
+                     && pb[5] == 0x76)
                  || (   pb[0] == 0x60
                      && pb[1] == 0xa0
                      && pb[2] == 0x62
