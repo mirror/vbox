@@ -2486,6 +2486,11 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
     d = pDrv->pbData;
     linesize = pDrv->cbScanline;
 
+    if (!(pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED))
+        pThis->vga_addr_mask = 0x3ffff;
+    else
+        pThis->vga_addr_mask = UINT32_MAX;
+
     y1 = 0;
     y2 = pThis->cr[0x09] & 0x1F;    /* starting row scan count */
     for(y = 0; y < height; y++) {
@@ -2499,6 +2504,7 @@ static int vga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnResiz
         if (!(pThis->cr[0x17] & 2)) {
             addr = (addr & ~(1 << 16)) | ((y1 & 2) << 15);
         }
+        addr &= pThis->vga_addr_mask;
         page0 = addr & ~PAGE_OFFSET_MASK;
         page1 = (addr + bwidth - 1) & ~PAGE_OFFSET_MASK;
         /** @todo r=klaus this assumes that a line is fully covered by 3 pages,

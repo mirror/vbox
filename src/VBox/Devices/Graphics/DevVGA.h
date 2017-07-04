@@ -254,6 +254,8 @@ typedef struct VGAState {
     uint8_t double_scan;
     uint8_t padding1[2];
     uint32_t line_offset;
+    uint32_t vga_addr_mask;
+    uint32_t padding1a;
     uint32_t line_compare;
     uint32_t start_addr;
     uint32_t plane_updated;
