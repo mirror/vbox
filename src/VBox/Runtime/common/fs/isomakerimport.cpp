@@ -158,6 +158,10 @@ typedef struct RTFSISOMKIMPORTER
     /** A somewhat larger buffer. */
     uint8_t             abBuf[_64K];
 
+    /** @name Rock Ridge stuff
+     * @{ */
+    /** Set if we've see the SP record. */
+    bool                fSuspSeenSP;
     /** The SUSP skip into system area offset. */
     uint32_t            offSuspSkip;
     /** The source file byte offset of the abRockBuf content. */
@@ -166,6 +170,7 @@ typedef struct RTFSISOMKIMPORTER
     char                szRockNameBuf[_2K];
     /** A buffer for reading rock ridge continuation blocks into   */
     uint8_t             abRockBuf[ISO9660_SECTOR_SIZE];
+    /** @} */
 } RTFSISOMKIMPORTER;
 /** Pointer to an ISO maker ISO importer state. */
 typedef RTFSISOMKIMPORTER *PRTFSISOMKIMPORTER;
@@ -507,24 +512,24 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
 #define MAKE_SIG(a_bSig1, a_bSig2) \
         (     ((uint16_t)(a_bSig1)         & 0x1f) \
           |  (((uint16_t)(a_bSig2) ^ 0x40)         << 5) \
-          | ((((uint16_t)(a_bSig1) ^ 0x40) & 0xe0) << (5+8)) )
+          | ((((uint16_t)(a_bSig1) ^ 0x40) & 0xe0) << (5 + 8)) )
 
         uint16_t const uSig = MAKE_SIG(pUnion->Hdr.bSig1, pUnion->Hdr.bSig2);
         switch (uSig)
         {
             /*
-             * General SUSP stuff.
+             * System use sharing protocol entries.
              */
             case MAKE_SIG(ISO9660SUSPCE_SIG1, ISO9660SUSPCE_SIG2):
             {
                 if (RT_BE2H_U32(pUnion->CE.offBlock.be) != RT_LE2H_U32(pUnion->CE.offBlock.le))
-                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Invalid CE offBlock field: be=%#x vs le=%#x\n",
+                    LogRel(("rtFsIsoImport/Rock: Invalid CE offBlock field: be=%#x vs le=%#x\n",
                             RT_BE2H_U32(pUnion->CE.offBlock.be), RT_LE2H_U32(pUnion->CE.offBlock.le)));
                 else if (RT_BE2H_U32(pUnion->CE.cbData.be) != RT_LE2H_U32(pUnion->CE.cbData.le))
-                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Invalid CE cbData field: be=%#x vs le=%#x\n",
+                    LogRel(("rtFsIsoImport/Rock: Invalid CE cbData field: be=%#x vs le=%#x\n",
                             RT_BE2H_U32(pUnion->CE.cbData.be), RT_LE2H_U32(pUnion->CE.cbData.le)));
                 else if (RT_BE2H_U32(pUnion->CE.offData.be) != RT_LE2H_U32(pUnion->CE.offData.le))
-                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Invalid CE offData field: be=%#x vs le=%#x\n",
+                    LogRel(("rtFsIsoImport/Rock: Invalid CE offData field: be=%#x vs le=%#x\n",
                             RT_BE2H_U32(pUnion->CE.offData.be), RT_LE2H_U32(pUnion->CE.offData.le)));
                 else if (!fContinuationRecord)
                 {
@@ -547,39 +552,96 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                                                                                     &pThis->abRockBuf[offData & ISO9660_SECTOR_OFFSET_MASK],
                                                                                     cbData, true /*fContinuationRecord*/, fIsFirstDirRec);
                             else
-                                LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Error reading continuation record at %#RX64: %Rrc\n",
+                                LogRel(("rtFsIsoImport/Rock: Error reading continuation record at %#RX64: %Rrc\n",
                                         offDataBlock, rc));
                         }
                     }
                     else
-                        LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: continuation record isn't within a sector! offData=%#RX64 cbData=%#RX32\n",
+                        LogRel(("rtFsIsoImport/Rock: continuation record isn't within a sector! offData=%#RX64 cbData=%#RX32\n",
                                 cbData, offData));
                 }
                 else
-                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: nested continuation record!\n"));
+                    LogRel(("rtFsIsoImport/Rock: nested continuation record!\n"));
                 break;
             }
+
+            case MAKE_SIG(ISO9660SUSPSP_SIG1, ISO9660SUSPSP_SIG2): /* SP */
+                if (   pUnion->Hdr.cbEntry  != ISO9660SUSPSP_LEN
+                    || pUnion->Hdr.bVersion != ISO9660SUSPSP_VER
+                    || pUnion->SP.bCheck1   != ISO9660SUSPSP_CHECK1
+                    || pUnion->SP.bCheck2   != ISO9660SUSPSP_CHECK2
+                    || pUnion->SP.cbSkip > UINT8_MAX - RT_OFFSETOF(ISO9660DIRREC, achFileId[1]))
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'SP' record: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x), bCheck1=%#x (vs %#x), bCheck2=%#x (vs %#x), cbSkip=%#x (vs max %#x)\n",
+                            pUnion->Hdr.cbEntry, ISO9660SUSPSP_LEN, pUnion->Hdr.bVersion, ISO9660SUSPSP_VER,
+                            pUnion->SP.bCheck1, ISO9660SUSPSP_CHECK1, pUnion->SP.bCheck2, ISO9660SUSPSP_CHECK2,
+                            pUnion->SP.cbSkip, UINT8_MAX - RT_OFFSETOF(ISO9660DIRREC, achFileId[1]) ));
+                else if (!fIsFirstDirRec)
+                    LogRel(("rtFsIsoImport/Rock: Ignorining 'SP' record in non-root directory record\n"));
+                else if (pThis->fSuspSeenSP)
+                    LogRel(("rtFsIsoImport/Rock: Ignorining additional 'SP' record\n"));
+                else
+                {
+                    pThis->offSuspSkip = pUnion->SP.cbSkip;
+                    if (pUnion->SP.cbSkip != 0)
+                        LogRel(("rtFsIsoImport/Rock: SP: cbSkip=%#x\n", pUnion->SP.cbSkip));
+                }
+                break;
+
+            case MAKE_SIG(ISO9660SUSPER_SIG1, ISO9660SUSPER_SIG2): /* ER */
+                if (   pUnion->Hdr.cbEntry >   RT_OFFSETOF(ISO9660SUSPER, achPayload) + (uint32_t)pUnion->ER.cchIdentifier
+                                             + (uint32_t)pUnion->ER.cchDescription   + (uint32_t)pUnion->ER.cchSource
+                    || pUnion->Hdr.bVersion != ISO9660SUSPER_VER)
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'ER' record: cbEntry=%#x bVersion=%#x (vs %#x) cchIdentifier=%#x cchDescription=%#x cchSource=%#x\n",
+                            pUnion->Hdr.cbEntry, pUnion->Hdr.bVersion, ISO9660SUSPER_VER, pUnion->ER.cchIdentifier,
+                            pUnion->ER.cchDescription + pUnion->ER.cchSource));
+                else if (!fIsFirstDirRec)
+                    LogRel(("rtFsIsoImport/Rock: Ignorining 'ER' record in non-root directory record\n"));
+                else if (   pUnion->ER.bVersion == 1 /* RRIP detection */
+                         && (   (pUnion->ER.cchIdentifier >= 4  && strncmp(pUnion->ER.achPayload, ISO9660_RRIP_ID, 4 /*RRIP*/) == 0)
+                             || (pUnion->ER.cchIdentifier >= 10 && strncmp(pUnion->ER.achPayload, RT_STR_TUPLE(ISO9660_RRIP_1_12_ID)) == 0) ))
+                {
+                    pObjInfo->Attr.u.Unix.fFlags |= RT_BIT_32(31); /** @todo define RRIP ER record flag. Or do we call the maker? */
+                    LogRel(("rtFsIsoImport/Rock: Rock Ridge 'ER' record: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
+                            pUnion->ER.bVersion, pUnion->ER.cchIdentifier, pUnion->ER.achPayload,
+                            pUnion->ER.cchDescription, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier],
+                            pUnion->ER.cchSource, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier + pUnion->ER.cchDescription]));
+                }
+                else
+                    LogRel(("rtFsIsoImport/Rock: Unknown extension in 'ER' record: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
+                            pUnion->ER.bVersion, pUnion->ER.cchIdentifier, pUnion->ER.achPayload,
+                            pUnion->ER.cchDescription, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier],
+                            pUnion->ER.cchSource, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier + pUnion->ER.cchDescription]));
+                break;
 
             case MAKE_SIG(ISO9660SUSPPD_SIG1, ISO9660SUSPPD_SIG2): /* PD - ignored */
             case MAKE_SIG(ISO9660SUSPST_SIG1, ISO9660SUSPST_SIG2): /* ST - ignore for now */
             case MAKE_SIG(ISO9660SUSPES_SIG1, ISO9660SUSPES_SIG2): /* ES - ignore for now */
                 break;
 
-            case MAKE_SIG(ISO9660SUSPSP_SIG1, ISO9660SUSPSP_SIG2): /* SP */
-                if (!fIsFirstDirRec)
-                {
-                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: \n"));
-                    break;
-                }
+            /*
+             * Rock ridge interchange protocol entries.
+             */
+            case MAKE_SIG(ISO9660RRIPPX_SIG1, ISO9660RRIPPX_SIG2): /* PX */
+            case MAKE_SIG(ISO9660RRIPPN_SIG1, ISO9660RRIPPN_SIG2): /* PN */
+            case MAKE_SIG(ISO9660RRIPTF_SIG1, ISO9660RRIPTF_SIG2): /* TF */
+            case MAKE_SIG(ISO9660RRIPSF_SIG1, ISO9660RRIPSF_SIG2): /* SF */
                 break;
 
-            case MAKE_SIG(ISO9660SUSPER_SIG1, ISO9660SUSPER_SIG2): /* ER */
+            case MAKE_SIG(ISO9660RRIPSL_SIG1, ISO9660RRIPSL_SIG2): /* SL */
+            case MAKE_SIG(ISO9660RRIPNM_SIG1, ISO9660RRIPNM_SIG2): /* NM */
+                break;
+
+            case MAKE_SIG(ISO9660RRIPCL_SIG1, ISO9660RRIPCL_SIG2): /* CL - just warn for now. */
+            case MAKE_SIG(ISO9660RRIPPL_SIG1, ISO9660RRIPPL_SIG2): /* PL - just warn for now. */
+            case MAKE_SIG(ISO9660RRIPRE_SIG1, ISO9660RRIPRE_SIG2): /* RE - just warn for now. */
+                LogRel(("rtFsIsoImport/Rock: Ignorning directory relocation entry '%c%c'!\n", pUnion->Hdr.bSig1, pUnion->Hdr.bSig2));
                 break;
 
             default:
-                Log(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Unknown SUSP entry: %#x %#x\n",
-                     pUnion->Hdr.bSig1, pUnion->Hdr.bSig2));
+                LogRel(("rtFsIsoImport/Rock: Unknown SUSP entry: %#x %#x, %#x bytes, v%u\n",
+                        pUnion->Hdr.bSig1, pUnion->Hdr.bSig2, pUnion->Hdr.cbEntry, pUnion->Hdr.bVersion));
                 break;
+#undef MAKE_SIG
         }
 #if 0
         /*
@@ -587,11 +649,6 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
         if (pbSys[0] == 'C' && pbSys[1] == 'E')
         {
         }
-        else if (pbSys[0] == 'P' && pbSys[1] == 'D')
-        else if (pbSys[0] == 'S' && pbSys[1] == 'P')
-        else if (pbSys[0] == 'S' && pbSys[1] == 'T')
-        else if (pbSys[0] == 'E' && pbSys[1] == 'R')
-        else if (pbSys[0] == 'E' && pbSys[1] == 'S')
         /* RRIP */
         else if (pbSys[0] == 'R' && pbSys[1] == 'R')
         else if (pbSys[0] == 'P' && pbSys[1] == 'X')
@@ -1100,7 +1157,11 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
  */
 static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t offDirBlock, uint32_t cbDir, bool fUnicode)
 {
+    /*
+     * Reset some parsing state.
+     */
     pThis->offSuspSkip = 0;
+    pThis->fSuspSeenSP = false;
 
     /*
      * Make sure we've got a root in the namespace.
@@ -2004,7 +2065,8 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
             //pThis->idPrimaryVol   = 0;
             //pThis->fSeenJoliet    = false;
             pThis->pResults         = pResults;
-            pThis->offSuspSkip      = 0;
+            //pThis->fSuspSeenSP    = false;
+            //pThis->offSuspSkip    = 0;
             pThis->offRockBuf       = UINT64_MAX;
 
             /*

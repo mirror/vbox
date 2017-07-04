@@ -1039,9 +1039,9 @@ typedef struct ISO9660SUSPER
     /** The payload: first @a cchIdentifier chars of identifier string, second
      * @a cchDescription chars of description string, thrid @a cchSource chars
      * of source string.  Variable length. */
-    char                achPayload[1];
+    char                achPayload[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
 } ISO9660SUSPER;
-AssertCompileSize(ISO9660SUSPER, 9);
+AssertCompileMemberOffset(ISO9660SUSPER, achPayload, 8);
 /** Pointer to a SUSP padding entry. */
 typedef ISO9660SUSPER *PISO9660SUSPER;
 /** Pointer to a const SUSP padding entry. */
@@ -1057,7 +1057,7 @@ typedef ISO9660SUSPER const *PCISO9660SUSPER;
  */
 typedef struct ISO9660SUSPES
 {
-    /** Header (ISO9660SUSPER_SIG1, ISO9660SUSPER_SIG2, ISO9660SUSPER_VER). */
+    /** Header (ISO9660SUSPES_SIG1, ISO9660SUSPES_SIG2, ISO9660SUSPES_VER). */
     ISO9660SUSPHDR      Hdr;
     /** The ER entry sequence number of the extension comming first. */
     uint8_t             iFirstExtension;
@@ -1073,6 +1073,310 @@ typedef ISO9660SUSPES const *PCISO9660SUSPES;
 #define ISO9660SUSPES_LEN       5              /**< SUSP extension sequence entry length (fixed). */
 
 
+/** RRIP ER identifier string from Rock Ridge Interchange Protocol v1.10 specs. */
+#define ISO9660_RRIP_ID         "RRIP_1991A"
+/** RRIP ER recommended description string (from RRIP v1.10 specs). */
+#define ISO9660_RRIP_DESC       "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
+/** RRIP ER recommended source string  (from RRIP v1.10 specs). */
+#define ISO9660_RRIP_SRC        "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
+
+/** RRIP ER identifier string from RRIP IEEE P1282 v1.12 draft. */
+#define ISO9660_RRIP_1_12_ID    "IEEE_P1282"
+/** RRIP ER recommended description string (RRIP IEEE P1282 v1.12 draft). */
+#define ISO9660_RRIP_1_12_DESC  "THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS."
+/** RRIP ER recommended source string  (RRIP IEEE P1282 v1.12 draft). */
+#define ISO9660_RRIP_1_12_SRC   "PLEASE CONTACT THE IEEE STANDARDS DEPARTMENT, PISCATAWAY, NJ, USA FOR THE P1282 SPECIFICATION."
+
+/**
+ * Rock ridge interchange protocol -  posix attribute entry (PX).
+ */
+typedef struct ISO9660RRIPPX
+{
+    /** Header (ISO9660RRIPPX_SIG1, ISO9660RRIPPX_SIG2,
+     *  ISO9660RRIPPX_LEN, ISO9660RRIPPX_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The file mode (RTFS_UNIX_XXX, RTFS_TYPE_XXX). */
+    ISO9660U32          fMode;
+    /** Number of hardlinks. */
+    ISO9660U32          cHardlinks;
+    /** User ID. */
+    ISO9660U32          uid;
+    /** Group ID. */
+    ISO9660U32          gid;
+    /** Inode number. */
+    ISO9660U32          INode;
+} ISO9660RRIPPX;
+AssertCompileSize(ISO9660RRIPPX, 44);
+/** Pointer to a RRIP posix attribute entry. */
+typedef ISO9660RRIPPX *PISO9660RRIPPX;
+/** Pointer to a const RRIP posix attribute entry. */
+typedef ISO9660RRIPPX const *PCISO9660RRIPPX;
+#define ISO9660RRIPPX_SIG1     'P'             /**< RRIP posix attribute entry signature byte 1. */
+#define ISO9660RRIPPX_SIG2     'X'             /**< RRIP posix attribute entry signature byte 2. */
+#define ISO9660RRIPPX_VER       1              /**< RRIP posix attribute entry version number. */
+#define ISO9660RRIPPX_LEN       44             /**< RRIP posix attribute entry length (fixed). */
+
+
+/**
+ * Rock ridge interchange protocol -  timestamp entry (TF).
+ */
+typedef struct ISO9660RRIPTF
+{
+    /** Header (ISO9660RRIPTF_SIG1, ISO9660RRIPTF_SIG2, ISO9660RRIPTF_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** Flags, ISO9660RRIPTF_F_XXX. */
+    uint8_t             fFlags;
+    /** Timestamp payload bytes (variable size and format). */
+    uint8_t             abPayload[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} ISO9660RRIPTF;
+AssertCompileMemberOffset(ISO9660RRIPTF, abPayload, 5);
+/** Pointer to a RRIP timestamp  entry. */
+typedef ISO9660RRIPTF *PISO9660RRIPTF;
+/** Pointer to a const RRIP timestamp entry. */
+typedef ISO9660RRIPTF const *PCISO9660RRIPTF;
+#define ISO9660RRIPTF_SIG1     'T'             /**< RRIP child link entry signature byte 1. */
+#define ISO9660RRIPTF_SIG2     'F'             /**< RRIP child link entry signature byte 2. */
+#define ISO9660RRIPTF_VER       1              /**< RRIP child link entry version number. */
+
+/** @name ISO9660RRIPTF_F_XXX - Timestmap flags.
+ * @{ */
+#define ISO9660RRIPTF_F_BIRTH           UINT8_C(0x01) /**< Birth (creation) timestamp is recorded. */
+#define ISO9660RRIPTF_F_MODIFY          UINT8_C(0x02) /**< Modification timestamp is recorded. */
+#define ISO9660RRIPTF_F_ACCESS          UINT8_C(0x04) /**< Accessed timestamp is recorded. */
+#define ISO9660RRIPTF_F_CHANGE          UINT8_C(0x08) /**< Attribute change timestamp is recorded. */
+#define ISO9660RRIPTF_F_BACKUP          UINT8_C(0x10) /**< Backup timestamp is recorded. */
+#define ISO9660RRIPTF_F_EXPIRATION      UINT8_C(0x20) /**< Expiration timestamp is recorded. */
+#define ISO9660RRIPTF_F_EFFECTIVE       UINT8_C(0x40) /**< Effective timestamp is recorded. */
+#define ISO9660RRIPTF_F_LONG_FORM       UINT8_C(0x80) /**< If set ISO9660TIMESTAMP is used, otherwise ISO9660RECTIMESTAMP. */
+/** @} */
+
+
+/**
+ * Rock ridge interchange protocol -  posix device number entry (PN).
+ *
+ * Mandatory for block or character devices.
+ */
+typedef struct ISO9660RRIPPN
+{
+    /** Header (ISO9660RRIPPN_SIG1, ISO9660RRIPPN_SIG2,
+     *  ISO9660RRIPPN_LEN, ISO9660RRIPPN_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The major device number. */
+    ISO9660U32          Major;
+    /** The minor device number. */
+    ISO9660U32          Minor;
+} ISO9660RRIPPN;
+AssertCompileSize(ISO9660RRIPPN, 20);
+/** Pointer to a RRIP posix attribute entry. */
+typedef ISO9660RRIPPN *PISO9660RRIPPN;
+/** Pointer to a const RRIP posix attribute entry. */
+typedef ISO9660RRIPPN const *PCISO9660RRIPPN;
+#define ISO9660RRIPPN_SIG1     'P'             /**< RRIP posix device number entry signature byte 1. */
+#define ISO9660RRIPPN_SIG2     'N'             /**< RRIP posix device number entry signature byte 2. */
+#define ISO9660RRIPPN_VER       1              /**< RRIP posix device number entry version number. */
+#define ISO9660RRIPPN_LEN       20             /**< RRIP posix device number entry length (fixed). */
+
+/**
+ * Rock ridge interchange protocol -  symlink entry (SL).
+ *
+ * Mandatory for symbolic links.
+ */
+typedef struct ISO9660RRIPSL
+{
+    /** Header (ISO9660RRIPSL_SIG1, ISO9660RRIPSL_SIG2, ISO9660RRIPSL_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** Flags (0 or ISO9660RRIP_SL_F_CONTINUE). */
+    uint8_t             fFlags;
+    /** Variable length of components.  First byte in each component is a
+     *  combination of ISO9660RRIP_SL_C_XXX flag values.  The second byte the
+     *  length of character data following it. */
+    uint8_t             abComponents[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} ISO9660RRIPSL;
+AssertCompileMemberOffset(ISO9660RRIPSL, abComponents, 5);
+/** Pointer to a RRIP symbolic link entry. */
+typedef ISO9660RRIPSL *PISO9660RRIPSL;
+/** Pointer to a const RRIP symbolic link entry. */
+typedef ISO9660RRIPSL const *PCISO9660RRIPSL;
+#define ISO9660RRIPSL_SIG1     'S'             /**< RRIP symbolic link entry signature byte 1. */
+#define ISO9660RRIPSL_SIG2     'L'             /**< RRIP symbolic link entry signature byte 2. */
+#define ISO9660RRIPSL_VER       1              /**< RRIP symbolic link entry version number. */
+/** ISO9660RRIPSL.fFlags - When set another symlink entry follows this one. */
+#define ISO9660RRIP_SL_F_CONTINUE       UINT8_C(0x01)
+/** @name ISO9660RRIP_SL_C_XXX - Symlink component flags.
+ * @note These matches ISO9660RRIP_NM_F_XXX.
+ * @{ */
+/** Indicates there are more components.   */
+#define ISO9660RRIP_SL_C_CONTINUE       UINT8_C(0x01)
+/** Refer to '.' (the current dir). */
+#define ISO9660RRIP_SL_C_CURRENT        UINT8_C(0x02)
+/** Refer to '..' (the parent dir). */
+#define ISO9660RRIP_SL_C_PARENT         UINT8_C(0x04)
+/** Refer to '/' (the root dir). */
+#define ISO9660RRIP_SL_C_ROOT           UINT8_C(0x08)
+/** Reserved / historically was mount point reference. */
+#define ISO9660RRIP_SL_C_MOUNT_POINT    UINT8_C(0x10)
+/** Reserved / historically was uname network node name. */
+#define ISO9660RRIP_SL_C_UNAME          UINT8_C(0x20)
+/** @} */
+
+
+/**
+ * Rock ridge interchange protocol -  name entry (NM).
+ */
+typedef struct ISO9660RRIPNM
+{
+    /** Header (ISO9660RRIPNM_SIG1, ISO9660RRIPNM_SIG2, ISO9660RRIPNM_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** Flags (ISO9660RRIP_NM_F_XXX). */
+    uint8_t             fFlags;
+    /** The name part (if any).  */
+    char                achName[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+} ISO9660RRIPNM;
+AssertCompileMemberOffset(ISO9660RRIPNM, achName, 5);
+/** Pointer to a RRIP name entry. */
+typedef ISO9660RRIPNM *PISO9660RRIPNM;
+/** Pointer to a const RRIP name entry. */
+typedef ISO9660RRIPNM const *PCISO9660RRIPNM;
+#define ISO9660RRIPNM_SIG1     'N'             /**< RRIP name entry signature byte 1. */
+#define ISO9660RRIPNM_SIG2     'M'             /**< RRIP name entry signature byte 2. */
+#define ISO9660RRIPNM_VER       1              /**< RRIP name entry version number. */
+/** @name ISO9660RRIP_NM_F_XXX - Name flags.
+ * @note These matches ISO9660RRIP_SL_C_XXX.
+ * @{ */
+/** Indicates there are more 'NM' entries.   */
+#define ISO9660RRIP_NM_F_CONTINUE       UINT8_C(0x01)
+/** Refer to '.' (the current dir). */
+#define ISO9660RRIP_NM_F_CURRENT        UINT8_C(0x02)
+/** Refer to '..' (the parent dir). */
+#define ISO9660RRIP_NM_F_PARENT         UINT8_C(0x04)
+/** Reserved / historically was uname network node name. */
+#define ISO9660RRIP_NM_F_UNAME          UINT8_C(0x20)
+/** @} */
+
+
+/**
+ * Rock ridge interchange protocol -  child link entry (CL).
+ *
+ * This is used for relocated directories.  Relocated directries are employed
+ * to bypass the ISO 9660 maximum tree depth of 8.
+ *
+ * The size of the directory and everything else is found in the '.' entry in
+ * the specified location.  Only the name (NM or dir rec) and this link record
+ * should be used.
+ */
+typedef struct ISO9660RRIPCL
+{
+    /** Header (ISO9660RRIPCL_SIG1, ISO9660RRIPCL_SIG2,
+     *  ISO9660RRIPCL_LEN, ISO9660RRIPCL_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The offset of the directory data (block offset). */
+    ISO9660U32          offExtend;
+} ISO9660RRIPCL;
+AssertCompileSize(ISO9660RRIPCL, 12);
+/** Pointer to a RRIP child link entry. */
+typedef ISO9660RRIPCL *PISO9660RRIPCL;
+/** Pointer to a const RRIP child link entry. */
+typedef ISO9660RRIPCL const *PCISO9660RRIPCL;
+#define ISO9660RRIPCL_SIG1     'C'             /**< RRIP child link entry signature byte 1. */
+#define ISO9660RRIPCL_SIG2     'L'             /**< RRIP child link entry signature byte 2. */
+#define ISO9660RRIPCL_VER       1              /**< RRIP child link entry version number. */
+#define ISO9660RRIPCL_LEN       12             /**< RRIP child link entry length. */
+
+
+/**
+ * Rock ridge interchange protocol -  parent link entry (PL).
+ *
+ * This is used in relocated directories.  Relocated directries are employed
+ * to bypass the ISO 9660 maximum tree depth of 8.
+ *
+ * The size of the directory and everything else is found in the '.' entry in
+ * the specified location.  Only the name (NM or dir rec) and this link record
+ * should be used.
+ */
+typedef struct ISO9660RRIPPL
+{
+    /** Header (ISO9660RRIPPL_SIG1, ISO9660RRIPPL_SIG2,
+     *  ISO9660RRIPPL_LEN, ISO9660RRIPPL_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The offset of the directory data (block offset). */
+    ISO9660U32          offExtend;
+} ISO9660RRIPPL;
+AssertCompileSize(ISO9660RRIPPL, 12);
+/** Pointer to a RRIP parent link entry. */
+typedef ISO9660RRIPPL *PISO9660RRIPPL;
+/** Pointer to a const RRIP parent link entry. */
+typedef ISO9660RRIPPL const *PCISO9660RRIPPL;
+#define ISO9660RRIPPL_SIG1     'P'             /**< RRIP parent link entry signature byte 1. */
+#define ISO9660RRIPPL_SIG2     'L'             /**< RRIP parent link entry signature byte 2. */
+#define ISO9660RRIPPL_VER       1              /**< RRIP parent link entry version number. */
+#define ISO9660RRIPPL_LEN       12             /**< RRIP parent link entry length. */
+
+
+/**
+ * Rock ridge interchange protocol -  relocated entry (RE).
+ *
+ * This is used in the directory record for a relocated directory in the
+ * holding place high up in the directory hierarchy.  The system may choose to
+ * ignore/hide entries with this entry present.
+ */
+typedef struct ISO9660RRIPRE
+{
+    /** Header (ISO9660RRIPRE_SIG1, ISO9660RRIPRE_SIG2,
+     *  ISO9660RRIPRE_LEN, ISO9660RRIPRE_VER). */
+    ISO9660SUSPHDR      Hdr;
+} ISO9660RRIPRE;
+AssertCompileSize(ISO9660RRIPRE, 4);
+/** Pointer to a RRIP parent link entry. */
+typedef ISO9660RRIPRE *PISO9660RRIPRE;
+/** Pointer to a const RRIP parent link entry. */
+typedef ISO9660RRIPRE const *PCISO9660RRIPRE;
+#define ISO9660RRIPRE_SIG1     'R'             /**< RRIP relocated entry signature byte 1. */
+#define ISO9660RRIPRE_SIG2     'E'             /**< RRIP relocated entry signature byte 2. */
+#define ISO9660RRIPRE_VER       1              /**< RRIP relocated entry version number. */
+#define ISO9660RRIPRE_LEN       4              /**< RRIP relocated entry length. */
+
+
+/**
+ * Rock ridge interchange protocol -  sparse file entry (SF).
+ */
+#pragma pack(1)
+typedef struct ISO9660RRIPSF
+{
+    /** Header (ISO9660RRIPSF_SIG1, ISO9660RRIPSF_SIG2,
+     *  ISO9660RRIPSF_LEN, ISO9660RRIPSF_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The high 32-bits of the 64-bit sparse file size. */
+    ISO9660U32          cbSparseHi;
+    /** The low 32-bits of the 64-bit sparse file size. */
+    ISO9660U32          cbSparseLo;
+    /** The table depth. */
+    uint8_t             cDepth;
+} ISO9660RRIPSF;
+#pragma pack()
+AssertCompileSize(ISO9660RRIPSF, 21);
+/** Pointer to a RRIP symbolic link entry. */
+typedef ISO9660RRIPSF *PISO9660RRIPSF;
+/** Pointer to a const RRIP symbolic link entry. */
+typedef ISO9660RRIPSF const *PCISO9660RRIPSF;
+#define ISO9660RRIPSF_SIG1     'S'             /**< RRIP spare file entry signature byte 1. */
+#define ISO9660RRIPSF_SIG2     'F'             /**< RRIP spare file entry signature byte 2. */
+#define ISO9660RRIPSF_VER       1              /**< RRIP spare file entry version number. */
+#define ISO9660RRIPSF_LEN       21             /**< RRIP spare file entry length. */
+
+/** @name ISO9660RRIP_SF_TAB_F_XXX - Sparse table format.
+ * @{ */
+/** The 24-bit logical block number mask.
+ * This is somewhat complicated, see docs.  MBZ for EMPTY. */
+#define ISO9660RRIP_SF_TAB_F_BLOCK_MASK     UINT32_C(0x00ffffff)
+/** Reserved bits, MBZ. */
+#define ISO9660RRIP_SF_TAB_F_RESERVED       RT_BIT_32()
+/** References a sub-table with 256 entries (ISO9660U32). */
+#define ISO9660RRIP_SF_TAB_F_TABLE          RT_BIT_32(30)
+/** Zero data region. */
+#define ISO9660RRIP_SF_TAB_F_EMPTY          RT_BIT_32(31)
+/** @} */
+
+
 /**
  * SUSP and RRIP union.
  */
@@ -1085,11 +1389,21 @@ typedef union ISO9660SUSPUNION
     ISO9660SUSPST   ST;     /**< SUSP terminator entry. */
     ISO9660SUSPER   ER;     /**< SUSP extension record entry. */
     ISO9660SUSPES   ES;     /**< SUSP extension sequence entry. */
+    ISO9660RRIPPX   PX;     /**< RRIP posix attribute entry. */
+    ISO9660RRIPTF   TF;     /**< RRIP timestamp entry. */
+    ISO9660RRIPPN   PN;     /**< RRIP posix device number entry. */
+    ISO9660RRIPSF   SF;     /**< RRIP sparse file entry. */
+    ISO9660RRIPSL   SL;     /**< RRIP symbolic link entry. */
+    ISO9660RRIPNM   NM;     /**< RRIP name entry. */
+    ISO9660RRIPCL   CL;     /**< RRIP child link entry. */
+    ISO9660RRIPPL   PL;     /**< RRIP parent link entry. */
+    ISO9660RRIPRE   RE;     /**< RRIP relocated entry. */
 } ISO9660SUSPUNION;
 /** Pointer to a SUSP and RRIP union. */
 typedef ISO9660SUSPUNION *PISO9660SUSPUNION;
 /** Pointer to a const SUSP and RRIP union. */
 typedef ISO9660SUSPUNION *PCISO9660SUSPUNION;
+
 
 /** @} */
 
