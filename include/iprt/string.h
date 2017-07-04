@@ -32,11 +32,8 @@
 #include <iprt/stdarg.h>
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
-  RT_C_DECLS_BEGIN
-# define new newhack /* string.h: strreplace */
+  /* no C++ hacks ('new' etc) here anymore! */
 # include <linux/string.h>
-# undef new
-  RT_C_DECLS_END
 
 #elif defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
   RT_C_DECLS_BEGIN
