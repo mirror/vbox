@@ -5866,7 +5866,9 @@ ifdef VBOX_WITH_QTGUI
     # legacy libraries required to be installed on EL5
     VBOX_QT_LEGACY_LIBS = \
      $(if $(VBOX_LD_HAS_LIBXCB),,libxcb.so.1 libX11.so.6 libX11-xcb.so.1)
-    VBOX_QT_PLUGINS = plugins/platforms/libqxcb.so
+    VBOX_QT_PLUGINS = \
+      plugins/platforms/libqxcb.so \
+      plugins/xcbglintegrations/libqxcb-glx-integration.so
    else ifeq ($(KBUILD_TARGET), win)
     VBOX_QT_MOD += \
      Qt5WinExtras

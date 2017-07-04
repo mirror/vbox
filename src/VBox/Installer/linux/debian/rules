@@ -271,6 +271,7 @@ endif
 	        --keepgoing --replace /usr/lib/$(package) \
 	        $(prefix)/usr/lib/$(package)/*.so.5 \
 	        $(prefix)/usr/lib/$(package)/plugins/platforms/*.so; \
+	        $(prefix)/usr/lib/$(package)/plugins/xcbglintegrations/*.so; \
 	    echo "[Paths]" > $(prefix)/usr/lib/$(package)/qt.conf; \
 	    echo "Plugins = /usr/lib/$(package)/plugins" >> $(prefix)/usr/lib/$(package)/qt.conf; \
 	fi
@@ -314,7 +315,7 @@ ifeq ($(DEBUG),)
 	dh_strip --keep-debug \
 	    $(addprefix --exclude=lib,$(addsuffix VBox.so.5,\
 	      Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport Qt5OpenGL Qt5DBus Qt5XcbQpa Qt5X11Extras)) \
-	    --exclude=libqxcb.so
+	    --exclude=libqxcb.so --exclude=libqxcb-glx-integration.so
 endif
 	mkdir -p $(current)/debian/$(verpkg)-dbg/usr/lib/$(package)
 	mv $(prefix)/usr/lib/$(package)/*.debug $(current)/debian/$(verpkg)-dbg/usr/lib/$(package)

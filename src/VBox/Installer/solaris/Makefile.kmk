@@ -354,6 +354,7 @@ ifdef VBOX_WITH_QTGUI
 	  libQt5X11ExtrasVBox.so.5 \
           libQt5WidgetsVBox.so.5 \
           plugins/platforms/libqxcb.so \
+          plugins/xcbglintegrations/libqxcb-glx-integration.so \
 	  $(if $(VBOX_GUI_USE_QGL),libQt5OpenGLVBox.so.5,)
   endif
 endif #VBOX_WITH_QTGUI

@@ -518,6 +518,7 @@ BLDDIRS += $(foreach d,\
 	$(if $(VBOX_WITH_UNATTENDED),archive/unattended_templates,) \
 	$(if $(VBOX_WITH_ORACLE_QT), \
 	  archive/plugins/platforms \
+	  archive/plugins/xcbglintegrations \
 	  archive/legacy,) \
 	$(if $(VBOX_WITH_PYTHON),\
 	  archive/sdk/installer \
