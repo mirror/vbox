@@ -284,7 +284,7 @@ void UIMediumDetailsWidget::prepareTabDetails()
             for (int i = (int)UIMediumType_HardDisk; i < (int)UIMediumType_All; ++i)
             {
                 const UIMediumType enmType = (UIMediumType)i;
-                prepareInformationContainer(enmType, enmType == UIMediumType_HardDisk ? 7 : 3); /// @todo Remove hard-coded values.
+                prepareInformationContainer(enmType, enmType == UIMediumType_HardDisk ? 6 : 3); /// @todo Remove hard-coded values.
             }
         }
 
