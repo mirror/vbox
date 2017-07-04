@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2016 Oracle Corporation
+ * Copyright (C) 2012-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,10 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
+
+#ifdef LOG_ENABLED
+# include <iprt/stream.h>
+#endif
 #include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
@@ -52,6 +56,15 @@ void VBoxCredProvVerbose(DWORD dwLevel, const char *pszFormat, ...)
         AssertPtr(psz);
         LogRel(("%s", psz));
 
+#ifdef LOG_ENABLED
+        PRTSTREAM pStream;
+        int rc2 = RTStrmOpen("C:\\VBoxCredProvLog.txt", "a", &pStream);
+        if (RT_SUCCESS(rc2))
+        {
+            RTStrmPrintf(pStream, "%s", psz);
+            RTStrmClose(pStream);
+        }
+#endif
         RTStrFree(psz);
     }
 }
