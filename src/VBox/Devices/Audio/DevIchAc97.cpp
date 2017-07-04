@@ -114,6 +114,8 @@
 #define AC97_BD_BUP RT_BIT(30)          /**< Buffer Underrun Policy. */
 
 #define AC97_BD_MAX_LEN_MASK 0xFFFE
+
+#define AC97_MAX_BDLE        32         /**< Maximum number of BDLEs. */
 /** @} */
 
 /** @name Extended Audio Status and Control Register (EACS).
@@ -2203,7 +2205,7 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
 
             pRegs->sr &= ~AC97_SR_CELV;
             pRegs->civ = pRegs->piv;
-            pRegs->piv = (pRegs->piv + 1) % 32; /** @todo r=andy Define for max BDLEs? */
+            pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
 
             ichac97StreamFetchBDLE(pThis, pStream);
             continue;
@@ -2315,7 +2317,7 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
             else
             {
                 pRegs->civ = pRegs->piv;
-                pRegs->piv = (pRegs->piv + 1) % 32; /** @todo r=andy Define for max BDLEs? */
+                pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
                 ichac97StreamFetchBDLE(pThis, pStream);
             }
 
@@ -2530,11 +2532,11 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                     {
                         pRegs->sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
                         pRegs->civ = pRegs->piv;
-                        pRegs->piv = (pRegs->piv + 1) % 32;
+                        pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
 
                         ichac97StreamFetchBDLE(pThis, pStream);
                     }
-                    pRegs->lvi = u32Val % 32;
+                    pRegs->lvi = u32Val % AC97_MAX_BDLE;
                     Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8SD, u32Val));
                     break;
                 }
@@ -2577,7 +2579,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                             Log3Func(("[SD%RU8] Enable\n", pStream->u8SD));
 
                             pRegs->civ = pRegs->piv;
-                            pRegs->piv = (pRegs->piv + 1) % 32;
+                            pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
 
                             pRegs->sr &= ~AC97_SR_DCH;
 
