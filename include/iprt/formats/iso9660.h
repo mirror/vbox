@@ -903,6 +903,173 @@ typedef ISO9660SYSLINUXINFOTABLE const *PCISO9660SYSLINUXINFOTABLE;
 /** The file offset of the isolinux boot info table. */
 #define ISO9660SYSLINUXINFOTABLE_OFFSET     8
 
+
+
+/**
+ * System Use Sharing Protocol Protocol (SUSP) header.
+ */
+typedef struct ISO9660SUSPHDR
+{
+    /** Signature byte 1. */
+    uint8_t             bSig1;
+    /** Signature byte 2. */
+    uint8_t             bSig2;
+    /** Length of the entry (including the header). */
+    uint8_t             cbEntry;
+    /** Entry version number. */
+    uint8_t             bVersion;
+} ISO9660SUSPHDR;
+AssertCompileSize(ISO9660SUSPHDR, 4);
+/** Pointer to a SUSP header. */
+typedef ISO9660SUSPHDR *PISO9660SUSPHDR;
+/** Pointer to a const SUSP header. */
+typedef ISO9660SUSPHDR const *PCISO9660SUSPHDR;
+
+/**
+ * SUSP continuation entry (CE).
+ */
+typedef struct ISO9660SUSPCE
+{
+    /** Header (ISO9660SUSPCE_SIG1, ISO9660SUSPCE_SIG2, ISO9660SUSPCE_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The offset of the continutation data block (block offset).  */
+    ISO9660U32          offBlock;
+    /** The byte offset in the block of the contiuation data.  */
+    ISO9660U32          offData;
+    /** The size of the continuation data. */
+    ISO9660U32          cbData;
+} ISO9660SUSPCE;
+AssertCompileSize(ISO9660SUSPCE, 28);
+/** Pointer to a SUSP continuation entry. */
+typedef ISO9660SUSPCE *PISO9660SUSPCE;
+/** Pointer to a const SUSP continuation entry. */
+typedef ISO9660SUSPCE const *PCISO9660SUSPCE;
+#define ISO9660SUSPCE_SIG1     'C' /**< SUSP continutation entry signature byte 1. */
+#define ISO9660SUSPCE_SIG2     'E' /**< SUSP continutation entry signature byte 2. */
+#define ISO9660SUSPCE_VER       1  /**< SUSP continutation entry version number. */
+
+/**
+ * SUSP padding entry (PD).
+ */
+typedef struct ISO9660SUSPPD
+{
+    /** Header (ISO9660SUSPPD_SIG1, ISO9660SUSPPD_SIG2, ISO9660SUSPPD_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /* Padding follows. */
+} ISO9660SUSPPD;
+AssertCompileSize(ISO9660SUSPPD, 4);
+/** Pointer to a SUSP padding entry. */
+typedef ISO9660SUSPPD *PISO9660SUSPPD;
+/** Pointer to a const SUSP padding entry. */
+typedef ISO9660SUSPPD const *PCISO9660SUSPPD;
+#define ISO9660SUSPPD_SIG1     'P' /**< SUSP padding entry signature byte 1. */
+#define ISO9660SUSPPD_SIG2     'D' /**< SUSP padding entry signature byte 2. */
+#define ISO9660SUSPPD_VER       1  /**< SUSP padding entry version number. */
+
+/**
+ * SUSP system use protocol entry (SP)
+ *
+ * This is only used in the '.' record of the root directory.
+ */
+typedef struct ISO9660SUSPSP
+{
+    /** Header (ISO9660SUSPSP_SIG1, ISO9660SUSPSP_SIG2,
+     *  ISO9660SUSPSP_LEN, ISO9660SUSPSP_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** Check byte 1 (ISO9660SUSPSP_CHECK1). */
+    uint8_t             bCheck1;
+    /** Check byte 2 (ISO9660SUSPSP_CHECK2). */
+    uint8_t             bCheck2;
+    /** Number of bytes to skip within the system use field of each directory
+     * entry (except the '.' entry of the root, since that's where this is). */
+    uint8_t             cbSkip;
+} ISO9660SUSPSP;
+AssertCompileSize(ISO9660SUSPSP, 7);
+/** Pointer to a SUSP padding entry. */
+typedef ISO9660SUSPSP *PISO9660SUSPSP;
+/** Pointer to a const SUSP padding entry. */
+typedef ISO9660SUSPSP const *PCISO9660SUSPSP;
+#define ISO9660SUSPSP_SIG1     'S'              /**< SUSP system use protocol entry signature byte 1. */
+#define ISO9660SUSPSP_SIG2     'P'              /**< SUSP system use protocol entry signature byte 2. */
+#define ISO9660SUSPSP_VER       1               /**< SUSP system use protocol entry version number. */
+#define ISO9660SUSPSP_LEN       7               /**< SUSP system use protocol entry length (fixed). */
+#define ISO9660SUSPSP_CHECK1    UINT8_C(0xbe)   /**< SUSP system use protocol entry check byte 1. */
+#define ISO9660SUSPSP_CHECK2    UINT8_C(0xef)   /**< SUSP system use protocol entry check byte 2. */
+
+/**
+ * SUSP terminator entry (ST)
+ *
+ * Used to terminate system use entries.
+ */
+typedef struct ISO9660SUSPST
+{
+    /** Header (ISO9660SUSPST_SIG1, ISO9660SUSPST_SIG2,
+     *  ISO9660SUSPST_LEN, ISO9660SUSPST_VER). */
+    ISO9660SUSPHDR      Hdr;
+} ISO9660SUSPST;
+AssertCompileSize(ISO9660SUSPST, 4);
+/** Pointer to a SUSP padding entry. */
+typedef ISO9660SUSPST *PISO9660SUSPST;
+/** Pointer to a const SUSP padding entry. */
+typedef ISO9660SUSPST const *PCISO9660SUSPST;
+#define ISO9660SUSPST_SIG1     'S'             /**< SUSP system use protocol entry signature byte 1. */
+#define ISO9660SUSPST_SIG2     'T'             /**< SUSP system use protocol entry signature byte 2. */
+#define ISO9660SUSPST_VER       1              /**< SUSP system use protocol entry version number. */
+#define ISO9660SUSPST_LEN       4              /**< SUSP system use protocol entry length (fixed). */
+
+/**
+ * SUSP extension record entry (ER)
+ *
+ * This is only used in the '.' record of the root directory.  There can be multiple of these.
+ */
+typedef struct ISO9660SUSPER
+{
+    /** Header (ISO9660SUSPER_SIG1, ISO9660SUSPER_SIG2, ISO9660SUSPER_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The length of the identifier component. */
+    uint8_t             cchIdentifier;
+    /** The length of the description component. */
+    uint8_t             cchDescription;
+    /** The length of the source component.   */
+    uint8_t             cchSource;
+    /** The extension version number. */
+    uint8_t             bVersion;
+    /** The payload: first @a cchIdentifier chars of identifier string, second
+     * @a cchDescription chars of description string, thrid @a cchSource chars
+     * of source string.  Variable length. */
+    char                achPayload[1];
+} ISO9660SUSPER;
+AssertCompileSize(ISO9660SUSPER, 9);
+/** Pointer to a SUSP padding entry. */
+typedef ISO9660SUSPER *PISO9660SUSPER;
+/** Pointer to a const SUSP padding entry. */
+typedef ISO9660SUSPER const *PCISO9660SUSPER;
+#define ISO9660SUSPER_SIG1     'E'             /**< SUSP extension record entry signature byte 1. */
+#define ISO9660SUSPER_SIG2     'R'             /**< SUSP extension record entry signature byte 2. */
+#define ISO9660SUSPER_VER       1              /**< SUSP extension record entry version number. */
+
+/**
+ * SUSP extension sequence entry (ES)
+ *
+ * This is only used in the '.' record of the root directory.
+ */
+typedef struct ISO9660SUSPES
+{
+    /** Header (ISO9660SUSPER_SIG1, ISO9660SUSPER_SIG2, ISO9660SUSPER_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** The ER entry sequence number of the extension comming first. */
+    uint8_t             iFirstExtension;
+} ISO9660SUSPES;
+AssertCompileSize(ISO9660SUSPES, 5);
+/** Pointer to a SUSP padding entry. */
+typedef ISO9660SUSPES *PISO9660SUSPES;
+/** Pointer to a const SUSP padding entry. */
+typedef ISO9660SUSPES const *PCISO9660SUSPES;
+#define ISO9660SUSPES_SIG1     'E'             /**< SUSP extension sequence entry signature byte 1. */
+#define ISO9660SUSPES_SIG2     'S'             /**< SUSP extension sequence entry signature byte 2. */
+#define ISO9660SUSPES_VER       1              /**< SUSP extension sequence entry version number. */
+#define ISO9660SUSPES_LEN       5              /**< SUSP extension sequence entry length (fixed). */
+
 /** @} */
 
 #endif
