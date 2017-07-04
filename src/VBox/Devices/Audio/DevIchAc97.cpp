@@ -110,12 +110,12 @@
 
 /** @name Buffer Descriptor (BD).
  * @{ */
-#define AC97_BD_IOC RT_BIT(31)          /**< Interrupt on Completion. */
-#define AC97_BD_BUP RT_BIT(30)          /**< Buffer Underrun Policy. */
+#define AC97_BD_IOC             RT_BIT(31)          /**< Interrupt on Completion. */
+#define AC97_BD_BUP             RT_BIT(30)          /**< Buffer Underrun Policy. */
 
-#define AC97_BD_MAX_LEN_MASK 0xFFFE
+#define AC97_BD_LEN_MASK        0xFFFF              /**< Mask for the BDL buffer length. */
 
-#define AC97_MAX_BDLE        32         /**< Maximum number of BDLEs. */
+#define AC97_MAX_BDLE           32                  /**< Maximum number of BDLEs. */
 /** @} */
 
 /** @name Extended Audio Status and Control Register (EACS).
@@ -551,11 +551,11 @@ static void ichac97StreamFetchBDLE(PAC97STATE pThis, PAC97STREAM pStream)
     pRegs->bd.addr    = RT_H2LE_U32(u32[0] & ~3);
     pRegs->bd.ctl_len = RT_H2LE_U32(u32[1]);
 #endif
-    pRegs->picb       = pRegs->bd.ctl_len & AC97_BD_MAX_LEN_MASK;
+    pRegs->picb       = pRegs->bd.ctl_len & AC97_BD_LEN_MASK;
     LogFlowFunc(("bd %2d addr=%#x ctl=%#06x len=%#x(%d bytes)\n",
                   pRegs->civ, pRegs->bd.addr, pRegs->bd.ctl_len >> 16,
-                  pRegs->bd.ctl_len & AC97_BD_MAX_LEN_MASK,
-                 (pRegs->bd.ctl_len & AC97_BD_MAX_LEN_MASK) << 1)); /** @todo r=andy Assumes 16bit samples. */
+                  pRegs->bd.ctl_len & AC97_BD_LEN_MASK,
+                 (pRegs->bd.ctl_len & AC97_BD_LEN_MASK) << 1)); /** @todo r=andy Assumes 16bit samples. */
 }
 
 /**
