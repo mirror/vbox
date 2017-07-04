@@ -39,6 +39,8 @@
 
 /** The (default) logical sectors size of ISO 9660. */
 #define ISO9660_SECTOR_SIZE                 2048
+/** The (default) sector offset mask of ISO 9660. */
+#define ISO9660_SECTOR_OFFSET_MASK          2047
 /** Maximum filename length (level 2 & 3). */
 #define ISO9660_MAX_NAME_LEN                30
 
@@ -1069,6 +1071,25 @@ typedef ISO9660SUSPES const *PCISO9660SUSPES;
 #define ISO9660SUSPES_SIG2     'S'             /**< SUSP extension sequence entry signature byte 2. */
 #define ISO9660SUSPES_VER       1              /**< SUSP extension sequence entry version number. */
 #define ISO9660SUSPES_LEN       5              /**< SUSP extension sequence entry length (fixed). */
+
+
+/**
+ * SUSP and RRIP union.
+ */
+typedef union ISO9660SUSPUNION
+{
+    ISO9660SUSPHDR  Hdr;    /**< SUSP header . */
+    ISO9660SUSPCE   CE;     /**< SUSP continuation entry. */
+    ISO9660SUSPPD   PD;     /**< SUSP padding entry. */
+    ISO9660SUSPSP   SP;     /**< SUSP system use protocol entry. */
+    ISO9660SUSPST   ST;     /**< SUSP terminator entry. */
+    ISO9660SUSPER   ER;     /**< SUSP extension record entry. */
+    ISO9660SUSPES   ES;     /**< SUSP extension sequence entry. */
+} ISO9660SUSPUNION;
+/** Pointer to a SUSP and RRIP union. */
+typedef ISO9660SUSPUNION *PISO9660SUSPUNION;
+/** Pointer to a const SUSP and RRIP union. */
+typedef ISO9660SUSPUNION *PCISO9660SUSPUNION;
 
 /** @} */
 

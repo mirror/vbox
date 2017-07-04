@@ -463,14 +463,20 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
  * @param   pObjInfo            The object information to improve upon.
  * @param   pbSys               The system area of the directory record.
  * @param   cbSys               The number of bytes present in the sys area.
+ * @param   fContinuationRecord Set if we're processing a continuation record in
+ *                              living in the abRockBuf.
+ * @param   fIsFirstDirRec      Set if this is the '.' directory entry in the
+ *                              root directory.  (Some entries applies only to
+ *                              it.)
  */
 static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORTER pThis, PRTFSOBJINFO pObjInfo,
-                                                                uint8_t const *pbSys, size_t cbSys)
+                                                                uint8_t const *pbSys, size_t cbSys, bool fContinuationRecord,
+                                                                bool fIsFirstDirRec)
 {
     RT_NOREF(pObjInfo);
 
     /*
-     * Skip and check the signature of the first record.
+     * Do skipping if specified.
      */
     if (pThis->offSuspSkip)
     {
@@ -479,14 +485,105 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
         pbSys += pThis->offSuspSkip;
         cbSys -= pThis->offSuspSkip;
     }
-    if (cbSys < 4)
-        return;
-#if 0
+
     while (cbSys >= 4)
     {
+        /*
+         * Check header length and advance the sys variables.
+         */
+        PCISO9660SUSPUNION pUnion = (PCISO9660SUSPUNION)pbSys;
+        if (pUnion->Hdr.cbEntry > cbSys)
+        {
+            LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: cbEntry=%#x cbSys=%#x (%#x %#x)\n",
+                    pUnion->Hdr.cbEntry, cbSys, pUnion->Hdr.bSig1, pUnion->Hdr.bSig2));
+            return;
+        }
+        pbSys += pUnion->Hdr.cbEntry;
+        cbSys += pUnion->Hdr.cbEntry;
 
+        /*
+         * Process fields.
+         */
+#define MAKE_SIG(a_bSig1, a_bSig2) \
+        (     ((uint16_t)(a_bSig1)         & 0x1f) \
+          |  (((uint16_t)(a_bSig2) ^ 0x40)         << 5) \
+          | ((((uint16_t)(a_bSig1) ^ 0x40) & 0xe0) << (5+8)) )
 
-        /* SUSP: */
+        uint16_t const uSig = MAKE_SIG(pUnion->Hdr.bSig1, pUnion->Hdr.bSig2);
+        switch (uSig)
+        {
+            /*
+             * General SUSP stuff.
+             */
+            case MAKE_SIG(ISO9660SUSPCE_SIG1, ISO9660SUSPCE_SIG2):
+            {
+                if (RT_BE2H_U32(pUnion->CE.offBlock.be) != RT_LE2H_U32(pUnion->CE.offBlock.le))
+                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Invalid CE offBlock field: be=%#x vs le=%#x\n",
+                            RT_BE2H_U32(pUnion->CE.offBlock.be), RT_LE2H_U32(pUnion->CE.offBlock.le)));
+                else if (RT_BE2H_U32(pUnion->CE.cbData.be) != RT_LE2H_U32(pUnion->CE.cbData.le))
+                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Invalid CE cbData field: be=%#x vs le=%#x\n",
+                            RT_BE2H_U32(pUnion->CE.cbData.be), RT_LE2H_U32(pUnion->CE.cbData.le)));
+                else if (RT_BE2H_U32(pUnion->CE.offData.be) != RT_LE2H_U32(pUnion->CE.offData.le))
+                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Invalid CE offData field: be=%#x vs le=%#x\n",
+                            RT_BE2H_U32(pUnion->CE.offData.be), RT_LE2H_U32(pUnion->CE.offData.le)));
+                else if (!fContinuationRecord)
+                {
+                    uint64_t offData = ISO9660_GET_ENDIAN(&pUnion->CE.offBlock) * (uint64_t)ISO9660_SECTOR_SIZE;
+                    offData += ISO9660_GET_ENDIAN(&pUnion->CE.offData);
+                    uint32_t cbData = ISO9660_GET_ENDIAN(&pUnion->CE.cbData);
+                    if (cbData <= sizeof(pThis->abRockBuf) - (uint32_t)(offData & ISO9660_SECTOR_OFFSET_MASK))
+                    {
+                        AssertCompile(sizeof(pThis->abRockBuf) == ISO9660_SECTOR_SIZE);
+                        uint64_t offDataBlock = offData & ~(uint64_t)ISO9660_SECTOR_OFFSET_MASK;
+                        if (pThis->offRockBuf == offDataBlock)
+                            rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, pObjInfo,
+                                                                                &pThis->abRockBuf[offData & ISO9660_SECTOR_OFFSET_MASK],
+                                                                                cbData, true /*fContinuationRecord*/, fIsFirstDirRec);
+                        else
+                        {
+                            int rc = RTVfsFileReadAt(pThis->hSrcFile, offDataBlock, pThis->abRockBuf, sizeof(pThis->abRockBuf), NULL);
+                            if (RT_SUCCESS(rc))
+                                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, pObjInfo,
+                                                                                    &pThis->abRockBuf[offData & ISO9660_SECTOR_OFFSET_MASK],
+                                                                                    cbData, true /*fContinuationRecord*/, fIsFirstDirRec);
+                            else
+                                LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Error reading continuation record at %#RX64: %Rrc\n",
+                                        offDataBlock, rc));
+                        }
+                    }
+                    else
+                        LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: continuation record isn't within a sector! offData=%#RX64 cbData=%#RX32\n",
+                                cbData, offData));
+                }
+                else
+                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: nested continuation record!\n"));
+                break;
+            }
+
+            case MAKE_SIG(ISO9660SUSPPD_SIG1, ISO9660SUSPPD_SIG2): /* PD - ignored */
+            case MAKE_SIG(ISO9660SUSPST_SIG1, ISO9660SUSPST_SIG2): /* ST - ignore for now */
+            case MAKE_SIG(ISO9660SUSPES_SIG1, ISO9660SUSPES_SIG2): /* ES - ignore for now */
+                break;
+
+            case MAKE_SIG(ISO9660SUSPSP_SIG1, ISO9660SUSPSP_SIG2): /* SP */
+                if (!fIsFirstDirRec)
+                {
+                    LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: \n"));
+                    break;
+                }
+                break;
+
+            case MAKE_SIG(ISO9660SUSPER_SIG1, ISO9660SUSPER_SIG2): /* ER */
+                break;
+
+            default:
+                Log(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: Unknown SUSP entry: %#x %#x\n",
+                     pUnion->Hdr.bSig1, pUnion->Hdr.bSig2));
+                break;
+        }
+#if 0
+        /*
+          SUSP: */
         if (pbSys[0] == 'C' && pbSys[1] == 'E')
         {
         }
@@ -510,9 +607,9 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
         else if (pbSys[0] == 'A' && pbSys[1] == 'A')
         else if (pbSys[0] == 'A' && pbSys[1] == 'B')
         else if (pbSys[0] == 'A' && pbSys[1] == 'S')
+#endif
 
     }
-#endif
 }
 
 
@@ -867,8 +964,9 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             Log3(("  --> name='%s'\n", pThis->szNameBuf));
 
             pThis->szRockNameBuf[0] = '\0';
-            if (cbSys > 0)
-                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys);
+            if (cbSys > 0 && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE))
+                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys,
+                                                                    false /*fContinuationRecord*/, false /*fIsFirstDirRec*/);
 
             /*
              * Deal with multi-extent files (usually large ones).  We currently only
@@ -1670,11 +1768,6 @@ static int rtFsIsoImportProcessElToritoSectionEntry(PRTFSISOMKIMPORTER pThis, ui
                                             pEntry->bSelectionCriteriaType, pbSelCrit, cbSelCrit);
     if (RT_SUCCESS(rc))
     {
-uint64_t cbImage = 0;
-RTFsIsoMakerObjQueryDataSize(pThis->hIsoMaker, idxImageObj, &cbImage);
-LogRel(("ISO import: boot catalog #%#x: bMediaType=%#x (%#x) bSystemType=%#x idxImageObj=%#x size=%#RX64\n",
-        iEntry, bMediaType, pEntry->bBootMediaType, pEntry->bSystemType, idxImageObj, cbImage));
-
         pThis->pResults->cBootCatEntries += 1 + *pcSkip;
         rc = rtFsIsoImportProcessElToritoImage(pThis, idxImageObj, offBootImage);
     }
