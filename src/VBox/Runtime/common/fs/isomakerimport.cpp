@@ -810,7 +810,7 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                     || (pUnion->SL.fFlags & ~ISO9660RRIP_SL_F_CONTINUE)
                     || (pUnion->SL.abComponents[0] & ISO9660RRIP_SL_C_RESERVED_MASK) )
                     LogRel(("rtFsIsoImport/Rock: Malformed 'SL' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fFlags=%#x comp[0].fFlags=%#x\n",
-                            pUnion->SL.Hdr.cbEntry, pUnion->SL.Hdr.cbEntry, RT_OFFSETOF(ISO9660RRIPSL, abComponents[2]),
+                            pUnion->SL.Hdr.cbEntry, RT_OFFSETOF(ISO9660RRIPSL, abComponents[2]),
                             pUnion->SL.Hdr.bVersion, ISO9660RRIPSL_VER, RT_BE2H_U32(pUnion->SL.fFlags), pUnion->SL.abComponents[0]));
                 else if (pThis->fSeenLastSL)
                     LogRel(("rtFsIsoImport/Rock: Unexpected 'SL' entry\n"));
