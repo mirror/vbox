@@ -6019,8 +6019,9 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* Attach drivers to every available port. */
     for (i = 0; i < pThis->cPortsImpl; i++)
     {
-        char szName[24];
-        RTStrPrintf(szName, sizeof(szName), "Port%u", i);
+        char *pszName;
+        if (RTStrAPrintf(&pszName, "Port%u", i) <= 0)
+            AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
         PAHCIPort pAhciPort      = &pThis->ahciPort[i];
         /*
@@ -6038,7 +6039,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pAhciPort->fWrkThreadSleeping                      = true;
 
         /* Query per port configuration options if available. */
-        PCFGMNODE pCfgPort = CFGMR3GetChild(pDevIns->pCfg, szName);
+        PCFGMNODE pCfgPort = CFGMR3GetChild(pDevIns->pCfg, pszName);
         if (pCfgPort)
         {
             rc = CFGMR3QueryBoolDef(pCfgPort, "Hotpluggable", &pAhciPort->fHotpluggable, true);
@@ -6050,13 +6051,13 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         /*
          * Attach the block driver
          */
-        rc = PDMDevHlpDriverAttach(pDevIns, pAhciPort->iLUN, &pAhciPort->IBase, &pAhciPort->pDrvBase, szName);
+        rc = PDMDevHlpDriverAttach(pDevIns, pAhciPort->iLUN, &pAhciPort->IBase, &pAhciPort->pDrvBase, pszName);
         if (RT_SUCCESS(rc))
         {
             rc = ahciR3ConfigureLUN(pDevIns, pAhciPort);
             if (RT_FAILURE(rc))
             {
-                Log(("%s: Failed to configure the %s.\n", __FUNCTION__, szName));
+                Log(("%s: Failed to configure the %s.\n", __FUNCTION__, pszName));
                 return rc;
             }
 
@@ -6067,7 +6068,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             /*
              * Init vendor product data.
              */
-            rc = ahciR3VpdInit(pDevIns, pAhciPort, szName);
+            rc = ahciR3VpdInit(pDevIns, pAhciPort, pszName);
             if (RT_FAILURE(rc))
                 return rc;
 
@@ -6077,20 +6078,20 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                            N_("AHCI: Failed to create SUP event semaphore"));
 
             rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop,
-                                       ahciAsyncIOLoopWakeUp, 0, RTTHREADTYPE_IO, szName);
+                                       ahciAsyncIOLoopWakeUp, 0, RTTHREADTYPE_IO, pszName);
             if (RT_FAILURE(rc))
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                           N_("AHCI: Failed to create worker thread %s"), szName);
+                                           N_("AHCI: Failed to create worker thread %s"), pszName);
         }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             pAhciPort->pDrvBase = NULL;
             rc = VINF_SUCCESS;
-            LogRel(("AHCI: %s: No driver attached\n", szName));
+            LogRel(("AHCI: %s: No driver attached\n", pszName));
         }
         else
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("AHCI: Failed to attach drive to %s"), szName);
+                                       N_("AHCI: Failed to attach drive to %s"), pszName);
     }
 
     /*

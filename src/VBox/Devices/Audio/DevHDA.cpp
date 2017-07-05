@@ -6894,11 +6894,9 @@ static int hdaAttachInternal(PPDMDEVINS pDevIns, PHDADRIVER pDrv, unsigned uLUN,
     /*
      * Attach driver.
      */
-    char *pszDesc = NULL;
+    char *pszDesc;
     if (RTStrAPrintf(&pszDesc, "Audio driver port (HDA) for LUN#%u", uLUN) <= 0)
-        AssertReleaseMsgReturn(pszDesc,
-                               ("Not enough memory for HDA driver port description of LUN #%u\n", uLUN),
-                               VERR_NO_MEMORY);
+        AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
     PPDMIBASE pDrvBase;
     int rc = PDMDevHlpDriverAttach(pDevIns, uLUN,

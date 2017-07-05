@@ -218,11 +218,9 @@ static int sb16AttachInternal(PPDMDEVINS pDevIns, PSB16DRIVER pDrv, unsigned uLU
     /*
      * Attach driver.
      */
-    char *pszDesc = NULL;
+    char *pszDesc;
     if (RTStrAPrintf(&pszDesc, "Audio driver port (SB16) for LUN #%u", uLUN) <= 0)
-        AssertReleaseMsgReturn(pszDesc,
-                               ("Not enough memory for SB16 driver port description of LUN #%u\n", uLUN),
-                               VERR_NO_MEMORY);
+        AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
     PPDMIBASE pDrvBase;
     int rc = PDMDevHlpDriverAttach(pDevIns, uLUN,

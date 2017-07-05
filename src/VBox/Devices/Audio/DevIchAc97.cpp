@@ -3220,11 +3220,9 @@ static DECLCALLBACK(int) ichac97AttachInternal(PPDMDEVINS pDevIns, PAC97DRIVER p
     /*
      * Attach driver.
      */
-    char *pszDesc = NULL;
+    char *pszDesc;
     if (RTStrAPrintf(&pszDesc, "Audio driver port (AC'97) for LUN #%u", uLUN) <= 0)
-        AssertReleaseMsgReturn(pszDesc,
-                               ("Not enough memory for AC'97 driver port description of LUN #%u\n", uLUN),
-                               VERR_NO_MEMORY);
+        AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
     PPDMIBASE pDrvBase;
     int rc = PDMDevHlpDriverAttach(pDevIns, uLUN,

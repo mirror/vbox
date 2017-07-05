@@ -5594,7 +5594,6 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     for (unsigned i = 0; i < pThis->cDeviceStates; i++)
     {
-        char szName[24];
         PLSILOGICDEVICE pDevice = &pThis->paDeviceStates[i];
 
         /* Initialize static parts of the device. */
@@ -5612,10 +5611,12 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pDevice->IMediaExPort.pfnMediumEjected           = lsilogicR3MediumEjected;
         pDevice->ILed.pfnQueryStatusLed                  = lsilogicR3DeviceQueryStatusLed;
 
-        RTStrPrintf(szName, sizeof(szName), "Device%u", i);
+        char *pszName;
+        if (RTStrAPrintf(&pszName, "Device%u", i) <= 0)
+            AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
         /* Attach SCSI driver. */
-        rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, szName);
+        rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, pszName);
         if (RT_SUCCESS(rc))
         {
             /* Query the media interface. */
@@ -5640,11 +5641,11 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         {
             pDevice->pDrvBase = NULL;
             rc = VINF_SUCCESS;
-            Log(("LsiLogic: no driver attached to device %s\n", szName));
+            Log(("LsiLogic: no driver attached to device %s\n", pszName));
         }
         else
         {
-            AssertLogRelMsgFailed(("LsiLogic: Failed to attach %s\n", szName));
+            AssertLogRelMsgFailed(("LsiLogic: Failed to attach %s\n", pszName));
             return rc;
         }
     }
