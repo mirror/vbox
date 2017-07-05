@@ -1158,15 +1158,15 @@ typedef ISO9660RRIPTF const *PCISO9660RRIPTF;
  */
 DECLINLINE(uint8_t) Iso9660RripTfCalcLength(uint8_t fFlags)
 {
-    uint8_t cTimestamps = ((fFlags & ISO9660RRIPTF_F_BIRTH)      != 0)
-                        + ((fFlags & ISO9660RRIPTF_F_MODIFY)     != 0)
-                        + ((fFlags & ISO9660RRIPTF_F_ACCESS)     != 0)
-                        + ((fFlags & ISO9660RRIPTF_F_CHANGE)     != 0)
-                        + ((fFlags & ISO9660RRIPTF_F_BACKUP)     != 0)
-                        + ((fFlags & ISO9660RRIPTF_F_EXPIRATION) != 0)
-                        + ((fFlags & ISO9660RRIPTF_F_EFFECTIVE)  != 0);
-    return cTimestamps * (uint8_t)(fFlags & ISO9660RRIPTF_F_LONG_FORM ? sizeof(ISO9660TIMESTAMP) : sizeof(ISO9660RECTIMESTAMP))
-         + (uint8_t)RT_OFFSETOF(ISO9660RRIPTF, abPayload);
+    unsigned cTimestamps = ((fFlags & ISO9660RRIPTF_F_BIRTH)      != 0)
+                         + ((fFlags & ISO9660RRIPTF_F_MODIFY)     != 0)
+                         + ((fFlags & ISO9660RRIPTF_F_ACCESS)     != 0)
+                         + ((fFlags & ISO9660RRIPTF_F_CHANGE)     != 0)
+                         + ((fFlags & ISO9660RRIPTF_F_BACKUP)     != 0)
+                         + ((fFlags & ISO9660RRIPTF_F_EXPIRATION) != 0)
+                         + ((fFlags & ISO9660RRIPTF_F_EFFECTIVE)  != 0);
+    return (uint8_t)(  cTimestamps * (fFlags & ISO9660RRIPTF_F_LONG_FORM ? sizeof(ISO9660TIMESTAMP) : sizeof(ISO9660RECTIMESTAMP))
+                     + RT_OFFSETOF(ISO9660RRIPTF, abPayload));
 }
 
 
