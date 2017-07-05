@@ -849,7 +849,7 @@ HRESULT Guest::setCredentials(const com::Utf8Str &aUserName, const com::Utf8Str 
  * @param aInterfaceVersion
  * @param aOsType
  */
-void Guest::i_setAdditionsInfo(com::Utf8Str aInterfaceVersion, VBOXOSTYPE aOsType)
+void Guest::i_setAdditionsInfo(const com::Utf8Str &aInterfaceVersion, VBOXOSTYPE aOsType)
 {
     RTTIMESPEC TimeSpecTS;
     RTTimeNow(&TimeSpecTS);

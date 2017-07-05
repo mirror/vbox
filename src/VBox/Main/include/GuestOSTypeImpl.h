@@ -16,7 +16,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-    // static int i_vrdpServerVerifyPortsString(com::Utf8Str portRange);
 #ifndef ____H_GUESTOSTYPEIMPL
 #define ____H_GUESTOSTYPEIMPL
 

@@ -166,7 +166,7 @@ struct ConfigFileBase::Data
         cleanup();
     }
 
-    RTCString        strFilename;
+    RTCString               strFilename;
     bool                    fFileExists;
 
     xml::Document           *pDoc;

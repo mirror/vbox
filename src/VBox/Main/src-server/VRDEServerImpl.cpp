@@ -306,9 +306,9 @@ static int i_portParseNumber(uint16_t *pu16Port, const char *pszStart, const cha
     return VERR_INVALID_PARAMETER;
 }
 
-static int i_vrdpServerVerifyPortsString(com::Utf8Str portRange)
+static int i_vrdpServerVerifyPortsString(const com::Utf8Str &aPortRange)
 {
-    const char *pszPortRange = portRange.c_str();
+    const char *pszPortRange = aPortRange.c_str();
 
     if (!pszPortRange || *pszPortRange == 0) /* Reject empty string. */
         return VERR_INVALID_PARAMETER;
