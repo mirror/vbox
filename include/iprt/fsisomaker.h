@@ -411,6 +411,43 @@ RTDECL(int) RTFsIsoMakerAddFileWithSrcPath(RTFSISOMAKER hIsoMaker, const char *p
  */
 RTDECL(int) RTFsIsoMakerAddFileWithVfsFile(RTFSISOMAKER hIsoMaker, const char *pszFile, RTVFSFILE hVfsFileSrc, uint32_t *pidxObj);
 
+/**
+ * Adds an unnamed symbolic link to the image.
+ *
+ * The symlink must explictly be entered into the desired namespaces.  Please
+ * note that it is not possible to enter a symbolic link into an ISO 9660
+ * namespace where rock ridge extensions are disabled, since symbolic links
+ * depend on rock ridge.  For HFS and UDF there is no such requirement.
+ *
+ * Will fail if no namespace is configured that supports symlinks.
+ *
+ * @returns IPRT status code
+ * @retrval VERR_ISOMK_SYMLINK_SUPPORT_DISABLED if not supported.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pObjInfo            Pointer to object attributes, must be set to
+ *                              UNIX.  The size and hardlink counts are ignored.
+ *                              Optional.
+ * @param   pszTarget           The symbolic link target (UTF-8).
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ * @sa      RTFsIsoMakerAddSymlink, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO pObjInfo, const char *pszTarget, uint32_t *pidxObj);
+
+/**
+ * Adds a directory to the image in all namespaces and default attributes.
+ *
+ * Will fail if no namespace is configured that supports symlinks.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pszSymlink          The path (UTF-8) to the symlink in the ISO.
+ * @param   pszTarget           The symlink target (UTF-8).
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.  Optional.
+ * @sa      RTFsIsoMakerAddUnnamedSymlink, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddSymlink(RTFSISOMAKER hIsoMaker, const char *pszSymlink, const char *pszTarget, uint32_t *pidxObj);
 
 /**
  * Set the validation entry of the boot catalog (this is the first entry).
@@ -493,6 +530,8 @@ typedef struct RTFSISOMAKERIMPORTRESULTS
     uint64_t        cbAddedDataBlocks;
     /** Number of unique files added (unique in terms of data location). */
     uint32_t        cAddedFiles;
+    /** Number of symbolic links added. */
+    uint32_t        cAddedSymlinks;
     /** Number of imported boot catalog entries. */
     uint32_t        cBootCatEntries;
     /** Number of system area bytes imported (from offset zero). */

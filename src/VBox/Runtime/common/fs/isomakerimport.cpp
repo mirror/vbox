@@ -364,6 +364,59 @@ static DECLCALLBACK(int) rtFsIsoMakerImportDestroyData2File(PAVLU32NODECORE pNod
 
 
 /**
+ * Adds a symbolic link and names it given its ISO-9660 directory record and
+ * parent.
+ *
+ * @returns IPRT status code (safe to ignore).
+ * @param   pThis       The importer instance.
+ * @param   pDirRec     The directory record.
+ * @param   pObjInfo    Object information.
+ * @param   fNamespace  The namespace flag.
+ * @param   idxParent   Parent directory.
+ * @param   pszName     The name.
+ * @param   pszRockName The rock ridge name.  Empty if not present.
+ * @param   pszTarget   The symbolic link target.
+ */
+static int rtFsIsoImportProcessIso9660AddAndNameSymlink(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, PRTFSOBJINFO pObjInfo,
+                                                        uint32_t fNamespace, uint32_t idxParent,
+                                                        const char *pszName, const char *pszRockName, const char *pszTarget)
+{
+    Assert(!(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY));
+    Assert(RTFS_IS_SYMLINK(pObjInfo->Attr.fMode));
+
+    uint32_t idxObj;
+    int rc = RTFsIsoMakerAddUnnamedSymlink(pThis->hIsoMaker, pObjInfo, pszTarget, &idxObj);
+    if (RT_SUCCESS(rc))
+    {
+        Log3(("  --> added symlink #%#x (-> %s)\n", idxObj, pszTarget));
+        pThis->pResults->cAddedSymlinks++;
+
+        /*
+         * Enter the object into the namespace.
+         */
+        rc = RTFsIsoMakerObjSetNameAndParent(pThis->hIsoMaker, idxObj, idxParent, fNamespace, pszName);
+        if (RT_SUCCESS(rc))
+        {
+            pThis->pResults->cAddedNames++;
+
+            if (*pszRockName != '\0' && strcmp(pszName, pszRockName) != 0)
+            {
+                rc = RTFsIsoMakerObjSetRockName(pThis->hIsoMaker, idxObj, fNamespace, pszRockName);
+                if (RT_FAILURE(rc))
+                    rc = rtFsIsoImpError(pThis, rc, "Error setting rock ridge name for symlink '%s' to '%s'", pszName, pszRockName);
+            }
+        }
+        else
+            rc = rtFsIsoImpError(pThis, rc, "Error naming symlink '%s' (-> %s): %Rrc", pszName, pszTarget, rc);
+    }
+    else
+        rc = rtFsIsoImpError(pThis, rc, "Error adding symbolic link '%s' (-> %s): %Rrc", pszName, pszTarget, rc);
+    return rc;
+}
+
+
+
+/**
  * Adds a directory and names it given its ISO-9660 directory record and parent.
  *
  * @returns IPRT status code (safe to ignore).
@@ -375,7 +428,7 @@ static DECLCALLBACK(int) rtFsIsoMakerImportDestroyData2File(PAVLU32NODECORE pNod
  * @param   fNamespace  The namespace flag.
  * @param   idxParent   Parent directory.
  * @param   pszName     The name.
- * @param   pszRockName The rock ridge name.
+ * @param   pszRockName The rock ridge name.  Empty if not present.
  * @param   cDepth      The depth to add it with.
  * @param   pTodoList   The todo list (for directories).
  */
@@ -400,7 +453,7 @@ static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pTh
         {
             pThis->pResults->cAddedNames++;
 
-            if (*pszRockName != '\0' && strcmp(pszName, pszRockName))
+            if (*pszRockName != '\0' && strcmp(pszName, pszRockName) != 0)
                 rc = RTFsIsoMakerObjSetRockName(pThis->hIsoMaker, idxObj, fNamespace, pszRockName);
             if (RT_SUCCESS(rc))
             {
@@ -424,10 +477,10 @@ static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pTh
                 rc = rtFsIsoImpError(pThis, rc, "Error setting rock ridge name for directory '%s' to '%s'", pszName, pszRockName);
         }
         else
-            rc = rtFsIsoImpError(pThis, rc, "Error naming directory '%s'", pszName);
+            rc = rtFsIsoImpError(pThis, rc, "Error naming directory '%s': %Rrc", pszName, rc);
     }
     else
-        rc = rtFsIsoImpError(pThis, rc, "Error adding directory '%s': %Rrc", pszName, pDirRec->fFileFlags, rc);
+        rc = rtFsIsoImpError(pThis, rc, "Error adding directory '%s': %Rrc", pszName, rc);
     return rc;
 }
 
@@ -438,13 +491,16 @@ static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pTh
  * @returns IPRT status code (safe to ignore).
  * @param   pThis       The importer instance.
  * @param   pDirRec     The directory record.
+ * @param   pObjInfo    Object information.
  * @param   cbData      The actual file data size.
  * @param   fNamespace  The namespace flag.
  * @param   idxParent   Parent directory.
  * @param   pszName     The name.
+ * @param   pszRockName The rock ridge name.  Empty if not present.
  */
-static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, uint64_t cbData,
-                                                     uint32_t fNamespace, uint32_t idxParent, const char *pszName)
+static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, PRTFSOBJINFO pObjInfo,
+                                                     uint64_t cbData, uint32_t fNamespace, uint32_t idxParent,
+                                                     const char *pszName, const char *pszRockName)
 {
     int rc;
 
@@ -502,9 +558,10 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
      */
     if (idxObj == UINT32_MAX)
     {
+        pObjInfo->cbObject = pObjInfo->cbAllocated = cbData;
         rc = RTFsIsoMakerAddUnnamedFileWithCommonSrc(pThis->hIsoMaker, pThis->idxSrcFile,
                                                      ISO9660_GET_ENDIAN(&pDirRec->offExtent) * (uint64_t)ISO9660_SECTOR_SIZE,
-                                                     cbData, NULL /*pObjInfo*/, &idxObj);
+                                                     cbData, pObjInfo, &idxObj);
         if (RT_FAILURE(rc))
             return rtFsIsoImpError(pThis, rc, "Error adding file '%s': %Rrc", pszName, rc);
         Assert(idxObj != UINT32_MAX);
@@ -542,9 +599,18 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
      */
     rc = RTFsIsoMakerObjSetNameAndParent(pThis->hIsoMaker, idxObj, idxParent, fNamespace, pszName);
     if (RT_SUCCESS(rc))
+    {
         pThis->pResults->cAddedNames++;
+
+        if (*pszRockName != '\0' && strcmp(pszName, pszRockName) != 0)
+        {
+            rc = RTFsIsoMakerObjSetRockName(pThis->hIsoMaker, idxObj, fNamespace, pszRockName);
+            if (RT_FAILURE(rc))
+                rc = rtFsIsoImpError(pThis, rc, "Error setting rock ridge name for file '%s' to '%s'", pszName, pszRockName);
+        }
+    }
     else
-        return rtFsIsoImpError(pThis, rc, "Error adding directory '%s': %Rrc", pszName, pDirRec->fFileFlags, rc);
+        return rtFsIsoImpError(pThis, rc, "Error naming file '%s': %Rrc", pszName, rc);
     return VINF_SUCCESS;
 }
 
@@ -1443,8 +1509,12 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                 if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
                     rtFsIsoImportProcessIso9660AddAndNameDirectory(pThis, pDirRec, &ObjInfo, cbData, fNamespace, idxDir,
                                                                    pThis->szNameBuf, pThis->szRockNameBuf, cDepth + 1, pTodoList);
+                else if (pThis->szRockSymlinkTargetBuf[0] == '\0')
+                    rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, &ObjInfo, cbData, fNamespace, idxDir,
+                                                              pThis->szNameBuf, pThis->szRockNameBuf);
                 else
-                    rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, cbData, fNamespace, idxDir, pThis->szNameBuf);
+                    rtFsIsoImportProcessIso9660AddAndNameSymlink(pThis, pDirRec, &ObjInfo, fNamespace, idxDir, pThis->szNameBuf,
+                                                                 pThis->szRockNameBuf, pThis->szRockSymlinkTargetBuf);
             }
         }
         else

@@ -2688,6 +2688,12 @@ RT_C_DECLS_END
 /** The file is too big for the current ISO level (4GB+ sized files
  * requires ISO level 3). */
 #define VERR_ISOMK_FILE_TOO_BIG_REQ_ISO_LEVEL_3         (-25006)
+/** Cannot add symbolic link to namespace which isn't configured to support it. */
+#define VERR_ISOMK_SYMLINK_REQ_ROCK_RIDGE               (-25007)
+/** Cannot add symbolic link to one of the selected namespaces. */
+#define VINF_ISOMK_SYMLINK_REQ_ROCK_RIDGE               (25007)
+/** Cannot add symbolic link because no namespace is configured to support it. */
+#define VERR_ISOMK_SYMLINK_SUPPORT_DISABLED             (-25008)
 
 /** Requested to import an unknown ISO format. */
 #define VERR_ISOMK_IMPORT_UNKNOWN_FORMAT                (-25100)

@@ -125,7 +125,7 @@ typedef enum RTFSISOMAKEROBJTYPE
     RTFSISOMAKEROBJTYPE_INVALID = 0,
     RTFSISOMAKEROBJTYPE_DIR,
     RTFSISOMAKEROBJTYPE_FILE,
-    //RTFSISOMAKEROBJTYPE_SYMLINK,
+    RTFSISOMAKEROBJTYPE_SYMLINK,
     RTFSISOMAKEROBJTYPE_END
 } RTFSISOMAKEROBJTYPE;
 
@@ -413,6 +413,22 @@ typedef struct RTFSISOMAKERDIR
 } RTFSISOMAKERDIR;
 /** Pointer to an ISO maker directory object.  */
 typedef RTFSISOMAKERDIR *PRTFSISOMAKERDIR;
+
+
+/**
+ * ISO maker symlink object.
+ */
+typedef struct RTFSISOMAKERSYMLINK
+{
+    /** The common bit. */
+    RTFSISOMAKEROBJ         Core;
+    /** The symbolic link target length. */
+    size_t                  cchTarget;
+    /** The symbolic link target. */
+    char                    szTarget[RT_FLEXIBLE_ARRAY];
+} RTFSISOMAKERSYMLINK;
+/** Pointer to an ISO maker directory object.  */
+typedef RTFSISOMAKERSYMLINK *PRTFSISOMAKERSYMLINK;
 
 
 
@@ -1929,6 +1945,15 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
     }
 
     /*
+     * If this is a symbolic link, refuse to add it to a namespace that isn't
+     * configured to support symbolic links.
+     */
+    if (   pObj->enmType == RTFSISOMAKEROBJTYPE_SYMLINK
+        && (pNamespace->fNamespace & (RTFSISOMAKER_NAMESPACE_ISO_9660 | RTFSISOMAKER_NAMESPACE_JOLIET))
+        && pNamespace->uRockRidgeLevel == 0)
+        return VERR_ISOMK_SYMLINK_REQ_ROCK_RIDGE;
+
+    /*
      * If the object is already named, unset that name before continuing.
      */
     if (*rtFsIsoMakerObjGetNameForNamespace(pObj, pNamespace))
@@ -2541,7 +2566,8 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
     /*
      * Execute requested actions.
      */
-    int rc = VINF_SUCCESS;
+    uint32_t cAdded = 0;
+    int      rc = VINF_SUCCESS;
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
         if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
         {
@@ -2549,12 +2575,13 @@ RTDECL(int) RTFsIsoMakerObjSetPath(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint
             if (pNamespace->uLevel > 0)
             {
                 int rc2 = rtFsIsoMakerObjSetPathInOne(pThis, pNamespace, pObj, pszPath);
-                if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
-                    continue;
-                rc = rc2;
+                if (RT_SUCCESS(rc2))
+                    cAdded++;
+                else if (RT_SUCCESS(rc) || rc == VERR_ISOMK_SYMLINK_REQ_ROCK_RIDGE)
+                    rc = rc2;
             }
         }
-    return rc;
+    return rc != VERR_ISOMK_SYMLINK_REQ_ROCK_RIDGE || cAdded == 0 ? rc : VINF_ISOMK_SYMLINK_REQ_ROCK_RIDGE;
 }
 
 
@@ -2594,6 +2621,7 @@ RTDECL(int) RTFsIsoMakerObjSetNameAndParent(RTFSISOMAKER hIsoMaker, uint32_t idx
     /*
      * Execute requested actions.
      */
+    uint32_t cAdded = 0;
     int rc = VINF_SUCCESS;
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aRTFsIsoNamespaces); i++)
         if (fNamespaces & g_aRTFsIsoNamespaces[i].fNamespace)
@@ -2605,13 +2633,14 @@ RTDECL(int) RTFsIsoMakerObjSetNameAndParent(RTFSISOMAKER hIsoMaker, uint32_t idx
                 if (pParentName)
                 {
                     int rc2 = rtFsIsoMakerObjSetName(pThis, pNamespace, pObj, pParentName, pszName, cchName, NULL /*ppNewName*/);
-                    if (RT_SUCCESS(rc2) || RT_FAILURE(rc))
-                        continue;
-                    rc = rc2;
+                    if (RT_SUCCESS(rc2))
+                        cAdded++;
+                    else if (RT_SUCCESS(rc) || rc == VERR_ISOMK_SYMLINK_REQ_ROCK_RIDGE)
+                        rc = rc2;
                 }
             }
         }
-    return rc;
+    return rc != VERR_ISOMK_SYMLINK_REQ_ROCK_RIDGE || cAdded == 0 ? rc : VINF_ISOMK_SYMLINK_REQ_ROCK_RIDGE;
 }
 
 
@@ -3265,6 +3294,110 @@ RTDECL(int) RTFsIsoMakerAddFileWithVfsFile(RTFSISOMAKER hIsoMaker, const char *p
 }
 
 
+/**
+ * Adds an unnamed symbolic link to the image.
+ *
+ * The symlink must explictly be entered into the desired namespaces.  Please
+ * note that it is not possible to enter a symbolic link into an ISO 9660
+ * namespace where rock ridge extensions are disabled, since symbolic links
+ * depend on rock ridge.  For HFS and UDF there is no such requirement.
+ *
+ * Will fail if no namespace is configured that supports symlinks.
+ *
+ * @returns IPRT status code
+ * @retrval VERR_ISOMK_SYMLINK_SUPPORT_DISABLED if not supported.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pObjInfo            Pointer to object attributes, must be set to
+ *                              UNIX.  The size and hardlink counts are ignored.
+ *                              Optional.
+ * @param   pszTarget           The symbolic link target (UTF-8).
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.
+ * @sa      RTFsIsoMakerAddSymlink, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO pObjInfo, const char *pszTarget, uint32_t *pidxObj)
+{
+    /*
+     * Validate input.
+     */
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pidxObj, VERR_INVALID_POINTER);
+    if (pObjInfo)
+    {
+        AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
+        AssertReturn(pObjInfo->Attr.enmAdditional == RTFSOBJATTRADD_UNIX, VERR_INVALID_PARAMETER);
+        AssertReturn(RTFS_IS_SYMLINK(pObjInfo->Attr.fMode), VERR_INVALID_FLAGS);
+    }
+    AssertPtrReturn(pszTarget, VERR_INVALID_POINTER);
+    size_t cchTarget = strlen(pszTarget);
+    AssertPtrReturn(cchTarget > 0, VERR_INVALID_NAME);
+    AssertPtrReturn(cchTarget < _1K, VERR_FILENAME_TOO_LONG);
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    /*
+     * Check that symlinks are supported by some namespace.
+     */
+    AssertReturn(   (pThis->PrimaryIso.uLevel > 0 && pThis->PrimaryIso.uRockRidgeLevel > 0)
+                 || (pThis->Joliet.uLevel     > 0 && pThis->Joliet.uRockRidgeLevel     > 0)
+                 || pThis->Udf.uLevel > 0
+                 || pThis->Hfs.uLevel > 0,
+                 VERR_ISOMK_SYMLINK_SUPPORT_DISABLED);
+
+    /*
+     * Do the adding.
+     */
+    PRTFSISOMAKERSYMLINK pSymlink = (PRTFSISOMAKERSYMLINK)RTMemAllocZ(RT_UOFFSETOF(RTFSISOMAKERSYMLINK, szTarget[cchTarget + 1]));
+    AssertReturn(pSymlink, VERR_NO_MEMORY);
+    int rc = rtFsIsoMakerInitCommonObj(pThis, &pSymlink->Core, RTFSISOMAKEROBJTYPE_SYMLINK, pObjInfo);
+    if (RT_SUCCESS(rc))
+    {
+        memcpy(pSymlink->szTarget, pszTarget, cchTarget);
+        pSymlink->szTarget[cchTarget] = '\0';
+        pSymlink->cchTarget = cchTarget;
+        return VINF_SUCCESS;
+    }
+    RTMemFree(pSymlink);
+    return rc;
+}
+
+
+/**
+ * Adds a directory to the image in all namespaces and default attributes.
+ *
+ * Will fail if no namespace is configured that supports symlinks.
+ *
+ * @returns IPRT status code
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   pszSymlink          The path (UTF-8) to the symlink in the ISO.
+ * @param   pszTarget           The symlink target (UTF-8).
+ * @param   pidxObj             Where to return the configuration index of the
+ *                              directory.  Optional.
+ * @sa      RTFsIsoMakerAddUnnamedSymlink, RTFsIsoMakerObjSetPath
+ */
+RTDECL(int) RTFsIsoMakerAddSymlink(RTFSISOMAKER hIsoMaker, const char *pszSymlink, const char *pszTarget, uint32_t *pidxObj)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    AssertPtrReturn(pszSymlink, VERR_INVALID_POINTER);
+    AssertReturn(RTPATH_IS_SLASH(*pszSymlink), VERR_INVALID_NAME);
+
+    uint32_t idxObj;
+    int rc = RTFsIsoMakerAddUnnamedSymlink(hIsoMaker, NULL /*pObjInfo*/, pszTarget, &idxObj);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFsIsoMakerObjSetPath(hIsoMaker, idxObj, RTFSISOMAKER_NAMESPACE_ALL, pszSymlink);
+        if (RT_SUCCESS(rc))
+        {
+            if (pidxObj)
+                *pidxObj = idxObj;
+        }
+        else
+            RTFsIsoMakerObjRemove(hIsoMaker, idxObj);
+    }
+    return rc;
+
+}
 
 
 /*
