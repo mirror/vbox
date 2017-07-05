@@ -1236,7 +1236,7 @@ typedef ISO9660RRIPSL const *PCISO9660RRIPSL;
 #define ISO9660RRIP_SL_C_MOUNT_POINT    UINT8_C(0x10)
 /** Reserved / historically was uname network node name. */
 #define ISO9660RRIP_SL_C_UNAME          UINT8_C(0x20)
-/** Reserved mask (includes historically bits). */
+/** Reserved mask (considers historically bits reserved). */
 #define ISO9660RRIP_SL_C_RESERVED_MASK  UINT8_C(0xf0)
 /** @} */
 
@@ -1272,6 +1272,8 @@ typedef ISO9660RRIPNM const *PCISO9660RRIPNM;
 #define ISO9660RRIP_NM_F_PARENT         UINT8_C(0x04)
 /** Reserved / historically was uname network node name. */
 #define ISO9660RRIP_NM_F_UNAME          UINT8_C(0x20)
+/** Reserved mask (considers historically bits reserved). */
+#define ISO9660RRIP_NM_F_RESERVED_MASK  UINT8_C(0xf8)
 /** @} */
 
 

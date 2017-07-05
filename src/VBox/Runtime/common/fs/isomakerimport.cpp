@@ -369,21 +369,24 @@ static DECLCALLBACK(int) rtFsIsoMakerImportDestroyData2File(PAVLU32NODECORE pNod
  * @returns IPRT status code (safe to ignore).
  * @param   pThis       The importer instance.
  * @param   pDirRec     The directory record.
+ * @param   pObjInfo    Object information.
  * @param   cbData      The actual directory data size.  (Always same as in the
  *                      directory record, but this what we do for files below.)
  * @param   fNamespace  The namespace flag.
  * @param   idxParent   Parent directory.
  * @param   pszName     The name.
+ * @param   pszRockName The rock ridge name.
  * @param   cDepth      The depth to add it with.
  * @param   pTodoList   The todo list (for directories).
  */
-static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, uint64_t cbData,
+static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec,
+                                                          PCRTFSOBJINFO pObjInfo, uint64_t cbData,
                                                           uint32_t fNamespace, uint32_t idxParent, const char *pszName,
-                                                          uint8_t cDepth, PRTLISTANCHOR pTodoList)
+                                                          const char *pszRockName, uint8_t cDepth, PRTLISTANCHOR pTodoList)
 {
     Assert(pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY);
     uint32_t idxObj;
-    int rc = RTFsIsoMakerAddUnnamedDir(pThis->hIsoMaker, &idxObj);
+    int rc = RTFsIsoMakerAddUnnamedDir(pThis->hIsoMaker, pObjInfo, &idxObj);
     if (RT_SUCCESS(rc))
     {
         Log3(("  --> added directory #%#x\n", idxObj));
@@ -397,21 +400,28 @@ static int rtFsIsoImportProcessIso9660AddAndNameDirectory(PRTFSISOMKIMPORTER pTh
         {
             pThis->pResults->cAddedNames++;
 
-            /*
-             * Push it onto the traversal stack.
-             */
-            PRTFSISOMKIMPDIR pImpDir = (PRTFSISOMKIMPDIR)RTMemAlloc(sizeof(*pImpDir));
-            if (pImpDir)
+            if (*pszRockName != '\0' && strcmp(pszName, pszRockName))
+                rc = RTFsIsoMakerObjSetRockName(pThis->hIsoMaker, idxObj, fNamespace, pszRockName);
+            if (RT_SUCCESS(rc))
             {
-                Assert((uint32_t)cbData == cbData /* no multi-extents for dirs makes it this far */);
-                pImpDir->cbDir       = (uint32_t)cbData;
-                pImpDir->offDirBlock = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
-                pImpDir->idxObj      = idxObj;
-                pImpDir->cDepth      = cDepth;
-                RTListAppend(pTodoList, &pImpDir->Entry);
+                /*
+                 * Push it onto the traversal stack.
+                 */
+                PRTFSISOMKIMPDIR pImpDir = (PRTFSISOMKIMPDIR)RTMemAlloc(sizeof(*pImpDir));
+                if (pImpDir)
+                {
+                    Assert((uint32_t)cbData == cbData /* no multi-extents for dirs makes it this far */);
+                    pImpDir->cbDir       = (uint32_t)cbData;
+                    pImpDir->offDirBlock = ISO9660_GET_ENDIAN(&pDirRec->offExtent);
+                    pImpDir->idxObj      = idxObj;
+                    pImpDir->cDepth      = cDepth;
+                    RTListAppend(pTodoList, &pImpDir->Entry);
+                }
+                else
+                    rc = rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPDIR");
             }
             else
-                rc = rtFsIsoImpError(pThis, VERR_NO_MEMORY, "Could not allocate RTFSISOMKIMPDIR");
+                rc = rtFsIsoImpError(pThis, rc, "Error setting rock ridge name for directory '%s' to '%s'", pszName, pszRockName);
         }
         else
             rc = rtFsIsoImpError(pThis, rc, "Error naming directory '%s'", pszName);
@@ -811,9 +821,9 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                     || (pUnion->SL.abComponents[0] & ISO9660RRIP_SL_C_RESERVED_MASK) )
                     LogRel(("rtFsIsoImport/Rock: Malformed 'SL' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fFlags=%#x comp[0].fFlags=%#x\n",
                             pUnion->SL.Hdr.cbEntry, RT_OFFSETOF(ISO9660RRIPSL, abComponents[2]),
-                            pUnion->SL.Hdr.bVersion, ISO9660RRIPSL_VER, RT_BE2H_U32(pUnion->SL.fFlags), pUnion->SL.abComponents[0]));
+                            pUnion->SL.Hdr.bVersion, ISO9660RRIPSL_VER, pUnion->SL.fFlags, pUnion->SL.abComponents[0]));
                 else if (pThis->fSeenLastSL)
-                    LogRel(("rtFsIsoImport/Rock: Unexpected 'SL' entry\n"));
+                    LogRel(("rtFsIsoImport/Rock: Unexpected 'SL!' entry\n"));
                 else
                 {
                     pThis->fSeenLastSL = !(pUnion->SL.fFlags & ISO9660RRIP_SL_F_CONTINUE); /* used in loop */
@@ -901,12 +911,60 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                                 break;
                             }
                         }
-                    } while (cbSrcLeft >= 2);
+                    }
                     pThis->szRockSymlinkTargetBuf[offDst] = '\0';
+
+                    /* Purge the encoding as we don't want invalid UTF-8 floating around. */
+                    RTStrPurgeEncoding(pThis->szRockSymlinkTargetBuf);
                 }
                 break;
 
             case MAKE_SIG(ISO9660RRIPNM_SIG1, ISO9660RRIPNM_SIG2): /* NM */
+                if (   pUnion->NM.Hdr.bVersion != ISO9660RRIPNM_VER
+                    || pUnion->NM.Hdr.cbEntry < RT_OFFSETOF(ISO9660RRIPNM, achName)
+                    || (pUnion->NM.fFlags & ISO9660RRIP_NM_F_RESERVED_MASK) )
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'NM' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fFlags=%#x %.*Rhxs\n",
+                            pUnion->NM.Hdr.cbEntry, RT_OFFSETOF(ISO9660RRIPNM, achName),
+                            pUnion->NM.Hdr.bVersion, ISO9660RRIPNM_VER, pUnion->NM.fFlags,
+                            pUnion->NM.Hdr.cbEntry - RT_MIN(pUnion->NM.Hdr.cbEntry, RT_OFFSETOF(ISO9660RRIPNM, achName)),
+                            &pUnion->NM.achName[0] ));
+                else if (pThis->fSeenLastNM)
+                    LogRel(("rtFsIsoImport/Rock: Unexpected 'NM' entry!\n"));
+                else
+                {
+                    pThis->fSeenLastNM = !(pUnion->NM.fFlags & ISO9660RRIP_NM_F_CONTINUE);
+
+                    uint8_t const cchName = pUnion->NM.Hdr.cbEntry - (uint8_t)RT_OFFSETOF(ISO9660RRIPNM, achName);
+                    if (pUnion->NM.fFlags & (ISO9660RRIP_NM_F_CURRENT | ISO9660RRIP_NM_F_PARENT))
+                    {
+                        if (cchName == 0 && pThis->szRockNameBuf[0] == '\0')
+                            Log(("rtFsIsoImport/Rock: Ignoring 'NM' entry for '.' and '..'\n"));
+                        else
+                            LogRel(("rtFsIsoImport/Rock: Ignoring malformed 'NM' using '.' or '..': fFlags=%#x cchName=%#x %.*Rhxs; szRockNameBuf='%s'\n",
+                                    pUnion->NM.fFlags, cchName, cchName, pUnion->NM.achName, pThis->szRockNameBuf));
+                        pThis->szRockNameBuf[0] = '\0';
+                        pThis->fSeenLastNM = true;
+                    }
+                    else
+                    {
+                        size_t offDst = strlen(pThis->szRockNameBuf);
+                        if (offDst + cchName < sizeof(pThis->szRockNameBuf))
+                        {
+                            memcpy(&pThis->szRockNameBuf[offDst], pUnion->NM.achName, cchName);
+                            pThis->szRockNameBuf[offDst + cchName] = '\0';
+
+                            /* Purge the encoding as we don't want invalid UTF-8 floating around. */
+                            RTStrPurgeEncoding(pThis->szRockSymlinkTargetBuf);
+                        }
+                        else
+                        {
+                            LogRel(("rtFsIsoImport/Rock: 'NM' constructs a too long name, ignoring it all: '%s%.*s'\n",
+                                    pThis->szRockNameBuf, cchName, pUnion->NM.achName));
+                            pThis->szRockNameBuf[0] = '\0';
+                            pThis->fSeenLastNM = true;
+                        }
+                    }
+                }
                 break;
 
             case MAKE_SIG(ISO9660RRIPCL_SIG1, ISO9660RRIPCL_SIG2): /* CL - just warn for now. */
@@ -1276,6 +1334,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
             Log3(("  --> name='%s'\n", pThis->szNameBuf));
 
             pThis->szRockNameBuf[0] = '\0';
+            pThis->szRockSymlinkTargetBuf[0] = '\0';
             if (cbSys > 0 && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE))
             {
                 pThis->fSeenLastNM               = false;
@@ -1382,8 +1441,8 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                  * Add the object.
                  */
                 if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
-                    rtFsIsoImportProcessIso9660AddAndNameDirectory(pThis, pDirRec, cbData, fNamespace, idxDir,
-                                                                   pThis->szNameBuf, cDepth + 1, pTodoList);
+                    rtFsIsoImportProcessIso9660AddAndNameDirectory(pThis, pDirRec, &ObjInfo, cbData, fNamespace, idxDir,
+                                                                   pThis->szNameBuf, pThis->szRockNameBuf, cDepth + 1, pTodoList);
                 else
                     rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, cbData, fNamespace, idxDir, pThis->szNameBuf);
             }

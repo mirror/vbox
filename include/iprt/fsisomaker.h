@@ -251,6 +251,22 @@ RTDECL(int) RTFsIsoMakerObjSetNameAndParent(RTFSISOMAKER hIsoMaker, uint32_t idx
                                             uint32_t fNamespaces, const char *pszName);
 
 /**
+ * Changes the rock ridge name for the object in the selected namespaces.
+ *
+ * The object must already be enetered into the namespaces by
+ * RTFsIsoMakerObjSetNameAndParent, RTFsIsoMakerObjSetPath or similar.
+ *
+ * @returns IPRT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   idxObj              The configuration index of to name.
+ * @param   fNamespaces         The namespaces to apply the path to
+ *                              (RTFSISOMAKER_NAMESPACE_XXX).
+ * @param   pszRockName         The rock ridge name.  Passing NULL or an empty
+ *                              string will restore the specified name.
+ */
+RTDECL(int) RTFsIsoMakerObjSetRockName(RTFSISOMAKER hIsoMaker, uint32_t idxObj, uint32_t fNamespaces, const char *pszRockName);
+
+/**
  * Enables or disable syslinux boot info table patching of a file.
  *
  * @returns IPRT status code.
@@ -279,11 +295,14 @@ RTDECL(int) RTFsIsoMakerObjQueryDataSize(RTFSISOMAKER hIsoMaker, uint32_t idxObj
  *
  * @returns IPRT status code
  * @param   hIsoMaker           The ISO maker handle.
+ * @param   pObjInfo            Pointer to object attributes, must be set to
+ *                              UNIX.  The size and hardlink counts are ignored.
+ *                              Optional.
  * @param   pidxObj             Where to return the configuration index of the
  *                              directory.
  * @sa      RTFsIsoMakerAddDir, RTFsIsoMakerObjSetPath
  */
-RTDECL(int) RTFsIsoMakerAddUnnamedDir(RTFSISOMAKER hIsoMaker, uint32_t *pidxObj);
+RTDECL(int) RTFsIsoMakerAddUnnamedDir(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO pObjInfo, uint32_t *pidxObj);
 
 /**
  * Adds a directory to the image in all namespaces and default attributes.

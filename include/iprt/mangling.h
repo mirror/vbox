@@ -940,6 +940,7 @@
 # define RTFsIsoMakerObjRemove                          RT_MANGLER(RTFsIsoMakerObjRemove)
 # define RTFsIsoMakerObjSetPath                         RT_MANGLER(RTFsIsoMakerObjSetPath)
 # define RTFsIsoMakerObjSetNameAndParent                RT_MANGLER(RTFsIsoMakerObjSetNameAndParent)
+# define RTFsIsoMakerObjSetRockName                     RT_MANGLER(RTFsIsoMakerObjSetRockName)
 # define RTFsIsoMakerAddUnnamedDir                      RT_MANGLER(RTFsIsoMakerAddUnnamedDir)
 # define RTFsIsoMakerAddDir                             RT_MANGLER(RTFsIsoMakerAddDir)
 # define RTFsIsoMakerAddUnnamedFileWithSrcPath          RT_MANGLER(RTFsIsoMakerAddUnnamedFileWithSrcPath)
