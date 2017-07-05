@@ -46,7 +46,7 @@
 
 #if VBOX_BIOS_CPU >= 80386
 /* Warning: Destroys high bits of ECX. */
-uint16_t pci_find_class(uint16_t op, uint32_t dev_class, uint16_t start_bdf);
+uint16_t pci_find_class(uint16_t op, uint32_t dev_class, uint16_t index);
 # pragma aux pci_find_class =    \
     ".386"                  \
     "shl    ecx, 16"        \
@@ -59,7 +59,7 @@ uint16_t pci_find_class(uint16_t op, uint32_t dev_class, uint16_t start_bdf);
     parm [ax] [cx dx] [si] value [bx];
 #endif
 
-uint16_t pci_find_dev(uint16_t op, uint16_t dev_id, uint16_t ven_id, uint16_t start_bdf);
+uint16_t pci_find_dev(uint16_t op, uint16_t dev_id, uint16_t ven_id, uint16_t index);
 #pragma aux pci_find_dev =  \
     "int    0x1a"           \
     "cmp    ah, 0"          \
@@ -119,7 +119,7 @@ uint8_t pci_write_cfgd(uint16_t op, uint16_t bus_dev_fn, uint16_t reg, uint32_t 
  * @returns bus/device/fn in a 16-bit integer where
  *          where the upper byte contains the bus number
  *          and lower one the device and function number.
- *          VBOX_AHCI_NO_DEVICE if no device was found.
+ *          0xffff if no device was found.
  * @param   dev_class   The PCI class code to search for.
  */
 uint16_t pci_find_classcode(uint32_t dev_class)
@@ -129,6 +129,22 @@ uint16_t pci_find_classcode(uint32_t dev_class)
 #else
     return UINT16_C(0xffff);
 #endif
+}
+
+/**
+ * Returns the bus/device/function of a PCI device with
+ * the given vendor and device id.
+ *
+ * @returns bus/device/fn in one 16bit integer where
+ *          where the upper byte contains the bus number
+ *          and lower one the device and function number.
+ *          0xffff if no device was found.
+ * @param   v_id    The vendor ID.
+ * @param   d_id    The device ID.
+ */
+uint16_t pci_find_device(uint16_t v_id, uint16_t d_id)
+{
+    return pci_find_dev((PCIBIOS_ID << 8) | PCIBIOS_FIND_PCI_DEVICE, d_id, v_id, 0);
 }
 
 uint32_t pci_read_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t reg)
@@ -157,22 +173,6 @@ void pci_write_config_word(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint16_t va
 }
 
 #if 0 /* Disabled to save space because they are not needed. Might become useful in the future. */
-/**
- * Returns the bus/device/function of a PCI device with
- * the given vendor and device id.
- *
- * @returns bus/device/fn in one 16bit integer where
- *          where the upper byte contains the bus number
- *          and lower one the device and function number.
- *          VBOX_AHCI_NO_DEVICE if no device was found.
- * @param   u16Vendor    The vendor ID.
- * @param   u16Device    The device ID.
- */
-uint16_t pci_find_device(uint16_t v_id, uint16_t d_id)
-{
-    return pci_find_dev((PCIBIOS_ID << 8) | PCIBIOS_FIND_PCI_DEVICE, v_id, d_id, 0);
-}
-
 void pci_write_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint8_t val)
 {
     pci_write_cfgb((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_BYTE, (bus << 8) | dev_fn, reg, val);
