@@ -8241,8 +8241,10 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uin
             case X86_XCPT_SS:
             case X86_XCPT_GP:
             case X86_XCPT_AC:
-                AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo),
-                          ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
+                /* No error codes for exceptions in real-mode. See Intel spec. 20.1.4 "Interrupt and Exception Handling" */
+                if (!CPUMIsGuestInRealModeEx(pMixedCtx))
+                    AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo),
+                              ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
                 /* fall thru */
             default:
                 break;
