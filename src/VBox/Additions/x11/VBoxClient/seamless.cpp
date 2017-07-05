@@ -252,29 +252,6 @@ int SeamlessMain::stopX11MonitorThread(void)
     return rc;
 }
 
-/** @todo Expand this? */
-int SeamlessMain::selfTest()
-{
-    int rc = VERR_INTERNAL_ERROR;
-    const char *pcszStage;
-
-    LogRelFlowFunc(("\n"));
-    do {
-        pcszStage = "Testing event loop cancellation";
-        VbglR3InterruptEventWaits();
-        if (RT_FAILURE(VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)))
-            break;
-        if (   VbglR3WaitEvent(VMMDEV_EVENT_VALID_EVENT_MASK, 0, NULL)
-            != VERR_TIMEOUT)
-            break;
-        rc = VINF_SUCCESS;
-    } while(0);
-    if (RT_FAILURE(rc))
-        LogRel(("VBoxClient (seamless): self test failed.  Stage: \"%s\"\n",
-                pcszStage));
-    return rc;
-}
-
 /** Service magic number, start of a UUID. */
 #define SEAMLESSSERVICE_MAGIC 0xd28ba727
 
@@ -321,12 +298,6 @@ static int init(struct VBCLSERVICE **ppInterface)
     rc = pSelf->mSeamless.init();
     if (RT_FAILURE(rc))
         return rc;
-    rc = pSelf->mSeamless.selfTest();
-    if (RT_FAILURE(rc))
-    {
-        pSelf->mSeamless.stop();
-        return rc;
-    }
     pSelf->mIsInitialised = true;
     return VINF_SUCCESS;
 }

@@ -79,16 +79,6 @@ int VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
     return rc;
 }
 
-int VbglR3WaitEvent(uint32_t , uint32_t cMillies, uint32_t *)
-{
-    return RTSemEventWait(eventSem, cMillies);
-}
-
-int VbglR3InterruptEventWaits(void)
-{
-    return RTSemEventSignal(eventSem);
-}
-
 VBGLR3DECL(int)     VbglR3InitUser(void) { return VINF_SUCCESS; }
 VBGLR3DECL(void)    VbglR3Term(void) {}
 
