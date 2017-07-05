@@ -3681,7 +3681,7 @@ iemRaiseXcptOrIntInRealMode(PVMCPU      pVCpu,
     pCtx->cs.u64Base       = (uint32_t)Idte.sel << 4;
     /** @todo do we load attribs and limit as well? Should we check against limit like far jump? */
     pCtx->rip              = Idte.off;
-    fEfl &= ~X86_EFL_IF;
+    fEfl &= ~(X86_EFL_IF | X86_EFL_TF | X86_EFL_AC);
     IEMMISC_SET_EFL(pVCpu, pCtx, fEfl);
 
     /** @todo do we actually do this in real mode? */
