@@ -434,9 +434,19 @@ VBoxCredProvProvider::GetFieldDescriptorAt(DWORD dwIndex, CREDENTIAL_PROVIDER_FI
             hr = E_OUTOFMEMORY;
 
         if (SUCCEEDED(hr))
+        {
             *ppFieldDescriptor = pcpFieldDesc;
+        }
         else if (pcpFieldDesc)
+        {
+            if (pcpFieldDesc->pszLabel)
+            {
+                CoTaskMemFree(pcpFieldDesc->pszLabel);
+                pcpFieldDesc->pszLabel = NULL;
+            }
+
             CoTaskMemFree(pcpFieldDesc);
+        }
     }
     else
         hr = E_INVALIDARG;
