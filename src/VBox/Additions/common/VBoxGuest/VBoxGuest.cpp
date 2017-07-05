@@ -1726,6 +1726,10 @@ static int vgdrvIoCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSes
 }
 
 
+/** @todo the semantics of this IoCtl have been tightened, so that no calls to
+ *  VBOXGUEST_IOCTL_WAITEVENT are allowed in a session after it has been
+ *  called.  Change the code to make calls to VBOXGUEST_IOCTL_WAITEVENT made
+ *  after that to return VERR_INTERRUPTED or something appropriate. */
 static int vgdrvIoCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     PVBOXGUESTWAIT          pWait;
