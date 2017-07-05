@@ -286,6 +286,9 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 
 /** IOCTL to VBoxGuest to interrupt (cancel) any pending WAITEVENTs and return.
  * Handled inside the guest additions and not seen by the host at all.
+ * After calling this, VBOXGUEST_IOCTL_WAITEVENT should no longer be called in
+ * the same session.  At the time of writing this is not enforced; at the time
+ * of reading it may be.
  * @see VBOXGUEST_IOCTL_WAITEVENT */
 #define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS       VBOXGUEST_IOCTL_CODE_(5, 0)
 

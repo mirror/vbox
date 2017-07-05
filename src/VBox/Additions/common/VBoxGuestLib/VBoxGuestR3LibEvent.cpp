@@ -86,7 +86,9 @@ VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfE
  * with a VERR_INTERRUPTED status.
  *
  * Can be used in combination with a termination flag variable for interrupting
- * event loops.  Avoiding race conditions is the responsibility of the caller.
+ * event loops.  After calling this, VBOXGUEST_IOCTL_WAITEVENT should no longer
+ * be called in the same session.  At the time of writing this is not enforced;
+ * at the time of reading it may be.
  *
  * @returns IPRT status code.
  */
