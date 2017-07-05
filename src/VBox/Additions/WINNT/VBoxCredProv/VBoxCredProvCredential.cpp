@@ -51,7 +51,9 @@ VBoxCredProvCredential::VBoxCredProvCredential(void) :
 
     for (unsigned i = 0; i < VBOXCREDPROV_NUM_FIELDS; i++)
     {
-        m_apwszFields[i] = RTUtf16Alloc(VBOXCREDPROV_MAX_FIELD_LEN * sizeof(RTUTF16) + 1);
+        const VBOXCREDPROV_FIELD *pField = &s_VBoxCredProvDefaultFields[i];
+
+        m_apwszFields[i] = RTUtf16Dup(pField->desc.pszLabel ? pField->desc.pszLabel : L"");
         AssertPtr(m_apwszFields[i]);
     }
 }
@@ -386,27 +388,54 @@ HRESULT VBoxCredProvCredential::kerberosLogonSerialize(const KERB_INTERACTIVE_LO
 
 
 /**
- * Resets a credential provider field by zero'ing out its contents in a (hopefully) secure manner.
+ * Sets a credential provider field by first zero'ing out its current content in a (hopefully) secure manner,
+ * then applying either the field's default or a new value.
  *
  * @return  HRESULT
  * @param   dwFieldID           Field ID of the credential provider field to reset.
+ * @param   pcwszString         String to set for the given field. Specify NULL for setting the provider's default value.
+ * @param   fNotifyUI           Whether to notify the LogonUI about the reset.
  */
-HRESULT VBoxCredProvCredential::resetField(DWORD dwFieldID)
+HRESULT VBoxCredProvCredential::setField(DWORD dwFieldID, const PRTUTF16 pcwszString, bool fNotifyUI)
 {
-    if (   dwFieldID >= VBOXCREDPROV_NUM_FIELDS
-        || !m_apwszFields[dwFieldID])
-    {
+    if (dwFieldID >= VBOXCREDPROV_NUM_FIELDS)
         return E_INVALIDARG;
-    }
 
     HRESULT hr = S_OK;
 
-    RTMemWipeThoroughly(m_apwszFields[dwFieldID],
-                        (VBOXCREDPROV_MAX_FIELD_LEN + 1) * sizeof(RTUTF16), 3 /* cPasses */);
-    if (m_pEvents)
-        hr = m_pEvents->SetFieldString(this, dwFieldID, m_apwszFields[dwFieldID]);
+    PRTUTF16 pwszField = m_apwszFields[dwFieldID];
+    if (pwszField)
+    {
+        /* First, wipe the existing value thoroughly. */
+        RTMemWipeThoroughly(pwszField, RTUtf16Len(pwszField) * sizeof(RTUTF16), 3 /* cPasses */);
 
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential::resetField: Resetting field dwFieldID=%ld, hr=0x%08x\n", dwFieldID, hr);
+        /* Second, free the string. */
+        RTUtf16Free(pwszField);
+    }
+
+    /* Either fill in the default value or the one specified in pcwszString. */
+    pwszField = RTUtf16Dup(pcwszString ? pcwszString : s_VBoxCredProvDefaultFields[dwFieldID].desc.pszLabel);
+    if (pwszField)
+    {
+        m_apwszFields[dwFieldID] = pwszField; /* Update the pointer. */
+
+        if (   m_pEvents
+            && fNotifyUI) /* Let the logon UI know if wanted. */
+        {
+            hr = m_pEvents->SetFieldString(this, dwFieldID, pwszField);
+        }
+    }
+    else
+        hr = E_OUTOFMEMORY;
+
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::setField: Setting field dwFieldID=%ld to '%ls', fNotifyUI=%RTbool, hr=0x%08x\n",
+                        dwFieldID,
+#ifdef DEBUG
+                        pwszField,
+#else
+                        L"XXX" /* Don't show any actual values in release mode. */,
+#endif
+                        fNotifyUI, hr);
     return hr;
 }
 
@@ -426,17 +455,14 @@ HRESULT VBoxCredProvCredential::Reset(void)
 #endif
                         m_apwszFields[VBOXCREDPROV_FIELDID_DOMAINNAME] ? m_apwszFields[VBOXCREDPROV_FIELDID_DOMAINNAME] : L"<NULL>");
 
-    if (m_pEvents)
-    {
-        resetField(VBOXCREDPROV_FIELDID_USERNAME);
-        resetField(VBOXCREDPROV_FIELDID_PASSWORD);
-        resetField(VBOXCREDPROV_FIELDID_DOMAINNAME);
-    }
+    /* Note: Do not reset the user name and domain name here,
+     *       as they could still being queried (again) by LogonUI on failed login attempts. */
+    HRESULT hr = setField(VBOXCREDPROV_FIELDID_PASSWORD, NULL /* Use default value */, true /* fNotifyUI */);
 
     m_fIsSelected = false;
 
     VBoxCredProvVerbose(0, "VBoxCredProvCredential::Reset\n");
-    return S_OK;
+    return hr;
 }
 
 
@@ -525,27 +551,9 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
     {
         VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Credentials already retrieved\n");
 
-        resetField(VBOXCREDPROV_FIELDID_USERNAME);
-        rc = RTUtf16Copy(m_apwszFields[VBOXCREDPROV_FIELDID_USERNAME],      VBOXCREDPROV_MAX_FIELD_LEN, pwszUser);
-
-        resetField(VBOXCREDPROV_FIELDID_PASSWORD);
-        int rc2 = RTUtf16Copy(m_apwszFields[VBOXCREDPROV_FIELDID_PASSWORD], VBOXCREDPROV_MAX_FIELD_LEN, pwszPassword);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-
-        resetField(VBOXCREDPROV_FIELDID_DOMAINNAME);
-        rc2 = RTUtf16Copy(m_apwszFields[VBOXCREDPROV_FIELDID_DOMAINNAME],   VBOXCREDPROV_MAX_FIELD_LEN, pwszDomain);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: User=%ls, Password=%ls, Domain=%ls\n",
-                            m_apwszFields[VBOXCREDPROV_FIELDID_USERNAME],
-#ifdef DEBUG
-                            m_apwszFields[VBOXCREDPROV_FIELDID_PASSWORD],
-#else
-                            L"XXX" /* Don't show any passwords in release mode. */,
-#endif
-                            m_apwszFields[VBOXCREDPROV_FIELDID_DOMAINNAME]);
+        setField(VBOXCREDPROV_FIELDID_USERNAME,   pwszUser,     true /* fNotifyUI */);
+        setField(VBOXCREDPROV_FIELDID_PASSWORD,   pwszPassword, true /* fNotifyUI */);
+        setField(VBOXCREDPROV_FIELDID_DOMAINNAME, pwszDomain,   true /* fNotifyUI */);
     }
 
     VbglR3CredentialsDestroyUtf16(pwszUser, pwszPassword, pwszDomain, 3 /* cPasses */);
@@ -656,10 +664,10 @@ HRESULT VBoxCredProvCredential::GetFieldState(DWORD dwFieldID, CREDENTIAL_PROVID
     if (dwFieldID < VBOXCREDPROV_NUM_FIELDS)
     {
         if (pFieldState)
-            *pFieldState            = s_VBoxCredProvFields[dwFieldID].state;
+            *pFieldState            = s_VBoxCredProvDefaultFields[dwFieldID].state;
 
         if (pFieldstateInteractive)
-            *pFieldstateInteractive = s_VBoxCredProvFields[dwFieldID].stateInteractive;
+            *pFieldstateInteractive = s_VBoxCredProvDefaultFields[dwFieldID].stateInteractive;
     }
     else
         hr = E_INVALIDARG;

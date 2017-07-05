@@ -86,7 +86,7 @@ public:
                                 CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon);
     /** @} */
 
-    HRESULT resetField(DWORD dwFieldID);
+    HRESULT setField(DWORD dwFieldID, const PRTUTF16 pcwszString, bool fNotifyUI);
     HRESULT Reset(void);
     HRESULT Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus);
     int RetrieveCredentials(void);

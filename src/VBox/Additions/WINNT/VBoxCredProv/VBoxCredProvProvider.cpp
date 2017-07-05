@@ -410,7 +410,7 @@ VBoxCredProvProvider::GetFieldDescriptorAt(DWORD dwIndex, CREDENTIAL_PROVIDER_FI
 
         if (pcpFieldDesc)
         {
-            const VBOXCREDPROV_FIELD &field = s_VBoxCredProvFields[dwIndex];
+            const VBOXCREDPROV_FIELD &field = s_VBoxCredProvDefaultFields[dwIndex];
 
             RT_BZERO(pcpFieldDesc, sizeof(CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR));
 
