@@ -80,10 +80,10 @@ void UIMediumDetailsWidget::retranslateUi()
 
     /* Translate 'Options' tab content. */
 
-    /* Translate label: */
+    /* Translate type label: */
     m_pLabelType->setText(tr("&Type"));
 
-    /* Translate field: */
+    /* Translate type field: */
     m_pComboBoxType->setToolTip(tr("Holds the type of this medium."));
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
         m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
@@ -216,11 +216,6 @@ void UIMediumDetailsWidget::prepareTabOptions()
                     /* Configure editor: */
                     m_pLabelType->setBuddy(m_pComboBoxType);
                     m_pComboBoxType->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                    m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Normal));
-                    m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Immutable));
-                    m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Writethrough));
-                    m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Shareable));
-                    m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_MultiAttach));
                     connect(m_pComboBoxType, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
                             this, &UIMediumDetailsWidget::sltTypeIndexChanged);
 
@@ -353,6 +348,32 @@ void UIMediumDetailsWidget::prepareInformationContainer(UIMediumType enmType, in
 
 void UIMediumDetailsWidget::loadDataForOptions()
 {
+    /* Clear type combo-box: */
+    m_pComboBoxType->clear();
+    if (m_newData.m_fValid)
+    {
+        /* Populate type combo-box: */
+        switch (m_newData.m_enmType)
+        {
+            case UIMediumType_DVD:
+            case UIMediumType_Floppy:
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Readonly));
+                break;
+            case UIMediumType_HardDisk:
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Normal));
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Immutable));
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Writethrough));
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Shareable));
+                m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_MultiAttach));
+                break;
+            default:
+                break;
+        }
+        /* Translate type combo-box: */
+        for (int i = 0; i < m_pComboBoxType->count(); ++i)
+            m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
+    }
+
     /* Choose the item with required type to be the current one: */
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
         if (m_pComboBoxType->itemData(i).value<KMediumType>() == m_newData.m_options.m_enmType)

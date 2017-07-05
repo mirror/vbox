@@ -380,6 +380,7 @@ void UIMediumItem::refresh()
         setToolTip(i, strToolTip);
 
     /* Gather medium data: */
+    m_fValid = !m_guiMedium.isNull();
     m_enmType = m_guiMedium.type();
     /* Gather medium options data: */
     m_options.m_enmType = m_guiMedium.medium().GetType(); /// @todo: Cache it in UIMedium class!
@@ -1002,6 +1003,7 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
 
     /* Re-fetch all current medium-items: */
     refetchCurrentMediumItems();
+    refetchCurrentChosenMediumItem();
 }
 
 void UIMediumManagerWidget::sltHandleMediumEnumerated(const QString &strMediumID)
@@ -1038,6 +1040,7 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationFinish()
 
     /* Re-fetch all current medium-items: */
     refetchCurrentMediumItems();
+    refetchCurrentChosenMediumItem();
 }
 
 void UIMediumManagerWidget::sltCopyMedium()
