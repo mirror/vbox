@@ -157,7 +157,7 @@ struct UIDataHostNetwork
 };
 
 
-/** Host Network Manager: Host network details widget. */
+/** Host Network Manager: Host network details-widget. */
 class UIHostNetworkDetailsWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -174,15 +174,14 @@ signals:
 
 public:
 
-    /** Constructs host network details dialog for the passed @a pParent and @a data. */
+    /** Constructs medium details dialog passing @a pParent to the base-class.
+      * @param  enmEmbedding  Brings embedding type. */
     UIHostNetworkDetailsWidget(EmbedTo enmEmbedding, QWidget *pParent = 0);
 
     /** Returns the host network data. */
     const UIDataHostNetwork &data() const { return m_newData; }
     /** Defines the host network @a data. */
     void setData(const UIDataHostNetwork &data);
-    /** Clears the host network data. */
-    void clearData();
 
 protected:
 
@@ -264,8 +263,9 @@ private:
         UIDataHostNetwork  m_oldData;
         /** Holds the new data copy. */
         UIDataHostNetwork  m_newData;
+
         /** Holds the tab-widget. */
-        QITabWidget       *m_pTabWidget;
+        QITabWidget *m_pTabWidget;
     /** @} */
 
     /** @name Interface variables.

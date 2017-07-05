@@ -77,18 +77,6 @@ void UIHostNetworkDetailsWidget::setData(const UIDataHostNetwork &data)
     loadDataForDHCPServer();
 }
 
-void UIHostNetworkDetailsWidget::clearData()
-{
-    /* Reset old/new data: */
-    m_oldData = UIDataHostNetwork();
-    m_newData = m_oldData;
-
-    /* Load 'Interface' data: */
-    loadDataForInterface();
-    /* Load 'DHCP server' data: */
-    loadDataForDHCPServer();
-}
-
 void UIHostNetworkDetailsWidget::retranslateUi()
 {
     /* Translate tab-widget: */
@@ -231,31 +219,23 @@ void UIHostNetworkDetailsWidget::sltTextChangedUpperAddress(const QString &strTe
 
 void UIHostNetworkDetailsWidget::sltHandleButtonBoxClick(QAbstractButton *pButton)
 {
+    /* Make sure button-box exists: */
+    AssertPtrReturnVoid(m_pButtonBoxInterface);
+    AssertPtrReturnVoid(m_pButtonBoxServer);
+
     /* Disable buttons first of all: */
-    if (m_pButtonBoxInterface)
-    {
-        m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setEnabled(false);
-        m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setEnabled(false);
-    }
-    if (m_pButtonBoxServer)
-    {
-        m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setEnabled(false);
-        m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setEnabled(false);
-    }
+    m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)->setEnabled(false);
+    m_pButtonBoxInterface->button(QDialogButtonBox::Ok)->setEnabled(false);
+    m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setEnabled(false);
+    m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setEnabled(false);
 
     /* Compare with known buttons: */
-    if (   (   m_pButtonBoxInterface
-            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Cancel))
-        || (   m_pButtonBoxServer
-            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Cancel)))
+    if (   pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Cancel)
+        || pButton == m_pButtonBoxServer->button(QDialogButtonBox::Cancel))
         emit sigDataChangeRejected();
-
     else
-
-    if (   (   m_pButtonBoxInterface
-            && pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Ok))
-        || (   m_pButtonBoxServer
-            && pButton == m_pButtonBoxServer->button(QDialogButtonBox::Ok)))
+    if (   pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Ok)
+        || pButton == m_pButtonBoxServer->button(QDialogButtonBox::Ok))
         emit sigDataChangeAccepted();
 }
 
@@ -279,6 +259,7 @@ void UIHostNetworkDetailsWidget::prepareThis()
     {
         /* Configure layout: */
         pLayout->setContentsMargins(0, 0, 0, 0);
+
         /* Prepare tab-widget: */
         prepareTabWidget();
     }
@@ -294,6 +275,7 @@ void UIHostNetworkDetailsWidget::prepareTabWidget()
         prepareTabInterface();
         /* Prepare 'DHCP server' tab: */
         prepareTabDHCPServer();
+
         /* Add into layout: */
         layout()->addWidget(m_pTabWidget);
     }
