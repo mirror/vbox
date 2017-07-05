@@ -486,11 +486,33 @@ HRESULT NetworkAdapter::setBridgedInterface(const com::Utf8Str &aBridgedInterfac
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData->strBridgedName != aBridgedInterface)
+    Bstr canonicalName = aBridgedInterface;
+#ifdef RT_OS_DARWIN
+    com::SafeIfaceArray<IHostNetworkInterface> hostNetworkInterfaces;
+    ComPtr<IHost> host;
+    HRESULT rc = mParent->i_getVirtualBox()->COMGETTER(Host)(host.asOutParam());
+    if (SUCCEEDED(rc))
+    {
+        host->FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_Bridged,
+                                              ComSafeArrayAsOutParam(hostNetworkInterfaces));
+        for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
+        {
+            Bstr shortName;
+            ComPtr<IHostNetworkInterface> ni = hostNetworkInterfaces[i];
+            ni->COMGETTER(ShortName)(shortName.asOutParam());
+            if (shortName == aBridgedInterface)
+            {
+                ni->COMGETTER(Name)(canonicalName.asOutParam());
+                break;
+            }
+        }
+    }
+#endif /* RT_OS_DARWIN */
+    if (Bstr(mData->strBridgedName) != canonicalName)
     {
         /* if an empty/null string is to be set, bridged interface must be
          * turned off */
-        if (aBridgedInterface.isEmpty()
+        if (canonicalName.isEmpty()
             && mData->mode == NetworkAttachmentType_Bridged)
         {
             return setError(E_FAIL,
@@ -498,7 +520,7 @@ HRESULT NetworkAdapter::setBridgedInterface(const com::Utf8Str &aBridgedInterfac
         }
 
         mData.backup();
-        mData->strBridgedName = aBridgedInterface;
+        mData->strBridgedName = canonicalName;
 
         // leave the lock before informing callbacks
         alock.release();
