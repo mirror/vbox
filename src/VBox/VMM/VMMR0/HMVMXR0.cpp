@@ -8229,8 +8229,12 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uin
     uint32_t const uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntInfo);
 
 #ifdef VBOX_STRICT
-    /* Validate the error-code-valid bit for hardware exceptions. */
-    if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT)
+    /*
+     * Validate the error-code-valid bit for hardware exceptions.
+     * No error codes for exceptions in real-mode. See Intel spec. 20.1.4 "Interrupt and Exception Handling"
+     */
+    if (   uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
+        && !CPUMIsGuestInRealModeEx(pMixedCtx))
     {
         switch (uVector)
         {
@@ -8241,10 +8245,8 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uin
             case X86_XCPT_SS:
             case X86_XCPT_GP:
             case X86_XCPT_AC:
-                /* No error codes for exceptions in real-mode. See Intel spec. 20.1.4 "Interrupt and Exception Handling" */
-                if (!CPUMIsGuestInRealModeEx(pMixedCtx))
-                    AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo),
-                              ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
+                AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo),
+                          ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
                 /* fall thru */
             default:
                 break;
