@@ -169,6 +169,7 @@ typedef struct {
     pusha_regs_t    gr;
     uint16_t        es;
     uint16_t        ds;
+    uint16_t        ifl;
     iret_addr_t     ra;
 } kbd_regs_t;
 

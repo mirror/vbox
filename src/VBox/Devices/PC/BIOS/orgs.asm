@@ -872,6 +872,9 @@ ebda_post       endp
                 BIOSORG 0E82Eh, 0E82Ch
 int16_handler:
                 sti
+                ;; Flags are saved *after* enabling interrupts, and with
+                ;; implicitly cleared TF. Software may depend on that.
+                pushf
                 push    es
                 push    ds
                 DO_pusha
@@ -887,6 +890,7 @@ int16_handler:
                 DO_popa
                 pop     ds
                 pop     es
+                add     sp, 2           ; Skip saved flags
                 iret
 
 int16_F00:
@@ -914,6 +918,7 @@ int16_key_found:
                 DO_popa
                 pop     ds
                 pop     es
+                add     sp, 2           ; Skip saved flags
 ; TODO: review/enable? If so, flags should be restored here?
 if 0
                 push    ax

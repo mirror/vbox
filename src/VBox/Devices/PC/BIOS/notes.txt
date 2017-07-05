@@ -11,8 +11,12 @@
 - NetWare 5.1 is one of the *extremely* few users of El Torito hard disk
   emulation.
 
-- Keystroke check (INT 16h, fn 01h/10h) always enables interrupts on return.
+- Keystroke check (INT 16h, fn 01h/11h) always enables interrupts on return.
   DOS POWER.EXE depends on that in some situations.
+
+- IBM DOS J5.00/V is even worse and does a far jump into INT 16h/11h after
+  pushing garbage on the stack. Using IRET directly may change IOPL, set
+  TF, change direction flag, etc. We have to use or simulate RETF 2 instead.
 
 - MS-DOS 5.0/V setup assumes that INT 13h always returns with interrupts
   enabled.
