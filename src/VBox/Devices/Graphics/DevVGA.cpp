@@ -104,6 +104,9 @@
     } while (0)
 #endif
 
+/* VGA text mode blinking constants (cursor and blinking chars). */
+#define VGA_BLINK_PERIOD_FULL   (RT_NS_100MS * 4)   /* Blink cycle length. */
+#define VGA_BLINK_PERIOD_ON     (RT_NS_100MS * 2)   /* How long cursor/text is visible. */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -1907,7 +1910,7 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
         cx_max = -1;
         for(cx = 0; cx < width; cx++) {
             ch_attr = *(uint16_t *)src;
-            if (full_update || ch_attr != (int)*ch_attr_ptr) {
+            if (full_update || ch_attr != (int)*ch_attr_ptr || src == cursor_ptr) {
                 if (cx < cx_min)
                     cx_min = cx;
                 if (cx > cx_max)
@@ -1940,23 +1943,28 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
                 if (src == cursor_ptr &&
                     !(pThis->cr[0x0a] & 0x20)) {
                     int line_start, line_last, h;
-                    /* draw the cursor */
-                    line_start = pThis->cr[0x0a] & 0x1f;
-                    line_last = pThis->cr[0x0b] & 0x1f;
-                    /* XXX: check that */
-                    if (line_last > cheight - 1)
-                        line_last = cheight - 1;
-                    if (line_last >= line_start && line_start < cheight) {
-                        h = line_last - line_start + 1;
-                        d = d1 + (linesize * line_start << dscan);
-                        if (cw != 9) {
-                            if (pThis->fRenderVRAM)
-                                vga_draw_glyph8(d, linesize,
-                                                cursor_glyph, h, fgcol, bgcol, dscan);
-                        } else {
-                            if (pThis->fRenderVRAM)
-                                vga_draw_glyph9(d, linesize,
-                                                cursor_glyph, h, fgcol, bgcol, 1);
+                    uint64_t time_ns;
+
+                    /* draw the cursor if within the visible period */
+                    time_ns = PDMDevHlpTMTimeVirtGetNano(VGASTATE2DEVINS(pThis));
+                    if (time_ns % VGA_BLINK_PERIOD_FULL < VGA_BLINK_PERIOD_ON) {
+                        line_start = pThis->cr[0x0a] & 0x1f;
+                        line_last = pThis->cr[0x0b] & 0x1f;
+                        /* XXX: check that */
+                        if (line_last > cheight - 1)
+                            line_last = cheight - 1;
+                        if (line_last >= line_start && line_start < cheight) {
+                            h = line_last - line_start + 1;
+                            d = d1 + (linesize * line_start << dscan);
+                            if (cw != 9) {
+                                if (pThis->fRenderVRAM)
+                                    vga_draw_glyph8(d, linesize,
+                                                    cursor_glyph, h, fgcol, bgcol, dscan);
+                            } else {
+                                if (pThis->fRenderVRAM)
+                                    vga_draw_glyph9(d, linesize,
+                                                    cursor_glyph, h, fgcol, bgcol, 1);
+                            }
                         }
                     }
                 }
