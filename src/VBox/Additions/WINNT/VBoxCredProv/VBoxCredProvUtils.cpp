@@ -21,11 +21,11 @@
 *********************************************************************************************************************************/
 #include <iprt/win/windows.h>
 
+#include <iprt/string.h>
+#include <VBox/log.h>
 #ifdef LOG_ENABLED
 # include <iprt/stream.h>
 #endif
-#include <iprt/string.h>
-#include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
 
 
