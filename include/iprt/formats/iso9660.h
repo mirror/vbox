@@ -1150,6 +1150,25 @@ typedef ISO9660RRIPTF const *PCISO9660RRIPTF;
 #define ISO9660RRIPTF_F_LONG_FORM       UINT8_C(0x80) /**< If set ISO9660TIMESTAMP is used, otherwise ISO9660RECTIMESTAMP. */
 /** @} */
 
+/**
+ * Calculates the length of a 'TF' entry given the flags.
+ *
+ * @returns Length in bytes.
+ * @param   fFlags              The flags (ISO9660RRIPTF_F_XXX).
+ */
+DECLINLINE(uint8_t) Iso9660RripTfCalcLength(uint8_t fFlags)
+{
+    uint8_t cTimestamps = ((fFlags & ISO9660RRIPTF_F_BIRTH)      != 0)
+                        + ((fFlags & ISO9660RRIPTF_F_MODIFY)     != 0)
+                        + ((fFlags & ISO9660RRIPTF_F_ACCESS)     != 0)
+                        + ((fFlags & ISO9660RRIPTF_F_CHANGE)     != 0)
+                        + ((fFlags & ISO9660RRIPTF_F_BACKUP)     != 0)
+                        + ((fFlags & ISO9660RRIPTF_F_EXPIRATION) != 0)
+                        + ((fFlags & ISO9660RRIPTF_F_EFFECTIVE)  != 0);
+    return cTimestamps * (uint8_t)(fFlags & ISO9660RRIPTF_F_LONG_FORM ? sizeof(ISO9660TIMESTAMP) : sizeof(ISO9660RECTIMESTAMP))
+         + (uint8_t)RT_OFFSETOF(ISO9660RRIPTF, abPayload);
+}
+
 
 /**
  * Rock ridge interchange protocol -  posix device number entry (PN).
@@ -1217,6 +1236,8 @@ typedef ISO9660RRIPSL const *PCISO9660RRIPSL;
 #define ISO9660RRIP_SL_C_MOUNT_POINT    UINT8_C(0x10)
 /** Reserved / historically was uname network node name. */
 #define ISO9660RRIP_SL_C_UNAME          UINT8_C(0x20)
+/** Reserved mask (includes historically bits). */
+#define ISO9660RRIP_SL_C_RESERVED_MASK  UINT8_C(0xf0)
 /** @} */
 
 

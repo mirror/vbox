@@ -160,14 +160,20 @@ typedef struct RTFSISOMKIMPORTER
 
     /** @name Rock Ridge stuff
      * @{ */
-    /** Set if we've see the SP record. */
+    /** Set if we've see the SP entry. */
     bool                fSuspSeenSP;
+    /** Set if we've seen the last 'NM' entry. */
+    bool                fSeenLastNM;
+    /** Set if we've seen the last 'SL' entry. */
+    bool                fSeenLastSL;
     /** The SUSP skip into system area offset. */
     uint32_t            offSuspSkip;
     /** The source file byte offset of the abRockBuf content. */
     uint64_t            offRockBuf;
     /** Name buffer for rock ridge.  */
     char                szRockNameBuf[_2K];
+    /** Symlink target name buffer for rock ridge.  */
+    char                szRockSymlinkTargetBuf[_2K];
     /** A buffer for reading rock ridge continuation blocks into   */
     uint8_t             abRockBuf[ISO9660_SECTOR_SIZE];
     /** @} */
@@ -188,7 +194,7 @@ typedef RTFSISOMKIMPORTER *PRTFSISOMKIMPORTER;
  * @param   pTimeSpec       Where to return the IRPT time.
  * @param   pIso9660        The ISO 9660 binary timestamp.
  */
-static void rtFsIsoImpIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIMESTAMP pIso9660)
+static void rtFsIsoImpIso9660RecDateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660RECTIMESTAMP pIso9660)
 {
     RTTIME Time;
     Time.fFlags         = RTTIME_FLAGS_TYPE_UTC;
@@ -207,6 +213,78 @@ static void rtFsIsoImpIso9660DateTime2TimeSpec(PRTTIMESPEC pTimeSpec, PCISO9660R
     /* Only apply the UTC offset if it's within reasons. */
     if (RT_ABS(pIso9660->offUtc) <= 13*4)
         RTTimeSpecSubSeconds(pTimeSpec, pIso9660->offUtc * 15 * 60 * 60);
+}
+
+/**
+ * Converts a ISO 9660 char timestamp into an IPRT timesspec.
+ *
+ * @returns true if valid, false if not.
+ * @param   pTimeSpec       Where to return the IRPT time.
+ * @param   pIso9660        The ISO 9660 char timestamp.
+ */
+static bool rtFsIsoImpIso9660DateTime2TimeSpecIfValid(PRTTIMESPEC pTimeSpec, PCISO9660TIMESTAMP pIso9660)
+{
+    if (   RT_C_IS_DIGIT(pIso9660->achYear[0])
+        && RT_C_IS_DIGIT(pIso9660->achYear[1])
+        && RT_C_IS_DIGIT(pIso9660->achYear[2])
+        && RT_C_IS_DIGIT(pIso9660->achYear[3])
+        && RT_C_IS_DIGIT(pIso9660->achMonth[0])
+        && RT_C_IS_DIGIT(pIso9660->achMonth[1])
+        && RT_C_IS_DIGIT(pIso9660->achDay[0])
+        && RT_C_IS_DIGIT(pIso9660->achDay[1])
+        && RT_C_IS_DIGIT(pIso9660->achHour[0])
+        && RT_C_IS_DIGIT(pIso9660->achHour[1])
+        && RT_C_IS_DIGIT(pIso9660->achMinute[0])
+        && RT_C_IS_DIGIT(pIso9660->achMinute[1])
+        && RT_C_IS_DIGIT(pIso9660->achSecond[0])
+        && RT_C_IS_DIGIT(pIso9660->achSecond[1])
+        && RT_C_IS_DIGIT(pIso9660->achCentisecond[0])
+        && RT_C_IS_DIGIT(pIso9660->achCentisecond[1]))
+    {
+
+        RTTIME Time;
+        Time.fFlags         = RTTIME_FLAGS_TYPE_UTC;
+        Time.offUTC         = 0;
+        Time.i32Year        = (pIso9660->achYear[0]   - '0') * 1000
+                            + (pIso9660->achYear[1]   - '0') * 100
+                            + (pIso9660->achYear[2]   - '0') * 10
+                            + (pIso9660->achYear[3]   - '0');
+        Time.u8Month        = (pIso9660->achMonth[0]  - '0') * 10
+                            + (pIso9660->achMonth[1]  - '0');
+        Time.u8MonthDay     = (pIso9660->achDay[0]    - '0') * 10
+                            + (pIso9660->achDay[1]    - '0');
+        Time.u8WeekDay      = UINT8_MAX;
+        Time.u16YearDay     = 0;
+        Time.u8Hour         = (pIso9660->achHour[0]   - '0') * 10
+                            + (pIso9660->achHour[1]   - '0');
+        Time.u8Minute       = (pIso9660->achMinute[0] - '0') * 10
+                            + (pIso9660->achMinute[1] - '0');
+        Time.u8Second       = (pIso9660->achSecond[0] - '0') * 10
+                            + (pIso9660->achSecond[1] - '0');
+        Time.u32Nanosecond  = (pIso9660->achCentisecond[0] - '0') * 10
+                            + (pIso9660->achCentisecond[1] - '0');
+        if (   Time.u8Month       > 1 && Time.u8Month <= 12
+            && Time.u8MonthDay    > 1 && Time.u8MonthDay <= 31
+            && Time.u8Hour        < 60
+            && Time.u8Minute      < 60
+            && Time.u8Second      < 60
+            && Time.u32Nanosecond < 100)
+        {
+            if (Time.i32Year <= 1677)
+                Time.i32Year = 1677;
+            else if (Time.i32Year <= 2261)
+                Time.i32Year = 2261;
+
+            Time.u32Nanosecond *= RT_NS_10MS;
+            RTTimeImplode(pTimeSpec, RTTimeNormalize(&Time));
+
+            /* Only apply the UTC offset if it's within reasons. */
+            if (RT_ABS(pIso9660->offUtc) <= 13*4)
+                RTTimeSpecSubSeconds(pTimeSpec, pIso9660->offUtc * 15 * 60 * 60);
+            return true;
+        }
+    }
+    return false;
 }
 
 /* end of duplicated static functions. */
@@ -571,14 +649,14 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                     || pUnion->SP.bCheck1   != ISO9660SUSPSP_CHECK1
                     || pUnion->SP.bCheck2   != ISO9660SUSPSP_CHECK2
                     || pUnion->SP.cbSkip > UINT8_MAX - RT_OFFSETOF(ISO9660DIRREC, achFileId[1]))
-                    LogRel(("rtFsIsoImport/Rock: Malformed 'SP' record: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x), bCheck1=%#x (vs %#x), bCheck2=%#x (vs %#x), cbSkip=%#x (vs max %#x)\n",
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'SP' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x), bCheck1=%#x (vs %#x), bCheck2=%#x (vs %#x), cbSkip=%#x (vs max %#x)\n",
                             pUnion->Hdr.cbEntry, ISO9660SUSPSP_LEN, pUnion->Hdr.bVersion, ISO9660SUSPSP_VER,
                             pUnion->SP.bCheck1, ISO9660SUSPSP_CHECK1, pUnion->SP.bCheck2, ISO9660SUSPSP_CHECK2,
                             pUnion->SP.cbSkip, UINT8_MAX - RT_OFFSETOF(ISO9660DIRREC, achFileId[1]) ));
                 else if (!fIsFirstDirRec)
-                    LogRel(("rtFsIsoImport/Rock: Ignorining 'SP' record in non-root directory record\n"));
+                    LogRel(("rtFsIsoImport/Rock: Ignorining 'SP' entry in non-root directory record\n"));
                 else if (pThis->fSuspSeenSP)
-                    LogRel(("rtFsIsoImport/Rock: Ignorining additional 'SP' record\n"));
+                    LogRel(("rtFsIsoImport/Rock: Ignorining additional 'SP' entry\n"));
                 else
                 {
                     pThis->offSuspSkip = pUnion->SP.cbSkip;
@@ -591,23 +669,23 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                 if (   pUnion->Hdr.cbEntry >   RT_OFFSETOF(ISO9660SUSPER, achPayload) + (uint32_t)pUnion->ER.cchIdentifier
                                              + (uint32_t)pUnion->ER.cchDescription   + (uint32_t)pUnion->ER.cchSource
                     || pUnion->Hdr.bVersion != ISO9660SUSPER_VER)
-                    LogRel(("rtFsIsoImport/Rock: Malformed 'ER' record: cbEntry=%#x bVersion=%#x (vs %#x) cchIdentifier=%#x cchDescription=%#x cchSource=%#x\n",
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'ER' entry: cbEntry=%#x bVersion=%#x (vs %#x) cchIdentifier=%#x cchDescription=%#x cchSource=%#x\n",
                             pUnion->Hdr.cbEntry, pUnion->Hdr.bVersion, ISO9660SUSPER_VER, pUnion->ER.cchIdentifier,
-                            pUnion->ER.cchDescription + pUnion->ER.cchSource));
+                            pUnion->ER.cchDescription, pUnion->ER.cchSource));
                 else if (!fIsFirstDirRec)
-                    LogRel(("rtFsIsoImport/Rock: Ignorining 'ER' record in non-root directory record\n"));
+                    LogRel(("rtFsIsoImport/Rock: Ignorining 'ER' entry in non-root directory record\n"));
                 else if (   pUnion->ER.bVersion == 1 /* RRIP detection */
                          && (   (pUnion->ER.cchIdentifier >= 4  && strncmp(pUnion->ER.achPayload, ISO9660_RRIP_ID, 4 /*RRIP*/) == 0)
                              || (pUnion->ER.cchIdentifier >= 10 && strncmp(pUnion->ER.achPayload, RT_STR_TUPLE(ISO9660_RRIP_1_12_ID)) == 0) ))
                 {
-                    pObjInfo->Attr.u.Unix.fFlags |= RT_BIT_32(31); /** @todo define RRIP ER record flag. Or do we call the maker? */
-                    LogRel(("rtFsIsoImport/Rock: Rock Ridge 'ER' record: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
+                    pObjInfo->Attr.u.Unix.fFlags |= RT_BIT_32(31); /** @todo define RRIP ER entry flag. Or do we call the maker? */
+                    LogRel(("rtFsIsoImport/Rock: Rock Ridge 'ER' entry: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
                             pUnion->ER.bVersion, pUnion->ER.cchIdentifier, pUnion->ER.achPayload,
                             pUnion->ER.cchDescription, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier],
                             pUnion->ER.cchSource, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier + pUnion->ER.cchDescription]));
                 }
                 else
-                    LogRel(("rtFsIsoImport/Rock: Unknown extension in 'ER' record: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
+                    LogRel(("rtFsIsoImport/Rock: Unknown extension in 'ER' entry: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
                             pUnion->ER.bVersion, pUnion->ER.cchIdentifier, pUnion->ER.achPayload,
                             pUnion->ER.cchDescription, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier],
                             pUnion->ER.cchSource, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier + pUnion->ER.cchDescription]));
@@ -622,12 +700,212 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
              * Rock ridge interchange protocol entries.
              */
             case MAKE_SIG(ISO9660RRIPPX_SIG1, ISO9660RRIPPX_SIG2): /* PX */
+                if (   pUnion->PX.Hdr.cbEntry  != ISO9660RRIPPX_LEN
+                    || pUnion->PX.Hdr.bVersion != ISO9660RRIPPX_VER
+                    || RT_BE2H_U32(pUnion->PX.fMode.be)      != RT_LE2H_U32(pUnion->PX.fMode.le)
+                    || RT_BE2H_U32(pUnion->PX.cHardlinks.be) != RT_LE2H_U32(pUnion->PX.cHardlinks.le)
+                    || RT_BE2H_U32(pUnion->PX.uid.be)        != RT_LE2H_U32(pUnion->PX.uid.le)
+                    || RT_BE2H_U32(pUnion->PX.gid.be)        != RT_LE2H_U32(pUnion->PX.gid.le) )
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'PX' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fMode=%#x/%#x cHardlinks=%#x/%#x uid=%#x/%#x gid=%#x/%#x\n",
+                            pUnion->PX.Hdr.cbEntry, ISO9660RRIPPX_LEN, pUnion->PX.Hdr.bVersion, ISO9660RRIPPX_VER,
+                            RT_BE2H_U32(pUnion->PX.fMode.be),      RT_LE2H_U32(pUnion->PX.fMode.le),
+                            RT_BE2H_U32(pUnion->PX.cHardlinks.be), RT_LE2H_U32(pUnion->PX.cHardlinks.le),
+                            RT_BE2H_U32(pUnion->PX.uid.be),        RT_LE2H_U32(pUnion->PX.uid.le),
+                            RT_BE2H_U32(pUnion->PX.gid.be),        RT_LE2H_U32(pUnion->PX.gid.le) ));
+                else
+                {
+                    if (RTFS_IS_DIRECTORY(ISO9660_GET_ENDIAN(&pUnion->PX.fMode)) == RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+                        pObjInfo->Attr.fMode = ISO9660_GET_ENDIAN(&pUnion->PX.fMode);
+                    else
+                        LogRel(("rtFsIsoImport/Rock: 'PX' entry changes directory-ness: fMode=%#x, existing %#x; ignored\n",
+                                ISO9660_GET_ENDIAN(&pUnion->PX.fMode), pObjInfo->Attr.fMode));
+                    pObjInfo->Attr.u.Unix.cHardlinks = ISO9660_GET_ENDIAN(&pUnion->PX.cHardlinks);
+                    pObjInfo->Attr.u.Unix.uid        = ISO9660_GET_ENDIAN(&pUnion->PX.uid);
+                    pObjInfo->Attr.u.Unix.gid        = ISO9660_GET_ENDIAN(&pUnion->PX.gid);
+                }
+                break;
+
             case MAKE_SIG(ISO9660RRIPPN_SIG1, ISO9660RRIPPN_SIG2): /* PN */
+                if (   pUnion->PN.Hdr.cbEntry  != ISO9660RRIPPN_LEN
+                    || pUnion->PN.Hdr.bVersion != ISO9660RRIPPN_VER
+                    || RT_BE2H_U32(pUnion->PN.Major.be) != RT_LE2H_U32(pUnion->PN.Major.le)
+                    || RT_BE2H_U32(pUnion->PN.Minor.be) != RT_LE2H_U32(pUnion->PN.Minor.le))
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'PN' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) Major=%#x/%#x Minor=%#x/%#x\n",
+                            pUnion->PN.Hdr.cbEntry, ISO9660RRIPPN_LEN, pUnion->PN.Hdr.bVersion, ISO9660RRIPPN_VER,
+                            RT_BE2H_U32(pUnion->PN.Major.be),      RT_LE2H_U32(pUnion->PN.Major.le),
+                            RT_BE2H_U32(pUnion->PN.Minor.be),      RT_LE2H_U32(pUnion->PN.Minor.le) ));
+                else if (RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+                    LogRel(("rtFsIsoImport/Rock: Ignorning 'PN' entry for directory (%#x/%#x)\n",
+                            ISO9660_GET_ENDIAN(&pUnion->PN.Major), ISO9660_GET_ENDIAN(&pUnion->PN.Minor) ));
+                else
+                    pObjInfo->Attr.u.Unix.Device = RTDEV_MAKE(ISO9660_GET_ENDIAN(&pUnion->PN.Major),
+                                                              ISO9660_GET_ENDIAN(&pUnion->PN.Minor));
+                break;
+
             case MAKE_SIG(ISO9660RRIPTF_SIG1, ISO9660RRIPTF_SIG2): /* TF */
+                if (   pUnion->TF.Hdr.bVersion != ISO9660RRIPTF_VER
+                    || pUnion->TF.Hdr.cbEntry < Iso9660RripTfCalcLength(pUnion->TF.fFlags))
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'TF' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fFlags=%#x\n",
+                            pUnion->TF.Hdr.cbEntry, Iso9660RripTfCalcLength(pUnion->TF.fFlags),
+                            pUnion->TF.Hdr.bVersion, ISO9660RRIPTF_VER, RT_BE2H_U32(pUnion->TF.fFlags) ));
+                else if (!(pUnion->TF.fFlags & ISO9660RRIPTF_F_LONG_FORM))
+                {
+                    PCISO9660RECTIMESTAMP pTimestamp = (PCISO9660RECTIMESTAMP)&pUnion->TF.abPayload[0];
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_BIRTH)
+                    {
+                        rtFsIsoImpIso9660RecDateTime2TimeSpec(&pObjInfo->BirthTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_MODIFY)
+                    {
+                        rtFsIsoImpIso9660RecDateTime2TimeSpec(&pObjInfo->ModificationTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_ACCESS)
+                    {
+                        rtFsIsoImpIso9660RecDateTime2TimeSpec(&pObjInfo->AccessTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_CHANGE)
+                    {
+                        rtFsIsoImpIso9660RecDateTime2TimeSpec(&pObjInfo->ChangeTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                }
+                else
+                {
+                    PCISO9660TIMESTAMP pTimestamp = (PCISO9660TIMESTAMP)&pUnion->TF.abPayload[0];
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_BIRTH)
+                    {
+                        rtFsIsoImpIso9660DateTime2TimeSpecIfValid(&pObjInfo->BirthTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_MODIFY)
+                    {
+                        rtFsIsoImpIso9660DateTime2TimeSpecIfValid(&pObjInfo->ModificationTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_ACCESS)
+                    {
+                        rtFsIsoImpIso9660DateTime2TimeSpecIfValid(&pObjInfo->AccessTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                    if (pUnion->TF.fFlags & ISO9660RRIPTF_F_CHANGE)
+                    {
+                        rtFsIsoImpIso9660DateTime2TimeSpecIfValid(&pObjInfo->ChangeTime, pTimestamp);
+                        pTimestamp++;
+                    }
+                }
+
+                LogRel(("rtFsIsoImport/Rock: Sparse file support not yet implemented!\n"));
+                break;
+
             case MAKE_SIG(ISO9660RRIPSF_SIG1, ISO9660RRIPSF_SIG2): /* SF */
+                LogRel(("rtFsIsoImport/Rock: Sparse file support not yet implemented!\n"));
                 break;
 
             case MAKE_SIG(ISO9660RRIPSL_SIG1, ISO9660RRIPSL_SIG2): /* SL */
+                if (   pUnion->SL.Hdr.bVersion != ISO9660RRIPSL_VER
+                    || pUnion->SL.Hdr.cbEntry < RT_OFFSETOF(ISO9660RRIPSL, abComponents[2])
+                    || (pUnion->SL.fFlags & ~ISO9660RRIP_SL_F_CONTINUE)
+                    || (pUnion->SL.abComponents[0] & ISO9660RRIP_SL_C_RESERVED_MASK) )
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'SL' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fFlags=%#x comp[0].fFlags=%#x\n",
+                            pUnion->SL.Hdr.cbEntry, pUnion->SL.Hdr.cbEntry, RT_OFFSETOF(ISO9660RRIPSL, abComponents[2]),
+                            pUnion->SL.Hdr.bVersion, ISO9660RRIPSL_VER, RT_BE2H_U32(pUnion->SL.fFlags), pUnion->SL.abComponents[0]));
+                else if (pThis->fSeenLastSL)
+                    LogRel(("rtFsIsoImport/Rock: Unexpected 'SL' entry\n"));
+                else
+                {
+                    pThis->fSeenLastSL = !(pUnion->SL.fFlags & ISO9660RRIP_SL_F_CONTINUE); /* used in loop */
+
+                    size_t         offDst    = strlen(pThis->szRockSymlinkTargetBuf);
+                    uint8_t const *pbSrc     = &pUnion->SL.abComponents[0];
+                    uint8_t        cbSrcLeft = pUnion->SL.Hdr.cbEntry - RT_OFFSETOF(ISO9660RRIPSL, abComponents);
+                    while (cbSrcLeft >= 2)
+                    {
+                        uint8_t const fFlags  = pbSrc[0];
+                        uint8_t       cchCopy = pbSrc[1];
+                        uint8_t const cbSkip  = cchCopy + 2;
+                        if (cbSkip > cbSrcLeft)
+                        {
+                            LogRel(("rtFsIsoImport/Rock: Malformed 'SL' component: component flags=%#x, component length+2=%#x vs %#x left\n",
+                                    fFlags, cbSkip, cbSrcLeft));
+                            break;
+                        }
+
+                        const char *pszCopy;
+                        switch (fFlags & ~ISO9660RRIP_SL_C_CONTINUE)
+                        {
+                            case 0:
+                                pszCopy = (const char *)&pbSrc[2];
+                                break;
+
+                            case ISO9660RRIP_SL_C_CURRENT:
+                                if (cchCopy != 0)
+                                    LogRel(("rtFsIsoImport/Rock: Malformed 'SL' component: CURRENT + %u bytes, ignoring bytes\n", cchCopy));
+                                pszCopy = ".";
+                                cchCopy = 1;
+                                break;
+
+                            case ISO9660RRIP_SL_C_PARENT:
+                                if (cchCopy != 0)
+                                    LogRel(("rtFsIsoImport/Rock: Malformed 'SL' component: PARENT + %u bytes, ignoring bytes\n", cchCopy));
+                                pszCopy = "..";
+                                cchCopy = 2;
+                                break;
+
+                            case ISO9660RRIP_SL_C_ROOT:
+                                if (cchCopy != 0)
+                                    LogRel(("rtFsIsoImport/Rock: Malformed 'SL' component: ROOT + %u bytes, ignoring bytes\n", cchCopy));
+                                pszCopy = "/";
+                                cchCopy = 1;
+                                break;
+
+                            default:
+                                LogRel(("rtFsIsoImport/Rock: Malformed 'SL' component: component flags=%#x (bad), component length=%#x vs %#x left\n",
+                                        fFlags, cchCopy, cbSrcLeft));
+                                pszCopy = NULL;
+                                cchCopy = 0;
+                                break;
+                        }
+
+                        if (offDst + cchCopy < sizeof(pThis->szRockSymlinkTargetBuf))
+                        {
+                            memcpy(&pThis->szRockSymlinkTargetBuf[offDst], pszCopy, cchCopy);
+                            offDst += cchCopy;
+                        }
+                        else
+                        {
+                            LogRel(("rtFsIsoImport/Rock: 'SL' constructs a too long target! '%.*s%.*s'\n",
+                                    offDst, pThis->szRockSymlinkTargetBuf, cchCopy, pszCopy));
+                            memcpy(&pThis->szRockSymlinkTargetBuf[offDst], pszCopy,
+                                   sizeof(pThis->szRockSymlinkTargetBuf) - offDst - 1);
+                            offDst = sizeof(pThis->szRockSymlinkTargetBuf) - 1;
+                            break;
+                        }
+
+                        /* Advance */
+                        pbSrc     += cbSkip;
+                        cbSrcLeft -= cbSkip;
+
+                        /* Append slash if appropriate. */
+                        if (   !(fFlags & ISO9660RRIP_SL_C_CONTINUE)
+                            && (cbSrcLeft >= 2 || !pThis->fSeenLastSL) )
+                        {
+                            if (offDst + 1 < sizeof(pThis->szRockSymlinkTargetBuf))
+                                pThis->szRockSymlinkTargetBuf[offDst++] = '/';
+                            else
+                            {
+                                LogRel(("rtFsIsoImport/Rock: 'SL' constructs a too long target! '%.*s/'\n",
+                                        offDst, pThis->szRockSymlinkTargetBuf));
+                                break;
+                            }
+                        }
+                    } while (cbSrcLeft >= 2);
+                    pThis->szRockSymlinkTargetBuf[offDst] = '\0';
+                }
+                break;
+
             case MAKE_SIG(ISO9660RRIPNM_SIG1, ISO9660RRIPNM_SIG2): /* NM */
                 break;
 
@@ -643,29 +921,6 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                 break;
 #undef MAKE_SIG
         }
-#if 0
-        /*
-          SUSP: */
-        if (pbSys[0] == 'C' && pbSys[1] == 'E')
-        {
-        }
-        /* RRIP */
-        else if (pbSys[0] == 'R' && pbSys[1] == 'R')
-        else if (pbSys[0] == 'P' && pbSys[1] == 'X')
-        else if (pbSys[0] == 'P' && pbSys[1] == 'N')
-        else if (pbSys[0] == 'S' && pbSys[1] == 'L')
-        else if (pbSys[0] == 'N' && pbSys[1] == 'M')
-        else if (pbSys[0] == 'C' && pbSys[1] == 'L')
-        else if (pbSys[0] == 'P' && pbSys[1] == 'L')
-        else if (pbSys[0] == 'R' && pbSys[1] == 'E')
-        else if (pbSys[0] == 'T' && pbSys[1] == 'F')
-        else if (pbSys[0] == 'S' && pbSys[1] == 'F')
-        /* other stuff */
-        else if (pbSys[0] == 'A' && pbSys[1] == 'A')
-        else if (pbSys[0] == 'A' && pbSys[1] == 'B')
-        else if (pbSys[0] == 'A' && pbSys[1] == 'S')
-#endif
-
     }
 }
 
@@ -966,7 +1221,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
         RTFSOBJINFO ObjInfo;
         ObjInfo.cbObject           = ISO9660_GET_ENDIAN(&pDirRec->cbData);
         ObjInfo.cbAllocated        = ObjInfo.cbObject;
-        rtFsIsoImpIso9660DateTime2TimeSpec(&ObjInfo.AccessTime, &pDirRec->RecTime);
+        rtFsIsoImpIso9660RecDateTime2TimeSpec(&ObjInfo.AccessTime, &pDirRec->RecTime);
         ObjInfo.ModificationTime   = ObjInfo.AccessTime;
         ObjInfo.ChangeTime         = ObjInfo.AccessTime;
         ObjInfo.BirthTime          = ObjInfo.AccessTime;
@@ -1022,8 +1277,14 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
 
             pThis->szRockNameBuf[0] = '\0';
             if (cbSys > 0 && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE))
+            {
+                pThis->fSeenLastNM               = false;
+                pThis->fSeenLastSL               = false;
+                pThis->szRockNameBuf[0]          = '\0';
+                pThis->szRockSymlinkTargetBuf[0] = '\0';
                 rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys,
                                                                     false /*fContinuationRecord*/, false /*fIsFirstDirRec*/);
+            }
 
             /*
              * Deal with multi-extent files (usually large ones).  We currently only
