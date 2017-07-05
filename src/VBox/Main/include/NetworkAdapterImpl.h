@@ -111,7 +111,7 @@ private:
     void i_generateMACAddress();
     HRESULT i_updateMacAddress(Utf8Str aMacAddress);
     void i_updateBandwidthGroup(BandwidthGroup *aBwGroup);
-    HRESULT i_checkAndSwitchFromNatNetworking(com::Utf8Str networkName);
+    HRESULT i_switchFromNatNetworking(const com::Utf8Str &aNatnetworkName);
     HRESULT i_switchToNatNetworking(const com::Utf8Str &aNatNetworkName);
 
 

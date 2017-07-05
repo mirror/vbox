@@ -457,7 +457,7 @@ HRESULT NetworkAdapter::setAttachmentType(NetworkAttachmentType_T aAttachmentTyp
         mlock.release();
 
         if (oldAttachmentType == NetworkAttachmentType_NATNetwork)
-            i_checkAndSwitchFromNatNetworking(mData->strNATNetworkName);
+            i_switchFromNatNetworking(mData->strNATNetworkName);
 
         if (aAttachmentType == NetworkAttachmentType_NATNetwork)
             i_switchToNatNetworking(mData->strNATNetworkName);
@@ -647,9 +647,13 @@ HRESULT NetworkAdapter::setNATNetwork(const com::Utf8Str &aNATNetwork)
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
         mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
-        i_checkAndSwitchFromNatNetworking(oldNatNetworkName.raw());
 
-        i_switchToNatNetworking(aNATNetwork);
+        if (mData->mode == NetworkAttachmentType_NATNetwork)
+        {
+            i_switchFromNatNetworking(oldNatNetworkName.raw());
+            i_switchToNatNetworking(aNATNetwork);
+        }
+
         /* When changing the host adapter, adapt the CFGM logic to make this
          * change immediately effect and to notify the guest that the network
          * might have changed, therefore changeAdapter=TRUE. */
@@ -1388,7 +1392,7 @@ void NetworkAdapter::i_updateBandwidthGroup(BandwidthGroup *aBwGroup)
 }
 
 
-HRESULT NetworkAdapter::i_checkAndSwitchFromNatNetworking(com::Utf8Str networkName)
+HRESULT NetworkAdapter::i_switchFromNatNetworking(const com::Utf8Str &networkName)
 {
     HRESULT hrc;
     MachineState_T state;
