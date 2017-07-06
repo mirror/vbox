@@ -659,7 +659,7 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
             return;
         }
         pbSys += pUnion->Hdr.cbEntry;
-        cbSys += pUnion->Hdr.cbEntry;
+        cbSys -= pUnion->Hdr.cbEntry;
 
         /*
          * Process fields.
@@ -677,6 +677,7 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
              */
             case MAKE_SIG(ISO9660SUSPCE_SIG1, ISO9660SUSPCE_SIG2):
             {
+__debugbreak();
                 if (RT_BE2H_U32(pUnion->CE.offBlock.be) != RT_LE2H_U32(pUnion->CE.offBlock.le))
                     LogRel(("rtFsIsoImport/Rock: Invalid CE offBlock field: be=%#x vs le=%#x\n",
                             RT_BE2H_U32(pUnion->CE.offBlock.be), RT_LE2H_U32(pUnion->CE.offBlock.le)));
@@ -755,7 +756,7 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                          && (   (pUnion->ER.cchIdentifier >= 4  && strncmp(pUnion->ER.achPayload, ISO9660_RRIP_ID, 4 /*RRIP*/) == 0)
                              || (pUnion->ER.cchIdentifier >= 10 && strncmp(pUnion->ER.achPayload, RT_STR_TUPLE(ISO9660_RRIP_1_12_ID)) == 0) ))
                 {
-                    pObjInfo->Attr.u.Unix.fFlags |= RT_BIT_32(31); /** @todo define RRIP ER entry flag. Or do we call the maker? */
+                    //pObjInfo->Attr.u.Unix.fFlags |= RT_BIT_32(31); /** @todo define RRIP ER entry flag. Or do we call the maker? */
                     LogRel(("rtFsIsoImport/Rock: Rock Ridge 'ER' entry: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
                             pUnion->ER.bVersion, pUnion->ER.cchIdentifier, pUnion->ER.achPayload,
                             pUnion->ER.cchDescription, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier],
@@ -776,19 +777,33 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
             /*
              * Rock ridge interchange protocol entries.
              */
+            case MAKE_SIG(ISO9660RRIPRR_SIG1, ISO9660RRIPRR_SIG2): /* RR */
+                if (   pUnion->RR.Hdr.cbEntry  != ISO9660RRIPRR_LEN
+                    || pUnion->RR.Hdr.bVersion != ISO9660RRIPRR_VER)
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'RR' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fFlags=%#x\n",
+                            pUnion->RR.Hdr.cbEntry, ISO9660RRIPRR_LEN, pUnion->RR.Hdr.bVersion, ISO9660RRIPRR_VER, pUnion->RR.fFlags));
+                /* else: ignore it */
+                break;
+
             case MAKE_SIG(ISO9660RRIPPX_SIG1, ISO9660RRIPPX_SIG2): /* PX */
-                if (   pUnion->PX.Hdr.cbEntry  != ISO9660RRIPPX_LEN
+                if (   (   pUnion->PX.Hdr.cbEntry  != ISO9660RRIPPX_LEN
+                        && pUnion->PX.Hdr.cbEntry  != ISO9660RRIPPX_LEN_NO_INODE)
                     || pUnion->PX.Hdr.bVersion != ISO9660RRIPPX_VER
                     || RT_BE2H_U32(pUnion->PX.fMode.be)      != RT_LE2H_U32(pUnion->PX.fMode.le)
                     || RT_BE2H_U32(pUnion->PX.cHardlinks.be) != RT_LE2H_U32(pUnion->PX.cHardlinks.le)
                     || RT_BE2H_U32(pUnion->PX.uid.be)        != RT_LE2H_U32(pUnion->PX.uid.le)
-                    || RT_BE2H_U32(pUnion->PX.gid.be)        != RT_LE2H_U32(pUnion->PX.gid.le) )
-                    LogRel(("rtFsIsoImport/Rock: Malformed 'PX' entry: cbEntry=%#x (vs %#x), bVersion=%#x (vs %#x) fMode=%#x/%#x cHardlinks=%#x/%#x uid=%#x/%#x gid=%#x/%#x\n",
-                            pUnion->PX.Hdr.cbEntry, ISO9660RRIPPX_LEN, pUnion->PX.Hdr.bVersion, ISO9660RRIPPX_VER,
+                    || RT_BE2H_U32(pUnion->PX.gid.be)        != RT_LE2H_U32(pUnion->PX.gid.le)
+                    || (   pUnion->PX.Hdr.cbEntry  == ISO9660RRIPPX_LEN
+                        && RT_BE2H_U32(pUnion->PX.INode.be)  != RT_LE2H_U32(pUnion->PX.INode.le)) )
+                    LogRel(("rtFsIsoImport/Rock: Malformed 'PX' entry: cbEntry=%#x (vs %#x or %#x), bVersion=%#x (vs %#x) fMode=%#x/%#x cHardlinks=%#x/%#x uid=%#x/%#x gid=%#x/%#x inode=%#x/%#x\n",
+                            pUnion->PX.Hdr.cbEntry, ISO9660RRIPPX_LEN, ISO9660RRIPPX_LEN_NO_INODE,
+                            pUnion->PX.Hdr.bVersion, ISO9660RRIPPX_VER,
                             RT_BE2H_U32(pUnion->PX.fMode.be),      RT_LE2H_U32(pUnion->PX.fMode.le),
                             RT_BE2H_U32(pUnion->PX.cHardlinks.be), RT_LE2H_U32(pUnion->PX.cHardlinks.le),
                             RT_BE2H_U32(pUnion->PX.uid.be),        RT_LE2H_U32(pUnion->PX.uid.le),
-                            RT_BE2H_U32(pUnion->PX.gid.be),        RT_LE2H_U32(pUnion->PX.gid.le) ));
+                            RT_BE2H_U32(pUnion->PX.gid.be),        RT_LE2H_U32(pUnion->PX.gid.le),
+                            pUnion->PX.Hdr.cbEntry == ISO9660RRIPPX_LEN ? RT_BE2H_U32(pUnion->PX.INode.be) : 0,
+                            pUnion->PX.Hdr.cbEntry == ISO9660RRIPPX_LEN ? RT_LE2H_U32(pUnion->PX.INode.le) : 0 ));
                 else
                 {
                     if (RTFS_IS_DIRECTORY(ISO9660_GET_ENDIAN(&pUnion->PX.fMode)) == RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
@@ -799,6 +814,7 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                     pObjInfo->Attr.u.Unix.cHardlinks = ISO9660_GET_ENDIAN(&pUnion->PX.cHardlinks);
                     pObjInfo->Attr.u.Unix.uid        = ISO9660_GET_ENDIAN(&pUnion->PX.uid);
                     pObjInfo->Attr.u.Unix.gid        = ISO9660_GET_ENDIAN(&pUnion->PX.gid);
+                    /* ignore inode */
                 }
                 break;
 
@@ -873,8 +889,6 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                         pTimestamp++;
                     }
                 }
-
-                LogRel(("rtFsIsoImport/Rock: Sparse file support not yet implemented!\n"));
                 break;
 
             case MAKE_SIG(ISO9660RRIPSF_SIG1, ISO9660RRIPSF_SIG2): /* SF */
@@ -1051,11 +1065,51 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
 
 
 /**
+ * Deals with the special '.' entry in the root directory.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The import instance.
+ * @param   pDirRec             The root directory record.
+ */
+static int rtFsIsoImportProcessIso9660TreeWorkerDoRockForRoot(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec)
+{
+    uint8_t const         cbSys = pDirRec->cbDirRec - RT_UOFFSETOF(ISO9660DIRREC, achFileId)
+                                - pDirRec->bFileIdLength - !(pDirRec->bFileIdLength & 1);
+    uint8_t const * const pbSys = (uint8_t const *)&pDirRec->achFileId[pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1)];
+    if (cbSys > 4)
+    {
+        RTFSOBJINFO ObjInfo;
+        ObjInfo.cbObject           = 0;
+        ObjInfo.cbAllocated        = 0;
+        rtFsIsoImpIso9660RecDateTime2TimeSpec(&ObjInfo.AccessTime, &pDirRec->RecTime);
+        ObjInfo.ModificationTime   = ObjInfo.AccessTime;
+        ObjInfo.ChangeTime         = ObjInfo.AccessTime;
+        ObjInfo.BirthTime          = ObjInfo.AccessTime;
+        ObjInfo.Attr.fMode         = RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | 0555;
+        ObjInfo.Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
+        ObjInfo.Attr.u.Unix.uid             = NIL_RTUID;
+        ObjInfo.Attr.u.Unix.gid             = NIL_RTGID;
+        ObjInfo.Attr.u.Unix.cHardlinks      = 2;
+        ObjInfo.Attr.u.Unix.INodeIdDevice   = 0;
+        ObjInfo.Attr.u.Unix.INodeId         = 0;
+        ObjInfo.Attr.u.Unix.fFlags          = 0;
+        ObjInfo.Attr.u.Unix.GenerationId    = 0;
+        ObjInfo.Attr.u.Unix.Device          = 0;
+
+        rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys,
+                                                            false /*fContinuationRecord*/, true /*fIsFirstDirRec*/);
+        /** @todo Update root dir attribs.  Need API. */
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Validates a directory record.
  *
  * @returns IPRT status code (safe to ignore, see pThis->rc).
  * @param   pThis               The importer instance.
- * @param   pDirRec             The root directory record to validate.
+ * @param   pDirRec             The directory record to validate.
  * @param   cbMax               The maximum size.
  */
 static int rtFsIsoImportValidateDirRec(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, uint32_t cbMax)
@@ -1274,6 +1328,14 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
     rc = rtFsIsoImportValidateDotDirRec(pThis, pDirRec, cbChunk, 0x00);
     if (RT_FAILURE(rc))
         return rc;
+    if (   cDepth == 0
+        && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE)
+        && pDirRec->cbDirRec > RT_UOFFSETOF(ISO9660DIRREC, achFileId[1]))
+    {
+        rc = rtFsIsoImportProcessIso9660TreeWorkerDoRockForRoot(pThis, pDirRec);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     cbChunk -= pDirRec->cbDirRec;
     pDirRec = (PCISO9660DIRREC)((uintptr_t)pDirRec + pDirRec->cbDirRec);

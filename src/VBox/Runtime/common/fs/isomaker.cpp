@@ -4139,6 +4139,30 @@ static void rtFsIsoMakerFinalizeGatherDirs(PRTFSISOMAKERNAMESPACE pNamespace, PR
 
 
 /**
+ * Allocates space in the rock ridge spill file.
+ *
+ * @returns Spill file offset, UINT32_MAX on failure.
+ * @param   pRRSpillFile    The spill file.
+ * @param   cbRock          Number of bytes to allocate.
+ */
+static uint32_t rtFsIsoMakerFinalizeAllocRockRidgeSpill(PRTFSISOMAKERFILE pRRSpillFile, uint32_t cbRock)
+{
+    uint32_t off = pRRSpillFile->cbData;
+    if (ISO9660_SECTOR_SIZE - (pRRSpillFile->cbData & ISO9660_SECTOR_OFFSET_MASK) >= cbRock)
+    { /* likely */ }
+    else
+    {
+        off |= ISO9660_SECTOR_OFFSET_MASK;
+        off++;
+        AssertLogRelReturn(off > 0, UINT32_MAX);
+        pRRSpillFile->cbData = off;
+    }
+    pRRSpillFile->cbData += RT_ALIGN_32(cbRock, 4);
+    return off;
+}
+
+
+/**
  * Finalizes a directory entry (i.e. namespace node).
  *
  * This calculates the directory record size.
@@ -4201,7 +4225,13 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
             && (   pName->cbNameInDirRec != 1
                 || (uint8_t)pName->szName[0] > (uint8_t)0x01) )
         {
-            cbRock += (pName->cchRockRidgeNm + ISO9660RRIPNM_MAX_NAME_LEN - 1) / ISO9660RRIPNM_MAX_NAME_LEN;
+            uint16_t cchNm = pName->cchRockRidgeNm;
+            while (cchNm > ISO9660RRIPNM_MAX_NAME_LEN)
+            {
+                cbRock += (uint16_t)RT_UOFFSETOF(ISO9660RRIPNM, achName) + ISO9660RRIPNM_MAX_NAME_LEN;
+                cchNm  -= ISO9660RRIPNM_MAX_NAME_LEN;
+            }
+            cbRock += (uint16_t)RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchNm;
             fFlags |= ISO9660RRIP_RR_F_NM;
         }
 
@@ -4244,10 +4274,8 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
                     pName->fRockNeedRRInDirRec = false;
                     pName->fRockNeedRRInSpill  = uRockRidgeLevel >= 2;
                 }
-                if (ISO9660_SECTOR_SIZE - (pFinalizedDirs->pRRSpillFile->cbData & ISO9660_SECTOR_OFFSET_MASK) < cbRock)
-                    pFinalizedDirs->pRRSpillFile->cbData = (pFinalizedDirs->pRRSpillFile->cbData | ISO9660_SECTOR_OFFSET_MASK) + 1;
-                pName->offRockSpill = pFinalizedDirs->pRRSpillFile->cbData;
-                pFinalizedDirs->pRRSpillFile->cbData += RT_ALIGN_T(cbRock, 4, uint16_t);
+                pName->offRockSpill         = rtFsIsoMakerFinalizeAllocRockRidgeSpill(pFinalizedDirs->pRRSpillFile, cbRock);
+                AssertReturn(pName->offRockSpill != UINT32_MAX, VERR_ISOMK_RR_SPILL_FILE_FULL);
             }
             else
             {
@@ -4280,10 +4308,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
                 pName->fRockNeedRRInDirRec  = false;
                 cbRock += ISO9660_RRIP_ER_LEN;
                 pName->cbRockSpill          = cbRock;
-                if ( ISO9660_SECTOR_SIZE - (pFinalizedDirs->pRRSpillFile->cbData & ISO9660_SECTOR_OFFSET_MASK) < cbRock)
-                    pFinalizedDirs->pRRSpillFile->cbData = (pFinalizedDirs->pRRSpillFile->cbData | ISO9660_SECTOR_OFFSET_MASK) + 1;
-                pName->offRockSpill = pFinalizedDirs->pRRSpillFile->cbData;
-                pFinalizedDirs->pRRSpillFile->cbData += RT_ALIGN_T(cbRock, 4, uint16_t);
+                pName->offRockSpill         = rtFsIsoMakerFinalizeAllocRockRidgeSpill(pFinalizedDirs->pRRSpillFile, cbRock);
             }
         }
         pName->cbDirRec += pName->cbRockInDirRec;
@@ -4429,13 +4454,23 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
     }
 
     /*
-     * Update the rock ridge spill file size.
+     * Remove rock ridge spill file if we haven't got any spill.
+     * If we have, round the size up to a whole sector to avoid the slow path
+     * when reading from it.
      */
     if (pFinalizedDirs->pRRSpillFile)
     {
-        rc = RTVfsFileGetSize(pFinalizedDirs->pRRSpillFile->u.hVfsFile, &pFinalizedDirs->pRRSpillFile->cbData);
-        AssertRCReturn(rc, rc);
-        pThis->cbData += pFinalizedDirs->pRRSpillFile->cbData;
+        if (pFinalizedDirs->pRRSpillFile->cbData > 0)
+        {
+            pFinalizedDirs->pRRSpillFile->cbData = RT_ALIGN_64(pFinalizedDirs->pRRSpillFile->cbData, ISO9660_SECTOR_SIZE);
+            pThis->cbData += pFinalizedDirs->pRRSpillFile->cbData;
+        }
+        else
+        {
+            rc = rtFsIsoMakerObjRemoveWorker(pThis, &pFinalizedDirs->pRRSpillFile->Core);
+            if (RT_SUCCESS(rc))
+                pFinalizedDirs->pRRSpillFile = NULL;
+        }
     }
 
     /*
@@ -5327,93 +5362,102 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
         cbSys -= sizeof(*pRR);
     }
 
-    if (pName->fRockEntries & ISO9660RRIP_RR_F_PX)
+    /*
+     * The following entries all end up in the spill or fully in
+     * the directory record.
+     */
+    if (fInSpill || pName->cbRockSpill == 0)
     {
-        PISO9660RRIPPX pPX = (PISO9660RRIPPX)pbSys;
-        Assert(cbSys >= sizeof(*pPX));
-        pPX->Hdr.bSig1      = ISO9660RRIPPX_SIG1;
-        pPX->Hdr.bSig2      = ISO9660RRIPPX_SIG2;
-        pPX->Hdr.cbEntry    = ISO9660RRIPPX_LEN;
-        pPX->Hdr.bVersion   = ISO9660RRIPPX_VER;
-        pPX->fMode.be       = RT_H2BE_U32((uint32_t)pName->fMode);
-        pPX->fMode.le       = RT_H2LE_U32((uint32_t)pName->fMode);
-        pPX->cHardlinks.be  = RT_H2BE_U32((uint32_t)pName->cHardlinks);
-        pPX->cHardlinks.le  = RT_H2LE_U32((uint32_t)pName->cHardlinks);
-        pPX->uid.be         = RT_H2BE_U32((uint32_t)pName->uid);
-        pPX->uid.le         = RT_H2LE_U32((uint32_t)pName->uid);
-        pPX->gid.be         = RT_H2BE_U32((uint32_t)pName->gid);
-        pPX->gid.le         = RT_H2LE_U32((uint32_t)pName->gid);
-        pPX->INode.be       = RT_H2BE_U32((uint32_t)pName->pObj->idxObj);
-        pPX->INode.le       = RT_H2LE_U32((uint32_t)pName->pObj->idxObj);
-        pbSys += sizeof(*pPX);
-        cbSys -= sizeof(*pPX);
-    }
-
-    if (pName->fRockEntries & ISO9660RRIP_RR_F_TF)
-    {
-        PISO9660RRIPTF pTF = (PISO9660RRIPTF)pbSys;
-        pTF->Hdr.bSig1      = ISO9660RRIPTF_SIG1;
-        pTF->Hdr.bSig2      = ISO9660RRIPTF_SIG2;
-        pTF->Hdr.cbEntry    = Iso9660RripTfCalcLength(ISO9660RRIPTF_F_BIRTH | ISO9660RRIPTF_F_MODIFY | ISO9660RRIPTF_F_ACCESS | ISO9660RRIPTF_F_CHANGE);
-        Assert(cbSys >= pTF->Hdr.cbEntry);
-        pTF->Hdr.bVersion   = ISO9660RRIPTF_VER;
-        pTF->fFlags         = ISO9660RRIPTF_F_BIRTH | ISO9660RRIPTF_F_MODIFY | ISO9660RRIPTF_F_ACCESS | ISO9660RRIPTF_F_CHANGE;
-        PISO9660RECTIMESTAMP paTimestamps = (PISO9660RECTIMESTAMP)&pTF->abPayload[0];
-        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->BirthTime,        &paTimestamps[0]);
-        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->ModificationTime, &paTimestamps[1]);
-        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->AccessedTime,     &paTimestamps[2]);
-        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->ChangeTime,       &paTimestamps[3]);
-        cbSys += pTF->Hdr.cbEntry;
-        pbSys += pTF->Hdr.cbEntry;
-    }
-
-    if (pName->fRockEntries & ISO9660RRIP_RR_F_PN)
-    {
-        PISO9660RRIPPN pPN = (PISO9660RRIPPN)pbSys;
-        Assert(cbSys >= sizeof(*pPN));
-        pPN->Hdr.bSig1      = ISO9660RRIPPN_SIG1;
-        pPN->Hdr.bSig2      = ISO9660RRIPPN_SIG2;
-        pPN->Hdr.cbEntry    = ISO9660RRIPPN_LEN;
-        pPN->Hdr.bVersion   = ISO9660RRIPPN_VER;
-        pPN->Major.be       = RT_H2BE_U32((uint32_t)RTDEV_MAJOR(pName->Device));
-        pPN->Major.le       = RT_H2LE_U32((uint32_t)RTDEV_MAJOR(pName->Device));
-        pPN->Minor.be       = RT_H2BE_U32((uint32_t)RTDEV_MINOR(pName->Device));
-        pPN->Minor.le       = RT_H2LE_U32((uint32_t)RTDEV_MINOR(pName->Device));
-    }
-
-    if (pName->fRockEntries & ISO9660RRIP_RR_F_NM)
-    {
-        size_t      cchSrc = pName->cchRockRidgeNm;
-        const char *pszSrc = pName->pszRockRidgeNm;
-        for (;;)
+        if (pName->fRockEntries & ISO9660RRIP_RR_F_PX)
         {
-            size_t         cchThis = RT_MIN(cchSrc, ISO9660RRIPNM_MAX_NAME_LEN);
-            PISO9660RRIPNM pNM     = (PISO9660RRIPNM)pbSys;
-            Assert(cbSys >= RT_UOFFSETOF(ISO9660RRIPNM, achName[cchThis]));
-            pNM->Hdr.bSig1      = ISO9660RRIPNM_SIG1;
-            pNM->Hdr.bSig2      = ISO9660RRIPNM_SIG2;
-            pNM->Hdr.cbEntry    = (uint8_t)(RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis);
-            pNM->Hdr.bVersion   = ISO9660RRIPNM_VER;
-            pNM->fFlags         = cchThis == cchSrc ? 0 : ISO9660RRIP_NM_F_CONTINUE;
-            memcpy(&pNM->achName[0], pszSrc, cchThis);
-            pbSys  += RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
-            cbSys  -= RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
-            cchSrc -= cchThis;
-            if (!cchSrc)
-                break;
+            PISO9660RRIPPX pPX = (PISO9660RRIPPX)pbSys;
+            Assert(cbSys >= sizeof(*pPX));
+            pPX->Hdr.bSig1      = ISO9660RRIPPX_SIG1;
+            pPX->Hdr.bSig2      = ISO9660RRIPPX_SIG2;
+            pPX->Hdr.cbEntry    = ISO9660RRIPPX_LEN;
+            pPX->Hdr.bVersion   = ISO9660RRIPPX_VER;
+            pPX->fMode.be       = RT_H2BE_U32((uint32_t)pName->fMode);
+            pPX->fMode.le       = RT_H2LE_U32((uint32_t)pName->fMode);
+            pPX->cHardlinks.be  = RT_H2BE_U32((uint32_t)pName->cHardlinks);
+            pPX->cHardlinks.le  = RT_H2LE_U32((uint32_t)pName->cHardlinks);
+            pPX->uid.be         = RT_H2BE_U32((uint32_t)pName->uid);
+            pPX->uid.le         = RT_H2LE_U32((uint32_t)pName->uid);
+            pPX->gid.be         = RT_H2BE_U32((uint32_t)pName->gid);
+            pPX->gid.le         = RT_H2LE_U32((uint32_t)pName->gid);
+            pPX->INode.be       = RT_H2BE_U32((uint32_t)pName->pObj->idxObj);
+            pPX->INode.le       = RT_H2LE_U32((uint32_t)pName->pObj->idxObj);
+            pbSys += sizeof(*pPX);
+            cbSys -= sizeof(*pPX);
         }
-    }
 
-    if (pName->fRockEntries & ISO9660RRIP_RR_F_SL)
-    {
-        AssertReturnVoid(pName->pObj->enmType == RTFSISOMAKEROBJTYPE_SYMLINK);
-        PCRTFSISOMAKERSYMLINK pSymlink = (PCRTFSISOMAKERSYMLINK)pName->pObj;
+        if (pName->fRockEntries & ISO9660RRIP_RR_F_TF)
+        {
+            PISO9660RRIPTF pTF = (PISO9660RRIPTF)pbSys;
+            pTF->Hdr.bSig1      = ISO9660RRIPTF_SIG1;
+            pTF->Hdr.bSig2      = ISO9660RRIPTF_SIG2;
+            pTF->Hdr.cbEntry    = Iso9660RripTfCalcLength(ISO9660RRIPTF_F_BIRTH | ISO9660RRIPTF_F_MODIFY | ISO9660RRIPTF_F_ACCESS | ISO9660RRIPTF_F_CHANGE);
+            Assert(cbSys >= pTF->Hdr.cbEntry);
+            pTF->Hdr.bVersion   = ISO9660RRIPTF_VER;
+            pTF->fFlags         = ISO9660RRIPTF_F_BIRTH | ISO9660RRIPTF_F_MODIFY | ISO9660RRIPTF_F_ACCESS | ISO9660RRIPTF_F_CHANGE;
+            PISO9660RECTIMESTAMP paTimestamps = (PISO9660RECTIMESTAMP)&pTF->abPayload[0];
+            rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->BirthTime,        &paTimestamps[0]);
+            rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->ModificationTime, &paTimestamps[1]);
+            rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->AccessedTime,     &paTimestamps[2]);
+            rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->ChangeTime,       &paTimestamps[3]);
+            cbSys -= pTF->Hdr.cbEntry;
+            pbSys += pTF->Hdr.cbEntry;
+        }
 
-        ssize_t cbSlRockRidge = rtFsIsoMakerOutFile_RockRidgeGenSL(pSymlink->szTarget, pbSys, cbSys);
-        AssertReturnVoid(cbSlRockRidge > 0);
-        Assert(cbSys >= (size_t)cbSlRockRidge);
-        cbSys -= (size_t)cbSlRockRidge;
-        pbSys -= (size_t)cbSlRockRidge;
+        if (pName->fRockEntries & ISO9660RRIP_RR_F_PN)
+        {
+            PISO9660RRIPPN pPN = (PISO9660RRIPPN)pbSys;
+            Assert(cbSys >= sizeof(*pPN));
+            pPN->Hdr.bSig1      = ISO9660RRIPPN_SIG1;
+            pPN->Hdr.bSig2      = ISO9660RRIPPN_SIG2;
+            pPN->Hdr.cbEntry    = ISO9660RRIPPN_LEN;
+            pPN->Hdr.bVersion   = ISO9660RRIPPN_VER;
+            pPN->Major.be       = RT_H2BE_U32((uint32_t)RTDEV_MAJOR(pName->Device));
+            pPN->Major.le       = RT_H2LE_U32((uint32_t)RTDEV_MAJOR(pName->Device));
+            pPN->Minor.be       = RT_H2BE_U32((uint32_t)RTDEV_MINOR(pName->Device));
+            pPN->Minor.le       = RT_H2LE_U32((uint32_t)RTDEV_MINOR(pName->Device));
+            cbSys -= sizeof(*pPN);
+            pbSys += sizeof(*pPN);
+        }
+
+        if (pName->fRockEntries & ISO9660RRIP_RR_F_NM)
+        {
+            size_t      cchSrc = pName->cchRockRidgeNm;
+            const char *pszSrc = pName->pszRockRidgeNm;
+            for (;;)
+            {
+                size_t         cchThis = RT_MIN(cchSrc, ISO9660RRIPNM_MAX_NAME_LEN);
+                PISO9660RRIPNM pNM     = (PISO9660RRIPNM)pbSys;
+                Assert(cbSys >= RT_UOFFSETOF(ISO9660RRIPNM, achName[cchThis]));
+                pNM->Hdr.bSig1      = ISO9660RRIPNM_SIG1;
+                pNM->Hdr.bSig2      = ISO9660RRIPNM_SIG2;
+                pNM->Hdr.cbEntry    = (uint8_t)(RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis);
+                pNM->Hdr.bVersion   = ISO9660RRIPNM_VER;
+                pNM->fFlags         = cchThis == cchSrc ? 0 : ISO9660RRIP_NM_F_CONTINUE;
+                memcpy(&pNM->achName[0], pszSrc, cchThis);
+                pbSys  += RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
+                cbSys  -= RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
+                cchSrc -= cchThis;
+                if (!cchSrc)
+                    break;
+            }
+        }
+
+        if (pName->fRockEntries & ISO9660RRIP_RR_F_SL)
+        {
+            AssertReturnVoid(pName->pObj->enmType == RTFSISOMAKEROBJTYPE_SYMLINK);
+            PCRTFSISOMAKERSYMLINK pSymlink = (PCRTFSISOMAKERSYMLINK)pName->pObj;
+
+            ssize_t cbSlRockRidge = rtFsIsoMakerOutFile_RockRidgeGenSL(pSymlink->szTarget, pbSys, cbSys);
+            AssertReturnVoid(cbSlRockRidge > 0);
+            Assert(cbSys >= (size_t)cbSlRockRidge);
+            pbSys += (size_t)cbSlRockRidge;
+            cbSys -= (size_t)cbSlRockRidge;
+        }
     }
 
     /* finally, zero padding. */

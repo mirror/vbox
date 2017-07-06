@@ -1124,8 +1124,8 @@ typedef struct ISO9660RRIPRR
 typedef ISO9660RRIPRR *PISO9660RRIPRR;
 /** Pointer to a const RRIP RR entry. */
 typedef ISO9660RRIPRR const *PCISO9660RRIPRR;
-#define ISO9660RRIPRR_SIG1     'P'             /**< RRIP RR entry signature byte 1. */
-#define ISO9660RRIPRR_SIG2     'X'             /**< RRIP RR entry signature byte 2. */
+#define ISO9660RRIPRR_SIG1     'R'             /**< RRIP RR entry signature byte 1. */
+#define ISO9660RRIPRR_SIG2     'R'             /**< RRIP RR entry signature byte 2. */
 #define ISO9660RRIPRR_VER       1              /**< RRIP RR entry version number. */
 #define ISO9660RRIPRR_LEN       5              /**< RRIP RR entry length (fixed). */
 AssertCompileSize(ISO9660RRIPRR, ISO9660RRIPRR_LEN);
@@ -1170,6 +1170,7 @@ typedef ISO9660RRIPPX const *PCISO9660RRIPPX;
 #define ISO9660RRIPPX_VER       1              /**< RRIP posix attribute entry version number. */
 #define ISO9660RRIPPX_LEN       44             /**< RRIP posix attribute entry length (fixed). */
 AssertCompileSize(ISO9660RRIPPX, ISO9660RRIPPX_LEN);
+#define ISO9660RRIPPX_LEN_NO_INODE 36          /**< RRIP posix attribute entry length without inode (fixed). */
 
 
 /**

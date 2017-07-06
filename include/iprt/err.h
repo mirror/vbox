@@ -2734,8 +2734,8 @@ RT_C_DECLS_END
 #define VERR_ISOMK_IPE_READ_FILE_DATA_3                 (-25027)
 /** Internal ISO maker error: Finalization problem \#1.  */
 #define VERR_ISOMK_IPE_FINALIZE_1                       (-25028)
-
-
+/** The spill file grew larger than 4GB. */
+#define VERR_ISOMK_RR_SPILL_FILE_FULL                   (-25029)
 
 /** Requested to import an unknown ISO format. */
 #define VERR_ISOMK_IMPORT_UNKNOWN_FORMAT                (-25100)
