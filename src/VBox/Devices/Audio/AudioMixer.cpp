@@ -875,7 +875,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
     if (RT_FAILURE(rc))
         return 0;
 
-    uint32_t cbWritable = 0;
+    uint32_t cbWritable = UINT32_MAX;
 
     if (    (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
         && !(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
@@ -896,13 +896,14 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
 
             const uint32_t cbWritableStream = pMixStream->pConn->pfnStreamGetWritable(pMixStream->pConn, pMixStream->pStream);
 
-            if (cbWritable < cbWritableStream)
+            if (cbWritableStream < cbWritable)
                 cbWritable = cbWritableStream;
-
-            break; /** @todo For now the first stream sets the pace. */
         }
 #endif
     }
+
+    if (cbWritable == UINT32_MAX)
+        cbWritable = 0;
 
     Log3Func(("[%s] cbWritable=%RU32\n", pSink->pszName, cbWritable));
 
@@ -1052,8 +1053,8 @@ bool AudioMixerSinkIsActive(PAUDMIXSINK pSink)
  */
 int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
-    RT_NOREF(enmOp);
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    RT_NOREF(enmOp);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf,    VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
@@ -1591,16 +1592,11 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME p
  */
 int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
-    RT_NOREF(enmOp);
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    RT_NOREF(enmOp);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn   (cbBuf, VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
-
-    if (!pvBuf || !cbBuf)
-    {
-        if (pcbWritten)
-            *pcbWritten = 0;
-        return VINF_SUCCESS;
-    }
 
     int rc = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc))
@@ -1613,7 +1609,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
 
     Log3Func(("[%s] enmOp=%d, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
 
-    uint32_t cbWritten = 0;
+    uint32_t cbWritten = UINT32_MAX;
 
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
@@ -1629,25 +1625,26 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
         if (RT_FAILURE(rc2))
             LogFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
 
-        if (cbProcessed < cbBuf)
-            LogFunc(("[%s] Only written %RU32/%RU32 bytes for stream '%s', rc=%Rrc\n",
-                     pSink->pszName, cbProcessed, cbBuf, pMixStream->pszName, rc2));
+        Log3Func(("[%s] Written %RU32 to '%s'\n", pSink->pszName, cbProcessed, pMixStream->pszName));
 
         if (cbProcessed)
         {
             /* Set dirty bit. */
             pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
+
+            /*
+             * Return the minimum bytes processed by all connected streams.
+             * The host sets the pace, so all backends have to behave accordingly.
+             */
+            if (cbWritten > cbProcessed)
+                cbWritten = cbProcessed;
         }
-
-        Log3Func(("\t%s: cbProcessed=%RU32\n", pMixStream->pszName, cbProcessed));
-
-        /*
-         * Return the maximum bytes processed by all connected streams.
-         * Streams which have processed less than the current maximum have to deal with
-         * this themselves.
-         */
-        cbWritten = RT_MAX(cbWritten, cbProcessed);
     }
+
+    if (cbWritten == UINT32_MAX)
+        cbWritten = 0;
+
+    Log3Func(("[%s] cbWritten=%RU32\n", pSink->pszName, cbWritten));
 
     if (pcbWritten)
         *pcbWritten = cbWritten;
