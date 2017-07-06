@@ -164,7 +164,11 @@ static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint
 
         int rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, iTrack - 1, &uLbaStart,
                                                      NULL, NULL, &enmDataForm);
-        AssertRC(rc);
+        if (rc == VERR_NOT_FOUND || rc == VERR_MEDIA_NOT_PRESENT)
+             return vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_NOT_READY,
+                                             SCSI_ASC_MEDIUM_NOT_PRESENT, 0x00);
+        else
+            AssertRC(rc);
 
         *q++ = 0;                  /* reserved */
 
@@ -200,7 +204,11 @@ static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint
 
     int rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, cTracks - 1, &uLbaStart,
                                                  &cBlocks, NULL, NULL);
-    AssertRC(rc);
+    if (rc == VERR_NOT_FOUND || rc == VERR_MEDIA_NOT_PRESENT)
+         return vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_NOT_READY,
+                                         SCSI_ASC_MEDIUM_NOT_PRESENT, 0x00);
+    else
+        AssertRC(rc);
 
     uLbaStart += cBlocks;
     if (fMSF)
@@ -240,7 +248,11 @@ static int mmcReadTOCMulti(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint1
     VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_MODE1_2048;
     int rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, 0, NULL,
                                                  NULL, NULL, &enmDataForm);
-    AssertRC(rc);
+    if (rc == VERR_NOT_FOUND || rc == VERR_MEDIA_NOT_PRESENT)
+         return vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_NOT_READY,
+                                         SCSI_ASC_MEDIUM_NOT_PRESENT, 0x00);
+    else
+        AssertRC(rc);
 
     if (enmDataForm == VDREGIONDATAFORM_CDDA)
         pbBuf[5] = 0x10;           /* ADR, control */
@@ -994,14 +1006,25 @@ static DECLCALLBACK(int) vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
     pVScsiLunMmc->cSectors          = 0;
 
     uint32_t cTracks = vscsiLunMediumGetRegionCount(pVScsiLun);
-    for (uint32_t i = 0; i < cTracks; i++)
+    if (cTracks)
     {
-        uint64_t cBlocks = 0;
-        rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, i, NULL, &cBlocks,
-                                                 NULL, NULL);
-        AssertRC(rc);
+        for (uint32_t i = 0; i < cTracks; i++)
+        {
+            uint64_t cBlocks = 0;
+            rc = vscsiLunMediumQueryRegionProperties(pVScsiLun, i, NULL, &cBlocks,
+                                                     NULL, NULL);
+            AssertRC(rc);
 
-        pVScsiLunMmc->cSectors += cBlocks;
+            pVScsiLunMmc->cSectors += cBlocks;
+        }
+
+        pVScsiLunMmc->Core.fMediaPresent = true;
+        pVScsiLunMmc->Core.fReady = false;
+    }
+    else
+    {
+        pVScsiLunMmc->Core.fMediaPresent = false;
+        pVScsiLunMmc->Core.fReady = false;
     }
 
     return rc;
@@ -1603,13 +1626,17 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
             rc = vscsiLunMediumQueryRegionPropertiesForLba(pVScsiLun, uLbaStart,
                                                            NULL, NULL, NULL, &enmDataForm);
-            AssertRC(rc);
-            if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
-                && enmDataForm != VDREGIONDATAFORM_MODE1_2352
-                && enmDataForm != VDREGIONDATAFORM_MODE2_2336
-                && enmDataForm != VDREGIONDATAFORM_MODE2_2352
-                && enmDataForm != VDREGIONDATAFORM_RAW
-                && cbSector == _2K)
+            if (RT_FAILURE(rc))
+            {
+                rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
+                vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
+            }
+            else if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
+                     && enmDataForm != VDREGIONDATAFORM_MODE1_2352
+                     && enmDataForm != VDREGIONDATAFORM_MODE2_2336
+                     && enmDataForm != VDREGIONDATAFORM_MODE2_2352
+                     && enmDataForm != VDREGIONDATAFORM_RAW
+                     && cbSector == _2K)
             {
                 rcReq = vscsiLunReqSenseErrorInfoSet(pVScsiLun, pVScsiReq,
                                                      SCSI_SENSE_ILLEGAL_REQUEST | SCSI_SENSE_FLAG_ILI,
@@ -1690,6 +1717,7 @@ static DECLCALLBACK(int) vscsiLunMmcMediumRemoved(PVSCSILUNINT pVScsiLun)
 
     ASMAtomicWriteU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus, MMCEVENTSTATUSTYPE_MEDIA_REMOVED);
     ASMAtomicXchgU32(&pVScsiLunMmc->u32MediaTrackType, MMC_MEDIA_TYPE_NO_DISC);
+    pVScsiLunMmc->cSectors = 0;
     return VINF_SUCCESS;
 }
 
