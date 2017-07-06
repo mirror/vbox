@@ -67,6 +67,10 @@
         <file alias="display_hardware_16px_hidpi.png">images/hidpi/display_hardware_16px_hidpi.png</file>
         <file alias="display_hardware_write_16px_hidpi.png">images/hidpi/display_hardware_write_16px_hidpi.png</file>
         <file alias="display_software_16px_hidpi.png">images/hidpi/display_software_16px_hidpi.png</file>
+        <file alias="download_manager_16px_hidpi.png">images/hidpi/download_manager_16px_hidpi.png</file>
+        <file alias="download_manager_32px_hidpi.png">images/hidpi/download_manager_32px_hidpi.png</file>
+        <file alias="download_manager_error_16px_hidpi.png">images/hidpi/download_manager_error_16px_hidpi.png</file>
+        <file alias="download_manager_loading_16px_hidpi.png">images/hidpi/download_manager_loading_16px_hidpi.png</file>
         <file alias="drag_drop_16px_hidpi.png">images/hidpi/drag_drop_16px_hidpi.png</file>
         <file alias="drag_drop_disabled_16px_hidpi.png">images/hidpi/drag_drop_disabled_16px_hidpi.png</file>
         <file alias="edata_add_16px_hidpi.png">images/hidpi/edata_add_16px_hidpi.png</file>

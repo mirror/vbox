@@ -784,7 +784,7 @@ class UIActionSimpleNetworkAccessManager : public UIActionSimple
 public:
 
     UIActionSimpleNetworkAccessManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
+        : UIActionSimple(pParent, ":/download_manager_16px.png")
     {
         setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();

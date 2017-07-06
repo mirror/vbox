@@ -48,7 +48,7 @@ UINetworkRequestWidget::UINetworkRequestWidget(UINetworkManagerDialog *pParent, 
     , m_pTimer(new QTimer(this))
 {
     /* Setup self: */
-    setTitleIcon(UIIconPool::iconSet(":/nw_16px.png"));
+    setTitleIcon(UIIconPool::iconSet(":/download_manager_16px.png"));
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     setContentWidget(m_pContentWidget);
     setOpen(true);

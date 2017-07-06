@@ -31,9 +31,9 @@
 UINetworkManagerIndicator::UINetworkManagerIndicator()
 {
     /* Assign state icons: */
-    setStateIcon(UINetworkManagerIndicatorState_Idle, UIIconPool::iconSet(":/nw_16px.png"));
-    setStateIcon(UINetworkManagerIndicatorState_Loading, UIIconPool::iconSet(":/nw_loading_16px.png"));
-    setStateIcon(UINetworkManagerIndicatorState_Error, UIIconPool::iconSet(":/nw_error_16px.png"));
+    setStateIcon(UINetworkManagerIndicatorState_Idle, UIIconPool::iconSet(":/download_manager_16px.png"));
+    setStateIcon(UINetworkManagerIndicatorState_Loading, UIIconPool::iconSet(":/download_manager_loading_16px.png"));
+    setStateIcon(UINetworkManagerIndicatorState_Error, UIIconPool::iconSet(":/download_manager_error_16px.png"));
 
     /* Translate content: */
     retranslateUi();
