@@ -927,6 +927,7 @@ typedef ISO9660SUSPHDR *PISO9660SUSPHDR;
 /** Pointer to a const SUSP header. */
 typedef ISO9660SUSPHDR const *PCISO9660SUSPHDR;
 
+
 /**
  * SUSP continuation entry (CE).
  */
@@ -941,7 +942,6 @@ typedef struct ISO9660SUSPCE
     /** The size of the continuation data. */
     ISO9660U32          cbData;
 } ISO9660SUSPCE;
-AssertCompileSize(ISO9660SUSPCE, 28);
 /** Pointer to a SUSP continuation entry. */
 typedef ISO9660SUSPCE *PISO9660SUSPCE;
 /** Pointer to a const SUSP continuation entry. */
@@ -950,6 +950,8 @@ typedef ISO9660SUSPCE const *PCISO9660SUSPCE;
 #define ISO9660SUSPCE_SIG2     'E' /**< SUSP continutation entry signature byte 2. */
 #define ISO9660SUSPCE_LEN      28  /**< SUSP continutation entry length. */
 #define ISO9660SUSPCE_VER       1  /**< SUSP continutation entry version number. */
+AssertCompileSize(ISO9660SUSPCE, ISO9660SUSPCE_LEN);
+
 
 /**
  * SUSP padding entry (PD).
@@ -969,6 +971,7 @@ typedef ISO9660SUSPPD const *PCISO9660SUSPPD;
 #define ISO9660SUSPPD_SIG2     'D' /**< SUSP padding entry signature byte 2. */
 #define ISO9660SUSPPD_VER       1  /**< SUSP padding entry version number. */
 
+
 /**
  * SUSP system use protocol entry (SP)
  *
@@ -987,7 +990,6 @@ typedef struct ISO9660SUSPSP
      * entry (except the '.' entry of the root, since that's where this is). */
     uint8_t             cbSkip;
 } ISO9660SUSPSP;
-AssertCompileSize(ISO9660SUSPSP, 7);
 /** Pointer to a SUSP entry. */
 typedef ISO9660SUSPSP *PISO9660SUSPSP;
 /** Pointer to a const SUSP entry. */
@@ -998,6 +1000,8 @@ typedef ISO9660SUSPSP const *PCISO9660SUSPSP;
 #define ISO9660SUSPSP_LEN       7               /**< SUSP system use protocol entry length (fixed). */
 #define ISO9660SUSPSP_CHECK1    UINT8_C(0xbe)   /**< SUSP system use protocol entry check byte 1. */
 #define ISO9660SUSPSP_CHECK2    UINT8_C(0xef)   /**< SUSP system use protocol entry check byte 2. */
+AssertCompileSize(ISO9660SUSPSP, ISO9660SUSPSP_LEN);
+
 
 /**
  * SUSP terminator entry (ST)
@@ -1010,7 +1014,6 @@ typedef struct ISO9660SUSPST
      *  ISO9660SUSPST_LEN, ISO9660SUSPST_VER). */
     ISO9660SUSPHDR      Hdr;
 } ISO9660SUSPST;
-AssertCompileSize(ISO9660SUSPST, 4);
 /** Pointer to a SUSP padding entry. */
 typedef ISO9660SUSPST *PISO9660SUSPST;
 /** Pointer to a const SUSP padding entry. */
@@ -1019,6 +1022,8 @@ typedef ISO9660SUSPST const *PCISO9660SUSPST;
 #define ISO9660SUSPST_SIG2     'T'             /**< SUSP system use protocol entry signature byte 2. */
 #define ISO9660SUSPST_VER       1              /**< SUSP system use protocol entry version number. */
 #define ISO9660SUSPST_LEN       4              /**< SUSP system use protocol entry length (fixed). */
+AssertCompileSize(ISO9660SUSPST, ISO9660SUSPST_LEN);
+
 
 /**
  * SUSP extension record entry (ER)
@@ -1042,7 +1047,6 @@ typedef struct ISO9660SUSPER
      * of source string.  Variable length. */
     char                achPayload[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
 } ISO9660SUSPER;
-AssertCompileMemberOffset(ISO9660SUSPER, achPayload, 8);
 /** Pointer to a SUSP padding entry. */
 typedef ISO9660SUSPER *PISO9660SUSPER;
 /** Pointer to a const SUSP padding entry. */
@@ -1050,6 +1054,8 @@ typedef ISO9660SUSPER const *PCISO9660SUSPER;
 #define ISO9660SUSPER_SIG1     'E'             /**< SUSP extension record entry signature byte 1. */
 #define ISO9660SUSPER_SIG2     'R'             /**< SUSP extension record entry signature byte 2. */
 #define ISO9660SUSPER_VER       1              /**< SUSP extension record entry version number. */
+#define ISO9660SUSPER_OFF_PAYLOAD 8            /**< SUSP extension record entry payload member offset. */
+AssertCompileMemberOffset(ISO9660SUSPER, achPayload, ISO9660SUSPER_OFF_PAYLOAD);
 
 /**
  * SUSP extension sequence entry (ES)
@@ -1063,7 +1069,6 @@ typedef struct ISO9660SUSPES
     /** The ER entry sequence number of the extension comming first. */
     uint8_t             iFirstExtension;
 } ISO9660SUSPES;
-AssertCompileSize(ISO9660SUSPES, 5);
 /** Pointer to a SUSP padding entry. */
 typedef ISO9660SUSPES *PISO9660SUSPES;
 /** Pointer to a const SUSP padding entry. */
@@ -1072,6 +1077,7 @@ typedef ISO9660SUSPES const *PCISO9660SUSPES;
 #define ISO9660SUSPES_SIG2     'S'             /**< SUSP extension sequence entry signature byte 2. */
 #define ISO9660SUSPES_VER       1              /**< SUSP extension sequence entry version number. */
 #define ISO9660SUSPES_LEN       5              /**< SUSP extension sequence entry length (fixed). */
+AssertCompileSize(ISO9660SUSPES, ISO9660SUSPES_LEN);
 
 
 /** RRIP ER identifier string from Rock Ridge Interchange Protocol v1.10 specs. */
@@ -1083,7 +1089,7 @@ typedef ISO9660SUSPES const *PCISO9660SUSPES;
 /** The length of a RRIP v1.10 ER record.
  * The record must be constructed using ISO9660_RRIP_ID, ISO9660_RRIP_DESC
  * and ISO9660_RRIP_SRC. */
-#define ISO9660_RRIP_ER_LEN     ((uint8_t)(  RT_OFFSETOF(ISO9660SUSPER, achPayload) \
+#define ISO9660_RRIP_ER_LEN     ((uint8_t)(  ISO9660SUSPER_OFF_PAYLOAD \
                                            + sizeof(ISO9660_RRIP_ID)   - 1 \
                                            + sizeof(ISO9660_RRIP_DESC) - 1 \
                                            + sizeof(ISO9660_RRIP_SRC)  - 1 ))
@@ -1097,7 +1103,7 @@ typedef ISO9660SUSPES const *PCISO9660SUSPES;
 /** The length of a RRIP v1.12 ER record.
  * The record must be constructed using ISO9660_RRIP_1_12_ID,
  * ISO9660_RRIP_1_12_DESC and ISO9660_RRIP_1_12_SRC. */
-#define ISO9660_RRIP_1_12_ER_LEN ((uint8_t)(  RT_OFFSETOF(ISO9660SUSPER, achPayload) \
+#define ISO9660_RRIP_1_12_ER_LEN ((uint8_t)(  ISO9660SUSPER_OFF_PAYLOAD \
                                             + sizeof(ISO9660_RRIP_1_12_ID)   - 1 \
                                             + sizeof(ISO9660_RRIP_1_12_DESC) - 1 \
                                             + sizeof(ISO9660_RRIP_1_12_SRC)  - 1 ))
@@ -1114,7 +1120,6 @@ typedef struct ISO9660RRIPRR
     /** Flags indicating which RRIP entries are present (). */
     uint8_t             fFlags;
 } ISO9660RRIPRR;
-AssertCompileSize(ISO9660RRIPRR, 5);
 /** Pointer to a RRIP RR entry. */
 typedef ISO9660RRIPRR *PISO9660RRIPRR;
 /** Pointer to a const RRIP RR entry. */
@@ -1123,6 +1128,7 @@ typedef ISO9660RRIPRR const *PCISO9660RRIPRR;
 #define ISO9660RRIPRR_SIG2     'X'             /**< RRIP RR entry signature byte 2. */
 #define ISO9660RRIPRR_VER       1              /**< RRIP RR entry version number. */
 #define ISO9660RRIPRR_LEN       5              /**< RRIP RR entry length (fixed). */
+AssertCompileSize(ISO9660RRIPRR, ISO9660RRIPRR_LEN);
 
 /** @name ISO9660RRIP_RR_F_XXX - Indicates which RRIP entries are present.
  * @{ */
@@ -1155,7 +1161,6 @@ typedef struct ISO9660RRIPPX
     /** Inode number. */
     ISO9660U32          INode;
 } ISO9660RRIPPX;
-AssertCompileSize(ISO9660RRIPPX, 44);
 /** Pointer to a RRIP posix attribute entry. */
 typedef ISO9660RRIPPX *PISO9660RRIPPX;
 /** Pointer to a const RRIP posix attribute entry. */
@@ -1164,6 +1169,7 @@ typedef ISO9660RRIPPX const *PCISO9660RRIPPX;
 #define ISO9660RRIPPX_SIG2     'X'             /**< RRIP posix attribute entry signature byte 2. */
 #define ISO9660RRIPPX_VER       1              /**< RRIP posix attribute entry version number. */
 #define ISO9660RRIPPX_LEN       44             /**< RRIP posix attribute entry length (fixed). */
+AssertCompileSize(ISO9660RRIPPX, ISO9660RRIPPX_LEN);
 
 
 /**
@@ -1234,7 +1240,6 @@ typedef struct ISO9660RRIPPN
     /** The minor device number. */
     ISO9660U32          Minor;
 } ISO9660RRIPPN;
-AssertCompileSize(ISO9660RRIPPN, 20);
 /** Pointer to a RRIP posix attribute entry. */
 typedef ISO9660RRIPPN *PISO9660RRIPPN;
 /** Pointer to a const RRIP posix attribute entry. */
@@ -1243,6 +1248,7 @@ typedef ISO9660RRIPPN const *PCISO9660RRIPPN;
 #define ISO9660RRIPPN_SIG2     'N'             /**< RRIP posix device number entry signature byte 2. */
 #define ISO9660RRIPPN_VER       1              /**< RRIP posix device number entry version number. */
 #define ISO9660RRIPPN_LEN       20             /**< RRIP posix device number entry length (fixed). */
+AssertCompileSize(ISO9660RRIPPN, ISO9660RRIPPN_LEN);
 
 /**
  * Rock ridge interchange protocol -  symlink entry (SL).
@@ -1347,7 +1353,6 @@ typedef struct ISO9660RRIPCL
     /** The offset of the directory data (block offset). */
     ISO9660U32          offExtend;
 } ISO9660RRIPCL;
-AssertCompileSize(ISO9660RRIPCL, 12);
 /** Pointer to a RRIP child link entry. */
 typedef ISO9660RRIPCL *PISO9660RRIPCL;
 /** Pointer to a const RRIP child link entry. */
@@ -1356,6 +1361,7 @@ typedef ISO9660RRIPCL const *PCISO9660RRIPCL;
 #define ISO9660RRIPCL_SIG2     'L'             /**< RRIP child link entry signature byte 2. */
 #define ISO9660RRIPCL_VER       1              /**< RRIP child link entry version number. */
 #define ISO9660RRIPCL_LEN       12             /**< RRIP child link entry length. */
+AssertCompileSize(ISO9660RRIPCL, ISO9660RRIPCL_LEN);
 
 
 /**
@@ -1376,7 +1382,6 @@ typedef struct ISO9660RRIPPL
     /** The offset of the directory data (block offset). */
     ISO9660U32          offExtend;
 } ISO9660RRIPPL;
-AssertCompileSize(ISO9660RRIPPL, 12);
 /** Pointer to a RRIP parent link entry. */
 typedef ISO9660RRIPPL *PISO9660RRIPPL;
 /** Pointer to a const RRIP parent link entry. */
@@ -1385,6 +1390,7 @@ typedef ISO9660RRIPPL const *PCISO9660RRIPPL;
 #define ISO9660RRIPPL_SIG2     'L'             /**< RRIP parent link entry signature byte 2. */
 #define ISO9660RRIPPL_VER       1              /**< RRIP parent link entry version number. */
 #define ISO9660RRIPPL_LEN       12             /**< RRIP parent link entry length. */
+AssertCompileSize(ISO9660RRIPPL, ISO9660RRIPPL_LEN);
 
 
 /**
@@ -1400,7 +1406,6 @@ typedef struct ISO9660RRIPRE
      *  ISO9660RRIPRE_LEN, ISO9660RRIPRE_VER). */
     ISO9660SUSPHDR      Hdr;
 } ISO9660RRIPRE;
-AssertCompileSize(ISO9660RRIPRE, 4);
 /** Pointer to a RRIP parent link entry. */
 typedef ISO9660RRIPRE *PISO9660RRIPRE;
 /** Pointer to a const RRIP parent link entry. */
@@ -1409,6 +1414,7 @@ typedef ISO9660RRIPRE const *PCISO9660RRIPRE;
 #define ISO9660RRIPRE_SIG2     'E'             /**< RRIP relocated entry signature byte 2. */
 #define ISO9660RRIPRE_VER       1              /**< RRIP relocated entry version number. */
 #define ISO9660RRIPRE_LEN       4              /**< RRIP relocated entry length. */
+AssertCompileSize(ISO9660RRIPRE, ISO9660RRIPRE_LEN);
 
 
 /**
@@ -1428,7 +1434,6 @@ typedef struct ISO9660RRIPSF
     uint8_t             cDepth;
 } ISO9660RRIPSF;
 #pragma pack()
-AssertCompileSize(ISO9660RRIPSF, 21);
 /** Pointer to a RRIP symbolic link entry. */
 typedef ISO9660RRIPSF *PISO9660RRIPSF;
 /** Pointer to a const RRIP symbolic link entry. */
@@ -1437,6 +1442,7 @@ typedef ISO9660RRIPSF const *PCISO9660RRIPSF;
 #define ISO9660RRIPSF_SIG2     'F'             /**< RRIP spare file entry signature byte 2. */
 #define ISO9660RRIPSF_VER       1              /**< RRIP spare file entry version number. */
 #define ISO9660RRIPSF_LEN       21             /**< RRIP spare file entry length. */
+AssertCompileSize(ISO9660RRIPSF, ISO9660RRIPSF_LEN);
 
 /** @name ISO9660RRIP_SF_TAB_F_XXX - Sparse table format.
  * @{ */
@@ -1464,6 +1470,7 @@ typedef union ISO9660SUSPUNION
     ISO9660SUSPST   ST;     /**< SUSP terminator entry. */
     ISO9660SUSPER   ER;     /**< SUSP extension record entry. */
     ISO9660SUSPES   ES;     /**< SUSP extension sequence entry. */
+    ISO9660RRIPRR   RR;     /**< RRIP optimization entry. */
     ISO9660RRIPPX   PX;     /**< RRIP posix attribute entry. */
     ISO9660RRIPTF   TF;     /**< RRIP timestamp entry. */
     ISO9660RRIPPN   PN;     /**< RRIP posix device number entry. */
