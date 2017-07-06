@@ -63,7 +63,7 @@ verpkg   := VirtualBox-5.1
 current  := $(shell pwd)
 vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
-builddir := $(current)/rpm/builddir
+builddir := $(vboxroot)/rpm/builddir
 rpmlib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
 chrarch  := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "x86"; fi)
 verfile  := $(builddir)/version-generated.mk
