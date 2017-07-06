@@ -128,16 +128,23 @@ def_uninstall()
         done
     test "$found" = 0 && return 0
     if ! test "$1" = "force" ; then
+        # Try to make the promised notification appear on next start.
+        VBoxControl guestproperty delete \
+            /VirtualBox/GuestAdd/HostVerLastChecked 2>&1 > /dev/null
         cat 1>&2 << EOF
-You appear to have a version of the VirtualBox Guest Additions
-on your system which was installed from a different source or using a
-different type of installer.  If you installed it from a package from your
-Linux distribution or if it is a default part of the system then we strongly
-recommend that you cancel this installation and remove it properly before
-installing this version.  If this is simply an older or a damaged
-installation you may safely proceed.
+This system appears to have a version of the VirtualBox Guest Additions
+already installed.  If it is part of the operating system and kept up-to-date,
+there is most likely no need to replace it.  If it is not up-to-date, you
+should get a notification when you start the system.  If you wish to replace
+it with this version, please do not continue with this installation now, but
+instead remove the current version first, following the instructions for the
+operating system.
 
-Do you wish to continue anyway? [yes or no]
+If your system simply has the remains of a version of the Additions you could
+not remove you should probably continue now, and these will be removed during
+installation.
+
+Do you wish to continue? [yes or no]
 EOF
         read reply dummy
         if ! expr "$reply" : [yY] > /dev/null &&
