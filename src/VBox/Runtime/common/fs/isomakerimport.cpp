@@ -139,6 +139,9 @@ typedef struct RTFSISOMKIMPORTER
     /** Set if we've already seen a joliet volume descriptor. */
     bool                    fSeenJoliet;
 
+    /** The name of the TRANS.TBL in the import media (must ignore). */
+    const char             *pszTransTbl;
+
     /** Pointer to the import results structure (output). */
     PRTFSISOMAKERIMPORTRESULTS pResults;
 
@@ -1572,8 +1575,11 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                     rtFsIsoImportProcessIso9660AddAndNameDirectory(pThis, pDirRec, &ObjInfo, cbData, fNamespace, idxDir,
                                                                    pThis->szNameBuf, pThis->szRockNameBuf, cDepth + 1, pTodoList);
                 else if (pThis->szRockSymlinkTargetBuf[0] == '\0')
-                    rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, &ObjInfo, cbData, fNamespace, idxDir,
-                                                              pThis->szNameBuf, pThis->szRockNameBuf);
+                {
+                    if (strcmp(pThis->szNameBuf, pThis->pszTransTbl) != 0)
+                        rtFsIsoImportProcessIso9660AddAndNameFile(pThis, pDirRec, &ObjInfo, cbData, fNamespace, idxDir,
+                                                                  pThis->szNameBuf, pThis->szRockNameBuf);
+                }
                 else
                     rtFsIsoImportProcessIso9660AddAndNameSymlink(pThis, pDirRec, &ObjInfo, fNamespace, idxDir, pThis->szNameBuf,
                                                                  pThis->szRockNameBuf, pThis->szRockSymlinkTargetBuf);
@@ -1614,6 +1620,7 @@ static int rtFsIsoImportProcessIso9660Tree(PRTFSISOMKIMPORTER pThis, uint32_t of
      */
     pThis->offSuspSkip = 0;
     pThis->fSuspSeenSP = false;
+    pThis->pszTransTbl = "TRANS.TBL"; /** @todo query this from the iso maker! */
 
     /*
      * Make sure we've got a root in the namespace.
