@@ -753,6 +753,7 @@ void vbe_biosfn_get_set_scanline_length(uint16_t STACK_BASED *AX, uint16_t STACK
     uint16_t    old_vw;
 
     bpp    = dispi_get_bpp();
+    bpp    = bpp == 15 ? 16 : bpp;
     old_vw = dispi_get_virt_width();
     result = 0x004F;
     val    = *CX;
