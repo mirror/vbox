@@ -27,6 +27,7 @@
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/sup.h>
 
 #include <VBox/err.h>
 #include <iprt/asm-amd64-x86.h>
@@ -2660,8 +2661,24 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     }
 #endif
 
-    /* Mask out the VME capability on certain CPUs, unless overridden by fForceVme. */
+    uint32_t uMicrocodeRev;
+    int rc = SUPR3QueryMicrocodeRev(&uMicrocodeRev);
+    rc = SUPR3QueryVTCaps(&uMicrocodeRev);
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("CPUM: Microcode revision 0x%08X\n", uMicrocodeRev));
+    }
+    else
+    {
+        uMicrocodeRev = 0;
+        LogRel(("CPUM: Failed to query microcode revision. rc=%Rrc\n", rc));
+    }
+
+    /* Mask out the VME capability on certain CPUs, unless overridden by fForceVme. 
+     * VME bug was fixed in AGESA 1.0.0.6, microcode patch level 8001126.
+     */
     if ( (pVM->cpum.s.GuestFeatures.enmMicroarch == kCpumMicroarch_AMD_Zen_Ryzen)
+        && uMicrocodeRev < 0x8001126
         && !pConfig->fForceVme)
     {
         /** @todo The above is a very coarse test but at the moment we don't know any better (see @bugref{8852}). */

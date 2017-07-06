@@ -2302,6 +2302,19 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_UCODE_REV):
+        {
+            /* validate */
+            PSUPUCODEREV pReq = (PSUPUCODEREV)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_UCODE_REV);
+    
+            /* execute */
+            pReq->Hdr.rc = SUPR0QueryUcodeRev(pSession, &pReq->u.Out.MicrocodeRev);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
+        }
+    
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;
@@ -4200,6 +4213,98 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
      * Call common worker.
      */
     return supdrvQueryVTCapsInternal(pfCaps);
+}
+
+
+/**
+ * Queries the CPU microcode revision.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_UNSUPPORTED_CPU if not identifiable as a processor with
+ *          readable microcode rev.
+ *
+ * @param   pSession        The session handle.
+ * @param   puRevisoion     Where to store the microcode revision.
+ */
+int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
+{
+    int  rc = VERR_UNSUPPORTED_CPU;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+
+    /*
+     * Input validation.
+     */
+    AssertPtrReturn(puRevision, VERR_INVALID_POINTER);
+
+    *puRevision = 0;
+
+    /* Disable preemption so we make sure we don't migrate CPUs, just in case. */
+    /* NB: We assume that there aren't mismatched microcode revs in the system. */
+    RTThreadPreemptDisable(&PreemptState);
+
+    if (ASMHasCpuId())
+    {
+        uint32_t uDummy, uTFMSEAX;
+        uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
+
+        ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
+        ASMCpuId(1, &uTFMSEAX, &uDummy, &uDummy, &uDummy);
+
+        if (ASMIsValidStdRange(uMaxId))
+        {
+            uint64_t    uRevMsr;
+            if (ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            {
+                /* Architectural MSR available on Pentium Pro and later. */
+                if (ASMGetCpuFamily(uTFMSEAX) >= 6)
+                {
+                    /* Revision is in the high dword. */
+                    uRevMsr = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);
+                    *puRevision = RT_HIDWORD(uRevMsr);
+                    rc = VINF_SUCCESS;
+                }
+            } 
+            else if (ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            {
+                /* Not well documented, but at least all AMD64 CPUs support this. */
+                if (ASMGetCpuFamily(uTFMSEAX) >= 15)
+                {
+                    /* Revision is in the low dword. */
+                    uRevMsr = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);  /* Same MSR as Intel. */
+                    *puRevision = RT_LODWORD(uRevMsr);
+                    rc = VINF_SUCCESS;
+                }
+            }
+        }
+    }
+
+    RTThreadPreemptRestore(&PreemptState);
+
+    return rc;
+}
+
+/**
+ * Queries the CPU microcode revision.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_UNSUPPORTED_CPU if not identifiable as a processor with
+ *          readable microcode rev.
+ *
+ * @param   pSession        The session handle.
+ * @param   puRevisoion     Where to store the microcode revision.
+ */
+SUPR0DECL(int) SUPR0QueryUcodeRev(PSUPDRVSESSION pSession, uint32_t *puRevision)
+{
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puRevision, VERR_INVALID_POINTER);
+
+    /*
+     * Call common worker.
+     */
+    return supdrvQueryUcodeRev(puRevision);
 }
 
 

@@ -1816,6 +1816,14 @@ SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
  */
 SUPR3DECL(int) SUPR3GipSetFlags(uint32_t fOrMask, uint32_t fAndMask);
 
+/**
+ * Return processor microcode revision, if applicable.
+ *
+ * @returns VINF_SUCCESS if supported, error code indicating why if not.
+ * @param   puMicrocodeRev  Pointer to microcode revision dword (out).
+ */
+SUPR3DECL(int) SUPR3QueryMicrocodeRev(uint32_t *puMicrocodeRev);
+
 /** @} */
 #endif /* IN_RING3 */
 
@@ -1898,6 +1906,7 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous);
 SUPR0DECL(int) SUPR0GetCurrentGdtRw(RTHCUINTPTR *pGdtRw);
 SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
+SUPR0DECL(int) SUPR0QueryUcodeRev(PSUPDRVSESSION pSession, uint32_t *puMicrocodeRev);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);

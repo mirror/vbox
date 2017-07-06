@@ -214,7 +214,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - nothing.
  */
-#define SUPDRV_IOC_VERSION                              0x00280001
+#define SUPDRV_IOC_VERSION                              0x00280002
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1595,6 +1595,32 @@ typedef struct SUPGIPSETFLAGS
     } u;
 } SUPGIPSETFLAGS, *PSUPGIPSETFLAGS;
 /** @} */
+
+
+/** @name SUP_IOCTL_UCODE_REV
+ * Get the CPU microcode revision.
+ *
+ * @{
+ */
+#define SUP_IOCTL_UCODE_REV                             SUP_CTL_CODE_SIZE(40, SUP_IOCTL_VT_CAPS_SIZE)
+#define SUP_IOCTL_UCODE_REV_SIZE                        sizeof(SUPUCODEREV)
+#define SUP_IOCTL_UCODE_REV_SIZE_IN                     sizeof(SUPREQHDR)
+#define SUP_IOCTL_UCODE_REV_SIZE_OUT                    sizeof(SUPUCODEREV)
+typedef struct SUPUCODEREV
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The microcode revision dword. */
+            uint32_t        MicrocodeRev;
+        } Out;
+    } u;
+} SUPUCODEREV, *PSUPUCODEREV;
+/** @} */
+
 
 #pragma pack()                          /* paranoia */
 
