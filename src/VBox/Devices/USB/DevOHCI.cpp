@@ -2007,7 +2007,7 @@ static bool ohci_in_done_queue_check(POHCI pThis, uint32_t GCPhysTD)
 }
 
 
-#  ifdef VBOX_STRICT
+#  if defined(VBOX_STRICT) && defined(LOG_ENABLED)
 /**
  * Adds a TD to the in-done-queue tracking, checking that it's not there already.
  * @param   pThis       OHCI instance data.
