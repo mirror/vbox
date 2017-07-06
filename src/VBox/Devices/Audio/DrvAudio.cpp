@@ -957,8 +957,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         if (   RT_FAILURE(rc)
             || !csWritten)
         {
-            AssertMsgFailed(("[%s] Write failed (guest status %s, host status %s): cbBuf=%RU32, csWritten=%RU32, rc=%Rrc\n",
-                             pGstStream->szName, pszGstSts, pszHstSts, cbBuf, csWritten, rc));
+            AssertMsgFailed(("[%s] Write failed: cbBuf=%RU32, csWritten=%RU32, rc=%Rrc\n",
+                             pGstStream->szName, cbBuf, csWritten, rc));
             break;
         }
 
@@ -976,8 +976,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             if (   RT_FAILURE(rc2)
                 || csMixed < csWritten)
             {
-                AssertMsgFailed(("[%s] Mixing failed (guest status %s, host status %s): cbBuf=%RU32, csWritten=%RU32, csMixed=%RU32, rc=%Rrc\n",
-                                 pGstStream->szName, pszGstSts, pszHstSts, cbBuf, csWritten, csMixed, rc2));
+                AssertMsgFailed(("[%s] Mixing failed: cbBuf=%RU32, csWritten=%RU32, csMixed=%RU32, rc=%Rrc\n",
+                                 pGstStream->szName, cbBuf, csWritten, csMixed, rc2));
 
                 LogRel2(("Audio: Lost audio samples (%RU32) due to full host stream '%s', expect stuttering audio output\n",
                          csWritten - csMixed, pHstStream->szName));
