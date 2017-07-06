@@ -400,7 +400,6 @@ static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
  * @param   pMixer              Mixer to remove sink from.
  * @param   pSink               Sink to remove.
  */
-
 void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
 {
     int rc2 = RTCritSectEnter(&pMixer->CritSect);
