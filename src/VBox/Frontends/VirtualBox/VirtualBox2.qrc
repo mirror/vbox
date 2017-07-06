@@ -19,6 +19,7 @@
         <file alias="os_win95.png">images/os_win95.png</file>
         <file alias="os_win98.png">images/os_win98.png</file>
         <file alias="os_win_other.png">images/os_win_other.png</file>
+        <file alias="os_win_other_64.png">images/os_win_other_64.png</file>
         <file alias="os_winme.png">images/os_winme.png</file>
         <file alias="os_winnt4.png">images/os_winnt4.png</file>
         <file alias="os_winvista.png">images/os_winvista.png</file>

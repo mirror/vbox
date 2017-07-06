@@ -299,7 +299,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("Windows10_64",    ":/os_win10_64.png");
     m_guestOSTypeIconNames.insert("Windows2016_64",  ":/os_win2k16_64.png");
     m_guestOSTypeIconNames.insert("WindowsNT",       ":/os_win_other.png");
-    m_guestOSTypeIconNames.insert("WindowsNT_64",    ":/os_win_other.png"); /// @todo os_win_other_64
+    m_guestOSTypeIconNames.insert("WindowsNT_64",    ":/os_win_other_64.png");
     m_guestOSTypeIconNames.insert("OS2Warp3",        ":/os_os2warp3.png");
     m_guestOSTypeIconNames.insert("OS2Warp4",        ":/os_os2warp4.png");
     m_guestOSTypeIconNames.insert("OS2Warp45",       ":/os_os2warp45.png");
@@ -333,8 +333,8 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("Xandros_64",      ":/os_xandros_64.png");
     m_guestOSTypeIconNames.insert("Oracle",          ":/os_oracle.png");
     m_guestOSTypeIconNames.insert("Oracle_64",       ":/os_oracle_64.png");
-    m_guestOSTypeIconNames.insert("Linux",           ":/os_linux_other.png");
-    m_guestOSTypeIconNames.insert("Linux_64",        ":/os_linux_other.png"); /// @todo os_linux_other_64
+    m_guestOSTypeIconNames.insert("Linux",           ":/os_linux.png");
+    m_guestOSTypeIconNames.insert("Linux_64",        ":/os_linux_64.png");
     m_guestOSTypeIconNames.insert("FreeBSD",         ":/os_freebsd.png");
     m_guestOSTypeIconNames.insert("FreeBSD_64",      ":/os_freebsd_64.png");
     m_guestOSTypeIconNames.insert("OpenBSD",         ":/os_openbsd.png");

@@ -28,6 +28,7 @@
         <file alias="os_win95_hidpi.png">images/hidpi/os_win95_hidpi.png</file>
         <file alias="os_win98_hidpi.png">images/hidpi/os_win98_hidpi.png</file>
         <file alias="os_win_other_hidpi.png">images/hidpi/os_win_other_hidpi.png</file>
+        <file alias="os_win_other_64_hidpi.png">images/hidpi/os_win_other_64_hidpi.png</file>
         <file alias="os_winme_hidpi.png">images/hidpi/os_winme_hidpi.png</file>
         <file alias="os_winnt4_hidpi.png">images/hidpi/os_winnt4_hidpi.png</file>
         <file alias="os_winvista_64_hidpi.png">images/hidpi/os_winvista_64_hidpi.png</file>

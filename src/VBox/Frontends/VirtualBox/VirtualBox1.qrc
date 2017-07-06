@@ -256,12 +256,12 @@
         <file alias="os_jrockitve.png">images/os_jrockitve.png</file>
         <file alias="os_l4.png">images/os_l4.png</file>
         <file alias="os_linux.png">images/os_linux.png</file>
+        <file alias="os_linux_64.png">images/os_linux_64.png</file>
         <file alias="os_linux22.png">images/os_linux22.png</file>
         <file alias="os_linux24.png">images/os_linux24.png</file>
         <file alias="os_linux24_64.png">images/os_linux24_64.png</file>
         <file alias="os_linux26.png">images/os_linux26.png</file>
         <file alias="os_linux26_64.png">images/os_linux26_64.png</file>
-        <file alias="os_linux_other.png">images/os_linux_other.png</file>
         <file alias="os_macosx.png">images/os_macosx.png</file>
         <file alias="os_macosx_64.png">images/os_macosx_64.png</file>
         <file alias="os_mandriva.png">images/os_mandriva.png</file>

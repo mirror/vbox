@@ -249,7 +249,6 @@
         <file alias="os_fedora_hidpi.png">images/hidpi/os_fedora_hidpi.png</file>
         <file alias="os_freebsd_64_hidpi.png">images/hidpi/os_freebsd_64_hidpi.png</file>
         <file alias="os_freebsd_hidpi.png">images/hidpi/os_freebsd_hidpi.png</file>
-        <file alias="os_freedos_hidpi.png">images/hidpi/os_freedos_hidpi.png</file>
         <file alias="os_gentoo_64_hidpi.png">images/hidpi/os_gentoo_64_hidpi.png</file>
         <file alias="os_gentoo_hidpi.png">images/hidpi/os_gentoo_hidpi.png</file>
         <file alias="os_jrockitve_hidpi.png">images/hidpi/os_jrockitve_hidpi.png</file>
@@ -260,13 +259,11 @@
         <file alias="os_linux26_64_hidpi.png">images/hidpi/os_linux26_64_hidpi.png</file>
         <file alias="os_linux26_hidpi.png">images/hidpi/os_linux26_hidpi.png</file>
         <file alias="os_linux_hidpi.png">images/hidpi/os_linux_hidpi.png</file>
-        <file alias="os_linux_other_hidpi.png">images/hidpi/os_linux_other_hidpi.png</file>
+        <file alias="os_linux_64_hidpi.png">images/hidpi/os_linux_64_hidpi.png</file>
         <file alias="os_macosx_64_hidpi.png">images/hidpi/os_macosx_64_hidpi.png</file>
         <file alias="os_macosx_hidpi.png">images/hidpi/os_macosx_hidpi.png</file>
         <file alias="os_mandriva_64_hidpi.png">images/hidpi/os_mandriva_64_hidpi.png</file>
         <file alias="os_mandriva_hidpi.png">images/hidpi/os_mandriva_hidpi.png</file>
-        <file alias="os_mint_64_hidpi.png">images/hidpi/os_mint_64_hidpi.png</file>
-        <file alias="os_mint_hidpi.png">images/hidpi/os_mint_hidpi.png</file>
         <file alias="os_netbsd_64_hidpi.png">images/hidpi/os_netbsd_64_hidpi.png</file>
         <file alias="os_netbsd_hidpi.png">images/hidpi/os_netbsd_hidpi.png</file>
         <file alias="os_netware_hidpi.png">images/hidpi/os_netware_hidpi.png</file>
