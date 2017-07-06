@@ -941,29 +941,26 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 #endif
         const uint32_t cbFree = AudioMixBufFreeBytes(&pGstStream->MixBuf);
         if (!cbFree) /* No free guest side buffer space, bail out. */
+        {
+            AssertMsgFailed(("[%s] Stream full\n", pGstStream->szName));
             break;
+        }
 
         /* Do not attempt to write more than the guest side currently can handle. */
         if (cbBuf > cbFree)
             cbBuf = cbFree;
 
+        /* We use the guest side mixing buffer as an intermediate buffer to do some
+         * (first) processing (if needed), so always write the incoming data at offset 0. */
         uint32_t csWritten = 0;
-        rc = AudioMixBufWriteCirc(&pGstStream->MixBuf, pvBuf, cbBuf, &csWritten);
-        if (RT_FAILURE(rc))
-        {
-            LogRel2(("Audio: Lost audio samples due to full guest stream '%s', expect stuttering audio output\n",
-                     pGstStream->szName));
-            rc = VINF_SUCCESS; /* Continue. */
-        }
-
-#ifdef DEBUG_andy
+        rc = AudioMixBufWriteAt(&pGstStream->MixBuf, 0 /* offSamples */, pvBuf, cbBuf, &csWritten);
         if (   RT_FAILURE(rc)
             || !csWritten)
         {
             AssertMsgFailed(("[%s] Write failed (guest status %s, host status %s): cbBuf=%RU32, csWritten=%RU32, rc=%Rrc\n",
                              pGstStream->szName, pszGstSts, pszHstSts, cbBuf, csWritten, rc));
+            break;
         }
-#endif
 
 #ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
         drvAudioDbgPCMDump(pThis, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH, "StreamWrite.pcm", pvBuf, cbBuf);
@@ -975,21 +972,19 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         uint32_t csMixed = 0;
         if (csWritten)
         {
-            int rc2 = AudioMixBufMixToParent(&pGstStream->MixBuf, csWritten, &csMixed);
-            if (RT_FAILURE(rc2))
-            {
-                LogRel2(("Audio: Lost audio samples (%RU32) due to full host stream '%s', expect stuttering audio output\n",
-                         csWritten - csMixed, pHstStream->szName));
-            }
-
-#ifdef DEBUG_andy
+            int rc2 = AudioMixBufMixToParentEx(&pGstStream->MixBuf, 0 /* Offset */, csWritten /* Samples */, &csMixed);
             if (   RT_FAILURE(rc2)
                 || csMixed < csWritten)
             {
                 AssertMsgFailed(("[%s] Mixing failed (guest status %s, host status %s): cbBuf=%RU32, csWritten=%RU32, csMixed=%RU32, rc=%Rrc\n",
                                  pGstStream->szName, pszGstSts, pszHstSts, cbBuf, csWritten, csMixed, rc2));
+
+                LogRel2(("Audio: Lost audio samples (%RU32) due to full host stream '%s', expect stuttering audio output\n",
+                         csWritten - csMixed, pHstStream->szName));
+
+                /* Keep going. */
             }
-#endif
+
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
@@ -2742,20 +2737,14 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
         return 0;
     }
 
-    PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
-    AssertPtr(pGstStream);
+    /* As the host side sets the overall pace, return the writable bytes from that side. */
+    uint32_t cbWritable = AudioMixBufFreeBytes(&pHstStream->MixBuf);
 
-    uint32_t cWritable = AudioMixBufFree(&pGstStream->MixBuf);
-
-    Log3Func(("[%s] cWritable=%RU32 (%zu bytes)\n", pHstStream->szName, cWritable,
-              AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritable)));
-
-    uint32_t cbWritable = AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritable);
+    Log3Func(("[%s] cbWritable=%RU32\n", pHstStream->szName, cbWritable));
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
-    /* Return bytes instead of audio samples. */
     return cbWritable;
 }
 
