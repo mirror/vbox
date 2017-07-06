@@ -388,6 +388,25 @@ HRESULT VBoxCredProvCredential::kerberosLogonSerialize(const KERB_INTERACTIVE_LO
 
 
 /**
+ * Returns the current value of a specific credential provider field.
+ *
+ * @return  Pointer (const) to the credential provider field requested, or NULL if not found / invalid.
+ * @param   dwFieldID           Field ID of the credential provider field to get.
+ */
+PCRTUTF16 VBoxCredProvCredential::getField(DWORD dwFieldID)
+{
+    if (dwFieldID >= VBOXCREDPROV_NUM_FIELDS)
+        return NULL;
+
+    /* Paranoia: Don't ever reveal passwords. */
+    if (dwFieldID == VBOXCREDPROV_FIELDID_PASSWORD)
+        return NULL;
+
+    return m_apwszFields[dwFieldID];
+}
+
+
+/**
  * Sets a credential provider field by first zero'ing out its current content in a (hopefully) secure manner,
  * then applying either the field's default or a new value.
  *
