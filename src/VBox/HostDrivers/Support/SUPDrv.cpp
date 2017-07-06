@@ -4223,8 +4223,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
  * @retval  VERR_UNSUPPORTED_CPU if not identifiable as a processor with
  *          readable microcode rev.
  *
- * @param   pSession        The session handle.
- * @param   puRevisoion     Where to store the microcode revision.
+ * @param   puRevision      Where to store the microcode revision.
  */
 int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
 {
