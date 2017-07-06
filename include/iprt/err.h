@@ -2694,6 +2694,48 @@ RT_C_DECLS_END
 #define VINF_ISOMK_SYMLINK_REQ_ROCK_RIDGE               (25007)
 /** Cannot add symbolic link because no namespace is configured to support it. */
 #define VERR_ISOMK_SYMLINK_SUPPORT_DISABLED             (-25008)
+/** No space for rock ridge 'CE' entry in directory record. */
+#define VERR_ISOMK_RR_NO_SPACE_FOR_CE                   (-25009)
+/** Internal ISO maker error: Rock ridge read problem. */
+#define VERR_ISOMK_IPE_RR_READ                          (-25010)
+/** Internal ISO maker error: Buggy namespace table. */
+#define VERR_ISOMK_IPE_TABLE                            (-25011)
+/** Internal ISO maker error: Namespace problem \#1. */
+#define VERR_ISOMK_IPE_NAMESPACE_1                      (-25012)
+/** Internal ISO maker error: Namespace problem \#2. */
+#define VERR_ISOMK_IPE_NAMESPACE_2                      (-25013)
+/** Internal ISO maker error: Namespace problem \#3. */
+#define VERR_ISOMK_IPE_NAMESPACE_3                      (-25014)
+/** Internal ISO maker error: Namespace problem \#4. */
+#define VERR_ISOMK_IPE_NAMESPACE_4                      (-25015)
+/** Internal ISO maker error: Namespace problem \#5. */
+#define VERR_ISOMK_IPE_NAMESPACE_5                      (-25016)
+/** Internal ISO maker error: Namespace problem \#6. */
+#define VERR_ISOMK_IPE_NAMESPACE_6                      (-25017)
+/** Internal ISO maker error: Empty path. */
+#define VERR_ISOMK_IPE_EMPTY_PATH                       (-25018)
+/** Internal ISO maker error: Unexpected empty component. */
+#define VERR_ISOMK_IPE_EMPTY_COMPONENT                  (-25019)
+/** Internal ISO maker error: Expected path to start with root slash. */
+#define VERR_ISOMK_IPE_ROOT_SLASH                       (-25020)
+/** Internal ISO maker error: Descriptor miscounting. */
+#define VERR_ISOMK_IPE_DESC_COUNT                       (-25021)
+/** Internal ISO maker error: Buffer size. */
+#define VERR_ISOMK_IPE_BUFFER_SIZE                      (-25022)
+/** Internal ISO maker error: Boot catalog file handle problem. */
+#define VERR_ISOMK_IPE_BOOT_CAT_FILE                    (-25023)
+/** Internal ISO maker error: Inconsistency produing trans.tbl file. */
+#define VERR_ISOMK_IPE_PRODUCE_TRANS_TBL                (-25024)
+/** Internal ISO maker error: Read file data probem \#1.  */
+#define VERR_ISOMK_IPE_READ_FILE_DATA_1                 (-25025)
+/** Internal ISO maker error: Read file data probem \#2.  */
+#define VERR_ISOMK_IPE_READ_FILE_DATA_2                 (-25026)
+/** Internal ISO maker error: Read file data probem \#3.  */
+#define VERR_ISOMK_IPE_READ_FILE_DATA_3                 (-25027)
+/** Internal ISO maker error: Finalization problem \#1.  */
+#define VERR_ISOMK_IPE_FINALIZE_1                       (-25028)
+
+
 
 /** Requested to import an unknown ISO format. */
 #define VERR_ISOMK_IMPORT_UNKNOWN_FORMAT                (-25100)

@@ -948,6 +948,7 @@ typedef ISO9660SUSPCE *PISO9660SUSPCE;
 typedef ISO9660SUSPCE const *PCISO9660SUSPCE;
 #define ISO9660SUSPCE_SIG1     'C' /**< SUSP continutation entry signature byte 1. */
 #define ISO9660SUSPCE_SIG2     'E' /**< SUSP continutation entry signature byte 2. */
+#define ISO9660SUSPCE_LEN      28  /**< SUSP continutation entry length. */
 #define ISO9660SUSPCE_VER       1  /**< SUSP continutation entry version number. */
 
 /**
@@ -987,9 +988,9 @@ typedef struct ISO9660SUSPSP
     uint8_t             cbSkip;
 } ISO9660SUSPSP;
 AssertCompileSize(ISO9660SUSPSP, 7);
-/** Pointer to a SUSP padding entry. */
+/** Pointer to a SUSP entry. */
 typedef ISO9660SUSPSP *PISO9660SUSPSP;
-/** Pointer to a const SUSP padding entry. */
+/** Pointer to a const SUSP entry. */
 typedef ISO9660SUSPSP const *PCISO9660SUSPSP;
 #define ISO9660SUSPSP_SIG1     'S'              /**< SUSP system use protocol entry signature byte 1. */
 #define ISO9660SUSPSP_SIG2     'P'              /**< SUSP system use protocol entry signature byte 2. */
@@ -1079,6 +1080,13 @@ typedef ISO9660SUSPES const *PCISO9660SUSPES;
 #define ISO9660_RRIP_DESC       "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
 /** RRIP ER recommended source string  (from RRIP v1.10 specs). */
 #define ISO9660_RRIP_SRC        "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
+/** The length of a RRIP v1.10 ER record.
+ * The record must be constructed using ISO9660_RRIP_ID, ISO9660_RRIP_DESC
+ * and ISO9660_RRIP_SRC. */
+#define ISO9660_RRIP_ER_LEN     ((uint8_t)(  RT_OFFSETOF(ISO9660SUSPER, achPayload) \
+                                           + sizeof(ISO9660_RRIP_ID)   - 1 \
+                                           + sizeof(ISO9660_RRIP_DESC) - 1 \
+                                           + sizeof(ISO9660_RRIP_SRC)  - 1 ))
 
 /** RRIP ER identifier string from RRIP IEEE P1282 v1.12 draft. */
 #define ISO9660_RRIP_1_12_ID    "IEEE_P1282"
@@ -1086,6 +1094,47 @@ typedef ISO9660SUSPES const *PCISO9660SUSPES;
 #define ISO9660_RRIP_1_12_DESC  "THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS."
 /** RRIP ER recommended source string  (RRIP IEEE P1282 v1.12 draft). */
 #define ISO9660_RRIP_1_12_SRC   "PLEASE CONTACT THE IEEE STANDARDS DEPARTMENT, PISCATAWAY, NJ, USA FOR THE P1282 SPECIFICATION."
+/** The length of a RRIP v1.12 ER record.
+ * The record must be constructed using ISO9660_RRIP_1_12_ID,
+ * ISO9660_RRIP_1_12_DESC and ISO9660_RRIP_1_12_SRC. */
+#define ISO9660_RRIP_1_12_ER_LEN ((uint8_t)(  RT_OFFSETOF(ISO9660SUSPER, achPayload) \
+                                            + sizeof(ISO9660_RRIP_1_12_ID)   - 1 \
+                                            + sizeof(ISO9660_RRIP_1_12_DESC) - 1 \
+                                            + sizeof(ISO9660_RRIP_1_12_SRC)  - 1 ))
+
+
+/**
+ * Rock ridge interchange protocol -  RR.
+ */
+typedef struct ISO9660RRIPRR
+{
+    /** Header (ISO9660RRIPRR_SIG1, ISO9660RRIPRR_SIG2,
+     *  ISO9660RRIPRR_LEN, ISO9660RRIPRR_VER). */
+    ISO9660SUSPHDR      Hdr;
+    /** Flags indicating which RRIP entries are present (). */
+    uint8_t             fFlags;
+} ISO9660RRIPRR;
+AssertCompileSize(ISO9660RRIPRR, 5);
+/** Pointer to a RRIP RR entry. */
+typedef ISO9660RRIPRR *PISO9660RRIPRR;
+/** Pointer to a const RRIP RR entry. */
+typedef ISO9660RRIPRR const *PCISO9660RRIPRR;
+#define ISO9660RRIPRR_SIG1     'P'             /**< RRIP RR entry signature byte 1. */
+#define ISO9660RRIPRR_SIG2     'X'             /**< RRIP RR entry signature byte 2. */
+#define ISO9660RRIPRR_VER       1              /**< RRIP RR entry version number. */
+#define ISO9660RRIPRR_LEN       5              /**< RRIP RR entry length (fixed). */
+
+/** @name ISO9660RRIP_RR_F_XXX - Indicates which RRIP entries are present.
+ * @{ */
+#define ISO9660RRIP_RR_F_PX     UINT8_C(0x01)
+#define ISO9660RRIP_RR_F_PN     UINT8_C(0x02)
+#define ISO9660RRIP_RR_F_SL     UINT8_C(0x04)
+#define ISO9660RRIP_RR_F_NM     UINT8_C(0x08)
+#define ISO9660RRIP_RR_F_CL     UINT8_C(0x10)
+#define ISO9660RRIP_RR_F_PL     UINT8_C(0x20)
+#define ISO9660RRIP_RR_F_RE     UINT8_C(0x40)
+#define ISO9660RRIP_RR_F_TF     UINT8_C(0x80)
+/** @} */
 
 /**
  * Rock ridge interchange protocol -  posix attribute entry (PX).
@@ -1224,7 +1273,7 @@ typedef ISO9660RRIPSL const *PCISO9660RRIPSL;
 /** @name ISO9660RRIP_SL_C_XXX - Symlink component flags.
  * @note These matches ISO9660RRIP_NM_F_XXX.
  * @{ */
-/** Indicates there are more components.   */
+/** Indicates that the component continues in the next entry.   */
 #define ISO9660RRIP_SL_C_CONTINUE       UINT8_C(0x01)
 /** Refer to '.' (the current dir). */
 #define ISO9660RRIP_SL_C_CURRENT        UINT8_C(0x02)
@@ -1275,6 +1324,9 @@ typedef ISO9660RRIPNM const *PCISO9660RRIPNM;
 /** Reserved mask (considers historically bits reserved). */
 #define ISO9660RRIP_NM_F_RESERVED_MASK  UINT8_C(0xf8)
 /** @} */
+
+/** Maximum name length in one 'NM' entry. */
+#define ISO9660RRIPNM_MAX_NAME_LEN      250
 
 
 /**

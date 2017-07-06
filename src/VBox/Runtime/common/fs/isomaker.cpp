@@ -77,6 +77,9 @@
 /** UTF-8 name buffer.  */
 #define RTFSISOMAKER_MAX_NAME_BUF               768
 
+/** Max symbolic link target length.  */
+#define RTFSISOMAKER_MAX_SYMLINK_TARGET_LEN     260
+
 /** TRANS.TBL left padding length.
  * We keep the amount of padding low to avoid wasing memory when generating
  * these long obsolete files. */
@@ -204,6 +207,12 @@ typedef struct RTFSISOMAKERNAME
     bool                    fRockRidgeNmAlloced : 1;
     /** Set if pszTransNm is allocated separately.  Normally same as pszSpecNm. */
     bool                    fTransNmAlloced : 1;
+    /** Set if we need to emit an ER entry (root only). */
+    bool                    fRockNeedER : 1;
+    /** Set if we need to emit a RR entry in the directory record. */
+    bool                    fRockNeedRRInDirRec : 1;
+    /** Set if we need to emit a RR entry in the spill file. */
+    bool                    fRockNeedRRInSpill : 1;
 
     /** The mode mask.
      * Starts out as a copy of RTFSISOMAKEROBJ::fMode. */
@@ -217,9 +226,6 @@ typedef struct RTFSISOMAKERNAME
     /** The device number if a character or block device.
      * This is for Rock Ridge.  */
     RTDEV                   Device;
-    /** The inode/serial number.
-     * This is for Rock Ridge.  */
-    uint64_t                INode;
     /** The number of hardlinks to report in the file stats.
      * This is for Rock Ridge.  */
     uint32_t                cHardlinks;
@@ -234,6 +240,15 @@ typedef struct RTFSISOMAKERNAME
     /** The total directory record size (cbDirRec * cDirRecs), including end of
      *  sector zero padding. */
     uint16_t                cbDirRecTotal;
+
+    /** Rock ridge flags (ISO9660RRIP_RR_F_XXX). */
+    uint8_t                 fRockEntries;
+    /** Number of rock ridge data bytes in the directory record. */
+    uint8_t                 cbRockInDirRec;
+    /** Rock ridge spill file data offset, UINT32_MAX if placed in dir record. */
+    uint32_t                offRockSpill;
+    /** Size of rock data in spill file. */
+    uint16_t                cbRockSpill;
 
     /** The number of bytes the name requires in the directory record. */
     uint16_t                cbNameInDirRec;
@@ -353,6 +368,7 @@ typedef enum RTFSISOMAKERSRCTYPE
     RTFSISOMAKERSRCTYPE_VFS_FILE,
     RTFSISOMAKERSRCTYPE_COMMON,
     RTFSISOMAKERSRCTYPE_TRANS_TBL,
+    RTFSISOMAKERSRCTYPE_RR_SPILL,
     RTFSISOMAKERSRCTYPE_END
 } RTFSISOMAKERSRCTYPE;
 
@@ -389,6 +405,8 @@ typedef struct RTFSISOMAKERFILE
         } Common;
         /** The directory the translation table belongs to. */
         PRTFSISOMAKERNAME   pTransTblDir;
+        /** The namespace for a rock ridge spill file.. */
+        PRTFSISOMAKERNAMESPACE pRockSpillNamespace;
     } u;
 
     /** Boot info table to patch into the file.
@@ -422,13 +440,17 @@ typedef struct RTFSISOMAKERSYMLINK
 {
     /** The common bit. */
     RTFSISOMAKEROBJ         Core;
+    /** The size of the rock ridge 'SL' records for this link. */
+    uint16_t                cbSlRockRidge;
     /** The symbolic link target length. */
-    size_t                  cchTarget;
+    uint16_t                cchTarget;
     /** The symbolic link target. */
     char                    szTarget[RT_FLEXIBLE_ARRAY];
 } RTFSISOMAKERSYMLINK;
 /** Pointer to an ISO maker directory object.  */
 typedef RTFSISOMAKERSYMLINK *PRTFSISOMAKERSYMLINK;
+/** Pointer to a const ISO maker directory object.  */
+typedef const RTFSISOMAKERSYMLINK *PCRTFSISOMAKERSYMLINK;
 
 
 
@@ -593,6 +615,10 @@ typedef struct RTFSISOMAKEROUTPUTFILE
     PRTFSISOMAKERNAMEDIR    pDirHintPrimaryIso;
     /** Current directory hint for the joliet namespace. */
     PRTFSISOMAKERNAMEDIR    pDirHintJoliet;
+    /** Joliet directory child index hint. */
+    uint32_t                iChildPrimaryIso;
+    /** Joliet directory child index hint. */
+    uint32_t                iChildJoliet;
 } RTFSISOMAKEROUTPUTFILE;
 /** Pointer to the instance data of an ISO maker output file. */
 typedef RTFSISOMAKEROUTPUTFILE *PRTFSISOMAKEROUTPUTFILE;
@@ -669,6 +695,7 @@ static int rtFsIsoMakerAddUnnamedFileWorker(PRTFSISOMAKERINT pThis, PCRTFSOBJINF
                                             PRTFSISOMAKERFILE *ppFile);
 static int rtFsIsoMakerObjRemoveWorker(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pObj);
 
+static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t *pbBuf, size_t cbBuf);
 static DECLCALLBACK(int) rtFsIsoMakerOutFile_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual);
 
 
@@ -685,13 +712,13 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
      * Do some integrity checks first.
      */
     AssertReturn(g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[RTFSISOMAKER_NAMESPACE_ISO_9660]].fNamespace == RTFSISOMAKER_NAMESPACE_ISO_9660,
-                 VERR_INTERNAL_ERROR_5);
+                 VERR_ISOMK_IPE_TABLE);
     AssertReturn(g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[RTFSISOMAKER_NAMESPACE_JOLIET]].fNamespace   == RTFSISOMAKER_NAMESPACE_JOLIET,
-                 VERR_INTERNAL_ERROR_5);
+                 VERR_ISOMK_IPE_TABLE);
     AssertReturn(g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[RTFSISOMAKER_NAMESPACE_UDF]].fNamespace      == RTFSISOMAKER_NAMESPACE_UDF,
-                 VERR_INTERNAL_ERROR_5);
+                 VERR_ISOMK_IPE_TABLE);
     AssertReturn(g_aRTFsIsoNamespaces[g_aidxRTFsIsoNamespaceFlagToIdx[RTFSISOMAKER_NAMESPACE_HFS]].fNamespace      == RTFSISOMAKER_NAMESPACE_HFS,
-                 VERR_INTERNAL_ERROR_5);
+                 VERR_ISOMK_IPE_TABLE);
 
     if (g_szAppIdPrimaryIso[0] == '\0')
         RTStrPrintf(g_szAppIdPrimaryIso, sizeof(g_szAppIdPrimaryIso), "IPRT ISO MAKER V%u.%u.%u R%s",
@@ -869,6 +896,7 @@ DECLINLINE(void) rtFsIsoMakerObjDestroy(PRTFSISOMAKEROBJ pObj)
                 break;
 
             case RTFSISOMAKERSRCTYPE_COMMON:
+            case RTFSISOMAKERSRCTYPE_RR_SPILL:
                 break;
 
             case RTFSISOMAKERSRCTYPE_INVALID:
@@ -1543,7 +1571,7 @@ static int rtFsIsoMakerWalkPathBySpec(PRTFSISOMAKERNAMESPACE pNamespace, const c
      */
     while (RTPATH_IS_SLASH(*pszPath))
         pszPath++;
-    AssertReturn(*pszPath, VERR_INTERNAL_ERROR_4);
+    AssertReturn(*pszPath, VERR_ISOMK_IPE_EMPTY_PATH);
 
     PRTFSISOMAKERNAME pCur = pNamespace->pRoot;
     if (!pCur)
@@ -1666,7 +1694,7 @@ static int rtFsIsoMakerNormalizeNameForPrimaryIso9660(PRTFSISOMAKERINT pThis, PR
                                                       const char *pchSrc, size_t cchSrc, bool fIsDir,
                                                       char *pszDst, size_t cbDst, size_t *pcchDst, size_t *pcbInDirRec)
 {
-    AssertReturn(cbDst > ISO9660_MAX_NAME_LEN + 2, VERR_INTERNAL_ERROR_3);
+    AssertReturn(cbDst > ISO9660_MAX_NAME_LEN + 2, VERR_ISOMK_IPE_BUFFER_SIZE);
 
     /* Skip leading dots. */
     while (cchSrc > 0 && *pchSrc == '.')
@@ -1841,7 +1869,7 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
                 AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 
             default:
-                AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+                AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
         }
     }
     else
@@ -1856,7 +1884,7 @@ static int rtFsIsoMakerNormalizeNameForNamespace(PRTFSISOMAKERINT pThis, PRTFSIS
         *pszDst      = '\0';
         *pcchDst     = 0;
         *pcbInDirRec = pNamespace->fNamespace & (RTFSISOMAKER_NAMESPACE_ISO_9660 | RTFSISOMAKER_NAMESPACE_JOLIET) ? 1 : 0;
-        AssertReturn(!pParent, VERR_INTERNAL_ERROR_3);
+        AssertReturn(!pParent, VERR_ISOMK_IPE_NAMESPACE_3);
         return VINF_SUCCESS;
     }
 }
@@ -1969,7 +1997,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
      */
     if (pParent)
     {
-        AssertReturn(pParent->pDir, VERR_INTERNAL_ERROR_5);
+        AssertReturn(pParent->pDir, VERR_ISOMK_IPE_NAMESPACE_1);
         uint32_t cChildren = pParent->pDir->cChildren;
         if (cChildren & 31)
         { /* likely */ }
@@ -1982,7 +2010,7 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
         }
     }
     else
-        AssertReturn(pNamespace->pRoot == NULL, VERR_INTERNAL_ERROR_5);
+        AssertReturn(pNamespace->pRoot == NULL, VERR_ISOMK_IPE_NAMESPACE_2);
 
     /*
      * Normalize the name for this namespace.
@@ -2022,17 +2050,23 @@ static int rtFsIsoMakerObjSetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE
             pName->uDepth               = pParent ? pParent->uDepth + 1 : 0;
             pName->fRockRidgeNmAlloced  = false;
             pName->fTransNmAlloced      = false;
+            pName->fRockNeedER          = false;
+            pName->fRockNeedRRInDirRec  = false;
+            pName->fRockNeedRRInSpill   = false;
 
             pName->fMode                = pObj->fMode;
             pName->uid                  = pObj->uid;
             pName->gid                  = pObj->gid;
             pName->Device               = 0;
-            pName->INode                = pObj->idxObj;
             pName->cHardlinks           = 1;
             pName->offDirRec            = UINT32_MAX;
             pName->cbDirRec             = 0;
             pName->cDirRecs             = 1;
             pName->cbDirRecTotal        = 0;
+            pName->fRockEntries         = 0;
+            pName->cbRockInDirRec       = 0;
+            pName->offRockSpill         = UINT32_MAX;
+            pName->cbRockSpill          = 0;
 
             memcpy(pName->szName, szName, cchName);
             pName->szName[cchName] = '\0';
@@ -2121,14 +2155,14 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
     *pcchEntry = 0;    /* shut up gcc */
 
     int rc;
-    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INTERNAL_ERROR_4);
+    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_ISOMK_IPE_ROOT_SLASH);
 
     /*
      * Deal with the special case of the root.
      */
     while (RTPATH_IS_SLASH(*pszPath))
         pszPath++;
-    AssertReturn(*pszPath, VERR_INTERNAL_ERROR_4); /* We should not be called on a root path. */
+    AssertReturn(*pszPath, VERR_ISOMK_IPE_EMPTY_PATH); /* We should not be called on a root path. */
 
     PRTFSISOMAKERNAME pParent = pNamespace->pRoot;
     if (!pParent)
@@ -2144,7 +2178,7 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
         rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pDir->Core, NULL /*pParent*/, "", 0, &pParent);
         AssertRCReturn(rc, rc);
         pParent = pNamespace->pRoot;
-        AssertReturn(pParent, VERR_INTERNAL_ERROR_4);
+        AssertReturn(pParent, VERR_ISOMK_IPE_NAMESPACE_4);
     }
 
     /*
@@ -2159,7 +2193,7 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
         size_t cchComponent = 0;
         while ((ch = pszPath[cchComponent]) != '\0' && !RTPATH_IS_SLASH(ch))
             cchComponent++;
-        AssertReturn(cchComponent > 0, VERR_INTERNAL_ERROR_4);
+        AssertReturn(cchComponent > 0, VERR_ISOMK_IPE_EMPTY_COMPONENT);
 
         size_t offNext = cchComponent;
         while (RTPATH_IS_SLASH(ch))
@@ -2219,7 +2253,7 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
                         rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pChildObj->Core, pParent, pszPath, cchComponent, &pChild);
                         if (RT_FAILURE(rc))
                             return rc;
-                        AssertReturn(pChild != NULL, VERR_INTERNAL_ERROR_4);
+                        AssertReturn(pChild != NULL, VERR_ISOMK_IPE_NAMESPACE_5);
                     }
                 }
                 /* If we didn't have luck in other namespaces, create a new directory. */
@@ -2230,7 +2264,7 @@ static int rtFsIsoMakerCreatePathToParent(PRTFSISOMAKERINT pThis, PRTFSISOMAKERN
                         rc = rtFsIsoMakerObjSetName(pThis, pNamespace, &pChildObj->Core, pParent, pszPath, cchComponent, &pChild);
                     if (RT_FAILURE(rc))
                         return rc;
-                    AssertReturn(pChild != NULL, VERR_INTERNAL_ERROR_4);
+                    AssertReturn(pChild != NULL, VERR_ISOMK_IPE_NAMESPACE_5);
                 }
                 pParent = pChild;
             }
@@ -2257,7 +2291,7 @@ static int rtFsIsoMakerObjSetPathInOne(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAME
                                        PRTFSISOMAKEROBJ pObj, const char *pszPath)
 {
     AssertReturn(*rtFsIsoMakerObjGetNameForNamespace(pObj, pNamespace) == NULL, VERR_WRONG_ORDER);
-    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_INTERNAL_ERROR_5);
+    AssertReturn(RTPATH_IS_SLASH(*pszPath), VERR_ISOMK_IPE_ROOT_SLASH);
 
     /*
      * Figure out where the parent is.
@@ -2362,7 +2396,7 @@ static int rtFsIsoMakerObjUnsetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPA
 
     /* Not found. This can't happen. */
     AssertFailed();
-    return VERR_INTERNAL_ERROR_2;
+    return VERR_ISOMK_IPE_NAMESPACE_6;
 }
 
 
@@ -2525,6 +2559,8 @@ RTDECL(int) RTFsIsoMakerObjRemove(RTFSISOMAKER hIsoMaker, uint32_t idxObj)
     RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
     PRTFSISOMAKEROBJ pObj = rtFsIsoMakerIndexToObj(pThis, idxObj);
     AssertReturn(pObj, VERR_OUT_OF_RANGE);
+    AssertReturn(   pObj->enmType != RTFSISOMAKEROBJTYPE_FILE
+                 || ((PRTFSISOMAKERFILE)pObj)->enmSrcType != RTFSISOMAKERSRCTYPE_RR_SPILL, VERR_ACCESS_DENIED);
     AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
 
     /*
@@ -2806,7 +2842,8 @@ RTDECL(int) RTFsIsoMakerObjQueryDataSize(RTFSISOMAKER hIsoMaker, uint32_t idxObj
     if (pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
     {
         PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
-        if (pFile->enmSrcType != RTFSISOMAKERSRCTYPE_TRANS_TBL)
+        if (   pFile->enmSrcType != RTFSISOMAKERSRCTYPE_TRANS_TBL
+            && pFile->enmSrcType != RTFSISOMAKERSRCTYPE_RR_SPILL)
         {
             *pcbData = ((PRTFSISOMAKERFILE)pObj)->cbData;
             return VINF_SUCCESS;
@@ -3332,7 +3369,7 @@ RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO 
     AssertPtrReturn(pszTarget, VERR_INVALID_POINTER);
     size_t cchTarget = strlen(pszTarget);
     AssertPtrReturn(cchTarget > 0, VERR_INVALID_NAME);
-    AssertPtrReturn(cchTarget < _1K, VERR_FILENAME_TOO_LONG);
+    AssertPtrReturn(cchTarget < RTFSISOMAKER_MAX_SYMLINK_TARGET_LEN, VERR_FILENAME_TOO_LONG);
     AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
 
     /*
@@ -3345,6 +3382,13 @@ RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO 
                  VERR_ISOMK_SYMLINK_SUPPORT_DISABLED);
 
     /*
+     * Calculate the size of the SL entries.
+     */
+    uint8_t abTmp[_2K + RTFSISOMAKER_MAX_SYMLINK_TARGET_LEN * 3];
+    ssize_t cbSlRockRidge = rtFsIsoMakerOutFile_RockRidgeGenSL(pszTarget, abTmp, sizeof(abTmp));
+    AssertReturn(cbSlRockRidge > 0, (int)cbSlRockRidge);
+
+    /*
      * Do the adding.
      */
     PRTFSISOMAKERSYMLINK pSymlink = (PRTFSISOMAKERSYMLINK)RTMemAllocZ(RT_UOFFSETOF(RTFSISOMAKERSYMLINK, szTarget[cchTarget + 1]));
@@ -3352,9 +3396,11 @@ RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO 
     int rc = rtFsIsoMakerInitCommonObj(pThis, &pSymlink->Core, RTFSISOMAKEROBJTYPE_SYMLINK, pObjInfo);
     if (RT_SUCCESS(rc))
     {
+        pSymlink->cchTarget     = (uint16_t)cchTarget;
+        pSymlink->cbSlRockRidge = (uint16_t)cbSlRockRidge;
         memcpy(pSymlink->szTarget, pszTarget, cchTarget);
         pSymlink->szTarget[cchTarget] = '\0';
-        pSymlink->cchTarget = cchTarget;
+
         return VINF_SUCCESS;
     }
     RTMemFree(pSymlink);
@@ -3556,7 +3602,7 @@ RTDECL(int) RTFsIsoMakerBootCatSetFile(RTFSISOMAKER hIsoMaker, uint32_t idxObj)
             RTVfsFileRelease(hVfsFile);
         }
         else
-            rc = VERR_INTERNAL_ERROR_2;
+            rc = VERR_ISOMK_IPE_BOOT_CAT_FILE;
     }
     return rc;
 }
@@ -4101,11 +4147,11 @@ static void rtFsIsoMakerFinalizeGatherDirs(PRTFSISOMAKERNAMESPACE pNamespace, PR
  * @param   pFinalizedDirs  .
  * @param   pName           The directory entry to finalize.
  * @param   offInDir        The offset in the directory of this record.
- * @param   uRootRockRidge  This is the rock ridge level when
- *                          root, otherwise it's zero.
+ * @param   uRockRidgeLevel This is the rock ridge level.
+ * @param   fIsRoot         Set if this is the root.
  */
 static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, PRTFSISOMAKERNAME pName,
-                                                 uint32_t offInDir, uint8_t uRootRockRidge)
+                                                 uint32_t offInDir, uint8_t uRockRidgeLevel, bool fIsRoot)
 {
     /* Set directory and translation table offsets.  (These are for
        helping generating data blocks later.) */
@@ -4125,13 +4171,123 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
     }
 
     /*
-     * Calculate additional rock ridge stuff, if it doesn't all fit write it
-     * to the spill file.
+     * Calculate the size of the rock ridge bits we need.
      */
-    if (pFinalizedDirs->pRRSpillFile)
+    if (uRockRidgeLevel > 0)
     {
-        /** @todo rock ridge    */
-        RT_NOREF(uRootRockRidge);
+        uint16_t cbRock = 0;
+        uint8_t  fFlags = 0;
+
+        /* Level two starts with a 'RR' entry. */
+        if (uRockRidgeLevel >= 2)
+            cbRock += sizeof(ISO9660RRIPRR);
+
+        /* We always do 'PX' and 'TF' w/ 4 timestamps. */
+        cbRock = sizeof(ISO9660RRIPPX)
+               + RT_OFFSETOF(ISO9660RRIPTF, abPayload) + 4 * sizeof(ISO9660RECTIMESTAMP);
+        fFlags |= ISO9660RRIP_RR_F_PX | ISO9660RRIP_RR_F_TF;
+
+        /* Devices needs 'PN'. */
+        if (   RTFS_IS_DEV_BLOCK(pName->pObj->fMode)
+            || RTFS_IS_DEV_BLOCK(pName->pObj->fMode))
+        {
+            cbRock += sizeof(ISO9660RRIPPN);
+            fFlags |= ISO9660RRIP_RR_F_PN;
+        }
+
+        /* Usually we need a 'NM' entry too. */
+        if (   pName->pszRockRidgeNm != pName->szName
+            && pName->cchRockRidgeNm > 0
+            && (   pName->cbNameInDirRec != 1
+                || (uint8_t)pName->szName[0] > (uint8_t)0x01) )
+        {
+            cbRock += (pName->cchRockRidgeNm + ISO9660RRIPNM_MAX_NAME_LEN - 1) / ISO9660RRIPNM_MAX_NAME_LEN;
+            fFlags |= ISO9660RRIP_RR_F_NM;
+        }
+
+        /* Symbolic links needs a 'SL' entry. */
+        if (pName->pObj->enmType == RTFSISOMAKEROBJTYPE_SYMLINK)
+        {
+            PRTFSISOMAKERSYMLINK pSymlink = (PRTFSISOMAKERSYMLINK)pName->pObj;
+            cbRock += pSymlink->cbSlRockRidge;
+            fFlags |= ISO9660RRIP_RR_F_SL;
+        }
+
+        /*
+         * Decide where stuff goes.  The '.' record of the root dir is special.
+         */
+        pName->fRockEntries = fFlags;
+        if (!fIsRoot)
+        {
+            if (pName->cbDirRec + cbRock < UINT8_MAX)
+            {
+                pName->cbRockInDirRec      = cbRock + (cbRock & 1);
+                pName->cbRockSpill         = 0;
+                pName->fRockNeedRRInDirRec = uRockRidgeLevel >= 2;
+                pName->fRockNeedRRInSpill  = false;
+            }
+            else if (pName->cbDirRec + sizeof(ISO9660SUSPCE) < UINT8_MAX)
+            {
+                /* Try fit the 'RR' entry in the directory record, but don't bother with anything else. */
+                if (uRockRidgeLevel >= 2 && pName->cbDirRec + sizeof(ISO9660SUSPCE) + sizeof(ISO9660RRIPRR) < UINT8_MAX)
+                {
+                    pName->cbRockInDirRec      = RT_ALIGN_T(sizeof(ISO9660SUSPCE) + sizeof(ISO9660RRIPRR), 2, uint16_t);
+                    cbRock -= sizeof(ISO9660RRIPRR);
+                    pName->cbRockSpill         = cbRock;
+                    pName->fRockNeedRRInDirRec = true;
+                    pName->fRockNeedRRInSpill  = false;
+                }
+                else
+                {
+                    pName->cbRockInDirRec      = RT_ALIGN_T(sizeof(ISO9660SUSPCE), 2, uint16_t);
+                    pName->cbRockSpill         = cbRock;
+                    pName->fRockNeedRRInDirRec = false;
+                    pName->fRockNeedRRInSpill  = uRockRidgeLevel >= 2;
+                }
+                if (ISO9660_SECTOR_SIZE - (pFinalizedDirs->pRRSpillFile->cbData & ISO9660_SECTOR_OFFSET_MASK) < cbRock)
+                    pFinalizedDirs->pRRSpillFile->cbData = (pFinalizedDirs->pRRSpillFile->cbData | ISO9660_SECTOR_OFFSET_MASK) + 1;
+                pName->offRockSpill = pFinalizedDirs->pRRSpillFile->cbData;
+                pFinalizedDirs->pRRSpillFile->cbData += RT_ALIGN_T(cbRock, 4, uint16_t);
+            }
+            else
+            {
+                LogRel(("RTFsIsoMaker: no space for 'CE' entry: cbDirRec=%#x bytes, name=%s (%#x bytes)\n",
+                        pName->cbDirRec, pName->szName, pName->cbNameInDirRec));
+                return VERR_ISOMK_RR_NO_SPACE_FOR_CE;
+            }
+        }
+        else
+        {
+            /* The root starts with a 'SP' record to indicate that SUSP is being used,
+               this is always in the directory record.  If we add a 'ER' record (big) too,
+               we put all but 'SP' and 'ER' in the spill file too keep things simple. */
+            if (uRockRidgeLevel < 2)
+            {
+                Assert(!(fFlags & (ISO9660RRIP_RR_F_NM | ISO9660RRIP_RR_F_SL | ISO9660RRIP_RR_F_CL | ISO9660RRIP_RR_F_PL | ISO9660RRIP_RR_F_RE)));
+                cbRock += sizeof(ISO9660SUSPSP);
+                Assert(pName->cbDirRec + cbRock < UINT8_MAX);
+                pName->cbRockInDirRec       = cbRock + (cbRock & 1);
+                pName->cbRockSpill          = 0;
+                pName->fRockNeedER          = false;
+                pName->fRockNeedRRInDirRec  = false;
+                pName->fRockNeedRRInSpill   = false;
+            }
+            else
+            {
+                pName->cbRockInDirRec       = RT_ALIGN_T(sizeof(ISO9660SUSPSP) + sizeof(ISO9660SUSPCE), 2, uint16_t);
+                pName->fRockNeedER          = true;
+                pName->fRockNeedRRInSpill   = true;
+                pName->fRockNeedRRInDirRec  = false;
+                cbRock += ISO9660_RRIP_ER_LEN;
+                pName->cbRockSpill          = cbRock;
+                if ( ISO9660_SECTOR_SIZE - (pFinalizedDirs->pRRSpillFile->cbData & ISO9660_SECTOR_OFFSET_MASK) < cbRock)
+                    pFinalizedDirs->pRRSpillFile->cbData = (pFinalizedDirs->pRRSpillFile->cbData | ISO9660_SECTOR_OFFSET_MASK) + 1;
+                pName->offRockSpill = pFinalizedDirs->pRRSpillFile->cbData;
+                pFinalizedDirs->pRRSpillFile->cbData += RT_ALIGN_T(cbRock, 4, uint16_t);
+            }
+        }
+        pName->cbDirRec += pName->cbRockInDirRec;
+        Assert(pName->cbDirRec < UINT8_MAX);
     }
 
     pName->cbDirRecTotal = pName->cbDirRec * pName->cDirRecs;
@@ -4153,6 +4309,8 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
 static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPACE pNamespace,
                                                          PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs, uint64_t *poffData)
 {
+    int rc;
+
     /* The directory data comes first, so take down it's offset. */
     pFinalizedDirs->offDirs = *poffData;
 
@@ -4163,15 +4321,19 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
      */
     if (pFinalizedDirs->pRRSpillFile)
     {
+        pFinalizedDirs->pRRSpillFile->Core.cNotOrphan = 0;
         rtFsIsoMakerObjRemoveWorker(pThis, &pFinalizedDirs->pRRSpillFile->Core);
         pFinalizedDirs->pRRSpillFile = NULL;
     }
     if (pNamespace->uRockRidgeLevel > 0)
     {
-        /** @todo create rock ridge spill file to indicate rock ridge */
+        rc = rtFsIsoMakerAddUnnamedFileWorker(pThis, NULL, 0, &pFinalizedDirs->pRRSpillFile);
+        AssertRCReturn(rc, rc);
+        pFinalizedDirs->pRRSpillFile->enmSrcType            = RTFSISOMAKERSRCTYPE_RR_SPILL;
+        pFinalizedDirs->pRRSpillFile->u.pRockSpillNamespace = pNamespace;
+        pFinalizedDirs->pRRSpillFile->Core.cNotOrphan       = 1;
     }
 
-    int      rc;
     uint16_t idPathTable = 1;
     uint32_t cbPathTable = 0;
     if (pNamespace->pRoot)
@@ -4179,7 +4341,8 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
         /*
          * Precalc the directory record size for the root directory.
          */
-        rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pNamespace->pRoot, 0 /*offInDir*/, pNamespace->uRockRidgeLevel);
+        rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pNamespace->pRoot, 0 /*offInDir*/,
+                                                   pNamespace->uRockRidgeLevel, true /*fIsRoot*/);
         AssertRCReturn(rc, rc);
 
         /*
@@ -4202,13 +4365,15 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
             uint32_t offInDir   = (uint32_t)pCurDir->cbDirRec00 + pCurDir->cbDirRec01;
 
             /* Finalize the directory entries. */
+            uint32_t            cSubDirs    = 0;
             uint32_t            cbTransTbl  = 0;
             uint32_t            cLeft       = pCurDir->cChildren;
             PPRTFSISOMAKERNAME  ppChild     = pCurDir->papChildren;
             while (cLeft-- > 0)
             {
                 PRTFSISOMAKERNAME pChild = *ppChild++;
-                rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir, 0 /*uRootRockRidge*/);
+                rc = rtFsIsoMakerFinalizeIsoDirectoryEntry(pFinalizedDirs, pChild, offInDir,
+                                                           pNamespace->uRockRidgeLevel, false /*fIsRoot*/);
                 AssertRCReturn(rc, rc);
 
                 if ((RTFSISOMAKER_SECTOR_SIZE - (offInDir & RTFSISOMAKER_SECTOR_OFFSET_MASK)) < pChild->cbDirRecTotal)
@@ -4233,6 +4398,9 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
                                +  1 /* tab */
                                +  pChild->cchTransNm
                                +  1 /* newline */;
+
+                if (RTFS_IS_DIRECTORY(pChild->fMode))
+                    cSubDirs++;
             }
 
             /* Set the directory size and location, advancing the data offset. */
@@ -4251,6 +4419,9 @@ static int rtFsIsoMakerFinalizeDirectoriesInIsoNamespace(PRTFSISOMAKERINT pThis,
             pCurDir->offPathTable = cbPathTable;
             pCurDir->idPathTable  = idPathTable++;
             cbPathTable += RTFSISOMAKER_CALC_PATHREC_SIZE(pCurName->cbNameInDirRec);
+
+            /* Set the hardlink count. */
+            pCurName->cHardlinks = cSubDirs + 2;
 
             Log4(("rtFsIsoMakerFinalizeDirectoriesInIsoNamespace: idxObj=#%#x cbDir=%#08x cChildren=%#05x %s\n",
                   pCurDir->pName->pObj->idxObj, pCurDir->cbDir, pCurDir->cChildren, pCurDir->pName->szName));
@@ -4379,7 +4550,7 @@ static int rtFsIsoMakerFinalizeData(PRTFSISOMAKERINT pThis, uint64_t *poffData)
                         rc = VINF_SUCCESS;
                         break;
                     default:
-                        AssertMsgFailedReturn(("enmSrcType=%d\n", pCurFile->enmSrcType), VERR_INTERNAL_ERROR_3);
+                        AssertMsgFailedReturn(("enmSrcType=%d\n", pCurFile->enmSrcType), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
                 }
 
                 uint32_t uChecksum = 0;
@@ -4600,7 +4771,7 @@ static int rtFsIsoMakerFinalizePrepVolumeDescriptors(PRTFSISOMAKERINT pThis)
     {
         /** @todo UDF descriptors. */
     }
-    AssertReturn(offVolDescs == pThis->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE, VERR_INTERNAL_ERROR_2);
+    AssertReturn(offVolDescs == pThis->cVolumeDescriptors * RTFSISOMAKER_SECTOR_SIZE, VERR_ISOMK_IPE_DESC_COUNT);
 
     /*
      * This may be needed later.
@@ -4736,7 +4907,7 @@ static int rtFsIsoMakerFinalizePrepVolumeDescriptors(PRTFSISOMAKERINT pThis)
  */
 static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
 {
-    AssertReturn(pThis->pbVolDescs && pThis->pPrimaryVolDesc && pThis->pTerminatorVolDesc, VERR_INTERNAL_ERROR_3);
+    AssertReturn(pThis->pbVolDescs && pThis->pPrimaryVolDesc && pThis->pTerminatorVolDesc, VERR_ISOMK_IPE_FINALIZE_1);
 
     /*
      * Primary descriptor.
@@ -4949,6 +5120,563 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_QueryInfo(void *pvThis, PRTFSOBJINF
 
 
 /**
+ * Generates the 'SL' records for a symbolic link.
+ *
+ * This is used both when generating directories records, spill file data and
+ * when creating the symbolic link.
+ *
+ * @returns Number of bytes produced.  Negative IPRT status if buffer overflow.
+ * @param   pszTarget   The symbolic link target to encode.
+ * @param   pbBuf       The output buffer.
+ * @param   cbBuf       The size of the output buffer.
+ */
+static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t *pbBuf, size_t cbBuf)
+{
+    Assert(*pszTarget != '\0');
+
+    PISO9660RRIPSL pEntry = (PISO9660RRIPSL)pbBuf;
+    pEntry->Hdr.bSig1    = ISO9660RRIPSL_SIG1;
+    pEntry->Hdr.bSig2    = ISO9660RRIPSL_SIG2;
+    pEntry->Hdr.cbEntry  = 0; /* set later. */
+    pEntry->Hdr.bVersion = ISO9660RRIPSL_VER;
+    pEntry->fFlags       = 0;
+    size_t  offEntry = 0;
+    size_t  off      = pEntry->Hdr.cbEntry;
+
+    /* Does it start with a root slash? */
+    if (RTPATH_IS_SLASH(*pszTarget))
+    {
+        pbBuf[off++] = ISO9660RRIP_SL_C_ROOT;
+        pbBuf[off++] = 0;
+        pszTarget++;
+    }
+
+    for (;;)
+    {
+        /* Find the end of the component. */
+        size_t cchComponent = 0;
+        char   ch;
+        while ((ch = pszTarget[cchComponent]) != '\0' && !RTPATH_IS_SLASH(ch))
+            cchComponent++;
+
+        /* Check for dots and figure out how much space we need. */
+        uint8_t fFlags;
+        size_t  cbNeeded;
+        if (cchComponent == 1 && *pszTarget == '.')
+        {
+            fFlags   = ISO9660RRIP_SL_C_CURRENT;
+            cbNeeded = 2;
+        }
+        else if (cchComponent == 2 && pszTarget[0] == '.' && pszTarget[1] == '.')
+        {
+            fFlags   = ISO9660RRIP_SL_C_PARENT;
+            cbNeeded = 0;
+        }
+        else
+        {
+            fFlags   = 0;
+            cbNeeded = 2 + cchComponent;
+        }
+
+        /* Split the SL record if we're out of space. */
+        if (   off - offEntry + cbNeeded < UINT8_MAX
+            && off + cbNeeded <= cbBuf)
+        { /* likely */ }
+        else if (cbNeeded + RT_OFFSETOF(ISO9660RRIPSL, abComponents) < UINT8_MAX)
+        {
+            AssertReturn(off + cbNeeded + RT_OFFSETOF(ISO9660RRIPSL, abComponents) <= cbBuf, VERR_BUFFER_OVERFLOW);
+            Assert(off - offEntry < UINT8_MAX);
+            pEntry->Hdr.cbEntry = (uint8_t)(off - offEntry);
+            pEntry->fFlags |= ISO9660RRIP_SL_F_CONTINUE;
+
+            offEntry = off;
+            pEntry = (PISO9660RRIPSL)&pbBuf[off];
+            pEntry->Hdr.bSig1    = ISO9660RRIPSL_SIG1;
+            pEntry->Hdr.bSig2    = ISO9660RRIPSL_SIG2;
+            pEntry->Hdr.cbEntry  = 0; /* set later. */
+            pEntry->Hdr.bVersion = ISO9660RRIPSL_VER;
+            pEntry->fFlags       = 0;
+        }
+        else
+        {
+            /* Special case: component doesn't fit in a single SL entry. */
+            do
+            {
+                if (off - offEntry + 3 < UINT8_MAX)
+                {
+                    size_t cchLeft   = UINT8_MAX - 1 - (off - offEntry) - 2;
+                    size_t cchToCopy = RT_MIN(cchLeft, cchComponent);
+                    AssertReturn(off + 2 + cchToCopy <= cbBuf, VERR_BUFFER_OVERFLOW);
+                    pbBuf[off++] = cchToCopy < cchComponent ? ISO9660RRIP_SL_C_CONTINUE : 0;
+                    pbBuf[off++] = (uint8_t)cchToCopy;
+                    memcpy(&pbBuf[off], pszTarget, cchToCopy);
+                    off          += pbBuf[off++];
+                    pszTarget    += cchToCopy;
+                    cchComponent -= cchToCopy;
+                    if (!cchComponent)
+                        break;
+                }
+
+                Assert(off - offEntry < UINT8_MAX);
+                pEntry->Hdr.cbEntry = (uint8_t)(off - offEntry);
+                pEntry->fFlags |= ISO9660RRIP_SL_F_CONTINUE;
+
+                AssertReturn(off + 2 + cchComponent + RT_OFFSETOF(ISO9660RRIPSL, abComponents) <= cbBuf, VERR_BUFFER_OVERFLOW);
+                offEntry = off;
+                pEntry = (PISO9660RRIPSL)&pbBuf[off];
+                pEntry->Hdr.bSig1    = ISO9660RRIPSL_SIG1;
+                pEntry->Hdr.bSig2    = ISO9660RRIPSL_SIG2;
+                pEntry->Hdr.cbEntry  = 0; /* set later. */
+                pEntry->Hdr.bVersion = ISO9660RRIPSL_VER;
+                pEntry->fFlags       = 0;
+
+
+            } while (cchComponent > 0);
+            if (ch == '\0')
+                break;
+            continue;
+        }
+
+        /* Produce the record. */
+        pbBuf[off++] = fFlags;
+        pbBuf[off++] = (uint8_t)(cbNeeded - 2);
+        if (cchComponent > 0)
+        {
+            memcpy(&pbBuf[off], pszTarget, cbNeeded - 2);
+            off += cbNeeded - 2;
+        }
+
+        if (ch == '\0')
+            break;
+        pszTarget += cchComponent;
+    }
+
+    Assert(off - offEntry < UINT8_MAX);
+    pEntry->Hdr.cbEntry = (uint8_t)(off - offEntry);
+    return off;
+}
+
+
+/**
+ * Generates rock ridge data.
+ *
+ * This is used both for the directory record and for the spill file ('CE').
+ *
+ * @param   pName           The name to generate rock ridge info for.
+ * @param   pbSys           The output buffer.
+ * @param   cbSys           The size of the output buffer.
+ * @param   fInSpill        Indicates whether we're in a spill file (true) or
+ *                          directory record (false).
+ */
+static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8_t *pbSys, size_t cbSys, bool fInSpill)
+{
+    /*
+     * Deal with records specific to the root directory '.' entry.
+     */
+    if (pName->pParent != NULL)
+    { /* likely */ }
+    else
+    {
+        if (!fInSpill)
+        {
+            PISO9660SUSPSP  pSP = (PISO9660SUSPSP)pbSys;
+            Assert(cbSys >= sizeof(*pSP));
+            pSP->Hdr.bSig1      = ISO9660SUSPSP_SIG1;
+            pSP->Hdr.bSig2      = ISO9660SUSPSP_SIG2;
+            pSP->Hdr.cbEntry    = ISO9660SUSPSP_LEN;
+            pSP->Hdr.bVersion   = ISO9660SUSPSP_VER;
+            pSP->bCheck1        = ISO9660SUSPSP_CHECK1;
+            pSP->bCheck2        = ISO9660SUSPSP_CHECK2;
+            pSP->cbSkip         = 0;
+            pbSys += sizeof(*pSP);
+            cbSys -= sizeof(*pSP);
+        }
+        if (pName->fRockNeedER)
+        {
+            PISO9660SUSPER  pER = (PISO9660SUSPER)pbSys;
+            Assert(cbSys >= ISO9660_RRIP_ER_LEN);
+            AssertCompile(ISO9660_RRIP_ER_LEN < UINT8_MAX);
+            pER->Hdr.bSig1      = ISO9660SUSPER_SIG1;
+            pER->Hdr.bSig2      = ISO9660SUSPER_SIG2;
+            pER->Hdr.cbEntry    = ISO9660_RRIP_ER_LEN;
+            pER->Hdr.bVersion   = ISO9660SUSPER_VER;
+            pER->cchIdentifier  = sizeof(ISO9660_RRIP_ID)   - 1;
+            pER->cchDescription = sizeof(ISO9660_RRIP_DESC) - 1;
+            pER->cchSource      = sizeof(ISO9660_RRIP_SRC)  - 1;
+            memcpy(&pER->achPayload[0], RT_STR_TUPLE(ISO9660_RRIP_ID));
+            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID)], RT_STR_TUPLE(ISO9660_RRIP_DESC));
+            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID) + sizeof(ISO9660_RRIP_DESC)], RT_STR_TUPLE(ISO9660_RRIP_SRC));
+            pbSys += ISO9660_RRIP_ER_LEN;
+            cbSys -= ISO9660_RRIP_ER_LEN;
+        }
+    }
+
+    /*
+     * Deal with common stuff.
+     */
+    if (!fInSpill ? pName->fRockNeedRRInDirRec : pName->fRockNeedRRInSpill)
+    {
+        PISO9660RRIPRR  pRR = (PISO9660RRIPRR)pbSys;
+        Assert(cbSys >= sizeof(*pRR));
+        pRR->Hdr.bSig1      = ISO9660RRIPRR_SIG1;
+        pRR->Hdr.bSig2      = ISO9660RRIPRR_SIG2;
+        pRR->Hdr.cbEntry    = ISO9660RRIPRR_LEN;
+        pRR->Hdr.bVersion   = ISO9660RRIPRR_VER;
+        pRR->fFlags         = pName->fRockEntries;
+        pbSys += sizeof(*pRR);
+        cbSys -= sizeof(*pRR);
+    }
+
+    if (pName->fRockEntries & ISO9660RRIP_RR_F_PX)
+    {
+        PISO9660RRIPPX pPX = (PISO9660RRIPPX)pbSys;
+        Assert(cbSys >= sizeof(*pPX));
+        pPX->Hdr.bSig1      = ISO9660RRIPPX_SIG1;
+        pPX->Hdr.bSig2      = ISO9660RRIPPX_SIG2;
+        pPX->Hdr.cbEntry    = ISO9660RRIPPX_LEN;
+        pPX->Hdr.bVersion   = ISO9660RRIPPX_VER;
+        pPX->fMode.be       = RT_H2BE_U32((uint32_t)pName->fMode);
+        pPX->fMode.le       = RT_H2LE_U32((uint32_t)pName->fMode);
+        pPX->cHardlinks.be  = RT_H2BE_U32((uint32_t)pName->cHardlinks);
+        pPX->cHardlinks.le  = RT_H2LE_U32((uint32_t)pName->cHardlinks);
+        pPX->uid.be         = RT_H2BE_U32((uint32_t)pName->uid);
+        pPX->uid.le         = RT_H2LE_U32((uint32_t)pName->uid);
+        pPX->gid.be         = RT_H2BE_U32((uint32_t)pName->gid);
+        pPX->gid.le         = RT_H2LE_U32((uint32_t)pName->gid);
+        pPX->INode.be       = RT_H2BE_U32((uint32_t)pName->pObj->idxObj);
+        pPX->INode.le       = RT_H2LE_U32((uint32_t)pName->pObj->idxObj);
+        pbSys += sizeof(*pPX);
+        cbSys -= sizeof(*pPX);
+    }
+
+    if (pName->fRockEntries & ISO9660RRIP_RR_F_TF)
+    {
+        PISO9660RRIPTF pTF = (PISO9660RRIPTF)pbSys;
+        pTF->Hdr.bSig1      = ISO9660RRIPTF_SIG1;
+        pTF->Hdr.bSig2      = ISO9660RRIPTF_SIG2;
+        pTF->Hdr.cbEntry    = Iso9660RripTfCalcLength(ISO9660RRIPTF_F_BIRTH | ISO9660RRIPTF_F_MODIFY | ISO9660RRIPTF_F_ACCESS | ISO9660RRIPTF_F_CHANGE);
+        Assert(cbSys >= pTF->Hdr.cbEntry);
+        pTF->Hdr.bVersion   = ISO9660RRIPTF_VER;
+        pTF->fFlags         = ISO9660RRIPTF_F_BIRTH | ISO9660RRIPTF_F_MODIFY | ISO9660RRIPTF_F_ACCESS | ISO9660RRIPTF_F_CHANGE;
+        PISO9660RECTIMESTAMP paTimestamps = (PISO9660RECTIMESTAMP)&pTF->abPayload[0];
+        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->BirthTime,        &paTimestamps[0]);
+        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->ModificationTime, &paTimestamps[1]);
+        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->AccessedTime,     &paTimestamps[2]);
+        rtFsIsoMakerTimespecToIso9660RecTimestamp(&pName->pObj->ChangeTime,       &paTimestamps[3]);
+        cbSys += pTF->Hdr.cbEntry;
+        pbSys += pTF->Hdr.cbEntry;
+    }
+
+    if (pName->fRockEntries & ISO9660RRIP_RR_F_PN)
+    {
+        PISO9660RRIPPN pPN = (PISO9660RRIPPN)pbSys;
+        Assert(cbSys >= sizeof(*pPN));
+        pPN->Hdr.bSig1      = ISO9660RRIPPN_SIG1;
+        pPN->Hdr.bSig2      = ISO9660RRIPPN_SIG2;
+        pPN->Hdr.cbEntry    = ISO9660RRIPPN_LEN;
+        pPN->Hdr.bVersion   = ISO9660RRIPPN_VER;
+        pPN->Major.be       = RT_H2BE_U32((uint32_t)RTDEV_MAJOR(pName->Device));
+        pPN->Major.le       = RT_H2LE_U32((uint32_t)RTDEV_MAJOR(pName->Device));
+        pPN->Minor.be       = RT_H2BE_U32((uint32_t)RTDEV_MINOR(pName->Device));
+        pPN->Minor.le       = RT_H2LE_U32((uint32_t)RTDEV_MINOR(pName->Device));
+    }
+
+    if (pName->fRockEntries & ISO9660RRIP_RR_F_NM)
+    {
+        size_t      cchSrc = pName->cchRockRidgeNm;
+        const char *pszSrc = pName->pszRockRidgeNm;
+        for (;;)
+        {
+            size_t         cchThis = RT_MIN(cchSrc, ISO9660RRIPNM_MAX_NAME_LEN);
+            PISO9660RRIPNM pNM     = (PISO9660RRIPNM)pbSys;
+            Assert(cbSys >= RT_OFFSETOF(ISO9660RRIPNM, achName[cchThis]));
+            pNM->Hdr.bSig1      = ISO9660RRIPNM_SIG1;
+            pNM->Hdr.bSig2      = ISO9660RRIPNM_SIG2;
+            pNM->Hdr.cbEntry    = (uint8_t)(RT_OFFSETOF(ISO9660RRIPNM, achName) + cchThis);
+            pNM->Hdr.bVersion   = ISO9660RRIPNM_VER;
+            pNM->fFlags         = cchThis == cchSrc ? 0 : ISO9660RRIP_NM_F_CONTINUE;
+            memcpy(&pNM->achName[0], pszSrc, cchThis);
+            pbSys  += RT_OFFSETOF(ISO9660RRIPNM, achName) + cchThis;
+            cbSys  -= RT_OFFSETOF(ISO9660RRIPNM, achName) + cchThis;
+            cchSrc -= cchThis;
+            if (!cchSrc)
+                break;
+        }
+    }
+
+    if (pName->fRockEntries & ISO9660RRIP_RR_F_SL)
+    {
+        AssertReturnVoid(pName->pObj->enmType == RTFSISOMAKEROBJTYPE_SYMLINK);
+        PCRTFSISOMAKERSYMLINK pSymlink = (PCRTFSISOMAKERSYMLINK)pName->pObj;
+
+        ssize_t cbSlRockRidge = rtFsIsoMakerOutFile_RockRidgeGenSL(pSymlink->szTarget, pbSys, cbSys);
+        AssertReturnVoid(cbSlRockRidge > 0);
+        Assert(cbSys >= (size_t)cbSlRockRidge);
+        cbSys -= (size_t)cbSlRockRidge;
+        pbSys -= (size_t)cbSlRockRidge;
+    }
+
+    /* finally, zero padding. */
+    if (cbSys & 1)
+    {
+        *pbSys++ = '\0';
+        cbSys--;
+    }
+
+    Assert(cbSys == 0);
+}
+
+
+
+
+/**
+ * Reads one or more sectors from a rock ridge spill file.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The ISO maker output file instance.  We use the
+ *                      directory pointer hints and child index hints
+ * @param   pIsoMaker   The ISO maker.
+ * @param   pFile       The rock ridge spill file.
+ * @param   offInFile   The offset into the spill file.  This is sector aligned.
+ * @param   pbBuf       The output buffer.
+ * @param   cbToRead    The number of bytes to tread.  This is sector aligned.
+ */
+static int rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERINT pIsoMaker,
+                                                         PRTFSISOMAKERFILE pFile, uint32_t offInFile, uint8_t *pbBuf,
+                                                         size_t cbToRead)
+{
+    /*
+     * We're only working multiple of ISO 9660 sectors.
+     *
+     * The spill of one directory record will always fit entirely within a
+     * sector, we make sure about that during finalization.  There may be
+     * zero padding between spill data sequences, especially on the sector
+     * boundrary.
+     */
+    Assert((offInFile & ISO9660_SECTOR_OFFSET_MASK) == 0);
+    Assert((cbToRead  & ISO9660_SECTOR_OFFSET_MASK) == 0);
+    Assert(cbToRead  >= ISO9660_SECTOR_SIZE);
+
+    /*
+     * We generate a sector at a time.
+     *
+     * So, we start by locating the first directory/child in the block offInFile
+     * is pointing to.
+     */
+    PRTFSISOMAKERFINALIZEDDIRS  pFinalizedDirs;
+    PRTFSISOMAKERNAMEDIR       *ppDirHint;
+    uint32_t                   *pidxChildHint;
+    if (pFile->u.pRockSpillNamespace->fNamespace & RTFSISOMAKER_NAMESPACE_ISO_9660)
+    {
+        pFinalizedDirs = &pIsoMaker->PrimaryIsoDirs;
+        ppDirHint      = &pThis->pDirHintPrimaryIso;
+        pidxChildHint  = &pThis->iChildPrimaryIso;
+    }
+    else
+    {
+        pFinalizedDirs = &pIsoMaker->JolietDirs;
+        ppDirHint      = &pThis->pDirHintJoliet;
+        pidxChildHint  = &pThis->iChildJoliet;
+    }
+
+    /* Special case: '.' record in root dir */
+    uint32_t             idxChild  = *pidxChildHint;
+    PRTFSISOMAKERNAMEDIR pDir      = *ppDirHint;
+    if (   offInFile == 0
+        && (pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry)) != NULL
+        && pDir->pName->cbRockSpill > 0)
+    {
+        AssertReturn(pDir, VERR_ISOMK_IPE_RR_READ);
+        AssertReturn(pDir->pName->offRockSpill == 0, VERR_ISOMK_IPE_RR_READ);
+        idxChild = 0;
+    }
+    else
+    {
+        /* Establish where to start searching from. */
+        if (  !pDir
+            || idxChild >= pDir->cChildren
+            || pDir->papChildren[idxChild]->cbRockSpill == 0)
+        {
+            idxChild = 0;
+            pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+            AssertReturn(pDir, VERR_ISOMK_IPE_RR_READ);
+        }
+
+        if (pDir->papChildren[idxChild]->offRockSpill == offInFile)
+        { /* hit, no need to search */ }
+        else if (pDir->papChildren[idxChild]->offRockSpill < offInFile)
+        {
+            /* search forwards */
+            for (;;)
+            {
+                idxChild++;
+                while (   idxChild < pDir->cChildren
+                       && (   pDir->papChildren[idxChild]->offRockSpill < offInFile
+                           || pDir->papChildren[idxChild]->cbRockSpill  == 0) )
+                    idxChild++;
+                if (idxChild < pDir->cChildren)
+                    break;
+                pDir = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+                AssertReturn(pDir, VERR_ISOMK_IPE_RR_READ);
+            }
+            Assert(pDir->papChildren[idxChild]->offRockSpill == offInFile);
+        }
+        else
+        {
+            /* search backwards (no root dir concerns here) */
+            for (;;)
+            {
+                while (   idxChild > 0
+                       && (   pDir->papChildren[idxChild - 1]->offRockSpill >= offInFile
+                           || pDir->papChildren[idxChild - 1]->cbRockSpill  == 0) )
+                    idxChild--;
+                if (pDir->papChildren[idxChild]->offRockSpill == offInFile)
+                    break;
+                pDir = RTListGetPrev(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+                AssertReturn(pDir, VERR_ISOMK_IPE_RR_READ);
+            }
+            Assert(pDir->papChildren[idxChild]->offRockSpill == offInFile);
+        }
+    }
+
+    /*
+     * Produce data.
+     */
+    while (cbToRead > 0)
+    {
+        PRTFSISOMAKERNAME pChild;
+        if (   offInFile > 0
+            || pDir->pName->cbRockSpill == 0
+            || pDir->pName->pParent     != NULL)
+        {
+            pChild = pDir->papChildren[idxChild];
+            AssertReturn(pChild->offRockSpill == offInFile, VERR_ISOMK_IPE_RR_READ);
+            AssertReturn(pChild->cbRockSpill > 0, VERR_ISOMK_IPE_RR_READ);
+            idxChild++;
+        }
+        else
+        {   /* root dir special case. */
+            pChild = pDir->pName;
+            Assert(idxChild == 0);
+            Assert(pChild->pParent == NULL);
+        }
+
+        AssertReturn(cbToRead >= pChild->cbRockSpill, VERR_ISOMK_IPE_RR_READ);
+        rtFsIosMakerOutFile_GenerateRockRidge(pDir->pName, pbBuf, cbToRead, true /*fInSpill*/);
+        cbToRead  -= pChild->cbRockSpill;
+        pbBuf     += pChild->cbRockSpill;
+        offInFile += pChild->cbRockSpill;
+
+        /* Advance to the next name, if any. */
+        uint32_t offNext = UINT32_MAX;
+        do
+        {
+            while (idxChild < pDir->cChildren)
+            {
+                pChild = pDir->papChildren[idxChild];
+                if (pChild->cbRockSpill == 0)
+                    Assert(pChild->offRockSpill == UINT32_MAX);
+                else
+                {
+                    offNext = pChild->offRockSpill;
+                    AssertReturn(offNext >= offInFile, VERR_ISOMK_IPE_RR_READ);
+                    AssertReturn(offNext < pFile->cbData, VERR_ISOMK_IPE_RR_READ);
+                    break;
+                }
+                idxChild++;
+            }
+            pDir     = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
+            idxChild = 0;
+        } while (pDir != NULL);
+
+        if (offNext != UINT32_MAX)
+        {
+            uint32_t cbToZero = offNext - offInFile;
+            if (cbToRead > cbToZero)
+                RT_BZERO(pbBuf, cbToZero);
+            else
+            {
+                RT_BZERO(pbBuf, cbToRead);
+                *ppDirHint     = pDir;
+                *pidxChildHint = idxChild;
+                break;
+            }
+        }
+        else
+        {
+            RT_BZERO(pbBuf, cbToRead);
+            *ppDirHint     = NULL;
+            *pidxChildHint = UINT32_MAX;
+            break;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deals with reads that aren't an exact multiple of sectors.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The ISO maker output file instance.  We use the
+ *                      directory pointer hints and child index hints
+ * @param   pIsoMaker   The ISO maker.
+ * @param   pFile       The rock ridge spill file.
+ * @param   offInFile   The offset into the spill file.
+ * @param   pbBuf       The output buffer.
+ * @param   cbToRead    The number of bytes to tread.
+ */
+static int rtFsIsoMakerOutFile_RockRidgeSpillReadUnaligned(PRTFSISOMAKEROUTPUTFILE pThis, PRTFSISOMAKERINT pIsoMaker,
+                                                           PRTFSISOMAKERFILE pFile, uint32_t offInFile, uint8_t *pbBuf,
+                                                           uint32_t cbToRead)
+{
+    for (;;)
+    {
+        /*
+         * Deal with unnaligned file offsets and sub-sector sized reads.
+         */
+        if (   (offInFile & ISO9660_SECTOR_OFFSET_MASK)
+            || cbToRead < ISO9660_SECTOR_SIZE)
+        {
+            uint8_t abSectorBuf[ISO9660_SECTOR_SIZE];
+            int rc = rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(pThis, pIsoMaker, pFile,
+                                                                   offInFile & ~(uint32_t)ISO9660_SECTOR_OFFSET_MASK,
+                                                                   abSectorBuf, sizeof(abSectorBuf));
+            if (RT_FAILURE(rc))
+                return rc;
+            uint32_t offSrcBuf = (size_t)offInFile & (size_t)ISO9660_SECTOR_OFFSET_MASK;
+            uint32_t cbToCopy  = RT_MIN(ISO9660_SECTOR_SIZE - offSrcBuf, cbToRead);
+            memcpy(pbBuf, &abSectorBuf[offSrcBuf], cbToCopy);
+            if (cbToCopy >= cbToRead)
+                return VINF_SUCCESS;
+            cbToRead  -= cbToCopy;
+            offInFile += cbToCopy;
+            pbBuf     += cbToCopy;
+        }
+
+        /*
+         * The offset is aligned now, so try read some sectors directly into the buffer.
+         */
+        AssertContinue((offInFile & ISO9660_SECTOR_OFFSET_MASK) == 0);
+        if (cbToRead >= ISO9660_SECTOR_SIZE)
+        {
+            uint32_t cbFullSectors = cbToRead & ~(uint32_t)ISO9660_SECTOR_OFFSET_MASK;
+            int rc = rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(pThis, pIsoMaker, pFile, offInFile, pbBuf, cbFullSectors);
+            if (RT_FAILURE(rc))
+                return rc;
+            if (cbFullSectors >= cbToRead)
+                return VINF_SUCCESS;
+            cbToRead  -= cbFullSectors;
+            offInFile += cbFullSectors;
+            pbBuf     += cbFullSectors;
+        }
+    }
+}
+
+
+
+/**
  * Produces the content of a TRANS.TBL file as a memory file.
  *
  * @returns IPRT status code.
@@ -5002,7 +5730,7 @@ static int rtFsIsoMakerOutFile_ProduceTransTbl(PRTFSISOMAKEROUTPUTFILE pThis, PR
 
     AssertMsgFailed(("rc=%Rrc, cbResult=%#RX64 cbData=%#RX64\n", rc, cbResult, pFile->cbData));
     RTVfsFileRelease(hVfsFile);
-    return VERR_INTERNAL_ERROR_4;
+    return VERR_ISOMK_IPE_PRODUCE_TRANS_TBL;
 }
 
 
@@ -5033,7 +5761,7 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
     if (!pFile)
     {
         pFile = RTListGetFirst(&pIsoMaker->FinalizedFiles, RTFSISOMAKERFILE, FinalizedEntry);
-        AssertReturn(pFile, VERR_INTERNAL_ERROR_2);
+        AssertReturn(pFile, VERR_ISOMK_IPE_READ_FILE_DATA_1);
     }
     if ((offInFile = offUnsigned - pFile->offData) < RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE))
     { /* hit */ }
@@ -5043,7 +5771,7 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
         do
         {
             pFile = RTListGetNext(&pIsoMaker->FinalizedFiles, pFile, RTFSISOMAKERFILE, FinalizedEntry);
-            AssertReturn(pFile, VERR_INTERNAL_ERROR_3);
+            AssertReturn(pFile, VERR_ISOMK_IPE_READ_FILE_DATA_2);
         } while ((offInFile = offUnsigned - pFile->offData) >= RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
     }
     else
@@ -5052,7 +5780,7 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
         do
         {
             pFile = RTListGetPrev(&pIsoMaker->FinalizedFiles, pFile, RTFSISOMAKERFILE, FinalizedEntry);
-            AssertReturn(pFile, VERR_INTERNAL_ERROR_3);
+            AssertReturn(pFile, VERR_ISOMK_IPE_READ_FILE_DATA_3);
         } while ((offInFile = offUnsigned - pFile->offData) >= RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE));
     }
 
@@ -5111,8 +5839,20 @@ static int rtFsIsoMakerOutFile_ReadFileData(PRTFSISOMAKEROUTPUTFILE pThis, PRTFS
                 AssertRC(rc);
                 break;
 
+            case RTFSISOMAKERSRCTYPE_RR_SPILL:
+                Assert(pFile->cbData < UINT32_MAX);
+                if (   !(offInFile & ISO9660_SECTOR_OFFSET_MASK)
+                    && !(cbToRead & ISO9660_SECTOR_OFFSET_MASK)
+                    && cbToRead > 0)
+                    rc = rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(pThis, pIsoMaker, pFile, (uint32_t)offInFile,
+                                                                       pbBuf, (uint32_t)cbToRead);
+                else
+                    rc = rtFsIsoMakerOutFile_RockRidgeSpillReadUnaligned(pThis, pIsoMaker, pFile, (uint32_t)offInFile,
+                                                                         pbBuf, (uint32_t)cbToRead);
+                break;
+
             default:
-                AssertFailedReturn(VERR_INTERNAL_ERROR_5);
+                AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
         }
         if (RT_FAILURE(rc))
             return rc;
@@ -5318,13 +6058,15 @@ static size_t rtFsIsoMakerOutFile_ReadPathTable(PRTFSISOMAKERNAMEDIR *ppDirHint,
  * padding.
  *
  * @returns Number of bytes copied into the buffer (pName->cbDirRec).
- * @param   pName       The namespace node.
- * @param   fUnicode    Set if the name should be translated to big endian
- *                      UTF-16BE / UCS-2BE, i.e. we're in the joliet namespace.
- * @param   pbBuf       The buffer.  This is at least pName->cbDirRec bytes big
- *                      (i.e. at most 256 bytes).
+ * @param   pName           The namespace node.
+ * @param   fUnicode        Set if the name should be translated to big endian
+ *                          UTF-16BE / UCS-2BE, i.e. we're in the joliet namespace.
+ * @param   pbBuf           The buffer.  This is at least pName->cbDirRec bytes
+ *                          big (i.e. at most 256 bytes).
+ * @param   pFinalizedDirs  The finalized directory data for the namespace.
  */
-static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf)
+static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf,
+                                                   PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs)
 {
     /*
      * Emit a standard ISO-9660 directory record.
@@ -5391,7 +6133,57 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
     /*
      * Rock ridge fields if enabled.
      */
-    /** @todo rock ridge. */
+    if (pName->cbRockInDirRec > 0)
+    {
+        uint8_t *pbSys = (uint8_t *)&pDirRec->achFileId[pName->cbNameInDirRec + !(pName->cbNameInDirRec & 1)];
+        size_t   cbSys = &pbBuf[pName->cbDirRec] - pbSys;
+        Assert(cbSys >= pName->cbRockInDirRec);
+        if (cbSys > pName->cbRockInDirRec)
+            RT_BZERO(&pbSys[pName->cbRockInDirRec], cbSys - pName->cbRockInDirRec);
+        if (pName->cbRockSpill == 0)
+            rtFsIosMakerOutFile_GenerateRockRidge(pName, pbSys, cbSys, false /*fInSpill*/);
+        else
+        {
+            /* Maybe emit SP and RR entry, before emitting the CE entry. */
+            if (pName->pParent == NULL)
+            {
+                PISO9660SUSPSP pSP = (PISO9660SUSPSP)pbSys;
+                pSP->Hdr.bSig1     = ISO9660SUSPSP_SIG1;
+                pSP->Hdr.bSig2     = ISO9660SUSPSP_SIG2;
+                pSP->Hdr.cbEntry   = ISO9660SUSPSP_LEN;
+                pSP->Hdr.bVersion  = ISO9660SUSPSP_VER;
+                pSP->bCheck1       = ISO9660SUSPSP_CHECK1;
+                pSP->bCheck2       = ISO9660SUSPSP_CHECK2;
+                pSP->cbSkip        = 0;
+                pbSys += sizeof(*pSP);
+                cbSys -= sizeof(*pSP);
+            }
+            if (pName->fRockNeedRRInDirRec)
+            {
+                PISO9660RRIPRR pRR = (PISO9660RRIPRR)pbSys;
+                pRR->Hdr.bSig1     = ISO9660RRIPRR_SIG1;
+                pRR->Hdr.bSig2     = ISO9660RRIPRR_SIG2;
+                pRR->Hdr.cbEntry   = ISO9660RRIPRR_LEN;
+                pRR->Hdr.bVersion  = ISO9660RRIPRR_VER;
+                pRR->fFlags        = pName->fRockEntries;
+                pbSys += sizeof(*pRR);
+                cbSys -= sizeof(*pRR);
+            }
+            PISO9660SUSPCE pCE = (PISO9660SUSPCE)pbSys;
+            pCE->Hdr.bSig1     = ISO9660SUSPCE_SIG1;
+            pCE->Hdr.bSig2     = ISO9660SUSPCE_SIG2;
+            pCE->Hdr.cbEntry   = ISO9660SUSPCE_LEN;
+            pCE->Hdr.bVersion  = ISO9660SUSPCE_VER;
+            uint64_t offData = pFinalizedDirs->pRRSpillFile->offData + pName->offRockSpill;
+            pCE->offBlock.be   = RT_H2BE_U32((uint32_t)(offData / ISO9660_SECTOR_SIZE));
+            pCE->offBlock.le   = RT_H2LE_U32((uint32_t)(offData / ISO9660_SECTOR_SIZE));
+            pCE->offData.be    = RT_H2BE_U32((uint32_t)(offData & ISO9660_SECTOR_OFFSET_MASK));
+            pCE->offData.le    = RT_H2LE_U32((uint32_t)(offData & ISO9660_SECTOR_OFFSET_MASK));
+            pCE->cbData.be     = RT_H2BE_U32((uint32_t)pName->cbRockSpill);
+            pCE->cbData.le     = RT_H2LE_U32((uint32_t)pName->cbRockSpill);
+            Assert(cbSys >= sizeof(*pCE));
+        }
+    }
 
     return pName->cbDirRec;
 }
@@ -5401,18 +6193,20 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRec(PRTFSISOMAKERNAME pName, bool
  * Generates ISO-9660 directory records into the specified buffer.
  *
  * @returns Number of bytes copied into the buffer.
- * @param   pName       The namespace node.
- * @param   fUnicode    Set if the name should be translated to big endian
- *                      UTF-16BE / UCS-2BE, i.e. we're in the joliet namespace.
- * @param   pbBuf       The buffer.  This is at least pName->cbDirRecTotal bytes
- *                      big.
+ * @param   pName           The namespace node.
+ * @param   fUnicode        Set if the name should be translated to big endian
+ *                          UTF-16BE / UCS-2BE, i.e. we're in the joliet namespace.
+ * @param   pbBuf           The buffer.  This is at least pName->cbDirRecTotal
+ *                          bytes big.
+ * @param   pFinalizedDirs  The finalized directory data for the namespace.
  */
-static uint32_t rtFsIsoMakerOutFile_GenerateDirRecDirect(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf)
+static uint32_t rtFsIsoMakerOutFile_GenerateDirRecDirect(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t *pbBuf,
+                                                         PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs)
 {
     /*
      * Normally there is just a single record without any zero padding.
      */
-    uint32_t cbReturn = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
+    uint32_t cbReturn = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf, pFinalizedDirs);
     if (RT_LIKELY(pName->cbDirRecTotal == cbReturn))
         return cbReturn;
     Assert(cbReturn < pName->cbDirRecTotal);
@@ -5469,15 +6263,17 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecDirect(PRTFSISOMAKERNAME pName
  * directory record.
  *
  * @returns Number of bytes copied into the buffer.
- * @param   pName       The namespace node.
- * @param   fUnicode    Set if the name should be translated to big endian
- *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
- * @param   off         The offset into the directory record.
- * @param   pbBuf       The buffer.
- * @param   cbBuf       The buffer size.
+ * @param   pName           The namespace node.
+ * @param   fUnicode        Set if the name should be translated to big endian
+ *                          UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   off             The offset into the directory record.
+ * @param   pbBuf           The buffer.
+ * @param   cbBuf           The buffer size.
+ * @param   pFinalizedDirs  The finalized directory data for the namespace.
  */
 static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pName, bool fUnicode,
-                                                          uint32_t off, uint8_t *pbBuf, size_t cbBuf)
+                                                          uint32_t off, uint8_t *pbBuf, size_t cbBuf,
+                                                          PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs)
 {
     Assert(off < pName->cbDirRecTotal);
 
@@ -5487,7 +6283,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pNam
      */
     uint8_t abTmpBuf[256];
     Assert(pName->cbDirRec <= sizeof(abTmpBuf));
-    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf);
+    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf, pFinalizedDirs);
     Assert(cbOne == pName->cbDirRec);
     if (cbOne == pName->cbDirRecTotal)
     {
@@ -5587,16 +6383,18 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pNam
  * reduced to 1 byte.
  *
  * @returns Number of bytes copied into the buffer.
- * @param   pName       The directory namespace node.
- * @param   fUnicode    Set if the name should be translated to big endian
- *                      UTF-16 / UCS-2, i.e. we're in the joliet namespace.
- * @param   bDirId      The directory ID (0x00 or 0x01).
- * @param   off         The offset into the directory record.
- * @param   pbBuf       The buffer.
- * @param   cbBuf       The buffer size.
+ * @param   pName           The directory namespace node.
+ * @param   fUnicode        Set if the name should be translated to big endian
+ *                          UTF-16 / UCS-2, i.e. we're in the joliet namespace.
+ * @param   bDirId          The directory ID (0x00 or 0x01).
+ * @param   off             The offset into the directory record.
+ * @param   pbBuf           The buffer.
+ * @param   cbBuf           The buffer size.
+ * @param   pFinalizedDirs  The finalized directory data for the namespace.
  */
 static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pName, bool fUnicode, uint8_t bDirId,
-                                                          uint32_t off, uint8_t *pbBuf, size_t cbBuf)
+                                                          uint32_t off, uint8_t *pbBuf, size_t cbBuf,
+                                                          PRTFSISOMAKERFINALIZEDDIRS pFinalizedDirs)
 {
     Assert(off < pName->cbDirRec);
     Assert(pName->pDir);
@@ -5604,7 +6402,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
     /* Generate a regular directory record. */
     uint8_t abTmpBuf[256];
     Assert(off < pName->cbDirRec);
-    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf);
+    size_t cbToCopy = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs);
     Assert(cbToCopy == pName->cbDirRec);
 
     /* Replace the filename part. */
@@ -5706,7 +6504,8 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
             /* do '.' */
             if (offInDir < pDir->cbDirRec00)
             {
-                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateSpecialDirRec(pDirName, fUnicode, 0, offInDir, pbBuf, cbBuf);
+                uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateSpecialDirRec(pDirName, fUnicode, 0, offInDir,
+                                                                              pbBuf, cbBuf, pFinalizedDirs);
                 cbDone   += cbCopied;
                 offInDir += cbCopied;
                 pbBuf    += cbCopied;
@@ -5717,7 +6516,8 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
             if (cbBuf > 0)
             {
                 uint32_t cbCopied = rtFsIsoMakerOutFile_GenerateSpecialDirRec(pParentName, fUnicode, 1,
-                                                                              offInDir - pDir->cbDirRec00, pbBuf, cbBuf);
+                                                                              offInDir - pDir->cbDirRec00,
+                                                                              pbBuf, cbBuf, pFinalizedDirs);
                 cbDone   += cbCopied;
                 offInDir += cbCopied;
                 pbBuf    += cbCopied;
@@ -5754,9 +6554,10 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
             uint32_t cbCopied;
             if (   offInDir == pChild->offDirRec
                 && cbBuf    >= pChild->cbDirRecTotal)
-                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecDirect(pChild, fUnicode, pbBuf);
+                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecDirect(pChild, fUnicode, pbBuf, pFinalizedDirs);
             else
-                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pChild, fUnicode, offInDir - pChild->offDirRec, pbBuf, cbBuf);
+                cbCopied = rtFsIsoMakerOutFile_GenerateDirRecPartial(pChild, fUnicode, offInDir - pChild->offDirRec,
+                                                                     pbBuf, cbBuf, pFinalizedDirs);
 
             cbDone   += cbCopied;
             offInDir += cbCopied;
@@ -5903,8 +6704,6 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRT
         else if (offUnsigned >= pIsoMaker->PrimaryIsoDirs.offDirs)
             cbDone = rtFsIsoMakerOutFile_ReadDirStructures(&pThis->pDirHintPrimaryIso, &pIsoMaker->PrimaryIso,
                                                            &pIsoMaker->PrimaryIsoDirs, offUnsigned, pbBuf, cbBuf);
-        /** @todo Insert El Torito stuff here? Probably okay to let it be in the file
-         *        area, right? */
         /*
          * Volume descriptors.
          */
@@ -6055,7 +6854,7 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Seek(void *pvThis, RTFOFF offSeek, 
             break;
 
         default:
-            return VERR_INTERNAL_ERROR_5;
+            return VERR_INVALID_PARAMETER;
     }
 
     /*
@@ -6168,6 +6967,8 @@ RTDECL(int) RTFsIsoMakerCreateVfsOutputFile(RTFSISOMAKER hIsoMaker, PRTVFSFILE p
         pFileData->hVfsSrcFile        = NIL_RTVFSFILE;
         pFileData->pDirHintPrimaryIso = NULL;
         pFileData->pDirHintJoliet     = NULL;
+        pFileData->iChildPrimaryIso   = UINT32_MAX;
+        pFileData->iChildJoliet       = UINT32_MAX;
         *phVfsFile = hVfsFile;
         return VINF_SUCCESS;
     }
