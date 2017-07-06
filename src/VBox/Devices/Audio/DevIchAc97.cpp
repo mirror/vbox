@@ -910,39 +910,57 @@ static int ichac97StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIXSI
     AssertReturn(cbToRead,       VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
+    int rc = VINF_SUCCESS;
+
+    uint32_t cbReadTotal = 0;
+
     PRTCIRCBUF pCircBuf = pSrcStream->State.pCircBuf;
     AssertPtr(pCircBuf);
 
     void *pvSrc;
     size_t cbSrc;
 
-    uint32_t cbWritten = 0;
-
-    RTCircBufAcquireReadBlock(pCircBuf, cbToRead, &pvSrc, &cbSrc);
-
-    if (cbSrc)
+    while (cbToRead)
     {
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
-        RTFILE fh;
-        RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm",
-                   RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, pvSrc, cbSrc, NULL);
-        RTFileClose(fh);
-#endif
-        int rc2 = AudioMixerSinkWrite(pDstMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
-        AssertRC(rc2);
+        uint32_t cbWritten = 0;
 
-#ifdef DEBUG_andy
-        Assert(cbWritten == cbSrc);
+        RTCircBufAcquireReadBlock(pCircBuf, cbToRead, &pvSrc, &cbSrc);
+
+        if (cbSrc)
+        {
+#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA
+            RTFILE fh;
+            RTFileOpen(&fh, VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "ac97StreamRead.pcm",
+                       RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+            RTFileWrite(fh, pvSrc, cbSrc, NULL);
+            RTFileClose(fh);
 #endif
+            rc = AudioMixerSinkWrite(pDstMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(cbWritten <= cbSrc);
+
+                cbReadTotal += cbWritten;
+
+                Assert(cbToRead >= cbWritten);
+                cbToRead    -= cbWritten;
+            }
+        }
+
+        RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
+
+        if (   !cbWritten
+            || !RTCircBufUsed(pCircBuf))
+               break;
+
+        if (RT_FAILURE(rc))
+            break;
     }
 
-    RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
-
     if (pcbRead)
-        *pcbRead = cbWritten;
+        *pcbRead = cbReadTotal;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
@@ -1248,8 +1266,12 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
             if (cbUsed)
             {
                 /* Read (guest output) data and write it to the stream's sink. */
-                rc2 = ichac97StreamRead(pThis, pStream, pSink, cbUsed, NULL /* pcbRead */);
+                uint32_t cbRead;
+                rc2 = ichac97StreamRead(pThis, pStream, pSink, cbUsed, &cbRead);
                 AssertRC(rc2);
+
+                AssertMsg(cbUsed == cbRead, ("[SD%RU8] %RU32 bytes announced to be ready to read but %RU32 bytes read\n",
+                                             pStream->u8SD, cbUsed, cbRead));
             }
 
             /* When running synchronously, update the associated sink here.
