@@ -745,7 +745,7 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->fFinalized                 = false;
 
         pThis->PrimaryIso.fNamespace        = RTFSISOMAKER_NAMESPACE_ISO_9660;
-        pThis->PrimaryIso.offName           = RT_OFFSETOF(RTFSISOMAKEROBJ, pPrimaryName);
+        pThis->PrimaryIso.offName           = RT_UOFFSETOF(RTFSISOMAKEROBJ, pPrimaryName);
         pThis->PrimaryIso.uLevel            = 3; /* 30 char names, large files */
         pThis->PrimaryIso.uRockRidgeLevel   = 1;
         pThis->PrimaryIso.pszTransTbl       = (char *)g_szTransTbl;
@@ -760,7 +760,7 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->PrimaryIso.pszBibliographicFileId = NULL;
 
         pThis->Joliet.fNamespace            = RTFSISOMAKER_NAMESPACE_JOLIET;
-        pThis->Joliet.offName               = RT_OFFSETOF(RTFSISOMAKEROBJ, pJolietName);
+        pThis->Joliet.offName               = RT_UOFFSETOF(RTFSISOMAKEROBJ, pJolietName);
         pThis->Joliet.uLevel                = 3;
         //pThis->Joliet.uRockRidgeLevel     = 0;
         //pThis->Joliet.pszTransTbl         = NULL;
@@ -775,7 +775,7 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->Joliet.pszBibliographicFileId = NULL;
 
         pThis->Udf.fNamespace               = RTFSISOMAKER_NAMESPACE_UDF;
-        pThis->Udf.offName                  = RT_OFFSETOF(RTFSISOMAKEROBJ, pUdfName);
+        pThis->Udf.offName                  = RT_UOFFSETOF(RTFSISOMAKEROBJ, pUdfName);
         //pThis->Udf.uLevel                 = 0;
         //pThis->Udf.uRockRidgeLevel        = 0;
         //pThis->Udf.pszTransTbl            = NULL;
@@ -792,7 +792,7 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->Udf.pszBibliographicFileId = NULL;
 
         pThis->Hfs.fNamespace               = RTFSISOMAKER_NAMESPACE_HFS;
-        pThis->Hfs.offName                  = RT_OFFSETOF(RTFSISOMAKEROBJ, pHfsName);
+        pThis->Hfs.offName                  = RT_UOFFSETOF(RTFSISOMAKEROBJ, pHfsName);
         //pThis->Hfs.uLevel                 = 0;
         //pThis->Hfs.uRockRidgeLevel        = 0;
         //pThis->Hfs.pszTransTbl            = NULL;
@@ -4184,7 +4184,7 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
 
         /* We always do 'PX' and 'TF' w/ 4 timestamps. */
         cbRock = sizeof(ISO9660RRIPPX)
-               + RT_OFFSETOF(ISO9660RRIPTF, abPayload) + 4 * sizeof(ISO9660RECTIMESTAMP);
+               + RT_UOFFSETOF(ISO9660RRIPTF, abPayload) + 4 * sizeof(ISO9660RECTIMESTAMP);
         fFlags |= ISO9660RRIP_RR_F_PX | ISO9660RRIP_RR_F_TF;
 
         /* Devices needs 'PN'. */
@@ -4698,7 +4698,7 @@ static void rtFsIsoMakerTimespecToIso9660Timestamp(PCRTTIMESPEC pTime, PISO9660T
  */
 static void rtFsIsoMakerZero9660Timestamp(PISO9660TIMESTAMP pIsoTs)
 {
-    memset(pIsoTs, '0', RT_OFFSETOF(ISO9660TIMESTAMP, offUtc));
+    memset(pIsoTs, '0', RT_UOFFSETOF(ISO9660TIMESTAMP, offUtc));
     pIsoTs->offUtc = 0;
 }
 
@@ -5182,9 +5182,9 @@ static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t
         if (   off - offEntry + cbNeeded < UINT8_MAX
             && off + cbNeeded <= cbBuf)
         { /* likely */ }
-        else if (cbNeeded + RT_OFFSETOF(ISO9660RRIPSL, abComponents) < UINT8_MAX)
+        else if (cbNeeded + RT_UOFFSETOF(ISO9660RRIPSL, abComponents) < UINT8_MAX)
         {
-            AssertReturn(off + cbNeeded + RT_OFFSETOF(ISO9660RRIPSL, abComponents) <= cbBuf, VERR_BUFFER_OVERFLOW);
+            AssertReturn(off + cbNeeded + RT_UOFFSETOF(ISO9660RRIPSL, abComponents) <= cbBuf, VERR_BUFFER_OVERFLOW);
             Assert(off - offEntry < UINT8_MAX);
             pEntry->Hdr.cbEntry = (uint8_t)(off - offEntry);
             pEntry->fFlags |= ISO9660RRIP_SL_F_CONTINUE;
@@ -5221,7 +5221,7 @@ static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t
                 pEntry->Hdr.cbEntry = (uint8_t)(off - offEntry);
                 pEntry->fFlags |= ISO9660RRIP_SL_F_CONTINUE;
 
-                AssertReturn(off + 2 + cchComponent + RT_OFFSETOF(ISO9660RRIPSL, abComponents) <= cbBuf, VERR_BUFFER_OVERFLOW);
+                AssertReturn(off + 2 + cchComponent + RT_UOFFSETOF(ISO9660RRIPSL, abComponents) <= cbBuf, VERR_BUFFER_OVERFLOW);
                 offEntry = off;
                 pEntry = (PISO9660RRIPSL)&pbBuf[off];
                 pEntry->Hdr.bSig1    = ISO9660RRIPSL_SIG1;
@@ -5389,15 +5389,15 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
         {
             size_t         cchThis = RT_MIN(cchSrc, ISO9660RRIPNM_MAX_NAME_LEN);
             PISO9660RRIPNM pNM     = (PISO9660RRIPNM)pbSys;
-            Assert(cbSys >= RT_OFFSETOF(ISO9660RRIPNM, achName[cchThis]));
+            Assert(cbSys >= RT_UOFFSETOF(ISO9660RRIPNM, achName[cchThis]));
             pNM->Hdr.bSig1      = ISO9660RRIPNM_SIG1;
             pNM->Hdr.bSig2      = ISO9660RRIPNM_SIG2;
-            pNM->Hdr.cbEntry    = (uint8_t)(RT_OFFSETOF(ISO9660RRIPNM, achName) + cchThis);
+            pNM->Hdr.cbEntry    = (uint8_t)(RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis);
             pNM->Hdr.bVersion   = ISO9660RRIPNM_VER;
             pNM->fFlags         = cchThis == cchSrc ? 0 : ISO9660RRIP_NM_F_CONTINUE;
             memcpy(&pNM->achName[0], pszSrc, cchThis);
-            pbSys  += RT_OFFSETOF(ISO9660RRIPNM, achName) + cchThis;
-            cbSys  -= RT_OFFSETOF(ISO9660RRIPNM, achName) + cchThis;
+            pbSys  += RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
+            cbSys  -= RT_UOFFSETOF(ISO9660RRIPNM, achName) + cchThis;
             cchSrc -= cchThis;
             if (!cchSrc)
                 break;
@@ -6409,12 +6409,12 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
     PISO9660DIRREC pDirRec = (PISO9660DIRREC)abTmpBuf;
     if (pDirRec->bFileIdLength != 1)
     {
-        uint8_t offSysUse = pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1) + RT_OFFSETOF(ISO9660DIRREC, achFileId);
+        uint8_t offSysUse = pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1) + RT_UOFFSETOF(ISO9660DIRREC, achFileId);
         uint8_t cbSysUse  = pDirRec->cbDirRec - offSysUse;
         if (cbSysUse > 0)
             memmove(&pDirRec->achFileId[1], &pbBuf[offSysUse], cbSysUse);
         pDirRec->bFileIdLength = 1;
-        cbToCopy = RT_OFFSETOF(ISO9660DIRREC, achFileId) + 1 + cbSysUse;
+        cbToCopy = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + 1 + cbSysUse;
         pDirRec->cbDirRec = (uint8_t)cbToCopy;
     }
     pDirRec->achFileId[0] = bDirId;
