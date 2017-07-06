@@ -2663,7 +2663,6 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
 
     uint32_t uMicrocodeRev;
     int rc = SUPR3QueryMicrocodeRev(&uMicrocodeRev);
-    rc = SUPR3QueryVTCaps(&uMicrocodeRev);
     if (RT_SUCCESS(rc))
     {
         LogRel(("CPUM: Microcode revision 0x%08X\n", uMicrocodeRev));
