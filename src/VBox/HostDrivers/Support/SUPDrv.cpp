@@ -4290,7 +4290,7 @@ int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
  *          readable microcode rev.
  *
  * @param   pSession        The session handle.
- * @param   puRevisoion     Where to store the microcode revision.
+ * @param   puRevision      Where to store the microcode revision.
  */
 SUPR0DECL(int) SUPR0QueryUcodeRev(PSUPDRVSESSION pSession, uint32_t *puRevision)
 {
