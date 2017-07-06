@@ -120,6 +120,12 @@ static void dispi_set_yres(uint16_t yres)
     out_w(VBE_DISPI_IOPORT_DATA, yres);
 }
 
+static uint16_t dispi_get_yres(void)
+{
+    out_w(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
+    return in_w(VBE_DISPI_IOPORT_DATA);
+}
+
 static void dispi_set_bpp(uint16_t bpp)
 {
 #ifdef VGA_DEBUG
@@ -744,8 +750,10 @@ void vbe_biosfn_get_set_scanline_length(uint16_t STACK_BASED *AX, uint16_t STACK
     uint16_t    result;
     uint8_t     bpp;
     uint8_t     subfn;
+    uint16_t    old_vw;
 
     bpp    = dispi_get_bpp();
+    old_vw = dispi_get_virt_width();
     result = 0x004F;
     val    = *CX;
     subfn  = *BX & 0xFF;
@@ -772,6 +780,10 @@ void vbe_biosfn_get_set_scanline_length(uint16_t STACK_BASED *AX, uint16_t STACK
         val = (val + 3) & ~3;
         *BX = val;                          /* Bytes per scanline. */
         *DX = dispi_get_virt_height();      /* Height in lines. */
+        if (*DX < dispi_get_yres()) {
+            dispi_set_virt_width(old_vw);
+            result = 0x200;
+        }
         break;
     default:
         // function failed
