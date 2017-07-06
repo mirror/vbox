@@ -677,7 +677,6 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
              */
             case MAKE_SIG(ISO9660SUSPCE_SIG1, ISO9660SUSPCE_SIG2):
             {
-__debugbreak();
                 if (RT_BE2H_U32(pUnion->CE.offBlock.be) != RT_LE2H_U32(pUnion->CE.offBlock.le))
                     LogRel(("rtFsIsoImport/Rock: Invalid CE offBlock field: be=%#x vs le=%#x\n",
                             RT_BE2H_U32(pUnion->CE.offBlock.be), RT_LE2H_U32(pUnion->CE.offBlock.le)));
