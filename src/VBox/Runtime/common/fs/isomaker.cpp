@@ -3368,8 +3368,8 @@ RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO 
     }
     AssertPtrReturn(pszTarget, VERR_INVALID_POINTER);
     size_t cchTarget = strlen(pszTarget);
-    AssertPtrReturn(cchTarget > 0, VERR_INVALID_NAME);
-    AssertPtrReturn(cchTarget < RTFSISOMAKER_MAX_SYMLINK_TARGET_LEN, VERR_FILENAME_TOO_LONG);
+    AssertReturn(cchTarget > 0, VERR_INVALID_NAME);
+    AssertReturn(cchTarget < RTFSISOMAKER_MAX_SYMLINK_TARGET_LEN, VERR_FILENAME_TOO_LONG);
     AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
 
     /*
