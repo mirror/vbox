@@ -5177,7 +5177,7 @@ static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t
     pEntry->Hdr.bVersion = ISO9660RRIPSL_VER;
     pEntry->fFlags       = 0;
     size_t  offEntry = 0;
-    size_t  off      = pEntry->Hdr.cbEntry;
+    size_t  off      = RT_UOFFSETOF(ISO9660RRIPSL, abComponents);
 
     /* Does it start with a root slash? */
     if (RTPATH_IS_SLASH(*pszTarget))
@@ -5377,8 +5377,8 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
             pPX->Hdr.bSig2      = ISO9660RRIPPX_SIG2;
             pPX->Hdr.cbEntry    = ISO9660RRIPPX_LEN;
             pPX->Hdr.bVersion   = ISO9660RRIPPX_VER;
-            pPX->fMode.be       = RT_H2BE_U32((uint32_t)pName->fMode);
-            pPX->fMode.le       = RT_H2LE_U32((uint32_t)pName->fMode);
+            pPX->fMode.be       = RT_H2BE_U32((uint32_t)(pName->fMode & RTFS_UNIX_MASK));
+            pPX->fMode.le       = RT_H2LE_U32((uint32_t)(pName->fMode & RTFS_UNIX_MASK));
             pPX->cHardlinks.be  = RT_H2BE_U32((uint32_t)pName->cHardlinks);
             pPX->cHardlinks.le  = RT_H2LE_U32((uint32_t)pName->cHardlinks);
             pPX->uid.be         = RT_H2BE_U32((uint32_t)pName->uid);

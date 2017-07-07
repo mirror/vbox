@@ -799,7 +799,7 @@ static DECLCALLBACK(int) rtFsIso9660File_QuerySize(void *pvThis, uint64_t *pcbFi
 
 
 /**
- * FAT file operations.
+ * ISO FS file operations.
  */
 DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIos9660FileOps =
 {
