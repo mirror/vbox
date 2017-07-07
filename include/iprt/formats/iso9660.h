@@ -1086,6 +1086,8 @@ AssertCompileSize(ISO9660SUSPES, ISO9660SUSPES_LEN);
 #define ISO9660_RRIP_DESC       "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
 /** RRIP ER recommended source string  (from RRIP v1.10 specs). */
 #define ISO9660_RRIP_SRC        "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
+/** RRIP ER version field value from the Rock Ridge Interchange Protocol v1.10 specs. */
+#define ISO9660_RRIP_VER         1
 /** The length of a RRIP v1.10 ER record.
  * The record must be constructed using ISO9660_RRIP_ID, ISO9660_RRIP_DESC
  * and ISO9660_RRIP_SRC. */
@@ -1100,6 +1102,8 @@ AssertCompileSize(ISO9660SUSPES, ISO9660SUSPES_LEN);
 #define ISO9660_RRIP_1_12_DESC  "THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS."
 /** RRIP ER recommended source string  (RRIP IEEE P1282 v1.12 draft). */
 #define ISO9660_RRIP_1_12_SRC   "PLEASE CONTACT THE IEEE STANDARDS DEPARTMENT, PISCATAWAY, NJ, USA FOR THE P1282 SPECIFICATION."
+/** RRIP ER version field value from the Rock Ridge Interchange Protocol v1.12 specs. */
+#define ISO9660_RRIP_1_12_VER   1
 /** The length of a RRIP v1.12 ER record.
  * The record must be constructed using ISO9660_RRIP_1_12_ID,
  * ISO9660_RRIP_1_12_DESC and ISO9660_RRIP_1_12_SRC. */
