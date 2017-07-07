@@ -641,6 +641,11 @@ extern void vga_font_set(uint8_t function, uint8_t data);
 //
 // ============================================================================================
 
+/* CGA-compatible MSR (0x3D8) register values for first modes 0-7. */
+uint8_t cga_msr[8] = {
+    0x2C, 0x28, 0x2D, 0x29, 0x2A, 0x2E, 0x1E, 0x29
+};
+
 void biosfn_set_video_mode(uint8_t mode)
 {// mode: Bit 7 is 1 if no clear screen
 
@@ -817,9 +822,11 @@ void biosfn_set_video_mode(uint8_t mode)
  write_byte(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,0x08);    // 8 is VGA should be ok for now
  write_dword(BIOSMEM_SEG,BIOSMEM_VS_POINTER, (uint32_t)(void __far *)video_save_pointer_table);
 
- // FIXME
- write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x00); // Unavailable on vanilla vga, but...
- write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x00); // Unavailable on vanilla vga, but...
+ if (mode <= 7)
+ {
+     write_byte(BIOSMEM_SEG, BIOSMEM_CURRENT_MSR, cga_msr[mode]);           /* Like CGA reg. 0x3D8 */
+     write_byte(BIOSMEM_SEG, BIOSMEM_CURRENT_PAL, mode == 6 ? 0x3F : 0x30); /* Like CGA reg. 0x3D9*/
+ }
 
  // Set cursor shape
  if(vga_modes[line].class==TEXT)
