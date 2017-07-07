@@ -169,7 +169,7 @@ static PRTVFSMEMEXTENT rtVfsMemFile_LocateExtentSlow(PRTVFSMEMFILE pThis, uint64
      * are very very simple, but whatever.
      */
     PRTVFSMEMEXTENT pExtent = pThis->pCurExt;
-    if (!pExtent || pExtent->off < off)
+    if (!pExtent || off < pExtent->off)
     {
         /* Consider the last entry first (for writes). */
         pExtent = RTListGetLast(&pThis->ExtentHead, RTVFSMEMEXTENT, Entry);
