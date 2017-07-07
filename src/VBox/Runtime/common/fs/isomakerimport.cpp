@@ -626,15 +626,16 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
  * @param   pObjInfo            The object information to improve upon.
  * @param   pbSys               The system area of the directory record.
  * @param   cbSys               The number of bytes present in the sys area.
- * @param   fContinuationRecord Set if we're processing a continuation record in
- *                              living in the abRockBuf.
+ * @param   fUnicode            Indicates which namespace we're working on.
  * @param   fIsFirstDirRec      Set if this is the '.' directory entry in the
  *                              root directory.  (Some entries applies only to
  *                              it.)
+ * @param   fContinuationRecord Set if we're processing a continuation record in
+ *                              living in the abRockBuf.
  */
 static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORTER pThis, PRTFSOBJINFO pObjInfo,
-                                                                uint8_t const *pbSys, size_t cbSys, bool fContinuationRecord,
-                                                                bool fIsFirstDirRec)
+                                                                uint8_t const *pbSys, size_t cbSys, bool fUnicode,
+                                                                bool fIsFirstDirRec, bool fContinuationRecord)
 {
     RT_NOREF(pObjInfo);
 
@@ -701,14 +702,16 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                         if (pThis->offRockBuf == offDataBlock)
                             rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, pObjInfo,
                                                                                 &pThis->abRockBuf[offData & ISO9660_SECTOR_OFFSET_MASK],
-                                                                                cbData, true /*fContinuationRecord*/, fIsFirstDirRec);
+                                                                                cbData, fUnicode, fIsFirstDirRec,
+                                                                                true /*fContinuationRecord*/);
                         else
                         {
                             int rc = RTVfsFileReadAt(pThis->hSrcFile, offDataBlock, pThis->abRockBuf, sizeof(pThis->abRockBuf), NULL);
                             if (RT_SUCCESS(rc))
                                 rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, pObjInfo,
                                                                                     &pThis->abRockBuf[offData & ISO9660_SECTOR_OFFSET_MASK],
-                                                                                    cbData, true /*fContinuationRecord*/, fIsFirstDirRec);
+                                                                                    cbData, fUnicode, fIsFirstDirRec,
+                                                                                    true /*fContinuationRecord*/);
                             else
                                 LogRel(("rtFsIsoImport/Rock: Error reading continuation record at %#RX64: %Rrc\n",
                                         offDataBlock, rc));
@@ -758,11 +761,22 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                          && (   (pUnion->ER.cchIdentifier >= 4  && strncmp(pUnion->ER.achPayload, ISO9660_RRIP_ID, 4 /*RRIP*/) == 0)
                              || (pUnion->ER.cchIdentifier >= 10 && strncmp(pUnion->ER.achPayload, RT_STR_TUPLE(ISO9660_RRIP_1_12_ID)) == 0) ))
                 {
-                    //pObjInfo->Attr.u.Unix.fFlags |= RT_BIT_32(31); /** @todo define RRIP ER entry flag. Or do we call the maker? */
                     LogRel(("rtFsIsoImport/Rock: Rock Ridge 'ER' entry: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
                             pUnion->ER.bVersion, pUnion->ER.cchIdentifier, pUnion->ER.achPayload,
                             pUnion->ER.cchDescription, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier],
                             pUnion->ER.cchSource, &pUnion->ER.achPayload[pUnion->ER.cchIdentifier + pUnion->ER.cchDescription]));
+                    if (!fUnicode)
+                    {
+                        int rc = RTFsIsoMakerSetRockRidgeLevel(pThis->hIsoMaker, 2);
+                        if (RT_FAILURE(rc))
+                            LogRel(("rtFsIsoImport/Rock: RTFsIsoMakerSetRockRidgeLevel(,2) failed: %Rrc\n", rc));
+                    }
+                    else
+                    {
+                        int rc = RTFsIsoMakerSetJolietRockRidgeLevel(pThis->hIsoMaker, 2);
+                        if (RT_FAILURE(rc))
+                            LogRel(("rtFsIsoImport/Rock: RTFsIsoMakerSetJolietRockRidgeLevel(,2) failed: %Rrc\n", rc));
+                    }
                 }
                 else
                     LogRel(("rtFsIsoImport/Rock: Unknown extension in 'ER' entry: v%u id='%.*s' desc='%.*s' source='%.*s'\n",
@@ -1072,8 +1086,9 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
  * @returns IPRT status code.
  * @param   pThis               The import instance.
  * @param   pDirRec             The root directory record.
+ * @param   fUnicode            Indicates which namespace we're working on.
  */
-static int rtFsIsoImportProcessIso9660TreeWorkerDoRockForRoot(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec)
+static int rtFsIsoImportProcessIso9660TreeWorkerDoRockForRoot(PRTFSISOMKIMPORTER pThis, PCISO9660DIRREC pDirRec, bool fUnicode)
 {
     uint8_t const         cbSys = pDirRec->cbDirRec - RT_UOFFSETOF(ISO9660DIRREC, achFileId)
                                 - pDirRec->bFileIdLength - !(pDirRec->bFileIdLength & 1);
@@ -1098,8 +1113,8 @@ static int rtFsIsoImportProcessIso9660TreeWorkerDoRockForRoot(PRTFSISOMKIMPORTER
         ObjInfo.Attr.u.Unix.GenerationId    = 0;
         ObjInfo.Attr.u.Unix.Device          = 0;
 
-        rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys,
-                                                            false /*fContinuationRecord*/, true /*fIsFirstDirRec*/);
+        rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys, fUnicode, true /*fIsFirstDirRec*/,
+                                                            false /*fContinuationRecord*/);
         /** @todo Update root dir attribs.  Need API. */
     }
     return VINF_SUCCESS;
@@ -1334,7 +1349,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
         && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE)
         && pDirRec->cbDirRec > RT_UOFFSETOF(ISO9660DIRREC, achFileId[1]))
     {
-        rc = rtFsIsoImportProcessIso9660TreeWorkerDoRockForRoot(pThis, pDirRec);
+        rc = rtFsIsoImportProcessIso9660TreeWorkerDoRockForRoot(pThis, pDirRec, fUnicode);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1472,7 +1487,7 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
                 pThis->fSeenLastSL               = false;
                 pThis->szRockNameBuf[0]          = '\0';
                 pThis->szRockSymlinkTargetBuf[0] = '\0';
-                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys,
+                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys, fUnicode,
                                                                     false /*fContinuationRecord*/, false /*fIsFirstDirRec*/);
             }
 

@@ -1188,8 +1188,10 @@ RTDECL(int) RTFsIsoMakerSetRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel
 {
     PRTFSISOMAKERINT pThis = hIsoMaker;
     RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
-    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
     AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
+    AssertReturn(   !pThis->fSeenContent
+                 || (uLevel >= pThis->PrimaryIso.uRockRidgeLevel && pThis->PrimaryIso.uRockRidgeLevel > 0), VERR_WRONG_ORDER);
+    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
 
     pThis->PrimaryIso.uRockRidgeLevel = uLevel;
     return VINF_SUCCESS;
@@ -1208,8 +1210,9 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
 {
     PRTFSISOMAKERINT pThis = hIsoMaker;
     RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
-    AssertReturn(!pThis->fSeenContent, VERR_WRONG_ORDER);
     AssertReturn(uLevel <= 2, VERR_INVALID_PARAMETER);
+    AssertReturn(   !pThis->fSeenContent
+                 || (uLevel >= pThis->Joliet.uRockRidgeLevel && pThis->Joliet.uRockRidgeLevel > 0), VERR_WRONG_ORDER);
 
     pThis->Joliet.uRockRidgeLevel = uLevel;
     return VINF_SUCCESS;
@@ -4208,8 +4211,8 @@ static int rtFsIsoMakerFinalizeIsoDirectoryEntry(PRTFSISOMAKERFINALIZEDDIRS pFin
             cbRock += sizeof(ISO9660RRIPRR);
 
         /* We always do 'PX' and 'TF' w/ 4 timestamps. */
-        cbRock = sizeof(ISO9660RRIPPX)
-               + RT_UOFFSETOF(ISO9660RRIPTF, abPayload) + 4 * sizeof(ISO9660RECTIMESTAMP);
+        cbRock += sizeof(ISO9660RRIPPX)
+                + RT_UOFFSETOF(ISO9660RRIPTF, abPayload) + 4 * sizeof(ISO9660RECTIMESTAMP);
         fFlags |= ISO9660RRIP_RR_F_PX | ISO9660RRIP_RR_F_TF;
 
         /* Devices needs 'PN'. */
@@ -5468,7 +5471,7 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
         cbSys--;
     }
 
-    Assert(cbSys == 0);
+    Assert(!fInSpill ? cbSys == 0 : cbSys < _2G);
 }
 
 
