@@ -736,7 +736,21 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
     rtFsIsoMakerPrintf(pOpts, "usage: %s [options] <file>=<cdfile>\n", pszProgName);
 }
 
-static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile, RTVFSFILE hVfsDstFile, uint64_t cbImage)
+
+/**
+ * Verifies the image content by reading blocks in random order.
+ *
+ * This is for exercise the virtual ISO code better and test that we get the
+ * same data when reading something twice.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   hVfsSrcFile         The source file (virtual ISO).
+ * @param   hVfsDstFile         The destination file (image file on disk).
+ * @param   cbImage             The size of the ISO.
+ */
+static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile,
+                                                   RTVFSFILE hVfsDstFile, uint64_t cbImage)
 {
     /*
      * Figure the buffer (block) size and allocate a bitmap for noting down blocks we've covered.
@@ -881,6 +895,11 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
  * @returns IPRT status code.
  * @param   pOpts               The ISO maker command instance.
  * @param   hVfsSrcFile         The source file from the ISO maker.
+ * @param   hVfsDstFile         The destination file (image file on disk).
+ * @param   cbImage             The size of the ISO.
+ * @param   ppvBuf              Pointer to the buffer pointer.  The buffer will
+ *                              be reallocated, but we want the luxary of the
+ *                              caller freeing it.
  */
 static int rtFsIsoMakerCmdWriteImageRandomBufferSize(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile, RTVFSFILE hVfsDstFile,
                                                      uint64_t cbImage, void **ppvBuf)
@@ -930,6 +949,10 @@ static int rtFsIsoMakerCmdWriteImageRandomBufferSize(PRTFSISOMAKERCMDOPTS pOpts,
  * @returns IPRT status code.
  * @param   pOpts               The ISO maker command instance.
  * @param   hVfsSrcFile         The source file from the ISO maker.
+ * @param   hVfsDstFile         The destination file (image file on disk).
+ * @param   cbImage             The size of the ISO.
+ * @param   pvBuf               Pointer to read buffer.
+ * @param   cbBuf               The buffer size.
  */
 static int rtFsIsoMakerCmdWriteImageSimple(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile, RTVFSFILE hVfsDstFile,
                                            uint64_t cbImage, void *pvBuf, size_t cbBuf)
