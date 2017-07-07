@@ -1338,6 +1338,14 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
     }
 }
 
+/**
+ * Sets a AC'97 mixer control to a specific value.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   uMixerIdx           Mixer control to set value for.
+ * @param   uVal                Value to set.
+ */
 static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
 {
     if (size_t(uMixerIdx + 2) > sizeof(pThis->mixer_data))
@@ -1350,6 +1358,13 @@ static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
     pThis->mixer_data[uMixerIdx + 1] = RT_HI_U8(uVal);
 }
 
+/**
+ * Gets a value from a specific AC'97 mixer control.
+ *
+ * @returns Retrieved mixer control value.
+ * @param   pThis               AC'97 state.
+ * @param   uMixerIdx           Mixer control to get value for.
+ */
 static uint16_t ichac97MixerGet(PAC97STATE pThis, uint32_t uMixerIdx)
 {
     uint16_t uVal;
