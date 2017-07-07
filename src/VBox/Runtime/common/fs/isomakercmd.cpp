@@ -776,7 +776,7 @@ static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, R
              */
             uint32_t iBlock = RTRandU32Ex(0, cBlocks - 1);
             if (!ASMBitTestAndSet(pvBitmap, iBlock))
-                Assert(iBlock < (int32_t)cBlocks);
+                Assert(iBlock < cBlocks);
             else
             {
                 /* try 32 other random numbers. */
