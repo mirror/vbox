@@ -5245,7 +5245,7 @@ static ssize_t rtFsIsoMakerOutFile_RockRidgeGenSL(const char *pszTarget, uint8_t
                     pbBuf[off++] = cchToCopy < cchComponent ? ISO9660RRIP_SL_C_CONTINUE : 0;
                     pbBuf[off++] = (uint8_t)cchToCopy;
                     memcpy(&pbBuf[off], pszTarget, cchToCopy);
-                    off          += pbBuf[off++];
+                    off          += cchToCopy;
                     pszTarget    += cchToCopy;
                     cchComponent -= cchToCopy;
                     if (!cchComponent)
