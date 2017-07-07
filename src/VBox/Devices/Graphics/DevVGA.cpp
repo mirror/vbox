@@ -1827,7 +1827,7 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
         pThis->plane_updated = 0;
         full_update = true;
     }
-    full_update |= update_basic_params(pThis) | 1;  //@TODO! do not commit!!
+    full_update |= update_basic_params(pThis);
 
     line_offset = pThis->line_offset;
     s1 = pThis->CTX_SUFF(vram_ptr) + (pThis->start_addr * 8); /** @todo r=bird: Add comment why we do *8 instead of *4, it's not so obvious... */
