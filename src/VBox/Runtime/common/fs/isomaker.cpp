@@ -5342,9 +5342,10 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
             pER->cchIdentifier  = sizeof(ISO9660_RRIP_ID)   - 1;
             pER->cchDescription = sizeof(ISO9660_RRIP_DESC) - 1;
             pER->cchSource      = sizeof(ISO9660_RRIP_SRC)  - 1;
+            pER->bVersion       = ISO9660_RRIP_VER;
             memcpy(&pER->achPayload[0], RT_STR_TUPLE(ISO9660_RRIP_ID));
-            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID)], RT_STR_TUPLE(ISO9660_RRIP_DESC));
-            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID) + sizeof(ISO9660_RRIP_DESC)], RT_STR_TUPLE(ISO9660_RRIP_SRC));
+            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID) - 1], RT_STR_TUPLE(ISO9660_RRIP_DESC));
+            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID) - 1 + sizeof(ISO9660_RRIP_DESC) - 1], RT_STR_TUPLE(ISO9660_RRIP_SRC));
             pbSys += ISO9660_RRIP_ER_LEN;
             cbSys -= ISO9660_RRIP_ER_LEN;
         }
@@ -6331,7 +6332,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateDirRecPartial(PRTFSISOMAKERNAME pNam
      */
     uint8_t abTmpBuf[256];
     Assert(pName->cbDirRec <= sizeof(abTmpBuf));
-    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, pbBuf, pFinalizedDirs);
+    uint32_t const cbOne = rtFsIsoMakerOutFile_GenerateDirRec(pName, fUnicode, abTmpBuf, pFinalizedDirs);
     Assert(cbOne == pName->cbDirRec);
     if (cbOne == pName->cbDirRecTotal)
     {
@@ -6460,7 +6461,7 @@ static uint32_t rtFsIsoMakerOutFile_GenerateSpecialDirRec(PRTFSISOMAKERNAME pNam
         uint8_t offSysUse = pDirRec->bFileIdLength + !(pDirRec->bFileIdLength & 1) + RT_UOFFSETOF(ISO9660DIRREC, achFileId);
         uint8_t cbSysUse  = pDirRec->cbDirRec - offSysUse;
         if (cbSysUse > 0)
-            memmove(&pDirRec->achFileId[1], &pbBuf[offSysUse], cbSysUse);
+            memmove(&pDirRec->achFileId[1], &abTmpBuf[offSysUse], cbSysUse);
         pDirRec->bFileIdLength = 1;
         cbToCopy = RT_UOFFSETOF(ISO9660DIRREC, achFileId) + 1 + cbSysUse;
         pDirRec->cbDirRec = (uint8_t)cbToCopy;
@@ -6518,6 +6519,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirRecords(PRTFSISOMAKERNAMEDIR *ppDirHint
     {
         pDir = RTListGetFirst(&pFinalizedDirs->FinalizedDirs, RTFSISOMAKERNAMEDIR, FinalizedEntry);
         AssertReturnStmt(pDir, *pbBuf = 0xff, 1);
+        offInDir64 = offUnsigned - pDir->offDir;
     }
     /* Seek backwards: */
     else

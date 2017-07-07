@@ -2495,6 +2495,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, const char *pszIso, uint3
     pResults->cAddedDirs        = 0;
     pResults->cbAddedDataBlocks = 0;
     pResults->cAddedFiles       = 0;
+    pResults->cAddedSymlinks    = 0;
     pResults->cBootCatEntries   = UINT32_MAX;
     pResults->cbSysArea         = 0;
     pResults->cErrors           = 0;

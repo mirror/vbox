@@ -32,6 +32,7 @@
 #include "internal/iprt.h"
 #include <iprt/fsisomaker.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
@@ -92,6 +93,7 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER,
     RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,
     RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,
+    RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION,
     RTFSISOMAKERCMD_OPT_NAME_SETUP,
     RTFSISOMAKERCMD_OPT_NO_JOLIET,
     RTFSISOMAKERCMD_OPT_IMPORT_ISO,
@@ -311,6 +313,9 @@ typedef struct RTFSISOMAKERCMDOPTS
     /** Use random output read buffer size.  cbOutputReadBuffer works as maximum
      * when this is enabled. */
     bool                fRandomOutputReadBufferSize;
+    /** Do output verification, but do it in random order if non-zero.  The
+     * values gives the block size to use. */
+    uint32_t            cbRandomOrderVerifciationBlock;
 
     /** @name Processing of inputs
      * @{ */
@@ -413,6 +418,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
 
     { "--output-buffer-size",           RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE,             RTGETOPT_REQ_UINT32  },
     { "--random-output-buffer-size",    RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,      RTGETOPT_REQ_NOTHING },
+    { "--random-order-verficiation",    RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION,      RTGETOPT_REQ_UINT32 },
     { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
     { "--no-joliet",                    RTFSISOMAKERCMD_OPT_NO_JOLIET,                      RTGETOPT_REQ_NOTHING },
     { "--import-iso",                   RTFSISOMAKERCMD_OPT_IMPORT_ISO,                     RTGETOPT_REQ_STRING  },
@@ -730,6 +736,234 @@ static void rtFsIsoMakerCmdUsage(PRTFSISOMAKERCMDOPTS pOpts, const char *pszProg
     rtFsIsoMakerPrintf(pOpts, "usage: %s [options] <file>=<cdfile>\n", pszProgName);
 }
 
+static int rtFsIsoMakerCmdVerifyImageInRandomOrder(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile, RTVFSFILE hVfsDstFile, uint64_t cbImage)
+{
+    /*
+     * Figure the buffer (block) size and allocate a bitmap for noting down blocks we've covered.
+     */
+    int      rc;
+    size_t   cbBuf     = RT_MAX(pOpts->cbRandomOrderVerifciationBlock, 1);
+    uint64_t cBlocks64 = (cbImage + cbBuf - 1) / cbBuf;
+    if (cBlocks64 > _512M)
+        return rtFsIsoMakerCmdErrorRc(pOpts, VERR_OUT_OF_RANGE,
+                                      "verification block count too high: cBlocks=%#RX64 (cbBuf=%#zx), max 512M", cBlocks64, cbBuf);
+    uint32_t cBlocks   = (uint32_t)cBlocks64;
+    uint32_t cbBitmap  = (cBlocks + 63) / 8;
+    if (cbBitmap > _64M)
+        return rtFsIsoMakerCmdErrorRc(pOpts, VERR_OUT_OF_RANGE,
+                                      "verification bitmap too big: cbBitmap=%#RX32 (cbBuf=%#zx), max 64MB", cbBitmap, cbBuf);
+    void    *pvSrcBuf  = RTMemTmpAlloc(cbBuf);
+    void    *pvDstBuf  = RTMemTmpAlloc(cbBuf);
+    void    *pvBitmap  = RTMemTmpAllocZ(cbBitmap);
+    if (pvSrcBuf && pvDstBuf && pvBitmap)
+    {
+        /* Must set the unused bits in the top qword. */
+        for (uint32_t i = RT_ALIGN_32(cBlocks, 64) - 1; i >= cBlocks; i--)
+            ASMBitSet(pvBitmap, i);
+
+        /*
+         * Do the verification.
+         */
+        rtFsIsoMakerPrintf(pOpts, "Verifying image in random order using %zu (%#zx) byte blocks: %#zx in blocks\n",
+                           cbBuf, cbBuf, cBlocks);
+
+        rc = VINF_SUCCESS;
+        uint64_t cLeft = cBlocks;
+        while (cLeft-- > 0)
+        {
+            /*
+             * Figure out which block to check next.
+             */
+            uint32_t iBlock = RTRandU32Ex(0, cBlocks - 1);
+            if (!ASMBitTestAndSet(pvBitmap, iBlock))
+                Assert(iBlock < (int32_t)cBlocks);
+            else
+            {
+                /* try 32 other random numbers. */
+                bool     fBitSet;
+                unsigned cTries = 0;
+                do
+                {
+                    iBlock = RTRandU32Ex(0, cBlocks - 1);
+                    fBitSet = ASMBitTestAndSet(pvBitmap, iBlock);
+                } while (fBitSet && ++cTries < 32);
+                if (fBitSet)
+                {
+                    /* Look for the next clear bit after it (with wrap around). */
+                    int iHit = ASMBitNextClear(pvBitmap, cBlocks, iBlock);
+                    Assert(iHit < (int32_t)cBlocks);
+                    if (iHit < 0)
+                    {
+                        iHit = ASMBitNextClear(pvBitmap, iBlock, 0);
+                        Assert(iHit < (int32_t)cBlocks);
+                    }
+                    if (iHit >= 0)
+                    {
+                        fBitSet  = ASMBitTestAndSet(pvBitmap, iHit);
+                        if (!fBitSet)
+                            iBlock = iHit;
+                        else
+                        {
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_INTERNAL_ERROR_3,
+                                                        "Bitmap weirdness: iHit=%#x iBlock=%#x cBlocks=%#x",
+                                                        iHit, iBlock, cBlocks);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_INTERNAL_ERROR_2, "Bitmap weirdness: iBlock=%#x cBlocks=%#x",
+                                                    iBlock, cBlocks);
+                        break;
+                    }
+                }
+            }
+            Assert(ASMBitTest(pvBitmap, iBlock));
+
+            /*
+             * Figure out how much and where to read (last block fun).
+             */
+            uint64_t offBlock = iBlock * (uint64_t)cbBuf;
+            size_t   cbToRead = cbBuf;
+            if (iBlock + 1 < cBlocks)
+            { /* likely */ }
+            else if (cbToRead > cbImage - offBlock)
+                cbToRead = (size_t)(cbImage - offBlock);
+            Assert(offBlock + cbToRead <= cbImage);
+
+            /*
+             * Read the blocks.
+             */
+            //RTPrintf("Reading block #%#x at %#RX64\n", iBlock, offBlock);
+            rc = RTVfsFileReadAt(hVfsDstFile, offBlock, pvDstBuf, cbToRead, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                memset(pvSrcBuf, 0xdd, cbBuf);
+                rc = RTVfsFileReadAt(hVfsSrcFile, offBlock, pvSrcBuf, cbToRead, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    if (memcmp(pvDstBuf, pvSrcBuf, cbToRead) == 0)
+                        continue;
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_MISMATCH,
+                                                "Block #%#x differs! offBlock=%#RX64 cbToRead=%#zu\n"
+                                                "Virtual ISO (source):\n%.*Rhxd\nWritten ISO (destination):\n%.*Rhxd",
+                                                iBlock, offBlock, cbToRead, cbToRead, pvSrcBuf, cbToRead, pvDstBuf);
+                }
+                else
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc,
+                                                "Error reading %#zx bytes source (virtual ISO) block #%#x at %#RX64: %Rrc",
+                                                cbToRead, iBlock, offBlock, rc);
+            }
+            else
+                rc = rtFsIsoMakerCmdErrorRc(pOpts, rc,
+                                            "Error reading %#zx bytes destination (written ISO) block #%#x at %#RX64: %Rrc",
+                                            cbToRead, iBlock, offBlock, rc);
+            break;
+        }
+
+        if (RT_SUCCESS(rc))
+            rtFsIsoMakerPrintf(pOpts, "Written image verified fine!\n");
+    }
+    else if (!pvSrcBuf || !pvDstBuf)
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "RTMemTmpAlloc(%#zx) failed", cbBuf);
+    else
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "RTMemTmpAlloc(%#zx) failed", cbBuf);
+    RTMemTmpFree(pvBitmap);
+    RTMemTmpFree(pvDstBuf);
+    RTMemTmpFree(pvSrcBuf);
+    return rc;
+}
+
+
+/**
+ * Writes the image to file, no checking, no special buffering.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   hVfsSrcFile         The source file from the ISO maker.
+ */
+static int rtFsIsoMakerCmdWriteImageRandomBufferSize(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile, RTVFSFILE hVfsDstFile,
+                                                     uint64_t cbImage, void **ppvBuf)
+{
+    /*
+     * Copy the virtual image bits to the destination file.
+     */
+    void    *pvBuf    = *ppvBuf;
+    uint32_t cbMaxBuf = pOpts->cbOutputReadBuffer > 0 ? pOpts->cbOutputReadBuffer : _64K;
+    uint64_t offImage = 0;
+    while (offImage < cbImage)
+    {
+        /* Figure out how much to copy this time. */
+        size_t cbToCopy = RTRandU32Ex(1, cbMaxBuf - 1);
+        if (offImage + cbToCopy < cbImage)
+        { /* likely */ }
+        else
+            cbToCopy = (size_t)(cbImage - offImage);
+        RTMemFree(pvBuf);
+        *ppvBuf = pvBuf = RTMemTmpAlloc(cbToCopy);
+        if (pvBuf)
+        {
+            /* Do the copying. */
+            int rc = RTVfsFileReadAt(hVfsSrcFile, offImage, pvBuf, cbToCopy, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTVfsFileWriteAt(hVfsDstFile, offImage, pvBuf, cbToCopy, NULL);
+                if (RT_SUCCESS(rc))
+                    offImage += cbToCopy;
+                else
+                    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc writing %#zx bytes at offset %#RX64 to '%s'",
+                                                  rc, cbToCopy, offImage, pOpts->pszOutFile);
+            }
+            else
+                return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc read %#zx bytes at offset %#RX64", rc, cbToCopy, offImage);
+        }
+        else
+            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "RTMemTmpAlloc(%#zx) failed", cbToCopy);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Writes the image to file, no checking, no special buffering.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   hVfsSrcFile         The source file from the ISO maker.
+ */
+static int rtFsIsoMakerCmdWriteImageSimple(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsSrcFile, RTVFSFILE hVfsDstFile,
+                                           uint64_t cbImage, void *pvBuf, size_t cbBuf)
+{
+    /*
+     * Copy the virtual image bits to the destination file.
+     */
+    uint64_t offImage = 0;
+    while (offImage < cbImage)
+    {
+        /* Figure out how much to copy this time. */
+        size_t cbToCopy = cbBuf;
+        if (offImage + cbToCopy < cbImage)
+        { /* likely */ }
+        else
+            cbToCopy = (size_t)(cbImage - offImage);
+
+        /* Do the copying. */
+        int rc = RTVfsFileReadAt(hVfsSrcFile, offImage, pvBuf, cbToCopy, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTVfsFileWriteAt(hVfsDstFile, offImage, pvBuf, cbToCopy, NULL);
+            if (RT_SUCCESS(rc))
+                offImage += cbToCopy;
+            else
+                return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc writing %#zx bytes at offset %#RX64 to '%s'",
+                                              rc, cbToCopy, offImage, pOpts->pszOutFile);
+        }
+        else
+            return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc read %#zx bytes at offset %#RX64", rc, cbToCopy, offImage);
+    }
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Writes the image to file.
@@ -759,45 +993,21 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
             RTVFSFILE       hVfsDstFile;
             uint32_t        offError;
             RTERRINFOSTATIC ErrInfo;
-            rc = RTVfsChainOpenFile(pOpts->pszOutFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE,
+            rc = RTVfsChainOpenFile(pOpts->pszOutFile, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE,
                                     &hVfsDstFile, &offError, RTErrInfoInitStatic(&ErrInfo));
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Copy the virtual image bits to the destination file.
+                 * Apply the desired writing method.
                  */
-                uint64_t offImage = 0;
-                while (offImage < cbImage)
-                {
-                    /* Figure out how much to copy this time. */
-                    size_t cbToCopy = cbBuf;
-                    if (pOpts->fRandomOutputReadBufferSize)
-                        cbToCopy = RTRandU32Ex(1, (uint32_t)cbBuf - 1);
-                    if (offImage + cbToCopy < cbImage)
-                    { /* likely */ }
-                    else
-                        cbToCopy = (size_t)(cbImage - offImage);
+                if (!pOpts->fRandomOutputReadBufferSize)
+                    rc = rtFsIsoMakerCmdWriteImageRandomBufferSize(pOpts, hVfsSrcFile, hVfsDstFile, cbImage, &pvBuf);
+                else
+                    rc = rtFsIsoMakerCmdWriteImageSimple(pOpts, hVfsSrcFile, hVfsDstFile, cbImage, pvBuf, cbBuf);
+                RTMemTmpFree(pvBuf);
 
-                    /* Do the copying. */
-                    rc = RTVfsFileReadAt(hVfsSrcFile, offImage, pvBuf, cbToCopy, NULL);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = RTVfsFileWriteAt(hVfsDstFile, offImage, pvBuf, cbToCopy, NULL);
-                        if (RT_SUCCESS(rc))
-                            offImage += cbToCopy;
-                        else
-                        {
-                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc writing %#zx bytes at offset %#RX64 to '%s'",
-                                                        rc, cbToCopy, offImage, pOpts->pszOutFile);
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error %Rrc read %#zx bytes at offset %#RX64", rc, cbToCopy, offImage);
-                        break;
-                    }
-                }
+                if (RT_SUCCESS(rc) && pOpts->cbRandomOrderVerifciationBlock > 0)
+                    rc = rtFsIsoMakerCmdVerifyImageInRandomOrder(pOpts, hVfsSrcFile, hVfsDstFile, cbImage);
 
                 /*
                  * Flush the output file before releasing it.
@@ -812,12 +1022,13 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
                 RTVfsFileRelease(hVfsDstFile);
             }
             else
+            {
+                RTMemTmpFree(pvBuf);
                 rc = rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainOpenFile", pOpts->pszOutFile, rc, offError, &ErrInfo.Core);
-
-            RTMemTmpFree(pvBuf);
+            }
         }
         else
-            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTMemTmpAlloc(%zu) failed: %Rrc", pOpts->cbOutputReadBuffer, rc);
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "RTMemTmpAlloc(%zu) failed", cbBuf);
     }
     else
         rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsFileGetSize failed: %Rrc", rc);
@@ -1408,6 +1619,7 @@ static int rtFsIsoMakerCmdOptImportIso(PRTFSISOMAKERCMDOPTS pOpts, const char *p
     int rc = RTFsIsoMakerImport(pOpts->hIsoMaker, pszIsoSpec, 0 /*fFlags*/, &Results, RTErrInfoInitStatic(&ErrInfo));
 
     pOpts->cItemsAdded += Results.cAddedFiles;
+    pOpts->cItemsAdded += Results.cAddedSymlinks;
     pOpts->cItemsAdded += Results.cAddedDirs;
     pOpts->cItemsAdded += Results.cBootCatEntries != UINT32_MAX ? Results.cBootCatEntries : 0;
     pOpts->cItemsAdded += Results.cbSysArea != 0 ? 1 : 0;
@@ -1417,6 +1629,7 @@ static int rtFsIsoMakerCmdOptImportIso(PRTFSISOMAKERCMDOPTS pOpts, const char *p
     rtFsIsoMakerPrintf(pOpts, "    cAddedDirs:          %'14RU32\n", Results.cAddedDirs);
     rtFsIsoMakerPrintf(pOpts, "    cbAddedDataBlocks:   %'14RU64 bytes\n", Results.cbAddedDataBlocks);
     rtFsIsoMakerPrintf(pOpts, "    cAddedFiles:         %'14RU32\n", Results.cAddedFiles);
+    rtFsIsoMakerPrintf(pOpts, "    cAddedSymlinks:      %'14RU32\n", Results.cAddedSymlinks);
     if (Results.cBootCatEntries == UINT32_MAX)
         rtFsIsoMakerPrintf(pOpts, "    cBootCatEntries:               none\n");
     else
@@ -2075,6 +2288,18 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
 
             case RTFSISOMAKERCMD_OPT_IPRT_ISO_MAKER_FILE_MARKER:
                 /* ignored */
+                break;
+
+            case RTFSISOMAKERCMD_OPT_OUTPUT_BUFFER_SIZE:                /* --output-buffer-size {cb} */
+                pOpts->cbOutputReadBuffer = ValueUnion.u32;
+                break;
+
+            case RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE:         /* --random-output-buffer-size */
+                pOpts->fRandomOutputReadBufferSize = true;
+                break;
+
+            case RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION:         /* --random-order-verficiation {cb} */
+                pOpts->cbRandomOrderVerifciationBlock = ValueUnion.u32;
                 break;
 
             case RTFSISOMAKERCMD_OPT_IMPORT_ISO:
