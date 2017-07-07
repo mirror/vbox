@@ -3401,6 +3401,7 @@ RTDECL(int) RTFsIsoMakerAddUnnamedSymlink(RTFSISOMAKER hIsoMaker, PCRTFSOBJINFO 
         memcpy(pSymlink->szTarget, pszTarget, cchTarget);
         pSymlink->szTarget[cchTarget] = '\0';
 
+        *pidxObj = pSymlink->Core.idxObj;
         return VINF_SUCCESS;
     }
     RTMemFree(pSymlink);
