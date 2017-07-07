@@ -383,7 +383,7 @@ void UIMediumItem::refresh()
     m_fValid = !m_guiMedium.isNull();
     m_enmType = m_guiMedium.type();
     /* Gather medium options data: */
-    m_options.m_enmType = m_guiMedium.medium().GetType(); /// @todo: Cache it in UIMedium class!
+    m_options.m_enmType = m_guiMedium.mediumType();
     /* Gather medium details data: */
     m_details.m_aFields.clear();
     switch (m_enmType)

@@ -271,14 +271,6 @@ public:
         return tr("%n second(s)", "", cVal);
     }
 
-    QString differencingMediumTypeName() const { return mDiskTypes_Differencing; }
-
-    /**
-     * Similar to toString (KMediumType), but returns 'Differencing' for
-     * normal hard disks that have a parent.
-     */
-    QString mediumTypeString(const CMedium &medium) const;
-
     QStringList COMPortNames() const;
     QString toCOMPortName (ulong aIRQ, ulong aIOBase) const;
     bool toCOMPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
@@ -627,8 +619,6 @@ private:
     QString mBrandingConfig;
 
     int m3DAvailable;
-
-    QString mDiskTypes_Differencing;
 
     QString mUserDefinedPortName;
 

@@ -186,6 +186,11 @@ public:
       * @note  In "don't show diffs" mode, this method returns the logical size of root in the given hard drive chain. */
     QString logicalSize(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strLogicalSize : m_strLogicalSize; }
 
+    /** Returns the medium disk type.
+      * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
+      * @note  In "don't show diffs" mode, this method returns the disk type of root in the given hard drive chain. */
+    KMediumType mediumType(bool fNoDiffs = false) const { return fNoDiffs ? root().m_enmMediumType : m_enmMediumType; }
+
     /** Returns the hard drive medium disk type.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the disk type of root in the given hard drive chain. */
@@ -306,6 +311,9 @@ private:
       * @param fNoDiffs @if false, this method immediately returns. */
     void checkNoDiffs(bool fNoDiffs);
 
+    /** Returns string representation for passed @a comMedium type. */
+    static QString mediumTypeToString(const CMedium &comMedium);
+
     /** Holds the type of UIMedium object. */
     UIMediumType m_type;
 
@@ -338,6 +346,9 @@ private:
     QString m_strSize;
     /** Holds the medium logical size. */
     QString m_strLogicalSize;
+
+    /** Holds the medium disk type. */
+    KMediumType m_enmMediumType;
 
     /** Holds the hard drive medium disk type. */
     QString m_strHardDiskType;

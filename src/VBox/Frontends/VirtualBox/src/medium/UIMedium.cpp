@@ -40,6 +40,7 @@ UIMedium::UIMedium()
     : m_type(UIMediumType_Invalid)
     , m_medium(CMedium())
     , m_state(KMediumState_NotCreated)
+    , m_enmMediumType(KMediumType_Max)
 {
     refresh();
 }
@@ -48,6 +49,7 @@ UIMedium::UIMedium(const CMedium &medium, UIMediumType type)
     : m_type(type)
     , m_medium(medium)
     , m_state(KMediumState_NotCreated)
+    , m_enmMediumType(KMediumType_Max)
 {
     refresh();
 }
@@ -56,6 +58,7 @@ UIMedium::UIMedium(const CMedium &medium, UIMediumType type, KMediumState state)
     : m_type(type)
     , m_medium(medium)
     , m_state(state)
+    , m_enmMediumType(KMediumType_Max)
 {
     refresh();
 }
@@ -86,6 +89,8 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
 
     m_strSize = other.size();
     m_strLogicalSize = other.logicalSize();
+
+    m_enmMediumType = other.mediumType();
 
     m_strHardDiskType = other.hardDiskType();
     m_strHardDiskFormat = other.hardDiskFormat();
@@ -146,6 +151,9 @@ void UIMedium::refresh()
     /* Reset name/location/size parameters: */
     m_strName = VBoxGlobal::tr("Empty", "medium");
     m_strLocation = m_strSize = m_strLogicalSize = QString("--");
+
+    /* Reset medium type parameter: */
+    m_enmMediumType = KMediumType_Max;
 
     /* Reset hard drive related parameters: */
     m_strHardDiskType = QString();
@@ -210,11 +218,14 @@ void UIMedium::refresh()
             }
         }
 
+        /* Refresh medium type: */
+        m_enmMediumType = m_medium.GetType();
+
         /* For hard drive medium: */
         if (m_type == UIMediumType_HardDisk)
         {
             /* Refresh hard drive disk type: */
-            m_strHardDiskType = vboxGlobal().mediumTypeString(m_medium);
+            m_strHardDiskType = mediumTypeToString(m_medium);
             /* Refresh hard drive format: */
             m_strHardDiskFormat = m_medium.GetFormat();
 
@@ -607,5 +618,16 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
         m_noDiffs.toolTip = m_strToolTip;
 
     m_noDiffs.isSet = true;
+}
+
+/* static */
+QString UIMedium::mediumTypeToString(const CMedium &comMedium)
+{
+    if (!comMedium.GetParent().isNull())
+    {
+        Assert(comMedium.GetType() == KMediumType_Normal);
+        return QApplication::translate("VBoxGlobal", "Differencing", "MediumType");
+    }
+    return gpConverter->toString(comMedium.GetType());
 }
 

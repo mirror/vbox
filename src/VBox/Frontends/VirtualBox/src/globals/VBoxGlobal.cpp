@@ -696,20 +696,6 @@ static const PortConfig kLptKnownPorts[] =
 };
 
 /**
- * Similar to toString (KMediumType), but returns 'Differencing' for
- * normal hard disks that have a parent.
- */
-QString VBoxGlobal::mediumTypeString(const CMedium &medium) const
-{
-    if (!medium.GetParent().isNull())
-    {
-        Assert(medium.GetType() == KMediumType_Normal);
-        return mDiskTypes_Differencing;
-    }
-    return gpConverter->toString(medium.GetType());
-}
-
-/**
  *  Returns the list of the standard COM port names (i.e. "COMx").
  */
 QStringList VBoxGlobal::COMPortNames() const
@@ -1632,8 +1618,6 @@ QString VBoxGlobal::languageTranslators() const
  */
 void VBoxGlobal::retranslateUi()
 {
-    mDiskTypes_Differencing = tr ("Differencing", "DiskType");
-
     mUserDefinedPortName = tr ("User-defined", "serial port");
 
     mWarningIcon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning).pixmap (16, 16);
