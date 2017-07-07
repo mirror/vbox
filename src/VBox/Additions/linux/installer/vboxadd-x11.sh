@@ -205,6 +205,27 @@ setup()
         done
     fi
 
+    case "${x_version}" in
+    4.* | 6.* | 7.* | 1.?.* | 1.1[0-6].* )
+        blacklist_vboxvideo="yes"
+        ;;
+    esac
+    case "$oracle_release" in
+        Oracle*release\ 6.* )
+            # relevant for OL6/UEK4 but cannot hurt for other kernels
+            blacklist_vboxvideo="yes"
+    esac
+    if test -n "${blacklist_vboxvideo}"; then
+        echo "blacklist vboxvideo" > /etc/modprobe.d/blacklist-vboxvideo.conf
+    else
+        test -f /etc/modprobe.d/blacklist-vboxvideo.conf &&
+            rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
+        # We do not want to load the driver if X.Org Server is already
+        # running, as without a driver the server will touch the hardware
+        # directly, causing problems.
+        ps -Af | grep -q '[X]org' || ${MODPROBE} -q vboxvideo
+    fi
+
     test -z "$x_version" -o -z "$modules_dir" &&
         {
             echo "Could not find the X.Org or XFree86 Window System, skipping." >&2
@@ -333,26 +354,6 @@ setup()
             dox11config=""
             ;;
     esac
-    case "${x_version}" in
-    4.* | 6.* | 7.* | 1.?.* | 1.1[0-6].* )
-        blacklist_vboxvideo="yes"
-        ;;
-    esac
-    case "$oracle_release" in
-        Oracle*release\ 6.* )
-            # relevant for OL6/UEK4 but cannot hurt for other kernels
-            blacklist_vboxvideo="yes"
-    esac
-    if test -n "${blacklist_vboxvideo}"; then
-        echo "blacklist vboxvideo" > /etc/modprobe.d/blacklist-vboxvideo.conf
-    else
-        test -f /etc/modprobe.d/blacklist-vboxvideo.conf &&
-            rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
-        # We do not want to load the driver if X.Org Server is already
-        # running, as without a driver the server will touch the hardware
-        # directly, causing problems.
-        ps -Af | grep -q '[X]org' || ${MODPROBE} vboxvideo
-    fi
     test -n "${dox11config}" &&
         echo "Installing $xserver_version modules" >&2
     case "$vboxvideo_src" in
