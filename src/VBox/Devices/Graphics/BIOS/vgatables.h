@@ -350,7 +350,7 @@ static VideoParamTableEntry video_param_table[30] = {
  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 },
 {
-    /* index=0x18 ega mode 0x03 */
+    /* index=0x16 ega mode 0x03 */
     80, 24, 14, 0x00, 0x10, /* tw, th-1, ch, slength */
     0x00, 0x03, 0x00, 0x02, /* sequ_regs */
     0x67, /* miscreg */
@@ -546,7 +546,7 @@ static uint8_t static_functionality[0x10]=
  /* 2 */ 0x0f,  // All modes supported #3
  /* 3 */ 0x00, 0x00, 0x00, 0x00,  // reserved
  /* 7 */ 0x07,  // 200, 350, 400 scan lines
- /* 8 */ 0x02,  // mamimum number of visible charsets in text mode
+ /* 8 */ 0x02,  // maximum number of visible charsets in text mode
  /* 9 */ 0x08,  // total number of charset blocks in text mode
  /* a */ 0xe7,  // Change to add new functions
  /* b */ 0x0c,  // Change to add new functions
