@@ -31,6 +31,7 @@
 # include "QILabel.h"
 # include "QITabWidget.h"
 # include "UIConverter.h"
+# include "UIFilePathSelector.h"
 # include "UIIconPool.h"
 # include "UIMediumDetailsWidget.h"
 
@@ -43,9 +44,8 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_oldData(UIDataMedium())
     , m_newData(UIDataMedium())
     , m_pTabWidget(0)
-    , m_pLabelType(0)
-    , m_pComboBoxType(0)
-    , m_pErrorPaneType(0)
+    , m_pLabelType(0), m_pComboBoxType(0), m_pErrorPaneType(0)
+    , m_pLabelLocation(0), m_pSelectorLocation(0), m_pErrorPaneLocation(0)
     , m_pButtonBox(0)
     , m_pLayoutDetails(0)
 {
@@ -80,13 +80,15 @@ void UIMediumDetailsWidget::retranslateUi()
 
     /* Translate 'Options' tab content. */
 
-    /* Translate type label: */
-    m_pLabelType->setText(tr("&Type"));
+    /* Translate labels: */
+    m_pLabelType->setText(tr("&Type:"));
+    m_pLabelLocation->setText(tr("&Location:"));
 
-    /* Translate type field: */
+    /* Translate fields: */
     m_pComboBoxType->setToolTip(tr("Holds the type of this medium."));
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
         m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
+    m_pSelectorLocation->setToolTip(tr("Holds the location of this medium."));
 
     /* Translate button-box: */
     if (m_pButtonBox)
@@ -113,6 +115,13 @@ void UIMediumDetailsWidget::sltTypeIndexChanged(int iIndex)
 {
     m_newData.m_options.m_enmType = m_pComboBoxType->itemData(iIndex).value<KMediumType>();
     revalidate(m_pErrorPaneType);
+    updateButtonStates();
+}
+
+void UIMediumDetailsWidget::sltLocationPathChanged(const QString &strPath)
+{
+    m_newData.m_options.m_strLocation = strPath;
+    revalidate(m_pErrorPaneLocation);
     updateButtonStates();
 }
 
@@ -237,12 +246,57 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 pLayoutOptions->addLayout(pLayoutType, 0, 1);
             }
 
+            /* Create location label: */
+            m_pLabelLocation = new QLabel;
+            AssertPtrReturnVoid(m_pLabelLocation);
+            {
+                /* Configure label: */
+                m_pLabelLocation->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                /* Add into layout: */
+                pLayoutOptions->addWidget(m_pLabelLocation, 1, 0);
+            }
+            /* Create location layout: */
+            QHBoxLayout *pLayoutLocation = new QHBoxLayout;
+            AssertPtrReturnVoid(pLayoutLocation);
+            {
+                /* Configure layout: */
+                pLayoutLocation->setContentsMargins(0, 0, 0, 0);
+                /* Create location editor: */
+                m_pSelectorLocation = new UIFilePathSelector;
+                AssertPtrReturnVoid(m_pSelectorLocation);
+                {
+                    /* Configure editor: */
+                    m_pLabelLocation->setBuddy(m_pSelectorLocation);
+                    m_pSelectorLocation->setResetEnabled(false);
+                    m_pSelectorLocation->setMode(UIFilePathSelector::Mode_File_Save);
+                    m_pSelectorLocation->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+                    connect(m_pSelectorLocation, &UIFilePathSelector::pathChanged,
+                            this, &UIMediumDetailsWidget::sltLocationPathChanged);
+
+                    /* Add into layout: */
+                    pLayoutLocation->addWidget(m_pSelectorLocation);
+                }
+                /* Create location error pane: */
+                m_pErrorPaneLocation = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneLocation);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneLocation->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneLocation->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                    .pixmap(QSize(iIconMetric, iIconMetric)));
+                    /* Add into layout: */
+                    pLayoutLocation->addWidget(m_pErrorPaneLocation);
+                }
+                /* Add into layout: */
+                pLayoutOptions->addLayout(pLayoutLocation, 1, 1);
+            }
+
             /* Create stretch: */
             QSpacerItem *pSpacer2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
             AssertPtrReturnVoid(pSpacer2);
             {
                 /* Add into layout: */
-                pLayoutOptions->addItem(pSpacer2, 1, 0, 1, 2);
+                pLayoutOptions->addItem(pSpacer2, 2, 0, 1, 2);
             }
 
             /* If parent embedded into stack: */
@@ -379,6 +433,10 @@ void UIMediumDetailsWidget::loadDataForOptions()
         if (m_pComboBoxType->itemData(i).value<KMediumType>() == m_newData.m_options.m_enmType)
             m_pComboBoxType->setCurrentIndex(i);
     sltTypeIndexChanged(m_pComboBoxType->currentIndex());
+
+    /* Load location: */
+    m_pSelectorLocation->setPath(m_newData.m_options.m_strLocation);
+    sltLocationPathChanged(m_pSelectorLocation->path());
 }
 
 void UIMediumDetailsWidget::loadDataForDetails()
@@ -407,6 +465,12 @@ void UIMediumDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
         const bool fError = false;
         m_pErrorPaneType->setVisible(fError);
     }
+    if (!pWidget || pWidget == m_pErrorPaneLocation)
+    {
+        /* Always valid for now: */
+        const bool fError = false;
+        m_pErrorPaneLocation->setVisible(fError);
+    }
 
     /* Retranslate validation: */
     retranslateValidation(pWidget);
@@ -416,8 +480,11 @@ void UIMediumDetailsWidget::retranslateValidation(QWidget * /* pWidget = 0 */)
 {
     /* Translate 'Interface' tab content: */
 //    if (!pWidget || pWidget == m_pErrorPaneType)
-//        m_pErrorPaneType->setToolTip(tr("Cannot directly change from type <b>%1</b> to type <b>%2</b>.")
-//                                     .arg(m_oldData.m_enmType).arg(m_newData.m_enmType));
+//        m_pErrorPaneType->setToolTip(tr("Cannot change from type <b>%1</b> to <b>%2</b>.")
+//                                     .arg(m_oldData.m_options.m_enmType).arg(m_newData.m_options.m_enmType));
+//    if (!pWidget || pWidget == m_pErrorPaneLocation)
+//        m_pErrorPaneLocation->setToolTip(tr("Cannot change medium location from <b>%1</b> to <b>%2</b>.")
+//                                         .arg(m_oldData.m_options.m_strLocation).arg(m_newData.m_options.m_strLocation));
 }
 
 void UIMediumDetailsWidget::updateButtonStates()

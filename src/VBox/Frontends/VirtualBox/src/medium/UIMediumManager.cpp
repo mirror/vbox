@@ -384,6 +384,7 @@ void UIMediumItem::refresh()
     m_enmType = m_guiMedium.type();
     /* Gather medium options data: */
     m_options.m_enmType = m_guiMedium.mediumType();
+    m_options.m_strLocation = m_guiMedium.location();
     /* Gather medium details data: */
     m_details.m_aFields.clear();
     switch (m_enmType)
@@ -920,12 +921,43 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     CMedium comMedium = vboxGlobal().medium(pMediumItem->id()).medium();
 
     /* Try to assign new medium type: */
-    if (newData.m_options.m_enmType != oldData.m_options.m_enmType)
+    if (   comMedium.isOk()
+        && newData.m_options.m_enmType != oldData.m_options.m_enmType)
+    {
         comMedium.SetType(newData.m_options.m_enmType);
 
-    /* Show error message if necessary: */
-    if (!comMedium.isOk())
-        msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmType, newData.m_options.m_enmType, this);
+        /* Show error message if necessary: */
+        if (!comMedium.isOk())
+            msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmType, newData.m_options.m_enmType, this);
+    }
+
+    /* Try to assign new medium location: */
+    if (   comMedium.isOk()
+        && newData.m_options.m_strLocation != oldData.m_options.m_strLocation)
+    {
+        /* Prepare move storage progress: */
+        CProgress comProgress = comMedium.SetLocation(newData.m_options.m_strLocation);
+
+        /* Show error message if necessary: */
+        if (!comMedium.isOk())
+            msgCenter().cannotMoveHardDiskStorage(comMedium,
+                                                  oldData.m_options.m_strLocation,
+                                                  newData.m_options.m_strLocation,
+                                                  this);
+        else
+        {
+            /* Show move storage progress: */
+            msgCenter().showModalProgressDialog(comProgress, UIMediumManager::tr("Moving medium..."),
+                                                ":/progress_media_move_90px.png", this);
+
+            /* Show error message if necessary: */
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                msgCenter().cannotMoveHardDiskStorage(comProgress,
+                                                      oldData.m_options.m_strLocation,
+                                                      newData.m_options.m_strLocation,
+                                                      this);
+        }
+    }
 
     /* Recache current item: */
     pMediumItem->refreshAll();

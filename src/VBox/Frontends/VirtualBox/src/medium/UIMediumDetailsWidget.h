@@ -37,6 +37,7 @@ class QStackedLayout;
 class QWidget;
 class QILabel;
 class QITabWidget;
+class UIFilePathSelector;
 
 
 /** Virtual Media Manager: Medium options data structure. */
@@ -45,6 +46,7 @@ struct UIDataMediumOptions
     /** Constructs data. */
     UIDataMediumOptions()
         : m_enmType(KMediumType_Normal)
+        , m_strLocation(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -52,6 +54,7 @@ struct UIDataMediumOptions
     {
         return true
                && (m_enmType == other.m_enmType)
+               && (m_strLocation == other.m_strLocation)
                ;
     }
 
@@ -62,6 +65,8 @@ struct UIDataMediumOptions
 
     /** Holds the type. */
     KMediumType m_enmType;
+    /** Holds the location. */
+    QString m_strLocation;
 };
 
 
@@ -182,6 +187,8 @@ private slots:
       * @{ */
         /** Handles type change. */
         void sltTypeIndexChanged(int iIndex);
+        /** Handles location change. */
+        void sltLocationPathChanged(const QString &strPath);
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -253,8 +260,15 @@ private:
         QLabel    *m_pLabelType;
         /** Holds the type combo-box. */
         QComboBox *m_pComboBoxType;
-        /** Holds the automatic interface configuration error pane. */
+        /** Holds the type error pane. */
         QLabel    *m_pErrorPaneType;
+
+        /** Holds the location label. */
+        QLabel    *m_pLabelLocation;
+        /** Holds the location selector. */
+        UIFilePathSelector *m_pSelectorLocation;
+        /** Holds the location error pane. */
+        QLabel    *m_pErrorPaneLocation;
 
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;

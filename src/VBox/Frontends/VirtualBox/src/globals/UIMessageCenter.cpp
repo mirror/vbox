@@ -1326,6 +1326,22 @@ void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, con
           formatErrorInfo(progress));
 }
 
+void UIMessageCenter::cannotMoveHardDiskStorage(const CMedium &comMedium, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to move the storage unit of the hard disk <b>%1</b> to <b>%2</b>.")
+             .arg(strLocationOld, strLocationNew),
+          formatErrorInfo(comMedium));
+}
+
+void UIMessageCenter::cannotMoveHardDiskStorage(const CProgress &comProgress, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to move the storage unit of the hard disk <b>%1</b> to <b>%2</b>.")
+             .arg(strLocationOld, strLocationNew),
+          formatErrorInfo(comProgress));
+}
+
 void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /* = 0*/) const
 {
     /* Prepare the message: */
