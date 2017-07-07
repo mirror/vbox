@@ -345,8 +345,9 @@ setup()
     esac
     if test -n "${blacklist_vboxvideo}"; then
         echo "blacklist vboxvideo" > /etc/modprobe.d/blacklist-vboxvideo.conf
-    elif test -f /etc/modprobe.d/blacklist-vboxvideo.conf; then
-        rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
+    else
+        test -f /etc/modprobe.d/blacklist-vboxvideo.conf &&
+            rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
         # We do not want to load the driver if X.Org Server is already
         # running, as without a driver the server will touch the hardware
         # directly, causing problems.
