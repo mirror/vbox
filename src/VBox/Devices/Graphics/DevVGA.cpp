@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1778,11 +1778,12 @@ static const uint8_t cursor_glyph[32 * 4] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
+static const uint8_t empty_glyph[32 * 4] = { 0 };
+
 /*
  * Text mode update
  * Missing:
  * - underline
- * - flashing
  */
 static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, bool reset_dirty,
                          PDMIDISPLAYCONNECTOR *pDrv)
@@ -1798,6 +1799,9 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
     uint32_t *ch_attr_ptr;
     vga_draw_glyph8_func *vga_draw_glyph8;
     vga_draw_glyph9_func *vga_draw_glyph9;
+    uint64_t time_ns;
+    bool blink_on, chr_blink_flip, cur_blink_flip;
+    bool blink_enabled, blink_do_redraw;
 
     full_update |= update_palette16(pThis);
     palette = pThis->last_palette;
@@ -1823,7 +1827,7 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
         pThis->plane_updated = 0;
         full_update = true;
     }
-    full_update |= update_basic_params(pThis);
+    full_update |= update_basic_params(pThis) | 1;  //@TODO! do not commit!!
 
     line_offset = pThis->line_offset;
     s1 = pThis->CTX_SUFF(vram_ptr) + (pThis->start_addr * 8); /** @todo r=bird: Add comment why we do *8 instead of *4, it's not so obvious... */
@@ -1903,6 +1907,21 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
     cx_max_upd = -1;
     cx_min_upd = width;
 
+    /* Figure out if we're in the visible period of the blink cycle. */
+    time_ns  = PDMDevHlpTMTimeVirtGetNano(VGASTATE2DEVINS(pThis));
+    blink_on = (time_ns % VGA_BLINK_PERIOD_FULL) < VGA_BLINK_PERIOD_ON;
+    chr_blink_flip = false;
+    cur_blink_flip = false;
+    if (pThis->last_chr_blink != blink_on)
+    {
+        /* Currently cursor and characters blink at the same rate, but they might not. */
+        pThis->last_chr_blink = blink_on;
+        pThis->last_cur_blink = blink_on;
+        chr_blink_flip = true;
+        cur_blink_flip = true;
+    }
+    blink_enabled = !!(pThis->ar[0x10] & 0x08); /* Attribute controller blink enable. */
+
     for(cy = 0; cy < (height - dscan); cy = cy + (1 << dscan)) {
         d1 = dest;
         src = s1;
@@ -1910,7 +1929,9 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
         cx_max = -1;
         for(cx = 0; cx < width; cx++) {
             ch_attr = *(uint16_t *)src;
-            if (full_update || ch_attr != (int)*ch_attr_ptr || src == cursor_ptr) {
+            /* Figure out if character needs redrawing due to blink state change. */
+            blink_do_redraw = blink_enabled && chr_blink_flip && (ch_attr & 0x80);
+            if (full_update || ch_attr != (int)*ch_attr_ptr || blink_do_redraw || (src == cursor_ptr && cur_blink_flip)) {
                 if (cx < cx_min)
                     cx_min = cx;
                 if (cx > cx_max)
@@ -1928,6 +1949,14 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
                 font_ptr += 32 * 4 * ch;
                 bgcol = palette[cattr >> 4];
                 fgcol = palette[cattr & 0x0f];
+
+                if (blink_enabled && (cattr & 0x80))
+                {
+                    bgcol = palette[(cattr >> 4) & 7];
+                    if (!blink_on)
+                        font_ptr = empty_glyph;
+                }
+
                 if (cw != 9) {
                     if (pThis->fRenderVRAM)
                         vga_draw_glyph8(d1, linesize,
@@ -1943,11 +1972,9 @@ static int vga_draw_text(PVGASTATE pThis, bool full_update, bool fFailOnResize, 
                 if (src == cursor_ptr &&
                     !(pThis->cr[0x0a] & 0x20)) {
                     int line_start, line_last, h;
-                    uint64_t time_ns;
 
                     /* draw the cursor if within the visible period */
-                    time_ns = PDMDevHlpTMTimeVirtGetNano(VGASTATE2DEVINS(pThis));
-                    if (time_ns % VGA_BLINK_PERIOD_FULL < VGA_BLINK_PERIOD_ON) {
+                    if (blink_on) {
                         line_start = pThis->cr[0x0a] & 0x1f;
                         line_last = pThis->cr[0x0b] & 0x1f;
                         /* XXX: check that */

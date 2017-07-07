@@ -263,7 +263,8 @@ typedef struct VGAState {
     uint32_t last_width, last_height; /* in chars or pixels */
     uint32_t last_scr_width, last_scr_height; /* in pixels */
     uint32_t last_bpp;
-    uint8_t cursor_start, cursor_end, padding3[2];
+    uint8_t cursor_start, cursor_end;
+    bool last_cur_blink, last_chr_blink;
     uint32_t cursor_offset;
     /* hardware mouse cursor support */
     uint32_t invalidated_y_table[VGA_MAX_HEIGHT / 32];
