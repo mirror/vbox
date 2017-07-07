@@ -1480,8 +1480,22 @@ static uint32_t hdaGetINTSTS(PHDASTATE pThis)
 }
 
 #ifndef DEBUG
+/**
+ * Processes (de/asserts) the interrupt according to the HDA's current state.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ */
 static int hdaProcessInterrupt(PHDASTATE pThis)
 #else
+/**
+ * Processes (de/asserts) the interrupt according to the HDA's current state.
+ * Debug version.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ * @param   pszSource           Caller information.
+ */
 static int hdaProcessInterrupt(PHDASTATE pThis, const char *pszSource)
 #endif
 {
@@ -1715,7 +1729,16 @@ static int hdaRegLookupWithin(uint32_t offReg)
 }
 
 #ifdef IN_RING3
-
+/**
+ * Synchronizes the CORB / RIRB buffers between internal <-> device state.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ * @param   fLocal              Specify true to synchronize HDA state's CORB buffer with the device state,
+ *                              or false to synchronize the device state's RIRB buffer with the HDA state.
+ *
+ * @todo r=andy Break this up into two functions?
+ */
 static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
 {
     int rc = VINF_SUCCESS;
@@ -1779,6 +1802,13 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
     return rc;
 }
 
+/**
+ * Processes the next CORB buffer command in the queue.
+ * This will invoke the HDA codec verb dispatcher.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ */
 static int hdaCORBCmdProcess(PHDASTATE pThis)
 {
     int rc = hdaCmdSync(pThis, true);
@@ -1848,6 +1878,13 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
     return rc;
 }
 
+/**
+ * Creates an HDA stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             HDA stream to create.
+ * @param   pThis               HDA state to assign the HDA stream to.
+ */
 static int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis)
 {
     RT_NOREF(pThis);
@@ -1878,6 +1915,11 @@ static int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis)
     return rc;
 }
 
+/**
+ * Destroys an HDA stream.
+ *
+ * @param   pStream             HDA stream to destroy.
+ */
 static void hdaStreamDestroy(PHDASTREAM pStream)
 {
     AssertPtrReturnVoid(pStream);
@@ -1914,6 +1956,13 @@ static void hdaStreamDestroy(PHDASTREAM pStream)
     LogFlowFuncLeave();
 }
 
+/**
+ * Initializes an HDA stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             HDA stream to initialize.
+ * @param   uSD                 SD (stream descriptor) number to assign the HDA stream to.
+ */
 static int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -3627,7 +3676,13 @@ DECLINLINE(uint32_t) hdaStreamGetTransferSize(PHDASTATE pThis, PHDASTREAM pStrea
     return cbToTransfer;
 }
 
-
+/**
+ * Increases the amount of transferred (audio) data of an HDA stream and
+ * reports this as needed to the guest.
+ *
+ * @param  pStream              HDA stream to increase amount for.
+ * @param  cbInc                Amount (in bytes) to increase.
+ */
 DECLINLINE(void) hdaStreamTransferInc(PHDASTREAM pStream, uint32_t cbInc)
 {
     AssertPtrReturnVoid(pStream);
@@ -3644,7 +3699,6 @@ DECLINLINE(void) hdaStreamTransferInc(PHDASTREAM pStream, uint32_t cbInc)
 
     hdaStreamUpdateLPIB(pStream, u32LPIB + cbInc);
 }
-
 
 /**
  * Retrieves a corresponding sink for a given mixer control.
@@ -3690,6 +3744,14 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
     return pSink;
 }
 
+/**
+ * Adds audio streams of all attached LUNs to a given HDA audio mixer sink.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ * @param   pSink               HDA mixer sink to add audio streams to.
+ * @param   pCfg                Audio stream configuration to use for the audio streams to add.
+ */
 static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
