@@ -37,6 +37,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/fsvfs.h>
 #include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/log.h>
@@ -55,6 +56,9 @@
 *********************************************************************************************************************************/
 /** Maximum number of name specifiers we allow.  */
 #define RTFSISOMAKERCMD_MAX_NAMES                       8
+
+/** Maximum directory recursions when adding a directory tree. */
+#define RTFSISOMAKERCMD_MAX_DIR_RECURSIONS              32
 
 /** @name Name specifiers
  * @{ */
@@ -97,6 +101,11 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_NAME_SETUP,
     RTFSISOMAKERCMD_OPT_NO_JOLIET,
     RTFSISOMAKERCMD_OPT_IMPORT_ISO,
+    RTFSISOMAKERCMD_OPT_PUSH_ISO,
+    RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_JOLIET,
+    RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK,
+    RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK_NO_JOLIET,
+    RTFSISOMAKERCMD_OPT_POP,
 
     RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,
     RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,
@@ -317,6 +326,13 @@ typedef struct RTFSISOMAKERCMDOPTS
      * values gives the block size to use. */
     uint32_t            cbRandomOrderVerifciationBlock;
 
+    /** The current source VFS, NIL_RTVFS if regular file system is used. */
+    RTVFS               hSrcVfs;
+    /** The specifier for hSrcVfs (error messages). */
+    const char         *pszSrcVfs;
+    /** The option for hSrcVfs. */
+    const char         *pszSrcVfsOption;
+
     /** @name Processing of inputs
      * @{ */
     /** The namespaces (RTFSISOMAKER_NAMESPACE_XXX) we're currently adding
@@ -397,7 +413,6 @@ typedef RTFSISOMKCMDPARSEDNAMES *PRTFSISOMKCMDPARSEDNAMES;
 typedef RTFSISOMKCMDPARSEDNAMES *PCRTFSISOMKCMDPARSEDNAMES;
 
 
-
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -422,6 +437,12 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
     { "--no-joliet",                    RTFSISOMAKERCMD_OPT_NO_JOLIET,                      RTGETOPT_REQ_NOTHING },
     { "--import-iso",                   RTFSISOMAKERCMD_OPT_IMPORT_ISO,                     RTGETOPT_REQ_STRING  },
+    { "--push-iso",                     RTFSISOMAKERCMD_OPT_PUSH_ISO,                       RTGETOPT_REQ_STRING  },
+    { "--push-iso-no-joliet",           RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_JOLIET,             RTGETOPT_REQ_STRING  },
+    { "--push-iso-no-rock",             RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK,               RTGETOPT_REQ_STRING  },
+    { "--push-iso-no-rock-no-joliet",   RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK_NO_JOLIET,     RTGETOPT_REQ_STRING  },
+    { "--pop",                          RTFSISOMAKERCMD_OPT_POP,                            RTGETOPT_REQ_NOTHING },
+
 
     { "--eltorito-new-entry",           RTFSISOMAKERCMD_OPT_ELTORITO_NEW_ENTRY,             RTGETOPT_REQ_NOTHING },
     { "--eltorito-add-image",           RTFSISOMAKERCMD_OPT_ELTORITO_ADD_IMAGE,             RTGETOPT_REQ_STRING },
@@ -725,6 +746,12 @@ static int rtFsIsoMakerCmdDeleteState(PRTFSISOMAKERCMDOPTS pOpts, int rc)
     {
         RTFsIsoMakerRelease(pOpts->hIsoMaker);
         pOpts->hIsoMaker = NIL_RTFSISOMAKER;
+    }
+
+    if (pOpts->hSrcVfs != NIL_RTVFS)
+    {
+        RTVfsRelease(pOpts->hSrcVfs);
+        pOpts->hSrcVfs = NIL_RTVFS;
     }
 
     return rc;
@@ -1498,6 +1525,48 @@ static int rtFsIsoMakerCmdSetObjPaths(PRTFSISOMAKERCMDOPTS pOpts, uint32_t idxOb
 
 
 /**
+ * Enteres an object into the namespaces given the parent and single name.
+ *
+ * This is used by the directory tree recursion code.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts           The ISO maker command instance.
+ * @param   idxObj          The configuration index of the object to be named.
+ * @param   idxParentObj    The configuration index of the parent directory.
+ * @param   pszName         The name of the object.
+ * @param   pParsed         The parsed names - only fNameSpecifies used, no
+ *                          names.
+ * @param   pszSrc          The full source path for error reporting.
+ */
+static int rtFsIsoMakerCmdSetNameAndParent(PRTFSISOMAKERCMDOPTS pOpts, uint32_t idxObj, uint32_t idxParentObj,
+                                           const char *pszName, PCRTFSISOMKCMDPARSEDNAMES pParsed, const char *pszSrc)
+{
+    int rc = VINF_SUCCESS;
+    for (uint32_t i = 0; i < pParsed->cNames; i++)
+        if (pParsed->aNames[i].cchPath > 0)
+        {
+            if (pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK)
+            {
+                rc = RTFsIsoMakerObjSetNameAndParent(pOpts->hIsoMaker, idxObj, idxParentObj,
+                                                     pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK,
+                                                     pszName);
+                if (RT_FAILURE(rc))
+                {
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error setting parent & name '%s' on '%s': %Rrc",
+                                                pszName, pszSrc, rc);
+                    break;
+                }
+            }
+            if (pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MINOR_MASK)
+            {
+                /** @todo add APIs for this.   */
+            }
+        }
+    return rc;
+}
+
+
+/**
  * Adds a file.
  *
  * @returns IPRT status code.
@@ -1510,20 +1579,285 @@ static int rtFsIsoMakerCmdSetObjPaths(PRTFSISOMAKERCMDOPTS pOpts, uint32_t idxOb
 static int rtFsIsoMakerCmdAddFile(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc, PCRTFSISOMKCMDPARSEDNAMES pParsed,
                                   uint32_t *pidxObj)
 {
-    uint32_t idxObj;
-    int rc = RTFsIsoMakerAddUnnamedFileWithSrcPath(pOpts->hIsoMaker, pszSrc, &idxObj);
-    if (RT_SUCCESS(rc))
+    int      rc;
+    uint32_t idxObj = UINT32_MAX;
+    if (   pOpts->hSrcVfs == NIL_RTVFS
+        || RTVfsChainIsSpec(pszSrc))
     {
-        pOpts->cItemsAdded++;
-        if (pidxObj)
-            *pidxObj = idxObj;
-
-        rc = rtFsIsoMakerCmdSetObjPaths(pOpts, idxObj, pParsed, pszSrc);
+        rc = RTFsIsoMakerAddUnnamedFileWithSrcPath(pOpts->hIsoMaker, pszSrc, &idxObj);
+        if (RT_FAILURE(rc))
+            return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding '%s': %Rrc", pszSrc, rc);
     }
     else
-        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding '%s': %Rrc", pszSrc, rc);
+    {
+        RTVFSFILE hVfsFileSrc;
+        rc = RTVfsFileOpen(pOpts->hSrcVfs, pszSrc, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileSrc);
+        if (RT_FAILURE(rc))
+            return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening '%s' (inside '%s'): %Rrc", pszSrc, pOpts->pszSrcVfs, rc);
+
+        rc = RTFsIsoMakerAddUnnamedFileWithVfsFile(pOpts->hIsoMaker, hVfsFileSrc, &idxObj);
+        RTVfsFileRelease(hVfsFileSrc);
+        if (RT_FAILURE(rc))
+            return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding '%s' (VFS): %Rrc", pszSrc, rc);
+    }
+
+    pOpts->cItemsAdded++;
+    if (pidxObj)
+        *pidxObj = idxObj;
+
+    return rtFsIsoMakerCmdSetObjPaths(pOpts, idxObj, pParsed, pszSrc);
+}
+
+static bool rtFsIsoMakerCmdIsFilteredOut(PRTFSISOMAKERCMDOPTS pOpts, const char *pszDir, const char *pszName, bool fIsDir)
+{
+    RT_NOREF(pOpts, pszDir, pszName, fIsDir);
+    return false;
+}
+
+/**
+ * Adds a directory, from a VFS chain or real file system.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszSrc              The path to the source directory.
+ * @param   pParsed             The parsed names.
+ */
+static int rtFsIsoMakerCmdAddDir(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc, PCRTFSISOMKCMDPARSEDNAMES pParsed)
+{
+    RT_NOREF(pParsed);
+    return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding directory '%s' failed: not implemented", pszSrc);
+}
+
+
+/**
+ * Worker for rtFsIsoMakerCmdAddVfsDir that does the recursion.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   hVfsDir             The directory to process.
+ * @param   idxDirObj           The configuration index of the directory.
+ * @param   pszSrc              Pointer to the source path buffer.  RTPATH_MAX
+ *                              in size.  Okay to modify beyond @a cchSrc.
+ * @param   cchSrc              Length of the path corresponding to @a hVfsDir.
+ * @param   fNamespaces         Which ISO maker namespaces to add the names to.
+ * @param   cDepth              Number of recursions.  Used to deal with loopy
+ *                              directories.
+ */
+static int rtFsIsoMakerCmdAddVfsDirRecursive(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDIR hVfsDir, uint32_t idxDirObj,
+                                             char *pszSrc, size_t cchSrc, uint32_t fNamespaces, uint8_t cDepth)
+{
+    /*
+     * Check that we're not in too deep.
+     */
+    if (cDepth >= RTFSISOMAKERCMD_MAX_DIR_RECURSIONS)
+        return rtFsIsoMakerCmdErrorRc(pOpts, VERR_ISOMK_IMPORT_TOO_DEEP_DIR_TREE,
+                                      "Recursive (VFS) dir add too deep (depth=%u): %.*s", cDepth, cchSrc, pszSrc);
+    /*
+     * Enumerate the directory.
+     */
+    int           rc;
+    size_t        cbDirEntryAlloced = sizeof(RTDIRENTRYEX);
+    PRTDIRENTRYEX pDirEntry         = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
+    if (pDirEntry)
+    {
+        for (;;)
+        {
+            /*
+             * Read the next entry.
+             */
+            size_t cbDirEntry = cbDirEntryAlloced;
+            rc = RTVfsDirReadEx(hVfsDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_NO_MORE_FILES)
+                    rc = VINF_SUCCESS;
+                else if (rc == VERR_BUFFER_OVERFLOW)
+                {
+                    RTMemTmpFree(pDirEntry);
+                    cbDirEntryAlloced = RT_ALIGN_Z(RT_MIN(cbDirEntry, cbDirEntryAlloced) + 64, 64);
+                    pDirEntry  = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
+                    if (pDirEntry)
+                        continue;
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "Out of memory (direntry buffer)");
+                }
+                else
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsDirReadEx failed on %.*s: %Rrc", cchSrc, pszSrc, rc);
+                break;
+            }
+
+            /* Ignore '.' and '..' entries. */
+            if (RTDirEntryExIsStdDotLink(pDirEntry))
+                continue;
+
+            /*
+             * Process the entry.
+             */
+
+            /* Update the name. */
+            if (cchSrc + 1 + pDirEntry->cbName < RTPATH_MAX)
+            {
+                pszSrc[cchSrc] = '/'; /* VFS only groks unix slashes */
+                memcpy(&pszSrc[cchSrc + 1], pDirEntry->szName, pDirEntry->cbName);
+                pszSrc[cchSrc + 1 + pDirEntry->cbName] = '\0';
+            }
+            else
+                rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_FILENAME_TOO_LONG, "Filename is too long (depth %u): '%.*s/%s'",
+                                            cDepth, cchSrc, pszSrc, pDirEntry->szName);
+
+            /* Okay? Check name filtering. */
+            if (   RT_SUCCESS(rc)
+                && !rtFsIsoMakerCmdIsFilteredOut(pOpts, pszSrc, pDirEntry->szName, RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode)))
+            {
+                /* Do type specific adding. */
+                uint32_t idxObj = UINT32_MAX;
+                if (RTFS_IS_FILE(pDirEntry->Info.Attr.fMode))
+                {
+                    /*
+                     * Files are added with VFS file sources.
+                     * The ASSUMPTION is that we're working with a virtual file system
+                     * here and won't be wasting native file descriptors.
+                     */
+                    RTVFSFILE hVfsFileSrc;
+                    rc = RTVfsDirOpenFile(hVfsDir, pDirEntry->szName,
+                                          RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileSrc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTFsIsoMakerAddUnnamedFileWithVfsFile(pOpts->hIsoMaker, hVfsFileSrc, &idxObj);
+                        RTVfsFileRelease(hVfsFileSrc);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pOpts->cItemsAdded++;
+                            rc = RTFsIsoMakerObjSetNameAndParent(pOpts->hIsoMaker, idxObj, idxDirObj, fNamespaces,
+                                                                 pDirEntry->szName);
+                            if (RT_FAILURE(rc))
+                                rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error setting parent & name on file '%s' to '%s': %Rrc",
+                                                            pszSrc, pDirEntry->szName, rc);
+                        }
+                        else
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding file '%s' (VFS recursive): %Rrc", pszSrc, rc);
+                    }
+                    else
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening file '%s' (VFS recursive): %Rrc", pszSrc, rc);
+                }
+                else if (RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode))
+                {
+                    /*
+                     * Open and add the sub-directory.
+                     */
+                    RTVFSDIR hVfsSubDirSrc;
+                    rc = RTVfsDirOpenDir(hVfsDir, pDirEntry->szName, 0 /*fFlags*/, &hVfsSubDirSrc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTFsIsoMakerAddUnnamedDir(pOpts->hIsoMaker, &pDirEntry->Info, &idxObj);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pOpts->cItemsAdded++;
+                            rc = RTFsIsoMakerObjSetNameAndParent(pOpts->hIsoMaker, idxObj, idxDirObj, fNamespaces,
+                                                                 pDirEntry->szName);
+                            if (RT_SUCCESS(rc))
+                                /* Recurse into the sub-directory. */
+                                rc = rtFsIsoMakerCmdAddVfsDirRecursive(pOpts, hVfsSubDirSrc, idxObj, pszSrc,
+                                                                       cchSrc + 1 + pDirEntry->cbName, fNamespaces, cDepth + 1);
+                            else
+                                rc = rtFsIsoMakerCmdErrorRc(pOpts, rc,
+                                                            "Error setting parent & name on directory '%s' to '%s': %Rrc",
+                                                            pszSrc, pDirEntry->szName, rc);
+                        }
+                        else
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding directory '%s' (VFS recursive): %Rrc", pszSrc, rc);
+                        RTVfsDirRelease(hVfsSubDirSrc);
+                    }
+                    else
+                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening directory '%s' (VFS recursive): %Rrc", pszSrc, rc);
+                }
+                else if (RTFS_IS_SYMLINK(pDirEntry->Info.Attr.fMode))
+                {
+                    /*
+                     * TODO: ISO FS symlink support.
+                     */
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED,
+                                                "Adding symlink '%s' failed: not yet implemented", pszSrc);
+                }
+                else
+                    rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED,
+                                                "Adding special file '%s' failed: not implemented", pszSrc);
+            }
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        RTMemTmpFree(pDirEntry);
+    }
+    else
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "Out of memory! (direntry buffer)");
     return rc;
 }
+
+
+/**
+ * Adds a directory, from the source VFS.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pParsed             The parsed names.
+ * @param   pidxObj             Where to return the configuration index for the
+ *                              added file.  Optional.
+ */
+static int rtFsIsoMakerCmdAddVfsDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPARSEDNAMES pParsed, PCRTFSOBJINFO pObjInfo)
+{
+    Assert(pParsed->cNames < pParsed->cNamesWithSrc);
+
+    /*
+     * Open the directory.
+     */
+    char    *pszDir = pParsed->aNames[pParsed->cNamesWithSrc - 1].szPath;
+    RTPathChangeToUnixSlashes(pszDir, true /*fForce*/); /* VFS currently only understand unix slashes. */
+    RTVFSDIR hVfsDirSrc;
+    int rc = RTVfsDirOpen(pOpts->hSrcVfs, pszDir, 0 /*fFlags*/, &hVfsDirSrc);
+    if (RT_FAILURE(rc))
+        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening directory '%s' (inside '%s'): %Rrc",
+                                      pszDir, pOpts->pszSrcVfs, rc);
+
+    /*
+     * Add the directory if it doesn't exist.
+     */
+    uint32_t idxObj = UINT32_MAX;
+    for (uint32_t i = 0; i < pParsed->cNames; i++)
+        if (pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK)
+        {
+            idxObj = RTFsIsoMakerGetObjIdxForPath(pOpts->hIsoMaker,
+                                                  pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK,
+                                                  pParsed->aNames[i].szPath);
+            if (idxObj != UINT32_MAX)
+            {
+                /** @todo make sure the directory is present in the other namespace. */
+                break;
+            }
+        }
+    if (idxObj == UINT32_MAX)
+    {
+        rc = RTFsIsoMakerAddUnnamedDir(pOpts->hIsoMaker, pObjInfo, &idxObj);
+        if (RT_SUCCESS(rc))
+            rc = rtFsIsoMakerCmdSetObjPaths(pOpts, idxObj, pParsed, pParsed->aNames[pParsed->cNames - 1].szPath);
+        else
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTFsIsoMakerAddUnnamedDir failed: %Rrc", rc);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Add the directory content.
+         */
+        uint32_t fNamespaces = 0;
+        for (uint32_t i = 0; i < pParsed->cNames; i++)
+            fNamespaces |= pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK;
+        rc = rtFsIsoMakerCmdAddVfsDirRecursive(pOpts, hVfsDirSrc, idxObj, pszDir,
+                                               pParsed->aNames[pParsed->cNamesWithSrc - 1].cchPath, fNamespaces, 0 /*cDepth*/);
+    }
+    RTVfsDirRelease(hVfsDirSrc);
+    return rc;
+}
+
+
 
 
 /**
@@ -1539,13 +1873,25 @@ static int rtFsIsoMakerCmdAddFile(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc
 static int rtFsIsoMakerCmdStatAndAddFile(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc, PCRTFSISOMKCMDPARSEDNAMES pParsed,
                                          uint32_t *pidxObj)
 {
-    RTFSOBJINFO     ObjInfo;
-    uint32_t        offError;
-    RTERRINFOSTATIC ErrInfo;
-    int rc = RTVfsChainQueryInfo(pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX,
-                                 RTPATH_F_FOLLOW_LINK, &offError, RTErrInfoInitStatic(&ErrInfo));
-    if (RT_FAILURE(rc))
-        return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainQueryInfo", pszSrc, rc, offError, &ErrInfo.Core);
+    int         rc;
+    RTFSOBJINFO ObjInfo;
+    if (   pOpts->hSrcVfs == NIL_RTVFS
+        || RTVfsChainIsSpec(pszSrc))
+    {
+        uint32_t        offError;
+        RTERRINFOSTATIC ErrInfo;
+        rc = RTVfsChainQueryInfo(pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX,
+                                     RTPATH_F_FOLLOW_LINK, &offError, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_FAILURE(rc))
+            return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainQueryInfo", pszSrc, rc, offError, &ErrInfo.Core);
+    }
+    else
+    {
+        rc = RTVfsQueryPathInfo(pOpts->hSrcVfs, pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK);
+        if (RT_FAILURE(rc))
+            return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsQueryPathInfo failed on %s (inside %s): %Rrc",
+                                          pszSrc, pOpts->pszSrcVfs, rc);
+    }
 
     if (RTFS_IS_FILE(ObjInfo.Attr.fMode))
         return rtFsIsoMakerCmdAddFile(pOpts, pszSrc, pParsed, pidxObj);
@@ -1605,26 +1951,113 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
     {
         const char     *pszSrc = Parsed.aNames[Parsed.cNamesWithSrc - 1].szPath;
         RTFSOBJINFO     ObjInfo;
-        uint32_t        offError;
-        RTERRINFOSTATIC ErrInfo;
-        rc = RTVfsChainQueryInfo(pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX,
-                                 RTPATH_F_FOLLOW_LINK, &offError, RTErrInfoInitStatic(&ErrInfo));
-        if (RT_FAILURE(rc))
-            return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainQueryInfo", pszSrc, rc, offError, &ErrInfo.Core);
+        if (   pOpts->hSrcVfs == NIL_RTVFS
+            || RTVfsChainIsSpec(pszSrc))
+        {
+            uint32_t        offError;
+            RTERRINFOSTATIC ErrInfo;
+            rc = RTVfsChainQueryInfo(pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX,
+                                     RTPATH_F_FOLLOW_LINK, &offError, RTErrInfoInitStatic(&ErrInfo));
+            if (RT_FAILURE(rc))
+                return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainQueryInfo", pszSrc, rc, offError, &ErrInfo.Core);
+        }
+        else
+        {
+            rc = RTVfsQueryPathInfo(pOpts->hSrcVfs, pszSrc, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK);
+            if (RT_FAILURE(rc))
+                return rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsQueryPathInfo failed on %s (in %s): %Rrc",
+                                              pszSrc, pOpts->pszSrcVfs, rc);
+        }
 
         if (RTFS_IS_FILE(ObjInfo.Attr.fMode))
             return rtFsIsoMakerCmdAddFile(pOpts, pszSrc, &Parsed, NULL /*pidxObj*/);
 
         if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
-            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding directory '%s' failed: not implemented", pszSpec);
+        {
+            if (   pOpts->hSrcVfs == NIL_RTVFS
+                || RTVfsChainIsSpec(pszSrc))
+                return rtFsIsoMakerCmdAddDir(pOpts, pszSrc, &Parsed);
+            return rtFsIsoMakerCmdAddVfsDir(pOpts, &Parsed, &ObjInfo);
+        }
 
         if (RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
-            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding symlink '%s' failed: not implemented", pszSpec);
+            return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding symlink '%s' failed: not yet implemented", pszSpec);
 
         return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding special file '%s' failed: not implemented", pszSpec);
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Opens an ISO and use it for subsequent file system accesses.
+ *
+ * This is handy for duplicating a part of an ISO in the new image.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszIsoSpec          The ISO path specifier.
+ * @param   pszOption           The option we're being called on.
+ * @param   fFlags              RTFSISO9660_F_XXX
+ */
+static int rtFsIsoMakerCmdOptPushIso(PRTFSISOMAKERCMDOPTS pOpts, const char *pszIsoSpec, const char *pszOption, uint32_t fFlags)
+{
+    if (pOpts->hSrcVfs != NIL_RTVFS)
+        return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED,
+                                      "Nested %s usage is not supported (previous: %s %s)",
+                                      pszOption, pOpts->pszSrcVfsOption, pOpts->pszSrcVfs);
+
+    /*
+     * Try open the file.
+     */
+    RTVFSFILE       hVfsFileIso;
+    uint32_t        offError;
+    RTERRINFOSTATIC ErrInfo;
+    int rc = RTVfsChainOpenFile(pszIsoSpec, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
+                                &hVfsFileIso, &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        RTVFS hSrcVfs;
+        rc = RTFsIso9660VolOpen(hVfsFileIso, fFlags, &hSrcVfs, RTErrInfoInitStatic(&ErrInfo));
+        RTVfsFileRelease(hVfsFileIso);
+        if (RT_SUCCESS(rc))
+        {
+            pOpts->hSrcVfs         = hSrcVfs;
+            pOpts->pszSrcVfs       = pszIsoSpec;
+            pOpts->pszSrcVfsOption = pszOption;
+            return VINF_SUCCESS;
+        }
+
+        if (RTErrInfoIsSet(&ErrInfo.Core))
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to open '%s' as ISO FS: %Rrc - %s",
+                                        pszIsoSpec, rc, ErrInfo.Core.pszMsg);
+        else
+            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to open '%s' as ISO FS: %Rrc", pszIsoSpec, rc);
+    }
+    else
+        rc = rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainOpenFile", pszIsoSpec, rc, offError, &ErrInfo.Core);
+    return rc;
+}
+
+
+/**
+ * Counter part to --push-iso and friends.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ */
+static int rtFsIsoMakerCmdOptPop(PRTFSISOMAKERCMDOPTS pOpts)
+{
+    if (pOpts->hSrcVfs != NIL_RTVFS)
+    {
+        RTVfsRelease(pOpts->hSrcVfs);
+        pOpts->hSrcVfs         = NIL_RTVFS;
+        pOpts->pszSrcVfs       = NULL;
+        pOpts->pszSrcVfsOption = NULL;
+        return VINF_SUCCESS;
+    }
+    return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_FOUND, "--pop without --push-xxx");
 }
 
 
@@ -2325,6 +2758,28 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                 pOpts->cbRandomOrderVerifciationBlock = ValueUnion.u32;
                 break;
 
+            case RTFSISOMAKERCMD_OPT_PUSH_ISO:
+                rc = rtFsIsoMakerCmdOptPushIso(pOpts, ValueUnion.psz, "--push-iso", 0);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_JOLIET:
+                rc = rtFsIsoMakerCmdOptPushIso(pOpts, ValueUnion.psz, "--push-iso-no-joliet", RTFSISO9660_F_NO_JOLIET);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK:
+                rc = rtFsIsoMakerCmdOptPushIso(pOpts, ValueUnion.psz, "--push-iso-no-rock", RTFSISO9660_F_NO_ROCK);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_ROCK_NO_JOLIET:
+                rc = rtFsIsoMakerCmdOptPushIso(pOpts, ValueUnion.psz, "--push-iso-no-rock-no-joliet",
+                                               RTFSISO9660_F_NO_ROCK | RTFSISO9660_F_NO_JOLIET);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_POP:
+                rc = rtFsIsoMakerCmdOptPop(pOpts);
+                break;
+
+
             case RTFSISOMAKERCMD_OPT_IMPORT_ISO:
                 rc = rtFsIsoMakerCmdOptImportIso(pOpts, ValueUnion.psz);
                 break;
@@ -2503,6 +2958,7 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     Opts.hIsoMaker              = NIL_RTFSISOMAKER;
     Opts.pErrInfo               = pErrInfo;
     Opts.fVirtualImageMaker     = phVfsFile != NULL;
+    Opts.hSrcVfs                = NIL_RTVFS;
     Opts.cNameSpecifiers        = 1;
     Opts.afNameSpecifiers[0]    = RTFSISOMAKERCMDNAME_MAJOR_MASK;
     Opts.fDstNamespaces         = RTFSISOMAKERCMDNAME_MAJOR_MASK;
