@@ -1525,48 +1525,6 @@ static int rtFsIsoMakerCmdSetObjPaths(PRTFSISOMAKERCMDOPTS pOpts, uint32_t idxOb
 
 
 /**
- * Enteres an object into the namespaces given the parent and single name.
- *
- * This is used by the directory tree recursion code.
- *
- * @returns IPRT status code.
- * @param   pOpts           The ISO maker command instance.
- * @param   idxObj          The configuration index of the object to be named.
- * @param   idxParentObj    The configuration index of the parent directory.
- * @param   pszName         The name of the object.
- * @param   pParsed         The parsed names - only fNameSpecifies used, no
- *                          names.
- * @param   pszSrc          The full source path for error reporting.
- */
-static int rtFsIsoMakerCmdSetNameAndParent(PRTFSISOMAKERCMDOPTS pOpts, uint32_t idxObj, uint32_t idxParentObj,
-                                           const char *pszName, PCRTFSISOMKCMDPARSEDNAMES pParsed, const char *pszSrc)
-{
-    int rc = VINF_SUCCESS;
-    for (uint32_t i = 0; i < pParsed->cNames; i++)
-        if (pParsed->aNames[i].cchPath > 0)
-        {
-            if (pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK)
-            {
-                rc = RTFsIsoMakerObjSetNameAndParent(pOpts->hIsoMaker, idxObj, idxParentObj,
-                                                     pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK,
-                                                     pszName);
-                if (RT_FAILURE(rc))
-                {
-                    rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error setting parent & name '%s' on '%s': %Rrc",
-                                                pszName, pszSrc, rc);
-                    break;
-                }
-            }
-            if (pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MINOR_MASK)
-            {
-                /** @todo add APIs for this.   */
-            }
-        }
-    return rc;
-}
-
-
-/**
  * Adds a file.
  *
  * @returns IPRT status code.
@@ -1608,11 +1566,22 @@ static int rtFsIsoMakerCmdAddFile(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc
     return rtFsIsoMakerCmdSetObjPaths(pOpts, idxObj, pParsed, pszSrc);
 }
 
+
+/**
+ * Applies filtering rules.
+ *
+ * @returns true if filtered out, false if included.
+ * @param   pOpts       The ISO maker command instance.
+ * @param   pszSrc      The source source.
+ * @param   pszName     The name part (maybe different buffer from pszSrc).
+ * @param   fIsDir      Set if directory, clear if not.
+ */
 static bool rtFsIsoMakerCmdIsFilteredOut(PRTFSISOMAKERCMDOPTS pOpts, const char *pszDir, const char *pszName, bool fIsDir)
 {
     RT_NOREF(pOpts, pszDir, pszName, fIsDir);
     return false;
 }
+
 
 /**
  * Adds a directory, from a VFS chain or real file system.
