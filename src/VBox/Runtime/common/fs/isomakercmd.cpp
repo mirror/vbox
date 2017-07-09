@@ -359,6 +359,12 @@ typedef struct RTFSISOMAKERCMDOPTS
     RTFSISOMKCMDELTORITOENTRY   aBootCatEntries[64];
     /** @} */
 
+    /** @name Filteringer
+     * @{ */
+    /** The trans.tbl filename when enabled.  We must not import these files. */
+    const char         *pszTransTbl;
+    /** @} */
+
     /** Number of items (files, directories, images, whatever) we've added. */
     uint32_t            cItemsAdded;
 } RTFSISOMAKERCMDOPTS;
@@ -1580,6 +1586,11 @@ static int rtFsIsoMakerCmdAddFile(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc
  */
 static bool rtFsIsoMakerCmdIsFilteredOut(PRTFSISOMAKERCMDOPTS pOpts, const char *pszDir, const char *pszName, bool fIsDir)
 {
+    /* Ignore trans.tbl files. */
+    if (   !fIsDir
+        && RTStrICmp(pszName, pOpts->pszTransTbl) == 0)
+        return true;
+
     RT_NOREF(pOpts, pszDir, pszName, fIsDir);
     return false;
 }
@@ -2933,6 +2944,7 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, PRTVFSFILE phVfs
     Opts.cNameSpecifiers        = 1;
     Opts.afNameSpecifiers[0]    = RTFSISOMAKERCMDNAME_MAJOR_MASK;
     Opts.fDstNamespaces         = RTFSISOMAKERCMDNAME_MAJOR_MASK;
+    Opts.pszTransTbl            = "TRANS.TBL"; /** @todo query this below */
     if (phVfsFile)
         *phVfsFile = NIL_RTVFSFILE;
     for (uint32_t i = 0; i < RT_ELEMENTS(Opts.aBootCatEntries); i++)
