@@ -3768,7 +3768,7 @@
     name="IUnattended" extends="$unknown"
     uuid="2fb5b9e2-2fe6-4e60-e066-862fbafb1e9f"
     wsmap="managed"
-    reservedMethods="4" reservedAttributes="12"
+    reservedMethods="4" reservedAttributes="16"
     >
 
     <desc>
