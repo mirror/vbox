@@ -5068,6 +5068,8 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
         pszLastOp = "formatting data clusters";
         uint64_t offCur = offFirstFat + cbFat * cFats + cbRootDir;
         uint64_t cbLeft = cTotalSectors * cbSector;
+        if (cbVol - cbLeft <= _256K) /* HACK ALERT! Format to end of volume if it's a cluster rounding thing.  */
+            cbLeft = cbVol;
         if (cbLeft > offCur)
         {
             cbLeft -= offCur;
@@ -5108,7 +5110,7 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
 RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick)
 {
     return RTFsFatVolFormat(hVfsFile, 0 /*offVol*/, 1474560, fQuick ? RTFSFATVOL_FMT_F_QUICK : RTFSFATVOL_FMT_F_FULL,
-                            512 /*cbSector*/, 2 /*cSectorsPerCluster*/, RTFSFATTYPE_FAT12, 2 /*cHeads*/,  18 /*cSectors*/,
+                            512 /*cbSector*/, 1 /*cSectorsPerCluster*/, RTFSFATTYPE_FAT12, 2 /*cHeads*/,  18 /*cSectors*/,
                             0xf0 /*bMedia*/, 0 /*cHiddenSectors*/, 224 /*cRootDirEntries*/, NULL /*pErrInfo*/);
 }
 
