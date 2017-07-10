@@ -1561,11 +1561,5 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  bstrAuxiliaryBasePath.raw());
     } while (0);
 
-    RTPrintf("Unattended installation OS %s has been running on virtual machine '%ls'.\n"
-             "UUID: %ls\n",
-             strInstalledOS.c_str(),
-             bstrMachineName.raw(),
-             bstrUuid.raw());
-
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
