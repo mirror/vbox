@@ -108,6 +108,7 @@ public:
     const ComObjPtr<MediumFormat> & i_getMediumFormat() const;
     bool i_isMediumFormatFile() const;
     uint64_t i_getSize() const;
+    uint64_t i_getLogicalSize() const;
     DeviceType_T i_getDeviceType() const;
     MediumType_T i_getType() const;
     Utf8Str i_getName();
