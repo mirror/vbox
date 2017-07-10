@@ -242,6 +242,8 @@ static int pic_get_irq(PPICSTATE pPic)
        master, the IRQ coming from the slave is not taken into account
        for the priority computation. */
     mask = pPic->isr;
+    if (pPic->special_mask)
+        mask &= ~pPic->imr;
     if (pPic->special_fully_nested_mode && pPic->idxPic == 0)
         mask &= ~(1 << 2);
     cur_priority = get_priority(pPic, mask);
@@ -315,51 +317,6 @@ static int pic_update_irq(PDEVPIC pThis)
     }
     return VINF_SUCCESS;
 }
-
-/** @note if an interrupt line state changes from unmasked to masked, then it must be deactivated when currently pending! */
-static void pic_update_imr(PDEVPIC pThis, PPICSTATE pPic, uint8_t val)
-{
-    int       irq, intno;
-    PPICSTATE pActivePIC;
-
-    /* Query the current pending irq, if any. */
-    pActivePIC = &pThis->aPics[0];
-    intno = irq = pic_get_irq(pActivePIC);
-    if (irq == 2)
-    {
-        pActivePIC = &pThis->aPics[1];
-        irq = pic_get_irq(pActivePIC);
-        intno = irq + 8;
-    }
-
-    /* Update IMR */
-    Log(("pic_update_imr: pic%u %#x -> %#x\n", pPic->idxPic, pPic->imr, val));
-    pPic->imr = val;
-
-    /* If an interrupt is pending and now masked, then clear the FF flag. */
-    if (    irq >= 0
-        &&  ((1 << irq) & ~pActivePIC->imr) == 0)
-    {
-        Log(("pic_update_imr: pic0: elcr=%x last_irr=%x irr=%x imr=%x isr=%x irq_base=%x\n",
-            pThis->aPics[0].elcr, pThis->aPics[0].last_irr, pThis->aPics[0].irr, pThis->aPics[0].imr, pThis->aPics[0].isr, pThis->aPics[0].irq_base));
-        Log(("pic_update_imr: pic1: elcr=%x last_irr=%x irr=%x imr=%x isr=%x irq_base=%x\n",
-            pThis->aPics[1].elcr, pThis->aPics[1].last_irr, pThis->aPics[1].irr, pThis->aPics[1].imr, pThis->aPics[1].isr, pThis->aPics[1].irq_base));
-
-        /* Clear pending IRQ 2 on master controller in case of slave interrupt. */
-        /** @todo Is this correct? */
-        if (intno > 7)
-        {
-            pThis->aPics[0].irr &= ~(1 << 2);
-            STAM_COUNTER_INC(&pThis->StatClearedActiveSlaveIRQ);
-        }
-        else
-            STAM_COUNTER_INC(&pThis->StatClearedActiveMasterIRQ);
-
-        Log(("pic_update_imr: clear pending interrupt %d\n", intno));
-        pThis->CTX_SUFF(pPicHlp)->pfnClearInterruptFF(pThis->CTX_SUFF(pDevIns));
-    }
-}
-
 
 /**
  * Set the an IRQ.
@@ -594,8 +551,7 @@ static int pic_ioport_write(PDEVPIC pThis, PPICSTATE pPic, uint32_t addr, uint32
         {
             case 0:
                 /* normal mode */
-                pic_update_imr(pThis, pPic, val);
-
+                pPic->imr = val;
                 rc = pic_update_irq(pThis);
                 Assert(rc == VINF_SUCCESS);
                 break;
