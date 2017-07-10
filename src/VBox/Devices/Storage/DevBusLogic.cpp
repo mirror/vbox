@@ -1056,6 +1056,7 @@ static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
     LogFlowFunc(("pBusLogic=%#p, clearing %#02x (pending %#02x)\n",
                  pBusLogic, pBusLogic->regInterrupt, pBusLogic->uPendingIntr));
     pBusLogic->regInterrupt = 0;
+    pBusLogic->regStatus &= ~BL_STAT_CMDINV;
     PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 0);
     /* If there's another pending interrupt, report it now. */
     if (pBusLogic->uPendingIntr)
