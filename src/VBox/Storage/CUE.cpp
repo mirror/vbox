@@ -1311,7 +1311,8 @@ static int cueOpenImage(PCUEIMAGE pThis, unsigned uOpenFlags)
                 rc = vdIfError(pThis->pIfError, rc, RT_SRC_POS, N_("CUE: Error reading '%s'"), pThis->pszFilename);
         }
         else if (RT_SUCCESS(rc))
-            rc = vdIfError(pThis->pIfError, rc, RT_SRC_POS, N_("CUE: The descriptor file '%s' is too huge (%llu vs %llu)"),
+            rc = vdIfError(pThis->pIfError, VERR_VD_INVALID_SIZE,
+                           RT_SRC_POS, N_("CUE: The descriptor file '%s' is too huge (%llu vs %llu)"),
                            pThis->pszFilename, cbFile, _16K - 1);
     }
     /* else: Do NOT signal an appropriate error here, as the VD layer has the
