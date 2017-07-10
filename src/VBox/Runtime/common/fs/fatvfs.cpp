@@ -1415,11 +1415,11 @@ static uint8_t rtFsFatTimeSpec2FatDateTime(PCRTFSFATVOL pVol, PCRTTIMESPEC pTime
     RTTimeExplode(&Time, RTTimeSpecSubNano(&TimeSpec, pVol->offNanoUTC));
 
     if (puDate)
-        *puDate = ((RT_MIN(Time.i32Year, 1980) - 1980) << 9)
+        *puDate = ((uint16_t)(RT_MAX(Time.i32Year, 1980) - 1980) << 9)
                 | (Time.u8Month << 5)
                 | Time.u8MonthDay;
     if (puTime)
-        *puTime = (Time.u8Hour   << 11)
+        *puTime = ((uint16_t)Time.u8Hour   << 11)
                 | (Time.u8Minute << 5)
                 | (Time.u8Second >> 1);
     return (Time.u8Second & 1) * 100 + Time.u32Nanosecond / 10000000;
@@ -4928,7 +4928,9 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
     pBootSector->Bpb.Bpb331.cSectorsPerTrack    = cSectorsPerTrack;
     pBootSector->Bpb.Bpb331.cTracksPerCylinder  = cHeads;
     pBootSector->Bpb.Bpb331.cHiddenSectors      = cHiddenSectors;
-    pBootSector->Bpb.Bpb331.cTotalSectors32     = cTotalSectors <= UINT32_MAX     ? (uint32_t)cTotalSectors : 0;
+    /* XP barfs if both cTotalSectors32 and cTotalSectors16 are set */
+    pBootSector->Bpb.Bpb331.cTotalSectors32     = cTotalSectors <= UINT32_MAX && pBootSector->Bpb.Bpb331.cTotalSectors16 == 0
+                                                ? (uint32_t)cTotalSectors : 0;
     if (enmFatType != RTFSFATTYPE_FAT32)
     {
         pBootSector->Bpb.Ebpb.bInt13Drive       = 0;
