@@ -5394,8 +5394,13 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     VBOXSTRICTRC rcStrict = HMSvmVmmcall(pVCpu, pCtx, &fRipUpdated);
     if (RT_SUCCESS(rcStrict))
     {
-        if (!fRipUpdated)
+        /* Only update the RIP if we're continuing guest execution and not
+           in the case of say VINF_GIM_R3_HYPERCALL. */
+        if (   rcStrict == VINF_SUCCESS
+            && !fRipUpdated)
+        {
             hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 3 /* cbInstr */);
+        }
 
         /* If the hypercall or TPR patching changes anything other than guest's general-purpose registers,
            we would need to reload the guest changed bits here before VM-entry. */
