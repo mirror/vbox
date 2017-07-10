@@ -5111,7 +5111,7 @@ RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick)
 {
     return RTFsFatVolFormat(hVfsFile, 0 /*offVol*/, 1474560, fQuick ? RTFSFATVOL_FMT_F_QUICK : RTFSFATVOL_FMT_F_FULL,
                             512 /*cbSector*/, 1 /*cSectorsPerCluster*/, RTFSFATTYPE_FAT12, 2 /*cHeads*/,  18 /*cSectors*/,
-                            0xf0 /*bMedia*/, 0 /*cHiddenSectors*/, 224 /*cRootDirEntries*/, NULL /*pErrInfo*/);
+                            0xf0 /*bMedia*/, 224 /*cRootDirEntries*/, 0 /*cHiddenSectors*/, NULL /*pErrInfo*/);
 }
 
 
