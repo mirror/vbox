@@ -1157,13 +1157,14 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
 static void buslogicCommandComplete(PBUSLOGIC pBusLogic, bool fSuppressIrq)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
+    Assert(pBusLogic->uOperationCode != BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND);
 
     pBusLogic->fUseLocalRam = false;
     pBusLogic->regStatus |= BL_STAT_HARDY;
     pBusLogic->iReply = 0;
 
-    /* Modify I/O address does not generate an interrupt. */
-    if (pBusLogic->uOperationCode != BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND)
+    /* The Enable OMBR command does not set CMDC when successful. */
+    if (pBusLogic->uOperationCode != BUSLOGICCOMMAND_ENABLE_OUTGOING_MAILBOX_AVAILABLE_INTERRUPT)
     {
         /* Notify that the command is complete. */
         pBusLogic->regStatus &= ~BL_STAT_DIRRDY;
@@ -1968,6 +1969,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         {
             PRequestInitMbx pRequest = (PRequestInitMbx)pBusLogic->aCommandBuffer;
 
+            ///@todo: Command should fail if requested no. of mailbox entries is zero
             pBusLogic->fMbxIs24Bit = true;
             pBusLogic->cMailbox = pRequest->cMailbox;
             pBusLogic->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)ADDR_TO_U32(pRequest->aMailboxBaseAddr);
@@ -1987,6 +1989,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         {
             PRequestInitializeExtendedMailbox pRequest = (PRequestInitializeExtendedMailbox)pBusLogic->aCommandBuffer;
 
+            ///@todo: Command should fail if requested no. of mailbox entries is zero
             pBusLogic->fMbxIs24Bit = false;
             pBusLogic->cMailbox = pRequest->cMailbox;
             pBusLogic->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress;
@@ -2087,6 +2090,22 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         {
             pBusLogic->aReplyBuffer[0] = pBusLogic->aCommandBuffer[0];
             pBusLogic->cbReplyParametersLeft = 1;
+            break;
+        }
+        case BUSLOGICCOMMAND_ENABLE_OUTGOING_MAILBOX_AVAILABLE_INTERRUPT:
+        {
+            uint8_t     uEnable = pBusLogic->aCommandBuffer[0];
+
+            pBusLogic->cbReplyParametersLeft = 0;
+            Log(("Enable OMBR: %u\n", uEnable));
+            /* Only 0/1 are accepted. */
+            if (uEnable > 1)
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+            else
+            {
+                pBusLogic->LocalRam.structured.autoSCSIData.uReserved6 = uEnable;
+                fSuppressIrq = true;
+            }
             break;
         }
         case BUSLOGICCOMMAND_SET_PREEMPT_TIME_ON_BUS:
@@ -2305,6 +2324,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             /* Fast path for mailbox execution command. */
             if ((uVal == BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND) && (pBusLogic->uOperationCode == 0xff))
             {
+                ///@todo: Should fail if BL_STAT_INREQ is set
                 /* If there are no mailboxes configured, don't even try to do anything. */
                 if (pBusLogic->cMailbox)
                 {
@@ -2356,6 +2376,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_INQUIRE_SYNCHRONOUS_PERIOD:
                     case BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT:
                     case BUSLOGICCOMMAND_ECHO_COMMAND_DATA:
+                    case BUSLOGICCOMMAND_ENABLE_OUTGOING_MAILBOX_AVAILABLE_INTERRUPT:
                     case BUSLOGICCOMMAND_SET_PREEMPT_TIME_ON_BUS:
                     case BUSLOGICCOMMAND_SET_TIME_OFF_BUS:
                     case BUSLOGICCOMMAND_SET_BUS_TRANSFER_RATE:
