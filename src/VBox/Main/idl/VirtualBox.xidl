@@ -3766,9 +3766,9 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="cc3e4bc1-2cb1-4ac7-f26b-dedf01dd24a9"
+    uuid="2fb5b9e2-2fe6-4e60-e066-862fbafb1e9f"
     wsmap="managed"
-    reservedMethods="4" reservedAttributes="4"
+    reservedMethods="4" reservedAttributes="12"
     >
 
     <desc>
