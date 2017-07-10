@@ -1,0 +1,61 @@
+;SetupMgrTag
+[Data]
+    AutoPartition = 1
+    MsDosInitiated = "0"
+    UnattendedInstall = "Yes"
+
+[Unattended]
+    UnattendMode = FullUnattended
+    OemSkipEula = Yes
+    OemPreinstall = No
+    TargetPath = \WINDOWS
+    Repartition = Yes
+    UnattendSwitch = "Yes"
+    DriverSigningPolicy = Ignore
+    WaitForReboot = "No"
+
+[GuiUnattended]
+    AdminPassword = "@@VBOX_INSERT_USER_PASSWORD@@"
+    EncryptedAdminPassword = No
+    AutoLogon = Yes
+    OEMSkipRegional = 1
+    OemSkipWelcome = 1
+; TODO: Make timezone configurable?
+    TimeZone = 85
+    OemSkipWelcome = 1
+
+[UserData]
+; ProductKey was introduced in XP, ProductID was used in 2K and earlier.
+    ProductKey = "@@VBOX_INSERT_PRODUCT_KEY@@"
+    ProductID = "@@VBOX_INSERT_PRODUCT_KEY@@"
+    FullName = "@@VBOX_INSERT_USER_LOGIN@@"
+    OrgName = ""
+; TODO: Make computer name configurable, defaulting to a mangled (for NT) VM name.
+    ComputerName = *
+
+[RegionalSettings]
+; TODO: Make language groups configurable?
+;   LanguageGroup=1,2,3,4,5 - needed for us+russian?
+    LanguageGroup=1
+; TODO: Make system+user locale configurable.
+; 0409:00000409 is US.
+;    SystemLocale=00000419 - russian
+; TODO: Make Input locale configurable?
+;    InputLocale=0409:00000409,0419:00000419 - US,Russian
+
+[LicenseFilePrintData]
+; This section is used for server installs.
+    AutoMode = "PerServer"
+    AutoUsers = "5"
+
+[Identification]
+    JoinWorkgroup = WORKGROUP
+
+[Networking]
+    InstallDefaultComponents = Yes
+
+@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
+[GuiRunOnce]
+    Command0="E:\VBoxWindowsAdditions.exe"
+@@VBOX_COND_END@@
+
