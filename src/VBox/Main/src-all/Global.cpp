@@ -741,6 +741,7 @@ Global::vboxStatusCodeToCOM(int aVBoxStatus)
         /* Other errors. */
         case VERR_UNRESOLVED_ERROR:             return E_FAIL;
         case VERR_NOT_EQUAL:                    return VBOX_E_FILE_ERROR;
+        case VERR_FILE_NOT_FOUND:               return VBOX_E_OBJECT_NOT_FOUND;
 
         default:
             AssertMsgFailed(("%Rrc\n", aVBoxStatus));
