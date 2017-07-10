@@ -18,6 +18,8 @@ CPU = 386
 
 CFLAGS   = -q -0 -wx -zu -s -oas -d1+ -ms
 CFLAGS32 = -q -wx -zu -s -oas -d1+ -ms -nt=BIOS32 -nd=BIOS32
+# -oat seems to prevent ENTER/LEAVE generation
+#CFLAGS32 = -q -wx -zu -s -oat -d1+ -ms -nt=BIOS32 -nd=BIOS32
 
 DEFS = -DVBOX -DVBOX_LANBOOT_SEG=0xE200 -DVBOX_VERSION_STRING=$(Q)0.9$(Q) &
  -DVBOX_WITH_SCSI -DVBOX_BIOS_CPU=80386
@@ -52,7 +54,7 @@ vbxbios.bin : $(OBJS) $(__MAKEFILES__)
 	 output raw offset=0xF0000 order &
 	 clname DATA segaddr=0xF000 segment _DATA &
 	 clname CODE &
-	 segment _TEXT segaddr=0xF000 offset=0x1600 &
+	 segment _TEXT segaddr=0xF000 offset=0x1C00 &
 	 segment BIOS32 segaddr=0xF000 offset=0xDB00 &
 	 segment BIOSSEG segaddr=0xF000 offset=0xE000 &
 	 file { $(OBJS) } &

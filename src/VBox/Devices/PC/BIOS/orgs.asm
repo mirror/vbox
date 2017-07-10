@@ -522,8 +522,8 @@ endif
                 mov     ds:[410h], ax   ; store in BDA
 
                 ;; Serial setup
-                SET_INT_VECTOR 0Bh, BIOSSEG, dummy_isr
-                SET_INT_VECTOR 0Ch, BIOSSEG, dummy_isr
+                SET_INT_VECTOR 0Bh, BIOSSEG, dummy_isr  ; IRQ 3
+                SET_INT_VECTOR 0Ch, BIOSSEG, dummy_isr  ; IRQ 4
                 SET_INT_VECTOR 14h, BIOSSEG, int14_handler
                 xor     bx, bx
                 mov     cl, 0Ah         ; timeout value
@@ -850,7 +850,8 @@ ebda_post       proc    near
 
                 SET_INT_VECTOR 0Dh, BIOSSEG, dummy_isr  ; IRQ 5
                 SET_INT_VECTOR 0Fh, BIOSSEG, dummy_isr  ; IRQ 7
-                SET_INT_VECTOR 72h, BIOSSEG, dummy_isr  ; IRQ 11
+                SET_INT_VECTOR 72h, BIOSSEG, dummy_isr  ; IRQ 10
+                SET_INT_VECTOR 73h, BIOSSEG, dummy_isr  ; IRQ 11
                 SET_INT_VECTOR 77h, BIOSSEG, dummy_isr  ; IRQ 15
 
                 mov     ax, EBDA_SEG
