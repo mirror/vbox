@@ -128,5 +128,5 @@ private:
     Utf8Str mLogName;                   /**< For logging purposes */
 };
 
-#endif // ____H_MEDIUMATTACHMENTIMPL
+#endif // !____H_MEDIUMATTACHMENTIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
