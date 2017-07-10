@@ -331,7 +331,7 @@ HRESULT Snapshot::setName(const com::Utf8Str &aName)
     Guid test(aName);
 
     if (!test.isZero() && test.isValid())
-        return setError(E_INVALIDARG,  tr("A machine cannot have a UUID as its name"));
+        return setError(E_INVALIDARG, tr("A machine cannot have a UUID as its name"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2899,7 +2899,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                     if (RT_FAILURE(vrc))
                     {
                         rc = setError(E_FAIL,
-                                      tr(" Unable to merge storage '%s'. Can't get storage UID "),
+                                      tr("Unable to merge storage '%s'. Can't get storage UID"),
                                       pTarget_local->i_getLocationFull().c_str());
                         throw rc;
                     }
@@ -2932,10 +2932,10 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                 /* get info about a storage */
                 if (it_sm == serialMapToStoragePath.end())
                 {
-                    LogFlowThisFunc((" Path to the storage wasn't found...\n "));
+                    LogFlowThisFunc(("Path to the storage wasn't found...\n"));
 
                     rc = setError(E_INVALIDARG,
-                                  tr(" Unable to merge storage '%s'. Path to the storage wasn't found. "),
+                                  tr("Unable to merge storage '%s'. Path to the storage wasn't found"),
                                   it_sm->second);
                     throw rc;
                 }
@@ -2944,17 +2944,17 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                 if (RT_FAILURE(vrc))
                 {
                     rc = setError(E_FAIL,
-                                  tr(" Unable to merge storage '%s'. Can't get the storage size. "),
+                                  tr("Unable to merge storage '%s'. Can't get the storage size"),
                                   it_sm->second);
                     throw rc;
                 }
 
                 if (commonSourceStoragesSize > (uint64_t)pcbFree)
                 {
-                    LogFlowThisFunc((" Not enough free space to merge...\n "));
+                    LogFlowThisFunc(("Not enough free space to merge...\n"));
 
                     rc = setError(E_OUTOFMEMORY,
-                                  tr(" Unable to merge storage '%s' - not enough free storage space. "),
+                                  tr("Unable to merge storage '%s'. Not enough free storage space"),
                                   it_sm->second);
                     throw rc;
                 }
