@@ -77,9 +77,9 @@ typedef struct HDAREGALIAS
 /** Total number of stream tags (channels). Index 0 is reserved / invalid. */
 #define HDA_MAX_TAGS                16
 
-/*
- * ICH6 datasheet defines limits for FIFOS registers (18.2.39)
- * formula: size - 1
+/**
+ * ICH6 datasheet defines limits for FIFOS registers (18.2.39).
+ * Formula: size - 1
  * Other values not listed are not supported.
  */
 /** Maximum FIFO size (in bytes). */
@@ -130,13 +130,15 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_REG(pThis, x)           (HDA_REG_IND((pThis), HDA_REG_IND_NAME(x)))
 
 
-#define HDA_REG_GCAP                0 /* range 0x00-0x01*/
+#define HDA_REG_GCAP                0           /* Range 0x00 - 0x01 */
 #define HDA_RMX_GCAP                0
-/* GCAP HDASpec 3.3.2 This macro encodes the following information about HDA in a compact manner:
- * oss (15:12) - number of output streams supported
- * iss (11:8)  - number of input streams supported
- * bss (7:3)   - number of bidirectional streams supported
- * bds (2:1)   - number of serial data out (SDO) signals supported
+/**
+ * GCAP HDASpec 3.3.2 This macro encodes the following information about HDA in a compact manner:
+ *
+ * oss (15:12) - Number of output streams supported.
+ * iss (11:8)  - Number of input streams supported.
+ * bss (7:3)   - Number of bidirectional streams supported.
+ * bds (2:1)   - Number of serial data out (SDO) signals supported.
  * b64sup (0)  - 64 bit addressing supported.
  */
 #define HDA_MAKE_GCAP(oss, iss, bss, bds, b64sup) \
@@ -146,139 +148,139 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
      | (((bds)   & 0x3)  << 2)  \
      | ((b64sup) & 1))
 
-#define HDA_REG_VMIN                1 /* 0x02 */
+#define HDA_REG_VMIN                1           /* 0x02 */
 #define HDA_RMX_VMIN                1
 
-#define HDA_REG_VMAJ                2 /* 0x03 */
+#define HDA_REG_VMAJ                2           /* 0x03 */
 #define HDA_RMX_VMAJ                2
 
-#define HDA_REG_OUTPAY              3 /* 0x04-0x05 */
+#define HDA_REG_OUTPAY              3           /* 0x04-0x05 */
 #define HDA_RMX_OUTPAY              3
 
-#define HDA_REG_INPAY               4 /* 0x06-0x07 */
+#define HDA_REG_INPAY               4           /* 0x06-0x07 */
 #define HDA_RMX_INPAY               4
 
-#define HDA_REG_GCTL                5 /* 0x08-0x0B */
+#define HDA_REG_GCTL                5           /* 0x08-0x0B */
 #define HDA_RMX_GCTL                5
 #define HDA_GCTL_UNSOL              RT_BIT(8)   /* Accept Unsolicited Response Enable */
 #define HDA_GCTL_FCNTRL             RT_BIT(1)   /* Flush Control */
 #define HDA_GCTL_CRST               RT_BIT(0)   /* Controller Reset */
 
-#define HDA_REG_WAKEEN              6 /* 0x0C */
+#define HDA_REG_WAKEEN              6           /* 0x0C */
 #define HDA_RMX_WAKEEN              6
 
-#define HDA_REG_STATESTS            7 /* 0x0E */
+#define HDA_REG_STATESTS            7           /* 0x0E */
 #define HDA_RMX_STATESTS            7
-#define HDA_STATESTS_SCSF_MASK      0x7 /* State Change Status Flags (6.2.8). */
+#define HDA_STATESTS_SCSF_MASK      0x7         /* State Change Status Flags (6.2.8). */
 
-#define HDA_REG_GSTS                8 /* 0x10-0x11*/
+#define HDA_REG_GSTS                8           /* 0x10-0x11*/
 #define HDA_RMX_GSTS                8
 #define HDA_GSTS_FSTS               RT_BIT(1)   /* Flush Status */
 
-#define HDA_REG_OUTSTRMPAY          9  /* 0x18 */
+#define HDA_REG_OUTSTRMPAY          9           /* 0x18 */
 #define HDA_RMX_OUTSTRMPAY          112
 
-#define HDA_REG_INSTRMPAY           10 /* 0x1a */
+#define HDA_REG_INSTRMPAY           10          /* 0x1a */
 #define HDA_RMX_INSTRMPAY           113
 
-#define HDA_REG_INTCTL              11 /* 0x20 */
+#define HDA_REG_INTCTL              11          /* 0x20 */
 #define HDA_RMX_INTCTL              9
 #define HDA_INTCTL_GIE              RT_BIT(31)  /* Global Interrupt Enable */
 #define HDA_INTCTL_CIE              RT_BIT(30)  /* Controller Interrupt Enable */
-/* Bits 0-29 correspond to streams 0-29. */
+/** Bits 0-29 correspond to streams 0-29. */
 #define HDA_STRMINT_MASK            0xFF        /* Streams 0-7 implemented. Applies to INTCTL and INTSTS. */
 
-#define HDA_REG_INTSTS              12 /* 0x24 */
+#define HDA_REG_INTSTS              12          /* 0x24 */
 #define HDA_RMX_INTSTS              10
 #define HDA_INTSTS_GIS              RT_BIT(31)  /* Global Interrupt Status */
 #define HDA_INTSTS_CIS              RT_BIT(30)  /* Controller Interrupt Status */
-/* Bits 0-29 correspond to streams 0-29. */
 
-#define HDA_REG_WALCLK              13 /* 0x30 */
-/* NB: HDA_RMX_WALCLK is not defined because the register is not stored in memory. */
+#define HDA_REG_WALCLK              13          /* 0x30 */
+/**NB: HDA_RMX_WALCLK is not defined because the register is not stored in memory. */
 
-/* Note: The HDA specification defines a SSYNC register at offset 0x38. The
+/**
+ * Note: The HDA specification defines a SSYNC register at offset 0x38. The
  * ICH6/ICH9 datahseet defines SSYNC at offset 0x34. The Linux HDA driver matches
  * the datasheet.
  */
-#define HDA_REG_SSYNC               14 /* 0x34 */
+#define HDA_REG_SSYNC               14          /* 0x34 */
 #define HDA_RMX_SSYNC               12
 
-#define HDA_REG_CORBLBASE           15 /* 0x40 */
+#define HDA_REG_CORBLBASE           15          /* 0x40 */
 #define HDA_RMX_CORBLBASE           13
 
-#define HDA_REG_CORBUBASE           16 /* 0x44 */
+#define HDA_REG_CORBUBASE           16          /* 0x44 */
 #define HDA_RMX_CORBUBASE           14
 
-#define HDA_REG_CORBWP              17 /* 0x48 */
+#define HDA_REG_CORBWP              17          /* 0x48 */
 #define HDA_RMX_CORBWP              15
 
-#define HDA_REG_CORBRP              18 /* 0x4A */
+#define HDA_REG_CORBRP              18          /* 0x4A */
 #define HDA_RMX_CORBRP              16
 #define HDA_CORBRP_RST              RT_BIT(15)  /* CORB Read Pointer Reset */
 
-#define HDA_REG_CORBCTL             19 /* 0x4C */
+#define HDA_REG_CORBCTL             19          /* 0x4C */
 #define HDA_RMX_CORBCTL             17
 #define HDA_CORBCTL_DMA             RT_BIT(1)   /* Enable CORB DMA Engine */
 #define HDA_CORBCTL_CMEIE           RT_BIT(0)   /* CORB Memory Error Interrupt Enable */
 
-#define HDA_REG_CORBSTS             20 /* 0x4D */
+#define HDA_REG_CORBSTS             20          /* 0x4D */
 #define HDA_RMX_CORBSTS             18
 
-#define HDA_REG_CORBSIZE            21 /* 0x4E */
+#define HDA_REG_CORBSIZE            21          /* 0x4E */
 #define HDA_RMX_CORBSIZE            19
-/* NB: Up to and including ICH 10, sizes of CORB and RIRB are fixed at 256 entries. */
+/** NB: Up to and including ICH 10, sizes of CORB and RIRB are fixed at 256 entries. */
 
-#define HDA_REG_RIRBLBASE           22 /* 0x50 */
+#define HDA_REG_RIRBLBASE           22          /* 0x50 */
 #define HDA_RMX_RIRBLBASE           20
 
-#define HDA_REG_RIRBUBASE           23 /* 0x54 */
+#define HDA_REG_RIRBUBASE           23          /* 0x54 */
 #define HDA_RMX_RIRBUBASE           21
 
-#define HDA_REG_RIRBWP              24 /* 0x58 */
+#define HDA_REG_RIRBWP              24          /* 0x58 */
 #define HDA_RMX_RIRBWP              22
 #define HDA_RIRBWP_RST              RT_BIT(15)  /* RIRB Write Pointer Reset */
 
-#define HDA_REG_RINTCNT             25 /* 0x5A */
+#define HDA_REG_RINTCNT             25          /* 0x5A */
 #define HDA_RMX_RINTCNT             23
 #define RINTCNT_N(pThis)            (HDA_REG(pThis, RINTCNT) & 0xff)
 
-#define HDA_REG_RIRBCTL             26 /* 0x5C */
+#define HDA_REG_RIRBCTL             26          /* 0x5C */
 #define HDA_RMX_RIRBCTL             24
 #define HDA_RIRBCTL_ROIC            RT_BIT(2)   /* Response Overrun Interrupt Control */
 #define HDA_RIRBCTL_RDMAEN          RT_BIT(1)   /* RIRB DMA Enable */
 #define HDA_RIRBCTL_RINTCTL         RT_BIT(0)   /* Response Interrupt Control */
 
-#define HDA_REG_RIRBSTS             27 /* 0x5D */
+#define HDA_REG_RIRBSTS             27          /* 0x5D */
 #define HDA_RMX_RIRBSTS             25
 #define HDA_RIRBSTS_RIRBOIS         RT_BIT(2)   /* Response Overrun Interrupt Status */
 #define HDA_RIRBSTS_RINTFL          RT_BIT(0)   /* Response Interrupt Flag */
 
-#define HDA_REG_RIRBSIZE            28 /* 0x5E */
+#define HDA_REG_RIRBSIZE            28          /* 0x5E */
 #define HDA_RMX_RIRBSIZE            26
 
-#define HDA_REG_IC                  29 /* 0x60 */
+#define HDA_REG_IC                  29          /* 0x60 */
 #define HDA_RMX_IC                  27
 
-#define HDA_REG_IR                  30 /* 0x64 */
+#define HDA_REG_IR                  30          /* 0x64 */
 #define HDA_RMX_IR                  28
 
-#define HDA_REG_IRS                 31 /* 0x68 */
+#define HDA_REG_IRS                 31          /* 0x68 */
 #define HDA_RMX_IRS                 29
 #define HDA_IRS_IRV                 RT_BIT(1)   /* Immediate Result Valid */
 #define HDA_IRS_ICB                 RT_BIT(0)   /* Immediate Command Busy */
 
-#define HDA_REG_DPLBASE             32 /* 0x70 */
+#define HDA_REG_DPLBASE             32          /* 0x70 */
 #define HDA_RMX_DPLBASE             30
 
-#define HDA_REG_DPUBASE             33 /* 0x74 */
+#define HDA_REG_DPUBASE             33          /* 0x74 */
 #define HDA_RMX_DPUBASE             31
 
 #define DPBASE_ADDR_MASK            (~(uint64_t)0x7f)
 
 #define HDA_STREAM_REG_DEF(name, num)           (HDA_REG_SD##num##name)
 #define HDA_STREAM_RMX_DEF(name, num)           (HDA_RMX_SD##num##name)
-/* Note: sdnum here _MUST_ be stream reg number [0,7]. */
+/** Note: sdnum here _MUST_ be stream reg number [0,7]. */
 #define HDA_STREAM_REG(pThis, name, sdnum)      (HDA_REG_IND((pThis), HDA_REG_SD0##name + (sdnum) * 10))
 
 #define HDA_SD_NUM_FROM_REG(pThis, func, reg)   ((reg - HDA_STREAM_REG_DEF(func, 0)) / 10)
@@ -307,7 +309,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_SDCTL_RUN               RT_BIT(1)   /* Stream Run */
 #define HDA_SDCTL_SRST              RT_BIT(0)   /* Stream Reset */
 
-#define HDA_REG_SD0STS              35 /* 0x83; other streams offset by 0x20 */
+#define HDA_REG_SD0STS              35          /* 0x83; other streams offset by 0x20 */
 #define HDA_RMX_SD0STS              33
 #define HDA_RMX_SD1STS              (HDA_STREAM_RMX_DEF(STS, 0) + 10)
 #define HDA_RMX_SD2STS              (HDA_STREAM_RMX_DEF(STS, 0) + 20)
@@ -322,7 +324,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_SDSTS_FIFOE             RT_BIT(3)   /* FIFO Error */
 #define HDA_SDSTS_BCIS              RT_BIT(2)   /* Buffer Completion Interrupt Status */
 
-#define HDA_REG_SD0LPIB             36 /* 0x84; other streams offset by 0x20 */
+#define HDA_REG_SD0LPIB             36          /* 0x84; other streams offset by 0x20 */
 #define HDA_REG_SD1LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 10) /* 0xA4 */
 #define HDA_REG_SD2LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 20) /* 0xC4 */
 #define HDA_REG_SD3LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 30) /* 0xE4 */
@@ -339,7 +341,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD6LPIB             (HDA_STREAM_RMX_DEF(LPIB, 0) + 60)
 #define HDA_RMX_SD7LPIB             (HDA_STREAM_RMX_DEF(LPIB, 0) + 70)
 
-#define HDA_REG_SD0CBL              37 /* 0x88; other streams offset by 0x20 */
+#define HDA_REG_SD0CBL              37          /* 0x88; other streams offset by 0x20 */
 #define HDA_RMX_SD0CBL              35
 #define HDA_RMX_SD1CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 10)
 #define HDA_RMX_SD2CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 20)
@@ -349,7 +351,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD6CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 60)
 #define HDA_RMX_SD7CBL              (HDA_STREAM_RMX_DEF(CBL, 0) + 70)
 
-#define HDA_REG_SD0LVI              38 /* 0x8C; other streams offset by 0x20 */
+#define HDA_REG_SD0LVI              38          /* 0x8C; other streams offset by 0x20 */
 #define HDA_RMX_SD0LVI              36
 #define HDA_RMX_SD1LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 10)
 #define HDA_RMX_SD2LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 20)
@@ -359,7 +361,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD6LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 60)
 #define HDA_RMX_SD7LVI              (HDA_STREAM_RMX_DEF(LVI, 0) + 70)
 
-#define HDA_REG_SD0FIFOW            39 /* 0x8E; other streams offset by 0x20 */
+#define HDA_REG_SD0FIFOW            39          /* 0x8E; other streams offset by 0x20 */
 #define HDA_RMX_SD0FIFOW            37
 #define HDA_RMX_SD1FIFOW            (HDA_STREAM_RMX_DEF(FIFOW, 0) + 10)
 #define HDA_RMX_SD2FIFOW            (HDA_STREAM_RMX_DEF(FIFOW, 0) + 20)
@@ -376,7 +378,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_SDFIFOW_16B             0x3
 #define HDA_SDFIFOW_32B             0x4
 
-#define HDA_REG_SD0FIFOS            40 /* 0x90; other streams offset by 0x20 */
+#define HDA_REG_SD0FIFOS            40          /* 0x90; other streams offset by 0x20 */
 #define HDA_RMX_SD0FIFOS            38
 #define HDA_RMX_SD1FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 10)
 #define HDA_RMX_SD2FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 20)
@@ -386,17 +388,17 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD6FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 60)
 #define HDA_RMX_SD7FIFOS            (HDA_STREAM_RMX_DEF(FIFOS, 0) + 70)
 
-#define HDA_SDIFIFO_120B            0x77 /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
-#define HDA_SDIFIFO_160B            0x9F /* 20-, 24-bit Input Streams Streams */
+#define HDA_SDIFIFO_120B            0x77        /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
+#define HDA_SDIFIFO_160B            0x9F        /* 20-, 24-bit Input Streams Streams */
 
-#define HDA_SDOFIFO_16B             0x0F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDOFIFO_32B             0x1F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDOFIFO_64B             0x3F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDOFIFO_128B            0x7F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDOFIFO_192B            0xBF /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDOFIFO_256B            0xFF /* 20-, 24-bit Output Streams */
+#define HDA_SDOFIFO_16B             0x0F        /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDOFIFO_32B             0x1F        /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDOFIFO_64B             0x3F        /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDOFIFO_128B            0x7F        /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDOFIFO_192B            0xBF        /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDOFIFO_256B            0xFF        /* 20-, 24-bit Output Streams */
 
-#define HDA_REG_SD0FMT              41 /* 0x92; other streams offset by 0x20 */
+#define HDA_REG_SD0FMT              41          /* 0x92; other streams offset by 0x20 */
 #define HDA_RMX_SD0FMT              39
 #define HDA_RMX_SD1FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 10)
 #define HDA_RMX_SD2FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 20)
@@ -406,7 +408,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD6FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 60)
 #define HDA_RMX_SD7FMT              (HDA_STREAM_RMX_DEF(FMT, 0) + 70)
 
-#define HDA_REG_SD0BDPL             42 /* 0x98; other streams offset by 0x20 */
+#define HDA_REG_SD0BDPL             42          /* 0x98; other streams offset by 0x20 */
 #define HDA_RMX_SD0BDPL             40
 #define HDA_RMX_SD1BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 10)
 #define HDA_RMX_SD2BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 20)
@@ -416,7 +418,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD6BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 60)
 #define HDA_RMX_SD7BDPL             (HDA_STREAM_RMX_DEF(BDPL, 0) + 70)
 
-#define HDA_REG_SD0BDPU             43 /* 0x9C; other streams offset by 0x20 */
+#define HDA_REG_SD0BDPU             43          /* 0x9C; other streams offset by 0x20 */
 #define HDA_RMX_SD0BDPU             41
 #define HDA_RMX_SD1BDPU             (HDA_STREAM_RMX_DEF(BDPU, 0) + 10)
 #define HDA_RMX_SD2BDPU             (HDA_STREAM_RMX_DEF(BDPU, 0) + 20)
@@ -427,54 +429,54 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_RMX_SD7BDPU             (HDA_STREAM_RMX_DEF(BDPU, 0) + 70)
 
 #define HDA_CODEC_CAD_SHIFT         28
-/* Encodes the (required) LUN into a codec command. */
+/** Encodes the (required) LUN into a codec command. */
 #define HDA_CODEC_CMD(cmd, lun)     ((cmd) | (lun << HDA_CODEC_CAD_SHIFT))
 
-#define HDA_SDFMT_NON_PCM_SHIFT                            15
-#define HDA_SDFMT_NON_PCM_MASK                             0x1
-#define HDA_SDFMT_BASE_RATE_SHIFT                          14
-#define HDA_SDFMT_BASE_RATE_MASK                           0x1
-#define HDA_SDFMT_MULT_SHIFT                               11
-#define HDA_SDFMT_MULT_MASK                                0x7
-#define HDA_SDFMT_DIV_SHIFT                                8
-#define HDA_SDFMT_DIV_MASK                                 0x7
-#define HDA_SDFMT_BITS_SHIFT                               4
-#define HDA_SDFMT_BITS_MASK                                0x7
-#define HDA_SDFMT_CHANNELS_MASK                            0xF
+#define HDA_SDFMT_NON_PCM_SHIFT     15
+#define HDA_SDFMT_NON_PCM_MASK      0x1
+#define HDA_SDFMT_BASE_RATE_SHIFT   14
+#define HDA_SDFMT_BASE_RATE_MASK    0x1
+#define HDA_SDFMT_MULT_SHIFT        11
+#define HDA_SDFMT_MULT_MASK         0x7
+#define HDA_SDFMT_DIV_SHIFT         8
+#define HDA_SDFMT_DIV_MASK          0x7
+#define HDA_SDFMT_BITS_SHIFT        4
+#define HDA_SDFMT_BITS_MASK         0x7
+#define HDA_SDFMT_CHANNELS_MASK     0xF
 
-#define HDA_SDFMT_TYPE                                     RT_BIT(15)
-#define HDA_SDFMT_TYPE_PCM                                 (0)
-#define HDA_SDFMT_TYPE_NON_PCM                             (1)
+#define HDA_SDFMT_TYPE              RT_BIT(15)
+#define HDA_SDFMT_TYPE_PCM          (0)
+#define HDA_SDFMT_TYPE_NON_PCM      (1)
 
-#define HDA_SDFMT_BASE                                     RT_BIT(14)
-#define HDA_SDFMT_BASE_48KHZ                               (0)
-#define HDA_SDFMT_BASE_44KHZ                               (1)
+#define HDA_SDFMT_BASE              RT_BIT(14)
+#define HDA_SDFMT_BASE_48KHZ        (0)
+#define HDA_SDFMT_BASE_44KHZ        (1)
 
-#define HDA_SDFMT_MULT_1X                                  (0)
-#define HDA_SDFMT_MULT_2X                                  (1)
-#define HDA_SDFMT_MULT_3X                                  (2)
-#define HDA_SDFMT_MULT_4X                                  (3)
+#define HDA_SDFMT_MULT_1X           (0)
+#define HDA_SDFMT_MULT_2X           (1)
+#define HDA_SDFMT_MULT_3X           (2)
+#define HDA_SDFMT_MULT_4X           (3)
 
-#define HDA_SDFMT_DIV_1X                                   (0)
-#define HDA_SDFMT_DIV_2X                                   (1)
-#define HDA_SDFMT_DIV_3X                                   (2)
-#define HDA_SDFMT_DIV_4X                                   (3)
-#define HDA_SDFMT_DIV_5X                                   (4)
-#define HDA_SDFMT_DIV_6X                                   (5)
-#define HDA_SDFMT_DIV_7X                                   (6)
-#define HDA_SDFMT_DIV_8X                                   (7)
+#define HDA_SDFMT_DIV_1X            (0)
+#define HDA_SDFMT_DIV_2X            (1)
+#define HDA_SDFMT_DIV_3X            (2)
+#define HDA_SDFMT_DIV_4X            (3)
+#define HDA_SDFMT_DIV_5X            (4)
+#define HDA_SDFMT_DIV_6X            (5)
+#define HDA_SDFMT_DIV_7X            (6)
+#define HDA_SDFMT_DIV_8X            (7)
 
-#define HDA_SDFMT_8_BIT                                    (0)
-#define HDA_SDFMT_16_BIT                                   (1)
-#define HDA_SDFMT_20_BIT                                   (2)
-#define HDA_SDFMT_24_BIT                                   (3)
-#define HDA_SDFMT_32_BIT                                   (4)
+#define HDA_SDFMT_8_BIT             (0)
+#define HDA_SDFMT_16_BIT            (1)
+#define HDA_SDFMT_20_BIT            (2)
+#define HDA_SDFMT_24_BIT            (3)
+#define HDA_SDFMT_32_BIT            (4)
 
-#define HDA_SDFMT_CHAN_MONO                                (0)
-#define HDA_SDFMT_CHAN_STEREO                              (1)
+#define HDA_SDFMT_CHAN_MONO         (0)
+#define HDA_SDFMT_CHAN_STEREO       (1)
 
-/* Emits a SDnFMT register format. */
-/* Also being used in the codec's converter format. */
+/** Emits a SDnFMT register format.
+ * Also being used in the codec's converter format. */
 #define HDA_SDFMT_MAKE(_afNonPCM, _aBaseRate, _aMult, _aDiv, _aBits, _aChan)    \
     (  (((_afNonPCM)  & HDA_SDFMT_NON_PCM_MASK)   << HDA_SDFMT_NON_PCM_SHIFT)   \
      | (((_aBaseRate) & HDA_SDFMT_BASE_RATE_MASK) << HDA_SDFMT_BASE_RATE_SHIFT) \
