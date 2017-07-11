@@ -944,7 +944,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	VMMDev/VMMDevTesting.cpp
 
   VBoxDDRC_SOURCES      += \
- 	Audio/DevHDA.cpp
+ 	Audio/DevHDA.cpp \
+ 	Audio/DevHDACommon.cpp
 
   ifdef VBOX_WITH_E1000
    VBoxDDRC_DEFS        += VBOX_WITH_E1000
@@ -1105,7 +1106,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	VMMDev/VMMDevTesting.cpp \
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp \
- 	Audio/DevHDA.cpp
+ 	Audio/DevHDA.cpp \
+ 	Audio/DevHDACommon.cpp
 
  VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
 
