@@ -277,7 +277,7 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
         return VINF_SUCCESS;
     }
     return RTErrInfoSetF(pArgs->pErrInfo, VERR_SYMBOL_NOT_FOUND,
-                         "Unable to local imported symbol '%s%s%s' for module '%s'",
+                         "Unable to locate imported symbol '%s%s%s' for module '%s'",
                          pszModule ? pszModule : "",
                          pszModule && *pszModule ? "." : "",
                          pszSymbol,
