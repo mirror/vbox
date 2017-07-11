@@ -187,23 +187,23 @@ typedef struct HDASTREAMTHREADCTX
 /** @name Stream functions.
  * @{
  */
-int           hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis);
-void          hdaStreamDestroy(PHDASTREAM pStream);
-int           hdaStreamInit(PHDASTREAM pStream, uint8_t uSD);
-void          hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD);
-int           hdaStreamEnable(PHDASTREAM pStream, bool fEnable);
-uint32_t      hdaStreamGetUsed(PHDASTREAM pStream);
-uint32_t      hdaStreamGetFree(PHDASTREAM pStream);
-int           hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax);
-uint32_t      hdaStreamUpdateLPIB(PHDASTREAM pStream, uint32_t u32LPIB);
-void          hdaStreamLock(PHDASTREAM pStream);
-void          hdaStreamUnlock(PHDASTREAM pStream);
-int           hdaStreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead);
-int           hdaStreamWrite(PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten);
-void          hdaStreamUpdate(PHDASTREAM pStream, bool fAsync);
+int               hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis);
+void              hdaStreamDestroy(PHDASTREAM pStream);
+int               hdaStreamInit(PHDASTREAM pStream, uint8_t uSD);
+void              hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD);
+int               hdaStreamEnable(PHDASTREAM pStream, bool fEnable);
+uint32_t          hdaStreamGetUsed(PHDASTREAM pStream);
+uint32_t          hdaStreamGetFree(PHDASTREAM pStream);
+int               hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax);
+uint32_t          hdaStreamUpdateLPIB(PHDASTREAM pStream, uint32_t u32LPIB);
+void              hdaStreamLock(PHDASTREAM pStream);
+void              hdaStreamUnlock(PHDASTREAM pStream);
+int               hdaStreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead);
+int               hdaStreamWrite(PHDASTREAM pStream, uint32_t cbToWrite, uint32_t *pcbWritten);
+void              hdaStreamUpdate(PHDASTREAM pStream, bool fAsync);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
-bool          hdaStreamRegisterDMAHandlers(PHDASTREAM pStream);
-void          hdaStreamUnregisterDMAHandlers(PHDASTREAM pStream);
+bool              hdaStreamRegisterDMAHandlers(PHDASTREAM pStream);
+void              hdaStreamUnregisterDMAHandlers(PHDASTREAM pStream);
 # endif /* HDA_USE_DMA_ACCESS_HANDLER */
 /** @} */
 
@@ -211,13 +211,13 @@ void          hdaStreamUnregisterDMAHandlers(PHDASTREAM pStream);
  * @{
  */
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-int           hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser);
-int           hdaStreamAsyncIOCreate(PHDASTREAM pStream);
-int           hdaStreamAsyncIODestroy(PHDASTREAM pStream);
-int           hdaStreamAsyncIONotify(PHDASTREAM pStream);
-void          hdaStreamAsyncIOLock(PHDASTREAM pStream);
-void          hdaStreamAsyncIOUnlock(PHDASTREAM pStream);
-void          hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable);
+DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser);
+int               hdaStreamAsyncIOCreate(PHDASTREAM pStream);
+int               hdaStreamAsyncIODestroy(PHDASTREAM pStream);
+int               hdaStreamAsyncIONotify(PHDASTREAM pStream);
+void              hdaStreamAsyncIOLock(PHDASTREAM pStream);
+void              hdaStreamAsyncIOUnlock(PHDASTREAM pStream);
+void              hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable);
 # endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 /** @} */
 
