@@ -641,6 +641,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_VIRTUALBOXSDS,
     /** Main group, IVirtualSystemDescription. */
     LOG_GROUP_MAIN_VIRTUALSYSTEMDESCRIPTION,
+    /** Main group, VMM device interfaces. */
+    LOG_GROUP_MAIN_VMMDEVINTERFACES,
     /** Main group, IVRDEServer. */
     LOG_GROUP_MAIN_VRDESERVER,
     /** Main group, IVRDEServerChangedEvent. */
@@ -1107,6 +1109,7 @@ typedef enum LOGGROUP
     "MAIN_VIRTUALBOXCLIENT", \
     "MAIN_VIRTUALBOXSDS", \
     "MAIN_VIRTUALSYSTEMDESCRIPTION", \
+    "MAIN_VMMDEVINTERFACES", \
     "MAIN_VRDESERVER", \
     "MAIN_VRDESERVERCHANGEDEVENT", \
     "MAIN_VRDESERVERINFO", \
