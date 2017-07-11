@@ -20,6 +20,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN
+#include "LoggingNew.h"
+
 #include "MouseImpl.h"
 #include "KeyboardImpl.h"
 #include "DisplayImpl.h"
@@ -40,10 +43,9 @@
 # include "PCIRawDevImpl.h"
 #endif
 
-#include "Logging.h"
-
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/version.h>
+
 
 /**
  * Register the main drivers.

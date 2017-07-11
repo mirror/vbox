@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * HGCMObjects - Host-Guest Communication Manager objects header.
  */
 
@@ -16,11 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __HGCMOBJECTS__H
-#define __HGCMOBJECTS__H
-
-#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
-#include "Logging.h"
+#ifndef ___HGCMOBJECTS__H
+#define ___HGCMOBJECTS__H
 
 #include <iprt/assert.h>
 #include <iprt/avl.h>
@@ -114,4 +110,4 @@ void hgcmObjDereference(HGCMObject *pObject);
 uint32_t hgcmObjQueryHandleCount();
 void     hgcmObjSetHandleCount(uint32_t u32HandleCount);
 
-#endif /* __HGCMOBJECTS__H */
+#endif /* !___HGCMOBJECTS__H */

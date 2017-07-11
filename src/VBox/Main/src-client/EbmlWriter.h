@@ -144,4 +144,4 @@ private:
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(WebMWriter);
 };
 
-#endif /* ____EBMLWRITER */
+#endif /* !____EBMLWRITER */

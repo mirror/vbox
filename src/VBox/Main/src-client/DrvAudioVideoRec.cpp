@@ -33,7 +33,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
-#include <VBox/log.h>
+#include "LoggingNew.h"
+
 #include "DrvAudioVideoRec.h"
 #include "ConsoleImpl.h"
 

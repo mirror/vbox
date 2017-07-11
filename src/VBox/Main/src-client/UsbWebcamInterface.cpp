@@ -17,6 +17,8 @@
 
 
 #define LOG_GROUP LOG_GROUP_USB_WEBCAM
+#include "LoggingNew.h"
+
 #include "UsbWebcamInterface.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"

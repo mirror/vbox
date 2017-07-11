@@ -20,6 +20,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_USB_CARDREADER
+#include "LoggingNew.h"
+
 #include "UsbCardReader.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"

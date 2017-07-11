@@ -15,7 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP LOG_GROUP_MAIN
+#define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
+#include "LoggingNew.h"
 
 #include <stdexcept>
 #include <vector>

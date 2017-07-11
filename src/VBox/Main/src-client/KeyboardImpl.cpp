@@ -15,11 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_KEYBOARD
+#include "LoggingNew.h"
+
 #include "KeyboardImpl.h"
 #include "ConsoleImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <VBox/com/array.h>
 #include <VBox/vmm/pdmdrv.h>

@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_CONSOLE
+#include "LoggingNew.h"
+
 #include "ConsoleVRDPServer.h"
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
@@ -34,7 +37,6 @@
 
 #include "Global.h"
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/asm.h>
 #include <iprt/alloca.h>
@@ -47,6 +49,7 @@
 #include <VBox/RemoteDesktop/VRDEOrders.h>
 #include <VBox/com/listeners.h>
 #include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+
 
 class VRDPConsoleListener
 {

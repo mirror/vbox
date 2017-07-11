@@ -24,6 +24,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_CONSOLE
+#include "LoggingNew.h"
 
 // VBoxNetCfg-win.h needs winsock2.h and thus MUST be included before any other
 // header file includes Windows.h.
@@ -49,7 +51,6 @@
 #include "SchemaDefs.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/base64.h>
 #include <iprt/buildconfig.h>

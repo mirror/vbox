@@ -1,9 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * VirtualBox IHostUSBDevice COM interface implementation
- * for remote (VRDP) USB devices
+ * VirtualBox IHostUSBDevice COM interface implementation for remote (VRDP) USB devices.
  */
 
 /*
@@ -18,10 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_HOSTUSBDEVICE
+#include "LoggingNew.h"
+
 #include "RemoteUSBDeviceImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/cpp/utils.h>
 
@@ -29,6 +28,7 @@
 
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vrdpusb.h>
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////

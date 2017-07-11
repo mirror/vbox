@@ -15,12 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_USBDEVICE
+#include "LoggingNew.h"
+
 #include "USBDeviceImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/cpp/utils.h>
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////

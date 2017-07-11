@@ -588,5 +588,5 @@ private:
     Data m;
 };
 
-#endif // ____H_DISPLAYIMPL
+#endif // !____H_DISPLAYIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

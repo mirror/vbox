@@ -16,6 +16,8 @@
  */
 
 #define LOG_GROUP LOG_GROUP_USB_REMOTE
+#include "LoggingNew.h"
+
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "RemoteUSBBackend.h"

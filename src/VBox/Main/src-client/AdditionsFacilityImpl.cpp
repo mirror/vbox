@@ -16,11 +16,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_ADDITIONSFACILITY
+#include "LoggingNew.h"
+
 #include "AdditionsFacilityImpl.h"
 #include "Global.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
+
 
 /* static */
 const AdditionsFacility::FacilityInfo AdditionsFacility::s_aFacilityInfo[8] =

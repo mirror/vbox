@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * Bitmap of a guest screen implementation.
  */
 
@@ -16,8 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_DISPLAYSOURCEBITMAP
+#include "LoggingNew.h"
+
 #include "DisplayImpl.h"
-#include "Logging.h"
 
 /*
  * DisplaySourceBitmap implementation.

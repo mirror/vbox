@@ -19,12 +19,14 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_CONSOLE
+#include "LoggingNew.h"
+
 #include "ConsoleImpl.h"
 #include "Global.h"
 #include "ProgressImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 #include "HashedPw.h"
 
 #include <iprt/asm.h>

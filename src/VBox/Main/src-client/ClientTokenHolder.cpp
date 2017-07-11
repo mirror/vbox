@@ -16,6 +16,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_SESSION
+#include "LoggingNew.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>

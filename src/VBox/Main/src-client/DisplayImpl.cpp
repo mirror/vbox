@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
+#include "LoggingNew.h"
+
 #include "DisplayImpl.h"
 #include "DisplayUtils.h"
 #include "ConsoleImpl.h"
@@ -23,7 +26,6 @@
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 /* generated header */
 #include "VBoxEvents.h"

@@ -15,16 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_SESSION
+#include "LoggingNew.h"
+
 #include "SessionImpl.h"
 #include "ConsoleImpl.h"
 #include "Global.h"
 #include "ClientTokenHolder.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <VBox/err.h>
 #include <iprt/process.h>
+
 
 /**
  *  Local macro to check whether the session is open and return an error if not.

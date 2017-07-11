@@ -15,11 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_VIRTUALBOXCLIENT
+#include "LoggingNew.h"
+
 #include "VirtualBoxClientImpl.h"
 
 #include "AutoCaller.h"
 #include "VBoxEvents.h"
-#include "Logging.h"
 #include "VBox/com/ErrorInfo.h"
 
 #include <iprt/asm.h>

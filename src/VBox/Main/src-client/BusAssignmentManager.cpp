@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox bus slots assignment manager
  */
 
@@ -16,6 +14,10 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+#define LOG_GROUP LOG_GROUP_MAIN
+#include "LoggingNew.h"
+
 #include "BusAssignmentManager.h"
 
 #include <iprt/asm.h>

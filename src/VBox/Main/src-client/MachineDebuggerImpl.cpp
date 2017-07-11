@@ -19,13 +19,15 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_MACHINEDEBUGGER
+#include "LoggingNew.h"
+
 #include "MachineDebuggerImpl.h"
 
 #include "Global.h"
 #include "ConsoleImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/patm.h>

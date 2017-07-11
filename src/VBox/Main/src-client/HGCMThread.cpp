@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
-#include "Logging.h"
+#define LOG_GROUP LOG_GROUP_HGCM
+#include "LoggingNew.h"
 
 #include "HGCMThread.h"
 

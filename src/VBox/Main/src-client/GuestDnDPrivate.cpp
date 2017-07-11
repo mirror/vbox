@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * Private guest drag and drop code, used by GuestDnDTarget +
- * GuestDnDSource.
+ * Private guest drag and drop code, used by GuestDnDTarget + GuestDnDSource.
  */
 
 /*
@@ -15,6 +14,9 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include "LoggingNew.h"
 
 #include "GuestImpl.h"
 #include "AutoCaller.h"
@@ -38,13 +40,7 @@
 # include <VBox/HostServices/DragAndDropSvc.h>
 # include <VBox/version.h>
 
-# ifdef LOG_GROUP
-#  undef LOG_GROUP
-# endif
-# define LOG_GROUP LOG_GROUP_GUEST_DND
-# include <VBox/log.h>
-
-/**
+/** @page pg_main_dnd  Dungeons & Dragons - Overview
  * Overview:
  *
  * Drag and Drop is handled over the internal HGCM service for the host <->

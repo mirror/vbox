@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * Emulated USB manager implementation.
  */
 
@@ -16,11 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_MAIN_EMULATEDUSB
+#define LOG_GROUP LOG_GROUP_MAIN_EMULATEDUSB
+#include "LoggingNew.h"
 
 #include "EmulatedUSBImpl.h"
 #include "ConsoleImpl.h"
-#include "Logging.h"
 
 #include <VBox/vmm/pdmusb.h>
 

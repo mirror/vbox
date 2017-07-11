@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_CONSOLE
+#include "LoggingNew.h"
+
 /** @todo Move the TAP mess back into the driver! */
 #if defined(RT_OS_WINDOWS)
 #elif defined(RT_OS_LINUX)
@@ -77,7 +80,6 @@
 
 #include "VBoxEvents.h"
 #include "AutoCaller.h"
-#include "Logging.h"
 #include "ThreadTask.h"
 
 #include <VBox/com/array.h>
