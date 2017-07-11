@@ -536,35 +536,35 @@ typedef FAT32INFOSECTOR const *PCFAT32INFOSECTOR;
  */
 typedef struct FATDIRENTRY
 {
-    /** The directory entry name.
+    /** 0x00: The directory entry name.
      * First character serves as a flag to indicate deleted or not. */
     uint8_t         achName[8+3];
-    /** Attributes (FAT_ATTR_XXX). */
+    /** 0x0b: Attributes (FAT_ATTR_XXX). */
     uint8_t         fAttrib;
-    /** NT case flags (FATDIRENTRY_CASE_F_XXX). */
+    /** 0x0c: NT case flags (FATDIRENTRY_CASE_F_XXX). */
     uint8_t         fCase;
-    /** Birth milliseconds (DOS 7.0+ w/VFAT). */
+    /** 0x0d: Birth milliseconds (DOS 7.0+ w/VFAT). */
     uint8_t         uBirthCentiseconds;
-    /** Birth time (DOS 7.0+ w/VFAT). */
+    /** 0x0e: Birth time (DOS 7.0+ w/VFAT). */
     uint16_t        uBirthTime;
-    /** Birth date (DOS 7.0+ w/VFAT). */
+    /** 0x10: Birth date (DOS 7.0+ w/VFAT). */
     uint16_t        uBirthDate;
-    /** Access date (DOS 7.0+ w/ACCDATA in Config.sys). */
+    /** 0x12: Access date (DOS 7.0+ w/ACCDATA in Config.sys). */
     uint16_t        uAccessDate;
     union
     {
-        /** High cluster word for FAT32.   */
+        /** 0x14: High cluster word for FAT32.   */
         uint16_t    idxClusterHigh;
-        /** Index of extended attributes (FAT16/FAT12). */
+        /** 0x14: Index of extended attributes (FAT16/FAT12). */
         uint16_t    idxEAs;
     } u;
-    /** Modify time (PC-DOS 1.1+, MS-DOS 1.20+).  */
+    /** 0x16: Modify time (PC-DOS 1.1+, MS-DOS 1.20+).  */
     uint16_t        uModifyTime;
-    /** Modify date. */
+    /** 0x18: Modify date. */
     uint16_t        uModifyDate;
-    /** The data cluster index. */
+    /** 0x1a: The data cluster index. */
     uint16_t        idxCluster;
-    /** The file size. */
+    /** 0x1c: The file size. */
     uint32_t        cbFile;
 } FATDIRENTRY;
 AssertCompileSize(FATDIRENTRY, 0x20);
