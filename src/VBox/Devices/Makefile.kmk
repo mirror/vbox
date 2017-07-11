@@ -595,7 +595,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
 	Audio/DevHDA.cpp \
+	Audio/DevHDACommon.cpp \
 	Audio/HDACodec.cpp \
+	Audio/HDAStream.cpp \
 	Audio/HDAStreamChannel.cpp \
 	Audio/HDAStreamMap.cpp \
 	Audio/HDAStreamPeriod.cpp \

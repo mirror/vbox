@@ -18,6 +18,10 @@
 #ifndef DEV_HDA_CODEC_H
 #define DEV_HDA_CODEC_H
 
+#include <iprt/list.h>
+
+#include "AudioMixer.h"
+
 /** The ICH HDA (Intel) controller. */
 typedef struct HDASTATE *PHDASTATE;
 /** The ICH HDA (Intel) codec state. */
