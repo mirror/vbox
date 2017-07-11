@@ -5343,9 +5343,12 @@ static void rtFsIosMakerOutFile_GenerateRockRidge(PRTFSISOMAKERNAME pName, uint8
             pER->cchDescription = sizeof(ISO9660_RRIP_DESC) - 1;
             pER->cchSource      = sizeof(ISO9660_RRIP_SRC)  - 1;
             pER->bVersion       = ISO9660_RRIP_VER;
-            memcpy(&pER->achPayload[0], RT_STR_TUPLE(ISO9660_RRIP_ID));
-            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID) - 1], RT_STR_TUPLE(ISO9660_RRIP_DESC));
-            memcpy(&pER->achPayload[sizeof(ISO9660_RRIP_ID) - 1 + sizeof(ISO9660_RRIP_DESC) - 1], RT_STR_TUPLE(ISO9660_RRIP_SRC));
+            char *pchDst = &pER->achPayload[0]; /* we do this to shut up annoying clang. */
+            memcpy(pchDst, RT_STR_TUPLE(ISO9660_RRIP_ID));
+            pchDst += sizeof(ISO9660_RRIP_ID) - 1;
+            memcpy(pchDst, RT_STR_TUPLE(ISO9660_RRIP_DESC));
+            pchDst += sizeof(ISO9660_RRIP_DESC) - 1;
+            memcpy(pchDst, RT_STR_TUPLE(ISO9660_RRIP_SRC));
             pbSys += ISO9660_RRIP_ER_LEN;
             cbSys -= ISO9660_RRIP_ER_LEN;
         }
