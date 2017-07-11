@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="41d87758-ec4a-495a-670a-35d9b1dff2a8"
+    uuid="a6ba3585-5fc3-4465-d61d-5b70540690af"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3820,10 +3820,11 @@
 
     <attribute name="installGuestAdditions" type="boolean">
       <desc>
-        specifies if the Oracle VirtualBox additions should be installed or not.
-        (Answering "false" does not affect Guest Additions, that come
-        pre-installed with certain versions of Linux guests, such as openSUSE).
-        Currently not implemented.
+        Indicates whether the guest additions should be installed or not.
+
+        Setting this to false does not affect additions shipped with the linux
+        distribution, only the installation of additions pointed to by
+        <link to="IUnattended::additionsIsoPath"/>.
       </desc>
     </attribute>
 
@@ -3863,34 +3864,36 @@
     <method name="prepare">
       <desc>
         Prepare for running the unattended process of installation.
-      </desc>
-    </method>
 
-    <method name="constructScript">
-      <desc>
-        Generates Guest-OS-specific unattended script.
+        This will instantiate the installer based on the guest type associated
+        with the machine (see <link to="IMachine::OSTypeId"/>).
       </desc>
     </method>
 
     <method name="constructMedia">
       <desc>
-        Fix scripts in auxiliary CD ISO if it's needed
-        Packages Guest-OS-specific unattended script into auxiliary CD ISO
-        or into auxiliary floppy, depending on IMachine::OSTypId.
+        Constructors the necessary ISO/VISO/Floppy images, with unattended scripts
+        and all necessary bits on them.
       </desc>
     </method>
 
     <method name="reconfigureVM">
       <desc>
-        Prepare a newly created VM to start unattended installation
-        (For example, such steps like open/attach bootable CD/FDD, OS ISO, additions)
+        Reconfigures the machine to start the installation.
+
+        This involves mounting the ISOs and floppy images created by
+        <link to="IUnattended::constructMedia"/>, attaching new DVD and floppy
+        drives as necessary, and possibly modifying the boot order.
       </desc>
     </method>
 
     <method name="done">
       <desc>
-        This flushes the settings and whatever else might be open before the
-        caller launches the VM.
+        Done - time to start the VM.
+
+        This deletes the internal installer instance that <link to="IUnattended::prepare"/>
+        created.  Before done() is called, it is not possible to start over again
+        from <link to="IUnattended::prepare"/>.
       </desc>
     </method>
 

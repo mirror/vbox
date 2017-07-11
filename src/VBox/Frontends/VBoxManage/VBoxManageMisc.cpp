@@ -1440,6 +1440,9 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         ComPtr<IUnattended> unAttended;
         CHECK_ERROR_BREAK(machine, COMGETTER(Unattended)(unAttended.asOutParam()));
 
+        /* Always calls 'done' to clean up from any aborted previous session. */
+        CHECK_ERROR_BREAK(unAttended,Done());
+
         if (pszSettingsFile)
             CHECK_ERROR_BREAK(unAttended, LoadSettings(Bstr(pszSettingsFile).raw()));
 
@@ -1463,7 +1466,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             CHECK_ERROR_BREAK(unAttended, COMSETTER(AuxiliaryBasePath)(Bstr(pszAuxiliaryBasePath).raw()));
 
         CHECK_ERROR_BREAK(unAttended,Prepare());
-        CHECK_ERROR_BREAK(unAttended,ConstructScript());
         CHECK_ERROR_BREAK(unAttended,ConstructMedia());
         CHECK_ERROR_BREAK(unAttended,ReconfigureVM());
         CHECK_ERROR_BREAK(unAttended,Done());
@@ -1532,6 +1534,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR_BREAK(unAttended, COMGETTER(User)(bstrUser.asOutParam()));
         Bstr bstrPassword;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Password)(bstrPassword.asOutParam()));
+        Bstr bstrFullUserName;
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(FullUserName)(bstrFullUserName.asOutParam()));
         Bstr bstrProductKey;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ProductKey)(bstrProductKey.asOutParam()));
         Bstr bstrAuxiliaryBasePath;
@@ -1541,6 +1545,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         RTPrintf("Got values:\n"
                  " user:                  %ls\n"
                  " password:              %ls\n"
+                 " fullUserName:          %ls\n"
                  " productKey:            %ls\n"
                  " image index:           %u\n"
                  " isoPath:               %ls\n"
@@ -1549,6 +1554,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  " auxiliaryBasePath:     %ls",
                  bstrUser.raw(),
                  bstrPassword.raw(),
+                 bstrFullUserName.raw(),
                  bstrProductKey.raw(),
                  idxImageActual,
                  bstrIsoPath.raw(),
