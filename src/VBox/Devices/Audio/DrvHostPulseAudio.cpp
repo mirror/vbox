@@ -888,22 +888,24 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
             break;
         }
 
-        size_t cbToWrite = RT_MIN(cbWriteable, cbBuf);
+        size_t cbLeft = RT_MIN(cbWriteable, cbBuf);
 
-        uint32_t cbWritten;
-        while (cbToWrite)
+        while (cbLeft)
         {
-            cbWritten = cbToWrite;
-            if (pa_stream_write(pPAStream->pStream, (uint8_t *)pvBuf + cbWrittenTotal, cbWritten, NULL /* Cleanup callback */,
+            size_t cbToWrite = RT_MIN(cbLeft, pa_stream_writable_size(pPAStream->pStream));
+            if (cbToWrite <= (size_t)0)
+                break;
+
+            if (pa_stream_write(pPAStream->pStream, (uint8_t *)pvBuf + cbWrittenTotal, cbToWrite, NULL /* Cleanup callback */,
                                 0, PA_SEEK_RELATIVE) < 0)
             {
                 rc = paError(pPAStream->pDrv, "Failed to write to output stream");
                 break;
             }
 
-            Assert(cbToWrite >= cbWritten);
-            cbToWrite      -= cbWritten;
-            cbWrittenTotal += cbWritten;
+            Assert(cbLeft  >= cbToWrite);
+            cbLeft         -= cbToWrite;
+            cbWrittenTotal += cbToWrite;
         }
 
     } while (0);
