@@ -549,8 +549,8 @@ typedef struct HDABDLE
  * @{
  */
 PDMAUDIODIR   hdaGetDirFromSD(uint8_t uSD);
-PHDASTREAM    hdaStreamGetFromSD(PHDASTATE pThis, uint8_t uSD);
-PHDASTREAM    hdaSinkGetStream(PHDASTATE pThis, PHDAMIXERSINK pSink);
+PHDASTREAM    hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD);
+PHDASTREAM    hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink);
 /** @} */
 
 /** @name Interrupt functions.

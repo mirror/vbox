@@ -169,18 +169,18 @@ uint64_t hdaWalClkGetCurrent(PHDASTATE pThis)
  */
 bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
 {
-    const bool     fFrontPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaSinkGetStream(pThis, &pThis->SinkFront)->State.Period,
+    const bool     fFrontPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period,
                                                                            u64WalClk);
-    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkFront)->State.Period);
+    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
 # error "Implement me!"
 #endif
 
-    const bool     fLineInPassed      = hdaStreamPeriodHasPassedAbsWalClk (&hdaSinkGetStream(pThis, &pThis->SinkLineIn)->State.Period, u64WalClk);
-    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkLineIn)->State.Period);
+    const bool     fLineInPassed      = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period, u64WalClk);
+    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period);
 #ifdef VBOX_WITH_HDA_MIC_IN
-    const bool     fMicInPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaSinkGetStream(pThis, &pThis->SinkMicIn)->State.Period,  u64WalClk);
-    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkMicIn)->State.Period);
+    const bool     fMicInPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period,  u64WalClk);
+    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period);
 #endif
 
 #ifdef VBOX_STRICT
@@ -258,7 +258,7 @@ PDMAUDIODIR hdaGetDirFromSD(uint8_t uSD)
  *
  * @return  Pointer to HDA stream, or NULL if none found.
  */
-PHDASTREAM hdaStreamGetFromSD(PHDASTATE pThis, uint8_t uSD)
+PHDASTREAM hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD)
 {
     AssertPtrReturn(pThis, NULL);
     AssertReturn(uSD < HDA_MAX_STREAMS, NULL);
@@ -277,13 +277,13 @@ PHDASTREAM hdaStreamGetFromSD(PHDASTATE pThis, uint8_t uSD)
  *
  * @return  Pointer to HDA stream, or NULL if none found.
  */
-PHDASTREAM hdaSinkGetStream(PHDASTATE pThis, PHDAMIXERSINK pSink)
+PHDASTREAM hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink)
 {
     AssertPtrReturn(pThis, NULL);
     AssertPtrReturn(pSink, NULL);
 
     /** @todo Do something with the channel mapping here? */
-    return hdaStreamGetFromSD(pThis, pSink->uSD);
+    return hdaGetStreamFromSD(pThis, pSink->uSD);
 }
 
 /**

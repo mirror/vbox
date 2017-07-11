@@ -489,7 +489,7 @@ static void hdaReschedulePendingInterrupts(PHDASTATE pThis)
 
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
     {
-        PHDASTREAM pStream = hdaStreamGetFromSD(pThis, i);
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, i);
         if (!pStream)
             continue;
 
@@ -914,13 +914,13 @@ static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 uint64_t hdaWalClkGetMax(PHDASTATE pThis)
 {
     const uint64_t u64WalClkCur       = ASMAtomicReadU64(&pThis->u64WalClk);
-    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkFront)->State.Period);
+    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
 # error "Implement me!"
 #endif
-    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkLineIn)->State.Period);
+    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period);
 #ifdef VBOX_WITH_HDA_MIC_IN
-    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaSinkGetStream(pThis, &pThis->SinkMicIn)->State.Period);
+    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period);
 #endif
 
     uint64_t u64WalClkNew = RT_MAX(u64WalClkCur, u64FrontAbsWalClk);
@@ -1015,7 +1015,7 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CBL, iReg));
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CBL, iReg));
     if (!pStream)
     {
         LogFunc(("[SD%RU8]: Warning: Changing SDCBL on non-attached stream (0x%x)\n",
@@ -1079,7 +1079,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     /* Assign new values. */
     pTag->uTag    = uTag;
-    pTag->pStream = hdaStreamGetFromSD(pThis, uSD);
+    pTag->pStream = hdaGetStreamFromSD(pThis, uSD);
 
     PHDASTREAM pStream = pTag->pStream;
     AssertPtr(pStream);
@@ -1188,7 +1188,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, STS, iReg));
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, STS, iReg));
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8]: Warning: Writing SDSTS on non-attached stream (0x%x)\n",
@@ -1250,7 +1250,7 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
 
-    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, uSD);
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8]: Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
@@ -1292,7 +1292,7 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return VINF_SUCCESS;
     }
 
-    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg));
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg));
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8]: Warning: Changing FIFOW on non-attached stream (0x%x)\n", uSD, u32Value));
@@ -1346,7 +1346,7 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return VINF_SUCCESS;
     }
 
-    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, uSD);
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8]: Warning: Changing FIFOS on non-attached stream (0x%x)\n", uSD, u32Value));
@@ -1630,7 +1630,7 @@ static int hdaAddStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FMT, iReg));
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FMT, iReg));
     if (!pStream)
     {
         LogFunc(("[SD%RU8]: Warning: Changing SDFMT on non-attached stream (0x%x)\n",
@@ -1672,7 +1672,7 @@ DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
     int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
     AssertRC(rc2);
 
-    PHDASTREAM pStream = hdaStreamGetFromSD(pThis, uSD);
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
         return VINF_SUCCESS;
 
@@ -2200,7 +2200,7 @@ static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
 
         Assert(uSD < HDA_MAX_STREAMS);
 
-        PHDASTREAM pStream = hdaStreamGetFromSD(pThis, uSD);
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
         if (pStream)
         {
             hdaStreamLock(pStream);
@@ -2702,11 +2702,11 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCBTYPE enmType, void *pvCtx, 
  */
 static void hdaDoTransfers(PHDASTATE pThis)
 {
-    PHDASTREAM pStreamLineIn  = hdaSinkGetStream(pThis, &pThis->SinkLineIn);
+    PHDASTREAM pStreamLineIn  = hdaGetStreamFromSink(pThis, &pThis->SinkLineIn);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    PHDASTREAM pStreamMicIn   = hdaSinkGetStream(pThis, &pThis->SinkMicIn);
+    PHDASTREAM pStreamMicIn   = hdaGetStreamFromSink(pThis, &pThis->SinkMicIn);
 #endif
-    PHDASTREAM pStreamFront   = hdaSinkGetStream(pThis, &pThis->SinkFront);
+    PHDASTREAM pStreamFront   = hdaGetStreamFromSink(pThis, &pThis->SinkFront);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     /** @todo See note below. */
 #endif
@@ -3227,7 +3227,7 @@ static int hdaLoadExecPost(PHDASTATE pThis)
      */
     for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
     {
-        PHDASTREAM pStream = hdaStreamGetFromSD(pThis, i);
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, i);
         if (pStream)
         {
             int rc2;
@@ -3447,7 +3447,7 @@ static int hdaLoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion
                 if (RT_FAILURE(rc))
                     break;
 
-                PHDASTREAM pStrm = hdaStreamGetFromSD(pThis, uStreamID);
+                PHDASTREAM pStrm = hdaGetStreamFromSD(pThis, uStreamID);
                 HDASTREAM  StreamDummy;
 
                 if (!pStrm)
@@ -3641,7 +3641,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         rc = SSMR3GetU8(pSSM, &uStreamID);
         AssertRC(rc);
 
-        PHDASTREAM pStrm = hdaStreamGetFromSD(pThis, uStreamID);
+        PHDASTREAM pStrm = hdaGetStreamFromSD(pThis, uStreamID);
         HDASTREAM  StreamDummy;
 
         if (!pStrm)
