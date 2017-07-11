@@ -69,6 +69,7 @@ typedef struct HDAREGALIAS
 #define HDA_MAX_SDI                 4
 #define HDA_MAX_SDO                 4
 #define HDA_MAX_STREAMS             (HDA_MAX_SDI + HDA_MAX_SDO)
+AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 /** Number of general registers. */
 #define HDA_NUM_GENERAL_REGS        34
@@ -534,6 +535,7 @@ typedef struct HDABDLEDESC
      *  Rest is reserved for further use and must be 0. */
     uint32_t     fFlags;
 } HDABDLEDESC, *PHDABDLEDESC;
+AssertCompileSize(HDABDLEDESC, 16); /* Always 16 byte. Also must be aligned on 128-byte boundary. */
 
 /**
  * Buffer Descriptor List Entry (BDLE) (3.6.3).

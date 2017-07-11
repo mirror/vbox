@@ -30,8 +30,6 @@
 
 #include "HDAStream.h"
 
-AssertCompileSize(HDABDLEDESC, 16); /* Always 16 byte. Also must be aligned on 128-byte boundary. */
-AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 #ifndef DEBUG
 /**
@@ -500,6 +498,14 @@ int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite, uint32_
 }
 #endif /* IN_RING3 */
 
+/**
+ * Returns a new INTSTS value based on the current device state.
+ *
+ * @returns Determined INTSTS register value.
+ * @param   pThis               HDA state.
+ *
+ * @remark  This function does *not* set INTSTS!
+ */
 uint32_t hdaGetINTSTS(PHDASTATE pThis)
 {
     uint32_t intSts = 0;

@@ -136,6 +136,9 @@ typedef struct HDADRIVERSTREAM
 } HDADRIVERSTREAM, *PHDADRIVERSTREAM;
 
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
+/**
+ * Struct for keeping an HDA DMA access handler context.
+ */
 typedef struct HDADMAACCESSHANDLER
 {
     /** Node for storing this handler in our list in HDASTREAMSTATE. */
@@ -206,7 +209,7 @@ typedef struct HDADRIVER
 *********************************************************************************************************************************/
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 #ifdef IN_RING3
-static void hdaGctlReset(PHDASTATE pThis);
+static void hdaGCTLReset(PHDASTATE pThis);
 #endif
 
 /** @name Register read/write stubs.
@@ -863,7 +866,7 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         /* Clear the CRST bit to indicate that we're in reset state. */
         HDA_REG(pThis, GCTL) &= ~HDA_GCTL_CRST;
 
-        hdaGctlReset(pThis);
+        hdaGCTLReset(pThis);
 #else
         return VINF_IOM_R3_MMIO_WRITE;
 #endif
@@ -2521,7 +2524,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTG
  * @param   pThis   HDA state.
  *
  */
-static void hdaGctlReset(PHDASTATE pThis)
+static void hdaGCTLReset(PHDASTATE pThis)
 {
     LogFlowFuncEnter();
 
@@ -4058,7 +4061,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
      */
     HDA_REG(pThis, WAKEEN)  = 0x0;
 
-    hdaGctlReset(pThis);
+    hdaGCTLReset(pThis);
 
     /* Indicate that HDA is not in reset. The firmware is supposed to (un)reset HDA,
      * but we can take a shortcut.
