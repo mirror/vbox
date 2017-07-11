@@ -1,125 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
-<unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+<unattend xmlns="urn:schemas-microsoft-com:unattend"
+    xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
 
-  <settings pass="windowsPE">
-    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <InputLocale>en-US</InputLocale>
-      <SystemLocale>en-US</SystemLocale>
-      <UILanguage>en-US</UILanguage>
-      <UserLocale>en-US</UserLocale>
-    </component>
-    
-    <component name="Microsoft-Windows-Setup" processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
-      publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <settings pass="windowsPE">
+        <component name="Microsoft-Windows-International-Core-WinPE"
+            processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
+            publicKeyToken="31bf3856ad364e35" language="neutral"
+            versionScope="nonSxS">
+            <InputLocale>en-US</InputLocale>
+            <SystemLocale>en-US</SystemLocale>
+            <UILanguage>en-US</UILanguage>
+            <UserLocale>en-US</UserLocale>
+        </component>
 
-      <DiskConfiguration>
-      <WillShowUI>OnError</WillShowUI>
-        <Disk>
-        <DiskID>0</DiskID>
-        <WillWipeDisk>true</WillWipeDisk>
-        <CreatePartitions>
-          <CreatePartition>
-            <Order>1</Order>
-            <Type>Primary</Type>
-            <Extend>true</Extend>
-          </CreatePartition>
-        </CreatePartitions>
-        </Disk>
-      </DiskConfiguration>
+        <component name="Microsoft-Windows-Setup"
+            processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
+            publicKeyToken="31bf3856ad364e35" language="neutral"
+            versionScope="nonSxS">
 
-      <UserData>
-        <ProductKey>
-          <Key>@@VBOX_INSERT_PRODUCT_KEY_ELEMENT@@</Key>
-          <WillShowUI>OnError</WillShowUI>
-        </ProductKey>
-        <AcceptEula>true</AcceptEula>
-      </UserData>
+            <DiskConfiguration>
+                <WillShowUI>OnError</WillShowUI>
+                <Disk>
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>true</WillWipeDisk>
+                    <CreatePartitions>
+                        <CreatePartition>
+                            <Order>1</Order>
+                            <Type>Primary</Type>
+                            <Extend>true</Extend>
+                        </CreatePartition>
+                    </CreatePartitions>
+                </Disk>
+            </DiskConfiguration>
 
-      <ImageInstall>
-        <OSImage>
-          <InstallFrom>
-            <MetaData wcm:action="add">
-              <Key>IMAGE/INDEX</Key>
-              <Value>@@VBOX_INSERT_IMAGE_INDEX_ELEMENT@@</Value>
-            </MetaData>
-            <Path>d:\sources\install.wim</Path>
-          </InstallFrom>
-          <InstallTo>
-            <DiskID>0</DiskID>
-            <PartitionID>1</PartitionID>
-          </InstallTo>
-          <WillShowUI>OnError</WillShowUI>
-          <InstallToAvailablePartition>false</InstallToAvailablePartition>
-        </OSImage>
-      </ImageInstall>
+            <UserData>
+                <ProductKey>
+                    <Key>@@VBOX_INSERT_PRODUCT_KEY_ELEMENT@@</Key>
+                    <WillShowUI>OnError</WillShowUI>
+                </ProductKey>
+                <AcceptEula>true</AcceptEula>
+            </UserData>
 
-      <ComplianceCheck>
-        <DisplayReport>OnError</DisplayReport>
-      </ComplianceCheck>
+            <ImageInstall>
+                <OSImage>
+                    <InstallFrom>
+                        <MetaData wcm:action="add">
+                            <Key>/IMAGE/INDEX</Key>
+                            <Value>@@VBOX_INSERT_IMAGE_INDEX_ELEMENT@@</Value>
+                        </MetaData>
+                        <!-- <Path>d:\sources\install.wim</Path> - the w7 tests doesn't specify this -->
+                    </InstallFrom>
+                    <InstallTo>
+                        <DiskID>0</DiskID>
+                        <PartitionID>1</PartitionID>
+                    </InstallTo>
+                    <WillShowUI>OnError</WillShowUI>
+                    <InstallToAvailablePartition>false</InstallToAvailablePartition>
+                </OSImage>
+            </ImageInstall>
 
-    </component>
-  </settings>
+            <ComplianceCheck>
+                <DisplayReport>OnError</DisplayReport>
+            </ComplianceCheck>
 
-  <settings pass="oobeSystem">
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
-      publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <AutoLogon>
-        <Password>
-          <Value>@@VBOX_INSERT_USER_PASSWORD_ELEMENT@@</Value>
-          <PlainText>true</PlainText>
-        </Password>
-        <Enabled>true</Enabled>
-        <Username>@@VBOX_INSERT_USER_LOGIN_ELEMENT@@</Username>
-      </AutoLogon>
+        </component>
+    </settings>
 
-      <UserAccounts>
-      <LocalAccounts>
-        <LocalAccount wcm:action="add">
-        <Name>@@VBOX_INSERT_USER_LOGIN_ELEMENT@@</Name>
-        <Group>administrators;users</Group>
-        <Password>
-          <Value>@@VBOX_INSERT_USER_PASSWORD_ELEMENT@@</Value>
-          <PlainText>true</PlainText>
-        </Password>
-        </LocalAccount>
-      </LocalAccounts>
-      </UserAccounts>
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup"
+            processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
+            publicKeyToken="31bf3856ad364e35" language="neutral"
+            versionScope="nonSxS">
+            <AutoLogon>
+                <Password>
+                    <Value>@@VBOX_INSERT_USER_PASSWORD_ELEMENT@@</Value>
+                    <PlainText>true</PlainText>
+                </Password>
+                <Enabled>true</Enabled>
+                <Username>@@VBOX_INSERT_USER_LOGIN_ELEMENT@@</Username>
+            </AutoLogon>
 
-      <VisualEffects>
-        <FontSmoothing>ClearType</FontSmoothing>
-      </VisualEffects>
+            <UserAccounts>
+                <LocalAccounts>
+                    <LocalAccount wcm:action="add">
+                        <Name>@@VBOX_INSERT_USER_LOGIN_ELEMENT@@</Name>
+                        <DisplayName>@@VBOX_INSERT_USER_FULL_NAME_ELEMENT@@</DisplayName>
+                        <Group>administrators;users</Group>
+                        <Password>
+                            <Value>@@VBOX_INSERT_USER_PASSWORD_ELEMENT@@</Value>
+                            <PlainText>true</PlainText>
+                        </Password>
+                    </LocalAccount>
+                </LocalAccounts>
+            </UserAccounts>
 
-      <OOBE>
-        <ProtectYourPC>3</ProtectYourPC>
-        <HideEULAPage>true</HideEULAPage>
-        <SkipUserOOBE>true</SkipUserOOBE>
-        <SkipMachineOOBE>true</SkipMachineOOBE>
-        <NetworkLocation>Home</NetworkLocation>
-      </OOBE>
+            <VisualEffects>
+                <FontSmoothing>ClearType</FontSmoothing>
+            </VisualEffects>
 
-      <FirstLogonCommands>
-        <SynchronousCommand wcm:action="add">
-          <Order>1</Order>
-          <Description>Turn Off Network Selection pop-up</Description>
-          <CommandLine>cmd /c reg add "HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
-        </SynchronousCommand>
+            <OOBE>
+                <ProtectYourPC>3</ProtectYourPC>
+                <HideEULAPage>true</HideEULAPage>
+                <SkipUserOOBE>true</SkipUserOOBE>
+                <SkipMachineOOBE>true</SkipMachineOOBE>
+                <NetworkLocation>Home</NetworkLocation>
+            </OOBE>
+
+            <FirstLogonCommands>
+                <SynchronousCommand wcm:action="add">
+                    <Order>1</Order>
+                    <Description>Turn Off Network Selection pop-up</Description>
+                    <CommandLine>cmd /c reg add "HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
+                </SynchronousCommand>
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
-<!-- TODO: The following two command can be combined. -->
-        <SynchronousCommand wcm:action="add">
-          <Order>2</Order>
-          <Description>Install Oracle certificate</Description>
-          <CommandLine>cmd /c for %i in (e:\cert\vbox*.cer) do certutil -addstore -f "TrustedPublisher" %i</CommandLine>
-        </SynchronousCommand>
-        <SynchronousCommand wcm:action="add">
-          <Order>3</Order>
-          <Description>Install VirtualBox Guest Additions</Description>
-          <CommandLine>e:\VBoxWindowsAdditions.exe /S</CommandLine>
-        </SynchronousCommand>
+                <!-- TODO: The following two commands can be combined. -->
+                <SynchronousCommand wcm:action="add">
+                    <Order>2</Order>
+                    <Description>Install Oracle certificate</Description>
+                    <CommandLine>cmd /c for %i in (e:\cert\vbox*.cer) do certutil -addstore -f "TrustedPublisher" %i</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>3</Order>
+                    <Description>Install VirtualBox Guest Additions</Description>
+                    <CommandLine>e:\VBoxWindowsAdditions.exe /S</CommandLine>
+                </SynchronousCommand>
 @@VBOX_COND_END@@
-      </FirstLogonCommands>
+            </FirstLogonCommands>
 
-      <TimeZone>GMT Standard Time</TimeZone>
-    </component>
+            <TimeZone>GMT Standard Time</TimeZone>
+        </component>
 
-  </settings>
+    </settings>
 </unattend>
