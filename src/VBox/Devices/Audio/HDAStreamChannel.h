@@ -22,7 +22,7 @@ int hdaStreamChannelDataInit(PPDMAUDIOSTREAMCHANNELDATA pChanData, uint32_t fFla
 void hdaStreamChannelDataDestroy(PPDMAUDIOSTREAMCHANNELDATA pChanData);
 int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvBuf, size_t cbBuf);
 int hdaStreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv);
-int hdaStreamChannelAcquireData(PPDMAUDIOSTREAMCHANNELDATA pChanData, void *pvData, size_t *pcbData);
+int hdaStreamChannelAcquireData(PPDMAUDIOSTREAMCHANNELDATA pChanData, void *ppvData, size_t *pcbData);
 int hdaStreamChannelReleaseData(PPDMAUDIOSTREAMCHANNELDATA pChanData);
 
 #endif /* !HDA_STREAMCHANNEL_H */
