@@ -1274,7 +1274,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     const char *pszIsoPath           = NULL;
     const char *pszUser              = NULL;
     const char *pszPassword          = NULL;
-    const char *pszGroup             = NULL;
+    const char *pszFullUserName      = NULL;
     const char *pszProductKey        = NULL;
     const char *pszAdditionsIsoPath  = NULL;
     int         fInstallAdditions    = -1;
@@ -1296,7 +1296,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--iso-path",             'i', RTGETOPT_REQ_STRING },
         { "--user",                 'u', RTGETOPT_REQ_STRING },
         { "--password",             'p', RTGETOPT_REQ_STRING },
-        { "--group",                'g', RTGETOPT_REQ_STRING },
+        { "--full-user-name",       'U', RTGETOPT_REQ_STRING },
         { "--key",                  'k', RTGETOPT_REQ_STRING },
         { "--install-additions",    'A', RTGETOPT_REQ_NOTHING },
         { "--no-install-additions", 'N', RTGETOPT_REQ_NOTHING },
@@ -1337,8 +1337,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 pszPassword = ValueUnion.psz;
                 break;
 
-            case 'g':   // --group
-                pszGroup = ValueUnion.psz;
+            case 'U':   // --full-user-name
+                pszFullUserName = ValueUnion.psz;
                 break;
 
             case 'k':   // --key
@@ -1449,8 +1449,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             CHECK_ERROR_BREAK(unAttended, COMSETTER(User)(Bstr(pszUser).raw()));
         if (pszPassword)
             CHECK_ERROR_BREAK(unAttended, COMSETTER(Password)(Bstr(pszPassword).raw()));
-        if (pszGroup)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(Group)(Bstr(pszGroup).raw()));
+        if (pszFullUserName)
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(FullUserName)(Bstr(pszFullUserName).raw()));
         if (pszProductKey)
             CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(Bstr(pszProductKey).raw()));
         if (pszAdditionsIsoPath)
@@ -1522,8 +1522,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         /*
          * Retrieve and display the parameters actually used.
          */
-        Bstr bstrGroup;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(Group)(bstrGroup.asOutParam()));
         Bstr bstrAdditionsIsoPath;
         CHECK_ERROR_BREAK(unAttended, COMGETTER(AdditionsIsoPath)(bstrAdditionsIsoPath.asOutParam()));
         BOOL fInstallGuestAdditions = FALSE;
@@ -1543,7 +1541,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         RTPrintf("Got values:\n"
                  " user:                  %ls\n"
                  " password:              %ls\n"
-                 " group:                 %ls\n"
                  " productKey:            %ls\n"
                  " image index:           %u\n"
                  " isoPath:               %ls\n"
@@ -1552,7 +1549,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  " auxiliaryBasePath:     %ls",
                  bstrUser.raw(),
                  bstrPassword.raw(),
-                 bstrGroup.raw(),
                  bstrProductKey.raw(),
                  idxImageActual,
                  bstrIsoPath.raw(),

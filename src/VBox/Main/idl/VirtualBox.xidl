@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="2fb5b9e2-2fe6-4e60-e066-862fbafb1e9f"
+    uuid="41d87758-ec4a-495a-670a-35d9b1dff2a8"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3779,12 +3779,6 @@
       <link to="IMachine::unattended"/> attribute.
     </desc>
 
-    <attribute name="group" type="wstring">
-      <desc>
-        A group this VM belongs to.
-      </desc>
-    </attribute>
-
     <attribute name="isoPath" type="wstring">
       <desc>
         Guest operating system ISO image
@@ -3793,7 +3787,7 @@
 
     <attribute name="user" type="wstring">
       <desc>
-        Assign an user name.
+        Assign an user login name.
       </desc>
     </attribute>
 
@@ -3801,6 +3795,14 @@
       <desc>
         Assign a password to the user. The password is the same for both
         normal user and for Administrator / 'root' accounts.
+      </desc>
+    </attribute>
+
+    <attribute name="fullUserName" type="wstring">
+      <desc>
+        The full name of the user.  This is optional and defaults to
+        <link to="IUnattended::user"/>.  Please note that not all guests picks
+        up this attribute.
       </desc>
     </attribute>
 
