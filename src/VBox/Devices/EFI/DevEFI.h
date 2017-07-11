@@ -129,7 +129,7 @@ typedef enum
 #define EFI_VARIABLE_OP_STATUS_OK         0xcafe0000
 #define EFI_VARIABLE_OP_STATUS_ERROR      0xcafe0001
 #define EFI_VARIABLE_OP_STATUS_NOT_FOUND  0xcafe0002
-#define EFI_VARIABLE_OP_STATUS_NOT_WP     0xcafe0003
+#define EFI_VARIABLE_OP_STATUS_WP         0xcafe0003
 #define EFI_VARIABLE_OP_STATUS_BSY        0xcafe0010
 
 /** The max number of variables allowed. */

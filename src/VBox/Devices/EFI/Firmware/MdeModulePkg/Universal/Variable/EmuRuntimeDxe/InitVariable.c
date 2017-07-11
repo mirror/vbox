@@ -338,7 +338,7 @@ RuntimeServiceSetVariable (
     {
         case EFI_VARIABLE_OP_STATUS_OK:
             return EFI_SUCCESS;
-        case EFI_VARIABLE_OP_STATUS_NOT_WP:
+        case EFI_VARIABLE_OP_STATUS_WP:
         default:
             return EFI_WRITE_PROTECTED;
     }
