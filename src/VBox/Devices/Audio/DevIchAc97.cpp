@@ -50,7 +50,7 @@
 #define AC97_SSM_VERSION    1
 
 /** Default timer frequency (in Hz). */
-#define AC97_TIMER_HZ       100
+#define AC97_TIMER_HZ       200
 
 /** Maximum FIFO size (in bytes). */
 #define AC97_FIFO_MAX       256
