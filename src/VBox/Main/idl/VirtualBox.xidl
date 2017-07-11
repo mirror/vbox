@@ -3840,7 +3840,8 @@
     <attribute name="imageIndex" type="unsigned long">
       <desc>
         The image index on installation CD/DVD used to install.
-        Used only with Windows installation CD/DVD
+        Used only with Windows installation CD/DVD:
+        https://technet.microsoft.com/en-us/library/cc766022%28v=ws.10%29.aspx
       </desc>
     </attribute>
 
