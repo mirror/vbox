@@ -498,6 +498,7 @@ int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite, uint32_
 
     return rc;
 }
+#endif /* IN_RING3 */
 
 uint32_t hdaGetINTSTS(PHDASTATE pThis)
 {
@@ -617,6 +618,7 @@ int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
     return rc;
 }
 
+#ifdef IN_RING3
 /**
  * Fetches a Bundle Descriptor List Entry (BDLE) from the DMA engine.
  *
