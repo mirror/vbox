@@ -466,13 +466,13 @@
  * @{
  */
 /** External or virtual interrupt. */
-#define SVM_EVENT_EXTERNAL_IRQ                  0
+#define SVM_EVENT_EXTERNAL_IRQ                0
 /** Non-maskable interrupt. */
-#define SVM_EVENT_NMI                           2
+#define SVM_EVENT_NMI                         2
 /** Exception; fault or trap. */
-#define SVM_EVENT_EXCEPTION                     3
+#define SVM_EVENT_EXCEPTION                   3
 /** Software interrupt. */
-#define SVM_EVENT_SOFTWARE_INT                  4
+#define SVM_EVENT_SOFTWARE_INT                4
 /** @} */
 
 
@@ -727,7 +727,7 @@ typedef struct
     /** Offset 0x98 - AVIC APIC BAR.  */
     SVMAVIC     AvicBar;
     /** Offset 0xa0-0xa7 - Reserved. */
-    uint8_t     u8Reserved2[0xA8-0xA0];
+    uint8_t     u8Reserved2[0xA8 - 0xA0];
     /** Offset 0xa8 - Event injection. */
     SVMEVENT    EventInject;
     /** Offset 0xb0 - Host CR3 for nested paging. */
@@ -818,15 +818,15 @@ typedef struct
     /** Offset 0x490 - Guest TR register + hidden parts. */
     SVMSEL      TR;
     /** Offset 0x4A0-0x4CA - Reserved. */
-    uint8_t     u8Reserved4[0x4CB-0x4A0];
+    uint8_t     u8Reserved4[0x4CB - 0x4A0];
     /** Offset 0x4CB - CPL. */
     uint8_t     u8CPL;
     /** Offset 0x4CC-0x4CF - Reserved. */
-    uint8_t     u8Reserved5[0x4D0-0x4CC];
+    uint8_t     u8Reserved5[0x4D0 - 0x4CC];
     /** Offset 0x4D0 - EFER. */
     uint64_t    u64EFER;
     /** Offset 0x4D8-0x547 - Reserved. */
-    uint8_t     u8Reserved6[0x548-0x4D8];
+    uint8_t     u8Reserved6[0x548 - 0x4D8];
     /** Offset 0x548 - CR4. */
     uint64_t    u64CR4;
     /** Offset 0x550 - CR3. */
@@ -842,11 +842,11 @@ typedef struct
     /** Offset 0x578 - RIP. */
     uint64_t    u64RIP;
     /** Offset 0x580-0x5D7 - Reserved. */
-    uint8_t     u8Reserved7[0x5D8-0x580];
+    uint8_t     u8Reserved7[0x5D8 - 0x580];
     /** Offset 0x5D8 - RSP. */
     uint64_t    u64RSP;
     /** Offset 0x5E0-0x5F7 - Reserved. */
-    uint8_t     u8Reserved8[0x5F8-0x5E0];
+    uint8_t     u8Reserved8[0x5F8 - 0x5E0];
     /** Offset 0x5F8 - RAX. */
     uint64_t    u64RAX;
     /** Offset 0x600 - STAR. */
@@ -868,7 +868,7 @@ typedef struct
     /** Offset 0x640 - CR2. */
     uint64_t    u64CR2;
     /** Offset 0x648-0x667 - Reserved. */
-    uint8_t     u8Reserved9[0x668-0x648];
+    uint8_t     u8Reserved9[0x668 - 0x648];
     /** Offset 0x668 - G_PAT. */
     uint64_t    u64GPAT;
     /** Offset 0x670 - DBGCTL. */
@@ -940,20 +940,20 @@ typedef struct SVMVMCB
     /** Offset 0x00 - Control area. */
     SVMVMCBCTRL ctrl;
     /** Offset 0x100-0x3FF - Reserved. */
-    uint8_t     u8Reserved3[0x400-0x100];
+    uint8_t     u8Reserved3[0x400 - 0x100];
     /** Offset 0x400 - State save area. */
     SVMVMCBSTATESAVE guest;
     /** Offset 0x698-0xFFF- Reserved. */
-    uint8_t     u8Reserved10[0x1000-0x698];
+    uint8_t     u8Reserved10[0x1000 - 0x698];
 } SVMVMCB;
 #pragma pack()
 /** Pointer to the SVMVMCB structure. */
 typedef SVMVMCB *PSVMVMCB;
 /** Pointer to a const SVMVMCB structure. */
 typedef const SVMVMCB *PCSVMVMCB;
-AssertCompileMemberOffset(SVMVMCB, ctrl, 0x00);
-AssertCompileMemberOffset(SVMVMCB, u8Reserved3, 0x100);
-AssertCompileMemberOffset(SVMVMCB, guest, 0x400);
+AssertCompileMemberOffset(SVMVMCB, ctrl,         0x00);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved3,  0x100);
+AssertCompileMemberOffset(SVMVMCB, guest,        0x400);
 AssertCompileMemberOffset(SVMVMCB, u8Reserved10, 0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 

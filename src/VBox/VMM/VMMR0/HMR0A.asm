@@ -804,7 +804,8 @@ ENDPROC SVMR0InvlpgA
 ; Wrapper around vmx.pfnStartVM that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) HMR0VMXStartVMhmR0DumpDescriptorM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+; @cproto       DECLASM(int) HMR0VMXStartVMhmR0DumpDescriptorM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM,
+;                                                              PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
 ;
 ; @returns      eax
 ;
@@ -983,12 +984,13 @@ ENDPROC   hmR0VMXStartVMWrapXMM
 ; Wrapper around svm.pfnVMRun that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
+; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu,
+;                                              PFNHMSVMVMRUN pfnVMRun);
 ;
 ; @returns      eax
 ;
-; @param        pVMCBHostPhys   msc:rcx
-; @param        pVMCBPhys       msc:rdx
+; @param        HCPhysVmcbHost  msc:rcx
+; @param        HCPhysVmcb      msc:rdx
 ; @param        pCtx            msc:r8
 ; @param        pVM             msc:r9
 ; @param        pVCpu           msc:[rbp+30h]   The cross context virtual CPU structure of the calling EMT.
@@ -1010,8 +1012,8 @@ BEGINPROC hmR0SVMRunWrapXMM
         sub     xSP, 0b0h + 040h        ; Don't bother optimizing the frame size.
 
         ; spill input parameters.
-        mov     [xBP + 010h], rcx       ; pVMCBHostPhys
-        mov     [xBP + 018h], rdx       ; pVMCBPhys
+        mov     [xBP + 010h], rcx       ; HCPhysVmcbHost
+        mov     [xBP + 018h], rdx       ; HCPhysVmcb
         mov     [xBP + 020h], r8        ; pCtx
         mov     [xBP + 028h], r9        ; pVM
 
@@ -1025,8 +1027,8 @@ BEGINPROC hmR0SVMRunWrapXMM
         mov     r11, [xBP + 38h]        ; pfnVMRun
         mov     r10, [xBP + 30h]        ; pVCpu
         mov     [xSP + 020h], r10
-        mov     rcx, [xBP + 010h]       ; pVMCBHostPhys
-        mov     rdx, [xBP + 018h]       ; pVMCBPhys
+        mov     rcx, [xBP + 010h]       ; HCPhysVmcbHost
+        mov     rdx, [xBP + 018h]       ; HCPhysVmcb
         mov     r8,  [xBP + 020h]       ; pCtx
         mov     r9,  [xBP + 028h]       ; pVM
         call    r11
@@ -1066,8 +1068,8 @@ ALIGNCODE(8)
         mov     r11, [xBP + 38h]        ; pfnVMRun
         mov     r10, [xBP + 30h]        ; pVCpu
         mov     [xSP + 020h], r10
-        mov     rcx, [xBP + 010h]       ; pVMCBHostPhys
-        mov     rdx, [xBP + 018h]       ; pVMCBPhys
+        mov     rcx, [xBP + 010h]       ; HCPhysVmcbHost
+        mov     rdx, [xBP + 018h]       ; HCPhysVmcb
         mov     r8,  [xBP + 020h]       ; pCtx
         mov     r9,  [xBP + 028h]       ; pVM
         call    r11
@@ -1128,8 +1130,8 @@ ALIGNCODE(8)
         mov     r11, [xBP + 38h]        ; pfnVMRun
         mov     r10, [xBP + 30h]        ; pVCpu
         mov     [xSP + 020h], r10
-        mov     rcx, [xBP + 010h]       ; pVMCBHostPhys
-        mov     rdx, [xBP + 018h]       ; pVMCBPhys
+        mov     rcx, [xBP + 010h]       ; HCPhysVmcbHost
+        mov     rdx, [xBP + 018h]       ; HCPhysVmcb
         mov     r8,  [xBP + 020h]       ; pCtx
         mov     r9,  [xBP + 028h]       ; pVM
         call    r11
@@ -1764,28 +1766,28 @@ ENDPROC VMXR0StartVM64
 ; Prepares for and executes VMRUN (32 bits guests)
 ;
 ; @returns  VBox status code
-; @param    HCPhysVMCB      Physical address of host VMCB.
-; @param    HCPhysVMCB      Physical address of guest VMCB.
-; @param    pCtx            Pointer to the guest CPU-context.
-; @param    pVM             msc:r9, gcc:rcx     The cross context VM structure.
+; @param    HCPhysVmcbHost  msc:rcx,gcc:rdi     Physical address of host VMCB.
+; @param    HCPhysVmcb      msc:rdx,gcc:rsi     Physical address of guest VMCB.
+; @param    pCtx            msc:r8,gcc:rdx      Pointer to the guest CPU-context.
+; @param    pVM             msc:r9,gcc:rcx      The cross context VM structure.
 ; @param    pVCpu           msc:[rsp+28],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun
 %ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
-    push    r8
-    push    rcx
-    push    rdx
-    push    rsi
-    push    rdi
+    push    r8                ; pVCpu
+    push    rcx               ; pVM
+    push    rdx               ; pCtx
+    push    rsi               ; HCPhysVmcb
+    push    rdi               ; HCPhysVmcbHost
  %else
     mov     rax, [rsp + 28h]
-    push    rax                         ; pVCpu
-    push    r9                          ; pVM
-    push    r8                          ; pCtx
-    push    rdx                         ; HCPHYSGuestVMCB
-    push    rcx                         ; HCPhysHostVMCB
+    push    rax               ; pVCpu
+    push    r9                ; pVM
+    push    r8                ; pCtx
+    push    rdx               ; HCPhysVmcb
+    push    rcx               ; HCPhysVmcbHost
  %endif
     push    0
 %endif
@@ -1793,53 +1795,45 @@ BEGINPROC SVMR0VMRun
     mov     xBP, xSP
     pushf
 
-    ;
     ; Save all general purpose host registers.
-    ;
     MYPUSHAD
 
-    ;
     ; Load pCtx into xSI.
-    ;
     mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
 
-    ;
     ; Save the host XCR0 and load the guest one if necessary.
-    ;
     mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB * 2 + xCB * 2] ; pVCpu
     test    byte [xAX + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
     jz      .xcr0_before_skip
 
     xor     ecx, ecx
-    xgetbv                              ; Save the host one on the stack.
+    xgetbv                                  ; Save the host XCR0 on the stack
     push    xDX
     push    xAX
 
     mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
-    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     eax, [xSI + CPUMCTX.aXcr]       ; load the guest XCR0
     mov     edx, [xSI + CPUMCTX.aXcr + 4]
-    xor     ecx, ecx                    ; paranoia
+    xor     ecx, ecx                        ; paranoia
     xsetbv
 
-    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    push    0                               ; indicate that we must restore XCR0 (popped into ecx, thus 0)
     jmp     .xcr0_before_done
 
 .xcr0_before_skip:
-    push    3fh                         ; indicate that we need not.
+    push    3fh                             ; indicate that we need not restore XCR0
 .xcr0_before_done:
 
-    ;
     ; Save guest CPU-context pointer for simplifying saving of the GPRs afterwards.
-    ;
     push    xSI
 
     ; Save host fs, gs, sysenter msr etc.
-    mov     xAX, [xBP + xCB * 2]                    ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    mov     xAX, [xBP + xCB * 2]                    ; HCPhysVmcbHost (64 bits physical address; x86: take low dword only)
     push    xAX                                     ; save for the vmload after vmrun
     vmsave
 
     ; Setup xAX for VMLOAD.
-    mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
+    mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB]      ; HCPhysVmcb (64 bits physical address; x86: take low dword only)
 
     ; Load guest general purpose registers.
     ; eax is loaded from the VMCB by VMRUN.
@@ -1856,25 +1850,22 @@ BEGINPROC SVMR0VMRun
 
     ; Load guest fs, gs, sysenter msr etc.
     vmload
+
     ; Run the VM.
     vmrun
-
-    ; eax is in the VMCB already; we can use it here.
 
     ; Save guest fs, gs, sysenter msr etc.
     vmsave
 
     ; Load host fs, gs, sysenter msr etc.
-    pop     xAX                     ; Pushed above
+    pop     rax                             ; load HCPhysVmcbHost (pushed above)
     vmload
 
     ; Set the global interrupt flag again, but execute cli to make sure IF=0.
     cli
     stgi
 
-    ;
     ; Pop the context pointer (pushed above) and save the guest GPRs (sans RSP and RAX).
-    ;
     pop     xAX
 
     mov     [ss:xAX + CPUMCTX.ebx], ebx
@@ -1884,20 +1875,16 @@ BEGINPROC SVMR0VMRun
     mov     [ss:xAX + CPUMCTX.edi], edi
     mov     [ss:xAX + CPUMCTX.ebp], ebp
 
-    ;
     ; Restore the host xcr0 if necessary.
-    ;
     pop     xCX
     test    ecx, ecx
     jnz     .xcr0_after_skip
     pop     xAX
     pop     xDX
-    xsetbv                              ; ecx is already zero.
+    xsetbv                              ; ecx is already zero
 .xcr0_after_skip:
 
-    ;
     ; Restore host general purpose registers.
-    ;
     MYPOPAD
 
     mov     eax, VINF_SUCCESS
@@ -1916,31 +1903,31 @@ ENDPROC SVMR0VMRun
 ; Prepares for and executes VMRUN (64 bits guests)
 ;
 ; @returns  VBox status code
-; @param    HCPhysVMCB      Physical address of host VMCB.
-; @param    HCPhysVMCB      Physical address of guest VMCB.
-; @param    pCtx            Pointer to the guest-CPU context.
-; @param    pVM             msc:r9, gcc:rcx     The cross context VM structure.
+; @param    HCPhysVmcbHost  msc:rcx,gcc:rdi     Physical address of host VMCB.
+; @param    HCPhysVmcb      msc:rdx,gcc:rsi     Physical address of guest VMCB.
+; @param    pCtx            msc:r8,gcc:rdx      Pointer to the guest-CPU context.
+; @param    pVM             msc:r9,gcc:rcx      The cross context VM structure.
 ; @param    pVCpu           msc:[rsp+28],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun64
     ; Fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
-    push    r8
-    push    rcx
-    push    rdx
-    push    rsi
-    push    rdi
+    push    r8                ;pVCpu
+    push    rcx               ;pVM
+    push    rdx               ;pCtx
+    push    rsi               ;HCPhysVmcb
+    push    rdi               ;HCPhysVmcbHost
  %else
     mov     rax, [rsp + 28h]
-    push    rax                         ; rbp + 30h pVCpu
-    push    r9                          ; rbp + 28h pVM
-    push    r8                          ; rbp + 20h pCtx
-    push    rdx                         ; rbp + 18h HCPHYSGuestVMCB
-    push    rcx                         ; rbp + 10h HCPhysHostVMCB
+    push    rax               ; rbp + 30h pVCpu
+    push    r9                ; rbp + 28h pVM
+    push    r8                ; rbp + 20h pCtx
+    push    rdx               ; rbp + 18h HCPhysVmcb
+    push    rcx               ; rbp + 10h HCPhysVmcbHost
  %endif
-    push    0                           ; rbp + 08h "fake ret addr"
-    push    rbp                         ; rbp + 00h
+    push    0                 ; rbp + 08h "fake ret addr"
+    push    rbp               ; rbp + 00h
     mov     rbp, rsp
     pushf
 
@@ -1952,60 +1939,48 @@ BEGINPROC SVMR0VMRun64
     ;  - LDTR (reset to 0)
     ;  - DRx (presumably not changed at all)
     ;  - DR7 (reset to 0x400)
-    ;
 
-    ;
     ; Save all general purpose host registers.
-    ;
     MYPUSHAD
 
-    ;
     ; Load pCtx into xSI.
-    ;
     mov     xSI, [rbp + xCB * 2 + RTHCPHYS_CB * 2]
 
-    ;
     ; Save the host XCR0 and load the guest one if necessary.
-    ;
-    mov     rax, [xBP + 30h]            ; pVCpu
+    mov     rax, [xBP + 30h]                ; pVCpu
     test    byte [xAX + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
     jz      .xcr0_before_skip
 
     xor     ecx, ecx
-    xgetbv                              ; Save the host one on the stack.
+    xgetbv                                  ; save the host XCR0 on the stack.
     push    xDX
     push    xAX
 
     mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
-    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     eax, [xSI + CPUMCTX.aXcr]       ; load the guest XCR0
     mov     edx, [xSI + CPUMCTX.aXcr + 4]
-    xor     ecx, ecx                    ; paranoia
+    xor     ecx, ecx                        ; paranoia
     xsetbv
 
-    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    push    0                               ; indicate that we must restore XCR0 (popped into ecx, thus 0)
     jmp     .xcr0_before_done
 
 .xcr0_before_skip:
-    push    3fh                         ; indicate that we need not.
+    push    3fh                             ; indicate that we need not restore XCR0
 .xcr0_before_done:
 
-    ;
     ; Save guest CPU-context pointer for simplifying saving of the GPRs afterwards.
-    ;
     push    rsi
 
-    ;
     ; Save host fs, gs, sysenter msr etc.
-    ;
-    mov     rax, [rbp + xCB * 2]                    ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
-    push    rax                                     ; Save for the vmload after vmrun
+    mov     rax, [rbp + xCB * 2]                    ; HCPhysVmcbHost (64 bits physical address; x86: take low dword only)
+    push    rax                                     ; save for the vmload after vmrun
     vmsave
 
     ; Setup rax for VMLOAD.
-    mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
+    mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB]      ; HCPhysVmcb (64 bits physical address; take low dword only)
 
-    ; Load guest general purpose registers.
-    ; rax is loaded from the VMCB by VMRUN.
+    ; Load guest general purpose registers (rax is loaded from the VMCB by VMRUN).
     mov     rbx, qword [xSI + CPUMCTX.ebx]
     mov     rcx, qword [xSI + CPUMCTX.ecx]
     mov     rdx, qword [xSI + CPUMCTX.edx]
@@ -2025,31 +2000,24 @@ BEGINPROC SVMR0VMRun64
     clgi
     sti
 
-    ; Load guest fs, gs, sysenter msr etc.
+    ; Load guest FS, GS, Sysenter MSRs etc.
     vmload
+
     ; Run the VM.
     vmrun
-
-    ; rax is in the VMCB already; we can use it here.
 
     ; Save guest fs, gs, sysenter msr etc.
     vmsave
 
-    ;
     ; Load host fs, gs, sysenter msr etc.
-    ;
-    pop     rax                     ; pushed above
+    pop     rax                         ; load HCPhysVmcbHost (pushed above)
     vmload
 
-    ;
     ; Set the global interrupt flag again, but execute cli to make sure IF=0.
-    ;
     cli
     stgi
 
-    ;
     ; Pop the context pointer (pushed above) and save the guest GPRs (sans RSP and RAX).
-    ;
     pop     rax
 
     mov     qword [rax + CPUMCTX.ebx], rbx
@@ -2067,20 +2035,16 @@ BEGINPROC SVMR0VMRun64
     mov     qword [rax + CPUMCTX.r14], r14
     mov     qword [rax + CPUMCTX.r15], r15
 
-    ;
     ; Restore the host xcr0 if necessary.
-    ;
     pop     xCX
     test    ecx, ecx
     jnz     .xcr0_after_skip
     pop     xAX
     pop     xDX
-    xsetbv                              ; ecx is already zero.
+    xsetbv                              ; ecx is already zero
 .xcr0_after_skip:
 
-    ;
     ; Restore host general purpose registers.
-    ;
     MYPOPAD
 
     mov     eax, VINF_SUCCESS
