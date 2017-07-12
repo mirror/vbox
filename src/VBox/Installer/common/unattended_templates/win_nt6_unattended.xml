@@ -129,7 +129,7 @@
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
                     <Description>Install Oracle certificate</Description>
-                    <CommandLine>e:\cert\VBoxCertUtil.exe add-trusted-publisher e:\cert\vbox*.cer --root e:\cert\vbox*.cer
+                    <CommandLine>e:\cert\VBoxCertUtil.exe add-trusted-publisher e:\cert\vbox*.cer --root e:\cert\vbox*.cer</CommandLine>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>3</Order>
