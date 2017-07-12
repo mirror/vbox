@@ -2247,8 +2247,12 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
                     /*
                      * Reply finished, set command complete bit, unset data-in ready bit and
                      * interrupt the guest if enabled.
+                     * NB: Some commands do not set the CMDC bit / raise completion interrupt.
                      */
-                    buslogicCommandComplete(pBusLogic, false);
+                    if (pBusLogic->uOperationCode == BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM)
+                        buslogicCommandComplete(pBusLogic, true /* fSuppressIrq */);
+                    else
+                        buslogicCommandComplete(pBusLogic, false);
                 }
             }
             LogFlowFunc(("data=%02x, iReply=%d, cbReplyParametersLeft=%u\n", *pu32,
