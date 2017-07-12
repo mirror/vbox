@@ -123,7 +123,7 @@
                 <SynchronousCommand wcm:action="add">
                     <Order>1</Order>
                     <Description>Turn Off Network Selection pop-up</Description>
-                    <CommandLine>cmd /c reg add "HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
+                    <CommandLine>reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
                 </SynchronousCommand>
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
                 <SynchronousCommand wcm:action="add">
