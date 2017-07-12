@@ -89,8 +89,8 @@ VBoxVgaUgaDrawSetMode (
   IN  UINT32                RefreshRate
   )
 {
-  VBOX_VGA_PRIVATE_DATA  *Private;
-  UINTN                           Index;
+  VBOX_VGA_PRIVATE_DATA *Private;
+  UINTN                 Index;
 
   DEBUG((DEBUG_INFO, "%a:%d VIDEO: %dx%d %d bpp\n", __FILE__, __LINE__, HorizontalResolution, VerticalResolution, ColorDepth));
   Private = VBOX_VGA_PRIVATE_DATA_FROM_UGA_DRAW_THIS (This);
@@ -327,8 +327,10 @@ VBoxVgaUgaDrawConstructor (
   )
 {
   EFI_UGA_DRAW_PROTOCOL *UgaDraw;
+  UINT32                Index;
   UINT32                HorizontalResolution = 1024;
   UINT32                VerticalResolution = 768;
+  UINT32                ColorDepth = 32;
 
   //
   // Fill in Private->UgaDraw protocol
@@ -348,16 +350,46 @@ VBoxVgaUgaDrawConstructor (
   //
   // Initialize the hardware
   //
-  VBoxVgaGetVmVariable(EFI_INFO_INDEX_UGA_HORIZONTAL_RESOLUTION, (CHAR8 *)&HorizontalResolution,
+  VBoxVgaGetVmVariable(EFI_INFO_INDEX_HORIZONTAL_RESOLUTION, (CHAR8 *)&HorizontalResolution,
                        sizeof(HorizontalResolution));
-  VBoxVgaGetVmVariable(EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION, (CHAR8 *)&VerticalResolution,
+  VBoxVgaGetVmVariable(EFI_INFO_INDEX_VERTICAL_RESOLUTION, (CHAR8 *)&VerticalResolution,
                        sizeof(VerticalResolution));
+  for (Index = 0; Index < Private->MaxMode; Index++)
+  {
+    if (   HorizontalResolution == Private->ModeData[Index].HorizontalResolution
+        && VerticalResolution == Private->ModeData[Index].VerticalResolution
+        && ColorDepth == Private->ModeData[Index].ColorDepth)
+      break;
+  }
+  // not found? try mode number
+  if (Index >= Private->MaxMode)
+  {
+    VBoxVgaGetVmVariable(EFI_INFO_INDEX_GRAPHICS_MODE, (CHAR8 *)&Index, sizeof(Index));
+    // try with mode 2 (usually 1024x768) as a fallback
+    if (Index >= Private->MaxMode)
+      Index = 2;
+    // try with mode 0 (usually 640x480) as a fallback
+    if (Index >= Private->MaxMode)
+      Index = 0;
+
+    // get the resolution from the mode if valid
+    if (Index < Private->MaxMode)
+    {
+      HorizontalResolution = Private->ModeData[Index].HorizontalResolution;
+      VerticalResolution = Private->ModeData[Index].VerticalResolution;
+      ColorDepth = Private->ModeData[Index].ColorDepth;
+    }
+  }
+
+  // skip mode setting completely if there is no valid mode
+  if (Index >= Private->MaxMode)
+    return EFI_UNSUPPORTED;
 
   UgaDraw->SetMode (
             UgaDraw,
             HorizontalResolution,
             VerticalResolution,
-            32,
+            ColorDepth,
             60
             );
 

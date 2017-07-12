@@ -1777,22 +1777,28 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             Utf8Str deviceProps;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiDeviceProps", &deviceProps);
 
-            /* Get GOP mode settings */
-            uint32_t u32GopMode = UINT32_MAX;
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGopMode", &strTmp);
+            /* Get graphics mode settings */
+            uint32_t u32GraphicsMode = UINT32_MAX;
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGraphicsMode", &strTmp);
+            if (strTmp.isEmpty())
+                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGopMode", &strTmp);
             if (!strTmp.isEmpty())
-                u32GopMode = strTmp.toUInt32();
+                u32GraphicsMode = strTmp.toUInt32();
 
-            /* UGA mode settings */
-            uint32_t u32UgaHorizontal = 0;
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaHorizontalResolution", &strTmp);
+            /* Get graphics resolution settings */
+            uint32_t u32HorizontalResolution = 0;
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiHorizontalResolution", &strTmp);
+            if (strTmp.isEmpty())
+                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaHorizontalResolution", &strTmp);
             if (!strTmp.isEmpty())
-                u32UgaHorizontal = strTmp.toUInt32();
+                u32HorizontalResolution = strTmp.toUInt32();
 
-            uint32_t u32UgaVertical = 0;
-            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaVerticalResolution", &strTmp);
+            uint32_t u32VerticalResolution = 0;
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiVerticalResolution", &strTmp);
+            if (strTmp.isEmpty())
+                GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaVerticalResolution", &strTmp);
             if (!strTmp.isEmpty())
-                u32UgaVertical = strTmp.toUInt32();
+                u32VerticalResolution = strTmp.toUInt32();
 
             /*
              * EFI subtree.
@@ -1811,9 +1817,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg,  "APIC",        uFwAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "64BitEntry",  f64BitEntry); /* boolean */
-            InsertConfigInteger(pCfg,  "GopMode",     u32GopMode);
-            InsertConfigInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorizontal);
-            InsertConfigInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);
+            InsertConfigInteger(pCfg,  "GraphicsMode",  u32GraphicsMode);
+            InsertConfigInteger(pCfg,  "HorizontalResolution", u32HorizontalResolution);
+            InsertConfigInteger(pCfg,  "VerticalResolution", u32VerticalResolution);
 
             /* For OS X guests we'll force passing host's DMI info to the guest */
             if (fOsXGuest)

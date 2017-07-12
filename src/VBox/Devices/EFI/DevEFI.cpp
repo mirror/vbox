@@ -221,12 +221,12 @@ typedef struct DEVEFI
     uint64_t                u64TscFrequency;
     /** Virtual machine CPU frequency. */
     uint64_t                u64CpuFrequency;
-    /** GOP mode. */
-    uint32_t                u32GopMode;
-    /** Uga mode horizontal resolution. */
-    uint32_t                cxUgaResolution;
-    /** Uga mode vertical resolution. */
-    uint32_t                cyUgaResolution;
+    /** EFI Graphics mode (used as fallback if resolution is not known). */
+    uint32_t                u32GraphicsMode;
+    /** EFI Graphics (GOP or UGA) horizontal resolution. */
+    uint32_t                u32HorizontalResolution;
+    /** EFI Graphics (GOP or UGA) vertical resolution. */
+    uint32_t                u32VerticalResolution;
     /** Physical address of PCI config space MMIO region */
     uint64_t                u64McfgBase;
     /** Length of PCI config space MMIO region */
@@ -1104,9 +1104,9 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
         case EFI_INFO_INDEX_TEMPMEM_SIZE:
         case EFI_INFO_INDEX_STACK_BASE:
         case EFI_INFO_INDEX_STACK_SIZE:
-        case EFI_INFO_INDEX_GOP_MODE:
-        case EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION:
-        case EFI_INFO_INDEX_UGA_HORIZONTAL_RESOLUTION:
+        case EFI_INFO_INDEX_GRAPHICS_MODE:
+        case EFI_INFO_INDEX_VERTICAL_RESOLUTION:
+        case EFI_INFO_INDEX_HORIZONTAL_RESOLUTION:
             return 4;
         case EFI_INFO_INDEX_BOOT_ARGS:
             return (uint32_t)RTStrNLen(pThis->szBootArgs, sizeof(pThis->szBootArgs)) + 1;
@@ -1189,9 +1189,9 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
         case EFI_INFO_INDEX_CPU_FREQUENCY:      return efiInfoNextByteU64(pThis, pThis->u64CpuFrequency);
         case EFI_INFO_INDEX_BOOT_ARGS:          return efiInfoNextByteBuf(pThis, pThis->szBootArgs, sizeof(pThis->szBootArgs));
         case EFI_INFO_INDEX_DEVICE_PROPS:       return efiInfoNextByteBuf(pThis, pThis->pbDeviceProps, pThis->cbDeviceProps);
-        case EFI_INFO_INDEX_GOP_MODE:           return efiInfoNextByteU32(pThis, pThis->u32GopMode);
-        case EFI_INFO_INDEX_UGA_HORIZONTAL_RESOLUTION:  return efiInfoNextByteU32(pThis, pThis->cxUgaResolution);
-        case EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION:    return efiInfoNextByteU32(pThis, pThis->cyUgaResolution);
+        case EFI_INFO_INDEX_GRAPHICS_MODE:      return efiInfoNextByteU32(pThis, pThis->u32GraphicsMode);
+        case EFI_INFO_INDEX_HORIZONTAL_RESOLUTION:  return efiInfoNextByteU32(pThis, pThis->u32HorizontalResolution);
+        case EFI_INFO_INDEX_VERTICAL_RESOLUTION:    return efiInfoNextByteU32(pThis, pThis->u32VerticalResolution);
 
         /* Keep in sync with value in EfiThunk.asm */
         case EFI_INFO_INDEX_STACK_BASE:         return efiInfoNextByteU32(pThis,  VBOX_EFI_TOP_OF_STACK - _128K); /* 2M - 128 K */
@@ -1466,7 +1466,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             {
                 pThis->szMsg[pThis->iMsg] = '\0';
                 if (pThis->iMsg)
-                    Log(("efi: %s\n", pThis->szMsg));
+                    LogRel(("efi: %s\n", pThis->szMsg));
                 pThis->iMsg = 0;
             }
             else
@@ -1474,7 +1474,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
                 {
                     pThis->szMsg[pThis->iMsg] = '\0';
-                    Log(("efi: %s\n", pThis->szMsg));
+                    LogRel(("efi: %s\n", pThis->szMsg));
                     pThis->iMsg = 0;
                 }
                 pThis->szMsg[pThis->iMsg] = (char )u32;
@@ -2188,9 +2188,12 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "64BitEntry\0"
                               "BootArgs\0"
                               "DeviceProps\0"
-                              "GopMode\0"
-                              "UgaHorizontalResolution\0"
-                              "UgaVerticalResolution\0"))
+                              "GopMode\0"                   // legacy
+                              "GraphicsMode\0"
+                              "UgaHorizontalResolution\0"   // legacy
+                              "UgaVerticalResolution\0"     // legacy
+                              "HorizontalResolution\0"
+                              "VerticalResolution\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
 
@@ -2318,26 +2321,44 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->u64FsbFrequency = CPUMGetGuestScalableBusFrequency(PDMDevHlpGetVM(pDevIns));
 
     /*
-     * GOP graphics.
+     * EFI graphics mode (with new EFI VGA code used only as a fallback, for
+     * old EFI VGA code the only way to select the GOP mode).
      */
-    rc = CFGMR3QueryU32Def(pCfg, "GopMode", &pThis->u32GopMode, 2 /* 1024x768 */);
+    rc = CFGMR3QueryU32Def(pCfg, "GraphicsMode", &pThis->u32GraphicsMode, UINT32_MAX);
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Configuration error: Querying \"GopMode\" as a 32-bit int failed"));
-    if (pThis->u32GopMode == UINT32_MAX)
-        pThis->u32GopMode = 2; /* 1024x768 */
+                                   N_("Configuration error: Querying \"GraphicsMode\" as a 32-bit int failed"));
+    if (pThis->u32GraphicsMode == UINT32_MAX)
+    {
+        /* get the legacy value if nothing else was specified */
+        rc = CFGMR3QueryU32Def(pCfg, "GopMode", &pThis->u32GraphicsMode, UINT32_MAX);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: Querying \"GopMode\" as a 32-bit int failed"));
+    }
+    if (pThis->u32GraphicsMode == UINT32_MAX)
+        pThis->u32GraphicsMode = 2; /* 1024x768 */
 
     /*
-     * Uga graphics, default to 1024x768.
+     * EFI graphics resolution, defaults to 1024x768 (used to be UGA only, now
+     * is the main config setting as the mode number is so hard to predict).
      */
-    rc = CFGMR3QueryU32Def(pCfg, "UgaHorizontalResolution", &pThis->cxUgaResolution, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "HorizontalResolution", &pThis->u32HorizontalResolution, 0);
     AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryU32Def(pCfg, "UgaVerticalResolution", &pThis->cyUgaResolution, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "VerticalResolution", &pThis->u32VerticalResolution, 0);
     AssertRCReturn(rc, rc);
-    if (pThis->cxUgaResolution == 0 || pThis->cyUgaResolution == 0)
+    if (pThis->u32HorizontalResolution == 0 || pThis->u32VerticalResolution == 0)
     {
-        pThis->cxUgaResolution = 1024;
-        pThis->cyUgaResolution = 768;
+        /* get the legacy values if nothing else was specified */
+        rc = CFGMR3QueryU32Def(pCfg, "UgaHorizontalResolution", &pThis->u32HorizontalResolution, 0);
+        AssertRCReturn(rc, rc);
+        rc = CFGMR3QueryU32Def(pCfg, "UgaVerticalResolution", &pThis->u32VerticalResolution, 0);
+        AssertRCReturn(rc, rc);
+    }
+    if (pThis->u32HorizontalResolution == 0 || pThis->u32VerticalResolution == 0)
+    {
+        pThis->u32HorizontalResolution = 1024;
+        pThis->u32VerticalResolution = 768;
     }
 
     /*

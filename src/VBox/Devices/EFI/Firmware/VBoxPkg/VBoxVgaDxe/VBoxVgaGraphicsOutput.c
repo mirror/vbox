@@ -425,9 +425,14 @@ VBoxVgaGraphicsOutputConstructor (
   VBOX_VGA_PRIVATE_DATA  *Private
   )
 {
-  EFI_STATUS                   Status;
-  EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
-  UINT32                        GopMode = 2;
+  EFI_STATUS                    Status;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
+  UINT32                        Index;
+  UINT32                        HorizontalResolution = 1024;
+  UINT32                        VerticalResolution = 768;
+  UINT32                        ColorDepth = 32;
+
+  DEBUG((DEBUG_INFO, "%a:%d construct\n", __FILE__, __LINE__));
 
   GraphicsOutput            = &Private->GraphicsOutput;
   GraphicsOutput->QueryMode = VBoxVgaGraphicsOutputQueryMode;
@@ -460,9 +465,34 @@ VBoxVgaGraphicsOutputConstructor (
   //
   // Initialize the hardware
   //
-  VBoxVgaGetVmVariable(EFI_INFO_INDEX_GOP_MODE, (CHAR8 *)&GopMode, sizeof(GopMode));
+  VBoxVgaGetVmVariable(EFI_INFO_INDEX_HORIZONTAL_RESOLUTION, (CHAR8 *)&HorizontalResolution,
+                       sizeof(HorizontalResolution));
+  VBoxVgaGetVmVariable(EFI_INFO_INDEX_VERTICAL_RESOLUTION, (CHAR8 *)&VerticalResolution,
+                       sizeof(VerticalResolution));
+  for (Index = 0; Index < Private->MaxMode; Index++)
+  {
+    if (   HorizontalResolution == Private->ModeData[Index].HorizontalResolution
+        && VerticalResolution == Private->ModeData[Index].VerticalResolution
+        && ColorDepth == Private->ModeData[Index].ColorDepth)
+      break;
+  }
+  // not found? try mode number
+  if (Index >= Private->MaxMode)
+  {
+    VBoxVgaGetVmVariable(EFI_INFO_INDEX_GRAPHICS_MODE, (CHAR8 *)&Index, sizeof(Index));
+    // try with mode 2 (usually 1024x768) as a fallback
+    if (Index >= Private->MaxMode)
+      Index = 2;
+    // try with mode 0 (usually 640x480) as a fallback
+    if (Index >= Private->MaxMode)
+      Index = 0;
+  }
 
-  GraphicsOutput->SetMode (GraphicsOutput, GopMode);
+  // skip mode setting completely if there is no valid mode
+  if (Index >= Private->MaxMode)
+    return EFI_UNSUPPORTED;
+
+  GraphicsOutput->SetMode (GraphicsOutput, Index);
 
   DrawLogo (
     Private,
