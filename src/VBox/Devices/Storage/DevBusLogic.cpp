@@ -382,13 +382,11 @@ typedef struct BUSLOGIC
 
     /** Flag whether IRQs are enabled. */
     bool                            fIRQEnabled;
-    /** Flag whether the ISA I/O port range is disabled
-     * to prevent the BIOS to access the device. */
-    bool                            fISAEnabled;    /**< @todo unused, to be removed */
     /** Flag whether 24-bit mailboxes are in use (default is 32-bit). */
     bool                            fMbxIs24Bit;
     /** ISA I/O port base (encoded in FW-compatible format). */
     uint8_t                         uISABaseCode;
+    uint8_t                         Alignment00;
 
     /** ISA I/O port base (disabled if zero). */
     RTIOPORT                        IOISABase;
@@ -1871,8 +1869,14 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         case BUSLOGICCOMMAND_INQUIRE_HOST_ADAPTER_MODEL_NUMBER:
         {
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
+            if (pBusLogic->aCommandBuffer[0] > sizeof(pBusLogic->aReplyBuffer))
+            {
+                Log(("Requested too much adapter model number data (%u)!\n", pBusLogic->aCommandBuffer[0]));
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
-            memset(pBusLogic->aReplyBuffer, 0, pBusLogic->cbReplyParametersLeft);
+            memset(pBusLogic->aReplyBuffer, 0, sizeof(pBusLogic->aReplyBuffer));
             const char aModelName[] = "958D ";  /* Trailing \0 is fine, that's the filler anyway. */
             int cCharsToTransfer =   pBusLogic->cbReplyParametersLeft <= sizeof(aModelName)
                                    ? pBusLogic->cbReplyParametersLeft
@@ -1970,7 +1974,13 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         {
             PRequestInitMbx pRequest = (PRequestInitMbx)pBusLogic->aCommandBuffer;
 
-            ///@todo: Command should fail if requested no. of mailbox entries is zero
+            pBusLogic->cbReplyParametersLeft = 0;
+            if (!pRequest->cMailbox)
+            {
+                Log(("cMailboxes=%u (24-bit mode), fail!\n", pBusLogic->cMailbox));
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
             pBusLogic->fMbxIs24Bit = true;
             pBusLogic->cMailbox = pRequest->cMailbox;
             pBusLogic->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)ADDR_TO_U32(pRequest->aMailboxBaseAddr);
@@ -1983,14 +1993,19 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             LogRel(("Initialized 24-bit mailbox, %d entries at %08x\n", pRequest->cMailbox, ADDR_TO_U32(pRequest->aMailboxBaseAddr)));
 
             pBusLogic->regStatus &= ~BL_STAT_INREQ;
-            pBusLogic->cbReplyParametersLeft = 0;
             break;
         }
         case BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX:
         {
             PRequestInitializeExtendedMailbox pRequest = (PRequestInitializeExtendedMailbox)pBusLogic->aCommandBuffer;
 
-            ///@todo: Command should fail if requested no. of mailbox entries is zero
+            pBusLogic->cbReplyParametersLeft = 0;
+            if (!pRequest->cMailbox)
+            {
+                Log(("cMailboxes=%u (32-bit mode), fail!\n", pBusLogic->cMailbox));
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
             pBusLogic->fMbxIs24Bit = false;
             pBusLogic->cMailbox = pRequest->cMailbox;
             pBusLogic->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress;
@@ -2003,7 +2018,6 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             LogRel(("Initialized 32-bit mailbox, %d entries at %08x\n", pRequest->cMailbox, pRequest->uMailboxBaseAddress));
 
             pBusLogic->regStatus &= ~BL_STAT_INREQ;
-            pBusLogic->cbReplyParametersLeft = 0;
             break;
         }
         case BUSLOGICCOMMAND_ENABLE_STRICT_ROUND_ROBIN_MODE:
@@ -2070,8 +2084,13 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_INQUIRE_SYNCHRONOUS_PERIOD:
         {
+            if (pBusLogic->aCommandBuffer[0] > sizeof(pBusLogic->aReplyBuffer))
+            {
+                Log(("Requested too much synch period inquiry (%u)!\n", pBusLogic->aCommandBuffer[0]));
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
-
             for (uint8_t i = 0; i < pBusLogic->cbReplyParametersLeft; i++)
                 pBusLogic->aReplyBuffer[i] = 0; /** @todo Figure if we need something other here. It's not needed for the linux driver */
 
@@ -2079,6 +2098,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT:
         {
+            pBusLogic->cbReplyParametersLeft = 0;
             if (pBusLogic->aCommandBuffer[0] == 0)
                 pBusLogic->fIRQEnabled = false;
             else
