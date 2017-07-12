@@ -5088,9 +5088,10 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 8:
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT
-            if (pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIntrMasking)
+            PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+            if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
             {
-                crX = pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u8VTPR;
+                crX = pVmcbCtrl->IntCtrl.n.u8VTPR;
                 break;
             }
 #endif
@@ -5462,8 +5463,9 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                     IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR8, enmAccessCrX, iGReg);
                 }
 
-                pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u8VTPR = u8Tpr;
-                if (pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIntrMasking)
+                PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+                pVmcbCtrl->IntCtrl.n.u8VTPR = u8Tpr;
+                if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
                 {
                     rcStrict = VINF_SUCCESS;
                     break;

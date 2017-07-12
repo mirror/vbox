@@ -146,12 +146,13 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         VmcbNstGst.u8CPL         = pCtx->ss.Attr.n.u2Dpl;   /* See comment in CPUMGetGuestCPL(). */
         Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
 
+        PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
         /* Save interrupt shadow of the nested-guest instruction if any. */
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
         {
             LogFlow(("iemSvmVmexit: Interrupt shadow till %#RX64\n", pCtx->rip));
-            pCtx->hwvirt.svm.VmcbCtrl.u64IntShadow |= SVM_INTERRUPT_SHADOW_ACTIVE;
+            pVmcbCtrl->u64IntShadow |= SVM_INTERRUPT_SHADOW_ACTIVE;
         }
 
         /*
@@ -159,19 +160,19 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
          */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
         {
-            Assert(pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIrqPending);
+            Assert(pVmcbCtrl->IntCtrl.n.u1VIrqPending);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
         }
         else
-            pCtx->hwvirt.svm.VmcbCtrl.IntCtrl.n.u1VIrqPending = 0;
+            pVmcbCtrl->IntCtrl.n.u1VIrqPending = 0;
 
         /** @todo Save V_TPR, V_IRQ. */
         /** @todo NRIP. */
 
         /* Save exit information. */
-        pCtx->hwvirt.svm.VmcbCtrl.u64ExitCode  = uExitCode;
-        pCtx->hwvirt.svm.VmcbCtrl.u64ExitInfo1 = uExitInfo1;
-        pCtx->hwvirt.svm.VmcbCtrl.u64ExitInfo2 = uExitInfo2;
+        pVmcbCtrl->u64ExitCode  = uExitCode;
+        pVmcbCtrl->u64ExitInfo1 = uExitInfo1;
+        pVmcbCtrl->u64ExitInfo2 = uExitInfo2;
 
         /*
          * Update the exit interrupt information field if this #VMEXIT happened as a result
@@ -183,15 +184,15 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
             uint32_t fExitIntFlags;
             bool const fRaisingEvent = IEMGetCurrentXcpt(pVCpu, &uExitIntVector, &fExitIntFlags, &uExitIntErr,
                                                          NULL /* uExitIntCr2 */);
-            pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u1Valid = fRaisingEvent;
+            pVmcbCtrl->ExitIntInfo.n.u1Valid = fRaisingEvent;
             if (fRaisingEvent)
             {
-                pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u8Vector = uExitIntVector;
-                pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u3Type   = iemGetSvmEventType(uExitIntVector, fExitIntFlags);
+                pVmcbCtrl->ExitIntInfo.n.u8Vector = uExitIntVector;
+                pVmcbCtrl->ExitIntInfo.n.u3Type   = iemGetSvmEventType(uExitIntVector, fExitIntFlags);
                 if (fExitIntFlags & IEM_XCPT_FLAGS_ERR)
                 {
-                    pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u1ErrorCodeValid = true;
-                    pCtx->hwvirt.svm.VmcbCtrl.ExitIntInfo.n.u32ErrorCode     = uExitIntErr;
+                    pVmcbCtrl->ExitIntInfo.n.u1ErrorCodeValid = true;
+                    pVmcbCtrl->ExitIntInfo.n.u32ErrorCode     = uExitIntErr;
                 }
             }
         }
@@ -199,13 +200,13 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         /*
          * Clear event injection in the VMCB.
          */
-        pCtx->hwvirt.svm.VmcbCtrl.EventInject.n.u1Valid = 0;
+        pVmcbCtrl->EventInject.n.u1Valid = 0;
 
         /*
          * Write back the VMCB controls to the guest VMCB in guest physical memory.
          */
-        VBOXSTRICTRC rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb,
-                                                         &pCtx->hwvirt.svm.VmcbCtrl, sizeof(pCtx->hwvirt.svm.VmcbCtrl));
+        VBOXSTRICTRC rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb, pVmcbCtrl,
+                                                         sizeof(*pVmcbCtrl));
         /*
          * Prepare for guest's "host mode" by clearing internal processor state bits.
          *
@@ -213,7 +214,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
          * but the offset in the guest's VMCB will remain as it should as we've written
          * back the VMCB controls above.
          */
-        RT_ZERO(pCtx->hwvirt.svm.VmcbCtrl);
+        memset(pVmcbCtrl, 0, sizeof(*pVmcbCtrl));
 
         if (RT_SUCCESS(rcStrict))
         {
@@ -327,12 +328,15 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     pCtx->hwvirt.svm.GCPhysVmcb = GCPhysVmcb;
 
     /*
-     * Save host state.
+     * Read the guest VMCB state.
      */
     SVMVMCBSTATESAVE VmcbNstGst;
     int rc = PGMPhysSimpleReadGCPhys(pVM, &VmcbNstGst, GCPhysVmcb + RT_OFFSETOF(SVMVMCB, guest), sizeof(SVMVMCBSTATESAVE));
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Save the host state.
+         */
         PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
         pHostState->es         = pCtx->es;
         pHostState->cs         = pCtx->cs;
@@ -350,13 +354,12 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         pHostState->uRax       = pCtx->rax;
 
         /*
-         * Load the VMCB controls.
+         * Read the guest VMCB controls.
          */
-        rc = PGMPhysSimpleReadGCPhys(pVM, &pCtx->hwvirt.svm.VmcbCtrl, GCPhysVmcb, sizeof(pCtx->hwvirt.svm.VmcbCtrl));
+        PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+        rc = PGMPhysSimpleReadGCPhys(pVM, pVmcbCtrl, GCPhysVmcb, sizeof(*pVmcbCtrl));
         if (RT_SUCCESS(rc))
         {
-            PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
-
             /*
              * Validate guest-state and controls.
              */
@@ -927,18 +930,20 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, 
 #ifdef IEM_WITH_CODE_TLB
             AssertReleaseFailedReturn(VERR_IEM_IPE_5);
 #else
+            PSVMVMCBCTRL  pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
             uint8_t const offOpCode = pVCpu->iem.s.offOpcode;
             uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode;
             if (   cbCurrent > 0
-                && cbCurrent < sizeof(pCtx->hwvirt.svm.VmcbCtrl.abInstr))
+                && cbCurrent < sizeof(pVmcbCtrl->abInstr))
             {
                 Assert(cbCurrent <= sizeof(pVCpu->iem.s.abOpcode));
-                memcpy(&pCtx->hwvirt.svm.VmcbCtrl.abInstr[0], &pVCpu->iem.s.abOpcode[offOpCode], cbCurrent);
+                memcpy(&pVmcbCtrl->abInstr[0], &pVCpu->iem.s.abOpcode[offOpCode], cbCurrent);
             }
 #endif
         }
-        Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept. u32InterceptXcpt=%#RX32 u8Vector=%#x uExitInfo1=%#RX64, uExitInfo2=%#RX64 -> #VMEXIT\n",
-             pCtx->hwvirt.svm.VmcbCtrl.u32InterceptXcpt, u8Vector, uExitInfo1, uExitInfo2));
+        Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept u32InterceptXcpt=%#RX32 u8Vector=%#x "
+              "uExitInfo1=%#RX64 uExitInfo2=%#RX64 -> #VMEXIT\n", pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl.u32InterceptXcpt,
+              u8Vector, uExitInfo1, uExitInfo2));
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_EXCEPTION_0 + u8Vector, uExitInfo1, uExitInfo2);
     }
 
