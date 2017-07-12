@@ -2863,6 +2863,15 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case AC97_Record_Select:
                     ichac97MixerRecordSelect(pThis, u32Val);
                     break;
+                case AC97_Record_Gain_Mute:
+                    /* Newer Ubuntu guests rely on that when controlling gain and muting
+                     * the recording (capturing) levels. */
+                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
+                    break;
+                case AC97_Record_Gain_Mic_Mute:
+                    /* Ditto; see note above. */
+                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_MIC_IN,  u32Val);
+                    break;
                 case AC97_Vendor_ID1:
                 case AC97_Vendor_ID2:
                     LogFunc(("Attempt to write vendor ID to %#x\n", u32Val));
