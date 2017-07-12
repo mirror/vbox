@@ -50,6 +50,7 @@
         <file alias="progress_media_create_90px.png">images/progress_media_create_90px.png</file>
         <file alias="progress_media_delete_90px.png">images/progress_media_delete_90px.png</file>
         <file alias="progress_media_move_90px.png">images/progress_media_move_90px.png</file>
+        <file alias="progress_media_resize_90px.png">images/progress_media_resize_90px.png</file>
         <file alias="progress_network_interface_90px.png">images/progress_network_interface_90px.png</file>
         <file alias="progress_poweroff_90px.png">images/progress_poweroff_90px.png</file>
         <file alias="progress_reading_appliance_90px.png">images/progress_reading_appliance_90px.png</file>

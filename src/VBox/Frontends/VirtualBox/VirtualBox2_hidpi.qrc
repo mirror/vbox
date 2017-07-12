@@ -59,6 +59,7 @@
         <file alias="progress_media_create_90px_hidpi.png">images/hidpi/progress_media_create_90px_hidpi.png</file>
         <file alias="progress_media_delete_90px_hidpi.png">images/hidpi/progress_media_delete_90px_hidpi.png</file>
         <file alias="progress_media_move_90px_hidpi.png">images/hidpi/progress_media_move_90px_hidpi.png</file>
+        <file alias="progress_media_resize_90px_hidpi.png">images/hidpi/progress_media_resize_90px_hidpi.png</file>
         <file alias="progress_network_interface_90px_hidpi.png">images/hidpi/progress_network_interface_90px_hidpi.png</file>
         <file alias="progress_poweroff_90px_hidpi.png">images/hidpi/progress_poweroff_90px_hidpi.png</file>
         <file alias="progress_reading_appliance_90px_hidpi.png">images/hidpi/progress_reading_appliance_90px_hidpi.png</file>

@@ -341,7 +341,7 @@ bool UIMediumItem::release()
 
 void UIMediumItem::refreshAll()
 {
-    m_guiMedium.refresh();
+    m_guiMedium.blockAndQueryState();
     refresh();
 }
 
@@ -385,6 +385,7 @@ void UIMediumItem::refresh()
     /* Gather medium options data: */
     m_options.m_enmType = m_guiMedium.mediumType();
     m_options.m_strLocation = m_guiMedium.location();
+    m_options.m_uLogicalSize = m_guiMedium.logicalSizeInBytes();
     /* Gather medium details data: */
     m_details.m_aFields.clear();
     switch (m_enmType)
@@ -956,6 +957,36 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
                                                       oldData.m_options.m_strLocation,
                                                       newData.m_options.m_strLocation,
                                                       this);
+        }
+    }
+
+    /* Try to assign new medium size: */
+    if (   comMedium.isOk()
+        && newData.m_options.m_uLogicalSize != oldData.m_options.m_uLogicalSize)
+    {
+        /* Prepare resize storage progress: */
+        CProgress comProgress = comMedium.Resize(newData.m_options.m_uLogicalSize);
+
+        /* Show error message if necessary: */
+        if (!comMedium.isOk())
+            msgCenter().cannotResizeHardDiskStorage(comMedium,
+                                                    oldData.m_options.m_strLocation,
+                                                    vboxGlobal().formatSize(oldData.m_options.m_uLogicalSize),
+                                                    vboxGlobal().formatSize(newData.m_options.m_uLogicalSize),
+                                                    this);
+        else
+        {
+            /* Show resize storage progress: */
+            msgCenter().showModalProgressDialog(comProgress, UIMediumManager::tr("Moving medium..."),
+                                                ":/progress_media_move_90px.png", this);
+
+            /* Show error message if necessary: */
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                msgCenter().cannotResizeHardDiskStorage(comProgress,
+                                                        oldData.m_options.m_strLocation,
+                                                        vboxGlobal().formatSize(oldData.m_options.m_uLogicalSize),
+                                                        vboxGlobal().formatSize(newData.m_options.m_uLogicalSize),
+                                                        this);
         }
     }
 

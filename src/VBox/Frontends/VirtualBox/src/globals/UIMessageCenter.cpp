@@ -1342,6 +1342,22 @@ void UIMessageCenter::cannotMoveHardDiskStorage(const CProgress &comProgress, co
           formatErrorInfo(comProgress));
 }
 
+void UIMessageCenter::cannotResizeHardDiskStorage(const CMedium &comMedium, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to resize the storage unit of the hard disk <b>%1</b> from <b>%2</b> to <b>%3</b>.")
+             .arg(strLocation, strSizeOld, strSizeNew),
+          formatErrorInfo(comMedium));
+}
+
+void UIMessageCenter::cannotResizeHardDiskStorage(const CProgress &comProgress, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to resize the storage unit of the hard disk <b>%1</b> from <b>%2</b> to <b>%3</b>.")
+             .arg(strLocation, strSizeOld, strSizeNew),
+          formatErrorInfo(comProgress));
+}
+
 void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /* = 0*/) const
 {
     /* Prepare the message: */

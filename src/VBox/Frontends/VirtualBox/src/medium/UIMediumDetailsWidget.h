@@ -33,9 +33,11 @@
 class QAbstractButton;
 class QComboBox;
 class QLabel;
+class QSlider;
 class QStackedLayout;
 class QWidget;
 class QILabel;
+class QILineEdit;
 class QITabWidget;
 class UIFilePathSelector;
 
@@ -47,6 +49,7 @@ struct UIDataMediumOptions
     UIDataMediumOptions()
         : m_enmType(KMediumType_Normal)
         , m_strLocation(QString())
+        , m_uLogicalSize(0)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -55,6 +58,7 @@ struct UIDataMediumOptions
         return true
                && (m_enmType == other.m_enmType)
                && (m_strLocation == other.m_strLocation)
+               && (m_uLogicalSize == other.m_uLogicalSize)
                ;
     }
 
@@ -67,6 +71,8 @@ struct UIDataMediumOptions
     KMediumType m_enmType;
     /** Holds the location. */
     QString m_strLocation;
+    /** Holds the logical size. */
+    qulonglong m_uLogicalSize;
 };
 
 
@@ -189,6 +195,10 @@ private slots:
         void sltTypeIndexChanged(int iIndex);
         /** Handles location change. */
         void sltLocationPathChanged(const QString &strPath);
+        /** Handles size slider change. */
+        void sltSizeSliderChanged(int iValue);
+        /** Handles size editor change. */
+        void sltSizeEditorChanged(const QString &strValue);
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -228,6 +238,17 @@ private:
         void retranslateValidation(QWidget *pWidget = 0);
         /** Updates button states. */
         void updateButtonStates();
+
+        /** Calculates slider scale according to passed @a uMaximumMediumSize. */
+        static int calculateSliderScale(qulonglong uMaximumMediumSize);
+        /** Returns log2 for passed @a uValue. */
+        static int log2i(qulonglong uValue);
+        /** Converts passed bytes @a uValue to slides scaled value using @a iSliderScale. */
+        static int sizeMBToSlider(qulonglong uValue, int iSliderScale);
+        /** Converts passed slider @a uValue to bytes unscaled value using @a iSliderScale. */
+        static qulonglong sliderToSizeMB(int uValue, int iSliderScale);
+        /** Updates slider/editor tool-tips. */
+        void updateSizeToolTips(qulonglong uSize);
     /** @} */
 
     /** @name Details stuff.
@@ -269,6 +290,25 @@ private:
         UIFilePathSelector *m_pSelectorLocation;
         /** Holds the location error pane. */
         QLabel    *m_pErrorPaneLocation;
+
+        /** Holds the minimum medium size. */
+        const qulonglong  m_uMediumSizeMin;
+        /** Holds the maximum medium size. */
+        const qulonglong  m_uMediumSizeMax;
+        /** Holds the slider scale. */
+        const int         m_iSliderScale;
+        /** Holds the size label. */
+        QLabel           *m_pLabelSize;
+        /** Holds the size slider. */
+        QSlider          *m_pSliderSize;
+        /** Holds the minimum size label. */
+        QLabel           *m_pLabelMinSize;
+        /** Holds the maximum size label. */
+        QLabel           *m_pLabelMaxSize;
+        /** Holds the size editor. */
+        QILineEdit       *m_pEditorSize;
+        /** Holds the size error pane. */
+        QLabel           *m_pErrorPaneSize;
 
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
