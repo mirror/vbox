@@ -126,11 +126,10 @@
                     <CommandLine>cmd /c reg add "HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
                 </SynchronousCommand>
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
-                <!-- TODO: The following two commands can be combined. -->
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
                     <Description>Install Oracle certificate</Description>
-                    <CommandLine>cmd /c for %i in (e:\cert\vbox*.cer) do certutil -addstore -f "TrustedPublisher" %i</CommandLine>
+                    <CommandLine>e:\cert\VBoxCertUtil.exe add-trusted-publisher e:\cert\vbox*.cer --root e:\cert\vbox*.cer
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>3</Order>
