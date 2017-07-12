@@ -81,6 +81,12 @@
             </AutoLogon>
 
             <UserAccounts>
+@@VBOX_COND_IS_USER_LOGIN_NOT_ADMINISTRATOR@@
+                <AdministratorPassword>
+                    <Value>@@VBOX_INSERT_ROOT_PASSWORD_ELEMENT@@</Value>
+                    <PlainText>true</PlainText>
+                </AdministratorPassword>
+
                 <LocalAccounts>
                     <LocalAccount wcm:action="add">
                         <Name>@@VBOX_INSERT_USER_LOGIN_ELEMENT@@</Name>
@@ -92,6 +98,13 @@
                         </Password>
                     </LocalAccount>
                 </LocalAccounts>
+@@VBOX_COND_END@@
+@@VBOX_COND_IS_USER_LOGIN_ADMINISTRATOR@@
+                <AdministratorPassword>
+                    <Value>@@VBOX_INSERT_USER_PASSWORD_ELEMENT@@</Value>
+                    <PlainText>true</PlainText>
+                </AdministratorPassword>
+@@VBOX_COND_END@@
             </UserAccounts>
 
             <VisualEffects>
