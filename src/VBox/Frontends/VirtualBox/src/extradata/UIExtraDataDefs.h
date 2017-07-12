@@ -182,6 +182,8 @@ namespace UIExtraDataDefs
         /** Holds Runtime UI menu-bar availability status. */
         extern const char* GUI_MenuBar_Enabled;
 #endif /* !VBOX_WS_MAC */
+        /** Holds Runtime UI menu-bar context-menu availability status. */
+        extern const char* GUI_MenuBar_ContextMenu_Enabled;
         /** Holds restricted Runtime UI menu types. */
         extern const char* GUI_RestrictedRuntimeMenus;
         /** Holds restricted Runtime UI action types for 'Application' menu. */
@@ -255,6 +257,8 @@ namespace UIExtraDataDefs
 #endif /* !VBOX_WS_MAC */
         /** Holds Runtime UI status-bar availability status. */
         extern const char* GUI_StatusBar_Enabled;
+        /** Holds Runtime UI status-bar context-menu availability status. */
+        extern const char* GUI_StatusBar_ContextMenu_Enabled;
         /** Holds restricted Runtime UI status-bar indicators. */
         extern const char* GUI_RestrictedStatusBarIndicators;
         /** Holds Runtime UI status-bar indicator order. */

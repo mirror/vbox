@@ -160,7 +160,8 @@ void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QString &s
 void UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest(const QPoint &position)
 {
     /* Raise action's context-menu: */
-    actionPool()->action(UIActionIndexRT_M_View_M_MenuBar)->menu()->exec(menuBar()->mapToGlobal(position));
+    if (gEDataManager->menuBarContextMenuEnabled(vboxGlobal().managedVMUuid()))
+        actionPool()->action(UIActionIndexRT_M_View_M_MenuBar)->menu()->exec(menuBar()->mapToGlobal(position));
 }
 #endif /* !RT_OS_DARWIN */
 
@@ -193,7 +194,8 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QString 
 void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &position)
 {
     /* Raise action's context-menu: */
-    actionPool()->action(UIActionIndexRT_M_View_M_StatusBar)->menu()->exec(statusBar()->mapToGlobal(position));
+    if (gEDataManager->statusBarContextMenuEnabled(vboxGlobal().managedVMUuid()))
+        actionPool()->action(UIActionIndexRT_M_View_M_StatusBar)->menu()->exec(statusBar()->mapToGlobal(position));
 }
 
 void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position)

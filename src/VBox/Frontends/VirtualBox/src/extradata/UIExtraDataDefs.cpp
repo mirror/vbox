@@ -104,6 +104,7 @@ const char* UIExtraDataDefs::GUI_Geometry_State_Max = "max";
 #ifndef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_MenuBar_Enabled = "GUI/MenuBar/Enabled";
 #endif /* !VBOX_WS_MAC */
+const char* UIExtraDataDefs::GUI_MenuBar_ContextMenu_Enabled = "GUI/MenuBar/ContextMenu/Enabled";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeApplicationMenuActions = "GUI/RestrictedRuntimeApplicationMenuActions";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeMachineMenuActions = "GUI/RestrictedRuntimeMachineMenuActions";
@@ -144,6 +145,7 @@ const char* UIExtraDataDefs::GUI_MiniToolBarAutoHide = "GUI/MiniToolBarAutoHide"
 const char* UIExtraDataDefs::GUI_MiniToolBarAlignment = "GUI/MiniToolBarAlignment";
 #endif /* !VBOX_WS_MAC */
 const char* UIExtraDataDefs::GUI_StatusBar_Enabled = "GUI/StatusBar/Enabled";
+const char* UIExtraDataDefs::GUI_StatusBar_ContextMenu_Enabled = "GUI/StatusBar/ContextMenu/Enabled";
 const char* UIExtraDataDefs::GUI_RestrictedStatusBarIndicators = "GUI/RestrictedStatusBarIndicators";
 const char* UIExtraDataDefs::GUI_StatusBar_IndicatorOrder = "GUI/StatusBar/IndicatorOrder";
 #ifdef VBOX_WS_MAC
