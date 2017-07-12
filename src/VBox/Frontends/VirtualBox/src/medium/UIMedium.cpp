@@ -87,6 +87,8 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_strName = other.name();
     m_strLocation = other.location();
 
+    m_uSize = other.sizeInBytes();
+    m_uLogicalSize = other.logicalSizeInBytes();
     m_strSize = other.size();
     m_strLogicalSize = other.logicalSize();
 
@@ -151,6 +153,7 @@ void UIMedium::refresh()
     /* Reset name/location/size parameters: */
     m_strName = VBoxGlobal::tr("Empty", "medium");
     m_strLocation = m_strSize = m_strLogicalSize = QString("--");
+    m_uSize = m_uLogicalSize = 0;
 
     /* Reset medium type parameter: */
     m_enmMediumType = KMediumType_Max;
@@ -210,11 +213,18 @@ void UIMedium::refresh()
             /* Only for created and accessible mediums: */
             if (m_state != KMediumState_Inaccessible && m_state != KMediumState_NotCreated)
             {
-                m_strSize = vboxGlobal().formatSize(m_medium.GetSize());
+                m_uSize = m_medium.GetSize();
+                m_strSize = vboxGlobal().formatSize(m_uSize);
                 if (m_type == UIMediumType_HardDisk)
-                    m_strLogicalSize = vboxGlobal().formatSize(m_medium.GetLogicalSize());
+                {
+                    m_uLogicalSize = m_medium.GetLogicalSize();
+                    m_strLogicalSize = vboxGlobal().formatSize(m_uLogicalSize);
+                }
                 else
+                {
+                    m_uLogicalSize = m_uSize;
                     m_strLogicalSize = m_strSize;
+                }
             }
         }
 

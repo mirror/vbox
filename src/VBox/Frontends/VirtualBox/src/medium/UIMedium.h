@@ -177,6 +177,14 @@ public:
       * @note  In "don't show diffs" mode, this method returns the location of root in the given hard drive chain. */
     QString location(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strLocation : m_strLocation; }
 
+    /** Returns the medium size in bytes.
+      * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
+      * @note  In "don't show diffs" mode, this method returns the size of root in the given hard drive chain. */
+    qulonglong sizeInBytes(bool fNoDiffs = false) const { return fNoDiffs ? root().m_uSize : m_uSize; }
+    /** Returns the logical medium size in bytes.
+      * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
+      * @note  In "don't show diffs" mode, this method returns the size of root in the given hard drive chain. */
+    qulonglong logicalSizeInBytes(bool fNoDiffs = false) const { return fNoDiffs ? root().m_uLogicalSize : m_uLogicalSize; }
     /** Returns the medium size.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the size of root in the given hard drive chain. */
@@ -342,9 +350,13 @@ private:
     /** Holds the medium location. */
     QString m_strLocation;
 
+    /** Holds the medium size in bytes. */
+    qulonglong m_uSize;
+    /** Holds the logical medium size in bytes. */
+    qulonglong m_uLogicalSize;
     /** Holds the medium size. */
     QString m_strSize;
-    /** Holds the medium logical size. */
+    /** Holds the logical medium size. */
     QString m_strLogicalSize;
 
     /** Holds the medium disk type. */
