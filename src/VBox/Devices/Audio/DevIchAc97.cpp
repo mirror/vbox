@@ -1732,9 +1732,6 @@ static uint32_t ichac97StreamGetFree(PAC97STREAM pStream)
  */
 static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL enmMixerCtl, uint32_t uVal)
 {
-    bool    fCntlMuted;
-    uint8_t lCntlAtt, rCntlAtt;
-
     /*
      * From AC'97 SoundMax Codec AD1981A/AD1981B:
      * "Because AC '97 defines 6-bit volume registers, to maintain compatibility whenever the
@@ -1745,14 +1742,14 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
      * Linux ALSA depends on this behavior.
      */
     /// @todo Does this apply to anything other than the master volume control?
-    if (uVal & RT_BIT(5))
+    if (uVal & RT_BIT(5))  /* D5 bit set? */
         uVal |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
-    if (uVal & RT_BIT(13))
+    if (uVal & RT_BIT(13)) /* D13 bit set? */
         uVal |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
 
-    fCntlMuted = (uVal >> AC97_BARS_VOL_MUTE_SHIFT) & 1;
-    lCntlAtt   = (uVal >> 8) & AC97_BARS_VOL_MASK;
-    rCntlAtt   = uVal & AC97_BARS_VOL_MASK;
+    const bool    fCtlMuted    = (uVal >> AC97_BARS_VOL_MUTE_SHIFT) & 1;
+          uint8_t uCtlAttLeft  = (uVal >> 8) & AC97_BARS_VOL_MASK;
+          uint8_t uCtlAttRight = uVal & AC97_BARS_VOL_MASK;
 
     /* For the master and headphone volume, 0 corresponds to 0dB attenuation. For the other
      * volume controls, 0 means 12dB gain and 8 means unity gain.
@@ -1761,31 +1758,31 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
     {
 #ifndef VBOX_WITH_AC97_GAIN_SUPPORT
         /* NB: Currently there is no gain support, only attenuation. */
-        lCntlAtt = lCntlAtt < 8 ? 0 : lCntlAtt - 8;
-        rCntlAtt = rCntlAtt < 8 ? 0 : rCntlAtt - 8;
+        uCtlAttLeft  = uCtlAttLeft  < 8 ? 0 : uCtlAttLeft  - 8;
+        uCtlAttRight = uCtlAttRight < 8 ? 0 : uCtlAttRight - 8;
 #endif
     }
-    Assert(lCntlAtt <= 255 / AC97_DB_FACTOR);
-    Assert(rCntlAtt <= 255 / AC97_DB_FACTOR);
+    Assert(uCtlAttLeft  <= 255 / AC97_DB_FACTOR);
+    Assert(uCtlAttRight <= 255 / AC97_DB_FACTOR);
 
     LogFunc(("index=0x%x, uVal=%RU32, enmMixerCtl=%RU32\n", index, uVal, enmMixerCtl));
-    LogFunc(("lAtt=%RU8, rAtt=%RU8 ", lCntlAtt, rCntlAtt));
+    LogFunc(("uCtlAttLeft=%RU8, uCtlAttRight=%RU8 ", uCtlAttLeft, uCtlAttRight));
 
     /*
      * For AC'97 volume controls, each additional step means -1.5dB attenuation with
      * zero being maximum. In contrast, we're internally using 255 (PDMAUDIO_VOLUME_MAX)
      * steps, each -0.375dB, where 0 corresponds to -96dB and 255 corresponds to 0dB.
      */
-    uint8_t lVol = PDMAUDIO_VOLUME_MAX - lCntlAtt * AC97_DB_FACTOR;
-    uint8_t rVol = PDMAUDIO_VOLUME_MAX - rCntlAtt * AC97_DB_FACTOR;
+    uint8_t lVol = PDMAUDIO_VOLUME_MAX - uCtlAttLeft  * AC97_DB_FACTOR;
+    uint8_t rVol = PDMAUDIO_VOLUME_MAX - uCtlAttRight * AC97_DB_FACTOR;
 
-    Log(("-> fMuted=%RTbool, lVol=%RU8, rVol=%RU8\n", fCntlMuted, lVol, rVol));
+    Log(("-> fMuted=%RTbool, lVol=%RU8, rVol=%RU8\n", fCtlMuted, lVol, rVol));
 
     int rc = VINF_SUCCESS;
 
     if (pThis->pMixer) /* Device can be in reset state, so no mixer available. */
     {
-        PDMAUDIOVOLUME Vol   = { fCntlMuted, lVol, rVol };
+        PDMAUDIOVOLUME Vol   = { fCtlMuted, lVol, rVol };
         PAUDMIXSINK    pSink = NULL;
 
         switch (enmMixerCtl)
@@ -1969,7 +1966,10 @@ static int ichac97MixerReset(PAC97STATE pThis)
     }
     ichac97MixerRecordSelect(pThis, 0);
 
+    /* The default value is 8000h, which corresponds to 0 dB attenuation with mute on. */
     ichac97MixerSetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME_MASTER, 0x8000);
+
+    /* The default value for stereo registers is 8808h, which corresponds to 0 dB gain with mute on.*/
     ichac97MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT,         0x8808);
     ichac97MixerSetVolume(pThis, AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN,       0x8808);
     ichac97MixerSetVolume(pThis, AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN,        0x8808);
@@ -2664,7 +2664,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                 }
 
                 default:
-                    LogFunc(("Unimplemented: %#x <- %#x (Byte)\n", uPort, u32Val));
+                    LogRel2(("AC97: Warning: Unimplemented NABMWrite (%u byte) portIdx=%#x <- %#x\n", cbVal, uPortIdx, u32Val));
                     break;
             }
             break;
@@ -2683,7 +2683,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                     Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val, pRegs->sr));
                     break;
                 default:
-                    LogFunc(("Unimplemented: %#x <- %#x (Word)\n", uPort, u32Val));
+                    LogRel2(("AC97: Warning: Unimplemented NABMWrite (%u byte) portIdx=%#x <- %#x\n", cbVal, uPortIdx, u32Val));
                     break;
             }
             break;
@@ -2717,14 +2717,14 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                     Log3Func(("glob_sta <- %#x (glob_sta %#x)\n", u32Val, pThis->glob_sta));
                     break;
                 default:
-                    LogFunc(("Unimplemented: %#x <- %#x (DWord)\n", uPort, u32Val));
+                    LogRel2(("AC97: Warning: Unimplemented NABMWrite (%u byte) portIdx=%#x <- %#x\n", cbVal, uPortIdx, u32Val));
                     break;
             }
             break;
         }
 
         default:
-            AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", uPort, cbVal, u32Val));
+            AssertLogRel(("AC97: Warning: Unimplemented NABMWrite (%u byte) portIdx=%#x <- %#x\n", cbVal, uPortIdx, u32Val));
             break;
     }
 
@@ -2752,11 +2752,13 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 
     int rc = VINF_SUCCESS;
 
+    uint32_t index = uPort - pThis->IOPortBase[0];
+
     switch (cbVal)
     {
         case 1:
         {
-            Log3Func(("U nam readb %#x\n", uPort));
+            LogRel2(("AC97: Warning: Unimplemented read (%u byte) port=%#x, idx=%RU32\n", cbVal, uPort, index));
             pThis->cas = 0;
             *pu32Val = UINT32_MAX;
             break;
@@ -2764,14 +2766,13 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 
         case 2:
         {
-            uint32_t index = uPort - pThis->IOPortBase[0];
             *pu32Val = UINT32_MAX;
             pThis->cas = 0;
+
             switch (index)
             {
                 default:
                     *pu32Val = ichac97MixerGet(pThis, index);
-                    Log3Func(("nam readw %#x -> %#x\n", uPort, *pu32Val));
                     break;
             }
             break;
@@ -2779,7 +2780,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 
         case 4:
         {
-            Log3Func(("U nam readl %#x\n", uPort));
+            LogRel2(("AC97: Warning: Unimplemented read (%u byte) port=%#x, idx=%RU32\n", cbVal, uPort, index));
             pThis->cas = 0;
             *pu32Val = UINT32_MAX;
             break;
@@ -2813,28 +2814,29 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
+    uint32_t uPortIdx = uPort - pThis->IOPortBase[0];
+
     switch (cbVal)
     {
         case 1:
         {
-            Log3Func(("U nam writeb %#x <- %#x\n", uPort, u32Val));
+            LogRel2(("AC97: Warning: Unimplemented NAMWrite (%u byte) port=%#x, idx=0x%x <- %#x\n", cbVal, uPort, uPortIdx, u32Val));
             pThis->cas = 0;
             break;
         }
 
         case 2:
         {
-            uint32_t index = uPort - pThis->IOPortBase[0];
             pThis->cas = 0;
-            switch (index)
+            switch (uPortIdx)
             {
                 case AC97_Reset:
                     ichac97Reset(pThis->CTX_SUFF(pDevIns));
                     break;
                 case AC97_Powerdown_Ctrl_Stat:
                     u32Val &= ~0xf;
-                    u32Val |= ichac97MixerGet(pThis, index) & 0xf;
-                    ichac97MixerSet(pThis, index, u32Val);
+                    u32Val |= ichac97MixerGet(pThis, uPortIdx) & 0xf;
+                    ichac97MixerSet(pThis, uPortIdx, u32Val);
                     break;
                 case AC97_Master_Volume_Mute:
                     if (pThis->uCodecModel == AC97_CODEC_AD1980)
@@ -2842,7 +2844,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_LOSEL)
                             break; /* Register controls surround (rear), do nothing. */
                     }
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
+                    ichac97MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
                     break;
                 case AC97_Headphone_Volume_Mute:
                     if (pThis->uCodecModel == AC97_CODEC_AD1980)
@@ -2850,15 +2852,15 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_HPSEL)
                         {
                             /* Register controls PCM (front) outputs. */
-                            ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
+                            ichac97MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
                         }
                     }
                     break;
                 case AC97_PCM_Out_Volume_Mute:
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_FRONT, u32Val);
+                    ichac97MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_FRONT, u32Val);
                     break;
                 case AC97_Line_In_Volume_Mute:
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
+                    ichac97MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
                     break;
                 case AC97_Record_Select:
                     ichac97MixerRecordSelect(pThis, u32Val);
@@ -2866,11 +2868,11 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case AC97_Record_Gain_Mute:
                     /* Newer Ubuntu guests rely on that when controlling gain and muting
                      * the recording (capturing) levels. */
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
+                    ichac97MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
                     break;
                 case AC97_Record_Gain_Mic_Mute:
                     /* Ditto; see note above. */
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_MIC_IN,  u32Val);
+                    ichac97MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_MIC_IN,  u32Val);
                     break;
                 case AC97_Vendor_ID1:
                 case AC97_Vendor_ID2:
@@ -2905,7 +2907,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case AC97_PCM_Front_DAC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRA)
                     {
-                        ichac97MixerSet(pThis, index, u32Val);
+                        ichac97MixerSet(pThis, uPortIdx, u32Val);
                         LogFunc(("Set front DAC rate to %RU32\n", u32Val));
                         ichac97StreamReOpen(pThis, &pThis->StreamOut);
                     }
@@ -2915,7 +2917,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case AC97_MIC_ADC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRM)
                     {
-                        ichac97MixerSet(pThis, index, u32Val);
+                        ichac97MixerSet(pThis, uPortIdx, u32Val);
                         LogFunc(("Set MIC ADC rate to %RU32\n", u32Val));
                         ichac97StreamReOpen(pThis, &pThis->StreamMicIn);
                     }
@@ -2925,7 +2927,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case AC97_PCM_LR_ADC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRA)
                     {
-                        ichac97MixerSet(pThis, index, u32Val);
+                        ichac97MixerSet(pThis, uPortIdx, u32Val);
                         LogFunc(("Set front LR ADC rate to %RU32\n", u32Val));
                         ichac97StreamReOpen(pThis, &pThis->StreamLineIn);
                     }
@@ -2933,8 +2935,8 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                         AssertMsgFailed(("Attempt to set LR ADC rate to %RU32, but VRA is not set\n", u32Val));
                     break;
                 default:
-                    LogFunc(("U nam writew %#x <- %#x\n", uPort, u32Val));
-                    ichac97MixerSet(pThis, index, u32Val);
+                    LogRel2(("AC97: Warning: Unimplemented NAMWrite (%u byte) port=%#x, idx=0x%x <- %#x\n", cbVal, uPort, uPortIdx, u32Val));
+                    ichac97MixerSet(pThis, uPortIdx, u32Val);
                     break;
             }
             break;
@@ -2942,13 +2944,13 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
 
         case 4:
         {
-            Log3Func(("U nam writel %#x <- %#x\n", uPort, u32Val));
+            LogRel2(("AC97: Warning: Unimplemented NAMWrite (%u byte) port=%#x, idx=0x%x <- %#x\n", cbVal, uPort, uPortIdx, u32Val));
             pThis->cas = 0;
             break;
         }
 
         default:
-            AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", uPort, cbVal, u32Val));
+            AssertMsgFailed(("Unhandled NAMWrite port=%#x, cbVal=%u u32Val=%#x\n", uPort, cbVal, u32Val));
             break;
     }
 
