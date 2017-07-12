@@ -57,9 +57,6 @@ private slots:
 
     /* Location editors stuff: */
     void sltSelectLocationButtonClicked();
-    /* Size editors stuff: */
-    void sltSizeSliderValueChanged(int iValue);
-    void sltSizeEditorTextChanged(const QString &strValue);
 
 private:
 

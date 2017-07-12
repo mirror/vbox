@@ -33,13 +33,12 @@
 class QAbstractButton;
 class QComboBox;
 class QLabel;
-class QSlider;
 class QStackedLayout;
 class QWidget;
 class QILabel;
-class QILineEdit;
 class QITabWidget;
 class UIFilePathSelector;
+class UIMediumSizeEditor;
 
 
 /** Virtual Media Manager: Medium options data structure. */
@@ -195,10 +194,8 @@ private slots:
         void sltTypeIndexChanged(int iIndex);
         /** Handles location change. */
         void sltLocationPathChanged(const QString &strPath);
-        /** Handles size slider change. */
-        void sltSizeSliderChanged(int iValue);
         /** Handles size editor change. */
-        void sltSizeEditorChanged(const QString &strValue);
+        void sltSizeEditorChanged(qulonglong uSize);
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -238,17 +235,6 @@ private:
         void retranslateValidation(QWidget *pWidget = 0);
         /** Updates button states. */
         void updateButtonStates();
-
-        /** Calculates slider scale according to passed @a uMaximumMediumSize. */
-        static int calculateSliderScale(qulonglong uMaximumMediumSize);
-        /** Returns log2 for passed @a uValue. */
-        static int log2i(qulonglong uValue);
-        /** Converts passed bytes @a uValue to slides scaled value using @a iSliderScale. */
-        static int sizeMBToSlider(qulonglong uValue, int iSliderScale);
-        /** Converts passed slider @a uValue to bytes unscaled value using @a iSliderScale. */
-        static qulonglong sliderToSizeMB(int uValue, int iSliderScale);
-        /** Updates slider/editor tool-tips. */
-        void updateSizeToolTips(qulonglong uSize);
     /** @} */
 
     /** @name Details stuff.
@@ -291,24 +277,12 @@ private:
         /** Holds the location error pane. */
         QLabel    *m_pErrorPaneLocation;
 
-        /** Holds the minimum medium size. */
-        const qulonglong  m_uMediumSizeMin;
-        /** Holds the maximum medium size. */
-        const qulonglong  m_uMediumSizeMax;
-        /** Holds the slider scale. */
-        const int         m_iSliderScale;
         /** Holds the size label. */
-        QLabel           *m_pLabelSize;
-        /** Holds the size slider. */
-        QSlider          *m_pSliderSize;
-        /** Holds the minimum size label. */
-        QLabel           *m_pLabelMinSize;
-        /** Holds the maximum size label. */
-        QLabel           *m_pLabelMaxSize;
+        QLabel             *m_pLabelSize;
         /** Holds the size editor. */
-        QILineEdit       *m_pEditorSize;
+        UIMediumSizeEditor *m_pEditorSize;
         /** Holds the size error pane. */
-        QLabel           *m_pErrorPaneSize;
+        QLabel             *m_pErrorPaneSize;
 
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;

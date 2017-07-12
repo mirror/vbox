@@ -434,6 +434,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UILineTextEdit.h \
+	src/widgets/UIMediumSizeEditor.h \
 	src/widgets/UIMenuBar.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
@@ -747,6 +748,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UILineTextEdit.cpp \
+	src/widgets/UIMediumSizeEditor.cpp \
 	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \

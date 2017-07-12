@@ -39,6 +39,7 @@
 # include "QIRichTextLabel.h"
 # include "QIToolButton.h"
 # include "QILineEdit.h"
+# include "UIMediumSizeEditor.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -52,7 +53,6 @@ UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QStr
     , m_strDefaultPath(strDefaultPath)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(vboxGlobal().virtualBox().GetSystemProperties().GetInfoVDSize())
-    , m_iSliderScale(calculateSliderScale(m_uMediumSizeMax))
 {
 }
 
@@ -109,30 +109,6 @@ void UIWizardNewVDPage3::onSelectLocationButtonClicked()
     }
 }
 
-void UIWizardNewVDPage3::onSizeSliderValueChanged(int iValue)
-{
-    /* Get full size: */
-    qulonglong uMediumSize = sliderToSizeMB(iValue, m_iSliderScale);
-    /* Update tooltips: */
-    updateSizeToolTips(uMediumSize);
-    /* Notify size-editor about size had changed (preventing callback): */
-    m_pSizeEditor->blockSignals(true);
-    m_pSizeEditor->setText(vboxGlobal().formatSize(uMediumSize));
-    m_pSizeEditor->blockSignals(false);
-}
-
-void UIWizardNewVDPage3::onSizeEditorTextChanged(const QString &strValue)
-{
-    /* Get full size: */
-    qulonglong uMediumSize = vboxGlobal().parseSize(strValue);
-    /* Update tooltips: */
-    updateSizeToolTips(uMediumSize);
-    /* Notify size-slider about size had changed (preventing callback): */
-    m_pSizeSlider->blockSignals(true);
-    m_pSizeSlider->setValue(sizeMBToSlider(uMediumSize, m_iSliderScale));
-    m_pSizeSlider->blockSignals(false);
-}
-
 /* static */
 QString UIWizardNewVDPage3::toFileName(const QString &strName, const QString &strExtension)
 {
@@ -182,85 +158,6 @@ QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRe
     return QString();
 }
 
-/* static */
-int UIWizardNewVDPage3::calculateSliderScale(qulonglong uMaximumMediumSize)
-{
-    /* Detect how many steps to recognize between adjacent powers of 2
-     * to ensure that the last slider step is exactly that we need: */
-    int iSliderScale = 0;
-    int iPower = log2i(uMaximumMediumSize);
-    qulonglong uTickMB = (qulonglong)1 << iPower;
-    if (uTickMB < uMaximumMediumSize)
-    {
-        qulonglong uTickMBNext = (qulonglong)1 << (iPower + 1);
-        qulonglong uGap = uTickMBNext - uMaximumMediumSize;
-        iSliderScale = (int)((uTickMBNext - uTickMB) / uGap);
-#ifdef VBOX_WS_MAC
-        // WORKAROUND:
-        // There is an issue with Qt5 QSlider under OSX:
-        // Slider tick count (maximum - minimum) is limited with some
-        // "magical number" - 588351, having it more than that brings
-        // unpredictable results like slider token jumping and disappearing,
-        // so we are limiting tick count by lowering slider-scale 128 times.
-        iSliderScale /= 128;
-#endif /* VBOX_WS_MAC */
-    }
-    return qMax(iSliderScale, 8);
-}
-
-/* static */
-int UIWizardNewVDPage3::log2i(qulonglong uValue)
-{
-    int iPower = -1;
-    while (uValue)
-    {
-        ++iPower;
-        uValue >>= 1;
-    }
-    return iPower;
-}
-
-/* static */
-int UIWizardNewVDPage3::sizeMBToSlider(qulonglong uValue, int iSliderScale)
-{
-    /* Make sure *any* slider value is multiple of 512: */
-    uValue /= 512;
-
-    /* Calculate result: */
-    int iPower = log2i(uValue);
-    qulonglong uTickMB = qulonglong (1) << iPower;
-    qulonglong uTickMBNext = qulonglong (1) << (iPower + 1);
-    int iStep = (uValue - uTickMB) * iSliderScale / (uTickMBNext - uTickMB);
-    int iResult = iPower * iSliderScale + iStep;
-
-    /* Return result: */
-    return iResult;
-}
-
-/* static */
-qulonglong UIWizardNewVDPage3::sliderToSizeMB(int uValue, int iSliderScale)
-{
-    /* Calculate result: */
-    int iPower = uValue / iSliderScale;
-    int iStep = uValue % iSliderScale;
-    qulonglong uTickMB = qulonglong (1) << iPower;
-    qulonglong uTickMBNext = qulonglong (1) << (iPower + 1);
-    qulonglong uResult = uTickMB + (uTickMBNext - uTickMB) * iStep / iSliderScale;
-
-    /* Make sure *any* slider value is multiple of 512: */
-    uResult *= 512;
-
-    /* Return result: */
-    return uResult;
-}
-
-void UIWizardNewVDPage3::updateSizeToolTips(qulonglong uSize)
-{
-    QString strToolTip = UIWizardNewVD::tr("<nobr>%1 (%2 B)</nobr>").arg(vboxGlobal().formatSize(uSize)).arg(uSize);
-    m_pSizeSlider->setToolTip(strToolTip);
-    m_pSizeEditor->setToolTip(strToolTip);
-}
-
 QString UIWizardNewVDPage3::mediumPath() const
 {
     return absoluteFilePath(toFileName(m_pLocationEditor->text(), m_strDefaultExtension), m_strDefaultPath);
@@ -268,21 +165,12 @@ QString UIWizardNewVDPage3::mediumPath() const
 
 qulonglong UIWizardNewVDPage3::mediumSize() const
 {
-    return sliderToSizeMB(m_pSizeSlider->value(), m_iSliderScale);
+    return m_pEditorSize->mediumSize();
 }
 
 void UIWizardNewVDPage3::setMediumSize(qulonglong uMediumSize)
 {
-    /* Block signals: */
-    m_pSizeSlider->blockSignals(true);
-    m_pSizeEditor->blockSignals(true);
-    /* Set values: */
-    m_pSizeSlider->setValue(sizeMBToSlider(uMediumSize, m_iSliderScale));
-    m_pSizeEditor->setText(vboxGlobal().formatSize(uMediumSize));
-    updateSizeToolTips(uMediumSize);
-    /* Unblock signals: */
-    m_pSizeSlider->blockSignals(false);
-    m_pSizeEditor->blockSignals(false);
+    m_pEditorSize->setMediumSize(uMediumSize);
 }
 
 UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
@@ -304,56 +192,19 @@ UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, 
             pLocationLayout->addWidget(m_pLocationOpenButton);
         }
         m_pSizeLabel = new QIRichTextLabel(this);
-        QGridLayout *m_pSizeLayout = new QGridLayout;
-        {
-            m_pSizeSlider = new QSlider(this);
-            {
-                m_pSizeSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                m_pSizeSlider->setOrientation(Qt::Horizontal);
-                m_pSizeSlider->setTickPosition(QSlider::TicksBelow);
-                m_pSizeSlider->setFocusPolicy(Qt::StrongFocus);
-                m_pSizeSlider->setPageStep(m_iSliderScale);
-                m_pSizeSlider->setSingleStep(m_iSliderScale / 8);
-                m_pSizeSlider->setTickInterval(0);
-                m_pSizeSlider->setMinimum(sizeMBToSlider(m_uMediumSizeMin, m_iSliderScale));
-                m_pSizeSlider->setMaximum(sizeMBToSlider(m_uMediumSizeMax, m_iSliderScale));
-            }
-            m_pSizeEditor = new QILineEdit(this);
-            {
-                m_pSizeEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-                m_pSizeEditor->setFixedWidthByText("88888.88 MB");
-                m_pSizeEditor->setAlignment(Qt::AlignRight);
-                m_pSizeEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
-            }
-            QLabel *m_pSizeMin = new QLabel(this);
-            {
-                m_pSizeMin->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                m_pSizeMin->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
-            }
-            QLabel *m_pSizeMax = new QLabel(this);
-            {
-                m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                m_pSizeMax->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
-            }
-            m_pSizeLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
-            m_pSizeLayout->addWidget(m_pSizeEditor, 0, 3);
-            m_pSizeLayout->addWidget(m_pSizeMin, 1, 0);
-            m_pSizeLayout->setColumnStretch(1, 1);
-            m_pSizeLayout->addWidget(m_pSizeMax, 1, 2);
-        }
+        m_pEditorSize = new UIMediumSizeEditor;
         setMediumSize(uDefaultSize);
         pMainLayout->addWidget(m_pLocationLabel);
         pMainLayout->addLayout(pLocationLayout);
         pMainLayout->addWidget(m_pSizeLabel);
-        pMainLayout->addLayout(m_pSizeLayout);
+        pMainLayout->addWidget(m_pEditorSize);
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
     connect(m_pLocationEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
     connect(m_pLocationOpenButton, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
-    connect(m_pSizeSlider, SIGNAL(valueChanged(int)), this, SLOT(sltSizeSliderValueChanged(int)));
-    connect(m_pSizeEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltSizeEditorTextChanged(const QString &)));
+    connect(m_pEditorSize, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageBasic3::completeChanged);
 
     /* Register fields: */
     registerField("mediumPath", this, "mediumPath");
@@ -364,24 +215,6 @@ void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
 {
     /* Call to base-class: */
     onSelectLocationButtonClicked();
-}
-
-void UIWizardNewVDPageBasic3::sltSizeSliderValueChanged(int iValue)
-{
-    /* Call to base-class: */
-    onSizeSliderValueChanged(iValue);
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
-}
-
-void UIWizardNewVDPageBasic3::sltSizeEditorTextChanged(const QString &strValue)
-{
-    /* Call to base-class: */
-    onSizeEditorTextChanged(strValue);
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
 }
 
 void UIWizardNewVDPageBasic3::retranslateUi()

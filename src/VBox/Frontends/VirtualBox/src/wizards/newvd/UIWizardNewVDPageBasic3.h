@@ -25,9 +25,8 @@
 class CMediumFormat;
 class QLineEdit;
 class QIToolButton;
-class QSlider;
-class QILineEdit;
 class QIRichTextLabel;
+class UIMediumSizeEditor;
 
 /* 3rd page of the New Virtual Hard Drive wizard (base part): */
 class UIWizardNewVDPage3 : public UIWizardPageBase
@@ -39,20 +38,11 @@ protected:
 
     /* Handlers: */
     void onSelectLocationButtonClicked();
-    void onSizeSliderValueChanged(int iValue);
-    void onSizeEditorTextChanged(const QString &strValue);
 
     /* Location-editors stuff: */
     static QString toFileName(const QString &strName, const QString &strExtension);
     static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
     static QString defaultExtension(const CMediumFormat &mediumFormatRef);
-
-    /* Size-editors stuff: */
-    static int calculateSliderScale(qulonglong uMaximumMediumSize);
-    static int log2i(qulonglong uValue);
-    static int sizeMBToSlider(qulonglong uValue, int iSliderScale);
-    static qulonglong sliderToSizeMB(int uValue, int iSliderScale);
-    void updateSizeToolTips(qulonglong uSize);
 
     /* Stuff for 'mediumPath' field: */
     QString mediumPath() const;
@@ -67,13 +57,11 @@ protected:
     QString m_strDefaultExtension;
     qulonglong m_uMediumSizeMin;
     qulonglong m_uMediumSizeMax;
-    int m_iSliderScale;
 
     /* Widgets: */
     QLineEdit *m_pLocationEditor;
     QIToolButton *m_pLocationOpenButton;
-    QSlider *m_pSizeSlider;
-    QILineEdit *m_pSizeEditor;
+    UIMediumSizeEditor *m_pEditorSize;
 };
 
 /* 3rd page of the New Virtual Hard Drive wizard (basic extension): */
@@ -99,10 +87,6 @@ private slots:
 
     /* Location editors stuff: */
     void sltSelectLocationButtonClicked();
-
-    /* Size editors stuff: */
-    void sltSizeSliderValueChanged(int iValue);
-    void sltSizeEditorTextChanged(const QString &strValue);
 
 private:
 

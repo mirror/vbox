@@ -40,6 +40,7 @@
 # include "QIRichTextLabel.h"
 # include "QIToolButton.h"
 # include "QILineEdit.h"
+# include "UIMediumSizeEditor.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -76,42 +77,12 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
         m_pSizeCnt = new QGroupBox(this);
         {
             m_pSizeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *pSizeCntLayout = new QGridLayout(m_pSizeCnt);
+            QVBoxLayout *pSizeCntLayout = new QVBoxLayout(m_pSizeCnt);
             {
-                m_pSizeSlider = new QSlider(m_pSizeCnt);
+                m_pEditorSize = new UIMediumSizeEditor;
                 {
-                    m_pSizeSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                    m_pSizeSlider->setOrientation(Qt::Horizontal);
-                    m_pSizeSlider->setTickPosition(QSlider::TicksBelow);
-                    m_pSizeSlider->setFocusPolicy(Qt::StrongFocus);
-                    m_pSizeSlider->setPageStep(m_iSliderScale);
-                    m_pSizeSlider->setSingleStep(m_iSliderScale / 8);
-                    m_pSizeSlider->setTickInterval(0);
-                    m_pSizeSlider->setMinimum(sizeMBToSlider(m_uMediumSizeMin, m_iSliderScale));
-                    m_pSizeSlider->setMaximum(sizeMBToSlider(m_uMediumSizeMax, m_iSliderScale));
+                    pSizeCntLayout->addWidget(m_pEditorSize);
                 }
-                m_pSizeEditor = new QILineEdit(m_pSizeCnt);
-                {
-                    m_pSizeEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-                    m_pSizeEditor->setFixedWidthByText("88888.88 MB");
-                    m_pSizeEditor->setAlignment(Qt::AlignRight);
-                    m_pSizeEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
-                }
-                QLabel *m_pSizeMin = new QLabel(m_pSizeCnt);
-                {
-                    m_pSizeMin->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                    m_pSizeMin->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
-                }
-                QLabel *m_pSizeMax = new QLabel(m_pSizeCnt);
-                {
-                    m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                    m_pSizeMax->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
-                }
-                pSizeCntLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
-                pSizeCntLayout->addWidget(m_pSizeEditor, 0, 3);
-                pSizeCntLayout->addWidget(m_pSizeMin, 1, 0);
-                pSizeCntLayout->setColumnStretch(1, 1);
-                pSizeCntLayout->addWidget(m_pSizeMax, 1, 2);
             }
         }
         m_pFormatCnt = new QGroupBox(this);
@@ -194,8 +165,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
     connect(m_pSplitBox, SIGNAL(stateChanged(int)), this, SIGNAL(completeChanged()));
     connect(m_pLocationEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
     connect(m_pLocationOpenButton, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
-    connect(m_pSizeSlider, SIGNAL(valueChanged(int)), this, SLOT(sltSizeSliderValueChanged(int)));
-    connect(m_pSizeEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltSizeEditorTextChanged(const QString &)));
+    connect(m_pEditorSize, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageExpert::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<CMediumFormat>();
@@ -241,20 +211,6 @@ void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
 {
     /* Call to base-class: */
     onSelectLocationButtonClicked();
-}
-
-void UIWizardNewVDPageExpert::sltSizeSliderValueChanged(int iValue)
-{
-    onSizeSliderValueChanged(iValue);
-
-    emit completeChanged();
-}
-
-void UIWizardNewVDPageExpert::sltSizeEditorTextChanged(const QString &strValue)
-{
-    onSizeEditorTextChanged(strValue);
-
-    emit completeChanged();
 }
 
 void UIWizardNewVDPageExpert::retranslateUi()

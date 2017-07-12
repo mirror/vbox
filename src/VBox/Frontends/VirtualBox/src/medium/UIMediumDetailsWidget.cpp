@@ -36,6 +36,7 @@
 # include "UIFilePathSelector.h"
 # include "UIIconPool.h"
 # include "UIMediumDetailsWidget.h"
+# include "UIMediumSizeEditor.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -52,10 +53,7 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pTabWidget(0)
     , m_pLabelType(0), m_pComboBoxType(0), m_pErrorPaneType(0)
     , m_pLabelLocation(0), m_pSelectorLocation(0), m_pErrorPaneLocation(0)
-    , m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(vboxGlobal().virtualBox().GetSystemProperties().GetInfoVDSize())
-    , m_iSliderScale(calculateSliderScale(m_uMediumSizeMax))
-    , m_pLabelSize(0), m_pSliderSize(0), m_pLabelMinSize(0), m_pLabelMaxSize(0), m_pEditorSize(0), m_pErrorPaneSize(0)
+    , m_pLabelSize(0), m_pEditorSize(0), m_pErrorPaneSize(0)
     , m_pButtonBox(0)
     , m_pLayoutDetails(0)
 {
@@ -94,15 +92,12 @@ void UIMediumDetailsWidget::retranslateUi()
     m_pLabelType->setText(tr("&Type:"));
     m_pLabelLocation->setText(tr("&Location:"));
     m_pLabelSize->setText(tr("&Size:"));
-    m_pLabelMinSize->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
-    m_pLabelMaxSize->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
 
     /* Translate fields: */
     m_pComboBoxType->setToolTip(tr("Holds the type of this medium."));
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
         m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
     m_pSelectorLocation->setToolTip(tr("Holds the location of this medium."));
-    m_pSliderSize->setToolTip(tr("Holds the size of this medium."));
     m_pEditorSize->setToolTip(tr("Holds the size of this medium."));
 
     /* Translate button-box: */
@@ -140,25 +135,10 @@ void UIMediumDetailsWidget::sltLocationPathChanged(const QString &strPath)
     updateButtonStates();
 }
 
-void UIMediumDetailsWidget::sltSizeSliderChanged(int iValue)
+void UIMediumDetailsWidget::sltSizeEditorChanged(qulonglong uSize)
 {
-    m_newData.m_options.m_uLogicalSize = sliderToSizeMB(iValue, m_iSliderScale);
-    m_pEditorSize->blockSignals(true);
-    m_pEditorSize->setText(vboxGlobal().formatSize(m_newData.m_options.m_uLogicalSize));
-    m_pEditorSize->blockSignals(false);
+    m_newData.m_options.m_uLogicalSize = uSize;
     revalidate(m_pErrorPaneSize);
-    updateSizeToolTips(m_newData.m_options.m_uLogicalSize);
-    updateButtonStates();
-}
-
-void UIMediumDetailsWidget::sltSizeEditorChanged(const QString &strValue)
-{
-    m_newData.m_options.m_uLogicalSize = vboxGlobal().parseSize(strValue);
-    m_pSliderSize->blockSignals(true);
-    m_pSliderSize->setValue(sizeMBToSlider(m_newData.m_options.m_uLogicalSize, m_iSliderScale));
-    m_pSliderSize->blockSignals(false);
-    revalidate(m_pErrorPaneSize);
-    updateSizeToolTips(m_newData.m_options.m_uLogicalSize);
     updateButtonStates();
 }
 
@@ -356,69 +336,19 @@ void UIMediumDetailsWidget::prepareTabOptions()
             {
                 /* Configure layout: */
                 pLayoutSize->setContentsMargins(0, 0, 0, 0);
-                pLayoutSize->setColumnStretch(0, 1);
-                pLayoutSize->setColumnStretch(1, 1);
-                pLayoutSize->setColumnStretch(2, 0);
-                pLayoutSize->setColumnStretch(3, 0);
-
-                /* Create size slider: */
-                m_pSliderSize = new QSlider;
-                AssertPtrReturnVoid(m_pSliderSize);
-                {
-                    /* Configure slider: */
-                    m_pSliderSize->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-                    m_pSliderSize->setOrientation(Qt::Horizontal);
-                    m_pSliderSize->setTickPosition(QSlider::TicksBelow);
-                    m_pSliderSize->setFocusPolicy(Qt::StrongFocus);
-                    m_pSliderSize->setPageStep(m_iSliderScale);
-                    m_pSliderSize->setSingleStep(m_iSliderScale / 8);
-                    m_pSliderSize->setTickInterval(0);
-                    m_pSliderSize->setMinimum(sizeMBToSlider(m_uMediumSizeMin, m_iSliderScale));
-                    m_pSliderSize->setMaximum(sizeMBToSlider(m_uMediumSizeMax, m_iSliderScale));
-                    connect(m_pSliderSize, &QSlider::valueChanged,
-                            this, &UIMediumDetailsWidget::sltSizeSliderChanged);
-
-                    /* Add into layout: */
-                    pLayoutSize->addWidget(m_pSliderSize, 0, 0, 1, 2);
-                }
-
-                /* Create minimum size label: */
-                m_pLabelMinSize = new QLabel;
-                AssertPtrReturnVoid(m_pLabelMinSize);
-                {
-                    /* Configure label: */
-                    m_pLabelMinSize->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-
-                    /* Add into layout: */
-                    pLayoutSize->addWidget(m_pLabelMinSize, 1, 0);
-                }
-
-                /* Create maximum size label: */
-                m_pLabelMaxSize = new QLabel;
-                AssertPtrReturnVoid(m_pLabelMaxSize);
-                {
-                    /* Configure label: */
-                    m_pLabelMaxSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-
-                    /* Add into layout: */
-                    pLayoutSize->addWidget(m_pLabelMaxSize, 1, 1);
-                }
 
                 /* Create size editor: */
-                m_pEditorSize = new QILineEdit;
+                m_pEditorSize = new UIMediumSizeEditor;
                 AssertPtrReturnVoid(m_pEditorSize);
                 {
                     /* Configure editor: */
                     m_pLabelSize->setBuddy(m_pEditorSize);
-                    m_pEditorSize->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-                    m_pEditorSize->setFixedWidthByText("88888.88 MB");
-                    m_pEditorSize->setAlignment(Qt::AlignRight);
-                    m_pEditorSize->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
-                    connect(m_pEditorSize, &QILineEdit::textChanged,
+                    m_pEditorSize->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+                    connect(m_pEditorSize, &UIMediumSizeEditor::sigSizeChanged,
                             this, &UIMediumDetailsWidget::sltSizeEditorChanged);
 
                     /* Add into layout: */
-                    pLayoutSize->addWidget(m_pEditorSize, 0, 2);
+                    pLayoutSize->addWidget(m_pEditorSize, 0, 0, 2, 1);
                 }
 
                 /* Create size error pane: */
@@ -431,7 +361,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                                                     .pixmap(QSize(iIconMetric, iIconMetric)));
 
                     /* Add into layout: */
-                    pLayoutSize->addWidget(m_pErrorPaneSize, 0, 3);
+                    pLayoutSize->addWidget(m_pErrorPaneSize, 0, 1);
                 }
 
                 /* Add into layout: */
@@ -591,11 +521,8 @@ void UIMediumDetailsWidget::loadDataForOptions()
 
     /* Load size: */
     m_pLabelSize->setEnabled(m_newData.m_fValid && m_newData.m_enmType == UIMediumType_HardDisk);
-    m_pSliderSize->setEnabled(m_newData.m_fValid && m_newData.m_enmType == UIMediumType_HardDisk);
-    m_pLabelMinSize->setEnabled(m_newData.m_fValid && m_newData.m_enmType == UIMediumType_HardDisk);
-    m_pLabelMaxSize->setEnabled(m_newData.m_fValid && m_newData.m_enmType == UIMediumType_HardDisk);
     m_pEditorSize->setEnabled(m_newData.m_fValid && m_newData.m_enmType == UIMediumType_HardDisk);
-    m_pEditorSize->setText(vboxGlobal().formatSize(m_newData.m_options.m_uLogicalSize));
+    m_pEditorSize->setMediumSize(m_newData.m_options.m_uLogicalSize);
 }
 
 void UIMediumDetailsWidget::loadDataForDetails()
@@ -670,85 +597,6 @@ void UIMediumDetailsWidget::updateButtonStates()
 
     /* Notify listeners as well: */
     emit sigDataChanged(m_oldData != m_newData);
-}
-
-/* static */
-int UIMediumDetailsWidget::calculateSliderScale(qulonglong uMaximumMediumSize)
-{
-    /* Detect how many steps to recognize between adjacent powers of 2
-     * to ensure that the last slider step is exactly that we need: */
-    int iSliderScale = 0;
-    int iPower = log2i(uMaximumMediumSize);
-    qulonglong uTickMB = (qulonglong)1 << iPower;
-    if (uTickMB < uMaximumMediumSize)
-    {
-        qulonglong uTickMBNext = (qulonglong)1 << (iPower + 1);
-        qulonglong uGap = uTickMBNext - uMaximumMediumSize;
-        iSliderScale = (int)((uTickMBNext - uTickMB) / uGap);
-#ifdef VBOX_WS_MAC
-        // WORKAROUND:
-        // There is an issue with Qt5 QSlider under OSX:
-        // Slider tick count (maximum - minimum) is limited with some
-        // "magical number" - 588351, having it more than that brings
-        // unpredictable results like slider token jumping and disappearing,
-        // so we are limiting tick count by lowering slider-scale 128 times.
-        iSliderScale /= 128;
-#endif /* VBOX_WS_MAC */
-    }
-    return qMax(iSliderScale, 8);
-}
-
-/* static */
-int UIMediumDetailsWidget::log2i(qulonglong uValue)
-{
-    int iPower = -1;
-    while (uValue)
-    {
-        ++iPower;
-        uValue >>= 1;
-    }
-    return iPower;
-}
-
-/* static */
-int UIMediumDetailsWidget::sizeMBToSlider(qulonglong uValue, int iSliderScale)
-{
-    /* Make sure *any* slider value is multiple of 512: */
-    uValue /= 512;
-
-    /* Calculate result: */
-    int iPower = log2i(uValue);
-    qulonglong uTickMB = qulonglong (1) << iPower;
-    qulonglong uTickMBNext = qulonglong (1) << (iPower + 1);
-    int iStep = (uValue - uTickMB) * iSliderScale / (uTickMBNext - uTickMB);
-    int iResult = iPower * iSliderScale + iStep;
-
-    /* Return result: */
-    return iResult;
-}
-
-/* static */
-qulonglong UIMediumDetailsWidget::sliderToSizeMB(int uValue, int iSliderScale)
-{
-    /* Calculate result: */
-    int iPower = uValue / iSliderScale;
-    int iStep = uValue % iSliderScale;
-    qulonglong uTickMB = qulonglong (1) << iPower;
-    qulonglong uTickMBNext = qulonglong (1) << (iPower + 1);
-    qulonglong uResult = uTickMB + (uTickMBNext - uTickMB) * iStep / iSliderScale;
-
-    /* Make sure *any* slider value is multiple of 512: */
-    uResult *= 512;
-
-    /* Return result: */
-    return uResult;
-}
-
-void UIMediumDetailsWidget::updateSizeToolTips(qulonglong uSize)
-{
-    const QString strToolTip = tr("<nobr>%1 (%2 B)</nobr>").arg(vboxGlobal().formatSize(uSize)).arg(uSize);
-    m_pSliderSize->setToolTip(strToolTip);
-    m_pEditorSize->setToolTip(strToolTip);
 }
 
 QWidget *UIMediumDetailsWidget::infoContainer(UIMediumType enmType) const
