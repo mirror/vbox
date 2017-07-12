@@ -1858,7 +1858,7 @@ BEGINPROC SVMR0VMRun
     vmsave
 
     ; Load host fs, gs, sysenter msr etc.
-    pop     rax                             ; load HCPhysVmcbHost (pushed above)
+    pop     xAX                             ; load HCPhysVmcbHost (pushed above)
     vmload
 
     ; Set the global interrupt flag again, but execute cli to make sure IF=0.
