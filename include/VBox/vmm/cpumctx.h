@@ -478,31 +478,37 @@ typedef struct CPUMCTX
                 uint64_t            uMsrHSavePa;
                 /** 736 - Guest physical address of the nested-guest VMCB. */
                 RTGCPHYS            GCPhysVmcb;
-                /** 744 - Cache of the nested-guest VMCB control area. */
-                SVMVMCBCTRL         VmcbCtrl;
-                /** 1000 - Guest's host-state save area. */
+                /** 744 - Cache of the nested-guest VMCB - R0 ptr. */
+                R0PTRTYPE(PSVMVMCB) pVmcbR0;
+                /** 752 / 748 - Cache of the nested-guest VMCB - R3 ptr. */
+                R3PTRTYPE(PSVMVMCB) pVmcbR3;
+#if HC_ARCH_BITS == 32
+                /** NA / 752 - Padding. */
+                uint8_t             abPadding0[8];
+#endif
+                /** 760 - Guest's host-state save area. */
                 SVMHOSTSTATE        HostState;
-                /** 1184 - Global interrupt flag. */
+                /** 944 - Global interrupt flag. */
                 uint8_t             fGif;
-                /** 1185 - Pause filter count. */
+                /** 945 - Pause filter count. */
                 uint16_t            cPauseFilter;
-                /** 1187 - Pause filter count. */
+                /** 947 - Pause filter count. */
                 uint16_t            cPauseFilterThreshold;
-                /** 1189 - Whether the injected event is subject to event intercepts. */
+                /** 949 - Whether the injected event is subject to event intercepts. */
                 uint8_t             fInterceptEvents;
-                /** 1190 - Padding. */
-                uint8_t             abPadding0[2];
-                /** 1192 - MSR permission bitmap - R0 ptr. */
+                /** 950 - Padding. */
+                uint8_t             abPadding1[2];
+                /** 952 - MSR permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvMsrBitmapR0;
-                /** 1200 / 1196 - MSR permission bitmap - R3 ptr. */
+                /** 960 / 956 - MSR permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)   pvMsrBitmapR3;
-                /** 1208 / 1200 - IO permission bitmap - R0 ptr. */
+                /** 968 / 960 - IO permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvIoBitmapR0;
-                /** 1216 / 1204 - IO permission bitmap - R3 ptr. */
+                /** 976 / 964 - IO permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)   pvIoBitmapR3;
 #if HC_ARCH_BITS == 32
-                /** NA / 1200 - Padding. */
-                uint8_t             abPadding1[16];
+                /** NA / 968 - Padding. */
+                uint8_t             abPadding2[16];
 #endif
             } svm;
 #if 0
@@ -512,11 +518,11 @@ typedef struct CPUMCTX
 #endif
         } CPUM_UNION_NM(s);
 
-        /** 1224 - A subset of force flags that are preserved while running
+        /** 984 - A subset of force flags that are preserved while running
          *  the nested-guest. */
         uint32_t                fLocalForcedActions;
         /** 1212 - Padding. */
-        uint8_t                 abPadding1[52];
+        uint8_t                 abPadding1[36];
     } hwvirt;
     /** @} */
 } CPUMCTX;
@@ -574,17 +580,21 @@ AssertCompileMemberOffset(CPUMCTX,                 aoffXState, HC_ARCH_BITS == 6
 AssertCompileMemberOffset(CPUMCTX, hwvirt, 728);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,            728);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.GCPhysVmcb,             736);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.VmcbCtrl,               744);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,             1000);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,                  1184);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,          1185);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilterThreshold, 1187);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fInterceptEvents,      1189);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,         1192);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3,         HC_ARCH_BITS == 64 ? 1200 : 1196);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,          HC_ARCH_BITS == 64 ? 1208 : 1200);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,          HC_ARCH_BITS == 64 ? 1216 : 1204);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) fLocalForcedActions,       1224);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,                744);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR3,                HC_ARCH_BITS == 64 ? 752 : 748);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,              760);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,                   944);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,           945);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilterThreshold,  947);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fInterceptEvents,       949);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,          952);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3,          HC_ARCH_BITS == 64 ? 960 : 956);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,           HC_ARCH_BITS == 64 ? 968 : 960);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,           HC_ARCH_BITS == 64 ? 976 : 964);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) fLocalForcedActions,        984);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,       8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0, 8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,  8);
 
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);

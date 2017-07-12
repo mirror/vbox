@@ -2554,10 +2554,14 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
  */
 VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
 {
+#ifdef IN_RC
+    RT_NOREF(pCtx);
+    AssertReleaseFailedReturn(false);
+#else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(pCtx->hwvirt.svm.fGif);
 
-    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     X86EFLAGS fEFlags;
     if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
         fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
@@ -2565,6 +2569,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
         fEFlags.u = pCtx->eflags.u;
 
     return fEFlags.Bits.u1IF;
+#endif
 }
 
 
@@ -2579,9 +2584,13 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PCCPUMCTX pCtx)
  */
 VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
 {
+#ifdef IN_RC
+    RT_NOREF(pCtx);
+    AssertReleaseFailedReturn(false);
+#else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
-    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
         &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
         return false;
@@ -2593,6 +2602,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
         return false;
 
     return true;
+#endif
 }
 
 
@@ -2604,7 +2614,12 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
  */
 VMM_INT_DECL(uint8_t) CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx)
 {
-    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.VmcbCtrl;
+#ifdef IN_RC
+    RT_NOREF(pCtx);
+    AssertReleaseFailedReturn(0);
+#else
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     return pVmcbCtrl->IntCtrl.n.u8VIntrVector;
+#endif
 }
 

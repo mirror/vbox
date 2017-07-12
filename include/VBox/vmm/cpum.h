@@ -1314,6 +1314,7 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
     return RT_BOOL(pCtx->msrEFER & MSR_K6_EFER_SVME);
 }
 
+#ifndef IN_RC
 /**
  * Checks if the guest VMCB has the specified ctrl/instruction intercept active.
  *
@@ -1324,7 +1325,8 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
  */
 DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCCPUMCTX pCtx, uint64_t fIntercept)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u64InterceptCtrl & fIntercept);
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    return RT_BOOL(pVmcbCtrl->u64InterceptCtrl & fIntercept);
 }
 
 /**
@@ -1337,7 +1339,8 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCCPUMCTX pCtx, uint64_t fInterc
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptRdCRx & (1 << uCr));
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    return RT_BOOL(pVmcbCtrl->u16InterceptRdCRx & (1 << uCr));
 }
 
 /**
@@ -1350,7 +1353,8 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptWrCRx & (1 << uCr));
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    return RT_BOOL(pVmcbCtrl->u16InterceptWrCRx & (1 << uCr));
 }
 
 /**
@@ -1363,7 +1367,8 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCCPUMCTX pCtx, uint8_t uCr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptRdDRx & (1 << uDr));
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    return RT_BOOL(pVmcbCtrl->u16InterceptRdDRx & (1 << uDr));
 }
 
 /**
@@ -1376,7 +1381,8 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptWrDRx & (1 << uDr));
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    return RT_BOOL(pVmcbCtrl->u16InterceptWrDRx & (1 << uDr));
 }
 
 /**
@@ -1390,8 +1396,10 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCCPUMCTX pCtx, uint8_t uDr)
 DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector)
 {
     Assert(uVector < 32);
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u32InterceptXcpt & (UINT32_C(1) << uVector));
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    return RT_BOOL(pVmcbCtrl->u32InterceptXcpt & (UINT32_C(1) << uVector));
 }
+#endif /* !IN_RC */
 
 /**
  * Checks if we are executing inside an SVM nested hardware-virtualized guest.
@@ -1405,7 +1413,13 @@ DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
      * With AMD-V, the VMRUN intercept is a pre-requisite to entering SVM guest-mode.
      * See AMD spec. 15.5 "VMRUN instruction" subsection "Canonicalization and Consistency Checks".
      */
-    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
+#ifndef IN_RC
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    return RT_BOOL(pVmcbCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
+#else
+    RT_NOREF(pCtx);
+    return false;
+#endif
 }
 
 /**
@@ -1416,8 +1430,8 @@ DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
  */
 DECLINLINE(bool) CPUMIsGuestInVmxNestedHwVirtMode(PCCPUMCTX pCtx)
 {
-    RT_NOREF1(pCtx);
     /** @todo Intel. */
+    RT_NOREF(pCtx);
     return false;
 }
 

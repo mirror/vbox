@@ -761,6 +761,12 @@ static void cpumR3FreeHwVirtState(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
+        if (pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3)
+        {
+            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3, SVM_VMCB_PAGES);
+            pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3 = NULL;
+        }
+
         if (pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES);
@@ -792,6 +798,19 @@ static int cpumR3AllocHwVirtState(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
+
+        /*
+         * Allocate the nested-guest VMCB.
+         */
+        Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
+        rc = SUPR3PageAllocEx(SVM_VMCB_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3,
+                              (PRTR0PTR)pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0, NULL /* paPages */);
+        if (RT_FAILURE(rc))
+        {
+            Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMCB\n", pVCpu->idCpu, SVM_VMCB_PAGES));
+            break;
+        }
 
         /*
          * Allocate the MSRPM (MSR Permission bitmap).
@@ -1249,7 +1268,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * Hardware virtualization state.
      */
     /* SVM. */
-    RT_ZERO(pCtx->hwvirt.svm.VmcbCtrl);
+    memset(&pCtx->hwvirt.svm, 0, sizeof(pCtx->hwvirt.svm));
     pCtx->hwvirt.svm.fGif = 1;
 }
 
@@ -2224,7 +2243,8 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  uMsrHSavePa                = %#RX64\n",    pCtx->hwvirt.svm.uMsrHSavePa);
         pHlp->pfnPrintf(pHlp, "  GCPhysVmcb                 = %#RGp\n",     pCtx->hwvirt.svm.GCPhysVmcb);
         pHlp->pfnPrintf(pHlp, "  VmcbCtrl:\n");
-        HMR3InfoSvmVmcbCtrl(pHlp, &pCtx->hwvirt.svm.VmcbCtrl, "    " /* pszPrefix */);
+        HMR3InfoSvmVmcbCtrl(pHlp, &pCtx->hwvirt.svm.pVmcbR3->ctrl, "    " /* pszPrefix */);
+        /** @todo HMR3InfoSvmVmcbStateSave. */
         pHlp->pfnPrintf(pHlp, "  HostState:\n");
         pHlp->pfnPrintf(pHlp, "    uEferMsr                   = %#RX64\n",  pCtx->hwvirt.svm.HostState.uEferMsr);
         pHlp->pfnPrintf(pHlp, "    uCr0                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uCr0);
