@@ -208,16 +208,19 @@ void UIMediumDetailsWidget::prepareTabOptions()
             AssertPtrReturnVoid(m_pLabelType);
             {
                 /* Configure label: */
-                m_pLabelType->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
                 /* Add into layout: */
                 pLayoutOptions->addWidget(m_pLabelType, 0, 0);
             }
+
             /* Create type layout: */
             QHBoxLayout *pLayoutType = new QHBoxLayout;
             AssertPtrReturnVoid(pLayoutType);
             {
                 /* Configure layout: */
                 pLayoutType->setContentsMargins(0, 0, 0, 0);
+
                 /* Create type editor: */
                 m_pComboBoxType = new QComboBox;
                 AssertPtrReturnVoid(m_pComboBoxType);
@@ -231,6 +234,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                     /* Add into layout: */
                     pLayoutType->addWidget(m_pComboBoxType);
                 }
+
                 /* Create type error pane: */
                 m_pErrorPaneType = new QLabel;
                 AssertPtrReturnVoid(m_pErrorPaneType);
@@ -239,9 +243,11 @@ void UIMediumDetailsWidget::prepareTabOptions()
                     m_pErrorPaneType->setAlignment(Qt::AlignCenter);
                     m_pErrorPaneType->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
                                                 .pixmap(QSize(iIconMetric, iIconMetric)));
+
                     /* Add into layout: */
                     pLayoutType->addWidget(m_pErrorPaneType);
                 }
+
                 /* Add into layout: */
                 pLayoutOptions->addLayout(pLayoutType, 0, 1);
             }
@@ -251,16 +257,19 @@ void UIMediumDetailsWidget::prepareTabOptions()
             AssertPtrReturnVoid(m_pLabelLocation);
             {
                 /* Configure label: */
-                m_pLabelLocation->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelLocation->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
                 /* Add into layout: */
                 pLayoutOptions->addWidget(m_pLabelLocation, 1, 0);
             }
+
             /* Create location layout: */
             QHBoxLayout *pLayoutLocation = new QHBoxLayout;
             AssertPtrReturnVoid(pLayoutLocation);
             {
                 /* Configure layout: */
                 pLayoutLocation->setContentsMargins(0, 0, 0, 0);
+
                 /* Create location editor: */
                 m_pSelectorLocation = new UIFilePathSelector;
                 AssertPtrReturnVoid(m_pSelectorLocation);
@@ -276,6 +285,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                     /* Add into layout: */
                     pLayoutLocation->addWidget(m_pSelectorLocation);
                 }
+
                 /* Create location error pane: */
                 m_pErrorPaneLocation = new QLabel;
                 AssertPtrReturnVoid(m_pErrorPaneLocation);
@@ -287,6 +297,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                     /* Add into layout: */
                     pLayoutLocation->addWidget(m_pErrorPaneLocation);
                 }
+
                 /* Add into layout: */
                 pLayoutOptions->addLayout(pLayoutLocation, 1, 1);
             }
@@ -310,7 +321,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIMediumDetailsWidget::sltHandleButtonBoxClick);
 
                 /* Add into layout: */
-                pLayoutOptions->addWidget(m_pButtonBox, 2, 0, 1, 2);
+                pLayoutOptions->addWidget(m_pButtonBox, 3, 0, 1, 2);
             }
         }
 
@@ -403,6 +414,8 @@ void UIMediumDetailsWidget::prepareInformationContainer(UIMediumType enmType, in
 void UIMediumDetailsWidget::loadDataForOptions()
 {
     /* Clear type combo-box: */
+    m_pLabelType->setEnabled(m_newData.m_fValid);
+    m_pComboBoxType->setEnabled(m_newData.m_fValid);
     m_pComboBoxType->clear();
     if (m_newData.m_fValid)
     {
@@ -435,6 +448,8 @@ void UIMediumDetailsWidget::loadDataForOptions()
     sltTypeIndexChanged(m_pComboBoxType->currentIndex());
 
     /* Load location: */
+    m_pLabelLocation->setEnabled(m_newData.m_fValid);
+    m_pSelectorLocation->setEnabled(m_newData.m_fValid);
     m_pSelectorLocation->setPath(m_newData.m_options.m_strLocation);
     sltLocationPathChanged(m_pSelectorLocation->path());
 }
