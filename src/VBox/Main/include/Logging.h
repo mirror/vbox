@@ -18,15 +18,21 @@
 #ifndef ____H_LOGGING
 #define ____H_LOGGING
 
-/** @def LOG_GROUP_MAIN_OVERRIDE
- *  Define this macro to point to the desired log group before including
- *  the |Logging.h| header if you want to use a group other than LOG_GROUP_MAIN
- *  for logging from within Main source files.
+/* @def LOG_GROUP_MAIN_OVERRIDE
  *
- *  Example:
- *  @code
- *  #define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
- *  @endcode
+ * DEPRECATED: Define this macro to point to the desired log group before including
+ * DEPRECATED: the |Logging.h| header if you want to use a group other than LOG_GROUP_MAIN
+ * DEPRECATED: for logging from within Main source files.
+ * DEPRECATED:
+ * DEPRECATED: Example:
+ * DEPRECATED: @code
+ * DEPRECATED: #define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_HGCM
+ * DEPRECATED: @endcode
+ *
+ * INSTEAD: Please define LOG_GROUP and include LoggingNew.h at the top of the source file!
+ * INSTEAD: Please define LOG_GROUP and include LoggingNew.h at the top of the source file!
+ * INSTEAD: Please define LOG_GROUP and include LoggingNew.h at the top of the source file!
+ *
  */
 
 /*
