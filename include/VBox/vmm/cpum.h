@@ -1415,7 +1415,7 @@ DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
      */
 #ifndef IN_RC
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-    return RT_BOOL(pVmcbCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
+    return RT_BOOL(pVmcbCtrl && pVmcbCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
 #else
     RT_NOREF(pCtx);
     return false;
