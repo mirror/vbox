@@ -28,6 +28,7 @@
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
+#include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -389,9 +390,7 @@ static bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const char *pszC
                 RTMsgError("CertAddCertificateContextToStore returned %s", errorToString(GetLastError()));
         }
         else
-        {
             RTMsgError("Path not implemented at line %d\n",  __LINE__);
-        }
 
         CertCloseStore(hDstStore, CERT_CLOSE_STORE_CHECK_FLAG);
     }
@@ -591,20 +590,19 @@ static RTEXITCODE cmdRemoveTrustedPublisher(int argc, char **argv)
 static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
 {
     /*
-     * Parse arguments.
+     * Parse arguments and execute imports as we move along.
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--root",     'r',    RTGETOPT_REQ_STRING },
     };
 
-    const char *pszRootCert    = NULL;
-    const char *pszTrustedCert = NULL;
-
-    int             rc;
-    RTGETOPTUNION   ValueUnion;
-    RTGETOPTSTATE   GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    RTEXITCODE          rcExit = RTEXITCODE_SUCCESS;
+    unsigned            cImports = 0;
+    RTGETOPTUNION       ValueUnion;
+    RTGETOPTSTATE       GetState;
+    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    AssertRC(rc);
     while ((rc = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (rc)
@@ -618,47 +616,39 @@ static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
                 return RTEXITCODE_SUCCESS;
 
             case 'r':
-                if (pszRootCert)
-                    return RTMsgErrorExit(RTEXITCODE_SUCCESS,
-                                          "You've already specified '%s' as root certificate.",
-                                          pszRootCert);
-                pszRootCert = ValueUnion.psz;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
-                if (pszTrustedCert)
-                    return RTMsgErrorExit(RTEXITCODE_SUCCESS,
-                                          "You've already specified '%s' as trusted certificate.",
-                                          pszTrustedCert);
-                pszTrustedCert = ValueUnion.psz;
+            {
+                const char * const  pszStoreNm   = rc == 'r' ? "Root" : "TrustedPublisher";
+                const char * const  pszStoreDesc = rc == 'r' ? "root" : "trusted publisher";
+                PCRTPATHGLOBENTRY   pResultHead;
+                rc = RTPathGlob(ValueUnion.psz, RTPATHGLOB_F_NO_DIRS, &pResultHead, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    for (PCRTPATHGLOBENTRY pCur = pResultHead; pCur; pCur = pCur->pNext)
+                    {
+                        if (addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, pszStoreNm, pCur->szPath, CERT_STORE_ADD_NEW))
+                            RTMsgInfo("Successfully added '%s' as %s", pCur->szPath, pszStoreDesc);
+                        else
+                            rcExit = RTEXITCODE_FAILURE;
+                        cImports++;
+                    }
+                    RTPathGlobFree(pResultHead);
+                }
+                else
+                {
+                    rcExit = RTMsgErrorExit(RTEXITCODE_SUCCESS, "glob failed on '%s': %Rrc", ValueUnion.psz, rc);
+                    cImports++;
+                }
                 break;
+            }
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
     }
-    if (!pszTrustedCert)
-        return RTMsgErrorExit(RTEXITCODE_SUCCESS, "No trusted certificate specified.");
-
-    /*
-     * Do the job.
-     */
-    /** @todo The root-cert part needs to be made more flexible. */
-    if (   pszRootCert
-        && !addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", pszRootCert, CERT_STORE_ADD_NEW))
-        return RTEXITCODE_FAILURE;
-
-    if (!addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, "TrustedPublisher", pszTrustedCert, CERT_STORE_ADD_NEW))
-        return RTEXITCODE_FAILURE;
-
-    if (g_cVerbosityLevel > 0)
-    {
-        if (pszRootCert)
-            RTMsgInfo("Successfully added '%s' as root and '%s' as trusted publisher", pszRootCert, pszTrustedCert);
-        else
-            RTMsgInfo("Successfully added '%s' as trusted publisher", pszTrustedCert);
-    }
-    return RTEXITCODE_SUCCESS;
+    if (cImports == 0)
+        return RTMsgErrorExit(RTEXITCODE_SUCCESS, "No trusted or root certificates specified.");
+    return rcExit;
 }
 
 
