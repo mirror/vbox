@@ -489,15 +489,17 @@ typedef struct CPUMCTX
                 /** 760 - Guest's host-state save area. */
                 SVMHOSTSTATE        HostState;
                 /** 944 - Global interrupt flag. */
-                uint8_t             fGif;
-                /** 945 - Pause filter count. */
+                bool                fGif;
+                /** 945 - Padding. */
+                uint8_t             u8Padding0;
+                /** 946 - Pause filter count. */
                 uint16_t            cPauseFilter;
-                /** 947 - Pause filter count. */
+                /** 948 - Pause filter count. */
                 uint16_t            cPauseFilterThreshold;
-                /** 949 - Whether the injected event is subject to event intercepts. */
-                uint8_t             fInterceptEvents;
-                /** 950 - Padding. */
-                uint8_t             abPadding1[2];
+                /** 950 - Whether the injected event is subject to event intercepts. */
+                bool                fInterceptEvents;
+                /** 951 - Padding. */
+                uint8_t             u8Padding1;
                 /** 952 - MSR permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvMsrBitmapR0;
                 /** 960 / 956 - MSR permission bitmap - R3 ptr. */
@@ -584,9 +586,9 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,        
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR3,                HC_ARCH_BITS == 64 ? 752 : 748);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,              760);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,                   944);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,           945);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilterThreshold,  947);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fInterceptEvents,       949);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,           946);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilterThreshold,  948);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fInterceptEvents,       950);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,          952);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3,          HC_ARCH_BITS == 64 ? 960 : 956);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,           HC_ARCH_BITS == 64 ? 968 : 960);

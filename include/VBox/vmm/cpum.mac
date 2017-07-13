@@ -266,10 +266,11 @@ struc CPUMCTX
 %endif
     .hwvirt.svm.HostState              resb        184
     .hwvirt.svm.fGif                   resb          1
+    .hwvirt.svm.u8Padding0             resb          1
     .hwvirt.svm.cPauseFilter           resw          1
     .hwvirt.svm.cPauseFilterThreshold  resw          1
     .hwvirt.svm.fInterceptEvents       resb          1
-    .hwvirt.svm.abPadding1             resb          2
+    .hwvirt.svm.u8Padding1             resb          1
     .hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES   1
     .hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES   1
     .hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES   1
