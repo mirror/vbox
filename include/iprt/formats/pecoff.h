@@ -921,9 +921,58 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V8, 0x98);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V8 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V8;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V8 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V8;
 
-typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V8   IMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef PIMAGE_LOAD_CONFIG_DIRECTORY32_V8  PIMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef PCIMAGE_LOAD_CONFIG_DIRECTORY32_V8 PCIMAGE_LOAD_CONFIG_DIRECTORY32;
+/** @since  Windows 10 build 16237 (or maybe earlier). */
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V9
+{
+    uint32_t  Size;                                 /**< 0x00 */
+    uint32_t  TimeDateStamp;                        /**< 0x04 */
+    uint16_t  MajorVersion;                         /**< 0x08 */
+    uint16_t  MinorVersion;                         /**< 0x0a */
+    uint32_t  GlobalFlagsClear;                     /**< 0x0c */
+    uint32_t  GlobalFlagsSet;                       /**< 0x10 */
+    uint32_t  CriticalSectionDefaultTimeout;        /**< 0x14 */
+    uint32_t  DeCommitFreeBlockThreshold;           /**< 0x18 */
+    uint32_t  DeCommitTotalFreeThreshold;           /**< 0x1c */
+    uint32_t  LockPrefixTable;                      /**< 0x20 */
+    uint32_t  MaximumAllocationSize;                /**< 0x24 */
+    uint32_t  VirtualMemoryThreshold;               /**< 0x28 */
+    uint32_t  ProcessHeapFlags;                     /**< 0x2c */
+    uint32_t  ProcessAffinityMask;                  /**< 0x30 */
+    uint16_t  CSDVersion;                           /**< 0x34 */
+    uint16_t  DependentLoadFlags;                   /**< 0x36 */
+    uint32_t  EditList;                             /**< 0x38 */
+    uint32_t  SecurityCookie;                       /**< 0x3c */
+    uint32_t  SEHandlerTable;                       /**< 0x40 */
+    uint32_t  SEHandlerCount;                       /**< 0x44 */
+    uint32_t  GuardCFCCheckFunctionPointer;         /**< 0x48 */
+    uint32_t  GuardCFDispatchFunctionPointer;       /**< 0x4c */
+    uint32_t  GuardCFFunctionTable;                 /**< 0x50 */
+    uint32_t  GuardCFFunctionCount;                 /**< 0x54 */
+    uint32_t  GuardFlags;                           /**< 0x58 */
+    IMAGE_LOAD_CONFIG_CODE_INTEGRITY CodeIntegrity; /**< 0x5c */
+    uint32_t  GuardAddressTakenIatEntryTable;       /**< 0x68 */
+    uint32_t  GuardAddressTakenIatEntryCount;       /**< 0x6c */
+    uint32_t  GuardLongJumpTargetTable;             /**< 0x70 */
+    uint32_t  GuardLongJumpTargetCount;             /**< 0x74 */
+    uint32_t  DynamicValueRelocTable;               /**< 0x78 */
+    uint32_t  CHPEMetadataPointer;                  /**< 0x7c Not sure when this was renamed from HybridMetadataPointer. */
+    uint32_t  GuardRFFailureRoutine;                /**< 0x80 */
+    uint32_t  GuardRFFailureRoutineFunctionPointer; /**< 0x84 */
+    uint32_t  DynamicValueRelocTableOffset;         /**< 0x88 */
+    uint16_t  DynamicValueRelocTableSection;        /**< 0x8c */
+    uint16_t  Reserved2;                            /**< 0x8e */
+    uint32_t  GuardRFVerifyStackPointerFunctionPointer; /**< 0x90 */
+    uint32_t  HotPatchTableOffset;                  /**< 0x94 */
+    uint32_t  AddressOfSomeUnicodeString;           /**< 0x98 - 64-bit version has this member about here. not sure about location yet. */
+    uint32_t  Reserved3QuestionMark;                /**< 0x9a - Did they 8-byte pad the structure or is AddressOfSomeUnicodeString 64-bit? */
+} IMAGE_LOAD_CONFIG_DIRECTORY32_V9;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V9, 0xa0);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V9 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V9;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V9 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V9;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V9   IMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY32_V9  PIMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY32_V9 PCIMAGE_LOAD_CONFIG_DIRECTORY32;
 
 
 /* No _IMAGE_LOAD_CONFIG_DIRECTORY64_V1 exists. */
@@ -1195,9 +1244,58 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V8, 0xf4);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V8 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V8;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V8 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V8;
 
-typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V8   IMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef PIMAGE_LOAD_CONFIG_DIRECTORY64_V8  PIMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef PCIMAGE_LOAD_CONFIG_DIRECTORY64_V8 PCIMAGE_LOAD_CONFIG_DIRECTORY64;
+/** @since  Windows 10 build 15002 (or maybe earlier). */
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64_V9
+{
+    uint32_t  Size;                                 /**< 0x00 */
+    uint32_t  TimeDateStamp;                        /**< 0x04 */
+    uint16_t  MajorVersion;                         /**< 0x08 */
+    uint16_t  MinorVersion;                         /**< 0x0a */
+    uint32_t  GlobalFlagsClear;                     /**< 0x0c */
+    uint32_t  GlobalFlagsSet;                       /**< 0x10 */
+    uint32_t  CriticalSectionDefaultTimeout;        /**< 0x14 */
+    uint64_t  DeCommitFreeBlockThreshold;           /**< 0x18 */
+    uint64_t  DeCommitTotalFreeThreshold;           /**< 0x20 */
+    uint64_t  LockPrefixTable;                      /**< 0x28 */
+    uint64_t  MaximumAllocationSize;                /**< 0x30 */
+    uint64_t  VirtualMemoryThreshold;               /**< 0x38 */
+    uint64_t  ProcessAffinityMask;                  /**< 0x40 */
+    uint32_t  ProcessHeapFlags;                     /**< 0x48 */
+    uint16_t  CSDVersion;                           /**< 0x4c */
+    uint16_t  DependentLoadFlags;                   /**< 0x4e */
+    uint64_t  EditList;                             /**< 0x50 */
+    uint64_t  SecurityCookie;                       /**< 0x58 */
+    uint64_t  SEHandlerTable;                       /**< 0x60 */
+    uint64_t  SEHandlerCount;                       /**< 0x68 */
+    uint64_t  GuardCFCCheckFunctionPointer;         /**< 0x70 */
+    uint64_t  GuardCFDispatchFunctionPointer;       /**< 0x78 */
+    uint64_t  GuardCFFunctionTable;                 /**< 0x80 */
+    uint64_t  GuardCFFunctionCount;                 /**< 0x88 */
+    uint32_t  GuardFlags;                           /**< 0x90 */
+    IMAGE_LOAD_CONFIG_CODE_INTEGRITY CodeIntegrity; /**< 0x94 */
+    uint64_t  GuardAddressTakenIatEntryTable;       /**< 0xa0 */
+    uint64_t  GuardAddressTakenIatEntryCount;       /**< 0xa8 */
+    uint64_t  GuardLongJumpTargetTable;             /**< 0xb0 */
+    uint64_t  GuardLongJumpTargetCount;             /**< 0xb8 */
+    uint64_t  DynamicValueRelocTable;               /**< 0xc0 */
+    uint64_t  CHPEMetadataPointer;                  /**< 0xc8 */
+    uint64_t  GuardRFFailureRoutine;                /**< 0xd0 */
+    uint64_t  GuardRFFailureRoutineFunctionPointer; /**< 0xd8 */
+    uint32_t  DynamicValueRelocTableOffset;         /**< 0xe0 */
+    uint16_t  DynamicValueRelocTableSection;        /**< 0xe4 */
+    uint16_t  Reserved2;                            /**< 0xe6 */
+    uint64_t  GuardRFVerifyStackPointerFunctionPointer; /**< 0xe8 */
+    uint32_t  HotPatchTableOffset;                  /**< 0xf0 */
+    uint32_t  Reserved3;                            /**< 0xf4 */
+    uint64_t  AddressOfSomeUnicodeString;           /**< 0xf8 - seen in bcrypt and bcryptprimitives pointing to the string "L". */
+} IMAGE_LOAD_CONFIG_DIRECTORY64_V9;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V9, 0x100);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V9 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V9;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V9 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V9;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V9   IMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY64_V9  PIMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY64_V9 PCIMAGE_LOAD_CONFIG_DIRECTORY64;
 
 /** @} */
 
