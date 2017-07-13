@@ -2463,7 +2463,6 @@ static NTSTATUS     VBoxDrvNtErr2NtStatus(int rc)
 }
 
 
-#if 0 /* See alternative in SUPDrvA-win.asm */
 /**
  * Alternative version of SUPR0Printf for Windows.
  *
@@ -2473,7 +2472,7 @@ static NTSTATUS     VBoxDrvNtErr2NtStatus(int rc)
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
     va_list va;
-    char    szMsg[512];
+    char    szMsg[384];
 
     va_start(va, pszFormat);
     size_t cch = RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
@@ -2483,7 +2482,6 @@ SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
     RTLogWriteDebugger(szMsg, cch);
     return 0;
 }
-#endif
 
 
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
