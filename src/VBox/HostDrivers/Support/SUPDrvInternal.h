@@ -487,8 +487,14 @@ typedef struct SUPDRVSESSION
      * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
     RTR0PROCESS                     R0Process;
 
-    /** The VM associated with the session. */
-    PVM                             pVM;
+    /** The GVM associated with the session.
+     * This is set by VMMR0.  */
+    PGVM                            pSessionGVM;
+    /** The VM associated with the session.
+     * This is set by VMMR0.  */
+    PVM                             pSessionVM;
+    /** Set to pSessionVM if fast I/O controlls are enabled. */
+    PVM                             pFastIoCtrlVM;
     /** Handle table for IPRT semaphore wrapper APIs.
      * This takes care of its own locking in an IRQ safe manner. */
     RTHANDLETABLE                   hHandleTable;
@@ -587,9 +593,10 @@ typedef struct SUPDRVDEVEXT
      * 0 if the code VMM isn't loaded and Idt are nops. */
     void * volatile                 pvVMMR0;
     /** VMMR0EntryFast() pointer. */
-    DECLR0CALLBACKMEMBER(void,      pfnVMMR0EntryFast, (PVM pVM, VMCPUID idCpu, unsigned uOperation));
+    DECLR0CALLBACKMEMBER(void,      pfnVMMR0EntryFast, (PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t uOperation));
     /** VMMR0EntryEx() pointer. */
-    DECLR0CALLBACKMEMBER(int,       pfnVMMR0EntryEx, (PVM pVM, VMCPUID idCpu, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession));
+    DECLR0CALLBACKMEMBER(int,       pfnVMMR0EntryEx, (PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t uOperation,
+                                                      PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession));
 
     /** Linked list of loaded code. */
     PSUPDRVLDRIMAGE volatile        pLdrImages;

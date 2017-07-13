@@ -81,6 +81,8 @@ typedef struct GVM
     uint32_t        hSelf;
     /** The ring-0 mapping of the VM structure. */
     PVM             pVM;
+    /** The support driver session the VM is associated with. */
+    PSUPDRVSESSION  pSession;
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.
      * Same same as VM::cCpus. */
     uint32_t        cCpus;
