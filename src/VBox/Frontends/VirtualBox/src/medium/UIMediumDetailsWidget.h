@@ -112,6 +112,7 @@ struct UIDataMedium
     UIDataMedium()
         : m_fValid(false)
         , m_enmType(UIMediumType_Invalid)
+        , m_enmVariant(KMediumVariant_Max)
         , m_options(UIDataMediumOptions())
         , m_details(UIDataMediumDetails())
     {}
@@ -120,6 +121,7 @@ struct UIDataMedium
     UIDataMedium(UIMediumType enmType)
         : m_fValid(false)
         , m_enmType(enmType)
+        , m_enmVariant(KMediumVariant_Max)
         , m_options(UIDataMediumOptions())
         , m_details(UIDataMediumDetails())
     {}
@@ -130,6 +132,7 @@ struct UIDataMedium
         return true
                && (m_fValid == other.m_fValid)
                && (m_enmType == other.m_enmType)
+               && (m_enmVariant == other.m_enmVariant)
                && (m_options == other.m_options)
                && (m_details == other.m_details)
                ;
@@ -144,6 +147,8 @@ struct UIDataMedium
     bool m_fValid;
     /** Holds the medium type. */
     UIMediumType m_enmType;
+    /** Holds the medium variant. */
+    KMediumVariant m_enmVariant;
 
     /** Holds the medium options. */
     UIDataMediumOptions m_options;

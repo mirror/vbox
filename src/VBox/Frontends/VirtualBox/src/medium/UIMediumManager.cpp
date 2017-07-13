@@ -382,6 +382,7 @@ void UIMediumItem::refresh()
     /* Gather medium data: */
     m_fValid = !m_guiMedium.isNull();
     m_enmType = m_guiMedium.type();
+    m_enmVariant = m_guiMedium.mediumVariant();
     /* Gather medium options data: */
     m_options.m_enmType = m_guiMedium.mediumType();
     m_options.m_strLocation = m_guiMedium.location();

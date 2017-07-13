@@ -523,8 +523,11 @@ void UIMediumDetailsWidget::loadDataForOptions()
     sltLocationPathChanged(m_pSelectorLocation->path());
 
     /* Load size: */
-    m_pLabelSize->setEnabled(m_newData.m_fValid && m_newData.m_enmType == UIMediumType_HardDisk);
-    m_pEditorSize->setEnabled(m_newData.m_fValid && m_newData.m_enmType == UIMediumType_HardDisk);
+    const bool fEnableResize =    m_newData.m_fValid
+                               && m_newData.m_enmType == UIMediumType_HardDisk
+                               && !(m_newData.m_enmVariant & KMediumVariant_Fixed);
+    m_pLabelSize->setEnabled(fEnableResize);
+    m_pEditorSize->setEnabled(fEnableResize);
     m_pEditorSize->setMediumSize(m_newData.m_options.m_uLogicalSize);
 }
 
