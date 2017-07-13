@@ -623,11 +623,11 @@ void scsi_pci_init(uint16_t vendor_id, uint16_t device_id)
 
     bus_dev_fn = pci_find_device(vendor_id, device_id);
     if (bus_dev_fn == -1) {
-        BX_INFO("%s: Adapter %x:%x not found, how come?!\n", __func__, vendor_id, device_id);
+        DBG_SCSI("%s: Adapter %x:%x not found, how come?!\n", __func__, vendor_id, device_id);
         return;
     }
 
-    BX_INFO("%s: Adapter %x:%x found at %x, enabling BM\n", __func__, vendor_id, device_id, bus_dev_fn);
+    DBG_SCSI("%s: Adapter %x:%x found at %x, enabling BM\n", __func__, vendor_id, device_id, bus_dev_fn);
     /* Enable PCI memory, I/O, bus mastering access in command register. */
     pci_write_config_word(bus_dev_fn >> 8, (uint8_t)bus_dev_fn, 4, 0x7);
 }
