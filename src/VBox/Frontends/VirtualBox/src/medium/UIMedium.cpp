@@ -41,6 +41,7 @@ UIMedium::UIMedium()
     , m_medium(CMedium())
     , m_state(KMediumState_NotCreated)
     , m_enmMediumType(KMediumType_Max)
+    , m_enmMediumVariant(KMediumVariant_Max)
 {
     refresh();
 }
@@ -50,6 +51,7 @@ UIMedium::UIMedium(const CMedium &medium, UIMediumType type)
     , m_medium(medium)
     , m_state(KMediumState_NotCreated)
     , m_enmMediumType(KMediumType_Max)
+    , m_enmMediumVariant(KMediumVariant_Max)
 {
     refresh();
 }
@@ -59,6 +61,7 @@ UIMedium::UIMedium(const CMedium &medium, UIMediumType type, KMediumState state)
     , m_medium(medium)
     , m_state(state)
     , m_enmMediumType(KMediumType_Max)
+    , m_enmMediumVariant(KMediumVariant_Max)
 {
     refresh();
 }
@@ -93,6 +96,7 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_strLogicalSize = other.logicalSize();
 
     m_enmMediumType = other.mediumType();
+    m_enmMediumVariant = other.mediumVariant();
 
     m_strHardDiskType = other.hardDiskType();
     m_strHardDiskFormat = other.hardDiskFormat();
@@ -155,8 +159,9 @@ void UIMedium::refresh()
     m_strLocation = m_strSize = m_strLogicalSize = QString("--");
     m_uSize = m_uLogicalSize = 0;
 
-    /* Reset medium type parameter: */
+    /* Reset medium type & variant parameter: */
     m_enmMediumType = KMediumType_Max;
+    m_enmMediumVariant = KMediumVariant_Max;
 
     /* Reset hard drive related parameters: */
     m_strHardDiskType = QString();
@@ -228,8 +233,12 @@ void UIMedium::refresh()
             }
         }
 
-        /* Refresh medium type: */
+        /* Refresh medium type & variant: */
         m_enmMediumType = m_medium.GetType();
+        qlonglong iMediumVariant = 0;
+        foreach (const KMediumVariant &enmVariant, m_medium.GetVariant())
+            iMediumVariant |= enmVariant;
+        m_enmMediumVariant = (KMediumVariant)iMediumVariant;
 
         /* For hard drive medium: */
         if (m_type == UIMediumType_HardDisk)
@@ -240,10 +249,7 @@ void UIMedium::refresh()
             m_strHardDiskFormat = m_medium.GetFormat();
 
             /* Refresh hard drive storage details: */
-            qlonglong iMediumVariant = 0;
-            foreach (const KMediumVariant &enmVariant, m_medium.GetVariant())
-                iMediumVariant |= enmVariant;
-            m_strStorageDetails = gpConverter->toString((KMediumVariant)iMediumVariant);
+            m_strStorageDetails = gpConverter->toString(m_enmMediumVariant);
 
             /* Check whether this is read-only hard drive: */
             m_fReadOnly = m_medium.GetReadOnly();

@@ -198,6 +198,10 @@ public:
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the disk type of root in the given hard drive chain. */
     KMediumType mediumType(bool fNoDiffs = false) const { return fNoDiffs ? root().m_enmMediumType : m_enmMediumType; }
+    /** Returns the medium disk variant.
+      * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
+      * @note  In "don't show diffs" mode, this method returns the disk variant of root in the given hard drive chain. */
+    KMediumVariant mediumVariant(bool fNoDiffs = false) const { return fNoDiffs ? root().m_enmMediumVariant : m_enmMediumVariant; }
 
     /** Returns the hard drive medium disk type.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -361,6 +365,8 @@ private:
 
     /** Holds the medium disk type. */
     KMediumType m_enmMediumType;
+    /** Holds the medium disk variant. */
+    KMediumVariant m_enmMediumVariant;
 
     /** Holds the hard drive medium disk type. */
     QString m_strHardDiskType;
