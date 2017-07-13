@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,12 @@
 #define pa_stream_write                         PULSE_MANGLER(pa_stream_write)
 #define pa_stream_unref                         PULSE_MANGLER(pa_stream_unref)
 #define pa_stream_get_state                     PULSE_MANGLER(pa_stream_get_state)
+#define pa_stream_get_latency                   PULSE_MANGLER(pa_stream_get_latency)
+#define pa_stream_get_timing_info               PULSE_MANGLER(pa_stream_get_timing_info)
+#define pa_stream_set_buffer_attr               PULSE_MANGLER(pa_stream_set_buffer_attr)
 #define pa_stream_set_state_callback            PULSE_MANGLER(pa_stream_set_state_callback)
+#define pa_stream_set_underflow_callback        PULSE_MANGLER(pa_stream_set_underflow_callback)
+#define pa_stream_set_write_callback            PULSE_MANGLER(pa_stream_set_write_callback)
 #define pa_stream_flush                         PULSE_MANGLER(pa_stream_flush)
 #define pa_stream_drain                         PULSE_MANGLER(pa_stream_drain)
 #define pa_stream_trigger                       PULSE_MANGLER(pa_stream_trigger)
@@ -59,6 +64,9 @@
 #define pa_threaded_mainloop_start              PULSE_MANGLER(pa_threaded_mainloop_start)
 #define pa_threaded_mainloop_lock               PULSE_MANGLER(pa_threaded_mainloop_lock)
 #define pa_bytes_per_second                     PULSE_MANGLER(pa_bytes_per_second)
+#define pa_bytes_to_usec                        PULSE_MANGLER(pa_bytes_to_usec)
+#define pa_usec_to_bytes                        PULSE_MANGLER(pa_usec_to_bytes)
+#define pa_rtclock_now                          PULSE_MANGLER(pa_rtclock_now)
 #define pa_frame_size                           PULSE_MANGLER(pa_frame_size)
 #define pa_sample_format_to_string              PULSE_MANGLER(pa_sample_format_to_string)
 #define pa_sample_spec_valid                    PULSE_MANGLER(pa_sample_spec_valid)

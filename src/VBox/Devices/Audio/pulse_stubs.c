@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,8 +78,23 @@ PROXY_STUB_VOID(pa_stream_unref,
 PROXY_STUB     (pa_stream_get_state, pa_stream_state_t,
                 (pa_stream *p),
                 (p))
+PROXY_STUB     (pa_stream_get_latency, int,
+                (pa_stream *s, pa_usec_t *r_usec, int *negative),
+                (s, r_usec, negative))
+PROXY_STUB     (pa_stream_get_timing_info, pa_timing_info*,
+                (pa_stream *s),
+                (s))
+PROXY_STUB      (pa_stream_set_buffer_attr, pa_operation *,
+                (pa_stream *s, const pa_buffer_attr *attr, pa_stream_success_cb_t cb, void *userdata),
+                (s, attr, cb, userdata))
 PROXY_STUB_VOID(pa_stream_set_state_callback,
                 (pa_stream *s, pa_stream_notify_cb_t cb, void *userdata),
+                (s, cb, userdata))
+PROXY_STUB_VOID(pa_stream_set_underflow_callback,
+                (pa_stream *s, pa_stream_notify_cb_t cb, void *userdata),
+                (s, cb, userdata))
+PROXY_STUB_VOID(pa_stream_set_write_callback,
+                (pa_stream *s, pa_stream_request_cb_t cb, void *userdata),
                 (s, cb, userdata))
 PROXY_STUB     (pa_stream_flush, pa_operation*,
                 (pa_stream *s, pa_stream_success_cb_t cb, void *userdata),
@@ -110,7 +125,8 @@ PROXY_STUB     (pa_stream_writable_size, size_t,
                 (pa_stream *p),
                 (p))
 PROXY_STUB     (pa_context_connect, int,
-                (pa_context *c, const char *server, pa_context_flags_t flags, const pa_spawn_api *api),
+                (pa_context *c, const char *server, pa_context_flags_t flags,
+                 const pa_spawn_api *api),
                 (c, server, flags, api))
 PROXY_STUB_VOID(pa_context_disconnect,
                 (pa_context *c),
@@ -169,6 +185,15 @@ PROXY_STUB_VOID(pa_threaded_mainloop_lock,
 PROXY_STUB     (pa_bytes_per_second, size_t,
                 (const pa_sample_spec *spec),
                 (spec))
+PROXY_STUB     (pa_bytes_to_usec, pa_usec_t,
+                (uint64_t l, const pa_sample_spec *spec),
+                (l, spec))
+PROXY_STUB     (pa_usec_to_bytes, size_t,
+                (pa_usec_t t, const pa_sample_spec *spec),
+                (t, spec))
+PROXY_STUB     (pa_rtclock_now, pa_usec_t,
+                (void),
+                ())
 PROXY_STUB     (pa_frame_size, size_t,
                 (const pa_sample_spec *spec),
                 (spec))
@@ -215,7 +240,12 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(pa_stream_write),
     ELEMENT(pa_stream_unref),
     ELEMENT(pa_stream_get_state),
+    ELEMENT(pa_stream_get_latency),
+    ELEMENT(pa_stream_get_timing_info),
+    ELEMENT(pa_stream_set_buffer_attr),
     ELEMENT(pa_stream_set_state_callback),
+    ELEMENT(pa_stream_set_underflow_callback),
+    ELEMENT(pa_stream_set_write_callback),
     ELEMENT(pa_stream_flush),
     ELEMENT(pa_stream_drain),
     ELEMENT(pa_stream_trigger),
@@ -245,6 +275,9 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(pa_threaded_mainloop_start),
     ELEMENT(pa_threaded_mainloop_lock),
     ELEMENT(pa_bytes_per_second),
+    ELEMENT(pa_bytes_to_usec),
+    ELEMENT(pa_usec_to_bytes),
+    ELEMENT(pa_rtclock_now),
     ELEMENT(pa_frame_size),
     ELEMENT(pa_sample_format_to_string),
     ELEMENT(pa_sample_spec_valid),
@@ -295,3 +328,4 @@ int audioLoadPulseLib(void)
     isLibLoaded = YES;
     return rc;
 }
+
