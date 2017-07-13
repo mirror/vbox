@@ -1031,6 +1031,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            --iso-path <path>\n"
                      "                            [--key <CD-key>]\n"
                      "                            [--additions-iso-path <path>]\n"
+                     "                            [--install-additions]\n"
                      "                            [--image-index <index>]\n"
                      "                            [--session-type <type>]\n"
                      "\n", SEP, SEP);
