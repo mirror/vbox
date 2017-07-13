@@ -1182,15 +1182,15 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM, PVM pVM)
     AssertMsgReturn(pVM->enmVMState >= VMSTATE_CREATING && pVM->enmVMState <= VMSTATE_TERMINATED, ("%d\n", pVM->enmVMState),
                     VERR_WRONG_ORDER);
 
-    uint32_t hGVM = pGVM->hSelf;
+    uint32_t        hGVM = pGVM->hSelf;
     AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_HANDLE);
     AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_HANDLE);
 
-    PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
+    PGVMHANDLE      pHandle = &pGVMM->aHandles[hGVM];
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
 
-    RTPROCESS      ProcId = RTProcSelf();
-    RTNATIVETHREAD hSelf  = RTThreadNativeSelf();
+    RTPROCESS       ProcId = RTProcSelf();
+    RTNATIVETHREAD  hSelf  = RTThreadNativeSelf();
     AssertReturn(   (   pHandle->hEMT0  == hSelf
                      && pHandle->ProcId == ProcId)
                  || pHandle->hEMT0 == NIL_RTNATIVETHREAD, VERR_NOT_OWNER);
@@ -1202,6 +1202,9 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM, PVM pVM)
      */
     int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRC(rc);
+
+/** @todo Check that all other EMTs have said bye-bye. */
+
 
     /* Be careful here because we might theoretically be racing someone else cleaning up. */
     if (    pHandle->pVM == pVM
