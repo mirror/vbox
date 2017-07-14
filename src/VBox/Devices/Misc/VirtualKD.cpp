@@ -111,14 +111,13 @@ static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             || !RequestHeader.cbData)
             return VINF_SUCCESS;
 
-        size_t cbData = RT_MIN(RequestHeader.cbData, sizeof(pThis->abCmdBody));
+        unsigned cbData = RT_MIN(RequestHeader.cbData, sizeof(pThis->abCmdBody));
         rc = PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)(u32 + sizeof(RequestHeader)), pThis->abCmdBody, cbData);
         if (!RT_SUCCESS(rc))
             return VINF_SUCCESS;
 
         char *pReply = NULL;
-        unsigned cbReply;
-        cbReply = pThis->pKDClient->OnRequest(pThis->abCmdBody, cbData, &pReply);
+        unsigned cbReply = pThis->pKDClient->OnRequest(pThis->abCmdBody, cbData, &pReply);
 
         if (!pReply)
             cbReply = 0;
