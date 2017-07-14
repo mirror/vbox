@@ -73,7 +73,7 @@ typedef struct VIRTUALKD
     bool fChannelDetectSuccessful;
     RTLDRMOD hLib;
     IKDClient *pKDClient;
-    char abCmdBody[262144];
+    char abCmdBody[_256K];
 } VIRTUALKD;
 
 
@@ -107,17 +107,18 @@ static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     {
         VKDREQUESTHDR RequestHeader = {0, };
         int rc = PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &RequestHeader, sizeof(RequestHeader));
-        if (!RT_SUCCESS(rc) || !RequestHeader.cbData)
+        if (   !RT_SUCCESS(rc)
+            || !RequestHeader.cbData)
             return VINF_SUCCESS;
-        rc = PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)(u32 + sizeof(RequestHeader)), pThis->abCmdBody, RequestHeader.cbData);
+
+        size_t cbData = RT_MIN(RequestHeader.cbData, sizeof(pThis->abCmdBody));
+        rc = PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)(u32 + sizeof(RequestHeader)), pThis->abCmdBody, cbData);
         if (!RT_SUCCESS(rc))
             return VINF_SUCCESS;
 
         char *pReply = NULL;
         unsigned cbReply;
-        cbReply = pThis->pKDClient->OnRequest(pThis->abCmdBody,
-                                              RequestHeader.cbData,
-                                              &pReply);
+        cbReply = pThis->pKDClient->OnRequest(pThis->abCmdBody, cbData, &pReply);
 
         if (!pReply)
             cbReply = 0;
