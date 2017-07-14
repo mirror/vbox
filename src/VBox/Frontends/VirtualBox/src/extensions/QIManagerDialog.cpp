@@ -82,7 +82,7 @@ void QIManagerDialog::prepare()
         /* On the basis of current host-screen geometry if possible: */
         const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
         if (screenGeometry.isValid())
-            proposedSize = screenGeometry.size() * 2 / 5;
+            proposedSize = screenGeometry.size() * 7 / 15;
     }
     /* Fallback to default size if we failed: */
     if (proposedSize.isNull())
