@@ -89,6 +89,7 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
 
     m_strName = other.name();
     m_strLocation = other.location();
+    m_strDescription = other.description();
 
     m_uSize = other.sizeInBytes();
     m_uLogicalSize = other.logicalSizeInBytes();
@@ -154,9 +155,10 @@ void UIMedium::refresh()
     /* Reset cache parameters: */
     //m_strKey = nullID();
 
-    /* Reset name/location/size parameters: */
+    /* Reset name/location/description/size parameters: */
     m_strName = VBoxGlobal::tr("Empty", "medium");
     m_strLocation = m_strSize = m_strLogicalSize = QString("--");
+    m_strDescription = QString();
     m_uSize = m_uLogicalSize = 0;
 
     /* Reset medium type & variant parameter: */
@@ -208,9 +210,12 @@ void UIMedium::refresh()
             m_strName = VBoxGlobal::tr("Host Drive '%1'", "medium").arg(QDir::toNativeSeparators(m_medium.GetLocation()));
         else
             m_strName = VBoxGlobal::tr("Host Drive %1 (%2)", "medium").arg(m_medium.GetDescription(), m_medium.GetName());
-        /* Refresh medium location: */
+        /* Refresh medium location/description: */
         if (!m_fHostDrive)
+        {
             m_strLocation = QDir::toNativeSeparators(m_medium.GetLocation());
+            m_strDescription = m_medium.GetDescription();
+        }
 
         /* Refresh medium size and logical size: */
         if (!m_fHostDrive)

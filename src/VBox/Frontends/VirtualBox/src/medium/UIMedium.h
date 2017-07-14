@@ -176,6 +176,10 @@ public:
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the location of root in the given hard drive chain. */
     QString location(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strLocation : m_strLocation; }
+    /** Returns the medium description.
+      * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
+      * @note  In "don't show diffs" mode, this method returns the description of root in the given hard drive chain. */
+    QString description(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strDescription : m_strDescription; }
 
     /** Returns the medium size in bytes.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -353,6 +357,8 @@ private:
     QString m_strName;
     /** Holds the medium location. */
     QString m_strLocation;
+    /** Holds the medium description. */
+    QString m_strDescription;
 
     /** Holds the medium size in bytes. */
     qulonglong m_uSize;
