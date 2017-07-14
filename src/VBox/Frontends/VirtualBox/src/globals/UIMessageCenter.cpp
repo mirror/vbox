@@ -1234,6 +1234,14 @@ void UIMessageCenter::cannotMoveMediumStorage(const CProgress &comProgress, cons
           formatErrorInfo(comProgress));
 }
 
+void UIMessageCenter::cannotChangeMediumDescription(const CMedium &comMedium, const QString &strLocation, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("<p>Error changing the description of the disk image <b>%1</b>.</p>")
+             .arg(strLocation),
+          formatErrorInfo(comMedium));
+}
+
 bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, QWidget *pParent /* = 0*/) const
 {
     /* Prepare the usage: */

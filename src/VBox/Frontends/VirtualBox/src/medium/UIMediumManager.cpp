@@ -387,6 +387,7 @@ void UIMediumItem::refresh()
     m_options.m_enmType = m_guiMedium.mediumType();
     m_options.m_strLocation = m_guiMedium.location();
     m_options.m_uLogicalSize = m_guiMedium.logicalSizeInBytes();
+    m_options.m_strDescription = m_guiMedium.description();
     /* Gather medium details data: */
     m_details.m_aFields.clear();
     switch (m_enmType)
@@ -989,6 +990,19 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
                                                         vboxGlobal().formatSize(newData.m_options.m_uLogicalSize),
                                                         this);
         }
+    }
+
+    /* Try to assign new medium description: */
+    if (   comMedium.isOk()
+        && newData.m_options.m_strDescription != oldData.m_options.m_strDescription)
+    {
+        comMedium.SetDescription(newData.m_options.m_strDescription);
+
+        /* Show error message if necessary: */
+        if (!comMedium.isOk())
+            msgCenter().cannotChangeMediumDescription(comMedium,
+                                                      oldData.m_options.m_strLocation,
+                                                      this);
     }
 
     /* Recache current item: */

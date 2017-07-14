@@ -34,6 +34,7 @@ class QAbstractButton;
 class QComboBox;
 class QLabel;
 class QStackedLayout;
+class QTextEdit;
 class QWidget;
 class QILabel;
 class QITabWidget;
@@ -49,6 +50,7 @@ struct UIDataMediumOptions
         : m_enmType(KMediumType_Normal)
         , m_strLocation(QString())
         , m_uLogicalSize(0)
+        , m_strDescription(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -58,6 +60,7 @@ struct UIDataMediumOptions
                && (m_enmType == other.m_enmType)
                && (m_strLocation == other.m_strLocation)
                && (m_uLogicalSize == other.m_uLogicalSize)
+               && (m_strDescription == other.m_strDescription)
                ;
     }
 
@@ -72,6 +75,8 @@ struct UIDataMediumOptions
     QString m_strLocation;
     /** Holds the logical size. */
     qulonglong m_uLogicalSize;
+    /** Holds the description. */
+    QString m_strDescription;
 };
 
 
@@ -201,6 +206,8 @@ private slots:
         void sltLocationPathChanged(const QString &strPath);
         /** Handles size editor change. */
         void sltSizeValueChanged(qulonglong uSize);
+        /** Handles description text change. */
+        void sltDescriptionTextChanged();
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -288,6 +295,13 @@ private:
         UIMediumSizeEditor *m_pEditorSize;
         /** Holds the size error pane. */
         QLabel             *m_pErrorPaneSize;
+
+        /** Holds the description label. */
+        QLabel    *m_pLabelDescription;
+        /** Holds the description editor. */
+        QTextEdit *m_pEditorDescription;
+        /** Holds the description error pane. */
+        QLabel    *m_pErrorPaneDescription;
 
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;

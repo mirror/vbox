@@ -25,6 +25,7 @@
 # include <QPushButton>
 # include <QSlider>
 # include <QStackedLayout>
+# include <QTextEdit>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -54,6 +55,7 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pLabelType(0), m_pComboBoxType(0), m_pErrorPaneType(0)
     , m_pLabelLocation(0), m_pSelectorLocation(0), m_pErrorPaneLocation(0)
     , m_pLabelSize(0), m_pEditorSize(0), m_pErrorPaneSize(0)
+    , m_pLabelDescription(0), m_pEditorDescription(0), m_pErrorPaneDescription(0)
     , m_pButtonBox(0)
     , m_pLayoutDetails(0)
 {
@@ -92,6 +94,7 @@ void UIMediumDetailsWidget::retranslateUi()
     m_pLabelType->setText(tr("&Type:"));
     m_pLabelLocation->setText(tr("&Location:"));
     m_pLabelSize->setText(tr("&Size:"));
+    m_pLabelDescription->setText(tr("&Description:"));
 
     /* Translate fields: */
     m_pComboBoxType->setToolTip(tr("Holds the type of this medium."));
@@ -99,6 +102,7 @@ void UIMediumDetailsWidget::retranslateUi()
         m_pComboBoxType->setItemText(i, gpConverter->toString(m_pComboBoxType->itemData(i).value<KMediumType>()));
     m_pSelectorLocation->setToolTip(tr("Holds the location of this medium."));
     m_pEditorSize->setToolTip(tr("Holds the size of this medium."));
+    m_pEditorDescription->setToolTip(tr("Holds the description of this medium."));
 
     /* Translate button-box: */
     if (m_pButtonBox)
@@ -139,6 +143,13 @@ void UIMediumDetailsWidget::sltSizeValueChanged(qulonglong uSize)
 {
     m_newData.m_options.m_uLogicalSize = uSize;
     revalidate(m_pErrorPaneSize);
+    updateButtonStates();
+}
+
+void UIMediumDetailsWidget::sltDescriptionTextChanged()
+{
+    m_newData.m_options.m_strDescription = m_pEditorDescription->toPlainText();
+    revalidate(m_pErrorPaneDescription);
     updateButtonStates();
 }
 
@@ -372,12 +383,67 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 pLayoutOptions->addLayout(pLayoutSize, 2, 1, 2, 1);
             }
 
+            /* Create description label: */
+            m_pLabelDescription = new QLabel;
+            AssertPtrReturnVoid(m_pLabelDescription);
+            {
+                /* Configure label: */
+                m_pLabelDescription->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+                /* Add into layout: */
+                pLayoutOptions->addWidget(m_pLabelDescription, 4, 0);
+            }
+
+            /* Create description layout: */
+            QGridLayout *pLayoutDescription = new QGridLayout;
+            AssertPtrReturnVoid(pLayoutDescription);
+            {
+                /* Configure layout: */
+                pLayoutDescription->setContentsMargins(0, 0, 0, 0);
+
+                /* Create description editor: */
+                m_pEditorDescription = new QTextEdit;
+                AssertPtrReturnVoid(m_pEditorDescription);
+                {
+                    /* Configure editor: */
+                    m_pLabelDescription->setBuddy(m_pEditorDescription);
+                    QFontMetrics fontMetrics = m_pEditorDescription->fontMetrics();
+                    QTextDocument *pTextDocument = m_pEditorDescription->document();
+                    const int iMinimumHeight = fontMetrics.lineSpacing() * 3
+                                             + pTextDocument->documentMargin() * 2
+                                             + m_pEditorDescription->frameWidth() * 2;
+                    m_pEditorDescription->setMaximumHeight(iMinimumHeight);
+                    connect(m_pEditorDescription, &QTextEdit::textChanged,
+                            this, &UIMediumDetailsWidget::sltDescriptionTextChanged);
+
+                    /* Add into layout: */
+                    pLayoutDescription->addWidget(m_pEditorDescription, 0, 0, 2, 1);
+                }
+
+                /* Create description error pane: */
+                m_pErrorPaneDescription = new QLabel;
+                AssertPtrReturnVoid(m_pErrorPaneDescription);
+                {
+                    /* Configure label: */
+                    m_pErrorPaneDescription->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneDescription->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+                    m_pErrorPaneDescription->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
+                                                       .pixmap(QSize(iIconMetric, iIconMetric)));
+
+                    /* Add into layout: */
+                    pLayoutDescription->addWidget(m_pErrorPaneDescription, 0, 1, Qt::AlignCenter);
+                }
+
+                /* Add into layout: */
+                pLayoutOptions->addLayout(pLayoutDescription, 4, 1, 2, 1);
+            }
+
             /* Create stretch: */
             QSpacerItem *pSpacer2 = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
             AssertPtrReturnVoid(pSpacer2);
             {
                 /* Add into layout: */
-                pLayoutOptions->addItem(pSpacer2, 4, 0, 1, 2);
+                pLayoutOptions->addItem(pSpacer2, 6, 0, 1, 2);
             }
 
             /* If parent embedded into stack: */
@@ -391,7 +457,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIMediumDetailsWidget::sltHandleButtonBoxClick);
 
                 /* Add into layout: */
-                pLayoutOptions->addWidget(m_pButtonBox, 5, 0, 1, 2);
+                pLayoutOptions->addWidget(m_pButtonBox, 7, 0, 1, 2);
             }
         }
 
@@ -530,6 +596,11 @@ void UIMediumDetailsWidget::loadDataForOptions()
     m_pLabelSize->setEnabled(fEnableResize);
     m_pEditorSize->setEnabled(fEnableResize);
     m_pEditorSize->setMediumSize(m_newData.m_options.m_uLogicalSize);
+
+    /* Load description: */
+    m_pLabelDescription->setEnabled(m_newData.m_fValid);
+    m_pEditorDescription->setEnabled(m_newData.m_fValid);
+    m_pEditorDescription->setPlainText(m_newData.m_options.m_strDescription);
 }
 
 void UIMediumDetailsWidget::loadDataForDetails()
@@ -570,6 +641,12 @@ void UIMediumDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
         const bool fError = false;
         m_pErrorPaneSize->setVisible(fError);
     }
+    if (!pWidget || pWidget == m_pErrorPaneDescription)
+    {
+        /* Always valid for now: */
+        const bool fError = false;
+        m_pErrorPaneDescription->setVisible(fError);
+    }
 
     /* Retranslate validation: */
     retranslateValidation(pWidget);
@@ -587,6 +664,9 @@ void UIMediumDetailsWidget::retranslateValidation(QWidget * /* pWidget = 0 */)
 //    if (!pWidget || pWidget == m_pErrorPaneSize)
 //        m_pErrorPaneSize->setToolTip(tr("Cannot change medium size from <b>%1</b> to <b>%2</b>.")
 //                                         .arg(m_oldData.m_options.m_uLogicalSize).arg(m_newData.m_options.m_uLogicalSize));
+//    if (!pWidget || pWidget == m_pErrorPaneDescription)
+//        m_pErrorPaneDescription->setToolTip(tr("Cannot change medium description from <b>%1</b> to <b>%2</b>.")
+//                                               .arg(m_oldData.m_options.m_strDescription).arg(m_newData.m_options.m_strDescription));
 }
 
 void UIMediumDetailsWidget::updateButtonStates()
