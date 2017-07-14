@@ -1819,7 +1819,6 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         return STATUS_NAME_TOO_LONG;
     }
 
-#if 0
     /*
      * Reject all UNC-like paths as we cannot trust non-local files at all.
      * Note! We may have to relax this to deal with long path specifications and NT pass thrus.
@@ -1834,7 +1833,6 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         RtlRestoreLastWin32Error(dwSavedLastError);
         return STATUS_REDIRECTOR_NOT_STARTED;
     }
-#endif
 
     /*
      * Reject PGHook.dll as it creates a thread from its DllMain that breaks
