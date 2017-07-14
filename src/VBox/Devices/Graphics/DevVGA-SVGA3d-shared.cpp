@@ -1051,3 +1051,76 @@ const char *vmsvga3dPrimitiveType2String(SVGA3dPrimitiveType PrimitiveType)
 
 #endif /* LOG_ENABLED */
 
+/** Unsigned coordinates in pBox. Clip to [0; pSizeSrc), [0;pSizeDest).
+ *
+ * @param pSizeSrc  Source surface dimensions.
+ * @param pSizeDest Destination surface dimensions.
+ * @param pBox      Coordinates to be clipped.
+ */
+void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
+                       const SVGA3dSize *pSizeDest,
+                       SVGA3dCopyBox *pBox)
+{
+    /* Src x, w */
+    if (pBox->srcx > pSizeSrc->width)
+        pBox->srcx = pSizeSrc->width;
+    if (pBox->w > pSizeSrc->width - pBox->srcx)
+        pBox->w = pSizeSrc->width - pBox->srcx;
+
+    /* Src y, h */
+    if (pBox->srcy > pSizeSrc->height)
+        pBox->srcy = pSizeSrc->height;
+    if (pBox->h > pSizeSrc->height - pBox->srcy)
+        pBox->h = pSizeSrc->height - pBox->srcy;
+
+    /* Src z, d */
+    if (pBox->srcz > pSizeSrc->depth)
+        pBox->srcz = pSizeSrc->depth;
+    if (pBox->d > pSizeSrc->depth - pBox->srcz)
+        pBox->d = pSizeSrc->depth - pBox->srcz;
+
+    /* Dest x, w */
+    if (pBox->x > pSizeDest->width)
+        pBox->x = pSizeDest->width;
+    if (pBox->w > pSizeDest->width - pBox->x)
+        pBox->w = pSizeDest->width - pBox->x;
+
+    /* Dest y, h */
+    if (pBox->y > pSizeDest->height)
+        pBox->y = pSizeDest->height;
+    if (pBox->h > pSizeDest->height - pBox->y)
+        pBox->h = pSizeDest->height - pBox->y;
+
+    /* Dest z, d */
+    if (pBox->z > pSizeDest->depth)
+        pBox->z = pSizeDest->depth;
+    if (pBox->d > pSizeDest->depth - pBox->z)
+        pBox->d = pSizeDest->depth - pBox->z;
+}
+
+/** Unsigned coordinates in pBox. Clip to [0; pSize).
+ *
+ * @param pSize     Source surface dimensions.
+ * @param pBox      Coordinates to be clipped.
+ */
+void vmsvgaClipBox(const SVGA3dSize *pSize,
+                   SVGA3dBox *pBox)
+{
+    /* x, w */
+    if (pBox->x > pSize->width)
+        pBox->x = pSize->width;
+    if (pBox->w > pSize->width - pBox->x)
+        pBox->w = pSize->width - pBox->x;
+
+    /* y, h */
+    if (pBox->y > pSize->height)
+        pBox->y = pSize->height;
+    if (pBox->h > pSize->height - pBox->y)
+        pBox->h = pSize->height - pBox->y;
+
+    /* z, d */
+    if (pBox->z > pSize->depth)
+        pBox->z = pSize->depth;
+    if (pBox->d > pSize->depth - pBox->z)
+        pBox->d = pSize->depth - pBox->z;
+}

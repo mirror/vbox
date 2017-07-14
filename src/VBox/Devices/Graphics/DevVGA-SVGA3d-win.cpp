@@ -1318,8 +1318,12 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
     AssertReturn(pSurfaceSrc->faces[0].numMipLevels > src.mipmap, VERR_INVALID_PARAMETER);
     AssertReturn(pSurfaceDest->faces[0].numMipLevels > dest.mipmap, VERR_INVALID_PARAMETER);
 
+    const VMSVGA3DMIPMAPLEVEL *pMipmapLevelSrc = &pSurfaceSrc->pMipmapLevels[src.mipmap];
+    const VMSVGA3DMIPMAPLEVEL *pMipmapLevelDest = &pSurfaceDest->pMipmapLevels[dest.mipmap];
+
    // AssertMsgReturn(pSurfaceSrc->format == pSurfaceDest->format, ("Format mismatch (%d vs %d)!!\n", pSurfaceSrc->format, pSurfaceDest->format), VERR_INVALID_PARAMETER);
 
+    /** @todo Support cubemaps. */
     bool fSrcTexture  = !!(pSurfaceSrc->flags & SVGA3D_SURFACE_HINT_TEXTURE);
     bool fDestTexture = !!(pSurfaceDest->flags & SVGA3D_SURFACE_HINT_TEXTURE);
 
@@ -1387,26 +1391,36 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             IDirect3DSurface9 *pSrc;
             IDirect3DSurface9 *pDest;
 
-            RectSrc.left    = pBox[i].srcx;
-            RectSrc.top     = pBox[i].srcy;
-            RectSrc.right   = pBox[i].srcx + pBox[i].w;   /* exclusive */
-            RectSrc.bottom  = pBox[i].srcy + pBox[i].h;   /* exclusive */
-            RectDest.left   = pBox[i].x;
-            RectDest.top    = pBox[i].y;
-            RectDest.right  = pBox[i].x + pBox[i].w;   /* exclusive */
-            RectDest.bottom = pBox[i].y + pBox[i].h;   /* exclusive */
+            SVGA3dCopyBox clipBox = pBox[i];
+            vmsvgaClipCopyBox(&pMipmapLevelSrc->size, &pMipmapLevelDest->size, &clipBox);
+            if (   !clipBox.w
+                || !clipBox.h
+                || !clipBox.d)
+            {
+                LogFunc(("Skipped empty box.\n"));
+                continue;
+            }
+
+            RectSrc.left    = clipBox.srcx;
+            RectSrc.top     = clipBox.srcy;
+            RectSrc.right   = clipBox.srcx + clipBox.w;   /* exclusive */
+            RectSrc.bottom  = clipBox.srcy + clipBox.h;   /* exclusive */
+            RectDest.left   = clipBox.x;
+            RectDest.top    = clipBox.y;
+            RectDest.right  = clipBox.x + clipBox.w;   /* exclusive */
+            RectDest.bottom = clipBox.y + clipBox.h;   /* exclusive */
 
             Log(("vmsvga3dSurfaceCopy: (StretchRect) copy src sid=%x face=%d mipmap=%d (%d,%d)(%d,%d) to dest sid=%x face=%d mipmap=%d (%d,%d)\n", sidSrc, src.face, src.mipmap, RectSrc.left, RectSrc.top, RectSrc.right, RectSrc.bottom, sidDest, dest.face, dest.mipmap, pBox[i].x, pBox[i].y));
 
             if (    sidSrc == sidDest
-                &&  pBox[i].srcx == pBox[i].x
-                &&  pBox[i].srcy == pBox[i].y)
+                &&  clipBox.srcx == clipBox.x
+                &&  clipBox.srcy == clipBox.y)
             {
                 Log(("vmsvga3dSurfaceCopy: redundant copy to the same surface at the same coordinates. Ignore. \n"));
                 continue;
             }
             Assert(sidSrc != sidDest);
-            Assert(!pBox[i].srcz && !pBox[i].z);
+            Assert(!clipBox.srcz && !clipBox.z);
 
             if (fSrcTexture)
             {
@@ -1445,28 +1459,52 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
     else
     for (uint32_t i = 0; i < cCopyBoxes; i++)
     {
-        HRESULT        hr = D3D_OK;
+        HRESULT        hr;
         D3DLOCKED_RECT LockedSrcRect;
         D3DLOCKED_RECT LockedDestRect;
-        RECT           Rect;
+        RECT           RectSrc;
+        RECT           RectDest;
 
-        Rect.left   = pBox[i].srcx;
-        Rect.top    = pBox[i].srcy;
-        Rect.right  = pBox[i].srcx + pBox[i].w;   /* exclusive */
-        Rect.bottom = pBox[i].srcy + pBox[i].h;   /* exclusive */
+        SVGA3dCopyBox clipBox = pBox[i];
+        vmsvgaClipCopyBox(&pMipmapLevelSrc->size, &pMipmapLevelDest->size, &clipBox);
+        if (   !clipBox.w
+            || !clipBox.h
+            || !clipBox.d)
+        {
+            LogFunc(("Skipped empty box.\n"));
+            continue;
+        }
 
-        Log(("vmsvga3dSurfaceCopy: (manual) copy sid=%x face=%d mipmap=%d (%d,%d)(%d,%d) to sid=%x face=%d mipmap=%d (%d,%d)\n", sidSrc, src.face, src.mipmap, Rect.left, Rect.top, Rect.right, Rect.bottom, sidDest, dest.face, dest.mipmap, pBox[i].x, pBox[i].y));
+        RectSrc.left    = clipBox.srcx;
+        RectSrc.top     = clipBox.srcy;
+        RectSrc.right   = clipBox.srcx + clipBox.w;   /* exclusive */
+        RectSrc.bottom  = clipBox.srcy + clipBox.h;   /* exclusive */
+        RectDest.left   = clipBox.x;
+        RectDest.top    = clipBox.y;
+        RectDest.right  = clipBox.x + clipBox.w;   /* exclusive */
+        RectDest.bottom = clipBox.y + clipBox.h;   /* exclusive */
 
-        Assert(!pBox[i].srcz && !pBox[i].z);
+        LogFunc(("(manual) copy sid=%x face=%d mipmap=%d (%d,%d)(%d,%d) to sid=%x face=%d mipmap=%d (%d,%d)\n",
+                 sidSrc, src.face, src.mipmap, RectSrc.left, RectSrc.top, RectSrc.right, RectSrc.bottom,
+                 sidDest, dest.face, dest.mipmap, pBox[i].x, pBox[i].y));
+
+        Assert(!clipBox.srcz && !clipBox.z);
+        Assert(pSurfaceSrc->cbBlock == pSurfaceDest->cbBlock);
 
         if (!pSurfaceSrc->u.pSurface)
         {
-            LockedSrcRect.pBits = (void *)pSurfaceSrc->pMipmapLevels[src.mipmap].pSurfaceData;
-            LockedSrcRect.Pitch  = pSurfaceSrc->pMipmapLevels[src.mipmap].cbSurfacePitch;
+            LockedSrcRect.pBits = (uint8_t *)pMipmapLevelSrc->pSurfaceData +
+                                  pMipmapLevelSrc->cbSurfacePitch * clipBox.srcy + pSurfaceSrc->cbBlock * clipBox.srcx;
+            LockedSrcRect.Pitch = pMipmapLevelSrc->cbSurfacePitch;
         }
         else
         {
-            /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
+            /** @todo This branch is dead code. Because if the source is a hardware surface, then
+             *  the code above creates hardware surface for the destination and does the copy in hardware.
+             *  I.e. we can not get here with pSurfaceSrc->u.pSurface != NULL.
+             */
+
+            /* Must flush the context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
             vmsvga3dSurfaceFlush(pThis, pSurfaceSrc);
 
             if (fSrcTexture)
@@ -1474,24 +1512,25 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
                 Assert(!pSurfaceSrc->bounce.pTexture);
                 hr = pSurfaceSrc->u.pTexture->LockRect(src.mipmap, /* Texture level */
                                                        &LockedSrcRect,
-                                                       &Rect,
+                                                       &RectSrc,
                                                        D3DLOCK_READONLY);
             }
             else
                 hr = pSurfaceSrc->u.pSurface->LockRect(&LockedSrcRect,
-                                                       &Rect,
+                                                       &RectSrc,
                                                        D3DLOCK_READONLY);
-            AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceCopy: LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
+            AssertMsgReturn(hr == D3D_OK, ("LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
         }
 
         if (!pSurfaceDest->u.pSurface)
         {
-            LockedDestRect.pBits = (void *)pSurfaceDest->pMipmapLevels[dest.mipmap].pSurfaceData;
-            LockedDestRect.Pitch  = pSurfaceDest->pMipmapLevels[dest.mipmap].cbSurfacePitch;
+            LockedDestRect.pBits = (uint8_t *)pMipmapLevelDest->pSurfaceData +
+                                   pMipmapLevelDest->cbSurfacePitch * clipBox.y + pSurfaceDest->cbBlock * clipBox.x;
+            LockedDestRect.Pitch = pMipmapLevelDest->cbSurfacePitch;
         }
         else
         {
-            /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
+            /* Must flush the context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
             vmsvga3dSurfaceFlush(pThis, pSurfaceDest);
 
             if (fDestTexture)
@@ -1500,31 +1539,31 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
                 {
                     /* pSurfaceDest->u.pTexture can't be locked, see vmsvga3dBackCreateTexture */
                     hr = pSurfaceDest->bounce.pTexture->LockRect(dest.mipmap, /* texture level */
-                                                            &LockedDestRect,
-                                                            &Rect,
-                                                            0);
+                                                                 &LockedDestRect,
+                                                                 &RectDest,
+                                                                 0);
                 }
                 else
                 {
                     hr = pSurfaceDest->u.pTexture->LockRect(dest.mipmap, /* texture level */
                                                             &LockedDestRect,
-                                                            &Rect,
+                                                            &RectDest,
                                                             0);
                 }
             }
             else
                 hr = pSurfaceDest->u.pSurface->LockRect(&LockedDestRect,
-                                                        &Rect,
+                                                        &RectDest,
                                                         0);
-            AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceCopy: LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
+            AssertMsgReturn(hr == D3D_OK, ("LockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
         }
 
-        uint8_t *pDest = (uint8_t *)LockedDestRect.pBits + LockedDestRect.Pitch * pBox[i].y + pBox[i].x * pSurfaceDest->cbBlock;
-        uint8_t *pSrc  = (uint8_t *)LockedSrcRect.pBits + LockedSrcRect.Pitch * pBox[i].srcy + pBox[i].srcx * pSurfaceSrc->cbBlock;
+        uint8_t *pDest = (uint8_t *)LockedDestRect.pBits;
+        const uint8_t *pSrc = (uint8_t *)LockedSrcRect.pBits;
 
-        for (int32_t j = Rect.top; j < Rect.bottom; j++)
+        for (uint32_t j = 0; j < clipBox.h; ++j)
         {
-            memcpy(pDest, pSrc, pBox[i].w * pSurfaceSrc->cbBlock);
+            memcpy(pDest, pSrc, clipBox.w * pSurfaceSrc->cbBlock);
 
             pDest += LockedDestRect.Pitch;
             pSrc  += LockedSrcRect.Pitch;
@@ -1559,7 +1598,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             }
             else
                 hr = pSurfaceDest->u.pSurface->UnlockRect();
-            AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceCopy: Unlock failed with %x\n", hr), VERR_INTERNAL_ERROR);
+            AssertMsgReturn(hr == D3D_OK, ("Unlock failed with %x\n", hr), VERR_INTERNAL_ERROR);
         }
 
         if (pSurfaceSrc->u.pSurface)
@@ -1568,7 +1607,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
                 hr = pSurfaceSrc->u.pTexture->UnlockRect(src.mipmap /* Texture level */);
             else
                 hr = pSurfaceSrc->u.pSurface->UnlockRect();
-            AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceCopy: Unlock failed with %x\n", hr), VERR_INTERNAL_ERROR);
+            AssertMsgReturn(hr == D3D_OK, ("Unlock failed with %x\n", hr), VERR_INTERNAL_ERROR);
         }
     }
 

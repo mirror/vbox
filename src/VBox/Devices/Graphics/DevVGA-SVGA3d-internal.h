@@ -522,6 +522,7 @@ typedef struct VMSVGA3DSURFACE
 #endif
     SVGA3dSurfaceFace       faces[SVGA3D_MAX_SURFACE_FACES];
     uint32_t                cFaces;
+    uint32_t                cMipmapLevels;
     PVMSVGA3DMIPMAPLEVEL    pMipmapLevels;
     uint32_t                multiSampleCount;
     SVGA3dTextureFilter     autogenFilter;
@@ -1058,6 +1059,12 @@ int  vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSV
 
 int  vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext,
                                PVMSVGA3DSURFACE pSurface);
+
+void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
+                       const SVGA3dSize *pSizeDest,
+                       SVGA3dCopyBox *pBox);
+void vmsvgaClipBox(const SVGA3dSize *pSize,
+                   SVGA3dBox *pBox);
 
 #endif
 

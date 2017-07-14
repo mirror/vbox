@@ -74,6 +74,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
      * Since only plain surfaces (cFaces == 1) and cubemaps (cFaces == 6) are supported
      * (see also SVGA3dCmdDefineSurface definition in svga3d_reg.h), we ignore anything else.
      */
+    uint32_t cRemainingMipLevels = cMipLevels;
     uint32_t cFaces = 0;
     for (uint32_t i = 0; i < SVGA3D_MAX_SURFACE_FACES; ++i)
     {
@@ -82,6 +83,11 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 
         /* All SVGA3dSurfaceFace structures must have the same value of numMipLevels field */
         AssertReturn(face[i].numMipLevels == face[0].numMipLevels, VERR_INVALID_PARAMETER);
+
+        /* numMipLevels value can't be greater than the number of remaining elements in the paMipLevelSizes array. */
+        AssertReturn(face[i].numMipLevels <= cRemainingMipLevels, VERR_INVALID_PARAMETER);
+        cRemainingMipLevels -= face[i].numMipLevels;
+
         ++cFaces;
     }
     for (uint32_t i = cFaces; i < SVGA3D_MAX_SURFACE_FACES; ++i)
@@ -89,7 +95,9 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 
     /* cFaces must be 6 for a cubemap and 1 otherwise. */
     AssertReturn(cFaces == (uint32_t)((surfaceFlags & SVGA3D_SURFACE_CUBEMAP) ? 6 : 1), VERR_INVALID_PARAMETER);
-    AssertReturn(cMipLevels == cFaces * face[0].numMipLevels, VERR_INVALID_PARAMETER);
+
+    /* Sum of face[i].numMipLevels must be equal to cMipLevels. */
+    AssertReturn(cRemainingMipLevels == 0, VERR_INVALID_PARAMETER);
 
     if (sid >= pState->cSurfaces)
     {
@@ -211,6 +219,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     pSurface->autogenFilter     = autogenFilter;
     Assert(autogenFilter != SVGA3D_TEX_FILTER_FLATCUBIC);
     Assert(autogenFilter != SVGA3D_TEX_FILTER_GAUSSIANCUBIC);
+    pSurface->cMipmapLevels     = cMipLevels;
     pSurface->pMipmapLevels     = (PVMSVGA3DMIPMAPLEVEL)RTMemAllocZ(cMipLevels * sizeof(VMSVGA3DMIPMAPLEVEL));
     AssertReturn(pSurface->pMipmapLevels, VERR_NO_MEMORY);
 
@@ -218,6 +227,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
         pSurface->pMipmapLevels[i].size = paMipLevelSizes[i];
 
     pSurface->cbBlock = vmsvga3dSurfaceFormatSize(format);
+    AssertReturn(pSurface->cbBlock, VERR_INVALID_PARAMETER);
 
 #ifdef VMSVGA3D_DIRECT3D
     /* Translate the format and usage flags to D3D. */
@@ -275,16 +285,41 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     Assert(!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface));
 
     /* Allocate buffer to hold the surface data until we can move it into a D3D object */
+    uint32_t cbMemRemaining = SVGA3D_MAX_SURFACE_MEM_SIZE; /* Do not allow more than this for a surface. */
     for (uint32_t i = 0; i < cMipLevels; ++i)
     {
         PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[i];
-        LogFunc(("[%d] face %d mip level %d (%d,%d,%d)\n", i, i / pSurface->faces[0].numMipLevels, i % pSurface->faces[0].numMipLevels, pMipmapLevel->size.width, pMipmapLevel->size.height, pMipmapLevel->size.depth));
-        LogFunc(("cbPitch=0x%x cbBlock=0x%x\n", pSurface->cbBlock * pMipmapLevel->size.width, pSurface->cbBlock));
+        LogFunc(("[%d] face %d mip level %d (%d,%d,%d) cbBlock=0x%x\n",
+                 i, i / pSurface->faces[0].numMipLevels, i % pSurface->faces[0].numMipLevels,
+                 pMipmapLevel->size.width, pMipmapLevel->size.height, pMipmapLevel->size.depth, pSurface->cbBlock));
 
-        pMipmapLevel->cbSurfacePitch = pSurface->cbBlock * pMipmapLevel->size.width;
-        pMipmapLevel->cbSurface      = pMipmapLevel->cbSurfacePitch * pMipmapLevel->size.height * pMipmapLevel->size.depth;
-        pMipmapLevel->pSurfaceData   = RTMemAllocZ(pMipmapLevel->cbSurface);
+        if (   pMipmapLevel->size.width == 0
+            || pMipmapLevel->size.height == 0
+            || pMipmapLevel->size.depth == 0)
+            return VERR_INVALID_PARAMETER;
+
+        const uint32_t cMaxWidth = cbMemRemaining / pSurface->cbBlock;
+        if (pMipmapLevel->size.width > cMaxWidth)
+            return VERR_INVALID_PARAMETER;
+        const uint32_t cbSurfacePitch = pSurface->cbBlock * pMipmapLevel->size.width;
+        LogFunc(("cbPitch=0x%x\n", cbSurfacePitch));
+
+        const uint32_t cMaxHeight = cbMemRemaining / cbSurfacePitch;
+        if (pMipmapLevel->size.height > cMaxHeight)
+            return VERR_INVALID_PARAMETER;
+        const uint32_t cbSurfacePlane = cbSurfacePitch * pMipmapLevel->size.height;
+
+        const uint32_t cMaxDepth = cbMemRemaining / cbSurfacePlane;
+        if (pMipmapLevel->size.depth > cMaxDepth)
+            return VERR_INVALID_PARAMETER;
+        const uint32_t cbSurface = cbSurfacePlane * pMipmapLevel->size.depth;
+
+        pMipmapLevel->cbSurfacePitch = cbSurfacePitch;
+        pMipmapLevel->cbSurface      = cbSurface;
+        pMipmapLevel->pSurfaceData   = RTMemAllocZ(cbSurface);
         AssertReturn(pMipmapLevel->pSurfaceData, VERR_NO_MEMORY);
+
+        cbMemRemaining -= cbSurface;
     }
     return VINF_SUCCESS;
 }
@@ -327,15 +362,8 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
 
         if (pSurface->pMipmapLevels)
         {
-            for (uint32_t face=0; face < pSurface->cFaces; face++)
-            {
-                for (uint32_t i=0; i < pSurface->faces[face].numMipLevels; i++)
-                {
-                    uint32_t idx = i + face * pSurface->faces[0].numMipLevels;
-                    if (pSurface->pMipmapLevels[idx].pSurfaceData)
-                        RTMemFree(pSurface->pMipmapLevels[idx].pSurfaceData);
-                }
-            }
+            for (uint32_t i = 0; i < pSurface->cMipmapLevels; ++i)
+                RTMemFree(pSurface->pMipmapLevels[i].pSurfaceData);
             RTMemFree(pSurface->pMipmapLevels);
         }
 
@@ -427,9 +455,14 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId const *pDstS
         AssertRCReturn(rc, rc);
     }
 
+    SVGA3dBox clipSrcBox = *pSrcBox;
+    SVGA3dBox clipDstBox = *pDstBox;
+    vmsvgaClipBox(&pSrcSurface->pMipmapLevels[pSrcSfcImg->mipmap].size, &clipSrcBox);
+    vmsvgaClipBox(&pDstSurface->pMipmapLevels[pDstSfcImg->mipmap].size, &clipDstBox);
+
     return vmsvga3dBackSurfaceStretchBlt(pThis, pState,
-                                         pDstSurface, pDstSfcImg->mipmap, pDstBox,
-                                         pSrcSurface, pSrcSfcImg->mipmap, pSrcBox,
+                                         pDstSurface, pDstSfcImg->mipmap, &clipDstBox,
+                                         pSrcSurface, pSrcSfcImg->mipmap, &clipSrcBox,
                                          enmMode, pContext);
 }
 
@@ -484,33 +517,26 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
             uint8_t *pBufferStart;
 
             Log(("Copy box %d (%d,%d,%d)(%d,%d,%d) dest (%d,%d)\n", i, paBoxes[i].srcx, paBoxes[i].srcy, paBoxes[i].srcz, paBoxes[i].w, paBoxes[i].h, paBoxes[i].d, paBoxes[i].x, paBoxes[i].y));
-            /* Apparently we're supposed to clip it (gmr test sample) */
-            if (paBoxes[i].x + paBoxes[i].w > pMipLevel->size.width)
-                paBoxes[i].w = pMipLevel->size.width - paBoxes[i].x;
-            if (paBoxes[i].y + paBoxes[i].h > pMipLevel->size.height)
-                paBoxes[i].h = pMipLevel->size.height - paBoxes[i].y;
-            if (paBoxes[i].z + paBoxes[i].d > pMipLevel->size.depth)
-                paBoxes[i].d = pMipLevel->size.depth - paBoxes[i].z;
 
-            if (    !paBoxes[i].w
-                ||  !paBoxes[i].h
-                ||  !paBoxes[i].d
-                ||   paBoxes[i].x > pMipLevel->size.width
-                ||   paBoxes[i].y > pMipLevel->size.height
-                ||   paBoxes[i].z > pMipLevel->size.depth)
+            /* Apparently we're supposed to clip it (gmr test sample) */
+            SVGA3dCopyBox clipBox = paBoxes[i];
+            vmsvgaClipCopyBox(&pMipLevel->size, &pMipLevel->size, &clipBox);
+            if (   !clipBox.w
+                || !clipBox.h
+                || !clipBox.d)
             {
                 Log(("Empty box; skip\n"));
                 continue;
             }
 
-            uDestOffset = paBoxes[i].x * pSurface->cbBlock + paBoxes[i].y * pMipLevel->cbSurfacePitch + paBoxes[i].z * pMipLevel->size.height * pMipLevel->cbSurfacePitch;
-            AssertReturn(uDestOffset + paBoxes[i].w * pSurface->cbBlock * paBoxes[i].h * paBoxes[i].d <= pMipLevel->cbSurface, VERR_INTERNAL_ERROR);
+            uDestOffset = clipBox.x * pSurface->cbBlock + clipBox.y * pMipLevel->cbSurfacePitch + clipBox.z * pMipLevel->size.height * pMipLevel->cbSurfacePitch;
+            AssertReturn(uDestOffset + clipBox.w * pSurface->cbBlock * clipBox.h * clipBox.d <= pMipLevel->cbSurface, VERR_INTERNAL_ERROR);
 
-            cbSrcPitch = (guest.pitch == 0) ? paBoxes[i].w * pSurface->cbBlock : guest.pitch;
+            cbSrcPitch = (guest.pitch == 0) ? clipBox.w * pSurface->cbBlock : guest.pitch;
 #ifdef MANUAL_FLIP_SURFACE_DATA
             pBufferStart =    (uint8_t *)pMipLevel->pSurfaceData
-                            + paBoxes[i].x * pSurface->cbBlock
-                            + pMipLevel->cbSurface - paBoxes[i].y * pMipLevel->cbSurfacePitch
+                            + clipBox.x * pSurface->cbBlock
+                            + pMipLevel->cbSurface - clipBox.y * pMipLevel->cbSurfacePitch
                             - pMipLevel->cbSurfacePitch;      /* flip image during copy */
 #else
             pBufferStart = (uint8_t *)pMipLevel->pSurfaceData + uDestOffset;
@@ -524,10 +550,10 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                                    (int32_t)pMipLevel->cbSurfacePitch,
 #endif
                                    guest.ptr,
-                                   paBoxes[i].srcx * pSurface->cbBlock + (paBoxes[i].srcy + paBoxes[i].srcz * paBoxes[i].h) * cbSrcPitch,
+                                   clipBox.srcx * pSurface->cbBlock + (clipBox.srcy + clipBox.srcz * clipBox.h) * cbSrcPitch,
                                    cbSrcPitch,
-                                   paBoxes[i].w * pSurface->cbBlock,
-                                   paBoxes[i].d * paBoxes[i].h);
+                                   clipBox.w * pSurface->cbBlock,
+                                   clipBox.d * clipBox.h);
 
             Log4(("first line:\n%.*Rhxd\n", pMipLevel->cbSurfacePitch, pMipLevel->pSurfaceData));
 
@@ -554,30 +580,25 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
 
         for (unsigned i = 0; i < cCopyBoxes; i++)
         {
-            /* Apparently we're supposed to clip it (gmr test sample) */
-            if (paBoxes[i].x + paBoxes[i].w > pMipLevel->size.width)
-                paBoxes[i].w = pMipLevel->size.width - paBoxes[i].x;
-            if (paBoxes[i].y + paBoxes[i].h > pMipLevel->size.height)
-                paBoxes[i].h = pMipLevel->size.height - paBoxes[i].y;
-            if (paBoxes[i].z + paBoxes[i].d > pMipLevel->size.depth)
-                paBoxes[i].d = pMipLevel->size.depth - paBoxes[i].z;
+            Log(("Copy box %d (%d,%d,%d)(%d,%d,%d) dest (%d,%d)\n", i, paBoxes[i].srcx, paBoxes[i].srcy, paBoxes[i].srcz, paBoxes[i].w, paBoxes[i].h, paBoxes[i].d, paBoxes[i].x, paBoxes[i].y));
 
+            /** @todo Is d == 0 valid? */
             Assert((paBoxes[i].d == 1 || paBoxes[i].d == 0) && paBoxes[i].z == 0);
 
-            if (    !paBoxes[i].w
-                ||  !paBoxes[i].h
-                ||   paBoxes[i].x > pMipLevel->size.width
-                ||   paBoxes[i].y > pMipLevel->size.height)
+            /* Apparently we're supposed to clip it (gmr test sample) */
+            SVGA3dCopyBox clipBox = paBoxes[i];
+            vmsvgaClipCopyBox(&pMipLevel->size, &pMipLevel->size, &clipBox);
+            if (   !clipBox.w
+                || !clipBox.h
+                || !clipBox.d)
             {
                 Log(("Empty box; skip\n"));
                 continue;
             }
 
-            Log(("Copy box %d (%d,%d,%d)(%d,%d,%d) dest (%d,%d)\n", i, paBoxes[i].srcx, paBoxes[i].srcy, paBoxes[i].srcz, paBoxes[i].w, paBoxes[i].h, paBoxes[i].d, paBoxes[i].x, paBoxes[i].y));
-
-            uint32_t cbSrcPitch = (guest.pitch == 0) ? paBoxes[i].w * pSurface->cbBlock : guest.pitch;
+            uint32_t cbSrcPitch = (guest.pitch == 0) ? clipBox.w * pSurface->cbBlock : guest.pitch;
             rc = vmsvga3dBackSurfaceDMACopyBox(pThis, pState, pSurface, host.mipmap, guest.ptr, cbSrcPitch, transfer,
-                                               &paBoxes[i], pContext, rc, i);
+                                               &clipBox, pContext, rc, i);
         }
     }
 
