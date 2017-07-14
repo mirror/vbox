@@ -1567,6 +1567,7 @@ static NTSTATUS NTAPI
 supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POBJECT_ATTRIBUTES pObjAttribs,
                                      PLARGE_INTEGER pcbSection, ULONG fProtect, ULONG fAttribs, HANDLE hFile)
 {
+    bool fNeedUncChecking = false;
     if (   hFile != NULL
         && hFile != INVALID_HANDLE_VALUE)
     {
@@ -1576,6 +1577,7 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
                                                    | PAGE_EXECUTE_READWRITE));
         if (fImage || fExecMap || fExecProt)
         {
+            fNeedUncChecking = true;
             DWORD dwSavedLastError = RtlGetLastWin32Error();
 
             bool fCallRealApi;
@@ -1598,7 +1600,73 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
     /*
      * Call checked out OK, call the original.
      */
-    return g_pfnNtCreateSectionReal(phSection, fAccess, pObjAttribs, pcbSection, fProtect, fAttribs, hFile);
+    NTSTATUS rcNtReal = g_pfnNtCreateSectionReal(phSection, fAccess, pObjAttribs, pcbSection, fProtect, fAttribs, hFile);
+
+    /*
+     * Check that the image that got mapped bear some resemblance to the one that was
+     * requested.  Apparently there are ways to trick the NT cache manager to map a
+     * file different from hFile into memory using local UNC accesses.
+     */
+    if (   NT_SUCCESS(rcNtReal)
+        && fNeedUncChecking)
+    {
+        DWORD dwSavedLastError = RtlGetLastWin32Error();
+
+        bool fOkay = false;
+
+        /* To get the name of the file backing the section, we unfortunately have to map it. */
+        SIZE_T   cbView   = 0;
+        PVOID    pvTmpMap = NULL;
+        NTSTATUS rcNt = NtMapViewOfSection(*phSection, NtCurrentProcess(), &pvTmpMap, 0, 0, NULL /*poffSection*/, &cbView,
+                                           ViewUnmap, MEM_TOP_DOWN, PAGE_EXECUTE);
+        if (NT_SUCCESS(rcNt))
+        {
+            /* Query the name. */
+            union
+            {
+                UNICODE_STRING  UniStr;
+                RTUTF16         awcBuf[512];
+            } uBuf;
+            RT_ZERO(uBuf);
+            SIZE_T   cbActual = 0;
+            NTSTATUS rcNtQuery = NtQueryVirtualMemory(NtCurrentProcess(), pvTmpMap, MemorySectionName,
+                                                      &uBuf, sizeof(uBuf) - sizeof(RTUTF16), &cbActual);
+
+            /* Unmap the view. */
+            rcNt = NtUnmapViewOfSection(NtCurrentProcess(), pvTmpMap);
+            if (!NT_SUCCESS(rcNt))
+                SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: NtUnmapViewOfSection failed on %p (hSection=%p, hFile=%p) with %#x!\n",
+                             pvTmpMap, *phSection, hFile, rcNt));
+
+            /* Process the name query result. */
+            if (NT_SUCCESS(rcNtQuery))
+            {
+                static UNICODE_STRING const s_UncPrefix = RTNT_CONSTANT_UNISTR(L"\\Device\\Mup");
+                if (!supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &s_UncPrefix, true /*fCheckSlash*/))
+                    fOkay = true;
+                else
+                    supR3HardenedError(VINF_SUCCESS, false,
+                                       "supR3HardenedMonitor_NtCreateSection: Image section with UNC path is not trusted: '%.*ls'\n",
+                                       uBuf.UniStr.Length / sizeof(RTUTF16), uBuf.UniStr.Buffer);
+            }
+            else
+                SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: NtQueryVirtualMemory failed on %p (hFile=%p) with %#x -> STATUS_TRUST_FAILURE\n",
+                             *phSection, hFile, rcNt));
+        }
+        else
+            SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: NtMapViewOfSection failed on %p (hFile=%p) with %#x -> STATUS_TRUST_FAILURE\n",
+                         *phSection, hFile, rcNt));
+        if (!fOkay)
+        {
+            NtClose(*phSection);
+            *phSection = INVALID_HANDLE_VALUE;
+            RtlRestoreLastWin32Error(dwSavedLastError);
+            return STATUS_TRUST_FAILURE;
+        }
+
+        RtlRestoreLastWin32Error(dwSavedLastError);
+    }
+    return rcNtReal;
 }
 
 
@@ -1733,6 +1801,9 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         RtlRestoreLastWin32Error(dwSavedLastError);
         return STATUS_INVALID_PARAMETER;
     }
+    PCWCHAR const  pawcOrgName = pName->Buffer;
+    uint32_t const cwcOrgName  = pName->Length / sizeof(WCHAR);
+
     /*SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%p:%ls\n",
                  (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer, pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath,
                  !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));*/
@@ -1740,13 +1811,30 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     /*
      * Reject long paths that's close to the 260 limit without looking.
      */
-    if (pName->Length > 256 * sizeof(WCHAR))
+    if (cwcOrgName > 256)
     {
         supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: too long name: %#x bytes\n", pName->Length);
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
         RtlRestoreLastWin32Error(dwSavedLastError);
         return STATUS_NAME_TOO_LONG;
     }
+
+#if 0
+    /*
+     * Reject all UNC-like paths as we cannot trust non-local files at all.
+     * Note! We may have to relax this to deal with long path specifications and NT pass thrus.
+     */
+    if (   cwcOrgName >= 3
+        && RTPATH_IS_SLASH(pawcOrgName[0])
+        && RTPATH_IS_SLASH(pawcOrgName[1])
+        && !RTPATH_IS_SLASH(pawcOrgName[2]))
+    {
+        supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting UNC name '%.*ls'\n", cwcOrgName, pawcOrgName);
+        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_REDIRECTOR_NOT_STARTED));
+        RtlRestoreLastWin32Error(dwSavedLastError);
+        return STATUS_REDIRECTOR_NOT_STARTED;
+    }
+#endif
 
     /*
      * Reject PGHook.dll as it creates a thread from its DllMain that breaks
@@ -1786,12 +1874,10 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     /*
      * Process the name a little, checking if it needs a DLL suffix and is pathless.
      */
-    PCWCHAR         pawcName     = pName->Buffer;
-    uint32_t        cwcName      = pName->Length / sizeof(WCHAR);
     uint32_t        offLastSlash = UINT32_MAX;
     uint32_t        offLastDot   = UINT32_MAX;
-    for (uint32_t i = 0; i < cwcName; i++)
-        switch (pawcName[i])
+    for (uint32_t i = 0; i < cwcOrgName; i++)
+        switch (pawcOrgName[i])
         {
             case '\\':
             case '/':
@@ -1803,17 +1889,17 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                 break;
         }
     bool const fNeedDllSuffix = offLastDot == UINT32_MAX;
-    //bool const fTrailingDot   = offLastDot == cwcName - 1;
+    //bool const fTrailingDot   = offLastDot == cwcOrgName - 1;
 
     /*
      * Absolute path?
      */
-    if (   (   cwcName >= 4
-            && RT_C_IS_ALPHA(pawcName[0])
-            && pawcName[1] == ':'
-            && RTPATH_IS_SLASH(pawcName[2]) )
-        || (   cwcName >= 1
-            && RTPATH_IS_SLASH(pawcName[0]) )
+    if (   (   cwcOrgName >= 4
+            && RT_C_IS_ALPHA(pawcOrgName[0])
+            && pawcOrgName[1] == ':'
+            && RTPATH_IS_SLASH(pawcOrgName[2]) )
+        || (   cwcOrgName >= 1
+            && RTPATH_IS_SLASH(pawcOrgName[0]) )
        )
     {
         rcNtResolve = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
@@ -1849,21 +1935,21 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         else
         {
             /* Copy the path. */
-            memcpy(wszPath, pawcName, cwcName * sizeof(WCHAR));
-            if (fNeedDllSuffix)
+            memcpy(wszPath, pawcOrgName, cwcOrgName * sizeof(WCHAR));
+            if (!fNeedDllSuffix)
+                wszPath[cwcOrgName] = '\0';
+            else
             {
-                if (cwcName + 4 >= RT_ELEMENTS(wszPath))
+                if (cwcOrgName + 4 >= RT_ELEMENTS(wszPath))
                 {
                     supR3HardenedError(VINF_SUCCESS, false,
-                                       "supR3HardenedMonitor_LdrLoadDll: Name too long (abs): %.*ls\n", cwcName, pawcName);
+                                       "supR3HardenedMonitor_LdrLoadDll: Name too long (abs): %.*ls\n", cwcOrgName, pawcOrgName);
                     SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
                     RtlRestoreLastWin32Error(dwSavedLastError);
                     return STATUS_NAME_TOO_LONG;
                 }
-                memcpy(&wszPath[cwcName], L".dll", 5 * sizeof(WCHAR));
-                cwcName += 4;
+                memcpy(&wszPath[cwcOrgName], L".dll", 5 * sizeof(WCHAR));
             }
-            wszPath[cwcName] = '\0';
         }
     }
     /*
@@ -1895,7 +1981,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         {
             supR3HardenedError(VINF_SUCCESS, false,
                                "supR3HardenedMonitor_LdrLoadDll: relative name not permitted: %.*ls\n",
-                               cwcName, pawcName);
+                               cwcOrgName, pawcOrgName);
             SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_OBJECT_NAME_INVALID));
             RtlRestoreLastWin32Error(dwSavedLastError);
             return STATUS_OBJECT_NAME_INVALID;
@@ -1937,18 +2023,18 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
              */
             AssertCompile(sizeof(g_System32WinPath.awcBuffer) <= sizeof(wszPath));
             cwc = g_System32WinPath.UniStr.Length / sizeof(RTUTF16); Assert(cwc > 2);
-            if (cwc + 1 + cwcName + fNeedDllSuffix * 4 >= RT_ELEMENTS(wszPath))
+            if (cwc + 1 + cwcOrgName + fNeedDllSuffix * 4 >= RT_ELEMENTS(wszPath))
             {
                 supR3HardenedError(VINF_SUCCESS, false,
-                                   "supR3HardenedMonitor_LdrLoadDll: Name too long (system32): %.*ls\n", cwcName, pawcName);
+                                   "supR3HardenedMonitor_LdrLoadDll: Name too long (system32): %.*ls\n", cwcOrgName, pawcOrgName);
                 SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
                 RtlRestoreLastWin32Error(dwSavedLastError);
                 return STATUS_NAME_TOO_LONG;
             }
             memcpy(wszPath, g_System32WinPath.UniStr.Buffer, cwc * sizeof(RTUTF16));
             wszPath[cwc++] = '\\';
-            memcpy(&wszPath[cwc], pawcName, cwcName * sizeof(WCHAR));
-            cwc += cwcName;
+            memcpy(&wszPath[cwc], pawcOrgName, cwcOrgName * sizeof(WCHAR));
+            cwc += cwcOrgName;
             if (!fNeedDllSuffix)
                 wszPath[cwc] = '\0';
             else
