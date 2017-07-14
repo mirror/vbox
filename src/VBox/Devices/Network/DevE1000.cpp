@@ -4023,6 +4023,13 @@ static void e1kInsertChecksum(PE1KSTATE pThis, uint8_t *pPkt, uint16_t u16PktLen
 
     if (cse == 0)
         cse = u16PktLen - 1;
+    else if (cse < css)
+    {
+        E1kLog2(("%s css(%X) is greater than cse(%X), checksum is not inserted\n",
+                 pThis->szPrf, css, cse));
+        return;
+    }
+
     uint16_t u16ChkSum = e1kCSum16(pPkt + css, cse - css + 1);
     E1kLog2(("%s Inserting csum: %04X at %02X, old value: %04X\n", pThis->szPrf,
              u16ChkSum, cso, *(uint16_t*)(pPkt + cso)));
