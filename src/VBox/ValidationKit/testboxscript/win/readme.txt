@@ -107,14 +107,14 @@ Preparations:
         for /L %i in (5000,1,5032) do netsh firewall add portopening TCP %i "NetPerf %i TCP"
         for /L %i in (5000,1,5032) do netsh firewall add portopening UDP %i "NetPerf %i UDP"
 
-20. Setup time server to "wei01-time.de.oracle.com" and update date/time.
+12. Setup time server to "wei01-time.de.oracle.com" and update date/time.
 
-21. Activate windows. "https://linserv.de.oracle.com/vbox/wiki/MSDN Volume License Keys"
+13. Activate windows. "https://linserv.de.oracle.com/vbox/wiki/MSDN Volume License Keys"
 
-22. Windows 2012 R2: If you experience mouse pointer problems connecting with rdesktop,
+14. Windows 2012 R2: If you experience mouse pointer problems connecting with rdesktop,
     open the mouse pointer settings and disable mouse pointer shadow.
 
-23. Enable RDP access by opening "System Properties" and selecting "Allow
+15. Enable RDP access by opening "System Properties" and selecting "Allow
     remote connections to this computer" in the "Remote" tab.  Ensure that
     "Allow connections only from computers running Remote Desktop with Network
     Level Authentication" is not checked or rdesktop can't access it.
@@ -123,23 +123,25 @@ Preparations:
          \HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\SecurityLayer
          Change DWORD Hex '2' -> '1'
 
-23b. While you're in "System Properties", in the "Hardware" tab, button
+15b. While you're in "System Properties", in the "Hardware" tab, button
     "Driver Signing" tell it to ignore logo testing requirements.
+
+    W10: Doesn't exist any more.
 
 The install (as user vbox):
 
-24. Disable loading CONIME. Set "HKEY_CURRENT_USER\Console\LoadConIme" to 0.
+16. Disable loading CONIME. Set "HKEY_CURRENT_USER\Console\LoadConIme" to 0.
 
-25. Unzip (/ copy) the content of the testboxscript-*.zip to C:\testboxscript.
+17. Unzip (/ copy) the content of the testboxscript-*.zip to C:\testboxscript.
 
-26. Copy C:\testboxscript\testboxscript\win\autoexec-testbox.cmd to C:\.
+18. Copy C:\testboxscript\testboxscript\win\autoexec-testbox.cmd to C:\.
 
-27. Create a shortcut to C:\autoexec-testbox.cmd and drag it into
+19. Create a shortcut to C:\autoexec-testbox.cmd and drag it into
     "Start" -> "All Programs" -> "Startup".
 
     W10: Find startup folder by hitting Win+R and entering "shell:startup".
 
-28. If this is an Intel box and the CPU is capable of Nested Paging, edit C:\autoexec-testbox.cmd
+20. If this is an Intel box and the CPU is capable of Nested Paging, edit C:\autoexec-testbox.cmd
     and append '--nested-paging'
 
 
