@@ -147,7 +147,7 @@ static int vscsiLUNSSCReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
         }
         case SCSI_MODE_SENSE_6:
         {
-            uint8_t uModePage = pVScsiReq->pbCDB[2] & 0x3f;
+//            uint8_t uModePage = pVScsiReq->pbCDB[2] & 0x3f;
             uint8_t aReply[24];
             uint8_t *pu8ReplyPos;
             uint8_t uReplyLen;
