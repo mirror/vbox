@@ -942,10 +942,10 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
 
         /* Show error message if necessary: */
         if (!comMedium.isOk())
-            msgCenter().cannotMoveHardDiskStorage(comMedium,
-                                                  oldData.m_options.m_strLocation,
-                                                  newData.m_options.m_strLocation,
-                                                  this);
+            msgCenter().cannotMoveMediumStorage(comMedium,
+                                                oldData.m_options.m_strLocation,
+                                                newData.m_options.m_strLocation,
+                                                this);
         else
         {
             /* Show move storage progress: */
@@ -954,10 +954,10 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
 
             /* Show error message if necessary: */
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotMoveHardDiskStorage(comProgress,
-                                                      oldData.m_options.m_strLocation,
-                                                      newData.m_options.m_strLocation,
-                                                      this);
+                msgCenter().cannotMoveMediumStorage(comProgress,
+                                                    oldData.m_options.m_strLocation,
+                                                    newData.m_options.m_strLocation,
+                                                    this);
         }
     }
 

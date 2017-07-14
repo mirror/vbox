@@ -1218,6 +1218,22 @@ void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType 
           formatErrorInfo(medium));
 }
 
+void UIMessageCenter::cannotMoveMediumStorage(const CMedium &comMedium, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to move the storage unit of the disk image <b>%1</b> to <b>%2</b>.")
+             .arg(strLocationOld, strLocationNew),
+          formatErrorInfo(comMedium));
+}
+
+void UIMessageCenter::cannotMoveMediumStorage(const CProgress &comProgress, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to move the storage unit of the disk image <b>%1</b> to <b>%2</b>.")
+             .arg(strLocationOld, strLocationNew),
+          formatErrorInfo(comProgress));
+}
+
 bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, QWidget *pParent /* = 0*/) const
 {
     /* Prepare the usage: */
@@ -1324,22 +1340,6 @@ void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, con
           tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
              .arg(strLocation),
           formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotMoveHardDiskStorage(const CMedium &comMedium, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to move the storage unit of the hard disk <b>%1</b> to <b>%2</b>.")
-             .arg(strLocationOld, strLocationNew),
-          formatErrorInfo(comMedium));
-}
-
-void UIMessageCenter::cannotMoveHardDiskStorage(const CProgress &comProgress, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to move the storage unit of the hard disk <b>%1</b> to <b>%2</b>.")
-             .arg(strLocationOld, strLocationNew),
-          formatErrorInfo(comProgress));
 }
 
 void UIMessageCenter::cannotResizeHardDiskStorage(const CMedium &comMedium, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent /* = 0 */) const

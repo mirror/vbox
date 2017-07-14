@@ -200,7 +200,7 @@ private slots:
         /** Handles location change. */
         void sltLocationPathChanged(const QString &strPath);
         /** Handles size editor change. */
-        void sltSizeEditorChanged(qulonglong uSize);
+        void sltSizeValueChanged(qulonglong uSize);
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -276,11 +276,11 @@ private:
         QLabel    *m_pErrorPaneType;
 
         /** Holds the location label. */
-        QLabel    *m_pLabelLocation;
+        QLabel             *m_pLabelLocation;
         /** Holds the location selector. */
         UIFilePathSelector *m_pSelectorLocation;
         /** Holds the location error pane. */
-        QLabel    *m_pErrorPaneLocation;
+        QLabel             *m_pErrorPaneLocation;
 
         /** Holds the size label. */
         QLabel             *m_pLabelSize;

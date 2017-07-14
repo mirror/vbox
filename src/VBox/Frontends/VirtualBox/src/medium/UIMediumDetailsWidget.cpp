@@ -135,7 +135,7 @@ void UIMediumDetailsWidget::sltLocationPathChanged(const QString &strPath)
     updateButtonStates();
 }
 
-void UIMediumDetailsWidget::sltSizeEditorChanged(qulonglong uSize)
+void UIMediumDetailsWidget::sltSizeValueChanged(qulonglong uSize)
 {
     m_newData.m_options.m_uLogicalSize = uSize;
     revalidate(m_pErrorPaneSize);
@@ -348,7 +348,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
                     m_pLabelSize->setBuddy(m_pEditorSize);
                     m_pEditorSize->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
                     connect(m_pEditorSize, &UIMediumSizeEditor::sigSizeChanged,
-                            this, &UIMediumDetailsWidget::sltSizeEditorChanged);
+                            this, &UIMediumDetailsWidget::sltSizeValueChanged);
 
                     /* Add into layout: */
                     pLayoutSize->addWidget(m_pEditorSize, 0, 0, 2, 1);
@@ -360,11 +360,12 @@ void UIMediumDetailsWidget::prepareTabOptions()
                 {
                     /* Configure label: */
                     m_pErrorPaneSize->setAlignment(Qt::AlignCenter);
+                    m_pErrorPaneSize->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
                     m_pErrorPaneSize->setPixmap(UIIconPool::iconSet(":/status_error_16px.png")
-                                                    .pixmap(QSize(iIconMetric, iIconMetric)));
+                                                .pixmap(QSize(iIconMetric, iIconMetric)));
 
                     /* Add into layout: */
-                    pLayoutSize->addWidget(m_pErrorPaneSize, 0, 1);
+                    pLayoutSize->addWidget(m_pErrorPaneSize, 0, 1, Qt::AlignCenter);
                 }
 
                 /* Add into layout: */
