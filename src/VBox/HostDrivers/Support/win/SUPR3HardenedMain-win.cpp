@@ -1657,6 +1657,32 @@ static bool supR3HardenedIsFilenameMatchDll(PUNICODE_STRING pPath, const char *p
     return RTUtf16ICmpAscii(pwszTmp, pszName) == 0;
 }
 
+/**
+ * Checks whether the given unicode string contains a path separator.
+ *
+ * @returns true if it contains path separator, false if only a name.
+ * @param   pPath               The path to check.
+ */
+static bool supR3HardenedContainsPathSep(PUNICODE_STRING pPath)
+{
+    size_t    cwcLeft = pPath->Length / sizeof(WCHAR);
+    PCRTUTF16 pwc     = pPath->Buffer;
+    while (cwcLeft-- > 0)
+    {
+        RTUTF16 wc = *pwc++;
+        switch (wc)
+        {
+            default:
+                break;
+            case '\\':
+            case '/':
+            case ':':
+                return true;
+        }
+    }
+    return false;
+}
+
 
 /**
  * Hooks that intercepts LdrLoadDll calls.
@@ -1745,7 +1771,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     }
 
     /*
-     * Absolute path?
+     * Resolve the path, copying the result into wszPath
      */
     NTSTATUS        rcNtResolve     = STATUS_SUCCESS;
     bool            fSkipValidation = false;
@@ -1757,12 +1783,37 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     PUNICODE_STRING pUniStrResult  = NULL;
     UNICODE_STRING  ResolvedName;
 
-    if (   (   pName->Length >= 4 * sizeof(WCHAR)
-            && RT_C_IS_ALPHA(pName->Buffer[0])
-            && pName->Buffer[1] == ':'
-            && RTPATH_IS_SLASH(pName->Buffer[2]) )
-        || (   pName->Length >= 1 * sizeof(WCHAR)
-            && RTPATH_IS_SLASH(pName->Buffer[1]) )
+    /*
+     * Process the name a little, checking if it needs a DLL suffix and is pathless.
+     */
+    PCWCHAR         pawcName     = pName->Buffer;
+    uint32_t        cwcName      = pName->Length / sizeof(WCHAR);
+    uint32_t        offLastSlash = UINT32_MAX;
+    uint32_t        offLastDot   = UINT32_MAX;
+    for (uint32_t i = 0; i < cwcName; i++)
+        switch (pawcName[i])
+        {
+            case '\\':
+            case '/':
+                offLastSlash = i;
+                offLastDot = UINT32_MAX;
+                break;
+            case '.':
+                offLastDot = i;
+                break;
+        }
+    bool const fNeedDllSuffix = offLastDot == UINT32_MAX;
+    //bool const fTrailingDot   = offLastDot == cwcName - 1;
+
+    /*
+     * Absolute path?
+     */
+    if (   (   cwcName >= 4
+            && RT_C_IS_ALPHA(pawcName[0])
+            && pawcName[1] == ':'
+            && RTPATH_IS_SLASH(pawcName[2]) )
+        || (   cwcName >= 1
+            && RTPATH_IS_SLASH(pawcName[0]) )
        )
     {
         rcNtResolve = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
@@ -1797,19 +1848,33 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         }
         else
         {
-            memcpy(wszPath, pName->Buffer, pName->Length);
-            wszPath[pName->Length / sizeof(WCHAR)] = '\0';
+            /* Copy the path. */
+            memcpy(wszPath, pawcName, cwcName * sizeof(WCHAR));
+            if (fNeedDllSuffix)
+            {
+                if (cwcName + 4 >= RT_ELEMENTS(wszPath))
+                {
+                    supR3HardenedError(VINF_SUCCESS, false,
+                                       "supR3HardenedMonitor_LdrLoadDll: Name too long (abs): %.*ls\n", cwcName, pawcName);
+                    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
+                    RtlRestoreLastWin32Error(dwSavedLastError);
+                    return STATUS_NAME_TOO_LONG;
+                }
+                memcpy(&wszPath[cwcName], L".dll", 5 * sizeof(WCHAR));
+                cwcName += 4;
+            }
+            wszPath[cwcName] = '\0';
         }
     }
     /*
      * Not an absolute path.  Check if it's one of those special API set DLLs
      * or something we're known to use but should be taken from WinSxS.
      */
-    else if (   supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
-                                               L"api-ms-win-", 11, false /*fCheckSlash*/)
-             || supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
-                                               L"ext-ms-win-", 11, false /*fCheckSlash*/)
-            )
+    else if (   (   supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
+                                                  L"api-ms-win-", 11, false /*fCheckSlash*/)
+                 || supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
+                                                  L"ext-ms-win-", 11, false /*fCheckSlash*/) )
+             && !supR3HardenedContainsPathSep(pName))
     {
         memcpy(wszPath, pName->Buffer, pName->Length);
         wszPath[pName->Length / sizeof(WCHAR)] = '\0';
@@ -1823,28 +1888,6 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
      */
     else
     {
-        PCWCHAR  pawcName     = pName->Buffer;
-        uint32_t cwcName      = pName->Length / sizeof(WCHAR);
-        uint32_t offLastSlash = UINT32_MAX;
-        uint32_t offLastDot   = UINT32_MAX;
-        for (uint32_t i = 0; i < cwcName; i++)
-            switch (pawcName[i])
-            {
-                case '\\':
-                case '/':
-                    offLastSlash = i;
-                    offLastDot = UINT32_MAX;
-                    break;
-                case '.':
-                    offLastDot = i;
-                    break;
-            }
-
-        bool const fNeedDllSuffix = offLastDot == UINT32_MAX && offLastSlash == UINT32_MAX;
-
-        if (offLastDot != UINT32_MAX && offLastDot == cwcName - 1)
-            cwcName--;
-
         /*
          * Reject relative paths for now as they might be breakout attempts.
          */
@@ -2017,6 +2060,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                 rcNtGetDll = LdrGetDllHandle(NULL /*DllPath*/, NULL /*pfFlags*/, pOrgName, phMod);
                 if (NT_SUCCESS(rcNtGetDll))
                 {
+                    RTNtPathFree(&NtPathUniStr, &hRootDir);
                     RtlRestoreLastWin32Error(dwSavedLastError);
                     return rcNtGetDll;
                 }
@@ -2025,6 +2069,11 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: error opening '%ls': %u (NtPath=%.*ls; Input=%.*ls; rcNtGetDll=%#x\n",
                          wszPath, dwErr, NtPathUniStr.Length / sizeof(RTUTF16), NtPathUniStr.Buffer,
                          pOrgName->Length / sizeof(WCHAR), pOrgName->Buffer, rcNtGetDll));
+
+            RTNtPathFree(&NtPathUniStr, &hRootDir);
+            RtlRestoreLastWin32Error(dwSavedLastError);
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
+            return rcNt;
         }
         RTNtPathFree(&NtPathUniStr, &hRootDir);
     }
