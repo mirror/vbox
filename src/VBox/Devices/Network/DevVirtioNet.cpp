@@ -1150,6 +1150,8 @@ DECLINLINE(uint16_t) vnetCSum16(const void *pvBuf, size_t cb)
 
 DECLINLINE(void) vnetCompleteChecksum(uint8_t *pBuf, size_t cbSize, uint16_t uStart, uint16_t uOffset)
 {
+    AssertReturnVoid(uStart < cbSize);
+    AssertReturnVoid(uStart + uOffset + sizeof(uint16_t) <= cbSize);
     *(uint16_t*)(pBuf + uStart + uOffset) = vnetCSum16(pBuf + uStart, cbSize - uStart);
 }
 
