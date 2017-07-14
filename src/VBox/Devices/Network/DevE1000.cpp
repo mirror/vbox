@@ -3724,7 +3724,6 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, bool fGso)
                  pThis->szPrf, pThis->cbTxAlloc,
                  pThis->fVTag ? "VLAN " : "",
                  pThis->fGSO ? "GSO " : ""));
-        pThis->cbTxAlloc = 0;
     }
     else
     {
@@ -3740,6 +3739,7 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, bool fGso)
         pSg->aSegs[0].pvSeg = pThis->aTxPacketFallback;
         pSg->aSegs[0].cbSeg = sizeof(pThis->aTxPacketFallback);
     }
+    pThis->cbTxAlloc = 0;
 
     pThis->CTX_SUFF(pTxSg) = pSg;
     return VINF_SUCCESS;
@@ -4365,13 +4365,21 @@ static int e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, bool fOnWork
 #endif
 
     uint16_t u16MaxPktLen = pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw3.u16MSS;
-    Assert(u16MaxPktLen != 0);
-    Assert(u16MaxPktLen < E1K_MAX_TX_PKT_SIZE);
+    if (RT_UNLIKELY(u16MaxPktLen <= pThis->contextTSE.dw3.u8HDRLEN))
+    {
+        E1kLog(("%s Transmit packet is too small: %u <= %u(min)\n", pThis->szPrf, u16MaxPktLen, pThis->contextTSE.dw3.u8HDRLEN));
+        return VINF_SUCCESS; // @todo consider VERR_BUFFER_UNDERFLOW;
+    }
+    if (RT_UNLIKELY(u16MaxPktLen > E1K_MAX_TX_PKT_SIZE || u16MaxPktLen > pThis->CTX_SUFF(pTxSg)->cbAvailable))
+    {
+        E1kLog(("%s Transmit packet is too large: %u > %u(max)\n", pThis->szPrf, u16MaxPktLen, E1K_MAX_TX_PKT_SIZE));
+        return VINF_SUCCESS; // @todo consider VERR_BUFFER_OVERFLOW;
+    }
 
     /*
      * Carve out segments.
      */
-    int rc;
+    int rc = VINF_SUCCESS;
     do
     {
         /* Calculate how many bytes we have left in this TCP segment */
@@ -4405,7 +4413,7 @@ static int e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, bool fOnWork
         e1kXmitFreeBuf(pThis);
     }
 
-    return false;
+    return VINF_SUCCESS; // @todo consider rc;
 }
 #endif /* E1K_WITH_TXD_CACHE */
 
