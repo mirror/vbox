@@ -84,6 +84,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/VSCSI/VSCSIIoReq.cpp \
  	Storage/VSCSI/VSCSIVpdPagePool.cpp \
  	build/VBoxDDUDeps.cpp
+
+ ifdef VBOX_WITH_VSCSI_SSC
+  VBoxDDU_SOURCES        += Storage/VSCSI/VSCSILunSsc.cpp
+  VBoxDDU_DEFS		 += VBOX_WITH_VSCSI_SSC
+ endif
  ifdef VBOX_WITH_USB
   VBoxDDU_INCS.os2       += \
  	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
