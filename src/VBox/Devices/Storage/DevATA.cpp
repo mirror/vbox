@@ -4553,6 +4553,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             Log2(("%s: LUN#%d status %#04x\n", __FUNCTION__, pCtl->aIfs[i].iLUN, pCtl->aIfs[i].uATARegStatus));
             pCtl->aIfs[i].uATARegError = 0x01;
         }
+        pCtl->iSelectedIf = 0;
         ataR3AsyncIOClearRequests(pCtl);
         Log2(("%s: Ctl#%d: message to async I/O thread, resetA\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
         if (val & ATA_DEVCTL_HOB)
