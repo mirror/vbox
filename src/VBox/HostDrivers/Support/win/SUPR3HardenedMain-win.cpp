@@ -1671,6 +1671,143 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
 
 
 /**
+ * Checks if the given name is a valid ApiSet name.
+ *
+ * This is only called on likely looking names.
+ *
+ * @returns true if ApiSet name, false if not.
+ * @param   pName               The name to check out.
+ */
+static bool supR3HardenedIsApiSetDll(PUNICODE_STRING pName)
+{
+    /*
+     * API added in Windows 8, or so they say.
+     */
+    if (ApiSetQueryApiSetPresence != NULL)
+    {
+        BOOLEAN fPresent = FALSE;
+        NTSTATUS rcNt = ApiSetQueryApiSetPresence(pName, &fPresent);
+        SUP_DPRINTF(("supR3HardenedIsApiSetDll: ApiSetQueryApiSetPresence(%.*ls) -> %#x, fPresent=%d\n",
+                     pName->Length / sizeof(WCHAR), pName->Buffer, rcNt, fPresent));
+        return fPresent != 0;
+    }
+
+    /*
+     * Fallback needed for Windows 7.  Fortunately, there aren't too many fake DLLs here.
+     */
+    if (   supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
+                                          L"api-ms-win-", 11, false /*fCheckSlash*/)
+        || supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
+                                          L"ext-ms-win-", 11, false /*fCheckSlash*/) )
+    {
+#define MY_ENTRY(a) { a, sizeof(a) - 1 }
+        static const struct { const char *psz; size_t cch; } s_aKnownSets[] =
+        {
+            MY_ENTRY("api-ms-win-core-console-l1-1-0 "),
+            MY_ENTRY("api-ms-win-core-datetime-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-debug-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-delayload-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-errorhandling-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-fibers-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-file-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-handle-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-heap-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-interlocked-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-io-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-libraryloader-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-localization-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-localregistry-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-memory-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-misc-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-namedpipe-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-processenvironment-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-processthreads-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-profile-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-rtlsupport-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-string-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-synch-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-sysinfo-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-threadpool-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-ums-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-util-l1-1-0"),
+            MY_ENTRY("api-ms-win-core-xstate-l1-1-0"),
+            MY_ENTRY("api-ms-win-security-base-l1-1-0"),
+            MY_ENTRY("api-ms-win-security-lsalookup-l1-1-0"),
+            MY_ENTRY("api-ms-win-security-sddl-l1-1-0"),
+            MY_ENTRY("api-ms-win-service-core-l1-1-0"),
+            MY_ENTRY("api-ms-win-service-management-l1-1-0"),
+            MY_ENTRY("api-ms-win-service-management-l2-1-0"),
+            MY_ENTRY("api-ms-win-service-winsvc-l1-1-0"),
+        };
+#undef MY_ENTRY
+
+        /* drop the dll suffix if present. */
+        PCRTUTF16 pawcName = pName->Buffer;
+        size_t    cwcName  = pName->Length / sizeof(WCHAR);
+        if (   cwcName > 5
+            && (pawcName[cwcName - 1] == 'l' || pawcName[cwcName - 1] == 'L')
+            && (pawcName[cwcName - 2] == 'l' || pawcName[cwcName - 2] == 'L')
+            && (pawcName[cwcName - 3] == 'd' || pawcName[cwcName - 3] == 'D')
+            &&  pawcName[cwcName - 4] == '.')
+            cwcName -= 4;
+
+        /* Search the table. */
+        for (size_t i = 0; i < RT_ELEMENTS(s_aKnownSets); i++)
+            if (   cwcName == s_aKnownSets[i].cch
+                && RTUtf16NICmpAscii(pawcName, s_aKnownSets[i].psz, cwcName) == 0)
+            {
+                SUP_DPRINTF(("supR3HardenedIsApiSetDll: '%.*ls' -> true\n", pName->Length / sizeof(WCHAR)));
+                return true;
+            }
+
+        SUP_DPRINTF(("supR3HardenedIsApiSetDll: Warning! '%.*ls' looks like an API set, but it's not in the list!\n",
+                     pName->Length / sizeof(WCHAR), pName->Buffer));
+    }
+
+    SUP_DPRINTF(("supR3HardenedIsApiSetDll: '%.*ls' -> false\n", pName->Length / sizeof(WCHAR)));
+    return false;
+}
+
+
+/**
+ * Checks whether the given unicode string contains a path separator and at
+ * least one dash.
+ *
+ * This is used to check for likely ApiSet name.  So far, all the pseudo DLL
+ * names include multiple dashes, so we use that as a criteria for recognizing
+ * them.  By happy coincident, most regular DLLs doesn't include dashes.
+ *
+ * @returns true if it contains path separator, false if only a name.
+ * @param   pPath               The path to check.
+ */
+static bool supR3HardenedHasDashButNoPath(PUNICODE_STRING pPath)
+{
+    size_t    cDashes = 0;
+    size_t    cwcLeft = pPath->Length / sizeof(WCHAR);
+    PCRTUTF16 pwc     = pPath->Buffer;
+    while (cwcLeft-- > 0)
+    {
+        RTUTF16 wc = *pwc++;
+        switch (wc)
+        {
+            default:
+                break;
+
+            case '-':
+                cDashes++;
+                break;
+
+            case '\\':
+            case '/':
+            case ':':
+                return false;
+        }
+    }
+    return cDashes > 0;
+}
+
+
+/**
  * Helper for supR3HardenedMonitor_LdrLoadDll.
  *
  * @returns NT status code.
@@ -1723,32 +1860,6 @@ static bool supR3HardenedIsFilenameMatchDll(PUNICODE_STRING pPath, const char *p
         && pwszTmp[-1] != '/')
         return false;
     return RTUtf16ICmpAscii(pwszTmp, pszName) == 0;
-}
-
-/**
- * Checks whether the given unicode string contains a path separator.
- *
- * @returns true if it contains path separator, false if only a name.
- * @param   pPath               The path to check.
- */
-static bool supR3HardenedContainsPathSep(PUNICODE_STRING pPath)
-{
-    size_t    cwcLeft = pPath->Length / sizeof(WCHAR);
-    PCRTUTF16 pwc     = pPath->Buffer;
-    while (cwcLeft-- > 0)
-    {
-        RTUTF16 wc = *pwc++;
-        switch (wc)
-        {
-            default:
-                break;
-            case '\\':
-            case '/':
-            case ':':
-                return true;
-        }
-    }
-    return false;
 }
 
 
@@ -1954,11 +2065,8 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
      * Not an absolute path.  Check if it's one of those special API set DLLs
      * or something we're known to use but should be taken from WinSxS.
      */
-    else if (   (   supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
-                                                  L"api-ms-win-", 11, false /*fCheckSlash*/)
-                 || supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
-                                                  L"ext-ms-win-", 11, false /*fCheckSlash*/) )
-             && !supR3HardenedContainsPathSep(pName))
+    else if (   supR3HardenedHasDashButNoPath(pName)
+             && supR3HardenedIsApiSetDll(pName))
     {
         memcpy(wszPath, pName->Buffer, pName->Length);
         wszPath[pName->Length / sizeof(WCHAR)] = '\0';

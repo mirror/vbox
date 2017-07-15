@@ -461,7 +461,7 @@ RTDECL(int) RTUtf16BigICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2);
 RTDECL(int) RTUtf16ICmpUtf8(PCRTUTF16 pwsz1, const char *psz2);
 
 /**
- * Performs a case insensitive string compare between an UTF-16 string and an
+ * Performs a case insensitive string compare between an UTF-16 string and a
  * pure ASCII string.
  *
  * Since this compare only takes cares about the first 128 codepoints in
@@ -524,6 +524,23 @@ RTDECL(int) RTUtf16NICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2, size_t cwcMax);
  * @param   cwcMax      Maximum number of characters to compare.
  */
 RTDECL(int) RTUtf16BigNICmp(PCRTUTF16 pwsz1, PCRTUTF16 pwsz2, size_t cwcMax);
+
+/**
+ * Performs a case insensitive string compare between a UTF-16 string and a pure
+ * ASCII string, stopping after N characters.
+ *
+ * Since this compare only takes cares about the first 128 codepoints in
+ * unicode, no tables are needed and there aren't any real complications.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   pwsz1       The UTF-16 first string. Null is allowed.
+ * @param   psz2        The pure ASCII second string. Null is allowed.
+ * @param   cwcMax      Maximum number of UTF-16 characters to compare.
+ */
+RTDECL(int) RTUtf16NICmpAscii(PCRTUTF16 pwsz1, const char *psz2, size_t cwcMax);
+
 
 /**
  * Folds a UTF-16 string to lowercase.

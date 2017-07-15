@@ -3484,6 +3484,7 @@
 # define RTUtf16CatAscii                                RT_MANGLER(RTUtf16CatAscii)
 # define RTUtf16End                                     RT_MANGLER(RTUtf16End)
 # define RTUtf16ICmpAscii                               RT_MANGLER(RTUtf16ICmpAscii)
+# define RTUtf16NICmpAscii                              RT_MANGLER(RTUtf16NICmpAscii)
 # define RTUtf16NLen                                    RT_MANGLER(RTUtf16NLen)
 # define RTUtf16NLenEx                                  RT_MANGLER(RTUtf16NLenEx)
 # define RTUtf16PrintHexBytes                           RT_MANGLER(RTUtf16PrintHexBytes)
