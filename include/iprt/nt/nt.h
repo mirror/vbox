@@ -2665,7 +2665,7 @@ NTSYSAPI NTSTATUS NTAPI RtlDosApplyFileIsolationRedirection_Ustr(IN ULONG fFlags
                                                                  IN PSIZE_T pcbNeeded OPTIONAL);
 /** @since Windows 8.
  * @note Status code is always zero in windows 10 build 14393. */
-NTSYSAPI NTSTATUS ApiSetQueryApiSetPresence(IN PCUNICODE_STRING pAllegedApiSetDll, OUT PBOOLEAN pfPresent);
+NTSYSAPI NTSTATUS NTAPI ApiSetQueryApiSetPresence(IN PCUNICODE_STRING pAllegedApiSetDll, OUT PBOOLEAN pfPresent);
 /** @copydoc ApiSetQueryApiSetPresence */
 typedef NTSTATUS (NTAPI *PFNAPISETQUERYAPISETPRESENCE)(IN PCUNICODE_STRING pAllegedApiSetDll, OUT PBOOLEAN pfPresent);
 
