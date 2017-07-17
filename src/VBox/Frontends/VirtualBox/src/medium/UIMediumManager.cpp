@@ -1500,9 +1500,14 @@ void UIMediumManagerWidget::prepareTab(UIMediumType type)
     AssertPtrReturnVoid(pTab);
     {
         /* Create tab layout: */
-        new QVBoxLayout(pTab);
-        AssertPtrReturnVoid(pTab->layout());
+        QVBoxLayout *pLayout = new QVBoxLayout(pTab);
+        AssertPtrReturnVoid(pLayout);
         {
+#ifdef VBOX_WS_MAC
+            /* Configure layout: */
+            pLayout->setContentsMargins(10, 10, 10, 10);
+#endif
+
             /* Prepare tree-widget: */
             prepareTreeWidget(type, type == UIMediumType_HardDisk ? 3 : 2);
         }
