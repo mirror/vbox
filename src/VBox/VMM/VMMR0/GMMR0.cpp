@@ -2727,6 +2727,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The VCPU id.
  * @param   cPagesToUpdate      The number of pages to update (starting from the head).
