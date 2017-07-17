@@ -1723,25 +1723,6 @@ static int gvmmR0ByGVMandVM(PGVM pGVM, PVM pVM, PGVMM *ppGVMM, bool fTakeUsedLoc
 
 
 /**
- * Lookup a GVM structure by the shared VM structure.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   ppGVM       Where to store the GVM pointer.
- *
- * @remark  This will not take the 'used'-lock because it doesn't do
- *          nesting and this function will be used from under the lock.
- *          Update: This is no longer true.  Consider taking the lock in shared
- *          mode!
- */
-GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
-{
-    PGVMM pGVMM;
-    return gvmmR0ByVM(pVM, ppGVM, &pGVMM, false /* fTakeUsedLock */);
-}
-
-
-/**
  * Check that the given GVM and VM structures match up.
  *
  * The calling thread must be in the same process as the VM. All current lookups

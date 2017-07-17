@@ -169,46 +169,33 @@ PCIRAWR0DECL(void) PciRawR0Term(void)
 /**
  * Per-VM R0 module init.
  */
-PCIRAWR0DECL(int)  PciRawR0InitVM(PVM pVM)
+PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVM pVM)
 {
     PRAWPCIFACTORY pFactory = NULL;
-    int            rc;
-
-    rc = SUPR0ComponentQueryFactory(pVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
-
+    int rc = SUPR0ComponentQueryFactory(pGVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
     if (RT_SUCCESS(rc))
     {
         if (pFactory)
         {
-            PGVM pGVM = NULL;
-            rc = GVMMR0ByVM(pVM, &pGVM);
-            if (RT_SUCCESS(rc))
-                rc = pFactory->pfnInitVm(pFactory, pVM, &pGVM->rawpci.s);
+            rc = pFactory->pfnInitVm(pFactory, pVM, &pGVM->rawpci.s);
             pFactory->pfnRelease(pFactory);
         }
     }
-
     return VINF_SUCCESS;
 }
 
 /**
  * Per-VM R0 module termination routine.
  */
-PCIRAWR0DECL(void)  PciRawR0TermVM(PVM pVM)
+PCIRAWR0DECL(void)  PciRawR0TermVM(PGVM pGVM, PVM pVM)
 {
     PRAWPCIFACTORY pFactory = NULL;
-    int            rc;
-
-    rc = SUPR0ComponentQueryFactory(pVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
-
+    int rc = SUPR0ComponentQueryFactory(pGVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
     if (RT_SUCCESS(rc))
     {
         if (pFactory)
         {
-            PGVM pGVM = NULL;
-            rc = GVMMR0ByVM(pVM, &pGVM);
-            if (RT_SUCCESS(rc))
-                pFactory->pfnDeinitVm(pFactory, pVM, &pGVM->rawpci.s);
+            pFactory->pfnDeinitVm(pFactory, pVM, &pGVM->rawpci.s);
             pFactory->pfnRelease(pFactory);
         }
     }
@@ -500,7 +487,8 @@ static PRAWPCIDEVPORT pcirawr0CreateDummyDevice(uint32_t HostDevice, uint32_t fF
 
     return &pNew->DevPort;
 }
-#endif
+
+#endif /* DEBUG_nike */
 
 static DECLCALLBACK(void) pcirawr0DevObjDestructor(void *pvObj, void *pvIns, void *pvUnused)
 {
@@ -517,29 +505,29 @@ static DECLCALLBACK(void) pcirawr0DevObjDestructor(void *pvObj, void *pvIns, voi
 }
 
 
-static int pcirawr0OpenDevice(PSUPDRVSESSION   pSession,
-                              PVM              pVM,
+static int pcirawr0OpenDevice(PGVM pGVM, PVM pVM, PSUPDRVSESSION pSession,
                               uint32_t         HostDevice,
                               uint32_t         fFlags,
                               PCIRAWDEVHANDLE *pHandle,
                               uint32_t        *pfDevFlags)
 {
+
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0 /*idCpu*/);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /*
      * Query the factory we want, then use it create and connect the host device.
      */
-    PRAWPCIFACTORY pFactory = NULL;
-    PRAWPCIDEVPORT pDevPort = NULL;
-    int rc;
-    PPCIRAWDEV     pNew;
-
-    pNew = (PPCIRAWDEV)RTMemAllocZ(sizeof(*pNew));
+    PPCIRAWDEV pNew = (PPCIRAWDEV)RTMemAllocZ(sizeof(*pNew));
     if (!pNew)
         return VERR_NO_MEMORY;
 
-
+    PRAWPCIFACTORY pFactory = NULL;
     rc = SUPR0ComponentQueryFactory(pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
     /* No host driver registered, provide some fake implementation
        for debugging purposes. */
+    PRAWPCIDEVPORT pDevPort = NULL;
 #ifdef DEBUG_nike
     if (rc == VERR_SUPDRV_COMPONENT_NOT_FOUND)
     {
@@ -558,16 +546,12 @@ static int pcirawr0OpenDevice(PSUPDRVSESSION   pSession,
     {
         if (pFactory)
         {
-             PGVM pGVM = NULL;
-             rc = GVMMR0ByVM(pVM, &pGVM);
-
-            if (RT_SUCCESS(rc))
-                rc = pFactory->pfnCreateAndConnect(pFactory,
-                                                   HostDevice,
-                                                   fFlags,
-                                                   &pGVM->rawpci.s,
-                                                   &pDevPort,
-                                                   pfDevFlags);
+            rc = pFactory->pfnCreateAndConnect(pFactory,
+                                               HostDevice,
+                                               fFlags,
+                                               &pGVM->rawpci.s,
+                                               &pDevPort,
+                                               pfDevFlags);
             pFactory->pfnRelease(pFactory);
         }
 
@@ -575,26 +559,32 @@ static int pcirawr0OpenDevice(PSUPDRVSESSION   pSession,
         {
             rc = RTSpinlockCreate(&pNew->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "PciRaw");
             AssertRC(rc);
-            rc = RTSemEventCreate(&pNew->hIrqEvent);
-            AssertRC(rc);
-
-            pNew->pSession = pSession;
-            pNew->pPort    = pDevPort;
-            pNew->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_RAW_PCI_DEVICE,
-                                           pcirawr0DevObjDestructor, pNew, NULL);
-
-            uint32_t hHandle = 0;
-            rc = RTHandleTableAllocWithCtx(g_State.hHtDevs, pNew, pSession, &hHandle);
             if (RT_SUCCESS(rc))
             {
-                pNew->hHandle = (PCIRAWDEVHANDLE)hHandle;
-                *pHandle = pNew->hHandle;
-            }
-            else
-            {
-                SUPR0ObjRelease(pNew->pvObj, pSession);
+                rc = RTSemEventCreate(&pNew->hIrqEvent);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    pNew->pSession = pSession;
+                    pNew->pPort    = pDevPort;
+                    pNew->pvObj    = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_RAW_PCI_DEVICE,
+                                                      pcirawr0DevObjDestructor, pNew, NULL);
+                    if (pNew->pvObj)
+                    {
+
+                        uint32_t hHandle = 0;
+                        rc = RTHandleTableAllocWithCtx(g_State.hHtDevs, pNew, pSession, &hHandle);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pNew->hHandle = (PCIRAWDEVHANDLE)hHandle;
+                            *pHandle = pNew->hHandle;
+                            return rc;
+                        }
+                        SUPR0ObjRelease(pNew->pvObj, pSession);
+                    }
+                    RTSemEventDestroy(pNew->hIrqEvent);
+                }
                 RTSpinlockDestroy(pNew->hSpinlock);
-                RTSemEventDestroy(pNew->hIrqEvent);
             }
         }
     }
@@ -925,7 +915,7 @@ static int pcirawr0PowerStateChange(PSUPDRVSESSION    pSession,
  *
  * @returns VBox status code.
  */
-PCIRAWR0DECL(int) PciRawR0ProcessReq(PSUPDRVSESSION pSession, PVM pVM, PPCIRAWSENDREQ pReq)
+PCIRAWR0DECL(int) PciRawR0ProcessReq(PGVM pGVM, PVM pVM, PSUPDRVSESSION pSession, PPCIRAWSENDREQ pReq)
 {
     LogFlow(("PciRawR0ProcessReq: %d for %x\n", pReq->iRequest, pReq->TargetDevice));
     int rc = VINF_SUCCESS;
@@ -934,7 +924,7 @@ PCIRAWR0DECL(int) PciRawR0ProcessReq(PSUPDRVSESSION pSession, PVM pVM, PPCIRAWSE
     switch (pReq->iRequest)
     {
         case PCIRAWR0_DO_OPEN_DEVICE:
-            rc = pcirawr0OpenDevice(pSession, pVM,
+            rc = pcirawr0OpenDevice(pGVM, pVM, pSession,
                                     pReq->u.aOpenDevice.PciAddress,
                                     pReq->u.aOpenDevice.fFlags,
                                     &pReq->u.aOpenDevice.Device,
@@ -1038,3 +1028,4 @@ PCIRAWR0DECL(int) PciRawR0ProcessReq(PSUPDRVSESSION pSession, PVM pVM, PPCIRAWSE
     LogFlow(("PciRawR0ProcessReq: returns %Rrc\n", rc));
     return rc;
 }
+

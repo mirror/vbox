@@ -461,7 +461,7 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
                 {
                     VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-                    rc = PciRawR0InitVM(pVM);
+                    rc = PciRawR0InitVM(pGVM, pVM);
 #endif
                     if (RT_SUCCESS(rc))
                     {
@@ -481,7 +481,7 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
                             GIMR0TermVM(pVM);
                         }
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-                        PciRawR0TermVM(pVM);
+                        PciRawR0TermVM(pGVM, pVM);
 #endif
                     }
                 }
@@ -524,7 +524,7 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, PVM pVM, VMCPUID idCpu)
     }
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-    PciRawR0TermVM(pVM);
+    PciRawR0TermVM(pGVM, pVM);
 #endif
 
     /*
@@ -1939,7 +1939,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_PCIRAW_REQ:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PPCIRAWSENDREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            rc = PciRawR0ProcessReq(pSession, pVM, (PPCIRAWSENDREQ)pReqHdr);
+            rc = PciRawR0ProcessReq(pGVM, pVM, pSession, (PPCIRAWSENDREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 #endif

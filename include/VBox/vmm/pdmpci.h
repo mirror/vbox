@@ -348,7 +348,7 @@ PCIRAWR0DECL(int)  PciRawR0Init(void);
 /**
  * Process request (in R0).
  */
-PCIRAWR0DECL(int)  PciRawR0ProcessReq(PSUPDRVSESSION pSession, PVM pVM, PPCIRAWSENDREQ pReq);
+PCIRAWR0DECL(int)  PciRawR0ProcessReq(PGVM pGVM, PVM pVM, PSUPDRVSESSION pSession, PPCIRAWSENDREQ pReq);
 /**
  * Terminate R0 PCI module.
  */
@@ -357,12 +357,12 @@ PCIRAWR0DECL(void) PciRawR0Term(void);
 /**
  * Per-VM R0 module init.
  */
-PCIRAWR0DECL(int)  PciRawR0InitVM(PVM pVM);
+PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVM pVM);
 
 /**
  * Per-VM R0 module termination routine.
  */
-PCIRAWR0DECL(void)  PciRawR0TermVM(PVM pVM);
+PCIRAWR0DECL(void)  PciRawR0TermVM(PGVM pGVM, PVM pVM);
 
 /**
  * Flags returned by pfnPciDeviceConstructStart(), to notify device
