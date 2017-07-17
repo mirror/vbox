@@ -226,6 +226,10 @@ void UIMediumDetailsWidget::prepareTabOptions()
             /* Configure layout: */
             pLayoutOptions->setSpacing(10);
             pLayoutOptions->setContentsMargins(10, 10, 10, 10);
+            // WORKAROUND:
+            // Using adjusted vertical spacing because there are special widgets which
+            // requires more care and attention, UIFilePathSelector and UIMediumSizeEditor.
+            pLayoutOptions->setVerticalSpacing(6);
 #endif
 
             /* Get the required icon metric: */
