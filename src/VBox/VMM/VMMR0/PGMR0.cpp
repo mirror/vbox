@@ -227,18 +227,32 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * @retval  VINF_SUCCESS on success.
  * @retval  VINF_EM_NO_MEMORY if we're out of memory.
  *
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   idCpu       The ID of the calling EMT.
+ *
+ * @thread  EMT(idCpu)
  *
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
+    /*
+     * Validate inputs.
+     */
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
+    AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
+    PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
     PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
+
     Assert(!pVM->pgm.s.cLargeHandyPages);
 
-    int rc = GMMR0AllocateLargePage(pVM, pVCpu->idCpu, _2M,
+    /*
+     * Do the job.
+     */
+    int rc = GMMR0AllocateLargePage(pGVM, pVM, idCpu, _2M,
                                     &pVM->pgm.s.aLargeHandyPage[0].idPage,
                                     &pVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys);
     if (RT_SUCCESS(rc))
