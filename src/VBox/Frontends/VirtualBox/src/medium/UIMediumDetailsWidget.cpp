@@ -515,6 +515,9 @@ void UIMediumDetailsWidget::prepareInformationContainer(UIMediumType enmType, in
                 QLabel *pLabel = infoLabel(enmType, i);
                 AssertPtrReturnVoid(pLabel);
                 {
+                    /* Configure label: */
+                    pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
                     /* Add into layout: */
                     pLayout->addWidget(pLabel, i, 0);
                 }
