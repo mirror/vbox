@@ -1882,6 +1882,21 @@ static int gvmmR0ByGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGVMM *ppGV
 
 
 /**
+ * Validates a GVM/VM pair.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
+ * @param   pVM         The cross context VM structure.
+ */
+GVMMR0DECL(int) GVMMR0ValidateGVMandVM(PGVM pGVM, PVM pVM)
+{
+    PGVMM pGVMM;
+    return gvmmR0ByGVMandVM(pGVM, pVM, &pGVMM, false /*fTakeUsedLock*/);
+}
+
+
+
+/**
  * Validates a GVM/VM/EMT combo.
  *
  * @returns VBox status code.

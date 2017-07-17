@@ -76,9 +76,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCp
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
-    PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
 
     /*
      * Check for error injection.
@@ -201,9 +199,7 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
-    PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
 
     /*
      * Try allocate a full set of handy pages.
@@ -243,10 +239,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVM pVM, VMCPUID 
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
-    PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
-
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
     Assert(!pVM->pgm.s.cLargeHandyPages);
 
     /*
@@ -387,12 +380,12 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageUpdate(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHY
  *
  * @returns VBox status code.
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  */
-VMMR0_INT_DECL(int) PGMR0PhysSetupIommu(PVM pVM)
+VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVM pVM)
 {
-    PGVM pGVM;
-    int rc = GVMMR0ByVM(pVM, &pGVM);
+    int rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
     if (RT_FAILURE(rc))
         return rc;
 

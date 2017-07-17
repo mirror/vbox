@@ -1654,7 +1654,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_PGM_PHYS_SETUP_IOMMU:
             if (idCpu != 0)
                 return VERR_INVALID_CPU_ID;
-            rc = PGMR0PhysSetupIommu(pVM);
+            rc = PGMR0PhysSetupIoMmu(pGVM, pVM);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 

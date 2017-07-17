@@ -694,7 +694,7 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVM pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysSetupIommu(PVM pVM);
+VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVM pVM);
 VMMR0DECL(int)      PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);
 VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
