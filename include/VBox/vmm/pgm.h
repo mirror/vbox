@@ -691,8 +691,8 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 /** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
  * @{
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(int) PGMR0PhysSetupIommu(PVM pVM);
 VMMR0DECL(int)      PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);

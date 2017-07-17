@@ -402,7 +402,8 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM);
 GMMR0DECL(int)  GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
                                         GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority);
 GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
-GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
+GMMR0DECL(int)  GMMR0AllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate,
+                                        uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
 GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pIdPage, RTHCPHYS *pHCPhys);
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);

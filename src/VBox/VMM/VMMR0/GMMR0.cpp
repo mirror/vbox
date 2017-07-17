@@ -2728,12 +2728,13 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
  * @param   cPagesToAlloc       The number of pages to allocate (starting from the head).
  * @param   paPages             The array of page descriptors.
  *                              See GMMPAGEDESC for details on what is expected on input.
- * @thread  EMT.
+ * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
+GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate,
+                                       uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
 {
-    LogFlow(("GMMR0AllocateHandyPages: pVM=%p cPagesToUpdate=%#x cPagesToAlloc=%#x paPages=%p\n",
-             pVM, cPagesToUpdate, cPagesToAlloc, paPages));
+    LogFlow(("GMMR0AllocateHandyPages: pGVM=%p pVM=%p cPagesToUpdate=%#x cPagesToAlloc=%#x paPages=%p\n",
+             pGVM, pVM, cPagesToUpdate, cPagesToAlloc, paPages));
 
     /*
      * Validate, get basics and take the semaphore.
@@ -2741,8 +2742,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 

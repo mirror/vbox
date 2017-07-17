@@ -1633,14 +1633,14 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES:
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
-            rc = PGMR0PhysAllocateHandyPages(pVM, &pVM->aCpus[idCpu]);
+            rc = PGMR0PhysAllocateHandyPages(pGVM, pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_PGM_FLUSH_HANDY_PAGES:
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
-            rc = PGMR0PhysFlushHandyPages(pVM, &pVM->aCpus[idCpu]);
+            rc = PGMR0PhysFlushHandyPages(pGVM, pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
