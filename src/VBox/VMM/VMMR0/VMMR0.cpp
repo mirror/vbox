@@ -1664,42 +1664,42 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_GMM_INITIAL_RESERVATION:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0InitialReservationReq(pVM, idCpu, (PGMMINITIALRESERVATIONREQ)pReqHdr);
+            rc = GMMR0InitialReservationReq(pGVM, pVM, idCpu, (PGMMINITIALRESERVATIONREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_UPDATE_RESERVATION:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0UpdateReservationReq(pVM, idCpu, (PGMMUPDATERESERVATIONREQ)pReqHdr);
+            rc = GMMR0UpdateReservationReq(pGVM, pVM, idCpu, (PGMMUPDATERESERVATIONREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_ALLOCATE_PAGES:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0AllocatePagesReq(pVM, idCpu, (PGMMALLOCATEPAGESREQ)pReqHdr);
+            rc = GMMR0AllocatePagesReq(pGVM, pVM, idCpu, (PGMMALLOCATEPAGESREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_FREE_PAGES:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0FreePagesReq(pVM, idCpu, (PGMMFREEPAGESREQ)pReqHdr);
+            rc = GMMR0FreePagesReq(pGVM, pVM, idCpu, (PGMMFREEPAGESREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_FREE_LARGE_PAGE:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0FreeLargePageReq(pVM, idCpu, (PGMMFREELARGEPAGEREQ)pReqHdr);
+            rc = GMMR0FreeLargePageReq(pGVM, pVM, idCpu, (PGMMFREELARGEPAGEREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_QUERY_HYPERVISOR_MEM_STATS:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0QueryHypervisorMemoryStatsReq(pVM, (PGMMMEMSTATSREQ)pReqHdr);
+            rc = GMMR0QueryHypervisorMemoryStatsReq((PGMMMEMSTATSREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
@@ -1708,28 +1708,28 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
                 return VERR_INVALID_CPU_ID;
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0QueryMemoryStatsReq(pVM, idCpu, (PGMMMEMSTATSREQ)pReqHdr);
+            rc = GMMR0QueryMemoryStatsReq(pGVM, pVM, idCpu, (PGMMMEMSTATSREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_BALLOONED_PAGES:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0BalloonedPagesReq(pVM, idCpu, (PGMMBALLOONEDPAGESREQ)pReqHdr);
+            rc = GMMR0BalloonedPagesReq(pGVM, pVM, idCpu, (PGMMBALLOONEDPAGESREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0MapUnmapChunkReq(pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
+            rc = GMMR0MapUnmapChunkReq(pGVM, pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_SEED_CHUNK:
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0SeedChunk(pVM, idCpu, (RTR3PTR)u64Arg);
+            rc = GMMR0SeedChunk(pGVM, pVM, idCpu, (RTR3PTR)u64Arg);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
@@ -1738,7 +1738,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
                 return VERR_INVALID_CPU_ID;
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0RegisterSharedModuleReq(pVM, idCpu, (PGMMREGISTERSHAREDMODULEREQ)pReqHdr);
+            rc = GMMR0RegisterSharedModuleReq(pGVM, pVM, idCpu, (PGMMREGISTERSHAREDMODULEREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
@@ -1747,7 +1747,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
                 return VERR_INVALID_CPU_ID;
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0UnregisterSharedModuleReq(pVM, idCpu, (PGMMUNREGISTERSHAREDMODULEREQ)pReqHdr);
+            rc = GMMR0UnregisterSharedModuleReq(pGVM, pVM, idCpu, (PGMMUNREGISTERSHAREDMODULEREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
@@ -1757,7 +1757,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             if (    u64Arg
                 ||  pReqHdr)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0ResetSharedModules(pVM, idCpu);
+            rc = GMMR0ResetSharedModules(pGVM, pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
@@ -1769,24 +1769,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             if (    u64Arg
                 ||  pReqHdr)
                 return VERR_INVALID_PARAMETER;
-
-            PVMCPU pVCpu = &pVM->aCpus[idCpu];
-            Assert(pVCpu->hNativeThreadR0 == RTThreadNativeSelf());
-
-# ifdef DEBUG_sandervl
-            /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). */
-            /** @todo this can have bad side effects for unexpected jumps back to r3. */
-            rc = GMMR0CheckSharedModulesStart(pVM);
-            if (rc == VINF_SUCCESS)
-            {
-                rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, GMMR0CheckSharedModules, pVM, pVCpu); /* this may resume code. */
-                Assert(     rc == VINF_SUCCESS
-                       ||   (rc == VINF_VMM_CALL_HOST && pVCpu->vmm.s.enmCallRing3Operation == VMMCALLRING3_VMM_LOGGER_FLUSH));
-                GMMR0CheckSharedModulesEnd(pVM);
-            }
-# else
-            rc = GMMR0CheckSharedModules(pVM, pVCpu);
-# endif
+            rc = GMMR0CheckSharedModules(pGVM, pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
         }
@@ -1796,7 +1779,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_GMM_FIND_DUPLICATE_PAGE:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0FindDuplicatePageReq(pVM, (PGMMFINDDUPLICATEPAGEREQ)pReqHdr);
+            rc = GMMR0FindDuplicatePageReq(pGVM, pVM, (PGMMFINDDUPLICATEPAGEREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 #endif
@@ -1804,14 +1787,14 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_GMM_QUERY_STATISTICS:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0QueryStatisticsReq(pVM, (PGMMQUERYSTATISTICSSREQ)pReqHdr);
+            rc = GMMR0QueryStatisticsReq(pGVM, pVM, (PGMMQUERYSTATISTICSSREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GMM_RESET_STATISTICS:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GMMR0ResetStatisticsReq(pVM, (PGMMRESETSTATISTICSSREQ)pReqHdr);
+            rc = GMMR0ResetStatisticsReq(pGVM, pVM, (PGMMRESETSTATISTICSSREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 

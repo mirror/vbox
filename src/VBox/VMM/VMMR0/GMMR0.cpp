@@ -1539,8 +1539,9 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  * @retval  VERR_GMM_MEMORY_RESERVATION_DECLINED
  * @retval  VERR_GMM_
  *
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
- * @param   idCpu           The VCPU id.
+ * @param   idCpu           The VCPU id - must be zero.
  * @param   cBasePages      The number of pages that may be allocated for the base RAM and ROMs.
  *                          This does not include MMIO2 and similar.
  * @param   cShadowPages    The number of pages that may be allocated for shadow paging structures.
@@ -1549,21 +1550,21 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  * @param   enmPolicy       The OC policy to use on this VM.
  * @param   enmPriority     The priority in an out-of-memory situation.
  *
- * @thread  The creator thread / EMT.
+ * @thread  The creator thread / EMT(0).
  */
-GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages,
-                                       GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
+GMMR0DECL(int) GMMR0InitialReservation(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages,
+                                       uint32_t cFixedPages, GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
 {
-    LogFlow(("GMMR0InitialReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x enmPolicy=%d enmPriority=%d\n",
-             pVM, cBasePages, cShadowPages, cFixedPages, enmPolicy, enmPriority));
+    LogFlow(("GMMR0InitialReservation: pGVM=%p pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x enmPolicy=%d enmPriority=%d\n",
+             pGVM, pVM, cBasePages, cShadowPages, cFixedPages, enmPolicy, enmPriority));
 
     /*
      * Validate, get basics and take the semaphore.
      */
+    AssertReturn(idCpu == 0, VERR_INVALID_CPU_ID);
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1616,11 +1617,12 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePag
  * VMMR0 request wrapper for GMMR0InitialReservation.
  *
  * @returns see GMMR0InitialReservation.
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   idCpu           The VCPU id.
  * @param   pReq            Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, VMCPUID idCpu, PGMMINITIALRESERVATIONREQ pReq)
+GMMR0DECL(int) GMMR0InitialReservationReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMINITIALRESERVATIONREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -1629,7 +1631,8 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, VMCPUID idCpu, PGMMINITIALRES
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0InitialReservation(pVM, idCpu, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages, pReq->enmPolicy, pReq->enmPriority);
+    return GMMR0InitialReservation(pGVM, pVM, idCpu, pReq->cBasePages, pReq->cShadowPages,
+                                   pReq->cFixedPages, pReq->enmPolicy, pReq->enmPriority);
 }
 
 
@@ -1639,6 +1642,7 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, VMCPUID idCpu, PGMMINITIALRES
  * @returns VBox status code.
  * @retval  VERR_GMM_MEMORY_RESERVATION_DECLINED
  *
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   idCpu           The VCPU id.
  * @param   cBasePages      The number of pages that may be allocated for the base RAM and ROMs.
@@ -1647,20 +1651,20 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, VMCPUID idCpu, PGMMINITIALRES
  * @param   cFixedPages     The number of pages that may be allocated for fixed objects like the
  *                          hyper heap, MMIO2 and similar.
  *
- * @thread  EMT.
+ * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages)
+GMMR0DECL(int) GMMR0UpdateReservation(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t cBasePages,
+                                      uint32_t cShadowPages, uint32_t cFixedPages)
 {
-    LogFlow(("GMMR0UpdateReservation: pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x\n",
-             pVM, cBasePages, cShadowPages, cFixedPages));
+    LogFlow(("GMMR0UpdateReservation: pGVM=%p pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x\n",
+             pGVM, pVM, cBasePages, cShadowPages, cFixedPages));
 
     /*
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1710,11 +1714,12 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePage
  * VMMR0 request wrapper for GMMR0UpdateReservation.
  *
  * @returns see GMMR0UpdateReservation.
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   idCpu           The VCPU id.
  * @param   pReq            Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, VMCPUID idCpu, PGMMUPDATERESERVATIONREQ pReq)
+GMMR0DECL(int) GMMR0UpdateReservationReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMUPDATERESERVATIONREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -1723,7 +1728,7 @@ GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, VMCPUID idCpu, PGMMUPDATERESER
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0UpdateReservation(pVM, idCpu, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages);
+    return GMMR0UpdateReservation(pGVM, pVM, idCpu, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages);
 }
 
 #ifdef GMMR0_WITH_SANITY_CHECK
@@ -2917,6 +2922,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
  *
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   cPages      The number of pages to allocate.
@@ -2927,17 +2933,16 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32
  *
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
+GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
-    LogFlow(("GMMR0AllocatePages: pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pVM, cPages, paPages, enmAccount));
+    LogFlow(("GMMR0AllocatePages: pGVM=%p pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pGVM, pVM, cPages, paPages, enmAccount));
 
     /*
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2983,16 +2988,16 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMP
  * VMMR0 request wrapper for GMMR0AllocatePages.
  *
  * @returns see GMMR0AllocatePages.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESREQ pReq)
+GMMR0DECL(int) GMMR0AllocatePagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq >= RT_UOFFSETOF(GMMALLOCATEPAGESREQ, aPages[0]),
                     ("%#x < %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMALLOCATEPAGESREQ, aPages[0])),
@@ -3001,7 +3006,7 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESRE
                     ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMALLOCATEPAGESREQ, aPages[pReq->cPages])),
                     VERR_INVALID_PARAMETER);
 
-    return GMMR0AllocatePages(pVM, idCpu, pReq->cPages, &pReq->aPages[0], pReq->enmAccount);
+    return GMMR0AllocatePages(pGVM, pVM, idCpu, pReq->cPages, &pReq->aPages[0], pReq->enmAccount);
 }
 
 
@@ -3126,21 +3131,21 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32
  * Free a large page.
  *
  * @returns VBox status code:
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   idPage      The large page id.
  */
-GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
+GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t idPage)
 {
-    LogFlow(("GMMR0FreeLargePage: pVM=%p idPage=%x\n", pVM, idPage));
+    LogFlow(("GMMR0FreeLargePage: pGVM=%p pVM=%p idPage=%x\n", pGVM, pVM, idPage));
 
     /*
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -3193,22 +3198,22 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
  * VMMR0 request wrapper for GMMR0FreeLargePage.
  *
  * @returns see GMMR0FreeLargePage.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0FreeLargePageReq(PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq)
+GMMR0DECL(int) GMMR0FreeLargePageReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMFREEPAGESREQ),
                     ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(GMMFREEPAGESREQ)),
                     VERR_INVALID_PARAMETER);
 
-    return GMMR0FreeLargePage(pVM, idCpu, pReq->idPage);
+    return GMMR0FreeLargePage(pGVM, pVM, idCpu, pReq->idPage);
 }
 
 
@@ -3554,6 +3559,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
  * @returns VBox status code:
  * @retval  xxx
  *
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   cPages      The number of pages to allocate.
@@ -3562,17 +3568,16 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
  * @param   enmAccount  The account this relates to.
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
+GMMR0DECL(int) GMMR0FreePages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
-    LogFlow(("GMMR0FreePages: pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pVM, cPages, paPages, enmAccount));
+    LogFlow(("GMMR0FreePages: pGVM=%p pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pGVM, pVM, cPages, paPages, enmAccount));
 
     /*
      * Validate input and get the basics.
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -3606,16 +3611,16 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEP
  * VMMR0 request wrapper for GMMR0FreePages.
  *
  * @returns see GMMR0FreePages.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
+GMMR0DECL(int) GMMR0FreePagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq >= RT_UOFFSETOF(GMMFREEPAGESREQ, aPages[0]),
                     ("%#x < %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMFREEPAGESREQ, aPages[0])),
@@ -3624,7 +3629,7 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
                     ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMFREEPAGESREQ, aPages[pReq->cPages])),
                     VERR_INVALID_PARAMETER);
 
-    return GMMR0FreePages(pVM, idCpu, pReq->cPages, &pReq->aPages[0], pReq->enmAccount);
+    return GMMR0FreePages(pGVM, pVM, idCpu, pReq->cPages, &pReq->aPages[0], pReq->enmAccount);
 }
 
 
@@ -3644,17 +3649,18 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
  *          balloon some other VM).  (For standard deflate we have little choice
  *          but to hope the VM won't use the memory that was returned to it.)
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The VCPU id.
  * @param   enmAction           Inflate/deflate/reset.
  * @param   cBalloonedPages     The number of pages that was ballooned.
  *
- * @thread  EMT.
+ * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages)
+GMMR0DECL(int) GMMR0BalloonedPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages)
 {
-    LogFlow(("GMMR0BalloonedPages: pVM=%p enmAction=%d cBalloonedPages=%#x\n",
-             pVM, enmAction, cBalloonedPages));
+    LogFlow(("GMMR0BalloonedPages: pGVM=%p pVM=%p enmAction=%d cBalloonedPages=%#x\n",
+             pGVM, pVM, enmAction, cBalloonedPages));
 
     AssertMsgReturn(cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
 
@@ -3663,8 +3669,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -3776,37 +3781,36 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
  * VMMR0 request wrapper for GMMR0BalloonedPages.
  *
  * @returns see GMMR0BalloonedPages.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGESREQ pReq)
+GMMR0DECL(int) GMMR0BalloonedPagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMBALLOONEDPAGESREQ),
                     ("%#x < %#x\n", pReq->Hdr.cbReq, sizeof(GMMBALLOONEDPAGESREQ)),
                     VERR_INVALID_PARAMETER);
 
-    return GMMR0BalloonedPages(pVM, idCpu, pReq->enmAction, pReq->cBalloonedPages);
+    return GMMR0BalloonedPages(pGVM, pVM, idCpu, pReq->enmAction, pReq->cBalloonedPages);
 }
+
 
 /**
  * Return memory statistics for the hypervisor
  *
- * @returns VBox status code:
- * @param   pVM         The cross context VM structure.
+ * @returns VBox status code.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
+GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PGMMMEMSTATSREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMMEMSTATSREQ),
                     ("%#x < %#x\n", pReq->Hdr.cbReq, sizeof(GMMMEMSTATSREQ)),
@@ -3827,20 +3831,23 @@ GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Return memory statistics for the VM
  *
- * @returns VBox status code:
+ * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       Cpu id.
  * @param   pReq        Pointer to the request packet.
+ *
+ * @thread  EMT(idCpu)
  */
-GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ pReq)
+GMMR0DECL(int) GMMR0QueryMemoryStatsReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMMEMSTATSREQ),
                     ("%#x < %#x\n", pReq->Hdr.cbReq, sizeof(GMMMEMSTATSREQ)),
@@ -3851,8 +3858,7 @@ GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4122,24 +4128,24 @@ static bool gmmR0IsChunkMapped(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR 
  * when the ring-3 mapping cache is full.
  *
  * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   idChunkMap      The chunk to map. NIL_GMM_CHUNKID if nothing to map.
  * @param   idChunkUnmap    The chunk to unmap. NIL_GMM_CHUNKID if nothing to unmap.
  * @param   ppvR3           Where to store the address of the mapped chunk. NULL is ok if nothing to map.
- * @thread  EMT
+ * @thread  EMT ???
  */
-GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
+GMMR0DECL(int) GMMR0MapUnmapChunk(PGVM pGVM, PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
 {
-    LogFlow(("GMMR0MapUnmapChunk: pVM=%p idChunkMap=%#x idChunkUnmap=%#x ppvR3=%p\n",
-             pVM, idChunkMap, idChunkUnmap, ppvR3));
+    LogFlow(("GMMR0MapUnmapChunk: pGVM=%p pVM=%p idChunkMap=%#x idChunkUnmap=%#x ppvR3=%p\n",
+             pGVM, pVM, idChunkMap, idChunkUnmap, ppvR3));
 
     /*
      * Validate input and get the basics.
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVM(pVM, &pGVM);
+    int rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4214,19 +4220,19 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunk
  * VMMR0 request wrapper for GMMR0MapUnmapChunk.
  *
  * @returns see GMMR0MapUnmapChunk.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
+GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PGVM pGVM, PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0MapUnmapChunk(pVM, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
+    return GMMR0MapUnmapChunk(pGVM, pVM, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
 }
 
 
@@ -4237,19 +4243,19 @@ GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
  * will be locked down and used by the GMM when the GM asks for pages.
  *
  * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   pvR3        Pointer to the chunk size memory block to lock down.
  */
-GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
+GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
 {
     /*
      * Validate input and get the basics.
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4521,6 +4527,7 @@ static void gmmR0ShModDeletePerVM(PGMM pGMM, PGVM pGVM, PGMMSHAREDMODULEPERVM pR
  * Registers a new shared module for the VM.
  *
  * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   idCpu           The VCPU id.
  * @param   enmGuestOS      The guest OS type.
@@ -4530,8 +4537,9 @@ static void gmmR0ShModDeletePerVM(PGMM pGMM, PGVM pGVM, PGMMSHAREDMODULEPERVM pR
  * @param   cbModule        The module size.
  * @param   cRegions        The mumber of shared region descriptors.
  * @param   paRegions       Pointer to an array of shared region(s).
+ * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
+GMMR0DECL(int) GMMR0RegisterSharedModule(PGVM pGVM, PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
                                          char *pszVersion, RTGCPTR GCPtrModBase, uint32_t cbModule,
                                          uint32_t cRegions, struct VMMDEVSHAREDREGIONDESC const *paRegions)
 {
@@ -4544,8 +4552,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4668,21 +4675,23 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
  * VMMR0 request wrapper for GMMR0RegisterSharedModule.
  *
  * @returns see GMMR0RegisterSharedModule.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
+GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(   pReq->Hdr.cbReq >= sizeof(*pReq)
+                    && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]),
+                    ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     /* Pass back return code in the request packet to preserve informational codes. (VMMR3CallR0 chokes on them) */
-    pReq->rc = GMMR0RegisterSharedModule(pVM, idCpu, pReq->enmGuestOS, pReq->szName, pReq->szVersion,
+    pReq->rc = GMMR0RegisterSharedModule(pGVM, pVM, idCpu, pReq->enmGuestOS, pReq->szName, pReq->szVersion,
                                          pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
     return VINF_SUCCESS;
 }
@@ -4692,6 +4701,7 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
  * Unregisters a shared module for the VM
  *
  * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   idCpu           The VCPU id.
  * @param   pszModuleName   The module name.
@@ -4699,7 +4709,7 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
  * @param   GCPtrModBase    The module base address.
  * @param   cbModule        The module size.
  */
-GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion,
+GMMR0DECL(int) GMMR0UnregisterSharedModule(PGVM pGVM, PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion,
                                            RTGCPTR GCPtrModBase, uint32_t cbModule)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
@@ -4708,8 +4718,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4752,7 +4761,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     return rc;
 #else
 
-    NOREF(pVM); NOREF(idCpu); NOREF(pszModuleName); NOREF(pszVersion); NOREF(GCPtrModBase); NOREF(cbModule);
+    NOREF(pGVM); NOREF(pVM); NOREF(idCpu); NOREF(pszModuleName); NOREF(pszVersion); NOREF(GCPtrModBase); NOREF(cbModule);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -4762,20 +4771,20 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
  * VMMR0 request wrapper for GMMR0UnregisterSharedModule.
  *
  * @returns see GMMR0UnregisterSharedModule.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREGISTERSHAREDMODULEREQ pReq)
+GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMUNREGISTERSHAREDMODULEREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0UnregisterSharedModule(pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule);
+    return GMMR0UnregisterSharedModule(pGVM, pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule);
 }
 
 #ifdef VBOX_WITH_PAGE_SHARING
@@ -5069,10 +5078,11 @@ static void gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM)
  * Removes all shared modules for the specified VM
  *
  * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  */
-GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
+GMMR0DECL(int) GMMR0ResetSharedModules(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -5080,8 +5090,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5107,7 +5116,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
     gmmR0MutexRelease(pGMM);
     return rc;
 #else
-    NOREF(pVM); NOREF(idCpu);
+    RT_NOREF(pGVM, pVM, idCpu);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -5133,62 +5142,17 @@ static DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *p
 }
 
 #endif /* VBOX_WITH_PAGE_SHARING */
-#ifdef DEBUG_sandervl
-
-/**
- * Setup for a GMMR0CheckSharedModules call (to allow log flush jumps back to ring 3)
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-GMMR0DECL(int) GMMR0CheckSharedModulesStart(PVM pVM)
-{
-    /*
-     * Validate input and get the basics.
-     */
-    PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-
-    /*
-     * Take the semaphore and do some more validations.
-     */
-    gmmR0MutexAcquire(pGMM);
-    if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
-        rc = VERR_GMM_IS_NOT_SANE;
-    else
-        rc = VINF_SUCCESS;
-
-    return rc;
-}
-
-/**
- * Clean up after a GMMR0CheckSharedModules call (to allow log flush jumps back to ring 3)
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-GMMR0DECL(int) GMMR0CheckSharedModulesEnd(PVM pVM)
-{
-    /*
-     * Validate input and get the basics.
-     */
-    PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-
-    gmmR0MutexRelease(pGMM);
-    return VINF_SUCCESS;
-}
-
-#endif /* DEBUG_sandervl */
 
 /**
  * Check all shared modules for the specified VM.
  *
  * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   idCpu       The calling EMT number.
+ * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
+GMMR0DECL(int) GMMR0CheckSharedModules(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -5196,8 +5160,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, pVCpu->idCpu, &pGVM);
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5216,7 +5179,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 
         GMMCHECKSHAREDMODULEINFO Args;
         Args.pGVM     = pGVM;
-        Args.idCpu    = pVCpu->idCpu;
+        Args.idCpu    = idCpu;
         rc = RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Args);
 
         Log(("GMMR0CheckSharedModules done (rc=%Rrc)!\n", rc));
@@ -5286,23 +5249,22 @@ static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pv
  * Find a duplicate of the specified page in other active VMs
  *
  * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
+GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
 {
     /*
      * Validate input and pass it on.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
 
-    PGVM pGVM;
-    int rc = GVMMR0ByVM(pVM, &pGVM);
+    int rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5360,11 +5322,12 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
  *
  * @param   pStats      Where to put the statistics.
  * @param   pSession    The current session.
- * @param   pVM         The VM to obtain statistics for. Optional.
+ * @param   pGVM        The GVM to obtain statistics for. Optional.
+ * @param   pVM         The VM structure corresponding to @a pGVM.
  */
-GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
 {
-    LogFlow(("GVMMR0QueryStatistics: pStats=%p pSession=%p pVM=%p\n", pStats, pSession, pVM));
+    LogFlow(("GVMMR0QueryStatistics: pStats=%p pSession=%p pGVM=%p pVM=%p\n", pStats, pSession, pGVM, pVM));
 
     /*
      * Validate input.
@@ -5377,18 +5340,15 @@ GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, P
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
 
     /*
-     * Resolve the VM handle, if not NULL, and lock the GMM.
+     * Validate the VM handle, if not NULL, and lock the GMM.
      */
     int rc;
-    PGVM pGVM;
-    if (pVM)
+    if (pGVM)
     {
-        rc = GVMMR0ByVM(pVM, &pGVM);
+        rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
         if (RT_FAILURE(rc))
             return rc;
     }
-    else
-        pGVM = NULL;
 
     rc = gmmR0MutexAcquire(pGMM);
     if (RT_FAILURE(rc))
@@ -5427,10 +5387,11 @@ GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, P
  * VMMR0 request wrapper for GMMR0QueryStatistics.
  *
  * @returns see GMMR0QueryStatistics.
+ * @param   pGVM        The global (ring-0) VM structure. Optional.
  * @param   pVM         The cross context VM structure. Optional.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0QueryStatisticsReq(PVM pVM, PGMMQUERYSTATISTICSSREQ pReq)
+GMMR0DECL(int) GMMR0QueryStatisticsReq(PGVM pGVM, PVM pVM, PGMMQUERYSTATISTICSSREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -5438,7 +5399,7 @@ GMMR0DECL(int) GMMR0QueryStatisticsReq(PVM pVM, PGMMQUERYSTATISTICSSREQ pReq)
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0QueryStatistics(&pReq->Stats, pReq->pSession, pVM);
+    return GMMR0QueryStatistics(&pReq->Stats, pReq->pSession, pGVM, pVM);
 }
 
 
@@ -5450,11 +5411,12 @@ GMMR0DECL(int) GMMR0QueryStatisticsReq(PVM pVM, PGMMQUERYSTATISTICSSREQ pReq)
  * @param   pStats      Which statistics to reset, that is, non-zero fields
  *                      indicates which to reset.
  * @param   pSession    The current session.
- * @param   pVM         The VM to reset statistics for. Optional.
+ * @param   pGVM        The GVM to reset statistics for. Optional.
+ * @param   pVM         The VM structure corresponding to @a pGVM.
  */
-GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
 {
-    NOREF(pStats); NOREF(pSession); NOREF(pVM);
+    NOREF(pStats); NOREF(pSession); NOREF(pVM); NOREF(pGVM);
     /* Currently nothing we can reset at the moment. */
     return VINF_SUCCESS;
 }
@@ -5464,10 +5426,11 @@ GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, 
  * VMMR0 request wrapper for GMMR0ResetStatistics.
  *
  * @returns see GMMR0ResetStatistics.
+ * @param   pGVM        The global (ring-0) VM structure. Optional.
  * @param   pVM         The cross context VM structure. Optional.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0ResetStatisticsReq(PVM pVM, PGMMRESETSTATISTICSSREQ pReq)
+GMMR0DECL(int) GMMR0ResetStatisticsReq(PGVM pGVM, PVM pVM, PGMMRESETSTATISTICSSREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -5475,6 +5438,6 @@ GMMR0DECL(int) GMMR0ResetStatisticsReq(PVM pVM, PGMMRESETSTATISTICSSREQ pReq)
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0ResetStatistics(&pReq->Stats, pReq->pSession, pVM);
+    return GMMR0ResetStatistics(&pReq->Stats, pReq->pSession, pGVM, pVM);
 }
 
