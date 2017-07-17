@@ -49,8 +49,8 @@ struct UIDataMediumOptions
     UIDataMediumOptions()
         : m_enmType(KMediumType_Normal)
         , m_strLocation(QString())
-        , m_uLogicalSize(0)
         , m_strDescription(QString())
+        , m_uLogicalSize(0)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -59,8 +59,8 @@ struct UIDataMediumOptions
         return true
                && (m_enmType == other.m_enmType)
                && (m_strLocation == other.m_strLocation)
-               && (m_uLogicalSize == other.m_uLogicalSize)
                && (m_strDescription == other.m_strDescription)
+               && (m_uLogicalSize == other.m_uLogicalSize)
                ;
     }
 
@@ -73,10 +73,10 @@ struct UIDataMediumOptions
     KMediumType m_enmType;
     /** Holds the location. */
     QString m_strLocation;
-    /** Holds the logical size. */
-    qulonglong m_uLogicalSize;
     /** Holds the description. */
     QString m_strDescription;
+    /** Holds the logical size. */
+    qulonglong m_uLogicalSize;
 };
 
 
@@ -204,10 +204,10 @@ private slots:
         void sltTypeIndexChanged(int iIndex);
         /** Handles location change. */
         void sltLocationPathChanged(const QString &strPath);
-        /** Handles size editor change. */
-        void sltSizeValueChanged(qulonglong uSize);
         /** Handles description text change. */
         void sltDescriptionTextChanged();
+        /** Handles size editor change. */
+        void sltSizeValueChanged(qulonglong uSize);
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -289,19 +289,19 @@ private:
         /** Holds the location error pane. */
         QLabel             *m_pErrorPaneLocation;
 
-        /** Holds the size label. */
-        QLabel             *m_pLabelSize;
-        /** Holds the size editor. */
-        UIMediumSizeEditor *m_pEditorSize;
-        /** Holds the size error pane. */
-        QLabel             *m_pErrorPaneSize;
-
         /** Holds the description label. */
         QLabel    *m_pLabelDescription;
         /** Holds the description editor. */
         QTextEdit *m_pEditorDescription;
         /** Holds the description error pane. */
         QLabel    *m_pErrorPaneDescription;
+
+        /** Holds the size label. */
+        QLabel             *m_pLabelSize;
+        /** Holds the size editor. */
+        UIMediumSizeEditor *m_pEditorSize;
+        /** Holds the size error pane. */
+        QLabel             *m_pErrorPaneSize;
 
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
