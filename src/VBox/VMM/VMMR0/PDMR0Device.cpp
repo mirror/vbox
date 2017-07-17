@@ -820,25 +820,30 @@ static bool pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc)
  * PDMDevHlpCallR0 helper.
  *
  * @returns See PFNPDMDEVREQHANDLERR0.
+ * @param   pGVM    The global (ring-0) VM structure. (For validation.)
  * @param   pVM     The cross context VM structure. (For validation.)
  * @param   pReq    Pointer to the request buffer.
  */
-VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PVM pVM, PPDMDEVICECALLREQHANDLERREQ pReq)
+VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PVM pVM, PPDMDEVICECALLREQHANDLERREQ pReq)
 {
     /*
      * Validate input and make the call.
      */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+    int rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
+    if (RT_SUCCESS(rc))
+    {
+        AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+        AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    PPDMDEVINS pDevIns = pReq->pDevInsR0;
-    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
-    AssertReturn(pDevIns->Internal.s.pVMR0 == pVM, VERR_INVALID_PARAMETER);
+        PPDMDEVINS pDevIns = pReq->pDevInsR0;
+        AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
+        AssertReturn(pDevIns->Internal.s.pVMR0 == pVM, VERR_INVALID_PARAMETER);
 
-    PFNPDMDEVREQHANDLERR0 pfnReqHandlerR0 = pReq->pfnReqHandlerR0;
-    AssertPtrReturn(pfnReqHandlerR0, VERR_INVALID_POINTER);
+        PFNPDMDEVREQHANDLERR0 pfnReqHandlerR0 = pReq->pfnReqHandlerR0;
+        AssertPtrReturn(pfnReqHandlerR0, VERR_INVALID_POINTER);
 
-    return pfnReqHandlerR0(pDevIns, pReq->uOperation, pReq->u64Arg);
+        rc = pfnReqHandlerR0(pDevIns, pReq->uOperation, pReq->u64Arg);
+    }
+    return rc;
 }
 

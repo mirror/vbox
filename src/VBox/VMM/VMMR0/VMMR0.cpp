@@ -1805,7 +1805,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_GCFGM_SET_VALUE:
         case VMMR0_DO_GCFGM_QUERY_VALUE:
         {
-            if (pVM || !pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
+            if (pGVM || pVM || !pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             PGCFGMVALUEREQ pReq = (PGCFGMVALUEREQ)pReqHdr;
             if (pReq->Hdr.cbReq != sizeof(*pReq))
@@ -1831,18 +1831,18 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
          */
         case VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER:
         {
-            if (!pVM || !pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
+            if (!pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            rc = PDMR0DriverCallReqHandler(pVM, (PPDMDRIVERCALLREQHANDLERREQ)pReqHdr);
+            rc = PDMR0DriverCallReqHandler(pGVM, pVM, (PPDMDRIVERCALLREQHANDLERREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
         }
 
         case VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER:
         {
-            if (!pVM || !pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
+            if (!pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            rc = PDMR0DeviceCallReqHandler(pVM, (PPDMDEVICECALLREQHANDLERREQ)pReqHdr);
+            rc = PDMR0DeviceCallReqHandler(pGVM, pVM, (PPDMDEVICECALLREQHANDLERREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
         }

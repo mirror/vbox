@@ -1913,37 +1913,6 @@ GVMMR0DECL(int) GVMMR0ValidateGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 
 
 /**
- * Lookup a GVM structure by the shared VM structure
- * and ensuring that the caller is the EMT thread.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   idCpu       The Virtual CPU ID of the calling EMT.
- * @param   ppGVM       Where to store the GVM pointer.
- * @thread  EMT(idCpu)
- */
-GVMMR0DECL(int) GVMMR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM)
-{
-    AssertPtrReturn(ppGVM, VERR_INVALID_POINTER);
-    PGVMM pGVMM;
-    return gvmmR0ByVMAndEMT(pVM, idCpu, ppGVM, &pGVMM);
-}
-
-
-/**
- * Lookup a VM by its global handle.
- *
- * @returns Pointer to the VM on success, NULL on failure.
- * @param   hGVM    The global VM handle. Asserts on bad handle.
- */
-GVMMR0DECL(PVM) GVMMR0GetVMByHandle(uint32_t hGVM)
-{
-    PGVM pGVM = GVMMR0ByHandle(hGVM);
-    return pGVM ? pGVM->pVM : NULL;
-}
-
-
-/**
  * Looks up the VM belonging to the specified EMT thread.
  *
  * This is used by the assertion machinery in VMMR0.cpp to avoid causing
