@@ -79,7 +79,6 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
 	     $(if $(filter _Debian_squeeze _Ubuntu_lucid,$(debrel)),,VBOX_WITH_VMSVGA3D=1) \
 	     VBOX_DO_STRIP= \
-	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
 	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
 	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
