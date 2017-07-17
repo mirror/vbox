@@ -693,9 +693,6 @@ public:
         // Catch refcount screwups by setting refcount to -(LONG_MAX/2).
         m_iRef = -(LONG_MAX/2);
         FinalRelease();
-#ifdef _ATL_DEBUG_INTERFACES
-        _AtlDebugInterfacesModule.DeleteNonAddRefThunk(_GetRawUnknown());
-#endif
     }
     STDMETHOD_(ULONG, AddRef)() throw()
     {
