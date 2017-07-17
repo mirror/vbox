@@ -394,22 +394,20 @@ void UIMediumItem::refresh()
     {
         case UIMediumType_HardDisk:
         {
-            m_details.m_aLabels << UIMediumManager::tr("Location:");
             m_details.m_aLabels << UIMediumManager::tr("Format:");
             m_details.m_aLabels << UIMediumManager::tr("Storage details:");
             m_details.m_aLabels << UIMediumManager::tr("Attached to:");
             m_details.m_aLabels << UIMediumManager::tr("Encrypted with key:");
             m_details.m_aLabels << UIMediumManager::tr("UUID:");
 
-            m_details.m_aFields << formatFieldText(location(), true, "end");
             m_details.m_aFields << hardDiskFormat();
             m_details.m_aFields << details();
             m_details.m_aFields << (usage().isNull() ?
-                                     formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
-                                     formatFieldText(usage()));
+                                    formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
+                                    formatFieldText(usage()));
             m_details.m_aFields << (encryptionPasswordID().isNull() ?
-                                     formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Encrypted</i>"), false) :
-                                     formatFieldText(encryptionPasswordID()));
+                                    formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Encrypted</i>"), false) :
+                                    formatFieldText(encryptionPasswordID()));
             m_details.m_aFields << id();
 
             break;
@@ -417,14 +415,12 @@ void UIMediumItem::refresh()
         case UIMediumType_DVD:
         case UIMediumType_Floppy:
         {
-            m_details.m_aLabels << UIMediumManager::tr("Location:");
             m_details.m_aLabels << UIMediumManager::tr("Attached to:");
             m_details.m_aLabels << UIMediumManager::tr("UUID:");
 
-            m_details.m_aFields << formatFieldText(location(), true, "end");
             m_details.m_aFields << (usage().isNull() ?
-                                     formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
-                                     formatFieldText(usage()));
+                                    formatFieldText(UIMediumManager::tr("<i>Not&nbsp;Attached</i>"), false) :
+                                    formatFieldText(usage()));
             m_details.m_aFields << id();
             break;
         }
