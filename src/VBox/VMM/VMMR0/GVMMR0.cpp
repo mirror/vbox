@@ -1880,6 +1880,23 @@ static int gvmmR0ByGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGVMM *ppGV
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Validates a GVM/VM/EMT combo.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
+ * @param   pVM         The cross context VM structure.
+ * @param   idCpu       The Virtual CPU ID of the calling EMT.
+ * @thread  EMT(idCpu)
+ */
+GVMMR0DECL(int) GVMMR0ValidateGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+{
+    PGVMM pGVMM;
+    return gvmmR0ByGVMandVMandEMT(pGVM, pVM, idCpu, &pGVMM);
+}
+
+
 /**
  * Lookup a GVM structure by the shared VM structure
  * and ensuring that the caller is the EMT thread.
@@ -1888,7 +1905,7 @@ static int gvmmR0ByGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGVMM *ppGV
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The Virtual CPU ID of the calling EMT.
  * @param   ppGVM       Where to store the GVM pointer.
- * @thread  EMT
+ * @thread  EMT(idCpu)
  */
 GVMMR0DECL(int) GVMMR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM)
 {
@@ -2845,32 +2862,32 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
          i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
          i = pGVMM->aHandles[i].iNext)
     {
-        PGVM pGVM = pGVMM->aHandles[i].pGVM;
+        PGVM pOtherGVM = pGVMM->aHandles[i].pGVM;
         void *pvObj = pGVMM->aHandles[i].pvObj;
         if (    VALID_PTR(pvObj)
-            &&  VALID_PTR(pGVM)
-            &&  pGVM->u32Magic == GVM_MAGIC
+            &&  VALID_PTR(pOtherGVM)
+            &&  pOtherGVM->u32Magic == GVM_MAGIC
             &&  RT_SUCCESS(SUPR0ObjVerifyAccess(pvObj, pSession, NULL)))
         {
             pStats->cVMs++;
-            pStats->cEMTs += pGVM->cCpus;
+            pStats->cEMTs += pOtherGVM->cCpus;
 
-            pStats->SchedSum.cHaltCalls        += pGVM->gvmm.s.StatsSched.cHaltCalls;
-            pStats->SchedSum.cHaltBlocking     += pGVM->gvmm.s.StatsSched.cHaltBlocking;
-            pStats->SchedSum.cHaltTimeouts     += pGVM->gvmm.s.StatsSched.cHaltTimeouts;
-            pStats->SchedSum.cHaltNotBlocking  += pGVM->gvmm.s.StatsSched.cHaltNotBlocking;
-            pStats->SchedSum.cHaltWakeUps      += pGVM->gvmm.s.StatsSched.cHaltWakeUps;
+            pStats->SchedSum.cHaltCalls        += pOtherGVM->gvmm.s.StatsSched.cHaltCalls;
+            pStats->SchedSum.cHaltBlocking     += pOtherGVM->gvmm.s.StatsSched.cHaltBlocking;
+            pStats->SchedSum.cHaltTimeouts     += pOtherGVM->gvmm.s.StatsSched.cHaltTimeouts;
+            pStats->SchedSum.cHaltNotBlocking  += pOtherGVM->gvmm.s.StatsSched.cHaltNotBlocking;
+            pStats->SchedSum.cHaltWakeUps      += pOtherGVM->gvmm.s.StatsSched.cHaltWakeUps;
 
-            pStats->SchedSum.cWakeUpCalls      += pGVM->gvmm.s.StatsSched.cWakeUpCalls;
-            pStats->SchedSum.cWakeUpNotHalted  += pGVM->gvmm.s.StatsSched.cWakeUpNotHalted;
-            pStats->SchedSum.cWakeUpWakeUps    += pGVM->gvmm.s.StatsSched.cWakeUpWakeUps;
+            pStats->SchedSum.cWakeUpCalls      += pOtherGVM->gvmm.s.StatsSched.cWakeUpCalls;
+            pStats->SchedSum.cWakeUpNotHalted  += pOtherGVM->gvmm.s.StatsSched.cWakeUpNotHalted;
+            pStats->SchedSum.cWakeUpWakeUps    += pOtherGVM->gvmm.s.StatsSched.cWakeUpWakeUps;
 
-            pStats->SchedSum.cPokeCalls        += pGVM->gvmm.s.StatsSched.cPokeCalls;
-            pStats->SchedSum.cPokeNotBusy      += pGVM->gvmm.s.StatsSched.cPokeNotBusy;
+            pStats->SchedSum.cPokeCalls        += pOtherGVM->gvmm.s.StatsSched.cPokeCalls;
+            pStats->SchedSum.cPokeNotBusy      += pOtherGVM->gvmm.s.StatsSched.cPokeNotBusy;
 
-            pStats->SchedSum.cPollCalls        += pGVM->gvmm.s.StatsSched.cPollCalls;
-            pStats->SchedSum.cPollHalts        += pGVM->gvmm.s.StatsSched.cPollHalts;
-            pStats->SchedSum.cPollWakeUps      += pGVM->gvmm.s.StatsSched.cPollWakeUps;
+            pStats->SchedSum.cPollCalls        += pOtherGVM->gvmm.s.StatsSched.cPollCalls;
+            pStats->SchedSum.cPollHalts        += pOtherGVM->gvmm.s.StatsSched.cPollHalts;
+            pStats->SchedSum.cPollWakeUps      += pOtherGVM->gvmm.s.StatsSched.cPollWakeUps;
         }
     }
 
@@ -2994,15 +3011,15 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
              i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
              i = pGVMM->aHandles[i].iNext)
         {
-            PGVM pGVM = pGVMM->aHandles[i].pGVM;
+            PGVM pOtherGVM = pGVMM->aHandles[i].pGVM;
             void *pvObj = pGVMM->aHandles[i].pvObj;
             if (    VALID_PTR(pvObj)
-                &&  VALID_PTR(pGVM)
-                &&  pGVM->u32Magic == GVM_MAGIC
+                &&  VALID_PTR(pOtherGVM)
+                &&  pOtherGVM->u32Magic == GVM_MAGIC
                 &&  RT_SUCCESS(SUPR0ObjVerifyAccess(pvObj, pSession, NULL)))
             {
 #               define MAYBE_RESET_FIELD(field) \
-                    do { if (pStats->SchedSum. field ) { pGVM->gvmm.s.StatsSched. field = 0; } } while (0)
+                    do { if (pStats->SchedSum. field ) { pOtherGVM->gvmm.s.StatsSched. field = 0; } } while (0)
                 MAYBE_RESET_FIELD(cHaltCalls);
                 MAYBE_RESET_FIELD(cHaltBlocking);
                 MAYBE_RESET_FIELD(cHaltTimeouts);
