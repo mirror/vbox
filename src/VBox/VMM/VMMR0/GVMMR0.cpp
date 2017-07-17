@@ -361,6 +361,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
 static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock);
 static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM);
 static int gvmmR0ByGVMandVM(PGVM pGVM, PVM pVM, PGVMM *ppGVMM, bool fTakeUsedLock);
+static int gvmmR0ByGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGVMM *ppGVMM);
 
 #ifdef GVMM_SCHED_WITH_PPT
 static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
@@ -1183,8 +1184,8 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM, PVM pVM)
                     VERR_WRONG_ORDER);
 
     uint32_t        hGVM = pGVM->hSelf;
-    AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_HANDLE);
-    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_HANDLE);
+    AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_VM_HANDLE);
+    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_VM_HANDLE);
 
     PGVMHANDLE      pHandle = &pGVMM->aHandles[hGVM];
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
@@ -1203,9 +1204,6 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM, PVM pVM)
     int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRC(rc);
 
-/** @todo Check that all other EMTs have said bye-bye. */
-
-
     /* Be careful here because we might theoretically be racing someone else cleaning up. */
     if (    pHandle->pVM == pVM
         &&  (   (   pHandle->hEMT0  == hSelf
@@ -1216,20 +1214,34 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM, PVM pVM)
         &&  VALID_PTR(pHandle->pGVM)
         &&  pHandle->pGVM->u32Magic == GVM_MAGIC)
     {
-        void *pvObj = pHandle->pvObj;
-        pHandle->pvObj = NULL;
-        gvmmR0CreateDestroyUnlock(pGVMM);
-
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        /* Check that other EMTs have deregistered. */
+        uint32_t cNotDeregistered = 0;
+        for (VMCPUID idCpu = 1; idCpu < pGVM->cCpus; idCpu++)
+            cNotDeregistered += pGVM->aCpus[idCpu].hEMT != ~(RTNATIVETHREAD)1; /* see GVMMR0DeregisterVCpu for the value */
+        if (cNotDeregistered == 0)
         {
-            /** @todo Can we busy wait here for all thread-context hooks to be
-             *        deregistered before releasing (destroying) it? Only until we find a
-             *        solution for not deregistering hooks everytime we're leaving HMR0
-             *        context. */
-            VMMR0ThreadCtxHookDestroyForEmt(&pVM->aCpus[idCpu]);
-        }
+            /* Grab the object pointer. */
+            void *pvObj = pHandle->pvObj;
+            pHandle->pvObj = NULL;
+            gvmmR0CreateDestroyUnlock(pGVMM);
 
-        SUPR0ObjRelease(pvObj, pHandle->pSession);
+            /** @todo this _must_ be the wrong place.   */
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            {
+                /** @todo Can we busy wait here for all thread-context hooks to be
+                 *        deregistered before releasing (destroying) it? Only until we find a
+                 *        solution for not deregistering hooks everytime we're leaving HMR0
+                 *        context. */
+                VMMR0ThreadCtxHookDestroyForEmt(&pVM->aCpus[idCpu]);
+            }
+
+            SUPR0ObjRelease(pvObj, pHandle->pSession);
+        }
+        else
+        {
+            gvmmR0CreateDestroyUnlock(pGVMM);
+            rc = VERR_GVMM_NOT_ALL_EMTS_DEREGISTERED;
+        }
     }
     else
     {
@@ -1443,7 +1455,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
  */
 GVMMR0DECL(int) GVMMR0RegisterVCpu(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
-    AssertReturn(idCpu != 0, VERR_NOT_OWNER);
+    AssertReturn(idCpu != 0, VERR_INVALID_FUNCTION);
 
     /*
      * Validate the VM structure, state and handle.
@@ -1482,6 +1494,57 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PGVM pGVM, PVM pVM, VMCPUID idCpu)
         }
         else
             rc = VERR_INVALID_CPU_ID;
+    }
+    return rc;
+}
+
+
+/**
+ * Deregisters the calling thread as the EMT of a Virtual CPU.
+ *
+ * Note that VCPU 0 shall call GVMMR0DestroyVM intead of this API.
+ *
+ * @returns VBox status code
+ * @param   pGVM        The global (ring-0) VM structure.
+ * @param   pVM         The cross context VM structure.
+ * @param   idCpu       VCPU id to register the current thread as.
+ */
+GVMMR0DECL(int) GVMMR0DeregisterVCpu(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+{
+    AssertReturn(idCpu != 0, VERR_INVALID_FUNCTION);
+
+    /*
+     * Validate the VM structure, state and handle.
+     */
+    PGVMM pGVMM;
+    int rc = gvmmR0ByGVMandVMandEMT(pGVM, pVM, idCpu, &pGVMM);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Take the destruction lock and recheck the handle state to
+         * prevent racing GVMMR0DestroyVM.
+         */
+        gvmmR0CreateDestroyLock(pGVMM);
+        uint32_t hSelf = pGVM->hSelf;
+        if (   hSelf < RT_ELEMENTS(pGVMM->aHandles)
+            && pGVMM->aHandles[hSelf].pvObj != NULL
+            && pGVMM->aHandles[hSelf].pGVM  == pGVM)
+        {
+            /*
+             * Do per-EMT cleanups.
+             */
+            VMMR0ThreadCtxHookDestroyForEmt(&pVM->aCpus[idCpu]);
+
+            /*
+             * Invalidate hEMT.  We don't use NIL here as that would allow
+             * GVMMR0RegisterVCpu to be called again, and we don't want that.
+             */
+            AssertCompile(~(RTNATIVETHREAD)1 != NIL_RTNATIVETHREAD);
+            pGVM->aCpus[idCpu].hEMT           = ~(RTNATIVETHREAD)1;
+            pVM->aCpus[idCpu].hNativeThreadR0 = NIL_RTNATIVETHREAD;
+        }
+
+        gvmmR0CreateDestroyUnlock(pGVMM);
     }
     return rc;
 }
@@ -1672,7 +1735,7 @@ static int gvmmR0ByGVMandVM(PGVM pGVM, PVM pVM, PGVMM *ppGVMM, bool fTakeUsedLoc
                         GVMMR0_USED_SHARED_UNLOCK(pGVMM);
                 }
             }
-            rc = VERR_INVALID_HANDLE;
+            rc = VERR_INVALID_VM_HANDLE;
         }
         else
             rc = VERR_INVALID_POINTER;
@@ -1713,7 +1776,7 @@ GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
  * @param   ppGVMM      Where to store the pointer to the GVMM instance data.
  * @thread  EMT
  *
- * @remark  This will assert in all failure paths.
+ * @remarks This will assert in all failure paths.
  */
 static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
 {
@@ -1751,6 +1814,71 @@ static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Check that the given GVM and VM structures match up.
+ *
+ * The calling thread must be in the same process as the VM. All current lookups
+ * are by threads inside the same process, so this will not be an issue.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   pVM             The cross context VM structure.
+ * @param   idCpu           The (alleged) Virtual CPU ID of the calling EMT.
+ * @param   ppGVMM          Where to store the pointer to the GVMM instance data.
+ * @thread  EMT
+ *
+ * @remarks This will assert in all failure paths.
+ */
+static int gvmmR0ByGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGVMM *ppGVMM)
+{
+    /*
+     * Check the pointers.
+     */
+    AssertPtrReturn(pGVM, VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pVM,  VERR_INVALID_POINTER);
+    AssertReturn(((uintptr_t)pVM & PAGE_OFFSET_MASK) == 0, VERR_INVALID_POINTER);
+    AssertReturn(pGVM->pVM == pVM, VERR_INVALID_VM_HANDLE);
+
+
+    /*
+     * Get the pGVMM instance and check the VM handle.
+     */
+    PGVMM pGVMM;
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
+
+    uint16_t hGVM = pGVM->hSelf;
+    AssertReturn(   hGVM != NIL_GVM_HANDLE
+                 && hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_VM_HANDLE);
+
+    RTPROCESS const pidSelf = RTProcSelf();
+    PGVMHANDLE      pHandle = &pGVMM->aHandles[hGVM];
+    AssertReturn(   pHandle->pGVM   == pGVM
+                 && pHandle->pVM    == pVM
+                 && pHandle->ProcId == pidSelf
+                 && RT_VALID_PTR(pHandle->pvObj),
+                 VERR_INVALID_HANDLE);
+
+    /*
+     * Check the EMT claim.
+     */
+    RTNATIVETHREAD const hAllegedEMT = RTThreadNativeSelf();
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(pGVM->aCpus[idCpu].hEMT == hAllegedEMT, VERR_NOT_OWNER);
+
+    /*
+     * Some more VM data consistency checks.
+     */
+    AssertReturn(pVM->cCpus == pGVM->cCpus, VERR_INCONSISTENT_VM_HANDLE);
+    AssertReturn(pVM->hSelf == hGVM, VERR_INCONSISTENT_VM_HANDLE);
+    AssertReturn(pVM->pVMR0 == pVM, VERR_INCONSISTENT_VM_HANDLE);
+    AssertReturn(   pVM->enmVMState >= VMSTATE_CREATING
+                 && pVM->enmVMState <= VMSTATE_TERMINATED, VERR_INCONSISTENT_VM_HANDLE);
+
+    *ppGVMM = pGVMM;
+    return VINF_SUCCESS;
+}
 
 /**
  * Lookup a GVM structure by the shared VM structure

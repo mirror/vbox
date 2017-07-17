@@ -247,6 +247,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
 
     /*
      * Cleanup and exit.
+     * EMT0 does the VM destruction after all other EMTs have deregistered and terminated.
      */
     Log(("vmR3EmulationThread: Terminating emulation thread! Thread=%#x pUVM=%p rc=%Rrc enmBefore=%d enmVMState=%d\n",
          hThreadSelf, pUVM, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_TERMINATED));
@@ -274,6 +275,13 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
         pUVM->pVM = NULL;
 
         int rc2 = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        AssertLogRelRC(rc2);
+    }
+    /* Deregister the EMT with VMMR0. */
+    else if (   idCpu != 0
+             && (pVM = pUVM->pVM) != NULL)
+    {
+        int rc2 = SUPR3CallVMMR0Ex(pVM->pVMR0, idCpu, VMMR0_DO_GVMM_DEREGISTER_VMCPU, 0, NULL);
         AssertLogRelRC(rc2);
     }
 
