@@ -2800,11 +2800,12 @@ GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHos
  *
  * @param   pStats      Where to put the statistics.
  * @param   pSession    The current session.
- * @param   pVM         The VM to obtain statistics for. Optional.
+ * @param   pGVM        The GVM to obtain statistics for. Optional.
+ * @param   pVM         The VM structure corresponding to @a pGVM.
  */
-GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
 {
-    LogFlow(("GVMMR0QueryStatistics: pStats=%p pSession=%p pVM=%p\n", pStats, pSession, pVM));
+    LogFlow(("GVMMR0QueryStatistics: pStats=%p pSession=%p pGVM=%p pVM=%p\n", pStats, pSession, pGVM, pVM));
 
     /*
      * Validate input.
@@ -2817,10 +2818,9 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
      * Take the lock and get the VM statistics.
      */
     PGVMM pGVMM;
-    if (pVM)
+    if (pGVM)
     {
-        PGVM pGVM;
-        int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /*fTakeUsedLock*/);
+        int rc = gvmmR0ByGVMandVM(pGVM, pVM, &pGVMM, true /*fTakeUsedLock*/);
         if (RT_FAILURE(rc))
             return rc;
         pStats->SchedVM = pGVM->gvmm.s.StatsSched;
@@ -2913,11 +2913,12 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
  * VMMR0 request wrapper for GVMMR0QueryStatistics.
  *
  * @returns see GVMMR0QueryStatistics.
+ * @param   pGVM            The global (ring-0) VM structure. Optional.
  * @param   pVM             The cross context VM structure. Optional.
  * @param   pReq            Pointer to the request packet.
  * @param   pSession        The current session.
  */
-GVMMR0DECL(int) GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq, PSUPDRVSESSION pSession)
+GVMMR0DECL(int) GVMMR0QueryStatisticsReq(PGVM pGVM, PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq, PSUPDRVSESSION pSession)
 {
     /*
      * Validate input and pass it on.
@@ -2926,7 +2927,7 @@ GVMMR0DECL(int) GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq,
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
     AssertReturn(pReq->pSession == pSession, VERR_INVALID_PARAMETER);
 
-    return GVMMR0QueryStatistics(&pReq->Stats, pSession, pVM);
+    return GVMMR0QueryStatistics(&pReq->Stats, pSession, pGVM, pVM);
 }
 
 
@@ -2937,11 +2938,12 @@ GVMMR0DECL(int) GVMMR0QueryStatisticsReq(PVM pVM, PGVMMQUERYSTATISTICSSREQ pReq,
  *
  * @param   pStats      Which statistics to reset, that is, non-zero fields indicates which to reset.
  * @param   pSession    The current session.
- * @param   pVM         The VM to reset statistics for. Optional.
+ * @param   pGVM        The GVM to reset statistics for. Optional.
+ * @param   pVM         The VM structure corresponding to @a pGVM.
  */
-GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
 {
-    LogFlow(("GVMMR0ResetStatistics: pStats=%p pSession=%p pVM=%p\n", pStats, pSession, pVM));
+    LogFlow(("GVMMR0ResetStatistics: pStats=%p pSession=%p pGVM=%p pVM=%p\n", pStats, pSession, pGVM, pVM));
 
     /*
      * Validate input.
@@ -2953,10 +2955,9 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
      * Take the lock and get the VM statistics.
      */
     PGVMM pGVMM;
-    if (pVM)
+    if (pGVM)
     {
-        PGVM pGVM;
-        int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /*fTakeUsedLock*/);
+        int rc = gvmmR0ByGVMandVM(pGVM, pVM, &pGVMM, true /*fTakeUsedLock*/);
         if (RT_FAILURE(rc))
             return rc;
 #       define MAYBE_RESET_FIELD(field) \
@@ -3030,11 +3031,12 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
  * VMMR0 request wrapper for GVMMR0ResetStatistics.
  *
  * @returns see GVMMR0ResetStatistics.
+ * @param   pGVM            The global (ring-0) VM structure. Optional.
  * @param   pVM             The cross context VM structure. Optional.
  * @param   pReq            Pointer to the request packet.
  * @param   pSession        The current session.
  */
-GVMMR0DECL(int) GVMMR0ResetStatisticsReq(PVM pVM, PGVMMRESETSTATISTICSSREQ pReq, PSUPDRVSESSION pSession)
+GVMMR0DECL(int) GVMMR0ResetStatisticsReq(PGVM pGVM, PVM pVM, PGVMMRESETSTATISTICSSREQ pReq, PSUPDRVSESSION pSession)
 {
     /*
      * Validate input and pass it on.
@@ -3043,6 +3045,6 @@ GVMMR0DECL(int) GVMMR0ResetStatisticsReq(PVM pVM, PGVMMRESETSTATISTICSSREQ pReq,
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
     AssertReturn(pReq->pSession == pSession, VERR_INVALID_PARAMETER);
 
-    return GVMMR0ResetStatistics(&pReq->Stats, pSession, pVM);
+    return GVMMR0ResetStatistics(&pReq->Stats, pSession, pGVM, pVM);
 }
 
