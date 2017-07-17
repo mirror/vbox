@@ -596,6 +596,7 @@ void UIMediumDetailsWidget::loadDataForOptions()
     m_pLabelSize->setEnabled(fEnableResize);
     m_pEditorSize->setEnabled(fEnableResize);
     m_pEditorSize->setMediumSize(m_newData.m_options.m_uLogicalSize);
+    sltSizeValueChanged(m_pEditorSize->mediumSize());
 
     /* Load description: */
     m_pLabelDescription->setEnabled(m_newData.m_fValid);
@@ -671,9 +672,20 @@ void UIMediumDetailsWidget::retranslateValidation(QWidget * /* pWidget = 0 */)
 
 void UIMediumDetailsWidget::updateButtonStates()
 {
-//    if (m_oldData != m_newData)
-//        printf("Type: %d\n",
-//               (int)m_newData.m_enmType);
+//    if (m_newData != m_oldData)
+//    {
+//        if (m_newData.m_options != m_oldData.m_options)
+//        {
+//            if (m_newData.m_options.m_enmType != m_oldData.m_options.m_enmType)
+//                printf("Type: %d\n", (int)m_newData.m_options.m_enmType);
+//            if (m_newData.m_options.m_uLogicalSize != m_oldData.m_options.m_uLogicalSize)
+//                printf("Size: %llu vs %llu\n", m_newData.m_options.m_uLogicalSize, m_oldData.m_options.m_uLogicalSize);
+//            if (m_newData.m_options.m_strLocation != m_oldData.m_options.m_strLocation)
+//                printf("Location: %s\n", m_newData.m_options.m_strLocation.toUtf8().constData());
+//            if (m_newData.m_options.m_strDescription != m_oldData.m_options.m_strDescription)
+//                printf("Description: %s\n", m_newData.m_options.m_strDescription.toUtf8().constData());
+//        }
+//    }
 
     /* Update 'Apply' / 'Reset' button states: */
     if (m_pButtonBox)
