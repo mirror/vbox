@@ -737,7 +737,7 @@ void UISnapshotDetailsWidget::prepareTabOptions()
         {
 #ifdef VBOX_WS_MAC
             /* Configure layout: */
-            m_pLayoutOptions->setSpacing(5);
+            m_pLayoutOptions->setSpacing(10);
             m_pLayoutOptions->setContentsMargins(10, 10, 10, 10);
 #endif
 

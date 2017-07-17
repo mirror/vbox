@@ -293,7 +293,7 @@ void UIHostNetworkDetailsWidget::prepareTabInterface()
         {
 #ifdef VBOX_WS_MAC
             /* Configure layout: */
-            pLayoutInterface->setSpacing(5);
+            pLayoutInterface->setSpacing(10);
             pLayoutInterface->setContentsMargins(10, 10, 10, 10);
 #endif
 
@@ -586,7 +586,7 @@ void UIHostNetworkDetailsWidget::prepareTabDHCPServer()
         {
 #ifdef VBOX_WS_MAC
             /* Configure layout: */
-            pLayoutDHCPServer->setSpacing(5);
+            pLayoutDHCPServer->setSpacing(10);
             pLayoutDHCPServer->setContentsMargins(10, 10, 10, 10);
 #endif
 
