@@ -4179,7 +4179,7 @@ void            pgmUnlock(PVM pVM);
  * @param   a_pVM           Pointer to the VM.
  * @param   a_pVCpu         The current CPU handle.
  */
-#define PGM_LOCK_ASSERT_OWNER_EX(a_pVM, a_pVCpu)  Assert(PDMCritSectIsOwnerEx(&(a_pVM)->pgm.s.CritSectX, pVCpu))
+#define PGM_LOCK_ASSERT_OWNER_EX(a_pVM, a_pVCpu)  Assert(PDMCritSectIsOwnerEx(&(a_pVM)->pgm.s.CritSectX, a_pVCpu))
 
 #ifndef PGM_WITHOUT_MAPPINGS
 int             pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
