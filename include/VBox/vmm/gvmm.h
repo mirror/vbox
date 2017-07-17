@@ -177,8 +177,8 @@ GVMMR0DECL(int)     GVMMR0SchedWakeUpNoGVMNoLock(PVM pVM, VMCPUID idCpu);
 GVMMR0DECL(int)     GVMMR0SchedPoke(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 GVMMR0DECL(int)     GVMMR0SchedPokeEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, bool fTakeUsedLock);
 GVMMR0DECL(int)     GVMMR0SchedPokeNoGVMNoLock(PVM pVM, VMCPUID idCpu);
-GVMMR0DECL(int)     GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVMCPUSET pPokeSet);
-GVMMR0DECL(int)     GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield);
+GVMMR0DECL(int)     GVMMR0SchedWakeUpAndPokeCpus(PGVM pGVM, PVM pVM, PCVMCPUSET pSleepSet, PCVMCPUSET pPokeSet);
+GVMMR0DECL(int)     GVMMR0SchedPoll(PGVM pGVM, PVM pVM, VMCPUID idCpu, bool fYield);
 GVMMR0DECL(void)    GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHostCpu, uint32_t uHz);
 GVMMR0DECL(int)     GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
 GVMMR0DECL(int)     GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM);
@@ -222,7 +222,7 @@ typedef struct GVMMSCHEDWAKEUPANDPOKECPUSREQ /* nice and unreadable... */
 /** Pointer to a GVMMR0QueryStatisticsReq / VMMR0_DO_GVMM_QUERY_STATISTICS request buffer. */
 typedef GVMMSCHEDWAKEUPANDPOKECPUSREQ *PGVMMSCHEDWAKEUPANDPOKECPUSREQ;
 
-GVMMR0DECL(int)     GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKECPUSREQ pReq);
+GVMMR0DECL(int)     GVMMR0SchedWakeUpAndPokeCpusReq(PGVM pGVM, PVM pVM, PGVMMSCHEDWAKEUPANDPOKECPUSREQ pReq);
 
 
 /**

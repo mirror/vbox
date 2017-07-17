@@ -2499,11 +2499,12 @@ GVMMR0DECL(int) GVMMR0SchedPokeNoGVMNoLock(PVM pVM, VMCPUID idCpu)
  *
  * @returns VBox status code, no informational stuff.
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   pSleepSet           The set of sleepers to wake up.
  * @param   pPokeSet            The set of CPUs to poke.
  */
-GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVMCPUSET pPokeSet)
+GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PGVM pGVM, PVM pVM, PCVMCPUSET pSleepSet, PCVMCPUSET pPokeSet)
 {
     AssertPtrReturn(pSleepSet, VERR_INVALID_POINTER);
     AssertPtrReturn(pPokeSet, VERR_INVALID_POINTER);
@@ -2514,9 +2515,8 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVM
     /*
      * Validate input and take the UsedLock.
      */
-    PGVM pGVM;
     PGVMM pGVMM;
-    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, true /* fTakeUsedLock */);
+    int rc = gvmmR0ByGVMandVM(pGVM, pVM, &pGVMM, true /* fTakeUsedLock */);
     GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
     if (RT_SUCCESS(rc))
     {
@@ -2555,10 +2555,11 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PVM pVM, PCVMCPUSET pSleepSet, PCVM
  * VMMR0 request wrapper for GVMMR0SchedWakeUpAndPokeCpus.
  *
  * @returns see GVMMR0SchedWakeUpAndPokeCpus.
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   pReq            Pointer to the request packet.
  */
-GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKECPUSREQ pReq)
+GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PGVM pGVM, PVM pVM, PGVMMSCHEDWAKEUPANDPOKECPUSREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -2566,7 +2567,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKE
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GVMMR0SchedWakeUpAndPokeCpus(pVM, &pReq->SleepSet, &pReq->PokeSet);
+    return GVMMR0SchedWakeUpAndPokeCpus(pGVM, pVM, &pReq->SleepSet, &pReq->PokeSet);
 }
 
 
@@ -2579,20 +2580,20 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpusReq(PVM pVM, PGVMMSCHEDWAKEUPANDPOKE
  *
  * @returns VINF_SUCCESS if not yielded.
  *          VINF_GVM_YIELDED if an attempt to switch to a different VM task was made.
+ * @param   pGVM            The global (ring-0) VM structure.
  * @param   pVM             The cross context VM structure.
  * @param   idCpu           The Virtual CPU ID of the calling EMT.
  * @param   fYield          Whether to yield or not.
  *                          This is for when we're spinning in the halt loop.
  * @thread  EMT(idCpu).
  */
-GVMMR0DECL(int) GVMMR0SchedPoll(PVM pVM, VMCPUID idCpu, bool fYield)
+GVMMR0DECL(int) GVMMR0SchedPoll(PGVM pGVM, PVM pVM, VMCPUID idCpu, bool fYield)
 {
     /*
      * Validate input.
      */
-    PGVM pGVM;
     PGVMM pGVMM;
-    int rc = gvmmR0ByVMAndEMT(pVM, idCpu, &pGVM, &pGVMM);
+    int rc = gvmmR0ByGVMandVMandEMT(pGVM, pVM, idCpu, &pGVMM);
     if (RT_SUCCESS(rc))
     {
         /*

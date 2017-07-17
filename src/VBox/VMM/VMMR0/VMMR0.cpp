@@ -1477,14 +1477,14 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
         case VMMR0_DO_GVMM_SCHED_WAKE_UP_AND_POKE_CPUS:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            rc = GVMMR0SchedWakeUpAndPokeCpusReq(pVM, (PGVMMSCHEDWAKEUPANDPOKECPUSREQ)pReqHdr);
+            rc = GVMMR0SchedWakeUpAndPokeCpusReq(pGVM, pVM, (PGVMMSCHEDWAKEUPANDPOKECPUSREQ)pReqHdr);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
         case VMMR0_DO_GVMM_SCHED_POLL:
             if (pReqHdr || u64Arg > 1)
                 return VERR_INVALID_PARAMETER;
-            rc = GVMMR0SchedPoll(pVM, idCpu, !!u64Arg);
+            rc = GVMMR0SchedPoll(pGVM, pVM, idCpu, !!u64Arg);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
