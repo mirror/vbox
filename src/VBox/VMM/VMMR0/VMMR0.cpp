@@ -348,12 +348,13 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  *
  * @returns VBox status code.
  *
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
  * @param   uSvnRev     The SVN revision of the ring-3 part.
  * @param   uBuildType  Build type indicator.
- * @thread  EMT.
+ * @thread  EMT(0)
  */
-static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
+static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
 {
     VMM_CHECK_SMAP_SETUP();
     VMM_CHECK_SMAP_CHECK(return VERR_VMM_SMAP_BUT_AC_CLEAR);
@@ -373,9 +374,10 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
         SUPR0Printf("VMMR0InitVM: Build type mismatch, r3=%#x r0=%#x\n", uBuildType, vmmGetBuildType());
         return VERR_VMM_R0_VERSION_MISMATCH;
     }
-    if (    !VALID_PTR(pVM)
-        ||  pVM->pVMR0 != pVM)
-        return VERR_INVALID_PARAMETER;
+
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0 /*idCpu*/);
+    if (RT_FAILURE(rc))
+        return rc;
 
 
 #ifdef LOG_ENABLED
@@ -434,7 +436,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
      * Initialize the per VM data for GVMM and GMM.
      */
     VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-    int rc = GVMMR0InitVM(pVM);
+    rc = GVMMR0InitVM(pGVM);
 //    if (RT_SUCCESS(rc))
 //        rc = GMMR0InitPerVMData(pVM);
     if (RT_SUCCESS(rc))
@@ -470,7 +472,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
                             VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
                             if (RT_SUCCESS(rc))
                             {
-                                GVMMR0DoneInitVM(pVM);
+                                GVMMR0DoneInitVM(pGVM);
                                 VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
                                 return rc;
                             }
@@ -502,12 +504,25 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
  *
  * @returns VBox status code.
  *
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   pVM         The cross context VM structure.
- * @param   pGVM        Pointer to the global VM structure. Optional.
- * @thread  EMT or session clean up thread.
+ * @param   idCpu       Set to 0 if EMT(0) or NIL_VMCPUID if session cleanup
+ *                      thread.
+ * @thread  EMT(0) or session clean up thread.
  */
-VMMR0_INT_DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
+VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
+    /*
+     * Check EMT(0) claim if we're called from userland.
+     */
+    if (idCpu != NIL_VMCPUID)
+    {
+        AssertReturn(idCpu == 0, VERR_INVALID_CPU_ID);
+        int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     PciRawR0TermVM(pVM);
 #endif
@@ -515,7 +530,7 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
     /*
      * Tell GVMM what we're up to and check that we only do this once.
      */
-    if (GVMMR0DoingTermVM(pVM, pGVM))
+    if (GVMMR0DoingTermVM(pGVM))
     {
         GIMR0TermVM(pVM);
 
@@ -1506,7 +1521,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
          * Initialize the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_INIT:
-            rc = vmmR0InitVM(pVM, RT_LODWORD(u64Arg), RT_HIDWORD(u64Arg));
+            rc = vmmR0InitVM(pGVM, pVM, RT_LODWORD(u64Arg), RT_HIDWORD(u64Arg));
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
@@ -1514,7 +1529,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
          * Terminate the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_TERM:
-            rc = VMMR0TermVM(pVM, NULL);
+            rc = VMMR0TermVM(pGVM, pVM, 0 /*idCpu*/);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 

@@ -358,8 +358,6 @@ static PGVMM g_pGVMM = NULL;
 *********************************************************************************************************************************/
 static void gvmmR0InitPerVMData(PGVM pGVM);
 static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, void *pvHandle);
-static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock);
-static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM);
 static int gvmmR0ByGVMandVM(PGVM pGVM, PVM pVM, PGVMM *ppGVMM, bool fTakeUsedLock);
 static int gvmmR0ByGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGVMM *ppGVMM);
 
@@ -1069,36 +1067,28 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
  * Does the VM initialization.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
+ * @param   pGVM        The global (ring-0) VM structure.
  */
-GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
+GVMMR0DECL(int) GVMMR0InitVM(PGVM pGVM)
 {
-    LogFlow(("GVMMR0InitVM: pVM=%p\n", pVM));
+    LogFlow(("GVMMR0InitVM: pGVM=%p\n", pGVM));
 
-    /*
-     * Validate the VM structure, state and handle.
-     */
-    PGVM pGVM;
-    PGVMM pGVMM;
-    int rc = gvmmR0ByVMAndEMT(pVM, 0 /* idCpu */, &pGVM, &pGVMM);
-    if (RT_SUCCESS(rc))
+    int rc = VERR_INTERNAL_ERROR_3;
+    if (   !pGVM->gvmm.s.fDoneVMMR0Init
+        && pGVM->aCpus[0].gvmm.s.HaltEventMulti == NIL_RTSEMEVENTMULTI)
     {
-        if (   !pGVM->gvmm.s.fDoneVMMR0Init
-            && pGVM->aCpus[0].gvmm.s.HaltEventMulti == NIL_RTSEMEVENTMULTI)
+        for (VMCPUID i = 0; i < pGVM->cCpus; i++)
         {
-            for (VMCPUID i = 0; i < pGVM->cCpus; i++)
+            rc = RTSemEventMultiCreate(&pGVM->aCpus[i].gvmm.s.HaltEventMulti);
+            if (RT_FAILURE(rc))
             {
-                rc = RTSemEventMultiCreate(&pGVM->aCpus[i].gvmm.s.HaltEventMulti);
-                if (RT_FAILURE(rc))
-                {
-                    pGVM->aCpus[i].gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
-                    break;
-                }
+                pGVM->aCpus[i].gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
+                break;
             }
         }
-        else
-            rc = VERR_WRONG_ORDER;
     }
+    else
+        rc = VERR_WRONG_ORDER;
 
     LogFlow(("GVMMR0InitVM: returns %Rrc\n", rc));
     return rc;
@@ -1109,17 +1099,11 @@ GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
  * Indicates that we're done with the ring-0 initialization
  * of the VM.
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @thread  EMT(0)
  */
-GVMMR0DECL(void) GVMMR0DoneInitVM(PVM pVM)
+GVMMR0DECL(void) GVMMR0DoneInitVM(PGVM pGVM)
 {
-    /* Validate the VM structure, state and handle. */
-    PGVM pGVM;
-    PGVMM pGVMM;
-    int rc = gvmmR0ByVMAndEMT(pVM, 0 /* idCpu */, &pGVM, &pGVMM);
-    AssertRCReturnVoid(rc);
-
     /* Set the indicator. */
     pGVM->gvmm.s.fDoneVMMR0Init = true;
 }
@@ -1129,21 +1113,13 @@ GVMMR0DECL(void) GVMMR0DoneInitVM(PVM pVM)
  * Indicates that we're doing the ring-0 termination of the VM.
  *
  * @returns true if termination hasn't been done already, false if it has.
- * @param   pVM         The cross context VM structure.
  * @param   pGVM        Pointer to the global VM structure. Optional.
- * @thread  EMT(0)
+ * @thread  EMT(0) or session cleanup thread.
  */
-GVMMR0DECL(bool) GVMMR0DoingTermVM(PVM pVM, PGVM pGVM)
+GVMMR0DECL(bool) GVMMR0DoingTermVM(PGVM pGVM)
 {
     /* Validate the VM structure, state and handle. */
-    AssertPtrNullReturn(pGVM, false);
-    AssertReturn(!pGVM || pGVM->u32Magic == GVM_MAGIC, false);
-    if (!pGVM)
-    {
-        PGVMM pGVMM;
-        int rc = gvmmR0ByVMAndEMT(pVM, 0 /* idCpu */, &pGVM, &pGVMM);
-        AssertRCReturn(rc, false);
-    }
+    AssertPtrReturn(pGVM, false);
 
     /* Set the indicator. */
     if (pGVM->gvmm.s.fDoneVMMR0Term)
@@ -1259,7 +1235,7 @@ static void gvmmR0CleanupVM(PGVM pGVM)
             &&  RTR0MemObjAddress(pGVM->gvmm.s.VMMemObj) == pGVM->pVM)
         {
             LogFlow(("gvmmR0CleanupVM: Calling VMMR0TermVM\n"));
-            VMMR0TermVM(pGVM->pVM, pGVM);
+            VMMR0TermVM(pGVM, pGVM->pVM, NIL_RTCPUID);
         }
         else
             AssertMsgFailed(("gvmmR0CleanupVM: VMMemObj=%p pVM=%p\n", pGVM->gvmm.s.VMMemObj, pGVM->pVM));
@@ -1762,56 +1738,6 @@ GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
 {
     PGVMM pGVMM;
     return gvmmR0ByVM(pVM, ppGVM, &pGVMM, false /* fTakeUsedLock */);
-}
-
-
-/**
- * Lookup a GVM structure by the shared VM structure and ensuring that the
- * caller is an EMT thread.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   idCpu       The Virtual CPU ID of the calling EMT.
- * @param   ppGVM       Where to store the GVM pointer.
- * @param   ppGVMM      Where to store the pointer to the GVMM instance data.
- * @thread  EMT
- *
- * @remarks This will assert in all failure paths.
- */
-static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
-{
-    PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
-
-    /*
-     * Validate.
-     */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
-    AssertReturn(!((uintptr_t)pVM & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
-
-    uint16_t hGVM = pVM->hSelf;
-    AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_HANDLE);
-    AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_HANDLE);
-
-    /*
-     * Look it up.
-     */
-    PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
-    AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
-    RTPROCESS ProcId = RTProcSelf();
-    AssertReturn(pHandle->ProcId == ProcId, VERR_NOT_OWNER);
-    AssertPtrReturn(pHandle->pvObj, VERR_NOT_OWNER);
-
-    PGVM pGVM = pHandle->pGVM;
-    AssertPtrReturn(pGVM, VERR_NOT_OWNER);
-    AssertReturn(pGVM->pVM == pVM, VERR_NOT_OWNER);
-    RTNATIVETHREAD hAllegedEMT = RTThreadNativeSelf();
-    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
-    AssertReturn(pGVM->aCpus[idCpu].hEMT == hAllegedEMT, VERR_NOT_OWNER);
-
-    *ppGVM = pGVM;
-    *ppGVMM = pGVMM;
-    return VINF_SUCCESS;
 }
 
 

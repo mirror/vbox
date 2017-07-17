@@ -159,9 +159,9 @@ GVMMR0DECL(int)     GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName
 GVMMR0DECL(int)     GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, uint64_t *pu64Value);
 
 GVMMR0DECL(int)     GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppVM);
-GVMMR0DECL(int)     GVMMR0InitVM(PVM pVM);
-GVMMR0DECL(void)    GVMMR0DoneInitVM(PVM pVM);
-GVMMR0DECL(bool)    GVMMR0DoingTermVM(PVM pVM, PGVM pGVM);
+GVMMR0DECL(int)     GVMMR0InitVM(PGVM pGVM);
+GVMMR0DECL(void)    GVMMR0DoneInitVM(PGVM pGVM);
+GVMMR0DECL(bool)    GVMMR0DoingTermVM(PGVM pGVM);
 GVMMR0DECL(int)     GVMMR0DestroyVM(PGVM pGVM, PVM pVM);
 GVMMR0DECL(int)     GVMMR0RegisterVCpu(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 GVMMR0DECL(int)     GVMMR0DeregisterVCpu(PGVM pGVM, PVM pVM, VMCPUID idCpu);
