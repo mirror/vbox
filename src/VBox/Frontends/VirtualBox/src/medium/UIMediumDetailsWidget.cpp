@@ -224,7 +224,7 @@ void UIMediumDetailsWidget::prepareTabOptions()
         {
 #ifdef VBOX_WS_MAC
             /* Configure layout: */
-            pLayoutOptions->setSpacing(10);
+            pLayoutOptions->setSpacing(5);
             pLayoutOptions->setContentsMargins(10, 10, 10, 10);
 #endif
 
