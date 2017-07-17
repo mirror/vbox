@@ -5193,7 +5193,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 # endif
     return rc;
 #else
-    NOREF(pVM); NOREF(pVCpu);
+    RT_NOREF(pGVM, pVM, idCpu);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
