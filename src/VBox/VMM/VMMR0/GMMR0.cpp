@@ -4664,7 +4664,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PGVM pGVM, PVM pVM, VMCPUID idCpu, VBOX
     return rc;
 #else
 
-    NOREF(pVM); NOREF(idCpu); NOREF(enmGuestOS); NOREF(pszModuleName); NOREF(pszVersion);
+    NOREF(pGVM); NOREF(pVM); NOREF(idCpu); NOREF(enmGuestOS); NOREF(pszModuleName); NOREF(pszVersion);
     NOREF(GCPtrModBase); NOREF(cbModule); NOREF(cRegions); NOREF(paRegions);
     return VERR_NOT_IMPLEMENTED;
 #endif
