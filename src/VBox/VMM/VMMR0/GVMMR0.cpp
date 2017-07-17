@@ -2122,23 +2122,23 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
  *
  * @returns VINF_SUCCESS normal wakeup (timeout or kicked by other thread).
  *          VERR_INTERRUPTED if a signal was scheduled for the thread.
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The Virtual CPU ID of the calling EMT.
  * @param   u64ExpireGipTime    The time for the sleep to expire expressed as GIP time.
  * @thread  EMT(idCpu).
  */
-GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTime)
+GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTime)
 {
-    LogFlow(("GVMMR0SchedHalt: pVM=%p\n", pVM));
+    LogFlow(("GVMMR0SchedHalt: pGVM=%p pVM=%p idCpu=%#x u64ExpireGipTime=%#RX64\n", pGVM, pVM, idCpu, u64ExpireGipTime));
     GVMM_CHECK_SMAP_SETUP();
     GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
     /*
      * Validate the VM structure, state and handle.
      */
-    PGVM pGVM;
     PGVMM pGVMM;
-    int rc = gvmmR0ByVMAndEMT(pVM, idCpu, &pGVM, &pGVMM);
+    int rc = gvmmR0ByGVMandVMandEMT(pGVM, pVM, idCpu, &pGVMM);
     if (RT_FAILURE(rc))
         return rc;
     pGVM->gvmm.s.StatsSched.cHaltCalls++;
@@ -2281,12 +2281,13 @@ DECLINLINE(int) gvmmR0SchedWakeUpOne(PGVM pGVM, PGVMCPU pGVCpu)
  * @retval  VINF_SUCCESS if successfully woken up.
  * @retval  VINF_GVM_NOT_BLOCKED if the EMT wasn't blocked.
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The Virtual CPU ID of the EMT to wake up.
  * @param   fTakeUsedLock       Take the used lock or not
- * @thread  Any but EMT.
+ * @thread  Any but EMT(idCpu).
  */
-GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
+GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
 {
     GVMM_CHECK_SMAP_SETUP();
     GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
@@ -2294,9 +2295,8 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
     /*
      * Validate input and take the UsedLock.
      */
-    PGVM pGVM;
     PGVMM pGVMM;
-    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, fTakeUsedLock);
+    int rc = gvmmR0ByGVMandVM(pGVM, pVM, &pGVMM, fTakeUsedLock);
     GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
     if (RT_SUCCESS(rc))
     {
@@ -2330,7 +2330,7 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
         }
     }
 
-    LogFlow(("GVMMR0SchedWakeUp: returns %Rrc\n", rc));
+    LogFlow(("GVMMR0SchedWakeUpEx: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2342,14 +2342,44 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
  * @retval  VINF_SUCCESS if successfully woken up.
  * @retval  VINF_GVM_NOT_BLOCKED if the EMT wasn't blocked.
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The Virtual CPU ID of the EMT to wake up.
- * @thread  Any but EMT.
+ * @thread  Any but EMT(idCpu).
  */
-GVMMR0DECL(int) GVMMR0SchedWakeUp(PVM pVM, VMCPUID idCpu)
+GVMMR0DECL(int) GVMMR0SchedWakeUp(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
-    return GVMMR0SchedWakeUpEx(pVM, idCpu, true /* fTakeUsedLock */);
+    return GVMMR0SchedWakeUpEx(pGVM, pVM, idCpu, true /* fTakeUsedLock */);
 }
+
+
+/**
+ * Wakes up the halted EMT thread so it can service a pending request, no GVM
+ * parameter and no used locking.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if successfully woken up.
+ * @retval  VINF_GVM_NOT_BLOCKED if the EMT wasn't blocked.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   idCpu               The Virtual CPU ID of the EMT to wake up.
+ * @param   fTakeUsedLock       Take the used lock or not
+ * @thread  Any but EMT(idCpu).
+ * @deprecated  Don't use in new code if possible!  Use the GVM variant.
+ */
+GVMMR0DECL(int) GVMMR0SchedWakeUpNoGVMNoLock(PVM pVM, VMCPUID idCpu)
+{
+    GVMM_CHECK_SMAP_SETUP();
+    GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    PGVM pGVM;
+    PGVMM pGVMM;
+    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, false /*fTakeUsedLock*/);
+    GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    if (RT_SUCCESS(rc))
+        rc = GVMMR0SchedWakeUpEx(pGVM, pVM, idCpu, false /*fTakeUsedLock*/);
+    return rc;
+}
+
 
 /**
  * Worker common to GVMMR0SchedPoke and GVMMR0SchedWakeUpAndPokeCpus that pokes
@@ -2379,6 +2409,7 @@ DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Pokes an EMT if it's still busy running guest code.
  *
@@ -2386,18 +2417,18 @@ DECLINLINE(int) gvmmR0SchedPokeOne(PGVM pGVM, PVMCPU pVCpu)
  * @retval  VINF_SUCCESS if poked successfully.
  * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The ID of the virtual CPU to poke.
  * @param   fTakeUsedLock       Take the used lock or not
  */
-GVMMR0DECL(int) GVMMR0SchedPokeEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
+GVMMR0DECL(int) GVMMR0SchedPokeEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
 {
     /*
      * Validate input and take the UsedLock.
      */
-    PGVM pGVM;
     PGVMM pGVMM;
-    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, fTakeUsedLock);
+    int rc = gvmmR0ByGVMandVM(pGVM, pVM, &pGVMM, fTakeUsedLock);
     if (RT_SUCCESS(rc))
     {
         if (idCpu < pGVM->cCpus)
@@ -2424,12 +2455,42 @@ GVMMR0DECL(int) GVMMR0SchedPokeEx(PVM pVM, VMCPUID idCpu, bool fTakeUsedLock)
  * @retval  VINF_SUCCESS if poked successfully.
  * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
  *
+ * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  * @param   idCpu               The ID of the virtual CPU to poke.
  */
-GVMMR0DECL(int) GVMMR0SchedPoke(PVM pVM, VMCPUID idCpu)
+GVMMR0DECL(int) GVMMR0SchedPoke(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
-    return GVMMR0SchedPokeEx(pVM, idCpu, true /* fTakeUsedLock */);
+    return GVMMR0SchedPokeEx(pGVM, pVM, idCpu, true /* fTakeUsedLock */);
+}
+
+
+/**
+ * Pokes an EMT if it's still busy running guest code, no GVM parameter and no
+ * used locking.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if poked successfully.
+ * @retval  VINF_GVM_NOT_BUSY_IN_GC if the EMT wasn't busy in GC.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   idCpu               The ID of the virtual CPU to poke.
+ *
+ * @deprecated  Don't use in new code if possible!  Use the GVM variant.
+ */
+GVMMR0DECL(int) GVMMR0SchedPokeNoGVMNoLock(PVM pVM, VMCPUID idCpu)
+{
+    PGVM pGVM;
+    PGVMM pGVMM;
+    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, false /*fTakeUsedLock*/);
+    if (RT_SUCCESS(rc))
+    {
+        if (idCpu < pGVM->cCpus)
+            rc = gvmmR0SchedPokeOne(pGVM, &pVM->aCpus[idCpu]);
+        else
+            rc = VERR_INVALID_CPU_ID;
+    }
+    return rc;
 }
 
 

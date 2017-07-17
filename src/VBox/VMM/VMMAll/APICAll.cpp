@@ -2826,11 +2826,11 @@ VMM_INT_DECL(void) apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
         switch (VMCPU_GET_STATE(pVCpu))
         {
             case VMCPUSTATE_STARTED_EXEC:
-                GVMMR0SchedPokeEx(pVM, idCpu, false /* fTakeUsedLock */);
+                GVMMR0SchedPokeNoGVMNoLock(pVM, idCpu);
                 break;
 
             case VMCPUSTATE_STARTED_HALTED:
-                GVMMR0SchedWakeUpEx(pVM, idCpu, false /* fTakeUsedLock */);
+                GVMMR0SchedWakeUpNoGVMNoLock(pVM, idCpu);
                 break;
 
             default:
