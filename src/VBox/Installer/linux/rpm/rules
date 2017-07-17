@@ -167,6 +167,7 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     VBOX_DO_STRIP= \
 	     $(if $(filter el5,$(rpmrel)),VBOX_BLD_PYTHON=$(strip \
 		$(firstword $(wildcard /usr/local/bin/python2.7) $(wildcard /usr/bin/python))),) \
+	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     $(doc_dir) \
 	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
 	     VBOX_PACKAGE_DIST=$(rpmdist) \
