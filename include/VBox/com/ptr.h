@@ -287,13 +287,9 @@ public:
         {
             if (m_p)
                 return m_p->QueryInterface(COM_IIDOF(T2), (void **)pp);
-            else
-            {
-                *pp = NULL;
-                return S_OK;
-            }
+            *pp = NULL;
+            return S_OK;
         }
-
         return E_INVALIDARG;
     }
 
