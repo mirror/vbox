@@ -1177,6 +1177,25 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     Assert(!GIMIsParavirtTscEnabled(pVM));
     pVM->tm.s.fParavirtTscEnabled = false;
 
+    /*
+     * Reset TSC to avoid a windows 8 bug (see @bugref{8926}).
+     */
+    VM_ASSERT_EMT0(pVM);
+    uint64_t offTscRawSrc;
+    if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
+        offTscRawSrc = SUPReadTsc();
+    else
+    {
+        offTscRawSrc = TMVirtualSyncGetNoCheck(pVM);
+        offTscRawSrc = ASMMultU64ByU32DivByU32(offTscRawSrc, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
+    }
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        pVM->aCpus[iCpu].tm.s.offTSCRawSrc   = offTscRawSrc;
+        pVM->aCpus[iCpu].tm.s.u64TSC         = 0;
+        pVM->aCpus[iCpu].tm.s.u64TSCLastSeen = 0;
+    }
+
     TM_UNLOCK_TIMERS(pVM);
 }
 
