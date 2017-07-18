@@ -3904,7 +3904,7 @@
         Custom post installation command.
 
         Exactly what is expected as input here depends on the guest OS installer
-        and the script template (see <link to="IUnattended:scriptTemplatePath"/>).
+        and the script template (see <link to="IUnattended::scriptTemplatePath"/>).
         Most users will not need to set this attribute.
       </desc>
     </attribute>
