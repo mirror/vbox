@@ -1383,15 +1383,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     if (pszMachineName == NULL)
         return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID");
 
-    if (!pszSettingsFile)
-    {
-        if (!pszUser)
-            return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --user (or --settings-file) option");
-        if (!pszPassword)
-            return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --password (or --settings-file) option");
-        if (!pszIsoPath)
-            return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso-path (or --settings-file) option");
-    }
+    if (!pszSettingsFile && !pszIsoPath)
+        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso-path (or --settings-file) option");
 
     /*
      * Prepare.
@@ -1434,50 +1427,85 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  bstrMachineName.raw(),
                  Utf8Str(bstrUuid).c_str());
 
-        /*
-         * Instantiate and configure the unattended installer.
-         */
-        ComPtr<IUnattended> unAttended;
-        CHECK_ERROR_BREAK(machine, COMGETTER(Unattended)(unAttended.asOutParam()));
+        {
+            /*
+             * Instantiate and configure the unattended installer.
+             */
+            ComPtr<IUnattended> ptrUnattended;
+            CHECK_ERROR_BREAK(machine, CreateUnattendedInstaller(ptrUnattended.asOutParam()));
 
-        /* Always calls 'done' to clean up from any aborted previous session. */
-        CHECK_ERROR_BREAK(unAttended,Done());
+            if (pszSettingsFile)
+                CHECK_ERROR_BREAK(ptrUnattended, LoadSettings(Bstr(pszSettingsFile).raw()));
 
-        if (pszSettingsFile)
-            CHECK_ERROR_BREAK(unAttended, LoadSettings(Bstr(pszSettingsFile).raw()));
+            if (pszIsoPath)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(IsoPath)(Bstr(pszIsoPath).raw()));
+            if (pszUser)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(User)(Bstr(pszUser).raw()));
+            if (pszPassword)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Password)(Bstr(pszPassword).raw()));
+            if (pszFullUserName)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(FullUserName)(Bstr(pszFullUserName).raw()));
+            if (pszProductKey)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ProductKey)(Bstr(pszProductKey).raw()));
+            if (pszAdditionsIsoPath)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(AdditionsIsoPath)(Bstr(pszAdditionsIsoPath).raw()));
+            if (fInstallAdditions >= 0)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(InstallGuestAdditions)(fInstallAdditions != (int)false));
+            if (fSetImageIdx)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ImageIndex)(idxImage));
+            if (pszAuxiliaryBasePath)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(AuxiliaryBasePath)(Bstr(pszAuxiliaryBasePath).raw()));
 
-        if (pszIsoPath)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(IsoPath)(Bstr(pszIsoPath).raw()));
-        if (pszUser)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(User)(Bstr(pszUser).raw()));
-        if (pszPassword)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(Password)(Bstr(pszPassword).raw()));
-        if (pszFullUserName)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(FullUserName)(Bstr(pszFullUserName).raw()));
-        if (pszProductKey)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(Bstr(pszProductKey).raw()));
-        if (pszAdditionsIsoPath)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(AdditionsIsoPath)(Bstr(pszAdditionsIsoPath).raw()));
-        if (fInstallAdditions >= 0)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(fInstallAdditions != (int)false));
-        if (fSetImageIdx)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(idxImage));
-        if (pszAuxiliaryBasePath)
-            CHECK_ERROR_BREAK(unAttended, COMSETTER(AuxiliaryBasePath)(Bstr(pszAuxiliaryBasePath).raw()));
+            CHECK_ERROR_BREAK(ptrUnattended,Prepare());
+            CHECK_ERROR_BREAK(ptrUnattended,ConstructMedia());
+            CHECK_ERROR_BREAK(ptrUnattended,ReconfigureVM());
 
-        CHECK_ERROR_BREAK(unAttended,Prepare());
-        CHECK_ERROR_BREAK(unAttended,ConstructMedia());
-        CHECK_ERROR_BREAK(unAttended,ReconfigureVM());
-        CHECK_ERROR_BREAK(unAttended,Done());
+            /*
+             * Retrieve and display the parameters actually used.
+             */
+            RTPrintf("Using values:\n");
+#define SHOW_ATTR(a_Attr, a_szText, a_Type, a_szFmt) do { \
+                    a_Type Value; \
+                    HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(&Value); \
+                    if (SUCCEEDED(hrc2)) \
+                        RTPrintf("  %22s = " a_szFmt "\n", a_szText, Value); \
+                    else \
+                        RTPrintf("  %22s = failed: %Rhrc\n", a_szText, hrc2); \
+                } while (0)
+#define SHOW_STR_ATTR(a_Attr, a_szText) do { \
+                    Bstr bstrString; \
+                    HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(bstrString.asOutParam()); \
+                    if (SUCCEEDED(hrc2)) \
+                        RTPrintf("  %22s = %ls\n", a_szText, bstrString.raw()); \
+                    else \
+                        RTPrintf("  %22s = failed: %Rhrc\n", a_szText, hrc2); \
+                } while (0)
 
-        /*
-         * Start the VM.
-         */
+            SHOW_STR_ATTR(IsoPath,                  "isoPath");
+            SHOW_STR_ATTR(User,                     "user");
+            SHOW_STR_ATTR(Password,                 "password");
+            SHOW_STR_ATTR(FullUserName,             "fullUserName");
+            SHOW_STR_ATTR(ProductKey,               "productKey");
+            SHOW_STR_ATTR(AdditionsIsoPath,         "additionsIsoPath");
+            SHOW_ATTR(    InstallGuestAdditions,    "installGuestAdditions",    BOOL, "%RTbool");
+            SHOW_STR_ATTR(ValidationKitIsoPath,     "validationKitIsoPath");
+            SHOW_ATTR(    InstallTestExecService,   "installTestExecService",   BOOL, "%RTbool");
+            SHOW_STR_ATTR(AuxiliaryBasePath,        "auxiliaryBasePath");
+            SHOW_ATTR(    ImageIndex,               "imageIndex",               ULONG, "%u");
+            SHOW_STR_ATTR(ScriptTemplatePath,       "scriptTemplatePath");
+
+#undef SHOW_STR_ATTR
+#undef SHOW_ATTR
+        }
+
         a->session->UnlockMachine();
 
+        /*
+         * Start the VM if requested.
+         */
+        if (RTStrICmp(pszSessionType, "none") != 0)
         {
             Bstr env;
-
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
             /* make sure the VM process will start on the same display as VBoxManage */
             Utf8Str str;
@@ -1519,48 +1547,12 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                     }
                 }
             }
+
+            /*
+             * Do we wait for the VM to power down?
+             */
         }
 
-        /*
-         * Retrieve and display the parameters actually used.
-         */
-        Bstr bstrAdditionsIsoPath;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(AdditionsIsoPath)(bstrAdditionsIsoPath.asOutParam()));
-        BOOL fInstallGuestAdditions = FALSE;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(InstallGuestAdditions)(&fInstallGuestAdditions));
-        Bstr bstrIsoPath;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(IsoPath)(bstrIsoPath.asOutParam()));
-        Bstr bstrUser;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(User)(bstrUser.asOutParam()));
-        Bstr bstrPassword;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(Password)(bstrPassword.asOutParam()));
-        Bstr bstrFullUserName;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(FullUserName)(bstrFullUserName.asOutParam()));
-        Bstr bstrProductKey;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(ProductKey)(bstrProductKey.asOutParam()));
-        Bstr bstrAuxiliaryBasePath;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(AuxiliaryBasePath)(bstrAuxiliaryBasePath.asOutParam()));
-        ULONG idxImageActual = 0;
-        CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&idxImageActual));
-        RTPrintf("Got values:\n"
-                 " user:                  %ls\n"
-                 " password:              %ls\n"
-                 " fullUserName:          %ls\n"
-                 " productKey:            %ls\n"
-                 " image index:           %u\n"
-                 " isoPath:               %ls\n"
-                 " additionsIsoPath:      %ls\n"
-                 " installGuestAdditions: %RTbool\n"
-                 " auxiliaryBasePath:     %ls",
-                 bstrUser.raw(),
-                 bstrPassword.raw(),
-                 bstrFullUserName.raw(),
-                 bstrProductKey.raw(),
-                 idxImageActual,
-                 bstrIsoPath.raw(),
-                 bstrAdditionsIsoPath.raw(),
-                 fInstallGuestAdditions,
-                 bstrAuxiliaryBasePath.raw());
     } while (0);
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;

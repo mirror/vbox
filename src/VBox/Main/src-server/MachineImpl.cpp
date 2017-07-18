@@ -7183,37 +7183,6 @@ HRESULT Machine::setVMProcessPriority(const com::Utf8Str &aVMProcessPriority)
     return hrc;
 }
 
-HRESULT Machine::getUnattended(ComPtr<IUnattended> &aUnattended)
-{
-#ifdef VBOX_WITH_UNATTENDED
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (mUnattended.isNotNull())
-        aUnattended = mUnattended;
-    else
-    {
-        /* Do on-demand creation. */
-        alock.release();
-        AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
-        if (mUnattended.isNull())
-        {
-            unconst(mUnattended).createObject();
-            HRESULT hrc = mUnattended->init(this);
-            if (FAILED(hrc))
-            {
-                mUnattended->uninit();
-                unconst(mUnattended).setNull();
-                return hrc;
-            }
-        }
-        aUnattended = mUnattended;
-    }
-    return S_OK;
-#else
-    NOREF(aUnattended);
-    return E_NOTIMPL;
-#endif
-}
-
 HRESULT Machine::cloneTo(const ComPtr<IMachine> &aTarget, CloneMode_T aMode, const std::vector<CloneOptions_T> &aOptions,
                          ComPtr<IProgress> &aProgress)
 {
@@ -8444,10 +8413,6 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this);
 
-#ifdef VBOX_WITH_UNATTENDED
-    Assert(mUnattended.isNull()); /* Created on-demand. */
-#endif
-
     return S_OK;
 }
 
@@ -8524,14 +8489,6 @@ void Machine::uninitDataAndChildObjects()
         mBIOSSettings->uninit();
         unconst(mBIOSSettings).setNull();
     }
-
-#ifdef VBOX_WITH_UNATTENDED
-    if (mUnattended)
-    {
-        mUnattended->uninit();
-        unconst(mUnattended).setNull();
-    }
-#endif
 
     /* Deassociate media (only when a real Machine or a SnapshotMachine
      * instance is uninitialized; SessionMachine instances refer to real
@@ -15155,6 +15112,25 @@ HRESULT Machine::authenticateExternal(const std::vector<com::Utf8Str> &aAuthPara
     NOREF(aAuthParams);
     NOREF(aResult);
     ReturnComNotImplemented();
+}
+
+HRESULT Machine::createUnattendedInstaller(ComPtr<IUnattended> &aUnattended)
+{
+#ifdef VBOX_WITH_UNATTENDED
+    ComObjPtr<Unattended> ptrUnattended;
+    HRESULT hrc = ptrUnattended.createObject();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = ptrUnattended->init(this);
+        if (SUCCEEDED(hrc))
+            hrc = ptrUnattended.queryInterfaceTo(aUnattended.asOutParam());
+    }
+    return hrc;
+#else
+    NOREF(aUnattended);
+    return E_NOTIMPL;
+#endif
 }
 
 HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)

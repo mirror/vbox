@@ -775,9 +775,6 @@ protected:
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
-#ifdef VBOX_WITH_UNATTENDED
-    const ComObjPtr<Unattended>        mUnattended;
-#endif
 
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
     NetworkAdapterVector               mNetworkAdapters;
@@ -983,7 +980,6 @@ private:
     HRESULT getUSBProxyAvailable(BOOL *aUSBProxyAvailable);
     HRESULT getVMProcessPriority(com::Utf8Str &aVMProcessPriority);
     HRESULT setVMProcessPriority(const com::Utf8Str &aVMProcessPriority);
-    HRESULT getUnattended(ComPtr<IUnattended> &aUnattended);
 
     // wrapped IMachine methods
     HRESULT lockMachine(const ComPtr<ISession> &aSession,
@@ -1201,6 +1197,7 @@ private:
                                 ComPtr<IProgress> &aProgress);
     HRESULT restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
                             ComPtr<IProgress> &aProgress);
+    HRESULT createUnattendedInstaller(ComPtr<IUnattended> &aUnattended);
     HRESULT applyDefaults(const com::Utf8Str &aFlags);
 
     // wrapped IInternalMachineControl properties

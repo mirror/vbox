@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="a6ba3585-5fc3-4465-d61d-5b70540690af"
+    uuid="b365bb45-267f-44fa-c32a-cad265372f8e"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3775,8 +3775,19 @@
       The IUnattended interface represents the pipeline for preparing
       the Guest OS for fully automated install.
 
-      It is based on the IMachine:
-      <link to="IMachine::unattended"/> attribute.
+      The typical workflow is:
+      <ol>
+        <li>Call <link to="IMachine::createUnattendedInstaller"/> to create the object</li>
+        <li>Set the IUnattended attributes.</li>
+        <li>Call <link to="IUnattended::prepare"/> for the object to check the
+            attribute values and create an internal installer instance.</li>
+        <li>Call <link to="IUnattended::constructMedia"/> to create additional
+            media files (ISO/floppy) needed.</li>
+        <li>Call <link to="IUnattended::reconfigureVM"/> to reconfigure the VM
+            with the installation ISO, additional media files and whatnot </li>
+        <li>Optionally call <link to="IUnattended::done"/> to destroy the internal
+            installer and allow restarting from the second step.</li>
+      </ol>
     </desc>
 
     <attribute name="isoPath" type="wstring">
@@ -3814,7 +3825,11 @@
 
     <attribute name="additionsIsoPath" type="wstring">
       <desc>
-        Guest Additions ISO image path
+        Guest Additions ISO image path.  This defaults to
+        <link to="ISystemProperties::defaultAdditionsISO"/> when the Unattended
+        object is instantiated.
+
+        This property is ignored when <link to="IUnattended::installGuestAdditions"/> is false.
       </desc>
     </attribute>
 
@@ -3825,6 +3840,23 @@
         Setting this to false does not affect additions shipped with the linux
         distribution, only the installation of additions pointed to by
         <link to="IUnattended::additionsIsoPath"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="validationKitIsoPath" type="wstring">
+      <desc>
+        VirtualBox ValidationKit ISO image path.  This is used when
+        <link to="IUnattended::installTestExecService"/> is set to true.
+      </desc>
+    </attribute>
+
+    <attribute name="installTestExecService" type="boolean">
+      <desc>
+        Indicates whether the test execution service (TXS) from the VBox
+        ValidationKit should be installed.
+
+        The TXS binary will be taken from the ISO indicated by
+        <link to="IUnattended::validationKitIsoPath"/>.
       </desc>
     </attribute>
 
@@ -3845,6 +3877,25 @@
         The image index on installation CD/DVD used to install.
         Used only with Windows installation CD/DVD:
         https://technet.microsoft.com/en-us/library/cc766022%28v=ws.10%29.aspx
+      </desc>
+    </attribute>
+
+    <attribute name="machine" type="IMachine" readonly="yes">
+      <desc>
+        The associated machine object.
+      </desc>
+    </attribute>
+
+    <attribute name="scriptTemplatePath" type="wstring">
+      <desc>
+        The unattended installation script template file.
+
+        The template default is based on the guest OS type and is determined by the
+        internal installer when when <link to="IUnattended::prepare"/> is invoked.
+        Most users will want the defaults.
+
+        After <link to="IUnattended::prepare"/> is called, it can be read to see
+        which file is being used.
       </desc>
     </attribute>
 
@@ -5383,10 +5434,6 @@
 
         The profiles are found in src/VBox/VMM/VMMR3/cpus/.
       </desc>
-    </attribute>
-
-    <attribute name="unattended" type="IUnattended" readonly="yes">
-      <desc>Associated unattended install class, always present.</desc>
     </attribute>
 
     <method name="lockMachine">
@@ -7967,6 +8014,15 @@ and "VAR" for unsetting. -->
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="createUnattendedInstaller">
+      <desc>
+        Creates a new <link to="IUnattended"/> guest installation object.
+      </desc>
+      <param name="unattended" type="IUnattended" dir="return">
+        <desc>New unattended object.</desc>
       </param>
     </method>
 
