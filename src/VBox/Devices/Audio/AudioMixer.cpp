@@ -380,7 +380,7 @@ static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
     AssertMsgReturn(pSink->pParent == pMixer, ("%s: Is not part of mixer '%s'\n",
                                                pSink->pszName, pMixer->pszName), VERR_NOT_FOUND);
 
-    LogFlowFunc(("[%s]: pSink=%s, cSinks=%RU8\n",
+    LogFlowFunc(("[%s] pSink=%s, cSinks=%RU8\n",
                  pMixer->pszName, pSink->pszName, pMixer->cSinks));
 
     /* Remove sink from mixer. */
@@ -429,7 +429,7 @@ int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
 
     memcpy(&pMixer->VolMaster, pVol, sizeof(PDMAUDIOVOLUME));
 
-    LogFlowFunc(("[%s]: lVol=%RU32, rVol=%RU32 => fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+    LogFlowFunc(("[%s] lVol=%RU32, rVol=%RU32 => fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
                  pMixer->pszName, pVol->uLeft, pVol->uRight,
                  pMixer->VolMaster.fMuted, pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight));
 
@@ -554,7 +554,7 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
         }
     }
 
-    LogFlowFunc(("[%s]: cStreams=%RU8, rc=%Rrc\n", pSink->pszName, pSink->cStreams, rc));
+    LogFlowFunc(("[%s] cStreams=%RU8, rc=%Rrc\n", pSink->pszName, pSink->cStreams, rc));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -596,7 +596,7 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     if (RT_FAILURE(rc))
         return rc;
 
-    LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%ld, %RU8 bits, %RU8 channels, %RU32Hz)\n",
+    LogFlowFunc(("[%s] fFlags=0x%x (enmDir=%ld, %RU8 bits, %RU8 channels, %RU32Hz)\n",
                  pSink->pszName, fFlags, pCfg->enmDir, pCfg->Props.cBits, pCfg->Props.cChannels, pCfg->Props.uHz));
 
     /*
@@ -733,7 +733,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
 
 #ifdef LOG_ENABLED
     char *pszStatus = dbgAudioMixerSinkStatusToStr(pSink->fStatus);
-    LogFlowFunc(("[%s]: enmCmd=%d, fStatus=%s, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pszStatus, rc));
+    LogFlowFunc(("[%s] enmCmd=%d, fStatus=%s, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pszStatus, rc));
     RTStrFree(pszStatus);
 #endif
 
@@ -1189,7 +1189,7 @@ static int audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
     AssertMsgReturn(pStream->pSink == pSink, ("Stream '%s' is not part of sink '%s'\n",
                                               pStream->pszName, pSink->pszName), VERR_NOT_FOUND);
 
-    LogFlowFunc(("[%s]: (Stream = %s), cStreams=%RU8\n",
+    LogFlowFunc(("[%s] (Stream = %s), cStreams=%RU8\n",
                  pSink->pszName, pStream->pStream->szName, pSink->cStreams));
 
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
@@ -1346,12 +1346,12 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     }
 
     if (pSink->PCMProps.uHz)
-        LogFlowFunc(("[%s]: Old format: %RU8 bit, %RU8 channels, %RU32Hz\n",
+        LogFlowFunc(("[%s] Old format: %RU8 bit, %RU8 channels, %RU32Hz\n",
                      pSink->pszName, pSink->PCMProps.cBits, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
 
     memcpy(&pSink->PCMProps, pPCMProps, sizeof(PDMAUDIOPCMPROPS));
 
-    LogFlowFunc(("[%s]: New format %RU8 bit, %RU8 channels, %RU32Hz\n",
+    LogFlowFunc(("[%s] New format %RU8 bit, %RU8 channels, %RU32Hz\n",
                  pSink->pszName, pSink->PCMProps.cBits, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
 
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
@@ -1393,7 +1393,7 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
 
     memcpy(&pSink->Volume, pVol, sizeof(PDMAUDIOVOLUME));
 
-    LogFlowFunc(("[%s]: fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+    LogFlowFunc(("[%s] fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
                  pSink->pszName, pSink->Volume.fMuted, pSink->Volume.uLeft, pSink->Volume.uRight));
 
     AssertPtr(pSink->pParent);

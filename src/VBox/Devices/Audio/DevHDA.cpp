@@ -1021,7 +1021,7 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CBL, iReg));
     if (!pStream)
     {
-        LogFunc(("[SD%RU8]: Warning: Changing SDCBL on non-attached stream (0x%x)\n",
+        LogFunc(("[SD%RU8] Warning: Changing SDCBL on non-attached stream (0x%x)\n",
                  HDA_SD_NUM_FROM_REG(pThis, CTL, iReg), u32Value));
         return hdaRegWriteU32(pThis, iReg, u32Value);
     }
@@ -1031,7 +1031,7 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
     AssertRC(rc2);
 
-    LogFlowFunc(("[SD%RU8]: CBL=%RU32\n", pStream->u8SD, u32Value));
+    LogFlowFunc(("[SD%RU8] CBL=%RU32\n", pStream->u8SD, u32Value));
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -1058,7 +1058,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     /* Get the stream descriptor. */
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, CTL, iReg);
 
-    LogFunc(("[SD%RU8]: fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
+    LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
 
     /*
@@ -1071,14 +1071,14 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     uint8_t uTag = (u32Value >> HDA_SDCTL_NUM_SHIFT) & HDA_SDCTL_NUM_MASK;
     if (uTag > HDA_MAX_TAGS)
     {
-        LogFunc(("[SD%RU8]: Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
+        LogFunc(("[SD%RU8] Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
         return hdaRegWriteU24(pThis, iReg, u32Value);
     }
 
     PHDATAG pTag = &pThis->aTags[uTag];
     AssertPtr(pTag);
 
-    LogFunc(("[SD%RU8]: Using stream tag=%RU8\n", uSD, uTag));
+    LogFunc(("[SD%RU8] Using stream tag=%RU8\n", uSD, uTag));
 
     /* Assign new values. */
     pTag->uTag    = uTag;
@@ -1098,14 +1098,14 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         /* Report that we're done resetting this stream by clearing SRST. */
         HDA_STREAM_REG(pThis, CTL, uSD) &= ~HDA_SDCTL_SRST;
 
-        LogFunc(("[SD%RU8]: Reset exit\n", uSD));
+        LogFunc(("[SD%RU8] Reset exit\n", uSD));
     }
     else if (fReset)
     {
         /* ICH6 datasheet 18.2.33 says that RUN bit should be cleared before initiation of reset. */
         Assert(!fInRun && !fRun);
 
-        LogFunc(("[SD%RU8]: Reset enter\n", pStream->u8SD));
+        LogFunc(("[SD%RU8] Reset enter\n", pStream->u8SD));
 
         hdaStreamLock(pStream);
 
@@ -1128,7 +1128,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         if (fInRun != fRun)
         {
             Assert(!fReset && !fInReset);
-            LogFunc(("[SD%RU8]: State changed (fRun=%RTbool)\n", pStream->u8SD, fRun));
+            LogFunc(("[SD%RU8] State changed (fRun=%RTbool)\n", pStream->u8SD, fRun));
 
             hdaStreamLock(pStream);
 
@@ -1194,7 +1194,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, STS, iReg));
     if (!pStream)
     {
-        AssertMsgFailed(("[SD%RU8]: Warning: Writing SDSTS on non-attached stream (0x%x)\n",
+        AssertMsgFailed(("[SD%RU8] Warning: Writing SDSTS on non-attached stream (0x%x)\n",
                          HDA_SD_NUM_FROM_REG(pThis, STS, iReg), u32Value));
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
@@ -1256,13 +1256,13 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
     {
-        AssertMsgFailed(("[SD%RU8]: Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
+        AssertMsgFailed(("[SD%RU8] Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
     /** @todo Validate LVI. */
     pStream->u16LVI = u32Value;
-    LogFunc(("[SD%RU8]: Updating LVI to %RU16\n", uSD, pStream->u16LVI));
+    LogFunc(("[SD%RU8] Updating LVI to %RU16\n", uSD, pStream->u16LVI));
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
@@ -1298,7 +1298,7 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg));
     if (!pStream)
     {
-        AssertMsgFailed(("[SD%RU8]: Warning: Changing FIFOW on non-attached stream (0x%x)\n", uSD, u32Value));
+        AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOW on non-attached stream (0x%x)\n", uSD, u32Value));
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
@@ -1322,7 +1322,7 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (u32FIFOW)
     {
         pStream->u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
-        LogFunc(("[SD%RU8]: Updating FIFOW to %RU32 bytes\n", uSD, pStream->u16FIFOW));
+        LogFunc(("[SD%RU8] Updating FIFOW to %RU32 bytes\n", uSD, pStream->u16FIFOW));
 
         int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOW);
         AssertRC(rc2);
@@ -1352,7 +1352,7 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
     {
-        AssertMsgFailed(("[SD%RU8]: Warning: Changing FIFOS on non-attached stream (0x%x)\n", uSD, u32Value));
+        AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOS on non-attached stream (0x%x)\n", uSD, u32Value));
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
@@ -1380,7 +1380,7 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     if (u32FIFOS)
     {
         pStream->u16FIFOS = u32FIFOS + 1;
-        LogFunc(("[SD%RU8]: Updating FIFOS to %RU32 bytes\n", uSD, pStream->u16FIFOS));
+        LogFunc(("[SD%RU8] Updating FIFOS to %RU32 bytes\n", uSD, pStream->u16FIFOS));
 
         int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOS);
         AssertRC(rc2);
@@ -1636,7 +1636,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FMT, iReg));
     if (!pStream)
     {
-        LogFunc(("[SD%RU8]: Warning: Changing SDFMT on non-attached stream (0x%x)\n",
+        LogFunc(("[SD%RU8] Warning: Changing SDFMT on non-attached stream (0x%x)\n",
                  HDA_SD_NUM_FROM_REG(pThis, FMT, iReg), u32Value));
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
@@ -1693,7 +1693,7 @@ DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
     }
 # endif
 
-    LogFlowFunc(("[SD%RU8]: BDLBase=0x%x\n", pStream->u8SD, pStream->u64BDLBase));
+    LogFlowFunc(("[SD%RU8] BDLBase=0x%x\n", pStream->u8SD, pStream->u64BDLBase));
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */

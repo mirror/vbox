@@ -694,7 +694,7 @@ static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnab
         ichac97TimerMaybeStart(pThis);
 #endif
 
-    LogFunc(("[SD%RU8]: cStreamsActive=%RU8, rc=%Rrc\n", pStream->u8SD, pThis->cStreamsActive, rc));
+    LogFunc(("[SD%RU8] cStreamsActive=%RU8, rc=%Rrc\n", pStream->u8SD, pThis->cStreamsActive, rc));
     return rc;
 }
 
@@ -995,11 +995,11 @@ static DECLCALLBACK(int) ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *
 
     RTThreadUserSignal(hThreadSelf);
 
-    LogFunc(("[SD%RU8]: Started\n", pStream->u8SD));
+    LogFunc(("[SD%RU8] Started\n", pStream->u8SD));
 
     for (;;)
     {
-        Log2Func(("[SD%RU8]: Waiting ...\n", pStream->u8SD));
+        Log2Func(("[SD%RU8] Waiting ...\n", pStream->u8SD));
 
         int rc2 = RTSemEventWait(pAIO->Event, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc2))
@@ -1056,7 +1056,7 @@ static DECLCALLBACK(int) ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *
         AssertRC(rc2);
     }
 
-    LogFunc(("[SD%RU8]: Ended\n", pStream->u8SD));
+    LogFunc(("[SD%RU8] Ended\n", pStream->u8SD));
 
     ASMAtomicXchgBool(&pAIO->fStarted, false);
 
@@ -1101,7 +1101,7 @@ static int ichac97StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
     else
         rc = VINF_SUCCESS;
 
-    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
     return rc;
 }
 
@@ -1141,7 +1141,7 @@ static int ichac97StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream)
         pAIO->fEnabled  = false;
     }
 
-    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
     return rc;
 }
 
@@ -2329,7 +2329,7 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
             pRegs->bd.addr += cbChunk;
         }
 
-        LogFlowFunc(("[SD%RU8]: cbChunk=%RU32, cbLeft=%RU32, cbTotal=%RU32, rc=%Rrc\n",
+        LogFlowFunc(("[SD%RU8] cbChunk=%RU32, cbLeft=%RU32, cbTotal=%RU32, rc=%Rrc\n",
                      pStream->u8SD, cbChunk, cbLeft, cbProcessedTotal, rc));
 
         if (!pRegs->picb)
