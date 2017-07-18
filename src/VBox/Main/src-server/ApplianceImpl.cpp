@@ -377,16 +377,15 @@ Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
  */
 HRESULT VirtualBox::createAppliance(ComPtr<IAppliance> &aAppliance)
 {
-    HRESULT rc;
-
     ComObjPtr<Appliance> appliance;
-    appliance.createObject();
-    rc = appliance->init(this);
-
-    if (SUCCEEDED(rc))
-        appliance.queryInterfaceTo(aAppliance.asOutParam());
-
-    return rc;
+    HRESULT hrc = appliance.createObject();
+    if (SUCCEEDED(hrc))
+    {
+        hrc = appliance->init(this);
+        if (SUCCEEDED(hrc))
+            hrc = appliance.queryInterfaceTo(aAppliance.asOutParam());
+    }
+    return hrc;
 }
 
 /**
