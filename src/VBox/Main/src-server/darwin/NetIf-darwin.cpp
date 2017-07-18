@@ -360,6 +360,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         {
             memcpy(pNew->szName, pNIC->szName, cbNameLen);
             pNew->Uuid = pNIC->Uuid;
+            pNew->fWireless = pNIC->fWireless;
         }
         else
         {

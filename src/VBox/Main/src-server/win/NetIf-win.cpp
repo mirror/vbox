@@ -39,6 +39,7 @@
 #endif
 
 #include <iprt/win/iphlpapi.h>
+#include <iprt/win/ntddndis.h>
 
 #include "Logging.h"
 #include "HostNetworkInterfaceImpl.h"
@@ -194,7 +195,7 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
                         memcpy(pInfo->MACAddress.au8, pAdapter->PhysicalAddress, sizeof(pInfo->MACAddress));
                     pInfo->enmMediumType = NETIF_T_ETHERNET;
                     pInfo->enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
-                    pInfo->bIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
+                    pInfo->fIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
                     RTStrFree(pszUuid);
                     break;
                 }
@@ -211,11 +212,11 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo, int iDe
                 pInfo->IPAddress.u = Settings.ip;
                 pInfo->IPNetMask.u = Settings.mask;
             }
-            pInfo->bDhcpEnabled = Settings.bDhcp;
+            pInfo->fDhcpEnabled = Settings.bDhcp;
         }
         else
         {
-            pInfo->bDhcpEnabled = false;
+            pInfo->fDhcpEnabled = false;
         }
     }
     RTMemFree(pAddresses);
@@ -994,7 +995,7 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
             rc = iface->init(name, enmType, &Info);
             if (SUCCEEDED(rc))
             {
-                if (Info.bIsDefault)
+                if (Info.fIsDefault)
                     pPist->push_front(iface);
                 else
                     pPist->push_back(iface);
@@ -1459,6 +1460,7 @@ struct BoundAdapter
     LPWSTR                pHwId;
     RTUUID                guid;
     PIP_ADAPTER_ADDRESSES pAdapter;
+    BOOL                  fWireless;
 };
 
 static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdapter> &adapters)
@@ -1508,6 +1510,67 @@ static int netIfGetUnboundHostOnlyAdapters(INetCfg *pNetCfg, std::list<BoundAdap
     }
     netIfLog(("return\n"));
     return VINF_SUCCESS;
+}
+
+#define DEVNAME_PREFIX L"\\\\.\\"
+
+static BOOL netIfIsWireless(INetCfgComponent *pAdapter)
+{
+    HRESULT hr;
+    wchar_t * pswzBindName;
+    wchar_t FileName[MAX_PATH];
+    bool    fWireless = false;
+
+    hr = pAdapter->GetBindName(&pswzBindName);
+    wcscpy(FileName, DEVNAME_PREFIX);
+    wcscpy((wchar_t*)(((char*)FileName) + sizeof(DEVNAME_PREFIX) - sizeof(FileName[0])), pswzBindName);
+
+    /* open the device */
+    HANDLE hDevice = CreateFile(FileName,
+                                GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                NULL,
+                                OPEN_EXISTING,
+                                FILE_ATTRIBUTE_NORMAL,
+                                NULL);
+
+    if (hDevice != INVALID_HANDLE_VALUE)
+    {
+
+        /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
+        DWORD Oid = OID_GEN_PHYSICAL_MEDIUM;
+        NDIS_PHYSICAL_MEDIUM PhMedium;
+        DWORD cbResult;
+        if (DeviceIoControl(hDevice,
+                            IOCTL_NDIS_QUERY_GLOBAL_STATS,
+                            &Oid,
+                            sizeof(Oid),
+                            &PhMedium,
+                            sizeof(PhMedium),
+                            &cbResult,
+                            NULL))
+        {
+            /* that was simple, now examine PhMedium */
+            fWireless = PhMedium == NdisPhysicalMediumWirelessWan
+                     || PhMedium == NdisPhysicalMediumWirelessLan
+                     || PhMedium == NdisPhysicalMediumNative802_11
+                     || PhMedium == NdisPhysicalMediumBluetooth;
+        }
+        else
+        {
+            int winEr = GetLastError();
+            LogRel(("netIfIsWireless: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
+            Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
+        }
+        CloseHandle(hDevice);
+    }
+    else
+    {
+        int winEr = GetLastError();
+        AssertLogRelMsgFailed(("netIfIsWireless: CreateFile failed, err (0x%x), ignoring\n", winEr));
+    }
+
+    CoTaskMemFree(pswzBindName);
+    return fWireless;
 }
 
 static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
@@ -1609,6 +1672,7 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                                             adapter.pHwId    = pwszHwId;
                                             adapter.guid     = *(Guid(guid).raw());
                                             adapter.pAdapter = NULL;
+                                            adapter.fWireless = netIfIsWireless(pAdapter);
                                             netIfLog(("guid=%RTuuid, name=%ls, hwid=%ls, status=%x, chars=%x\n",
                                                       &adapter.guid, pwszName, pwszHwId, uStatus, dwChars));
                                             boundAdapters.push_back(adapter);
@@ -1872,8 +1936,8 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                 if (pAdapter)
                 {
                     info.enmStatus = pAdapter->OperStatus == IfOperStatusUp ? NETIF_S_UP : NETIF_S_DOWN;
-                    info.bIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
-                    info.bDhcpEnabled = pAdapter->Flags & IP_ADAPTER_DHCP_ENABLED;
+                    info.fIsDefault = (pAdapter->IfIndex == (DWORD)iDefault);
+                    info.fDhcpEnabled = pAdapter->Flags & IP_ADAPTER_DHCP_ENABLED;
                     OSVERSIONINFOEX OSInfoEx;
                     RT_ZERO(OSInfoEx);
                     OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
@@ -1899,7 +1963,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                     LogRelFunc(("HostNetworkInterface::init() -> %Rrc\n", rc));
                 else
                 {
-                    if (info.bIsDefault)
+                    if (info.fIsDefault)
                         list.push_front(iface);
                     else
                         list.push_back(iface);

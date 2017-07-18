@@ -175,6 +175,29 @@ void extractAddressesToNetInfo(int iAddrMask, caddr_t cp, caddr_t cplim, PNETIFI
 }
 
 
+static bool isWireless(const char *pszName)
+{
+    bool fWireless = false;
+    int iSock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (iSock >= 0)
+    {
+        struct ieee80211req WReq;
+        uint8_t abData[32];
+
+        RT_ZERO(WReq);
+        strncpy(WReq.i_name, pszName, sizeof(WReq.i_name));
+        WReq.i_type = IEEE80211_IOC_SSID;
+        WReq.i_val = -1;
+        WReq.i_data = abData;
+        WReq.i_len = sizeof(abData);
+
+        fWireless = ioctl(iSock, SIOCG80211, &WReq) >= 0;
+        close(iSock);
+    }
+
+    return fWireless;
+}    
+
 int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
     int rc = VINF_SUCCESS;
@@ -287,6 +310,8 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                 enmType = HostNetworkInterfaceType_Bridged;
             else
                 enmType = HostNetworkInterfaceType_HostOnly;
+
+            pNew->wireless = isWireless(pNew->szName);
 
             ComObjPtr<HostNetworkInterface> IfObj;
             IfObj.createObject();

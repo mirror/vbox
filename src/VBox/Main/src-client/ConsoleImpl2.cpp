@@ -103,7 +103,6 @@
 #  include <sys/socket.h>
 #  include <linux/types.h>
 #  include <linux/if.h>
-#  include <linux/wireless.h>
 # elif defined(RT_OS_FREEBSD)
 #  include <unistd.h>
 #  include <sys/types.h>
@@ -5184,6 +5183,17 @@ int Console::i_configNetwork(const char *pszDevice,
                 Utf8Str BridgedIfNameUtf8(BridgedIfName);
                 const char *pszBridgedIfName = BridgedIfNameUtf8.c_str();
 
+                ComPtr<IHostNetworkInterface> hostInterface;
+                hrc = host->FindHostNetworkInterfaceByName(BridgedIfName.raw(),
+                                                           hostInterface.asOutParam());
+                if (!SUCCEEDED(hrc))
+                {
+                    AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)", hrc, hrc));
+                    return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                      N_("Nonexistent host networking interface, name '%ls'"),
+                                      BridgedIfName.raw());
+                }
+
 # if defined(RT_OS_DARWIN)
                 /* The name is on the form 'ifX: long name', chop it off at the colon. */
                 char szTrunk[8];
@@ -5229,17 +5239,6 @@ int Console::i_configNetwork(const char *pszDevice,
                 const char *pszTrunk = szTrunk;
 
 # elif defined(RT_OS_WINDOWS)
-                ComPtr<IHostNetworkInterface> hostInterface;
-                hrc = host->FindHostNetworkInterfaceByName(BridgedIfName.raw(),
-                                                           hostInterface.asOutParam());
-                if (!SUCCEEDED(hrc))
-                {
-                    AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)", hrc, hrc));
-                    return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                      N_("Nonexistent host networking interface, name '%ls'"),
-                                      BridgedIfName.raw());
-                }
-
                 HostNetworkInterfaceType_T eIfType;
                 hrc = hostInterface->COMGETTER(InterfaceType)(&eIfType);
                 if (FAILED(hrc))
@@ -5422,133 +5421,18 @@ int Console::i_configNetwork(const char *pszDevice,
                 trunkName = Bstr(pszTrunk);
                 trunkType = Bstr(TRUNKTYPE_NETFLT);
 
-# if defined(RT_OS_DARWIN)
-                /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
-                if (    strstr(pszBridgedIfName, "Wireless")
-                    ||  strstr(pszBridgedIfName, "AirPort" ))
+                BOOL fSharedMacOnWire = false;
+                hrc = hostInterface->COMGETTER(Wireless)(&fSharedMacOnWire);
+                if (FAILED(hrc))
+                {
+                    LogRel(("NetworkAttachmentType_Bridged: COMGETTER(Wireless) failed, hrc (0x%x)\n", hrc));
+                    H();
+                }
+                else if (fSharedMacOnWire)
+                {
                     InsertConfigInteger(pCfg, "SharedMacOnWire", true);
-# elif defined(RT_OS_LINUX)
-                int iSock = socket(AF_INET, SOCK_DGRAM, 0);
-                if (iSock >= 0)
-                {
-                    struct iwreq WRq;
-
-                    RT_ZERO(WRq);
-                    strncpy(WRq.ifr_name, pszBridgedIfName, IFNAMSIZ);
-                    bool fSharedMacOnWire = ioctl(iSock, SIOCGIWNAME, &WRq) >= 0;
-                    close(iSock);
-                    if (fSharedMacOnWire)
-                    {
-                        InsertConfigInteger(pCfg, "SharedMacOnWire", true);
-                        Log(("Set SharedMacOnWire\n"));
-                    }
-                    else
-                        Log(("Failed to get wireless name\n"));
+                    Log(("Set SharedMacOnWire\n"));
                 }
-                else
-                    Log(("Failed to open wireless socket\n"));
-# elif defined(RT_OS_FREEBSD)
-                int iSock = socket(AF_INET, SOCK_DGRAM, 0);
-                if (iSock >= 0)
-                {
-                    struct ieee80211req WReq;
-                    uint8_t abData[32];
-
-                    RT_ZERO(WReq);
-                    strncpy(WReq.i_name, pszBridgedIfName, sizeof(WReq.i_name));
-                    WReq.i_type = IEEE80211_IOC_SSID;
-                    WReq.i_val = -1;
-                    WReq.i_data = abData;
-                    WReq.i_len = sizeof(abData);
-
-                    bool fSharedMacOnWire = ioctl(iSock, SIOCG80211, &WReq) >= 0;
-                    close(iSock);
-                    if (fSharedMacOnWire)
-                    {
-                        InsertConfigInteger(pCfg, "SharedMacOnWire", true);
-                        Log(("Set SharedMacOnWire\n"));
-                    }
-                    else
-                        Log(("Failed to get wireless name\n"));
-                }
-                else
-                    Log(("Failed to open wireless socket\n"));
-# elif defined(RT_OS_WINDOWS)
-#  define DEVNAME_PREFIX L"\\\\.\\"
-                /* we are getting the medium type via IOCTL_NDIS_QUERY_GLOBAL_STATS Io Control
-                 * there is a pretty long way till there though since we need to obtain the symbolic link name
-                 * for the adapter device we are going to query given the device Guid */
-
-
-                /* prepend the "\\\\.\\" to the bind name to obtain the link name */
-
-                wchar_t FileName[MAX_PATH];
-                wcscpy(FileName, DEVNAME_PREFIX);
-                wcscpy((wchar_t*)(((char*)FileName) + sizeof(DEVNAME_PREFIX) - sizeof(FileName[0])), pswzBindName);
-
-                /* open the device */
-                HANDLE hDevice = CreateFile(FileName,
-                                            GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                            NULL,
-                                            OPEN_EXISTING,
-                                            FILE_ATTRIBUTE_NORMAL,
-                                            NULL);
-
-                if (hDevice != INVALID_HANDLE_VALUE)
-                {
-                    bool fSharedMacOnWire = false;
-
-                    /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
-                    DWORD Oid = OID_GEN_PHYSICAL_MEDIUM;
-                    NDIS_PHYSICAL_MEDIUM PhMedium;
-                    DWORD cbResult;
-                    if (DeviceIoControl(hDevice,
-                                        IOCTL_NDIS_QUERY_GLOBAL_STATS,
-                                        &Oid,
-                                        sizeof(Oid),
-                                        &PhMedium,
-                                        sizeof(PhMedium),
-                                        &cbResult,
-                                        NULL))
-                    {
-                        /* that was simple, now examine PhMedium */
-                        if (   PhMedium == NdisPhysicalMediumWirelessWan
-                            || PhMedium == NdisPhysicalMediumWirelessLan
-                            || PhMedium == NdisPhysicalMediumNative802_11
-                            || PhMedium == NdisPhysicalMediumBluetooth)
-                            fSharedMacOnWire = true;
-                    }
-                    else
-                    {
-                        int winEr = GetLastError();
-                        LogRel(("Console::configNetwork: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
-                        Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
-                    }
-                    CloseHandle(hDevice);
-
-                    if (fSharedMacOnWire)
-                    {
-                        Log(("this is a wireless adapter"));
-                        InsertConfigInteger(pCfg, "SharedMacOnWire", true);
-                        Log(("Set SharedMacOnWire\n"));
-                    }
-                    else
-                        Log(("this is NOT a wireless adapter"));
-                }
-                else
-                {
-                    int winEr = GetLastError();
-                    AssertLogRelMsgFailed(("Console::configNetwork: CreateFile failed, err (0x%x), ignoring\n", winEr));
-                }
-
-                CoTaskMemFree(pswzBindName);
-
-                pAdaptorComponent.setNull();
-                /* release the pNc finally */
-                VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
-# else
-                /** @todo PORTME: wireless detection */
-# endif
 
 # if defined(RT_OS_SOLARIS)
 #  if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */

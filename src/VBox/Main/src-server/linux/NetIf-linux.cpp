@@ -25,7 +25,8 @@
 #include <iprt/err.h>
 #include <list>
 #include <sys/ioctl.h>
-#include <net/if.h>
+#include <sys/socket.h>
+#include <linux/wireless.h>
 #include <net/if_arp.h>
 #include <net/route.h>
 #include <netinet/in.h>
@@ -163,6 +164,11 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
 
         if (ioctl(iSocket, SIOCGIFFLAGS, &Req) >= 0)
             pInfo->enmStatus = Req.ifr_flags & IFF_UP ? NETIF_S_UP : NETIF_S_DOWN;
+
+        struct iwreq WRq;
+        RT_ZERO(WRq);
+        RTStrCopy(WRq.ifr_name, sizeof(WRq.ifr_name), pszName);
+        pInfo->fWireless = ioctl(iSocket, SIOCGIWNAME, &WRq) >= 0;
 
         FILE *fp = fopen("/proc/net/if_inet6", "r");
         if (fp)

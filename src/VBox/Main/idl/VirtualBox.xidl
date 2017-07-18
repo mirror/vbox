@@ -8926,6 +8926,10 @@ and "VAR" for unsetting. -->
       <desc>specifies the host interface type.</desc>
     </attribute>
 
+    <attribute name="wireless" type="boolean" readonly="yes">
+      <desc>Specifies whether the interface is wireless.</desc>
+    </attribute>
+
     <method name="enableStaticIPConfig">
       <desc>sets and enables the static IP V4 configuration for the given interface.</desc>
       <param name="IPAddress" type="wstring" dir="in">

@@ -166,7 +166,7 @@ HRESULT HostNetworkInterface::updateConfig()
 
         m.realIPAddress = m.IPAddress = info.IPAddress.u;
         m.realNetworkMask = m.networkMask = info.IPNetMask.u;
-        m.dhcpEnabled = info.bDhcpEnabled;
+        m.dhcpEnabled = info.fDhcpEnabled;
         if (info.IPv6Address.s.Lo || info.IPv6Address.s.Hi)
             m.realIPV6Address = m.IPV6Address = Bstr(Utf8StrFmt("%RTnaipv6", &info.IPv6Address));
         else
@@ -182,6 +182,7 @@ HRESULT HostNetworkInterface::updateConfig()
         m.status = info.enmStatus;
 #endif /* !RT_OS_WINDOWS */
         m.speedMbits = info.uSpeedMbits;
+        m.wireless = info.fWireless;
         return S_OK;
     }
     return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
@@ -235,7 +236,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
         m.realIPV6Address = m.IPV6Address = Bstr("");
     RTNetMaskToPrefixIPv6(&pIf->IPv6NetMask, &iPrefixIPv6);
     m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
-    m.dhcpEnabled = pIf->bDhcpEnabled;
+    m.dhcpEnabled = pIf->fDhcpEnabled;
     m.hardwareAddress = Bstr(Utf8StrFmt("%RTmac", &pIf->MACAddress));
 #ifdef RT_OS_WINDOWS
     m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
@@ -245,6 +246,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
     m.status = pIf->enmStatus;
 #endif /* !RT_OS_WINDOWS */
     m.speedMbits = pIf->uSpeedMbits;
+    m.wireless = pIf->fWireless;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -443,6 +445,13 @@ HRESULT HostNetworkInterface::getInterfaceType(HostNetworkInterfaceType_T *aType
 HRESULT HostNetworkInterface::getNetworkName(com::Utf8Str &aNetworkName)
 {
     aNetworkName = mNetworkName;
+
+    return S_OK;
+}
+
+HRESULT HostNetworkInterface::getWireless(BOOL *aWireless)
+{
+    *aWireless = m.wireless;
 
     return S_OK;
 }

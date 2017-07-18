@@ -69,6 +69,7 @@ private:
     HRESULT getStatus(HostNetworkInterfaceStatus_T *aStatus);
     HRESULT getInterfaceType(HostNetworkInterfaceType_T *aType);
     HRESULT getNetworkName(com::Utf8Str &aNetworkName);
+    HRESULT getWireless(BOOL *aWireless);
 
     // Wrapped IHostNetworkInterface methods
     HRESULT enableStaticIPConfig(const com::Utf8Str &aIPAddress,
@@ -92,7 +93,7 @@ private:
     {
         Data() : IPAddress(0), networkMask(0), dhcpEnabled(FALSE),
             mediumType(HostNetworkInterfaceMediumType_Unknown),
-            status(HostNetworkInterfaceStatus_Down){}
+            status(HostNetworkInterfaceStatus_Down), wireless(FALSE){}
 
         ULONG IPAddress;
         ULONG networkMask;
@@ -107,6 +108,7 @@ private:
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
         ULONG speedMbits;
+        BOOL wireless;
     } m;
 
 };
