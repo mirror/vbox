@@ -125,8 +125,9 @@ void UIDownloaderExtensionPack::handleVerifiedObject(UINetworkReply *pReply)
         /* Parse each record to tags, look for the required one: */
         foreach (const QString &strRecord, dictionary)
         {
-            const QString strFileName = strRecord.section(" *", 1);
-            const QString strDownloadedSumm = strRecord.section(" *", 0, 0);
+            QRegExp separator(" \\*|  ");
+            const QString strFileName = strRecord.section(separator, 1);
+            const QString strDownloadedSumm = strRecord.section(separator, 0, 0);
             if (strFileName == source().fileName())
             {
                 /* Calc the SHA-256 on the bytes, creating a string: */
