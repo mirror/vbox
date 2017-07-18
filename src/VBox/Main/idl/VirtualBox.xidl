@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="b365bb45-267f-44fa-c32a-cad265372f8e"
+    uuid="1f9a37d3-c3ba-4741-a53a-822a1b2d308d"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3896,6 +3896,16 @@
 
         After <link to="IUnattended::prepare"/> is called, it can be read to see
         which file is being used.
+      </desc>
+    </attribute>
+
+    <attribute name="postInstallCommand" type="wstring">
+      <desc>
+        Custom post installation command.
+
+        Exactly what is expected as input here depends on the guest OS installer
+        and the script template (see <link to="IUnattended:scriptTemplatePath"/>).
+        Most users will not need to set this attribute.
       </desc>
     </attribute>
 
