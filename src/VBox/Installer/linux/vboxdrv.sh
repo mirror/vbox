@@ -283,6 +283,8 @@ start()
         mkdir -p -m 0750 /dev/vboxusb 2>/dev/null
         chown root:vboxusers /dev/vboxusb 2>/dev/null
     fi
+    # Remove any kernel modules left over from previously installed kernels.
+    cleanup only_old
     succ_msg "VirtualBox services started"
 }
 
@@ -365,7 +367,14 @@ stop_vms()
 
 cleanup()
 {
+    # If this is set, only remove kernel modules for no longer installed
+    # kernels.  Note that only generated kernel modules should be placed
+    # in /lib/modules/*/misc.  Anything that we should not remove automatically
+    # should go elsewhere.
+    only_old="${1}"
     for i in /lib/modules/*; do
+        # Check whether we are only cleaning up for uninstalled kernels.
+        test -n "${only_old}" && test -e "${i}/kernel/drivers" && continue
         # We could just do "rm -f", but we only want to try deleting folders if
         # we are sure they were ours, i.e. they had our modules in beforehand.
         if    test -e "${i}/misc/vboxdrv.ko" \
