@@ -59,6 +59,7 @@
 #define pa_stream_set_buffer_attr               PULSE_MANGLER(pa_stream_set_buffer_attr)
 #define pa_stream_set_state_callback            PULSE_MANGLER(pa_stream_set_state_callback)
 #define pa_stream_set_underflow_callback        PULSE_MANGLER(pa_stream_set_underflow_callback)
+#define pa_stream_set_overflow_callback         PULSE_MANGLER(pa_stream_set_overflow_callback)
 #define pa_stream_set_write_callback            PULSE_MANGLER(pa_stream_set_write_callback)
 #define pa_stream_flush                         PULSE_MANGLER(pa_stream_flush)
 #define pa_stream_drain                         PULSE_MANGLER(pa_stream_drain)
