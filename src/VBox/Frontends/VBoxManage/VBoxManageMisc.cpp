@@ -1493,6 +1493,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             SHOW_STR_ATTR(AuxiliaryBasePath,        "auxiliaryBasePath");
             SHOW_ATTR(    ImageIndex,               "imageIndex",               ULONG, "%u");
             SHOW_STR_ATTR(ScriptTemplatePath,       "scriptTemplatePath");
+            SHOW_STR_ATTR(PostInstallCommand,       "postInstallCommand");
 
 #undef SHOW_STR_ATTR
 #undef SHOW_ATTR
