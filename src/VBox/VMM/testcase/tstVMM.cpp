@@ -37,6 +37,8 @@
 #include <iprt/test.h>
 #include <iprt/thread.h>
 
+#include <iprt/win/windows.h>
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -269,6 +271,28 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
+#if 1
+    HMODULE hmod;
+    //SetLastError(0);
+    //hmod = LoadLibraryW(L"c:\\tmp\\testdir\\nodot");
+    //RTPrintf("c:\\tmp\\testdir\\nodot -> %p %#x\n", hmod, GetLastError());
+    //
+    //SetLastError(0);
+    //hmod = LoadLibraryW(L"c:\\tmp\\testdir\\trailingdot.");
+    //RTPrintf("c:\\tmp\\testdir\\trailingdot. -> %p %#x\n", hmod, GetLastError());
+
+    RTPrintf("\n=======>\n");
+    SetLastError(0);
+    hmod = LoadLibraryW(L"\\\\localhost\\c\\tmp\\VBoxRes.dll");
+    RTPrintf("\\\\localhost\\c\\tmp\\VBoxRes.dll -> %p %#x\n", hmod, GetLastError());
+
+    RTPrintf("\n=======>\n");
+    SetLastError(0);
+    hmod = LoadLibraryW(L"\\\\?\\UNC\\localhost\\c\\tmp\\VBoxRes.dll");
+    RTPrintf("\\\\?\\UNC\\localhost\\c\\tmp\\VBoxRes.dll -> %p %#x\n", hmod, GetLastError());
+
+#else
+
     /*
      * Create the test VM.
      */
@@ -373,7 +397,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
     else
         RTTestFailed(hTest, "VMR3Create failed: rc=%Rrc\n", rc);
-
+#endif
     return RTTestSummaryAndDestroy(hTest);
 }
 
