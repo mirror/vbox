@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage unattended
+
+    Copyright (C) 2006-2017 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<refentry id="vboxmanage-unattended" lang="en">
+
+<!-- INCOMPLETE -->
+<!-- INCOMPLETE -->
+<!-- INCOMPLETE -->
+
+  <refentryinfo>
+    <pubdate>$Date$</pubdate>
+    <title>VBoxManage unattended</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-unattended</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-unattended</refname>
+    <refpurpose>unattended guest OS installation</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-unattended"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage unattended</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="req">--iso-path=<replaceable>install-iso</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <refsect2 id="vboxmanage-unattended">
+      <title>unattended installation</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        docs.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><replaceable>uuid|vmname</replaceable></term>
+          <listitem><para>Either the UUID or the name (case sensitive) of a VM.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+  </refsect1>
+</refentry>
+
