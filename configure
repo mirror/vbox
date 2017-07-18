@@ -185,17 +185,8 @@ if (cd `dirname $0`; pwd)|grep -q "$INVALID_CHARS"; then
   exit 1
 fi
 
-# darwin /bin/sh has a builtin echo that doesn't grok -n. gotta love it.
-if [ "$OS" = "darwin" ]; then
-  ECHO_N="/bin/echo -n"
-elif [ "$OS" = "solaris" ]; then
-  # Solaris 11 /bin/sh has a builtin echo that could grok -n if there is
-  # /usr/ucb/echo the first echo executable in the path, but the /usr/ucb
-  # tools are no longer installed by default.
-  ECHO_N="/usr/gnu/bin/echo -n"
-else
-  ECHO_N="echo -n"
-fi
+# Posix /bin/sh isn't supporting echo -n. Use printf instead.
+ECHO_N="printf"
 
 
 cleanup()
