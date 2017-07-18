@@ -1518,6 +1518,7 @@ void UIMediumManagerWidget::prepareTreeWidget(UIMediumType type, int iColumns)
     AssertPtrReturnVoid(pTreeWidget);
     {
         /* Configure tree-widget: */
+        pTreeWidget->setExpandsOnDoubleClick(false);
         pTreeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
         pTreeWidget->setAlternatingRowColors(true);
