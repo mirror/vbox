@@ -203,19 +203,19 @@ void UIMedium::refresh()
         /* Check whether this is host-drive medium: */
         m_fHostDrive = m_medium.GetHostDrive();
 
+        /* Refresh medium description: */
+        m_strDescription = m_medium.GetDescription();
+
         /* Refresh medium name: */
         if (!m_fHostDrive)
             m_strName = m_medium.GetName();
-        else if (m_medium.GetDescription().isEmpty())
+        else if (m_strDescription.isEmpty())
             m_strName = VBoxGlobal::tr("Host Drive '%1'", "medium").arg(QDir::toNativeSeparators(m_medium.GetLocation()));
         else
-            m_strName = VBoxGlobal::tr("Host Drive %1 (%2)", "medium").arg(m_medium.GetDescription(), m_medium.GetName());
-        /* Refresh medium location/description: */
+            m_strName = VBoxGlobal::tr("Host Drive %1 (%2)", "medium").arg(m_strDescription, m_medium.GetName());
+        /* Refresh medium location: */
         if (!m_fHostDrive)
-        {
             m_strLocation = QDir::toNativeSeparators(m_medium.GetLocation());
-            m_strDescription = m_medium.GetDescription();
-        }
 
         /* Refresh medium size and logical size: */
         if (!m_fHostDrive)
