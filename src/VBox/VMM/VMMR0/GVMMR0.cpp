@@ -1235,7 +1235,7 @@ static void gvmmR0CleanupVM(PGVM pGVM)
             &&  RTR0MemObjAddress(pGVM->gvmm.s.VMMemObj) == pGVM->pVM)
         {
             LogFlow(("gvmmR0CleanupVM: Calling VMMR0TermVM\n"));
-            VMMR0TermVM(pGVM, pGVM->pVM, NIL_RTCPUID);
+            VMMR0TermVM(pGVM, pGVM->pVM, NIL_VMCPUID);
         }
         else
             AssertMsgFailed(("gvmmR0CleanupVM: VMMemObj=%p pVM=%p\n", pGVM->gvmm.s.VMMemObj, pGVM->pVM));
