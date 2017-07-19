@@ -809,19 +809,26 @@ void ConfigFileBase::readMediumOne(MediaType t,
         if (!elmMedium.getAttributeValue("location", med.strLocation))
             throw ConfigFileError(this, &elmMedium, N_("Required %s/@location attribute is missing"), elmMedium.getName());
 
-    elmMedium.getAttributeValue("Description", med.strDescription);       // optional
+    // 3.2 builds added Description as an attribute, read it silently
+    // and write it back as an element starting with 5.1.26
+    elmMedium.getAttributeValue("Description", med.strDescription);
 
-    // handle medium properties
-    xml::NodesLoop nl2(elmMedium, "Property");
-    const xml::ElementNode *pelmHDChild;
-    while ((pelmHDChild = nl2.forAllNodes()))
+    xml::NodesLoop nlMediumChildren(elmMedium);
+    const xml::ElementNode *pelmMediumChild;
+    while ((pelmMediumChild = nlMediumChildren.forAllNodes()))
     {
-        Utf8Str strPropName, strPropValue;
-        if (   pelmHDChild->getAttributeValue("name", strPropName)
-            && pelmHDChild->getAttributeValue("value", strPropValue) )
-            med.properties[strPropName] = strPropValue;
-        else
-            throw ConfigFileError(this, pelmHDChild, N_("Required HardDisk/Property/@name or @value attribute is missing"));
+        if (pelmMediumChild->nameEquals("Description"))
+            med.strDescription = pelmMediumChild->getValue();
+        else if (pelmMediumChild->nameEquals("Property"))
+        {
+            // handle medium properties
+            Utf8Str strPropName, strPropValue;
+            if (   pelmMediumChild->getAttributeValue("name", strPropName)
+                && pelmMediumChild->getAttributeValue("value", strPropValue) )
+                med.properties[strPropName] = strPropValue;
+            else
+                throw ConfigFileError(this, pelmMediumChild, N_("Required HardDisk/Property/@name or @value attribute is missing"));
+        }
     }
 }
 
@@ -1265,7 +1272,7 @@ void ConfigFileBase::buildMedium(MediaType t,
         && mdm.fAutoReset)
         pelmMedium->setAttribute("autoReset", mdm.fAutoReset);
     if (mdm.strDescription.length())
-        pelmMedium->setAttribute("Description", mdm.strDescription);
+        pelmMedium->createChild("Description")->addContent(mdm.strDescription);
 
     for (StringsMap::const_iterator it = mdm.properties.begin();
          it != mdm.properties.end();
@@ -4956,7 +4963,8 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
     if (!elmSnapshot.getAttributeValue("name", snap.strName))
         throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@name attribute is missing"));
 
-    // earlier 3.1 trunk builds had a bug and added Description as an attribute, read it silently and write it back as an element
+    // 3.1 dev builds added Description as an attribute, read it silently
+    // and write it back as an element
     elmSnapshot.getAttributeValue("Description", snap.strDescription);
 
     if (!elmSnapshot.getAttributeValue("timeStamp", strTemp))
