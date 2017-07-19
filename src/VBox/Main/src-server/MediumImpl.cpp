@@ -1698,6 +1698,7 @@ HRESULT Medium::setDescription(const com::Utf8Str &aDescription)
         }
 
         // save the settings
+        alock.release();
         i_markRegistriesModified();
         m->pVirtualBox->i_saveModifiedRegistries();
     }
