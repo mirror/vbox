@@ -661,7 +661,7 @@
       <xsd:element name="VRDEProperties" type="TVRDEProperties"/>
     </xsd:choice>
   </xsd:sequence>
-  <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
+  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
   <xsd:attribute name="port" type="xsd:string" default="3389"/> <!-- deprecated -->
   <xsd:attribute name="authType" type="TAuthType" default="Null"/>
   <xsd:attribute name="authTimeout" type="xsd:unsignedInt" default="5000"/>
@@ -857,8 +857,8 @@
 
 <xsd:complexType name="TUSB">
   <xsd:sequence>
-    <xsd:element name="Controllers" type="TUSBControllers"/> 
-    <xsd:element name="DeviceFilters" type="TUSBDeviceFilters"/>
+    <xsd:element name="Controllers" type="TUSBControllers" minOccurs="0"/> 
+    <xsd:element name="DeviceFilters" type="TUSBDeviceFilters" minOccurs="0"/>
   </xsd:sequence>
 </xsd:complexType>
 
@@ -1004,6 +1004,15 @@
       <xsd:attribute name="trace" type="xsd:boolean" default="false"/>
       <xsd:attribute name="tracefile" type="xsd:string"/>
       <xsd:attribute name="bandwidthGroup" type="xsd:string"/>
+      <xsd:attribute name="promiscuousModePolicy" default="Deny">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:token">
+            <xsd:enumeration value="Deny"/>
+            <xsd:enumeration value="AllowNetwork"/>
+            <xsd:enumeration value="AllowAll"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:attribute>
     </xsd:extension>
   </xsd:complexContent>
 </xsd:complexType>
@@ -1238,7 +1247,7 @@
 </xsd:complexType>
 
 <xsd:complexType name="THID">
-  <xsd:attribute name="Pointing" use="required">
+  <xsd:attribute name="Pointing" default="PS2Mouse">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
         <xsd:enumeration value="USBMouse"/>
@@ -1248,7 +1257,7 @@
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-  <xsd:attribute name="Keyboard" use="required">
+  <xsd:attribute name="Keyboard" default="PS2Keyboard">
     <xsd:simpleType>
       <xsd:restriction base="xsd:token">
         <xsd:enumeration value="USBKeyboard"/>
