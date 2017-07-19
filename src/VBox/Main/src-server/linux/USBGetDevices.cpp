@@ -45,6 +45,7 @@
 #endif
 #include <linux/usbdevice_fs.h>
 
+#include <sys/sysmacros.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
