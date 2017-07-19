@@ -44,7 +44,8 @@ VBOX_LNX_ADD_INST_SBIN_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)sbin/
 VBOX_LNX_ADD_INST_LIB_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/
 VBOX_LNX_ADD_INST_OTHER_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)other/
 VBOX_LNX_ADD_INST_KMOD_DIR_BASE   := $(VBOX_LNX_ADD_INST_OUT_DIR)src/
-VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_KMOD_DIR_BASE)vboxguest-$(VBOX_VERSION_STRING)/
+# This is a symbolic link, so no trailing slash.
+VBOX_LNX_ADD_INST_KMOD_PATH       := $(VBOX_LNX_ADD_INST_KMOD_DIR_BASE)vboxguest-$(VBOX_VERSION_STRING)
 VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
 
 VBOX_LNX_ADD_ARCH_INST_DIRS       := \
@@ -52,8 +53,6 @@ VBOX_LNX_ADD_ARCH_INST_DIRS       := \
 	$(VBOX_LNX_ADD_INST_BIN_DIR) \
 	$(VBOX_LNX_ADD_INST_SBIN_DIR) \
 	$(if $(VBOX_WITH_CROGL),$(VBOX_LNX_ADD_INST_LIB_DIR),) \
-	$(VBOX_LNX_ADD_INST_KMOD_DIR_BASE) \
-	$(VBOX_LNX_ADD_INST_KMOD_DIR) \
 	$(VBOX_LNX_ADD_INST_INIT_DIR)
 
 # Installation paths for debug symbols
@@ -108,6 +107,7 @@ PACKING     += \
 	$(PATH_STAGE_BIN)/additions/VBoxGuestAdditions-dbg.tar.bz2
 OTHER_CLEAN += \
 	$(PACKING) \
+	$(VBOX_LNX_ADD_INST_KMOD_PATH) \
 	$(foreach file, $(VBOX_LNX_ADD_ARCHIVES), $(VBOX_LNX_ADD_INST_STAGE_DIR)$(subst -r$(VBOX_SVN_REV),,$(notdir $(file))))
 
 
@@ -153,9 +153,6 @@ VBOX_LNX_ADD_STRIP_OBJ = \
 	vboxmouse_drv.o \
 	vboxvideo_drv.o
 
-VBOX_LNX_ADD_KMOD_FILES = Makefile build_in_tmp
-VBOX_LNX_ADD_KMOD_DIRS =  vboxguest/ vboxsf/ vboxvideo/
-
 VBOX_LNX_ADD_INIT = \
 	vboxadd \
 	vboxadd-service \
@@ -172,12 +169,7 @@ VBOX_LNX_ADD_INST_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT))
-
-## @todo figure how to clean these... Or maybe rewrite everything here to somehow use install targets?
-VBOX_LNX_ADD_INST_DIRS := \
-	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS))
 
 VBOX_LNX_ADD_DBG_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_DBG_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)) \
@@ -270,27 +262,19 @@ else # strip to temp file because of umask.
 	$(QUIET)$(RM) -f -- $@.tmp
 endif
 
-# pattern rules for copying the VBOX_LNX_ADD_KMOD files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS)): \
-		$(VBOX_LNX_ADD_INST_KMOD_DIR)% : \
-		$(PATH_STAGE_BIN)/additions/src/% \
-		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*) \
-		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*) \
-		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*) \
-		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*/*) \
-		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*/*/*) \
-		$(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_HEADER) \
-		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
-	$(call MSG_INST_DIR,$<,$@)
-	$(QUIET)$(RM) -Rf $(filter-out $(VBOX_LNX_ADD_INST_KMOD_DIR),$(wildcard $(VBOX_LNX_ADD_INST_KMOD_DIR_BASE)*/))
-	$(QUIET)$(CP) -RPf -- $< $@
+include $(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/linux/files_vboxguest
+VBOX_LNX_ADD_INST_FILES_VBOXGUEST=$(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxguest/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXGUEST_NOBIN)))))
+include $(PATH_ROOT)/src/VBox/Additions/linux/sharedfolders/files_vboxsf
+VBOX_LNX_ADD_INST_FILES_VBOXSF=$(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxsf/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXSF_NOBIN)))))
+include $(PATH_ROOT)/src/VBox/Additions/linux/drm/files_vboxvideo_drv
+VBOX_LNX_ADD_INST_FILES_VBOXVIDEO=$(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxvideo/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN)))))
 
-$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)): \
-		$(VBOX_LNX_ADD_INST_KMOD_DIR)% : \
-		$(PATH_STAGE_BIN)/additions/src/% \
-		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
-	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)$(CP) -RPf -- $< $@
+# special rule for the kernel modules
+$(VBOX_LNX_ADD_INST_KMOD_DIR_BASE): $(PATH_STAGE_BIN)/additions/src/ | $(dir $@)
+	$(call MSG_INST_SYM,$<,$@)
+	$(QUIET)$(RM) -Rf $@
+	$(QUIET)$(MKDIR) $@
+	$(QUIET)$(LN_SYMLINK) $< $(VBOX_LNX_ADD_INST_KMOD_PATH)
 
 INSTALLS += GuestDrivers-src
 GuestDrivers-src_INST = $(INST_ADDITIONS)src/
@@ -407,15 +391,21 @@ VBOX_LNX_ADD_ARCH_FILES = \
 	$(lnx_add_inst-exec_2_STAGE_TARGETS) \
 	$(lnx_add_inst-license_2_STAGE_TARGETS) \
 	$(VBOX_LNX_ADD_INST_FILES) \
-	$(VBOX_LNX_ADD_INST_DIRS)
+	$(VBOX_LNX_ADD_INST_KMOD_DIR_BASE)
+
+VBOX_LNX_ADD_INST_ARCH_DEPS := \
+	$(VBOX_LNX_ADD_ARCH_FILES) \
+	$(VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE) \
+	$(VBOX_VERSION_STAMP) \
+	$(VBOX_LNX_ADD_INST_FILES_VBOXGUEST) \
+	$(VBOX_LNX_ADD_INST_FILES_VBOXSF) \
+	$(VBOX_LNX_ADD_INST_FILES_VBOXVIDEO)
 
 #
 # .tar.bz2 for converting into .run
 #
 $(VBOX_LNX_ADD_ARCHIVE.$(KBUILD_TARGET_ARCH)): \
-		$(VBOX_LNX_ADD_ARCH_FILES) \
-		$(VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE) \
-		$(VBOX_VERSION_STAMP)
+		$(VBOX_LNX_ADD_INST_ARCH_DEPS)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $(wildcard $(dir $@)VBoxGuestAdditions-*r*.tar.bz2)
 	$(QUIET)$(MKDIR) -p $(@D)
