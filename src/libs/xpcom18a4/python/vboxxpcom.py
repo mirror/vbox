@@ -39,7 +39,7 @@ _asVBoxPythons = [
 if sys.hexversion >= 0x030200f0 and sys.abiflags:
     _asNew = []
     for sCandidate in _asVBoxPythons:
-        if isdigit(sCandidate[-1:]):
+        if sCandidate[-1:].isdigit():
             _asNew.append(sCandidate + sys.abiflags)
         else:
             _asNew.append(sCandidate)
