@@ -69,13 +69,16 @@ typedef struct VRDESTREAM
         struct
         {
             /** Number of samples this stream can handle at once. */
-            uint32_t    cSamplesMax;
+            uint32_t    csMax;
             /** Circular buffer for holding the recorded audio samples from the host. */
             PRTCIRCBUF  pCircBuf;
         } In;
         struct
         {
-            uint64_t    old_ticks;
+            /** Timestamp (in virtual time ticks) of the last audio playback (of the VRDP server). */
+            uint64_t    ticksPlayedLast;
+            /** Internal counter (in audio samples) to track if and how much we can write to the VRDP server
+             *  for the current time period. */
             uint64_t    csToWrite;
         } Out;
     };
@@ -86,9 +89,9 @@ AssertCompileSize(PDMAUDIOSAMPLE, sizeof(int64_t) * 2 /* st_sample_t using by VR
 
 static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    pStreamVRDE->In.cSamplesMax = _1K; /** @todo Make this configurable. */
+    pStreamVRDE->In.csMax = _1K; /** @todo Make this configurable. */
 
-    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, pStreamVRDE->In.cSamplesMax * (pCfgReq->Props.cBits / 8) /* Bytes */);
+    int rc = RTCircBufCreate(&pStreamVRDE->In.pCircBuf, pStreamVRDE->In.csMax * (pCfgReq->Props.cBits / 8) /* Bytes */);
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
@@ -101,7 +104,7 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
              * the data without any layout modification needed.
              */
             pCfgAcq->enmLayout         = PDMAUDIOSTREAMLAYOUT_RAW;
-            pCfgAcq->cSampleBufferHint = pStreamVRDE->In.cSamplesMax;
+            pCfgAcq->cSampleBufferHint = pStreamVRDE->In.csMax;
         }
     }
 
@@ -154,7 +157,7 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAM pStreamVRDE, PDMA
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE, pStreamVRDE->In.cSamplesMax,
+            rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pStreamVRDE, pStreamVRDE->In.csMax,
                                                                pStreamVRDE->pCfg->Props.uHz, pStreamVRDE->pCfg->Props.cChannels,
                                                                pStreamVRDE->pCfg->Props.cBits);
             if (rc == VERR_NOT_SUPPORTED)
@@ -276,34 +279,15 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
                                                  pProps->cBits,
                                                  pProps->fSigned);
 
-#ifdef DEBUG
-    uint64_t now              = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
-    uint64_t ticks            = now  - pStreamVRDE->Out.old_ticks;
-    uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
-
-    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
-    uint32_t csExpected = (int)((2 * ticks * pProps->uHz + ticks_per_second) / ticks_per_second / 2);
-    LogFunc(("csExpected=%RU32\n", csExpected));
-#endif
-
+    /* Use the internal counter to track if we (still) can write to the VRDP server
+     * or if we need to wait another round (time slot). */
     uint32_t csToWrite = pStreamVRDE->Out.csToWrite;
 
-    Log2Func(("uFreq=%RU32, cChan=%RU8, cBits=%RU8 (%d BPP), fSigned=%RTbool, enmFormat=%ld, csLive=%RU32, csToWrite=%RU32\n",
-              pProps->uHz, pProps->cChannels, pProps->cBits, VRDE_AUDIO_FMT_BYTES_PER_SAMPLE(format),
-              pProps->fSigned, format, csLive, csToWrite));
+    Log3Func(("csLive=%RU32, csToWrite=%RU32\n", csLive, csToWrite));
 
     /* Don't play more than available. */
     if (csToWrite > csLive)
-    {
-        LogFunc(("Expected at least %RU32 audio samples, but only got %RU32\n", csToWrite, csLive));
         csToWrite = csLive;
-    }
-
-    /* Reset to-write sample count. */
-    pStreamVRDE->Out.csToWrite = 0;
-
-    /* Remember when samples were consumed. */
-    pStreamVRDE->Out.old_ticks = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
 
     int rc = VINF_SUCCESS;
 
@@ -334,6 +318,13 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
 
     if (RT_SUCCESS(rc))
     {
+        /* Subtract written samples from the counter. */
+        Assert(pStreamVRDE->Out.csToWrite >= csWritten);
+        pStreamVRDE->Out.csToWrite      -= csWritten;
+
+        /* Remember when samples were consumed. */
+        pStreamVRDE->Out.ticksPlayedLast = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
+
         /* Return samples instead of bytes here
          * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
         if (pcbWritten)
@@ -524,14 +515,14 @@ static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetWritable(PPDMIHOSTAUDIO pInte
     PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
 
-    uint64_t now              = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
-    uint64_t ticks            = now  - pStreamVRDE->Out.old_ticks;
-    uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
+    const uint64_t ticksNow     = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
+    const uint64_t ticksElapsed = ticksNow  - pStreamVRDE->Out.ticksPlayedLast;
+    const uint64_t ticksPerSec  = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
 
     PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
 
     /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
-    pStreamVRDE->Out.csToWrite = (int)((2 * ticks * pProps->uHz + ticks_per_second) / ticks_per_second / 2);
+    pStreamVRDE->Out.csToWrite = (int)((2 * ticksElapsed * pProps->uHz + ticksPerSec) / ticksPerSec / 2);
 
     /* Return samples instead of bytes here
      * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
