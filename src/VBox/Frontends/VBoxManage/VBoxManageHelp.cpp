@@ -1021,19 +1021,19 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
     }
 
     if (fCategory & USAGE_UNATTENDEDINSTALL)
-        RTStrmPrintf(pStrm,
+        RTStrmPrintf(pStrm, /* This will be replaced by a docbook man page. */
                            "%s unattended %s      <uuid|vmname>\n"
-                     "                            --settings-file <file>\n"
-                     "                            [--session-type <type>]\n"
+                     "         <OUTDATED-TODO>    --settings-file <file>\n"
+                     "         <OUTDATED-TODO>    [--session-type <type>]\n"
                            "%s unattended %s      <uuid|vmname>\n"
-                     "                            --user <user>\n"
-                     "                            --password <password>\n"
-                     "                            --iso-path <path>\n"
-                     "                            [--key <CD-key>]\n"
-                     "                            [--additions-iso-path <path>]\n"
-                     "                            [--install-additions]\n"
-                     "                            [--image-index <index>]\n"
-                     "                            [--session-type <type>]\n"
+                     "         <OUTDATED-TODO>    --user <user>\n"
+                     "         <OUTDATED-TODO>    --password <password>\n"
+                     "         <OUTDATED-TODO>    --iso-path <path>\n"
+                     "         <OUTDATED-TODO>    [--key <CD-key>]\n"
+                     "         <OUTDATED-TODO>    [--additions-iso-path <path>]\n"
+                     "         <OUTDATED-TODO>    [--install-additions]\n"
+                     "         <OUTDATED-TODO>    [--image-index <index>]\n"
+                     "         <OUTDATED-TODO>    [--session-type <type>]\n"
                      "\n", SEP, SEP);
 
     if (fCategory & USAGE_DISCARDSTATE)

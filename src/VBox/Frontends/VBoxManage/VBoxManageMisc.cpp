@@ -41,6 +41,7 @@
 #include <iprt/initterm.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/cpp/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
@@ -1271,19 +1272,29 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     /*
      * Options.
      */
-    const char *pszIsoPath           = NULL;
-    const char *pszUser              = NULL;
-    const char *pszPassword          = NULL;
-    const char *pszFullUserName      = NULL;
-    const char *pszProductKey        = NULL;
-    const char *pszAdditionsIsoPath  = NULL;
-    int         fInstallAdditions    = -1;
-    const char *pszAuxiliaryBasePath = NULL;
-    const char *pszMachineName       = NULL;
-    const char *pszSettingsFile      = NULL;
-    bool        fSetImageIdx         = false;
-    uint32_t    idxImage             = 0;
-    const char *pszSessionType       = "headless";
+    Utf8Str     strAbsIsoPath;
+    const char *pszIsoPath              = NULL;
+    const char *pszUser                 = NULL;
+    const char *pszPassword             = NULL;
+    const char *pszFullUserName         = NULL;
+    const char *pszProductKey           = NULL;
+    Utf8Str     strAbsAdditionsIsoPath;
+    const char *pszAdditionsIsoPath     = NULL;
+    int         fInstallAdditions       = -1;
+    Utf8Str     strAbsValidationKitIsoPath;
+    const char *pszValidationKitIsoPath = NULL;
+    int         fInstallTxs             = -1;
+    const char *pszMachineName          = NULL;
+    Utf8Str     strAbsSettingsFile;
+    const char *pszSettingsFile         = NULL;
+    bool        fSetImageIdx            = false;
+    uint32_t    idxImage                = 0;
+    const char *pszPostInstallCommand   = NULL;
+    Utf8Str     strAbsAuxiliaryBasePath;
+    const char *pszAuxiliaryBasePath    = NULL;
+    Utf8Str     strAbsScriptTemplatePath;
+    const char *pszScriptTemplatePath   = NULL;
+    const char *pszSessionType          = "headless";
 
     /*
      * Parse options.
@@ -1293,18 +1304,23 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--iso-path",             'i', RTGETOPT_REQ_STRING },
-        { "--user",                 'u', RTGETOPT_REQ_STRING },
-        { "--password",             'p', RTGETOPT_REQ_STRING },
-        { "--full-user-name",       'U', RTGETOPT_REQ_STRING },
-        { "--key",                  'k', RTGETOPT_REQ_STRING },
-        { "--install-additions",    'A', RTGETOPT_REQ_NOTHING },
-        { "--no-install-additions", 'N', RTGETOPT_REQ_NOTHING },
-        { "--additions-iso-path",   'a', RTGETOPT_REQ_STRING },
-        { "--auxiliary-base-path",  'x', RTGETOPT_REQ_STRING },
-        { "--image-index",          'm', RTGETOPT_REQ_UINT32 },
-        { "--settings-file",        's', RTGETOPT_REQ_STRING },
-        { "--session-type",         'S', RTGETOPT_REQ_STRING },
+        { "--iso",                      'i', RTGETOPT_REQ_STRING },
+        { "--user",                     'u', RTGETOPT_REQ_STRING },
+        { "--password",                 'p', RTGETOPT_REQ_STRING },
+        { "--full-user-name",           'U', RTGETOPT_REQ_STRING },
+        { "--key",                      'k', RTGETOPT_REQ_STRING },
+        { "--install-additions",        'A', RTGETOPT_REQ_NOTHING },
+        { "--no-install-additions",     'N', RTGETOPT_REQ_NOTHING },
+        { "--additions-iso",            'a', RTGETOPT_REQ_STRING },
+        { "--install-txs",              't', RTGETOPT_REQ_NOTHING },
+        { "--no-install-txs",           'T', RTGETOPT_REQ_NOTHING },
+        { "--validation-kit-iso",       'K', RTGETOPT_REQ_STRING },
+        { "--auxiliary-base-path",      'x', RTGETOPT_REQ_STRING },
+        { "--image-index",              'm', RTGETOPT_REQ_UINT32 },
+        { "--script-template",          'c', RTGETOPT_REQ_STRING },
+        { "--post-install-command",     'P', RTGETOPT_REQ_STRING },
+        { "--settings-file",            's', RTGETOPT_REQ_STRING },
+        { "--session-type",             'S', RTGETOPT_REQ_STRING },
     };
 
     RTGETOPTSTATE GetState;
@@ -1326,7 +1342,17 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 break;
 
             case 's':   // --settings-file <key value file>
-                pszSettingsFile = ValueUnion.psz;
+                vrc = RTPathAbsCxx(strAbsSettingsFile, ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                pszSettingsFile = strAbsSettingsFile.c_str();
+                break;
+
+            case 'i':   // --iso
+                vrc = RTPathAbsCxx(strAbsIsoPath, ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                pszIsoPath = strAbsIsoPath.c_str();
                 break;
 
             case 'u':   // --user
@@ -1351,21 +1377,47 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             case 'N':   // --no-install-additions
                 fInstallAdditions = false;
                 break;
-            case 'a':   // --additions-iso-path
-                pszAdditionsIsoPath = ValueUnion.psz;
+            case 'a':   // --additions-iso
+                vrc = RTPathAbsCxx(strAbsAdditionsIsoPath, ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                pszAdditionsIsoPath = strAbsAdditionsIsoPath.c_str();
                 break;
 
-            case 'i':   // --iso-path
-                pszIsoPath = ValueUnion.psz;
+            case 't':   // --install-txs
+                fInstallTxs = true;
+                break;
+            case 'T':   // --no-install-txs
+                fInstallTxs = false;
+                break;
+            case 'K':   // --valiation-kit-iso
+                vrc = RTPathAbsCxx(strAbsValidationKitIsoPath, ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                pszValidationKitIsoPath = strAbsValidationKitIsoPath.c_str();
                 break;
 
             case 'x':  // --auxiliary-base-path
-                pszAuxiliaryBasePath = ValueUnion.psz;
+                vrc = RTPathAbsCxx(strAbsAuxiliaryBasePath, ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                pszAuxiliaryBasePath = strAbsAuxiliaryBasePath.c_str();
                 break;
 
             case 'm':   // --image-index
                 idxImage = ValueUnion.u32;
                 fSetImageIdx = true;
+                break;
+
+            case 'c':  // --script-template
+                vrc = RTPathAbsCxx(strAbsScriptTemplatePath, ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                pszScriptTemplatePath = strAbsScriptTemplatePath.c_str();
+                break;
+
+            case 'P':   // --post-install-command.
+                pszPostInstallCommand = ValueUnion.psz;
                 break;
 
             case 'S':   // --session-type
@@ -1384,7 +1436,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID");
 
     if (!pszSettingsFile && !pszIsoPath)
-        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso-path (or --settings-file) option");
+        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso (or --settings-file) option");
 
     /*
      * Prepare.
@@ -1451,8 +1503,16 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(AdditionsIsoPath)(Bstr(pszAdditionsIsoPath).raw()));
             if (fInstallAdditions >= 0)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(InstallGuestAdditions)(fInstallAdditions != (int)false));
+            if (pszValidationKitIsoPath)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ValidationKitIsoPath)(Bstr(pszValidationKitIsoPath).raw()));
+            if (fInstallTxs >= 0)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(InstallTestExecService)(fInstallTxs != (int)false));
             if (fSetImageIdx)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ImageIndex)(idxImage));
+            if (pszScriptTemplatePath)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ScriptTemplatePath)(Bstr(pszScriptTemplatePath).raw()));
+            if (pszPostInstallCommand)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PostInstallCommand)(Bstr(pszPostInstallCommand).raw()));
             if (pszAuxiliaryBasePath)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(AuxiliaryBasePath)(Bstr(pszAuxiliaryBasePath).raw()));
 
