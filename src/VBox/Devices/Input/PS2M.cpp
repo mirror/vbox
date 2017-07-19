@@ -556,7 +556,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
     if (fAccumBtns)
     {
         pThis->fReportedB = pThis->fAccumB;
-        pThis->fAccumB    = 0;
+        pThis->fAccumB    = pThis->fCurrB;
     }
 }
 
@@ -847,7 +847,7 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     /* If the input queue is not empty, restart the timer. */
 #else
     /* If more movement is accumulated, report it and restart the timer. */
-    uHaveEvents = pThis->iAccumX | pThis->iAccumY | pThis->iAccumZ | (pThis->fCurrB != pThis->fReportedB);
+    uHaveEvents = pThis->iAccumX | pThis->iAccumY | pThis->iAccumZ | (pThis->fAccumB != pThis->fReportedB);
     LogFlowFunc(("Have%s events\n", uHaveEvents ? "" : " no"));
 
     if (uHaveEvents)
