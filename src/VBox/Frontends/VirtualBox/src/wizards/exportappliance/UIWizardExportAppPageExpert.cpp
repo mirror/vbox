@@ -251,7 +251,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
-    m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new experimental OVF 2.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
