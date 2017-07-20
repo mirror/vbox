@@ -38,7 +38,7 @@
  */
 
 /**
- * Wrapper around RTPathAbs() that returns the result in the given buffer.
+ * RTPathAbs() wrapper for working directly on a RTCString instance.
  *
  * @returns IPRT status code.
  * @param   rStrAbs         Reference to the destiation string.
@@ -51,7 +51,7 @@ DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, const char *pszRelative)
     if (RT_SUCCESS(rc))
     {
         char *pszDst = rStrAbs.mutableRaw();
-        rc = RTPathAbs(pszRelative, pszDst, rStrAbs.capacity() - 1);
+        rc = RTPathAbs(pszRelative, pszDst, rStrAbs.capacity());
         if (RT_FAILURE(rc))
             *pszDst = '\0';
         rStrAbs.jolt();
@@ -61,7 +61,7 @@ DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, const char *pszRelative)
 
 
 /**
- * Wrapper around RTPathAbs() that returns the result in the given buffer.
+ * RTPathAbs() wrapper for working directly on a RTCString instance.
  *
  * @returns IPRT status code.
  * @param   rStrAbs         Reference to the destiation string.
@@ -70,6 +70,92 @@ DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, const char *pszRelative)
 DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, RTCString const &rStrRelative)
 {
     return RTPathAbsCxx(rStrAbs, rStrRelative.c_str());
+}
+
+
+/**
+ * RTPathAppPrivateNoArch() wrapper for working directly on a RTCString instance.
+ *
+ * @returns IPRT status code.
+ * @param   rStrDst         Reference to the destiation string.
+ */
+DECLINLINE(int) RTPathAppPrivateNoArchCxx(RTCString &rStrDst)
+{
+    int rc = rStrDst.reserveNoThrow(RTPATH_MAX);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszDst = rStrDst.mutableRaw();
+        rc = RTPathAppPrivateNoArch(pszDst, rStrDst.capacity());
+        if (RT_FAILURE(rc))
+            *pszDst = '\0';
+        rStrDst.jolt();
+    }
+    return rc;
+
+}
+
+
+/**
+ * RTPathAppend() wrapper for working directly on a RTCString instance.
+ *
+ * @returns IPRT status code.
+ * @param   rStrDst         Reference to the destiation string.
+ * @param   pszAppend       One or more components to append to the path already
+ *                          present in @a rStrDst.
+ */
+DECLINLINE(int) RTPathAppendCxx(RTCString &rStrDst, const char *pszAppend)
+{
+    Assert(rStrDst.c_str() != pszAppend);
+    size_t cbEstimate = rStrDst.length() + 1 + strlen(pszAppend) + 1;
+    int rc;
+    if (rStrDst.capacity() >= cbEstimate)
+        rc = VINF_SUCCESS;
+    else
+        rc = rStrDst.reserveNoThrow(RT_ALIGN_Z(cbEstimate, 8));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTPathAppend(rStrDst.mutableRaw(), rStrDst.capacity(), pszAppend);
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            rc = rStrDst.reserveNoThrow(RTPATH_MAX);
+            if (RT_SUCCESS(rc))
+                rc = RTPathAppend(rStrDst.mutableRaw(), rStrDst.capacity(), pszAppend);
+        }
+        rStrDst.jolt();
+    }
+    return rc;
+}
+
+
+/**
+ * RTPathAppend() wrapper for working directly on a RTCString instance.
+ *
+ * @returns IPRT status code.
+ * @param   rStrDst         Reference to the destiation string.
+ * @param   rStrAppend      One or more components to append to the path already
+ *                          present in @a rStrDst.
+ */
+DECLINLINE(int) RTPathAppendCxx(RTCString &rStrDst, RTCString const &rStrAppend)
+{
+    Assert(&rStrDst != &rStrAppend);
+    size_t cbEstimate = rStrDst.length() + 1 + rStrAppend.length() + 1;
+    int rc;
+    if (rStrDst.capacity() >= cbEstimate)
+        rc = VINF_SUCCESS;
+    else
+        rc = rStrDst.reserveNoThrow(RT_ALIGN_Z(cbEstimate, 8));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTPathAppend(rStrDst.mutableRaw(), rStrDst.capacity(), rStrAppend.c_str());
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            rc = rStrDst.reserveNoThrow(RTPATH_MAX);
+            if (RT_SUCCESS(rc))
+                rc = RTPathAppend(rStrDst.mutableRaw(), rStrDst.capacity(), rStrAppend.c_str());
+        }
+        rStrDst.jolt();
+    }
+    return rc;
 }
 
 
