@@ -422,27 +422,9 @@
               Source="$(env.PATH_OUT)\bin\VBoxCAPI.dll" />
     </Component>
 
-<?if $(env.VBOX_WITH_UNATTENDED) = "yes" ?>
-    <!-- Unattended templates -->
-    <Directory Id="dir_VBoxUnattendedTemplates" Name="unattended_templates">
-        <Component Id="cp_UnattendedTemplates" Guid="8f89ec7e-ae83-490d-a293-c7ab276c5678" Win64="$(var.Property_Win64)">
-            <!-- VBox unattended template files -->
-            <File Id="file_debian_preseed.cfg" Name="debian_preseed.cfg"
-                  Source="$(env.PATH_OUT)\bin\unattended_templates\debian_preseed.cfg" />
-            <File Id="file_fedora_ks.cfg" Name="fedora_ks.cfg"
-                  Source="$(env.PATH_OUT)\bin\unattended_templates\fedora_ks.cfg" />
-            <File Id="file_ol_ks.cfg" Name="ol_ks.cfg"
-                  Source="$(env.PATH_OUT)\bin\unattended_templates\ol_ks.cfg" />
-            <File Id="file_redhat67_ks.cfg" Name="redhat67_ks.cfg"
-                  Source="$(env.PATH_OUT)\bin\unattended_templates\redhat67_ks.cfg" />
-            <File Id="file_ubuntu_preseed.cfg" Name="ubuntu_preseed.cfg"
-                  Source="$(env.PATH_OUT)\bin\unattended_templates\ubuntu_preseed.cfg" />
-            <File Id="file_win_nt6_unattended.xml" Name="win_nt6_unattended.xml"
-                  Source="$(env.PATH_OUT)\bin\unattended_templates\win_nt6_unattended.xml" />
-            <File Id="file_win_nt5_unattended.sif" Name="win_nt5_unattended.sif"
-                  Source="$(env.PATH_OUT)\bin\unattended_templates\win_nt5_unattended.sif" />
-        </Component>
-    </Directory>
+    <!-- Unattended installation template scripts if enabled -->
+    <?include $(env.PATH_TARGET)\VBoxUnattendedTemplateComponent.wxi ?>
+
 <?endif?>
 
 </Include>

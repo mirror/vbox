@@ -34,22 +34,5 @@ VBox-python-glue-installer_SOURCES = vboxapisetup.py
 
 endif # VBOX_WITH_PYTHON
 
-ifdef VBOX_WITH_UNATTENDED
-
-INSTALLS += VBox-unattended-templates
-
-VBox-unattended-templates_INST = bin/unattended_templates/
-VBox-unattended-templates_MODE = a+r,u+w
-VBox-unattended-templates_SOURCES = $(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/debian_preseed.cfg \
-	$(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/ubuntu_preseed.cfg \
-	$(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/redhat67_ks.cfg \
-	$(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/ol_ks.cfg \
-	$(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/fedora_ks.cfg \
-	$(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/suse_autoinstall.xml \
-	$(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/win_nt5_unattended.sif \
-	$(VBOX_PATH_INST_COMMON_SRC)/unattended_templates/win_nt6_unattended.xml
-
-endif # VBOX_WITH_UNATTENDED
-
 include $(FILE_KBUILD_SUB_FOOTER)
 

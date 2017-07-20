@@ -499,6 +499,11 @@ ifdef VBOX_WITH_EFIFW_PACKING
 	VBoxEFI64.fd
 endif
 
+# Unattended installation template scripts.
+ifdef VBOX_UNATTENDED_TEMPLATES
+ SOLARIS_COMMON += $(addprefix UnattendedTemplates/,$(VBOX_UNATTENDED_TEMPLATES))
+endif
+
 # DTrace library, testcase and scripts (as the rest of this file, this makes bold
 # ASSUMPTIONS about VBPX_INST_XXX variable values).
 ifdef VBOX_WITH_DTRACE

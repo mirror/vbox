@@ -240,14 +240,7 @@ VBOX_LNX_NO_STRIP = \
 	VBox.sh \
 	vboxweb-service.sh \
 	VBox.png \
-	$(if $(VBOX_WITH_UNATTENDED), \
-	  unattended_templates/debian_preseed.cfg \
-	  unattended_templates/ubuntu_preseed.cfg \
-	  unattended_templates/fedora_ks.cfg \
-	  unattended_templates/ol_ks.cfg \
-	  unattended_templates/redhat67_ks.cfg \
-	  unattended_templates/win_nt5_unattended.sif \
-	  unattended_templates/win_nt6_unattended.xml,)
+	$(addprefix UnattendedInstall/,$(VBOX_UNATTENDED_TEMPLATES))
 
 ifdef VBOX_WITH_EXTPACK
  VBOX_LNX_STRIP_BIN += \

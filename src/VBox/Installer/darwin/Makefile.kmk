@@ -566,6 +566,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/additions/*) \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/components/*) \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/*) \
+		$(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UnattendedTemplates/, $(VBOX_UNATTENDED_TEMPLATES)) \
 		$(if-expr defined(VBOX_WITH_PYTHON), $(addprefix $(VBOX_PATH_DIST)/, $(VBOX_DI_VBAPP_PYTHON_FILES)),) \
                 $(if-expr defined(VBOX_WITH_JXPCOM), $(addprefix $(VBOX_PATH_DIST)/, sdk/bindings/xpcom/java/vboxjxpcom.jar),) \
 		$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxwebsrv.plist,) \
@@ -699,8 +700,15 @@ if 1
 				) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(f)$(NLTAB) )
 endif
+ifdef VBOX_UNATTENDED_TEMPLATES
+# Unattended installation template scripts.
+	$(MKDIR) -p -m 0755 -- $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/UnattendedTemplates)
+	$(foreach file, $(VBOX_UNATTENDED_TEMPLATES) \
+		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/UnattendedTemplates/$(file) \
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/UnattendedTemplates/$(file)$(NLTAB))
+endif
 ifdef VBOX_WITH_DTRACE
-	@# DTrace library, testcases and scripts.
+# DTrace library, testcases and scripts.
 	$(MKDIR) -p -m 0755 -- \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/lib/$(KBUILD_TARGET_ARCH)/ \
 		$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/testcase/$(KBUILD_TARGET_ARCH)/ \
@@ -711,7 +719,6 @@ ifdef VBOX_WITH_DTRACE
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/dtrace/$(file)$(NLTAB))
 endif
-
 	@# Signed the binaries and the application bundle.
 ifdef VBOX_SIGNING_MODE
 	$(foreach qtmod, $(VBOX_QT_MOD_NAMES) \

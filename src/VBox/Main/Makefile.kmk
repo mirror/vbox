@@ -33,6 +33,7 @@ ifdef VBOX_WITH_WEBSERVICES
 endif
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 include $(PATH_SUB_CURRENT)/cbinding/Makefile.kmk
+include $(PATH_SUB_CURRENT)/UnattendedTemplates/Makefile.kmk
 
 
 #
