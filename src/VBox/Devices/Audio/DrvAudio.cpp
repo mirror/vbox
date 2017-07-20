@@ -1394,27 +1394,36 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
             rc = AudioMixBufPeek(&pHstStream->MixBuf, csLeft, aSampleBuf,
                                  RT_MIN(csLeft, RT_ELEMENTS(aSampleBuf)), &csRead);
 
-            if (   RT_SUCCESS(rc)
-                && csRead)
+            if (RT_SUCCESS(rc))
             {
-                uint32_t csPlayed;
-
-                /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames
-                 *       rather on bytes. */
-                Assert(csRead <= RT_ELEMENTS(aSampleBuf));
-                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
-                                                         aSampleBuf, csRead, &csPlayed);
-                if (   RT_FAILURE(rc)
-                    || !csPlayed)
+                if (csRead)
                 {
+                    uint32_t csPlayed;
+
+                    /* Note: As the stream layout is RPDMAUDIOSTREAMLAYOUT_RAW, operate on audio frames
+                     *       rather on bytes. */
+                    Assert(csRead <= RT_ELEMENTS(aSampleBuf));
+                    rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
+                                                             aSampleBuf, csRead, &csPlayed);
+                    if (   RT_FAILURE(rc)
+                        || !csPlayed)
+                    {
+                        break;
+                    }
+
+                    csPlayedTotal += csPlayed;
+                    Assert(csPlayedTotal <= csToPlay);
+
+                    Assert(csLeft >= csRead);
+                    csLeft        -= csRead;
+                }
+                else
+                {
+                    if (rc == VINF_AUDIO_MORE_DATA_AVAILABLE) /* Do another peeking round if there is more data available. */
+                        continue;
+
                     break;
                 }
-
-                csPlayedTotal += csPlayed;
-                Assert(csPlayedTotal <= csToPlay);
-
-                Assert(csLeft >= csRead);
-                csLeft        -= csRead;
             }
             else if (RT_FAILURE(rc))
                 break;
