@@ -33,7 +33,11 @@ ifdef VBOX_WITH_UNATTENDED
  	fedora_ks.cfg \
  	suse_autoinstall.xml \
  	win_nt5_unattended.sif \
- 	win_nt6_unattended.xml
+ 	win_nt6_unattended.xml \
+ 	\
+ 	debian_postinstall.sh \
+ 	redhat_postinstall.sh \
+ 	win_postinstall.cmd
 
 endif # VBOX_WITH_UNATTENDED
 
