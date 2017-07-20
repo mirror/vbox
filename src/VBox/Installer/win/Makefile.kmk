@@ -757,6 +757,7 @@ ifdef VBOX_UNATTENDED_TEMPLATES
 		'  </Directory>'
 endif
 	$(APPEND) $@ '</Include>'
+	$(CAT) $@
 
 
 #
