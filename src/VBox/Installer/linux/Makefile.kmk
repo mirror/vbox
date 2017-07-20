@@ -240,7 +240,7 @@ VBOX_LNX_NO_STRIP = \
 	VBox.sh \
 	vboxweb-service.sh \
 	VBox.png \
-	$(addprefix UnattendedInstall/,$(VBOX_UNATTENDED_TEMPLATES))
+	$(addprefix UnattendedTemplates/,$(VBOX_UNATTENDED_TEMPLATES))
 
 ifdef VBOX_WITH_EXTPACK
  VBOX_LNX_STRIP_BIN += \
