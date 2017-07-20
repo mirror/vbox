@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2016 Oracle Corporation
+ * Copyright (C) 2009-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -130,13 +130,16 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                 }
                 m_pFormatComboBox = new QComboBox(m_pSettingsCnt);
                 {
-                    const QString strFormat09("ovf-0.9");
-                    const QString strFormat10("ovf-1.0");
-                    const QString strFormat20("ovf-2.0");
-                    m_pFormatComboBox->addItem(strFormat09, strFormat09);
-                    m_pFormatComboBox->addItem(strFormat10, strFormat10);
-                    m_pFormatComboBox->addItem(strFormat20, strFormat20);
-                    connect(m_pFormatComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(sltUpdateFormatComboToolTip()));
+                    const QString strFormatOVF09("ovf-0.9");
+                    const QString strFormatOVF10("ovf-1.0");
+                    const QString strFormatOVF20("ovf-2.0");
+                    const QString strFormatOPC10("opc-1.0");
+                    m_pFormatComboBox->addItem(strFormatOVF09, strFormatOVF09);
+                    m_pFormatComboBox->addItem(strFormatOVF10, strFormatOVF10);
+                    m_pFormatComboBox->addItem(strFormatOVF20, strFormatOVF20);
+                    m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
+                    connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                            this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
                 }
                 m_pFormatComboBoxLabel = new QLabel(m_pSettingsCnt);
                 {
@@ -215,6 +218,12 @@ void UIWizardExportAppPageExpert::sltStorageTypeChangeHandler()
     emit completeChanged();
 }
 
+void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
+{
+    refreshCurrentSettings();
+    updateFormatComboToolTip();
+}
+
 void UIWizardExportAppPageExpert::retranslateUi()
 {
     /* Translate objects: */
@@ -234,20 +243,21 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
-    m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
-                                    UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
     m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
-    m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("OVF 0.9"));
-    m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("OVF 1.0"));
-    m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("OVF 2.0"));
+    m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
+    m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
+    m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
+    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new experimental OVF 2.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
 
     /* Refresh current settings: */
+    refreshCurrentSettings();
     updateFormatComboToolTip();
 }
 
@@ -274,7 +284,14 @@ bool UIWizardExportAppPageExpert::isComplete() const
     if (fResult)
     {
         const QString &strFile = m_pFileSelector->path().toLower();
-        fResult = VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts);
+        bool fOVF =    field("format").toString() == "ovf-0.9"
+                    || field("format").toString() == "ovf-1.0"
+                    || field("format").toString() == "ovf-2.0";
+        bool fOPC =    field("format").toString() == "opc-1.0";
+        fResult =    (   fOVF
+                      && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
+                  || (   fOPC
+                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
         if (fResult)
         {
             StorageType st = storageType();

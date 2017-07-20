@@ -86,6 +86,7 @@ namespace UIDefs
     extern QStringList VBoxFileExts;
     extern QStringList VBoxExtPackFileExts;
     extern QStringList OVFFileExts;
+    extern QStringList OPCFileExts;
 }
 using namespace UIDefs /* if header included */;
 

@@ -70,7 +70,7 @@ private slots:
     void sltStorageTypeChangeHandler();
 
     /* Format combo change handler: */
-    void sltUpdateFormatComboToolTip() { updateFormatComboToolTip(); }
+    void sltHandleFormatComboChange();
 
 private:
 

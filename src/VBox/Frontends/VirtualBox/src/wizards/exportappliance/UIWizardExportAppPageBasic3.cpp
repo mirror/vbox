@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2016 Oracle Corporation
+ * Copyright (C) 2009-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -99,14 +99,48 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
         }
     }
 
-    /* Use the default filename: */
-    QString strName = m_strDefaultApplianceName;
-    /* If it is one VM only, we use the VM name as filename: */
+    /* Compose file-name: */
+    QString strName;
+
+    /* If it's one VM only, we use the VM name as file-name: */
     if (fieldImp("machineNames").toStringList().size() == 1)
         strName = fieldImp("machineNames").toStringList()[0];
-    strName += ".ova";
+    /* Otherwise => we use the default file-name: */
+    else
+        strName = m_strDefaultApplianceName;
+
+    /* If the format is set to OPC: */
+    if (fieldImp("format").toString() == "opc-1.0")
+    {
+        /* We use .tar.gz extension: */
+        strName += ".tar.gz";
+
+        /* Update file chooser accordingly: */
+        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Oracle Public Cloud Format Archive (%1)").arg("*.tar.gz"));
+
+        /* Disable manifest file creation: */
+        m_pManifestCheckbox->setChecked(false);
+        m_pManifestCheckbox->setEnabled(false);
+    }
+    /* Otherwise: */
+    else
+    {
+        /* We use the default (.ova) extension: */
+        strName += ".ova";
+
+        /* Update file chooser accordingly: */
+        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
+                                        UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
+
+        /* Enable manifest file creation: */
+        m_pManifestCheckbox->setEnabled(true);
+    }
+
+    /* Copose file-path for 'Filesystem' storage case: */
     if (storageType == Filesystem)
         strName = QDir::toNativeSeparators(QString("%1/%2").arg(vboxGlobal().documentsPath()).arg(strName));
+
+    /* Assign file-path: */
     m_pFileSelector->setPath(strName);
 }
 
@@ -239,13 +273,16 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             }
             m_pFormatComboBox = new QComboBox(this);
             {
-                const QString strFormat09("ovf-0.9");
-                const QString strFormat10("ovf-1.0");
-                const QString strFormat20("ovf-2.0");
-                m_pFormatComboBox->addItem(strFormat09, strFormat09);
-                m_pFormatComboBox->addItem(strFormat10, strFormat10);
-                m_pFormatComboBox->addItem(strFormat20, strFormat20);
-                connect(m_pFormatComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(sltUpdateFormatComboToolTip()));
+                const QString strFormatOVF09("ovf-0.9");
+                const QString strFormatOVF10("ovf-1.0");
+                const QString strFormatOVF20("ovf-2.0");
+                const QString strFormatOPC10("opc-1.0");
+                m_pFormatComboBox->addItem(strFormatOVF09, strFormatOVF09);
+                m_pFormatComboBox->addItem(strFormatOVF10, strFormatOVF10);
+                m_pFormatComboBox->addItem(strFormatOVF20, strFormatOVF20);
+                m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
+                connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                        this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
             }
             m_pFormatComboBoxLabel = new QLabel(this);
             {
@@ -290,6 +327,12 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     registerField("path", this, "path");
 }
 
+void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
+{
+    refreshCurrentSettings();
+    updateFormatComboToolTip();
+}
+
 void UIWizardExportAppPageBasic3::retranslateUi()
 {
     /* Translate page: */
@@ -305,16 +348,16 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
-    m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
-                                    UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
     m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
-    m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("OVF 0.9"));
-    m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("OVF 1.0"));
-    m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("OVF 2.0"));
+    m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
+    m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
+    m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
+    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Public Cloud Format 1.0"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new experimental OVF 2.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
 
@@ -338,7 +381,14 @@ bool UIWizardExportAppPageBasic3::isComplete() const
     if (fResult)
     {
         const QString &strFile = m_pFileSelector->path().toLower();
-        fResult = VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts);
+        bool fOVF =    field("format").toString() == "ovf-0.9"
+                    || field("format").toString() == "ovf-1.0"
+                    || field("format").toString() == "ovf-2.0";
+        bool fOPC =    field("format").toString() == "opc-1.0";
+        fResult =    (   fOVF
+                      && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
+                  || (   fOPC
+                      && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
         if (fResult)
         {
             StorageType storageType = field("storageType").value<StorageType>();
@@ -376,12 +426,15 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
     {
         case Filesystem:
         {
-            m_pLabel->setText(tr("<p>Please choose a filename to export the OVF/OVA to.</p>"
-                                 "<p>If you use an <i>ova</i> extension, "
-                                 "then all the files will be combined into one Open Virtualization Format Archive.</p>"
-                                 "<p>If you use an <i>ovf</i> extension, "
-                                 "several files will be written separately.</p>"
-                                 "<p>Other extensions are not allowed.</p>"));
+            m_pLabel->setText(tr("<p>Please choose a filename to export the virtual appliance to.</p>"
+                                 "<p><b>Open Virtualization Format</b> supports only "
+                                 "<b>ovf</b> or <b>ova</b> extensions. "
+                                 "<br>If you use an <b>ovf</b> extension, "
+                                 "several files will be written separately."
+                                 "<br>If you use an <b>ova</b> extension, "
+                                 "all the files will be combined into one Open Virtualization Format archive.</p>"
+                                 "<p><b>Oracle Public Cloud Format</b> supports only <b>tar.gz</b> extension."
+                                 "<br>Each virtual disk file will be written separately.</p>"));
             m_pFileSelector->setFocus();
             break;
         }
