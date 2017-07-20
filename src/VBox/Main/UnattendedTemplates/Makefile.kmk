@@ -23,7 +23,7 @@ ifdef VBOX_WITH_UNATTENDED
  # Note! When updating the source list here, VBOX_UNATTENDED_TEMPLATES in
  #       ../../Installer/Config.kmk must be updated too!
  INSTALLS += VBoxUnattendedTemplates
- VBoxUnattendedTemplates_INST = bin/UnattendedTemplates/
+ VBoxUnattendedTemplates_INST = $(INST_UNATTENDED_TEMPLATES)
  VBoxUnattendedTemplates_MODE = a+r,u+w
  VBoxUnattendedTemplates_SOURCES = \
  	debian_preseed.cfg \

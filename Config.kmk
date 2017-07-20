@@ -99,6 +99,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_DIST)additions/
  INST_ADDITIONS_ISO   = $(INST_BIN)
+ INST_UNATTENDED_TEMPLATES = $(INST_BIN)UnattendedTemplates/
 
  INST_VBOXDBG_SYMS    = $(INST_VIRTUALBOX)Contents/Resources/VBoxDbgSyms/
 
@@ -126,6 +127,7 @@ else
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
+ INST_UNATTENDED_TEMPLATES = $(INST_BIN)UnattendedTemplates/
 
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
