@@ -425,6 +425,4 @@
     <!-- Unattended installation template scripts if enabled -->
     <?include $(env.PATH_TARGET)\VBoxUnattendedTemplateComponent.wxi ?>
 
-<?endif?>
-
 </Include>
