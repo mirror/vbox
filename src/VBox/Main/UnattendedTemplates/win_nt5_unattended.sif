@@ -56,6 +56,6 @@
 
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
 [GuiRunOnce]
-    Command0="E:\VBoxWindowsAdditions.exe"
+    Command0="A:\vboxpost.cmd"
 @@VBOX_COND_END@@
 

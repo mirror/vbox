@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="1f9a37d3-c3ba-4741-a53a-822a1b2d308d"
+    uuid="663fc677-ca00-4a24-b940-8741f76a898a"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3899,16 +3899,31 @@
       </desc>
     </attribute>
 
+    <attribute name="postInstallScriptTemplatePath" type="wstring">
+      <desc>
+        The post installation (shell/batch) script template file.
+
+        The template default is based on the guest OS type and is determined by the
+        internal installer when when <link to="IUnattended::prepare"/> is invoked.
+        Most users will want the defaults.
+
+        After <link to="IUnattended::prepare"/> is called, it can be read to see
+        which file is being used.
+      </desc>
+    </attribute>
+
     <attribute name="postInstallCommand" type="wstring">
       <desc>
         Custom post installation command.
 
         Exactly what is expected as input here depends on the guest OS installer
-        and the script template (see <link to="IUnattended::scriptTemplatePath"/>).
+        and the post installation script template (see
+        <link to="IUnattended::postInstallScriptTemplatePath"/>).
         Most users will not need to set this attribute.
       </desc>
     </attribute>
 
+    <!-- See no point in having this any more.
     <method name="loadSettings">
       <desc>
         Loads attributes from a file.
@@ -3921,6 +3936,7 @@
         <desc>File path.</desc>
       </param>
     </method>
+    -->
 
     <method name="prepare">
       <desc>

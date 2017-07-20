@@ -125,18 +125,11 @@
                     <Description>Turn Off Network Selection pop-up</Description>
                     <CommandLine>reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
                 </SynchronousCommand>
-@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
-                    <Description>Install Oracle certificate</Description>
-                    <CommandLine>e:\cert\VBoxCertUtil.exe add-trusted-publisher e:\cert\vbox*.cer --root e:\cert\vbox*.cer</CommandLine>
+                    <Description>VirtualBox post guest install steps </Description>
+                    <CommandLine>cmd.exe /c A:\vboxpost.cmd</CommandLine>
                 </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>3</Order>
-                    <Description>Install VirtualBox Guest Additions</Description>
-                    <CommandLine>e:\VBoxWindowsAdditions.exe /S</CommandLine>
-                </SynchronousCommand>
-@@VBOX_COND_END@@
             </FirstLogonCommands>
 
             <TimeZone>GMT Standard Time</TimeZone>

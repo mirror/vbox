@@ -1285,8 +1285,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     const char *pszValidationKitIsoPath = NULL;
     int         fInstallTxs             = -1;
     const char *pszMachineName          = NULL;
-    Utf8Str     strAbsSettingsFile;
-    const char *pszSettingsFile         = NULL;
     bool        fSetImageIdx            = false;
     uint32_t    idxImage                = 0;
     const char *pszPostInstallCommand   = NULL;
@@ -1294,6 +1292,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     const char *pszAuxiliaryBasePath    = NULL;
     Utf8Str     strAbsScriptTemplatePath;
     const char *pszScriptTemplatePath   = NULL;
+    Utf8Str     strAbsPostInstallScriptTemplatePath;
+    const char *pszPostInstallScriptTemplatePath = NULL;
     const char *pszSessionType          = "headless";
 
     /*
@@ -1318,8 +1318,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--auxiliary-base-path",      'x', RTGETOPT_REQ_STRING },
         { "--image-index",              'm', RTGETOPT_REQ_UINT32 },
         { "--script-template",          'c', RTGETOPT_REQ_STRING },
+        { "--post-install-template",    'C', RTGETOPT_REQ_STRING },
         { "--post-install-command",     'P', RTGETOPT_REQ_STRING },
-        { "--settings-file",            's', RTGETOPT_REQ_STRING },
         { "--session-type",             'S', RTGETOPT_REQ_STRING },
     };
 
@@ -1339,13 +1339,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 pszMachineName = ValueUnion.psz;
                 if (*pszMachineName == '\0')
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID is empty!");
-                break;
-
-            case 's':   // --settings-file <key value file>
-                vrc = RTPathAbsCxx(strAbsSettingsFile, ValueUnion.psz);
-                if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
-                pszSettingsFile = strAbsSettingsFile.c_str();
                 break;
 
             case 'i':   // --iso
@@ -1416,6 +1409,13 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 pszScriptTemplatePath = strAbsScriptTemplatePath.c_str();
                 break;
 
+            case 'C':  // --post-install-script-template
+                vrc = RTPathAbsCxx(strAbsPostInstallScriptTemplatePath, ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                pszPostInstallScriptTemplatePath = strAbsPostInstallScriptTemplatePath.c_str();
+                break;
+
             case 'P':   // --post-install-command.
                 pszPostInstallCommand = ValueUnion.psz;
                 break;
@@ -1435,8 +1435,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     if (pszMachineName == NULL)
         return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID");
 
-    if (!pszSettingsFile && !pszIsoPath)
-        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso (or --settings-file) option");
+    if (!pszIsoPath)
+        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso option");
 
     /*
      * Prepare.
@@ -1486,9 +1486,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             ComPtr<IUnattended> ptrUnattended;
             CHECK_ERROR_BREAK(machine, CreateUnattendedInstaller(ptrUnattended.asOutParam()));
 
-            if (pszSettingsFile)
-                CHECK_ERROR_BREAK(ptrUnattended, LoadSettings(Bstr(pszSettingsFile).raw()));
-
             if (pszIsoPath)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(IsoPath)(Bstr(pszIsoPath).raw()));
             if (pszUser)
@@ -1511,6 +1508,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ImageIndex)(idxImage));
             if (pszScriptTemplatePath)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ScriptTemplatePath)(Bstr(pszScriptTemplatePath).raw()));
+            if (pszPostInstallScriptTemplatePath)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PostInstallScriptTemplatePath)(Bstr(pszPostInstallScriptTemplatePath).raw()));
             if (pszPostInstallCommand)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PostInstallCommand)(Bstr(pszPostInstallCommand).raw()));
             if (pszAuxiliaryBasePath)
@@ -1528,17 +1527,17 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                     a_Type Value; \
                     HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(&Value); \
                     if (SUCCEEDED(hrc2)) \
-                        RTPrintf("  %22s = " a_szFmt "\n", a_szText, Value); \
+                        RTPrintf("  %32s = " a_szFmt "\n", a_szText, Value); \
                     else \
-                        RTPrintf("  %22s = failed: %Rhrc\n", a_szText, hrc2); \
+                        RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
                 } while (0)
 #define SHOW_STR_ATTR(a_Attr, a_szText) do { \
                     Bstr bstrString; \
                     HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(bstrString.asOutParam()); \
                     if (SUCCEEDED(hrc2)) \
-                        RTPrintf("  %22s = %ls\n", a_szText, bstrString.raw()); \
+                        RTPrintf("  %32s = %ls\n", a_szText, bstrString.raw()); \
                     else \
-                        RTPrintf("  %22s = failed: %Rhrc\n", a_szText, hrc2); \
+                        RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
                 } while (0)
 
             SHOW_STR_ATTR(IsoPath,                  "isoPath");
@@ -1553,6 +1552,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             SHOW_STR_ATTR(AuxiliaryBasePath,        "auxiliaryBasePath");
             SHOW_ATTR(    ImageIndex,               "imageIndex",               ULONG, "%u");
             SHOW_STR_ATTR(ScriptTemplatePath,       "scriptTemplatePath");
+            SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
             SHOW_STR_ATTR(PostInstallCommand,       "postInstallCommand");
 
 #undef SHOW_STR_ATTR
