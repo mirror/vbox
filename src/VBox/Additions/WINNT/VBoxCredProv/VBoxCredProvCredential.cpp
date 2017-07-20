@@ -426,7 +426,7 @@ HRESULT VBoxCredProvCredential::setField(DWORD dwFieldID, const PRTUTF16 pcwszSt
     if (pwszField)
     {
         /* First, wipe the existing value thoroughly. */
-        RTMemWipeThoroughly(pwszField, RTUtf16Len(pwszField) * sizeof(RTUTF16), 3 /* cPasses */);
+        RTMemWipeThoroughly(pwszField, (RTUtf16Len(pwszField) + 1) * sizeof(RTUTF16), 3 /* Passes */);
 
         /* Second, free the string. */
         RTUtf16Free(pwszField);
@@ -525,7 +525,7 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
             VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Translated account name %ls -> %ls\n",
                                 pwszUser, pwszAcount);
 
-            RTMemWipeThoroughly(pwszUser, RTUtf16Len(pwszUser) + sizeof(RTUTF16), 3 /* Passes */);
+            RTMemWipeThoroughly(pwszUser, (RTUtf16Len(pwszUser) + 1) * sizeof(RTUTF16), 3 /* Passes */);
             RTUtf16Free(pwszUser);
 
             pwszUser = pwszAcount;
@@ -543,7 +543,7 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
                 /* Update user name. */
                 if (pwszUser)
                 {
-                    RTMemWipeThoroughly(pwszUser, RTUtf16Len(pwszUser) + sizeof(RTUTF16), 3 /* Passes */);
+                    RTMemWipeThoroughly(pwszUser, (RTUtf16Len(pwszUser) + 1) * sizeof(RTUTF16), 3 /* Passes */);
                     RTUtf16Free(pwszUser);
                 }
                 pwszUser = pwszAcount;
@@ -551,7 +551,7 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
                 /* Update domain. */
                 if (pwszDomain)
                 {
-                    RTMemWipeThoroughly(pwszDomain, RTUtf16Len(pwszDomain) + sizeof(RTUTF16), 3 /* Passes */);
+                    RTMemWipeThoroughly(pwszDomain, (RTUtf16Len(pwszDomain) + 1) * sizeof(RTUTF16), 3 /* Passes */);
                     RTUtf16Free(pwszDomain);
                 }
                 pwszDomain = pwszDomain;
