@@ -525,6 +525,7 @@ BLDDIRS += $(foreach d,\
 	  archive/ExtensionPacks/VNC \
 	  archive/ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),) \
 	archive/additions \
+       $(if-expr defined(VBOX_UNATTENDED_TEMPLATES),archive/Unattended,) \
 	install \
        $(if $(VBOX_WITH_DTRACE),\
 	  archive/dtrace \
