@@ -751,13 +751,12 @@ ifdef VBOX_UNATTENDED_TEMPLATES
 	$(APPEND) -n $@ \
 		'  <Directory Id="dir_VBoxUnattendedTemplates" Name="UnattendedTemplates">' \
 		'    <Component Id="cp_UnattendedTemplates" Guid="0571550d-aaa5-4723-c17b-5ddcc29f5686" Win64="$$(var.Property_Win64)">' \
-		$@ $(foreach file,$(VBOX_UNATTENDED_TEMPLATES), \
+		$(foreach file,$(VBOX_UNATTENDED_TEMPLATES), \
 		'      <File Id="$(file)" Name="$(file)" Source="$$(env.PATH_OUT)\bin\UnattendedTemplates\$(file)" />') \
 		'    </Component>' \
 		'  </Directory>'
 endif
 	$(APPEND) $@ '</Include>'
-	$(CAT) $@
 
 
 #
