@@ -2,7 +2,9 @@
 ## @file
 # Post installation script template for debian-like distros.
 #
-# This script expects to be running w/o chroot.
+# Note! This script expects to be running w/o chroot.
+# Note! When using ubiquity, this is run after installation logs have
+#       been copied to /var/log/installation.
 #
 
 #
@@ -17,11 +19,57 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-#MY_DEBUG="yes"
-MY_DEBUG=""
+
+#
+# Globals.
+#
 MY_TARGET="/target"
 MY_LOGFILE="${MY_TARGET}/var/log/vboxpostinstall.log"
 MY_EXITCODE=0
+MY_DEBUG="" # "yes"
+
+
+#
+# Do we need to exec using target bash?  If so, we must do that early
+# or ash will bark 'bad substitution' and fail.
+#
+if [ "$1" = "--need-target-bash" ]; then
+    # Try figure out which directories we might need in the library path.
+    if [ -z "${LD_LIBRARY_PATH}" ]; then
+        LD_LIBRARY_PATH="${MY_TARGET}/lib"
+    fi
+    for x in \
+        ${MY_TARGET}/lib \
+        ${MY_TARGET}/usr/lib \
+        ${MY_TARGET}/lib/*linux-gnu/ \
+        ${MY_TARGET}/lib32/ \
+        ${MY_TARGET}/lib64/ \
+        ${MY_TARGET}/usr/lib/*linux-gnu/ \
+        ${MY_TARGET}/usr/lib32/ \
+        ${MY_TARGET}/usr/lib64/ \
+        ;
+    do
+        if [ -e "$x" ]; then LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${x}"; fi;
+    done
+    export LD_LIBRARY_PATH
+
+    # Append target bin directories to the PATH as busybox may not have tee.
+    PATH="${PATH}:${MY_TARGET}/bin:${MY_TARGET}/usr/bin:${MY_TARGET}/sbin:${MY_TARGET}/usr/sbin"
+    export PATH
+
+    # Drop the --need-target-bash argument and re-exec.
+    shift
+    echo "******************************************************************************" >> "${MY_LOGFILE}"
+    echo "** Relaunching using ${MY_TARGET}/bin/bash $0 $*" >> "${MY_LOGFILE}"
+    echo "**   LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> "${MY_LOGFILE}"
+    echo "**              PATH=${PATH}" >> "${MY_LOGFILE}"
+    exec "${MY_TARGET}/bin/bash" "$0" "$@"
+fi
+
+
+#
+# Commands.
+#
 
 # Logs execution of a command.
 log_command()
@@ -41,6 +89,7 @@ log_command()
     fi
 }
 
+# Logs execution of a command inside the target.
 log_command_in_target()
 {
     #
@@ -57,12 +106,13 @@ log_command_in_target()
 
 
 #
-# Header.
+# Log header.
 #
 echo "******************************************************************************" >> "${MY_LOGFILE}"
 echo "** VirtualBox Unattended Guest Installation - Late installation actions" >> "${MY_LOGFILE}"
 echo "** Date:    `date -R`" >> "${MY_LOGFILE}"
 echo "** Started: $0 $*" >> "${MY_LOGFILE}"
+
 
 #
 # Setup the target jail ourselves since in-target steals all the output.
@@ -79,9 +129,17 @@ else
     MY_HAVE_CHROOT_SETUP=""
 fi
 
+
 #
 # We want the ISO available inside the target jail.
 #
+if [ -d "${MY_TARGET}/cdrom" ]; then
+    MY_RMDIR_TARGET_CDROM=
+else
+    MY_RMDIR_TARGET_CDROM="yes"
+    log_command mkdir -p ${MY_TARGET}/cdrom
+fi
+
 if [ -f "${MY_TARGET}/cdrom/vboxpostinstall.sh" ]; then
     MY_UNMOUNT_TARGET_CDROM=
     echo "** binding cdrom into jail: already done" | tee -a "${MY_LOGFILE}"
@@ -98,30 +156,38 @@ else
     fi
 fi
 
+
 #
 # Debug
 #
 if [ "${MY_DEBUG}" = "yes" ]; then
     log_command id
+    log_command ps
+    log_command ps auxwwwf
+    log_command env
     log_command df
     log_command mount
     log_command_in_target df
     log_command_in_target mount
-    log_command find /
+    #log_command find /
     MY_EXITCODE=0
 fi
+
 
 #
 # Packages needed for GAs.
 #
+echo "--------------------------------------------------" >> "${MY_LOGFILE}"
 echo '** Installing packages for building kernel modules...' | tee -a "${MY_LOGFILE}"
 log_command_in_target apt-get -y install build-essential
 log_command_in_target apt-get -y install linux-headers-$(uname -r)
+
 
 #
 # GAs
 #
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
+echo "--------------------------------------------------" >> "${MY_LOGFILE}"
 echo '** Installing VirtualBox Guest Additions...' | tee -a "${MY_LOGFILE}"
 MY_IGNORE_EXITCODE=2  # returned if modules already loaded and reboot required.
 log_command_in_target /bin/bash /cdrom/vboxadditions/VBoxLinuxAdditions.run --nox11
@@ -129,10 +195,12 @@ MY_IGNORE_EXITCODE=
 log_command_in_target usermod -a -G vboxsf "@@VBOX_INSERT_USER_LOGIN@@"
 @@VBOX_COND_END@@
 
+
 #
 # Test Execution Service.
 #
 @@VBOX_COND_IS_INSTALLING_TEST_EXEC_SERVICE@@
+echo "--------------------------------------------------" >> "${MY_LOGFILE}"
 echo '** Installing Test Execution Service...' | tee -a "${MY_LOGFILE}"
 log_command_in_target test "/cdrom/vboxvalidationkit/linux/@@VBOX_INSERT_OS_ARCH@@/TestExecService"
 log_command mkdir -p "${MY_TARGET}/root/validationkit" "${MY_TARGET}/target/cdrom"
@@ -166,7 +234,7 @@ ExecStop=/root/validationkit/linux/vboxtxs stop
 WantedBy=multi-user.target
 EOF
     fi
-    log_command chmod 755 "${MY_UNIT_PATH}/vboxtxs.service"
+    log_command chmod 644 "${MY_UNIT_PATH}/vboxtxs.service"
     log_command_in_target systemctl -q enable vboxtxs
 
 # Not systemd.  Add support for upstart later...
@@ -176,6 +244,7 @@ fi
 
 @@VBOX_COND_END@@
 
+
 #
 # Run user command.
 #
@@ -184,6 +253,7 @@ echo '** Running custom user command ...'      | tee -a "${MY_LOGFILE}"
 log_command @@VBOX_INSERT_POST_INSTALL_COMMAND@@
 @@VBOX_COND_END@@
 
+
 #
 # Unmount the cdrom if we bound it and clean up the chroot if we set it up.
 #
@@ -191,6 +261,11 @@ if [ -n "${MY_UNMOUNT_TARGET_CDROM}" ]; then
     echo "** unbinding cdrom from jail..." | tee -a "${MY_LOGFILE}"
     log_command umount "${MY_TARGET}/cdrom"
 fi
+
+if [ -n "${MY_RMDIR_TARGET_CDROM}" ]; then
+    log_command rmdir "${MY_TARGET}/cdrom"
+fi
+
 if [ -n "${MY_HAVE_CHROOT_SETUP}" ]; then
     if chroot_cleanup; then
         echo "** chroot_cleanup: done"      | tee -a "${MY_LOGFILE}"
@@ -200,7 +275,7 @@ if [ -n "${MY_HAVE_CHROOT_SETUP}" ]; then
 fi
 
 #
-# Footer.
+# Log footer.
 #
 echo "******************************************************************************" >> "${MY_LOGFILE}"
 echo "** Date:            `date -R`" >> "${MY_LOGFILE}"
