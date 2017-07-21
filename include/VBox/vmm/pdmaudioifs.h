@@ -284,7 +284,10 @@ typedef enum PDMAUDIOSTREAMLAYOUT
     /** Complex layout, which does not fit into the
      *  interleaved / non-interleaved layouts. */
     PDMAUDIOSTREAMLAYOUT_COMPLEX,
-    /** Raw (pass through) data, with no data layout processing done. */
+    /** Raw (pass through) data, with no data layout processing done.
+     *
+     *  This means that this stream will operate on PDMAUDIOSAMPLE data
+     *  directly. Don't use this if you don't have to. */
     PDMAUDIOSTREAMLAYOUT_RAW,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMLAYOUT_32BIT_HACK = 0x7fffffff
@@ -1176,18 +1179,20 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnStreamControl, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd));
 
     /**
-     * Returns the number of bytes which are readable from the audio (input) stream.
+     * Returns the amount which is readable from the audio (input) stream.
      *
-     * @returns Number of readable bytes.
+     * @returns For non-raw layout streams: Number of readable bytes.
+     *          for raw layout streams    : Number of readable audio samples.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetReadable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
-     * Returns the number of bytes which are writable to the audio (output) stream.
+     * Returns the amount which is writable to the audio (output) stream.
      *
-     * @returns Number of writable bytes.
+     * @returns For non-raw layout streams: Number of writable bytes.
+     *          for raw layout streams    : Number of writable audio samples.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
@@ -1226,10 +1231,12 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      * @param   pvBuf               Pointer to audio data buffer to play.
-     * @param   cbBuf               Size (in bytes) of audio data buffer.
-     * @param   pcbWritten          Returns number of bytes written.  Optional.
+     * @param   cxBuf               For non-raw layout streams: Size (in bytes) of audio data buffer,
+     *                              for raw layout streams    : Size (in audio samples) of audio data buffer.
+     * @param   pcxWritten          For non-raw layout streams: Returns number of bytes written.    Optional.
+     *                              for raw layout streams    : Returns number of samples written.  Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
+    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten));
 
     /**
      * Signals the backend that the host finished playing for this iteration. Optional.
@@ -1254,10 +1261,12 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      * @param   pvBuf               Buffer where to store read audio data.
-     * @param   cbBuf               Size (in bytes) of buffer.
-     * @param   pcbRead             Returns number of bytes read.  Optional.
+     * @param   cxBuf               For non-raw layout streams: Size (in bytes) of audio data buffer,
+     *                              for raw layout streams    : Size (in audio samples) of audio data buffer.
+     * @param   pcxRead             For non-raw layout streams: Returns number of bytes read.    Optional.
+     *                              for raw layout streams    : Returns number of samples read.  Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead));
 
     /**
      * Signals the backend that the host finished capturing for this iteration. Optional.
