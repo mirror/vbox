@@ -1212,6 +1212,14 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
+     * Signals the backend that the host wants to begin playing for this iteration. Optional.
+     *
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pStream             Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamPlayBegin, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
      * Plays (writes to) an audio (output) stream.
      *
      * @returns VBox status code.
@@ -1222,6 +1230,22 @@ typedef struct PDMIHOSTAUDIO
      * @param   pcbWritten          Returns number of bytes written.  Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
+
+    /**
+     * Signals the backend that the host finished playing for this iteration. Optional.
+     *
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pStream             Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamPlayEnd, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
+     * Signals the backend that the host wants to begin capturing for this iteration. Optional.
+     *
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pStream             Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamCaptureBegin, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Captures (reads from) an audio (input) stream.
@@ -1235,10 +1259,18 @@ typedef struct PDMIHOSTAUDIO
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
 
+    /**
+     * Signals the backend that the host finished capturing for this iteration. Optional.
+     *
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pStream             Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnStreamCaptureEnd, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "12DF859E-416A-4332-9980-A049AC70D187"
+#define PDMIHOSTAUDIO_IID                           "378A5C7F-A45A-4B8B-C1DA-CB49E84894AA"
 
 /** @} */
 

@@ -1502,6 +1502,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
         uint32_t csToPlay = AudioMixBufLive(&pHstStream->MixBuf);
 
+        if (pThis->pHostDrvAudio->pfnStreamPlayBegin)
+            pThis->pHostDrvAudio->pfnStreamPlayBegin(pThis->pHostDrvAudio, pHstStream->pvBackend);
+
         if (RT_LIKELY(pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
         {
             rc = drvAudioStreamPlayNonInterleaved(pThis, pHstStream, csToPlay, &csPlayedTotal);
@@ -1512,6 +1515,9 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
         }
         else
             AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+        if (pThis->pHostDrvAudio->pfnStreamPlayEnd)
+            pThis->pHostDrvAudio->pfnStreamPlayEnd(pThis->pHostDrvAudio, pHstStream->pvBackend);
 
         uint32_t csLive = 0;
 
@@ -1788,6 +1794,9 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
          * Do the actual capturing.
          */
 
+        if (pThis->pHostDrvAudio->pfnStreamCaptureBegin)
+            pThis->pHostDrvAudio->pfnStreamCaptureBegin(pThis->pHostDrvAudio, pHstStream->pvBackend);
+
         if (RT_LIKELY(pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
         {
             rc = drvAudioStreamCaptureNonInterleaved(pThis, pHstStream, &csCaptured);
@@ -1798,6 +1807,9 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
         }
         else
             AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+        if (pThis->pHostDrvAudio->pfnStreamCaptureEnd)
+            pThis->pHostDrvAudio->pfnStreamCaptureEnd(pThis->pHostDrvAudio, pHstStream->pvBackend);
 
 #ifdef LOG_ENABLED
         pszBackendSts = dbgAudioStreamStatusToStr(stsBackend);
