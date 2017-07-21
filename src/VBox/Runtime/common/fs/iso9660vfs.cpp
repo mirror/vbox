@@ -434,7 +434,8 @@ static int rtFsIso9660Core_InitFromDirRec(PRTFSISO9660CORE pCore, PCISO9660DIRRE
     pCore->pVol                 = pVol;
     pCore->offDirRec            = offDirRec;
     pCore->fAttrib              = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY
-                                ? RTFS_DOS_DIRECTORY | RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
+                                ? 0755 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY
+                                : 0644 | RTFS_TYPE_FILE;
     if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_HIDDEN)
         pCore->fAttrib |= RTFS_DOS_HIDDEN;
     pCore->cbObject             = ISO9660_GET_ENDIAN(&pDirRec->cbData);
@@ -1168,7 +1169,9 @@ static int rtFsIso9660Dir_FindEntry(PRTFSISO9660DIRSHRD pThis, const char *pszEn
 
             *poffDirRec = pThis->Core.FirstExtent.offDisk + offEntryInDir;
             *ppDirRec   = pDirRec;
-            *pfMode     = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
+            *pfMode     = pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY
+                        ? 0755 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY
+                        : 0644 | RTFS_TYPE_FILE;
 
             /*
              * Deal with the unlikely scenario of multi extent records.
