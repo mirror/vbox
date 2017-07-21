@@ -216,7 +216,8 @@ void QIMessageBox::prepare()
         AssertPtrReturnVoid(m_pDetailsContainer);
         {
             /* Configure container: */
-            connect(m_pDetailsContainer, SIGNAL(sigSizeHintChange()), this, SLOT(sltUpdateSize()));
+            connect(m_pDetailsContainer, &QIArrowSplitter::sigSizeHintChange, 
+                    this, &QIMessageBox::sltUpdateSize);
             /* Add details-container into main-layout: */
             pMainLayout->addWidget(m_pDetailsContainer);
             /* Update details-container finally: */
@@ -241,13 +242,13 @@ void QIMessageBox::prepare()
             m_pButtonBox->setCenterButtons(true);
             m_pButton1 = createButton(m_iButton1);
             if (m_pButton1)
-                connect(m_pButton1, SIGNAL(clicked()), SLOT(sltDone1()));
+                connect(m_pButton1, &QPushButton::clicked, this, &QIMessageBox::sltDone1);
             m_pButton2 = createButton(m_iButton2);
             if (m_pButton2)
-                connect(m_pButton2, SIGNAL(clicked()), SLOT(sltDone2()));
+                connect(m_pButton2, &QPushButton::clicked, this, &QIMessageBox::sltDone2);
             m_pButton3 = createButton(m_iButton3);
             if (m_pButton3)
-                connect(m_pButton3, SIGNAL(clicked()), SLOT(sltDone3()));
+                connect(m_pButton3, &QPushButton::clicked, this, &QIMessageBox::sltDone3);
             /* Make sure Escape button always set: */
             Assert(m_iButtonEsc);
             /* If this is a critical message add a "Copy to clipboard" button: */
@@ -255,7 +256,7 @@ void QIMessageBox::prepare()
             {
                 QPushButton *pCopyButton = createButton(AlertButton_Copy);
                 pCopyButton->setToolTip(tr("Copy all errors to the clipboard"));
-                connect(pCopyButton, SIGNAL(clicked()), SLOT(sltCopy()));
+                connect(pCopyButton, &QPushButton::clicked, this, &QIMessageBox::sltCopy);
             }
             /* Add button-box into main-layout: */
             pMainLayout->addWidget(m_pButtonBox);

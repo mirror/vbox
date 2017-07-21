@@ -272,10 +272,10 @@ void QIAdvancedSlider::init(Qt::Orientation fOrientation /* = Qt::Horizontal */)
     m_pSlider = new CPrivateSlider(fOrientation, this);
     pMainLayout->addWidget(m_pSlider);
 
-    connect(m_pSlider, SIGNAL(sliderMoved(int)), this, SLOT(sltSliderMoved(int)));
-    connect(m_pSlider, SIGNAL(valueChanged(int)), this, SIGNAL(valueChanged(int)));
-    connect(m_pSlider, SIGNAL(sliderPressed()), this, SIGNAL(sliderPressed()));
-    connect(m_pSlider, SIGNAL(sliderReleased()), this, SIGNAL(sliderReleased()));
+    connect(m_pSlider, &CPrivateSlider::sliderMoved,    this, &QIAdvancedSlider::sltSliderMoved);
+    connect(m_pSlider, &CPrivateSlider::valueChanged,   this, &QIAdvancedSlider::valueChanged);
+    connect(m_pSlider, &CPrivateSlider::sliderPressed,  this, &QIAdvancedSlider::sliderPressed);
+    connect(m_pSlider, &CPrivateSlider::sliderReleased, this, &QIAdvancedSlider::sliderReleased);
 }
 
 int QIAdvancedSlider::snapValue(int val)

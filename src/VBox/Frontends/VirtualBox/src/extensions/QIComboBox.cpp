@@ -311,14 +311,20 @@ void QIComboBox::prepare()
         AssertPtrReturnVoid(m_pComboBox);
         {
             /* Configure combo-box: */
-            connect(m_pComboBox, SIGNAL(activated(int)), this, SIGNAL(activated(int)));
-            connect(m_pComboBox, SIGNAL(activated(const QString &)), this, SIGNAL(activated(const QString &)));
-            connect(m_pComboBox, SIGNAL(currentIndexChanged(int)), this, SIGNAL(currentIndexChanged(int)));
-            connect(m_pComboBox, SIGNAL(currentIndexChanged(const QString &)), this, SIGNAL(currentIndexChanged(const QString &)));
-            connect(m_pComboBox, SIGNAL(currentTextChanged(const QString &)), this, SIGNAL(currentTextChanged(const QString &)));
-            connect(m_pComboBox, SIGNAL(editTextChanged(const QString &)), this, SIGNAL(editTextChanged(const QString &)));
-            connect(m_pComboBox, SIGNAL(highlighted(int)), this, SIGNAL(highlighted(int)));
-            connect(m_pComboBox, SIGNAL(highlighted(const QString &)), this, SIGNAL(highlighted(const QString &)));
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+                    this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated));
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated),
+                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::activated));
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                    this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged));
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
+                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::currentIndexChanged));
+            connect(m_pComboBox, &QComboBox::currentTextChanged, this, &QIComboBox::currentTextChanged);
+            connect(m_pComboBox, &QComboBox::editTextChanged, this, &QIComboBox::editTextChanged);
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::highlighted),
+                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::highlighted));
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::highlighted),
+                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::highlighted));
             /* Add combo-box into layout: */
             pLayout->addWidget(m_pComboBox);
         }

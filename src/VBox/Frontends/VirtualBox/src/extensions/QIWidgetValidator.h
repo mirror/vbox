@@ -53,7 +53,7 @@ public:
     /** Returns last validation state. */
     QValidator::State state() const { return m_state; }
 
-private slots:
+public slots:
 
     /** Performs validation: */
     void sltValidate(QString strInput = QString());

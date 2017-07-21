@@ -254,7 +254,7 @@ void QILabel::init()
     addAction (mCopyAction);
     mCopyAction->setShortcut (QKeySequence (QKeySequence::Copy));
     mCopyAction->setShortcutContext (Qt::WidgetShortcut);
-    connect (mCopyAction, SIGNAL (triggered()), this, SLOT (copy()));
+    connect(mCopyAction, &QAction::triggered, this, &QILabel::copy);
 }
 
 void QILabel::updateSizeHint() const

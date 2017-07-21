@@ -254,8 +254,9 @@ void QIArrowSplitter::prepare()
                 m_pSwitchButton->setIconSize(QSize(iIconMetric, iIconMetric));
                 m_pSwitchButton->setIcons(UIIconPool::iconSet(":/arrow_right_10px.png"),
                                           UIIconPool::iconSet(":/arrow_down_10px.png"));
-                connect(m_pSwitchButton, SIGNAL(sigClicked()), this, SLOT(sltUpdateNavigationButtonsVisibility()));
-                connect(m_pSwitchButton, SIGNAL(sigClicked()), this, SLOT(sltUpdateDetailsBrowserVisibility()));
+                connect(m_pSwitchButton, &QIArrowButtonSwitch::sigClicked, this, &QIArrowSplitter::sltUpdateNavigationButtonsVisibility);
+                connect(m_pSwitchButton, &QIArrowButtonSwitch::sigClicked, this, &QIArrowSplitter::sltUpdateDetailsBrowserVisibility);
+
                 /* Add switch-button into button-layout: */
                 pButtonLayout->addWidget(m_pSwitchButton);
             }
@@ -268,7 +269,8 @@ void QIArrowSplitter::prepare()
                 /* Configure back-button: */
                 m_pBackButton->setIconSize(QSize(iIconMetric, iIconMetric));
                 m_pBackButton->setIcon(UIIconPool::iconSet(":/arrow_left_10px.png"));
-                connect(m_pBackButton, SIGNAL(sigClicked()), this, SLOT(sltSwitchDetailsPageBack()));
+                connect(m_pBackButton, &QIArrowButtonPress::sigClicked, this, &QIArrowSplitter::sltSwitchDetailsPageBack);
+
                 /* Add back-button into button-layout: */
                 pButtonLayout->addWidget(m_pBackButton);
             }
@@ -279,7 +281,8 @@ void QIArrowSplitter::prepare()
                 /* Configure next-button: */
                 m_pNextButton->setIconSize(QSize(iIconMetric, iIconMetric));
                 m_pNextButton->setIcon(UIIconPool::iconSet(":/arrow_right_10px.png"));
-                connect(m_pNextButton, SIGNAL(sigClicked()), this, SLOT(sltSwitchDetailsPageNext()));
+                connect(m_pNextButton, &QIArrowButtonPress::sigClicked, this, &QIArrowSplitter::sltSwitchDetailsPageNext);
+
                 /* Add next-button into button-layout: */
                 pButtonLayout->addWidget(m_pNextButton);
             }

@@ -432,7 +432,7 @@ void QITableView::makeSureEditorDataCommitted()
 void QITableView::sltEditorCreated(QWidget *pEditor, const QModelIndex &index)
 {
     /* Connect created editor to the table and store it: */
-    connect(pEditor, SIGNAL(destroyed(QObject *)), this, SLOT(sltEditorDestroyed(QObject *)));
+    connect(pEditor, &QWidget::destroyed, this, &QITableView::sltEditorDestroyed);
     m_editors[index] = pEditor;
 }
 
@@ -470,8 +470,8 @@ void QITableView::prepare()
         /* Assign newly created delegate to the table: */
         setItemDelegate(pStyledItemDelegate);
         /* Connect newly created delegate to the table: */
-        connect(pStyledItemDelegate, SIGNAL(sigEditorCreated(QWidget *, const QModelIndex &)),
-                this, SLOT(sltEditorCreated(QWidget *, const QModelIndex &)));
+        connect(pStyledItemDelegate, &QIStyledItemDelegate::sigEditorCreated,
+                this, &QITableView::sltEditorCreated);
     }
 }
 

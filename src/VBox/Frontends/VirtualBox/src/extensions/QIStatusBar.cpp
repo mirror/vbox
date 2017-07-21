@@ -61,8 +61,8 @@ QIStatusBar::QIStatusBar(QWidget *pParent)
     QAccessible::installFactory(QIAccessibilityInterfaceForQIStatusBar::pFactory);
 
     /* Make sure we remember the last one status message: */
-    connect(this, SIGNAL(messageChanged(const QString &)),
-            this, SLOT(sltRememberLastMessage(const QString &)));
+    connect(this, &QIStatusBar::messageChanged,
+            this, &QIStatusBar::sltRememberLastMessage);
 
     /* Remove that ugly border around the status-bar items on every platform: */
     setStyleSheet("QStatusBar::item { border: 0px none black; }");

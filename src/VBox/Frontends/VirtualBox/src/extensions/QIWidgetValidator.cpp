@@ -87,8 +87,8 @@ void QObjectValidatorGroup::addObjectValidator(QObjectValidator *pObjectValidato
     m_group.insert(pObjectValidator, toResult(pObjectValidator->state()));
 
     /* Attach object-validator to group: */
-    connect(pObjectValidator, SIGNAL(sigValidityChange(QValidator::State)),
-            this, SLOT(sltValidate(QValidator::State)));
+    connect(pObjectValidator, &QObjectValidator::sigValidityChange,
+            this, &QObjectValidatorGroup::sltValidate);
 }
 
 void QObjectValidatorGroup::sltValidate(QValidator::State state)
