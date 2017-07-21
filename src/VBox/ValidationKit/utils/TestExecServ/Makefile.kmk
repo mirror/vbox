@@ -45,6 +45,7 @@ TestExecServiceFiles_SOURCES                := \
 
 TestExecServiceFiles_EXEC_SOURCES.linux   := \
 	$(PATH_SUB_CURRENT)/linux/vboxtxs.sh=>linux/vboxtxs \
+	$(PATH_SUB_CURRENT)/linux/service.sh=>linux/vboxtxs.service \
 	$(PATH_SUB_CURRENT)/linux/vboxtxs-nat.sh=>linux/vboxtxs-nat
 
 TestExecServiceFiles_SOURCES.solaris        := \
