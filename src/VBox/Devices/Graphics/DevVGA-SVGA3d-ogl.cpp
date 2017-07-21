@@ -847,6 +847,20 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      *
      */
     /** @todo distinguish between vertex and pixel shaders??? */
+    const char *pszShadingLanguageVersion = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    float v = pszShadingLanguageVersion ? atof(pszShadingLanguageVersion) : 0.0f;
+    if (v >= 3.30f)
+    {
+        pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_40;
+        pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_40;
+    }
+    else
+    if (v >= 1.20f)
+    {
+        pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_20;
+        pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_20;
+    }
+    else
     if (   vmsvga3dCheckGLExtension(pState, 0.0f, " GL_NV_gpu_program4 ")
         || strstr(pState->pszOtherExtensions, " GL_NV_gpu_program4 "))
     {
