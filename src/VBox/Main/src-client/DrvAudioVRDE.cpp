@@ -219,13 +219,13 @@ static DECLCALLBACK(int) drvAudioVRDEInit(PPDMIHOSTAUDIO pInterface)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvAudioVRDEStreamCapture(PPDMIHOSTAUDIO pInterface,
-                                                   PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+                                                   PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
-    /* pcbRead is optional. */
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    /* pcxRead is optional. */
 
     PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
 
@@ -235,7 +235,7 @@ static DECLCALLBACK(int) drvAudioVRDEStreamCapture(PPDMIHOSTAUDIO pInterface,
     {
         void *pvData;
 
-        RTCircBufAcquireReadBlock(pStreamVRDE->In.pCircBuf, cbBuf, &pvData, &cbData);
+        RTCircBufAcquireReadBlock(pStreamVRDE->In.pCircBuf, cxBuf, &pvData, &cbData);
 
         if (cbData)
             memcpy(pvBuf, pvData, cbData);
@@ -243,8 +243,8 @@ static DECLCALLBACK(int) drvAudioVRDEStreamCapture(PPDMIHOSTAUDIO pInterface,
         RTCircBufReleaseReadBlock(pStreamVRDE->In.pCircBuf, cbData);
     }
 
-    if (pcbRead)
-        *pcbRead = (uint32_t)cbData;
+    if (pcxRead)
+        *pcxRead = (uint32_t)cbData;
 
     return VINF_SUCCESS;
 }
@@ -254,13 +254,13 @@ static DECLCALLBACK(int) drvAudioVRDEStreamCapture(PPDMIHOSTAUDIO pInterface,
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+                                                const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    /* pcxWritten is optional. */
 
     PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
@@ -270,7 +270,7 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
 
     /* Note: We get the number of *samples* in cbBuf
      *       (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout) on stream creation. */
-    uint32_t csLive           = cbBuf;
+    uint32_t csLive           = cxBuf;
 
     PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
 
@@ -327,8 +327,8 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
 
         /* Return samples instead of bytes here
          * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-        if (pcbWritten)
-            *pcbWritten = csWritten;
+        if (pcxWritten)
+            *pcxWritten = csWritten;
     }
 
     return rc;

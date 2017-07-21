@@ -134,19 +134,19 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostNullAudioGetStatus(PPDMIHOSTAUDIO
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+                                                    const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
 
     RT_NOREF(pInterface, pStream, pvBuf);
 
     /* Note: No copying of samples needed here, as this a NULL backend. */
 
-    if (pcbWritten)
-        *pcbWritten = cbBuf; /* Return all bytes as written. */
+    if (pcxWritten)
+        *pcxWritten = cxBuf; /* Return all bytes as written. */
 
     return VINF_SUCCESS;
 }
@@ -156,15 +156,15 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostNullAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+                                                       void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
 {
     RT_NOREF(pInterface, pStream);
 
     /* Return silence. */
-    RT_BZERO(pvBuf, cbBuf);
+    RT_BZERO(pvBuf, cxBuf);
 
-    if (pcbRead)
-        *pcbRead = cbBuf;
+    if (pcxRead)
+        *pcxRead = cxBuf;
 
     return VINF_SUCCESS;
 }

@@ -1007,12 +1007,12 @@ static DECLCALLBACK(int) drvHostALSAAudioInit(PPDMIHOSTAUDIO pInterface)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+                                                       void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
@@ -1034,7 +1034,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
         switch (state)
         {
             case SND_PCM_STATE_PREPARED:
-                cAvail = PDMAUDIOSTREAMCFG_B2S(pCfg, cbBuf);
+                cAvail = PDMAUDIOSTREAMCFG_B2S(pCfg, cxBuf);
                 break;
 
             case SND_PCM_STATE_SUSPENDED:
@@ -1054,8 +1054,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
         if (!cAvail)
         {
-            if (pcbRead)
-                *pcbRead = 0;
+            if (pcxRead)
+                *pcxRead = 0;
             return VINF_SUCCESS;
         }
     }
@@ -1064,7 +1064,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
      * Check how much we can read from the capture device without overflowing
      * the mixer buffer.
      */
-    size_t cbToRead = RT_MIN((size_t)PDMAUDIOSTREAMCFG_S2B(pCfg, cAvail), cbBuf);
+    size_t cbToRead = RT_MIN((size_t)PDMAUDIOSTREAMCFG_S2B(pCfg, cAvail), cxBuf);
 
     LogFlowFunc(("cbToRead=%zu, cAvail=%RI32\n", cbToRead, cAvail));
 
@@ -1139,8 +1139,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
     if (RT_SUCCESS(rc))
     {
-        if (pcbRead)
-            *pcbRead = cbReadTotal;
+        if (pcxRead)
+            *pcxRead = cbReadTotal;
     }
 
     return rc;
@@ -1150,13 +1150,13 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+                                                    const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    /* pcxWritten is optional. */
 
     PALSAAUDIOSTREAM pStreamALSA = (PALSAAUDIOSTREAM)pStream;
 
@@ -1185,8 +1185,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
             break;
 
         /* Do not write more than available. */
-        if (cbToWrite > cbBuf)
-            cbToWrite = cbBuf;
+        if (cbToWrite > cxBuf)
+            cbToWrite = cxBuf;
 
         memcpy(pStreamALSA->pvBuf, pvBuf, cbToWrite);
 
@@ -1256,8 +1256,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
 
     if (RT_SUCCESS(rc))
     {
-        if (pcbWritten)
-            *pcbWritten = cbWrittenTotal;
+        if (pcxWritten)
+            *pcxWritten = cbWrittenTotal;
     }
 
     return rc;

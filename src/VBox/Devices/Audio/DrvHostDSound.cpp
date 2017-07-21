@@ -1548,13 +1548,13 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
-                            PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+                            PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
-    /* pcbRead is optional. */
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    /* pcxWritten is optional. */
 
     PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
@@ -1586,7 +1586,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
             break;
         cbFree     -= cbSample;
 
-        uint32_t cbLive = cbBuf;
+        uint32_t cbLive = cxBuf;
 
         /* Do not write more than available space in the DirectSound playback buffer. */
         cbLive = RT_MIN(cbFree, cbLive);
@@ -1670,8 +1670,8 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        if (pcbWritten)
-            *pcbWritten = cbWrittenTotal;
+        if (pcxWritten)
+            *pcxWritten = cbWrittenTotal;
     }
     else
         dsoundUpdateStatusInternal(pThis);
@@ -1781,13 +1781,13 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, 
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
-                               PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+                               PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
 {
 
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
 
     PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
@@ -1833,17 +1833,17 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
         if (cbToCapture == 0)
             break;
 
-        if (cbBuf == 0)
+        if (cxBuf == 0)
         {
             DSLOGF(("DSound: Capture buffer full\n"));
             break;
         }
 
         DSLOGF(("DSound: Capture cbBuf=%RU32, offCurPos=%ld, offCaptureBufRead=%ld, cbToCapture=%ld\n",
-                cbBuf, offCurPos, pStreamDS->In.offCaptureBufRead, cbToCapture));
+                cxBuf, offCurPos, pStreamDS->In.offCaptureBufRead, cbToCapture));
 
         /* No need to fetch more samples than mix buffer can receive. */
-        cbToCapture = RT_MIN(cbToCapture, cbBuf);
+        cbToCapture = RT_MIN(cbToCapture, cxBuf);
 
         /* Lock relevant range in the DirectSound capture buffer. */
         PVOID pv1, pv2;
@@ -1884,8 +1884,8 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        if (pcbRead)
-            *pcbRead = cbReadTotal;
+        if (pcxRead)
+            *pcxRead = cbReadTotal;
     }
     else
         dsoundUpdateStatusInternal(pThis);

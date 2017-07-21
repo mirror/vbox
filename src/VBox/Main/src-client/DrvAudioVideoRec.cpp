@@ -507,12 +507,12 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                       void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+                                                       void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
 {
-    RT_NOREF(pInterface, pStream, pvBuf, cbBuf);
+    RT_NOREF(pInterface, pStream, pvBuf, cxBuf);
 
-    if (pcbRead)
-        *pcbRead = 0;
+    if (pcxRead)
+        *pcxRead = 0;
 
     return VINF_SUCCESS;
 }
@@ -522,13 +522,13 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
-                                                    const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+                                                    const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    /* pcxWritten is optional. */
 
     PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
     RT_NOREF(pThis);
@@ -550,7 +550,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
     void  *pvCircBuf;
     size_t cbCircBuf;
 
-    uint32_t cbToWrite = cbBuf;
+    uint32_t cbToWrite = cxBuf;
 
     /*
      * Fetch as much as we can into our internal ring buffer.
@@ -691,8 +691,8 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
      * Always report back all samples acquired, regardless of whether the
      * encoder actually did process those.
      */
-    if (pcbWritten)
-        *pcbWritten = cbWrittenTotal;
+    if (pcxWritten)
+        *pcxWritten = cbWrittenTotal;
 
     LogFlowFunc(("csReadTotal=%RU32, rc=%Rrc\n", cbWrittenTotal, rc));
     return rc;

@@ -826,13 +826,13 @@ static int paCreateStreamIn(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM  pStream
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterface,
-                                                        PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+                                                        PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead)
 {
-    RT_NOREF(pvBuf, cbBuf);
+    RT_NOREF(pvBuf, cxBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
     PDRVHOSTPULSEAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
@@ -857,14 +857,14 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
 
     if (!cbAvail) /* No data? Bail out. */
     {
-        if (pcbRead)
-            *pcbRead = 0;
+        if (pcxRead)
+            *pcxRead = 0;
         return VINF_SUCCESS;
     }
 
     int rc = VINF_SUCCESS;
 
-    size_t cbToRead = RT_MIN(cbAvail, cbBuf);
+    size_t cbToRead = RT_MIN(cbAvail, cxBuf);
 
     Log3Func(("cbToRead=%zu, cbAvail=%zu, offPeekBuf=%zu, cbPeekBuf=%zu\n",
               cbToRead, cbAvail, pStreamPA->offPeekBuf, pStreamPA->cbPeekBuf));
@@ -932,8 +932,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
 
     if (RT_SUCCESS(rc))
     {
-        if (pcbRead)
-            *pcbRead = cbReadTotal;
+        if (pcxRead)
+            *pcxRead = cbReadTotal;
     }
 
     return rc;
@@ -944,15 +944,15 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                     PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
-                                                     uint32_t *pcbWritten)
+                                                     PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf,
+                                                     uint32_t *pcxWritten)
 {
-    RT_NOREF(pvBuf, cbBuf);
+    RT_NOREF(pvBuf, cxBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
-    /* pcbWritten is optional. */
+    AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
+    /* pcxWritten is optional. */
 
     PDRVHOSTPULSEAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
     PPULSEAUDIOSTREAM  pPAStream = (PPULSEAUDIOSTREAM)pStream;
@@ -972,7 +972,7 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
             break;
         }
 
-        size_t cbLeft = RT_MIN(cbWriteable, cbBuf);
+        size_t cbLeft = RT_MIN(cbWriteable, cxBuf);
 
         while (cbLeft)
         {
@@ -998,8 +998,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        if (pcbWritten)
-            *pcbWritten = cbWrittenTotal;
+        if (pcxWritten)
+            *pcxWritten = cbWrittenTotal;
     }
 
     return rc;
