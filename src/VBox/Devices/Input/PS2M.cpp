@@ -831,6 +831,13 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
 
 #ifdef IN_RING3
 
+/** Is there any state change to send as events to the guest? */
+static uint32_t ps2mHaveEvents(PPS2M pThis)
+{
+    return   pThis->iAccumX | pThis->iAccumY | pThis->iAccumZ
+           | (pThis->fCurrB != pThis->fReportedB) | (pThis->fAccumB != 0);
+}
+
 /* Event rate throttling timer to emulate the auxiliary device sampling rate.
  */
 static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
@@ -847,7 +854,7 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     /* If the input queue is not empty, restart the timer. */
 #else
     /* If more movement is accumulated, report it and restart the timer. */
-    uHaveEvents = pThis->iAccumX | pThis->iAccumY | pThis->iAccumZ | (pThis->fCurrB != pThis->fReportedB);
+    uHaveEvents = ps2mHaveEvents(pThis);
     LogFlowFunc(("Have%s events\n", uHaveEvents ? "" : " no"));
 
     if (uHaveEvents)
@@ -989,6 +996,68 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
 
     return rc;
 }
+
+#ifdef RT_STRICT
+/** Test the event accumulation mechanism which we use to delay events going
+ * to the guest to one per 50ms.  This test depends on ps2mPutEventWorker() not
+ * touching the timer if This.fThrottleActive is true. */
+/** @todo if we add any more tests it might be worth using a table of test
+ * operations and checks. */
+static void ps2mTestAccumulation(void)
+{
+    PS2M This;
+    unsigned i;
+    int rc;
+    uint8_t b;
+
+    RT_ZERO(This);
+    This.evtQ.cSize = AUX_EVT_QUEUE_SIZE;
+    This.u8State = AUX_STATE_ENABLED;
+    This.fThrottleActive = true;
+    /* Certain Windows touch pad drivers report a double tap as a press, then
+     * a release-press-release all within a single 50ms interval.  Simulate
+     * this to check that it is handled right. */
+    ps2mPutEventWorker(&This, 0, 0, 0, 0, 1);
+    if (ps2mHaveEvents(&This))
+        ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
+    ps2mPutEventWorker(&This, 0, 0, 0, 0, 0);
+    if (ps2mHaveEvents(&This))
+        ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
+    ps2mPutEventWorker(&This, 0, 0, 0, 0, 1);
+    ps2mPutEventWorker(&This, 0, 0, 0, 0, 0);
+    if (ps2mHaveEvents(&This))
+        ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
+    if (ps2mHaveEvents(&This))
+        ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
+    for (i = 0; i < 12; ++i)
+    {
+        const uint8_t abExpected[] = { 9, 0, 0, 8, 0, 0, 9, 0, 0, 8, 0, 0};
+
+        rc = PS2MByteFromAux(&This, &b);
+        AssertRCSuccess(rc);
+        Assert(b == abExpected[i]);
+    }
+    rc = PS2MByteFromAux(&This, &b);
+    Assert(rc != VINF_SUCCESS);
+    /* Button hold down during mouse drags was broken at some point during
+     * testing fixes for the previous issue.  Test that that works. */
+    ps2mPutEventWorker(&This, 0, 0, 0, 0, 1);
+    if (ps2mHaveEvents(&This))
+        ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
+    if (ps2mHaveEvents(&This))
+        ps2mReportAccumulatedEvents(&This, (GeneriQ *)&This.evtQ, true);
+    for (i = 0; i < 3; ++i)
+    {
+        const uint8_t abExpected[] = { 9, 0, 0 };
+
+        rc = PS2MByteFromAux(&This, &b);
+        AssertRCSuccess(rc);
+        Assert(b == abExpected[i]);
+    }
+    rc = PS2MByteFromAux(&This, &b);
+    Assert(rc != VINF_SUCCESS);
+}
+#endif /* RT_STRICT */
 
 /* -=-=-=-=-=- Mouse: IMousePort  -=-=-=-=-=- */
 
@@ -1184,6 +1253,10 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
     RT_NOREF1(iInstance);
 
     LogFlowFunc(("iInstance=%d\n", iInstance));
+
+#ifdef RT_STRICT
+    ps2mTestAccumulation();
+#endif
 
     pThis->pParent = pParent;
 
