@@ -452,7 +452,8 @@ HRESULT VBoxCredProvCredential::setField(DWORD dwFieldID, const PRTUTF16 pcwszSt
 #ifdef DEBUG
                         pwszField,
 #else
-                        L"XXX" /* Don't show any actual values in release mode. */,
+                        /* Don't show any passwords in release mode. */
+                        dwFieldID == VBOXCREDPROV_FIELDID_PASSWORD ? L"XXX" : pwszField,
 #endif
                         fNotifyUI, hr);
     return hr;
@@ -564,11 +565,9 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
         m_fHaveCreds = true;
     }
 
-    /* If credentials already were retrieved (also by a former call), don't try to retrieve new ones
-     * and just report back the already retrieved ones. */
     if (m_fHaveCreds)
     {
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Credentials already retrieved\n");
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Setting fields\n");
 
         setField(VBOXCREDPROV_FIELDID_USERNAME,   pwszUser,     true /* fNotifyUI */);
         setField(VBOXCREDPROV_FIELDID_PASSWORD,   pwszPassword, true /* fNotifyUI */);
@@ -880,36 +879,53 @@ BOOL VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppw
 HRESULT VBoxCredProvCredential::GetStringValue(DWORD dwFieldID, PWSTR *ppwszString)
 {
     HRESULT hr;
-    if (   dwFieldID < VBOXCREDPROV_NUM_FIELDS
-        && ppwszString)
+
+    PWSTR pwszString = NULL;
+
+    if (dwFieldID < VBOXCREDPROV_NUM_FIELDS)
     {
         switch (dwFieldID)
         {
             case VBOXCREDPROV_FIELDID_SUBMIT_BUTTON:
+            {
                 /* Fill in standard value to make Winlogon happy. */
-                hr = SHStrDupW(L"Submit", ppwszString);
+                hr = SHStrDupW(L"Submit", &pwszString);
                 break;
+            }
 
             default:
+            {
                 if (   m_apwszFields[dwFieldID]
                     && RTUtf16Len(m_apwszFields[dwFieldID]))
-                    hr = SHStrDupW(m_apwszFields[dwFieldID], ppwszString);
+                {
+                    hr = SHStrDupW(m_apwszFields[dwFieldID], &pwszString);
+                }
                 else /* Fill in an empty value. */
-                    hr = SHStrDupW(L"", ppwszString);
+                    hr = SHStrDupW(L"", &pwszString);
                 break;
+            }
         }
     }
     else
         hr = E_INVALIDARG;
 
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetStringValue: m_fIsSelected=%RTbool, dwFieldID=%ld, ppwszString=%ls, hr=%Rhrc\n",
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetStringValue: m_fIsSelected=%RTbool, dwFieldID=%ld, pwszString=%ls, hr=%Rhrc\n",
                         m_fIsSelected, dwFieldID,
 #ifdef DEBUG
-                        ppwszString ? *ppwszString : L"<NULL>",
-#else /* Never show any (sensitive) data in release mode! */
-                        L"XXX",
+                        pwszString ? pwszString : L"<NULL>",
+#else
+                        /* Don't show any passwords in release mode. */
+                        dwFieldID == VBOXCREDPROV_FIELDID_PASSWORD ? L"XXX" : (pwszString ? pwszString : L"<NULL>"),
 #endif
                         hr);
+
+    if (ppwszString)
+    {
+        *ppwszString = pwszString;
+    }
+    else if (pwszString)
+        CoTaskMemFree(pwszString);
+
     return hr;
 }
 
