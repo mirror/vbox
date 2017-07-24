@@ -33,6 +33,7 @@
 *********************************************************************************************************************************/
 #include <iprt/cpp/ministring.h>
 #include <iprt/ctype.h>
+#include <iprt/uni.h>
 
 
 /*********************************************************************************************************************************
@@ -485,6 +486,30 @@ bool RTCString::startsWith(const RTCString &that, CaseSensitivity cs /*= CaseSen
     if (cs == CaseSensitive)
         return ::RTStrNCmp(m_psz, that.m_psz, l2) == 0;
     return ::RTStrNICmp(m_psz, that.m_psz, l2) == 0;
+}
+
+bool RTCString::startsWithWord(const char *pszWord, CaseSensitivity enmCase /*= CaseSensitive*/) const
+{
+    const char *pszSrc  = RTStrStripL(c_str()); /** @todo RTStrStripL doesn't use RTUniCpIsSpace (nbsp) */
+    size_t      cchWord = strlen(pszWord);
+    if (  enmCase == CaseSensitive
+        ? RTStrNCmp(pszSrc, pszWord, cchWord) == 0
+        : RTStrNICmp(pszSrc, pszWord, cchWord) == 0)
+    {
+        if (   pszSrc[cchWord] == '\0'
+            || RT_C_IS_SPACE(pszSrc[cchWord])
+            || RT_C_IS_PUNCT(pszSrc[cchWord]) )
+            return true;
+        RTUNICP uc = RTStrGetCp(&pszSrc[cchWord]);
+        if (RTUniCpIsSpace(uc))
+            return true;
+    }
+    return false;
+}
+
+bool RTCString::startsWithWord(const RTCString &rThat, CaseSensitivity enmCase /*= CaseSensitive*/) const
+{
+    return startsWithWord(rThat.c_str(), enmCase);
 }
 
 bool RTCString::contains(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const

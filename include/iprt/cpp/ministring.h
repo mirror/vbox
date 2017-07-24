@@ -928,6 +928,24 @@ public:
     bool startsWith(const RTCString &that, CaseSensitivity cs = CaseSensitive) const;
 
     /**
+     * Checks if the string starts with the given word, ignoring leading blanks.
+     *
+     * @param   pszWord The word to test for.
+     * @param   enmCase Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    bool startsWithWord(const char *pszWord, CaseSensitivity enmCase = CaseSensitive) const;
+
+    /**
+     * Checks if the string starts with the given word, ignoring leading blanks.
+     *
+     * @param   rThat   Prefix to test for.
+     * @param   enmCase Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    bool startsWithWord(const RTCString &rThat, CaseSensitivity enmCase = CaseSensitive) const;
+
+    /**
      * Returns true if @a this contains @a that (strstr).
      *
      * @param   that    Substring to look for.
