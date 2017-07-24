@@ -1287,13 +1287,18 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     const char *pszMachineName          = NULL;
     bool        fSetImageIdx            = false;
     uint32_t    idxImage                = 0;
-    const char *pszPostInstallCommand   = NULL;
+    const char *pszLocale               = NULL;
+    const char *pszCountry              = NULL;
+    const char *pszTimeZone             = NULL;
+    const char *pszProxy                = NULL;
     Utf8Str     strAbsAuxiliaryBasePath;
     const char *pszAuxiliaryBasePath    = NULL;
     Utf8Str     strAbsScriptTemplatePath;
     const char *pszScriptTemplatePath   = NULL;
     Utf8Str     strAbsPostInstallScriptTemplatePath;
     const char *pszPostInstallScriptTemplatePath = NULL;
+    const char *pszPostInstallCommand   = NULL;
+    const char *pszExtraInstallKernelParameters = NULL;
     const char *pszSessionType          = "headless";
 
     /*
@@ -1304,23 +1309,28 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--iso",                      'i', RTGETOPT_REQ_STRING },
-        { "--user",                     'u', RTGETOPT_REQ_STRING },
-        { "--password",                 'p', RTGETOPT_REQ_STRING },
-        { "--full-user-name",           'U', RTGETOPT_REQ_STRING },
-        { "--key",                      'k', RTGETOPT_REQ_STRING },
-        { "--install-additions",        'A', RTGETOPT_REQ_NOTHING },
-        { "--no-install-additions",     'N', RTGETOPT_REQ_NOTHING },
-        { "--additions-iso",            'a', RTGETOPT_REQ_STRING },
-        { "--install-txs",              't', RTGETOPT_REQ_NOTHING },
-        { "--no-install-txs",           'T', RTGETOPT_REQ_NOTHING },
-        { "--validation-kit-iso",       'K', RTGETOPT_REQ_STRING },
-        { "--auxiliary-base-path",      'x', RTGETOPT_REQ_STRING },
-        { "--image-index",              'm', RTGETOPT_REQ_UINT32 },
-        { "--script-template",          'c', RTGETOPT_REQ_STRING },
-        { "--post-install-template",    'C', RTGETOPT_REQ_STRING },
-        { "--post-install-command",     'P', RTGETOPT_REQ_STRING },
-        { "--session-type",             'S', RTGETOPT_REQ_STRING },
+        { "--iso",                              'i', RTGETOPT_REQ_STRING },
+        { "--user",                             'u', RTGETOPT_REQ_STRING },
+        { "--password",                         'p', RTGETOPT_REQ_STRING },
+        { "--full-user-name",                   'U', RTGETOPT_REQ_STRING },
+        { "--key",                              'k', RTGETOPT_REQ_STRING },
+        { "--install-additions",                'A', RTGETOPT_REQ_NOTHING },
+        { "--no-install-additions",             'N', RTGETOPT_REQ_NOTHING },
+        { "--additions-iso",                    'a', RTGETOPT_REQ_STRING },
+        { "--install-txs",                      't', RTGETOPT_REQ_NOTHING },
+        { "--no-install-txs",                   'T', RTGETOPT_REQ_NOTHING },
+        { "--validation-kit-iso",               'K', RTGETOPT_REQ_STRING },
+        { "--locale",                           'l', RTGETOPT_REQ_STRING },
+        { "--country",                          'L', RTGETOPT_REQ_STRING },
+        { "--time-zone",                        'z', RTGETOPT_REQ_STRING },
+        { "--proxy",                            'y', RTGETOPT_REQ_STRING },
+        { "--auxiliary-base-path",              'x', RTGETOPT_REQ_STRING },
+        { "--image-index",                      'm', RTGETOPT_REQ_UINT32 },
+        { "--script-template",                  'c', RTGETOPT_REQ_STRING },
+        { "--post-install-template",            'C', RTGETOPT_REQ_STRING },
+        { "--post-install-command",             'P', RTGETOPT_REQ_STRING },
+        { "--extra-install-kernel-parameters",  'I', RTGETOPT_REQ_STRING },
+        { "--session-type",                     'S', RTGETOPT_REQ_STRING },
     };
 
     RTGETOPTSTATE GetState;
@@ -1390,6 +1400,22 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 pszValidationKitIsoPath = strAbsValidationKitIsoPath.c_str();
                 break;
 
+            case 'l':   // --locale
+                pszLocale = ValueUnion.psz;
+                break;
+
+            case 'L':   // --country
+                pszCountry = ValueUnion.psz;
+                break;
+
+            case 'z':   // --time-zone;
+                pszTimeZone = ValueUnion.psz;
+                break;
+
+            case 'y':   // --proxy
+                pszProxy = ValueUnion.psz;
+                break;
+
             case 'x':  // --auxiliary-base-path
                 vrc = RTPathAbsCxx(strAbsAuxiliaryBasePath, ValueUnion.psz);
                 if (RT_FAILURE(vrc))
@@ -1418,6 +1444,10 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
             case 'P':   // --post-install-command.
                 pszPostInstallCommand = ValueUnion.psz;
+                break;
+
+            case 'I':   // --extra-install-kernel-parameters
+                pszExtraInstallKernelParameters = ValueUnion.psz;
                 break;
 
             case 'S':   // --session-type
@@ -1504,6 +1534,14 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ValidationKitIsoPath)(Bstr(pszValidationKitIsoPath).raw()));
             if (fInstallTxs >= 0)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(InstallTestExecService)(fInstallTxs != (int)false));
+            if (pszLocale)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Locale)(Bstr(pszLocale).raw()));
+            if (pszCountry)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Country)(Bstr(pszCountry).raw()));
+            if (pszTimeZone)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(TimeZone)(Bstr(pszTimeZone).raw()));
+            if (pszProxy)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Proxy)(Bstr(pszProxy).raw()));
             if (fSetImageIdx)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ImageIndex)(idxImage));
             if (pszScriptTemplatePath)
@@ -1514,6 +1552,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PostInstallCommand)(Bstr(pszPostInstallCommand).raw()));
             if (pszAuxiliaryBasePath)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(AuxiliaryBasePath)(Bstr(pszAuxiliaryBasePath).raw()));
+            if (pszExtraInstallKernelParameters)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ExtraInstallKernelParameters)(Bstr(pszExtraInstallKernelParameters).raw()));
 
             CHECK_ERROR_BREAK(ptrUnattended,Prepare());
             CHECK_ERROR_BREAK(ptrUnattended,ConstructMedia());
@@ -1540,20 +1580,29 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                         RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
                 } while (0)
 
-            SHOW_STR_ATTR(IsoPath,                  "isoPath");
-            SHOW_STR_ATTR(User,                     "user");
-            SHOW_STR_ATTR(Password,                 "password");
-            SHOW_STR_ATTR(FullUserName,             "fullUserName");
-            SHOW_STR_ATTR(ProductKey,               "productKey");
-            SHOW_STR_ATTR(AdditionsIsoPath,         "additionsIsoPath");
-            SHOW_ATTR(    InstallGuestAdditions,    "installGuestAdditions",    BOOL, "%RTbool");
-            SHOW_STR_ATTR(ValidationKitIsoPath,     "validationKitIsoPath");
-            SHOW_ATTR(    InstallTestExecService,   "installTestExecService",   BOOL, "%RTbool");
-            SHOW_STR_ATTR(AuxiliaryBasePath,        "auxiliaryBasePath");
-            SHOW_ATTR(    ImageIndex,               "imageIndex",               ULONG, "%u");
-            SHOW_STR_ATTR(ScriptTemplatePath,       "scriptTemplatePath");
+            SHOW_STR_ATTR(IsoPath,                       "isoPath");
+            SHOW_STR_ATTR(User,                          "user");
+            SHOW_STR_ATTR(Password,                      "password");
+            SHOW_STR_ATTR(FullUserName,                  "fullUserName");
+            SHOW_STR_ATTR(ProductKey,                    "productKey");
+            SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
+            SHOW_ATTR(    InstallGuestAdditions,         "installGuestAdditions",    BOOL, "%RTbool");
+            SHOW_STR_ATTR(ValidationKitIsoPath,          "validationKitIsoPath");
+            SHOW_ATTR(    InstallTestExecService,        "installTestExecService",   BOOL, "%RTbool");
+            SHOW_STR_ATTR(Locale,                        "locale");
+            SHOW_STR_ATTR(Country,                       "country");
+            SHOW_STR_ATTR(TimeZone,                      "timeZone");
+            SHOW_STR_ATTR(Proxy,                         "proxy");
+            SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
+            SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
+            SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
             SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
-            SHOW_STR_ATTR(PostInstallCommand,       "postInstallCommand");
+            SHOW_STR_ATTR(PostInstallCommand,            "postInstallCommand");
+            SHOW_STR_ATTR(ExtraInstallKernelParameters,  "extraInstallKernelParameters");
+            SHOW_STR_ATTR(DetectedOSTypeId,              "detectedOSTypeId");
+            SHOW_STR_ATTR(DetectedOSVersion,             "detectedOSVersion");
+            SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
+            SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
 
 #undef SHOW_STR_ATTR
 #undef SHOW_ATTR
