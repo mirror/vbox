@@ -4011,7 +4011,7 @@
       <desc>
         The detected OS type ID (<link to="IGuestOSType::id"/>).
 
-        Set by <link to="IUnattended::detectIso"/> or <link to="IUnattended::prepare"/>.
+        Set by <link to="IUnattended::detectIsoOS"/> or <link to="IUnattended::prepare"/>.
 
         Not yet implemented.
       </desc>
