@@ -515,21 +515,27 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
 
     if (RT_SUCCESS(rc))
     {
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Received credentials for user '%ls'\n", pwszUser);
+
         /*
          * In case we got a "display name" (e.g. "John Doe")
          * instead of the real user name (e.g. "jdoe") we have
          * to translate the data first ...
          */
-        PWSTR pwszAcount;
-        if (TranslateAccountName(pwszUser, &pwszAcount))
+        PWSTR pwszExtractedName = NULL;
+        if (   TranslateAccountName(pwszUser, &pwszExtractedName)
+            && pwszExtractedName)
         {
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Translated account name %ls -> %ls\n",
-                                pwszUser, pwszAcount);
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Translated account name '%ls' -> '%ls'\n",
+                                pwszUser, pwszExtractedName);
 
             RTMemWipeThoroughly(pwszUser, (RTUtf16Len(pwszUser) + 1) * sizeof(RTUTF16), 3 /* Passes */);
             RTUtf16Free(pwszUser);
 
-            pwszUser = pwszAcount;
+            pwszUser = RTUtf16Dup(pwszExtractedName);
+
+            CoTaskMemFree(pwszExtractedName);
+            pwszExtractedName = NULL;
         }
         else
         {
@@ -538,27 +544,41 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
              * principal name from which we have to extract the domain from?
              * (jdoe@my-domain.sub.net.com -> jdoe in domain my-domain.sub.net.com.)
              */
-            PWSTR pwszDomain;
-            if (ExtractAccoutData(pwszUser, &pwszAcount, &pwszDomain))
+            PWSTR pwszExtractedDomain = NULL;
+            if (ExtractAccoutData(pwszUser, &pwszExtractedName, &pwszExtractedDomain))
             {
                 /* Update user name. */
-                if (pwszUser)
+                if (pwszExtractedName)
                 {
-                    RTMemWipeThoroughly(pwszUser, (RTUtf16Len(pwszUser) + 1) * sizeof(RTUTF16), 3 /* Passes */);
-                    RTUtf16Free(pwszUser);
+                    if (pwszUser)
+                    {
+                        RTMemWipeThoroughly(pwszUser, (RTUtf16Len(pwszUser) + 1) * sizeof(RTUTF16), 3 /* Passes */);
+                        RTUtf16Free(pwszUser);
+                    }
+
+                    pwszUser = RTUtf16Dup(pwszExtractedName);
+
+                    CoTaskMemFree(pwszExtractedName);
+                    pwszExtractedName = NULL;
                 }
-                pwszUser = pwszAcount;
 
                 /* Update domain. */
-                if (pwszDomain)
+                if (pwszExtractedDomain)
                 {
-                    RTMemWipeThoroughly(pwszDomain, (RTUtf16Len(pwszDomain) + 1) * sizeof(RTUTF16), 3 /* Passes */);
-                    RTUtf16Free(pwszDomain);
-                }
-                pwszDomain = pwszDomain;
+                    if (pwszDomain)
+                    {
+                        RTMemWipeThoroughly(pwszDomain, (RTUtf16Len(pwszDomain) + 1) * sizeof(RTUTF16), 3 /* Passes */);
+                        RTUtf16Free(pwszDomain);
+                    }
 
-                VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Extracted account data pwszAccount=%ls, pwszDomain=%ls\n",
-                                    pwszUser, pwszDomain);
+                    pwszDomain = RTUtf16Dup(pwszExtractedDomain);
+
+                    CoTaskMemFree(pwszExtractedDomain);
+                    pwszExtractedDomain = NULL;
+                }
+
+                VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Extracted account name '%ls' + domain '%ls'\n",
+                                    pwszUser ? pwszUser : L"<NULL>", pwszDomain ? pwszDomain : L"<NULL>");
             }
         }
 
@@ -573,6 +593,8 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
         setField(VBOXCREDPROV_FIELDID_PASSWORD,   pwszPassword, true /* fNotifyUI */);
         setField(VBOXCREDPROV_FIELDID_DOMAINNAME, pwszDomain,   true /* fNotifyUI */);
     }
+
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Wiping ...\n");
 
     VbglR3CredentialsDestroyUtf16(pwszUser, pwszPassword, pwszDomain, 3 /* cPasses */);
 
@@ -696,7 +718,11 @@ HRESULT VBoxCredProvCredential::GetFieldState(DWORD dwFieldID, CREDENTIAL_PROVID
 
 /**
  * Searches the account name based on a display (real) name (e.g. "John Doe" -> "jdoe").
- * Result "ppwszAccoutName" needs to be freed with CoTaskMemFree!
+ *
+ * @return  TRUE if translation of the account name was successful, FALSE if not.
+ * @param   pwszDisplayName         Display name to extract account name from.
+ * @param   ppwszAccoutName         Where to store the extracted account name on success.
+ *                                  Needs to be free'd with CoTaskMemFree().
  */
 BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAccoutName)
 {
@@ -813,6 +839,13 @@ BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *
  * Extracts the actual account name & domain from a (raw) account data string.
  *
  * This might be a principal or FQDN string.
+ *
+ * @return  TRUE if extraction of the account name was successful, FALSE if not.
+ * @param   pwszAccountData         (Raw) account data string to extract data from.
+ * @param   ppwszAccoutName         Where to store the extracted account name on success.
+ *                                  Needs to be free'd with CoTaskMemFree().
+ * @param   ppwszDomain             Where to store the extracted domain name on success.
+ *                                  Needs to be free'd with CoTaskMemFree().
  */
 BOOL VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain)
 {
