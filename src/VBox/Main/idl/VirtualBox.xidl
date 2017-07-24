@@ -4021,7 +4021,7 @@
       <desc>
         The detected OS version string.
 
-        Set by <link to="IUnattended::detectIso"/> or <link to="IUnattended::prepare"/>.
+        Set by <link to="IUnattended::detectIsoOS"/> or <link to="IUnattended::prepare"/>.
 
         Not yet implemented.
       </desc>
@@ -4031,7 +4031,7 @@
       <desc>
         The detected OS flavor (e.g. server, desktop, etc)
 
-        Set by <link to="IUnattended::detectIso"/> or <link to="IUnattended::prepare"/>.
+        Set by <link to="IUnattended::detectIsoOS"/> or <link to="IUnattended::prepare"/>.
 
         Not yet implemented.
       </desc>
@@ -4042,7 +4042,7 @@
         Space separated list of other stuff detected about the OS and the
         installation ISO.
 
-        Set by <link to="IUnattended::detectIso"/> or <link to="IUnattended::prepare"/>.
+        Set by <link to="IUnattended::detectIsoOS"/> or <link to="IUnattended::prepare"/>.
 
         Not yet implemented.
       </desc>
