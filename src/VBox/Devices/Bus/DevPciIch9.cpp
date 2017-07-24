@@ -3181,6 +3181,35 @@ void devpciR3ResetDevice(PPDMPCIDEV pDev)
     }
 }
 
+/**
+ * Returns the PCI express encoding for the given PCI Express Device/Port type string.
+ *
+ * @returns PCI express encoding.
+ * @param   pszExpressPortType    The string identifier for the port/device type.
+ */
+static uint8_t ich9pcibridgeR3GetExpressPortTypeFromString(const char *pszExpressPortType)
+{
+    if (!RTStrCmp(pszExpressPortType, "EndPtDev"))
+        return VBOX_PCI_EXP_TYPE_ENDPOINT;
+    else if (!RTStrCmp(pszExpressPortType, "LegEndPtDev"))
+        return VBOX_PCI_EXP_TYPE_LEG_END;
+    else if (!RTStrCmp(pszExpressPortType, "RootCmplxRootPort"))
+        return VBOX_PCI_EXP_TYPE_ROOT_PORT;
+    else if (!RTStrCmp(pszExpressPortType, "ExpressSwUpstream"))
+        return VBOX_PCI_EXP_TYPE_UPSTREAM;
+    else if (!RTStrCmp(pszExpressPortType, "ExpressSwDownstream"))
+        return VBOX_PCI_EXP_TYPE_DOWNSTREAM;
+    else if (!RTStrCmp(pszExpressPortType, "Express2PciBridge"))
+        return VBOX_PCI_EXP_TYPE_PCI_BRIDGE;
+    else if (!RTStrCmp(pszExpressPortType, "Pci2ExpressBridge"))
+        return VBOX_PCI_EXP_TYPE_PCIE_BRIDGE;
+    else if (!RTStrCmp(pszExpressPortType, "RootCmplxIntEp"))
+        return VBOX_PCI_EXP_TYPE_ROOT_INT_EP;
+    else if (!RTStrCmp(pszExpressPortType, "RootCmplxEc"))
+        return VBOX_PCI_EXP_TYPE_ROOT_EC;
+
+    AssertLogRelMsgFailedReturn(("Unknown express port type specified"), VBOX_PCI_EXP_TYPE_ROOT_INT_EP);
+}
 
 /**
  * Recursive worker for ich9pciReset.
@@ -3290,7 +3319,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0" "ExpressEnabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0" "ExpressEnabled\0" "ExpressPortType\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* check if RC code is enabled. */
@@ -3314,6 +3343,16 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"ExpressEnabled\""));
+
+    char *pszExpressPortType;
+    rc = CFGMR3QueryStringAllocDef(pCfg, "ExpressPortType",
+                                   &pszExpressPortType, "RootCmplxIntEp");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("LsiLogic configuration error: failed to read \"ExpressPortType\" as string"));
+
+    uint8_t uExpressPortType = ich9pcibridgeR3GetExpressPortTypeFromString(pszExpressPortType);
+    MMR3HeapFree(pszExpressPortType);
 
     pDevIns->IBase.pfnQueryInterface = ich9pcibridgeQueryInterface;
 
@@ -3396,7 +3435,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
         PDMPciDevSetByte(&pBus->PciDev, 0xa0 + 1, 0); /* next */
         PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 2,
                         /* version */ 0x2
-                      | /* Root Complex Integrated Endpoint */ (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4));
+                      | (uExpressPortType << 4));
         PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 4, VBOX_PCI_EXP_DEVCAP_RBE); /* Device capabilities. */
         PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 8, 0x0000); /* Device control. */
         PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 10, 0x0000); /* Device status. */
