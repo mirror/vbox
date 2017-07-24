@@ -1124,7 +1124,7 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
                             /* We're done -- let the logon UI know. */
                             *pcpGetSerializationResponse = CPGSR_RETURN_CREDENTIAL_FINISHED;
 
-                            VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: Finished for user '%ls' (domain '%s')\n",
+                            VBoxCredProvVerbose(1, "VBoxCredProvCredential::GetSerialization: Finished for user '%ls' (domain '%ls')\n",
                                                 m_apwszFields[VBOXCREDPROV_FIELDID_USERNAME],
                                                 m_apwszFields[VBOXCREDPROV_FIELDID_DOMAINNAME]);
                         }
