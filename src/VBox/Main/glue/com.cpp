@@ -235,7 +235,7 @@ int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir)
             vrc = RTEnvGetEx(RTENV_DEFAULT, "XDG_CONFIG_HOME", g_szXdgConfigHome, sizeof(g_szXdgConfigHome), NULL);
             if (RT_SUCCESS(vrc))
                 vrc = RTPathAppend(g_szXdgConfigHome, sizeof(g_szXdgConfigHome), "VirtualBox");
-            AssertMsg(vrc == VERR_ENV_VAR_NOT_FOUND, ("%Rrc\n", vrc));
+            AssertMsg(vrc == VINF_SUCCESS || vrc == VERR_ENV_VAR_NOT_FOUND, ("%Rrc\n", vrc));
             if (RT_FAILURE_NP(vrc))
                 vrc = RTStrCopy(g_szXdgConfigHome, sizeof(g_szXdgConfigHome), ".config/VirtualBox");
 #endif
