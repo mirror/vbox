@@ -39,13 +39,25 @@
 #define VBGL_HGCM_ASSERT_MSG AssertReleaseMsg
 
 /**
+ * Fast heap for HGCM handles data.
+ * @{
+ */
+
+static RTSEMFASTMUTEX mutexHGCMHandle;
+
+static struct VBGLHGCMHANDLEDATA aHGCMHandleData[64];
+
+/** @} */
+
+/**
  * Initializes the HGCM VBGL bits.
  *
  * @return VBox status code.
  */
 int vbglR0HGCMInit(void)
 {
-    return RTSemFastMutexCreate(&g_vbgldata.mutexHGCMHandle);
+    AssertReturn(mutexHGCMHandle == NIL_RTSEMFASTMUTEX, VINF_ALREADY_INITIALIZED);
+    return RTSemFastMutexCreate(&mutexHGCMHandle);
 }
 
 /**
@@ -55,15 +67,15 @@ int vbglR0HGCMInit(void)
  */
 int vbglR0HGCMTerminate(void)
 {
-    RTSemFastMutexDestroy(g_vbgldata.mutexHGCMHandle);
-    g_vbgldata.mutexHGCMHandle = NIL_RTSEMFASTMUTEX;
+    RTSemFastMutexDestroy(mutexHGCMHandle);
+    mutexHGCMHandle = NIL_RTSEMFASTMUTEX;
 
     return VINF_SUCCESS;
 }
 
 DECLINLINE(int) vbglHandleHeapEnter(void)
 {
-    int rc = RTSemFastMutexRequest(g_vbgldata.mutexHGCMHandle);
+    int rc = RTSemFastMutexRequest(mutexHGCMHandle);
 
     VBGL_HGCM_ASSERT_MSG(RT_SUCCESS(rc), ("Failed to request handle heap mutex, rc = %Rrc\n", rc));
 
@@ -72,7 +84,7 @@ DECLINLINE(int) vbglHandleHeapEnter(void)
 
 DECLINLINE(void) vbglHandleHeapLeave(void)
 {
-    RTSemFastMutexRelease(g_vbgldata.mutexHGCMHandle);
+    RTSemFastMutexRelease(mutexHGCMHandle);
 }
 
 struct VBGLHGCMHANDLEDATA *vbglHGCMHandleAlloc(void)
@@ -85,11 +97,11 @@ struct VBGLHGCMHANDLEDATA *vbglHGCMHandleAlloc(void)
 
         /* Simple linear search in array. This will be called not so often, only connect/disconnect. */
         /** @todo bitmap for faster search and other obvious optimizations. */
-        for (i = 0; i < RT_ELEMENTS(g_vbgldata.aHGCMHandleData); i++)
+        for (i = 0; i < RT_ELEMENTS(aHGCMHandleData); i++)
         {
-            if (!g_vbgldata.aHGCMHandleData[i].fAllocated)
+            if (!aHGCMHandleData[i].fAllocated)
             {
-                p = &g_vbgldata.aHGCMHandleData[i];
+                p = &aHGCMHandleData[i];
                 p->fAllocated = 1;
                 break;
             }

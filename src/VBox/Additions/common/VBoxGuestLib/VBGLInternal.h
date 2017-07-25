@@ -107,17 +107,6 @@ typedef struct VBGLDATA
     VBGLDRIVER driver;
 
     /** @} */
-
-    /**
-     * Fast heap for HGCM handles data.
-     * @{
-     */
-
-    RTSEMFASTMUTEX mutexHGCMHandle;
-
-    struct VBGLHGCMHANDLEDATA aHGCMHandleData[64];
-
-    /** @} */
 #endif
 } VBGLDATA;
 
