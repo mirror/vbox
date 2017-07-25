@@ -91,6 +91,9 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
     uint32_t cbToTransfer;
     uint32_t cbIO;
 
+    /** @todo Remove the test and the fall-back path.  VbglR0CanUsePhysPageList()
+     *        returns true for any host version after 3.0, i.e. further back than
+     *        we support. */
     if (VbglR0CanUsePhysPageList())
     {
         ULONG offFirstPage = MmGetMdlByteOffset(pCtx->pMdl);
