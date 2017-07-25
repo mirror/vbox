@@ -855,7 +855,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
         ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' ),
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
-        ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' )
+        ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
+        ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
@@ -863,7 +864,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( True,  ktReason_Host_DriverNotLoaded,                     'Error opening VBoxDrvStub:  STATUS_OBJECT_NAME_NOT_FOUND' ),
         ( True,  ktReason_Host_NotSignedWithBuildCert,              'Not signed with the build certificate' ),
-        ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
     ];
 
     ## Things we search a kernel.log file for to figure out why something went bust.
