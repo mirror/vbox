@@ -3867,7 +3867,7 @@
         This is unfortunately guest OS specific.
 
         Windows XP and earlier takes the index number from this table:
-        https://msdn.microsoft.com/en-us/library/ms912391(v=winembedded.11).aspx
+        https://support.microsoft.com/en-gb/help/973627/microsoft-time-zone-index-values
 
         Windows Vista and later takes the time zone string from this table:
         https://technet.microsoft.com/en-us/library/cc749073(v=ws.10).aspx
