@@ -1178,7 +1178,9 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     pVM->tm.s.fParavirtTscEnabled = false;
 
     /*
-     * Reset TSC to avoid a windows 8 bug (see @bugref{8926}).
+     * Reset TSC to avoid a Windows 8+ bug (see @bugref{8926}). If Windows
+     * sees TSC value beyond 0x40000000000 at startup, it will reset the
+     * TSC on boot-up CPU only, causing confusion and mayhem with SMP.
      */
     VM_ASSERT_EMT0(pVM);
     uint64_t offTscRawSrc;
