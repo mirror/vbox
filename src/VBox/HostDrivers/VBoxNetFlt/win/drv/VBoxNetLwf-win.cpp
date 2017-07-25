@@ -1009,6 +1009,8 @@ static void vboxNetLwfWinFreePools(PVBOXNETLWF_MODULE pModuleCtx, int cPools)
 }
 #endif /* VBOXNETLWF_FIXED_SIZE_POOLS */
 
+DECLARE_GLOBAL_CONST_UNICODE_STRING(g_strHostOnlyMiniportName, L"VirtualBox Host-Only");
+
 static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hDriverCtx,
                                        IN PNDIS_FILTER_ATTACH_PARAMETERS pParameters)
 {
@@ -1018,6 +1020,21 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
     if (!pGlobals)
     {
         vboxNetLwfLogErrorEvent(IO_ERR_INTERNAL_ERROR, NDIS_STATUS_FAILURE, 1);
+        return NDIS_STATUS_FAILURE;
+    }
+
+    /*
+     * We need a copy of NDIS_STRING structure as we are going to modify length
+     * of the base miniport instance name since RTL does not support comparing
+     * first n characters of two strings. We check if miniport names start with
+     * "Virtual Host-Only" to detect host-only adapters. It is a waste of resources
+     * to bind our filter to host-only adapters since they now operate independently.
+     */
+    NDIS_STRING strTruncatedInstanceName = *pParameters->BaseMiniportInstanceName; /* Do not copy data, only the structure itself */
+    strTruncatedInstanceName.Length = g_strHostOnlyMiniportName.Length; /* Truncate instance name */
+    if (RtlEqualUnicodeString(&strTruncatedInstanceName, &g_strHostOnlyMiniportName, TRUE /* Case insensitive */))
+    {
+        DbgPrint("vboxNetLwfWinAttach: won't attach to %wZ\n", pParameters->BaseMiniportInstanceName);
         return NDIS_STATUS_FAILURE;
     }
 
