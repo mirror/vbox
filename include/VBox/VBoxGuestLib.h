@@ -287,6 +287,21 @@ typedef struct VBGLHGCMHANDLEDATA *VBGLHGCMHANDLE;
  */
 
 /**
+ * Initializes HGCM in the R0 guest library.  Must be called before any HGCM
+ * connections are made.  Is called by VbglInitClient().
+ *
+ * @return VBox status code.
+ */
+DECLVBGL(int) VbglR0HGCMInit(void);
+
+/**
+ * Terminates HGCM in the R0 guest library.  Is called by VbglTerminate().
+ *
+ * @return VBox status code.
+ */
+DECLVBGL(int) VbglR0HGCMTerminate(void);
+
+/**
  * Connect to a service.
  *
  * @param pHandle     Pointer to variable that will hold a handle to be used

@@ -138,10 +138,6 @@ extern VBGLDATA g_vbgldata;
 int vbglR0Enter (void);
 
 #ifdef VBOX_WITH_HGCM
-# ifndef VBGL_VBOXGUEST
-int                         vbglR0HGCMInit(void);
-int                         vbglR0HGCMTerminate(void);
-# endif
 struct VBGLHGCMHANDLEDATA  *vbglHGCMHandleAlloc(void);
 void                        vbglHGCMHandleFree(struct VBGLHGCMHANDLEDATA *pHandle);
 #endif /* VBOX_WITH_HGCM */

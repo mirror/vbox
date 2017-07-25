@@ -254,7 +254,7 @@ DECLVBGL(int) VbglInitClient(void)
             vbglQueryDriverInfo ();
 
 # ifdef VBOX_WITH_HGCM
-            rc = vbglR0HGCMInit ();
+            rc = VbglR0HGCMInit ();
 # endif /* VBOX_WITH_HGCM */
 
             if (RT_FAILURE(rc))
@@ -277,7 +277,7 @@ DECLVBGL(int) VbglInitClient(void)
 DECLVBGL(void) VbglTerminate (void)
 {
 # ifdef VBOX_WITH_HGCM
-    vbglR0HGCMTerminate ();
+    VbglR0HGCMTerminate ();
 # endif
 
     /* driver open could fail, which does not prevent VbglInit from succeeding,

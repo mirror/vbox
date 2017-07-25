@@ -54,7 +54,7 @@ static struct VBGLHGCMHANDLEDATA aHGCMHandleData[64];
  *
  * @return VBox status code.
  */
-int vbglR0HGCMInit(void)
+DECLVBGL(int) VbglR0HGCMInit(void)
 {
     AssertReturn(mutexHGCMHandle == NIL_RTSEMFASTMUTEX, VINF_ALREADY_INITIALIZED);
     return RTSemFastMutexCreate(&mutexHGCMHandle);
@@ -65,7 +65,7 @@ int vbglR0HGCMInit(void)
  *
  * @return VBox status code.
  */
-int vbglR0HGCMTerminate(void)
+DECLVBGL(int) VbglR0HGCMTerminate(void)
 {
     RTSemFastMutexDestroy(mutexHGCMHandle);
     mutexHGCMHandle = NIL_RTSEMFASTMUTEX;
