@@ -1093,6 +1093,15 @@ RTDECL(PCRTTIMEZONEINFO) RTTimeZoneGetInfoByWindowsName(const char *pszName);
  */
 RTDECL(PCRTTIMEZONEINFO) RTTimeZoneGetInfoByWindowsIndex(uint32_t idxZone);
 
+/**
+ * Get the current time zone (TZ).
+ *
+ * @returns IPRT status code.
+ * @param   pszName     Where to return the time zone name.
+ * @param   cbName      The size of the name buffer.
+ */
+RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName);
+
 /** @} */
 
 RT_C_DECLS_END

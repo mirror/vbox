@@ -822,6 +822,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/RTSystemShutdown-win.cpp \
 	r3/win/RTSystemQueryDmiString-win.cpp \
 	r3/win/RTSystemQueryTotalRam-win.cpp \
+ 	r3/win/RTTimeZoneGetCurrent-win.cpp \
 	r3/win/alloc-win.cpp \
 	r3/win/allocex-win.cpp \
 	r3/win/dir-win.cpp \
@@ -883,6 +884,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/mppresent-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+ 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/allocex-r3-posix.cpp \
 	r3/linux/RTThreadGetNativeState-linux.cpp \
 	r3/linux/krnlmod-linux.cpp \
@@ -991,6 +993,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/generic/allocex-r3-generic.cpp \
+ 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
 	r3/os2/pipe-os2.cpp \
@@ -1070,6 +1073,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/time-darwin.cpp \
 	r3/darwin/RTPathUserDocuments-darwin.cpp \
 	r3/generic/allocex-r3-generic.cpp \
+ 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1140,6 +1144,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/freebsd/systemmem-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/generic/allocex-r3-generic.cpp \
+ 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1209,6 +1214,7 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/netbsd/rtProcInitExePath-netbsd.cpp \
 	r3/generic/allocex-r3-generic.cpp \
+ 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1271,6 +1277,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/uuid-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/generic/allocex-r3-generic.cpp \
+ 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTFileSetAllocationSize-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
@@ -1358,6 +1365,7 @@ RuntimeR3_SOURCES.haiku = \
 	r3/haiku/rtProcInitExePath-haiku.cpp \
 	r3/haiku/time-haiku.cpp \
 	r3/generic/allocex-r3-generic.cpp \
+ 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \

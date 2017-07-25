@@ -2250,6 +2250,7 @@
 # define RTTimeZoneGetInfoByUnixName                    RT_MANGLER(RTTimeZoneGetInfoByUnixName)
 # define RTTimeZoneGetInfoByWindowsName                 RT_MANGLER(RTTimeZoneGetInfoByWindowsName)
 # define RTTimeZoneGetInfoByWindowsIndex                RT_MANGLER(RTTimeZoneGetInfoByWindowsIndex)
+# define RTTimeZoneGetCurrent                           RT_MANGLER(RTTimeZoneGetCurrent)
 # define RTTlsAlloc                                     RT_MANGLER(RTTlsAlloc)
 # define RTTlsAllocEx                                   RT_MANGLER(RTTlsAllocEx)
 # define RTTlsFree                                      RT_MANGLER(RTTlsFree)
