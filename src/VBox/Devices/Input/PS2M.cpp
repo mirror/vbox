@@ -596,7 +596,6 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
     bool    fHandled = true;
 
     LogFlowFunc(("cmd=0x%02X, active cmd=0x%02X\n", cmd, pThis->u8CurrCmd));
-//LogRel(("aux: cmd=0x%02X, active cmd=0x%02X\n", cmd, pThis->u8CurrCmd));
 
     if (pThis->enmMode == AUX_MODE_RESET)
         /* In reset mode, do not respond at all. */
@@ -801,12 +800,11 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             break;
     }
     LogFlowFunc(("Active cmd now 0x%02X; updating interrupts\n", pThis->u8CurrCmd));
-//    KBCUpdateInterrupts(pThis->pParent);
     return VINF_SUCCESS;
 }
 
 /**
- * Send a byte (keystroke or command response) to the keyboard controller.
+ * Send a byte (packet data or command response) to the keyboard controller.
  *
  * @returns VINF_SUCCESS or VINF_TRY_AGAIN.
  * @param   pThis               The PS/2 auxiliary device instance data.
@@ -820,7 +818,7 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
     AssertPtr(pb);
 
     /* Anything in the command queue has priority over data
-     * in the event queue. Additionally, keystrokes are /// @todo true?
+     * in the event queue. Additionally, packet data are
      * blocked if a command is currently in progress, even if
      * the command queue is empty.
      */
@@ -830,7 +828,6 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
         rc = ps2kRemoveQueue((GeneriQ *)&pThis->evtQ, pb);
 
     LogFlowFunc(("mouse sends 0x%02x (%svalid data)\n", *pb, rc == VINF_SUCCESS ? "" : "not "));
-//if (rc == VINF_SUCCESS) LogRel(("aux: sends 0x%02X\n", *pb));
 
     return rc;
 }
@@ -856,15 +853,11 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     int rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-#if 0
-    /* If the input queue is not empty, restart the timer. */
-#else
     /* If more movement is accumulated, report it and restart the timer. */
     uHaveEvents = ps2mHaveEvents(pThis);
     LogFlowFunc(("Have%s events\n", uHaveEvents ? "" : " no"));
 
     if (uHaveEvents)
-#endif
     {
         /* Report accumulated data, poke the KBC, and start the timer. */
         ps2mReportAccumulatedEvents(pThis, (GeneriQ *)&pThis->evtQ, true);
@@ -877,7 +870,7 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     PDMCritSectLeave(pThis->pCritSectR3);
 }
 
-/* The auxiliary device is specified to take up to about 500 milliseconds. We need
+/* The auxiliary device reset is specified to take up to about 500 milliseconds. We need
  * to delay sending the result to the host for at least a tiny little while.
  */
 static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
@@ -967,7 +960,6 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
     pThis->fAccumB |= fButtons;     /// @todo accumulate based on current protocol?
     pThis->fCurrB   = fButtons;
 
-#if 1
     /* Report the event and start the throttle timer unless it's already running. */
     if (!pThis->fThrottleActive)
     {
@@ -976,29 +968,6 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
         pThis->fThrottleActive = true;
         TMTimerSetMillies(pThis->CTX_SUFF(pThrottleTimer), pThis->uThrottleDelay);
     }
-#else
-    /* Clamp the delta values to the allowed range. */
-    dx = RT_MIN(RT_MAX(dx, -256), 255);
-    dy = RT_MIN(RT_MAX(dy, -256), 255);
-
-    /* Start with the sync bit. */
-    val  = RT_BIT(3);
-    /* Add buttons 1-3. */
-    val |= fButtons & PS2M_STD_BTN_MASK;
-    /* Set the X/Y sign bits. */
-    if (dx < 0)
-        val |= RT_BIT(4);
-    if (dy < 0)
-        val |= RT_BIT(5);
-
-    ps2kInsertQueue((GeneriQ *)&pThis->evtQ, val);
-    ps2kInsertQueue((GeneriQ *)&pThis->evtQ, (uint8_t)dx);
-    ps2kInsertQueue((GeneriQ *)&pThis->evtQ, (uint8_t)dy);
-    if (pThis->enmProtocol > PS2M_PROTO_PS2STD)
-    {
-        ps2kInsertQueue((GeneriQ *)&pThis->evtQ, (uint8_t)dz);
-    }
-#endif
 
     return rc;
 }
@@ -1178,10 +1147,6 @@ void PS2MReset(PPS2M pThis)
     /* Clear the queues. */
     ps2kClearQueue((GeneriQ *)&pThis->cmdQ);
     ps2mSetDefaults(pThis);     /* Also clears event queue. */
-
-    /* Activate the PS/2 mouse by default. */
-//    if (pThis->Mouse.pDrv)
-//        pThis->Mouse.pDrv->pfnSetActive(pThis->Mouse.pDrv, true);
 }
 
 void PS2MRelocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
