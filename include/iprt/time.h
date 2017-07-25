@@ -1030,6 +1030,69 @@ RTDECL(uint32_t)  RTTimeProgramSecTS(void);
  */
 RTDECL(uint64_t) RTTimeProgramStartNanoTS(void);
 
+
+/**
+ * Time zone information.
+ */
+typedef struct RTTIMEZONEINFO
+{
+    /** Unix time zone name (continent/country[/city]|). */
+    const char     *pszUnixName;
+    /** Windows time zone name.   */
+    const char     *pszWindowsName;
+    /** The length of the unix time zone name. */
+    uint8_t         cchUnixName;
+    /** The length of the windows time zone name. */
+    uint8_t         cchWindowsName;
+    /** Two letter country/territory code if applicable, otherwise 'ZZ'. */
+    char            szCountry[3];
+    /** Two letter windows country/territory code if applicable.
+     * Empty string if no windows mapping. */
+    char            szWindowsCountry[3];
+#if 0 /* Add when needed and it's been extracted. */
+    /** The standard delta in minutes (add to UTC). */
+    int16_t         cMinStdDelta;
+    /** The daylight saving time delta in minutes (add to UTC). */
+    int16_t         cMinDstDelta;
+#endif
+    /** closest matching windows time zone index. */
+    uint32_t        idxWindows;
+    /** Flags, RTTIMEZONEINFO_F_XXX. */
+    uint32_t        fFlags;
+} RTTIMEZONEINFO;
+/** Pointer to time zone info.   */
+typedef RTTIMEZONEINFO const *PCRTTIMEZONEINFO;
+
+/** @name RTTIMEZONEINFO_F_XXX - time zone info flags.
+ *  @{ */
+/** Indicates golden mapping entry for a windows time zone name. */
+#define RTTIMEZONEINFO_F_GOLDEN         RT_BIT_32(0)
+/** @} */
+
+/**
+ * Looks up static time zone information by unix name.
+ *
+ * @returns Pointer to info entry if found, NULL if not.
+ * @param   pszName     The unix zone name (TZ).
+ */
+RTDECL(PCRTTIMEZONEINFO) RTTimeZoneGetInfoByUnixName(const char *pszName);
+
+/**
+ * Looks up static time zone information by window name.
+ *
+ * @returns Pointer to info entry if found, NULL if not.
+ * @param   pszName     The windows zone name (reg key).
+ */
+RTDECL(PCRTTIMEZONEINFO) RTTimeZoneGetInfoByWindowsName(const char *pszName);
+
+/**
+ * Looks up static time zone information by windows index.
+ *
+ * @returns Pointer to info entry if found, NULL if not.
+ * @param   idxZone     The windows timezone index.
+ */
+RTDECL(PCRTTIMEZONEINFO) RTTimeZoneGetInfoByWindowsIndex(uint32_t idxZone);
+
 /** @} */
 
 RT_C_DECLS_END
