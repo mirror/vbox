@@ -229,18 +229,25 @@ int vboxWddmVModesAdd(PVBOXMP_DEVEXT pExt, VBOXWDDM_VMODES *pModes, uint32_t u32
     vramSize &= ~PAGE_OFFSET_MASK;
 
     /* prevent potensial overflow */
-    if (pResolution->cx > 0x7fff
-            || pResolution->cy > 0x7fff)
+    if (   pResolution->cx > 0x7fff
+        || pResolution->cy > 0x7fff)
     {
-        WARN(("too big resolution"));
+        WARN(("resolution %dx%d insane", pResolution->cx, pResolution->cy));
         return VERR_INVALID_PARAMETER;
     }
+
     uint32_t cbSurfMem = pResolution->cx * pResolution->cy * 4;
     if (cbSurfMem > vramSize)
+    {
+        WARN(("resolition %dx%d too big for available VRAM (%d bytes)\n", pResolution->cx, pResolution->cy, vramSize));
         return VERR_NOT_SUPPORTED;
+    }
 
     if (!VBoxLikesVideoMode(u32Target, pResolution->cx, pResolution->cy, 32))
+    {
+        WARN(("resolution %dx%d not accepted by the frontend\n", pResolution->cx, pResolution->cy));
         return VERR_NOT_SUPPORTED;
+    }
 
     if (pModes->aTransientResolutions[u32Target] == CR_RSIZE2U64(*pResolution))
     {
