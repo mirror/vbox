@@ -1141,7 +1141,7 @@ RTDECL(PCRTTIMEZONEINFO) RTTimeZoneGetInfoByWindowsName(const char *pszName)
     {
         PCRTTIMEZONEINFO pZone = &g_aTimeZones[g_aidxWinTimeZones[i]];
         if (   pZone->cchWindowsName == cchName
-            && RTStrICmpAscii(pszName, g_aTimeZones[i].pszWindowsName) == 0)
+            && RTStrICmpAscii(pszName, pZone->pszWindowsName) == 0)
             return pZone;
     }
     return NULL;
