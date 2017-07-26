@@ -282,7 +282,7 @@
             <entry>&ndash;</entry>
             <entry><emphasis role="bold">+</emphasis></entry>
             <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><link linkend="natforward">Port forwarding</link></entry>
+            <entry><link linkend="network_nat_service">Port forwarding</link></entry>
           </row>
         </tbody>
       </tgroup>
