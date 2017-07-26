@@ -1123,6 +1123,7 @@
 # define RTLocalIpcSessionQueryUserId                   RT_MANGLER(RTLocalIpcSessionQueryUserId)
 # define RTLocalIpcSessionQueryGroupId                  RT_MANGLER(RTLocalIpcSessionQueryGroupId)
 # define RTLocaleQueryLocaleName                        RT_MANGLER(RTLocaleQueryLocaleName)
+# define RTLocaleQueryNormalizedBaseLocaleName          RT_MANGLER(RTLocaleQueryNormalizedBaseLocaleName)
 # define RTLocaleQueryUserCountryCode                   RT_MANGLER(RTLocaleQueryUserCountryCode)
 # define RTLockValidatorClassAddPriorClass              RT_MANGLER(RTLockValidatorClassAddPriorClass)
 # define RTLockValidatorClassCreate                     RT_MANGLER(RTLockValidatorClassCreate)

@@ -31,7 +31,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_time   RTLocale - Locale and Related Info
+/** @defgroup grp_rt_locale RTLocale - Locale and Related Info
  * @ingroup grp_rt
  * @{
  */
@@ -46,6 +46,17 @@ RT_C_DECLS_BEGIN
  */
 RTDECL(int) RTLocaleQueryLocaleName(char *pszName, size_t cbName);
 
+/**
+ * Returns a normalized base locale name ('{ll}_{CC}' or 'C').
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if not supported.
+ * @param   pszName         Where to return the name.
+ * @param   cbName          The size of the name buffer.
+ *
+ * @sa      RTLOCALE_IS_LANGUAGE2_UNDERSCORE_COUNTRY2
+ */
+RTDECL(int) RTLocaleQueryNormalizedBaseLocaleName(char *pszName, size_t cbName);
 
 /**
  * Gets the two letter country code (ISO 3166-1 alpha-2) for the current user.
@@ -59,6 +70,27 @@ RTDECL(int) RTLocaleQueryLocaleName(char *pszName, size_t cbName);
  *                          The country code will be returned here on success.
  */
 RTDECL(int) RTLocaleQueryUserCountryCode(char pszCountryCode[3]);
+
+
+/**
+ * Checks whether @a a_psz seems to start with a
+ * language-code-underscore-country-code sequence.
+ *
+ * We perform a check for a likely ISO 639-1 language code, followed by an
+ * underscore, followed by a likely ISO 3166-1 alpha-2 country code.
+ *
+ * @return true if probable '{ll}_{CC}' sequence, false if surely not.
+ * @param  a_psz        The string to test the start of.
+ *
+ * @note User must include iprt/ctype.h separately.
+ */
+#define RTLOCALE_IS_LANGUAGE2_UNDERSCORE_COUNTRY2(a_psz) \
+    (   RT_C_IS_LOWER((a_psz)[0]) \
+     && RT_C_IS_LOWER((a_psz)[1]) \
+     && (a_psz)[2] == '_' \
+     && RT_C_IS_UPPER((a_psz)[3]) \
+     && RT_C_IS_UPPER((a_psz)[4]) )
+
 
 /** @} */
 

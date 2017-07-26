@@ -819,6 +819,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/env-win.cpp \
 	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
+ 	r3/win/RTLocaleQueryNormalizedBaseLocaleName-win.cpp \
 	r3/win/RTLocaleQueryUserCountryCode-win.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
 	r3/win/RTSystemShutdown-win.cpp \
@@ -887,6 +888,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+ 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
  	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/allocex-r3-posix.cpp \
@@ -998,6 +1000,7 @@ RuntimeR3_SOURCES.os2   = \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/generic/allocex-r3-generic.cpp \
  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+ 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
  	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/os2/filelock-os2.cpp \
@@ -1080,6 +1083,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/RTPathUserDocuments-darwin.cpp \
 	r3/generic/allocex-r3-generic.cpp \
  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+ 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
  	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
@@ -1153,6 +1157,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/generic/allocex-r3-generic.cpp \
  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+ 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
  	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
@@ -1225,6 +1230,7 @@ RuntimeR3_SOURCES.netbsd = \
 	r3/netbsd/rtProcInitExePath-netbsd.cpp \
 	r3/generic/allocex-r3-generic.cpp \
  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+ 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
  	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
@@ -1290,6 +1296,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/generic/allocex-r3-generic.cpp \
  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+ 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
  	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
@@ -1380,6 +1387,7 @@ RuntimeR3_SOURCES.haiku = \
 	r3/haiku/time-haiku.cpp \
 	r3/generic/allocex-r3-generic.cpp \
  	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
+ 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryUserCountryCode-r3-generic.cpp \
  	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
