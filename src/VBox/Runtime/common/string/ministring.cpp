@@ -92,7 +92,7 @@ RTCString &RTCString::assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_
         if (a_cchSrc > cchMax)
             a_cchSrc = cchMax;
         reserve(a_cchSrc + 1);
-        memcpy(m_psz, a_rSrc.c_str(), a_cchSrc);
+        memcpy(m_psz, a_rSrc.c_str() + a_offSrc, a_cchSrc);
         m_psz[a_cchSrc] = '\0';
         m_cch = a_cchSrc;
     }
