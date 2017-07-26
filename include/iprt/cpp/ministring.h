@@ -464,9 +464,9 @@ public:
      * @param   rThat           The string to append.
      * @returns Reference to the object.
      */
-    RTCString &operator+=(const RTCString &that)
+    RTCString &operator+=(const RTCString &rThat)
     {
-        return append(that);
+        return append(rThat);
     }
 
     /**
