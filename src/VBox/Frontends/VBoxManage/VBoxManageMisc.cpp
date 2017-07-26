@@ -1291,6 +1291,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     const char *pszCountry              = NULL;
     const char *pszTimeZone             = NULL;
     const char *pszProxy                = NULL;
+    const char *pszHostname             = NULL;
     Utf8Str     strAbsAuxiliaryBasePath;
     const char *pszAuxiliaryBasePath    = NULL;
     Utf8Str     strAbsScriptTemplatePath;
@@ -1311,7 +1312,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     {
         { "--iso",                              'i', RTGETOPT_REQ_STRING },
         { "--user",                             'u', RTGETOPT_REQ_STRING },
-        { "--password",                         'p', RTGETOPT_REQ_STRING },
+        { "--password",                         'p', RTGETOPT_REQ_STRING }, /** @todo password file ++ */
         { "--full-user-name",                   'U', RTGETOPT_REQ_STRING },
         { "--key",                              'k', RTGETOPT_REQ_STRING },
         { "--install-additions",                'A', RTGETOPT_REQ_NOTHING },
@@ -1324,6 +1325,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--country",                          'L', RTGETOPT_REQ_STRING },
         { "--time-zone",                        'z', RTGETOPT_REQ_STRING },
         { "--proxy",                            'y', RTGETOPT_REQ_STRING },
+        { "--hostname",                         'H', RTGETOPT_REQ_STRING },
         { "--auxiliary-base-path",              'x', RTGETOPT_REQ_STRING },
         { "--image-index",                      'm', RTGETOPT_REQ_UINT32 },
         { "--script-template",                  'c', RTGETOPT_REQ_STRING },
@@ -1414,6 +1416,10 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
             case 'y':   // --proxy
                 pszProxy = ValueUnion.psz;
+                break;
+
+            case 'H':   // --hostname
+                pszHostname = ValueUnion.psz;
                 break;
 
             case 'x':  // --auxiliary-base-path
@@ -1542,6 +1548,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(TimeZone)(Bstr(pszTimeZone).raw()));
             if (pszProxy)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Proxy)(Bstr(pszProxy).raw()));
+            if (pszHostname)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Hostname)(Bstr(pszHostname).raw()));
             if (fSetImageIdx)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ImageIndex)(idxImage));
             if (pszScriptTemplatePath)
@@ -1593,6 +1601,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             SHOW_STR_ATTR(Country,                       "country");
             SHOW_STR_ATTR(TimeZone,                      "timeZone");
             SHOW_STR_ATTR(Proxy,                         "proxy");
+            SHOW_STR_ATTR(Hostname,                      "hostname");
             SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
             SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
             SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
