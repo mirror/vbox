@@ -229,6 +229,65 @@
         </glossentry>
       </glosslist></para>
 
+    <para>The following table provides a quick overview of the most important
+    networking modes:</para>
+    <table>
+      <title>Overview</title>
+      <tgroup cols="5">
+        <colspec align="left" />
+        <colspec align="center" />
+        <colspec align="center" />
+        <colspec align="center" />
+        <colspec align="center" />
+        <thead valign="middle">
+          <row>
+            <entry></entry>
+            <entry><emphasis role="bold">VM &harr; Host</emphasis></entry>
+            <entry><emphasis role="bold">VM1 &harr; VM2</emphasis></entry>
+            <entry><emphasis role="bold">VM &rarr; Internet</emphasis></entry>
+            <entry><emphasis role="bold">VM &larr; Internet</emphasis></entry>
+          </row>
+        </thead>
+        <tbody valign="middle">
+          <row>
+            <entry>Host-only</entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry align="center"><emphasis role="bold">+</emphasis></entry>
+            <entry>&ndash;</entry>
+            <entry>&ndash;</entry>
+          </row>
+          <row>
+            <entry>Internal</entry>
+            <entry>&ndash;</entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry>&ndash;</entry>
+            <entry>&ndash;</entry>
+          </row>
+          <row>
+            <entry>Bridged</entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+          </row>
+          <row>
+            <entry>NAT</entry>
+            <entry>&ndash;</entry>
+            <entry>&ndash;</entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry><link linkend="natforward">Port forwarding</link></entry>
+          </row>
+          <row>
+            <entry>NAT Network</entry>
+            <entry>&ndash;</entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry><link linkend="natforward">Port forwarding</link></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+
     <para>The following sections describe the available network modes in more
     detail.</para>
   </sect1>
