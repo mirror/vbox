@@ -244,8 +244,6 @@ int MsiInit(PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
         /* How many vectors we're capable of */
         iFlags |= iMmc;
     }
-    else
-        AssertReturn(cVectors == 1, VERR_TOO_MUCH_DATA);
 
     if (f64bit)
         iFlags |= VBOX_PCI_MSI_FLAGS_64BIT;
