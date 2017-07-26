@@ -3766,7 +3766,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="68d72757-773b-4c13-9956-b5aa0a28e4a7"
+    uuid="da34bfb3-437a-4510-6c7e-7687b00d378d"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3928,6 +3928,15 @@
         This is a semicolon separated list of keywords, and later maybe guest OS
         package specifiers.  Currently the 'minimal' is the only recognized value,
         and this only works with a selection of linux installers.
+      </desc>
+    </attribute>
+
+    <attribute name="hostname" type="wstring">
+      <desc>
+        The fully qualified guest hostname.
+
+        This defaults to machine-name + ".myguest.virtualbox.org", though it may
+        change to the host domain name later.
       </desc>
     </attribute>
 
