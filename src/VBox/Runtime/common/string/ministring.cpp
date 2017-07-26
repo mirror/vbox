@@ -49,6 +49,81 @@ const size_t RTCString::npos = ~(size_t)0;
 #define IPRT_MINISTRING_APPEND_ALIGNMENT    64
 
 
+RTCString &RTCString::assign(const RTCString &a_rSrc)
+{
+    size_t const cchSrc = a_rSrc.length();
+    if (cchSrc > 0)
+    {
+        reserve(cchSrc + 1);
+        memcpy(m_psz, a_rSrc.c_str(), cchSrc);
+        m_psz[cchSrc] = '\0';
+        m_cch = cchSrc;
+        return *this;
+    }
+    setNull();
+    return *this;
+
+}
+
+RTCString &RTCString::assign(const char *a_pszSrc)
+{
+    if (a_pszSrc)
+    {
+        size_t cchSrc = strlen(a_pszSrc);
+        if (cchSrc)
+        {
+            reserve(cchSrc + 1);
+            memcpy(m_psz, a_pszSrc, cchSrc);
+            m_psz[cchSrc] = '\0';
+            m_cch = cchSrc;
+            return *this;
+        }
+    }
+    setNull();
+    return *this;
+}
+
+RTCString &RTCString::assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc /*= npos*/)
+{
+    AssertReturn(&a_rSrc != this, *this);
+    if (a_offSrc < a_rSrc.length())
+    {
+        size_t cchMax = a_rSrc.length() - a_offSrc;
+        if (a_cchSrc > cchMax)
+            a_cchSrc = cchMax;
+        reserve(a_cchSrc + 1);
+        memcpy(m_psz, a_rSrc.c_str(), a_cchSrc);
+        m_psz[a_cchSrc] = '\0';
+        m_cch = a_cchSrc;
+    }
+    else
+        setNull();
+    return *this;
+}
+
+RTCString &RTCString::assign(const char *a_pszSrc, size_t a_cchSrc)
+{
+    if (a_cchSrc)
+    {
+        a_cchSrc = RTStrNLen(a_pszSrc, a_cchSrc);
+        reserve(a_cchSrc + 1);
+        memcpy(m_psz, a_pszSrc, a_cchSrc);
+        m_psz[a_cchSrc] = '\0';
+        m_cch = a_cchSrc;
+    }
+    else
+        setNull();
+    return *this;
+}
+
+RTCString &RTCString::assign(size_t a_cTimes, char a_ch)
+{
+    reserve(a_cTimes + 1);
+    memset(m_psz, a_ch, a_cTimes);
+    return *this;
+}
+
+
 RTCString &RTCString::printf(const char *pszFormat, ...)
 {
     va_list va;

@@ -49,7 +49,7 @@
  * and empty strings.  In other words, RTCString("") and RTCString(NULL)
  * behave the same.  In both cases, RTCString allocates no memory, reports
  * a zero length and zero allocated bytes for both, and returns an empty
- * C string from c_str().
+ * C-style string from c_str().
  *
  * @note    RTCString ASSUMES that all strings it deals with are valid UTF-8.
  *          The caller is responsible for not breaking this assumption.
@@ -91,7 +91,7 @@ public:
     }
 
     /**
-     * Creates a copy of a C string.
+     * Creates a copy of a C-style string.
      *
      * This allocates strlen(pcsz) + 1 bytes for the new instance, unless s is empty.
      *
@@ -125,7 +125,7 @@ public:
     }
 
     /**
-     * Create a partial copy of a C string.
+     * Create a partial copy of a C-style string.
      *
      * @param   a_pszSrc        The source string (UTF-8).
      * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
@@ -329,6 +329,50 @@ public:
     }
 
     /**
+     * Assigns a copy of another RTCString.
+     *
+     * @param   a_rSrc          Reference to the source string.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     */
+    RTCString &assign(const RTCString &a_rSrc);
+
+    /**
+     * Assigns a copy of a C-style string.
+     *
+     * @param   a_pszSrc        Pointer to the C-style source string.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @remarks ASSUMES valid
+     */
+    RTCString &assign(const char *a_pszSrc);
+
+    /**
+     * Assigns a partial copy of another RTCString.
+     *
+     * @param   a_rSrc          The source string.
+     * @param   a_offSrc        The byte offset into the source string.
+     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
+     *                          to copy from the source string.
+     */
+    RTCString &assign(const RTCString &a_rSrc, size_t a_offSrc, size_t a_cchSrc = npos);
+
+    /**
+     * Assigns a partial copy of a C-style string.
+     *
+     * @param   a_pszSrc        The source string (UTF-8).
+     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
+     *                          to copy from the source string.
+     */
+    RTCString &assign(const char *a_pszSrc, size_t a_cchSrc);
+
+    /**
+     * Assigs a string containing @a a_cTimes repetitions of the character @a a_ch.
+     *
+     * @param   a_cTimes        The number of times the character is repeated.
+     * @param   a_ch            The character to fill the string with.
+     */
+    RTCString &assign(size_t a_cTimes, char a_ch);
+
+    /**
      * Assigns the output of the string format operation (RTStrPrintf).
      *
      * @param   pszFormat       Pointer to the format string,
@@ -357,26 +401,22 @@ public:
     RTCString &printfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
     /**
-     * Appends the string @a that to @a this.
+     * Appends the string @a that to @a rThat.
      *
-     * @param   that            The string to append.
-     *
+     * @param   rThat            The string to append.
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
-     *
      * @returns Reference to the object.
      */
-    RTCString &append(const RTCString &that);
+    RTCString &append(const RTCString &rThat);
 
     /**
-     * Appends the string @a pszThat to @a this.
+     * Appends the string @a pszSrc to @a this.
      *
-     * @param   pszThat         The C string to append.
-     *
+     * @param   pszSrc          The C-style string to append.
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
-     *
      * @returns Reference to the object.
      */
-    RTCString &append(const char *pszThat);
+    RTCString &append(const char *pszSrc);
 
     /**
      * Appends the a substring from @a rThat to @a this.
@@ -385,9 +425,7 @@ public:
      * @param   offStart        The start of the substring to append (byte offset,
      *                          not codepoint).
      * @param   cchMax          The maximum number of bytes to append.
-     *
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
-     *
      * @returns Reference to the object.
      */
     RTCString &append(const RTCString &rThat, size_t offStart, size_t cchMax = RTSTR_MAX);
@@ -395,11 +433,9 @@ public:
     /**
      * Appends the first @a cchMax chars from string @a pszThat to @a this.
      *
-     * @param   pszThat         The C string to append.
+     * @param   pszThat         The C-style string to append.
      * @param   cchMax          The maximum number of bytes to append.
-     *
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
-     *
      * @returns Reference to the object.
      */
     RTCString &append(const char *pszThat, size_t cchMax);
@@ -408,9 +444,7 @@ public:
      * Appends the given character to @a this.
      *
      * @param   ch              The character to append.
-     *
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
-     *
      * @returns Reference to the object.
      */
     RTCString &append(char ch);
@@ -419,9 +453,7 @@ public:
      * Appends the given unicode code point to @a this.
      *
      * @param   uc              The unicode code point to append.
-     *
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
-     *
      * @returns Reference to the object.
      */
     RTCString &appendCodePoint(RTUNICP uc);
@@ -429,8 +461,7 @@ public:
     /**
      * Shortcut to append(), RTCString variant.
      *
-     * @param that              The string to append.
-     *
+     * @param   rThat           The string to append.
      * @returns Reference to the object.
      */
     RTCString &operator+=(const RTCString &that)
@@ -441,8 +472,7 @@ public:
     /**
      * Shortcut to append(), const char* variant.
      *
-     * @param pszThat           The C string to append.
-     *
+     * @param   pszThat         The C-style string to append.
      * @returns                 Reference to the object.
      */
     RTCString &operator+=(const char *pszThat)
@@ -578,7 +608,7 @@ public:
      *
      * Returns the byte at the given index, or a null byte if the index is not
      * smaller than length().  This does _not_ count codepoints but simply points
-     * into the member C string.
+     * into the member C-style string.
      *
      * @param   i       The index into the string buffer.
      * @returns char at the index or null.
@@ -591,9 +621,10 @@ public:
     }
 
     /**
-     * Returns the contained string as a C-style const char* pointer.
-     * This never returns NULL; if the string is empty, this returns a
-     * pointer to static null byte.
+     * Returns the contained string as a const C-style string pointer.
+     *
+     * This never returns NULL; if the string is empty, this returns a pointer to
+     * static null byte.
      *
      * @returns const pointer to C-style string.
      */
