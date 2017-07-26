@@ -1292,6 +1292,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     const char *pszTimeZone             = NULL;
     const char *pszProxy                = NULL;
     const char *pszHostname             = NULL;
+    RTCList<RTCString> arrPackageSelectionAdjustments;
+    // advance options:
     Utf8Str     strAbsAuxiliaryBasePath;
     const char *pszAuxiliaryBasePath    = NULL;
     Utf8Str     strAbsScriptTemplatePath;
@@ -1300,6 +1302,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     const char *pszPostInstallScriptTemplatePath = NULL;
     const char *pszPostInstallCommand   = NULL;
     const char *pszExtraInstallKernelParameters = NULL;
+    // start vm related options:
     const char *pszSessionType          = "headless";
 
     /*
@@ -1326,12 +1329,15 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--time-zone",                        'z', RTGETOPT_REQ_STRING },
         { "--proxy",                            'y', RTGETOPT_REQ_STRING },
         { "--hostname",                         'H', RTGETOPT_REQ_STRING },
+        { "--package-selection-adjustment",     's', RTGETOPT_REQ_STRING },
+        // advance options:
         { "--auxiliary-base-path",              'x', RTGETOPT_REQ_STRING },
         { "--image-index",                      'm', RTGETOPT_REQ_UINT32 },
         { "--script-template",                  'c', RTGETOPT_REQ_STRING },
         { "--post-install-template",            'C', RTGETOPT_REQ_STRING },
         { "--post-install-command",             'P', RTGETOPT_REQ_STRING },
         { "--extra-install-kernel-parameters",  'I', RTGETOPT_REQ_STRING },
+        // start vm related options:
         { "--session-type",                     'S', RTGETOPT_REQ_STRING },
     };
 
@@ -1422,7 +1428,11 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 pszHostname = ValueUnion.psz;
                 break;
 
-            case 'x':  // --auxiliary-base-path
+            case 's':   // --package-selection-adjustment
+                arrPackageSelectionAdjustments.append(ValueUnion.psz);
+                break;
+
+            case 'x':   // --auxiliary-base-path
                 vrc = RTPathAbsCxx(strAbsAuxiliaryBasePath, ValueUnion.psz);
                 if (RT_FAILURE(vrc))
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
@@ -1434,14 +1444,14 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 fSetImageIdx = true;
                 break;
 
-            case 'c':  // --script-template
+            case 'c':   // --script-template
                 vrc = RTPathAbsCxx(strAbsScriptTemplatePath, ValueUnion.psz);
                 if (RT_FAILURE(vrc))
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 pszScriptTemplatePath = strAbsScriptTemplatePath.c_str();
                 break;
 
-            case 'C':  // --post-install-script-template
+            case 'C':   // --post-install-script-template
                 vrc = RTPathAbsCxx(strAbsPostInstallScriptTemplatePath, ValueUnion.psz);
                 if (RT_FAILURE(vrc))
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
@@ -1550,6 +1560,16 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Proxy)(Bstr(pszProxy).raw()));
             if (pszHostname)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Hostname)(Bstr(pszHostname).raw()));
+            if (arrPackageSelectionAdjustments.size() == 1)
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PackageSelectionAdjustments)(Bstr(arrPackageSelectionAdjustments[0]).raw()));
+            else if (arrPackageSelectionAdjustments.size() > 1)
+            {
+                RTCString strAdjustments;
+                strAdjustments.join(arrPackageSelectionAdjustments, ";");
+                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PackageSelectionAdjustments)(Bstr(strAdjustments).raw()));
+            }
+
+            // advanced options:
             if (fSetImageIdx)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ImageIndex)(idxImage));
             if (pszScriptTemplatePath)
@@ -1602,6 +1622,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             SHOW_STR_ATTR(TimeZone,                      "timeZone");
             SHOW_STR_ATTR(Proxy,                         "proxy");
             SHOW_STR_ATTR(Hostname,                      "hostname");
+            SHOW_STR_ATTR(PackageSelectionAdjustments,   "packageSelectionAdjustments");
             SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
             SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
             SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
