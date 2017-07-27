@@ -119,6 +119,44 @@ RTDECL(int) RTFsIsoMakerSetRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel
 RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel);
 
 /**
+ * Sets the default file mode settings.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The default file mode.
+ */
+RTDECL(int) RTFsIsoMakerSetDefaultFileMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode);
+
+/**
+ * Sets the default dir mode settings.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The default dir mode.
+ */
+RTDECL(int) RTFsIsoMakerSetDefaultDirMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode);
+
+/**
+ * Sets the forced file mode, if @a fForce is true also the default mode is set.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The file mode.
+ * @param   fForce              Indicate whether forced mode is active or not.
+ */
+RTDECL(int) RTFsIsoMakerSetForcedFileMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode, bool fForce);
+
+/**
+ * Sets the forced dir mode, if @a fForce is true also the default mode is set.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The dir mode.
+ * @param   fForce              Indicate whether forced mode is active or not.
+ */
+RTDECL(int) RTFsIsoMakerSetForcedDirMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode, bool fForce);
+
+/**
  * Sets the content of the system area, i.e. the first 32KB of the image.
  *
  * This can be used to put generic boot related stuff.

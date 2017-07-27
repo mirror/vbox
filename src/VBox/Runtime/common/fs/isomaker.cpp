@@ -506,6 +506,15 @@ typedef struct RTFSISOMAKERINT
     /** The default file mode mask. */
     RTFMODE                 fDefaultDirMode;
 
+    /** Forced file mode mask (permissions only). */
+    RTFMODE                 fForcedFileMode;
+    /** Set if fForcedFileMode is active. */
+    bool                    fForcedFileModeActive;
+    /** Set if fForcedDirMode is active. */
+    bool                    fForcedDirModeActive;
+    /** Forced directory mode mask (permissions only). */
+    RTFMODE                 fForcedDirMode;
+
     /** Number of common source files. */
     uint32_t                cCommonSources;
     /** Array of common source file handles. */
@@ -816,6 +825,11 @@ RTDECL(int) RTFsIsoMakerCreate(PRTFSISOMAKER phIsoMaker)
         //pThis->gidDefault                 = 0;
         pThis->fDefaultFileMode             = 0444 | RTFS_TYPE_FILE      | RTFS_DOS_ARCHIVED  | RTFS_DOS_READONLY;
         pThis->fDefaultDirMode              = 0555 | RTFS_TYPE_DIRECTORY | RTFS_DOS_DIRECTORY | RTFS_DOS_READONLY;
+
+        //pThis->fForcedFileMode            = 0;
+        //pThis->fForcedFileModeActive      = false;
+        //pThis->fForcedDirModeActive       = false;
+        //pThis->fForcedDirMode             = 0;
 
         //pThis->cCommonSources             = 0;
         //pThis->paCommonSources            = NULL;
@@ -1215,6 +1229,94 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
                  || (uLevel >= pThis->Joliet.uRockRidgeLevel && pThis->Joliet.uRockRidgeLevel > 0), VERR_WRONG_ORDER);
 
     pThis->Joliet.uRockRidgeLevel = uLevel;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the default file mode settings.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The default file mode.
+ */
+RTDECL(int) RTFsIsoMakerSetDefaultFileMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    Assert(!(fMode & ~RTFS_UNIX_ALL_PERMS));
+
+    pThis->fDefaultFileMode &= ~RTFS_UNIX_ALL_PERMS;
+    pThis->fDefaultFileMode |= fMode & RTFS_UNIX_ALL_PERMS;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the default dir mode settings.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The default dir mode.
+ */
+RTDECL(int) RTFsIsoMakerSetDefaultDirMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    Assert(!(fMode & ~RTFS_UNIX_ALL_PERMS));
+
+    pThis->fDefaultDirMode &= ~RTFS_UNIX_ALL_PERMS;
+    pThis->fDefaultDirMode |= fMode & RTFS_UNIX_ALL_PERMS;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the forced file mode, if @a fForce is true also the default mode is set.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The file mode.
+ * @param   fForce              Indicate whether forced mode is active or not.
+ */
+RTDECL(int) RTFsIsoMakerSetForcedFileMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode, bool fForce)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    Assert(!(fMode & ~RTFS_UNIX_ALL_PERMS));
+
+    pThis->fForcedFileMode       = fMode & RTFS_UNIX_ALL_PERMS;
+    pThis->fForcedFileModeActive = fForce;
+    if (fForce)
+    {
+        pThis->fDefaultFileMode &= ~RTFS_UNIX_ALL_PERMS;
+        pThis->fDefaultFileMode |= fMode & RTFS_UNIX_ALL_PERMS;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the forced dir mode, if @a fForce is true also the default mode is set.
+ *
+ * @returns IRPT status code.
+ * @param   hIsoMaker           The ISO maker handle.
+ * @param   fMode               The dir mode.
+ * @param   fForce              Indicate whether forced mode is active or not.
+ */
+RTDECL(int) RTFsIsoMakerSetForcedDirMode(RTFSISOMAKER hIsoMaker, RTFMODE fMode, bool fForce)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET(pThis);
+    Assert(!(fMode & ~RTFS_UNIX_ALL_PERMS));
+
+    pThis->fForcedDirModeActive  = fForce;
+    pThis->fForcedDirMode        = fMode & RTFS_UNIX_ALL_PERMS;
+    if (fForce)
+    {
+        pThis->fDefaultDirMode  &= ~RTFS_UNIX_ALL_PERMS;
+        pThis->fDefaultDirMode  |= fMode & RTFS_UNIX_ALL_PERMS;
+    }
     return VINF_SUCCESS;
 }
 
@@ -2887,6 +2989,9 @@ static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pO
         pObj->ModificationTime  = pObjInfo->ModificationTime;
         pObj->AccessedTime      = pObjInfo->AccessTime;
         pObj->fMode             = pObjInfo->Attr.fMode;
+        if (enmType == RTFSISOMAKEROBJTYPE_DIR ? pThis->fForcedDirModeActive : pThis->fForcedFileModeActive)
+            pObj->fMode = (pObj->fMode & ~RTFS_UNIX_ALL_PERMS)
+                        | (enmType == RTFSISOMAKEROBJTYPE_DIR ? pThis->fForcedDirMode : pThis->fForcedFileMode);
         pObj->uid               = pObjInfo->Attr.u.Unix.uid != NIL_RTUID ? pObjInfo->Attr.u.Unix.uid : pThis->uidDefault;
         pObj->gid               = pObjInfo->Attr.u.Unix.gid != NIL_RTGID ? pObjInfo->Attr.u.Unix.gid : pThis->gidDefault;
     }

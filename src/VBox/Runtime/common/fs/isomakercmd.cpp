@@ -113,6 +113,9 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,
     RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,
 
+    RTFSISOMAKERCMD_OPT_NO_FILE_MODE,
+    RTFSISOMAKERCMD_OPT_NO_DIR_MODE,
+
     /*
      * Compatibility options:
      */
@@ -349,6 +352,14 @@ typedef struct RTFSISOMAKERCMDOPTS
      * (rock-ridge, trans.tbl).
      */
     uint32_t            afNameSpecifiers[RTFSISOMAKERCMD_MAX_NAMES];
+    /** The forced directory mode. */
+    RTFMODE             fDirMode;
+    /** Set if fDirMode should be applied.   */
+    bool                fDirModeActive;
+    /** Set if fFileMode should be applied.   */
+    bool                fFileModeActive;
+    /** The force file mode. */
+    RTFMODE             fFileMode;
     /** @} */
 
     /** @name Booting related options and state.
@@ -456,6 +467,9 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--eltorito-floppy-144",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_144,            RTGETOPT_REQ_NOTHING },
     { "--eltorito-floppy-288",          RTFSISOMAKERCMD_OPT_ELTORITO_FLOPPY_288,            RTGETOPT_REQ_NOTHING },
 
+    { "--no-file-mode",                 RTFSISOMAKERCMD_OPT_NO_FILE_MODE,                   RTGETOPT_REQ_NOTHING },
+    { "--no-dir-mode",                  RTFSISOMAKERCMD_OPT_NO_DIR_MODE,                    RTGETOPT_REQ_NOTHING },
+
 #define DD(a_szLong, a_chShort, a_fFlags) { a_szLong, a_chShort, a_fFlags  }, { "-" a_szLong, a_chShort, a_fFlags  }
 
     /*
@@ -485,6 +499,11 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--volume-id",                    RTFSISOMAKERCMD_OPT_VOLUME_ID,                      RTGETOPT_REQ_STRING  }, /* should've been '-V' */
     DD("-volset",                       RTFSISOMAKERCMD_OPT_VOLUME_SET_ID,                  RTGETOPT_REQ_STRING  ),
 
+    /* Other: */
+    DD("-file-mode",                    RTFSISOMAKERCMD_OPT_FILE_MODE,                      RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
+    DD("-dir-mode",                     RTFSISOMAKERCMD_OPT_DIR_MODE,                       RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
+    DD("-new-dir-mode",                 RTFSISOMAKERCMD_OPT_NEW_DIR_MODE,                   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
+
     /*
      * genisoimage/mkisofs compatibility:
      */
@@ -509,10 +528,8 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     DD("-check-session",                 RTFSISOMAKERCMD_OPT_CHECK_SESSION,                 RTGETOPT_REQ_STRING  ),
     { "--dont-append-dot",              'd',                                                RTGETOPT_REQ_NOTHING },
     { "--deep-directories",             'D',                                                RTGETOPT_REQ_NOTHING },
-    DD("-dir-mode",                     RTFSISOMAKERCMD_OPT_DIR_MODE,                       RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
     DD("-dvd-video",                    RTFSISOMAKERCMD_OPT_DVD_VIDEO,                      RTGETOPT_REQ_NOTHING ),
     DD("-follow-symlinks",              'f',                                                RTGETOPT_REQ_NOTHING ),
-    DD("-file-mode",                    RTFSISOMAKERCMD_OPT_FILE_MODE,                      RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
     DD("-gid",                          RTFSISOMAKERCMD_OPT_GID,                            RTGETOPT_REQ_UINT32  ),
     DD("-gui",                          RTFSISOMAKERCMD_OPT_GUI,                            RTGETOPT_REQ_NOTHING ),
     DD("-graft-points",                 RTFSISOMAKERCMD_OPT_GRAFT_POINTS,                   RTGETOPT_REQ_NOTHING ),
@@ -548,7 +565,6 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
     { "--merge",                        'M',                                                RTGETOPT_REQ_STRING  },
     DD("-dev",                          'M',                                                RTGETOPT_REQ_STRING  ),
     { "--omit-version-numbers",         'N',                                                RTGETOPT_REQ_NOTHING },
-    DD("-new-dir-mode",                 RTFSISOMAKERCMD_OPT_NEW_DIR_MODE,                   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT ),
     DD("-nobak",                        RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING ),
     DD("-no-bak",                       RTFSISOMAKERCMD_OPT_NO_BACKUP_FILES,                RTGETOPT_REQ_NOTHING ),
     DD("-force-rr",                     RTFSISOMAKERCMD_OPT_FORCE_RR,                       RTGETOPT_REQ_NOTHING ),
@@ -2598,6 +2614,75 @@ static int rtFsIsoMakerCmdOptSetStringProp(PRTFSISOMAKERCMDOPTS pOpts, const cha
 
 
 /**
+ * Handles the --dir-mode and --file-mode options.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   fDir                True if applies to dir, false if applies to
+ *                              files.
+ * @param   fMode               The forced mode.
+ */
+static int rtFsIsoMakerCmdOptSetFileOrDirMode(PRTFSISOMAKERCMDOPTS pOpts, bool fDir, RTFMODE fMode)
+{
+    /* Change the mode masks. */
+    int rc;
+    if (fDir)
+        rc = RTFsIsoMakerSetForcedDirMode(pOpts->hIsoMaker, fMode, true /*fForced*/);
+    else
+        rc = RTFsIsoMakerSetForcedFileMode(pOpts->hIsoMaker, fMode, true /*fForced*/);
+    if (RT_SUCCESS(rc))
+    {
+        /* Then enable rock.*/
+        rc = RTFsIsoMakerSetRockRidgeLevel(pOpts->hIsoMaker, 2);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to enable rock ridge: %Rrc", rc);
+    }
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set %s force & default mode mask to %04o: %Rrc",
+                                  fMode, fDir ? "directory" : "file", rc);
+}
+
+
+/**
+ * Handles the --no-dir-mode and --no-file-mode options that counters
+ * --dir-mode and --file-mode.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   fDir                True if applies to dir, false if applies to
+ *                              files.
+ */
+static int rtFsIsoMakerCmdOptDisableFileOrDirMode(PRTFSISOMAKERCMDOPTS pOpts, bool fDir)
+{
+    int rc;
+    if (fDir)
+        rc = RTFsIsoMakerSetForcedDirMode(pOpts->hIsoMaker, 0, false /*fForced*/);
+    else
+        rc = RTFsIsoMakerSetForcedFileMode(pOpts->hIsoMaker, 0, true /*fForced*/);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to disable forced %s mode mask: %Rrc", fDir ? "directory" : "file", rc);
+}
+
+
+
+/**
+ * Handles the --new-dir-mode option.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   fMode               The forced mode.
+ */
+static int rtFsIsoMakerCmdOptSetNewDirMode(PRTFSISOMAKERCMDOPTS pOpts, RTFMODE fMode)
+{
+    int rc = RTFsIsoMakerSetDefaultDirMode(pOpts->hIsoMaker, fMode);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Failed to set default dir mode mask to %04o: %Rrc", fMode, rc);
+}
+
+
+/**
  * Loads an argument file (e.g. a .iso-file) and parses it.
  *
  * @returns IPRT status code.
@@ -2766,6 +2851,14 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                 rc = rtFsIsoMakerCmdOptImportIso(pOpts, ValueUnion.psz);
                 break;
 
+            case RTFSISOMAKERCMD_OPT_NO_FILE_MODE:
+                rc = rtFsIsoMakerCmdOptDisableFileOrDirMode(pOpts, false /*fDir*/);
+                break;
+            case RTFSISOMAKERCMD_OPT_NO_DIR_MODE:
+                rc = rtFsIsoMakerCmdOptDisableFileOrDirMode(pOpts, true /*fDir*/);
+                break;
+
+
             /*
              * Joliet related options.
              */
@@ -2884,6 +2977,19 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
                     return rtFsIsoMakerCmdSyntaxError(pOpts, "The --output option is specified more than once");
                 pOpts->pszOutFile = ValueUnion.psz;
                 break;
+
+            case RTFSISOMAKERCMD_OPT_DIR_MODE:
+                rc = rtFsIsoMakerCmdOptSetFileOrDirMode(pOpts, true /*fDir*/, ValueUnion.u32);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_FILE_MODE:
+                rc = rtFsIsoMakerCmdOptSetFileOrDirMode(pOpts, false /*fDir*/, ValueUnion.u32);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_NEW_DIR_MODE:
+                rc = rtFsIsoMakerCmdOptSetNewDirMode(pOpts, ValueUnion.u32);
+                break;
+
 
             /*
              * Standard bits.
