@@ -45,7 +45,29 @@
       <command>VBoxManage unattended install</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
       <arg choice="req">--iso=<replaceable>install-iso</replaceable></arg>
-      <arg choice="req">incomplete</arg>
+      <arg>--user=<replaceable>login</replaceable></arg>
+      <arg>--password=<replaceable>password</replaceable></arg>
+      <arg>--full-user-name=<replaceable>name</replaceable></arg>
+      <arg>--key=<replaceable>product-key</replaceable></arg>
+      <arg>--install-additions</arg>
+      <arg>--no-install-additions</arg>
+      <arg>--additions-iso=<replaceable>add-iso</replaceable></arg>
+      <arg>--install-txs</arg>
+      <arg>--no-install-txs</arg>
+      <arg>--validation-kit-iso=<replaceable>testing-iso</replaceable></arg>
+      <arg>--locale=<replaceable>ll_CC</replaceable></arg>
+      <arg>--country=<replaceable>CC</replaceable></arg>
+      <arg>--time-zone=<replaceable>tz</replaceable></arg>
+      <arg>--hostname=<replaceable>fqdn</replaceable></arg>
+      <arg>--package-selection-adjustment=<replaceable>keyword</replaceable></arg>
+      <arg>--dry-run</arg>
+      <arg>--auxiliary-base-path=<replaceable>path</replaceable></arg>
+      <arg>--image-index=<replaceable>number</replaceable></arg>
+      <arg>--script-template=<replaceable>file</replaceable></arg>
+      <arg>--post-install-template=<replaceable>file</replaceable></arg>
+      <arg>--post-install-command=<replaceable>command</replaceable></arg>
+      <arg>--extra-install-kernel-parameters=<replaceable>params</replaceable></arg>
+      <arg>--session-type=<replaceable>type</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -87,7 +109,116 @@
           <term><option>--iso=<replaceable>install-iso</replaceable></option></term>
           <listitem><para>The installation ISO to run the detection on.</para></listitem>
         </varlistentry>
-        <!-- a lot more stuff here to document. -->
+        <varlistentry>
+          <term><option>--user=<replaceable>login</replaceable></option></term>
+          <listitem><para>The login name. (default: vboxuser)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--password=<replaceable>password</replaceable></option></term>
+          <listitem><para>The login password. (default: changeme)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--full-user-name=<replaceable>name</replaceable></option></term>
+          <listitem><para>The full user name.  (default: --user)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--key=<replaceable>product-key</replaceable></option></term>
+          <listitem><para>The guest OS product key.  Not all guest OSes requires this.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--install-additions</option>, <option>--no-install-additions</option></term>
+          <listitem><para>Whether to install the VirtualBox guest additions.  (default: --no-install-addations)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--additions-iso=<replaceable>add-iso</replaceable></option></term>
+          <listitem>
+            <para>Path to the VirtualBox guest additions ISO.  (default: installed/downloaded GAs)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--install-txs</option>, <option>--no-install-txs</option></term>
+          <listitem>
+            <para>Whether to install the test execution service (TXS) from the VirtualBox ValidationKit.
+              This is useful when preparing VMs for testing or similar.  (default: --no-install-txs)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--validation-kit-iso=<replaceable>testing-iso</replaceable></option></term>
+          <listitem>
+            <para>Path to the VirtualBox ValidationKit ISO.  This is required if <option>--install-txs</option>
+              is specified. </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--locale=<replaceable>ll_CC</replaceable></option></term>
+          <listitem>
+            <para>The base locale specification for the guest, like en_US, de_CH, or nn_NO.  (default: host or en_US)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--country=<replaceable>CC</replaceable></option></term>
+          <listitem><para>The two letter country code if it differs from the specified by <option>--location</option>.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--time-zone=<replaceable>tz</replaceable></option></term>
+          <listitem><para>The time zone to set up the guest OS with. (default: host time zone or UTC)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--hostname=<replaceable>fqdn</replaceable></option></term>
+          <listitem>
+            <para>The fully qualified domain name of the guest machine.
+              (default: <replaceable>vmname</replaceable>.myguest.virtualbox.org)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--package-selection-adjustment=<replaceable>keyword</replaceable></option></term>
+          <listitem>
+            <para>Adjustments to the guest OS packages/components selection.  This can be specfied more than once.  Currently
+              the only recognized keyword is <computeroutput>minimal</computeroutput> which triggers a minimal installation for
+              some of the guest OSes.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--dry-run</option></term>
+          <listitem><para>Do not create any files or make any changes to the VM configuration.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--session-type=<replaceable>type</replaceable></option></term>
+          <listitem>
+            <para>The type of session to start when launching the installation.  This is the same as the <option>--type</option>
+              option for the <computeroutput>startvm</computeroutput> command, but we add <computeroutput>none</computeroutput>
+              for indicating that the VM should not be started.  (default: <computeroutput>headless</computeroutput>)</para></listitem>
+        </varlistentry>
+      </variablelist>
+
+      <para>Advanced options:</para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--auxiliary-base-path=<replaceable>path</replaceable></option></term>
+          <listitem>
+            <para>The path prefix to the media related files generated for the installation.
+              (default: <replaceable>vm-config-dir</replaceable>/Unattended-<replaceable>vm-uuid</replaceable>-)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--image-index=<replaceable>number</replaceable></option></term>
+          <listitem><para>Windows installation image index. (default: 1)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--script-template=<replaceable>file</replaceable></option></term>
+          <listitem><para>The unattended installation script template.  (default: IMachine::OSTypeId dependent)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--post-install-template=<replaceable>file</replaceable></option></term>
+          <listitem><para>The post installation script template.  (default: IMachine::OSTypeId dependent)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--post-install-command=<replaceable>command</replaceable></option></term>
+          <listitem>
+            <para>A single command to run after the installation is completed.  The exact format and exactly
+              when this is run is guest OS installer dependent.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--extra-install-kernel-parameters=<replaceable>params</replaceable></option></term>
+          <listitem>
+            <para>
+              List of extra linux kernel parameters to use during the installation. (default: IMachine::OSTypeId dependent)
+            </para></listitem>
+        </varlistentry>
+
       </variablelist>
     </refsect2>
 
