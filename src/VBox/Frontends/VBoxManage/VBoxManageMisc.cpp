@@ -1269,41 +1269,18 @@ RTEXITCODE handleExtPack(HandlerArg *a)
 
 RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 {
+    HRESULT hrc;
+    char    szAbsPath[RTPATH_MAX];
+
     /*
-     * Options.
+     * Options.  We work directly on an IUnattended instace while parsing
+     * the options.  This saves a lot of extra clutter.
      */
-    Utf8Str     strAbsIsoPath;
-    const char *pszIsoPath              = NULL;
-    const char *pszUser                 = NULL;
-    const char *pszPassword             = NULL;
-    const char *pszFullUserName         = NULL;
-    const char *pszProductKey           = NULL;
-    Utf8Str     strAbsAdditionsIsoPath;
-    const char *pszAdditionsIsoPath     = NULL;
-    int         fInstallAdditions       = -1;
-    Utf8Str     strAbsValidationKitIsoPath;
-    const char *pszValidationKitIsoPath = NULL;
-    int         fInstallTxs             = -1;
-    const char *pszMachineName          = NULL;
-    bool        fSetImageIdx            = false;
-    uint32_t    idxImage                = 0;
-    const char *pszLocale               = NULL;
-    const char *pszCountry              = NULL;
-    const char *pszTimeZone             = NULL;
-    const char *pszProxy                = NULL;
-    const char *pszHostname             = NULL;
-    RTCList<RTCString> arrPackageSelectionAdjustments;
-    // advance options:
-    Utf8Str     strAbsAuxiliaryBasePath;
-    const char *pszAuxiliaryBasePath    = NULL;
-    Utf8Str     strAbsScriptTemplatePath;
-    const char *pszScriptTemplatePath   = NULL;
-    Utf8Str     strAbsPostInstallScriptTemplatePath;
-    const char *pszPostInstallScriptTemplatePath = NULL;
-    const char *pszPostInstallCommand   = NULL;
-    const char *pszExtraInstallKernelParameters = NULL;
-    // start vm related options:
-    const char *pszSessionType          = "headless";
+    ComPtr<IUnattended> ptrUnattended;
+    CHECK_ERROR2_RET(hrc, a->virtualBox, CreateUnattendedInstaller(ptrUnattended.asOutParam()), RTEXITCODE_FAILURE);
+    RTCList<RTCString>  arrPackageSelectionAdjustments;
+    ComPtr<IMachine>    ptrMachine;
+    const char         *pszSessionType = "headless";
 
     /*
      * Parse options.
@@ -1352,80 +1329,79 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         switch (c)
         {
             case VINF_GETOPT_NOT_OPTION:
-                if (pszMachineName)
+                if (ptrMachine.isNotNull())
                     return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID given more than once!");
-                pszMachineName = ValueUnion.psz;
-                if (*pszMachineName == '\0')
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID is empty!");
+                CHECK_ERROR2_RET(hrc, a->virtualBox, FindMachine(Bstr(ValueUnion.psz).raw(), ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Machine)(ptrMachine), RTEXITCODE_FAILURE);
                 break;
 
             case 'i':   // --iso
-                vrc = RTPathAbsCxx(strAbsIsoPath, ValueUnion.psz);
+                vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
-                pszIsoPath = strAbsIsoPath.c_str();
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(IsoPath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'u':   // --user
-                pszUser = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(User)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'p':   // --password
-                pszPassword = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Password)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'U':   // --full-user-name
-                pszFullUserName = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(FullUserName)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'k':   // --key
-                pszProductKey = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ProductKey)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'A':   // --install-additions
-                fInstallAdditions = true;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(InstallGuestAdditions)(TRUE), RTEXITCODE_FAILURE);
                 break;
             case 'N':   // --no-install-additions
-                fInstallAdditions = false;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(InstallGuestAdditions)(FALSE), RTEXITCODE_FAILURE);
                 break;
             case 'a':   // --additions-iso
-                vrc = RTPathAbsCxx(strAbsAdditionsIsoPath, ValueUnion.psz);
+                vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
-                pszAdditionsIsoPath = strAbsAdditionsIsoPath.c_str();
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(AdditionsIsoPath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 't':   // --install-txs
-                fInstallTxs = true;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(InstallTestExecService)(TRUE), RTEXITCODE_FAILURE);
                 break;
             case 'T':   // --no-install-txs
-                fInstallTxs = false;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(InstallTestExecService)(FALSE), RTEXITCODE_FAILURE);
                 break;
             case 'K':   // --valiation-kit-iso
-                vrc = RTPathAbsCxx(strAbsValidationKitIsoPath, ValueUnion.psz);
+                vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
-                pszValidationKitIsoPath = strAbsValidationKitIsoPath.c_str();
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ValidationKitIsoPath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'l':   // --locale
-                pszLocale = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Locale)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'L':   // --country
-                pszCountry = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Country)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'z':   // --time-zone;
-                pszTimeZone = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(TimeZone)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'y':   // --proxy
-                pszProxy = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Proxy)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'H':   // --hostname
-                pszHostname = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Hostname)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 's':   // --package-selection-adjustment
@@ -1433,37 +1409,36 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 break;
 
             case 'x':   // --auxiliary-base-path
-                vrc = RTPathAbsCxx(strAbsAuxiliaryBasePath, ValueUnion.psz);
+                vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
-                pszAuxiliaryBasePath = strAbsAuxiliaryBasePath.c_str();
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(AuxiliaryBasePath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'm':   // --image-index
-                idxImage = ValueUnion.u32;
-                fSetImageIdx = true;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ImageIndex)(ValueUnion.u32), RTEXITCODE_FAILURE);
                 break;
 
             case 'c':   // --script-template
-                vrc = RTPathAbsCxx(strAbsScriptTemplatePath, ValueUnion.psz);
+                vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
-                pszScriptTemplatePath = strAbsScriptTemplatePath.c_str();
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ScriptTemplatePath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'C':   // --post-install-script-template
-                vrc = RTPathAbsCxx(strAbsPostInstallScriptTemplatePath, ValueUnion.psz);
+                vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbsCxx failed on '%s': %Rrc", ValueUnion.psz, vrc);
-                pszPostInstallScriptTemplatePath = strAbsPostInstallScriptTemplatePath.c_str();
+                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(PostInstallScriptTemplatePath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'P':   // --post-install-command.
-                pszPostInstallCommand = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(PostInstallCommand)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'I':   // --extra-install-kernel-parameters
-                pszExtraInstallKernelParameters = ValueUnion.psz;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ExtraInstallKernelParameters)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'S':   // --session-type
@@ -1478,31 +1453,39 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     /*
      * Check for required stuff.
      */
-    if (pszMachineName == NULL)
+    if (ptrMachine.isNull())
         return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID");
 
-    if (!pszIsoPath)
-        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing required --iso option");
+    /*
+     * Set accumulative attributes.
+     */
+    if (arrPackageSelectionAdjustments.size() == 1)
+        CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(PackageSelectionAdjustments)(Bstr(arrPackageSelectionAdjustments[0]).raw()),
+                         RTEXITCODE_FAILURE);
+    else if (arrPackageSelectionAdjustments.size() > 1)
+    {
+        RTCString strAdjustments;
+        strAdjustments.join(arrPackageSelectionAdjustments, ";");
+        CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(PackageSelectionAdjustments)(Bstr(strAdjustments).raw()), RTEXITCODE_FAILURE);
+    }
+
 
     /*
      * Prepare.
      */
-
-    /* try to find the given machine */
-    HRESULT rc;
-    ComPtr<IMachine> machine;
-    Bstr bstrMachineName = pszMachineName;
-    CHECK_ERROR(a->virtualBox, FindMachine(bstrMachineName.raw(), machine.asOutParam()));
-    if (FAILED(rc))
-        return RTEXITCODE_FAILURE;
-
-    CHECK_ERROR_RET(machine, COMGETTER(Name)(bstrMachineName.asOutParam()), RTEXITCODE_FAILURE);
+    Bstr bstrMachineName;
+    CHECK_ERROR2_RET(hrc, ptrMachine, COMGETTER(Name)(bstrMachineName.asOutParam()), RTEXITCODE_FAILURE);
     Bstr bstrUuid;
-    CHECK_ERROR_RET(machine, COMGETTER(Id)(bstrUuid.asOutParam()), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc, ptrMachine, COMGETTER(Id)(bstrUuid.asOutParam()), RTEXITCODE_FAILURE);
+    BSTR bstrInstalledOS;
+    CHECK_ERROR2_RET(hrc, ptrMachine, COMGETTER(OSTypeId)(&bstrInstalledOS), RTEXITCODE_FAILURE);
+    Utf8Str strInstalledOS(bstrInstalledOS);
+
     /* open a session for the VM */
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc, ptrMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
 
     /* get the associated console */
+    HRESULT rc;
     ComPtr<IConsole> console;
     CHECK_ERROR(a->session, COMGETTER(Console)(console.asOutParam()));
     if (console)
@@ -1512,11 +1495,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     ComPtr<IMachine> sessionMachine;
     CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
 
-    /* Get the OS type name of the VM. */
-    BSTR bstrInstalledOS;
-    CHECK_ERROR_RET(sessionMachine, COMGETTER(OSTypeId)(&bstrInstalledOS), RTEXITCODE_FAILURE);
-    Utf8Str strInstalledOS(bstrInstalledOS);
-
     do
     {
         RTPrintf("Start unattended installation OS %s on virtual machine '%ls'.\n"
@@ -1525,120 +1503,64 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                  bstrMachineName.raw(),
                  Utf8Str(bstrUuid).c_str());
 
-        {
-            /*
-             * Instantiate and configure the unattended installer.
-             */
-            ComPtr<IUnattended> ptrUnattended;
-            CHECK_ERROR_BREAK(a->virtualBox, CreateUnattendedInstaller(ptrUnattended.asOutParam()));
-            CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Machine)(machine));
+        /*
+         * Do the work.
+         */
+        CHECK_ERROR_BREAK(ptrUnattended,Prepare());
+        CHECK_ERROR_BREAK(ptrUnattended,ConstructMedia());
+        CHECK_ERROR_BREAK(ptrUnattended,ReconfigureVM());
 
-            if (pszIsoPath)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(IsoPath)(Bstr(pszIsoPath).raw()));
-            if (pszUser)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(User)(Bstr(pszUser).raw()));
-            if (pszPassword)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Password)(Bstr(pszPassword).raw()));
-            if (pszFullUserName)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(FullUserName)(Bstr(pszFullUserName).raw()));
-            if (pszProductKey)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ProductKey)(Bstr(pszProductKey).raw()));
-            if (pszAdditionsIsoPath)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(AdditionsIsoPath)(Bstr(pszAdditionsIsoPath).raw()));
-            if (fInstallAdditions >= 0)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(InstallGuestAdditions)(fInstallAdditions != (int)false));
-            if (pszValidationKitIsoPath)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ValidationKitIsoPath)(Bstr(pszValidationKitIsoPath).raw()));
-            if (fInstallTxs >= 0)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(InstallTestExecService)(fInstallTxs != (int)false));
-            if (pszLocale)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Locale)(Bstr(pszLocale).raw()));
-            if (pszCountry)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Country)(Bstr(pszCountry).raw()));
-            if (pszTimeZone)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(TimeZone)(Bstr(pszTimeZone).raw()));
-            if (pszProxy)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Proxy)(Bstr(pszProxy).raw()));
-            if (pszHostname)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Hostname)(Bstr(pszHostname).raw()));
-            if (arrPackageSelectionAdjustments.size() == 1)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PackageSelectionAdjustments)(Bstr(arrPackageSelectionAdjustments[0]).raw()));
-            else if (arrPackageSelectionAdjustments.size() > 1)
-            {
-                RTCString strAdjustments;
-                strAdjustments.join(arrPackageSelectionAdjustments, ";");
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PackageSelectionAdjustments)(Bstr(strAdjustments).raw()));
-            }
-
-            // advanced options:
-            if (fSetImageIdx)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ImageIndex)(idxImage));
-            if (pszScriptTemplatePath)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ScriptTemplatePath)(Bstr(pszScriptTemplatePath).raw()));
-            if (pszPostInstallScriptTemplatePath)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PostInstallScriptTemplatePath)(Bstr(pszPostInstallScriptTemplatePath).raw()));
-            if (pszPostInstallCommand)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(PostInstallCommand)(Bstr(pszPostInstallCommand).raw()));
-            if (pszAuxiliaryBasePath)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(AuxiliaryBasePath)(Bstr(pszAuxiliaryBasePath).raw()));
-            if (pszExtraInstallKernelParameters)
-                CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(ExtraInstallKernelParameters)(Bstr(pszExtraInstallKernelParameters).raw()));
-
-            CHECK_ERROR_BREAK(ptrUnattended,Prepare());
-            CHECK_ERROR_BREAK(ptrUnattended,ConstructMedia());
-            CHECK_ERROR_BREAK(ptrUnattended,ReconfigureVM());
-
-            /*
-             * Retrieve and display the parameters actually used.
-             */
-            RTPrintf("Using values:\n");
+        /*
+         * Retrieve and display the parameters actually used.
+         */
+        RTPrintf("Using values:\n");
 #define SHOW_ATTR(a_Attr, a_szText, a_Type, a_szFmt) do { \
-                    a_Type Value; \
-                    HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(&Value); \
-                    if (SUCCEEDED(hrc2)) \
-                        RTPrintf("  %32s = " a_szFmt "\n", a_szText, Value); \
-                    else \
-                        RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
-                } while (0)
+                a_Type Value; \
+                HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(&Value); \
+                if (SUCCEEDED(hrc2)) \
+                    RTPrintf("  %32s = " a_szFmt "\n", a_szText, Value); \
+                else \
+                    RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+            } while (0)
 #define SHOW_STR_ATTR(a_Attr, a_szText) do { \
-                    Bstr bstrString; \
-                    HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(bstrString.asOutParam()); \
-                    if (SUCCEEDED(hrc2)) \
-                        RTPrintf("  %32s = %ls\n", a_szText, bstrString.raw()); \
-                    else \
-                        RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
-                } while (0)
+                Bstr bstrString; \
+                HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(bstrString.asOutParam()); \
+                if (SUCCEEDED(hrc2)) \
+                    RTPrintf("  %32s = %ls\n", a_szText, bstrString.raw()); \
+                else \
+                    RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+            } while (0)
 
-            SHOW_STR_ATTR(IsoPath,                       "isoPath");
-            SHOW_STR_ATTR(User,                          "user");
-            SHOW_STR_ATTR(Password,                      "password");
-            SHOW_STR_ATTR(FullUserName,                  "fullUserName");
-            SHOW_STR_ATTR(ProductKey,                    "productKey");
-            SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
-            SHOW_ATTR(    InstallGuestAdditions,         "installGuestAdditions",    BOOL, "%RTbool");
-            SHOW_STR_ATTR(ValidationKitIsoPath,          "validationKitIsoPath");
-            SHOW_ATTR(    InstallTestExecService,        "installTestExecService",   BOOL, "%RTbool");
-            SHOW_STR_ATTR(Locale,                        "locale");
-            SHOW_STR_ATTR(Country,                       "country");
-            SHOW_STR_ATTR(TimeZone,                      "timeZone");
-            SHOW_STR_ATTR(Proxy,                         "proxy");
-            SHOW_STR_ATTR(Hostname,                      "hostname");
-            SHOW_STR_ATTR(PackageSelectionAdjustments,   "packageSelectionAdjustments");
-            SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
-            SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
-            SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
-            SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
-            SHOW_STR_ATTR(PostInstallCommand,            "postInstallCommand");
-            SHOW_STR_ATTR(ExtraInstallKernelParameters,  "extraInstallKernelParameters");
-            SHOW_STR_ATTR(DetectedOSTypeId,              "detectedOSTypeId");
-            SHOW_STR_ATTR(DetectedOSVersion,             "detectedOSVersion");
-            SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
-            SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
+        SHOW_STR_ATTR(IsoPath,                       "isoPath");
+        SHOW_STR_ATTR(User,                          "user");
+        SHOW_STR_ATTR(Password,                      "password");
+        SHOW_STR_ATTR(FullUserName,                  "fullUserName");
+        SHOW_STR_ATTR(ProductKey,                    "productKey");
+        SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
+        SHOW_ATTR(    InstallGuestAdditions,         "installGuestAdditions",    BOOL, "%RTbool");
+        SHOW_STR_ATTR(ValidationKitIsoPath,          "validationKitIsoPath");
+        SHOW_ATTR(    InstallTestExecService,        "installTestExecService",   BOOL, "%RTbool");
+        SHOW_STR_ATTR(Locale,                        "locale");
+        SHOW_STR_ATTR(Country,                       "country");
+        SHOW_STR_ATTR(TimeZone,                      "timeZone");
+        SHOW_STR_ATTR(Proxy,                         "proxy");
+        SHOW_STR_ATTR(Hostname,                      "hostname");
+        SHOW_STR_ATTR(PackageSelectionAdjustments,   "packageSelectionAdjustments");
+        SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
+        SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
+        SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
+        SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
+        SHOW_STR_ATTR(PostInstallCommand,            "postInstallCommand");
+        SHOW_STR_ATTR(ExtraInstallKernelParameters,  "extraInstallKernelParameters");
+        SHOW_STR_ATTR(DetectedOSTypeId,              "detectedOSTypeId");
+        SHOW_STR_ATTR(DetectedOSVersion,             "detectedOSVersion");
+        SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
+        SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
 
 #undef SHOW_STR_ATTR
 #undef SHOW_ATTR
-        }
 
+        ptrUnattended.setNull();
         a->session->UnlockMachine();
 
         /*
@@ -1659,7 +1581,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             env = str;
 #endif
             ComPtr<IProgress> progress;
-            CHECK_ERROR(machine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), env.raw(), progress.asOutParam()));
+            CHECK_ERROR(ptrMachine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), env.raw(), progress.asOutParam()));
             if (SUCCEEDED(rc) && !progress.isNull())
             {
                 RTPrintf("Waiting for VM \"%s\" to power on...\n", Utf8Str(bstrUuid).c_str());
