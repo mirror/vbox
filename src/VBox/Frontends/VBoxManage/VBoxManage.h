@@ -215,7 +215,6 @@ RTEXITCODE handleInternalCommands(HandlerArg *a);
 
 /* VBoxManageControlVM.cpp */
 RTEXITCODE handleControlVM(HandlerArg *a);
-RTEXITCODE handleUnattendedInstall(HandlerArg *a);
 #ifndef VBOX_ONLY_DOCS
 unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach);
 #endif
@@ -276,6 +275,7 @@ RTEXITCODE handleSetExtraData(HandlerArg *a);
 RTEXITCODE handleSetProperty(HandlerArg *a);
 RTEXITCODE handleSharedFolder(HandlerArg *a);
 RTEXITCODE handleExtPack(HandlerArg *a);
+RTEXITCODE handleUnattended(HandlerArg *a);
 
 /* VBoxManageDisk.cpp */
 HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,

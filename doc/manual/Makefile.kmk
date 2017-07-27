@@ -191,7 +191,8 @@ endef
 ## List of refentry files (manpages).
 VBOX_MANUAL_XML_REFENTRY_FILES = \
 	man_VBoxManage-debugvm.xml \
-	man_VBoxManage-extpack.xml
+	man_VBoxManage-extpack.xml \
+	man_VBoxManage-unattended.xml
 
 
 #

@@ -1020,22 +1020,6 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "\n", SEP);
     }
 
-    if (fCategory & USAGE_UNATTENDEDINSTALL)
-        RTStrmPrintf(pStrm, /* This will be replaced by a docbook man page. */
-                           "%s unattended %s      <uuid|vmname>\n"
-                     "         <OUTDATED-TODO>    --settings-file <file>\n"
-                     "         <OUTDATED-TODO>    [--session-type <type>]\n"
-                           "%s unattended %s      <uuid|vmname>\n"
-                     "         <OUTDATED-TODO>    --user <user>\n"
-                     "         <OUTDATED-TODO>    --password <password>\n"
-                     "         <OUTDATED-TODO>    --iso-path <path>\n"
-                     "         <OUTDATED-TODO>    [--key <CD-key>]\n"
-                     "         <OUTDATED-TODO>    [--additions-iso-path <path>]\n"
-                     "         <OUTDATED-TODO>    [--install-additions]\n"
-                     "         <OUTDATED-TODO>    [--image-index <index>]\n"
-                     "         <OUTDATED-TODO>    [--session-type <type>]\n"
-                     "\n", SEP, SEP);
-
     if (fCategory & USAGE_DISCARDSTATE)
         RTStrmPrintf(pStrm,
                            "%s discardstate %s    <uuid|vmname>\n"

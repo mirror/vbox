@@ -36,27 +36,58 @@
   </refnamediv>
 
   <refsynopsisdiv>
-    <cmdsynopsis id="synopsis-vboxmanage-unattended"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage unattended</command>
+    <cmdsynopsis id="synopsis-vboxmanage-unattended-detect"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage unattended detect</command>
+      <arg choice="req">--iso=<replaceable>install-iso</replaceable></arg>
+      <arg>--machine-readable</arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-unattended-install"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage unattended install</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-      <arg choice="req">--iso-path=<replaceable>install-iso</replaceable></arg>
+      <arg choice="req">--iso=<replaceable>install-iso</replaceable></arg>
+      <arg choice="req">incomplete</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
   <refsect1>
     <title>Description</title>
 
-    <refsect2 id="vboxmanage-unattended">
-      <title>unattended installation</title>
+    <refsect2 id="vboxmanage-unattended-detect">
+      <title>unattended detect</title>
       <remark role="help-copy-synopsis"/>
       <para>
-        docs.
+        Detects the guest operating system (OS) on the specified installation ISO
+        and displays the result.  This can be used as input when creating a VM for
+        the ISO to be installed in.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--iso=<replaceable>install-iso</replaceable></option></term>
+          <listitem><para>The installation ISO to run the detection on.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--machine-readable</option></term>
+          <listitem><para>Produce output that is simpler to parse from a script.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-unattended-install">
+      <title>unattended install</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Reconfigures the specified VM for installation and optionally starts it up.
       </para>
       <variablelist>
         <varlistentry>
           <term><replaceable>uuid|vmname</replaceable></term>
           <listitem><para>Either the UUID or the name (case sensitive) of a VM.</para></listitem>
         </varlistentry>
+        <varlistentry>
+          <term><option>--iso=<replaceable>install-iso</replaceable></option></term>
+          <listitem><para>The installation ISO to run the detection on.</para></listitem>
+        </varlistentry>
+        <!-- a lot more stuff here to document. -->
       </variablelist>
     </refsect2>
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1267,6 +1267,102 @@ RTEXITCODE handleExtPack(HandlerArg *a)
     return RTEXITCODE_SUCCESS;
 }
 
+RTEXITCODE handleUnattendedDetect(HandlerArg *a)
+{
+    HRESULT hrc;
+
+    /*
+     * Options.  We work directly on an IUnattended instace while parsing
+     * the options.  This saves a lot of extra clutter.
+     */
+    bool    fMachineReadable = false;
+    char    szIsoPath[RTPATH_MAX];
+    szIsoPath[0] = '\0';
+
+    /*
+     * Parse options.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--iso",                              'i', RTGETOPT_REQ_STRING },
+        { "--machine-readable",                 'M', RTGETOPT_REQ_NOTHING },
+    };
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'i': // --iso
+                vrc = RTPathAbs(ValueUnion.psz, szIsoPath, sizeof(szIsoPath));
+                if (RT_FAILURE(vrc))
+                    return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                break;
+
+            case 'M': // --machine-readable.
+                fMachineReadable = true;
+                break;
+
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    /*
+     * Check for required stuff.
+     */
+    if (szIsoPath[0] == '\0')
+        return errorSyntax("No ISO specified");
+
+    /*
+     * Do the job.
+     */
+    ComPtr<IUnattended> ptrUnattended;
+    CHECK_ERROR2_RET(hrc, a->virtualBox, CreateUnattendedInstaller(ptrUnattended.asOutParam()), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(IsoPath)(Bstr(szIsoPath).raw()), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc, ptrUnattended, DetectIsoOS(), RTEXITCODE_FAILURE);
+
+    /*
+     * Retrieve the results.
+     */
+    Bstr bstrDetectedOSTypeId;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSTypeId)(bstrDetectedOSTypeId.asOutParam()), RTEXITCODE_FAILURE);
+    Bstr bstrDetectedVersion;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSVersion)(bstrDetectedVersion.asOutParam()), RTEXITCODE_FAILURE);
+    Bstr bstrDetectedFlavor;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSFlavor)(bstrDetectedFlavor.asOutParam()), RTEXITCODE_FAILURE);
+    Bstr bstrDetectedHints;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSHints)(bstrDetectedHints.asOutParam()), RTEXITCODE_FAILURE);
+    if (fMachineReadable)
+        RTPrintf("OSTypeId=\"%ls\"\n"
+                 "OSVersion=\"%ls\"\n"
+                 "OSFlavor=\"%ls\"\n"
+                 "OSHints=\"%ls\"\n",
+                 bstrDetectedOSTypeId.raw(),
+                 bstrDetectedVersion.raw(),
+                 bstrDetectedFlavor.raw(),
+                 bstrDetectedHints.raw());
+    else
+    {
+        RTMsgInfo("Detected '%s' to be:\n", szIsoPath);
+        RTPrintf("    OS TypeId  = %ls\n"
+                 "    OS Version = %ls\n"
+                 "    OS Flavor  = %ls\n"
+                 "    OS Hints   = %ls\n",
+                 bstrDetectedOSTypeId.raw(),
+                 bstrDetectedVersion.raw(),
+                 bstrDetectedFlavor.raw(),
+                 bstrDetectedHints.raw());
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
 RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 {
     HRESULT hrc;
@@ -1280,14 +1376,12 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     CHECK_ERROR2_RET(hrc, a->virtualBox, CreateUnattendedInstaller(ptrUnattended.asOutParam()), RTEXITCODE_FAILURE);
     RTCList<RTCString>  arrPackageSelectionAdjustments;
     ComPtr<IMachine>    ptrMachine;
+    bool                fDryRun = false;
     const char         *pszSessionType = "headless";
 
     /*
      * Parse options.
      */
-    if (a->argc <= 1)
-        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID.");
-
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--iso",                              'i', RTGETOPT_REQ_STRING },
@@ -1307,6 +1401,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--proxy",                            'y', RTGETOPT_REQ_STRING },
         { "--hostname",                         'H', RTGETOPT_REQ_STRING },
         { "--package-selection-adjustment",     's', RTGETOPT_REQ_STRING },
+        { "--dry-run",                          'D', RTGETOPT_REQ_NOTHING },
         // advance options:
         { "--auxiliary-base-path",              'x', RTGETOPT_REQ_STRING },
         { "--image-index",                      'm', RTGETOPT_REQ_UINT32 },
@@ -1330,7 +1425,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         {
             case VINF_GETOPT_NOT_OPTION:
                 if (ptrMachine.isNotNull())
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "VM name/UUID given more than once!");
+                    return errorSyntax("VM name/UUID given more than once!");
                 CHECK_ERROR2_RET(hrc, a->virtualBox, FindMachine(Bstr(ValueUnion.psz).raw(), ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Machine)(ptrMachine), RTEXITCODE_FAILURE);
                 break;
@@ -1338,7 +1433,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             case 'i':   // --iso
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                    return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(IsoPath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
@@ -1367,7 +1462,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             case 'a':   // --additions-iso
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                    return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(AdditionsIsoPath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
@@ -1380,7 +1475,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             case 'K':   // --valiation-kit-iso
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                    return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ValidationKitIsoPath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
@@ -1408,10 +1503,14 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 arrPackageSelectionAdjustments.append(ValueUnion.psz);
                 break;
 
+            case 'D':
+                fDryRun = true;
+                break;
+
             case 'x':   // --auxiliary-base-path
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                    return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(AuxiliaryBasePath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
@@ -1422,14 +1521,14 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             case 'c':   // --script-template
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                    return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ScriptTemplatePath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'C':   // --post-install-script-template
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_UNATTENDEDINSTALL, "RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
+                    return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(PostInstallScriptTemplatePath)(Bstr(szAbsPath).raw()), RTEXITCODE_FAILURE);
                 break;
 
@@ -1446,7 +1545,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 break;
 
             default:
-                return errorGetOpt(USAGE_UNATTENDEDINSTALL, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
@@ -1454,7 +1553,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
      * Check for required stuff.
      */
     if (ptrMachine.isNull())
-        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Missing VM name/UUID");
+        return errorSyntax("Missing VM name/UUID");
 
     /*
      * Set accumulative attributes.
@@ -1503,8 +1602,11 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
               strInstalledOS.c_str(), bstrMachineName.raw(), bstrUuid.raw());
 
     CHECK_ERROR2_RET(hrc, ptrUnattended,Prepare(), RTEXITCODE_FAILURE);
-    CHECK_ERROR2_RET(hrc, ptrUnattended,ConstructMedia(), RTEXITCODE_FAILURE);
-    CHECK_ERROR2_RET(hrc, ptrUnattended,ReconfigureVM(), RTEXITCODE_FAILURE);
+    if (!fDryRun)
+    {
+        CHECK_ERROR2_RET(hrc, ptrUnattended, ConstructMedia(), RTEXITCODE_FAILURE);
+        CHECK_ERROR2_RET(hrc, ptrUnattended,ReconfigureVM(), RTEXITCODE_FAILURE);
+    }
 
     /*
      * Retrieve and display the parameters actually used.
@@ -1562,7 +1664,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     /*
      * Start the VM if requested.
      */
-    if (RTStrICmp(pszSessionType, "none") == 0)
+    if (   fDryRun
+        || RTStrICmp(pszSessionType, "none") == 0)
         hrc = S_OK;
     else
     {
@@ -1615,4 +1718,29 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     }
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+RTEXITCODE handleUnattended(HandlerArg *a)
+{
+    /*
+     * Sub-command switch.
+     */
+    if (a->argc < 1)
+        return errorNoSubcommand();
+
+    if (!strcmp(a->argv[0], "detect"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_UNATTENDED_DETECT);
+        return handleUnattendedDetect(a);
+    }
+
+    if (!strcmp(a->argv[0], "install"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_UNATTENDED_INSTALL);
+        return handleUnattendedInstall(a);
+    }
+
+    /* Consider some kind of create-vm-and-install-guest-os command. */
+    return errorUnknownSubcommand(a->argv[0]);
 }
