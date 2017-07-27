@@ -23,6 +23,114 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/**
+ * == Audio architecture overview
+ *
+ * The audio architecture mainly consists of two PDM interfaces, PDMAUDIOCONNECTOR
+ * and PDMIHOSTAUDIO.
+ *
+ * The PDMAUDIOCONNECTOR interface is responsible of connecting a device emulation, such
+ * as SB16, AC'97 and HDA to one or multiple audio backend(s). Its API abstracts audio
+ * stream handling and I/O functions, device enumeration and so on.
+ *
+ * The PDMIHOSTAUDIO interface must be implemented by all audio backends to provide an
+ * abstract and common way of accessing needed functions, such as transferring output audio
+ * data for playing audio or recording input from the host.
+ *
+ * A device emulation can have one or more LUNs attached to it, whereas these LUNs in turn
+ * then all have their own PDMIAUDIOCONNECTOR, making it possible to connect multiple backends
+ * to a certain device emulation stream (multiplexing).
+ *
+ * An audio backend's job is to record and/or play audio data (depending on its capabilities).
+ * It highly depends on the host it's running on and needs very specific (host-OS-dependent) code.
+ * The backend itself only has very limited ways of accessing and/or communicating with the
+ * PDMIAUDIOCONNECTOR interface via callbacks, but never directly with the device emulation or
+ * other parts of the audio sub system.
+ *
+ *
+ * == Mixing
+ *
+ * The AUDIOMIXER API is optionally available to create and manage virtual audio mixers.
+ * Such an audio mixer in turn then can be used by the device emulation code to manage all
+ * the multiplexing to/from the connected LUN audio streams.
+ *
+ * Currently only input and output stream are supported. Duplex stream are not supported yet.
+ *
+ * This also is handy if certain LUN audio streams should be added or removed during runtime.
+ *
+ * To create a group of either input or output streams the AUDMIXSINK API can be used.
+ *
+ * For example: The device emulation has one hardware output stream (HW0), and that output
+ *              stream shall be available to all connected LUN backends. For that to happen,
+ *              an AUDMIXSINK sink has to be created and attached to the device's AUDIOMIXER object.
+ *
+ *              As every LUN has its own AUDMIXSTREAM object, adding all those objects to the
+ *              just created audio mixer sink will do the job.
+ *
+ * Note: The AUDIOMIXER API is purely optional and is not used by all currently implemented
+ *       device emulations (e.g. SB16).
+ *
+ *
+ * == Data processing
+ *
+ * Audio input / output data gets handed-off to/from the device emulation in an unmodified
+ * - that is, raw - way. The actual audio frame / sample conversion is done via the PDMAUDIOMIXBUF API.
+ *
+ * This concentrates the audio data processing in one place and makes it easier to test / benchmark
+ * such code.
+ *
+ * A PDMAUDIOFRAME is the internal representation of a single audio frame, which consists of a single left
+ * and right audio sample in time. Only mono (1) and stereo (2) channel(s) currently are supported.
+ *
+ *
+ * == Diagram
+ *
+ * +-------------------------+
+ * +-------------------------+        +-------------------------+        +-------------------+
+ * |PDMAUDIOSTREAM           |        |PDMAUDIOCONNECTOR        |    + ++|LUN                |
+ * |-------------------------|        |-------------------------|    | |||-------------------|
+ * |PDMAUDIOMIXBUF           |+------>|PDMAUDIOSTREAM Host      |+---|-|||PDMIAUDIOCONNECTOR |
+ * |PDMAUDIOSTREAMCFG        |+------>|PDMAUDIOSTREAM Guest     |    | |||AUDMIXSTREAM       |
+ * |                         |        |Device capabilities      |    | |||                   |
+ * |                         |        |Device configuration     |    | |||                   |
+ * |                         |        |                         |    | |||                   |
+ * |                         |       +|PDMIHOSTAUDIO            |    | |||                   |
+ * |                         |       ||+-----------------------+|    | ||+-------------------+
+ * +-------------------------+       |||Backend storage space  ||    | ||
+ *                                   ||+-----------------------+|    | ||
+ *                                   |+-------------------------+    | ||
+ *                                   |                               | ||
+ * +---------------------+           |                               | ||
+ * |PDMIHOSTAUDIO        |           |                               | ||
+ * |+--------------+     |           |      +-------------------+    | ||      +-------------+
+ * ||DirectSound   |     |           |      |AUDMIXSINK         |    | ||      |AUDIOMIXER   |
+ * |+--------------+     |           |      |-------------------|    | ||      |-------------|
+ * |                     |           |      |AUDMIXSTREAM0      |+---|-||----->|AUDMIXSINK0  |
+ * |+--------------+     |           |      |AUDMIXSTREAM1      |+---|-||----->|AUDMIXSINK1  |
+ * ||PulseAudio    |     |           |      |AUDMIXSTREAMn      |+---|-||----->|AUDMIXSINKn  |
+ * |+--------------+     |+----------+      +-------------------+    | ||      +-------------+
+ * |                     |                                           | ||
+ * |+--------------+     |                                           | ||
+ * ||Core Audio    |     |                                           | ||
+ * |+--------------+     |                                           | ||
+ * |                     |                                           | ||
+ * |                     |                                           | ||+----------------------------------+
+ * |                     |                                           | |||Device (SB16 / AC'97 / HDA)       |
+ * |                     |                                           | |||----------------------------------|
+ * +---------------------+                                           | |||AUDIOMIXER (Optional)             |
+ *                                                                   | |||AUDMIXSINK0 (Optional)            |
+ *                                                                   | |||AUDMIXSINK1 (Optional)            |
+ *                                                                   | |||AUDMIXSINKn (Optional)            |
+ *                                                                   | |||                                  |
+ *                                                                   | |+|LUN0                              |
+ *                                                                   | ++|LUN1                              |
+ *                                                                   +--+|LUNn                              |
+ *                                                                       |                                  |
+ *                                                                       |                                  |
+ *                                                                       |                                  |
+ *                                                                       +----------------------------------+
+ */
+
 #ifndef ___VBox_vmm_pdmaudioifs_h
 #define ___VBox_vmm_pdmaudioifs_h
 
