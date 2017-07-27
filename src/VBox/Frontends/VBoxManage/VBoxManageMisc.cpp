@@ -1289,7 +1289,7 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
     };
 
     RTGETOPTSTATE GetState;
-    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     int c;
@@ -1414,7 +1414,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     };
 
     RTGETOPTSTATE GetState;
-    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     int c;
