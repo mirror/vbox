@@ -3615,8 +3615,10 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     /*
      * Load controller-specifc internals.
+     * Don't annoy other team mates (forgot this for state v7).
      */
-    if (SSMR3HandleRevision(pSSM) >= 116273) /* Don't annoy other team mates (forgot this for state v7). */
+    if (   SSMR3HandleRevision(pSSM) >= 116273
+        || SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
     {
         rc = SSMR3GetU64(pSSM, &pThis->u64WalClk);
         AssertRC(rc);
@@ -3680,11 +3682,13 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
         /*
          * Load period state.
+         * Don't annoy other team mates (forgot this for state v7).
          */
         hdaStreamPeriodInit(&pStrm->State.Period,
                             pStrm->u8SD, pStrm->u16LVI, pStrm->u32CBL, &pStrm->State.strmCfg);
 
-        if (SSMR3HandleRevision(pSSM) >= 116273) /* Don't annoy other team mates (forgot this for state v7). */
+        if (   SSMR3HandleRevision(pSSM) >= 116273
+            || SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
         {
             rc = SSMR3GetStructEx(pSSM, &pStrm->State.Period, sizeof(HDASTREAMPERIOD),
                                   0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
