@@ -131,7 +131,7 @@ static int debugCreateStreamIn(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStrea
     RT_NOREF(pDrv, pStreamDbg, pCfgReq);
 
     if (pCfgAcq)
-        pCfgAcq->cSampleBufferHint = _1K;
+        pCfgAcq->cFrameBufferHint = _1K;
 
     return VINF_SUCCESS;
 }
@@ -147,7 +147,7 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
     pStreamDbg->tsStarted = 0;
     pStreamDbg->uSamplesSinceStarted = 0;
     pStreamDbg->Out.tsLastPlayed  = 0;
-    pStreamDbg->Out.cbPlayBuffer  = 16 * _1K * PDMAUDIOSTREAMCFG_S2B(pCfgReq, 1); /** @todo Make this configurable? */
+    pStreamDbg->Out.cbPlayBuffer  = 16 * _1K * PDMAUDIOSTREAMCFG_F2B(pCfgReq, 1); /** @todo Make this configurable? */
     pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
     if (!pStreamDbg->Out.pu8PlayBuffer)
         rc = VERR_NO_MEMORY;
@@ -199,7 +199,7 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cSampleBufferHint = PDMAUDIOSTREAMCFG_B2S(pCfgAcq, pStreamDbg->Out.cbPlayBuffer);
+            pCfgAcq->cFrameBufferHint = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDbg->Out.cbPlayBuffer);
     }
 
     return rc;

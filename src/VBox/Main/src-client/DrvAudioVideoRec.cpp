@@ -374,7 +374,7 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
         AssertFailed();
 
         if (pCfgAcq)
-            pCfgAcq->cSampleBufferHint = 0;
+            pCfgAcq->cFrameBufferHint = 0;
 
         LogRel2(("VideoRec: Support for surround audio not implemented yet\n"));
         return VERR_NOT_SUPPORTED;
@@ -408,7 +408,7 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
              * a specific sampling rate Opus is optimized for. */
             pCfgAcq->Props.uHz         = pSink->Codec.Parms.uHz;
             pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
-            pCfgAcq->cSampleBufferHint = _4K; /** @todo Make this configurable. */
+            pCfgAcq->cFrameBufferHint = _4K; /** @todo Make this configurable. */
         }
     }
 #else
@@ -585,7 +585,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
     size_t  cbSrc;
 
     const uint32_t csFrame = pSink->Codec.Opus.csFrame;
-    const uint32_t cbFrame = PDMAUDIOSTREAMCFG_S2B(pStreamAV->pCfg, csFrame);
+    const uint32_t cbFrame = PDMAUDIOSTREAMCFG_F2B(pStreamAV->pCfg, csFrame);
 
     while (RTCircBufUsed(pCircBuf) >= cbFrame)
     {

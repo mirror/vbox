@@ -175,7 +175,7 @@ static int nullCreateStreamIn(PNULLAUDIOSTREAM pStreamNull, PPDMAUDIOSTREAMCFG p
     RT_NOREF(pStreamNull, pCfgReq);
 
     if (pCfgAcq)
-        pCfgAcq->cSampleBufferHint = _1K;
+        pCfgAcq->cFrameBufferHint = _1K;
 
     return VINF_SUCCESS;
 }
@@ -186,7 +186,7 @@ static int nullCreateStreamOut(PNULLAUDIOSTREAM pStreamNull, PPDMAUDIOSTREAMCFG 
     RT_NOREF(pStreamNull, pCfgReq);
 
     if (pCfgAcq)
-        pCfgAcq->cSampleBufferHint = _1K; /** @todo Make this configurable. */
+        pCfgAcq->cFrameBufferHint = _1K; /** @todo Make this configurable. */
 
     return VINF_SUCCESS;
 }

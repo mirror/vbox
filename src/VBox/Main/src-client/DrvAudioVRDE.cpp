@@ -85,7 +85,7 @@ typedef struct VRDESTREAM
 } VRDESTREAM, *PVRDESTREAM;
 
 /* Sanity. */
-AssertCompileSize(PDMAUDIOSAMPLE, sizeof(int64_t) * 2 /* st_sample_t using by VRDP server */);
+AssertCompileSize(PDMAUDIOFRAME, sizeof(int64_t) * 2 /* st_sample_t using by VRDP server */);
 
 static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
@@ -104,7 +104,7 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
              * the data without any layout modification needed.
              */
             pCfgAcq->enmLayout         = PDMAUDIOSTREAMLAYOUT_RAW;
-            pCfgAcq->cSampleBufferHint = pStreamVRDE->In.csMax;
+            pCfgAcq->cFrameBufferHint = pStreamVRDE->In.csMax;
         }
     }
 
@@ -126,7 +126,7 @@ static int vrdeCreateStreamOut(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgR
          * the data without any layout modification needed.
          */
         pCfgAcq->enmLayout         = PDMAUDIOSTREAMLAYOUT_RAW;
-        pCfgAcq->cSampleBufferHint = _4K; /** @todo Make this configurable. */
+        pCfgAcq->cFrameBufferHint = _4K; /** @todo Make this configurable. */
     }
 
     return VINF_SUCCESS;
@@ -291,7 +291,7 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
 
     int rc = VINF_SUCCESS;
 
-    PPDMAUDIOSAMPLE paSampleBuf = (PPDMAUDIOSAMPLE)pvBuf;
+    PPDMAUDIOFRAME paSampleBuf = (PPDMAUDIOFRAME)pvBuf;
     AssertPtr(paSampleBuf);
 
     /*
@@ -500,7 +500,7 @@ static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetReadable(PPDMIHOSTAUDIO pInte
     {
         /* Return samples instead of bytes here
          * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-        return (uint32_t)PDMAUDIOSTREAMCFG_B2S(pStreamVRDE->pCfg, RTCircBufUsed(pStreamVRDE->In.pCircBuf));
+        return (uint32_t)PDMAUDIOSTREAMCFG_B2F(pStreamVRDE->pCfg, RTCircBufUsed(pStreamVRDE->In.pCircBuf));
     }
 
     return 0;

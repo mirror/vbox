@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox audio: Audio mixing buffer for converting reading/writing audio
- *             samples.
+ * VBox audio: Audio mixing buffer for converting reading/writing audio data.
  */
 
 /*
@@ -136,122 +135,122 @@ AssertCompile(AUDIOMIXBUF_VOL_0DB == 0x40000000);   /* For now -- when only atte
 
 
 /**
- * Peeks for audio samples without any conversion done.
- * This will get the raw sample data out of a mixing buffer.
+ * Peeks for audio frames without any conversion done.
+ * This will get the raw frame data out of a mixing buffer.
  *
  * @return  IPRT status code or VINF_AUDIO_MORE_DATA_AVAILABLE if more data is available to read.
  *
- * @param   pMixBuf                 Mixing buffer to acquire audio samples from.
- * @param   cSamplesToRead          Number of audio samples to read.
- * @param   paSampleBuf             Buffer where to store the returned audio samples.
- * @param   cSampleBuf              Size (in samples) of the buffer to store audio samples into.
- * @param   pcSamplesRead           Returns number of read audio samples. Optional.
+ * @param   pMixBuf                 Mixing buffer to acquire audio frames from.
+ * @param   cFramesToRead           Number of audio frames to read.
+ * @param   paFrameBuf              Buffer where to store the returned audio frames.
+ * @param   cFrameBuf               Size (in frames) of the buffer to store audio frames into.
+ * @param   pcFramesRead            Returns number of read audio frames. Optional.
  *
  * @remark  This function is not thread safe!
  */
-int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
-                    PPDMAUDIOSAMPLE paSampleBuf, uint32_t cSampleBuf, uint32_t *pcSamplesRead)
+int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToRead,
+                    PPDMAUDIOFRAME paFrameBuf, uint32_t cFrameBuf, uint32_t *pcFramesRead)
 {
-    AssertPtrReturn(pMixBuf,     VERR_INVALID_POINTER);
-    AssertPtrReturn(paSampleBuf, VERR_INVALID_POINTER);
-    AssertReturn(cSampleBuf,     VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pMixBuf,    VERR_INVALID_POINTER);
+    AssertPtrReturn(paFrameBuf, VERR_INVALID_POINTER);
+    AssertReturn(cFrameBuf,     VERR_INVALID_PARAMETER);
     /* pcRead is optional. */
 
     int rc;
 
-    if (!cSamplesToRead)
+    if (!cFramesToRead)
     {
-        if (pcSamplesRead)
-            *pcSamplesRead = 0;
+        if (pcFramesRead)
+            *pcFramesRead = 0;
         return VINF_SUCCESS;
     }
 
     uint32_t cRead;
-    if (pMixBuf->offRead + cSamplesToRead > pMixBuf->cSamples)
+    if (pMixBuf->offRead + cFramesToRead > pMixBuf->cFrames)
     {
-        cRead = pMixBuf->cSamples - pMixBuf->offRead;
+        cRead = pMixBuf->cFrames - pMixBuf->offRead;
         rc = VINF_AUDIO_MORE_DATA_AVAILABLE;
     }
     else
     {
-        cRead = cSamplesToRead;
+        cRead = cFramesToRead;
         rc = VINF_SUCCESS;
     }
 
-    if (cRead > cSampleBuf)
+    if (cRead > cFrameBuf)
     {
-        cRead = cSampleBuf;
+        cRead = cFrameBuf;
         rc = VINF_AUDIO_MORE_DATA_AVAILABLE;
     }
 
     if (cRead)
     {
-        memcpy(paSampleBuf, &pMixBuf->pSamples[pMixBuf->offRead], sizeof(PDMAUDIOSAMPLE) * cRead);
+        memcpy(paFrameBuf, &pMixBuf->pFrames[pMixBuf->offRead], sizeof(PDMAUDIOFRAME) * cRead);
 
-        pMixBuf->offRead = (pMixBuf->offRead + cRead) % pMixBuf->cSamples;
-        Assert(pMixBuf->offRead <= pMixBuf->cSamples);
+        pMixBuf->offRead = (pMixBuf->offRead + cRead) % pMixBuf->cFrames;
+        Assert(pMixBuf->offRead <= pMixBuf->cFrames);
         pMixBuf->cUsed  -= RT_MIN(cRead, pMixBuf->cUsed);
     }
 
-    if (pcSamplesRead)
-        *pcSamplesRead = cRead;
+    if (pcFramesRead)
+        *pcFramesRead = cRead;
 
     return rc;
 }
 
 /**
- * Returns a mutable pointer to the mixing buffer's audio sample buffer for writing raw
- * audio samples.
+ * Returns a mutable pointer to the mixing buffer's audio frame buffer for writing raw
+ * audio frames.
  *
  * @return  IPRT status code. VINF_TRY_AGAIN for getting next pointer at beginning (circular).
- * @param   pMixBuf                 Mixing buffer to acquire audio samples from.
- * @param   cSamples                Number of requested audio samples to write.
- * @param   ppvSamples              Returns a mutable pointer to the buffer's audio sample data.
- * @param   pcSamplesToWrite        Number of available audio samples to write.
+ * @param   pMixBuf                 Mixing buffer to acquire audio frames from.
+ * @param   cFrames                 Number of requested audio frames to write.
+ * @param   ppvFrames               Returns a mutable pointer to the buffer's audio frame data.
+ * @param   pcFramesToWrite         Number of available audio frames to write.
  *
  * @remark  This function is not thread safe!
  */
-int AudioMixBufPeekMutable(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,
-                           PPDMAUDIOSAMPLE *ppvSamples, uint32_t *pcSamplesToWrite)
+int AudioMixBufPeekMutable(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames,
+                           PPDMAUDIOFRAME *ppvFrames, uint32_t *pcFramesToWrite)
 {
-    AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppvSamples, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcSamplesToWrite, VERR_INVALID_POINTER);
+    AssertPtrReturn(pMixBuf,         VERR_INVALID_POINTER);
+    AssertPtrReturn(ppvFrames,       VERR_INVALID_POINTER);
+    AssertPtrReturn(pcFramesToWrite, VERR_INVALID_POINTER);
 
     int rc;
 
-    if (!cSamples)
+    if (!cFrames)
     {
-        *pcSamplesToWrite = 0;
+        *pcFramesToWrite = 0;
         return VINF_SUCCESS;
     }
 
-    uint32_t cSamplesToWrite;
-    if (pMixBuf->offWrite + cSamples > pMixBuf->cSamples)
+    uint32_t cFramesToWrite;
+    if (pMixBuf->offWrite + cFrames > pMixBuf->cFrames)
     {
-        cSamplesToWrite = pMixBuf->cSamples - pMixBuf->offWrite;
+        cFramesToWrite = pMixBuf->cFrames - pMixBuf->offWrite;
         rc = VINF_TRY_AGAIN;
     }
     else
     {
-        cSamplesToWrite = cSamples;
+        cFramesToWrite = cFrames;
         rc = VINF_SUCCESS;
     }
 
-    *ppvSamples = &pMixBuf->pSamples[pMixBuf->offWrite];
-    AssertPtr(ppvSamples);
+    *ppvFrames = &pMixBuf->pFrames[pMixBuf->offWrite];
+    AssertPtr(ppvFrames);
 
-    pMixBuf->offWrite = (pMixBuf->offWrite + cSamplesToWrite) % pMixBuf->cSamples;
-    Assert(pMixBuf->offWrite <= pMixBuf->cSamples);
-    pMixBuf->cUsed += RT_MIN(cSamplesToWrite, pMixBuf->cUsed);
+    pMixBuf->offWrite = (pMixBuf->offWrite + cFramesToWrite) % pMixBuf->cFrames;
+    Assert(pMixBuf->offWrite <= pMixBuf->cFrames);
+    pMixBuf->cUsed += RT_MIN(cFramesToWrite, pMixBuf->cUsed);
 
-    *pcSamplesToWrite = cSamplesToWrite;
+    *pcFramesToWrite = cFramesToWrite;
 
     return rc;
 }
 
 /**
- * Clears the entire sample buffer.
+ * Clears the entire frame buffer.
  *
  * @param   pMixBuf                 Mixing buffer to clear.
  *
@@ -260,20 +259,20 @@ void AudioMixBufClear(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturnVoid(pMixBuf);
 
-    if (pMixBuf->cSamples)
-        RT_BZERO(pMixBuf->pSamples, pMixBuf->cSamples * sizeof(PDMAUDIOSAMPLE));
+    if (pMixBuf->cFrames)
+        RT_BZERO(pMixBuf->pFrames, pMixBuf->cFrames * sizeof(PDMAUDIOFRAME));
 }
 
 /**
- * Clears (zeroes) the buffer by a certain amount of (used) samples and
+ * Clears (zeroes) the buffer by a certain amount of (used) frames and
  * keeps track to eventually assigned children buffers.
  *
  * @param   pMixBuf                 Mixing buffer to clear.
- * @param   cSamplesToClear         Number of audio samples to clear.
+ * @param   cFramesToClear          Number of audio frames to clear.
  */
-void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear)
+void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear)
 {
-    AUDMIXBUF_LOG(("cSamplesToClear=%RU32\n", cSamplesToClear));
+    AUDMIXBUF_LOG(("cFramesToClear=%RU32\n", cFramesToClear));
     AUDMIXBUF_LOG(("%s: offRead=%RU32, cUsed=%RU32\n",
                    pMixBuf->pszName, pMixBuf->offRead, pMixBuf->cUsed));
 
@@ -281,45 +280,45 @@ void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear)
     RTListForEach(&pMixBuf->lstChildren, pIter, PDMAUDIOMIXBUF, Node)
     {
         AUDMIXBUF_LOG(("\t%s: cMixed=%RU32 -> %RU32\n",
-                       pIter->pszName, pIter->cMixed, pIter->cMixed - cSamplesToClear));
+                       pIter->pszName, pIter->cMixed, pIter->cMixed - cFramesToClear));
 
-        pIter->cMixed -= RT_MIN(pIter->cMixed, cSamplesToClear);
+        pIter->cMixed -= RT_MIN(pIter->cMixed, cFramesToClear);
         /* Note: Do not increment pIter->cUsed here, as this gets done when reading from that buffer using AudioMixBufReadXXX. */
     }
 
-    Assert(cSamplesToClear <= pMixBuf->cSamples);
+    Assert(cFramesToClear <= pMixBuf->cFrames);
 
     uint32_t cClearOff;
     uint32_t cClearLen;
 
     /* Clear end of buffer (wrap around). */
-    if (cSamplesToClear > pMixBuf->offRead)
+    if (cFramesToClear > pMixBuf->offRead)
     {
-        cClearOff = pMixBuf->cSamples - (cSamplesToClear - pMixBuf->offRead);
-        cClearLen = pMixBuf->cSamples - cClearOff;
+        cClearOff = pMixBuf->cFrames - (cFramesToClear - pMixBuf->offRead);
+        cClearLen = pMixBuf->cFrames - cClearOff;
 
         AUDMIXBUF_LOG(("Clearing1: %RU32 - %RU32\n", cClearOff, cClearOff + cClearLen));
 
-        RT_BZERO(pMixBuf->pSamples + cClearOff, cClearLen * sizeof(PDMAUDIOSAMPLE));
+        RT_BZERO(pMixBuf->pFrames + cClearOff, cClearLen * sizeof(PDMAUDIOFRAME));
 
-        Assert(cSamplesToClear >= cClearLen);
-        cSamplesToClear -= cClearLen;
+        Assert(cFramesToClear >= cClearLen);
+        cFramesToClear -= cClearLen;
     }
 
     /* Clear beginning of buffer. */
-    if (   cSamplesToClear
+    if (   cFramesToClear
         && pMixBuf->offRead)
     {
-        Assert(pMixBuf->offRead >= cSamplesToClear);
+        Assert(pMixBuf->offRead >= cFramesToClear);
 
-        cClearOff = pMixBuf->offRead - cSamplesToClear;
-        cClearLen = cSamplesToClear;
+        cClearOff = pMixBuf->offRead - cFramesToClear;
+        cClearLen = cFramesToClear;
 
-        Assert(cClearOff + cClearLen <= pMixBuf->cSamples);
+        Assert(cClearOff + cClearLen <= pMixBuf->cFrames);
 
         AUDMIXBUF_LOG(("Clearing2: %RU32 - %RU32\n", cClearOff, cClearOff + cClearLen));
 
-        RT_BZERO(pMixBuf->pSamples + cClearOff, cClearLen * sizeof(PDMAUDIOSAMPLE));
+        RT_BZERO(pMixBuf->pFrames + cClearOff, cClearLen * sizeof(PDMAUDIOFRAME));
     }
 }
 
@@ -349,48 +348,48 @@ void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf)
         pMixBuf->pRate = NULL;
     }
 
-    if (pMixBuf->pSamples)
+    if (pMixBuf->pFrames)
     {
-        Assert(pMixBuf->cSamples);
+        Assert(pMixBuf->cFrames);
 
-        RTMemFree(pMixBuf->pSamples);
-        pMixBuf->pSamples = NULL;
+        RTMemFree(pMixBuf->pFrames);
+        pMixBuf->pFrames = NULL;
     }
 
-    pMixBuf->cSamples = 0;
+    pMixBuf->cFrames = 0;
 }
 
 /**
- * Returns the size (in audio samples) of free audio buffer space.
+ * Returns the size (in audio frames) of free audio buffer space.
  *
- * @return  uint32_t                Size (in audio samples) of free audio buffer space.
+ * @return  uint32_t                Size (in audio frames) of free audio buffer space.
  * @param   pMixBuf                 Mixing buffer to return free size for.
  */
 uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
 
-    uint32_t cSamples, cSamplesFree;
+    uint32_t cFrames, cFramesFree;
     if (pMixBuf->pParent)
     {
         /*
-         * As a linked child buffer we want to know how many samples
+         * As a linked child buffer we want to know how many frames
          * already have been consumed by the parent.
          */
-        cSamples = pMixBuf->pParent->cSamples;
+        cFrames = pMixBuf->pParent->cFrames;
 
-        Assert(pMixBuf->cMixed <= cSamples);
-        cSamplesFree = cSamples - pMixBuf->cMixed;
+        Assert(pMixBuf->cMixed <= cFrames);
+        cFramesFree = cFrames - pMixBuf->cMixed;
     }
     else /* As a parent. */
     {
-        cSamples     = pMixBuf->cSamples;
-        Assert(cSamples >= pMixBuf->cUsed);
-        cSamplesFree = pMixBuf->cSamples - pMixBuf->cUsed;
+        cFrames     = pMixBuf->cFrames;
+        Assert(cFrames >= pMixBuf->cUsed);
+        cFramesFree = pMixBuf->cFrames - pMixBuf->cUsed;
     }
 
-    AUDMIXBUF_LOG(("%s: %RU32 of %RU32\n", pMixBuf->pszName, cSamplesFree, cSamples));
-    return cSamplesFree;
+    AUDMIXBUF_LOG(("%s: %RU32 of %RU32\n", pMixBuf->pszName, cFramesFree, cFrames));
+    return cFramesFree;
 }
 
 /**
@@ -401,28 +400,28 @@ uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf)
  */
 uint32_t AudioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf)
 {
-    return AUDIOMIXBUF_S2B(pMixBuf, AudioMixBufFree(pMixBuf));
+    return AUDIOMIXBUF_F2B(pMixBuf, AudioMixBufFree(pMixBuf));
 }
 
 /**
- * Allocates the internal audio sample buffer.
+ * Allocates the internal audio frame buffer.
  *
  * @return  IPRT status code.
- * @param   pMixBuf                 Mixing buffer to allocate sample buffer for.
- * @param   cSamples                Number of audio samples to allocate.
+ * @param   pMixBuf                 Mixing buffer to allocate frame buffer for.
+ * @param   cFrames                 Number of audio frames to allocate.
  */
-static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
+static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFrames)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertReturn(cSamples, VERR_INVALID_PARAMETER);
+    AssertReturn(cFrames, VERR_INVALID_PARAMETER);
 
-    AUDMIXBUF_LOG(("%s: cSamples=%RU32\n", pMixBuf->pszName, cSamples));
+    AUDMIXBUF_LOG(("%s: cFrames=%RU32\n", pMixBuf->pszName, cFrames));
 
-    size_t cbSamples = cSamples * sizeof(PDMAUDIOSAMPLE);
-    pMixBuf->pSamples = (PPDMAUDIOSAMPLE)RTMemAllocZ(cbSamples);
-    if (pMixBuf->pSamples)
+    size_t cbFrames = cFrames * sizeof(PDMAUDIOFRAME);
+    pMixBuf->pFrames = (PPDMAUDIOFRAME)RTMemAllocZ(cbFrames);
+    if (pMixBuf->pFrames)
     {
-        pMixBuf->cSamples = cSamples;
+        pMixBuf->cFrames = cFrames;
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
@@ -466,31 +465,31 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         return ((_aType) ((iVal >> (32 - _aShift)) + ((_aMax >> 1) + 1))); \
     } \
     \
-    DECLCALLBACK(uint32_t) audioMixBufConvFrom##_aName##Stereo(PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, \
+    DECLCALLBACK(uint32_t) audioMixBufConvFrom##_aName##Stereo(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, \
                                                                PCPDMAUDMIXBUFCONVOPTS pOpts) \
     { \
         _aType const *pSrc = (_aType const *)pvSrc; \
-        uint32_t cSamples = RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
-        AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
-                             pOpts->cSamples, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
-        for (uint32_t i = 0; i < cSamples; i++) \
+        uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(_aType)); \
+        AUDMIXBUF_MACRO_LOG(("cFrames=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
+                             pOpts->cFrames, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
+        for (uint32_t i = 0; i < cFrames; i++) \
         { \
             paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->From.Volume.uLeft ) >> AUDIOMIXBUF_VOL_SHIFT; \
             paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->From.Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
             paDst++; \
         } \
         \
-        return cSamples; \
+        return cFrames; \
     } \
     \
-    DECLCALLBACK(uint32_t) audioMixBufConvFrom##_aName##Mono(PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, \
+    DECLCALLBACK(uint32_t) audioMixBufConvFrom##_aName##Mono(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, \
                                                              PCPDMAUDMIXBUFCONVOPTS pOpts) \
     { \
         _aType const *pSrc = (_aType const *)pvSrc; \
-        const uint32_t cSamples = RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
-        AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
-                             cSamples, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
-        for (uint32_t i = 0; i < cSamples; i++) \
+        const uint32_t cFrames = RT_MIN(pOpts->cFrames, cbSrc / sizeof(_aType)); \
+        AUDMIXBUF_MACRO_LOG(("cFrames=%RU32, BpS=%zu, lVol=%RU32, rVol=%RU32\n", \
+                             cFrames, sizeof(_aType), pOpts->From.Volume.uLeft, pOpts->From.Volume.uRight)); \
+        for (uint32_t i = 0; i < cFrames; i++) \
         { \
             paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->From.Volume.uLeft)  >> AUDIOMIXBUF_VOL_SHIFT; \
             paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->From.Volume.uRight) >> AUDIOMIXBUF_VOL_SHIFT; \
@@ -498,16 +497,16 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
             paDst++; \
         } \
         \
-        return cSamples; \
+        return cFrames; \
     } \
     \
-    DECLCALLBACK(void) audioMixBufConvTo##_aName##Stereo(void *pvDst, PCPDMAUDIOSAMPLE paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts) \
+    DECLCALLBACK(void) audioMixBufConvTo##_aName##Stereo(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts) \
     { \
-        PCPDMAUDIOSAMPLE pSrc = paSrc; \
+        PCPDMAUDIOFRAME pSrc = paSrc; \
         _aType *pDst = (_aType *)pvDst; \
         _aType l, r; \
-        uint32_t cSamples = pOpts->cSamples; \
-        while (cSamples--) \
+        uint32_t cFrames = pOpts->cFrames; \
+        while (cFrames--) \
         { \
             AUDMIXBUF_MACRO_LOG(("%p: l=%RI64, r=%RI64\n", pSrc, pSrc->i64LSample, pSrc->i64RSample)); \
             l = audioMixBufClipTo##_aName(pSrc->i64LSample); \
@@ -519,12 +518,12 @@ static int audioMixBufAlloc(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         } \
     } \
     \
-    DECLCALLBACK(void) audioMixBufConvTo##_aName##Mono(void *pvDst, PCPDMAUDIOSAMPLE paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts) \
+    DECLCALLBACK(void) audioMixBufConvTo##_aName##Mono(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts) \
     { \
-        PCPDMAUDIOSAMPLE pSrc = paSrc; \
+        PCPDMAUDIOFRAME pSrc = paSrc; \
         _aType *pDst = (_aType *)pvDst; \
-        uint32_t cSamples = pOpts->cSamples; \
-        while (cSamples--) \
+        uint32_t cFrames = pOpts->cFrames; \
+        while (cFrames--) \
         { \
             *pDst++ = audioMixBufClipTo##_aName((pSrc->i64LSample + pSrc->i64RSample) / 2); \
             pSrc++; \
@@ -547,40 +546,40 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
 #undef AUDMIXBUF_CONVERT
 
 #define AUDMIXBUF_MIXOP(_aName, _aOp) \
-    static void audioMixBufOp##_aName(PPDMAUDIOSAMPLE paDst, uint32_t cDstSamples, \
-                                      PPDMAUDIOSAMPLE paSrc, uint32_t cSrcSamples, \
+    static void audioMixBufOp##_aName(PPDMAUDIOFRAME paDst, uint32_t cDstFrames, \
+                                      PPDMAUDIOFRAME paSrc, uint32_t cSrcFrames, \
                                       PPDMAUDIOSTRMRATE pRate, \
                                       uint32_t *pcDstWritten, uint32_t *pcSrcRead) \
     { \
-        AUDMIXBUF_MACRO_LOG(("cSrcSamples=%RU32, cDstSamples=%RU32\n", cSrcSamples, cDstSamples)); \
+        AUDMIXBUF_MACRO_LOG(("cSrcFrames=%RU32, cDstFrames=%RU32\n", cSrcFrames, cDstFrames)); \
         AUDMIXBUF_MACRO_LOG(("Rate: srcOffset=%RU32, dstOffset=%RU32, dstInc=%RU32\n", \
                              pRate->srcOffset, \
                              (uint32_t)(pRate->dstOffset >> 32), (uint32_t)(pRate->dstInc >> 32))); \
         \
         if (pRate->dstInc == (UINT64_C(1) + UINT32_MAX)) /* No conversion needed? */ \
         { \
-            uint32_t cSamples = RT_MIN(cSrcSamples, cDstSamples); \
-            AUDMIXBUF_MACRO_LOG(("cSamples=%RU32\n", cSamples)); \
-            for (uint32_t i = 0; i < cSamples; i++) \
+            uint32_t cFrames = RT_MIN(cSrcFrames, cDstFrames); \
+            AUDMIXBUF_MACRO_LOG(("cFrames=%RU32\n", cFrames)); \
+            for (uint32_t i = 0; i < cFrames; i++) \
             { \
                 paDst[i].i64LSample _aOp paSrc[i].i64LSample; \
                 paDst[i].i64RSample _aOp paSrc[i].i64RSample; \
             } \
             \
             if (pcDstWritten) \
-                *pcDstWritten = cSamples; \
+                *pcDstWritten = cFrames; \
             if (pcSrcRead) \
-                *pcSrcRead = cSamples; \
+                *pcSrcRead = cFrames; \
             return; \
         } \
         \
-        PPDMAUDIOSAMPLE paSrcStart = paSrc; \
-        PPDMAUDIOSAMPLE paSrcEnd   = paSrc + cSrcSamples; \
-        PPDMAUDIOSAMPLE paDstStart = paDst; \
-        PPDMAUDIOSAMPLE paDstEnd   = paDst + cDstSamples; \
-        PDMAUDIOSAMPLE  samCur     = { 0 }; \
-        PDMAUDIOSAMPLE  samOut; \
-        PDMAUDIOSAMPLE  samLast    = pRate->srcSampleLast; \
+        PPDMAUDIOFRAME paSrcStart = paSrc; \
+        PPDMAUDIOFRAME paSrcEnd   = paSrc + cSrcFrames;  \
+        PPDMAUDIOFRAME paDstStart = paDst; \
+        PPDMAUDIOFRAME paDstEnd   = paDst + cDstFrames; \
+        PDMAUDIOFRAME  frameCur   = { 0 }; \
+        PDMAUDIOFRAME  frameOut; \
+        PDMAUDIOFRAME  frameLast  = pRate->srcFrameLast; \
         \
         while (paDst < paDstEnd) \
         { \
@@ -592,7 +591,7 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
             while (pRate->srcOffset <= (pRate->dstOffset >> 32)) \
             { \
                 Assert(paSrc <= paSrcEnd); \
-                samLast = *paSrc++; \
+                frameLast = *paSrc++; \
                 pRate->srcOffset++; \
                 if (paSrc == paSrcEnd) \
                     break; \
@@ -602,21 +601,21 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
             if (paSrc == paSrcEnd) \
                 break; \
             \
-            samCur = *paSrc; \
+            frameCur = *paSrc; \
             \
             /* Interpolate. */ \
             int64_t iDstOffInt = pRate->dstOffset & UINT32_MAX; \
             \
-            samOut.i64LSample = (samLast.i64LSample * ((int64_t) (INT64_C(1) << 32) - iDstOffInt) + samCur.i64LSample * iDstOffInt) >> 32; \
-            samOut.i64RSample = (samLast.i64RSample * ((int64_t) (INT64_C(1) << 32) - iDstOffInt) + samCur.i64RSample * iDstOffInt) >> 32; \
+            frameOut.i64LSample = (frameLast.i64LSample * ((int64_t) (INT64_C(1) << 32) - iDstOffInt) + frameCur.i64LSample * iDstOffInt) >> 32; \
+            frameOut.i64RSample = (frameLast.i64RSample * ((int64_t) (INT64_C(1) << 32) - iDstOffInt) + frameCur.i64RSample * iDstOffInt) >> 32; \
             \
-            paDst->i64LSample _aOp samOut.i64LSample; \
-            paDst->i64RSample _aOp samOut.i64RSample; \
+            paDst->i64LSample _aOp frameOut.i64LSample; \
+            paDst->i64RSample _aOp frameOut.i64RSample; \
             \
             AUDMIXBUF_MACRO_LOG(("\tiDstOffInt=%RI64, l=%RI64, r=%RI64 (cur l=%RI64, r=%RI64)\n", \
                                  iDstOffInt, \
                                  paDst->i64LSample >> 32, paDst->i64RSample >> 32, \
-                                 samCur.i64LSample >> 32, samCur.i64RSample >> 32)); \
+                                 frameCur.i64LSample >> 32, frameCur.i64RSample >> 32)); \
             \
             paDst++; \
             pRate->dstOffset += pRate->dstInc; \
@@ -625,12 +624,12 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
             \
         } \
         \
-        AUDMIXBUF_MACRO_LOG(("%zu source samples -> %zu dest samples\n", paSrc - paSrcStart, paDst - paDstStart)); \
+        AUDMIXBUF_MACRO_LOG(("%zu source frames -> %zu dest frames\n", paSrc - paSrcStart, paDst - paDstStart)); \
         \
-        pRate->srcSampleLast = samLast; \
+        pRate->srcFrameLast = frameLast; \
         \
         AUDMIXBUF_MACRO_LOG(("pRate->srcSampleLast l=%RI64, r=%RI64\n", \
-                              pRate->srcSampleLast.i64LSample, pRate->srcSampleLast.i64RSample)); \
+                              pRate->srcFrameLast.i64LSample, pRate->srcFrameLast.i64RSample)); \
         \
         if (pcDstWritten) \
             *pcDstWritten = paDst - paDstStart; \
@@ -650,18 +649,18 @@ AUDMIXBUF_MIXOP(Blend  /* Name */, += /* Operation */)
 
 /** Dummy conversion used when the source is muted. */
 static DECLCALLBACK(uint32_t)
-audioMixBufConvFromSilence(PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, PCPDMAUDMIXBUFCONVOPTS pOpts)
+audioMixBufConvFromSilence(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc, PCPDMAUDMIXBUFCONVOPTS pOpts)
 {
     RT_NOREF(cbSrc, pvSrc);
 
     /* Internally zero always corresponds to silence. */
-    RT_BZERO(paDst, pOpts->cSamples * sizeof(paDst[0]));
-    return pOpts->cSamples;
+    RT_BZERO(paDst, pOpts->cFrames * sizeof(paDst[0]));
+    return pOpts->cFrames;
 }
 
 /**
  * Looks up the matching conversion (macro) routine for converting
- * audio samples from a source format.
+ * audio frames from a source format.
  *
  ** @todo Speed up the lookup by binding it to the actual stream state.
  *
@@ -721,7 +720,7 @@ static PFNPDMAUDIOMIXBUFCONVFROM audioMixBufConvFromLookup(PDMAUDIOMIXBUFFMT enm
 
 /**
  * Looks up the matching conversion (macro) routine for converting
- * audio samples to a destination format.
+ * audio frames to a destination format.
  *
  ** @todo Speed up the lookup by binding it to the actual stream state.
  *
@@ -810,9 +809,9 @@ static int audioMixBufConvVol(PPDMAUDMIXBUFVOL pVolDst, PPDMAUDIOVOLUME pVolSrc)
  * @param   pMixBuf                 Mixing buffer to initialize.
  * @param   pszName                 Name of mixing buffer for easier identification. Optional.
  * @param   pProps                  PCM audio properties to use for the mixing buffer.
- * @param   cSamples                Maximum number of audio samples the mixing buffer can hold.
+ * @param   cFrames                 Maximum number of audio frames the mixing buffer can hold.
  */
-int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPROPS pProps, uint32_t cSamples)
+int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -823,8 +822,8 @@ int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPR
     RTListInit(&pMixBuf->lstChildren);
     pMixBuf->cChildren = 0;
 
-    pMixBuf->pSamples = NULL;
-    pMixBuf->cSamples = 0;
+    pMixBuf->pFrames = NULL;
+    pMixBuf->cFrames = 0;
 
     pMixBuf->offRead  = 0;
     pMixBuf->offWrite = 0;
@@ -862,14 +861,14 @@ int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPR
                    AUDMIXBUF_FMT_BITS_PER_SAMPLE(pMixBuf->AudioFmt),
                    RT_BOOL(AUDMIXBUF_FMT_SIGNED(pMixBuf->AudioFmt))));
 
-    return audioMixBufAlloc(pMixBuf, cSamples);
+    return audioMixBufAlloc(pMixBuf, cFrames);
 }
 
 /**
- * Returns @c true if there are any audio samples available for processing,
+ * Returns @c true if there are any audio frames available for processing,
  * @c false if not.
  *
- * @return  bool                    @c true if there are any audio samples available for processing, @c false if not.
+ * @return  bool                    @c true if there are any audio frames available for processing, @c false if not.
  * @param   pMixBuf                 Mixing buffer to return value for.
  */
 bool AudioMixBufIsEmpty(PPDMAUDIOMIXBUF pMixBuf)
@@ -925,7 +924,7 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
     AssertPtrReturn(pParent, VERR_INVALID_POINTER);
 
     AssertMsgReturn(AUDMIXBUF_FMT_SAMPLE_FREQ(pParent->AudioFmt),
-                    ("Parent sample frequency (Hz) not set\n"), VERR_INVALID_PARAMETER);
+                    ("Parent frame frequency (Hz) not set\n"), VERR_INVALID_PARAMETER);
     AssertMsgReturn(AUDMIXBUF_FMT_SAMPLE_FREQ(pMixBuf->AudioFmt),
                     ("Buffer sample frequency (Hz) not set\n"), VERR_INVALID_PARAMETER);
     AssertMsgReturn(pMixBuf != pParent,
@@ -949,19 +948,19 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
 
     int rc = VINF_SUCCESS;
 #if 0
-    uint32_t cSamples = (uint32_t)RT_MIN(  ((uint64_t)pParent->cSamples << 32)
-                                         / pMixBuf->iFreqRatio, _64K /* 64K samples max. */);
-    if (!cSamples)
-        cSamples = pParent->cSamples;
+    uint32_t cFrames = (uint32_t)RT_MIN(  ((uint64_t)pParent->cFrames << 32)
+                                         / pMixBuf->iFreqRatio, _64K /* 64K frames max. */);
+    if (!cFrames)
+        cFrames = pParent->cFrames;
 
     int rc = VINF_SUCCESS;
 
-    if (cSamples != pMixBuf->cSamples)
+    if (cFrames != pMixBuf->cFrames)
     {
-        AUDMIXBUF_LOG(("%s: Reallocating samples %RU32 -> %RU32\n",
-                       pMixBuf->pszName, pMixBuf->cSamples, cSamples));
+        AUDMIXBUF_LOG(("%s: Reallocating frames %RU32 -> %RU32\n",
+                       pMixBuf->pszName, pMixBuf->cFrames, cFrames));
 
-        uint32_t cbSamples = cSamples * sizeof(PDMAUDIOSAMPLE);
+        uint32_t cbSamples = cFrames * sizeof(PDMAUDIOSAMPLE);
         Assert(cbSamples);
         pMixBuf->pSamples = (PPDMAUDIOSAMPLE)RTMemRealloc(pMixBuf->pSamples, cbSamples);
         if (!pMixBuf->pSamples)
@@ -969,7 +968,7 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
 
         if (RT_SUCCESS(rc))
         {
-            pMixBuf->cSamples = cSamples;
+            pMixBuf->cFrames = cFrames;
 
             /* Make sure to zero the reallocated buffer so that it can be
              * used properly when blending with another buffer later. */
@@ -993,13 +992,13 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
         pMixBuf->pRate->dstInc = ((uint64_t)AUDMIXBUF_FMT_SAMPLE_FREQ(pMixBuf->AudioFmt) << 32)
                                /            AUDMIXBUF_FMT_SAMPLE_FREQ(pParent->AudioFmt);
 
-        AUDMIXBUF_LOG(("uThisHz=%RU32, uParentHz=%RU32, iFreqRatio=0x%RX64 (%RI64), uRateInc=0x%RX64 (%RU64), cSamples=%RU32 (%RU32 parent)\n",
+        AUDMIXBUF_LOG(("uThisHz=%RU32, uParentHz=%RU32, iFreqRatio=0x%RX64 (%RI64), uRateInc=0x%RX64 (%RU64), cFrames=%RU32 (%RU32 parent)\n",
                        AUDMIXBUF_FMT_SAMPLE_FREQ(pMixBuf->AudioFmt),
                        AUDMIXBUF_FMT_SAMPLE_FREQ(pParent->AudioFmt),
                        pMixBuf->iFreqRatio, pMixBuf->iFreqRatio,
                        pMixBuf->pRate->dstInc, pMixBuf->pRate->dstInc,
-                       pMixBuf->cSamples,
-                       pParent->cSamples));
+                       pMixBuf->cFrames,
+                       pParent->cFrames));
         AUDMIXBUF_LOG(("%s (%RU32Hz) -> %s (%RU32Hz)\n",
                        pMixBuf->pszName, AUDMIXBUF_FMT_SAMPLE_FREQ(pMixBuf->AudioFmt),
                        pMixBuf->pParent->pszName, AUDMIXBUF_FMT_SAMPLE_FREQ(pParent->AudioFmt)));
@@ -1009,16 +1008,16 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
 }
 
 /**
- * Returns number of available live samples, that is, samples that
+ * Returns number of available live frames, that is, frames that
  * have been written into the mixing buffer but not have been processed yet.
  *
- * For a parent buffer, this simply returns the currently used number of samples
+ * For a parent buffer, this simply returns the currently used number of frames
  * in the buffer.
  *
- * For a child buffer, this returns the number of samples which have been mixed
+ * For a child buffer, this returns the number of frames which have been mixed
  * to the parent and were not processed by the parent yet.
  *
- * @return  uint32_t                Number of live samples available.
+ * @return  uint32_t                Number of live frames available.
  * @param   pMixBuf                 Mixing buffer to return value for.
  */
 uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
@@ -1026,33 +1025,33 @@ uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
     AssertPtrReturn(pMixBuf, 0);
 
 #ifdef RT_STRICT
-    uint32_t cSamples;
+    uint32_t cFrames;
 #endif
     uint32_t cAvail;
     if (pMixBuf->pParent) /* Is this a child buffer? */
     {
 #ifdef RT_STRICT
-        /* Use the sample count from the parent, as
-         * pMixBuf->cMixed specifies the sample count
-         * in parent samples. */
-        cSamples = pMixBuf->pParent->cSamples;
+        /* Use the frame count from the parent, as
+         * pMixBuf->cMixed specifies the frame count
+         * in parent frames. */
+        cFrames = pMixBuf->pParent->cFrames;
 #endif
         cAvail   = pMixBuf->cMixed;
     }
     else
     {
 #ifdef RT_STRICT
-        cSamples = pMixBuf->cSamples;
+        cFrames = pMixBuf->cFrames;
 #endif
         cAvail   = pMixBuf->cUsed;
     }
 
-    Assert(cAvail <= cSamples);
+    Assert(cAvail <= cFrames);
     return cAvail;
 }
 
 /**
- * Mixes audio samples from a source mixing buffer to a destination mixing buffer.
+ * Mixes audio frames from a source mixing buffer to a destination mixing buffer.
  *
  * @return  IPRT status code.
  *          VERR_BUFFER_UNDERFLOW if the source did not have enough audio data.
@@ -1060,11 +1059,11 @@ uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
  *
  * @param   pDst                    Destination mixing buffer.
  * @param   pSrc                    Source mixing buffer.
- * @param   cSrcOff                 Offset of source audio samples to mix.
- * @param   cSrcSamples             Number of source audio samples to mix.
- * @param   pcSrcMixed              Number of source audio samples successfully mixed. Optional.
+ * @param   cSrcOff                 Offset of source audio frames to mix.
+ * @param   cSrcFrames              Number of source audio frames to mix.
+ * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
  */
-static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t cSrcOff, uint32_t cSrcSamples,
+static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t cSrcOff, uint32_t cSrcFrames,
                             uint32_t *pcSrcMixed)
 {
     AssertPtrReturn(pDst,  VERR_INVALID_POINTER);
@@ -1076,18 +1075,18 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     uint32_t cReadTotal    = 0;
     uint32_t cWrittenTotal = 0;
 
-    Assert(pSrc->cMixed <= pDst->cSamples);
+    Assert(pSrc->cMixed <= pDst->cFrames);
 
     Assert(pSrc->cUsed >= pDst->cMixed);
-    Assert(pDst->cUsed <= pDst->cSamples);
+    Assert(pDst->cUsed <= pDst->cFrames);
 
     uint32_t offSrcRead  = cSrcOff;
 
     uint32_t offDstWrite = pDst->offWrite;
     uint32_t cDstMixed   = pSrc->cMixed;
 
-    uint32_t cSrcAvail   = RT_MIN(cSrcSamples, pSrc->cUsed);
-    uint32_t cDstAvail   = pDst->cSamples - pDst->cUsed; /** @todo Use pDst->cMixed later? */
+    uint32_t cSrcAvail   = RT_MIN(cSrcFrames, pSrc->cUsed);
+    uint32_t cDstAvail   = pDst->cFrames - pDst->cUsed; /** @todo Use pDst->cMixed later? */
 
     AUDMIXBUF_LOG(("%s (%RU32 available) -> %s (%RU32 available)\n",
                    pSrc->pszName, cSrcAvail, pDst->pszName, cDstAvail));
@@ -1111,8 +1110,8 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 
     while (cSrcAvail && cDstAvail)
     {
-        cSrcToRead  = RT_MIN(cSrcAvail, pSrc->cSamples - offSrcRead);
-        cDstToWrite = RT_MIN(cDstAvail, pDst->cSamples - offDstWrite);
+        cSrcToRead  = RT_MIN(cSrcAvail, pSrc->cFrames - offSrcRead);
+        cDstToWrite = RT_MIN(cDstAvail, pDst->cFrames - offDstWrite);
 
         AUDMIXBUF_LOG(("\tSource: %RU32 @ %RU32 -> reading %RU32\n", cSrcAvail, offSrcRead, cSrcToRead));
         AUDMIXBUF_LOG(("\tDest  : %RU32 @ %RU32 -> writing %RU32\n", cDstAvail, offDstWrite, cDstToWrite));
@@ -1125,21 +1124,21 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 
         cDstWritten = cSrcRead = 0;
 
-        Assert(offSrcRead < pSrc->cSamples);
-        Assert(offSrcRead + cSrcToRead <= pSrc->cSamples);
+        Assert(offSrcRead < pSrc->cFrames);
+        Assert(offSrcRead + cSrcToRead <= pSrc->cFrames);
 
-        Assert(offDstWrite < pDst->cSamples);
-        Assert(offDstWrite + cDstToWrite <= pDst->cSamples);
+        Assert(offDstWrite < pDst->cFrames);
+        Assert(offDstWrite + cDstToWrite <= pDst->cFrames);
 
-        audioMixBufOpAssign(pDst->pSamples + offDstWrite, cDstToWrite,
-                            pSrc->pSamples + offSrcRead,  cSrcToRead,
+        audioMixBufOpAssign(pDst->pFrames + offDstWrite, cDstToWrite,
+                            pSrc->pFrames + offSrcRead,  cSrcToRead,
                             pSrc->pRate, &cDstWritten, &cSrcRead);
 
         cReadTotal    += cSrcRead;
         cWrittenTotal += cDstWritten;
 
-        offSrcRead     = (offSrcRead  + cSrcRead)    % pSrc->cSamples;
-        offDstWrite    = (offDstWrite + cDstWritten) % pDst->cSamples;
+        offSrcRead     = (offSrcRead  + cSrcRead)    % pSrc->cFrames;
+        offDstWrite    = (offDstWrite + cDstWritten) % pDst->cFrames;
 
         cDstMixed     += cDstWritten;
 
@@ -1158,24 +1157,24 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     Assert(pSrc->cUsed >= cReadTotal);
     pSrc->cUsed      -= RT_MIN(pSrc->cUsed, cReadTotal);
 
-    /* Note: Always count in parent samples, as the rate can differ! */
-    pSrc->cMixed      = RT_MIN(cDstMixed, pDst->cSamples);
+    /* Note: Always count in parent frames, as the rate can differ! */
+    pSrc->cMixed      = RT_MIN(cDstMixed, pDst->cFrames);
 
     pDst->offWrite    = offDstWrite;
-    Assert(pDst->offWrite <= pDst->cSamples);
-    Assert((pDst->cUsed + cWrittenTotal) <= pDst->cSamples);
+    Assert(pDst->offWrite <= pDst->cFrames);
+    Assert((pDst->cUsed + cWrittenTotal) <= pDst->cFrames);
     pDst->cUsed      += cWrittenTotal;
 
-    /* If there are more used samples than fitting in the destination buffer,
+    /* If there are more used frames than fitting in the destination buffer,
      * adjust the values accordingly.
      *
      * This can happen if this routine has been called too often without
      * actually processing the destination buffer in between. */
-    if (pDst->cUsed > pDst->cSamples)
+    if (pDst->cUsed > pDst->cFrames)
     {
-        LogFunc(("%s: Warning: Destination buffer used %RU32 / %RU32 samples\n", pDst->pszName, pDst->cUsed, pDst->cSamples));
+        LogFunc(("%s: Warning: Destination buffer used %RU32 / %RU32 frames\n", pDst->pszName, pDst->cUsed, pDst->cFrames));
         pDst->offWrite     = 0;
-        pDst->cUsed        = pDst->cSamples;
+        pDst->cUsed        = pDst->cFrames;
 
         rc = VERR_BUFFER_OVERFLOW;
     }
@@ -1184,7 +1183,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     audioMixBufDbgValidate(pSrc);
     audioMixBufDbgValidate(pDst);
 
-    Assert(pSrc->cMixed <= pDst->cSamples);
+    Assert(pSrc->cMixed <= pDst->cFrames);
 #endif
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
@@ -1199,25 +1198,25 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
         Assert(sizeof(auBuf) >= 4);
         Assert(sizeof(auBuf) % 4 == 0);
 
-        uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2S(pDst, sizeof(auBuf)), RT_MIN(cLeft, pDst->cSamples - offRead));
+        uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2F(pDst, sizeof(auBuf)), RT_MIN(cLeft, pDst->cFrames - offRead));
         Assert(cToRead <= pDst->cUsed);
 
         PDMAUDMIXBUFCONVOPTS convOpts;
         RT_ZERO(convOpts);
-        convOpts.cSamples = cToRead;
+        convOpts.cFrames = cToRead;
 
-        pDst->pfnConvTo(auBuf, pDst->pSamples + offRead, &convOpts);
+        pDst->pfnConvTo(auBuf, pDst->pFrames + offRead, &convOpts);
 
         RTFILE fh;
         int rc2 = RTFileOpen(&fh, AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "mixbuf_mixto.pcm",
                              RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc2))
         {
-            RTFileWrite(fh, auBuf, AUDIOMIXBUF_S2B(pDst, cToRead), NULL);
+            RTFileWrite(fh, auBuf, AUDIOMIXBUF_F2B(pDst, cToRead), NULL);
             RTFileClose(fh);
         }
 
-        offRead  = (offRead + cToRead) % pDst->cSamples;
+        offRead  = (offRead + cToRead) % pDst->cFrames;
         cLeft   -= cToRead;
     }
 #endif /* AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA */
@@ -1235,34 +1234,34 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 }
 
 /**
- * Mixes audio samples down to the parent mixing buffer, extended version.
+ * Mixes audio frames down to the parent mixing buffer, extended version.
  *
  * @return  IPRT status code. See audioMixBufMixTo() for a more detailed explanation.
  * @param   pMixBuf                 Source mixing buffer to mix to its parent.
- * @param   cSrcOffset              Offset (in samples) of source mixing buffer.
- * @param   cSrcSamples             Number of source audio samples to mix to its parent.
- * @param   pcSrcMixed              Number of source audio samples successfully mixed. Optional.
+ * @param   cSrcOffset              Offset (in frames) of source mixing buffer.
+ * @param   cSrcFrames              Number of source audio frames to mix to its parent.
+ * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
  */
-int AudioMixBufMixToParentEx(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcSamples, uint32_t *pcSrcMixed)
+int AudioMixBufMixToParentEx(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
 {
     AssertMsgReturn(VALID_PTR(pMixBuf->pParent),
                     ("Buffer is not linked to a parent buffer\n"),
                     VERR_INVALID_PARAMETER);
 
-    return audioMixBufMixTo(pMixBuf->pParent, pMixBuf, cSrcOffset, cSrcSamples, pcSrcMixed);
+    return audioMixBufMixTo(pMixBuf->pParent, pMixBuf, cSrcOffset, cSrcFrames, pcSrcMixed);
 }
 
 /**
- * Mixes audio samples down to the parent mixing buffer.
+ * Mixes audio frames down to the parent mixing buffer.
  *
  * @return  IPRT status code. See audioMixBufMixTo() for a more detailed explanation.
  * @param   pMixBuf                 Source mixing buffer to mix to its parent.
- * @param   cSrcSamples             Number of source audio samples to mix to its parent.
- * @param   pcSrcMixed              Number of source audio samples successfully mixed. Optional.
+ * @param   cSrcFrames              Number of source audio frames to mix to its parent.
+ * @param   pcSrcMixed              Number of source audio frames successfully mixed. Optional.
  */
-int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcSamples, uint32_t *pcSrcMixed)
+int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_t *pcSrcMixed)
 {
-    return audioMixBufMixTo(pMixBuf->pParent, pMixBuf, pMixBuf->offRead, cSrcSamples, pcSrcMixed);
+    return audioMixBufMixTo(pMixBuf->pParent, pMixBuf, pMixBuf->offRead, cSrcFrames, pcSrcMixed);
 }
 
 #ifdef DEBUG
@@ -1280,7 +1279,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PPDMAUDIOMIXBUF pMixBuf, const
 {
     Log(("%s: %*s[%s] %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
          pszFunc, uIdtLvl * 4, "", fIsParent ? "PARENT" : "CHILD",
-         pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cSamples));
+         pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cFrames));
 }
 
 /**
@@ -1291,14 +1290,14 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PPDMAUDIOMIXBUF pMixBuf, const
  */
 DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PPDMAUDIOMIXBUF pMixBuf)
 {
-    //const uint32_t offReadEnd  = (pMixBuf->offRead + pMixBuf->cUsed) % pMixBuf->cSamples;
-    //const uint32_t offWriteEnd = (pMixBuf->offWrite + (pMixBuf->cSamples - pMixBuf->cUsed)) % pMixBuf->cSamples;
+    //const uint32_t offReadEnd  = (pMixBuf->offRead + pMixBuf->cUsed) % pMixBuf->cFrames;
+    //const uint32_t offWriteEnd = (pMixBuf->offWrite + (pMixBuf->cFrames - pMixBuf->cUsed)) % pMixBuf->cFrames;
 
     bool fValid = true;
 
-    AssertStmt(pMixBuf->offRead  <= pMixBuf->cSamples, fValid = false);
-    AssertStmt(pMixBuf->offWrite <= pMixBuf->cSamples, fValid = false);
-    AssertStmt(pMixBuf->cUsed    <= pMixBuf->cSamples, fValid = false);
+    AssertStmt(pMixBuf->offRead  <= pMixBuf->cFrames, fValid = false);
+    AssertStmt(pMixBuf->offWrite <= pMixBuf->cFrames, fValid = false);
+    AssertStmt(pMixBuf->cUsed    <= pMixBuf->cFrames, fValid = false);
 
     if (pMixBuf->offWrite > pMixBuf->offRead)
     {
@@ -1307,7 +1306,7 @@ DECL_FORCE_INLINE(bool) audioMixBufDbgValidate(PPDMAUDIOMIXBUF pMixBuf)
     }
     else if (pMixBuf->offWrite < pMixBuf->offRead)
     {
-        if (pMixBuf->offWrite + pMixBuf->cSamples - pMixBuf->offRead != pMixBuf->cUsed)
+        if (pMixBuf->offWrite + pMixBuf->cFrames - pMixBuf->offRead != pMixBuf->cUsed)
             fValid = false;
     }
 
@@ -1408,7 +1407,7 @@ void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
 #endif /* DEBUG */
 
 /**
- * Returns the total number of samples used.
+ * Returns the total number of frames used.
  *
  * @return  uint32_t
  * @param   pMixBuf
@@ -1420,39 +1419,39 @@ uint32_t AudioMixBufUsed(PPDMAUDIOMIXBUF pMixBuf)
 }
 
 /**
- * Reads audio samples at a specific offset.
+ * Reads audio frames at a specific offset.
  *
  * @return  IPRT status code.
- * @param   pMixBuf                 Mixing buffer to read audio samples from.
- * @param   offSamples              Offset (in audio samples) to start reading from.
+ * @param   pMixBuf                 Mixing buffer to read audio frames from.
+ * @param   offFrames               Offset (in audio frames) to start reading from.
  * @param   pvBuf                   Pointer to buffer to write output to.
  * @param   cbBuf                   Size (in bytes) of buffer to write to.
  * @param   pcbRead                 Size (in bytes) of data read. Optional.
  */
 int AudioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf,
-                      uint32_t offSamples,
+                      uint32_t offFrames,
                       void *pvBuf, uint32_t cbBuf,
                       uint32_t *pcbRead)
 {
     return AudioMixBufReadAtEx(pMixBuf, pMixBuf->AudioFmt,
-                               offSamples, pvBuf, cbBuf, pcbRead);
+                               offFrames, pvBuf, cbBuf, pcbRead);
 }
 
 /**
- * Reads audio samples at a specific offset.
+ * Reads audio frames at a specific offset.
  * If the audio format of the mixing buffer and the requested audio format do
  * not match the output will be converted accordingly.
  *
  * @return  IPRT status code.
- * @param   pMixBuf                 Mixing buffer to read audio samples from.
+ * @param   pMixBuf                 Mixing buffer to read audio frames from.
  * @param   enmFmt                  Audio format to use for output.
- * @param   offSamples              Offset (in audio samples) to start reading from.
+ * @param   offFrames               Offset (in audio frames) to start reading from.
  * @param   pvBuf                   Pointer to buffer to write output to.
  * @param   cbBuf                   Size (in bytes) of buffer to write to.
  * @param   pcbRead                 Size (in bytes) of data read. Optional.
  */
 int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
-                        uint32_t offSamples,
+                        uint32_t offFrames,
                         void *pvBuf, uint32_t cbBuf,
                         uint32_t *pcbRead)
 {
@@ -1460,15 +1459,15 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     /* pcbRead is optional. */
 
-    uint32_t cDstSamples = pMixBuf->cSamples;
+    uint32_t cDstFrames = pMixBuf->cFrames;
     uint32_t cLive = pMixBuf->cUsed;
 
-    uint32_t cDead = cDstSamples - cLive;
-    uint32_t cToProcess = (uint32_t)AUDIOMIXBUF_S2S_RATIO(pMixBuf, cDead);
-    cToProcess = RT_MIN(cToProcess, AUDIOMIXBUF_B2S(pMixBuf, cbBuf));
+    uint32_t cDead = cDstFrames - cLive;
+    uint32_t cToProcess = (uint32_t)AUDIOMIXBUF_F2F_RATIO(pMixBuf, cDead);
+    cToProcess = RT_MIN(cToProcess, AUDIOMIXBUF_B2F(pMixBuf, cbBuf));
 
-    AUDMIXBUF_LOG(("%s: offSamples=%RU32, cLive=%RU32, cDead=%RU32, cToProcess=%RU32\n",
-                   pMixBuf->pszName, offSamples, cLive, cDead, cToProcess));
+    AUDMIXBUF_LOG(("%s: offFrames=%RU32, cLive=%RU32, cDead=%RU32, cToProcess=%RU32\n",
+                   pMixBuf->pszName, offFrames, cLive, cDead, cToProcess));
 
     int rc;
     if (cToProcess)
@@ -1485,9 +1484,9 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
             RT_ZERO(convOpts);
             /* Note: No volume handling/conversion done in the conversion-to macros (yet). */
 
-            convOpts.cSamples = cToProcess;
+            convOpts.cFrames = cToProcess;
 
-            pfnConvTo(pvBuf, pMixBuf->pSamples + offSamples, &convOpts);
+            pfnConvTo(pvBuf, pMixBuf->pFrames + offFrames, &convOpts);
 
 #ifdef DEBUG
             AudioMixBufDbgPrint(pMixBuf);
@@ -1506,21 +1505,21 @@ int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (RT_SUCCESS(rc))
     {
         if (pcbRead)
-            *pcbRead = AUDIOMIXBUF_S2B(pMixBuf, cToProcess);
+            *pcbRead = AUDIOMIXBUF_F2B(pMixBuf, cToProcess);
     }
 
-    AUDMIXBUF_LOG(("cbRead=%RU32, rc=%Rrc\n", AUDIOMIXBUF_S2B(pMixBuf, cToProcess), rc));
+    AUDMIXBUF_LOG(("cbRead=%RU32, rc=%Rrc\n", AUDIOMIXBUF_F2B(pMixBuf, cToProcess), rc));
     return rc;
 }
 
 /**
- * Reads audio samples. The audio format of the mixing buffer will be used.
+ * Reads audio frames. The audio format of the mixing buffer will be used.
  *
  * @return  IPRT status code.
- * @param   pMixBuf                 Mixing buffer to read audio samples from.
+ * @param   pMixBuf                 Mixing buffer to read audio frames from.
  * @param   pvBuf                   Pointer to buffer to write output to.
  * @param   cbBuf                   Size (in bytes) of buffer to write to.
- * @param   pcRead                  Number of audio samples read. Optional.
+ * @param   pcRead                  Number of audio frames read. Optional.
  */
 int AudioMixBufReadCirc(PPDMAUDIOMIXBUF pMixBuf, void *pvBuf, uint32_t cbBuf, uint32_t *pcRead)
 {
@@ -1528,16 +1527,16 @@ int AudioMixBufReadCirc(PPDMAUDIOMIXBUF pMixBuf, void *pvBuf, uint32_t cbBuf, ui
 }
 
 /**
- * Reads audio samples in a specific audio format.
+ * Reads audio frames in a specific audio format.
  * If the audio format of the mixing buffer and the requested audio format do
  * not match the output will be converted accordingly.
  *
  * @return  IPRT status code.
- * @param   pMixBuf                 Mixing buffer to read audio samples from.
+ * @param   pMixBuf                 Mixing buffer to read audio frames from.
  * @param   enmFmt                  Audio format to use for output.
  * @param   pvBuf                   Pointer to buffer to write output to.
  * @param   cbBuf                   Size (in bytes) of buffer to write to.
- * @param   pcRead                  Number of audio samples read. Optional.
+ * @param   pcRead                  Number of audio frames read. Optional.
  */
 int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, void *pvBuf, uint32_t cbBuf, uint32_t *pcRead)
 {
@@ -1546,13 +1545,13 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, voi
     AssertPtrReturn(pvBuf,   VERR_INVALID_POINTER);
     /* pcRead is optional. */
 
-    /* Make sure that we at least have space for a full audio sample. */
-    AssertReturn(AUDIOMIXBUF_B2S(pMixBuf, cbBuf), VERR_INVALID_PARAMETER);
+    /* Make sure that we at least have space for a full audio frame. */
+    AssertReturn(AUDIOMIXBUF_B2F(pMixBuf, cbBuf), VERR_INVALID_PARAMETER);
 
-    uint32_t cToRead = RT_MIN(pMixBuf->cUsed, AUDIOMIXBUF_B2S(pMixBuf, cbBuf));
+    uint32_t cToRead = RT_MIN(pMixBuf->cUsed, AUDIOMIXBUF_B2F(pMixBuf, cbBuf));
 
-    AUDMIXBUF_LOG(("%s: cbBuf=%RU32 (%RU32 samples), cToRead=%RU32, fmtSrc=0x%x, fmtDst=0x%x\n",
-                   pMixBuf->pszName, cbBuf, AUDIOMIXBUF_B2S(pMixBuf, cbBuf), cToRead, pMixBuf->AudioFmt, enmFmt));
+    AUDMIXBUF_LOG(("%s: cbBuf=%RU32 (%RU32 frames), cToRead=%RU32, fmtSrc=0x%x, fmtDst=0x%x\n",
+                   pMixBuf->pszName, cbBuf, AUDIOMIXBUF_B2F(pMixBuf, cbBuf), cToRead, pMixBuf->AudioFmt, enmFmt));
 
     if (!cToRead)
     {
@@ -1576,16 +1575,16 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, voi
         return VERR_NOT_SUPPORTED;
     }
 
-    cToRead = RT_MIN(cToRead, pMixBuf->cSamples - pMixBuf->offRead);
+    cToRead = RT_MIN(cToRead, pMixBuf->cFrames - pMixBuf->offRead);
     if (cToRead)
     {
         PDMAUDMIXBUFCONVOPTS convOpts;
         RT_ZERO(convOpts);
-        convOpts.cSamples = cToRead;
+        convOpts.cFrames = cToRead;
 
         AUDMIXBUF_LOG(("cToRead=%RU32\n", cToRead));
 
-        pfnConvTo(pvBuf, pMixBuf->pSamples + pMixBuf->offRead, &convOpts);
+        pfnConvTo(pvBuf, pMixBuf->pFrames + pMixBuf->offRead, &convOpts);
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
@@ -1593,11 +1592,11 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, voi
                              RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc2))
         {
-            RTFileWrite(fh, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToRead), NULL);
+            RTFileWrite(fh, pvBuf, AUDIOMIXBUF_F2B(pMixBuf, cToRead), NULL);
             RTFileClose(fh);
         }
 #endif
-        pMixBuf->offRead  = (pMixBuf->offRead + cToRead) % pMixBuf->cSamples;
+        pMixBuf->offRead  = (pMixBuf->offRead + cToRead) % pMixBuf->cFrames;
         Assert(pMixBuf->cUsed >= cToRead);
         pMixBuf->cUsed   -= cToRead;
     }
@@ -1609,7 +1608,7 @@ int AudioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, voi
     audioMixBufDbgValidate(pMixBuf);
 #endif
 
-    AUDMIXBUF_LOG(("cRead=%RU32 (%RU32 bytes)\n", cToRead, AUDIOMIXBUF_S2B(pMixBuf, cToRead)));
+    AUDMIXBUF_LOG(("cRead=%RU32 (%RU32 bytes)\n", cToRead, AUDIOMIXBUF_F2B(pMixBuf, cToRead)));
     return VINF_SUCCESS;
 }
 
@@ -1663,15 +1662,15 @@ void AudioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
 }
 
 /**
- * Returns the maximum amount of audio samples this buffer can hold.
+ * Returns the maximum amount of audio frames this buffer can hold.
  *
- * @return  uint32_t                Size (in audio samples) the mixing buffer can hold.
+ * @return  uint32_t                Size (in audio frames) the mixing buffer can hold.
  * @param   pMixBuf                 Mixing buffer to retrieve maximum for.
  */
 uint32_t AudioMixBufSize(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
-    return pMixBuf->cSamples;
+    return pMixBuf->cFrames;
 }
 
 /**
@@ -1683,7 +1682,7 @@ uint32_t AudioMixBufSize(PPDMAUDIOMIXBUF pMixBuf)
 uint32_t AudioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
-    return AUDIOMIXBUF_S2B(pMixBuf, pMixBuf->cSamples);
+    return AUDIOMIXBUF_F2B(pMixBuf, pMixBuf->cFrames);
 }
 
 /**
@@ -1748,26 +1747,26 @@ void AudioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
 }
 
 /**
- * Writes audio samples at a specific offset.
+ * Writes audio frames at a specific offset.
  * The sample format being written must match the format of the mixing buffer.
  *
  * @return  IPRT status code.
  * @param   pMixBuf                 Pointer to mixing buffer to write to.
- * @param   offSamples              Offset (in samples) starting to write at.
+ * @param   offFrames               Offset (in frames) starting to write at.
  * @param   pvBuf                   Pointer to audio buffer to be written.
  * @param   cbBuf                   Size (in bytes) of audio buffer.
- * @param   pcWritten               Returns number of audio samples written. Optional.
+ * @param   pcWritten               Returns number of audio frames written. Optional.
  */
-int AudioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offSamples, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
+int AudioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offFrames, const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
 {
-    return AudioMixBufWriteAtEx(pMixBuf, pMixBuf->AudioFmt, offSamples, pvBuf, cbBuf, pcWritten);
+    return AudioMixBufWriteAtEx(pMixBuf, pMixBuf->AudioFmt, offFrames, pvBuf, cbBuf, pcWritten);
 }
 
 /**
- * Writes audio samples at a specific offset.
+ * Writes audio frames at a specific offset.
  *
  * Note that this operation also modifies the current read and write position
- * to \a offSamples + written samples on success.
+ * to \a offFrames + written frames on success.
  *
  * The audio sample format to be written can be different from the audio format
  * the mixing buffer operates on.
@@ -1775,13 +1774,13 @@ int AudioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offSamples, const void 
  * @return  IPRT status code.
  * @param   pMixBuf                 Pointer to mixing buffer to write to.
  * @param   enmFmt                  Audio format supplied in the buffer.
- * @param   offSamples              Offset (in samples) starting to write at.
+ * @param   offFrames               Offset (in frames) starting to write at.
  * @param   pvBuf                   Pointer to audio buffer to be written.
  * @param   cbBuf                   Size (in bytes) of audio buffer.
- * @param   pcWritten               Returns number of audio samples written. Optional.
+ * @param   pcWritten               Returns number of audio frames written. Optional.
  */
 int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
-                         uint32_t offSamples, const void *pvBuf, uint32_t cbBuf,
+                         uint32_t offFrames, const void *pvBuf, uint32_t cbBuf,
                          uint32_t *pcWritten)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -1789,7 +1788,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     AssertPtrReturn(pvBuf,   VERR_INVALID_POINTER);
     /* pcbWritten is optional. */
 
-    if (offSamples >= pMixBuf->cSamples)
+    if (offFrames >= pMixBuf->cFrames)
     {
         if (pcWritten)
             *pcWritten = 0;
@@ -1799,7 +1798,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     /*
      * Adjust cToWrite so we don't overflow our buffers.
      */
-    uint32_t cToWrite = RT_MIN(AUDIOMIXBUF_B2S(pMixBuf, cbBuf), pMixBuf->cSamples - offSamples);
+    uint32_t cToWrite = RT_MIN(AUDIOMIXBUF_B2F(pMixBuf, cbBuf), pMixBuf->cFrames - offFrames);
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
     /*
@@ -1810,7 +1809,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                          RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc2))
     {
-        RTFileWrite(hFile, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), NULL);
+        RTFileWrite(hFile, pvBuf, AUDIOMIXBUF_F2B(pMixBuf, cToWrite), NULL);
         RTFileClose(hFile);
     }
 #endif
@@ -1837,12 +1836,12 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     {
         PDMAUDMIXBUFCONVOPTS convOpts;
 
-        convOpts.cSamples           = cToWrite;
+        convOpts.cFrames           = cToWrite;
         convOpts.From.Volume.fMuted = pMixBuf->Volume.fMuted;
         convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
         convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
 
-        cWritten = pfnConvFrom(pMixBuf->pSamples + offSamples, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), &convOpts);
+        cWritten = pfnConvFrom(pMixBuf->pFrames + offFrames, pvBuf, AUDIOMIXBUF_F2B(pMixBuf, cToWrite), &convOpts);
     }
     else
     {
@@ -1854,15 +1853,15 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         }
     }
 
-    AUDMIXBUF_LOG(("%s: offSamples=%RU32, cbBuf=%RU32, cToWrite=%RU32 (%zu bytes), cWritten=%RU32 (%zu bytes), rc=%Rrc\n",
-                   pMixBuf->pszName, offSamples, cbBuf,
-                   cToWrite, AUDIOMIXBUF_S2B(pMixBuf, cToWrite),
-                   cWritten, AUDIOMIXBUF_S2B(pMixBuf, cWritten), rc));
+    AUDMIXBUF_LOG(("%s: offFrames=%RU32, cbBuf=%RU32, cToWrite=%RU32 (%zu bytes), cWritten=%RU32 (%zu bytes), rc=%Rrc\n",
+                   pMixBuf->pszName, offFrames, cbBuf,
+                   cToWrite, AUDIOMIXBUF_F2B(pMixBuf, cToWrite),
+                   cWritten, AUDIOMIXBUF_F2B(pMixBuf, cWritten), rc));
 
     if (RT_SUCCESS(rc))
     {
-        pMixBuf->offRead  = offSamples % pMixBuf->cSamples;
-        pMixBuf->offWrite = (offSamples + cWritten) % pMixBuf->cSamples;
+        pMixBuf->offRead  = offFrames % pMixBuf->cFrames;
+        pMixBuf->offWrite = (offFrames + cWritten) % pMixBuf->cFrames;
         pMixBuf->cUsed    = cWritten;
         pMixBuf->cMixed   = 0;
 
@@ -1879,16 +1878,16 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 }
 
 /**
- * Writes audio samples.
+ * Writes audio frames.
  *
  * The sample format being written must match the format of the mixing buffer.
  *
- * @return  IPRT status code, or VERR_BUFFER_OVERFLOW if samples which not have
+ * @return  IPRT status code, or VERR_BUFFER_OVERFLOW if frames which not have
  *          been processed yet have been overwritten (due to cyclic buffer).
  * @param   pMixBuf                 Pointer to mixing buffer to write to.
  * @param   pvBuf                   Pointer to audio buffer to be written.
  * @param   cbBuf                   Size (in bytes) of audio buffer.
- * @param   pcWritten               Returns number of audio samples written. Optional.
+ * @param   pcWritten               Returns number of audio frames written. Optional.
  */
 int AudioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf,
                          const void *pvBuf, uint32_t cbBuf,
@@ -1898,7 +1897,7 @@ int AudioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf,
 }
 
 /**
- * Writes audio samples of a specific format.
+ * Writes audio frames of a specific format.
  * This function might write less data at once than requested.
  *
  * @return  IPRT status code, or VERR_BUFFER_OVERFLOW no space is available for writing anymore.
@@ -1906,7 +1905,7 @@ int AudioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf,
  * @param   enmFmt                  Audio format supplied in the buffer.
  * @param   pvBuf                   Pointer to audio buffer to be written.
  * @param   cbBuf                   Size (in bytes) of audio buffer.
- * @param   pcWritten               Returns number of audio samples written. Optional.
+ * @param   pcWritten               Returns number of audio frames written. Optional.
  */
 int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                            const void *pvBuf, uint32_t cbBuf, uint32_t *pcWritten)
@@ -1922,11 +1921,11 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         return VINF_SUCCESS;
     }
 
-    /* Make sure that we at least write a full audio sample. */
-    AssertReturn(AUDIOMIXBUF_B2S(pMixBuf, cbBuf), VERR_INVALID_PARAMETER);
+    /* Make sure that we at least write a full audio frame. */
+    AssertReturn(AUDIOMIXBUF_B2F(pMixBuf, cbBuf), VERR_INVALID_PARAMETER);
 
-    Assert(pMixBuf->cSamples);
-    AssertPtr(pMixBuf->pSamples);
+    Assert(pMixBuf->cFrames);
+    AssertPtr(pMixBuf->pFrames);
 
     PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
     if (!pMixBuf->Volume.fMuted)
@@ -1949,13 +1948,13 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 
     uint32_t cWritten = 0;
 
-    uint32_t cFree = pMixBuf->cSamples - pMixBuf->cUsed;
+    uint32_t cFree = pMixBuf->cFrames - pMixBuf->cUsed;
     if (cFree)
     {
-        if ((pMixBuf->cSamples - pMixBuf->offWrite) == 0)
+        if ((pMixBuf->cFrames - pMixBuf->offWrite) == 0)
             pMixBuf->offWrite = 0;
 
-        uint32_t cToWrite = RT_MIN(AUDIOMIXBUF_B2S(pMixBuf, cbBuf), RT_MIN(pMixBuf->cSamples - pMixBuf->offWrite, cFree));
+        uint32_t cToWrite = RT_MIN(AUDIOMIXBUF_B2F(pMixBuf, cbBuf), RT_MIN(pMixBuf->cFrames - pMixBuf->offWrite, cFree));
         Assert(cToWrite);
 
         PDMAUDMIXBUFCONVOPTS convOpts;
@@ -1965,24 +1964,24 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         convOpts.From.Volume.uLeft  = pMixBuf->Volume.uLeft;
         convOpts.From.Volume.uRight = pMixBuf->Volume.uRight;
 
-        convOpts.cSamples = cToWrite;
+        convOpts.cFrames = cToWrite;
 
-        cWritten = pfnConvFrom(pMixBuf->pSamples + pMixBuf->offWrite,
-                               pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), &convOpts);
+        cWritten = pfnConvFrom(pMixBuf->pFrames + pMixBuf->offWrite,
+                               pvBuf, AUDIOMIXBUF_F2B(pMixBuf, cToWrite), &convOpts);
         Assert(cWritten == cToWrite);
 
 #ifdef AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA
         RTFILE fh;
         RTFileOpen(&fh, AUDIOMIXBUF_DEBUG_DUMP_PCM_DATA_PATH "mixbuf_writecirc_ex.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, pvBuf, AUDIOMIXBUF_S2B(pMixBuf, cToWrite), NULL);
+        RTFileWrite(fh, pvBuf, AUDIOMIXBUF_F2B(pMixBuf, cToWrite), NULL);
         RTFileClose(fh);
 #endif
         pMixBuf->cUsed   += cWritten;
-        Assert(pMixBuf->cUsed <= pMixBuf->cSamples);
+        Assert(pMixBuf->cUsed <= pMixBuf->cFrames);
 
-        pMixBuf->offWrite = (pMixBuf->offWrite + cWritten) % pMixBuf->cSamples;
-        Assert(pMixBuf->offWrite <= pMixBuf->cSamples);
+        pMixBuf->offWrite = (pMixBuf->offWrite + cWritten) % pMixBuf->cFrames;
+        Assert(pMixBuf->offWrite <= pMixBuf->cFrames);
     }
     else
         rc = VERR_BUFFER_OVERFLOW;
@@ -1995,8 +1994,8 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (pcWritten)
         *pcWritten = cWritten;
 
-    AUDMIXBUF_LOG(("%s: enmFmt=0x%x, cbBuf=%RU32 (%RU32 samples), cWritten=%RU32, rc=%Rrc\n",
-                   pMixBuf->pszName, enmFmt, cbBuf, AUDIOMIXBUF_B2S(pMixBuf, cbBuf), cWritten, rc));
+    AUDMIXBUF_LOG(("%s: enmFmt=0x%x, cbBuf=%RU32 (%RU32 frames), cWritten=%RU32, rc=%Rrc\n",
+                   pMixBuf->pszName, enmFmt, cbBuf, AUDIOMIXBUF_B2F(pMixBuf, cbBuf), cWritten, rc));
     return rc;
 }
 

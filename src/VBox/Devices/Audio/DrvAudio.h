@@ -93,14 +93,14 @@ typedef struct DRVAUDIOSTATS
 {
     STAMCOUNTER TotalStreamsActive;
     STAMCOUNTER TotalStreamsCreated;
-    STAMCOUNTER TotalSamplesRead;
-    STAMCOUNTER TotalSamplesWritten;
-    STAMCOUNTER TotalSamplesMixedIn;
-    STAMCOUNTER TotalSamplesMixedOut;
-    STAMCOUNTER TotalSamplesLostIn;
-    STAMCOUNTER TotalSamplesLostOut;
-    STAMCOUNTER TotalSamplesOut;
-    STAMCOUNTER TotalSamplesIn;
+    STAMCOUNTER TotalFramesRead;
+    STAMCOUNTER TotalFramesWritten;
+    STAMCOUNTER TotalFramesMixedIn;
+    STAMCOUNTER TotalFramesMixedOut;
+    STAMCOUNTER TotalFramesLostIn;
+    STAMCOUNTER TotalFramesLostOut;
+    STAMCOUNTER TotalFramesOut;
+    STAMCOUNTER TotalFramesIn;
     STAMCOUNTER TotalBytesRead;
     STAMCOUNTER TotalBytesWritten;
     /** How much delay (in ms) for input processing. */
@@ -164,7 +164,7 @@ typedef struct DRVAUDIO
 bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt);
 uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt);
 const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt);
-void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
+void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cFrames);
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
 uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps);
 bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pPCMProps1, const PPDMAUDIOPCMPROPS pPCMProps2);

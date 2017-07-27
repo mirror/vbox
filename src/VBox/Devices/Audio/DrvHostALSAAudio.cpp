@@ -1034,7 +1034,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
         switch (state)
         {
             case SND_PCM_STATE_PREPARED:
-                cAvail = PDMAUDIOSTREAMCFG_B2S(pCfg, cxBuf);
+                cAvail = PDMAUDIOSTREAMCFG_B2F(pCfg, cxBuf);
                 break;
 
             case SND_PCM_STATE_SUSPENDED:
@@ -1064,7 +1064,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
      * Check how much we can read from the capture device without overflowing
      * the mixer buffer.
      */
-    size_t cbToRead = RT_MIN((size_t)PDMAUDIOSTREAMCFG_S2B(pCfg, cAvail), cxBuf);
+    size_t cbToRead = RT_MIN((size_t)PDMAUDIOSTREAMCFG_F2B(pCfg, cAvail), cxBuf);
 
     LogFlowFunc(("cbToRead=%zu, cAvail=%RI32\n", cbToRead, cAvail));
 
@@ -1076,8 +1076,8 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
     while (   cbToRead
            && RT_SUCCESS(rc))
     {
-        cToRead = RT_MIN(PDMAUDIOSTREAMCFG_B2S(pCfg, cbToRead),
-                         PDMAUDIOSTREAMCFG_B2S(pCfg, pStreamALSA->cbBuf));
+        cToRead = RT_MIN(PDMAUDIOSTREAMCFG_B2F(pCfg, cbToRead),
+                         PDMAUDIOSTREAMCFG_B2F(pCfg, pStreamALSA->cbBuf));
         AssertBreakStmt(cToRead, rc = VERR_NO_DATA);
         cRead = snd_pcm_readi(pStreamALSA->phPCM, pStreamALSA->pvBuf, cToRead);
         if (cRead <= 0)
@@ -1127,7 +1127,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamCapture(PPDMIHOSTAUDIO pInterface
              * run into an endless loop if ALSA keeps producing samples ("null"
              * capture device for example).
              */
-            uint32_t cbRead = PDMAUDIOSTREAMCFG_S2B(pCfg, cRead);
+            uint32_t cbRead = PDMAUDIOSTREAMCFG_F2B(pCfg, cRead);
 
             memcpy(pvBuf, pStreamALSA->pvBuf, cbRead);
 
@@ -1180,7 +1180,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
         if (!csAvail)
             break;
 
-        size_t cbToWrite = RT_MIN((unsigned)PDMAUDIOSTREAMCFG_S2B(pCfg, csAvail), pStreamALSA->cbBuf);
+        size_t cbToWrite = RT_MIN((unsigned)PDMAUDIOSTREAMCFG_F2B(pCfg, csAvail), pStreamALSA->cbBuf);
         if (!cbToWrite)
             break;
 
@@ -1197,7 +1197,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
         for (iTry = 0; iTry < ALSA_RECOVERY_TRIES_MAX; iTry++)
         {
             csWritten = snd_pcm_writei(pStreamALSA->phPCM, pStreamALSA->pvBuf,
-                                       PDMAUDIOSTREAMCFG_B2S(pCfg, cbToWrite));
+                                       PDMAUDIOSTREAMCFG_B2F(pCfg, cbToWrite));
             if (csWritten <= 0)
             {
                 switch (csWritten)
@@ -1250,7 +1250,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
         if (RT_FAILURE(rc))
             break;
 
-        cbWrittenTotal = PDMAUDIOSTREAMCFG_S2B(pCfg, csWritten);
+        cbWrittenTotal = PDMAUDIOSTREAMCFG_F2B(pCfg, csWritten);
 
     } while (0);
 
@@ -1319,11 +1319,11 @@ static int alsaCreateStreamOut(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG 
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->cSampleBufferHint = obt.samples * 4;
+        pCfgAcq->cFrameBufferHint = obt.samples * 4;
 
         AssertBreakStmt(obt.samples, rc = VERR_INVALID_PARAMETER);
 
-        size_t cbBuf = obt.samples * PDMAUDIOSTREAMCFG_S2B(pCfgAcq, 1);
+        size_t cbBuf = obt.samples * PDMAUDIOSTREAMCFG_F2B(pCfgAcq, 1);
         AssertBreakStmt(cbBuf, rc = VERR_INVALID_PARAMETER);
 
         pStreamALSA->pvBuf = RTMemAllocZ(cbBuf);
@@ -1374,11 +1374,11 @@ static int alsaCreateStreamIn(PALSAAUDIOSTREAM pStreamALSA, PPDMAUDIOSTREAMCFG p
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->cSampleBufferHint = obt.samples;
+        pCfgAcq->cFrameBufferHint = obt.samples;
 
         AssertBreakStmt(obt.samples, rc = VERR_INVALID_PARAMETER);
 
-        size_t cbBuf = obt.samples * PDMAUDIOSTREAMCFG_S2B(pCfgAcq, 1);
+        size_t cbBuf = obt.samples * PDMAUDIOSTREAMCFG_F2B(pCfgAcq, 1);
         AssertBreakStmt(cbBuf, rc = VERR_INVALID_PARAMETER);
 
         pStreamALSA->pvBuf = RTMemAlloc(cbBuf);
@@ -1643,7 +1643,7 @@ static DECLCALLBACK(uint32_t) drvHostALSAAudioStreamGetReadable(PPDMIHOSTAUDIO p
     snd_pcm_sframes_t cFramesAvail;
     int rc = alsaStreamGetAvail(pStreamALSA->phPCM, &cFramesAvail);
     if (RT_SUCCESS(rc))
-        cbAvail = PDMAUDIOSTREAMCFG_S2B(pStreamALSA->pCfg, cFramesAvail);
+        cbAvail = PDMAUDIOSTREAMCFG_F2B(pStreamALSA->pCfg, cFramesAvail);
 
     return cbAvail;
 }
@@ -1665,7 +1665,7 @@ static DECLCALLBACK(uint32_t) drvHostALSAAudioStreamGetWritable(PPDMIHOSTAUDIO p
     if (   RT_SUCCESS(rc)
         && (uint32_t)cFramesAvail >= pStreamALSA->Out.cSamplesMin)
     {
-        cbAvail = PDMAUDIOSTREAMCFG_S2B(pStreamALSA->pCfg, cFramesAvail);
+        cbAvail = PDMAUDIOSTREAMCFG_F2B(pStreamALSA->pCfg, cFramesAvail);
     }
 
     return cbAvail;

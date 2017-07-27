@@ -36,32 +36,32 @@
 /** Decodes number of bytes per sample. */
 #define AUDMIXBUF_FMT_BYTES_PER_SAMPLE(a) ((AUDMIXBUF_AUDIO_FMT_BITS_PER_SAMPLE(a) + 7) / 8)
 
-/** Converts samples to bytes. */
-#define AUDIOMIXBUF_S2B(pBuf, samples) ((samples) << (pBuf)->cShift)
-/** Converts samples to bytes, respecting the conversion ratio to
+/** Converts frames to bytes. */
+#define AUDIOMIXBUF_F2B(pBuf, frames) ((frames) << (pBuf)->cShift)
+/** Converts frames to bytes, respecting the conversion ratio to
  *  a linked buffer. */
-#define AUDIOMIXBUF_S2B_RATIO(pBuf, samples) ((((int64_t) samples << 32) / (pBuf)->iFreqRatio) << (pBuf)->cShift)
-/** Converts bytes to samples, *not* taking the conversion ratio
+#define AUDIOMIXBUF_F2B_RATIO(pBuf, frames) ((((int64_t) frames << 32) / (pBuf)->iFreqRatio) << (pBuf)->cShift)
+/** Converts bytes to frames, *not* taking the conversion ratio
  *  into account. */
-#define AUDIOMIXBUF_B2S(pBuf, cb)  (cb >> (pBuf)->cShift)
-/** Converts number of samples according to the buffer's ratio. */
-#define AUDIOMIXBUF_S2S_RATIO(pBuf, samples)  (((int64_t) samples << 32) / (pBuf)->iFreqRatio)
+#define AUDIOMIXBUF_B2F(pBuf, cb)  (cb >> (pBuf)->cShift)
+/** Converts number of frames according to the buffer's ratio. */
+#define AUDIOMIXBUF_F2F_RATIO(pBuf, frames)  (((int64_t) frames << 32) / (pBuf)->iFreqRatio)
 
 
 inline uint32_t AudioMixBufBytesToSamples(PPDMAUDIOMIXBUF pMixBuf);
 void AudioMixBufClear(PPDMAUDIOMIXBUF pMixBuf);
 void AudioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf);
-void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear);
+void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToClear);
 uint32_t AudioMixBufFree(PPDMAUDIOMIXBUF pMixBuf);
 uint32_t AudioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf);
-int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPROPS pProps, uint32_t cSamples);
+int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPROPS pProps, uint32_t cFrames);
 bool AudioMixBufIsEmpty(PPDMAUDIOMIXBUF pMixBuf);
 int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent);
 uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf);
-int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcSamples, uint32_t *pcSrcMixed);
-int AudioMixBufMixToParentEx(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcSamples, uint32_t *pcSrcMixed);
-int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead, PPDMAUDIOSAMPLE paSampleBuf, uint32_t cSampleBuf, uint32_t *pcSamplesRead);
-int AudioMixBufPeekMutable(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead, PPDMAUDIOSAMPLE *ppvSamples, uint32_t *pcSamplesRead);
+int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcFrames, uint32_t *pcSrcMixed);
+int AudioMixBufMixToParentEx(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSrcOffset, uint32_t cSrcFrames, uint32_t *pcSrcMixed);
+int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToRead, PPDMAUDIOFRAME paSampleBuf, uint32_t cSampleBuf, uint32_t *pcFramesRead);
+int AudioMixBufPeekMutable(PPDMAUDIOMIXBUF pMixBuf, uint32_t cFramesToRead, PPDMAUDIOFRAME *ppvSamples, uint32_t *pcFramesRead);
 uint32_t AudioMixBufUsed(PPDMAUDIOMIXBUF pMixBuf);
 int AudioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offSamples, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
 int AudioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, uint32_t offSamples, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);

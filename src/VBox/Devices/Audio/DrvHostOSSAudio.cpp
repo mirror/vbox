@@ -359,7 +359,7 @@ static int ossControlStreamOut(PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD
         case PDMAUDIOSTREAMCMD_RESUME:
         {
             DrvAudioHlpClearBuf(&pStreamOSS->pCfg->Props, pStreamOSS->pvBuf, pStreamOSS->cbBuf,
-                                PDMAUDIOPCMPROPS_B2S(&pStreamOSS->pCfg->Props, pStreamOSS->cbBuf));
+                                PDMAUDIOPCMPROPS_B2F(&pStreamOSS->pCfg->Props, pStreamOSS->cbBuf));
 
             int mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
@@ -646,13 +646,13 @@ static int ossCreateStreamIn(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfg
                         ossAcq.cFragments * ossAcq.cbFragmentSize, pStreamOSS->uAlign + 1));
             }
 
-            uint32_t cSamples = PDMAUDIOSTREAMCFG_B2S(pCfgAcq, ossAcq.cFragments * ossAcq.cbFragmentSize);
+            uint32_t cSamples = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, ossAcq.cFragments * ossAcq.cbFragmentSize);
             if (!cSamples)
                 rc = VERR_INVALID_PARAMETER;
 
             if (RT_SUCCESS(rc))
             {
-                size_t cbBuf = PDMAUDIOSTREAMCFG_S2B(pCfgAcq, cSamples);
+                size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, cSamples);
                 void  *pvBuf = RTMemAlloc(cbBuf);
                 if (!pvBuf)
                 {
@@ -664,7 +664,7 @@ static int ossCreateStreamIn(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCfg
                 pStreamOSS->pvBuf = pvBuf;
                 pStreamOSS->cbBuf = cbBuf;
 
-                pCfgAcq->cSampleBufferHint = cSamples;
+                pCfgAcq->cFrameBufferHint = cSamples;
             }
         }
 
@@ -699,7 +699,7 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
         {
             memcpy(&pCfgAcq->Props, &obtStream.Props, sizeof(PDMAUDIOPCMPROPS));
 
-            cSamples = PDMAUDIOSTREAMCFG_B2S(pCfgAcq, obtStream.cFragments * obtStream.cbFragmentSize);
+            cSamples = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, obtStream.cFragments * obtStream.cbFragmentSize);
 
             if (obtStream.cFragments * obtStream.cbFragmentSize & pStreamOSS->uAlign)
             {
@@ -712,7 +712,7 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
         {
             pStreamOSS->Out.fMMIO = false;
 
-            size_t cbBuf = PDMAUDIOSTREAMCFG_S2B(pCfgAcq, cSamples);
+            size_t cbBuf = PDMAUDIOSTREAMCFG_F2B(pCfgAcq, cSamples);
             Assert(cbBuf);
 
 #ifndef RT_OS_L4
@@ -780,7 +780,7 @@ static int ossCreateStreamOut(POSSAUDIOSTREAM pStreamOSS, PPDMAUDIOSTREAMCFG pCf
 #ifndef RT_OS_L4
             }
 #endif
-            pCfgAcq->cSampleBufferHint = cSamples;
+            pCfgAcq->cFrameBufferHint = cSamples;
         }
 
     } while (0);

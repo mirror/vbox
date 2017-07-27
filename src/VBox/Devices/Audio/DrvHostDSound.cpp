@@ -732,7 +732,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
 #endif /* VBOX_WITH_AUDIO_DEVICE_CALLBACKS */
 
-        pCfgAcq->cSampleBufferHint = PDMAUDIOSTREAMCFG_B2S(pCfgAcq, pThis->cfg.cbBufferOut);
+        pCfgAcq->cFrameBufferHint = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pThis->cfg.cbBufferOut);
 
     } while (0);
 
@@ -757,8 +757,8 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
                                      &pv1, &pv2, &cb1, &cb2, DSBLOCK_ENTIREBUFFER);
     if (SUCCEEDED(hr))
     {
-        DWORD len1 = PDMAUDIOPCMPROPS_B2S(pProps, cb1);
-        DWORD len2 = PDMAUDIOPCMPROPS_B2S(pProps, cb2);
+        DWORD len1 = PDMAUDIOPCMPROPS_B2F(pProps, cb1);
+        DWORD len2 = PDMAUDIOPCMPROPS_B2F(pProps, cb2);
 
         if (pv1 && len1)
             DrvAudioHlpClearBuf(pProps, pv1, cb1, len1);
@@ -1169,7 +1169,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
         DSLOG(("DSound: offCaptureBufRead=%RU32, cbCaptureBuf=%RU32\n",
                pStreamDS->In.offCaptureBufRead, pStreamDS->In.cbCaptureBuf));
 
-        pCfgAcq->cSampleBufferHint = PDMAUDIOSTREAMCFG_B2S(pCfgAcq, pThis->cfg.cbBufferIn);
+        pCfgAcq->cFrameBufferHint = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pThis->cfg.cbBufferIn);
 
     } while (0);
 
@@ -1581,7 +1581,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
          * Check for full buffer, do not allow the offPlayWritePos to catch cbPlayPos during playback,
          * i.e. always leave a free space for 1 audio sample.
          */
-        const DWORD cbSample = PDMAUDIOPCMPROPS_S2B(pProps, 1);
+        const DWORD cbSample = PDMAUDIOPCMPROPS_F2B(pProps, 1);
         if (cbFree <= cbSample)
             break;
         cbFree     -= cbSample;

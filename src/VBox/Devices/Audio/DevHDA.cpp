@@ -2689,9 +2689,9 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCBTYPE enmType, void *pvCtx, 
         PHDADRIVER pDrv;
         RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
         {
-            uint32_t cSamplesPlayed;
-            int rc2 = pDrv->pConnector->pfnPlay(pDrv->pConnector, &cSamplesPlayed);
-            LogFlowFunc(("LUN#%RU8: cSamplesPlayed=%RU32, rc=%Rrc\n", pDrv->uLUN, cSamplesPlayed, rc2));
+            uint32_t cFramesPlayed;
+            int rc2 = pDrv->pConnector->pfnPlay(pDrv->pConnector, &cFramesPlayed);
+            LogFlowFunc(("LUN#%RU8: cFramesPlayed=%RU32, rc=%Rrc\n", pDrv->uLUN, cFramesPlayed, rc2));
         }
     }
 }

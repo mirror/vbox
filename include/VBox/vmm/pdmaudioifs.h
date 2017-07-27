@@ -198,19 +198,21 @@ typedef struct PDMAUDIOBACKENDCFG
 } PDMAUDIOBACKENDCFG, *PPDMAUDIOBACKENDCFG;
 
 /**
- * A single audio sample, representing left and right channels (stereo).
+ * A single audio frame.
+ *
+ * Currently only two (2) channels, left and right, are supported.
  */
-typedef struct PDMAUDIOSAMPLE
+typedef struct PDMAUDIOFRAME
 {
     /** Left channel. */
     int64_t i64LSample;
     /** Right channel. */
     int64_t i64RSample;
-} PDMAUDIOSAMPLE;
-/** Pointer to a single (stereo) audio sample.   */
-typedef PDMAUDIOSAMPLE *PPDMAUDIOSAMPLE;
-/** Pointer to a const single (stereo) audio sample.   */
-typedef PDMAUDIOSAMPLE const *PCPDMAUDIOSAMPLE;
+} PDMAUDIOFRAME;
+/** Pointer to a single (stereo) audio frame. */
+typedef PDMAUDIOFRAME *PPDMAUDIOFRAME;
+/** Pointer to a const single (stereo) audio frame. */
+typedef PDMAUDIOFRAME const *PCPDMAUDIOFRAME;
 
 typedef enum PDMAUDIOENDIANNESS
 {
@@ -286,7 +288,7 @@ typedef enum PDMAUDIOSTREAMLAYOUT
     PDMAUDIOSTREAMLAYOUT_COMPLEX,
     /** Raw (pass through) data, with no data layout processing done.
      *
-     *  This means that this stream will operate on PDMAUDIOSAMPLE data
+     *  This means that this stream will operate on PDMAUDIOFRAME data
      *  directly. Don't use this if you don't have to. */
     PDMAUDIOSTREAMLAYOUT_RAW,
     /** Hack to blow the type up to 32-bit. */
@@ -321,7 +323,7 @@ typedef struct PDMAUDIOSTREAMCHANNEL
     size_t                    cbStep;
     /** Frame size (in bytes) of this channel. */
     size_t                    cbFrame;
-    /** Offset (in bytes) to first sample in the data block. */
+    /** Offset (in bytes) to first frame in the data block. */
     size_t                    cbFirst;
     /** Currente offset (in bytes) in the data stream. */
     size_t                    cbOff;
@@ -355,7 +357,7 @@ typedef struct PDMAUDIOPCMPROPS
     /** Sample frequency in Hertz (Hz). */
     uint32_t    uHz;
     /** Shift count used for faster calculation of various
-     *  values, such as the alignment, bytes to samples and so on.
+     *  values, such as the alignment, bytes to frames and so on.
      *  Depends on number of stream channels and the stream format
      *  being used.
      *
@@ -366,18 +368,18 @@ typedef struct PDMAUDIOPCMPROPS
     bool        fSwapEndian;
 } PDMAUDIOPCMPROPS, *PPDMAUDIOPCMPROPS;
 
-/** Calculates the cShift value of given samples bits and audio channels.
+/** Calculates the cShift value of given sample bits and audio channels.
  *  Note: Does only support mono/stereo channels for now. */
 #define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBits, cChannels)     ((cChannels == 2) + (cBits / 16))
 /** Calculates the cShift value of a PDMAUDIOPCMPROPS structure.
  *  Note: Does only support mono/stereo channels for now. */
 #define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps)                     PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cChannels == 2) + (pProps)->cBits / 16)
-/** Converts (audio) samples to bytes.
+/** Converts (audio) frames to bytes.
  *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
-#define PDMAUDIOPCMPROPS_S2B(pProps, samples)                   ((samples) << (pProps)->cShift)
-/** Converts bytes to (audio) samples.
+#define PDMAUDIOPCMPROPS_F2B(pProps, frames)                    ((frames) << (pProps)->cShift)
+/** Converts bytes to (audio) frames.
  *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
-#define PDMAUDIOPCMPROPS_B2S(pProps, cb)                        (cb >> (pProps)->cShift)
+#define PDMAUDIOPCMPROPS_B2F(pProps, cb)                        (cb >> (pProps)->cShift)
 
 /**
  * Structure for keeping an audio stream configuration.
@@ -398,22 +400,22 @@ typedef struct PDMAUDIOSTREAMCFG
      *  Currently, the following layouts are supported by the audio connector:
      *
      *  PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED:
-     *      One stream at once. The consecutive audio data is exactly in the format and sample width
+     *      One stream at once. The consecutive audio data is exactly in the format and frame width
      *      like defined in the PCM properties. This is the default.
      *
      *  PDMAUDIOSTREAMLAYOUT_RAW:
      *      Can be one or many streams at once, depending on the stream's mixing buffer setup.
-     *      The audio data will get handled as PDMAUDIOSAMPLE samples without any modification done. */
+     *      The audio data will get handled as PDMAUDIOFRAME frames without any modification done. */
     PDMAUDIOSTREAMLAYOUT     enmLayout;
-    /** Hint about the optimal sample buffer size (in audio samples).
+    /** Hint about the optimal frame buffer size (in audio frames).
      *  0 if no hint is given. */
-    uint32_t                 cSampleBufferHint;
+    uint32_t                 cFrameBufferHint;
 } PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
 
-/** Converts (audio) samples to bytes. */
-#define PDMAUDIOSTREAMCFG_S2B(pCfg, samples) ((samples) << (pCfg->Props).cShift)
-/** Converts bytes to (audio) samples. */
-#define PDMAUDIOSTREAMCFG_B2S(pCfg, cb)  (cb >> (pCfg->Props).cShift)
+/** Converts (audio) frames to bytes. */
+#define PDMAUDIOSTREAMCFG_F2B(pCfg, frames) ((frames) << (pCfg->Props).cShift)
+/** Converts bytes to (audio) frames. */
+#define PDMAUDIOSTREAMCFG_B2F(pCfg, cb)  (cb >> (pCfg->Props).cShift)
 
 #if defined(RT_LITTLE_ENDIAN)
 # define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_LITTLE
@@ -506,9 +508,9 @@ typedef struct PDMAUDIOSTRMRATE
     /** Current (absolute) offset in the input
      *  stream. */
     uint32_t       srcOffset;
-    /** Last processed sample of the input stream.
+    /** Last processed frame of the input stream.
      *  Needed for interpolation. */
-    PDMAUDIOSAMPLE srcSampleLast;
+    PDMAUDIOFRAME  srcFrameLast;
 } PDMAUDIOSTRMRATE, *PPDMAUDIOSTRMRATE;
 
 /**
@@ -531,13 +533,13 @@ typedef struct PDMAUDMIXBUFVOL
 } PDMAUDMIXBUFVOL, *PPDMAUDMIXBUFVOL;
 
 /**
- * Structure for holding sample conversion parameters for
+ * Structure for holding frame conversion parameters for
  * the audioMixBufConvFromXXX / audioMixBufConvToXXX macros.
  */
 typedef struct PDMAUDMIXBUFCONVOPTS
 {
-    /** Number of audio samples to convert. */
-    uint32_t        cSamples;
+    /** Number of audio frames to convert. */
+    uint32_t                cFrames;
     union
     {
         struct
@@ -553,7 +555,7 @@ typedef PDMAUDMIXBUFCONVOPTS *PPDMAUDMIXBUFCONVOPTS;
 typedef PDMAUDMIXBUFCONVOPTS const *PCPDMAUDMIXBUFCONVOPTS;
 
 /**
- * Note: All internal handling is done in samples,
+ * Note: All internal handling is done in audio frames,
  *       not in bytes!
  */
 typedef uint32_t PDMAUDIOMIXBUFFMT;
@@ -562,13 +564,13 @@ typedef PDMAUDIOMIXBUFFMT *PPDMAUDIOMIXBUFFMT;
 /**
  * Convertion-from function used by the PDM audio buffer mixer.
  *
- * @returns Number of samples returned.
- * @param   paDst           Where to return the converted samples.
- * @param   pvSrc           The source samples bytes.
+ * @returns Number of audio frames returned.
+ * @param   paDst           Where to return the converted frames.
+ * @param   pvSrc           The source frame bytes.
  * @param   cbSrc           Number of bytes to convert.
  * @param   pOpts           Conversion options.
  */
-typedef DECLCALLBACK(uint32_t) FNPDMAUDIOMIXBUFCONVFROM(PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc,
+typedef DECLCALLBACK(uint32_t) FNPDMAUDIOMIXBUFCONVFROM(PPDMAUDIOFRAME paDst, const void *pvSrc, uint32_t cbSrc,
                                                         PCPDMAUDMIXBUFCONVOPTS pOpts);
 /** Pointer to a convertion-from function used by the PDM audio buffer mixer. */
 typedef FNPDMAUDIOMIXBUFCONVFROM *PFNPDMAUDIOMIXBUFCONVFROM;
@@ -577,10 +579,10 @@ typedef FNPDMAUDIOMIXBUFCONVFROM *PFNPDMAUDIOMIXBUFCONVFROM;
  * Convertion-to function used by the PDM audio buffer mixer.
  *
  * @param   pvDst           Output buffer.
- * @param   paSrc           The input samples.
+ * @param   paSrc           The input frames.
  * @param   pOpts           Conversion options.
  */
-typedef DECLCALLBACK(void) FNPDMAUDIOMIXBUFCONVTO(void *pvDst, PCPDMAUDIOSAMPLE paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts);
+typedef DECLCALLBACK(void) FNPDMAUDIOMIXBUFCONVTO(void *pvDst, PCPDMAUDIOFRAME paSrc, PCPDMAUDMIXBUFCONVOPTS pOpts);
 /** Pointer to a convertion-to function used by the PDM audio buffer mixer. */
 typedef FNPDMAUDIOMIXBUFCONVTO *PFNPDMAUDIOMIXBUFCONVTO;
 
@@ -590,23 +592,23 @@ typedef struct PDMAUDIOMIXBUF
     RTLISTNODE                Node;
     /** Name of the buffer. */
     char                     *pszName;
-    /** Sample buffer. */
-    PPDMAUDIOSAMPLE           pSamples;
-    /** Size of the sample buffer (in samples). */
-    uint32_t                  cSamples;
-    /** The current read position (in samples). */
+    /** Frame buffer. */
+    PPDMAUDIOFRAME            pFrames;
+    /** Size of the frame buffer (in audio frames). */
+    uint32_t                  cFrames;
+    /** The current read position (in frames). */
     uint32_t                  offRead;
-    /** The current write position (in samples). */
+    /** The current write position (in frames). */
     uint32_t                  offWrite;
     /**
-     * Total samples already mixed down to the parent buffer (if any). Always starting at
+     * Total frames already mixed down to the parent buffer (if any). Always starting at
      * the parent's offRead position.
      *
-     * Note: Count always is specified in parent samples, as the sample count can differ between parent
+     * Note: Count always is specified in parent frames, as the sample count can differ between parent
      *       and child.
      */
     uint32_t                  cMixed;
-    /** How much audio samples are currently being used
+    /** How much audio frames are currently being used
      *  in this buffer.
      *  Note: This also is known as the distance in ring buffer terms. */
     uint32_t                  cUsed;
@@ -637,7 +639,7 @@ typedef struct PDMAUDIOMIXBUF
      * Currently this does not get changed once assigned.
      */
     int64_t                   iFreqRatio;
-    /** For quickly converting samples <-> bytes and vice versa. */
+    /** For quickly converting frames <-> bytes and vice versa. */
     uint8_t                   cShift;
 } PDMAUDIOMIXBUF;
 
@@ -749,7 +751,7 @@ typedef struct PDMAUDIOSTREAMIN
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER StatBytesElapsed;
     STAMCOUNTER StatBytesTotalRead;
-    STAMCOUNTER StatSamplesCaptured;
+    STAMCOUNTER StatFramesCaptured;
 #endif
 } PDMAUDIOSTREAMIN, *PPDMAUDIOSTREAMIN;
 
@@ -764,7 +766,7 @@ typedef struct PDMAUDIOSTREAMOUT
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER StatBytesElapsed;
     STAMCOUNTER StatBytesTotalWritten;
-    STAMCOUNTER StatSamplesPlayed;
+    STAMCOUNTER StatFramesPlayed;
 #endif
 } PDMAUDIOSTREAMOUT, *PPDMAUDIOSTREAMOUT;
 
@@ -1036,24 +1038,24 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnStreamSetVolume, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOVOLUME pVol));
 
     /**
-     * Plays (transfers) available audio samples via the host backend. Only works with output streams.
+     * Plays (transfers) available audio frames via the host backend. Only works with output streams.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
      * @param   pStream              Pointer to audio stream.
-     * @param   pcSamplesPlayed      Number of samples played. Optional.
+     * @param   pcFramesPlayed       Number of frames played. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed));
+    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcFramesPlayed));
 
     /**
-     * Captures (transfers) available audio samples from the host backend. Only works with input streams.
+     * Captures (transfers) available audio frames from the host backend. Only works with input streams.
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
      * @param   pStream              Pointer to audio stream.
-     * @param   pcSamplesCaptured    Number of samples captured. Optional.
+     * @param   pcFramesCaptured     Number of frames captured. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesCaptured));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcFramesCaptured));
 
 #ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     DECLR3CALLBACKMEMBER(int, pfnRegisterCallbacks, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOCALLBACK paCallbacks, size_t cCallbacks));
@@ -1182,7 +1184,7 @@ typedef struct PDMIHOSTAUDIO
      * Returns the amount which is readable from the audio (input) stream.
      *
      * @returns For non-raw layout streams: Number of readable bytes.
-     *          for raw layout streams    : Number of readable audio samples.
+     *          for raw layout streams    : Number of readable audio frames.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
@@ -1192,7 +1194,7 @@ typedef struct PDMIHOSTAUDIO
      * Returns the amount which is writable to the audio (output) stream.
      *
      * @returns For non-raw layout streams: Number of writable bytes.
-     *          for raw layout streams    : Number of writable audio samples.
+     *          for raw layout streams    : Number of writable audio frames.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
@@ -1232,9 +1234,9 @@ typedef struct PDMIHOSTAUDIO
      * @param   pStream             Pointer to audio stream.
      * @param   pvBuf               Pointer to audio data buffer to play.
      * @param   cxBuf               For non-raw layout streams: Size (in bytes) of audio data buffer,
-     *                              for raw layout streams    : Size (in audio samples) of audio data buffer.
-     * @param   pcxWritten          For non-raw layout streams: Returns number of bytes written.    Optional.
-     *                              for raw layout streams    : Returns number of samples written.  Optional.
+     *                              for raw layout streams    : Size (in audio frames) of audio data buffer.
+     * @param   pcxWritten          For non-raw layout streams: Returns number of bytes written.   Optional.
+     *                              for raw layout streams    : Returns number of frames written.  Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cxBuf, uint32_t *pcxWritten));
 
@@ -1262,9 +1264,9 @@ typedef struct PDMIHOSTAUDIO
      * @param   pStream             Pointer to audio stream.
      * @param   pvBuf               Buffer where to store read audio data.
      * @param   cxBuf               For non-raw layout streams: Size (in bytes) of audio data buffer,
-     *                              for raw layout streams    : Size (in audio samples) of audio data buffer.
-     * @param   pcxRead             For non-raw layout streams: Returns number of bytes read.    Optional.
-     *                              for raw layout streams    : Returns number of samples read.  Optional.
+     *                              for raw layout streams    : Size (in audio frames) of audio data buffer.
+     * @param   pcxRead             For non-raw layout streams: Returns number of bytes read.   Optional.
+     *                              for raw layout streams    : Returns number of frames read.  Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cxBuf, uint32_t *pcxRead));
 
