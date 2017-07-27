@@ -143,6 +143,7 @@ else
  doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/packages/$(verpkg)\""
 endif
 
+# EL5 ships Python 2.4 while our Python support requires Python 2.6 or later
 cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(NOSDL),--disable-vboxsdl,) \
 	     $(if $(filter el5 el6,$(rpmrel)),--build-libvpx,) \
