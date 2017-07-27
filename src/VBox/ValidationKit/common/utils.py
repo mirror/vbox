@@ -820,6 +820,7 @@ def processGetInfo(uPid, fSudo = False):
         if not os.path.isfile(sGdb): sGdb = 'gdb';
         aasCmd = [
             [ sGdb, '-batch',
+              '-ex', 'set pagination off',
               '-ex', 'thread apply all bt',
               '-ex', 'info proc mapping',
               '-ex', 'info sharedlibrary',
