@@ -1899,7 +1899,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="0169423f-46b4-cde9-91af-1e9d5b6cd945"
+    uuid="9570b9d5-f1a1-448a-10c5-e12f5285adad"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     >
@@ -2382,6 +2382,17 @@
       </desc>
       <param name="appliance" type="IAppliance" dir="return">
         <desc>New appliance.</desc>
+      </param>
+    </method>
+
+    <method name="createUnattendedInstaller">
+      <desc>
+        Creates a new <link to="IUnattended"/> guest installation object.  This can be used to
+        analyze an installation ISO to create and configure a new machine for it to be installed
+        on.  It can also be used to (re)install an existing machine.
+      </desc>
+      <param name="unattended" type="IUnattended" dir="return">
+        <desc>New unattended object.</desc>
       </param>
     </method>
 
@@ -3766,7 +3777,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="da34bfb3-437a-4510-6c7e-7687b00d378d"
+    uuid="3107e9fd-7b3a-4008-91de-24273f605a8e"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3777,8 +3788,12 @@
 
       The typical workflow is:
       <ol>
-        <li>Call <link to="IMachine::createUnattendedInstaller"/> to create the object</li>
-        <li>Set the relevant IUnattended attributes.</li>
+        <li>Call <link to="IVirtualBox::createUnattendedInstaller"/> to create the object</li>
+        <li>Set <link to="IUnattended::isoPath"/> and call <link to="IUnattended::detectIsoOS"/></li>
+        <li>Create, configure and register a machine according to <link to="IUnattended::detectedOSTypeId"/>
+            and the other detectedOS* attributes.</li>
+        <li>Set <link to="IUnattended::machine"/> to the new IMachine instance.</li>
+        <li>Set the other IUnattended attributes as desired.</li>
         <li>Call <link to="IUnattended::prepare"/> for the object to check the
             attribute values and create an internal installer instance.</li>
         <li>Call <link to="IUnattended::constructMedia"/> to create additional
@@ -3788,11 +3803,22 @@
         <li>Optionally call <link to="IUnattended::done"/> to destroy the internal
             installer and allow restarting from the second step.</li>
       </ol>
+
+      Note! Steps one is currently not implemented.
     </desc>
 
     <attribute name="isoPath" type="wstring">
       <desc>
         Guest operating system ISO image
+      </desc>
+    </attribute>
+
+    <attribute name="machine" type="IMachine">
+      <desc>
+        The associated machine object.
+
+        This must be set before <link to="IUnattended::prepare"/> is called.
+        The VM must be registered.
       </desc>
     </attribute>
 
@@ -3958,12 +3984,6 @@
 
         Used only with Windows installation CD/DVD:
         https://technet.microsoft.com/en-us/library/cc766022%28v=ws.10%29.aspx
-      </desc>
-    </attribute>
-
-    <attribute name="machine" type="IMachine" readonly="yes">
-      <desc>
-        The associated machine object.
       </desc>
     </attribute>
 
@@ -4722,7 +4742,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="b2547866-a0a1-4391-8b86-6952d82efaa0"
+    uuid="f50b24f0-0956-453c-d14c-8c27c683c295"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -8171,15 +8191,6 @@ and "VAR" for unsetting. -->
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="createUnattendedInstaller">
-      <desc>
-        Creates a new <link to="IUnattended"/> guest installation object.
-      </desc>
-      <param name="unattended" type="IUnattended" dir="return">
-        <desc>New unattended object.</desc>
       </param>
     </method>
 

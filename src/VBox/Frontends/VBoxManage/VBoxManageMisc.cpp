@@ -1530,7 +1530,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
              * Instantiate and configure the unattended installer.
              */
             ComPtr<IUnattended> ptrUnattended;
-            CHECK_ERROR_BREAK(machine, CreateUnattendedInstaller(ptrUnattended.asOutParam()));
+            CHECK_ERROR_BREAK(a->virtualBox, CreateUnattendedInstaller(ptrUnattended.asOutParam()));
+            CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(Machine)(machine));
 
             if (pszIsoPath)
                 CHECK_ERROR_BREAK(ptrUnattended, COMSETTER(IsoPath)(Bstr(pszIsoPath).raw()));

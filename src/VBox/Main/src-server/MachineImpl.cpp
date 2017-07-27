@@ -43,9 +43,6 @@
 #include "DisplayUtils.h"
 #include "MachineImplCloneVM.h"
 #include "AutostartDb.h"
-#ifdef VBOX_WITH_UNATTENDED
-# include "UnattendedImpl.h"
-#endif
 #include "SystemPropertiesImpl.h"
 
 // generated header
@@ -15112,25 +15109,6 @@ HRESULT Machine::authenticateExternal(const std::vector<com::Utf8Str> &aAuthPara
     NOREF(aAuthParams);
     NOREF(aResult);
     ReturnComNotImplemented();
-}
-
-HRESULT Machine::createUnattendedInstaller(ComPtr<IUnattended> &aUnattended)
-{
-#ifdef VBOX_WITH_UNATTENDED
-    ComObjPtr<Unattended> ptrUnattended;
-    HRESULT hrc = ptrUnattended.createObject();
-    if (SUCCEEDED(hrc))
-    {
-        AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
-        hrc = ptrUnattended->init(this);
-        if (SUCCEEDED(hrc))
-            hrc = ptrUnattended.queryInterfaceTo(aUnattended.asOutParam());
-    }
-    return hrc;
-#else
-    NOREF(aUnattended);
-    return E_NOTIMPL;
-#endif
 }
 
 HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)

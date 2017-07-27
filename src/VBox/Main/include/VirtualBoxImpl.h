@@ -299,6 +299,7 @@ private:
     HRESULT getMachineStates(const std::vector<ComPtr<IMachine> > &aMachines,
                              std::vector<MachineState_T> &aStates);
     HRESULT createAppliance(ComPtr<IAppliance> &aAppliance);
+    HRESULT createUnattendedInstaller(ComPtr<IUnattended> &aUnattended);
     HRESULT createMedium(const com::Utf8Str &aFormat,
                          const com::Utf8Str &aLocation,
                          AccessMode_T aAccessMode,

@@ -70,6 +70,9 @@
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
+#ifdef VBOX_WITH_UNATTENDED
+# include "UnattendedImpl.h"
+#endif
 #include "AutostartDb.h"
 #include "ClientWatcher.h"
 
@@ -1796,6 +1799,25 @@ HRESULT VirtualBox::getMachineStates(const std::vector<ComPtr<IMachine> > &aMach
         aStates[i] = state;
     }
     return S_OK;
+}
+
+HRESULT VirtualBox::createUnattendedInstaller(ComPtr<IUnattended> &aUnattended)
+{
+#ifdef VBOX_WITH_UNATTENDED
+    ComObjPtr<Unattended> ptrUnattended;
+    HRESULT hrc = ptrUnattended.createObject();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock wlock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = ptrUnattended->initUnattended(this);
+        if (SUCCEEDED(hrc))
+            hrc = ptrUnattended.queryInterfaceTo(aUnattended.asOutParam());
+    }
+    return hrc;
+#else
+    NOREF(aUnattended);
+    return E_NOTIMPL;
+#endif
 }
 
 HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
