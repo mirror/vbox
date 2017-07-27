@@ -1469,9 +1469,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(PackageSelectionAdjustments)(Bstr(strAdjustments).raw()), RTEXITCODE_FAILURE);
     }
 
-
     /*
-     * Prepare.
+     * Get details about the machine so we can display them below.
      */
     Bstr bstrMachineName;
     CHECK_ERROR2_RET(hrc, ptrMachine, COMGETTER(Name)(bstrMachineName.asOutParam()), RTEXITCODE_FAILURE);
@@ -1481,142 +1480,139 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     CHECK_ERROR2_RET(hrc, ptrMachine, COMGETTER(OSTypeId)(&bstrInstalledOS), RTEXITCODE_FAILURE);
     Utf8Str strInstalledOS(bstrInstalledOS);
 
-    /* open a session for the VM */
+    /*
+     * Temporarily lock the machine to check whether it's running or not.
+     * Note! Not sure if this is the cheapest way of doing this...
+     */
     CHECK_ERROR2_RET(hrc, ptrMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
-
-    /* get the associated console */
-    HRESULT rc;
-    ComPtr<IConsole> console;
-    CHECK_ERROR(a->session, COMGETTER(Console)(console.asOutParam()));
-    if (console)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%ls' is currently running", bstrMachineName.raw());
-
-    /* ... and session machine */
-    ComPtr<IMachine> sessionMachine;
-    CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
-
-    do
     {
-        RTPrintf("Start unattended installation OS %s on virtual machine '%ls'.\n"
-                 "UUID: %s\n",
-                 strInstalledOS.c_str(),
-                 bstrMachineName.raw(),
-                 Utf8Str(bstrUuid).c_str());
+        ComPtr<IConsole> ptrConsole;
+        CHECK_ERROR2(hrc, a->session, COMGETTER(Console)(ptrConsole.asOutParam()));
+        a->session->UnlockMachine();
+        if (FAILED(hrc))
+            return RTEXITCODE_FAILURE;
+        if (ptrConsole.isNotNull())
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%ls' is currently running", bstrMachineName.raw());
+    }
 
-        /*
-         * Do the work.
-         */
-        CHECK_ERROR_BREAK(ptrUnattended,Prepare());
-        CHECK_ERROR_BREAK(ptrUnattended,ConstructMedia());
-        CHECK_ERROR_BREAK(ptrUnattended,ReconfigureVM());
+    /*
+     * Do the work.
+     */
+    RTMsgInfo("%s unattended installation of %s in machine '%ls' (%ls).\n",
+              RTStrICmp(pszSessionType, "none") == 0 ? "Preparing" : "Starting",
+              strInstalledOS.c_str(), bstrMachineName.raw(), bstrUuid.raw());
 
-        /*
-         * Retrieve and display the parameters actually used.
-         */
-        RTPrintf("Using values:\n");
+    CHECK_ERROR2_RET(hrc, ptrUnattended,Prepare(), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc, ptrUnattended,ConstructMedia(), RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc, ptrUnattended,ReconfigureVM(), RTEXITCODE_FAILURE);
+
+    /*
+     * Retrieve and display the parameters actually used.
+     */
+    RTMsgInfo("Using values:\n");
 #define SHOW_ATTR(a_Attr, a_szText, a_Type, a_szFmt) do { \
-                a_Type Value; \
-                HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(&Value); \
-                if (SUCCEEDED(hrc2)) \
-                    RTPrintf("  %32s = " a_szFmt "\n", a_szText, Value); \
-                else \
-                    RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
-            } while (0)
+            a_Type Value; \
+            HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(&Value); \
+            if (SUCCEEDED(hrc2)) \
+                RTPrintf("  %32s = " a_szFmt "\n", a_szText, Value); \
+            else \
+                RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+        } while (0)
 #define SHOW_STR_ATTR(a_Attr, a_szText) do { \
-                Bstr bstrString; \
-                HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(bstrString.asOutParam()); \
-                if (SUCCEEDED(hrc2)) \
-                    RTPrintf("  %32s = %ls\n", a_szText, bstrString.raw()); \
-                else \
-                    RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
-            } while (0)
+            Bstr bstrString; \
+            HRESULT hrc2 = ptrUnattended->COMGETTER(a_Attr)(bstrString.asOutParam()); \
+            if (SUCCEEDED(hrc2)) \
+                RTPrintf("  %32s = %ls\n", a_szText, bstrString.raw()); \
+            else \
+                RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+        } while (0)
 
-        SHOW_STR_ATTR(IsoPath,                       "isoPath");
-        SHOW_STR_ATTR(User,                          "user");
-        SHOW_STR_ATTR(Password,                      "password");
-        SHOW_STR_ATTR(FullUserName,                  "fullUserName");
-        SHOW_STR_ATTR(ProductKey,                    "productKey");
-        SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
-        SHOW_ATTR(    InstallGuestAdditions,         "installGuestAdditions",    BOOL, "%RTbool");
-        SHOW_STR_ATTR(ValidationKitIsoPath,          "validationKitIsoPath");
-        SHOW_ATTR(    InstallTestExecService,        "installTestExecService",   BOOL, "%RTbool");
-        SHOW_STR_ATTR(Locale,                        "locale");
-        SHOW_STR_ATTR(Country,                       "country");
-        SHOW_STR_ATTR(TimeZone,                      "timeZone");
-        SHOW_STR_ATTR(Proxy,                         "proxy");
-        SHOW_STR_ATTR(Hostname,                      "hostname");
-        SHOW_STR_ATTR(PackageSelectionAdjustments,   "packageSelectionAdjustments");
-        SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
-        SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
-        SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
-        SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
-        SHOW_STR_ATTR(PostInstallCommand,            "postInstallCommand");
-        SHOW_STR_ATTR(ExtraInstallKernelParameters,  "extraInstallKernelParameters");
-        SHOW_STR_ATTR(DetectedOSTypeId,              "detectedOSTypeId");
-        SHOW_STR_ATTR(DetectedOSVersion,             "detectedOSVersion");
-        SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
-        SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
+    SHOW_STR_ATTR(IsoPath,                       "isoPath");
+    SHOW_STR_ATTR(User,                          "user");
+    SHOW_STR_ATTR(Password,                      "password");
+    SHOW_STR_ATTR(FullUserName,                  "fullUserName");
+    SHOW_STR_ATTR(ProductKey,                    "productKey");
+    SHOW_STR_ATTR(AdditionsIsoPath,              "additionsIsoPath");
+    SHOW_ATTR(    InstallGuestAdditions,         "installGuestAdditions",    BOOL, "%RTbool");
+    SHOW_STR_ATTR(ValidationKitIsoPath,          "validationKitIsoPath");
+    SHOW_ATTR(    InstallTestExecService,        "installTestExecService",   BOOL, "%RTbool");
+    SHOW_STR_ATTR(Locale,                        "locale");
+    SHOW_STR_ATTR(Country,                       "country");
+    SHOW_STR_ATTR(TimeZone,                      "timeZone");
+    SHOW_STR_ATTR(Proxy,                         "proxy");
+    SHOW_STR_ATTR(Hostname,                      "hostname");
+    SHOW_STR_ATTR(PackageSelectionAdjustments,   "packageSelectionAdjustments");
+    SHOW_STR_ATTR(AuxiliaryBasePath,             "auxiliaryBasePath");
+    SHOW_ATTR(    ImageIndex,                    "imageIndex",               ULONG, "%u");
+    SHOW_STR_ATTR(ScriptTemplatePath,            "scriptTemplatePath");
+    SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
+    SHOW_STR_ATTR(PostInstallCommand,            "postInstallCommand");
+    SHOW_STR_ATTR(ExtraInstallKernelParameters,  "extraInstallKernelParameters");
+    SHOW_STR_ATTR(DetectedOSTypeId,              "detectedOSTypeId");
+    SHOW_STR_ATTR(DetectedOSVersion,             "detectedOSVersion");
+    SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
+    SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
 
 #undef SHOW_STR_ATTR
 #undef SHOW_ATTR
 
-        ptrUnattended.setNull();
-        a->session->UnlockMachine();
+    /* We can drop the IUnatteded object now. */
+    ptrUnattended.setNull();
 
-        /*
-         * Start the VM if requested.
-         */
-        if (RTStrICmp(pszSessionType, "none") != 0)
-        {
-            Bstr env;
+    /*
+     * Start the VM if requested.
+     */
+    if (RTStrICmp(pszSessionType, "none") == 0)
+        hrc = S_OK;
+    else
+    {
+        Bstr env;
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-            /* make sure the VM process will start on the same display as VBoxManage */
-            Utf8Str str;
-            const char *pszDisplay = RTEnvGet("DISPLAY");
-            if (pszDisplay)
-                str = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
-            const char *pszXAuth = RTEnvGet("XAUTHORITY");
-            if (pszXAuth)
-                str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
-            env = str;
+        /* make sure the VM process will start on the same display as VBoxManage */
+        Utf8Str str;
+        const char *pszDisplay = RTEnvGet("DISPLAY");
+        if (pszDisplay)
+            str = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
+        const char *pszXAuth = RTEnvGet("XAUTHORITY");
+        if (pszXAuth)
+            str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
+        env = str;
 #endif
-            ComPtr<IProgress> progress;
-            CHECK_ERROR(ptrMachine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), env.raw(), progress.asOutParam()));
-            if (SUCCEEDED(rc) && !progress.isNull())
+        ComPtr<IProgress> ptrProgress;
+        CHECK_ERROR2(hrc, ptrMachine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), env.raw(), ptrProgress.asOutParam()));
+        if (SUCCEEDED(hrc) && !ptrProgress.isNull())
+        {
+            RTMsgInfo("Waiting for VM \"%s\" to power on...\n", Utf8Str(bstrUuid).c_str());
+            CHECK_ERROR2(hrc, ptrProgress, WaitForCompletion(-1));
+            if (SUCCEEDED(hrc))
             {
-                RTPrintf("Waiting for VM \"%s\" to power on...\n", Utf8Str(bstrUuid).c_str());
-                CHECK_ERROR(progress, WaitForCompletion(-1));
-                if (SUCCEEDED(rc))
+                BOOL fCompleted = true;
+                CHECK_ERROR2(hrc, ptrProgress, COMGETTER(Completed)(&fCompleted));
+                if (SUCCEEDED(hrc))
                 {
-                    BOOL fCompleted = true;
-                    CHECK_ERROR(progress, COMGETTER(Completed)(&fCompleted));
-                    if (SUCCEEDED(rc))
-                    {
-                        ASSERT(fCompleted);
+                    ASSERT(fCompleted);
 
-                        LONG iRc;
-                        CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
-                        if (SUCCEEDED(rc))
+                    LONG iRc;
+                    CHECK_ERROR2(hrc, ptrProgress, COMGETTER(ResultCode)(&iRc));
+                    if (SUCCEEDED(hrc))
+                    {
+                        if (SUCCEEDED(iRc))
+                            RTMsgInfo("VM \"%s\" has been successfully started.\n", Utf8Str(bstrUuid).c_str());
+                        else
                         {
-                            if (SUCCEEDED(iRc))
-                                RTPrintf("VM \"%s\" has been successfully started.\n", Utf8Str(bstrUuid).c_str());
-                            else
-                            {
-                                ProgressErrorInfo info(progress);
-                                com::GluePrintErrorInfo(info);
-                            }
-                            rc = iRc;
+                            ProgressErrorInfo info(ptrProgress);
+                            com::GluePrintErrorInfo(info);
                         }
+                        hrc = iRc;
                     }
                 }
             }
-
-            /*
-             * Do we wait for the VM to power down?
-             */
         }
 
-    } while (0);
+        /*
+         * Do we wait for the VM to power down?
+         */
+    }
 
-    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
