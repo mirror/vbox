@@ -834,8 +834,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
     def investigateInfoHalReturnToFirmware(self, oCaseFile, sInfoText, dLogs):
         """ Investigates HalReturnToFirmware hangs """
+        del oCaseFile
+        del sInfoText
+        del dLogs
         # hope that's sufficient
-        return (True, ktReason_Unknown_HalReturnToFirmware);
+        return (True, self.ktReason_Unknown_HalReturnToFirmware);
 
     ## Things we search a main or VM log for to figure out why something went bust.
     katSimpleMainAndVmLogReasons = [
