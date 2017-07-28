@@ -226,7 +226,7 @@ void UIDesktopPanePrivate::prepareErrorPane()
 *   Class UIDesktopPane implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIDesktopPane::UIDesktopPane(QAction *pRefreshAction, QWidget *pParent)
+UIDesktopPane::UIDesktopPane(QAction *pRefreshAction, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
 {
     /* Prepare main layout: */
