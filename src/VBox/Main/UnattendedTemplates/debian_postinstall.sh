@@ -211,33 +211,11 @@ log_command chmod -R u+rw,a+xr "${MY_TARGET}/root/validationkit/"
 MY_UNIT_PATH="${MY_TARGET}/lib/systemd/system"
 test -d "${MY_TARGET}/usr/lib/systemd/system" && MY_UNIT_PATH="${MY_TARGET}/usr/lib/systemd/system"
 if [ -d "${MY_UNIT_PATH}" ]; then
-    if [  -f "${MY_TARGET}/linux/vboxtxs.service" ]; then ## REMOVE AS SOON AS r117117 IS READY
-        log_command cp "${MY_TARGET}/linux/vboxtxs.service" "${MY_UNIT_PATH}/vboxtxs.service"
-    else                                                  ## REMOVE AS SOON AS r117117 IS READY
-        cat > "${MY_UNIT_PATH}/vboxtxs.service" <<EOF
-[Unit]
-Description=VirtualBox Test Execution Service
-SourcePath=/root/validationkit/linux/vboxtxs
-
-[Service]
-Type=forking
-Restart=no
-TimeoutSec=5min
-IgnoreSIGPIPE=no
-KillMode=process
-GuessMainPID=no
-RemainAfterExit=yes
-ExecStart=/root/validationkit/linux/vboxtxs start
-ExecStop=/root/validationkit/linux/vboxtxs stop
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    fi
+    log_command cp "${MY_TARGET}/linux/vboxtxs.service" "${MY_UNIT_PATH}/vboxtxs.service"
     log_command chmod 644 "${MY_UNIT_PATH}/vboxtxs.service"
     log_command_in_target systemctl -q enable vboxtxs
 
-# Not systemd.  Add support for upstart later...
+# Not systemd:  Add support for upstart later...
 else
     echo "** error: No systemd unit dir found.  Using upstart or something?" | tee -a "${MY_LOGFILE}"
 fi
@@ -273,6 +251,7 @@ if [ -n "${MY_HAVE_CHROOT_SETUP}" ]; then
         echo "** chroot_cleanup: failed $?" | tee -a "${MY_LOGFILE}"
     fi
 fi
+
 
 #
 # Log footer.

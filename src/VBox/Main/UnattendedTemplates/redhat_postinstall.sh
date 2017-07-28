@@ -1,8 +1,8 @@
 #!/bin/bash
 ## @file
-# Post installation script template for redhat-like distros.
+# Post installation script template for redhat- distros.
 #
-# This script expects to be running chroot'ed into /target.
+# Note! This script expects to be running chrooted (inside new sytem).
 #
 
 #
@@ -17,44 +17,222 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-MY_LOGFILE="/var/log/vboxpostinstall.log"
+
+#
+# Globals.
+#
+MY_TARGET="/mnt/sysimage"
+MY_LOGFILE="${MY_TARGET}/var/log/vboxpostinstall.log"
+MY_CDROM_NOCHROOT="/run/install/repo"
 MY_EXITCODE=0
+MY_DEBUG="" # "yes"
+
+
+#
+# Do we need to exec using target bash?  If so, we must do that early
+# or ash will bark 'bad substitution' and fail.
+#
+if [ "$1" = "--need-target-bash" ]; then
+    # Try figure out which directories we might need in the library path.
+    if [ -z "${LD_LIBRARY_PATH}" ]; then
+        LD_LIBRARY_PATH="${MY_TARGET}/lib"
+    fi
+    for x in \
+        ${MY_TARGET}/lib \
+        ${MY_TARGET}/usr/lib \
+        ${MY_TARGET}/lib/*linux-gnu/ \
+        ${MY_TARGET}/lib32/ \
+        ${MY_TARGET}/lib64/ \
+        ${MY_TARGET}/usr/lib/*linux-gnu/ \
+        ${MY_TARGET}/usr/lib32/ \
+        ${MY_TARGET}/usr/lib64/ \
+        ;
+    do
+        if [ -e "$x" ]; then LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${x}"; fi;
+    done
+    export LD_LIBRARY_PATH
+
+    # Append target bin directories to the PATH as busybox may not have tee.
+    PATH="${PATH}:${MY_TARGET}/bin:${MY_TARGET}/usr/bin:${MY_TARGET}/sbin:${MY_TARGET}/usr/sbin"
+    export PATH
+
+    # Drop the --need-target-bash argument and re-exec.
+    shift
+    echo "******************************************************************************" >> "${MY_LOGFILE}"
+    echo "** Relaunching using ${MY_TARGET}/bin/bash $0 $*" >> "${MY_LOGFILE}"
+    echo "**   LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> "${MY_LOGFILE}"
+    echo "**              PATH=${PATH}" >> "${MY_LOGFILE}"
+    exec "${MY_TARGET}/bin/bash" "$0" "$@"
+fi
+
+
+#
+# Commands.
+#
 
 # Logs execution of a command.
 log_command()
 {
-    echo "Executing: $*" >> "${MY_LOGFILE}"
+    echo "--------------------------------------------------" >> "${MY_LOGFILE}"
+    echo "** Date:      `date -R`" >> "${MY_LOGFILE}"
+    echo "** Executing: $*" >> "${MY_LOGFILE}"
     "$@" 2>&1 | tee -a "${MY_LOGFILE}"
-    if [ "${PIPESTATUS[0]}" != "0" ]; then
-        echo "exit code: ${PIPESTATUS[0]}"
-        MY_EXITCODE=1;
+    MY_TMP_EXITCODE="${PIPESTATUS[0]}"
+    if [ "${MY_TMP_EXITCODE}" != "0" ]; then
+        if [ "${MY_TMP_EXITCODE}" != "${MY_IGNORE_EXITCODE}" ]; then
+            echo "** exit code: ${MY_TMP_EXITCODE}" | tee -a "${MY_LOGFILE}"
+            MY_EXITCODE=1;
+        else
+            echo "** exit code: ${MY_TMP_EXITCODE} (ignored)" | tee -a "${MY_LOGFILE}"
+        fi
     fi
 }
 
+# Logs execution of a command inside the target.
+log_command_in_target()
+{
+    log_command chroot "${MY_TARGET}" "$@"
+}
 
-echo "Started: $*" >> "${MY_LOGFILE}"
-echo "Date:    `date -R`" >> "${MY_LOGFILE}"
 
-#echo ''
-#echo 'Installing packages for building kernel modules...'
-#log_command apt-get -y install build-essential
-#log_command apt-get -y install linux-headers-$(uname -r)
 #
+# Log header.
+#
+echo "******************************************************************************" >> "${MY_LOGFILE}"
+echo "** VirtualBox Unattended Guest Installation - Late installation actions" >> "${MY_LOGFILE}"
+echo "** Date:    `date -R`" >> "${MY_LOGFILE}"
+echo "** Started: $0 $*" >> "${MY_LOGFILE}"
 
+
+#
+# We want the ISO available inside the target jail.
+#
+if [ -d "${MY_TARGET}/cdrom" ]; then
+    MY_RMDIR_TARGET_CDROM=
+else
+    MY_RMDIR_TARGET_CDROM="yes"
+    log_command mkdir -p ${MY_TARGET}/cdrom
+fi
+
+if [ -f "${MY_TARGET}/cdrom/vboxpostinstall.sh" ]; then
+    MY_UNMOUNT_TARGET_CDROM=
+    echo "** binding cdrom into jail: already done" | tee -a "${MY_LOGFILE}"
+else
+    MY_UNMOUNT_TARGET_CDROM="yes"
+    log_command mount -o bind "${MY_CDROM_NOCHROOT}" "${MY_TARGET}/cdrom"
+    if [ -f "${MY_TARGET}/cdrom/vboxpostinstall.sh" ]; then
+        echo "** binding cdrom into jail: success"  | tee -a "${MY_LOGFILE}"
+    else
+        echo "** binding cdrom into jail: failed"   | tee -a "${MY_LOGFILE}"
+    fi
+    if [ "${MY_DEBUG}" = "yes" ]; then
+        log_command find "${MY_TARGET}/cdrom"
+    fi
+fi
+
+
+#
+# Debug
+#
+if [ "${MY_DEBUG}" = "yes" ]; then
+    log_command id
+    log_command ps
+    log_command ps auxwwwf
+    log_command env
+    log_command df
+    log_command mount
+    log_command_in_target df
+    log_command_in_target mount
+    #log_command find /
+    MY_EXITCODE=0
+fi
+
+
+#
+# Packages needed for GAs.
+#
+echo "--------------------------------------------------" >> "${MY_LOGFILE}"
+echo '** Installing packages for building kernel modules...' | tee -a "${MY_LOGFILE}"
+log_command_in_target yum -y install "kernel-devel-$(uname -r)"
+log_command_in_target yum -y install "kernel-headers-$(uname -r)"
+log_command_in_target yum -y install gcc
+log_command_in_target yum -y install binutils
+log_command_in_target yum -y install make
+log_command_in_target yum -y install dkms
+log_command_in_target yum -y install make
+log_command_in_target yum -y install gzip2
+log_command_in_target yum -y install perl
+
+
+#
+# GAs
+#
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
-echo ''
-echo 'Installing VirtualBox Guest Additions...'
-## @todo fix this
-log_command /bin/bash /cdrom/VBoxAdditions/VBoxLinuxAdditions.run
-log_command usermod -a -G vboxsf "@@VBOX_INSERT_USER_LOGIN@@"
+echo "--------------------------------------------------" >> "${MY_LOGFILE}"
+echo '** Installing VirtualBox Guest Additions...' | tee -a "${MY_LOGFILE}"
+MY_IGNORE_EXITCODE=2  # returned if modules already loaded and reboot required.
+log_command_in_target /bin/bash /cdrom/vboxadditions/VBoxLinuxAdditions.run --nox11
+MY_IGNORE_EXITCODE=
+log_command_in_target usermod -a -G vboxsf "@@VBOX_INSERT_USER_LOGIN@@"
 @@VBOX_COND_END@@
 
+
+#
+# Test Execution Service.
+#
 @@VBOX_COND_IS_INSTALLING_TEST_EXEC_SERVICE@@
-echo ''
-echo 'Installing Test Execution Service...'
-## @todo fix this
+echo "--------------------------------------------------" >> "${MY_LOGFILE}"
+echo '** Installing Test Execution Service...' | tee -a "${MY_LOGFILE}"
+log_command_in_target test "${MY_CDROM_NOCHROOT}/vboxvalidationkit/linux/@@VBOX_INSERT_OS_ARCH@@/TestExecService"
+log_command mkdir -p "${MY_TARGET}/root/validationkit" "${MY_TARGET}/target/cdrom"
+log_command cp -R ${MY_CDROM_NOCHROOT}/vboxvalidationkit/* "${MY_TARGET}/root/validationkit/"
+log_command chmod -R u+rw,a+xr "${MY_TARGET}/root/validationkit/"
+
+# systemd service config:
+MY_UNIT_PATH="${MY_TARGET}/lib/systemd/system"
+test -d "${MY_TARGET}/usr/lib/systemd/system" && MY_UNIT_PATH="${MY_TARGET}/usr/lib/systemd/system"
+if [ -d "${MY_UNIT_PATH}" ]; then
+    log_command cp "${MY_TARGET}/linux/vboxtxs.service" "${MY_UNIT_PATH}/vboxtxs.service"
+    log_command chmod 644 "${MY_UNIT_PATH}/vboxtxs.service"
+    log_command_in_target systemctl -q enable vboxtxs
+
+# Not systemd:  Add support for upstart later...
+else
+    echo "** error: No systemd unit dir found.  Using upstart or something?" | tee -a "${MY_LOGFILE}"
+fi
+
 @@VBOX_COND_END@@
 
-echo "Final exit code: ${MY_EXITCODE}" >> "${MY_LOGFILE}"
+
+#
+# Run user command.
+#
+@@VBOX_COND_HAS_POST_INSTALL_COMMAND@@
+echo '** Running custom user command ...'      | tee -a "${MY_LOGFILE}"
+log_command @@VBOX_INSERT_POST_INSTALL_COMMAND@@
+@@VBOX_COND_END@@
+
+
+#
+# Unmount the cdrom if we bound it and clean up the chroot if we set it up.
+#
+if [ -n "${MY_UNMOUNT_TARGET_CDROM}" ]; then
+    echo "** unbinding cdrom from jail..." | tee -a "${MY_LOGFILE}"
+    log_command umount "${MY_TARGET}/cdrom"
+fi
+
+if [ -n "${MY_RMDIR_TARGET_CDROM}" ]; then
+    log_command rmdir "${MY_TARGET}/cdrom"
+fi
+
+
+#
+# Log footer.
+#
+echo "******************************************************************************" >> "${MY_LOGFILE}"
+echo "** Date:            `date -R`" >> "${MY_LOGFILE}"
+echo "** Final exit code: ${MY_EXITCODE}" >> "${MY_LOGFILE}"
+echo "******************************************************************************" >> "${MY_LOGFILE}"
+
 exit ${MY_EXITCODE}
 
