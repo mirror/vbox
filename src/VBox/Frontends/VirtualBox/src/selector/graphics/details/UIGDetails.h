@@ -47,7 +47,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIGDetails(QWidget *pParent);
+    UIGDetails(QWidget *pParent = 0);
 
     /** Return the Details-model instance. */
     UIGDetailsModel *model() const { return m_pDetailsModel; }

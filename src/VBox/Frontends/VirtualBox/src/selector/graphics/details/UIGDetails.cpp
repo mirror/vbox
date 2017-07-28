@@ -31,7 +31,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGDetails::UIGDetails(QWidget *pParent)
+UIGDetails::UIGDetails(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pMainLayout(0)
     , m_pDetailsModel(0)
