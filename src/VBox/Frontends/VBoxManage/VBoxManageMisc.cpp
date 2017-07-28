@@ -1460,6 +1460,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(InstallGuestAdditions)(FALSE), RTEXITCODE_FAILURE);
                 break;
             case 'a':   // --additions-iso
+                if (!ValueUnion.psz)
+                    return errorSyntax("No Additions ISO path specified");
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
                     return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
@@ -1554,6 +1556,26 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
      */
     if (ptrMachine.isNull())
         return errorSyntax("Missing VM name/UUID");
+
+    {
+        Bstr bstrString;
+        hrc = ptrUnattended->COMGETTER(AdditionsIsoPath)(bstrString.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            BOOL fGA = false;
+            hrc = ptrUnattended->COMGETTER(InstallGuestAdditions)(&fGA);
+            if (SUCCEEDED(hrc))
+            {
+                if (fGA == false && !bstrString.isEmpty())
+                    return errorSyntax("Parameter --additions-iso doesn't make sense without "
+                                       "parameter --install-additions");
+            }
+            else
+                return RTEXITCODE_FAILURE;
+        }
+        else
+            return RTEXITCODE_FAILURE;
+    }
 
     /*
      * Set accumulative attributes.
