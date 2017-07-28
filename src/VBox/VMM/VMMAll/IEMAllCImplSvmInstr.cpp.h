@@ -51,29 +51,26 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
 
 
 /**
- * Helper for handling a SVM world-switch (VMRUN, \#VMEXIT).
+ * Performs an SVM world-switch (VMRUN, \#VMEXIT) updating PGM and IEM internals.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uOldEfer    EFER MSR prior to the world-switch.
- * @param   uOldCr0     CR0 prior to the world-switch.
+ * @param   pCtx        The guest-CPU context.
  */
-DECLINLINE(VBOXSTRICTRC) iemSvmHandleWorldSwitch(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uOldCr0)
+DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    RT_NOREF(uOldEfer); RT_NOREF(uOldCr0);
-
-    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    /* Flush the TLB with new CR3. */
+    PGMFlushTLB(pVCpu, pCtx->cr3, true);
 
     /*
-     * Inform PGM.
+     * Inform PGM about paging mode changes.
      * We include X86_CR0_PE because PGM doesn't handle paged-real mode yet,
      * see comment in iemMemPageTranslateAndCheckAccess().
      */
-    PGMFlushTLB(pVCpu, pCtx->cr3, true);
     int rc = PGMChangeMode(pVCpu, pCtx->cr0 | X86_CR0_PE, pCtx->cr4, pCtx->msrEFER);
     AssertRCReturn(rc, rc);
 
-    /* Inform CPUM (recompiler). */
+    /* Inform CPUM (recompiler), can later be removed. */
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
 
     /* Re-initialize IEM cache/state after the drastic mode switch. */
@@ -226,9 +223,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
                 /** @todo Nested paging. */
                 /** @todo ASID. */
 
-                uint64_t const uOldCr0  = pCtx->cr0;
-                uint64_t const uOldEfer = pCtx->msrEFER;
-
                 /*
                  * Reload the guest's "host state".
                  */
@@ -259,23 +253,26 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
 
                 /* Restore guest's force-flags. */
                 if (pCtx->hwvirt.fLocalForcedActions)
+                {
                     VMCPU_FF_SET(pVCpu, pCtx->hwvirt.fLocalForcedActions);
+                    pCtx->hwvirt.fLocalForcedActions = 0;
+                }
 
                 /*
-                 * Inform PGM and others of the world-switch.
+                 * Update PGM, IEM and others of a world-switch.
                  */
-                rcStrict = iemSvmHandleWorldSwitch(pVCpu, uOldEfer, uOldCr0);
+                rcStrict = iemSvmWorldSwitch(pVCpu, pCtx);
                 if (rcStrict == VINF_SUCCESS)
                     return VINF_SVM_VMEXIT;
 
                 if (RT_SUCCESS(rcStrict))
                 {
-                    LogFlow(("iemSvmVmexit: Setting passup status from iemSvmHandleWorldSwitch %Rrc\n", rcStrict));
+                    LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", rcStrict));
                     iemSetPassUpStatus(pVCpu, rcStrict);
                     return VINF_SVM_VMEXIT;
                 }
 
-                LogFlow(("iemSvmVmexit: iemSvmHandleWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                LogFlow(("iemSvmVmexit: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             }
             else
                 LogFlow(("iemSvmVmexit: Writing VMCB guest-state at %#RGp failed. rc=%Rrc\n", pCtx->hwvirt.svm.GCPhysVmcb,
@@ -326,6 +323,25 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     pCtx->hwvirt.svm.GCPhysVmcb = GCPhysVmcb;
 
     /*
+     * Save the host state.
+     */
+    PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
+    pHostState->es       = pCtx->es;
+    pHostState->cs       = pCtx->cs;
+    pHostState->ss       = pCtx->ss;
+    pHostState->ds       = pCtx->ds;
+    pHostState->gdtr     = pCtx->gdtr;
+    pHostState->idtr     = pCtx->idtr;
+    pHostState->uEferMsr = pCtx->msrEFER;
+    pHostState->uCr0     = pCtx->cr0;
+    pHostState->uCr3     = pCtx->cr3;
+    pHostState->uCr4     = pCtx->cr4;
+    pHostState->rflags   = pCtx->rflags;
+    pHostState->uRip     = pCtx->rip + cbInstr;
+    pHostState->uRsp     = pCtx->rsp;
+    pHostState->uRax     = pCtx->rax;
+
+    /*
      * Read the guest VMCB state.
      */
     int rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pVmcb), GCPhysVmcb, sizeof(SVMVMCB));
@@ -335,28 +351,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         PSVMVMCBSTATESAVE pVmcbNstGst = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->guest;
 
         /*
-         * Save the host state.
-         */
-        PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
-        pHostState->es         = pCtx->es;
-        pHostState->cs         = pCtx->cs;
-        pHostState->ss         = pCtx->ss;
-        pHostState->ds         = pCtx->ds;
-        pHostState->gdtr       = pCtx->gdtr;
-        pHostState->idtr       = pCtx->idtr;
-        pHostState->uEferMsr   = pCtx->msrEFER;
-        pHostState->uCr0       = pCtx->cr0;
-        pHostState->uCr3       = pCtx->cr3;
-        pHostState->uCr4       = pCtx->cr4;
-        pHostState->rflags     = pCtx->rflags;
-        pHostState->uRip       = pCtx->rip + cbInstr;
-        pHostState->uRsp       = pCtx->rsp;
-        pHostState->uRax       = pCtx->rax;
-
-        /*
          * Validate guest-state and controls.
          */
-        /* VMRUN must always be iHMSntercepted. */
+        /* VMRUN must always be intercepted. */
         if (!CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_VMRUN))
         {
             Log(("iemSvmVmrun: VMRUN instruction not intercepted -> #VMEXIT\n"));
@@ -551,7 +548,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
          */
         if (pVmcbCtrl->u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
         {
-            LogFlow(("iemSvmVmrun: setting inerrupt shadow. inhibit PC=%#RX64\n", pVmcbNstGst->u64RIP));
+            LogFlow(("iemSvmVmrun: setting interrupt shadow. inhibit PC=%#RX64\n", pVmcbNstGst->u64RIP));
             /** @todo will this cause trouble if the nested-guest is 64-bit but the guest is 32-bit? */
             EMSetInhibitInterruptsPC(pVCpu, pVmcbNstGst->u64RIP);
         }
@@ -559,7 +556,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         /*
          * TLB flush control.
          * Currently disabled since it's redundant as we unconditionally flush the TLB
-         * in iemSvmHandleWorldSwitch() below.
+         * in iemSvmWorldSwitch() below.
          */
 #if 0
         /** @todo @bugref{7243}: ASID based PGM TLB flushes. */
@@ -570,9 +567,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
 #endif
 
         /** @todo @bugref{7243}: SVM TSC offset, see tmCpuTickGetInternal. */
-
-        uint64_t const uOldEfer = pCtx->msrEFER;
-        uint64_t const uOldCr0  = pCtx->cr0;
 
         /*
          * Copy the remaining guest state from the VMCB to the guest-CPU context.
@@ -608,23 +602,23 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST));
 
         /*
-         * Clear global interrupt flags to allow interrupts in the guest.
+         * Update PGM, IEM and others of a world-switch.
          */
-        pCtx->hwvirt.svm.fGif = 1;
-
-        /*
-         * Inform PGM and others of the world-switch.
-         */
-        VBOXSTRICTRC rcStrict = iemSvmHandleWorldSwitch(pVCpu, uOldEfer, uOldCr0);
+        VBOXSTRICTRC rcStrict = iemSvmWorldSwitch(pVCpu, pCtx);
         if (rcStrict == VINF_SUCCESS)
         { /* likely */ }
         else if (RT_SUCCESS(rcStrict))
             rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
         else
         {
-            LogFlow(("iemSvmVmrun: iemSvmHandleWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            LogFlow(("iemSvmVmrun: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
         }
+
+        /*
+         * Clear global interrupt flags to allow interrupts in the guest.
+         */
+        pCtx->hwvirt.svm.fGif = 1;
 
         /*
          * Event injection.
@@ -1127,7 +1121,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     if (rcStrict == VERR_SVM_VMEXIT_FAILED)
     {
         Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
-        rcStrict = iemInitiateCpuShutdown(pVCpu);
+        rcStrict = VINF_EM_TRIPLE_FAULT;
     }
     return rcStrict;
 #endif
