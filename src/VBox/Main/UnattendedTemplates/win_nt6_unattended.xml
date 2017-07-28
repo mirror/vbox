@@ -128,7 +128,7 @@
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
                     <Description>VirtualBox post guest install steps </Description>
-                    <CommandLine>cmd.exe /c A:\vboxpost.cmd</CommandLine>
+                    <CommandLine>cmd.exe /c A:\vboxpostinstall.cmd</CommandLine>
                 </SynchronousCommand>
             </FirstLogonCommands>
 
