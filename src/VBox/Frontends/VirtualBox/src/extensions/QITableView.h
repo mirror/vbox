@@ -97,6 +97,8 @@ public:
 
     /** Constructs table-view passing @a pParent to the base-class. */
     QITableView(QWidget *pParent = 0);
+    /** Destructs table-view. */
+    virtual ~QITableView() /* override */;
 
     /** Returns the number of children. */
     virtual int childCount() const { return 0; }
@@ -122,6 +124,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the map of editors stored for passed indexes. */
     QMap<QModelIndex, QObject*> m_editors;

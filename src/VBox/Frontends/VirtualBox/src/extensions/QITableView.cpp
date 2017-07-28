@@ -408,8 +408,14 @@ QString QIAccessibilityInterfaceForQITableView::text(QAccessible::Text /* enmTex
 QITableView::QITableView(QWidget *pParent)
     : QTableView(pParent)
 {
-    /* Prepare all: */
+    /* Prepare: */
     prepare();
+}
+
+QITableView::~QITableView()
+{
+    /* Cleanup: */
+    cleanup();
 }
 
 void QITableView::makeSureEditorDataCommitted()
@@ -473,5 +479,12 @@ void QITableView::prepare()
         connect(pStyledItemDelegate, &QIStyledItemDelegate::sigEditorCreated,
                 this, &QITableView::sltEditorCreated);
     }
+}
+
+void QITableView::cleanup()
+{
+    /* Disconnect all the editors prematurelly: */
+    foreach (QObject *pEditor, m_editors.values())
+        disconnect(pEditor, 0, this, 0);
 }
 
