@@ -481,7 +481,10 @@ typedef struct ISO9660PRIMARYVOLDESC
     uint8_t             bFileStructureVersion;
     /** 0x372: Reserve for future, MBZ. */
     uint8_t             bReserved883;
-    /** 0x373: Reserve for future, MBZ. */
+    /** 0x373: Reserve for future.
+     * mkisofs & genisoimage & libisofs seems to space pad this most of the time.
+     * Microsoft image (2.56) zero pads it.  isomd5sum uses it to store checksum
+     * info for the iso and space pads it. */
     uint8_t             abAppUse[512];
     /** 0x573: Reserved for future standardization, MBZ. */
     uint8_t             abReserved1396[653];
