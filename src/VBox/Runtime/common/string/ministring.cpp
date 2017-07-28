@@ -277,6 +277,28 @@ RTCString &RTCString::appendCodePoint(RTUNICP uc)
     return *this;
 }
 
+RTCString &RTCString::erase(size_t offStart /*= 0*/, size_t cchLength /*= npos*/)
+{
+    size_t cch = length();
+    if (offStart < cch)
+    {
+        if (cchLength >= cch - offStart)
+        {
+            /* Trail removal, nothing to move.  */
+            m_cch = offStart;
+            m_psz[offStart] = '\0';
+        }
+        else if (cchLength > 0)
+        {
+            /* Pull up the tail to offStart. */
+            size_t cchAfter = cch - offStart - cchLength;
+            memmove(&m_psz[offStart], &m_psz[offStart + cchLength], cchAfter);
+            m_cch = cch -= cchLength;
+            m_psz[cch] = '\0';
+        }
+    }
+    return *this;
+}
 
 RTCString &RTCString::replace(size_t offStart, size_t cchLength, const RTCString &rStrReplacement)
 {

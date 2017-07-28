@@ -531,6 +531,15 @@ public:
     }
 
     /**
+     * Erases a sequence from the string.
+     *
+     * @returns Reference to the object.
+     * @param   offStart        Where in @a this string to start erasing.
+     * @param   cchLength       How much following @a offStart to erase.
+     */
+    RTCString &erase(size_t offStart = 0, size_t cchLength = npos);
+
+    /**
      * Replaces a span of @a this string with a replacement string.
      *
      * @returns Reference to the object.
