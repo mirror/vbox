@@ -196,10 +196,12 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.linux.x86
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.linux.x86)/../vboxtxs)
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.linux.x86)/../vboxtxs-nat)
+ VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.linux.x86)/../vboxtxs.service)
 
 else ifdef VBOX_WITH_VALIDATIONKIT_PACKING.linux.amd64
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.linux.amd64)/../vboxtxs)
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.linux.amd64)/../vboxtxs-nat)
+ VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.linux.amd64)/../vboxtxs.service)
 endif
 
 # OS specific files - OS/2
