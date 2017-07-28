@@ -607,6 +607,11 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         *pfOutputting = mpUnattended->i_isMinimalInstallation();
     else if (IS_PLACEHOLDER_MATCH("IS_NOT_MINIMAL_INSTALLATION"))
         *pfOutputting = !mpUnattended->i_isMinimalInstallation();
+    /* Is RTC using UTC (i.e. set to UTC time on startup): */
+    else if (IS_PLACEHOLDER_MATCH("IS_RTC_USING_UTC"))
+        *pfOutputting = mpUnattended->i_isRtcUsingUtc();
+    else if (IS_PLACEHOLDER_MATCH("IS_NOT_RTC_USING_UTC"))
+        *pfOutputting = !mpUnattended->i_isRtcUsingUtc();
     else
         return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, mpSetError->tr("Unknown conditional placeholder '%.*s'"),
                                         cchPlaceholder, pachPlaceholder);

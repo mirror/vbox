@@ -25,6 +25,8 @@
 #
 MY_TARGET="/target"
 MY_LOGFILE="${MY_TARGET}/var/log/vboxpostinstall.log"
+MY_CHROOT_CDROM="/cdrom"
+MY_CDROM_NOCHROOT="/cdrom"
 MY_EXITCODE=0
 MY_DEBUG="" # "yes"
 
@@ -133,26 +135,26 @@ fi
 #
 # We want the ISO available inside the target jail.
 #
-if [ -d "${MY_TARGET}/cdrom" ]; then
+if [ -d "${MY_TARGET}${MY_CHROOT_CDROM}" ]; then
     MY_RMDIR_TARGET_CDROM=
 else
     MY_RMDIR_TARGET_CDROM="yes"
-    log_command mkdir -p ${MY_TARGET}/cdrom
+    log_command mkdir -p ${MY_TARGET}${MY_CHROOT_CDROM}
 fi
 
-if [ -f "${MY_TARGET}/cdrom/vboxpostinstall.sh" ]; then
+if [ -f "${MY_TARGET}${MY_CHROOT_CDROM}/vboxpostinstall.sh" ]; then
     MY_UNMOUNT_TARGET_CDROM=
     echo "** binding cdrom into jail: already done" | tee -a "${MY_LOGFILE}"
 else
     MY_UNMOUNT_TARGET_CDROM="yes"
-    log_command mount -o bind /cdrom "${MY_TARGET}/cdrom"
-    if [ -f "${MY_TARGET}/cdrom/vboxpostinstall.sh" ]; then
+    log_command mount -o bind "${MY_CDROM_NOCHROOT}" "${MY_TARGET}${MY_CHROOT_CDROM}"
+    if [ -f "${MY_TARGET}${MY_CHROOT_CDROM}/vboxpostinstall.sh" ]; then
         echo "** binding cdrom into jail: success"  | tee -a "${MY_LOGFILE}"
     else
         echo "** binding cdrom into jail: failed"   | tee -a "${MY_LOGFILE}"
     fi
     if [ "${MY_DEBUG}" = "yes" ]; then
-        log_command find "${MY_TARGET}/cdrom"
+        log_command find "${MY_TARGET}${MY_CHROOT_CDROM}"
     fi
 fi
 
@@ -190,7 +192,7 @@ log_command_in_target apt-get -y install linux-headers-$(uname -r)
 echo "--------------------------------------------------" >> "${MY_LOGFILE}"
 echo '** Installing VirtualBox Guest Additions...' | tee -a "${MY_LOGFILE}"
 MY_IGNORE_EXITCODE=2  # returned if modules already loaded and reboot required.
-log_command_in_target /bin/bash /cdrom/vboxadditions/VBoxLinuxAdditions.run --nox11
+log_command_in_target /bin/bash "${MY_CHROOT_CDROM}/vboxadditions/VBoxLinuxAdditions.run" --nox11
 MY_IGNORE_EXITCODE=
 log_command_in_target usermod -a -G vboxsf "@@VBOX_INSERT_USER_LOGIN@@"
 @@VBOX_COND_END@@
@@ -202,16 +204,16 @@ log_command_in_target usermod -a -G vboxsf "@@VBOX_INSERT_USER_LOGIN@@"
 @@VBOX_COND_IS_INSTALLING_TEST_EXEC_SERVICE@@
 echo "--------------------------------------------------" >> "${MY_LOGFILE}"
 echo '** Installing Test Execution Service...' | tee -a "${MY_LOGFILE}"
-log_command_in_target test "/cdrom/vboxvalidationkit/linux/@@VBOX_INSERT_OS_ARCH@@/TestExecService"
-log_command mkdir -p "${MY_TARGET}/root/validationkit" "${MY_TARGET}/target/cdrom"
-log_command cp -R /cdrom/vboxvalidationkit/* "${MY_TARGET}/root/validationkit/"
+log_command_in_target test "${MY_CHROOT_CDROM}/vboxvalidationkit/linux/@@VBOX_INSERT_OS_ARCH@@/TestExecService"
+log_command mkdir -p "${MY_TARGET}/root/validationkit" "${MY_TARGET}/media/cdrom"
+log_command cp -R ${MY_CDROM_NOCHROOT}/vboxvalidationkit/* "${MY_TARGET}/root/validationkit/"
 log_command chmod -R u+rw,a+xr "${MY_TARGET}/root/validationkit/"
 
 # systemd service config:
 MY_UNIT_PATH="${MY_TARGET}/lib/systemd/system"
 test -d "${MY_TARGET}/usr/lib/systemd/system" && MY_UNIT_PATH="${MY_TARGET}/usr/lib/systemd/system"
 if [ -d "${MY_UNIT_PATH}" ]; then
-    log_command cp "${MY_TARGET}/linux/vboxtxs.service" "${MY_UNIT_PATH}/vboxtxs.service"
+    log_command cp "${MY_CDROM_NOCHROOT}/vboxvalidationkit/linux/vboxtxs.service" "${MY_UNIT_PATH}/vboxtxs.service"
     log_command chmod 644 "${MY_UNIT_PATH}/vboxtxs.service"
     log_command_in_target systemctl -q enable vboxtxs
 
@@ -237,11 +239,11 @@ log_command @@VBOX_INSERT_POST_INSTALL_COMMAND@@
 #
 if [ -n "${MY_UNMOUNT_TARGET_CDROM}" ]; then
     echo "** unbinding cdrom from jail..." | tee -a "${MY_LOGFILE}"
-    log_command umount "${MY_TARGET}/cdrom"
+    log_command umount "${MY_TARGET}${MY_CHROOT_CDROM}"
 fi
 
 if [ -n "${MY_RMDIR_TARGET_CDROM}" ]; then
-    log_command rmdir "${MY_TARGET}/cdrom"
+    log_command rmdir "${MY_TARGET}${MY_CHROOT_CDROM}"
 fi
 
 if [ -n "${MY_HAVE_CHROOT_SETUP}" ]; then

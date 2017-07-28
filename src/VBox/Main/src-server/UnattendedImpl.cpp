@@ -149,8 +149,8 @@ typedef struct UnattendedInstallationDisk
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Unattended::Unattended()
-    : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfGuestOs64Bit(false), mpInstaller(NULL), mpTimeZoneInfo(NULL)
-    , mfIsDefaultAuxiliaryBasePath(true)
+    : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfGuestOs64Bit(false), mfRtcUseUtc(false)
+    , mpInstaller(NULL), mpTimeZoneInfo(NULL), mfIsDefaultAuxiliaryBasePath(true)
 { }
 
 Unattended::~Unattended()
@@ -265,7 +265,7 @@ HRESULT Unattended::prepare()
         if (SUCCEEDED(hrc))
         {
             strGuestOsTypeId = bstrTmp;
-            hrc = mMachine->COMGETTER(Name)(bstrTmp.asOutParam());
+            hrc = ptrMachine->COMGETTER(Name)(bstrTmp.asOutParam());
             if (SUCCEEDED(hrc))
                 strMachineName = bstrTmp;
         }
@@ -279,11 +279,19 @@ HRESULT Unattended::prepare()
     }
     bool const fIs64Bit = i_isGuestOSArchX64(strGuestOsTypeId);
 
+    BOOL fRtcUseUtc = FALSE;
+    hrc = ptrMachine->COMGETTER(RTCUseUTC)(&fRtcUseUtc);
+    if (FAILED(hrc))
+        return hrc;
 
     /*
-     * Write lock this object.
+     * Write lock this object and set attributes we got from IMachine.
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mStrGuestOsTypeId = strGuestOsTypeId;
+    mfGuestOs64Bit    = fIs64Bit;
+    mfRtcUseUtc       = RT_BOOL(fRtcUseUtc);
 
     /*
      * Do some state checks.
@@ -388,8 +396,6 @@ HRESULT Unattended::prepare()
     /*
      * Get the guest OS type info and instantiate the appropriate installer.
      */
-    mStrGuestOsTypeId = strGuestOsTypeId;
-    mfGuestOs64Bit    = fIs64Bit;
     uint32_t   const idxOSType = Global::getOSTypeIndexFromId(mStrGuestOsTypeId.c_str());
     meGuestOsType     = idxOSType < Global::cOSTypes ? Global::sOSTypes[idxOSType].osType : VBOXOSTYPE_Unknown;
 
@@ -574,12 +580,18 @@ HRESULT Unattended::i_innerReconfigureVM(AutoMultiWriteLock2 &rAutoLock, Storage
 
     /*
      * Set the boot order.
+     *
+     * ASSUME that the HD isn't bootable when we start out, but it will be what
+     * we boot from after the first stage of the installation is done.  Setting
+     * it first prevents endless reboot cylces.
      */
+    /** @todo consider making 100% sure the disk isn't bootable (edit partition
+     *        table active bits and EFI stuff). */
     Assert(   mpInstaller->getBootableDeviceType() == DeviceType_DVD
            || mpInstaller->getBootableDeviceType() == DeviceType_Floppy);
-    hrc = rPtrSessionMachine->SetBootOrder(1, mpInstaller->getBootableDeviceType());
+    hrc = rPtrSessionMachine->SetBootOrder(1, DeviceType_HardDisk);
     if (SUCCEEDED(hrc))
-        hrc = rPtrSessionMachine->SetBootOrder(2, DeviceType_HardDisk);
+        hrc = rPtrSessionMachine->SetBootOrder(2, mpInstaller->getBootableDeviceType());
     if (SUCCEEDED(hrc))
         hrc = rPtrSessionMachine->SetBootOrder(3, mpInstaller->getBootableDeviceType() == DeviceType_DVD
                                                   ? (DeviceType_T)DeviceType_Floppy : (DeviceType_T)DeviceType_DVD);
@@ -1643,6 +1655,12 @@ Utf8Str const &Unattended::i_getExtraInstallKernelParameters() const
 {
     Assert(isReadLockedOnCurrentThread());
     return mStrExtraInstallKernelParameters;
+}
+
+bool Unattended::i_isRtcUsingUtc() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    return mfRtcUseUtc;
 }
 
 bool Unattended::i_isGuestOs64Bit() const
