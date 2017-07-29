@@ -149,7 +149,7 @@ typedef struct UnattendedInstallationDisk
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Unattended::Unattended()
-    : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfGuestOs64Bit(false), mfRtcUseUtc(false)
+    : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfRtcUseUtc(false), mfGuestOs64Bit(false)
     , mpInstaller(NULL), mpTimeZoneInfo(NULL), mfIsDefaultAuxiliaryBasePath(true)
 { }
 
