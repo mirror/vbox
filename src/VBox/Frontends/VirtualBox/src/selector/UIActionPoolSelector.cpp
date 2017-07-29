@@ -927,6 +927,103 @@ protected:
 };
 
 
+class UIActionToggleToolsMachine : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleToolsMachine(UIActionPool *pParent)
+        : UIActionToggle(pParent, ":/tools_machine_32px.png") {}
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToolsMachine");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Machine Tools"));
+        setStatusTip(QApplication::translate("UIActionPool", "Switch to machine tools"));
+    }
+};
+
+class UIActionMenuToolsMachine : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuToolsMachine(UIActionPool *pParent)
+        : UIActionMenu(pParent) {}
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToolsMachineMenu");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Machine Tools Menu"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open machine tools menu"));
+    }
+};
+
+class UIActionSimpleToolsMachineDetails : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleToolsMachineDetails(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/session_info_details_16px.png", ":/session_info_details_16px.png",
+                         ":/session_info_details_16px.png", ":/session_info_details_16px.png") {}
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToolsMachineDetails");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Details"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open machine details pane"));
+    }
+};
+
+class UIActionSimpleToolsMachineSnapshots : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleToolsMachineSnapshots(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/snapshot_manager_22px.png", ":/snapshot_manager_16px.png",
+                         ":/snapshot_manager_22px.png", ":/snapshot_manager_16px.png") {}
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToolsMachineSnapshots");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Snapshots"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open machine snapshots pane"));
+    }
+};
+
+
 class UIActionMenuClose : public UIActionMenu
 {
     Q_OBJECT;
@@ -1119,6 +1216,12 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
     m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
     m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleMachineSortParent(this);
+
+    /* Machine Tools actions: */
+    m_pool[UIActionIndexST_M_Tools_T_Machine] = new UIActionToggleToolsMachine(this);
+    m_pool[UIActionIndexST_M_Tools_M_Machine] = new UIActionMenuToolsMachine(this);
+    m_pool[UIActionIndexST_M_Tools_M_Machine_Details] = new UIActionSimpleToolsMachineDetails(this);
+    m_pool[UIActionIndexST_M_Tools_M_Machine_Snapshots] = new UIActionSimpleToolsMachineSnapshots(this);
 
     /* Call to base-class: */
     UIActionPool::preparePool();

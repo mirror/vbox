@@ -91,6 +91,12 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_S_CreateShortcut,
     UIActionIndexST_M_Machine_S_SortParent,
 
+    /* Machine Tools actions: */
+    UIActionIndexST_M_Tools_T_Machine,
+    UIActionIndexST_M_Tools_M_Machine,
+    UIActionIndexST_M_Tools_M_Machine_Details,
+    UIActionIndexST_M_Tools_M_Machine_Snapshots,
+
     /* Maximum index: */
     UIActionIndexST_Max
 };
