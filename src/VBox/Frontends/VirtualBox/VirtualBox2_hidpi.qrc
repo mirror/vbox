@@ -194,6 +194,7 @@
         <file alias="statusbar_on_disabled_16px_hidpi.png">images/hidpi/statusbar_on_disabled_16px_hidpi.png</file>
         <file alias="statusbar_settings_16px_hidpi.png">images/hidpi/statusbar_settings_16px_hidpi.png</file>
         <file alias="statusbar_settings_disabled_16px_hidpi.png">images/hidpi/statusbar_settings_disabled_16px_hidpi.png</file>
+        <file alias="tools_machine_32px_hidpi.png">images/hidpi/tools_machine_32px_hidpi.png</file>
         <file alias="usb_16px_hidpi.png">images/hidpi/usb_16px_hidpi.png</file>
         <file alias="usb_24px_hidpi.png">images/hidpi/usb_24px_hidpi.png</file>
         <file alias="usb_32px_hidpi.png">images/hidpi/usb_32px_hidpi.png</file>

@@ -160,7 +160,7 @@ void UIToolsToolbar::prepareWidgets()
         m_pLayoutMain->setVerticalSpacing(0);
 
         /* Create stacked layout: */
-        m_pLayoutStacked = new QStackedLayout;
+        m_pLayoutStacked = new QStackedLayout(m_pLayoutMain);
         AssertPtrReturnVoid(m_pLayoutStacked);
         {
             /* Create Machine tab-bar: */

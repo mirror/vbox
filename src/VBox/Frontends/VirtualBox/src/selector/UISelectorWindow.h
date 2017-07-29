@@ -24,24 +24,21 @@
 /* GUI includes: */
 #include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
-#include "UIToolsPane.h"
+#include "UIToolsPaneMachine.h"
 #include "VBoxGlobal.h"
 
 /* Forward declarations: */
 class QMenu;
-class QStackedWidget;
 class QIManagerDialog;
 class QISplitter;
 class UIAction;
 class UIActionPool;
-class UIDesktopPane;
 class UIGChooser;
-class UIGDetails;
 #ifndef VBOX_WS_MAC
 class UIMainBar;
 #endif
-class UITexturedSegmentedButton;
 class UIToolBar;
+class UIToolsToolbar;
 class UIVMItem;
 
 
@@ -50,14 +47,6 @@ class UIVMItem;
 class UISelectorWindow : public QIWithRetranslateUI<QIMainWindow>
 {
     Q_OBJECT;
-
-    /** Segmented-button segment types. */
-    enum SegmentType
-    {
-        SegmentType_Details,
-        SegmentType_Tools,
-        SegmentType_None,
-    };
 
 public:
 
@@ -193,19 +182,13 @@ private slots:
         void sltMachineCloseMenuAboutToShow();
     /** @} */
 
-    /** @name Segmented-button stuff.
-      * @{ */
-        /** Handles segmented-button switch. */
-        void sltHandleSegmentedButtonSwitch(int iSegment);
-        /** Performs segmented-button switch. */
-        void sltPerformSegmentedButtonSwitch(int iSegment);
-        /** Performs segmented-button switch to details pane. */
-        void sltPerformSegmentedButtonSwitchToDetails() { sltPerformSegmentedButtonSwitch(SegmentType_Details); }
-    /** @} */
-
     /** @name Tools-pane stuff.
       * @{ */
-        void sltHandleToolsPaneToolOpened(ToolType enmType);
+        /** Handles rquest to open Machine tool of passed @a enmType. */
+        void sltHandleToolOpenedMachine(ToolTypeMachine enmType);
+
+        /** Handles rquest to close Machine tool of passed @a enmType. */
+        void sltHandleToolClosedMachine(ToolTypeMachine enmType);
     /** @} */
 
 private:
@@ -332,25 +315,17 @@ private:
 
 #ifndef VBOX_WS_MAC
     /** Holds the main bar instance. */
-    UIMainBar *m_pBar;
-#endif /* !VBOX_WS_MAC */
+    UIMainBar      *m_pBar;
+#endif
     /** Holds the main toolbar instance. */
-    UIToolBar *m_pToolBar;
-
-    /** Holds the segmented-button instance. */
-    UITexturedSegmentedButton *m_pSegmentedButton;
-
-    /** Holds the Details-container instance. */
-    QStackedWidget *m_pContainerDetails;
+    UIToolBar      *m_pToolBar;
+    /** Holds the Tools-toolbar instance. */
+    UIToolsToolbar *m_pToolbarTools;
 
     /** Holds the Chooser-pane instance. */
-    UIGChooser *m_pPaneChooser;
-    /** Holds the Details-pane instance. */
-    UIGDetails *m_pPaneDetails;
-    /** Holds the Desktop-pane instance. */
-    UIDesktopPane *m_pPaneDesktop;
+    UIGChooser         *m_pPaneChooser;
     /** Holds the Tools-pane instance. */
-    UIToolsPane *m_pPaneTools;
+    UIToolsPaneMachine *m_pPaneToolsMachine;
 
     /** Holds the list of Group menu actions. */
     QList<UIAction*> m_groupActions;

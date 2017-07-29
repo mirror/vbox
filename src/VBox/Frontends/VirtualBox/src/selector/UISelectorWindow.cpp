@@ -21,58 +21,50 @@
 
 /* Qt includes: */
 # include <QMenuBar>
-# include <QStatusBar>
 # include <QResizeEvent>
-# include <QStackedWidget>
+# include <QStandardPaths>
+# include <QStatusBar>
 # include <QToolButton>
 # include <QTimer>
-# if QT_VERSION >= 0x050000
-#  include <QStandardPaths>
-# else /* QT_VERSION < 0x050000 */
-#  include <QDesktopServices>
-# endif /* QT_VERSION < 0x050000 */
 
 /* GUI includes: */
-# include "QISplitter.h"
 # include "QIFileDialog.h"
+# include "QISplitter.h"
+# include "UIActionPoolSelector.h"
 # include "UIBar.h"
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-#  include "UINetworkManager.h"
-#  include "UINetworkManagerIndicator.h"
-#  include "UIUpdateManager.h"
-#  include "UIDownloaderUserManual.h"
-#  include "UIDownloaderExtensionPack.h"
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-# include "UIIconPool.h"
-# include "UIWizardCloneVM.h"
-# include "UIWizardExportApp.h"
-# include "UIWizardImportApp.h"
-# include "UIDesktopPane.h"
-# include "UIVirtualBoxEventHandler.h"
+# include "UIDesktopServices.h"
+# include "UIExtraDataManager.h"
+# include "UIGChooser.h"
+# include "UIGlobalSettingsExtension.h"
 # include "UIHostNetworkManager.h"
-# include "UIMediumManager.h"
 # include "UIMedium.h"
+# include "UIMediumManager.h"
 # include "UIMessageCenter.h"
+# include "UIModalWindowManager.h"
 # include "UISelectorWindow.h"
 # include "UISettingsDialogSpecific.h"
 # include "UISpacerWidgets.h"
-# include "UISpecialControls.h"
 # include "UIToolBar.h"
 # include "UIVMLogViewer.h"
-# include "UIDesktopServices.h"
-# include "UIGlobalSettingsExtension.h"
-# include "UIActionPoolSelector.h"
-# include "UIGChooser.h"
-# include "UIGDetails.h"
 # include "UIVMItem.h"
-# include "UIExtraDataManager.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIModalWindowManager.h"
+# include "UIToolsPaneMachine.h"
+# include "UIToolsToolbar.h"
+# include "UIVirtualBoxEventHandler.h"
+# include "UIWizardCloneVM.h"
+# include "UIWizardExportApp.h"
+# include "UIWizardImportApp.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UINetworkManager.h"
+#  include "UINetworkManagerIndicator.h"
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 # ifdef VBOX_WS_MAC
-#  include "VBoxUtils.h"
-#  include "UIWindowMenuManager.h"
 #  include "UIImageTools.h"
+#  include "UIWindowMenuManager.h"
+#  include "VBoxUtils.h"
 # endif /* VBOX_WS_MAC */
+# ifdef VBOX_WS_X11
+#  include "UIDesktopWidgetWatchdog.h"
+# endif
 
 /* Other VBox stuff: */
 # include <iprt/buildconfig.h>
@@ -121,14 +113,11 @@ UISelectorWindow::UISelectorWindow()
     , m_pSplitter(0)
 #ifndef VBOX_WS_MAC
     , m_pBar(0)
-#endif /* !VBOX_WS_MAC */
+#endif
     , m_pToolBar(0)
-    , m_pSegmentedButton(0)
-    , m_pContainerDetails(0)
+    , m_pToolbarTools(0)
     , m_pPaneChooser(0)
-    , m_pPaneDetails(0)
-    , m_pPaneDesktop(0)
-    , m_pPaneTools(0)
+    , m_pPaneToolsMachine(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
     , m_pManagerVirtualMedia(0)
@@ -238,37 +227,41 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     updateActionsAppearance();
 
     /* Update Details-pane: */
-    if (fUpdateDetails)
-        m_pPaneDetails->setItems(currentItems());
+    if (   fUpdateDetails
+        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+        m_pPaneToolsMachine->setItems(currentItems());
 
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
     {
-        /* Make sure at least Details-pane raised: */
-        if (m_pContainerDetails->currentWidget() == m_pPaneDesktop)
-            sltPerformSegmentedButtonSwitch(SegmentType_Details);
+        /* Make sure Machine Tools-pane raised: */
+        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+            m_pPaneToolsMachine->openTool(ToolTypeMachine_Details);
+        else
+        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
+            m_pPaneToolsMachine->openTool(ToolTypeMachine_Snapshots);
 
-        /* Refresh Tools-pane if requested: */
-        if (fUpdateTools)
-            m_pPaneTools->setMachine(pItem->machine());
+        /* Refresh Machine Tools-pane if requested: */
+        if (   fUpdateTools
+            && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
+            m_pPaneToolsMachine->setMachine(pItem->machine());
     }
     else
     {
         /* Make sure Desktop-pane raised: */
-        if (m_pContainerDetails->currentWidget() != m_pPaneDesktop)
-            sltPerformSegmentedButtonSwitch(SegmentType_None);
+        m_pPaneToolsMachine->openTool(ToolTypeMachine_Desktop);
 
         /* Note that the machine becomes inaccessible (or if the last VM gets
          * deleted), we have to update all fields, ignoring input arguments. */
         if (pItem)
         {
             /* The VM is inaccessible: */
-            m_pPaneDesktop->updateDetailsError(UIMessageCenter::formatErrorInfo(pItem->accessError()));
+            m_pPaneToolsMachine->setDetailsError(UIMessageCenter::formatErrorInfo(pItem->accessError()));
         }
         else
         {
             /* Default HTML support in Qt is terrible so just try to get something really simple: */
-            m_pPaneDesktop->updateDetailsText(
+            m_pPaneToolsMachine->setDetailsText(
                 tr("<h3>Welcome to VirtualBox!</h3>"
                    "<p>The left part of this window is  "
                    "a list of all virtual machines on your computer. "
@@ -286,7 +279,8 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
         }
 
         /* Refresh Tools-pane in any case: */
-        m_pPaneTools->setMachine(CMachine());
+        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
+            m_pPaneToolsMachine->setMachine(CMachine());
     }
 }
 
@@ -300,8 +294,7 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
     m_fWarningAboutInaccessibleMediaShown = true;
 
     /* Make sure MM window is not opened: */
-    if (   m_pManagerVirtualMedia
-        || m_pPaneTools->isToolOpened(ToolType_VirtualMediaManager))
+    if (m_pManagerVirtualMedia)
         return;
 
     /* Look for at least one inaccessible medium: */
@@ -406,14 +399,6 @@ void UISelectorWindow::sltHandleStateChange(QString)
 
 void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
 {
-    /* First check if instance of widget opened embedded: */
-    if (m_pPaneTools->isToolOpened(ToolType_VirtualMediaManager))
-    {
-        sltPerformSegmentedButtonSwitch(SegmentType_Tools);
-        m_pPaneTools->setCurrentTool(ToolType_VirtualMediaManager);
-        return;
-    }
-
     /* Create instance if not yet created: */
     if (!m_pManagerVirtualMedia)
     {
@@ -440,14 +425,6 @@ void UISelectorWindow::sltCloseVirtualMediumManagerWindow()
 
 void UISelectorWindow::sltOpenHostNetworkManagerWindow()
 {
-    /* First check if instance of widget opened embedded: */
-    if (m_pPaneTools->isToolOpened(ToolType_HostNetworkManager))
-    {
-        sltPerformSegmentedButtonSwitch(SegmentType_Tools);
-        m_pPaneTools->setCurrentTool(ToolType_HostNetworkManager);
-        return;
-    }
-
     /* Create instance if not yet created: */
     if (!m_pManagerHostNetwork)
     {
@@ -1047,57 +1024,27 @@ void UISelectorWindow::sltMachineCloseMenuAboutToShow()
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
 }
 
-void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
+void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
 {
-    /* Get current item: */
-    const UIVMItem *pItem = currentItem();
-
-    /* If current item exists & accessible: */
-    if (pItem && pItem->accessible())
+    /* Open corresponding tool: */
+    m_pPaneToolsMachine->openTool(enmType);
+    /* If that was 'Details' => pass there current items: */
+    if (   enmType == ToolTypeMachine_Details
+        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+        m_pPaneToolsMachine->setItems(currentItems());
+    /* If that was 'Snapshot' => pass there current or null machine: */
+    if (   enmType == ToolTypeMachine_Snapshots
+        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
     {
-        /* Raise the required widget: */
-        switch (iSegment)
-        {
-            case SegmentType_Details: m_pContainerDetails->setCurrentWidget(m_pPaneDetails); break;
-            case SegmentType_Tools:   m_pContainerDetails->setCurrentWidget(m_pPaneTools); break;
-            default:                  break;
-        }
+        UIVMItem *pItem = currentItem();
+        m_pPaneToolsMachine->setMachine(pItem ? pItem->machine() : CMachine());
     }
-    else
-    {
-        /* Raise the Desktop-pane with welcome text or error details: */
-        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-    }
-
-#ifdef VBOX_WS_MAC
-    // WORKAROUND:
-    // Qt 5.6.x has weird bug:
-    // When some cocoa widget being focused for a first time
-    // previously focused Qt widget being erased unless
-    // someone calls for it's update directly or
-    // indirectly (like with mouse hovering).
-    // Doing that directly for Chooser pane.
-    m_pPaneChooser->update();
-#endif
 }
 
-void UISelectorWindow::sltPerformSegmentedButtonSwitch(int iSegment)
+void UISelectorWindow::sltHandleToolClosedMachine(ToolTypeMachine enmType)
 {
-    /* Perform silent segmented-button switch: */
-    if (iSegment >= 0 && iSegment < m_pSegmentedButton->count())
-        m_pSegmentedButton->setSelected(iSegment);
-    /* Manually handle that switch as well: */
-    sltHandleSegmentedButtonSwitch(iSegment);
-}
-
-void UISelectorWindow::sltHandleToolsPaneToolOpened(ToolType enmType)
-{
-    switch (enmType)
-    {
-        case ToolType_VirtualMediaManager: sltCloseVirtualMediumManagerWindow(); break;
-        case ToolType_HostNetworkManager:  sltCloseHostNetworkManagerWindow(); break;
-        default:                           break;
-    }
+    /* Close corresponding tool: */
+    m_pPaneToolsMachine->closeTool(enmType);
 }
 
 UIVMItem* UISelectorWindow::currentItem() const
@@ -1124,10 +1071,21 @@ void UISelectorWindow::retranslateUi()
 #endif /* VBOX_BLEEDING_EDGE */
     setWindowTitle(strTitle);
 
-    /* Translate segmented-button: */
-    // TODO: Move that NLS from UIDesktopPane to UISelectorWindow context.
-    m_pSegmentedButton->setTitle(SegmentType_Details, QApplication::translate("UIDesktopPane", "&Details"));
-    m_pSegmentedButton->setTitle(SegmentType_Tools, QApplication::translate("UIDesktopPane", "&Tools"));
+    /* Translate Machine Tools welcome screen: */
+    m_pPaneToolsMachine->setDetailsText(
+        tr("<h3>Welcome to VirtualBox!</h3>"
+           "<p>The left part of this window is a list of all virtual machines "
+           "and virtual machine groups on your computer. "
+           "<img src=:/welcome.png align=right/></p>"
+           "<p>The right part of this window represents a set of tools "
+           "you have opened for the currently chosen machine. "
+           "For more tools check the corresponding menu at the right side "
+           "of the main tool bar located at the top of the window.</p>"
+           "<p>You can press the <b>%1</b> key to get instant help, "
+           "or visit "
+           "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+           "for the latest information and news.</p>")
+           .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
 
     /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
@@ -1274,6 +1232,9 @@ void UISelectorWindow::prepare()
     prepareWidgets();
     prepareConnections();
 
+    /* Make sure at least 'Details' Machine tool is opened at startup: */
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
+
     /* Load settings: */
     loadSettings();
 
@@ -1294,9 +1255,6 @@ void UISelectorWindow::prepare()
     /* General event filter: */
     qApp->installEventFilter(this);
 #endif /* VBOX_WS_MAC */
-
-    /* Switch segmented-button to Details-pane: */
-    sltPerformSegmentedButtonSwitchToDetails();
 
     /* Make sure current Chooser-pane index fetched: */
     sltHandleChooserPaneIndexChange();
@@ -1754,13 +1712,27 @@ void UISelectorWindow::prepareToolbar()
         /* Create/add horizontal spacer widget to align subsequent controls right: */
         m_pToolBar->addWidget(new UIHorizontalSpacerWidget);
 
-        /* Create/add segmented-button: */
-        m_pSegmentedButton = new UITexturedSegmentedButton(this, 2);
-        m_pSegmentedButton->setIcon(SegmentType_Details, UIIconPool::iconSet(":/edataman_16px.png",
-                                                                             ":/edataman_16px.png"));
-        m_pSegmentedButton->setIcon(SegmentType_Tools, UIIconPool::iconSet(":/guesttools_16px.png",
-                                                                           ":/guesttools_disabled_16px.png"));
-        m_pToolBar->addWidget(m_pSegmentedButton);
+        /* Create Tools toolbar: */
+        m_pToolbarTools = new UIToolsToolbar(actionPool());
+        if (m_pToolbarTools)
+        {
+            /* Configure toolbar: */
+            m_pToolbarTools->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+
+            /* Create exclusive action-group: */
+            QActionGroup *pActionGroupTools = new QActionGroup(m_pToolbarTools);
+            AssertPtrReturnVoid(pActionGroupTools);
+            {
+                /* Configure action-group: */
+                pActionGroupTools->setExclusive(true);
+
+                /* Add 'Tools' actions into action-group: */
+                pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Machine));
+            }
+
+            /* Add into toolbar: */
+            m_pToolBar->addWidget(m_pToolbarTools);
+        }
 
         /* Create/add horizontal spacer widget of fixed size for the beta label: */
         QWidget *pSpace = new QWidget;
@@ -1769,7 +1741,7 @@ void UISelectorWindow::prepareToolbar()
             if (vboxGlobal().isBeta())
                 pSpace->setFixedSize(28, 1);
             else
-                pSpace->setFixedSize(10, 1);
+                pSpace->setFixedSize(1, 1);
             m_pToolBar->addWidget(pSpace);
         }
 
@@ -1839,41 +1811,17 @@ void UISelectorWindow::prepareWidgets()
                     m_pSplitter->addWidget(m_pPaneChooser);
                 }
 
-                /* Create container: */
-                m_pContainerDetails = new QStackedWidget;
-                AssertPtrReturnVoid(m_pContainerDetails);
+                /* Prepare Machine Tools-pane: */
+                m_pPaneToolsMachine = new UIToolsPaneMachine(actionPool());
+                AssertPtrReturnVoid(m_pPaneToolsMachine);
                 {
-                    /* Prepare Details-pane: */
-                    m_pPaneDetails = new UIGDetails(this);
-                    AssertPtrReturnVoid(m_pPaneDetails);
-                    {
-                        /* Add into container: */
-                        m_pContainerDetails->addWidget(m_pPaneDetails);
-                    }
-
-                    /* Prepare Desktop-pane: */
-                    m_pPaneDesktop = new UIDesktopPane(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
-                    AssertPtrReturnVoid(m_pPaneDesktop);
-                    {
-                        /* Add into container: */
-                        m_pContainerDetails->addWidget(m_pPaneDesktop);
-                    }
-
-                    /* Prepare Tools-pane: */
-                    m_pPaneTools = new UIToolsPane;
-                    AssertPtrReturnVoid(m_pPaneTools);
-                    {
-                        /* Add into container: */
-                        m_pContainerDetails->addWidget(m_pPaneTools);
-                    }
-
                     /* Add into splitter: */
-                    m_pSplitter->addWidget(m_pContainerDetails);
+                    m_pSplitter->addWidget(m_pPaneToolsMachine);
                 }
 
                 /* Adjust splitter colors according to main widgets it splits: */
                 m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
-                                             m_pPaneDetails->palette().color(QPalette::Active, QPalette::Window));
+                                             m_pPaneToolsMachine->palette().color(QPalette::Active, QPalette::Window));
                 /* Set the initial distribution. The right site is bigger. */
                 m_pSplitter->setStretchFactor(0, 2);
                 m_pSplitter->setStretchFactor(1, 3);
@@ -1964,9 +1912,9 @@ void UISelectorWindow::prepareConnections()
 
     /* Graphics VM chooser connections: */
     connect(m_pPaneChooser, SIGNAL(sigSelectionChanged()), this, SLOT(sltHandleChooserPaneIndexChange()));
-    connect(m_pPaneChooser, SIGNAL(sigSlidingStarted()), m_pPaneDetails, SIGNAL(sigSlidingStarted()));
-    connect(m_pPaneChooser, SIGNAL(sigToggleStarted()), m_pPaneDetails, SIGNAL(sigToggleStarted()));
-    connect(m_pPaneChooser, SIGNAL(sigToggleFinished()), m_pPaneDetails, SIGNAL(sigToggleFinished()));
+    connect(m_pPaneChooser, SIGNAL(sigSlidingStarted()), m_pPaneToolsMachine, SIGNAL(sigSlidingStarted()));
+    connect(m_pPaneChooser, SIGNAL(sigToggleStarted()), m_pPaneToolsMachine, SIGNAL(sigToggleStarted()));
+    connect(m_pPaneChooser, SIGNAL(sigToggleFinished()), m_pPaneToolsMachine, SIGNAL(sigToggleFinished()));
     connect(m_pPaneChooser, SIGNAL(sigGroupSavingStateChanged()), this, SLOT(sltHandleGroupSavingProgressChange()));
 
     /* Tool-bar connections: */
@@ -1976,14 +1924,13 @@ void UISelectorWindow::prepareConnections()
     /* We want to receive right click notifications on the title bar, so register our own handler: */
     ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
 #endif /* VBOX_WS_MAC */
-
-    /* Segmented-button connections: */
-    connect(m_pSegmentedButton, SIGNAL(clicked(int)), this, SLOT(sltHandleSegmentedButtonSwitch(int)));
+    connect(m_pToolbarTools, &UIToolsToolbar::sigToolOpenedMachine, this, &UISelectorWindow::sltHandleToolOpenedMachine);
+    connect(m_pToolbarTools, &UIToolsToolbar::sigToolClosedMachine, this, &UISelectorWindow::sltHandleToolClosedMachine);
 
     /* VM desktop connections: */
-    connect(m_pPaneDetails, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
+    connect(m_pPaneToolsMachine, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             this, SLOT(sltOpenMachineSettingsDialog(const QString&, const QString&, const QString&)));
-    connect(m_pPaneTools, &UIToolsPane::sigToolOpened, this, &UISelectorWindow::sltHandleToolsPaneToolOpened);
+
 
     /* Global event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltHandleStateChange(QString)));
