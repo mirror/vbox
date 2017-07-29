@@ -188,6 +188,9 @@ log_command_in_target test "${MY_CHROOT_CDROM}/vboxvalidationkit/linux/@@VBOX_IN
 log_command mkdir -p "${MY_TARGET}/root/validationkit" "${MY_TARGET}/media/cdrom"
 log_command cp -R ${MY_CDROM_NOCHROOT}/vboxvalidationkit/* "${MY_TARGET}/root/validationkit/"
 log_command chmod -R u+rw,a+xr "${MY_TARGET}/root/validationkit/"
+if [ -e "${MY_TARGET}/usr/bin/chcon" -o -e "${MY_TARGET}/bin/chcon" -o -e "${MY_TARGET}/usr/sbin/chcon" -o -e "${MY_TARGET}/sbin/chcon" ]; then
+    log_command_in_target chcon -R -t usr_t "${MY_TARGET}/root/validationkit/"
+fi
 
 # systemd service config:
 MY_UNIT_PATH="${MY_TARGET}/lib/systemd/system"
