@@ -165,8 +165,8 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
 
     /* Prepare palette colors: */
     const QPalette pal = palette();
-    const QColor color0 = m_fCurrent ? pal.color(QPalette::Highlight).lighter(200)
-                        : m_fHovered ? pal.color(QPalette::Highlight).lighter(220)
+    const QColor color0 = m_fCurrent ? pal.color(QPalette::Highlight).lighter(150)
+                        : m_fHovered ? pal.color(QPalette::Highlight).lighter(170)
                         :              pal.color(QPalette::Window);
     QColor color1 = pal.color(QPalette::Window).lighter(110);
     color1.setAlpha(0);

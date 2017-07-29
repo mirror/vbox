@@ -19,8 +19,8 @@
 #include <QHBoxLayout>
 
 /* GUI includes: */
-#include "UISlidingWidget.h"
 #include "UIAnimationFramework.h"
+#include "UISlidingWidget.h"
 
 
 UISlidingWidget::UISlidingWidget(QWidget *pParent /* = 0 */)

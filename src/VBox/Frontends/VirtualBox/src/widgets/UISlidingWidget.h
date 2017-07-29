@@ -23,6 +23,7 @@
 
 /* Forward declarations: */
 class QHBoxLayout;
+class QRect;
 class QWidget;
 class UIAnimation;
 
