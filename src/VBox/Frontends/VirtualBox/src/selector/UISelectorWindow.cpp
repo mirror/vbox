@@ -1270,6 +1270,7 @@ void UISelectorWindow::prepare()
     prepareIcon();
     prepareMenuBar();
     prepareStatusBar();
+    prepareToolbar();
     prepareWidgets();
     prepareConnections();
 
@@ -1730,95 +1731,158 @@ void UISelectorWindow::prepareStatusBar()
 #endif /* VBOX_WS_MAC */
 }
 
+void UISelectorWindow::prepareToolbar()
+{
+    /* Create Main toolbar: */
+    m_pToolBar = new UIToolBar(this);
+    AssertPtrReturnVoid(m_pToolBar);
+    {
+        /* Configure toolbar: */
+        m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+        // TODO: Get red of hard-coded stuff:
+        const QSize toolBarIconSize = m_pToolBar->iconSize();
+        if (toolBarIconSize.width() < 32 || toolBarIconSize.height() < 32)
+            m_pToolBar->setIconSize(QSize(32, 32));
+
+        /* Add main actions block: */
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
+        m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
+
+        /* Create/add horizontal spacer widget to align subsequent controls right: */
+        m_pToolBar->addWidget(new UIHorizontalSpacerWidget);
+
+        /* Create/add segmented-button: */
+        m_pSegmentedButton = new UITexturedSegmentedButton(this, 2);
+        m_pSegmentedButton->setIcon(SegmentType_Details, UIIconPool::iconSet(":/edataman_16px.png",
+                                                                             ":/edataman_16px.png"));
+        m_pSegmentedButton->setIcon(SegmentType_Tools, UIIconPool::iconSet(":/guesttools_16px.png",
+                                                                           ":/guesttools_disabled_16px.png"));
+        m_pToolBar->addWidget(m_pSegmentedButton);
+
+        /* Create/add horizontal spacer widget of fixed size for the beta label: */
+        QWidget *pSpace = new QWidget;
+        if (pSpace)
+        {
+            if (vboxGlobal().isBeta())
+                pSpace->setFixedSize(28, 1);
+            else
+                pSpace->setFixedSize(10, 1);
+            m_pToolBar->addWidget(pSpace);
+        }
+
+#ifdef VBOX_WS_MAC
+        // WORKAROUND:
+        // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+        // the necessary size of the toolbar is increased. Also for some languages
+        // the with doesn't match if the text increase. So manually adjust the size
+        // after changing the text.
+        m_pToolBar->updateLayout();
+#endif
+    }
+}
+
 void UISelectorWindow::prepareWidgets()
 {
-    /* Prepare splitter: */
-    m_pSplitter = new QISplitter(this);
+    /* Create central-widget: */
+    QWidget *pWidget = new QWidget;
+    AssertPtrReturnVoid(pWidget);
+    {
+        /* Configure central-widget: */
+        setCentralWidget(pWidget);
+
+        /* Create central-layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(pWidget);
+        AssertPtrReturnVoid(pLayout);
+        {
+            /* Configure layout: */
+            pLayout->setSpacing(0);
+            pLayout->setContentsMargins(0, 0, 0, 0);
+
+#ifdef VBOX_WS_MAC
+
+            /* Native toolbar on MAC: */
+            addToolBar(m_pToolBar);
+
+#else /* !VBOX_WS_MAC */
+
+            /* Create main bar: */
+            m_pBar = new UIMainBar;
+            AssertPtrReturnVoid(m_pBar);
+            if (m_pBar)
+            {
+                /* Configure main bar: */
+                m_pBar->setContentWidget(m_pToolBar);
+
+                /* Add into layout: */
+                pLayout->addWidget(m_pBar);
+            }
+
+#endif /* !VBOX_WS_MAC */
+
+            /* Create splitter: */
+            m_pSplitter = new QISplitter;
+            AssertPtrReturnVoid(m_pSplitter);
+            {
+                /* Configure splitter: */
 #ifdef VBOX_WS_X11
-    m_pSplitter->setHandleType(QISplitter::Native);
-#endif /* VBOX_WS_X11 */
-
-    /* Prepare tool-bar: */
-    m_pToolBar = new UIToolBar(this);
-    m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
-    const QSize toolBarIconSize = m_pToolBar->iconSize();
-    if (toolBarIconSize.width() < 32 || toolBarIconSize.height() < 32)
-        m_pToolBar->setIconSize(QSize(32, 32));
-    m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-
-    /* Create/add horizontal spacer widget to align subsequent controls right: */
-    m_pToolBar->addWidget(new UIHorizontalSpacerWidget(this));
-
-    /* Create/add segmented-button: */
-    m_pSegmentedButton = new UITexturedSegmentedButton(this, 2);
-    m_pSegmentedButton->setIcon(SegmentType_Details, UIIconPool::iconSet(":/edataman_16px.png",
-                                                                         ":/edataman_16px.png"));
-    m_pSegmentedButton->setIcon(SegmentType_Tools, UIIconPool::iconSet(":/guesttools_16px.png",
-                                                                       ":/guesttools_disabled_16px.png"));
-    m_pToolBar->addWidget(m_pSegmentedButton);
-
-    /* Create/add horizontal spacer widget of fixed size for the beta label: */
-    QWidget *pSpace = new QWidget(this);
-    if (vboxGlobal().isBeta())
-        pSpace->setFixedSize(28, 1);
-    else
-        pSpace->setFixedSize(10, 1);
-    m_pToolBar->addWidget(pSpace);
-
-#if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
-    /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
-    m_pToolBar->updateLayout();
+                m_pSplitter->setHandleType(QISplitter::Native);
 #endif
 
-    /* Prepare Chooser-pane: */
-    m_pPaneChooser = new UIGChooser(this);
+                /* Prepare Chooser-pane: */
+                m_pPaneChooser = new UIGChooser(this);
+                AssertPtrReturnVoid(m_pPaneChooser);
+                {
+                    /* Add into splitter: */
+                    m_pSplitter->addWidget(m_pPaneChooser);
+                }
 
-    /* Prepare Details-pane: */
-    m_pPaneDetails = new UIGDetails(this);
+                /* Create container: */
+                m_pContainerDetails = new QStackedWidget;
+                AssertPtrReturnVoid(m_pContainerDetails);
+                {
+                    /* Prepare Details-pane: */
+                    m_pPaneDetails = new UIGDetails(this);
+                    AssertPtrReturnVoid(m_pPaneDetails);
+                    {
+                        /* Add into container: */
+                        m_pContainerDetails->addWidget(m_pPaneDetails);
+                    }
 
-    /* Configure splitter colors: */
-    m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
-                                 m_pPaneDetails->palette().color(QPalette::Active, QPalette::Window));
+                    /* Prepare Desktop-pane: */
+                    m_pPaneDesktop = new UIDesktopPane(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
+                    AssertPtrReturnVoid(m_pPaneDesktop);
+                    {
+                        /* Add into container: */
+                        m_pContainerDetails->addWidget(m_pPaneDesktop);
+                    }
 
-    /* Prepare Desktop-pane: */
-    m_pPaneDesktop = new UIDesktopPane(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
+                    /* Prepare Tools-pane: */
+                    m_pPaneTools = new UIToolsPane;
+                    AssertPtrReturnVoid(m_pPaneTools);
+                    {
+                        /* Add into container: */
+                        m_pContainerDetails->addWidget(m_pPaneTools);
+                    }
 
-    /* Prepare Tools-pane: */
-    m_pPaneTools = new UIToolsPane(this);
+                    /* Add into splitter: */
+                    m_pSplitter->addWidget(m_pContainerDetails);
+                }
 
-    /* Create container: */
-    m_pContainerDetails = new QStackedWidget(this);
-    m_pContainerDetails->addWidget(m_pPaneDetails);
-    m_pContainerDetails->addWidget(m_pPaneDesktop);
-    m_pContainerDetails->addWidget(m_pPaneTools);
+                /* Adjust splitter colors according to main widgets it splits: */
+                m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
+                                             m_pPaneDetails->palette().color(QPalette::Active, QPalette::Window));
+                /* Set the initial distribution. The right site is bigger. */
+                m_pSplitter->setStretchFactor(0, 2);
+                m_pSplitter->setStretchFactor(1, 3);
 
-    /* Layout all the widgets: */
-#ifdef VBOX_WS_MAC
-    addToolBar(m_pToolBar);
-    /* Central widget @ horizontal layout: */
-    setCentralWidget(m_pSplitter);
-    m_pSplitter->addWidget(m_pPaneChooser);
-#else /* !VBOX_WS_MAC */
-    QWidget *pCentralWidget = new QWidget(this);
-    setCentralWidget(pCentralWidget);
-    QVBoxLayout *pCentralLayout = new QVBoxLayout(pCentralWidget);
-    pCentralLayout->setContentsMargins(0, 0, 0, 0);
-    pCentralLayout->setSpacing(0);
-    m_pBar = new UIMainBar(this);
-    m_pBar->setContentWidget(m_pToolBar);
-    pCentralLayout->addWidget(m_pBar);
-    pCentralLayout->addWidget(m_pSplitter);
-    m_pSplitter->addWidget(m_pPaneChooser);
-#endif /* !VBOX_WS_MAC */
-    m_pSplitter->addWidget(m_pContainerDetails);
-
-    /* Set the initial distribution. The right site is bigger. */
-    m_pSplitter->setStretchFactor(0, 2);
-    m_pSplitter->setStretchFactor(1, 3);
+                /* Add into layout: */
+                pLayout->addWidget(m_pSplitter);
+            }
+        }
+    }
 
     /* Bring the VM list to the focus: */
     m_pPaneChooser->setFocus();
@@ -1958,10 +2022,10 @@ void UISelectorWindow::loadSettings()
     {
 #ifdef VBOX_WS_MAC
         // WORKAROUND:
-        // There is an issue in Qt5 main-window tool-bar implementation:
+        // There is an issue in Qt5 main-window toolbar implementation:
         // if you are hiding it before it's shown for the first time,
         // there is an ugly empty container appears instead, so we
-        // have to hide tool-bar asynchronously to avoid that.
+        // have to hide toolbar asynchronously to avoid that.
         if (!gEDataManager->selectorWindowToolBarVisible())
             QMetaObject::invokeMethod(m_pToolBar, "hide", Qt::QueuedConnection);
 #else /* VBOX_WS_MAC */

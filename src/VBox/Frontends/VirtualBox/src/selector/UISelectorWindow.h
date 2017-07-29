@@ -32,17 +32,18 @@ class QMenu;
 class QStackedWidget;
 class QIManagerDialog;
 class QISplitter;
-class CMachine;
 class UIAction;
 class UIActionPool;
-class UIActionPolymorphic;
 class UIDesktopPane;
 class UIGChooser;
 class UIGDetails;
+#ifndef VBOX_WS_MAC
 class UIMainBar;
+#endif
 class UITexturedSegmentedButton;
 class UIToolBar;
 class UIVMItem;
+
 
 /** Singleton QIMainWindow extension
   * used as VirtualBox Manager (selector-window) instance. */
@@ -255,6 +256,8 @@ private:
         void prepareMenuMachineClose(QMenu *pMenu);
         /** Prepares status-bar. */
         void prepareStatusBar();
+        /** Prepares toolbar. */
+        void prepareToolbar();
         /** Prepares widgets. */
         void prepareWidgets();
         /** Prepares connections. */
