@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QMap>
+#include <QUuid>
 #include <QWidget>
 
 /* Forward declarations: */
