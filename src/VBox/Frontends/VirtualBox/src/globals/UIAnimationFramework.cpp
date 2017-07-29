@@ -101,8 +101,10 @@ void UIAnimation::prepare()
 
     /* Prepare state-transitions: */
     QSignalTransition *pStartToFinal = m_pStateStart->addTransition(parent(), m_pszSignalForward, m_pStateFinal);
+    AssertPtrReturnVoid(pStartToFinal);
     pStartToFinal->addAnimation(m_pForwardAnimation);
     QSignalTransition *pFinalToStart = m_pStateFinal->addTransition(parent(), m_pszSignalReverse, m_pStateStart);
+    AssertPtrReturnVoid(pFinalToStart);
     pFinalToStart->addAnimation(m_pReverseAnimation);
 
     /* Fetch animation-borders: */
