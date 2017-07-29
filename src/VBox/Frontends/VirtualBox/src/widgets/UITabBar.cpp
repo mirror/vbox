@@ -250,7 +250,7 @@ void UITabBarItem::prepare()
         const int iMetricCloseButton = iMetric * 2 / 3;
 
         /* Configure layout: */
-        m_pLayout->setContentsMargins(iMargin, 0, iMargin, 0);
+        m_pLayout->setContentsMargins(iMargin + iSpacing, 0, iMargin, 0);
         m_pLayout->setSpacing(iSpacing);
 
         /* Create icon label: */
