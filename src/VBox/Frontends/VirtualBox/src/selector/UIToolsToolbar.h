@@ -28,15 +28,13 @@
 
 /* Forward declarations: */
 class QAction;
-class QGridLayout;
 class QHBoxLayout;
-class QLabel;
 class QStackedLayout;
 class QUuid;
 class QWidget;
-class QIToolButton;
 class UIActionPool;
 class UITabBar;
+class UIToolBar;
 
 
 /** Tools toolbar imlementation for Selector UI. */
@@ -54,9 +52,6 @@ signals:
 
 public:
 
-    /** Tools action types. */
-    enum ActionType { ActionType_Machine };
-
     /** Constructs Tools toolbar passing @a pParent to the base-class.
       * @param  pActionPool  Brings the action-pool to take corresponding actions from. */
     UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent = 0);
@@ -72,8 +67,8 @@ private slots:
     /** Handles request to make Machine tool with passed @a uuid current one. */
     void sltHandleToolChosenMachine(const QUuid &uuid);
 
-    /** Handles button toggle. */
-    void sltHandleButtonToggle();
+    /** Handles action toggle. */
+    void sltHandleActionToggle();
 
 private:
 
@@ -83,34 +78,23 @@ private:
     void prepareMenu();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares section button. */
-    static QIToolButton *prepareSectionButton(QAction *pAction);
-    /** Prepares connections. */
-    void prepareConnections();
-
-    /** Rebuilds toolbar shape. */
-    void rebuildShape();
 
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
 
     /** Holds the main layout instance. */
-    QGridLayout    *m_pLayoutMain;
+    QHBoxLayout    *m_pLayoutMain;
     /** Holds the stacked layout instance. */
     QStackedLayout *m_pLayoutStacked;
-    /** Holds the button layout instance. */
-    QHBoxLayout    *m_pLayoutButton;
 
     /** Holds the Machine tab-bar instance. */
-    UITabBar                     *m_pTabBarMachine;
+    UITabBar *m_pTabBarMachine;
+
     /** Holds the map of opened Machine tool IDs. */
     QMap<ToolTypeMachine, QUuid>  m_mapTabIdsMachine;
 
-    /** Holds the map of action wrapping buttons. */
-    QMap<ActionType, QIToolButton*>  m_mapButtons;
-
-    /** Holds the status label instance. */
-    QLabel *m_pLabel;
+    /** Holds the toolbar instance. */
+    UIToolBar *m_pToolBar;
 
     /** Holds the 'Machine' menu action instances. */
     QMap<ToolTypeMachine, QAction*>  m_mapActionsMachine;

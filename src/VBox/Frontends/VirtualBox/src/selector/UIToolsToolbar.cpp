@@ -20,20 +20,20 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QAction>
-#include <QButtonGroup>
-#include <QLabel>
-#include <QStackedLayout>
-#include <QUuid>
+# include <QAction>
+# include <QButtonGroup>
+# include <QLabel>
+# include <QStackedLayout>
+# include <QToolButton>
 
 /* GUI includes: */
-#include "QIToolButton.h"
-#include "UIActionPoolSelector.h"
-#include "UITabBar.h"
-#include "UIToolsToolbar.h"
+# include "UIActionPoolSelector.h"
+# include "UITabBar.h"
+# include "UIToolBar.h"
+# include "UIToolsToolbar.h"
 
 /* Other VBox includes: */
-#include "iprt/assert.h"
+# include "iprt/assert.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -43,9 +43,8 @@ UIToolsToolbar::UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent /* = 
     , m_pActionPool(pActionPool)
     , m_pLayoutMain(0)
     , m_pLayoutStacked(0)
-    , m_pLayoutButton(0)
     , m_pTabBarMachine(0)
-    , m_pLabel(0)
+    , m_pToolBar(0)
 {
     /* Prepare: */
     prepare();
@@ -95,24 +94,19 @@ void UIToolsToolbar::sltHandleToolChosenMachine(const QUuid &uuid)
         emit sigToolOpenedMachine(m_mapTabIdsMachine.key(uuid));
 }
 
-void UIToolsToolbar::sltHandleButtonToggle()
+void UIToolsToolbar::sltHandleActionToggle()
 {
     /* Acquire the sender: */
-    QIToolButton *pButton = sender() ? qobject_cast<QIToolButton*>(sender()) : 0;
-    if (!pButton)
-        pButton = m_mapButtons.value(m_mapButtons.keys().first());
+    UIAction *pAction = sender() ? qobject_cast<UIAction*>(sender()) : 0;
+    if (!pAction)
+        pAction = m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine);
 
-    /* Handle known buttons: */
-    if (m_pLayoutStacked && m_mapButtons.values().contains(pButton))
+    /* Handle known actions: */
+    if (m_pLayoutStacked)
     {
-        switch (m_mapButtons.key(pButton))
-        {
-            case ActionType_Machine: m_pLayoutStacked->setCurrentWidget(m_pTabBarMachine); break;
-        }
+        if (pAction == m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine))
+            m_pLayoutStacked->setCurrentWidget(m_pTabBarMachine);
     }
-
-    /* Update label's text: */
-    m_pLabel->setText(pButton->text().remove('&'));
 }
 
 void UIToolsToolbar::prepare()
@@ -121,11 +115,6 @@ void UIToolsToolbar::prepare()
     prepareMenu();
     /* Prepare widgets: */
     prepareWidgets();
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Initialize: */
-    sltHandleButtonToggle();
 }
 
 void UIToolsToolbar::prepareMenu()
@@ -146,18 +135,22 @@ void UIToolsToolbar::prepareMenu()
                 this, &UIToolsToolbar::sltHandleOpenToolMachine);
         m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->setProperty("ToolTypeMachine", QVariant::fromValue(ToolTypeMachine_Snapshots));
     }
+
+    /* Configure 'Machine' toggle action: */
+    m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->setMenu(pMenuMachine);
+    connect(m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine), &UIAction::toggled,
+            this, &UIToolsToolbar::sltHandleActionToggle);
 }
 
 void UIToolsToolbar::prepareWidgets()
 {
     /* Create main layout: */
-    m_pLayoutMain = new QGridLayout(this);
+    m_pLayoutMain = new QHBoxLayout(this);
     AssertPtrReturnVoid(m_pLayoutMain);
     {
         /* Configure layout: */
         m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
-        m_pLayoutMain->setHorizontalSpacing(10);
-        m_pLayoutMain->setVerticalSpacing(0);
+        m_pLayoutMain->setSpacing(10);
 
         /* Create stacked layout: */
         m_pLayoutStacked = new QStackedLayout(m_pLayoutMain);
@@ -178,78 +171,29 @@ void UIToolsToolbar::prepareWidgets()
             }
 
             /* Add into layout: */
-            m_pLayoutMain->addLayout(m_pLayoutStacked, 0, 0);
+            m_pLayoutMain->addLayout(m_pLayoutStacked);
         }
 
-        /* Create sub-layout: */
-        m_pLayoutButton = new QHBoxLayout;
-        AssertPtrReturnVoid(m_pLayoutButton);
+        /* Create toolbar: */
+        m_pToolBar = new UIToolBar;
+        AssertPtrReturnVoid(m_pToolBar);
         {
-            /* Create exclusive button-group: */
-            QButtonGroup *pButtonGroup = new QButtonGroup(this);
-            AssertPtrReturnVoid(pButtonGroup);
-            {
-                /* Create button 'Machine': */
-                m_mapButtons[ActionType_Machine] = prepareSectionButton(m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine));
-                QIToolButton *pButtonMachine = m_mapButtons.value(ActionType_Machine, 0);
-                AssertPtrReturnVoid(pButtonMachine);
-                {
-                    /* Confgure button: */
-                    pButtonMachine->setMenu(m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine)->menu());
+            /* Configure toolbar: */
+            m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+            // TODO: Get rid of hard-coded stuff:
+            const QSize toolBarIconSize = m_pToolBar->iconSize();
+            if (toolBarIconSize.width() < 32 || toolBarIconSize.height() < 32)
+                m_pToolBar->setIconSize(QSize(32, 32));
 
-                    /* Add into button-group / layout: */
-                    pButtonGroup->addButton(pButtonMachine);
-                    m_pLayoutButton->addWidget(pButtonMachine);
-                }
-            }
+            /* Add actions: */
+            UIAction *pActionMachine = m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine);
+            m_pToolBar->addAction(pActionMachine);
+            QToolButton *pNamedMenuToolButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(pActionMachine));
+            pNamedMenuToolButton->setPopupMode(QToolButton::InstantPopup);
 
             /* Add into layout: */
-            m_pLayoutMain->addLayout(m_pLayoutButton, 0, 1);
-        }
-
-        /* Create label: */
-        m_pLabel = new QLabel;
-        AssertPtrReturnVoid(m_pLabel);
-        {
-            /* Configure label: */
-            m_pLabel->setAlignment(Qt::AlignTop | Qt::AlignCenter);
-
-            /* Add into layout: */
-            m_pLayoutMain->addWidget(m_pLabel, 1, 1);
+            m_pLayoutMain->addWidget(m_pToolBar);
         }
     }
-}
-
-/* static */
-QIToolButton *UIToolsToolbar::prepareSectionButton(QAction *pAction)
-{
-    /* Create button: */
-    QIToolButton *pButton = new QIToolButton;
-    AssertPtrReturn(pButton, 0);
-    {
-        /* Confgure button: */
-        pButton->setIconSize(QSize(32, 32));
-        pButton->setPopupMode(QToolButton::InstantPopup);
-        pButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-
-        /* Load action state to button: */
-        pButton->setIcon(pAction->icon());
-        pButton->setText(pAction->text());
-        pButton->setToolTip(pAction->toolTip());
-        pButton->setChecked(pAction->isChecked());
-
-        /* Link button and action: */
-        connect(pButton, &QIToolButton::toggled, pAction, &QAction::setChecked);
-        connect(pAction, &QAction::toggled, pButton, &QIToolButton::setChecked);
-    }
-    /* Return button: */
-    return pButton;
-}
-
-void UIToolsToolbar::prepareConnections()
-{
-    /* Prepare connections: */
-    if (m_mapButtons.contains(ActionType_Machine))
-        connect(m_mapButtons.value(ActionType_Machine), &QIToolButton::toggled, this, &UIToolsToolbar::sltHandleButtonToggle);
 }
 
