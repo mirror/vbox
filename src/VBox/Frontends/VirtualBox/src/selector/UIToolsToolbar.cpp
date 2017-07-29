@@ -99,7 +99,8 @@ void UIToolsToolbar::sltHandleButtonToggle()
 {
     /* Acquire the sender: */
     QIToolButton *pButton = sender() ? qobject_cast<QIToolButton*>(sender()) : 0;
-    AssertPtrReturnVoid(pButton);
+    if (!pButton)
+        pButton = m_mapButtons.value(m_mapButtons.keys().first());
 
     /* Handle known buttons: */
     if (m_pLayoutStacked && m_mapButtons.values().contains(pButton))
@@ -122,6 +123,9 @@ void UIToolsToolbar::prepare()
     prepareWidgets();
     /* Prepare connections: */
     prepareConnections();
+
+    /* Initialize: */
+    sltHandleButtonToggle();
 }
 
 void UIToolsToolbar::prepareMenu()
