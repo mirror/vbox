@@ -1,6 +1,6 @@
 [Unit]
 Description=VirtualBox Test Execution Service
-SourcePath=/root/validationkit/linux/vboxtxs
+SourcePath=/opt/validationkit/linux/vboxtxs
 
 [Service]
 Type=forking
@@ -10,8 +10,8 @@ IgnoreSIGPIPE=no
 KillMode=process
 GuessMainPID=no
 RemainAfterExit=yes
-ExecStart=/root/validationkit/linux/vboxtxs start
-ExecStop=/root/validationkit/linux/vboxtxs stop
+ExecStart=/opt/validationkit/linux/vboxtxs start
+ExecStop=/opt/validationkit/linux/vboxtxs stop
 
 [Install]
 WantedBy=multi-user.target

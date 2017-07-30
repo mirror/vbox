@@ -29,13 +29,15 @@ Linux Installation
 1. cd /root
 2. scp/download VBoxValidationKit*.zip there.
 3. unzip VBoxValidationKit*.zip
-4. chmod -R u+w,a+x /root/validationkit/
+4. chmod -R u+w,a+x /opt/validationkit/
 5. cd /etc/init.d/
-6. Link up the right init script (see connection type above):
-      nat)   ln -s ../../root/validationkit/linux/vboxtxs-nat ./vboxtxs
-      other) ln -s ../../root/validationkit/linux/vboxtxs     ./vboxtxs
-7. Add vboxtxs to runlevels 2, 3, 5 and any other that makes sense
+6a. init.rc: Link up the right init script (see connection type above):
+      nat)   ln -s ../../opt/validationkit/linux/vboxtxs-nat ./vboxtxs
+      other) ln -s ../../opt/validationkit/linux/vboxtxs     ./vboxtxs
+6b. systemd: Link/copy up the vboxtxs.system to [/usr]/lib/systemd/.
+7a. init.rc: Add vboxtxs to runlevels 2, 3, 5 and any other that makes sense
    on the distro. There is usually some command for doing this...
+7b: systemd: Enable the vboxtxs service.
 8. Check the cdrom location in vboxtxs and fix it so it's correct, make sure
    to update in svn as well.
 9. reboot / done.

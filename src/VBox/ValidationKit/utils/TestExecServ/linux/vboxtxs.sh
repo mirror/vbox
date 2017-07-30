@@ -78,15 +78,15 @@ killproc() {
 
 case "`uname -m`" in
     AMD64|amd64|X86_64|x86_64)
-        binary=/root/validationkit/linux/amd64/TestExecService
+        binary=/opt/validationkit/linux/amd64/TestExecService
         ;;
 
     i386|x86|i486|i586|i686|i787)
-        binary=/root/validationkit/linux/x86/TestExecService
+        binary=/opt/validationkit/linux/x86/TestExecService
         ;;
 
     *)
-        binary=/root/validationkit/linux/x86/TestExecService
+        binary=/opt/validationkit/linux/x86/TestExecService
         ;;
 esac
 
