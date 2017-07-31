@@ -275,7 +275,7 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
 void UITabBarItem::prepare()
 {
     /* Configure self: */
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     /* Create main layout: */
     m_pLayout = new QHBoxLayout(this);
@@ -293,9 +293,9 @@ void UITabBarItem::prepare()
 
         /* Configure layout: */
 #ifdef VBOX_WS_MAC
-        m_pLayout->setContentsMargins(iMargin + iSpacing, 0, iMargin + iSpacing, 0);
+        m_pLayout->setContentsMargins(iMargin + iSpacing, iMargin, iMargin + iSpacing, iMargin);
 #else
-        m_pLayout->setContentsMargins(iMargin + iSpacing, 0, iMargin, 0);
+        m_pLayout->setContentsMargins(iMargin + iSpacing, iMargin, iMargin, iMargin);
 #endif
         m_pLayout->setSpacing(iSpacing);
 
@@ -304,6 +304,7 @@ void UITabBarItem::prepare()
         AssertPtrReturnVoid(m_pLabelIcon);
         {
             /* Configure label: */
+            m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             m_pLabelIcon->setPixmap(m_icon.pixmap(iMetric));
         }
 
@@ -312,6 +313,7 @@ void UITabBarItem::prepare()
         AssertPtrReturnVoid(m_pLabelName);
         {
             /* Configure label: */
+            m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             m_pLabelName->setText(m_strName);
         }
 
@@ -487,7 +489,7 @@ void UITabBar::prepare()
     {
         /* Configure layout: */
         m_pLayout->setSpacing(0);
-        m_pLayout->setContentsMargins(0, 10, 0, 10);
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         // TODO: Workout stretch at the and as well,
         //       depending on which alignment is set.
