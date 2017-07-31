@@ -1471,8 +1471,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(InstallGuestAdditions)(FALSE), RTEXITCODE_FAILURE);
                 break;
             case 'a':   // --additions-iso
-                if (!ValueUnion.psz)
-                    return errorSyntax("No Additions ISO path specified");
                 vrc = RTPathAbs(ValueUnion.psz, szAbsPath, sizeof(szAbsPath));
                 if (RT_FAILURE(vrc))
                     return errorSyntax("RTPathAbs failed on '%s': %Rrc", ValueUnion.psz, vrc);
