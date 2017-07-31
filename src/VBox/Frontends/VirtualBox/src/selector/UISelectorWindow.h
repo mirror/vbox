@@ -266,6 +266,8 @@ private:
 
     /** @name Action update stuff.
       * @{ */
+        /** Performs update of actions visibility. */
+        void updateActionsVisibility();
         /** Performs update of actions appearance. */
         void updateActionsAppearance();
 
@@ -324,7 +326,7 @@ private:
 
     /** Holds the Chooser-pane instance. */
     UIGChooser         *m_pPaneChooser;
-    /** Holds the Tools-pane instance. */
+    /** Holds the Machine Tools-pane instance. */
     UIToolsPaneMachine *m_pPaneToolsMachine;
 
     /** Holds the list of Group menu actions. */

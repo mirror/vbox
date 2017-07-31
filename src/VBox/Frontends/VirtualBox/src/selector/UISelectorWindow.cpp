@@ -205,24 +205,8 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     /* Get current item: */
     UIVMItem *pItem = currentItem();
 
-    /* Determine which menu to show: */
-    m_pGroupMenuAction->setVisible(m_pPaneChooser->isSingleGroupSelected());
-    m_pMachineMenuAction->setVisible(!m_pPaneChooser->isSingleGroupSelected());
-    if (m_pGroupMenuAction->isVisible())
-    {
-        foreach (UIAction *pAction, m_machineActions)
-            pAction->hideShortcut();
-        foreach (UIAction *pAction, m_groupActions)
-            pAction->showShortcut();
-    }
-    else if (m_pMachineMenuAction->isVisible())
-    {
-        foreach (UIAction *pAction, m_groupActions)
-            pAction->hideShortcut();
-        foreach (UIAction *pAction, m_machineActions)
-            pAction->showShortcut();
-    }
-
+    /* Update action visibility: */
+    updateActionsVisibility();
     /* Update action appearance: */
     updateActionsAppearance();
 
@@ -1698,7 +1682,7 @@ void UISelectorWindow::prepareToolbar()
         /* Configure toolbar: */
         m_pToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        // TODO: Get red of hard-coded stuff:
+        // TODO: Get rid of hard-coded stuff:
         const QSize toolBarIconSize = m_pToolBar->iconSize();
         if (toolBarIconSize.width() < 32 || toolBarIconSize.height() < 32)
             m_pToolBar->setIconSize(QSize(32, 32));
@@ -1931,7 +1915,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pPaneToolsMachine, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             this, SLOT(sltOpenMachineSettingsDialog(const QString&, const QString&, const QString&)));
 
-
     /* Global event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltHandleStateChange(QString)));
     connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltHandleStateChange(QString)));
@@ -2084,6 +2067,30 @@ void UISelectorWindow::performStartOrShowVirtualMachines(const QList<UIVMItem*> 
             CMachine machine = pItem->machine();
             vboxGlobal().launchMachine(machine, enmItemLaunchMode);
         }
+}
+
+void UISelectorWindow::updateActionsVisibility()
+{
+    /* Determine whether Machine or Group menu should be shown at all: */
+    const bool fMachineMenuShown = !m_pPaneChooser->isSingleGroupSelected();
+    m_pMachineMenuAction->setVisible(fMachineMenuShown);
+    m_pGroupMenuAction->setVisible(!fMachineMenuShown);
+
+    /* Hide action shortcuts: */
+    if (!fMachineMenuShown)
+        foreach (UIAction *pAction, m_machineActions)
+            pAction->hideShortcut();
+    if (fMachineMenuShown)
+        foreach (UIAction *pAction, m_groupActions)
+            pAction->hideShortcut();
+
+    /* Show what should be shown: */
+    if (fMachineMenuShown)
+        foreach (UIAction *pAction, m_machineActions)
+            pAction->showShortcut();
+    if (!fMachineMenuShown)
+        foreach (UIAction *pAction, m_groupActions)
+            pAction->showShortcut();
 }
 
 void UISelectorWindow::updateActionsAppearance()
