@@ -24,6 +24,7 @@
 #include <QWidget>
 
 /* GUI includes: */
+#include "UIToolsPaneGlobal.h"
 #include "UIToolsPaneMachine.h"
 
 /* Forward declarations: */
@@ -46,9 +47,13 @@ signals:
 
     /** Notify listeners about Machine tool of particular @a enmType opened. */
     void sigToolOpenedMachine(const ToolTypeMachine enmType);
+    /** Notify listeners about Global tool of particular @a enmType opened. */
+    void sigToolOpenedGlobal(const ToolTypeGlobal enmType);
 
     /** Notify listeners about Machine tool of particular @a enmType closed. */
     void sigToolClosedMachine(const ToolTypeMachine enmType);
+    /** Notify listeners about Global tool of particular @a enmType closed. */
+    void sigToolClosedGlobal(const ToolTypeGlobal enmType);
 
 public:
 
@@ -60,12 +65,18 @@ private slots:
 
     /** Handles request to open Machine tool. */
     void sltHandleOpenToolMachine();
+    /** Handles request to open Global tool. */
+    void sltHandleOpenToolGlobal();
 
     /** Handles request to close Machine tool with passed @a uuid. */
     void sltHandleCloseToolMachine(const QUuid &uuid);
+    /** Handles request to close Global tool with passed @a uuid. */
+    void sltHandleCloseToolGlobal(const QUuid &uuid);
 
     /** Handles request to make Machine tool with passed @a uuid current one. */
     void sltHandleToolChosenMachine(const QUuid &uuid);
+    /** Handles request to make Global tool with passed @a uuid current one. */
+    void sltHandleToolChosenGlobal(const QUuid &uuid);
 
     /** Handles action toggle. */
     void sltHandleActionToggle();
@@ -89,12 +100,16 @@ private:
 
     /** Holds the Machine tab-bar instance. */
     UITabBar *m_pTabBarMachine;
+    /** Holds the Global tab-bar instance. */
+    UITabBar *m_pTabBarGlobal;
 
     /** Holds the toolbar instance. */
     UIToolBar *m_pToolBar;
 
     /** Holds the map of opened Machine tool IDs. */
     QMap<ToolTypeMachine, QUuid>  m_mapTabIdsMachine;
+    /** Holds the map of opened Global tool IDs. */
+    QMap<ToolTypeGlobal, QUuid>   m_mapTabIdsGlobal;
 };
 
 #endif /* !___UIToolsToolbar_h___ */

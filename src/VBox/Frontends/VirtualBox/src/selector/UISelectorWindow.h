@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
+#include "UIToolsPaneGlobal.h"
 #include "UIToolsPaneMachine.h"
 #include "VBoxGlobal.h"
 
@@ -37,6 +38,7 @@ class UIGChooser;
 #ifndef VBOX_WS_MAC
 class UIMainBar;
 #endif
+class UISlidingWidget;
 class UIToolBar;
 class UIToolsToolbar;
 class UIVMItem;
@@ -182,13 +184,23 @@ private slots:
         void sltMachineCloseMenuAboutToShow();
     /** @} */
 
+    /** @name Tools-toolbar stuff.
+      * @{ */
+        /** Handles tools type switch. */
+        void sltHandleToolsTypeSwitch();
+    /** @} */
+
     /** @name Tools-pane stuff.
       * @{ */
         /** Handles rquest to open Machine tool of passed @a enmType. */
         void sltHandleToolOpenedMachine(ToolTypeMachine enmType);
+        /** Handles rquest to open Global tool of passed @a enmType. */
+        void sltHandleToolOpenedGlobal(ToolTypeGlobal enmType);
 
         /** Handles rquest to close Machine tool of passed @a enmType. */
         void sltHandleToolClosedMachine(ToolTypeMachine enmType);
+        /** Handles rquest to close Global tool of passed @a enmType. */
+        void sltHandleToolClosedGlobal(ToolTypeGlobal enmType);
     /** @} */
 
 private:
@@ -312,6 +324,9 @@ private:
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
 
+    /** Holds the sliding-widget isntance. */
+    UISlidingWidget *m_pSlidingWidget;
+
     /** Holds the central splitter instance. */
     QISplitter *m_pSplitter;
 
@@ -328,6 +343,8 @@ private:
     UIGChooser         *m_pPaneChooser;
     /** Holds the Machine Tools-pane instance. */
     UIToolsPaneMachine *m_pPaneToolsMachine;
+    /** Holds the Global Tools-pane instance. */
+    UIToolsPaneGlobal  *m_pPaneToolsGlobal;
 
     /** Holds the list of Group menu actions. */
     QList<UIAction*> m_groupActions;

@@ -44,6 +44,7 @@ UIToolsToolbar::UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent /* = 
     , m_pLayoutMain(0)
     , m_pLayoutStacked(0)
     , m_pTabBarMachine(0)
+    , m_pTabBarGlobal(0)
     , m_pToolBar(0)
 {
     /* Prepare: */
@@ -73,6 +74,29 @@ void UIToolsToolbar::sltHandleOpenToolMachine()
     emit sigToolOpenedMachine(enmType);
 }
 
+void UIToolsToolbar::sltHandleOpenToolGlobal()
+{
+    /* Acquire sender action: */
+    const QAction *pAction = sender() ? qobject_cast<const QAction*>(sender()) : 0;
+    /* Acquire action type: */
+    const ToolTypeGlobal enmType = pAction->property("ToolTypeGlobal").value<ToolTypeGlobal>();
+
+    /* Get corresponding tab id: */
+    QUuid idTab;
+    if (m_mapTabIdsGlobal.contains(enmType))
+        idTab = m_mapTabIdsGlobal.value(enmType);
+    else
+    {
+        idTab = m_pTabBarGlobal->addTab(pAction->icon(), pAction->text().remove('&'));
+        m_mapTabIdsGlobal[enmType] = idTab;
+    }
+    /* And make it active: */
+    m_pTabBarGlobal->setCurrent(idTab);
+
+    /* Notify listeners: */
+    emit sigToolOpenedGlobal(enmType);
+}
+
 void UIToolsToolbar::sltHandleCloseToolMachine(const QUuid &uuid)
 {
     /* If the ID is registered: */
@@ -87,11 +111,32 @@ void UIToolsToolbar::sltHandleCloseToolMachine(const QUuid &uuid)
     }
 }
 
+void UIToolsToolbar::sltHandleCloseToolGlobal(const QUuid &uuid)
+{
+    /* If the ID is registered: */
+    if (m_mapTabIdsGlobal.values().contains(uuid))
+    {
+        /* Notify listeners: */
+        emit sigToolClosedGlobal(m_mapTabIdsGlobal.key(uuid));
+
+        /* And remove the tab: */
+        m_pTabBarGlobal->removeTab(uuid);
+        m_mapTabIdsGlobal.remove(m_mapTabIdsGlobal.key(uuid));
+    }
+}
+
 void UIToolsToolbar::sltHandleToolChosenMachine(const QUuid &uuid)
 {
     /* If the ID is registered => Notify listeners: */
     if (m_mapTabIdsMachine.values().contains(uuid))
         emit sigToolOpenedMachine(m_mapTabIdsMachine.key(uuid));
+}
+
+void UIToolsToolbar::sltHandleToolChosenGlobal(const QUuid &uuid)
+{
+    /* If the ID is registered => Notify listeners: */
+    if (m_mapTabIdsGlobal.values().contains(uuid))
+        emit sigToolOpenedGlobal(m_mapTabIdsGlobal.key(uuid));
 }
 
 void UIToolsToolbar::sltHandleActionToggle()
@@ -106,6 +151,11 @@ void UIToolsToolbar::sltHandleActionToggle()
     {
         if (pAction == m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine))
             m_pLayoutStacked->setCurrentWidget(m_pTabBarMachine);
+
+        else
+
+        if (pAction == m_pActionPool->action(UIActionIndexST_M_Tools_T_Global))
+            m_pLayoutStacked->setCurrentWidget(m_pTabBarGlobal);
     }
 }
 
@@ -142,6 +192,33 @@ void UIToolsToolbar::prepareMenu()
     m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->setMenu(pMenuMachine);
     connect(m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine), &UIAction::toggled,
             this, &UIToolsToolbar::sltHandleActionToggle);
+
+    /* Configure 'Global' menu: */
+    UIMenu *pMenuGlobal = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global)->menu();
+    AssertPtrReturnVoid(pMenuGlobal);
+    {
+        /* Add 'Virtual Media Manager' action: */
+        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager), &UIAction::triggered,
+                this, &UIToolsToolbar::sltHandleOpenToolGlobal);
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager)
+            ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_VirtualMedia));
+
+        /* Add 'Host Network Manager' action: */
+        pMenuGlobal->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager));
+        connect(m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager), &UIAction::triggered,
+                this, &UIToolsToolbar::sltHandleOpenToolGlobal);
+        m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager)
+            ->setProperty("ToolTypeGlobal", QVariant::fromValue(ToolTypeGlobal_HostNetwork));
+    }
+
+    /* Configure 'Global' toggle action: */
+    m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->setMenu(pMenuGlobal);
+    connect(m_pActionPool->action(UIActionIndexST_M_Tools_T_Global), &UIAction::toggled,
+            this, &UIToolsToolbar::sltHandleActionToggle);
+
+    /* By default 'Machine' toggle action is toggled: */
+    m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
 }
 
 void UIToolsToolbar::prepareWidgets()
@@ -172,6 +249,20 @@ void UIToolsToolbar::prepareWidgets()
                 m_pLayoutStacked->addWidget(m_pTabBarMachine);
             }
 
+            /* Create Global tab-bar: */
+            m_pTabBarGlobal = new UITabBar;
+            AssertPtrReturnVoid(m_pTabBarGlobal);
+            {
+                /* Configure tab-bar: */
+                connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
+                        this, &UIToolsToolbar::sltHandleCloseToolGlobal);
+                connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
+                        this, &UIToolsToolbar::sltHandleToolChosenGlobal);
+
+                /* Add into layout: */
+                m_pLayoutStacked->addWidget(m_pTabBarGlobal);
+            }
+
             /* Add into layout: */
             m_pLayoutMain->addLayout(m_pLayoutStacked);
         }
@@ -188,10 +279,8 @@ void UIToolsToolbar::prepareWidgets()
                 m_pToolBar->setIconSize(QSize(32, 32));
 
             /* Add actions: */
-            UIAction *pActionMachine = m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine);
-            m_pToolBar->addAction(pActionMachine);
-            QToolButton *pNamedMenuToolButton = qobject_cast<QToolButton*>(m_pToolBar->widgetForAction(pActionMachine));
-            pNamedMenuToolButton->setPopupMode(QToolButton::InstantPopup);
+            m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine));
+            m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Tools_T_Global));
 
             /* Add into layout: */
             m_pLayoutMain->addWidget(m_pToolBar);

@@ -43,6 +43,7 @@
 # include "UIModalWindowManager.h"
 # include "UISelectorWindow.h"
 # include "UISettingsDialogSpecific.h"
+# include "UISlidingWidget.h"
 # include "UISpacerWidgets.h"
 # include "UIToolBar.h"
 # include "UIVMLogViewer.h"
@@ -110,6 +111,7 @@ UISelectorWindow::UISelectorWindow()
     : m_fPolished(false)
     , m_fWarningAboutInaccessibleMediaShown(false)
     , m_pActionPool(0)
+    , m_pSlidingWidget(0)
     , m_pSplitter(0)
 #ifndef VBOX_WS_MAC
     , m_pBar(0)
@@ -118,6 +120,7 @@ UISelectorWindow::UISelectorWindow()
     , m_pToolbarTools(0)
     , m_pPaneChooser(0)
     , m_pPaneToolsMachine(0)
+    , m_pPaneToolsGlobal(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
     , m_pManagerVirtualMedia(0)
@@ -278,7 +281,8 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
     m_fWarningAboutInaccessibleMediaShown = true;
 
     /* Make sure MM window is not opened: */
-    if (m_pManagerVirtualMedia)
+    if (   m_pManagerVirtualMedia
+        || m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_VirtualMedia))
         return;
 
     /* Look for at least one inaccessible medium: */
@@ -383,6 +387,13 @@ void UISelectorWindow::sltHandleStateChange(QString)
 
 void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
 {
+    /* First check if instance of widget opened embedded: */
+    if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_VirtualMedia))
+    {
+        m_pPaneToolsGlobal->openTool(ToolTypeGlobal_VirtualMedia);
+        return;
+    }
+
     /* Create instance if not yet created: */
     if (!m_pManagerVirtualMedia)
     {
@@ -409,6 +420,13 @@ void UISelectorWindow::sltCloseVirtualMediumManagerWindow()
 
 void UISelectorWindow::sltOpenHostNetworkManagerWindow()
 {
+    /* First check if instance of widget opened embedded: */
+    if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_HostNetwork))
+    {
+        m_pPaneToolsGlobal->openTool(ToolTypeGlobal_HostNetwork);
+        return;
+    }
+
     /* Create instance if not yet created: */
     if (!m_pManagerHostNetwork)
     {
@@ -1008,6 +1026,22 @@ void UISelectorWindow::sltMachineCloseMenuAboutToShow()
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
 }
 
+void UISelectorWindow::sltHandleToolsTypeSwitch()
+{
+    /* If Machine tool button is checked => go backward: */
+    if (actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
+        m_pSlidingWidget->moveBackward();
+
+    else
+
+    /* If Global tool button is checked => go forward: */
+    if (actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
+        m_pSlidingWidget->moveForward();
+
+    /* Update action visibility: */
+    updateActionsVisibility();
+}
+
 void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
 {
     /* Open corresponding tool: */
@@ -1025,10 +1059,22 @@ void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
     }
 }
 
+void UISelectorWindow::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType)
+{
+    /* Open corresponding tool: */
+    m_pPaneToolsGlobal->openTool(enmType);
+}
+
 void UISelectorWindow::sltHandleToolClosedMachine(ToolTypeMachine enmType)
 {
     /* Close corresponding tool: */
     m_pPaneToolsMachine->closeTool(enmType);
+}
+
+void UISelectorWindow::sltHandleToolClosedGlobal(ToolTypeGlobal enmType)
+{
+    /* Close corresponding tool: */
+    m_pPaneToolsGlobal->closeTool(enmType);
 }
 
 UIVMItem* UISelectorWindow::currentItem() const
@@ -1063,6 +1109,22 @@ void UISelectorWindow::retranslateUi()
            "<img src=:/welcome.png align=right/></p>"
            "<p>The right part of this window represents a set of tools "
            "you have opened for the currently chosen machine. "
+           "For more tools check the corresponding menu at the right side "
+           "of the main tool bar located at the top of the window.</p>"
+           "<p>You can press the <b>%1</b> key to get instant help, "
+           "or visit "
+           "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+           "for the latest information and news.</p>")
+           .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+
+    /* Translate Global Tools welcome screen: */
+    m_pPaneToolsGlobal->setDetailsText(
+        tr("<h3>Welcome to VirtualBox!</h3>"
+           "<p>This window represents a set of global tools "
+           "you have opened. They are not related to any particular machine "
+           "but to whole VirtualBox instead. This list will be extended with "
+           "new tools in the future releases. "
+           "<img src=:/welcome.png align=right/></p>"
            "For more tools check the corresponding menu at the right side "
            "of the main tool bar located at the top of the window.</p>"
            "<p>You can press the <b>%1</b> key to get instant help, "
@@ -1712,6 +1774,7 @@ void UISelectorWindow::prepareToolbar()
 
                 /* Add 'Tools' actions into action-group: */
                 pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Machine));
+                pActionGroupTools->addAction(actionPool()->action(UIActionIndexST_M_Tools_T_Global));
             }
 
             /* Add into toolbar: */
@@ -1778,40 +1841,52 @@ void UISelectorWindow::prepareWidgets()
 
 #endif /* !VBOX_WS_MAC */
 
-            /* Create splitter: */
-            m_pSplitter = new QISplitter;
-            AssertPtrReturnVoid(m_pSplitter);
+            /* Create sliding-widget: */
+            m_pSlidingWidget = new UISlidingWidget;
+            AssertPtrReturnVoid(m_pSlidingWidget);
             {
-                /* Configure splitter: */
+                /* Create splitter: */
+                m_pSplitter = new QISplitter;
+                AssertPtrReturnVoid(m_pSplitter);
+                {
+                    /* Configure splitter: */
 #ifdef VBOX_WS_X11
-                m_pSplitter->setHandleType(QISplitter::Native);
+                    m_pSplitter->setHandleType(QISplitter::Native);
 #endif
 
-                /* Prepare Chooser-pane: */
-                m_pPaneChooser = new UIGChooser(this);
-                AssertPtrReturnVoid(m_pPaneChooser);
-                {
-                    /* Add into splitter: */
-                    m_pSplitter->addWidget(m_pPaneChooser);
+                    /* Prepare Chooser-pane: */
+                    m_pPaneChooser = new UIGChooser(this);
+                    AssertPtrReturnVoid(m_pPaneChooser);
+                    {
+                        /* Add into splitter: */
+                        m_pSplitter->addWidget(m_pPaneChooser);
+                    }
+
+                    /* Prepare Machine Tools-pane: */
+                    m_pPaneToolsMachine = new UIToolsPaneMachine(actionPool());
+                    AssertPtrReturnVoid(m_pPaneToolsMachine);
+                    {
+                        /* Add into splitter: */
+                        m_pSplitter->addWidget(m_pPaneToolsMachine);
+                    }
+
+                    /* Adjust splitter colors according to main widgets it splits: */
+                    m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
+                                                 m_pPaneToolsMachine->palette().color(QPalette::Active, QPalette::Window));
+                    /* Set the initial distribution. The right site is bigger. */
+                    m_pSplitter->setStretchFactor(0, 2);
+                    m_pSplitter->setStretchFactor(1, 3);
                 }
 
-                /* Prepare Machine Tools-pane: */
-                m_pPaneToolsMachine = new UIToolsPaneMachine(actionPool());
-                AssertPtrReturnVoid(m_pPaneToolsMachine);
-                {
-                    /* Add into splitter: */
-                    m_pSplitter->addWidget(m_pPaneToolsMachine);
-                }
+                /* Prepare Global Tools-pane: */
+                m_pPaneToolsGlobal = new UIToolsPaneGlobal(actionPool());
+                AssertPtrReturnVoid(m_pPaneToolsGlobal);
 
-                /* Adjust splitter colors according to main widgets it splits: */
-                m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
-                                             m_pPaneToolsMachine->palette().color(QPalette::Active, QPalette::Window));
-                /* Set the initial distribution. The right site is bigger. */
-                m_pSplitter->setStretchFactor(0, 2);
-                m_pSplitter->setStretchFactor(1, 3);
+                /* Add left/right widgets into sliding widget: */
+                m_pSlidingWidget->setWidgets(m_pSplitter, m_pPaneToolsGlobal);
 
                 /* Add into layout: */
-                pLayout->addWidget(m_pSplitter);
+                pLayout->addWidget(m_pSlidingWidget);
             }
         }
     }
@@ -1890,6 +1965,12 @@ void UISelectorWindow::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown), SIGNAL(triggered()), this, SLOT(sltPerformShutdownMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff), SIGNAL(triggered()), this, SLOT(sltPerformPowerOffMachine()));
 
+    /* 'Tools' actions connections: */
+    connect(actionPool()->action(UIActionIndexST_M_Tools_T_Machine), &UIAction::toggled,
+            this, &UISelectorWindow::sltHandleToolsTypeSwitch);
+    connect(actionPool()->action(UIActionIndexST_M_Tools_T_Global), &UIAction::toggled,
+            this, &UISelectorWindow::sltHandleToolsTypeSwitch);
+
     /* Status-bar connections: */
     connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
             this, SLOT(sltShowSelectorWindowContextMenu(const QPoint&)));
@@ -1909,7 +1990,9 @@ void UISelectorWindow::prepareConnections()
     ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
 #endif /* VBOX_WS_MAC */
     connect(m_pToolbarTools, &UIToolsToolbar::sigToolOpenedMachine, this, &UISelectorWindow::sltHandleToolOpenedMachine);
+    connect(m_pToolbarTools, &UIToolsToolbar::sigToolOpenedGlobal,  this, &UISelectorWindow::sltHandleToolOpenedGlobal);
     connect(m_pToolbarTools, &UIToolsToolbar::sigToolClosedMachine, this, &UISelectorWindow::sltHandleToolClosedMachine);
+    connect(m_pToolbarTools, &UIToolsToolbar::sigToolClosedGlobal,  this, &UISelectorWindow::sltHandleToolClosedGlobal);
 
     /* VM desktop connections: */
     connect(m_pPaneToolsMachine, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
@@ -2072,9 +2155,10 @@ void UISelectorWindow::performStartOrShowVirtualMachines(const QList<UIVMItem*> 
 void UISelectorWindow::updateActionsVisibility()
 {
     /* Determine whether Machine or Group menu should be shown at all: */
+    const bool fMachineOrGroupMenuShown = actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked();
     const bool fMachineMenuShown = !m_pPaneChooser->isSingleGroupSelected();
-    m_pMachineMenuAction->setVisible(fMachineMenuShown);
-    m_pGroupMenuAction->setVisible(!fMachineMenuShown);
+    m_pMachineMenuAction->setVisible(fMachineOrGroupMenuShown && fMachineMenuShown);
+    m_pGroupMenuAction->setVisible(fMachineOrGroupMenuShown && !fMachineMenuShown);
 
     /* Hide action shortcuts: */
     if (!fMachineMenuShown)
@@ -2083,6 +2167,10 @@ void UISelectorWindow::updateActionsVisibility()
     if (fMachineMenuShown)
         foreach (UIAction *pAction, m_groupActions)
             pAction->hideShortcut();
+
+    /* Update actions visibility: */
+    foreach (UIAction *pAction, m_machineActions)
+        pAction->setVisible(fMachineOrGroupMenuShown);
 
     /* Show what should be shown: */
     if (fMachineMenuShown)

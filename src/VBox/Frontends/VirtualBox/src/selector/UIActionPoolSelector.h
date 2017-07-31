@@ -97,6 +97,12 @@ enum UIActionIndexST
     UIActionIndexST_M_Tools_M_Machine_Details,
     UIActionIndexST_M_Tools_M_Machine_Snapshots,
 
+    /* Global Tools actions: */
+    UIActionIndexST_M_Tools_T_Global,
+    UIActionIndexST_M_Tools_M_Global,
+    UIActionIndexST_M_Tools_M_Global_VirtualMediaManager,
+    UIActionIndexST_M_Tools_M_Global_HostNetworkManager,
+
     /* Maximum index: */
     UIActionIndexST_Max
 };
