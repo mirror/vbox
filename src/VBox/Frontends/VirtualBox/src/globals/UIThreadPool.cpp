@@ -165,8 +165,8 @@ void UIThreadPool::enqueueTask(UITask *pTask)
     AssertReturnVoid(!isTerminating());
 
     /* Prepare task: */
-    connect(pTask, SIGNAL(sigComplete(UITask*)),
-            this, SLOT(sltHandleTaskComplete(UITask*)), Qt::QueuedConnection);
+    connect(pTask, &UITask::sigComplete,
+            this, &UIThreadPool::sltHandleTaskComplete, Qt::QueuedConnection);
 
     /* Lock initially: */
     m_everythingLocker.lock();
@@ -189,8 +189,8 @@ void UIThreadPool::enqueueTask(UITask *pTask)
             {
                 /* Prepare the new worker: */
                 UIThreadWorker *pWorker = new UIThreadWorker(this, idxFirstUnused);
-                connect(pWorker, SIGNAL(sigFinished(UIThreadWorker*)),
-                        this, SLOT(sltHandleWorkerFinished(UIThreadWorker*)), Qt::QueuedConnection);
+                connect(pWorker, &UIThreadWorker::sigFinished,
+                        this, &UIThreadPool::sltHandleWorkerFinished, Qt::QueuedConnection);
                 m_workers[idxFirstUnused] = pWorker;
                 ++m_cWorkers;
 

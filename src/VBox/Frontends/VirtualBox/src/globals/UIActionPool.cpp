@@ -110,8 +110,9 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType type)
 
 #ifdef VBOX_WS_MAC
     /* Make sure each action notifies it's parent about hovering: */
-    connect(this, SIGNAL(hovered()), parent(), SLOT(sltActionHovered()));
-#endif /* VBOX_WS_MAC */
+    connect(this, &UIAction::hovered,
+            static_cast<UIActionPool*>(parent()), &UIActionPool::sltActionHovered);
+#endif
 }
 
 UIMenu* UIAction::menu() const
@@ -229,8 +230,8 @@ void UIActionMenu::prepare()
     AssertPtrReturnVoid(menu());
     {
         /* Prepare menu: */
-        connect(menu(), SIGNAL(aboutToShow()),
-                parent(), SLOT(sltHandleMenuPrepare()));
+        connect(menu(), &UIMenu::aboutToShow,
+                actionPool(), &UIActionPool::sltHandleMenuPrepare);
     }
 }
 
@@ -394,8 +395,8 @@ void UIActionPolymorphicMenu::prepare()
     AssertPtrReturnVoid(m_pMenu);
     {
         /* Prepare menu: */
-        connect(m_pMenu, SIGNAL(aboutToShow()),
-                parent(), SLOT(sltHandleMenuPrepare()));
+        connect(m_pMenu, &UIMenu::aboutToShow,
+                actionPool(), &UIActionPool::sltHandleMenuPrepare);
         /* Show menu: */
         showMenu();
     }
@@ -1155,32 +1156,32 @@ void UIActionPool::prepareConnections()
 {
     /* 'Application' menu connections: */
 #ifdef RT_OS_DARWIN
-    connect(action(UIActionIndex_M_Application_S_About), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_M_Application_S_About), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowHelpAboutDialog, Qt::UniqueConnection);
 #endif /* RT_OS_DARWIN */
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    connect(action(UIActionIndex_M_Application_S_NetworkAccessManager), SIGNAL(triggered()),
-            gNetworkManager, SLOT(show()), Qt::UniqueConnection);
-    connect(action(UIActionIndex_M_Application_S_CheckForUpdates), SIGNAL(triggered()),
-            gUpdateManager, SLOT(sltForceCheck()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_M_Application_S_NetworkAccessManager), &UIAction::triggered,
+            gNetworkManager, &UINetworkManager::show, Qt::UniqueConnection);
+    connect(action(UIActionIndex_M_Application_S_CheckForUpdates), &UIAction::triggered,
+            gUpdateManager, &UIUpdateManager::sltForceCheck, Qt::UniqueConnection);
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    connect(action(UIActionIndex_M_Application_S_ResetWarnings), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_M_Application_S_ResetWarnings), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltResetSuppressedMessages, Qt::UniqueConnection);
 
     /* 'Help' menu connections: */
-    connect(action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_BugTracker), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowBugTracker()), Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_Forums), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowForums()), Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_Oracle), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowOracle()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_Contents), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog, Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_WebSite), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowHelpWebDialog, Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_BugTracker), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowBugTracker, Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_Forums), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowForums, Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_Oracle), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowOracle, Qt::UniqueConnection);
 #ifndef RT_OS_DARWIN
-    connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_About), &UIAction::triggered,
+            &msgCenter(), &UIMessageCenter::sltShowHelpAboutDialog, Qt::UniqueConnection);
 #endif /* !RT_OS_DARWIN */
 }
 

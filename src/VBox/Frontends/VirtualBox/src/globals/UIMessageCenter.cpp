@@ -2803,7 +2803,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
         /* Create User Manual downloader: */
         UIDownloaderUserManual *pDl = UIDownloaderUserManual::create();
         /* After downloading finished => show User Manual: */
-        connect(pDl, SIGNAL(sigDownloadFinished(const QString&)), this, SLOT(sltShowUserManual(const QString&)));
+        connect(pDl, &UIDownloaderUserManual::sigDownloadFinished, this, &UIMessageCenter::sltShowUserManual);
         /* Start downloading: */
         pDl->start();
     }
@@ -2874,6 +2874,9 @@ void UIMessageCenter::prepare()
 
     /* Prepare interthread connection: */
     qRegisterMetaType<MessageType>();
+    // Won't go until we are supporting C++11 or at least variadic templates everywhere.
+    // connect(this, &UIMessageCenter::sigToShowMessageBox,
+    //         this, &UIMessageCenter::sltShowMessageBox,
     connect(this, SIGNAL(sigToShowMessageBox(QWidget*, MessageType,
                                              const QString&, const QString&,
                                              int, int, int,

@@ -240,8 +240,10 @@ void UIShortcutPool::prepare()
 void UIShortcutPool::prepareConnections()
 {
     /* Connect to extra-data signals: */
-    connect(gEDataManager, SIGNAL(sigSelectorUIShortcutChange()), this, SLOT(sltReloadSelectorShortcuts()));
-    connect(gEDataManager, SIGNAL(sigRuntimeUIShortcutChange()), this, SLOT(sltReloadMachineShortcuts()));
+    connect(gEDataManager, &UIExtraDataManager::sigSelectorUIShortcutChange,
+            this, &UIShortcutPool::sltReloadSelectorShortcuts);
+    connect(gEDataManager, &UIExtraDataManager::sigRuntimeUIShortcutChange,
+            this, &UIShortcutPool::sltReloadMachineShortcuts);
 }
 
 void UIShortcutPool::retranslateUi()

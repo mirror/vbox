@@ -459,18 +459,20 @@ public:
     /** Returns the list of main menus. */
     virtual QList<QMenu*> menus() const = 0;
 
-protected slots:
+public slots:
 
     /** Handles menu prepare. */
     void sltHandleMenuPrepare();
 
-    /** Loads keyboard shortcuts of action-pool into shortcuts-pool. */
-    void sltApplyShortcuts() { updateShortcuts(); }
-
 #ifdef VBOX_WS_MAC
     /** Handles action hovered signal. */
     void sltActionHovered();
-#endif /* VBOX_WS_MAC */
+#endif
+
+protected slots:
+
+    /** Loads keyboard shortcuts of action-pool into shortcuts-pool. */
+    void sltApplyShortcuts() { updateShortcuts(); }
 
 protected:
 

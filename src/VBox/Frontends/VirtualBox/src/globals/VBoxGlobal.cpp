@@ -3526,10 +3526,10 @@ bool VBoxGlobal::processArgs()
 void VBoxGlobal::prepare()
 {
     /* Make sure QApplication cleanup us on exit: */
-    connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(cleanup()));
+    connect(qApp, &QGuiApplication::aboutToQuit, this, &VBoxGlobal::cleanup);
     /* Make sure we handle host OS session shutdown as well: */
-    connect(qApp, SIGNAL(commitDataRequest(QSessionManager &)),
-            this, SLOT(sltHandleCommitDataRequest(QSessionManager &)));
+    connect(qApp, &QGuiApplication::commitDataRequest,
+            this, &VBoxGlobal::sltHandleCommitDataRequest);
 
 #ifdef VBOX_WS_MAC
     /* Determine OS release early: */
@@ -3607,8 +3607,8 @@ void VBoxGlobal::prepare()
     comWrappersReinit();
 
     /* Watch for the VBoxSVC availability changes: */
-    connect(gVBoxEvents, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
-            this, SLOT(sltHandleVBoxSVCAvailabilityChange(bool)));
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigVBoxSVCAvailabilityChange,
+            this, &VBoxGlobal::sltHandleVBoxSVCAvailabilityChange);
 
     /* Prepare thread-pool instance: */
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
@@ -3620,8 +3620,8 @@ void VBoxGlobal::prepare()
 
     retranslateUi();
 
-    connect(gEDataManager, SIGNAL(sigLanguageChange(QString)),
-            this, SLOT(sltGUILanguageChange(QString)));
+    connect(gEDataManager, &UIExtraDataManager::sigLanguageChange,
+            this, &VBoxGlobal::sltGUILanguageChange);
 
     qApp->installEventFilter (this);
 
@@ -3929,16 +3929,16 @@ void VBoxGlobal::prepare()
     m_pMediumEnumerator = new UIMediumEnumerator;
     {
         /* Prepare medium-enumerator: */
-        connect(m_pMediumEnumerator, SIGNAL(sigMediumCreated(const QString&)),
-                this, SIGNAL(sigMediumCreated(const QString&)));
-        connect(m_pMediumEnumerator, SIGNAL(sigMediumDeleted(const QString&)),
-                this, SIGNAL(sigMediumDeleted(const QString&)));
-        connect(m_pMediumEnumerator, SIGNAL(sigMediumEnumerationStarted()),
-                this, SIGNAL(sigMediumEnumerationStarted()));
-        connect(m_pMediumEnumerator, SIGNAL(sigMediumEnumerated(const QString&)),
-                this, SIGNAL(sigMediumEnumerated(const QString&)));
-        connect(m_pMediumEnumerator, SIGNAL(sigMediumEnumerationFinished()),
-                this, SIGNAL(sigMediumEnumerationFinished()));
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
+                this, &VBoxGlobal::sigMediumCreated);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
+                this, &VBoxGlobal::sigMediumDeleted);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
+                this, &VBoxGlobal::sigMediumEnumerationStarted);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
+                this, &VBoxGlobal::sigMediumEnumerated);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
+                this, &VBoxGlobal::sigMediumEnumerationFinished);
     }
 
     /* Create shortcut pool: */

@@ -84,11 +84,11 @@ void UIAnimation::prepare()
     /* Create 'start' state: */
     m_pStateStart = new QState(m_pAnimationMachine);
     m_pStateStart->assignProperty(parent(), "AnimationState", QString("Start"));
-    connect(m_pStateStart, SIGNAL(propertiesAssigned()), this, SIGNAL(sigStateEnteredStart()));
+    connect(m_pStateStart, &QState::propertiesAssigned, this, &UIAnimation::sigStateEnteredStart);
     /* Create 'final' state: */
     m_pStateFinal = new QState(m_pAnimationMachine);
     m_pStateFinal->assignProperty(parent(), "AnimationState", QString("Final"));
-    connect(m_pStateFinal, SIGNAL(propertiesAssigned()), this, SIGNAL(sigStateEnteredFinal()));
+    connect(m_pStateFinal, &QState::propertiesAssigned, this, &UIAnimation::sigStateEnteredFinal);
 
     /* Prepare 'forward' animation: */
     m_pForwardAnimation = new QPropertyAnimation(parent(), m_pszPropertyName, m_pAnimationMachine);

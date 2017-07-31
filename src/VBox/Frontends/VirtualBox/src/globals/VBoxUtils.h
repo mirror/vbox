@@ -37,7 +37,7 @@ public:
     QObjectPropertySetter(QObject *pParent, const QString &strName)
         : QObject(pParent), m_strName(strName) {}
 
-private slots:
+public slots:
 
     /** Assigns property value. */
     void sltAssignProperty(const QString &strValue)

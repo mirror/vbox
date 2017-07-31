@@ -404,10 +404,10 @@ void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
 //    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", screenCount());
 
     /* Listen for screen signals: */
-    connect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
-            this, SLOT(sltHandleHostScreenResized(const QRect &)));
-    connect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
-            this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+    connect(pHostScreen, &QScreen::geometryChanged,
+            this, &UIDesktopWidgetWatchdog::sltHandleHostScreenResized);
+    connect(pHostScreen, &QScreen::availableGeometryChanged,
+            this, &UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized);
 
 # ifdef VBOX_WS_X11
     /* Update host-screen configuration: */
@@ -423,10 +423,10 @@ void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen *pHostScreen)
 //    printf("UIDesktopWidgetWatchdog::sltHostScreenRemoved(%d)\n", screenCount());
 
     /* Forget about screen signals: */
-    disconnect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
-               this, SLOT(sltHandleHostScreenResized(const QRect &)));
-    disconnect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
-               this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+    disconnect(pHostScreen, &QScreen::geometryChanged,
+               this, &UIDesktopWidgetWatchdog::sltHandleHostScreenResized);
+    disconnect(pHostScreen, &QScreen::availableGeometryChanged,
+               this, &UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized);
 
 # ifdef VBOX_WS_X11
     /* Update host-screen configuration: */
@@ -512,18 +512,23 @@ void UIDesktopWidgetWatchdog::prepare()
 {
     /* Prepare connections: */
 #if QT_VERSION < 0x050000
-    connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
-    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
-    connect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenWorkAreaResized(int)));
+    connect(QApplication::desktop(), &QDesktopWidget::screenCountChanged,
+            this, &UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged);
+    connect(QApplication::desktop(), &QDesktopWidget::resized,
+            this, &UIDesktopWidgetWatchdog::sltHandleHostScreenResized);
+    connect(QApplication::desktop(), &QDesktopWidget::workAreaResized,
+            this, &UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized);
 #else /* QT_VERSION >= 0x050000 */
-    connect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
-    connect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
+    connect(qApp, &QGuiApplication::screenAdded,
+            this, &UIDesktopWidgetWatchdog::sltHostScreenAdded);
+    connect(qApp, &QGuiApplication::screenRemoved,
+            this, &UIDesktopWidgetWatchdog::sltHostScreenRemoved);
     foreach (QScreen *pHostScreen, qApp->screens())
     {
-        connect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
-                this, SLOT(sltHandleHostScreenResized(const QRect &)));
-        connect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
-                this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+        connect(pHostScreen, &QScreen::geometryChanged,
+                this, &UIDesktopWidgetWatchdog::sltHandleHostScreenResized);
+        connect(pHostScreen, &QScreen::availableGeometryChanged,
+                this, &UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized);
     }
 #endif /* QT_VERSION >= 0x050000 */
 
@@ -537,18 +542,23 @@ void UIDesktopWidgetWatchdog::cleanup()
 {
     /* Cleanup connections: */
 #if QT_VERSION < 0x050000
-    disconnect(QApplication::desktop(), SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
-    disconnect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
-    disconnect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenWorkAreaResized(int)));
+    disconnect(QApplication::desktop(), &QDesktopWidget::screenCountChanged,
+               this, &UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged);
+    disconnect(QApplication::desktop(), &QDesktopWidget::resized,
+               this, &UIDesktopWidgetWatchdog::sltHandleHostScreenResized);
+    disconnect(QApplication::desktop(), &QDesktopWidget::workAreaResized,
+               this, &UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized);
 #else /* QT_VERSION >= 0x050000 */
-    disconnect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
-    disconnect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
+    disconnect(qApp, &QGuiApplication::screenAdded,
+               this, &UIDesktopWidgetWatchdog::sltHostScreenAdded);
+    disconnect(qApp, &QGuiApplication::screenRemoved,
+               this, &UIDesktopWidgetWatchdog::sltHostScreenRemoved);
     foreach (QScreen *pHostScreen, qApp->screens())
     {
-        disconnect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
-                   this, SLOT(sltHandleHostScreenResized(const QRect &)));
-        disconnect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
-                   this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+        disconnect(pHostScreen, &QScreen::geometryChanged,
+                   this, &UIDesktopWidgetWatchdog::sltHandleHostScreenResized);
+        disconnect(pHostScreen, &QScreen::availableGeometryChanged,
+                   this, &UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized);
     }
 #endif /* QT_VERSION >= 0x050000 */
 
@@ -597,8 +607,8 @@ void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenI
         const QRect hostScreenGeometry = screenGeometry(iHostScreenIndex);
 
         /* Connect worker listener: */
-        connect(pWorker, SIGNAL(sigHostScreenAvailableGeometryCalculated(int, QRect)),
-                this, SLOT(sltHandleHostScreenAvailableGeometryCalculated(int, QRect)));
+        connect(pWorker, &UIInvisibleWindow::sigHostScreenAvailableGeometryCalculated,
+                this, &UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated);
 
         /* Place worker to corresponding host-screen: */
         pWorker->move(hostScreenGeometry.center());
