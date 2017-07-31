@@ -25,6 +25,9 @@
 # include <QHBoxLayout>
 # include <QLabel>
 # include <QPainter>
+# ifdef VBOX_WS_MAC
+#  include <QStackedLayout>
+# endif
 # include <QStyle>
 # include <QToolButton>
 
@@ -41,6 +44,9 @@ class QApplication;
 class QEvent;
 class QHBoxLayout;
 class QLabel;
+#ifdef VBOX_WS_MAC
+class QStackedLayout;
+#endif
 class QStyle;
 class QToolButton;
 
@@ -104,7 +110,11 @@ private:
     bool  m_fHovered;
 
     /** Holds the main layout instance. */
-    QHBoxLayout *m_pLayout;
+    QHBoxLayout    *m_pLayout;
+#ifdef VBOX_WS_MAC
+    /** Holds the stacked layout instance. */
+    QStackedLayout *m_pLayoutStacked;
+#endif
 
     /** Holds the icon label instance. */
     QLabel      *m_pLabelIcon;
@@ -126,6 +136,9 @@ UITabBarItem::UITabBarItem(const QUuid &uuid, const QIcon &icon /* = QIcon() */,
     , m_fCurrent(false)
     , m_fHovered(false)
     , m_pLayout(0)
+#ifdef VBOX_WS_MAC
+    , m_pLayoutStacked(0)
+#endif
     , m_pLabelIcon(0)
     , m_pLabelName(0)
     , m_pButtonClose(0)
@@ -150,12 +163,18 @@ bool UITabBarItem::event(QEvent *pEvent)
         /* Update the hovered state on/off: */
         case QEvent::Enter:
         {
+#ifdef VBOX_WS_MAC
+            m_pLayoutStacked->setCurrentWidget(m_pButtonClose);
+#endif
             m_fHovered = true;
             update();
             break;
         }
         case QEvent::Leave:
         {
+#ifdef VBOX_WS_MAC
+            m_pLayoutStacked->setCurrentWidget(m_pLabelIcon);
+#endif
             m_fHovered = false;
             update();
             break;
@@ -266,10 +285,18 @@ void UITabBarItem::prepare()
         const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         const int iMargin = iMetric / 2;
         const int iSpacing = iMargin / 2;
+#ifdef VBOX_WS_MAC
+        const int iMetricCloseButton = iMetric * 3 / 4;
+#else
         const int iMetricCloseButton = iMetric * 2 / 3;
+#endif
 
         /* Configure layout: */
+#ifdef VBOX_WS_MAC
+        m_pLayout->setContentsMargins(iMargin + iSpacing, 0, iMargin + iSpacing, 0);
+#else
         m_pLayout->setContentsMargins(iMargin + iSpacing, 0, iMargin, 0);
+#endif
         m_pLayout->setSpacing(iSpacing);
 
         /* Create icon label: */
@@ -300,10 +327,30 @@ void UITabBarItem::prepare()
             connect(m_pButtonClose, &QToolButton::clicked, this, &UITabBarItem::sltCloseClicked);
         }
 
+#ifdef VBOX_WS_MAC
+        /* Create stacked-layout: */
+        m_pLayoutStacked = new QStackedLayout(m_pLayout);
+        {
+            m_pLayoutStacked->setAlignment(Qt::AlignCenter);
+
+            /* Add icon-label and close-button into stacked-layout: */
+            m_pLayoutStacked->addWidget(m_pLabelIcon);
+            m_pLayoutStacked->addWidget(m_pButtonClose);
+            m_pLayoutStacked->setAlignment(m_pLabelIcon, Qt::AlignCenter);
+            m_pLayoutStacked->setAlignment(m_pButtonClose, Qt::AlignCenter);
+
+            /* Add stacked-layout into main-layout: */
+            m_pLayout->addLayout(m_pLayoutStacked);
+        }
+
+        /* Add name-label into main-layout: */
+        m_pLayout->addWidget(m_pLabelName);
+#else /* !VBOX_WS_MAC */
         /* Add everything into main-layout: */
         m_pLayout->addWidget(m_pLabelIcon);
         m_pLayout->addWidget(m_pLabelName);
         m_pLayout->addWidget(m_pButtonClose);
+#endif /* !VBOX_WS_MAC */
     }
 }
 
