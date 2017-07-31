@@ -4,6 +4,267 @@
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
+    <title>Version 5.2.0 (2017-xx-xx)</title>
+
+    <para>This is a major update. The following major new features
+      were added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VM export to Oracle Cloud (OPC)</para>
+      </listitem>
+
+      <listitem>
+        <para>Unattended guest installation (bug #5810)</para>
+      </listitem>
+
+      <listitem>
+        <para>Overhauled VM selector GUI (better tools layout,
+          new icons</para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In addition, the following items were fixed and/or added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>GUI: improvements with accessibility support</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio improvements</para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: better video mode handling</para>
+      </listitem>
+
+
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.1.26 (2017-07-27)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: reset the TSC on VM reset to work around a Windows bug
+          (bug #16643)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed memory leak when enabled with VRDP connections
+          (5.1.24 regression; bug #16928)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: fixed creation of too many sound sinks on Linux hosts when
+          using the PulseAudio backend (bug #16938)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: implemented record gain registers for AC'97 emulation; 
+          those are needed for newer Ubuntu guests which rely on those when controlling
+          gain and muting the recording (capturing) levels</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed hang when using the emulated NVMe controller with the
+          SPDK (bug #16945)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mouse: double click was not working with a precision touchpad
+          (bug #14632)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: properly bring up host-only network interfaces with
+          <emphasis>iproute</emphasis> (5.1.24 regression; bug #16911)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: provide Python 3 libraries for deb/rpm packages</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: make it possible to use host-only networking
+          without having bridged networking installed</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows guests: fixed automatic logons for Vista and newer
+          Windows guests (5.1.24 regression; bug #16921)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 5.1.24 (2017-07-18)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: mask the VME CPUID capability on AMD Ryzen processors
+          for now to make certain guests works, for example Windows XP</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: emulate more SSE2 instructions</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: properly clear the <emphasis>TF</emphasis> and
+          <emphasis>AC</emphasis> flags when dispatching real-mode
+          interrupts</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixes to make the mini-toolbar work with recent versions
+          of KDE / Plasma (bug #16325)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed a potential crash when a VM with multiple screens is
+          running in full screen / seamless mode and a host screen is removed,
+          for example when connecting to the host via RDP</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed initial size hints for guests which
+          set intermediate sizes before responding (bug #16593)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: prevent stopped screen updates or black screen on reboot
+          in a multi-screen setup under certain conditions</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: many improvements for Windows 10 guests (bugs #15189,
+          #15925, #16170, #16682, #16794 and others)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed possible crash when using Intels SPDK</para>
+      </listitem>
+
+      <listitem>
+        <para>API: use the correct file name of the VM machine state if the
+          VM settings directory is renamed, for example during grouping /
+          ungrouping a VM (bugs #16074 and #16745)</para>
+      </listitem>
+
+      <listitem>
+        <para>API: return the correct error code if powering up a VM fails</para>
+      </listitem>
+
+      <listitem>
+        <para>API: video recording did not automatically start at VM start
+          when enabled in the VM settings (bug #16803)</para>
+      </listitem>
+
+      <listitem>
+        <para>API: when relocating a medium, check that the target path is
+          fully qualified</para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: fix for VMs with more than 3504MB RAM (bug #11103)</para>
+      </listitem>
+
+      <listitem>
+        <para>Host-only adapter: correctly determine IPv4 netmasks on Windows
+          hosts (bug #16826)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT network: properly do the refcounting for starting / stopping
+          the NAT / DHCP services if the NAT network is changed while the
+          adapter network connection type is anything else but NAT network</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed <emphasis>controlvm videocapfile</emphasis>
+          (bug #16779)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: another fix for Windows insider builds
+          (bug #16892)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed crashes if driver verifier is enabled
+          (bug #15741)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux / Mac OS X hosts: more fixes for loading shared libraries
+          (5.1.20 regression; bugs #16778, #16693)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: Linux 4.12 fixes (bugs #16725, #16800)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: reduce the kernel stack consumption for
+          Linux kernels with <emphasis>CONFIG_CPUMASK_OFFSTACK</emphasis>
+          defined</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: fixes for kernel modules built with gcc-7
+          (bug #16772)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts / guests: Linux 4.13 fix (bug #16887)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: don't depend on <emphasis>net-tools</emphasis> on newer
+          distributions as this package is deprecated in favour of
+          <emphasis>iproute</emphasis> (bug #16764)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: make 2D video acceleration available for older
+          Linux distributions (5.1 regression; bug #16858)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fix for dynamic resizing with Oracle Linux 6
+           with UEK4</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: make Fedora 25 and 26 Alpha work when 3D
+           pass-through is enabled</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: no longer recommend removing distribution-
+           installed Additions if they are updated to our guidelines</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
     <title>Version 5.1.22 (2017-04-28)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
