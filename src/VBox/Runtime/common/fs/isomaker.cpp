@@ -5771,6 +5771,8 @@ static int rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(PRTFSISOMAKEROUTPUTFILE
                 }
                 idxChild++;
             }
+            if (offNext != UINT32_MAX)
+                break;
             pDir     = RTListGetNext(&pFinalizedDirs->FinalizedDirs, pDir, RTFSISOMAKERNAMEDIR, FinalizedEntry);
             idxChild = 0;
         } while (pDir != NULL);
@@ -5787,6 +5789,9 @@ static int rtFsIsoMakerOutFile_RockRidgeSpillReadSectors(PRTFSISOMAKEROUTPUTFILE
                 *pidxChildHint = idxChild;
                 break;
             }
+            cbToRead  -= cbToZero;
+            pbBuf     += cbToZero;
+            offInFile += cbToZero;
         }
         else
         {
