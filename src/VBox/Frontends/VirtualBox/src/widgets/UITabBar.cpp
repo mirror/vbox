@@ -316,7 +316,7 @@ QUuid UITabBar::addTab(const QIcon &icon /* = QIcon() */, const QString &strName
         connect(pItem, &UITabBarItem::sigClicked,      this, &UITabBar::sltHandleMakeChildCurrent);
         connect(pItem, &UITabBarItem::sigCloseClicked, this, &UITabBar::sltHandleChildClose);
         /* Add item into layout and list: */
-        m_pLayout->addWidget(pItem);
+        m_pLayout->insertWidget(1, pItem);
         m_aItems << pItem;
         /* Return unique ID: */
         return uuid;

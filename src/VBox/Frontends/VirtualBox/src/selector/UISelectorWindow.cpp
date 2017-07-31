@@ -1279,8 +1279,8 @@ void UISelectorWindow::prepare()
     prepareConnections();
 
     /* Make sure 'Details' and 'Snapshots' Machine tools ares opened at startup for now: */
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
     actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
 
     /* Load settings: */
     loadSettings();
