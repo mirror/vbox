@@ -90,14 +90,11 @@ private:
     /** Holds the Machine tab-bar instance. */
     UITabBar *m_pTabBarMachine;
 
-    /** Holds the map of opened Machine tool IDs. */
-    QMap<ToolTypeMachine, QUuid>  m_mapTabIdsMachine;
-
     /** Holds the toolbar instance. */
     UIToolBar *m_pToolBar;
 
-    /** Holds the 'Machine' menu action instances. */
-    QMap<ToolTypeMachine, QAction*>  m_mapActionsMachine;
+    /** Holds the map of opened Machine tool IDs. */
+    QMap<ToolTypeMachine, QUuid>  m_mapTabIdsMachine;
 };
 
 #endif /* !___UIToolsToolbar_h___ */
