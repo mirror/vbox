@@ -43,6 +43,7 @@
       <arg choice="req">--iso=<replaceable>install-iso</replaceable></arg>
       <arg>--user=<replaceable>login</replaceable></arg>
       <arg>--password=<replaceable>password</replaceable></arg>
+      <arg>--password-file=<replaceable>file</replaceable></arg>
       <arg>--full-user-name=<replaceable>name</replaceable></arg>
       <arg>--key=<replaceable>product-key</replaceable></arg>
       <arg>--install-additions</arg>
@@ -111,7 +112,15 @@
         </varlistentry>
         <varlistentry>
           <term><option>--password=<replaceable>password</replaceable></option></term>
-          <listitem><para>The login password. (default: changeme)</para></listitem>
+          <listitem>
+            <para>The login password.  This is used for the user given by <option>--user</option> as well as the
+              root/administrator user.  (default: changeme)</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--password-file=<replaceable>file</replaceable></option></term>
+          <listitem>
+            <para>Alternative to <option>--password</option> for providing the password.  Special filename
+              <computeroutput>stdin</computeroutput> can be used to read the password from standard input.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--full-user-name=<replaceable>name</replaceable></option></term>

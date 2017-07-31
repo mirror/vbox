@@ -1386,7 +1386,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     {
         { "--iso",                              'i', RTGETOPT_REQ_STRING },
         { "--user",                             'u', RTGETOPT_REQ_STRING },
-        { "--password",                         'p', RTGETOPT_REQ_STRING }, /** @todo password file ++ */
+        { "--password",                         'p', RTGETOPT_REQ_STRING },
+        { "--password-file",                    'X', RTGETOPT_REQ_STRING },
         { "--full-user-name",                   'U', RTGETOPT_REQ_STRING },
         { "--key",                              'k', RTGETOPT_REQ_STRING },
         { "--install-additions",                'A', RTGETOPT_REQ_NOTHING },
@@ -1444,6 +1445,16 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             case 'p':   // --password
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Password)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
+
+            case 'X':   // --password-file
+            {
+                Utf8Str strPassword;
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Password)(Bstr(strPassword).raw()), RTEXITCODE_FAILURE);
+                break;
+            }
 
             case 'U':   // --full-user-name
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(FullUserName)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
