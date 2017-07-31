@@ -430,7 +430,8 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(cbIoBuf > 0, VERR_INVALID_PARAMETER);
 
-    if (!pThis->cbFree)
+    if (   !pThis->cbFree
+        || pThis->fAllocSuspended)
         return VERR_NO_MEMORY;
 
     int rc = RTCritSectEnter(&pThis->CritSectAlloc);
