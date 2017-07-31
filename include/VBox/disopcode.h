@@ -725,6 +725,7 @@ enum OPCODES
     OP_LDMXCSR,
     OP_STMXCSR,
     OP_XSAVE,
+    OP_XSAVEOPT,
     OP_XRSTOR,
     OP_LFENCE,
     OP_MFENCE,
