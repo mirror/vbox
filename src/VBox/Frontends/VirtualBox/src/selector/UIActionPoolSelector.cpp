@@ -945,7 +945,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Tools"));
+        setName(QApplication::translate("UIActionPool", "&Machine Tools"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch to machine tools"));
     }
 };
