@@ -94,9 +94,6 @@ UIDesktopPanePrivate::UIDesktopPanePrivate(QWidget *pParent, QAction *pRefreshAc
     , m_pErrBox(0), m_pErrLabel(0), m_pErrText(0)
     , m_pRefreshButton(0), m_pRefreshAction(pRefreshAction)
 {
-    /* Make sure refresh action was passed: */
-    AssertMsg(m_pRefreshAction, ("Refresh action was NOT passed!"));
-
     /* Translate finally: */
     retranslateUi();
 }
@@ -226,7 +223,7 @@ void UIDesktopPanePrivate::prepareErrorPane()
 *   Class UIDesktopPane implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIDesktopPane::UIDesktopPane(QAction *pRefreshAction, QWidget *pParent /* = 0 */)
+UIDesktopPane::UIDesktopPane(QAction *pRefreshAction /* = 0 */, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
 {
     /* Prepare main layout: */

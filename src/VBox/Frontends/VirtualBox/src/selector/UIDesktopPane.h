@@ -37,7 +37,7 @@ public:
 
     /** Constructs desktop pane passing @a pParent to the base-class.
       * @param  pRefreshAction  Brings the refresh action reference. */
-    UIDesktopPane(QAction *pRefreshAction, QWidget *pParent = 0);
+    UIDesktopPane(QAction *pRefreshAction = 0, QWidget *pParent = 0);
 
     /** Updates @a strText details and switches to text details pane. */
     void updateDetailsText(const QString &strText);
