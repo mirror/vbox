@@ -186,7 +186,7 @@
           <listitem>
             <para>The type of session to start when launching the installation.  This is the same as the <option>--type</option>
               option for the <computeroutput>startvm</computeroutput> command, but we add <computeroutput>none</computeroutput>
-              for indicating that the VM should not be started.  (default: <computeroutput>headless</computeroutput>)</para></listitem>
+              for indicating that the VM should not be started.  (default: <computeroutput>none</computeroutput>)</para></listitem>
         </varlistentry>
       </variablelist>
 

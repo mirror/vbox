@@ -1377,7 +1377,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     RTCList<RTCString>  arrPackageSelectionAdjustments;
     ComPtr<IMachine>    ptrMachine;
     bool                fDryRun = false;
-    const char         *pszSessionType = "headless";
+    const char         *pszSessionType = "none";
 
     /*
      * Parse options.
@@ -1412,6 +1412,8 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--extra-install-kernel-parameters",  'I', RTGETOPT_REQ_STRING },
         // start vm related options:
         { "--session-type",                     'S', RTGETOPT_REQ_STRING },
+        /** @todo Add a --wait option too for waiting for the VM to shut down or
+         *        something like that...? */
     };
 
     RTGETOPTSTATE GetState;
@@ -1691,7 +1693,11 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
      */
     if (   fDryRun
         || RTStrICmp(pszSessionType, "none") == 0)
+    {
+        if (!fDryRun)
+            RTMsgInfo("VM '%ls' (%ls) is ready to be started (e.g. VBoxManage startvm).\n", bstrMachineName.raw(), bstrUuid.raw());
         hrc = S_OK;
+    }
     else
     {
         Bstr env;
@@ -1710,7 +1716,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR2(hrc, ptrMachine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), env.raw(), ptrProgress.asOutParam()));
         if (SUCCEEDED(hrc) && !ptrProgress.isNull())
         {
-            RTMsgInfo("Waiting for VM \"%s\" to power on...\n", Utf8Str(bstrUuid).c_str());
+            RTMsgInfo("Waiting for VM '%ls' to power on...\n", bstrMachineName.raw());
             CHECK_ERROR2(hrc, ptrProgress, WaitForCompletion(-1));
             if (SUCCEEDED(hrc))
             {
@@ -1725,7 +1731,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                     if (SUCCEEDED(hrc))
                     {
                         if (SUCCEEDED(iRc))
-                            RTMsgInfo("VM \"%s\" has been successfully started.\n", Utf8Str(bstrUuid).c_str());
+                            RTMsgInfo("VM '%ls' (%ls) has been successfully started.\n", bstrMachineName.raw(), bstrUuid.raw());
                         else
                         {
                             ProgressErrorInfo info(ptrProgress);
