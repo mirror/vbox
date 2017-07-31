@@ -2999,18 +2999,27 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
 
 #ifdef VBOX_WITH_AUDIO_DEBUG
-            /*
-             * The audio debug backend. Only can be used in debug builds.
-             */
-            CFGMR3InsertNodeF(pInst, &pLunL1, "LUN#%RU8", u8AudioLUN++);
-            InsertConfigString(pLunL1, "Driver", "AUDIO");
+# ifdef DEBUG_andy
+            strTmp = "1"; /* Always use the debugging backend. */
+# else
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
+# endif
+            if (!strTmp.isEmpty())
+            {
+                LogRel(("Audio: Debugging enabled\n"));
 
-            InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
-            InsertConfigString(pLunL1, "Driver", "DebugAudio");
+                /*
+                 * The audio debugging backend.
+                 */
+                CFGMR3InsertNodeF(pInst, &pLunL1, "LUN#%RU8", u8AudioLUN++);
+                InsertConfigString(pLunL1, "Driver", "AUDIO");
 
-            InsertConfigNode(pLunL1, "Config", &pCfg);
-            InsertConfigString(pCfg, "AudioDriver", "DebugAudio");
-            InsertConfigString(pCfg, "StreamName", bstr);
+                InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver", "DebugAudio");
+
+                InsertConfigNode(pLunL1, "Config", &pCfg);
+                InsertConfigString(pCfg, "AudioDriver", "DebugAudio");
+            }
 #endif /* VBOX_WITH_AUDIO_DEBUG */
 
 #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT

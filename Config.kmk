@@ -439,10 +439,9 @@ if1of ($(KBUILD_TARGET), linux)
  # Enable PulseAudio audio support.
  VBOX_WITH_AUDIO_PULSE = 1
 endif
-ifeq ($(KBUILD_TYPE),debug)
- ## @todo Only build if running on test boxes?
- VBOX_WITH_AUDIO_DEBUG =
-endif
+# Enable building debugging backend.
+# Only will be used at runtime when "VBoxInternal2/Audio/Debug/Enabled" (VM / global) is set.
+VBOX_WITH_AUDIO_DEBUG = 1
 # Enable PCI passthrough support.
 VBOX_WITH_PCI_PASSTHROUGH = 1
 # Enable statically linked dbus support.
