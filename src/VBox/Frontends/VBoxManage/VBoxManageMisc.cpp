@@ -1607,7 +1607,9 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             ComPtr<IMachine> ptrSessonMachine;
             CHECK_ERROR2(hrc, a->session, COMGETTER(Machine)(ptrSessonMachine.asOutParam()));
             if (ptrSessonMachine.isNotNull())
+            {
                 CHECK_ERROR2(hrc, ptrSessonMachine, SetExtraData(Bstr("GUI/FirstRun").raw(), Bstr("0").raw()));
+            }
         }
 
         a->session->UnlockMachine();
