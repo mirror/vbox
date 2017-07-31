@@ -37,6 +37,8 @@
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
+#include <iprt/file.h>
+#include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
@@ -459,7 +461,9 @@ int main(int argc, char *argv[])
      * Before we do anything, init the runtime without loading
      * the support driver.
      */
-    RTR3InitExe(argc, &argv, 0);
+    int vrc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_ONLY_DOCS)
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
@@ -473,6 +477,11 @@ int main(int argc, char *argv[])
     int  iCmdArg;
     const char *pszSettingsPw = NULL;
     const char *pszSettingsPwFile = NULL;
+#ifndef VBOX_ONLY_DOCS
+    int         cResponseFileArgs     = 0;
+    char      **papszResponseFileArgs = NULL;
+    char      **papszNewArgv          = NULL;
+#endif
 
     for (int i = 1; i < argc || argc <= iCmd; i++)
     {
@@ -547,6 +556,47 @@ int main(int argc, char *argv[])
             pszSettingsPwFile = argv[i+1];
             iCmd += 2;
         }
+#ifndef VBOX_ONLY_DOCS
+        else if (argv[i][0] == '@')
+        {
+            if (papszResponseFileArgs)
+                return RTMsgErrorExitFailure("Only one response file allowed");
+
+            /* Load response file, making sure it's valid UTF-8. */
+            char  *pszResponseFile;
+            size_t cbResponseFile;
+            vrc = RTFileReadAllEx(&argv[i][1], 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_NONE | RTFILE_RDALL_F_TRAILING_ZERO_BYTE,
+                                  (void **)&pszResponseFile, &cbResponseFile);
+            if (RT_FAILURE(vrc))
+                return RTMsgErrorExitFailure("Error reading response file '%s': %Rrc", &argv[i][1], vrc);
+            vrc = RTStrValidateEncoding(pszResponseFile);
+            if (RT_FAILURE(vrc))
+            {
+                RTFileReadAllFree(pszResponseFile, cbResponseFile);
+                return RTMsgErrorExitFailure("Invalid response file ('%s') encoding: %Rrc", &argv[i][1], vrc);
+            }
+
+            /* Parse it. */
+            vrc = RTGetOptArgvFromString(&papszResponseFileArgs, &cResponseFileArgs, pszResponseFile,
+                                         RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
+            RTFileReadAllFree(pszResponseFile, cbResponseFile);
+            if (RT_FAILURE(vrc))
+                return RTMsgErrorExitFailure("Failed to parse response file '%s' (bourne shell style): %Rrc", &argv[i][1], vrc);
+
+            /* Construct new argv+argc with the response file arguments inserted. */
+            int cNewArgs = argc + cResponseFileArgs;
+            papszNewArgv = (char **)RTMemAllocZ((cNewArgs + 2) * sizeof(papszNewArgv[0]));
+            if (!papszNewArgv)
+                return RTMsgErrorExitFailure("out of memory");
+            memcpy(&papszNewArgv[0], &argv[0], sizeof(argv[0]) * (i + 1));
+            memcpy(&papszNewArgv[i + 1], papszResponseFileArgs, sizeof(argv[0]) * cResponseFileArgs);
+            memcpy(&papszNewArgv[i + 1 + cResponseFileArgs], &argv[i + 1], sizeof(argv[0]) * (argc - i - 1 + 1));
+            argv = papszNewArgv;
+            argc = argc + cResponseFileArgs;
+
+            iCmd++;
+        }
+#endif
         else
             break;
     }
@@ -694,6 +744,12 @@ int main(int argc, char *argv[])
         handlerArg.argc = argc - iCmdArg;
         handlerArg.argv = &argv[iCmdArg];
         rcExit = pCmd->pfnHandler(&handlerArg);
+    }
+
+    if (papszResponseFileArgs)
+    {
+        RTGetOptArgvFree(papszResponseFileArgs);
+        RTMemFree(papszNewArgv);
     }
 
     return rcExit;
