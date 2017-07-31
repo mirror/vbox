@@ -607,6 +607,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "  [-q|--nologo]             suppress the logo\n"
                      "  [--settingspw <pw>]       provide the settings password\n"
                      "  [--settingspwfile <file>] provide a file containing the settings password\n"
+                     "  [@<response-file>]        load arguments from the given response file (bourne style)\n"
                      " \n \n"
                      "Commands:\n \n");
 
