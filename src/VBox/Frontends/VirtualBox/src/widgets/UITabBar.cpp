@@ -26,9 +26,9 @@
 # include <QLabel>
 # include <QPainter>
 # include <QStyle>
+# include <QToolButton>
 
 /* GUI includes: */
-# include "QIToolButton.h"
 # include "UIIconPool.h"
 # include "UITabBar.h"
 
@@ -42,6 +42,7 @@ class QEvent;
 class QHBoxLayout;
 class QLabel;
 class QStyle;
+class QToolButton;
 
 
 /** Our own skinnable implementation of tabs for tab-bar. */
@@ -103,13 +104,14 @@ private:
     bool  m_fHovered;
 
     /** Holds the main layout instance. */
-    QHBoxLayout  *m_pLayout;
+    QHBoxLayout *m_pLayout;
+
     /** Holds the icon label instance. */
-    QLabel       *m_pLabelIcon;
+    QLabel      *m_pLabelIcon;
     /** Holds the name label instance. */
-    QLabel       *m_pLabelName;
+    QLabel      *m_pLabelName;
     /** Holds the close button instance. */
-    QIToolButton *m_pButtonClose;
+    QToolButton *m_pButtonClose;
 };
 
 
@@ -146,11 +148,25 @@ bool UITabBarItem::event(QEvent *pEvent)
     switch (pEvent->type())
     {
         /* Update the hovered state on/off: */
-        case QEvent::Enter: m_fHovered = true; update(); break;
-        case QEvent::Leave: m_fHovered = false; update(); break;
+        case QEvent::Enter:
+        {
+            m_fHovered = true;
+            update();
+            break;
+        }
+        case QEvent::Leave:
+        {
+            m_fHovered = false;
+            update();
+            break;
+        }
 
         /* Notify listeners about the item was clicked: */
-        case QEvent::MouseButtonRelease: emit sigClicked(this); break;
+        case QEvent::MouseButtonRelease:
+        {
+            emit sigClicked(this);
+            break;
+        }
 
         default: break;
     }
@@ -239,6 +255,9 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
 
 void UITabBarItem::prepare()
 {
+    /* Configure self: */
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+
     /* Create main layout: */
     m_pLayout = new QHBoxLayout(this);
     AssertPtrReturnVoid(m_pLayout);
@@ -259,9 +278,6 @@ void UITabBarItem::prepare()
         {
             /* Configure label: */
             m_pLabelIcon->setPixmap(m_icon.pixmap(iMetric));
-
-            /* Add into layout: */
-            m_pLayout->addWidget(m_pLabelIcon);
         }
 
         /* Create name label: */
@@ -270,23 +286,24 @@ void UITabBarItem::prepare()
         {
             /* Configure label: */
             m_pLabelName->setText(m_strName);
-
-            /* Add into layout: */
-            m_pLayout->addWidget(m_pLabelName);
         }
 
         /* Create close button: */
-        m_pButtonClose = new QIToolButton;
+        m_pButtonClose = new QToolButton;
         AssertPtrReturnVoid(m_pButtonClose);
         {
             /* Configure button: */
+            m_pButtonClose->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             m_pButtonClose->setIconSize(QSize(iMetricCloseButton, iMetricCloseButton));
             m_pButtonClose->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-            connect(m_pButtonClose, &QIToolButton::clicked, this, &UITabBarItem::sltCloseClicked);
-
-            /* Add into layout: */
-            m_pLayout->addWidget(m_pButtonClose);
+            m_pButtonClose->setStyleSheet("QToolButton { border: 0px }");
+            connect(m_pButtonClose, &QToolButton::clicked, this, &UITabBarItem::sltCloseClicked);
         }
+
+        /* Add everything into main-layout: */
+        m_pLayout->addWidget(m_pLabelIcon);
+        m_pLayout->addWidget(m_pLabelName);
+        m_pLayout->addWidget(m_pButtonClose);
     }
 }
 
