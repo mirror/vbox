@@ -674,6 +674,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
               'This system is not currently set up to build kernel modules' ),
             ( True, ktReason_Host_DriverNotCompilable,
               'This system is currently not set up to build kernel modules' ),
+            ( True, ktReason_Host_DriverNotUnloading,
+              'Cannot unload module vboxdrv'),
         ],
     };
 
