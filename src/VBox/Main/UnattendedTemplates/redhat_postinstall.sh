@@ -189,15 +189,15 @@ log_command mkdir -p "${MY_TARGET}/opt/validationkit" "${MY_TARGET}/media/cdrom"
 log_command cp -R ${MY_CDROM_NOCHROOT}/vboxvalidationkit/* "${MY_TARGET}/opt/validationkit/"
 log_command chmod -R u+rw,a+xr "${MY_TARGET}/opt/validationkit/"
 if [ -e "${MY_TARGET}/usr/bin/chcon" -o -e "${MY_TARGET}/bin/chcon" -o -e "${MY_TARGET}/usr/sbin/chcon" -o -e "${MY_TARGET}/sbin/chcon" ]; then
+    MY_IGNORE_EXITCODE=1
     log_command_in_target chcon -R -t usr_t "/opt/validationkit/"
+    MY_IGNORE_EXITCODE=
 fi
 
 # systemd service config:
 MY_UNIT_PATH="${MY_TARGET}/lib/systemd/system"
 test -d "${MY_TARGET}/usr/lib/systemd/system" && MY_UNIT_PATH="${MY_TARGET}/usr/lib/systemd/system"
 if [ -d "${MY_UNIT_PATH}" ]; then
-    log_command sed -e "s,/root/,/opt/,g" -i .bak "${MY_TARGET}/opt/validationkit/linux/vboxtxs"
-    log_command sed -e "s,/root/,/opt/,g" -i .bak "${MY_TARGET}/opt/validationkit/linux/vboxtxs.service"
     log_command cp "${MY_TARGET}/opt/validationkit/linux/vboxtxs.service" "${MY_UNIT_PATH}/vboxtxs.service"
     log_command chmod 644 "${MY_UNIT_PATH}/vboxtxs.service"
     log_command_in_target systemctl -q enable vboxtxs
