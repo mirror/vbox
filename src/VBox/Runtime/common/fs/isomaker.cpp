@@ -37,6 +37,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>
+#include <iprt/md5.h>
 #include <iprt/file.h>
 #include <iprt/list.h>
 #include <iprt/log.h>
@@ -45,6 +46,7 @@
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
+#include <iprt/zero.h>
 #include <iprt/formats/iso9660.h>
 
 #include <internal/magics.h>
@@ -5105,6 +5107,34 @@ static int rtFsIsoMakerFinalizeVolumeDescriptors(PRTFSISOMAKERINT pThis)
         pJoliet->RootDir.DirRec.bFileIdLength      = 1;
         pJoliet->RootDir.DirRec.achFileId[0]       = 0x00;
     }
+
+#if 0 /* this doesn't quite fool it. */
+    /*
+     * isomd5sum fake.
+     */
+    if (1)
+    {
+        uint8_t      abDigest[RTMD5_HASH_SIZE];
+        if (pThis->cbSysArea == 0)
+            RTMd5(g_abRTZero4K, ISO9660_SECTOR_SIZE, abDigest);
+        else
+        {
+            RTMD5CONTEXT Ctx;
+            RTMd5Init(&Ctx);
+            RTMd5Update(&Ctx, pThis->pbSysArea, RT_MIN(pThis->cbSysArea, ISO9660_SECTOR_SIZE));
+            if (pThis->cbSysArea < ISO9660_SECTOR_SIZE)
+                RTMd5Update(&Ctx, g_abRTZero4K, ISO9660_SECTOR_SIZE - pThis->cbSysArea);
+            RTMd5Final(abDigest, &Ctx);
+        }
+        char szFakeHash[RTMD5_DIGEST_LEN + 1];
+        RTMd5ToString(abDigest, szFakeHash, sizeof(szFakeHash));
+
+        size_t cch = RTStrPrintf((char *)&pPrimary->abAppUse[0], sizeof(pPrimary->abAppUse),
+                                 "ISO MD5SUM = %s;SKIPSECTORS = %u;RHLISOSTATUS=1;THIS IS JUST A FAKE!",
+                                 szFakeHash, pThis->cbFinalizedImage / RTFSISOMAKER_SECTOR_SIZE - 1);
+        memset(&pPrimary->abAppUse[cch], ' ', sizeof(pPrimary->abAppUse) - cch);
+    }
+#endif
 
     return VINF_SUCCESS;
 }
