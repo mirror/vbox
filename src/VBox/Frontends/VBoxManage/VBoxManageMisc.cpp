@@ -1592,12 +1592,24 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
     /*
      * Temporarily lock the machine to check whether it's running or not.
-     * Note! Not sure if this is the cheapest way of doing this...
+     * We take this opportunity to disable the first run wizard.
      */
     CHECK_ERROR2_RET(hrc, ptrMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
     {
         ComPtr<IConsole> ptrConsole;
         CHECK_ERROR2(hrc, a->session, COMGETTER(Console)(ptrConsole.asOutParam()));
+
+        if (   ptrConsole.isNull()
+            && SUCCEEDED(hrc)
+            && (   RTStrICmp(pszSessionType, "gui") == 0
+                || RTStrICmp(pszSessionType, "none") == 0))
+        {
+            ComPtr<IMachine> ptrSessonMachine;
+            CHECK_ERROR2(hrc, a->session, COMGETTER(Machine)(ptrSessonMachine.asOutParam()));
+            if (ptrSessonMachine.isNotNull())
+                CHECK_ERROR2(hrc, ptrSessonMachine, SetExtraData(Bstr("GUI/FirstRun").raw(), Bstr("0").raw()));
+        }
+
         a->session->UnlockMachine();
         if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
