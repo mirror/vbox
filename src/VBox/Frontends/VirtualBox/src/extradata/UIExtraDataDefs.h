@@ -133,6 +133,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_SplitterSizes;
         /** Holds whether selector-window tool-bar visible. */
         extern const char* GUI_Toolbar;
+        /** Holds whether selector-window tool-bar text visible. */
+        extern const char* GUI_Toolbar_Text;
         /** Holds whether selector-window status-bar visible. */
         extern const char* GUI_Statusbar;
         /** Prefix used by composite extra-data keys,

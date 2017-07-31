@@ -79,6 +79,7 @@ const char* UIExtraDataDefs::GUI_RecentListFD = "GUI/RecentListFD";
 const char* UIExtraDataDefs::GUI_LastSelectorWindowPosition = "GUI/LastWindowPosition";
 const char* UIExtraDataDefs::GUI_SplitterSizes = "GUI/SplitterSizes";
 const char* UIExtraDataDefs::GUI_Toolbar = "GUI/Toolbar";
+const char* UIExtraDataDefs::GUI_Toolbar_Text = "GUI/Toolbar/Text";
 const char* UIExtraDataDefs::GUI_Statusbar = "GUI/Statusbar";
 const char* UIExtraDataDefs::GUI_GroupDefinitions = "GUI/GroupDefinitions";
 const char* UIExtraDataDefs::GUI_LastItemSelected = "GUI/LastItemSelected";

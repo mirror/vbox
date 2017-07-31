@@ -156,19 +156,48 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 {
     /* Populate toolbar/statusbar acctions: */
     QList<QAction*> actions;
-    QAction *pShowToolBar = new QAction(tr("Show Toolbar"), 0);
-    pShowToolBar->setCheckable(true);
-#ifdef VBOX_WS_MAC
-    pShowToolBar->setChecked(m_pToolBar->isVisible());
-#else /* VBOX_WS_MAC */
-    pShowToolBar->setChecked(m_pBar->isVisible());
-#endif /* !VBOX_WS_MAC */
-    actions << pShowToolBar;
-    QAction *pShowStatusBar = new QAction(tr("Show Statusbar"), 0);
-    pShowStatusBar->setCheckable(true);
-    pShowStatusBar->setChecked(statusBar()->isVisible());
-    actions << pShowStatusBar;
 
+    /* Create 'Show Toolbar' action: */
+    QAction *pShowToolBar = new QAction(tr("Show Toolbar"), 0);
+    AssertPtrReturnVoid(pShowToolBar);
+    {
+        /* Configure action: */
+        pShowToolBar->setCheckable(true);
+#ifdef VBOX_WS_MAC
+        pShowToolBar->setChecked(m_pToolBar->isVisible());
+#else /* VBOX_WS_MAC */
+        pShowToolBar->setChecked(m_pBar->isVisible());
+#endif /* !VBOX_WS_MAC */
+
+        /* Add into action list: */
+        actions << pShowToolBar;
+    }
+
+    /* Create 'Show Toolbar Text' action: */
+    QAction *pShowToolBarText = new QAction(tr("Show Toolbar Text"), 0);
+    AssertPtrReturnVoid(pShowToolBarText);
+    {
+        /* Configure action: */
+        pShowToolBarText->setCheckable(true);
+        pShowToolBarText->setChecked(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
+
+        /* Add into action list: */
+        actions << pShowToolBarText;
+    }
+
+    /* Create 'Show Statusbar' action: */
+    QAction *pShowStatusBar = new QAction(tr("Show Statusbar"), 0);
+    AssertPtrReturnVoid(pShowStatusBar);
+    {
+        /* Configure action: */
+        pShowStatusBar->setCheckable(true);
+        pShowStatusBar->setChecked(statusBar()->isVisible());
+
+        /* Add into action list: */
+        actions << pShowStatusBar;
+    }
+
+    /* Prepare the menu position: */
     QPoint globalPosition = position;
     QWidget *pSender = static_cast<QWidget*>(sender());
     if (pSender)
@@ -192,6 +221,13 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
             m_pBar->hide();
 #endif /* !VBOX_WS_MAC */
         }
+    }
+    else if (pResult == pShowToolBarText)
+    {
+        m_pToolBar->setToolButtonStyle(pResult->isChecked()
+                                       ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
+        m_pToolbarTools->setToolButtonStyle(pResult->isChecked()
+                                            ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
     }
     else if (pResult == pShowStatusBar)
     {
@@ -2032,7 +2068,7 @@ void UISelectorWindow::loadSettings()
         m_pSplitter->setSizes(sizes);
     }
 
-    /* Restore toolbar and statusbar visibility: */
+    /* Restore toolbar and statusbar functionality: */
     {
 #ifdef VBOX_WS_MAC
         // WORKAROUND:
@@ -2045,6 +2081,10 @@ void UISelectorWindow::loadSettings()
 #else /* VBOX_WS_MAC */
         m_pBar->setHidden(!gEDataManager->selectorWindowToolBarVisible());
 #endif /* !VBOX_WS_MAC */
+        m_pToolBar->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
+                                       ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
+        m_pToolbarTools->setToolButtonStyle(gEDataManager->selectorWindowToolBarTextVisible()
+                                            ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
         statusBar()->setHidden(!gEDataManager->selectorWindowStatusBarVisible());
     }
 }
@@ -2058,6 +2098,7 @@ void UISelectorWindow::saveSettings()
 #else /* VBOX_WS_MAC */
         gEDataManager->setSelectorWindowToolBarVisible(!m_pBar->isHidden());
 #endif /* !VBOX_WS_MAC */
+        gEDataManager->setSelectorWindowToolBarTextVisible(m_pToolBar->toolButtonStyle() == Qt::ToolButtonTextUnderIcon);
         gEDataManager->setSelectorWindowStatusBarVisible(!statusBar()->isHidden());
     }
 

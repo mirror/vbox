@@ -1947,7 +1947,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
-           << GUI_Toolbar << GUI_Statusbar
+           << GUI_Toolbar << GUI_Toolbar_Text << GUI_Statusbar
            << GUI_GroupDefinitions << GUI_LastItemSelected
            << GUI_DetailsPageBoxes << GUI_PreviewUpdate
            << GUI_HideDescriptionForWizards
@@ -2672,6 +2672,18 @@ void UIExtraDataManager::setSelectorWindowToolBarVisible(bool fVisible)
 {
     /* 'False' if feature restricted, null-string otherwise: */
     setExtraDataString(GUI_Toolbar, toFeatureRestricted(!fVisible));
+}
+
+bool UIExtraDataManager::selectorWindowToolBarTextVisible()
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_Toolbar_Text);
+}
+
+void UIExtraDataManager::setSelectorWindowToolBarTextVisible(bool fVisible)
+{
+    /* 'False' if feature restricted, null-string otherwise: */
+    setExtraDataString(GUI_Toolbar_Text, toFeatureRestricted(!fVisible));
 }
 
 bool UIExtraDataManager::selectorWindowStatusBarVisible()

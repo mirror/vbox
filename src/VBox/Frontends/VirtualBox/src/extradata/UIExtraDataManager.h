@@ -296,6 +296,11 @@ public:
         /** Defines whether selector-window tool-bar @a fVisible. */
         void setSelectorWindowToolBarVisible(bool fVisible);
 
+        /** Returns whether selector-window tool-bar text visible. */
+        bool selectorWindowToolBarTextVisible();
+        /** Defines whether selector-window tool-bar text @a fVisible. */
+        void setSelectorWindowToolBarTextVisible(bool fVisible);
+
         /** Returns whether selector-window status-bar visible. */
         bool selectorWindowStatusBarVisible();
         /** Defines whether selector-window status-bar @a fVisible. */

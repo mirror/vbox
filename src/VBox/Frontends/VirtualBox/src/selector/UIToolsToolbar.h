@@ -61,6 +61,9 @@ public:
       * @param  pActionPool  Brings the action-pool to take corresponding actions from. */
     UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent = 0);
 
+    /** Defines toolbar tool button @a enmStyle. */
+    void setToolButtonStyle(Qt::ToolButtonStyle enmStyle);
+
 private slots:
 
     /** Handles request to open Machine tool. */

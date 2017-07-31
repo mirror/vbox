@@ -51,6 +51,11 @@ UIToolsToolbar::UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent /* = 
     prepare();
 }
 
+void UIToolsToolbar::setToolButtonStyle(Qt::ToolButtonStyle enmStyle)
+{
+    m_pToolBar->setToolButtonStyle(enmStyle);
+}
+
 void UIToolsToolbar::sltHandleOpenToolMachine()
 {
     /* Acquire sender action: */
