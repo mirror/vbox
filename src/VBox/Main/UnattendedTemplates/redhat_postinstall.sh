@@ -24,7 +24,7 @@
 MY_TARGET="/mnt/sysimage"
 MY_LOGFILE="${MY_TARGET}/var/log/vboxpostinstall.log"
 MY_CHROOT_CDROM="/cdrom"
-MY_CDROM_NOCHROOT="/run/install/repo"
+MY_CDROM_NOCHROOT="/tmp/vboxcdrom"
 MY_EXITCODE=0
 MY_DEBUG="" # "yes"
 
@@ -95,6 +95,17 @@ log_command_in_target()
     log_command chroot "${MY_TARGET}" "$@"
 }
 
+# Checks if $1 is a command on the PATH inside the target jail.
+chroot_which()
+{
+    for dir in /bin /usr/bin /sbin /usr/sbin;
+    do
+        if [ -x "${MY_TARGET}${dir}/$1" ]; then
+            return 0;
+        fi
+    done
+    return 1;
+}
 
 #
 # Log header.
@@ -202,9 +213,39 @@ if [ -d "${MY_UNIT_PATH}" ]; then
     log_command chmod 644 "${MY_UNIT_PATH}/vboxtxs.service"
     log_command_in_target systemctl -q enable vboxtxs
 
-# Not systemd:  Add support for upstart later...
+# System V like:
+elif [ -e /etc/init.d/ ]; then
+
+    # Install the script.  On rhel6 scripts are under /etc/rc.d/ with /etc/init.d and /etc/rc?.d being symlinks.
+    if [ -d /etc/rc.d/init.d/ ]; then
+        MY_INIT_D_PATH="${MY_TARGET}/etc/rc.d"
+        log_command ln -s "../../../opt/validationkit/linux/vboxtxs" "${MY_INIT_D_PATH}/init.d/"
+    else
+        MY_INIT_D_PATH="${MY_TARGET}/etc"
+        log_command ln -s    "../../opt/validationkit/linux/vboxtxs" "${MY_INIT_D_PATH}/init.d/"
+    fi
+
+    # Use runlevel management script if found.
+    if chroot_which chkconfig; then     # Redhat based sysvinit systems
+        log_command_in_target chkconfig --add vboxtxs
+    elif chroot_which insserv; then     # SUSE-based sysvinit systems
+        log_command_in_target insserv vboxtxs
+    elif chroot_which update-rc.d; then # Debian/Ubuntu-based systems
+        log_command_in_target update-rc.d vboxtxs defaults
+    elif chroot_which rc-update; then   # Gentoo Linux
+        log_command_in_target rc-update add vboxtxs default
+    # Fall back on hardcoded symlinking.
+    else
+        log_command ln -s "../init.d/vboxtxs" "${MY_INIT_D_PATH}/rc0.d/K65vboxtxs"
+        log_command ln -s "../init.d/vboxtxs" "${MY_INIT_D_PATH}/rc1.d/K65vboxtxs"
+        log_command ln -s "../init.d/vboxtxs" "${MY_INIT_D_PATH}/rc6.d/K65vboxtxs"
+        log_command ln -s "../init.d/vboxtxs" "${MY_INIT_D_PATH}/rc2.d/S35vboxtxs"
+        log_command ln -s "../init.d/vboxtxs" "${MY_INIT_D_PATH}/rc3.d/S35vboxtxs"
+        log_command ln -s "../init.d/vboxtxs" "${MY_INIT_D_PATH}/rc4.d/S35vboxtxs"
+        log_command ln -s "../init.d/vboxtxs" "${MY_INIT_D_PATH}/rc5.d/S35vboxtxs"
+    fi
 else
-    echo "** error: No systemd unit dir found.  Using upstart or something?" | tee -a "${MY_LOGFILE}"
+    echo "** error: Unknown init script system." | tee -a "${MY_LOGFILE}"
 fi
 
 @@VBOX_COND_END@@
