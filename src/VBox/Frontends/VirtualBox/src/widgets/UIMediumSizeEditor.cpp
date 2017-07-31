@@ -214,6 +214,8 @@ int UIMediumSizeEditor::calculateSliderScale(qulonglong uMaximumMediumSize)
 /* static */
 int UIMediumSizeEditor::log2i(qulonglong uValue)
 {
+    if (!uValue)
+        return 0;
     int iPower = -1;
     while (uValue)
     {
