@@ -36,7 +36,7 @@
 
       <listitem>
         <para>Audio: implemented (optional) device enumeration support for
-         audio backends</para>
+          audio backends</para>
       </listitem>
 
       <listitem>
