@@ -981,8 +981,8 @@ public:
 
     UIActionSimpleToolsMachineDetails(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/session_info_details_16px.png", ":/session_info_details_16px.png",
-                         ":/session_info_details_16px.png", ":/session_info_details_16px.png") {}
+                         ":/machine_details_manager_22px.png", ":/machine_details_manager_16px.png",
+                         ":/machine_details_manager_22px.png", ":/machine_details_manager_16px.png") {}
 
 protected:
 

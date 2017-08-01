@@ -211,6 +211,8 @@
         <file alias="machine_24px_hidpi.png">images/hidpi/machine_24px_hidpi.png</file>
         <file alias="machine_32px_hidpi.png">images/hidpi/machine_32px_hidpi.png</file>
         <file alias="machine_abstract_16px_hidpi.png">images/hidpi/machine_abstract_16px_hidpi.png</file>
+        <file alias="machine_details_manager_16px_hidpi.png">images/hidpi/machine_details_manager_16px_hidpi.png</file>
+        <file alias="machine_details_manager_22px_hidpi.png">images/hidpi/machine_details_manager_22px_hidpi.png</file>
         <file alias="machine_warning_16px_hidpi.png">images/hidpi/machine_warning_16px_hidpi.png</file>
         <file alias="meditation_32px_hidpi.png">images/hidpi/meditation_32px_hidpi.png</file>
         <file alias="menubar_16px_hidpi.png">images/hidpi/menubar_16px_hidpi.png</file>
