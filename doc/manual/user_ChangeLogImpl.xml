@@ -35,14 +35,23 @@
       </listitem>
 
       <listitem>
-        <para>Audio improvements</para>
+        <para>Audio: implemented (optional) device enumeration support for
+         audio backends</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: implemented support for host device callbacks (e.g. when
+          adding or removing an audio device)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: HDA emulation now uses asynchronous data processing in 
+          own threads</para>
       </listitem>
 
       <listitem>
         <para>EFI: better video mode handling</para>
       </listitem>
-
-
 
     </itemizedlist>
   </sect1>
