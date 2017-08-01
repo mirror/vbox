@@ -986,7 +986,7 @@ DECLINLINE(VBOXSTRICTRC) apicSendIpi(PVMCPU pVCpu, int rcRZ)
             || enmDeliveryMode == XAPICDELIVERYMODE_NMI
             || enmDeliveryMode == XAPICDELIVERYMODE_INIT))
     {
-        Log2(("APIC%u: %s level de-assert unsupported, ignoring!\n", apicGetDeliveryModeName(enmDeliveryMode), pVCpu->idCpu));
+        Log2(("APIC%u: %s level de-assert unsupported, ignoring!\n", pVCpu->idCpu, apicGetDeliveryModeName(enmDeliveryMode)));
         return VINF_SUCCESS;
     }
 #else
