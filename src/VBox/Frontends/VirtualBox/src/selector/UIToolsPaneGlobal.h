@@ -58,6 +58,8 @@ public:
     /** Destructs tools pane. */
     virtual ~UIToolsPaneGlobal() /* override */;
 
+    /** Returns type of tool currently opened. */
+    ToolTypeGlobal currentTool() const;
     /** Returns whether tool of particular @a enmType is opened. */
     bool isToolOpened(ToolTypeGlobal enmType) const;
     /** Activates tool of passed @a enmType, creates new one if necessary. */

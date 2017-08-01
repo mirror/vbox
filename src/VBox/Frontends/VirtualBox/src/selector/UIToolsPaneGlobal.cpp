@@ -53,6 +53,11 @@ UIToolsPaneGlobal::~UIToolsPaneGlobal()
     cleanup();
 }
 
+ToolTypeGlobal UIToolsPaneGlobal::currentTool() const
+{
+    return m_pLayout->currentWidget()->property("ToolType").value<ToolTypeGlobal>();
+}
+
 bool UIToolsPaneGlobal::isToolOpened(ToolTypeGlobal enmType) const
 {
     /* Search through the stacked widgets: */

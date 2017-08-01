@@ -257,12 +257,16 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
     {
-        /* Make sure Machine Tools-pane raised: */
-        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-            m_pPaneToolsMachine->openTool(ToolTypeMachine_Details);
-        else
-        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
-            m_pPaneToolsMachine->openTool(ToolTypeMachine_Snapshots);
+        /* If Desktop pane is chosen currently: */
+        if (m_pPaneToolsMachine->currentTool() == ToolTypeMachine_Desktop)
+        {
+            /* Make sure Details or Snapshot pane is chosen if opened: */
+            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+                m_pPaneToolsMachine->openTool(ToolTypeMachine_Details);
+            else
+            if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
+                m_pPaneToolsMachine->openTool(ToolTypeMachine_Snapshots);
+        }
 
         /* Refresh Machine Tools-pane if requested: */
         if (   fUpdateTools

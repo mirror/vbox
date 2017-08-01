@@ -53,6 +53,11 @@ UIToolsPaneMachine::~UIToolsPaneMachine()
     cleanup();
 }
 
+ToolTypeMachine UIToolsPaneMachine::currentTool() const
+{
+    return m_pLayout->currentWidget()->property("ToolType").value<ToolTypeMachine>();
+}
+
 bool UIToolsPaneMachine::isToolOpened(ToolTypeMachine enmType) const
 {
     /* Search through the stacked widgets: */
