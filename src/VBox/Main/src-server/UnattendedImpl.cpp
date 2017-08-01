@@ -825,10 +825,12 @@ HRESULT Unattended::i_reconfigureIsos(com::SafeIfaceArray<IStorageController> &r
         cDvdDrivesNeeded++;
     if (mpInstaller->isOriginalIsoNeeded())
         cDvdDrivesNeeded++;
+#if 0 /* These are now in the AUX VISO. */
     if (mpInstaller->isAdditionsIsoNeeded())
         cDvdDrivesNeeded++;
     if (mpInstaller->isValidationKitIsoNeeded())
         cDvdDrivesNeeded++;
+#endif
     Assert(cDvdDrivesNeeded > 0);
     if (cDvdDrivesNeeded > lstControllerDvdSlots.size())
     {
@@ -877,12 +879,11 @@ HRESULT Unattended::i_reconfigureIsos(com::SafeIfaceArray<IStorageController> &r
     /*
      * Prepare ISO mounts.
      *
-     * ASSUMES the auxiliary ISO is bootable if present.  ASSUMES the original
-     * ISO is bootable if no auxiliary ISO present.  These two assumptions is
-     * reflected in the order we grab DVD slots.
+     * Boot order depends on bootFromAuxiliaryIso() and we must grab DVD slots
+     * according to the boot order.
      */
     std::list<ControllerSlot>::const_iterator itDvdSlot = lstControllerDvdSlots.begin();
-    if (mpInstaller->isAuxiliaryIsoNeeded())
+    if (mpInstaller->isAuxiliaryIsoNeeded() && mpInstaller->bootFromAuxiliaryIso())
     {
         rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, mpInstaller->getAuxiliaryIsoFilePath()));
         ++itDvdSlot;
@@ -894,6 +895,13 @@ HRESULT Unattended::i_reconfigureIsos(com::SafeIfaceArray<IStorageController> &r
         ++itDvdSlot;
     }
 
+    if (mpInstaller->isAuxiliaryIsoNeeded() && !mpInstaller->bootFromAuxiliaryIso())
+    {
+        rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, mpInstaller->getAuxiliaryIsoFilePath()));
+        ++itDvdSlot;
+    }
+
+#if 0 /* These are now in the AUX VISO. */
     if (mpInstaller->isAdditionsIsoNeeded())
     {
         rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getAdditionsIsoPath()));
@@ -905,6 +913,7 @@ HRESULT Unattended::i_reconfigureIsos(com::SafeIfaceArray<IStorageController> &r
         rVecInstallatationDisks.push_back(UnattendedInstallationDisk(itDvdSlot, i_getValidationKitIsoPath()));
         ++itDvdSlot;
     }
+#endif
 
     return S_OK;
 }

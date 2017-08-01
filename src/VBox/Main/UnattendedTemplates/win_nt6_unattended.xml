@@ -7,10 +7,10 @@
             processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
             publicKeyToken="31bf3856ad364e35" language="neutral"
             versionScope="nonSxS">
-            <InputLocale>en-US</InputLocale>
-            <SystemLocale>en-US</SystemLocale>
-            <UILanguage>en-US</UILanguage>
-            <UserLocale>en-US</UserLocale>
+            <InputLocale>@@VBOX_INSERT_DASH_LOCALE@@</InputLocale>
+            <SystemLocale>@@VBOX_INSERT_DASH_LOCALE@@</SystemLocale>
+            <UILanguage>@@VBOX_INSERT_DASH_LOCALE@@</UILanguage>
+            <UserLocale>@@VBOX_INSERT_DASH_LOCALE@@</UserLocale>
         </component>
 
         <component name="Microsoft-Windows-Setup"
@@ -116,6 +116,7 @@
                 <HideEULAPage>true</HideEULAPage>
                 <SkipUserOOBE>true</SkipUserOOBE>
                 <SkipMachineOOBE>true</SkipMachineOOBE>
+                <!-- Make this (NetworkLocation) default to public and make it configurable -->
                 <NetworkLocation>Home</NetworkLocation>
             </OOBE>
 
@@ -128,12 +129,13 @@
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
                     <Description>VirtualBox post guest install steps </Description>
-                    <CommandLine>cmd.exe /c A:\vboxpostinstall.cmd</CommandLine>
+                    <CommandLine>cmd.exe /c A:\VBOXPOST.CMD</CommandLine>
                 </SynchronousCommand>
             </FirstLogonCommands>
 
-            <TimeZone>GMT Standard Time</TimeZone>
+            <TimeZone>@@VBOX_INSERT_TIME_ZONE_WIN_NAME@@</TimeZone>
         </component>
 
     </settings>
 </unattend>
+

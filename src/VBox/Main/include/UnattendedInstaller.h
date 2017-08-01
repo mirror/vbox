@@ -109,6 +109,7 @@ public:
      */
     virtual HRESULT initInstaller();
 
+#if 0 /* These are now in the AUX VISO. */
     /**
      * Whether the VBox guest additions ISO is needed or not.
      *
@@ -124,6 +125,7 @@ public:
      * UnattendedInstaller::addFilesToAuxVisoVectors.
      */
     virtual bool isValidationKitIsoNeeded() const;
+#endif
 
     /**
      * Indicates whether an original installation ISO is needed or not.
@@ -138,7 +140,14 @@ public:
     /**
      * Indicates whether an additional or replacement ISO image is needed or not.
      */
-    virtual bool isAuxiliaryIsoNeeded() const       { return false; }
+    virtual bool isAuxiliaryIsoNeeded() const;
+
+    /**
+     * Indicates whether we should boot from the auxiliary ISO image.
+     *
+     * Will boot from installation ISO if false.
+     */
+    virtual bool bootFromAuxiliaryIso() const       { return isAuxiliaryIsoNeeded(); }
 
     /**
      * Indicates whether a the auxiliary ISO is a .viso-file rather than an
@@ -148,7 +157,7 @@ public:
      * .viso-file is generally only used when the installation media needs to
      * be remastered with small changes and additions.
      */
-    virtual bool isAuxiliaryIsoIsVISO() const       { return false; }
+    virtual bool isAuxiliaryIsoIsVISO() const       { return true; }
 
     /*
      * Getters
@@ -354,11 +363,13 @@ public:
     UnattendedWindowsSifInstaller(Unattended *pParent)
         : UnattendedInstaller(pParent,
                               "win_nt5_unattended.sif", "win_postinstall.cmd",
-                              "WINNT.SIF",              "vboxpostinstall.cmd")
-    { Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded());  Assert(!isAuxiliaryIsoNeeded()); }
+                              "WINNT.SIF",              "VBOXPOST.CMD")
+    { Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso()); }
     ~UnattendedWindowsSifInstaller()        {}
 
     bool isAuxiliaryFloppyNeeded() const    { return true; }
+    bool bootFromAuxiliaryIso() const       { return false; }
+
 };
 
 /**
@@ -370,11 +381,12 @@ public:
     UnattendedWindowsXmlInstaller(Unattended *pParent)
         : UnattendedInstaller(pParent,
                               "win_nt6_unattended.xml", "win_postinstall.cmd",
-                              "autounattend.xml",       "vboxpostinstall.cmd")
-    { Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded());  Assert(!isAuxiliaryIsoNeeded()); }
+                              "autounattend.xml",       "VBOXPOST.CMD")
+    { Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso()); }
     ~UnattendedWindowsXmlInstaller()      {}
 
     bool isAuxiliaryFloppyNeeded() const    { return true; }
+    bool bootFromAuxiliaryIso() const       { return false; }
 };
 
 
@@ -398,7 +410,6 @@ public:
     ~UnattendedLinuxInstaller() {}
 
     bool isAuxiliaryIsoNeeded() const       { return true; }
-    bool isAuxiliaryIsoIsVISO() const       { return true; }
 
 protected:
     /**

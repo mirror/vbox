@@ -558,6 +558,12 @@ HRESULT UnattendedScriptTemplate::getUnescapedReplacement(const char *pachPlaceh
     }
     else if (IS_PLACEHOLDER_MATCH("LOCALE"))
         rValue = mpUnattended->i_getLocale();
+    else if (IS_PLACEHOLDER_MATCH("DASH_LOCALE"))
+    {
+        rValue = mpUnattended->i_getLocale();
+        Assert(rValue[2] == '_');
+        rValue.replace(2, 1, "-");
+    }
     else if (IS_PLACEHOLDER_MATCH("COUNTRY"))
         rValue = mpUnattended->i_getCountry();
     else if (IS_PLACEHOLDER_MATCH("HOSTNAME_FQDN"))

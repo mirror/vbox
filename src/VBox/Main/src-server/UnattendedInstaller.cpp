@@ -186,6 +186,7 @@ HRESULT UnattendedInstaller::initInstaller()
     return S_OK;
 }
 
+#if 0  /* Always in AUX ISO */
 bool UnattendedInstaller::isAdditionsIsoNeeded() const
 {
     /* In the VISO case, we'll add the additions to the VISO in a subdir. */
@@ -197,6 +198,16 @@ bool UnattendedInstaller::isValidationKitIsoNeeded() const
     /* In the VISO case, we'll add the validation kit to the VISO in a subdir. */
     return !isAuxiliaryIsoIsVISO() && mpParent->i_getInstallTestExecService();
 }
+#endif
+
+bool UnattendedInstaller::isAuxiliaryIsoNeeded() const
+{
+    /* In the VISO case we use the AUX ISO for GAs and TXS. */
+    return isAuxiliaryIsoIsVISO()
+        && (   mpParent->i_getInstallGuestAdditions()
+            || mpParent->i_getInstallTestExecService());
+}
+
 
 HRESULT UnattendedInstaller::prepareUnattendedScripts()
 {
