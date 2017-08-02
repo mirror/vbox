@@ -231,7 +231,7 @@ typedef int FNSVMEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static void hmR0SvmSetMsrPermission(PSVMVMCB pVmcb, uint8_t *pbMsrBitmap, unsigned uMsr, SVMMSREXITREAD enmRead,
-                                    SVMMSREXITWRITE enmWrite)
+                                    SVMMSREXITWRITE enmWrite);
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
 static void hmR0SvmLeave(PVMCPU pVCpu);
 
