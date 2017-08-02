@@ -150,7 +150,7 @@ typedef struct UnattendedInstallationDisk
 
 Unattended::Unattended()
     : mhThreadReconfigureVM(NIL_RTNATIVETHREAD), mfRtcUseUtc(false), mfGuestOs64Bit(false)
-    , mpInstaller(NULL), mpTimeZoneInfo(NULL), mfIsDefaultAuxiliaryBasePath(true)
+    , mpInstaller(NULL), mpTimeZoneInfo(NULL), mfIsDefaultAuxiliaryBasePath(true), mfDoneDetectIsoOS(false)
 { }
 
 Unattended::~Unattended()
@@ -230,6 +230,78 @@ HRESULT Unattended::initUnattended(VirtualBox *aParent)
 
 HRESULT Unattended::detectIsoOS()
 {
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /*
+     * Just fake up some windows installation media locale (for <UILanguage>).
+     * Note! The translation here isn't perfect.  Feel free to send us a patch.
+     */
+    /** @todo Looks like we can get this from sources/lang.ini as well as
+     *        sources/??-* and boot/??-*.  Will require UDF reader. */
+    char        szTmp[16];
+    const char *pszFilename = RTPathFilename(mStrIsoPath.c_str());
+    if (   pszFilename
+        && RT_C_IS_ALPHA(pszFilename[0])
+        && RT_C_IS_ALPHA(pszFilename[1])
+        && (pszFilename[2] == '-' || pszFilename[2] == '_') )
+    {
+        szTmp[0] = RT_C_TO_LOWER(pszFilename[0]);
+        szTmp[1] = RT_C_TO_LOWER(pszFilename[1]);
+        szTmp[2] = '-';
+        if (szTmp[0] == 'e' && szTmp[1] == 'n')
+            strcpy(&szTmp[3], "US");
+        else if (szTmp[0] == 'a' && szTmp[1] == 'r')
+            strcpy(&szTmp[3], "SA");
+        else if (szTmp[0] == 'd' && szTmp[1] == 'a')
+            strcpy(&szTmp[3], "DK");
+        else if (szTmp[0] == 'e' && szTmp[1] == 't')
+            strcpy(&szTmp[3], "EE");
+        else if (szTmp[0] == 'e' && szTmp[1] == 'l')
+            strcpy(&szTmp[3], "GR");
+        else if (szTmp[0] == 'h' && szTmp[1] == 'e')
+            strcpy(&szTmp[3], "IL");
+        else if (szTmp[0] == 'j' && szTmp[1] == 'a')
+            strcpy(&szTmp[3], "JP");
+        else if (szTmp[0] == 's' && szTmp[1] == 'v')
+            strcpy(&szTmp[3], "SE");
+        else if (szTmp[0] == 'u' && szTmp[1] == 'k')
+            strcpy(&szTmp[3], "UA");
+        else if (szTmp[0] == 'c' && szTmp[1] == 's')
+            strcpy(szTmp, "cs-CZ");
+        else if (szTmp[0] == 'n' && szTmp[1] == 'o')
+            strcpy(szTmp, "nb-NO");
+        else if (szTmp[0] == 'p' && szTmp[1] == 'p')
+            strcpy(szTmp, "pt-PT");
+        else if (szTmp[0] == 'p' && szTmp[1] == 't')
+            strcpy(szTmp, "pt-BR");
+        else if (szTmp[0] == 'c' && szTmp[1] == 'n')
+            strcpy(szTmp, "zh-CN");
+        else if (szTmp[0] == 'h' && szTmp[1] == 'k')
+            strcpy(szTmp, "zh-HK");
+        else if (szTmp[0] == 't' && szTmp[1] == 'w')
+            strcpy(szTmp, "zh-TW");
+        else if (szTmp[0] == 's' && szTmp[1] == 'r')
+            strcpy(szTmp, "sr-Latn-CS"); /* hmm */
+        else
+        {
+            szTmp[3] = RT_C_TO_UPPER(pszFilename[0]);
+            szTmp[4] = RT_C_TO_UPPER(pszFilename[1]);
+            szTmp[5] = '\0';
+        }
+    }
+    else
+        strcpy(szTmp, "en-US");
+    try
+    {
+        mDetectedOSLanguages.clear();
+        mDetectedOSLanguages.append(szTmp);
+    }
+    catch (std::bad_alloc)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /** @todo implement actual detection logic. */
     return E_NOTIMPL;
 }
 
@@ -318,6 +390,16 @@ HRESULT Unattended::prepare()
                             mStrScriptTemplatePath.c_str());
 
     /*
+     * Do media detection if it haven't been done yet.
+     */
+    if (!mfDoneDetectIsoOS)
+    {
+        hrc = detectIsoOS();
+        if (FAILED(hrc) && hrc != E_NOTIMPL)
+            return hrc;
+    }
+
+    /*
      * Do some default property stuff and check other properties.
      */
     try
@@ -333,6 +415,14 @@ HRESULT Unattended::prepare()
             else
                 mStrLocale = "en_US";
             Assert(RTLOCALE_IS_LANGUAGE2_UNDERSCORE_COUNTRY2(mStrLocale));
+        }
+
+        if (mStrLanguage.isEmpty())
+        {
+            if (mDetectedOSLanguages.size() > 0)
+                mStrLanguage = mDetectedOSLanguages[0];
+            else
+                mStrLanguage.assign(mStrLocale).findReplace('_', '-');
         }
 
         if (mStrCountry.isEmpty())
@@ -1052,7 +1142,8 @@ HRESULT Unattended::setIsoPath(const com::Utf8Str &isoPath)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
-    mStrIsoPath = isoPath;
+    mStrIsoPath       = isoPath;
+    mfDoneDetectIsoOS = false;
     return S_OK;
 }
 
@@ -1215,6 +1306,21 @@ HRESULT Unattended::setLocale(const com::Utf8Str &aLocale)
         return S_OK;
     }
     return setError(E_INVALIDARG, tr("Expected two lower cased letters, an underscore, and two upper cased letters"));
+}
+
+HRESULT Unattended::getLanguage(com::Utf8Str &aLanguage)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aLanguage = mStrLanguage;
+    return S_OK;
+}
+
+HRESULT Unattended::setLanguage(const com::Utf8Str &aLanguage)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
+    mStrLanguage = aLanguage;
+    return S_OK;
 }
 
 HRESULT Unattended::getCountry(com::Utf8Str &aCountry)
@@ -1527,6 +1633,13 @@ HRESULT Unattended::getDetectedOSFlavor(com::Utf8Str &aDetectedOSFlavor)
     return S_OK;
 }
 
+HRESULT Unattended::getDetectedOSLanguages(com::Utf8Str &aDetectedOSLanguages)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aDetectedOSLanguages = RTCString::join(mDetectedOSLanguages, " ");
+    return S_OK;
+}
+
 HRESULT Unattended::getDetectedOSHints(com::Utf8Str &aDetectedOSHints)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1607,6 +1720,12 @@ Utf8Str const &Unattended::i_getLocale() const
 {
     Assert(isReadLockedOnCurrentThread());
     return mStrLocale;
+}
+
+Utf8Str const &Unattended::i_getLanguage() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    return mStrLanguage;
 }
 
 Utf8Str const &Unattended::i_getCountry() const

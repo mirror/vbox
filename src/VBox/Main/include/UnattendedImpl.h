@@ -59,6 +59,7 @@ public:
     Utf8Str const &i_getTimeZone() const;
     PCRTTIMEZONEINFO i_getTimeZoneInfo() const;
     Utf8Str const &i_getLocale() const;
+    Utf8Str const &i_getLanguage() const;
     Utf8Str const &i_getCountry() const;
     bool           i_isMinimalInstallation() const;
     Utf8Str const &i_getHostname() const;
@@ -99,6 +100,7 @@ private:
     Utf8Str         mStrTimeZone;
     PCRTTIMEZONEINFO mpTimeZoneInfo;
     Utf8Str         mStrLocale;
+    Utf8Str         mStrLanguage;           /**< (only relevant for windows at the moment) */
     Utf8Str         mStrCountry;
     RTCList<RTCString, RTCString *> mPackageSelectionAdjustments;
     Utf8Str         mStrHostname;
@@ -109,9 +111,12 @@ private:
     Utf8Str         mStrPostInstallScriptTemplatePath;
     Utf8Str         mStrPostInstallCommand;
     Utf8Str         mStrExtraInstallKernelParameters;
+
+    bool            mfDoneDetectIsoOS;         /**< Set by detectIsoOS(), cleared by setIsoPath(). */
     Utf8Str         mStrDetectedOSTypeId;
     Utf8Str         mStrDetectedOSVersion;
     Utf8Str         mStrDetectedOSFlavor;
+    RTCList<RTCString, RTCString *> mDetectedOSLanguages; /**< (only relevant for windows at the moment) */
     Utf8Str         mStrDetectedOSHints;
     /** @} */
 
@@ -165,6 +170,8 @@ private:
     HRESULT setTimeZone(const com::Utf8Str &aTimezone);
     HRESULT getLocale(com::Utf8Str &aLocale);
     HRESULT setLocale(const com::Utf8Str &aLocale);
+    HRESULT getLanguage(com::Utf8Str &aLanguage);
+    HRESULT setLanguage(const com::Utf8Str &aLanguage);
     HRESULT getCountry(com::Utf8Str &aCountry);
     HRESULT setCountry(const com::Utf8Str &aCountry);
     HRESULT getProxy(com::Utf8Str &aProxy);
@@ -189,6 +196,7 @@ private:
     HRESULT setExtraInstallKernelParameters(const com::Utf8Str &aExtraInstallKernelParameters);
     HRESULT getDetectedOSTypeId(com::Utf8Str &aDetectedOSTypeId);
     HRESULT getDetectedOSVersion(com::Utf8Str &aDetectedOSVersion);
+    HRESULT getDetectedOSLanguages(com::Utf8Str &aDetectedOSLanguages);
     HRESULT getDetectedOSFlavor(com::Utf8Str &aDetectedOSFlavor);
     HRESULT getDetectedOSHints(com::Utf8Str &aDetectedOSHints);
     //internal functions

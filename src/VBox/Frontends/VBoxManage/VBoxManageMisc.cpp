@@ -1336,27 +1336,33 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
     CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSVersion)(bstrDetectedVersion.asOutParam()), RTEXITCODE_FAILURE);
     Bstr bstrDetectedFlavor;
     CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSFlavor)(bstrDetectedFlavor.asOutParam()), RTEXITCODE_FAILURE);
+    Bstr bstrDetectedLanguages;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSLanguages)(bstrDetectedLanguages.asOutParam()), RTEXITCODE_FAILURE);
     Bstr bstrDetectedHints;
     CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSHints)(bstrDetectedHints.asOutParam()), RTEXITCODE_FAILURE);
     if (fMachineReadable)
         RTPrintf("OSTypeId=\"%ls\"\n"
                  "OSVersion=\"%ls\"\n"
                  "OSFlavor=\"%ls\"\n"
+                 "OSLanguages=\"%ls\"\n"
                  "OSHints=\"%ls\"\n",
                  bstrDetectedOSTypeId.raw(),
                  bstrDetectedVersion.raw(),
                  bstrDetectedFlavor.raw(),
+                 bstrDetectedLanguages.raw(),
                  bstrDetectedHints.raw());
     else
     {
         RTMsgInfo("Detected '%s' to be:\n", szIsoPath);
-        RTPrintf("    OS TypeId  = %ls\n"
-                 "    OS Version = %ls\n"
-                 "    OS Flavor  = %ls\n"
-                 "    OS Hints   = %ls\n",
+        RTPrintf("    OS TypeId    = %ls\n"
+                 "    OS Version   = %ls\n"
+                 "    OS Flavor    = %ls\n"
+                 "    OS Languages = %ls\n"
+                 "    OS Hints     = %ls\n",
                  bstrDetectedOSTypeId.raw(),
                  bstrDetectedVersion.raw(),
                  bstrDetectedFlavor.raw(),
+                 bstrDetectedLanguages.raw(),
                  bstrDetectedHints.raw());
     }
 
@@ -1397,7 +1403,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--no-install-txs",                   'T', RTGETOPT_REQ_NOTHING },
         { "--validation-kit-iso",               'K', RTGETOPT_REQ_STRING },
         { "--locale",                           'l', RTGETOPT_REQ_STRING },
-        { "--country",                          'L', RTGETOPT_REQ_STRING },
+        { "--country",                          'Y', RTGETOPT_REQ_STRING },
         { "--time-zone",                        'z', RTGETOPT_REQ_STRING },
         { "--proxy",                            'y', RTGETOPT_REQ_STRING },
         { "--hostname",                         'H', RTGETOPT_REQ_STRING },
@@ -1410,6 +1416,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         { "--post-install-template",            'C', RTGETOPT_REQ_STRING },
         { "--post-install-command",             'P', RTGETOPT_REQ_STRING },
         { "--extra-install-kernel-parameters",  'I', RTGETOPT_REQ_STRING },
+        { "--language",                         'L', RTGETOPT_REQ_STRING },
         // start vm related options:
         { "--session-type",                     'S', RTGETOPT_REQ_STRING },
         /** @todo Add a --wait option too for waiting for the VM to shut down or
@@ -1496,7 +1503,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Locale)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
-            case 'L':   // --country
+            case 'Y':   // --country
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Country)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
@@ -1551,6 +1558,10 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
             case 'I':   // --extra-install-kernel-parameters
                 CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(ExtraInstallKernelParameters)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
+                break;
+
+            case 'L':   // --language
+                CHECK_ERROR2_RET(hrc, ptrUnattended, COMSETTER(Language)(Bstr(ValueUnion.psz).raw()), RTEXITCODE_FAILURE);
                 break;
 
             case 'S':   // --session-type
@@ -1677,9 +1688,11 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     SHOW_STR_ATTR(PostInstallScriptTemplatePath, "postInstallScriptTemplatePath");
     SHOW_STR_ATTR(PostInstallCommand,            "postInstallCommand");
     SHOW_STR_ATTR(ExtraInstallKernelParameters,  "extraInstallKernelParameters");
+    SHOW_STR_ATTR(Language,                      "language");
     SHOW_STR_ATTR(DetectedOSTypeId,              "detectedOSTypeId");
     SHOW_STR_ATTR(DetectedOSVersion,             "detectedOSVersion");
     SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
+    SHOW_STR_ATTR(DetectedOSLanguages,           "detectedOSLanguages");
     SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
 
 #undef SHOW_STR_ATTR

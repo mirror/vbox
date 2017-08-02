@@ -564,6 +564,8 @@ HRESULT UnattendedScriptTemplate::getUnescapedReplacement(const char *pachPlaceh
         Assert(rValue[2] == '_');
         rValue.replace(2, 1, "-");
     }
+    else if (IS_PLACEHOLDER_MATCH("LANGUAGE"))
+        rValue = mpUnattended->i_getLanguage();
     else if (IS_PLACEHOLDER_MATCH("COUNTRY"))
         rValue = mpUnattended->i_getCountry();
     else if (IS_PLACEHOLDER_MATCH("HOSTNAME_FQDN"))

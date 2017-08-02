@@ -7,10 +7,13 @@
             processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
             publicKeyToken="31bf3856ad364e35" language="neutral"
             versionScope="nonSxS">
-            <InputLocale>@@VBOX_INSERT_DASH_LOCALE@@</InputLocale>
+            <InputLocale>en-US</InputLocale>
             <SystemLocale>@@VBOX_INSERT_DASH_LOCALE@@</SystemLocale>
-            <UILanguage>@@VBOX_INSERT_DASH_LOCALE@@</UILanguage>
             <UserLocale>@@VBOX_INSERT_DASH_LOCALE@@</UserLocale>
+            <!-- UILanguage must match the installation media language.  Stuff like de-CH does not work for
+                 example de_windows_7_enterprise_with_sp1_x64_dvd_u_677649.iso.  However, stupidly we cannot
+                 omit this element (kudos to brilliant minds at MS).  -->
+            <UILanguage>@@VBOX_INSERT_LANGUAGE@@</UILanguage>
         </component>
 
         <component name="Microsoft-Windows-Setup"

@@ -3777,7 +3777,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="3107e9fd-7b3a-4008-91de-24273f605a8e"
+    uuid="6f89464f-7193-426c-a41f-522e8f537fa0"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -3919,6 +3919,25 @@
         'en_US', 'de_DE', or 'ny_NO'.
 
         The default is taken from the host if possible, with 'en_US' as fallback.
+      </desc>
+    </attribute>
+
+    <attribute name="language" type="wstring">
+      <desc>
+        This is more or less a Windows specific setting for choosing the UI language
+        setting of the installer.
+
+        The value should be from the list availble via <link to="IUnattended::detectedOSLanguages"/>.
+        The typical format is {language-code}-{COUNTRY} but windows may also use
+        {16-bit code}:{32-bit code} or insert another component between the language
+        and country codes.  We consider the format guest OS specific.
+
+        Note that it is crucial that this is correctly specified for Windows
+        installations.  If an unsupported value is given the installer will ask
+        for an installation language and wait for user input.  Best to leave it
+        to the default value.
+
+        The default is the first one from <link to="IUnattended::detectedOSLanguages"/>.
       </desc>
     </attribute>
 
@@ -4066,6 +4085,19 @@
       </desc>
     </attribute>
 
+    <attribute name="detectedOSLanguages" type="wstring" readonly="yes">
+      <desc>
+        The space separated list of (Windows) installation UI languages we detected (lang.ini).
+
+        The language specifier format is specific to the guest OS.  They are
+        used to set <link to="IUnattended::language"/>.
+
+        Set by <link to="IUnattended::detectIsoOS"/> or <link to="IUnattended::prepare"/>.
+
+        Partially implemented.
+      </desc>
+    </attribute>
+
     <attribute name="detectedOSHints" type="wstring" readonly="yes">
       <desc>
         Space separated list of other stuff detected about the OS and the
@@ -4081,9 +4113,10 @@
       <desc>
         Detects the OS on the ISO given by <link to="IUnattended::isoPath"/> and sets
         <link to="IUnattended::detectedOSTypeId"/>, <link to="IUnattended::detectedOSVersion"/>
-        <link to="IUnattended::detectedOSFlavor"/>, and <link to="IUnattended::detectedOSHints"/>.
+        <link to="IUnattended::detectedOSFlavor"/>, <link to="IUnattended::detectedOSLanguages"/>,
+        and <link to="IUnattended::detectedOSHints"/>.
 
-        Not yet implemented.
+        Not really yet implemented.
       </desc>
     </method>
 
