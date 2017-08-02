@@ -15,23 +15,24 @@
     WaitForReboot = "No"
 
 [GuiUnattended]
-    AdminPassword = "@@VBOX_INSERT_USER_PASSWORD@@"
+    AdminPassword = "@@VBOX_INSERT_ROOT_PASSWORD@@"
     EncryptedAdminPassword = No
     AutoLogon = Yes
     OEMSkipRegional = 1
     OemSkipWelcome = 1
 ; TODO: Make timezone configurable?
-    TimeZone = 85
+    TimeZone = @@VBOX_INSERT_TIME_ZONE_WIN_INDEX@@
     OemSkipWelcome = 1
 
 [UserData]
 ; ProductKey was introduced in XP, ProductID was used in 2K and earlier.
     ProductKey = "@@VBOX_INSERT_PRODUCT_KEY@@"
     ProductID = "@@VBOX_INSERT_PRODUCT_KEY@@"
+; ; TODO: we're currently setting this up as Administrator only. We should respect the --user too.
+; ;       Maybe consider: https://unattended.msfn.org/unattended.xp/view/web/27/SESSID=329e04d6824e220b0bb415d0665b1fe0/
     FullName = "@@VBOX_INSERT_USER_LOGIN@@"
     OrgName = ""
-; TODO: Make computer name configurable, defaulting to a mangled (for NT) VM name.
-    ComputerName = *
+    ComputerName = "@@VBOX_INSERT_HOSTNAME_WITHOUT_DOMAIN_MAX_15@@"
 
 [RegionalSettings]
 ; TODO: Make language groups configurable?
@@ -54,8 +55,6 @@
 [Networking]
     InstallDefaultComponents = Yes
 
-@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
 [GuiRunOnce]
-    Command0="A:\vboxpost.cmd"
-@@VBOX_COND_END@@
+    Command0="A:\VBOXPOST.CMD"
 

@@ -612,6 +612,11 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         *pfOutputting = mpUnattended->i_getPostInstallCommand().isNotEmpty();
     else if (IS_PLACEHOLDER_MATCH("HAS_NO_POST_INSTALL_COMMAND"))
         *pfOutputting = !mpUnattended->i_getPostInstallCommand().isNotEmpty();
+    /* Product key: */
+    else if (IS_PLACEHOLDER_MATCH("HAS_PRODUCT_KEY"))
+        *pfOutputting = mpUnattended->i_getProductKey().isNotEmpty();
+    else if (IS_PLACEHOLDER_MATCH("HAS_NO_PRODUCT_KEY"))
+        *pfOutputting = !mpUnattended->i_getProductKey().isNotEmpty();
     /* Minimal installation: */
     else if (IS_PLACEHOLDER_MATCH("IS_MINIMAL_INSTALLATION"))
         *pfOutputting = mpUnattended->i_isMinimalInstallation();
