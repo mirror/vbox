@@ -572,6 +572,8 @@ HRESULT UnattendedScriptTemplate::getUnescapedReplacement(const char *pachPlaceh
         rValue = mpUnattended->i_getHostname();
     else if (IS_PLACEHOLDER_MATCH("HOSTNAME_WITHOUT_DOMAIN"))
         rValue.assign(mpUnattended->i_getHostname(), 0, mpUnattended->i_getHostname().find("."));
+    else if (IS_PLACEHOLDER_MATCH("HOSTNAME_WITHOUT_DOMAIN_MAX_15"))
+        rValue.assign(mpUnattended->i_getHostname(), 0, RT_MIN(mpUnattended->i_getHostname().find("."), 15));
     else if (IS_PLACEHOLDER_MATCH("HOSTNAME_DOMAIN"))
         rValue.assign(mpUnattended->i_getHostname(), mpUnattended->i_getHostname().find(".") + 1);
     else
