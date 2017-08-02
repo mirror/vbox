@@ -1761,6 +1761,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     DBGFTRACE_PDM_U64_TAG(pDevIns, u64Now, "acpi");
     Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
 
+#if 0
     /** @todo temporary: sanity check against running backwards */
     uint32_t uOld = ASMAtomicXchgU32(&pThis->uPmTimeOld, *pu32);
     if (*pu32 - uOld >= 0x10000000)
@@ -1773,6 +1774,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         AssertReleaseMsgFailed(("acpiPMTmrRead: old=%08RX32, current=%08RX32\n", uOld, *pu32));
 #endif
     }
+#endif
 
     NOREF(pvUser); NOREF(Port);
     return rc;
