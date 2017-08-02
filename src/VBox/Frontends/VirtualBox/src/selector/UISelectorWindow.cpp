@@ -1252,6 +1252,12 @@ void UISelectorWindow::polishEvent(QShowEvent*)
     /* Make sure user warned about inaccessible medium(s)
      * even if enumeration had finished before selector window shown: */
     QTimer::singleShot(0, this, SLOT(sltHandleMediumEnumerationFinish()));
+
+    // WORKAROUND:
+    // By some reason some of X11 DEs unable to update
+    // tab-bars on startup.  Let's try to do it ourselves.
+    m_pTabBarMachine->update();
+    m_pTabBarGlobal->update();
 }
 
 #ifdef VBOX_WS_MAC
