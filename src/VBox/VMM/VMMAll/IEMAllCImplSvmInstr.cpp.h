@@ -119,28 +119,31 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         /*
          * Save the nested-guest state into the VMCB state-save area.
          */
-        SVMVMCBSTATESAVE VmcbNstGst;
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &VmcbNstGst, ES, es);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &VmcbNstGst, CS, cs);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &VmcbNstGst, SS, ss);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, &VmcbNstGst, DS, ds);
-        VmcbNstGst.GDTR.u32Limit = pCtx->gdtr.cbGdt;
-        VmcbNstGst.GDTR.u64Base  = pCtx->gdtr.pGdt;
-        VmcbNstGst.IDTR.u32Limit = pCtx->idtr.cbIdt;
-        VmcbNstGst.IDTR.u64Base  = pCtx->idtr.pIdt;
-        VmcbNstGst.u64EFER       = pCtx->msrEFER;
-        VmcbNstGst.u64CR4        = pCtx->cr4;
-        VmcbNstGst.u64CR3        = pCtx->cr3;
-        VmcbNstGst.u64CR2        = pCtx->cr2;
-        VmcbNstGst.u64CR0        = pCtx->cr0;
+        PSVMVMCB           pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+        PSVMVMCBCTRL       pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+        PSVMVMCBSTATESAVE  pVmcbNstGstState = &pVmcbNstGst->guest;
+
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, ES, es);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, CS, cs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, SS, ss);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, DS, ds);
+        pVmcbNstGstState->GDTR.u32Limit = pCtx->gdtr.cbGdt;
+        pVmcbNstGstState->GDTR.u64Base  = pCtx->gdtr.pGdt;
+        pVmcbNstGstState->IDTR.u32Limit = pCtx->idtr.cbIdt;
+        pVmcbNstGstState->IDTR.u64Base  = pCtx->idtr.pIdt;
+        pVmcbNstGstState->u64EFER       = pCtx->msrEFER;
+        pVmcbNstGstState->u64CR4        = pCtx->cr4;
+        pVmcbNstGstState->u64CR3        = pCtx->cr3;
+        pVmcbNstGstState->u64CR2        = pCtx->cr2;
+        pVmcbNstGstState->u64CR0        = pCtx->cr0;
         /** @todo Nested paging. */
-        VmcbNstGst.u64RFlags     = pCtx->rflags.u64;
-        VmcbNstGst.u64RIP        = pCtx->rip;
-        VmcbNstGst.u64RSP        = pCtx->rsp;
-        VmcbNstGst.u64RAX        = pCtx->rax;
-        VmcbNstGst.u64DR7        = pCtx->dr[6];
-        VmcbNstGst.u64DR6        = pCtx->dr[7];
-        VmcbNstGst.u8CPL         = pCtx->ss.Attr.n.u2Dpl;   /* See comment in CPUMGetGuestCPL(). */
+        pVmcbNstGstState->u64RFlags     = pCtx->rflags.u64;
+        pVmcbNstGstState->u64RIP        = pCtx->rip;
+        pVmcbNstGstState->u64RSP        = pCtx->rsp;
+        pVmcbNstGstState->u64RAX        = pCtx->rax;
+        pVmcbNstGstState->u64DR7        = pCtx->dr[6];
+        pVmcbNstGstState->u64DR6        = pCtx->dr[7];
+        pVmcbNstGstState->u8CPL         = pCtx->ss.Attr.n.u2Dpl;   /* See comment in CPUMGetGuestCPL(). */
         Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
 
         PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
@@ -200,86 +203,54 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         pVmcbCtrl->EventInject.n.u1Valid = 0;
 
         /*
-         * Write back the VMCB controls to the guest VMCB in guest physical memory.
+         * Notify HM in case the VMRUN was executed using SVM R0, HM would have modified some VMCB
+         * state that we need to restore on #VMEXIT before writing it back to guest memory.
          */
-        VBOXSTRICTRC rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb, pVmcbCtrl,
-                                                         sizeof(*pVmcbCtrl));
+        HMSvmNstGstVmExitNotify(pVCpu, pVmcbNstGst);
+
+        /*
+         * Write back the nested-guest's VMCB to its guest physical memory location.
+         */
+        VBOXSTRICTRC rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb, pVmcbNstGst,
+                                                         sizeof(*pVmcbNstGst));
         /*
          * Prepare for guest's "host mode" by clearing internal processor state bits.
          *
-         * Some of these like TSC offset can then be used unconditionally in our TM code
-         * but the offset in the guest's VMCB will remain as it should as we've written
-         * back the VMCB controls above.
+         * We don't need to zero out the state-save area, just the controls should be
+         * sufficient because it has the critical bit of indicating whether we're inside
+         * the nested-guest or not.
          */
-        memset(pVmcbCtrl, 0, sizeof(*pVmcbCtrl));
+        memset(pVmcbNstGstCtrl, 0, sizeof(*pVmcbNstGstCtrl));
         Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
         if (RT_SUCCESS(rcStrict))
         {
-            rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb + RT_OFFSETOF(SVMVMCB, guest),
-                                                &VmcbNstGst, sizeof(VmcbNstGst));
+            /** @todo Nested paging. */
+            /** @todo ASID. */
+
+            /*
+             * Reload the guest's "host state".
+             */
+            CPUMSvmVmExitRestoreHostState(pCtx);
+
+            /*
+             * Update PGM, IEM and others of a world-switch.
+             */
+            rcStrict = iemSvmWorldSwitch(pVCpu, pCtx);
+            if (rcStrict == VINF_SUCCESS)
+                return VINF_SVM_VMEXIT;
+
             if (RT_SUCCESS(rcStrict))
             {
-                /** @todo Nested paging. */
-                /** @todo ASID. */
-
-                /*
-                 * Reload the guest's "host state".
-                 */
-                PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
-                pCtx->es         = pHostState->es;
-                pCtx->cs         = pHostState->cs;
-                pCtx->ss         = pHostState->ss;
-                pCtx->ds         = pHostState->ds;
-                pCtx->gdtr       = pHostState->gdtr;
-                pCtx->idtr       = pHostState->idtr;
-                pCtx->msrEFER    = pHostState->uEferMsr;
-                pCtx->cr0        = pHostState->uCr0 | X86_CR0_PE;
-                pCtx->cr3        = pHostState->uCr3;
-                pCtx->cr4        = pHostState->uCr4;
-                pCtx->rflags     = pHostState->rflags;
-                pCtx->rflags.Bits.u1VM = 0;
-                pCtx->rip        = pHostState->uRip;
-                pCtx->rsp        = pHostState->uRsp;
-                pCtx->rax        = pHostState->uRax;
-                pCtx->dr[7]     &= ~(X86_DR7_ENABLED_MASK | X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
-                pCtx->dr[7]     |= X86_DR7_RA1_MASK;
-
-                /** @todo if RIP is not canonical or outside the CS segment limit, we need to
-                 *        raise \#GP(0) in the guest. */
-
-                /** @todo check the loaded host-state for consistency. Figure out what
-                 *        exactly this involves? */
-
-                /* Restore guest's force-flags. */
-                if (pCtx->hwvirt.fLocalForcedActions)
-                {
-                    VMCPU_FF_SET(pVCpu, pCtx->hwvirt.fLocalForcedActions);
-                    pCtx->hwvirt.fLocalForcedActions = 0;
-                }
-
-                /*
-                 * Update PGM, IEM and others of a world-switch.
-                 */
-                rcStrict = iemSvmWorldSwitch(pVCpu, pCtx);
-                if (rcStrict == VINF_SUCCESS)
-                    return VINF_SVM_VMEXIT;
-
-                if (RT_SUCCESS(rcStrict))
-                {
-                    LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", rcStrict));
-                    iemSetPassUpStatus(pVCpu, rcStrict);
-                    return VINF_SVM_VMEXIT;
-                }
-
-                LogFlow(("iemSvmVmexit: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", rcStrict));
+                iemSetPassUpStatus(pVCpu, rcStrict);
+                return VINF_SVM_VMEXIT;
             }
-            else
-                LogFlow(("iemSvmVmexit: Writing VMCB guest-state at %#RGp failed. rc=%Rrc\n", pCtx->hwvirt.svm.GCPhysVmcb,
-                         VBOXSTRICTRC_VAL(rcStrict)));
+
+            LogFlow(("iemSvmVmexit: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         }
         else
-            LogFlow(("iemSvmVmexit: Writing VMCB guest-controls at %#RGp failed. rc=%Rrc\n", pCtx->hwvirt.svm.GCPhysVmcb,
+            LogFlow(("iemSvmVmexit: Writing VMCB at %#RGp failed. rc=%Rrc\n", pCtx->hwvirt.svm.GCPhysVmcb,
                      VBOXSTRICTRC_VAL(rcStrict)));
 
         return VERR_SVM_VMEXIT_FAILED;
@@ -325,21 +296,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     /*
      * Save the host state.
      */
-    PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
-    pHostState->es       = pCtx->es;
-    pHostState->cs       = pCtx->cs;
-    pHostState->ss       = pCtx->ss;
-    pHostState->ds       = pCtx->ds;
-    pHostState->gdtr     = pCtx->gdtr;
-    pHostState->idtr     = pCtx->idtr;
-    pHostState->uEferMsr = pCtx->msrEFER;
-    pHostState->uCr0     = pCtx->cr0;
-    pHostState->uCr3     = pCtx->cr3;
-    pHostState->uCr4     = pCtx->cr4;
-    pHostState->rflags   = pCtx->rflags;
-    pHostState->uRip     = pCtx->rip + cbInstr;
-    pHostState->uRsp     = pCtx->rsp;
-    pHostState->uRax     = pCtx->rax;
+    CPUMSvmVmRunSaveHostState(pCtx, cbInstr);
 
     /*
      * Read the guest VMCB state.
@@ -976,6 +933,18 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
 
     Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u)\n", u16Port, u16Port));
 
+#if 1
+    SVMIOIOEXITINFO IoExitInfo;
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    void *pvIoBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
+    bool const fIntercept = HMSvmIsIOInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
+                                                     &IoExitInfo);
+    if (fIntercept)
+    {
+        Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u) -> #VMEXIT\n", u16Port, u16Port));
+        return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_IOIO, IoExitInfo.u, pCtx->rip + cbInstr);
+    }
+#else
     /*
      * The IOPM layout:
      * Each bit represents one 8-bit port. That makes a total of 0..65535 bits or
@@ -1010,7 +979,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
         SVMIOIOEXITINFO IoExitInfo;
         IoExitInfo.u         = s_auIoOpSize[cbReg & 7];
         IoExitInfo.u        |= s_auIoAddrSize[(cAddrSizeBits >> 4) & 7];
-        IoExitInfo.n.u1STR   = fStrIo;
+        IoExitInfo.n.u1STR   = iemSvmVmexitfStrIo;
         IoExitInfo.n.u1REP   = fRep;
         IoExitInfo.n.u3SEG   = iEffSeg & 7;
         IoExitInfo.n.u1Type  = enmIoType;
@@ -1020,6 +989,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
               u16Port, u16Port, offIopm, fSizeMask, cShift, fIopmMask));
         return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_IOIO, IoExitInfo.u, pCtx->rip + cbInstr);
     }
+#endif
 
     /** @todo remove later (for debugging as VirtualBox always traps all IO
      *        intercepts). */
