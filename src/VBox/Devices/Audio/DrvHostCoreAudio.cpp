@@ -1634,6 +1634,12 @@ static int coreAudioStreamUninitQueue(PCOREAUDIOSTREAM pCAStream)
         pCAStream->hThread = NIL_RTTHREAD;
     }
 
+    if (pCAStream->pCfg)
+    {
+        DrvAudioHlpStreamCfgFree(pCAStream->pCfg);
+        pCAStream->pCfg = NULL;
+    }
+
     if (pCAStream->pCircBuf)
     {
         RTCircBufDestroy(pCAStream->pCircBuf);
@@ -1655,6 +1661,12 @@ static int coreAudioStreamUninit(PCOREAUDIOSTREAM pCAStream)
     LogFunc(("pCAStream=%p\n", pCAStream));
 
     int rc = coreAudioStreamUninitQueue(pCAStream);
+    if (RT_SUCCESS(rc))
+    {
+        pCAStream->Unit.pDevice = NULL;
+        pCAStream->pDrv         = NULL;
+    }
+
     return rc;
 }
 
