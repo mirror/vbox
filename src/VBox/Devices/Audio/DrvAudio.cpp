@@ -2250,7 +2250,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
      */
     if (pThis->pHostDrvAudio->pfnSetCallback)
     {
-        int rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
+        rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
         if (RT_FAILURE(rc2))
              LogRel(("Audio: Error registering backend callback, rc=%Rrc\n", rc2));
         /* Not fatal. */
