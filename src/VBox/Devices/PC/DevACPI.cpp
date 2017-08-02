@@ -483,6 +483,12 @@ typedef struct ACPIState
     uint8_t             au8SMBusBlkDat[32];
     /** SMBus Host Block Index */
     uint8_t             u8SMBusBlkIdx;
+
+    /** @todo DEBUGGING */
+    uint32_t            uPmTimerOld;
+    uint32_t            uPmTimerA;
+    uint32_t            uPmTimerB;
+    uint32_t            Alignment5;
 } ACPIState;
 
 #pragma pack(1)
@@ -1755,11 +1761,32 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     DBGFTRACE_PDM_U64_TAG(pDevIns, u64Now, "acpi");
     Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
 
+    /** @todo temporary: sanity check against running backwards */
+    uint32_t uOld = ASMAtomicXchgU32(&pThis->uPmTimerOld, *pu32);
+    if (*pu32 - uOld >= 0x10000000)
+    {
+#if defined(IN_RING0)
+        pThis->uPmTimerA = uOld;
+        pThis->uPmTimerB = *pu32;
+        return VERR_TM_TIMER_BAD_CLOCK;
+#elif defined(IN_RING3)
+        AssertReleaseMsgFailed(("acpiPMTmrRead: old=%08RX32, current=%08RX32\n", uOld, *pu32));
+#endif
+    }
+
     NOREF(pvUser); NOREF(Port);
     return rc;
 }
 
 #ifdef IN_RING3
+
+static DECLCALLBACK(void) acpiR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    pHlp->pfnPrintf(pHlp,
+                    "timer: old=%08RX32, current=%08RX32\n", pThis->uPmTimerA, pThis->uPmTimerB);
+}
 
 /**
  * @callback_method_impl{FNIOMIOPORTIN, GPE0 Status}
@@ -4080,6 +4107,8 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
    }
    else
        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach LUN #0"));
+
+    PDMDevHlpDBGFInfoRegister(pDevIns, "acpi", "ACPI info", acpiR3Info);
 
     return rc;
 }
