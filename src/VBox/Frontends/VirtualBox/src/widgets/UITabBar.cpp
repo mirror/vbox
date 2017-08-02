@@ -331,7 +331,11 @@ void UITabBarItem::prepare()
             m_pButtonClose->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             m_pButtonClose->setIconSize(QSize(iMetricCloseButton, iMetricCloseButton));
             m_pButtonClose->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+#ifdef VBOX_WS_MAC
             m_pButtonClose->setStyleSheet("QToolButton { border: 0px }");
+#else
+            m_pButtonClose->setAutoRaise(true);
+#endif
             connect(m_pButtonClose, &QToolButton::clicked, this, &UITabBarItem::sltCloseClicked);
         }
 
