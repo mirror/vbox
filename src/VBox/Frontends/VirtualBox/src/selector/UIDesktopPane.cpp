@@ -225,7 +225,11 @@ void UIToolWidgetHeader::paintEvent(QPaintEvent *pEvent)
 
     /* Prepare palette colors: */
     const QPalette pal = palette();
+#ifdef VBOX_WS_MAC
+    const QColor color0 = pal.color(QPalette::Highlight).lighter(105);
+#else /* !VBOX_WS_MAC */
     const QColor color0 = pal.color(QPalette::Highlight).lighter(130);
+#endif /* !VBOX_WS_MAC */
     QColor color1 = color0;
     color1.setAlpha(0);
 
@@ -302,10 +306,17 @@ void UIToolWidget::paintEvent(QPaintEvent * /* pEvent */)
 
     /* Prepare palette colors: */
     const QPalette pal = palette();
+#ifdef VBOX_WS_MAC
+    const QColor color0 = m_fHovered
+                        ? pal.color(QPalette::Highlight).lighter(120)
+                        : pal.color(QPalette::Base);
+    const QColor color1 = color0.lighter(110);
+#else /* !VBOX_WS_MAC */
     const QColor color0 = m_fHovered
                         ? pal.color(QPalette::Highlight).lighter(160)
                         : pal.color(QPalette::Base);
     const QColor color1 = color0.lighter(120);
+#endif /* !VBOX_WS_MAC */
     QColor color2 = pal.color(QPalette::Window).lighter(110);
     color2.setAlpha(0);
     QColor color3 = pal.color(QPalette::Window).darker(200);
