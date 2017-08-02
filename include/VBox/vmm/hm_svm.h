@@ -536,6 +536,9 @@ typedef SVMEVENT *PSVMEVENT;
 /** Pointer to a const SVMEVENT union. */
 typedef const SVMEVENT *PCSVMEVENT;
 
+/** Gets the event type given an SVMEVENT parameter. */
+#define SVM_EVENT_GET_TYPE(a_SvmEvent)  (((a_SvmEvent) >> 8) & 7)
+
 /**
  * SVM Interrupt control structure (Virtual Interrupt Control).
  */
@@ -616,6 +619,8 @@ typedef const SVMIOIOEXITINFO *PCSVMIOIOEXITINFO;
 #define SVM_IOIO_32_BIT_ADDR            RT_BIT_32(8)
 /** 64-bit address for the IO buffer. */
 #define SVM_IOIO_64_BIT_ADDR            RT_BIT_32(9)
+/** Number of bits to shift right to get the address sizes. */
+#define SVM_IOIO_ADDR_SIZE_SHIFT        7
 /** Mask of all the IO address sizes. */
 #define SVM_IOIO_ADDR_SIZE_MASK         (SVM_IOIO_16_BIT_ADDR | SVM_IOIO_32_BIT_ADDR | SVM_IOIO_64_BIT_ADDR)
 /** Number of bits to shift right to get the IO port number. */
@@ -956,6 +961,54 @@ AssertCompileMemberOffset(SVMVMCB, u8Reserved3,  0x100);
 AssertCompileMemberOffset(SVMVMCB, guest,        0x400);
 AssertCompileMemberOffset(SVMVMCB, u8Reserved10, 0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
+
+/** SVM nested-guest VMCB cache.
+ *
+ *  A state structure for holding information across AMD-V VMRUN/\#VMEXIT
+ *  operation during execution of the nested-guest, restored on \#VMEXIT.
+ */
+typedef struct SVMNESTEDVMCBCACHE
+{
+    /** @name Nested-guest VMCB controls.
+     * @{ */
+    /** Cache of CRX read intercepts. */
+    uint16_t            u16InterceptRdCRx;
+    /** Cache of CRX write intercepts. */
+    uint16_t            u16InterceptWrCRx;
+    /** Cache of DRX read intercepts. */
+    uint16_t            u16InterceptRdDRx;
+    /** Cache of DRX write intercepts. */
+    uint16_t            u16InterceptWrDRx;
+    /** Cache of exception intercepts. */
+    uint32_t            u32InterceptXcpt;
+    /** Cache of control intercepts. */
+    uint64_t            u64InterceptCtrl;
+    /** Cache of IOPM nested-guest physical address. */
+    uint64_t            u64IOPMPhysAddr;
+    /** Cache of MSRPM nested-guest physical address. */
+    uint64_t            u64MSRPMPhysAddr;
+    /** Cache of the VMCB clean bits. */
+    uint64_t            u64VmcbCleanBits;
+    /** Cache of V_INTR_MASKING bit. */
+    bool                fVIntrMasking;
+    /** @} */
+
+    /** @name Other miscellaneous state.
+     * @{ */
+    /** Whether the fields above are updated or not. */
+    bool                fValid;
+    /** Whether a VMRUN was just emulated in R0 and the VMCB is up to date. */
+    bool                fVmrunEmulatedInR0;
+    /** Whether the VMCB exit code and info fields are updated during \#VMEXIT
+     *  processing. */
+    bool                fExitCodeAndInfoUpdated;
+    /** @} */
+} SVMNESTEDVMCBCACHE;
+/** Pointer to the SVMNESTEDVMCBCACHE structure. */
+typedef SVMNESTEDVMCBCACHE *PSVMNESTEDVMCBCACHE;
+/** Pointer to a const SVMNESTEDVMCBCACHE structure. */
+typedef const SVMNESTEDVMCBCACHE *PCSVMNESTEDVMCBCACHE;
+/** @} */
 
 #ifdef IN_RING0
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);

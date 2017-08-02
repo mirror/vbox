@@ -2623,3 +2623,68 @@ VMM_INT_DECL(uint8_t) CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx)
 #endif
 }
 
+
+/**
+ * Restores the host-state from the host-state save area as part of a \#VMEXIT.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        The guest-CPU context.
+ */
+VMM_INT_DECL(void) CPUMSvmVmExitRestoreHostState(PCPUMCTX pCtx)
+{
+   /*
+     * Reload the guest's "host state".
+     */
+    PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
+    pCtx->es         = pHostState->es;
+    pCtx->cs         = pHostState->cs;
+    pCtx->ss         = pHostState->ss;
+    pCtx->ds         = pHostState->ds;
+    pCtx->gdtr       = pHostState->gdtr;
+    pCtx->idtr       = pHostState->idtr;
+    pCtx->msrEFER    = pHostState->uEferMsr;
+    pCtx->cr0        = pHostState->uCr0 | X86_CR0_PE;
+    pCtx->cr3        = pHostState->uCr3;
+    pCtx->cr4        = pHostState->uCr4;
+    pCtx->rflags     = pHostState->rflags;
+    pCtx->rflags.Bits.u1VM = 0;
+    pCtx->rip        = pHostState->uRip;
+    pCtx->rsp        = pHostState->uRsp;
+    pCtx->rax        = pHostState->uRax;
+    pCtx->dr[7]     &= ~(X86_DR7_ENABLED_MASK | X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
+    pCtx->dr[7]     |= X86_DR7_RA1_MASK;
+
+    /** @todo if RIP is not canonical or outside the CS segment limit, we need to
+     *        raise \#GP(0) in the guest. */
+
+    /** @todo check the loaded host-state for consistency. Figure out what
+     *        exactly this involves? */
+}
+
+
+/**
+ * Saves the host-state to the host-state save area as part of a VMRUN.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        The guest-CPU context.
+ * @param   cbInstr     The length of the VMRUN instruction in bytes.
+ */
+VMM_INT_DECL(void) CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr)
+{
+    PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
+    pHostState->es       = pCtx->es;
+    pHostState->cs       = pCtx->cs;
+    pHostState->ss       = pCtx->ss;
+    pHostState->ds       = pCtx->ds;
+    pHostState->gdtr     = pCtx->gdtr;
+    pHostState->idtr     = pCtx->idtr;
+    pHostState->uEferMsr = pCtx->msrEFER;
+    pHostState->uCr0     = pCtx->cr0;
+    pHostState->uCr3     = pCtx->cr3;
+    pHostState->uCr4     = pCtx->cr4;
+    pHostState->rflags   = pCtx->rflags;
+    pHostState->uRip     = pCtx->rip + cbInstr;
+    pHostState->uRsp     = pCtx->rsp;
+    pHostState->uRax     = pCtx->rax;
+}
+

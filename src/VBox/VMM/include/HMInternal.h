@@ -25,6 +25,7 @@
 #include <VBox/dis.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/hm_vmx.h>
+#include <VBox/vmm/hm_svm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/trpm.h>
@@ -866,27 +867,31 @@ typedef struct HMCPU
         RTHCPHYS                    HCPhysVmcbHost;
         /** R0 memory object for the host VMCB which holds additional host-state. */
         RTR0MEMOBJ                  hMemObjVmcbHost;
-        /** Virtual address of the host VMCB which holds additional host-state. */
-        R0PTRTYPE(void *)           pvVmcbHost;
+        /** Padding. */
+        R0PTRTYPE(void *)           pvPadding;
 
         /** Physical address of the guest VMCB. */
         RTHCPHYS                    HCPhysVmcb;
         /** R0 memory object for the guest VMCB. */
         RTR0MEMOBJ                  hMemObjVmcb;
-        /** Virtual address of the guest VMCB. */
-        R0PTRTYPE(void *)           pvVmcb;
+        /** Pointer to the guest VMCB. */
+        R0PTRTYPE(PSVMVMCB)         pVmcb;
 
         /** Physical address of the MSR bitmap (8 KB). */
         RTHCPHYS                    HCPhysMsrBitmap;
         /** R0 memory object for the MSR bitmap (8 KB). */
         RTR0MEMOBJ                  hMemObjMsrBitmap;
-        /** Virtual address of the MSR bitmap. */
+        /** Pointer to the MSR bitmap. */
         R0PTRTYPE(void *)           pvMsrBitmap;
 
         /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
          *  we should check if the VTPR changed on every VM-exit. */
         bool                        fSyncVTpr;
         uint8_t                     u8Alignment0[7];
+
+        /** Cache of the nested-guest's VMCB fields that we modify in order to run the
+         *  nested-guest using AMD-V. This will be restored on \#VMEXIT. */
+        SVMNESTEDVMCBCACHE          NstGstVmcbCache;
     } svm;
 
     /** Event injection state. */

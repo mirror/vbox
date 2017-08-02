@@ -161,9 +161,6 @@ VMM_INT_DECL(int)               HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16
 /** @name Nested hardware virtualization.
  * @{
  */
-VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
-                                                  uint64_t uExitInfo2);
-VMM_INT_DECL(void)              HMVmxNstGstVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr, RTGCPHYS GCPhysVmcb);
 VMM_INT_DECL(uint8_t)           HMSvmNstGstGetInterrupt(PCCPUMCTX pCtx);
@@ -174,6 +171,10 @@ VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCP
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t idMsr, bool fWrite);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstHandleIOIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PCSVMIOIOEXITINFO pIoExitInfo,
                                                              uint64_t uNextRip);
+VMM_INT_DECL(bool)              HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                                         uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
+                                                         PSVMIOIOEXITINFO pIoExitInfo);
+VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst);
 /** @} */
 
 #ifndef IN_RC

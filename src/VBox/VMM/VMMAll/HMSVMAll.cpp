@@ -257,3 +257,110 @@ VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm
     return VERR_OUT_OF_RANGE;
 }
 
+
+/**
+ * Determines whether an IOIO intercept is active for the nested-guest or not.
+ *
+ * @param   pvIoBitmap      Pointer to the nested-guest IO bitmap.
+ * @param   u16Port         The IO port being accessed.
+ * @param   enmIoType       The type of IO access.
+ * @param   cbReg           The IO operand size in bytes.
+ * @param   cAddrSizeBits   The address size bits (for 16, 32 or 64).
+ * @param   iEffSeg         The effective segment number.
+ * @param   fRep            Whether this is a repeating IO instruction (REP prefix).
+ * @param   fStrIo          Whether this is a string IO instruction.
+ * @param   pIoExitInfo     Pointer to the SVMIOIOEXITINFO struct to be filled.
+ *                          Optional, can be NULL.
+ */
+VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                            uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
+                                            PSVMIOIOEXITINFO pIoExitInfo)
+{
+    Assert(cAddrSizeBits == 0 || cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
+    Assert(cbReg == 1 || cbReg == 2 || cbReg == 4 || cbReg == 8);
+
+    /*
+     * The IOPM layout:
+     * Each bit represents one 8-bit port. That makes a total of 0..65535 bits or
+     * two 4K pages.
+     *
+     * For IO instructions that access more than a single byte, the permission bits
+     * for all bytes are checked; if any bit is set to 1, the IO access is intercepted.
+     *
+     * Since it's possible to do a 32-bit IO access at port 65534 (accessing 4 bytes),
+     * we need 3 extra bits beyond the second 4K page.
+     */
+    static const uint16_t s_auSizeMasks[] = { 0, 1, 3, 0, 0xf, 0, 0, 0 };
+
+    uint16_t const offIopm   = u16Port >> 3;
+    uint16_t const fSizeMask = s_auSizeMasks[(cAddrSizeBits >> SVM_IOIO_OP_SIZE_SHIFT) & 7];
+    uint8_t  const cShift    = u16Port - (offIopm << 3);
+    uint16_t const fIopmMask = (1 << cShift) | (fSizeMask << cShift);
+
+    uint8_t const *pbIopm = (uint8_t *)pvIoBitmap;
+    Assert(pbIopm);
+    pbIopm += offIopm;
+    uint16_t const u16Iopm = *(uint16_t *)pbIopm;
+    if (u16Iopm & fIopmMask)
+    {
+        if (pIoExitInfo)
+        {
+            static const uint32_t s_auIoOpSize[] =
+            { SVM_IOIO_32_BIT_OP, SVM_IOIO_8_BIT_OP, SVM_IOIO_16_BIT_OP, 0, SVM_IOIO_32_BIT_OP, 0, 0, 0 };
+
+            static const uint32_t s_auIoAddrSize[] =
+            { 0, SVM_IOIO_16_BIT_ADDR, SVM_IOIO_32_BIT_ADDR, 0, SVM_IOIO_64_BIT_ADDR, 0, 0, 0 };
+
+            pIoExitInfo->u         = s_auIoOpSize[cbReg & 7];
+            pIoExitInfo->u        |= s_auIoAddrSize[(cAddrSizeBits >> 4) & 7];
+            pIoExitInfo->n.u1STR   = fStrIo;
+            pIoExitInfo->n.u1REP   = fRep;
+            pIoExitInfo->n.u3SEG   = iEffSeg & 7;
+            pIoExitInfo->n.u1Type  = enmIoType;
+            pIoExitInfo->n.u16Port = u16Port;
+        }
+        return true;
+    }
+
+    /** @todo remove later (for debugging as VirtualBox always traps all IO
+     *        intercepts). */
+    AssertMsgFailed(("iemSvmHandleIOIntercept: We expect an IO intercept here!\n"));
+    return false;
+}
+
+
+/**
+ * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
+ * in IEM).
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
+ *
+ * @sa      hmR0SvmVmRunCacheVmcb.
+ */
+VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
+{
+    PSVMVMCBCTRL        pVmcbCtrl        = &pVmcbNstGst->ctrl;
+    PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+
+    /*
+     * Restore the nested-guest VMCB fields which have been modified for executing
+     * the nested-guest under SVM R0.
+     */
+    if (pNstGstVmcbCache->fValid)
+    {
+        pVmcbCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
+        pVmcbCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
+        pVmcbCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
+        pVmcbCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
+        pVmcbCtrl->u64VmcbCleanBits         = pNstGstVmcbCache->u64VmcbCleanBits;
+        pVmcbCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
+        pVmcbCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;
+        pVmcbCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
+        pNstGstVmcbCache->fValid = false;
+    }
+    pNstGstVmcbCache->fVmrunEmulatedInR0 = false;
+}
+

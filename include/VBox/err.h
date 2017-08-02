@@ -2140,6 +2140,8 @@
 #define VERR_SVM_VMEXIT_FAILED                      (-4066)
 /** An operation caused a nested-guest SVM \#VMEXIT. */
 #define VINF_SVM_VMEXIT                              4067
+/** VMRUN emulation succeeded, ready to immediately enter the nested-guest. */
+#define VINF_SVM_VMRUN                               4068
 /** @} */
 
 

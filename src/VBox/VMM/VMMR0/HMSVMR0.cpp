@@ -230,7 +230,8 @@ typedef int FNSVMEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite);
+static void hmR0SvmSetMsrPermission(PSVMVMCB pVmcb, uint8_t *pbMsrBitmap, unsigned uMsr, SVMMSREXITREAD enmRead,
+                                    SVMMSREXITWRITE enmWrite);
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
 static void hmR0SvmLeave(PVMCPU pVCpu);
 
@@ -280,8 +281,11 @@ static FNSVMEXITHANDLER hmR0SvmExitVmrun;
 #endif
 /** @} */
 
-DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient);
-
+static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
+static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
+#endif
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -455,7 +459,6 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
         if (pVCpu->hm.s.svm.hMemObjVmcbHost != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcbHost, false);
-            pVCpu->hm.s.svm.pvVmcbHost       = 0;
             pVCpu->hm.s.svm.HCPhysVmcbHost   = 0;
             pVCpu->hm.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
         }
@@ -463,7 +466,7 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
         if (pVCpu->hm.s.svm.hMemObjVmcb != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcb, false);
-            pVCpu->hm.s.svm.pvVmcb           = 0;
+            pVCpu->hm.s.svm.pVmcb            = NULL;
             pVCpu->hm.s.svm.HCPhysVmcb       = 0;
             pVCpu->hm.s.svm.hMemObjVmcb      = NIL_RTR0MEMOBJ;
         }
@@ -471,7 +474,7 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
         if (pVCpu->hm.s.svm.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjMsrBitmap, false);
-            pVCpu->hm.s.svm.pvMsrBitmap      = 0;
+            pVCpu->hm.s.svm.pvMsrBitmap      = NULL;
             pVCpu->hm.s.svm.HCPhysMsrBitmap  = 0;
             pVCpu->hm.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
         }
@@ -524,10 +527,10 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        pVCpu->hm.s.svm.pvVmcbHost     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcbHost);
+        void *pvVmcbHost               = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcbHost);
         pVCpu->hm.s.svm.HCPhysVmcbHost = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcbHost, 0 /* iPage */);
         Assert(pVCpu->hm.s.svm.HCPhysVmcbHost < _4G);
-        ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcbHost);
+        ASMMemZeroPage(pvVmcbHost);
 
         /*
          * Allocate one page for the guest-state VMCB.
@@ -536,10 +539,10 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        pVCpu->hm.s.svm.pvVmcb          = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcb);
+        pVCpu->hm.s.svm.pVmcb           = (PSVMVMCB)RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcb);
         pVCpu->hm.s.svm.HCPhysVmcb      = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcb, 0 /* iPage */);
         Assert(pVCpu->hm.s.svm.HCPhysVmcb < _4G);
-        ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcb);
+        ASMMemZeroPage(pVCpu->hm.s.svm.pVmcb);
 
         /*
          * Allocate two pages (8 KB) for the MSR permission bitmap. There doesn't seem to be a way to convince
@@ -554,7 +557,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         pVCpu->hm.s.svm.HCPhysMsrBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjMsrBitmap, 0 /* iPage */);
         /* Set all bits to intercept all MSR accesses (changed later on). */
         ASMMemFill32(pVCpu->hm.s.svm.pvMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT, UINT32_C(0xffffffff));
-    }
+   }
 
     return VINF_SUCCESS;
 
@@ -581,11 +584,13 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
  * Sets the permission bits for the specified MSR in the MSRPM.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest CPU or nested-guest CPU context.
  * @param   uMsr        The MSR for which the access permissions are being set.
  * @param   enmRead     MSR read permissions.
  * @param   enmWrite    MSR write permissions.
  */
-static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite)
+static void hmR0SvmSetMsrPermission(PSVMVMCB pVmcb, uint8_t *pbMsrBitmap, unsigned uMsr, SVMMSREXITREAD enmRead,
+                                    SVMMSREXITWRITE enmWrite)
 {
     uint16_t offMsrpm;
     uint32_t uMsrpmBit;
@@ -595,9 +600,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
     Assert(uMsrpmBit < 0x3fff);
     Assert(offMsrpm < SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
 
-    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
     pbMsrBitmap += offMsrpm;
-
     if (enmRead == SVMMSREXIT_INTERCEPT_READ)
         ASMBitSet(pbMsrBitmap, uMsrpmBit);
     else
@@ -608,7 +611,6 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
     else
         ASMBitClear(pbMsrBitmap, uMsrpmBit + 1);
 
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
 }
 
@@ -633,7 +635,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
-        PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcb;
+        PSVMVMCB pVmcb = pVM->aCpus[i].hm.s.svm.pVmcb;
 
         AssertMsgReturn(pVmcb, ("Invalid pVmcb for vcpu[%u]\n", i), VERR_SVM_INVALID_PVMCB);
 
@@ -766,16 +768,17 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
          * The following MSRs are saved/restored automatically during the world-switch.
          * Don't intercept guest read/write accesses to these MSRs.
          */
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_CSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K6_STAR,           SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_SF_MASK,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_FS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_GS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_LSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_CSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K6_STAR,           SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_SF_MASK,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_FS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_GS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     }
 
     return VINF_SUCCESS;
@@ -802,7 +805,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
     {
         Log4(("SVMR0InvalidatePage %RGv\n", GCVirt));
 
-        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         AssertMsgReturn(pVmcb, ("Invalid pVmcb!\n"), VERR_SVM_INVALID_PVMCB);
 
 #if HC_ARCH_BITS == 32
@@ -828,7 +831,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 {
     PVM pVM              = pVCpu->CTX_SUFF(pVM);
-    PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb       = pVCpu->hm.s.svm.pVmcb;
     PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
 
     /*
@@ -1095,65 +1098,57 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
  */
 static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
+    uint64_t u64GuestCR0 = pCtx->cr0;
+
+    /* Always enable caching. */
+    u64GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);
+
     /*
-     * Guest CR0.
+     * When Nested Paging is not available use shadow page tables and intercept #PFs (the latter done in SVMR0SetupVM()).
      */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0))
+    if (!pVmcb->ctrl.NestedPaging.n.u1NestedPaging)
     {
-        uint64_t u64GuestCR0 = pCtx->cr0;
-
-        /* Always enable caching. */
-        u64GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);
-
-        /*
-         * When Nested Paging is not available use shadow page tables and intercept #PFs (the latter done in SVMR0SetupVM()).
-         */
-        if (!pVM->hm.s.fNestedPaging)
-        {
-            u64GuestCR0 |= X86_CR0_PG;     /* When Nested Paging is not available, use shadow page tables. */
-            u64GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
-        }
-
-        /*
-         * Guest FPU bits.
-         */
-        bool fInterceptNM = false;
-        bool fInterceptMF = false;
-        u64GuestCR0 |= X86_CR0_NE;         /* Use internal x87 FPU exceptions handling rather than external interrupts. */
-        if (CPUMIsGuestFPUStateActive(pVCpu))
-        {
-            /* Catch floating point exceptions if we need to report them to the guest in a different way. */
-            if (!(pCtx->cr0 & X86_CR0_NE))
-            {
-                Log4(("hmR0SvmLoadGuestControlRegs: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
-                fInterceptMF = true;
-            }
-        }
-        else
-        {
-            fInterceptNM = true;           /* Guest FPU inactive, #VMEXIT on #NM for lazy FPU loading. */
-            u64GuestCR0 |=  X86_CR0_TS     /* Guest can task switch quickly and do lazy FPU syncing. */
-                          | X86_CR0_MP;    /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
-        }
-
-        /*
-         * Update the exception intercept bitmap.
-         */
-        if (fInterceptNM)
-            hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_NM);
-        else
-            hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_NM);
-
-        if (fInterceptMF)
-            hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_MF);
-        else
-            hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_MF);
-
-        pVmcb->guest.u64CR0 = u64GuestCR0;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
-        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR0);
+        u64GuestCR0 |= X86_CR0_PG;     /* When Nested Paging is not available, use shadow page tables. */
+        u64GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
     }
+
+    /*
+     * Guest FPU bits.
+     */
+    bool fInterceptNM = false;
+    bool fInterceptMF = false;
+    u64GuestCR0 |= X86_CR0_NE;         /* Use internal x87 FPU exceptions handling rather than external interrupts. */
+    if (CPUMIsGuestFPUStateActive(pVCpu))
+    {
+        /* Catch floating point exceptions if we need to report them to the guest in a different way. */
+        if (!(pCtx->cr0 & X86_CR0_NE))
+        {
+            Log4(("hmR0SvmLoadGuestControlRegs: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
+            fInterceptMF = true;
+        }
+    }
+    else
+    {
+        fInterceptNM = true;           /* Guest FPU inactive, #VMEXIT on #NM for lazy FPU loading. */
+        u64GuestCR0 |=  X86_CR0_TS     /* Guest can task switch quickly and do lazy FPU syncing. */
+                      | X86_CR0_MP;    /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
+    }
+
+    /*
+     * Update the exception intercept bitmap.
+     */
+    if (fInterceptNM)
+        hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_NM);
+    else
+        hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_NM);
+
+    if (fInterceptMF)
+        hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_MF);
+    else
+        hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_MF);
+
+    pVmcb->guest.u64CR0 = u64GuestCR0;
+    pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
 }
 
 
@@ -1262,6 +1257,58 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Loads the nested-guest control registers (CR2, CR3, CR4) into the VMCB.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0SvmLoadGuestControlRegsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst, PCPUMCTX pCtx)
+{
+    /*
+     * Guest CR2.
+     */
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR2))
+    {
+        pVmcbNstGst->guest.u64CR2 = pCtx->cr2;
+        pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CR2;
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR2);
+    }
+
+    /*
+     * Guest CR3.
+     */
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR3))
+    {
+        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmNestedPaging);
+        pVmcbNstGst->guest.u64CR3 = pCtx->cr3;
+        pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR3);
+    }
+
+    /*
+     * Guest CR4.
+     * ASSUMES this is done everytime we get in from ring-3! (XCR0)
+     */
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR4))
+    {
+        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmNestedPaging);
+        pVmcbNstGst->guest.u64CR4 = pCtx->cr4;
+        pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+
+        /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+nested-guest XCR0. */
+        pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR4);
+    }
+}
+#endif
+
+
 /**
  * Loads the guest segment registers into the VMCB.
  *
@@ -1367,7 +1414,6 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         }
     }
 
-
     /** @todo The following are used in 64-bit only (SYSCALL/SYSRET) but they might
      *        be writable in 32-bit mode. Clarify with AMD spec. */
     pVmcb->guest.u64STAR         = pCtx->msrSTAR;
@@ -1379,8 +1425,8 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 
 
 /**
- * Loads the guest state into the VMCB and programs the necessary intercepts
- * accordingly.
+ * Loads the guest (or nested-guest) debug state into the VMCB and programs the
+ * necessary intercepts accordingly.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
@@ -1391,10 +1437,10 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
  */
 static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
-    if (!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_DEBUG))
-        return;
-    Assert((pCtx->dr[6] & X86_DR6_RA1_MASK) == X86_DR6_RA1_MASK); Assert((pCtx->dr[6] & X86_DR6_RAZ_MASK) == 0);
-    Assert((pCtx->dr[7] & X86_DR7_RA1_MASK) == X86_DR7_RA1_MASK); Assert((pCtx->dr[7] & X86_DR7_RAZ_MASK) == 0);
+    Assert((pCtx->dr[6] & X86_DR6_RA1_MASK) == X86_DR6_RA1_MASK);
+    Assert((pCtx->dr[6] & X86_DR6_RAZ_MASK) == 0);
+    Assert((pCtx->dr[7] & X86_DR7_RA1_MASK) == X86_DR7_RA1_MASK);
+    Assert((pCtx->dr[7] & X86_DR7_RAZ_MASK) == 0);
 
     bool fInterceptMovDRx = false;
 
@@ -1535,10 +1581,29 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
             pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
         }
     }
-
-    HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_DEBUG);
 }
 
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Loads the nested-guest APIC state (currently just the TPR).
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
+ */
+static void hmR0SvmLoadGuestApicStateNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
+{
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE))
+    {
+        /* Always enable V_INTR_MASKING as we do not want to allow access to the physical APIC TPR. */
+        pVmcbNstGst->ctrl.IntCtrl.n.u1VIntrMasking = 1;
+        pVCpu->hm.s.svm.fSyncVTpr = false;
+        pVmcbNstGst->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_TPR;
+
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
+    }
+}
+#endif
 
 /**
  * Loads the guest APIC state (currently just the TPR).
@@ -1572,13 +1637,14 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
         if (pVM->hm.s.fTPRPatchingActive)
         {
             pCtx->msrLSTAR = u8Tpr;
+            uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
 
             /* If there are interrupts pending, intercept LSTAR writes, otherwise don't intercept reads or writes. */
             if (fPendingIntr)
-                hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_INTERCEPT_WRITE);
+                hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_INTERCEPT_WRITE);
             else
             {
-                hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+                hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
                 pVCpu->hm.s.svm.fSyncVTpr = true;
             }
         }
@@ -1606,16 +1672,14 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
 
 
 /**
- * Loads the exception interrupts required for guest execution in the VMCB.
+ * Loads the exception interrupts required for guest (or nested-guest) execution in
+ * the VMCB.
  *
- * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
- * @param   pCtx        Pointer to the guest-CPU context.
  */
-static int hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb)
 {
-    NOREF(pCtx);
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
         /* Trap #UD for GIM provider (e.g. for hypercalls). */
@@ -1633,8 +1697,34 @@ static int hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX
         /* The remaining intercepts are handled elsewhere, e.g. in hmR0SvmLoadSharedCR0(). */
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
     }
-    return VINF_SUCCESS;
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Loads the intercepts required for nested-guest execution in the VMCB.
+ *
+ * This merges the guest and nested-guest intercepts in a way that if the outer
+ * guest intercepts an exception we need to intercept it in the nested-guest as
+ * well and handle it accordingly.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcb           Pointer to the VM control block.
+ * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
+ */
+static void hmR0SvmMergeIntercepts(PVMCPU pVCpu, PCSVMVMCB pVmcb, PSVMVMCB pVmcbNstGst)
+{
+    RT_NOREF(pVCpu);
+#if 0
+    pVmcbNstGst->ctrl.u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
+    pVmcbNstGst->ctrl.u16InterceptWrCRx |= pVmcb->ctrl.u16InterceptWrCRx;
+    pVmcbNstGst->ctrl.u16InterceptRdDRx |= pVmcb->ctrl.u16InterceptRdDRx;
+    pVmcbNstGst->ctrl.u16InterceptWrDRx |= pVmcb->ctrl.u16InterceptWrDRx;
+#endif
+    pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
+    pVmcbNstGst->ctrl.u64InterceptCtrl  |= pVmcb->ctrl.u64InterceptCtrl;
+}
+#endif
 
 
 /**
@@ -1642,13 +1732,12 @@ static int hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX
  *
  * @returns VBox status code.
  * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pCtx    Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0SvmSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmSetupVMRunHandler(PVMCPU pVCpu)
 {
-    if (CPUMIsGuestInLongModeEx(pCtx))
+    if (CPUMIsGuestInLongMode(pVCpu))
     {
 #ifndef VBOX_ENABLE_64_BITS_GUESTS
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
@@ -1799,7 +1888,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  */
 static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
     AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
@@ -1818,10 +1907,9 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     rc = hmR0SvmLoadGuestApicState(pVCpu, pVmcb, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    rc = hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb, pCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestXcptIntercepts! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb);
 
-    rc = hmR0SvmSetupVMRunHandler(pVCpu, pCtx);
+    rc = hmR0SvmSetupVMRunHandler(pVCpu);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     /* Clear any unused and reserved bits. */
@@ -1848,8 +1936,71 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
- * Loads the state shared between the host and guest into the
+ * Loads the nested-guest state into the VMCB.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
+
+    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    Assert(pVmcbNstGst);
+
+    /*
+     * If we just emulated VMRUN, the VMCB is already in-sync with the guest-CPU context.
+     */
+    if (!pVCpu->hm.s.svm.NstGstVmcbCache.fVmrunEmulatedInR0)
+    {
+        hmR0SvmLoadGuestControlRegsNested(pVCpu, pVmcbNstGst, pCtx);
+        hmR0SvmLoadGuestSegmentRegs(pVCpu, pVmcbNstGst, pCtx);
+        hmR0SvmLoadGuestMsrs(pVCpu, pVmcbNstGst, pCtx);
+
+        pVmcbNstGst->guest.u64RIP    = pCtx->rip;
+        pVmcbNstGst->guest.u64RSP    = pCtx->rsp;
+        pVmcbNstGst->guest.u64RFlags = pCtx->eflags.u32;
+        pVmcbNstGst->guest.u64RAX    = pCtx->rax;
+    }
+
+    hmR0SvmLoadGuestApicStateNested(pVCpu, pVmcbNstGst);
+    hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcbNstGst);
+
+    int rc = hmR0SvmSetupVMRunHandler(pVCpu);
+    AssertRCReturn(rc, rc);
+
+    /* Clear any unused and reserved bits. */
+    HMCPU_CF_CLEAR(pVCpu,   HM_CHANGED_GUEST_RIP                  /* Unused (loaded unconditionally). */
+                          | HM_CHANGED_GUEST_RSP
+                          | HM_CHANGED_GUEST_RFLAGS
+                          | HM_CHANGED_GUEST_SYSENTER_CS_MSR
+                          | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
+                          | HM_CHANGED_GUEST_SYSENTER_ESP_MSR
+                          | HM_CHANGED_GUEST_LAZY_MSRS            /* Unused. */
+                          | HM_CHANGED_SVM_RESERVED1              /* Reserved. */
+                          | HM_CHANGED_SVM_RESERVED2
+                          | HM_CHANGED_SVM_RESERVED3
+                          | HM_CHANGED_SVM_RESERVED4);
+
+    /* All the guest state bits should be loaded except maybe the host context and/or shared host/guest bits. */
+    AssertMsg(   !HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_ALL_GUEST)
+              ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
+               ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
+
+    Log4(("Load: CS:RIP=%04x:%RX64 EFL=%#x SS:RSP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->ss.Sel, pCtx->rsp));
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
+    return rc;
+}
+#endif
+
+
+/**
+ * Loads the state shared between the host and guest or nested-guest into the
  * VMCB.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -1864,10 +2015,22 @@ static void hmR0SvmLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0))
+    {
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        /* We use nested-guest CR0 unmodified, hence nothing to do here. */
+        if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+            hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
+#else
         hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
+#endif
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR0);
+    }
 
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_DEBUG))
+    {
         hmR0SvmLoadSharedDebugState(pVCpu, pVmcb, pCtx);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_DEBUG);
+    }
 
     /* Unused on AMD-V. */
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
@@ -1878,21 +2041,21 @@ static void hmR0SvmLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 
 
 /**
- * Saves the entire guest state from the VMCB into the
- * guest-CPU context. Currently there is no residual state left in the CPU that
- * is not updated in the VMCB.
+ * Saves the guest (or nested-guest) state from the VMCB into the guest-CPU context.
+ *
+ * Currently there is no residual state left in the CPU that is not updated in the
+ * VMCB.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
+ * @param   pVmcb           Pointer to the VM control block.
  */
-static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pVmcb)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
-
-    PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     pMixedCtx->rip        = pVmcb->guest.u64RIP;
     pMixedCtx->rsp        = pVmcb->guest.u64RSP;
@@ -1911,6 +2074,18 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * Guest Control registers: CR2, CR3 (handled at the end) - accesses to other control registers are always intercepted.
      */
     pMixedCtx->cr2        = pVmcb->guest.u64CR2;
+
+#ifdef VBOX_WITH_NESTED_GUEST
+    /*
+     * The nested hypervisor might not be intercepting these control registers,
+     */
+    if (CPUMIsGuestInNestedHwVirtMode(pMixedCtx))
+    {
+        pMixedCtx->cr3        = pVmcb->guest.u64CR3;
+        pMixedCtx->cr4        = pVmcb->guest.u64CR4;
+        pMixedCtx->cr0        = pVmcb->guest.u64CR0;
+    }
+#endif
 
     /*
      * Guest MSRs.
@@ -2020,11 +2195,14 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * With Nested Paging, CR3 changes are not intercepted. Therefore, sync. it now.
      * This is done as the very last step of syncing the guest state, as PGMUpdateCR3() may cause longjmp's to ring-3.
      */
-    if (   pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx) || !pVmcb->ctrl.NestedPaging.n.u1NestedPaging);
+#endif
+    if (   pVmcb->ctrl.NestedPaging.n.u1NestedPaging
         && pMixedCtx->cr3 != pVmcb->guest.u64CR3)
     {
         CPUMSetGuestCR3(pVCpu, pVmcb->guest.u64CR3);
-        PGMUpdateCR3(pVCpu, pVmcb->guest.u64CR3);
+        PGMUpdateCR3(pVCpu,    pVmcb->guest.u64CR3);
     }
 }
 
@@ -2058,7 +2236,7 @@ static void hmR0SvmLeave(PVMCPU pVCpu)
 #ifdef VBOX_STRICT
     if (CPUMIsHyperDebugStateActive(pVCpu))
     {
-        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
         Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
     }
@@ -2238,6 +2416,10 @@ static int hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    pVCpu->hm.s.svm.NstGstVmcbCache.fVmrunEmulatedInR0 = false;
+#endif
+
     /* On our way back from ring-3 reload the guest state if there is a possibility of it being changed. */
     if (rcExit != VINF_EM_RAW_INTERRUPT)
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
@@ -2269,13 +2451,13 @@ static int hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
  *
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcb       Pointer to the VM control block.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0SvmUpdateTscOffsetting(PVM pVM, PVMCPU pVCpu)
+static void hmR0SvmUpdateTscOffsetting(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb)
 {
-    bool     fParavirtTsc;
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    bool fParavirtTsc;
     bool fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc);
     if (fCanUseRealTsc)
     {
@@ -2468,22 +2650,22 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
 
 
 /**
- * Gets the guest's interrupt-shadow.
+ * Checks if the guest (or nested-guest) has an interrupt shadow active right
+ * now.
  *
- * @returns The guest's interrupt-shadow.
+ * @returns true if the interrupt shadow is active, false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  * @remarks Has side-effects with VMCPU_FF_INHIBIT_INTERRUPTS force-flag.
  */
-DECLINLINE(uint32_t) hmR0SvmGetGuestIntrShadow(PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINLINE(bool) hmR0SvmIsIntrShadowActive(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /*
      * Instructions like STI and MOV SS inhibit interrupts till the next instruction completes. Check if we should
      * inhibit interrupts or clear any existing interrupt-inhibition.
      */
-    uint32_t uIntrState = 0;
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         if (pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
@@ -2493,11 +2675,11 @@ DECLINLINE(uint32_t) hmR0SvmGetGuestIntrShadow(PVMCPU pVCpu, PCPUMCTX pCtx)
              * AMD-V, the flag's condition to be cleared is met and thus the cleared state is correct.
              */
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+            return false;
         }
-        else
-            uIntrState = SVM_INTERRUPT_SHADOW_ACTIVE;
+        return true;
     }
-    return uIntrState;
+    return false;
 }
 
 
@@ -2577,6 +2759,114 @@ DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
     }
 }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Evaluates the event to be delivered to the nested-guest and sets it as the
+ * pending event.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+static void hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    Log4Func(("\n"));
+
+    Assert(!pVCpu->hm.s.Event.fPending);
+    Assert(pCtx->hwvirt.svm.fGif);
+
+    PSVMVMCB pVmcbNstGst  = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+
+    SVMEVENT Event;
+    Event.u = 0;
+    bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
+
+    /** @todo SMI. SMIs take priority over NMIs. */
+    /*
+     * Check if the nested-guest can receive NMIs.
+     * NMIs are higher priority than regular interrupts.
+     */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+    {
+        bool const fBlockNmi = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        if (fBlockNmi)
+            hmR0SvmSetIretIntercept(pVmcbNstGst);
+        else if (fIntShadow)
+            hmR0SvmSetVirtIntrIntercept(pVmcbNstGst);
+        else
+        {
+            Log4(("Pending NMI\n"));
+
+            Event.n.u1Valid  = 1;
+            Event.n.u8Vector = X86_XCPT_NMI;
+            Event.n.u3Type   = SVM_EVENT_NMI;
+
+            hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+            hmR0SvmSetIretIntercept(pVmcbNstGst);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+            return;
+        }
+    }
+
+    /*
+     * Check if the nested-guest can receive external interrupts (PIC/APIC).
+     */
+    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+        && !pVCpu->hm.s.fSingleInstruction)
+    {
+        /* Note: it is critical we call CPUMCanSvmNstGstTakePhysIntr -before- modifying the nested-guests's V_INTR_MASKING
+           bit, currently it gets modified in hmR0SvmLoadGuestApicStateNested. */
+        bool const fIntEnabled = CPUMCanSvmNstGstTakePhysIntr(pCtx);
+        if (    fIntEnabled
+            && !fIntShadow)
+        {
+            uint8_t u8Interrupt;
+            int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+            if (RT_SUCCESS(rc))
+            {
+                Log4(("Injecting external interrupt u8Interrupt=%#x\n", u8Interrupt));
+
+                Event.n.u1Valid  = 1;
+                Event.n.u8Vector = u8Interrupt;
+                Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
+
+                hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+            }
+            else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
+            {
+                /*
+                 * AMD-V has no TPR thresholding feature. We just avoid posting the interrupt.
+                 * We just avoid delivering the TPR-masked interrupt here. TPR will be updated
+                 * always via hmR0SvmLoadGuestState() -> hmR0SvmLoadGuestApicState().
+                 */
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
+            }
+            else
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
+        }
+        else
+            hmR0SvmSetVirtIntrIntercept(pVmcbNstGst);
+    }
+    /*
+     * Check if the nested-guest can receive virtual interrupts.
+     */
+    else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
+    {
+        bool const fIntEnabled = CPUMCanSvmNstGstTakeVirtIntr(pCtx);
+        if (fIntEnabled)
+        {
+            uint8_t const u8Interrupt = CPUMGetSvmNstGstInterrupt(pCtx);
+            Log4(("Injecting virtual interrupt u8Interrupt=%#x\n", u8Interrupt));
+
+            Event.n.u1Valid  = 1;
+            Event.n.u8Vector = u8Interrupt;
+            Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
+
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+            hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+        }
+    }
+}
+#endif
 
 /**
  * Evaluates the event to be delivered to the guest and sets it as the pending
@@ -2590,18 +2880,15 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!pVCpu->hm.s.Event.fPending);
     Log4Func(("\n"));
 
-    bool const fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
+    bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
     bool const fBlockNmi  = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS);
-    PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-
-    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
-        APICUpdatePendingInterrupts(pVCpu);
+    PSVMVMCB pVmcb        = pVCpu->hm.s.svm.pVmcb;
 
     SVMEVENT Event;
     Event.u = 0;
                                                               /** @todo SMI. SMIs take priority over NMIs. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts . */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts. */
     {
         if (fBlockNmi)
             hmR0SvmSetIretIntercept(pVmcb);
@@ -2666,22 +2953,22 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pVmcb       Pointer to the VM control block.
  */
-static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
 {
     Assert(!TRPMHasTrap(pVCpu));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    bool const fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
+    bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu, pCtx);
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
-    PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
     {
         SVMEVENT Event;
         Event.u = pVCpu->hm.s.Event.u64IntInfo;
+
         Assert(Event.n.u1Valid);
-#ifdef VBOX_STRICT
         if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
         {
             Assert(!fBlockInt);
@@ -2689,18 +2976,9 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else if (Event.n.u3Type == SVM_EVENT_NMI)
             Assert(!fIntShadow);
-#endif
+        NOREF(fBlockInt);
 
-#ifndef RT_OS_WINDOWS
-        /* Temporary test for returning guru, later make this function return void as before. */
-        if (   Event.n.u3Type == SVM_EVENT_EXCEPTION
-            && Event.n.u8Vector == X86_XCPT_PF)
-        {
-            AssertRelease(pCtx->cr2 == pVCpu->hm.s.Event.GCPtrFaultAddress);
-        }
-#endif
-
-        Log4(("Injecting pending HM event.\n"));
+        Log4(("Injecting pending HM event\n"));
         hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
         pVCpu->hm.s.Event.fPending = false;
 
@@ -2714,7 +2992,6 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Update the guest interrupt shadow in the VMCB. */
     pVmcb->ctrl.u64IntShadow = !!fIntShadow;
-    NOREF(fBlockInt);
 }
 
 
@@ -2732,7 +3009,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 {
     NOREF(pCtx);
     HMSVM_ASSERT_PREEMPT_SAFE();
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
 
     if (rcVMRun == VERR_SVM_INVALID_GUEST_STATE)
     {
@@ -2888,6 +3165,10 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
+    /* Update pending interrupts into the APIC's IRR. */
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+        APICUpdatePendingInterrupts(pVCpu);
+
     if (   VM_FF_IS_PENDING(pVM, !pVCpu->hm.s.fSingleInstruction
                             ? VM_FF_HP_R0_PRE_HM_MASK : VM_FF_HP_R0_PRE_HM_STEP_MASK)
         || VMCPU_FF_IS_PENDING(pVCpu, !pVCpu->hm.s.fSingleInstruction
@@ -2942,6 +3223,127 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Does the preparations before executing nested-guest code in AMD-V.
+ *
+ * @returns VBox status code (informational status codes included).
+ * @retval VINF_SUCCESS if we can proceed with running the guest.
+ * @retval VINF_* scheduling changes, we have to go back to ring-3.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ *
+ * @remarks Same caveats regarding longjumps as hmR0SvmPreRunGuest applies.
+ * @sa      hmR0SvmPreRunGuest.
+ */
+static int hmR0SvmPreRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_ASSERT_PREEMPT_SAFE();
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
+        return VINF_EM_RESCHEDULE_REM;
+    }
+#endif
+
+    /* Check force flag actions that might require us to go back to ring-3. */
+    int rc = hmR0SvmCheckForceFlags(pVM, pVCpu, pCtx);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
+    if (TRPMHasTrap(pVCpu))
+        hmR0SvmTrpmTrapToPendingEvent(pVCpu);
+    else if (!pVCpu->hm.s.Event.fPending)
+        hmR0SvmEvaluatePendingEventNested(pVCpu, pCtx);
+
+    /*
+     * On the oldest AMD-V systems, we may not get enough information to reinject an NMI.
+     * Just do it in software, see @bugref{8411}.
+     * NB: If we could continue a task switch exit we wouldn't need to do this.
+     */
+    if (RT_UNLIKELY(   !pVM->hm.s.svm.u32Features
+                    &&  pVCpu->hm.s.Event.fPending
+                    &&  SVM_EVENT_GET_TYPE(pVCpu->hm.s.Event.u64IntInfo) == SVM_EVENT_NMI))
+    {
+        return VINF_EM_RAW_INJECT_TRPM_EVENT;
+    }
+
+    /*
+     * Load the nested-guest state. We can optimize this later to be avoided when VMRUN is
+     * just emulated in hmR0SvmExecVmrun since the VMCB is already setup by the nested-hypervisor,
+     * We currently do this because we may pre-maturely return to ring-3 before executing the
+     * nested-guest and doing it here is simpler.
+     */
+    rc = hmR0SvmLoadGuestStateNested(pVCpu, pCtx);
+    AssertRCReturn(rc, rc);
+    /** @todo Get new STAM counter for this? */
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
+
+    /*
+     * No longjmps to ring-3 from this point on!!!
+     * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
+     * This also disables flushing of the R0-logger instance (if any).
+     */
+    VMMRZCallRing3Disable(pVCpu);
+
+    /*
+     * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
+     * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
+     *
+     * We need to check for force-flags that could've possible been altered since we last checked them (e.g.
+     * by PDMGetInterrupt() leaving the PDM critical section, see @bugref{6398}).
+     *
+     * We also check a couple of other force-flags as a last opportunity to get the EMT back to ring-3 before
+     * executing guest code.
+     */
+    pSvmTransient->fEFlags = ASMIntDisableFlags();
+    if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+    {
+        ASMSetFlags(pSvmTransient->fEFlags);
+        VMMRZCallRing3Enable(pVCpu);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
+        return VINF_EM_RAW_TO_R3;
+    }
+    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    {
+        ASMSetFlags(pSvmTransient->fEFlags);
+        VMMRZCallRing3Enable(pVCpu);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
+        return VINF_EM_RAW_INTERRUPT;
+    }
+
+    /*
+     * If we are injecting an NMI, we must set VMCPU_FF_BLOCK_NMIS only when we are going to execute
+     * guest code for certain (no exits to ring-3). Otherwise, we could re-read the flag on re-entry into
+     * AMD-V and conclude that NMI inhibition is active when we have not even delivered the NMI.
+     *
+     * With VT-x, this is handled by the Guest interruptibility information VMCS field which will set the
+     * VMCS field after actually delivering the NMI which we read on VM-exit to determine the state.
+     */
+    if (pVCpu->hm.s.Event.fPending)
+    {
+        SVMEVENT Event;
+        Event.u = pVCpu->hm.s.Event.u64IntInfo;
+        if (    Event.n.u1Valid
+            &&  Event.n.u3Type == SVM_EVENT_NMI
+            &&  Event.n.u8Vector == X86_XCPT_NMI
+            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        {
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+#endif
+
+
 /**
  * Does the preparations before executing guest code in AMD-V.
  *
@@ -2966,9 +3368,11 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_ASSERT_PREEMPT_SAFE();
+    Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
 #if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM)
-    /* Nested Hw. virt through SVM R0 execution is not yet implemented, IEM only, we shouldn't get here. */
+
+    /* IEM only for executing nested guest, we shouldn't get here. */
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
         Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
@@ -3014,7 +3418,7 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
             pSvmTransient->u8GuestTpr = pCtx->msrLSTAR;
         else
         {
-            PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+            PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
             pSvmTransient->u8GuestTpr = pVmcb->ctrl.IntCtrl.n.u8VTPR;
         }
     }
@@ -3078,6 +3482,116 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Prepares to run nested-guest code in AMD-V and we've committed to doing so. This
+ * means there is no backing out to ring-3 or anywhere else at this point.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ *
+ * @remarks Called with preemption disabled.
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(VMMR0IsLogFlushDisabled(pVCpu));
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
+
+    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    hmR0SvmInjectPendingEvent(pVCpu, pCtx, pVmcbNstGst);
+
+    if (   pVCpu->hm.s.fPreloadGuestFpu
+        && !CPUMIsGuestFPUStateActive(pVCpu))
+    {
+        CPUMR0LoadGuestFPU(pVM, pVCpu); /* (Ignore rc, no need to set HM_CHANGED_HOST_CONTEXT for SVM.) */
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
+    }
+
+    /* Load the state shared between host and nested-guest (FPU, debug). */
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_GUEST_SHARED_STATE))
+        hmR0SvmLoadSharedState(pVCpu, pVmcbNstGst, pCtx);
+
+    HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);             /* Preemption might set this, nothing to do on AMD-V. */
+    AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
+
+    /* Setup TSC offsetting. */
+    RTCPUID idCurrentCpu = hmR0GetCurrentCpu()->idCpu;
+    if (   pSvmTransient->fUpdateTscOffsetting
+        || idCurrentCpu != pVCpu->hm.s.idLastCpu)
+    {
+        hmR0SvmUpdateTscOffsetting(pVM, pVCpu, pVmcbNstGst);
+        pSvmTransient->fUpdateTscOffsetting = false;
+    }
+
+    /* If we've migrating CPUs, mark the VMCB Clean bits as dirty. */
+    if (idCurrentCpu != pVCpu->hm.s.idLastCpu)
+        pVmcbNstGst->ctrl.u64VmcbCleanBits = 0;
+
+    /* Store status of the shared guest-host state at the time of VMRUN. */
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActivePending(pVCpu);
+        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActivePending(pVCpu);
+    }
+    else
+#endif
+    {
+        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActive(pVCpu);
+        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
+    }
+    pSvmTransient->fWasGuestFPUStateActive = CPUMIsGuestFPUStateActive(pVCpu);
+
+    /* The TLB flushing would've already been setup by the nested-hypervisor. */
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
+    Assert(hmR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
+
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
+
+    TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
+                                                                   to start executing. */
+
+    /*
+     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
+     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
+     *
+     * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
+     */
+    uint8_t *pbMsrBitmap = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
+    if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+        && !(pVmcbNstGst->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP))
+    {
+        hmR0SvmSetMsrPermission(pVmcbNstGst, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64GuestTscAux = CPUMR0GetGuestTscAux(pVCpu);
+        if (u64GuestTscAux != pVCpu->hm.s.u64HostTscAux)
+            ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
+        pSvmTransient->fRestoreTscAuxMsr = true;
+    }
+    else
+    {
+        hmR0SvmSetMsrPermission(pVmcbNstGst, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
+        pSvmTransient->fRestoreTscAuxMsr = false;
+    }
+
+    /*
+     * If VMCB Clean bits isn't supported by the CPU or exposed by the guest,
+     * mark all state-bits as dirty indicating to the CPU to re-load from VMCB.
+     */
+    if (   !(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN)
+        || !(pVM->cpum.ro.GuestFeatures.fSvmVmcbClean))
+        pVmcbNstGst->ctrl.u64VmcbCleanBits = 0;
+}
+#endif
+
+
 /**
  * Prepares to run guest code in AMD-V and we've committed to doing so. This
  * means there is no backing out to ring-3 or anywhere else at this
@@ -3100,7 +3614,8 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
 
-    hmR0SvmInjectPendingEvent(pVCpu, pCtx);
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    hmR0SvmInjectPendingEvent(pVCpu, pCtx, pVmcb);
 
     if (   pVCpu->hm.s.fPreloadGuestFpu
         && !CPUMIsGuestFPUStateActive(pVCpu))
@@ -3110,9 +3625,9 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     }
 
     /* Load the state shared between host and guest (FPU, debug). */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_GUEST_SHARED_STATE))
         hmR0SvmLoadSharedState(pVCpu, pVmcb, pCtx);
+
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);             /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
@@ -3121,7 +3636,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     if (   pSvmTransient->fUpdateTscOffsetting
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
-        hmR0SvmUpdateTscOffsetting(pVM, pVCpu);
+        hmR0SvmUpdateTscOffsetting(pVM, pVCpu, pVmcb);
         pSvmTransient->fUpdateTscOffsetting = false;
     }
 
@@ -3160,10 +3675,11 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
      *
      * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
      */
+    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
     if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP))
     {
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
         uint64_t u64GuestTscAux = CPUMR0GetGuestTscAux(pVCpu);
         if (u64GuestTscAux != pVCpu->hm.s.u64HostTscAux)
@@ -3172,7 +3688,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     }
     else
     {
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
+        hmR0SvmSetMsrPermission(pVmcb, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
         pSvmTransient->fRestoreTscAuxMsr = false;
     }
 
@@ -3208,6 +3724,74 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Performs some essential restoration of state after running nested-guest code in
+ * AMD-V.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pMixedCtx       Pointer to the nested-guest-CPU context. The data maybe
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ * @param   rcVMRun         Return code of VMRUN.
+ *
+ * @remarks Called with interrupts disabled.
+ * @remarks No-long-jump zone!!! This function will however re-enable longjmps
+ *          unconditionally when it is safe to do so.
+ */
+static void hmR0SvmPostRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient, int rcVMRun)
+{
+    RT_NOREF(pVM);
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
+    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
+
+    /* TSC read must be done early for maximum accuracy. */
+    PSVMVMCB     pVmcbNstGst     = pMixedCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+    if (!(pVmcbNstGstCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC))
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcbNstGstCtrl->u64TSCOffset);
+
+    if (pSvmTransient->fRestoreTscAuxMsr)
+    {
+        uint64_t u64GuestTscAuxMsr = ASMRdMsr(MSR_K8_TSC_AUX);
+        CPUMR0SetGuestTscAux(pVCpu, u64GuestTscAuxMsr);
+        if (u64GuestTscAuxMsr != pVCpu->hm.s.u64HostTscAux)
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
+    }
+
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
+    TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
+    ASMSetFlags(pSvmTransient->fEFlags);                        /* Enable interrupts. */
+    VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
+
+    /* Mark the VMCB-state cache as unmodified by VMM. */
+    pVmcbNstGstCtrl->u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;
+
+    /* If VMRUN failed, we can bail out early. This does -not- cover SVM_EXIT_INVALID. */
+    if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
+    {
+        Log4(("VMRUN failure: rcVMRun=%Rrc\n", rcVMRun));
+        return;
+    }
+
+    pSvmTransient->u64ExitCode  = pVmcbNstGstCtrl->u64ExitCode; /* Save the #VMEXIT reason. */
+    HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmcbNstGstCtrl->u64ExitCode);/* Update the #VMEXIT history array. */
+    pSvmTransient->fVectoringDoublePF = false;                  /* Vectoring double page-fault needs to be determined later. */
+    pSvmTransient->fVectoringPF       = false;                  /* Vectoring page-fault needs to be determined later. */
+
+    Assert(!pVCpu->hm.s.svm.fSyncVTpr);
+    hmR0SvmSaveGuestState(pVCpu, pMixedCtx, pVmcbNstGst);       /* Save the nested-guest state from the VMCB to the
+                                                                   guest-CPU context. */
+}
+#endif
+
 /**
  * Performs some essential restoration of state after running guest code in
  * AMD-V.
@@ -3231,7 +3815,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB flushing. */
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb =pVCpu->hm.s.svm.pVmcb;
     pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */
 
     /* TSC read must be done early for maximum accuracy. */
@@ -3266,7 +3850,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     pSvmTransient->fVectoringDoublePF = false;                  /* Vectoring double page-fault needs to be determined later. */
     pSvmTransient->fVectoringPF = false;                        /* Vectoring page-fault needs to be determined later. */
 
-    hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
+    hmR0SvmSaveGuestState(pVCpu, pMixedCtx, pVmcb);             /* Save the guest state from the VMCB to the guest-CPU context. */
 
     if (RT_LIKELY(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID))
     {
@@ -3298,15 +3882,19 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pcLoops     Pointer to the number of executed loops.
  */
-static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t *pcLoops)
 {
+    uint32_t const cMaxResumeLoops = pVM->hm.s.cMaxResumeLoops;
+    Assert(pcLoops);
+    Assert(*pcLoops <= cMaxResumeLoops);
+
     SVMTRANSIENT SvmTransient;
     SvmTransient.fUpdateTscOffsetting = true;
-    uint32_t cLoops = 0;
-    int      rc     = VERR_INTERNAL_ERROR_5;
 
-    for (;; cLoops++)
+    int rc = VERR_INTERNAL_ERROR_5;
+    for (;;)
     {
         Assert(!HMR0SuspendPending());
         HMSVM_ASSERT_CPU_SAFE();
@@ -3343,12 +3931,12 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Handle the #VMEXIT. */
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
-        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hm.s.svm.pVmcb);
         rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rc != VINF_SUCCESS)
             break;
-        if (cLoops > pVM->hm.s.cMaxResumeLoops)
+        if (++(*pcLoops) >= cMaxResumeLoops)
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
             rc = VINF_EM_RAW_INTERRUPT;
@@ -3368,22 +3956,27 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pcLoops     Pointer to the number of executed loops.
  */
-static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t *pcLoops)
 {
+    uint32_t const cMaxResumeLoops = pVM->hm.s.cMaxResumeLoops;
+    Assert(pcLoops);
+    Assert(*pcLoops <= cMaxResumeLoops);
+
     SVMTRANSIENT SvmTransient;
     SvmTransient.fUpdateTscOffsetting = true;
-    uint32_t cLoops  = 0;
-    int      rc      = VERR_INTERNAL_ERROR_5;
+
     uint16_t uCsStart  = pCtx->cs.Sel;
     uint64_t uRipStart = pCtx->rip;
 
-    for (;; cLoops++)
+    int rc = VERR_INTERNAL_ERROR_5;
+    for (;;)
     {
         Assert(!HMR0SuspendPending());
         AssertMsg(pVCpu->hm.s.idEnteredCpu == RTMpCpuId(),
                   ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hm.s.idEnteredCpu,
-                  (unsigned)RTMpCpuId(), cLoops));
+                  (unsigned)RTMpCpuId(), *pcLoops));
 
         /* Preparatory work for running guest code, this may force us to return
            to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
@@ -3421,12 +4014,12 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Handle the #VMEXIT. */
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
-        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hm.s.svm.pVmcb);
         rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rc != VINF_SUCCESS)
             break;
-        if (cLoops > pVM->hm.s.cMaxResumeLoops)
+        if (++(*pcLoops) >= cMaxResumeLoops)
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
             rc = VINF_EM_RAW_INTERRUPT;
@@ -3459,6 +4052,85 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return rc;
 }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Runs the nested-guest code using AMD-V.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pcLoops     Pointer to the number of executed loops. If we're switching
+ *                      from the guest-code execution loop to this nested-guest
+ *                      execution loop pass the remainder value, else pass 0.
+ */
+static int hmR0SvmRunGuestCodeNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t *pcLoops)
+{
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+    Assert(pcLoops);
+    Assert(*pcLoops <= pVM->hm.s.cMaxResumeLoops);
+
+    SVMTRANSIENT SvmTransient;
+    SvmTransient.fUpdateTscOffsetting = true;
+
+    int rc = VERR_INTERNAL_ERROR_4;
+    for (;;)
+    {
+        Assert(!HMR0SuspendPending());
+        HMSVM_ASSERT_CPU_SAFE();
+
+        /* Preparatory work for running nested-guest code, this may force us to return
+           to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
+        rc = hmR0SvmPreRunGuestNested(pVM, pVCpu, pCtx, &SvmTransient);
+        if (rc != VINF_SUCCESS)
+            break;
+
+        /*
+         * No longjmps to ring-3 from this point on!!!
+         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
+         * This also disables flushing of the R0-logger instance (if any).
+         */
+        hmR0SvmPreRunGuestCommittedNested(pVM, pVCpu, pCtx, &SvmTransient);
+        rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
+
+        /* Restore any residual host-state and save any bits shared between host
+           and guest into the guest-CPU state.  Re-enables interrupts! */
+        hmR0SvmPostRunGuestNested(pVM, pVCpu, pCtx, &SvmTransient, rc);
+
+        if (RT_UNLIKELY(   rc != VINF_SUCCESS                               /* Check for VMRUN errors. */
+                        || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
+        {
+            if (rc == VINF_SUCCESS)
+                rc = VERR_SVM_INVALID_GUEST_STATE;
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
+            hmR0SvmReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
+            break;
+        }
+
+        /* Handle the #VMEXIT. */
+        HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
+        STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hm.s.svm.pVmcb);
+        rc = hmR0SvmHandleExitNested(pVCpu, pCtx, &SvmTransient);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
+        if (rc != VINF_SUCCESS)
+            break;
+        if (++(*pcLoops) >= pVM->hm.s.cMaxResumeLoops)
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
+            rc = VINF_EM_RAW_INTERRUPT;
+            break;
+        }
+
+        /** @todo handle single-stepping   */
+    }
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    return rc;
+}
+#endif
+
 
 /**
  * Runs the guest code using AMD-V.
@@ -3474,11 +4146,28 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     HMSVM_ASSERT_PREEMPT_SAFE();
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pCtx);
 
-    int rc;
-    if (!pVCpu->hm.s.fSingleInstruction)
-        rc = hmR0SvmRunGuestCodeNormal(pVM, pVCpu, pCtx);
+    uint32_t cLoops = 0;
+    int      rc;
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+#endif
+    {
+        if (!pVCpu->hm.s.fSingleInstruction)
+            rc = hmR0SvmRunGuestCodeNormal(pVM, pVCpu, pCtx, &cLoops);
+        else
+            rc = hmR0SvmRunGuestCodeStep(pVM, pVCpu, pCtx, &cLoops);
+    }
+#ifdef VBOX_WITH_NESTED_HWVIRT
     else
-        rc = hmR0SvmRunGuestCodeStep(pVM, pVCpu, pCtx);
+    {
+        rc = VINF_SVM_VMRUN;
+    }
+
+    /* Re-check the nested-guest condition here as we may be transitioning from the normal
+       execution loop into the nested-guest. */
+    if (rc == VINF_SVM_VMRUN)
+        rc = hmR0SvmRunGuestCodeNested(pVM, pVCpu, pCtx, &cLoops);
+#endif
 
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
@@ -3492,15 +4181,289 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
- * Handles a \#VMEXIT (for all EXITCODE values except SVM_EXIT_INVALID).
+ * Handles a nested-guest \#VMEXIT (for all EXITCODE values except
+ * SVM_EXIT_INVALID).
  *
  * @returns VBox status code (informational status codes included).
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            Pointer to the guest-CPU context.
  * @param   pSvmTransient   Pointer to the SVM transient structure.
  */
-DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
+    Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
+
+    PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    switch (pSvmTransient->u64ExitCode)
+    {
+        //case SVM_EXIT_NPF:
+        {
+            /** @todo. */
+            break;
+        }
+
+        case SVM_EXIT_IOIO:
+        {
+            /*
+             * Figure out if the IO port access is intercepted by the nested-guest. If not,
+             * we pass it to the outer guest.
+             */
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_IOIO_PROT)
+            {
+                void *pvIoBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
+                SVMIOIOEXITINFO IoExitInfo;
+                IoExitInfo.u = (uint32_t)pVmcbNstGst->ctrl.u64ExitInfo1;
+                bool const fIntercept = HMSvmIsIOInterceptActive(pvIoBitmap, IoExitInfo.n.u16Port,
+                                                                 (SVMIOIOTYPE)IoExitInfo.n.u1Type,
+                                                                 (IoExitInfo.u >> SVM_IOIO_OP_SIZE_SHIFT) & 7,
+                                                                 (IoExitInfo.u >> SVM_IOIO_ADDR_SIZE_SHIFT) << 4,
+                                                                 IoExitInfo.n.u3SEG, IoExitInfo.n.u1REP, IoExitInfo.n.u1STR,
+                                                                 NULL /* pIoExitInfo */);
+                if (fIntercept)
+                    return hmR0SvmExecVmexit(pVCpu, pCtx);
+            }
+            return hmR0SvmExitIOInstr(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_RDTSC:
+        {
+            return hmR0SvmExitRdtsc(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_RDTSCP:
+            return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_CPUID:
+            return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
+            return hmR0SvmExitXcptPF(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
+            return hmR0SvmExitXcptNM(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
+            return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_16:  /* X86_XCPT_MF */
+            return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
+            return hmR0SvmExitXcptDB(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_17:  /* X86_XCPT_AC */
+            return hmR0SvmExitXcptAC(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_3:   /* X86_XCPT_BP */
+            return hmR0SvmExitXcptBP(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_MONITOR:
+            return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_MWAIT:
+            return hmR0SvmExitMwait(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_HLT:
+            return hmR0SvmExitHlt(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_READ_CR0:
+        case SVM_EXIT_READ_CR3:
+        case SVM_EXIT_READ_CR4:
+            return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_WRITE_CR0:
+        case SVM_EXIT_WRITE_CR3:
+        case SVM_EXIT_WRITE_CR4:
+        case SVM_EXIT_WRITE_CR8:
+            return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_PAUSE:
+            return hmR0SvmExitPause(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_VMMCALL:
+            return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_VINTR:
+            return hmR0SvmExitVIntr(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_INTR:
+        case SVM_EXIT_FERR_FREEZE:
+        case SVM_EXIT_NMI:
+            return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_MSR:
+            return hmR0SvmExitMsr(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_INVLPG:
+            return hmR0SvmExitInvlpg(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_WBINVD:
+            return hmR0SvmExitWbinvd(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_INVD:
+            return hmR0SvmExitInvd(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_RDPMC:
+            return hmR0SvmExitRdpmc(pVCpu, pCtx, pSvmTransient);
+
+        default:
+        {
+            switch (pSvmTransient->u64ExitCode)
+            {
+                case SVM_EXIT_READ_DR0:     case SVM_EXIT_READ_DR1:     case SVM_EXIT_READ_DR2:     case SVM_EXIT_READ_DR3:
+                case SVM_EXIT_READ_DR6:     case SVM_EXIT_READ_DR7:     case SVM_EXIT_READ_DR8:     case SVM_EXIT_READ_DR9:
+                case SVM_EXIT_READ_DR10:    case SVM_EXIT_READ_DR11:    case SVM_EXIT_READ_DR12:    case SVM_EXIT_READ_DR13:
+                case SVM_EXIT_READ_DR14:    case SVM_EXIT_READ_DR15:
+                    return hmR0SvmExitReadDRx(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_WRITE_DR0:    case SVM_EXIT_WRITE_DR1:    case SVM_EXIT_WRITE_DR2:    case SVM_EXIT_WRITE_DR3:
+                case SVM_EXIT_WRITE_DR6:    case SVM_EXIT_WRITE_DR7:    case SVM_EXIT_WRITE_DR8:    case SVM_EXIT_WRITE_DR9:
+                case SVM_EXIT_WRITE_DR10:   case SVM_EXIT_WRITE_DR11:   case SVM_EXIT_WRITE_DR12:   case SVM_EXIT_WRITE_DR13:
+                case SVM_EXIT_WRITE_DR14:   case SVM_EXIT_WRITE_DR15:
+                    return hmR0SvmExitWriteDRx(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_XSETBV:
+                    return hmR0SvmExitXsetbv(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_TASK_SWITCH:
+                    return hmR0SvmExitTaskSwitch(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_IRET:
+                    return hmR0SvmExitIret(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_SHUTDOWN:
+                    return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_SMI:
+                case SVM_EXIT_INIT:
+                {
+                    /*
+                     * We don't intercept NMIs. As for INIT signals, it really shouldn't ever happen here. If it ever does,
+                     * we want to know about it so log the exit code and bail.
+                     */
+                    AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
+                    pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
+                    return VERR_SVM_UNEXPECTED_EXIT;
+                }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+                case SVM_EXIT_CLGI:     return hmR0SvmExitClgi(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_STGI:     return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_VMLOAD:   return hmR0SvmExitVmload(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_VMSAVE:   return hmR0SvmExitVmsave(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_INVLPGA:  return hmR0SvmExitInvlpga(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_VMRUN:    return hmR0SvmExitVmrun(pVCpu, pCtx, pSvmTransient);
+#else
+                case SVM_EXIT_CLGI:
+                case SVM_EXIT_STGI:
+                case SVM_EXIT_VMLOAD:
+                case SVM_EXIT_VMSAVE:
+                case SVM_EXIT_INVLPGA:
+                case SVM_EXIT_VMRUN:
+#endif
+                case SVM_EXIT_RSM:
+                case SVM_EXIT_SKINIT:
+                    return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
+
+#ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
+                case SVM_EXIT_EXCEPTION_0:             /* X86_XCPT_DE */
+                /*   SVM_EXIT_EXCEPTION_1: */          /* X86_XCPT_DB - Handled above. */
+                case SVM_EXIT_EXCEPTION_2:             /* X86_XCPT_NMI */
+                /*   SVM_EXIT_EXCEPTION_3: */          /* X86_XCPT_BP - Handled above. */
+                case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
+                case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
+                /*   SVM_EXIT_EXCEPTION_6: */          /* X86_XCPT_UD - Handled above. */
+                /*   SVM_EXIT_EXCEPTION_7: */          /* X86_XCPT_NM - Handled above. */
+                case SVM_EXIT_EXCEPTION_8:             /* X86_XCPT_DF */
+                case SVM_EXIT_EXCEPTION_9:             /* X86_XCPT_CO_SEG_OVERRUN */
+                case SVM_EXIT_EXCEPTION_10:            /* X86_XCPT_TS */
+                case SVM_EXIT_EXCEPTION_11:            /* X86_XCPT_NP */
+                case SVM_EXIT_EXCEPTION_12:            /* X86_XCPT_SS */
+                case SVM_EXIT_EXCEPTION_13:            /* X86_XCPT_GP */
+                /*   SVM_EXIT_EXCEPTION_14: */         /* X86_XCPT_PF - Handled above. */
+                case SVM_EXIT_EXCEPTION_15:            /* Reserved. */
+                /*   SVM_EXIT_EXCEPTION_16: */         /* X86_XCPT_MF - Handled above. */
+                /*   SVM_EXIT_EXCEPTION_17: */         /* X86_XCPT_AC - Handled above. */
+                case SVM_EXIT_EXCEPTION_18:            /* X86_XCPT_MC */
+                case SVM_EXIT_EXCEPTION_19:            /* X86_XCPT_XF */
+                case SVM_EXIT_EXCEPTION_20: case SVM_EXIT_EXCEPTION_21: case SVM_EXIT_EXCEPTION_22:
+                case SVM_EXIT_EXCEPTION_23: case SVM_EXIT_EXCEPTION_24: case SVM_EXIT_EXCEPTION_25:
+                case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27: case SVM_EXIT_EXCEPTION_28:
+                case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
+                {
+                    /** @todo r=ramshankar; We should be doing
+                     *        HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY here! */
+
+                    PSVMVMCB pVmcb   = pVCpu->hm.s.svm.pVmcb;
+                    SVMEVENT Event;
+                    Event.u          = 0;
+                    Event.n.u1Valid  = 1;
+                    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+                    Event.n.u8Vector = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
+
+                    switch (Event.n.u8Vector)
+                    {
+                        case X86_XCPT_DE:
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
+                            break;
+
+                        case X86_XCPT_NP:
+                            Event.n.u1ErrorCodeValid    = 1;
+                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);
+                            break;
+
+                        case X86_XCPT_SS:
+                            Event.n.u1ErrorCodeValid    = 1;
+                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
+                            break;
+
+                        case X86_XCPT_GP:
+                            Event.n.u1ErrorCodeValid    = 1;
+                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
+                            break;
+
+                        default:
+                            AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
+                            pVCpu->hm.s.u32HMError = Event.n.u8Vector;
+                            return VERR_SVM_UNEXPECTED_XCPT_EXIT;
+                    }
+
+                    Log4(("#Xcpt: Vector=%#x at CS:RIP=%04x:%RGv\n", Event.n.u8Vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
+                    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+                    return VINF_SUCCESS;
+                }
+#endif  /* HMSVM_ALWAYS_TRAP_ALL_XCPTS */
+
+                default:
+                {
+                    AssertMsgFailed(("hmR0SvmHandleExit: Unknown exit code %#x\n", pSvmTransient->u64ExitCode));
+                    pVCpu->hm.s.u32HMError = pSvmTransient->u64ExitCode;
+                    return VERR_SVM_UNKNOWN_EXIT;
+                }
+            }
+        }
+    }
+    /* not reached */
+}
+#endif
+
+
+/**
+ * Handles a guest \#VMEXIT (for all EXITCODE values except SVM_EXIT_INVALID).
+ *
+ * @returns VBox status code (informational status codes included).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ */
+static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
@@ -3685,7 +4648,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                     /** @todo r=ramshankar; We should be doing
                      *        HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY here! */
 
-                    PSVMVMCB pVmcb   = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+                    PSVMVMCB pVmcb   = pVCpu->hm.s.svm.pVmcb;
                     SVMEVENT Event;
                     Event.u          = 0;
                     Event.n.u1Valid  = 1;
@@ -4060,7 +5023,7 @@ DECLINLINE(bool) hmR0SvmIsContributoryXcpt(const uint32_t uVector)
 static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     int rc = VINF_SUCCESS;
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
 
     Log4(("EXITINTINFO: Pending vectoring event %#RX64 Valid=%RTbool ErrValid=%RTbool Err=%#RX32 Type=%u Vector=%u\n",
           pVmcb->ctrl.ExitIntInfo.u, !!pVmcb->ctrl.ExitIntInfo.n.u1Valid, !!pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid,
@@ -4357,7 +5320,7 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t
 {
     if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
     {
-        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         Assert(pVmcb->ctrl.u64NextRIP);
         AssertRelease(pVmcb->ctrl.u64NextRIP - pCtx->rip == cb);    /* temporary, remove later */
         pCtx->rip = pVmcb->ctrl.u64NextRIP;
@@ -4368,7 +5331,7 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t
     HMSVM_UPDATE_INTR_SHADOW(pVCpu, pCtx);
 }
 
-/* Currently only used by nested hw.virt instructions, so ifdef'd as such, otherwise compilers start whining. */
+
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * Gets the length of the current instruction if the CPU supports the NRIP_SAVE
@@ -4383,7 +5346,7 @@ DECLINLINE(uint8_t) hmR0SvmGetInstrLengthHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, u
     Assert(cbLikely <= 15);   /* See Intel spec. 2.3.11 "AVX Instruction Length" */
     if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
     {
-        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pCtx->rip;
         Assert(cbInstr == cbLikely);
         return cbInstr;
@@ -4391,6 +5354,7 @@ DECLINLINE(uint8_t) hmR0SvmGetInstrLengthHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, u
     return cbLikely;
 }
 #endif
+
 
 /**
  * Advances the guest RIP by the number of bytes specified in @a cb. This does
@@ -4406,6 +5370,381 @@ DECLINLINE(void) hmR0SvmAdvanceRipDumb(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
     HMSVM_UPDATE_INTR_SHADOW(pVCpu, pCtx);
 }
 #undef HMSVM_UPDATE_INTR_SHADOW
+
+
+#if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM)
+/**
+ * Merges the guest MSR permission bitmap into the nested-guest MSR permission
+ * bitmap.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pvMsrBitmap         Pointer to the guest MSRPM bitmap.
+ * @param   pvNstGstMsrBitmap   Pointer to the nested-guest MSRPM bitmap.
+ */
+static void hmR0SvmMergeMsrpmBitmap(PVMCPU pVCpu, const void *pvMsrBitmap, void *pvNstGstMsrBitmap)
+{
+    RT_NOREF(pVCpu);
+    uint64_t const *puChunk       = (uint64_t *)pvMsrBitmap;
+    uint64_t       *puNstGstChunk = (uint64_t *)pvNstGstMsrBitmap;
+    uint32_t const cbChunks       = SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT;
+    uint32_t const cChunks        = cbChunks / sizeof(*puChunk);
+    Assert(cbChunks % sizeof(*puChunk) == 0);
+
+    for (uint32_t idxChunk = 0, offChunk = 0;
+          idxChunk < cChunks;
+          idxChunk++, offChunk += sizeof(*puChunk))
+    {
+        /* Leave reserved offsets (1800h+) untouched (as all bits set, see SVMR0InitVM). */
+        if (offChunk >= 0x1800)
+            break;
+        puNstGstChunk[idxChunk] |= puChunk[idxChunk];
+    }
+}
+
+
+/**
+ * Performs a \#VMEXIT that happens during VMRUN emulation in hmR0SvmExecVmrun.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ */
+static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /*
+     * Disable the global interrupt flag to not cause any interrupts or NMIs
+     * in the guest.
+     */
+    pCtx->hwvirt.svm.fGif = 0;
+
+    /*
+     * Restore the guest's "host" state.
+     */
+    CPUMSvmVmExitRestoreHostState(pCtx);
+
+    /*
+     * Restore the guest's force-flags.
+     */
+    if (pCtx->hwvirt.fLocalForcedActions)
+    {
+        VMCPU_FF_SET(pVCpu, pCtx->hwvirt.fLocalForcedActions);
+        pCtx->hwvirt.fLocalForcedActions = 0;
+    }
+
+    /*
+     * Restore the modifications we did to the nested-guest VMCB in order
+     * to execute the nested-guest in SVM R0.
+     */
+    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    HMSvmNstGstVmExitNotify(pVCpu, pVmcbNstGst);
+
+    /*
+     * Write the nested-guest VMCB back to nested-guest memory.
+     */
+    RTGCPHYS const GCPhysVmcb = pCtx->hwvirt.svm.GCPhysVmcb;
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcb, pVmcbNstGst, sizeof(*pVmcbNstGst));
+
+    /*
+     * Clear our cache of the nested-guest VMCB controls.
+     */
+    PSVMVMCBCTRL pVmcbCtrl = &pVmcbNstGst->ctrl;
+    memset(pVmcbCtrl, 0, sizeof(*pVmcbCtrl));
+    Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+
+    if (RT_SUCCESS(rc))
+        return VINF_SVM_VMEXIT;
+
+    Log(("hmR0SvmExecVmexit: Failed to write guest-VMCB at %#RGp\n", GCPhysVmcb));
+    return rc;
+}
+
+
+/**
+ * Caches the nested-guest VMCB fields before we modify them for executing the
+ * nested-guest under SVM R0.
+ *
+ * @param   pCtx            Pointer to the guest-CPU context.
+ */
+static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+    PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+
+    pNstGstVmcbCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
+    pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrCRx;
+    pNstGstVmcbCache->u16InterceptRdDRx = pVmcbNstGstCtrl->u16InterceptRdDRx;
+    pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
+    pNstGstVmcbCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
+    pNstGstVmcbCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
+    pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
+    pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
+    pNstGstVmcbCache->u64VmcbCleanBits  = pVmcbNstGstCtrl->u64VmcbCleanBits;
+    pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
+    pNstGstVmcbCache->fValid            = true;
+}
+
+
+/**
+ * Setup execution of the nested-guest in SVM R0.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   GCPhysVmcb      The nested-guest physical address of its VMCB.
+ * @param   cbInstr         Length of the VMRUN instruction in bytes.
+ */
+static int hmR0SvmExecVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb, uint8_t cbInstr)
+{
+    Assert(CPUMGetGuestCPL(pVCpu) == 0);
+    Assert(!pVCpu->hm.s.svm.NstGstVmcbCache.fVmrunEmulatedInR0);
+
+    /*
+     * Cache the physical address of the VMCB for #VMEXIT exceptions.
+     */
+    pCtx->hwvirt.svm.GCPhysVmcb = GCPhysVmcb;
+
+    /*
+     * Save the "host" (guest-state) so that when we do a #VMEXIT we can restore the guest-state.
+     *
+     * The real host-state shall be saved/restored by the physical CPU once it executes VMRUN
+     * with the nested-guest VMCB.
+     */
+    CPUMSvmVmRunSaveHostState(pCtx, cbInstr);
+
+    /*
+     * Read the nested-guest VMCB state.
+     */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    int rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pVmcb), GCPhysVmcb, sizeof(SVMVMCB));
+    if (RT_SUCCESS(rc))
+    {
+        PSVMVMCB          pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+        PSVMVMCBCTRL      pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+        PSVMVMCBSTATESAVE pVmcbNstGstState = &pVmcbNstGst->guest;
+
+        /*
+         * Validate nested-guest state and controls.
+         * The rest shall be done by the physical CPU.
+         */
+        /* VMRUN must always be intercepted. */
+        if (!CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_VMRUN))
+        {
+            Log(("hmR0SvmExecVmrun: VMRUN instruction not intercepted -> #VMEXIT\n"));
+            pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
+
+        /* Nested paging. */
+        if (    pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging
+            && !pVM->cpum.ro.GuestFeatures.fSvmNestedPaging)
+        {
+            Log(("hmR0SvmExecVmrun: Nested paging not supported -> #VMEXIT\n"));
+            pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
+        /** @todo When implementing nested-paging for the nested-guest don't forget to
+         *        adjust/check PAT MSR. */
+
+        /* AVIC. */
+        if (    pVmcbNstGstCtrl->IntCtrl.n.u1AvicEnable
+            && !pVM->cpum.ro.GuestFeatures.fSvmAvic)
+        {
+            Log(("hmR0SvmExecVmrun: AVIC not supported -> #VMEXIT\n"));
+            pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
+
+        /* Last branch record (LBR) virtualization. */
+        if (    (pVmcbNstGstCtrl->u64LBRVirt & SVM_LBR_VIRT_ENABLE)
+            && !pVM->cpum.ro.GuestFeatures.fSvmLbrVirt)
+        {
+            Log(("hmR0SvmExecVmrun: LBR virtualization not supported -> #VMEXIT\n"));
+            pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
+
+        /*
+         * MSR permission bitmap (MSRPM).
+         */
+        RTGCPHYS const GCPhysMsrBitmap = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
+        Assert(pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap));
+        rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap), GCPhysMsrBitmap,
+                                     SVM_MSRPM_PAGES * X86_PAGE_4K_SIZE);
+        if (RT_FAILURE(rc))
+        {
+            Log(("hmR0SvmExecVmrun: Failed reading the MSR permission bitmap at %#RGp. rc=%Rrc\n", GCPhysMsrBitmap, rc));
+            pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
+
+        /*
+         * IO permission bitmap (IOPM).
+         */
+        RTHCPHYS HCPhysNstGstMsrpm;
+        rc = PGMPhysGCPhys2HCPhys(pVM, pVmcbNstGstCtrl->u64MSRPMPhysAddr, &HCPhysNstGstMsrpm);
+        if (RT_FAILURE(rc))
+        {
+            Log(("hmR0SvmExecVmrun: Failed reading the MSR permission bitmap at %#RGp. rc=%Rrc\n", GCPhysMsrBitmap, rc));
+            pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
+
+        /*
+         * EFER MSR.
+         */
+        uint64_t uValidEfer;
+        rc = CPUMQueryValidatedGuestEfer(pVM, pVmcbNstGstState->u64CR0, pVmcbNstGstState->u64EFER, pVmcbNstGstState->u64EFER,
+                                         &uValidEfer);
+        if (RT_FAILURE(rc))
+        {
+            Log(("iemSvmVmrun: EFER invalid uOldEfer=%#RX64 -> #VMEXIT\n", pVmcbNstGstState->u64EFER));
+            pVmcbNstGstCtrl->u64ExitCode = SVM_EXIT_INVALID;
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
+        bool const fLongModeEnabled         = RT_BOOL(uValidEfer & MSR_K6_EFER_LME);
+        bool const fPaging                  = RT_BOOL(pVmcbNstGstState->u64CR0 & X86_CR0_PG);
+        bool const fLongModeWithPaging      = fLongModeEnabled && fPaging;
+        /* Adjust EFER.LMA (this is normally done by the CPU when system software writes CR0) and update it. */
+        if (fLongModeWithPaging)
+            uValidEfer |= MSR_K6_EFER_LMA;
+
+        /*
+         * Cache the nested-guest VMCB fields before we start modifying them below.
+         */
+        hmR0SvmVmRunCacheVmcb(pVCpu, pCtx);
+
+        /*
+         * The IOPM of the nested-guest can be ignored because the the guest always
+         * intercepts all IO port accesses. Thus, we'll swap to the guest IOPM rather
+         * into the nested-guest one and swap it back on the #VMEXIT.
+         */
+        pVmcbNstGstCtrl->u64IOPMPhysAddr  = g_HCPhysIOBitmap;
+
+        /*
+         * Load the host-physical address into the MSRPM rather than the nested-guest
+         * physical address.
+         */
+        pVmcbNstGstCtrl->u64MSRPMPhysAddr = HCPhysNstGstMsrpm;
+
+        /*
+         * Merge the guest MSR permission bitmap in to the nested-guest one.
+         *
+         * Note the assumption here is that our MSRPM is set up only once in SVMR0SetupVM
+         * In hmR0SvmPreRunGuestCommittedNested we directly update the nested-guest one.
+         * Hence it can be done once here during VMRUN.
+         */
+        hmR0SvmMergeMsrpmBitmap(pVCpu, pVCpu->hm.s.svm.pvMsrBitmap, pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap));
+
+        /*
+         * Merge the guest exception intercepts in to the nested-guest ones.
+         */
+        {
+            PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+            hmR0SvmMergeIntercepts(pVCpu, pVmcb, pVmcbNstGst);
+        }
+
+        /*
+         * Check for pending virtual interrupts.
+         */
+        if (pVmcbNstGstCtrl->IntCtrl.n.u1VIrqPending)
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+        else
+            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST));
+
+        /*
+         * Preserve the required force-flags.
+         *
+         * We only preserve the force-flags that would affect the execution of the
+         * nested-guest (or the guest).
+         *
+         *   - VMCPU_FF_INHIBIT_INTERRUPTS need -not- be preserved as it's for a single
+         *     instruction which is this VMRUN instruction itself.
+         *
+         *   - VMCPU_FF_BLOCK_NMIS needs to be preserved as it blocks NMI until the
+         *     execution of a subsequent IRET instruction in the guest.
+         *
+         *   - The remaining FFs (e.g. timers) can stay in place so that we will be
+         *     able to generate interrupts that should cause #VMEXITs for the
+         *     nested-guest.
+         */
+        pCtx->hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & VMCPU_FF_BLOCK_NMIS;
+
+        /*
+         * Interrupt shadow.
+         */
+        if (pVmcbNstGstCtrl->u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
+        {
+            LogFlow(("hmR0SvmExecVmrun: setting interrupt shadow. inhibit PC=%#RX64\n", pVmcbNstGstState->u64RIP));
+            /** @todo will this cause trouble if the nested-guest is 64-bit but the guest is 32-bit? */
+            EMSetInhibitInterruptsPC(pVCpu, pVmcbNstGstState->u64RIP);
+        }
+
+        /*
+         * Load the guest-CPU state.
+         * Skip CPL adjustments (will be done by the hardware).
+         */
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbNstGstState, ES, es);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbNstGstState, CS, cs);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbNstGstState, SS, ss);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbNstGstState, DS, ds);
+        pCtx->gdtr.cbGdt   = pVmcbNstGstState->GDTR.u32Limit;
+        pCtx->gdtr.pGdt    = pVmcbNstGstState->GDTR.u64Base;
+        pCtx->idtr.cbIdt   = pVmcbNstGstState->IDTR.u32Limit;
+        pCtx->idtr.pIdt    = pVmcbNstGstState->IDTR.u64Base;
+        pCtx->cr0          = pVmcbNstGstState->u64CR0;
+        pCtx->cr4          = pVmcbNstGstState->u64CR4;
+        pCtx->cr3          = pVmcbNstGstState->u64CR3;
+        pCtx->cr2          = pVmcbNstGstState->u64CR2;
+        pCtx->dr[6]        = pVmcbNstGstState->u64DR6;
+        pCtx->dr[7]        = pVmcbNstGstState->u64DR7;
+        pCtx->rflags.u64   = pVmcbNstGstState->u64RFlags;
+        pCtx->rax          = pVmcbNstGstState->u64RAX;
+        pCtx->rsp          = pVmcbNstGstState->u64RSP;
+        pCtx->rip          = pVmcbNstGstState->u64RIP;
+        pCtx->msrEFER      = uValidEfer;
+
+        /* Mask DR6, DR7 bits mandatory set/clear bits. */
+        pCtx->dr[6] &= ~(X86_DR6_RAZ_MASK | X86_DR6_MBZ_MASK);
+        pCtx->dr[6] |= X86_DR6_RA1_MASK;
+        pCtx->dr[7] &= ~(X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
+        pCtx->dr[7] |= X86_DR7_RA1_MASK;
+
+        /*
+         * VMRUN loads a subset of the guest-CPU state (see above) and nothing else. Ensure
+         * hmR0SvmLoadGuestStateNested doesn't need to load anything back to the VMCB cache
+         * as we go straight into executing the nested-guest.
+         *
+         * If we fall back to ring-3 we would have to re-load things from the guest-CPU
+         * state into the VMCB as we are unsure what state we're in (e.g., VMRUN ends up
+         * getting executed in IEM along with a handful of nested-guest instructions and
+         * we have to continue executing the nested-guest in R0 since IEM doesn't know
+         * about this VMCB cache which is in HM).
+         */
+        PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+        pNstGstVmcbCache->fVmrunEmulatedInR0 = true;
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_ALL_GUEST);
+        HMCPU_CF_SET(pVCpu,   HM_CHANGED_HOST_GUEST_SHARED_STATE);
+
+        /*
+         * Clear global interrupt flags to allow interrupts and NMIs in the guest.
+         */
+        pCtx->hwvirt.svm.fGif = 1;
+
+        /*
+         * Inform PGM about paging mode changes.
+         * We include X86_CR0_PE because PGM doesn't handle paged-real mode yet.
+         */
+        /** @todo What about informing PGM about CR0.WP? */
+        PGMFlushTLB(pVCpu, pCtx->cr3, true /* fGlobal */);
+
+        int rc = PGMChangeMode(pVCpu, pVmcbNstGstState->u64CR0 | X86_CR0_PE, pVmcbNstGstState->u64CR4, pCtx->msrEFER);
+        return rc;
+    }
+
+    return rc;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT && !VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM */
 
 
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
@@ -4576,7 +5915,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
     {
         Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
-        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         uint8_t const cbInstr   = pVmcb->ctrl.u64NextRIP - pCtx->rip;
         RTGCPTR const GCPtrPage = pVmcb->ctrl.u64ExitInfo1;
         VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpg(pVCpu, cbInstr, GCPtrPage);
@@ -4687,7 +6026,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
     {
         Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
-        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         bool const fMovCRx = RT_BOOL(pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_MASK);
         if (fMovCRx)
         {
@@ -4727,7 +6066,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     if (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST)
     {
         Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE);
-        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         bool const fMovCRx = RT_BOOL(pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_MASK);
         if (fMovCRx)
         {
@@ -4800,7 +6139,7 @@ HMSVM_EXIT_DECL hmR0SvmExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
 HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
     PVM      pVM   = pVCpu->CTX_SUFF(pVM);
 
     int rc;
@@ -4927,7 +6266,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         Log5(("hmR0SvmExitReadDRx: Lazy loading guest debug registers\n"));
 
         /* Don't intercept DRx read and writes. */
-        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         pVmcb->ctrl.u16InterceptRdDRx = 0;
         pVmcb->ctrl.u16InterceptWrDRx = 0;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
@@ -5014,8 +6353,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                                                                                             the result (in AL/AX/EAX). */
     Log4(("hmR0SvmExitIOInstr: CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
 
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     PVM      pVM   = pVCpu->CTX_SUFF(pVM);
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
 
     /* Refer AMD spec. 15.10.2 "IN and OUT Behaviour" and Figure 15-2. "EXITINFO1 for IOIO Intercept" for the format. */
     SVMIOIOEXITINFO IoExitInfo;
@@ -5231,7 +6570,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     /* See AMD spec. 15.25.6 "Nested versus Guest Page Faults, Fault Ordering" for VMCB details for #NPF. */
-    PSVMVMCB pVmcb           = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb           = pVCpu->hm.s.svm.pVmcb;
     uint32_t u32ErrCode      = pVmcb->ctrl.u64ExitInfo1;
     RTGCPHYS GCPhysFaultAddr = pVmcb->ctrl.u64ExitInfo2;
 
@@ -5335,7 +6674,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
     pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 0;  /* No virtual interrupts pending, we'll inject the current one/NMI before reentry. */
     pVmcb->ctrl.IntCtrl.n.u8VIntrVector = 0;
 
@@ -5434,7 +6773,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now ready. */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
     hmR0SvmClearIretIntercept(pVmcb);
 
     /* Deliver the pending NMI via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
@@ -5453,7 +6792,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     /* See AMD spec. 15.12.15 "#PF (Page Fault)". */
-    PSVMVMCB    pVmcb         = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB    pVmcb         = pVCpu->hm.s.svm.pVmcb;
     uint32_t    u32ErrCode    = pVmcb->ctrl.u64ExitInfo1;
     RTGCUINTPTR uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
     PVM         pVM           = pVCpu->CTX_SUFF(pVM);
@@ -5571,8 +6910,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Paranoia; Ensure we cannot be called as a result of event delivery. */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb; NOREF(pVmcb);
-    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid); NOREF(pVmcb);
 
     /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
     VMMRZCallRing3Disable(pVCpu);
@@ -5625,8 +6964,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Paranoia; Ensure we cannot be called as a result of event delivery. */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb; NOREF(pVmcb);
-    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);  NOREF(pVmcb);
 
     int rc = VERR_SVM_UNEXPECTED_XCPT_EXIT;
     if (pVCpu->hm.s.fGIMTrapXcptUD)
@@ -5669,8 +7008,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Paranoia; Ensure we cannot be called as a result of event delivery. */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb; NOREF(pVmcb);
-    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid);
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid); NOREF(pVmcb);
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
 
@@ -5717,8 +7056,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     /* This can be a fault-type #DB (instruction breakpoint) or a trap-type #DB (data breakpoint). However, for both cases
        DR6 and DR7 are updated to what the exception handler expects. See AMD spec. 15.12.2 "#DB (Debug)". */
-    PSVMVMCB    pVmcb   = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    PVM         pVM     = pVCpu->CTX_SUFF(pVM);
+    PVM      pVM   = pVCpu->CTX_SUFF(pVM);
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
     int rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pVmcb->guest.u64DR6, pVCpu->hm.s.fSingleInstruction);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
@@ -5877,8 +7216,15 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmrun); */
+    VBOXSTRICTRC rcStrict;
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
-    VBOXSTRICTRC rcStrict = IEMExecDecodedVmrun(pVCpu, cbInstr);
+#if defined(VBOX_WITH_NESTED_HWVIRT) && defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM)
+    rcStrict = IEMExecDecodedVmrun(pVCpu, cbInstr);
+#else
+    rcStrict = hmR0SvmExecVmrun(pVCpu, pCtx, pCtx->rax, cbInstr);
+    if (rcStrict == VINF_SUCCESS)
+        rcStrict = VINF_SVM_VMRUN;
+#endif
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT */
