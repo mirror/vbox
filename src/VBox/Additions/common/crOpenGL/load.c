@@ -30,7 +30,6 @@
 #ifdef VBOX_WITH_WDDM
 #include <d3d9types.h>
 #include <D3dumddi.h>
-#include "../../WINNT/Graphics/Video/common/wddm/VBoxMPIf.h"
 #endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
@@ -783,26 +782,6 @@ static void stubDispatchVisibleRegions(WindowInfo *pWindow)
         crFree(lpRgnData);
     }
     else crWarning("GetRegionData failed, VisibleRegions update failed");
-}
-
-static HRGN stubMakeRegionFromRects(PVBOXVIDEOCM_CMD_RECTS pRegions, uint32_t start)
-{
-    HRGN hRgn, hTmpRgn;
-    uint32_t i;
-
-    if (pRegions->RectsInfo.cRects<=start)
-    {
-        return INVALID_HANDLE_VALUE;
-    }
-
-    hRgn = CreateRectRgn(0, 0, 0, 0);
-    for (i=start; i<pRegions->RectsInfo.cRects; ++i)
-    {
-        hTmpRgn = CreateRectRgnIndirect(&pRegions->RectsInfo.aRects[i]);
-        CombineRgn(hRgn, hRgn, hTmpRgn, RGN_OR);
-        DeleteObject(hTmpRgn);
-    }
-    return hRgn;
 }
 
 # endif /* VBOX_WITH_WDDM */
