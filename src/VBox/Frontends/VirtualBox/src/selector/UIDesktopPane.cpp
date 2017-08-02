@@ -530,7 +530,13 @@ void UIDesktopPanePrivate::removeToolDescriptions()
     /* Clear the layout: */
     QLayoutItem *pChild = 0;
     while ((pChild = m_pLayoutWidget->takeAt(0)) != 0)
+    {
+        /* Delete widget wrapped by the item first: */
+        if (pChild->widget())
+            delete pChild->widget();
+        /* Then the item itself: */
         delete pChild;
+    }
 }
 
 void UIDesktopPanePrivate::retranslateUi()
@@ -687,7 +693,7 @@ void UIDesktopPanePrivate::prepareToolsPane()
             }
 
             /* Create widget layout: */
-            m_pLayoutWidget = new QVBoxLayout(m_pToolsPane);
+            m_pLayoutWidget = new QVBoxLayout;
             AssertPtrReturnVoid(m_pLayoutWidget);
             {
                 /* Add into layout: */
