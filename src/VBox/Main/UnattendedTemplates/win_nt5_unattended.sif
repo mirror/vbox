@@ -35,13 +35,13 @@
     ComputerName = "@@VBOX_INSERT_HOSTNAME_WITHOUT_DOMAIN_MAX_15@@"
 
 [RegionalSettings]
-; TODO: Make language groups configurable?
-;   LanguageGroup=1,2,3,4,5 - needed for us+russian?
-    LanguageGroup=1
-; TODO: Make system+user locale configurable.
+; ; TODO: If we implement locales below, we must also install the necessary language groups here. Fun.
+;   LanguageGroup=1,2,3,4,5,6 - installed by default with XP
+
+; ; TODO: Implement mapping locales to windows LCIDs.
 ; 0409:00000409 is US.
 ;    SystemLocale=00000419 - russian
-; TODO: Make Input locale configurable?
+; ; TODO: Make Input locale configurable?
 ;    InputLocale=0409:00000409,0419:00000419 - US,Russian
 
 [LicenseFilePrintData]
@@ -56,5 +56,5 @@
     InstallDefaultComponents = Yes
 
 [GuiRunOnce]
-    Command0="A:\VBOXPOST.CMD"
+    Command0="A:\VBOXPOST.CMD --xp-or-older"
 
