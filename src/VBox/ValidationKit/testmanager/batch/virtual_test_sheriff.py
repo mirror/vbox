@@ -373,6 +373,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         aidFailureReasons = [
             self.getFailureReason(self.ktReason_Host_DriverNotUnloading).idFailureReason,
             self.getFailureReason(self.ktReason_Host_DriverNotCompilable).idFailureReason,
+            self.getFailureReason(self.ktReason_Host_InstallationFailed).idFailureReason,
         ];
 
         #
@@ -468,6 +469,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_DriverNotLoaded                      = ( 'Host',              'Driver not loaded' );
     ktReason_Host_DriverNotUnloading                   = ( 'Host',              'Driver not unloading' );
     ktReason_Host_DriverNotCompilable                  = ( 'Host',              'Driver not compilable' );
+    ktReason_Host_InstallationFailed                   = ( 'Host',              'Installation failed' );
     ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
     ktReason_Host_DoubleFreeHeap                       = ( 'Host',              'Double free or corruption' );
     ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
@@ -675,6 +677,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
               'This system is not currently set up to build kernel modules' ),
             ( True, ktReason_Host_DriverNotCompilable,
               'This system is currently not set up to build kernel modules' ),
+            ( True, ktReason_Host_InstallationFailed,
+              'vboxdrv.sh: failed: Look at /var/log/vbox-install.log to find out what went wrong.' ),
             ( True, ktReason_Host_DriverNotUnloading,
               'Cannot unload module vboxdrv'),
         ],
