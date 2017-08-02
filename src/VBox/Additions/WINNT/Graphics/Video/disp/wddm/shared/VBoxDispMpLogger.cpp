@@ -43,15 +43,15 @@
 #   else
 #       include <iprt/win/windows.h>
 #   endif
-#include "VBoxDispMpLogger.h"
+#include <VBoxDispMpLogger.h>
 #include <d3d9types.h>
 #include <D3dumddi.h>
 #include <d3dhal.h>
-#include "../../common/wddm/VBoxMPIf.h"
-#include "VBoxDispKmt.h"
+#include <../../../common/wddm/VBoxMPIf.h>
+#include <VBoxDispKmt.h>
 
 #define VBOX_VIDEO_LOG_NAME "VBoxDispMpLogger"
-#include <common/VBoxVideoLog.h>
+#include <../../../common/VBoxVideoLog.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>

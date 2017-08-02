@@ -211,6 +211,7 @@ VBoxOGL_LIBS = \
 
 VBoxOGL_LIBS.win += \
 	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxWddmUmKmt$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
@@ -258,6 +259,7 @@ VBoxOGL-x86_LIBS = $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
 
 VBoxOGL-x86_LIBS.win += \
 	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
 
 
@@ -594,6 +596,7 @@ VBoxOGLpackspu_LIBS        = \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
 VBoxOGLpackspu_LIBS.win += \
 	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxWddmUmKmt$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_CRHGSMI
@@ -621,6 +624,7 @@ VBoxOGLpackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrpacker-x86$(VBOX_SUFF_LIB)
 VBoxOGLpackspu-x86_LIBS.win += \
 	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
 VBoxOGLpackspu-x86_DEFS = $(VBoxOGLpackspu_DEFS) VBOX_WDDM_WOW64
 endif

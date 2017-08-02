@@ -110,12 +110,12 @@ VBoxDispD3D_INCS     = \
 	../../../include \
 	.. \
 	$(VBOX_PATH_CROGL_INCLUDE) \
+	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(VBOX_GRAPHICS_INCS)
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
 	wddm/VBoxDispD3DIf.cpp \
 	wddm/VBoxDispCm.cpp \
-	wddm/VBoxDispKmt.cpp \
 	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxD3DIf.cpp \
 	wddm/VBoxDispD3D.rc \
@@ -128,6 +128,7 @@ VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_VBGL_R3) \
 	Psapi.lib \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 
 #
@@ -141,6 +142,7 @@ VBoxDispD3D-x86_LIBS = \
 	$(VBOX_LIB_VBGL_R3_X86) \
 	Psapi.lib \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
 VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
 
@@ -157,10 +159,10 @@ VBoxCrHgsmi_INCS        = \
 	../../../include \
 	.. \
 	$(VBOX_PATH_CROGL_INCLUDE) \
+	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(VBOX_GRAPHICS_INCS)
 VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxCrHgsmi.cpp \
-	wddm/VBoxDispKmt.cpp \
 	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxUhgsmiKmt.cpp \
 	wddm/VBoxUhgsmiBase.cpp \
@@ -176,25 +178,7 @@ VBoxCrHgsmi-x86_BLD_TRG_ARCH = x86
 VBoxCrHgsmi-x86_DEFS = $(VBoxCrHgsmi_DEFS) VBOX_WDDM_WOW64
 endif #VBOX_WITH_CRHGSMI
 
-#
-# VBoxDispMpLogger - display backdoor logger library
-#
-LIBRARIES += VBoxDispMpLogger
-VBoxDispMpLogger_TEMPLATE    = VBoxGuestR3Lib
-VBoxDispMpLogger_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
-VBoxDispMpLogger_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
-VBoxDispMpLogger_INCS        = ../../../include .. $(VBOX_GRAPHICS_INCS)
-VBoxDispMpLogger_SOURCES     = \
-    wddm/VBoxDispMpLogger.cpp
-
-#
-# 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
-#
-LIBRARIES.amd64 += VBoxDispMpLogger-x86
-VBoxDispMpLogger-x86_TEMPLATE    = VBoxGuestR3Lib
-VBoxDispMpLogger-x86_EXTENDS = VBoxDispMpLogger
-VBoxDispMpLogger-x86_BLD_TRG_ARCH = x86
-VBoxDispMpLogger-x86_DEFS = $(VBoxDispMpLogger_DEFS) VBOX_WDDM_WOW64
+include $(PATH_SUB_CURRENT)/wddm/shared/Makefile.kmk
 
 endif #ifdef VBOX_WITH_WDDM
 

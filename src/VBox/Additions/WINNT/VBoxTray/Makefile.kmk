@@ -28,7 +28,10 @@ VBoxTray_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST)
 VBoxTray_DEFS     = \
 	VBOX_WITH_HGCM \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
-VBoxTray_INCS     = ../include $(VBOX_GRAPHICS_INCS)
+VBoxTray_INCS     = \
+	../include \
+	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
+	$(VBOX_GRAPHICS_INCS)
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
 	VBoxDispIf.cpp \
@@ -68,7 +71,7 @@ endif
 ifdef VBOX_WITH_WDDM
  VBoxTray_DEFS   += VBOX_WITH_WDDM
  # VBoxTray_DEFS   += LOG_ENABLED
- VBoxTray_SOURCES += ../Graphics/Video/disp/wddm/VBoxDispKmt.cpp
+ VBoxTray_SOURCES += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared/VBoxDispKmt.cpp
 endif
 
 # VBoxTray.cpp uses VBOX_SVN_REV.

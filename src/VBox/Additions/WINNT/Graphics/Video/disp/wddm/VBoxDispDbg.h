@@ -185,7 +185,7 @@ DECLINLINE(const char*) vboxDispLogD3DRcType(D3DRESOURCETYPE enmType)
     }
 }
 
-#include "VBoxDispMpLogger.h"
+#include <VBoxDispMpLogger.h>
 
 VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerDumpD3DCAPS9(struct _D3DCAPS9 *pCaps);
 

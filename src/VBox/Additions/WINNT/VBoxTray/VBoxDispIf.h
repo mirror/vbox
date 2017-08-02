@@ -19,7 +19,7 @@
 #ifdef VBOX_WITH_WDDM
 # define D3DKMDT_SPECIAL_MULTIPLATFORM_TOOL
 # include <d3dkmthk.h>
-# include "../Graphics/Video/disp/wddm/VBoxDispKmt.h"
+# include <VBoxDispKmt.h>
 #endif
 
 #include <VBoxDisplay.h>

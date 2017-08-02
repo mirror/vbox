@@ -33,7 +33,7 @@
 #include "../../common/wddm/VBoxMPIf.h"
 #include "VBoxDispCm.h"
 #include "VBoxDispMpInternal.h"
-#include "VBoxDispKmt.h"
+#include <VBoxDispKmt.h>
 #ifdef VBOX_WITH_CRHGSMI
 #include "VBoxUhgsmiBase.h"
 #include "VBoxUhgsmiDisp.h"

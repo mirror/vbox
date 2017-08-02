@@ -21,7 +21,7 @@
 
 #include <D3dkmthk.h>
 
-#include "../../common/wddm/VBoxMPIf.h"
+#include <../../../common/wddm/VBoxMPIf.h>
 
 /* win8 release preview-specific stuff */
 typedef struct _D3DKMT_ADAPTERINFO
