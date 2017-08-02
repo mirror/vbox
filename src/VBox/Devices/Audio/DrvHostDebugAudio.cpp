@@ -242,7 +242,7 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
             break;
         }
 
-        Assert(cbAvail >= cbAvail);
+        Assert(cbAvail >= cbChunk);
         cbAvail        -= cbChunk;
 
         cbWrittenTotal += cbChunk;
