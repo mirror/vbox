@@ -39,6 +39,7 @@ class UIGChooser;
 class UIMainBar;
 #endif
 class UISlidingWidget;
+class UITabBar;
 class UIToolBar;
 class UIToolsToolbar;
 class UIVMItem;
@@ -81,6 +82,11 @@ private slots:
     /** Stupid moc does not warn if it cannot find headers! */
     void QT_VERSION_NOT_DEFINED
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
+    /** Handles request to show Machine tab-bar. */
+    void sltHandleShowTabBarMachine();
+    /** Handles request to show Global tab-bar. */
+    void sltHandleShowTabBarGlobal();
 
     /** Handles selector-window context-menu call for passed @a position. */
     void sltShowSelectorWindowContextMenu(const QPoint &position);
@@ -332,10 +338,20 @@ private:
 
 #ifndef VBOX_WS_MAC
     /** Holds the main bar instance. */
-    UIMainBar      *m_pBar;
+    UIMainBar *m_pBar;
 #endif
     /** Holds the main toolbar instance. */
-    UIToolBar      *m_pToolBar;
+    UIToolBar *m_pToolBar;
+
+    /** Holds the Machine tab-bar instance. */
+    UITabBar *m_pTabBarMachine;
+    /** Holds the Global tab-bar instance. */
+    UITabBar *m_pTabBarGlobal;
+    /** Holds the Machine tab-bar action reference. */
+    QAction *m_pActionTabBarMachine;
+    /** Holds the Global tab-bar action reference. */
+    QAction *m_pActionTabBarGlobal;
+
     /** Holds the Tools-toolbar instance. */
     UIToolsToolbar *m_pToolbarTools;
 

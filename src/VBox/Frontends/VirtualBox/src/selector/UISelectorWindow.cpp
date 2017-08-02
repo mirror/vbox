@@ -45,6 +45,7 @@
 # include "UISettingsDialogSpecific.h"
 # include "UISlidingWidget.h"
 # include "UISpacerWidgets.h"
+# include "UITabBar.h"
 # include "UIToolBar.h"
 # include "UIVMLogViewer.h"
 # include "UIVMItem.h"
@@ -117,6 +118,10 @@ UISelectorWindow::UISelectorWindow()
     , m_pBar(0)
 #endif
     , m_pToolBar(0)
+    , m_pTabBarMachine(0)
+    , m_pTabBarGlobal(0)
+    , m_pActionTabBarMachine(0)
+    , m_pActionTabBarGlobal(0)
     , m_pToolbarTools(0)
     , m_pPaneChooser(0)
     , m_pPaneToolsMachine(0)
@@ -151,6 +156,18 @@ void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
     move(m_geometry.topLeft());
 }
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+
+void UISelectorWindow::sltHandleShowTabBarMachine()
+{
+    m_pActionTabBarGlobal->setVisible(false);
+    m_pActionTabBarMachine->setVisible(true);
+}
+
+void UISelectorWindow::sltHandleShowTabBarGlobal()
+{
+    m_pActionTabBarMachine->setVisible(false);
+    m_pActionTabBarGlobal->setVisible(true);
+}
 
 void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 {
@@ -1799,12 +1816,39 @@ void UISelectorWindow::prepareToolbar()
         /* Create/add horizontal spacer widget to align subsequent controls right: */
         m_pToolBar->addWidget(new UIHorizontalSpacerWidget);
 
+        /* Create Machine tab-bar: */
+        m_pTabBarMachine = new UITabBar;
+        AssertPtrReturnVoid(m_pTabBarMachine);
+        {
+            /* Configure tab-bar: */
+            m_pTabBarMachine->setContentsMargins(0, 0, 10, 0);
+
+            /* Add into toolbar: */
+            m_pActionTabBarMachine = m_pToolBar->addWidget(m_pTabBarMachine);
+        }
+
+        /* Create Global tab-bar: */
+        m_pTabBarGlobal = new UITabBar;
+        AssertPtrReturnVoid(m_pTabBarGlobal);
+        {
+            /* Configure tab-bar: */
+            m_pTabBarGlobal->setContentsMargins(0, 0, 10, 0);
+
+            /* Add into toolbar: */
+            m_pActionTabBarGlobal = m_pToolBar->addWidget(m_pTabBarGlobal);
+        }
+
         /* Create Tools toolbar: */
         m_pToolbarTools = new UIToolsToolbar(actionPool());
         if (m_pToolbarTools)
         {
             /* Configure toolbar: */
             m_pToolbarTools->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+            connect(m_pToolbarTools, &UIToolsToolbar::sigShowTabBarMachine,
+                    this, &UISelectorWindow::sltHandleShowTabBarMachine);
+            connect(m_pToolbarTools, &UIToolsToolbar::sigShowTabBarGlobal,
+                    this, &UISelectorWindow::sltHandleShowTabBarGlobal);
+            m_pToolbarTools->setTabBars(m_pTabBarMachine, m_pTabBarGlobal);
 
             /* Create exclusive action-group: */
             QActionGroup *pActionGroupTools = new QActionGroup(m_pToolbarTools);

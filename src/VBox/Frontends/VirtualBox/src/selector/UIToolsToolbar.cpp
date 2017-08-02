@@ -41,13 +41,33 @@
 UIToolsToolbar::UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pActionPool(pActionPool)
-    , m_pLayoutMain(0)
     , m_pTabBarMachine(0)
     , m_pTabBarGlobal(0)
+    , m_pLayoutMain(0)
     , m_pToolBar(0)
 {
     /* Prepare: */
     prepare();
+}
+
+void UIToolsToolbar::setTabBars(UITabBar *pTabBarMachine, UITabBar *pTabBarGlobal)
+{
+    /* Remember the new tab-bars: */
+    m_pTabBarMachine = pTabBarMachine;
+    m_pTabBarGlobal = pTabBarGlobal;
+
+    /* Configure tab-bar connections: */
+    connect(m_pTabBarMachine, &UITabBar::sigTabRequestForClosing,
+            this, &UIToolsToolbar::sltHandleCloseToolMachine);
+    connect(m_pTabBarMachine, &UITabBar::sigCurrentTabChanged,
+            this, &UIToolsToolbar::sltHandleToolChosenMachine);
+    connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
+            this, &UIToolsToolbar::sltHandleCloseToolGlobal);
+    connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
+            this, &UIToolsToolbar::sltHandleToolChosenGlobal);
+
+    /* Let the tab-bars know our opinion: */
+    sltHandleActionToggle();
 }
 
 void UIToolsToolbar::setToolButtonStyle(Qt::ToolButtonStyle enmStyle)
@@ -146,12 +166,10 @@ void UIToolsToolbar::sltHandleToolChosenGlobal(const QUuid &uuid)
 void UIToolsToolbar::sltHandleActionToggle()
 {
     /* Handle known actions: */
-    const bool fShowMachine = m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->isChecked();
-    const bool fShowGlobal  = m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->isChecked();
-    if (m_pTabBarMachine)
-        m_pTabBarMachine->setHidden(!fShowMachine);
-    if (m_pTabBarGlobal)
-        m_pTabBarGlobal->setHidden(!fShowGlobal);
+    if (m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
+        emit sigShowTabBarMachine();
+    else if (m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
+        emit sigShowTabBarGlobal();
 }
 
 void UIToolsToolbar::prepare()
@@ -227,35 +245,6 @@ void UIToolsToolbar::prepareWidgets()
     {
         /* Configure layout: */
         m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
-        m_pLayoutMain->setSpacing(10);
-
-        /* Create Machine tab-bar: */
-        m_pTabBarMachine = new UITabBar;
-        AssertPtrReturnVoid(m_pTabBarMachine);
-        {
-            /* Configure tab-bar: */
-            connect(m_pTabBarMachine, &UITabBar::sigTabRequestForClosing,
-                    this, &UIToolsToolbar::sltHandleCloseToolMachine);
-            connect(m_pTabBarMachine, &UITabBar::sigCurrentTabChanged,
-                    this, &UIToolsToolbar::sltHandleToolChosenMachine);
-
-            /* Add into layout: */
-            m_pLayoutMain->addWidget(m_pTabBarMachine);
-        }
-
-        /* Create Global tab-bar: */
-        m_pTabBarGlobal = new UITabBar;
-        AssertPtrReturnVoid(m_pTabBarGlobal);
-        {
-            /* Configure tab-bar: */
-            connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
-                    this, &UIToolsToolbar::sltHandleCloseToolGlobal);
-            connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
-                    this, &UIToolsToolbar::sltHandleToolChosenGlobal);
-
-            /* Add into layout: */
-            m_pLayoutMain->addWidget(m_pTabBarGlobal);
-        }
 
         /* Create toolbar: */
         m_pToolBar = new UIToolBar;

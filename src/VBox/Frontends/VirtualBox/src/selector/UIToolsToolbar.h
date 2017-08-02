@@ -44,14 +44,19 @@ class UIToolsToolbar : public QWidget
 
 signals:
 
-    /** Notify listeners about Machine tool of particular @a enmType opened. */
+    /** Notifies listeners about Machine tab-bar should be shown. */
+    void sigShowTabBarMachine();
+    /** Notifies listeners about Global tab-bar should be shown. */
+    void sigShowTabBarGlobal();
+
+    /** Notifies listeners about Machine tool of particular @a enmType opened. */
     void sigToolOpenedMachine(const ToolTypeMachine enmType);
-    /** Notify listeners about Global tool of particular @a enmType opened. */
+    /** Notifies listeners about Global tool of particular @a enmType opened. */
     void sigToolOpenedGlobal(const ToolTypeGlobal enmType);
 
-    /** Notify listeners about Machine tool of particular @a enmType closed. */
+    /** Notifies listeners about Machine tool of particular @a enmType closed. */
     void sigToolClosedMachine(const ToolTypeMachine enmType);
-    /** Notify listeners about Global tool of particular @a enmType closed. */
+    /** Notifies listeners about Global tool of particular @a enmType closed. */
     void sigToolClosedGlobal(const ToolTypeGlobal enmType);
 
 public:
@@ -59,6 +64,9 @@ public:
     /** Constructs Tools toolbar passing @a pParent to the base-class.
       * @param  pActionPool  Brings the action-pool to take corresponding actions from. */
     UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent = 0);
+
+    /** Defines the tab-bars to control. */
+    void setTabBars(UITabBar *pTabBarMachine, UITabBar *pTabBarGlobal);
 
     /** Defines toolbar tool button @a enmStyle. */
     void setToolButtonStyle(Qt::ToolButtonStyle enmStyle);
@@ -95,16 +103,15 @@ private:
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
 
-    /** Holds the main layout instance. */
-    QHBoxLayout *m_pLayoutMain;
-
     /** Holds the Machine tab-bar instance. */
     UITabBar *m_pTabBarMachine;
     /** Holds the Global tab-bar instance. */
     UITabBar *m_pTabBarGlobal;
 
+    /** Holds the main layout instance. */
+    QHBoxLayout *m_pLayoutMain;
     /** Holds the toolbar instance. */
-    UIToolBar *m_pToolBar;
+    UIToolBar   *m_pToolBar;
 
     /** Holds the map of opened Machine tool IDs. */
     QMap<ToolTypeMachine, QUuid>  m_mapTabIdsMachine;
