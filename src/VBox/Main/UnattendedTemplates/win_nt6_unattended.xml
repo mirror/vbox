@@ -47,6 +47,7 @@
             <ImageInstall>
                 <OSImage>
                     <InstallFrom>
+                        <!-- TODO: This stuff doesn't work for en_windows_vista_enterprise_sp1_x64_and_x86.iso ... -->
                         <MetaData wcm:action="add">
                             <Key>/IMAGE/INDEX</Key>
                             <Value>@@VBOX_INSERT_IMAGE_INDEX_ELEMENT@@</Value>
@@ -134,6 +135,7 @@
 
             <FirstLogonCommands>
                 <SynchronousCommand wcm:action="add">
+                    <!-- For which OS versions do we need to do this? -->
                     <Order>1</Order>
                     <Description>Turn Off Network Selection pop-up</Description>
                     <CommandLine>reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
