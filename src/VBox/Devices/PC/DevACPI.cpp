@@ -485,9 +485,9 @@ typedef struct ACPIState
     uint8_t             u8SMBusBlkIdx;
 
     /** @todo DEBUGGING */
-    uint32_t            uPmTimerOld;
-    uint32_t            uPmTimerA;
-    uint32_t            uPmTimerB;
+    uint32_t            uPmTimeOld;
+    uint32_t            uPmTimeA;
+    uint32_t            uPmTimeB;
     uint32_t            Alignment5;
 } ACPIState;
 
@@ -1762,12 +1762,12 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
 
     /** @todo temporary: sanity check against running backwards */
-    uint32_t uOld = ASMAtomicXchgU32(&pThis->uPmTimerOld, *pu32);
+    uint32_t uOld = ASMAtomicXchgU32(&pThis->uPmTimeOld, *pu32);
     if (*pu32 - uOld >= 0x10000000)
     {
 #if defined(IN_RING0)
-        pThis->uPmTimerA = uOld;
-        pThis->uPmTimerB = *pu32;
+        pThis->uPmTimeA = uOld;
+        pThis->uPmTimeB = *pu32;
         return VERR_TM_TIMER_BAD_CLOCK;
 #elif defined(IN_RING3)
         AssertReleaseMsgFailed(("acpiPMTmrRead: old=%08RX32, current=%08RX32\n", uOld, *pu32));
@@ -1785,7 +1785,7 @@ static DECLCALLBACK(void) acpiR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     RT_NOREF(pszArgs);
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     pHlp->pfnPrintf(pHlp,
-                    "timer: old=%08RX32, current=%08RX32\n", pThis->uPmTimerA, pThis->uPmTimerB);
+                    "timer: old=%08RX32, current=%08RX32\n", pThis->uPmTimeA, pThis->uPmTimeB);
 }
 
 /**
@@ -3496,6 +3496,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
     pThis->u64PmTimerInitial = TMTimerGet(pThis->pPmTimerR3);
     pThis->uPmTimerVal       = 0;
     acpiR3PmTimerReset(pThis, pThis->u64PmTimerInitial);
+    pThis->uPmTimeOld        = pThis->uPmTimerVal;
     pThis->uBatteryIndex     = 0;
     pThis->uSystemInfoIndex  = 0;
     pThis->gpe0_en           = 0;
