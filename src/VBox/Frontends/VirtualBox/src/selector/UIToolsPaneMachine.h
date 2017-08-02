@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Forward declarations: */
 class QHBoxLayout;
 class QStackedLayout;
@@ -47,7 +50,7 @@ Q_DECLARE_METATYPE(ToolTypeMachine);
 
 
 /** QWidget subclass representing container for tool panes. */
-class UIToolsPaneMachine : public QWidget
+class UIToolsPaneMachine : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -88,6 +91,11 @@ public:
 
     /** Defines the @a comMachine object. */
     void setMachine(const CMachine &comMachine);
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
 private:
 

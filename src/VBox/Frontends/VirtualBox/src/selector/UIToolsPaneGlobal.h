@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Forward declarations: */
 class QHBoxLayout;
 class QStackedLayout;
@@ -47,7 +50,7 @@ Q_DECLARE_METATYPE(ToolTypeGlobal);
 
 
 /** QWidget subclass representing container for tool panes. */
-class UIToolsPaneGlobal : public QWidget
+class UIToolsPaneGlobal : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -71,6 +74,11 @@ public:
     void setDetailsText(const QString &strText);
     /** Defines @a strError and switches to error details pane. */
     void setDetailsError(const QString &strError);
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
 private:
 

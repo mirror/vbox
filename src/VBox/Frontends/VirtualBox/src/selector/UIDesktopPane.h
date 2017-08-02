@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 #include <QWidget>
 
 /* Forward declarations: */
+class QAction;
 class UIDesktopPanePrivate;
 
 
@@ -43,6 +44,15 @@ public:
     void updateDetailsText(const QString &strText);
     /** Updates @a strError details and switches to error details pane. */
     void updateDetailsError(const QString &strError);
+
+    /** Defines a tools pane welcome @a strText. */
+    void setToolsPaneText(const QString &strText);
+    /** Add a tool element.
+      * @param  pAction         Brings tool action reference.
+      * @param  strDescription  Brings the tool description. */
+    void addToolDescription(QAction *pAction, const QString &strDescription);
+    /** Removes all tool elements. */
+    void removeToolDescriptions();
 
 private:
 

@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QStackedLayout>
+# include <QUuid>
 
 /* GUI includes */
 # include "UIActionPoolSelector.h"
@@ -36,7 +37,7 @@
 
 
 UIToolsPaneGlobal::UIToolsPaneGlobal(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionPool(pActionPool)
     , m_pLayout(0)
     , m_pPaneDesktop(0)
@@ -168,7 +169,7 @@ void UIToolsPaneGlobal::setDetailsText(const QString &strText)
 {
     /* Update desktop pane: */
     AssertPtrReturnVoid(m_pPaneDesktop);
-    m_pPaneDesktop->updateDetailsText(strText);
+    m_pPaneDesktop->setToolsPaneText(strText);
 }
 
 void UIToolsPaneGlobal::setDetailsError(const QString &strError)
@@ -176,6 +177,46 @@ void UIToolsPaneGlobal::setDetailsError(const QString &strError)
     /* Update desktop pane: */
     AssertPtrReturnVoid(m_pPaneDesktop);
     m_pPaneDesktop->updateDetailsError(strError);
+}
+
+void UIToolsPaneGlobal::retranslateUi()
+{
+    /* Translate Global Tools welcome screen: */
+    setDetailsText(
+        tr("<h3>Welcome to VirtualBox!</h3>"
+           "<p>This window represents a set of global tools "
+           "which are currently opened (or can be opened). "
+           "They are not related to any particular machine but "
+           "to whole VirtualBox instead. For list of currently "
+           "available tools check the corresponding menu at the right "
+           "side of the main tool bar located at the top of the window. "
+           "This list will be extended with new tools in the future releases.</p>"
+           "<p>You can press the <b>%1</b> key to get instant help, or visit "
+           "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+           "for the latest information and news.</p>")
+           .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+
+    /* Wipe out the tool descriptions: */
+    m_pPaneDesktop->removeToolDescriptions();
+
+    /* Add tool descriptions: */
+    QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager);
+    m_pPaneDesktop->addToolDescription(pAction1,
+                                       tr("Tool to observe virtual storage media. "
+                                          "Reflects all the chains of <u>virtual disks</u> you have registered "
+                                          "(per each storage type) within your virtual machines and allows for media "
+                                          "manipulations like possibility to <u>copy</u>, <u>remove</u>, <u>release</u> "
+                                          "(detach from VMs it currently attached to) and observe their properties. "
+                                          "Allows to <u>edit</u> medium attributes like <u>type</u>, "
+                                          "<u>location/name</u>, <u>description</u> and <u>size</u> (for dynamical storages "
+                                          "only)."));
+    QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager);
+    m_pPaneDesktop->addToolDescription(pAction2,
+                                       tr("Tool to control host-only network interfaces. "
+                                          "Reflects <u>host-only networks</u>, their DHCP servers and allows "
+                                          "for network manipulations like possibility to <u>create</u>, <u>remove</u> "
+                                          "and observe their properties. Allows to <u>edit</u> various "
+                                          "<u>attributes</u> for host-only interface and corresponding DHCP server."));
 }
 
 void UIToolsPaneGlobal::prepare()
@@ -191,6 +232,9 @@ void UIToolsPaneGlobal::prepare()
 
     /* Create desktop pane: */
     openTool(ToolTypeGlobal_Desktop);
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UIToolsPaneGlobal::cleanup()

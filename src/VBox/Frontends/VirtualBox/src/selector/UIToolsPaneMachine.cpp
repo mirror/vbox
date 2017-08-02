@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QStackedLayout>
+# include <QUuid>
 
 /* GUI includes */
 # include "UIActionPoolSelector.h"
@@ -36,7 +37,7 @@
 
 
 UIToolsPaneMachine::UIToolsPaneMachine(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionPool(pActionPool)
     , m_pLayout(0)
     , m_pPaneDesktop(0)
@@ -172,7 +173,7 @@ void UIToolsPaneMachine::setDetailsText(const QString &strText)
 {
     /* Update desktop pane: */
     AssertPtrReturnVoid(m_pPaneDesktop);
-    m_pPaneDesktop->updateDetailsText(strText);
+    m_pPaneDesktop->setToolsPaneText(strText);
 }
 
 void UIToolsPaneMachine::setDetailsError(const QString &strError)
@@ -196,6 +197,42 @@ void UIToolsPaneMachine::setMachine(const CMachine &comMachine)
     m_pPaneSnapshots->setMachine(comMachine);
 }
 
+void UIToolsPaneMachine::retranslateUi()
+{
+    /* Translate Machine Tools welcome screen: */
+    setDetailsText(
+        tr("<h3>Welcome to VirtualBox!</h3>"
+           "<p>The left part of this window is a list of all virtual "
+           "machines and virtual machine groups on your computer.</p>"
+           "<p>The right part of this window represents a set of "
+           "tools which are currently opened (or can be opened) for "
+           "the currently chosen machine. For list of currently "
+           "available tools check the corresponding menu at the right "
+           "side of the main tool bar located at the top of the window. "
+           "This list will be extended with new tools in the future releases.</p>"
+           "<p>You can press the <b>%1</b> key to get instant help, or visit "
+           "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
+           "for the latest information and news.</p>")
+           .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
+
+    /* Wipe out the tool descriptions: */
+    m_pPaneDesktop->removeToolDescriptions();
+
+    /* Add tool descriptions: */
+    QAction *pAction1 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Details);
+    m_pPaneDesktop->addToolDescription(pAction1,
+                                       tr("Tool to observe virtual machine (VM) details. "
+                                          "Reflects groups of <u>properties</u> for the currently chosen VM and allows "
+                                          "for basic manipulations on few of them (like the machine storage devices)."));
+    QAction *pAction2 = m_pActionPool->action(UIActionIndexST_M_Tools_M_Machine_Snapshots);
+    m_pPaneDesktop->addToolDescription(pAction2,
+                                       tr("Tool to control virtual machine (VM) snapshots. "
+                                          "Reflects <u>snapshots</u> created for the currently chosen VM and allows "
+                                          "for snapshot manipulations like possibility to <u>create</u>, <u>remove</u>, "
+                                          "<u>restore</u> (make current) and observe their properties. Allows to "
+                                          "<u>edit</u> snapshot attributes like <u>name</u> and <u>description</u>."));
+}
+
 void UIToolsPaneMachine::prepare()
 {
     /* Create stacked-layout: */
@@ -209,6 +246,9 @@ void UIToolsPaneMachine::prepare()
 
     /* Create desktop pane: */
     openTool(ToolTypeMachine_Desktop);
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UIToolsPaneMachine::cleanup()

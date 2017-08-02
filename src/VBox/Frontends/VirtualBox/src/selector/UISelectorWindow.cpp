@@ -1158,38 +1158,6 @@ void UISelectorWindow::retranslateUi()
 #endif /* VBOX_BLEEDING_EDGE */
     setWindowTitle(strTitle);
 
-    /* Translate Machine Tools welcome screen: */
-    m_pPaneToolsMachine->setDetailsText(
-        tr("<h3>Welcome to VirtualBox!</h3>"
-           "<p>The left part of this window is a list of all virtual machines "
-           "and virtual machine groups on your computer. "
-           "<img src=:/welcome.png align=right/></p>"
-           "<p>The right part of this window represents a set of tools "
-           "you have opened for the currently chosen machine. "
-           "For more tools check the corresponding menu at the right side "
-           "of the main tool bar located at the top of the window.</p>"
-           "<p>You can press the <b>%1</b> key to get instant help, "
-           "or visit "
-           "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-           "for the latest information and news.</p>")
-           .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
-
-    /* Translate Global Tools welcome screen: */
-    m_pPaneToolsGlobal->setDetailsText(
-        tr("<h3>Welcome to VirtualBox!</h3>"
-           "<p>This window represents a set of global tools "
-           "you have opened. They are not related to any particular machine "
-           "but to whole VirtualBox instead. This list will be extended with "
-           "new tools in the future releases. "
-           "<img src=:/welcome.png align=right/></p>"
-           "For more tools check the corresponding menu at the right side "
-           "of the main tool bar located at the top of the window.</p>"
-           "<p>You can press the <b>%1</b> key to get instant help, "
-           "or visit "
-           "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-           "for the latest information and news.</p>")
-           .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
-
     /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */);
 
@@ -1939,7 +1907,7 @@ void UISelectorWindow::prepareWidgets()
                     m_pSplitter->setHandleType(QISplitter::Native);
 #endif
 
-                    /* Prepare Chooser-pane: */
+                    /* Create Chooser-pane: */
                     m_pPaneChooser = new UIGChooser(this);
                     AssertPtrReturnVoid(m_pPaneChooser);
                     {
@@ -1947,7 +1915,7 @@ void UISelectorWindow::prepareWidgets()
                         m_pSplitter->addWidget(m_pPaneChooser);
                     }
 
-                    /* Prepare Machine Tools-pane: */
+                    /* Create Machine Tools-pane: */
                     m_pPaneToolsMachine = new UIToolsPaneMachine(actionPool());
                     AssertPtrReturnVoid(m_pPaneToolsMachine);
                     {
@@ -1963,7 +1931,7 @@ void UISelectorWindow::prepareWidgets()
                     m_pSplitter->setStretchFactor(1, 3);
                 }
 
-                /* Prepare Global Tools-pane: */
+                /* Create Global Tools-pane: */
                 m_pPaneToolsGlobal = new UIToolsPaneGlobal(actionPool());
                 AssertPtrReturnVoid(m_pPaneToolsGlobal);
 
