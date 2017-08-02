@@ -500,18 +500,21 @@ VMMR3_INT_DECL(int) DBGFR3InfoDeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, cons
         /*
          * Free all owned by the device.
          */
-        for (; pInfo; pPrev = pInfo, pInfo = pInfo->pNext)
+        while (pInfo != NULL)
             if (    pInfo->enmType == DBGFINFOTYPE_DEV
                 &&  pInfo->u.Dev.pDevIns == pDevIns)
             {
+                PDBGFINFO volatile pFree = pInfo;
                 if (pPrev)
-                    pPrev->pNext = pInfo->pNext;
+                    pInfo = pPrev->pNext = pInfo->pNext;
                 else
-                    pUVM->dbgf.s.pInfoFirst = pInfo->pNext;
-                MMR3HeapFree(pInfo);
-                pInfo = pPrev;
-                if (!pInfo)
-                    break;
+                    pInfo = pUVM->dbgf.s.pInfoFirst = pInfo->pNext;
+                MMR3HeapFree(pFree);
+            }
+            else
+            {
+                pPrev = pInfo;
+                pInfo = pInfo->pNext;
             }
         rc = VINF_SUCCESS;
     }
@@ -574,16 +577,21 @@ VMMR3_INT_DECL(int) DBGFR3InfoDeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, cons
         /*
          * Free all owned by the driver.
          */
-        for (; pInfo; pPrev = pInfo, pInfo = pInfo->pNext)
+        while (pInfo != NULL)
             if (    pInfo->enmType == DBGFINFOTYPE_DRV
                 &&  pInfo->u.Drv.pDrvIns == pDrvIns)
             {
+                PDBGFINFO volatile pFree = pInfo;
                 if (pPrev)
-                    pPrev->pNext = pInfo->pNext;
+                    pInfo = pPrev->pNext = pInfo->pNext;
                 else
-                    pUVM->dbgf.s.pInfoFirst = pInfo->pNext;
-                MMR3HeapFree(pInfo);
-                pInfo = pPrev;
+                    pInfo = pUVM->dbgf.s.pInfoFirst = pInfo->pNext;
+                MMR3HeapFree(pFree);
+            }
+            else
+            {
+                pPrev = pInfo;
+                pInfo = pInfo->pNext;
             }
         rc = VINF_SUCCESS;
     }
