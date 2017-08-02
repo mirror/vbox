@@ -313,7 +313,7 @@ void UITabBarItem::prepare()
         AssertPtrReturnVoid(m_pLabelName);
         {
             /* Configure label: */
-            m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            m_pLabelName->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             m_pLabelName->setText(m_strName);
         }
 
