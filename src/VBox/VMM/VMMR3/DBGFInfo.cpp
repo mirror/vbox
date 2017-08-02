@@ -510,6 +510,8 @@ VMMR3_INT_DECL(int) DBGFR3InfoDeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, cons
                     pUVM->dbgf.s.pInfoFirst = pInfo->pNext;
                 MMR3HeapFree(pInfo);
                 pInfo = pPrev;
+                if (!pInfo)
+                    break;
             }
         rc = VINF_SUCCESS;
     }
