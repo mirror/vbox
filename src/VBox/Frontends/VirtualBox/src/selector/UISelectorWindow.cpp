@@ -1101,6 +1101,10 @@ void UISelectorWindow::sltHandleToolsTypeSwitch()
 
 void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
 {
+    /* First, make sure corresponding tool set opened: */
+    if (!actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
+        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
+
     /* Open corresponding tool: */
     m_pPaneToolsMachine->openTool(enmType);
     /* If that was 'Details' => pass there current items: */
@@ -1118,6 +1122,10 @@ void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
 
 void UISelectorWindow::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType)
 {
+    /* First, make sure corresponding tool set opened: */
+    if (!actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
+        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setChecked(true);
+
     /* Open corresponding tool: */
     m_pPaneToolsGlobal->openTool(enmType);
 }
