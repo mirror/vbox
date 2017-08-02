@@ -566,7 +566,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD_DEFS  += VBOX_WITH_AUDIO_ENUM
 
  # Enable backend callback support.
- #VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
+ VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
 
  # Disable one-time audio stream initialization at device creation (VM startup) instead
  # of creating the stream when needed at some later point in time.
