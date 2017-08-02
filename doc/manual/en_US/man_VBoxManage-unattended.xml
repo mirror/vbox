@@ -65,7 +65,7 @@
       <arg>--post-install-command=<replaceable>command</replaceable></arg>
       <arg>--extra-install-kernel-parameters=<replaceable>params</replaceable></arg>
       <arg>--language=<replaceable>lang</replaceable></arg>
-      <arg>--session-type=<replaceable>type</replaceable></arg>
+      <arg>--start-vm=<replaceable>session-type</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -183,11 +183,12 @@
           <listitem><para>Do not create any files or make any changes to the VM configuration.</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--session-type=<replaceable>type</replaceable></option></term>
+          <term><option>--start-vm=<replaceable>session-type</replaceable></option></term>
           <listitem>
-            <para>The type of session to start when launching the installation.  This is the same as the <option>--type</option>
-              option for the <computeroutput>startvm</computeroutput> command, but we add <computeroutput>none</computeroutput>
-              for indicating that the VM should not be started.  (default: <computeroutput>none</computeroutput>)</para></listitem>
+            <para>Start the VM using the front end given by <replaceable>session-type</replaceable>. This is the same as
+              the <option>--type</option> option for the <computeroutput>startvm</computeroutput> command, but we have add
+              <computeroutput>none</computeroutput> for indicating that the VM should not be started.
+              (default: <computeroutput>none</computeroutput>)</para></listitem>
         </varlistentry>
       </variablelist>
 
