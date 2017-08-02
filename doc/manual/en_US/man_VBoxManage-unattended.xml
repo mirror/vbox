@@ -64,6 +64,7 @@
       <arg>--post-install-template=<replaceable>file</replaceable></arg>
       <arg>--post-install-command=<replaceable>command</replaceable></arg>
       <arg>--extra-install-kernel-parameters=<replaceable>params</replaceable></arg>
+      <arg>--language=<replaceable>lang</replaceable></arg>
       <arg>--session-type=<replaceable>type</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -222,6 +223,14 @@
             <para>
               List of extra linux kernel parameters to use during the installation. (default: IMachine::OSTypeId dependent)
             </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--language=<replaceable>lang</replaceable></option></term>
+          <listitem>
+            <para>
+              Specifies the UI language for a Windows installation.  The <replaceable>lang</replaceable> is
+              generally on the form {ll}-{CC}.  See detectedOSLanguages results from <command>VBoxManage unattended detect</command>.
+              (default: detectedOSLanguages[0])</para></listitem>
         </varlistentry>
 
       </variablelist>
