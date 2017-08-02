@@ -22,8 +22,8 @@
 /* Qt includes: */
 # include <QAction>
 # include <QButtonGroup>
+# include <QHBoxLayout>
 # include <QLabel>
-# include <QStackedLayout>
 # include <QToolButton>
 
 /* GUI includes: */
@@ -42,7 +42,6 @@ UIToolsToolbar::UIToolsToolbar(UIActionPool *pActionPool, QWidget *pParent /* = 
     : QWidget(pParent)
     , m_pActionPool(pActionPool)
     , m_pLayoutMain(0)
-    , m_pLayoutStacked(0)
     , m_pTabBarMachine(0)
     , m_pTabBarGlobal(0)
     , m_pToolBar(0)
@@ -146,22 +145,13 @@ void UIToolsToolbar::sltHandleToolChosenGlobal(const QUuid &uuid)
 
 void UIToolsToolbar::sltHandleActionToggle()
 {
-    /* Acquire the sender: */
-    UIAction *pAction = sender() ? qobject_cast<UIAction*>(sender()) : 0;
-    if (!pAction)
-        pAction = m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine);
-
     /* Handle known actions: */
-    if (m_pLayoutStacked)
-    {
-        if (pAction == m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine))
-            m_pLayoutStacked->setCurrentWidget(m_pTabBarMachine);
-
-        else
-
-        if (pAction == m_pActionPool->action(UIActionIndexST_M_Tools_T_Global))
-            m_pLayoutStacked->setCurrentWidget(m_pTabBarGlobal);
-    }
+    const bool fShowMachine = m_pActionPool->action(UIActionIndexST_M_Tools_T_Machine)->isChecked();
+    const bool fShowGlobal  = m_pActionPool->action(UIActionIndexST_M_Tools_T_Global)->isChecked();
+    if (m_pTabBarMachine)
+        m_pTabBarMachine->setHidden(!fShowMachine);
+    if (m_pTabBarGlobal)
+        m_pTabBarGlobal->setHidden(!fShowGlobal);
 }
 
 void UIToolsToolbar::prepare()
@@ -170,6 +160,9 @@ void UIToolsToolbar::prepare()
     prepareMenu();
     /* Prepare widgets: */
     prepareWidgets();
+
+    /* Make sure just one tab-bar shown initially: */
+    sltHandleActionToggle();
 }
 
 void UIToolsToolbar::prepareMenu()
@@ -236,40 +229,32 @@ void UIToolsToolbar::prepareWidgets()
         m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
         m_pLayoutMain->setSpacing(10);
 
-        /* Create stacked layout: */
-        m_pLayoutStacked = new QStackedLayout(m_pLayoutMain);
-        AssertPtrReturnVoid(m_pLayoutStacked);
+        /* Create Machine tab-bar: */
+        m_pTabBarMachine = new UITabBar;
+        AssertPtrReturnVoid(m_pTabBarMachine);
         {
-            /* Create Machine tab-bar: */
-            m_pTabBarMachine = new UITabBar;
-            AssertPtrReturnVoid(m_pTabBarMachine);
-            {
-                /* Configure tab-bar: */
-                connect(m_pTabBarMachine, &UITabBar::sigTabRequestForClosing,
-                        this, &UIToolsToolbar::sltHandleCloseToolMachine);
-                connect(m_pTabBarMachine, &UITabBar::sigCurrentTabChanged,
-                        this, &UIToolsToolbar::sltHandleToolChosenMachine);
-
-                /* Add into layout: */
-                m_pLayoutStacked->addWidget(m_pTabBarMachine);
-            }
-
-            /* Create Global tab-bar: */
-            m_pTabBarGlobal = new UITabBar;
-            AssertPtrReturnVoid(m_pTabBarGlobal);
-            {
-                /* Configure tab-bar: */
-                connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
-                        this, &UIToolsToolbar::sltHandleCloseToolGlobal);
-                connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
-                        this, &UIToolsToolbar::sltHandleToolChosenGlobal);
-
-                /* Add into layout: */
-                m_pLayoutStacked->addWidget(m_pTabBarGlobal);
-            }
+            /* Configure tab-bar: */
+            connect(m_pTabBarMachine, &UITabBar::sigTabRequestForClosing,
+                    this, &UIToolsToolbar::sltHandleCloseToolMachine);
+            connect(m_pTabBarMachine, &UITabBar::sigCurrentTabChanged,
+                    this, &UIToolsToolbar::sltHandleToolChosenMachine);
 
             /* Add into layout: */
-            m_pLayoutMain->addLayout(m_pLayoutStacked);
+            m_pLayoutMain->addWidget(m_pTabBarMachine);
+        }
+
+        /* Create Global tab-bar: */
+        m_pTabBarGlobal = new UITabBar;
+        AssertPtrReturnVoid(m_pTabBarGlobal);
+        {
+            /* Configure tab-bar: */
+            connect(m_pTabBarGlobal, &UITabBar::sigTabRequestForClosing,
+                    this, &UIToolsToolbar::sltHandleCloseToolGlobal);
+            connect(m_pTabBarGlobal, &UITabBar::sigCurrentTabChanged,
+                    this, &UIToolsToolbar::sltHandleToolChosenGlobal);
+
+            /* Add into layout: */
+            m_pLayoutMain->addWidget(m_pTabBarGlobal);
         }
 
         /* Create toolbar: */

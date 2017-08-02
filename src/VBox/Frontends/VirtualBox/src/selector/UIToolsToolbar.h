@@ -30,7 +30,6 @@
 /* Forward declarations: */
 class QAction;
 class QHBoxLayout;
-class QStackedLayout;
 class QUuid;
 class QWidget;
 class UIActionPool;
@@ -97,9 +96,7 @@ private:
     UIActionPool *m_pActionPool;
 
     /** Holds the main layout instance. */
-    QHBoxLayout    *m_pLayoutMain;
-    /** Holds the stacked layout instance. */
-    QStackedLayout *m_pLayoutStacked;
+    QHBoxLayout *m_pLayoutMain;
 
     /** Holds the Machine tab-bar instance. */
     UITabBar *m_pTabBarMachine;
