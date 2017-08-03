@@ -1192,14 +1192,14 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
              * on it? Check if the stream now can be closed and do so, if possible. */
             if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE)
             {
-                LogFunc(("[%s] Closing pending stream\n", pHstStream->szName));
+                LogFunc(("[%s] Closing pending input stream\n", pHstStream->szName));
                 rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
                 if (RT_SUCCESS(rc))
                 {
                     pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE;
                 }
                 else
-                    LogFunc(("[%s] Backend vetoed against closing pending output stream, rc=%Rrc\n", pHstStream->szName, rc));
+                    LogFunc(("[%s] Backend vetoed against closing pending input stream, rc=%Rrc\n", pHstStream->szName, rc));
             }
         }
 
@@ -1545,7 +1545,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
              * on it? Check if the stream now can be closed and do so, if possible. */
             if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE)
             {
-                LogFunc(("[%s] Closing pending stream\n", pHstStream->szName));
+                LogFunc(("[%s] All pending data played, closing output stream ...\n", pHstStream->szName));
                 rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
                 if (RT_SUCCESS(rc))
                 {
