@@ -548,7 +548,7 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
 #define AUDMIXBUF_MIXOP(_aName, _aOp) \
     static void audioMixBufOp##_aName(PPDMAUDIOFRAME paDst, uint32_t cDstFrames, \
                                       PPDMAUDIOFRAME paSrc, uint32_t cSrcFrames, \
-                                      PPDMAUDIOSTRMRATE pRate, \
+                                      PPDMAUDIOSTREAMRATE pRate, \
                                       uint32_t *pcDstWritten, uint32_t *pcSrcRead) \
     { \
         AUDMIXBUF_MACRO_LOG(("cSrcFrames=%RU32, cDstFrames=%RU32\n", cSrcFrames, cDstFrames)); \
@@ -982,12 +982,12 @@ int AudioMixBufLinkTo(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOMIXBUF pParent)
         if (!pMixBuf->pRate)
         {
             /* Create rate conversion. */
-            pMixBuf->pRate = (PPDMAUDIOSTRMRATE)RTMemAllocZ(sizeof(PDMAUDIOSTRMRATE));
+            pMixBuf->pRate = (PPDMAUDIOSTREAMRATE)RTMemAllocZ(sizeof(PDMAUDIOSTREAMRATE));
             if (!pMixBuf->pRate)
                 return VERR_NO_MEMORY;
         }
         else
-            RT_BZERO(pMixBuf->pRate, sizeof(PDMAUDIOSTRMRATE));
+            RT_BZERO(pMixBuf->pRate, sizeof(PDMAUDIOSTREAMRATE));
 
         pMixBuf->pRate->dstInc = ((uint64_t)AUDMIXBUF_FMT_SAMPLE_FREQ(pMixBuf->AudioFmt) << 32)
                                /            AUDMIXBUF_FMT_SAMPLE_FREQ(pParent->AudioFmt);

@@ -604,7 +604,7 @@ typedef struct PDMAUDIOVOLUME
  * because both streams can differ regarding their rates
  * and therefore need to be treated accordingly.
  */
-typedef struct PDMAUDIOSTRMRATE
+typedef struct PDMAUDIOSTREAMRATE
 {
     /** Current (absolute) offset in the output
      *  (destination) stream. */
@@ -619,7 +619,7 @@ typedef struct PDMAUDIOSTRMRATE
     /** Last processed frame of the input stream.
      *  Needed for interpolation. */
     PDMAUDIOFRAME  srcFrameLast;
-} PDMAUDIOSTRMRATE, *PPDMAUDIOSTRMRATE;
+} PDMAUDIOSTREAMRATE, *PPDMAUDIOSTREAMRATE;
 
 /**
  * Structure for holding mixing buffer volume parameters.
@@ -727,7 +727,7 @@ typedef struct PDMAUDIOMIXBUF
     /** Number of children mix buffers kept in lstChildren. */
     uint32_t                  cChildren;
     /** Intermediate structure for buffer conversion tasks. */
-    PPDMAUDIOSTRMRATE         pRate;
+    PPDMAUDIOSTREAMRATE         pRate;
     /** Internal representation of current volume used for mixing. */
     PDMAUDMIXBUFVOL           Volume;
     /** This buffer's audio format. */
