@@ -4164,11 +4164,16 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /* Re-check the nested-guest condition here as we may be transitioning from the normal
-       execution loop into the nested-guest. */
+       execution loop into the nested-guest, hence this is not placed in the 'else' part above. */
     if (rc == VINF_SVM_VMRUN)
+    {
         rc = hmR0SvmRunGuestCodeNested(pVM, pVCpu, pCtx, &cLoops);
+        if (rc == VINF_SVM_VMEXIT)
+            rc = VINF_SUCCESS;
+    }
 #endif
 
+    /* Fixup error codes. */
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     else if (rc == VINF_EM_RESET)
@@ -4182,6 +4187,27 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Determines whether an IOIO intercept is active for the nested-guest or not.
+ *
+ * @param   pvIoBitmap      Pointer to the nested-guest IO bitmap.
+ * @param   pIoExitInfo     Pointer to the SVMIOIOEXITINFO.
+ */
+static bool hmR0SvmIsIoInterceptActive(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExitInfo)
+{
+    const uint16_t    u16Port       = pIoExitInfo->n.u16Port;
+    const SVMIOIOTYPE enmIoType     = (SVMIOIOTYPE)pIoExitInfo->n.u1Type;
+    const uint8_t     cbReg         = (pIoExitInfo->u >> SVM_IOIO_OP_SIZE_SHIFT) & 7;
+    const uint8_t     cAddrSizeBits = (pIoExitInfo->u >> SVM_IOIO_ADDR_SIZE_SHIFT) << 4;
+    const uint8_t     iEffSeg       = pIoExitInfo->n.u3SEG;
+    const bool        fRep          = pIoExitInfo->n.u1REP;
+    const bool        fStrIo        = pIoExitInfo->n.u1STR;
+
+    return HMSvmIsIOInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
+                                    NULL /* pIoExitInfo */);
+}
+
+
 /**
  * Handles a nested-guest \#VMEXIT (for all EXITCODE values except
  * SVM_EXIT_INVALID).
@@ -4216,13 +4242,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             {
                 void *pvIoBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvIoBitmap);
                 SVMIOIOEXITINFO IoExitInfo;
-                IoExitInfo.u = (uint32_t)pVmcbNstGst->ctrl.u64ExitInfo1;
-                bool const fIntercept = HMSvmIsIOInterceptActive(pvIoBitmap, IoExitInfo.n.u16Port,
-                                                                 (SVMIOIOTYPE)IoExitInfo.n.u1Type,
-                                                                 (IoExitInfo.u >> SVM_IOIO_OP_SIZE_SHIFT) & 7,
-                                                                 (IoExitInfo.u >> SVM_IOIO_ADDR_SIZE_SHIFT) << 4,
-                                                                 IoExitInfo.n.u3SEG, IoExitInfo.n.u1REP, IoExitInfo.n.u1STR,
-                                                                 NULL /* pIoExitInfo */);
+                IoExitInfo.u = pVmcbNstGst->ctrl.u64ExitInfo1;
+                bool const fIntercept = hmR0SvmIsIoInterceptActive(pvIoBitmap, &IoExitInfo);
                 if (fIntercept)
                     return hmR0SvmExecVmexit(pVCpu, pCtx);
             }
@@ -5403,6 +5424,29 @@ static void hmR0SvmMergeMsrpmBitmap(PVMCPU pVCpu, const void *pvMsrBitmap, void 
 
 
 /**
+ * Performs an SVM world-switch (VMRUN, \#VMEXIT) updating PGM and HM internals.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        The guest-CPU context.
+ */
+static int hmR0SvmNstGstWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /** @todo What about informing PGM about CR0.WP? */
+    PGMFlushTLB(pVCpu, pCtx->cr3, true /* fGlobal */);
+
+    /* Inform CPUM (recompiler), can later be removed. */
+    CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+
+    /*
+     * Inform PGM about paging mode changes.
+     * We include X86_CR0_PE because PGM doesn't handle paged-real mode yet.
+     */
+    return PGMChangeMode(pVCpu, pCtx->cr0 | X86_CR0_PE, pCtx->cr4, pCtx->msrEFER);
+}
+
+
+/**
  * Performs a \#VMEXIT that happens during VMRUN emulation in hmR0SvmExecVmrun.
  *
  * @returns VBox status code.
@@ -5447,12 +5491,16 @@ static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Clear our cache of the nested-guest VMCB controls.
      */
-    PSVMVMCBCTRL pVmcbCtrl = &pVmcbNstGst->ctrl;
-    memset(pVmcbCtrl, 0, sizeof(*pVmcbCtrl));
+    PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+    memset(pVmcbNstGstCtrl, 0, sizeof(*pVmcbNstGstCtrl));
     Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
     if (RT_SUCCESS(rc))
-        return VINF_SVM_VMEXIT;
+    {
+        rc = hmR0SvmNstGstWorldSwitch(pVCpu, pCtx);
+        if (rc == VINF_SUCCESS)
+            rc = VINF_SVM_VMEXIT;
+    }
 
     Log(("hmR0SvmExecVmexit: Failed to write guest-VMCB at %#RGp\n", GCPhysVmcb));
     return rc;
@@ -5731,15 +5779,7 @@ static int hmR0SvmExecVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb, ui
          */
         pCtx->hwvirt.svm.fGif = 1;
 
-        /*
-         * Inform PGM about paging mode changes.
-         * We include X86_CR0_PE because PGM doesn't handle paged-real mode yet.
-         */
-        /** @todo What about informing PGM about CR0.WP? */
-        PGMFlushTLB(pVCpu, pCtx->cr3, true /* fGlobal */);
-
-        int rc = PGMChangeMode(pVCpu, pVmcbNstGstState->u64CR0 | X86_CR0_PE, pVmcbNstGstState->u64CR4, pCtx->msrEFER);
-        return rc;
+        return hmR0SvmNstGstWorldSwitch(pVCpu, pCtx);
     }
 
     return rc;
