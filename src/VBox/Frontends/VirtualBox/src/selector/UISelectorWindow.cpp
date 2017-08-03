@@ -146,12 +146,19 @@ bool UISelectorWindow::shouldBeMaximized() const
 
 void UISelectorWindow::sltHandlePolishEvent()
 {
-    // WORKAROUND:
-    // By some reason some of X11 DEs unable to update()
-    // tab-bars on startup.  Let's try to _create_ them instead.
-    /* Make sure 'Details' and 'Snapshots' Machine tools ares opened at startup for now: */
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
+    /* Get current item: */
+    UIVMItem *pItem = currentItem();
+
+    /* Make sure there is accessible VM item chosen: */
+    if (pItem && pItem->accessible())
+    {
+        // WORKAROUND:
+        // By some reason some of X11 DEs unable to update()
+        // tab-bars on startup.  Let's try to _create_ them instead.
+        /* Make sure 'Details' and 'Snapshots' Machine tools ares opened at startup for now: */
+        actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
+        actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
+    }
 }
 
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
@@ -254,7 +261,7 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 }
 
 void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = true */,
-                                                       bool fUpdateTools /* = true */)
+                                                       bool fUpdateSnapshots /* = true */)
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
@@ -263,11 +270,6 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     updateActionsVisibility();
     /* Update action appearance: */
     updateActionsAppearance();
-
-    /* Update Details-pane: */
-    if (   fUpdateDetails
-        && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
-        m_pPaneToolsMachine->setItems(currentItems());
 
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
@@ -283,8 +285,12 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
                 m_pPaneToolsMachine->openTool(ToolTypeMachine_Snapshots);
         }
 
-        /* Refresh Machine Tools-pane if requested: */
-        if (   fUpdateTools
+        /* Update Details-pane (if requested): */
+        if (   fUpdateDetails
+            && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+            m_pPaneToolsMachine->setItems(currentItems());
+        /* Update Snapshots-pane (if requested): */
+        if (   fUpdateSnapshots
             && m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
             m_pPaneToolsMachine->setMachine(pItem->machine());
     }
@@ -320,7 +326,10 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
                    .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
         }
 
-        /* Refresh Tools-pane in any case: */
+        /* Update Details-pane (in any case): */
+        if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Details))
+            m_pPaneToolsMachine->setItems(currentItems());
+        /* Update Snapshots-pane (in any case): */
         if (m_pPaneToolsMachine->isToolOpened(ToolTypeMachine_Snapshots))
             m_pPaneToolsMachine->setMachine(CMachine());
     }

@@ -90,10 +90,10 @@ private slots:
     void sltShowSelectorWindowContextMenu(const QPoint &position);
 
     /** Handles signal about Chooser-pane index change.
-      * @param  fUpdateDetails  Brings whether details should be updated.
-      * @param  fUpdateTools    Brings whether tools should be updated. */
+      * @param  fUpdateDetails    Brings whether details should be updated.
+      * @param  fUpdateSnapshots  Brings whether tools should be updated. */
     void sltHandleChooserPaneIndexChange(bool fUpdateDetails = true,
-                                         bool fUpdateTools = true);
+                                         bool fUpdateSnapshots = true);
 
     /** Handles signal about medium-enumeration finished. */
     void sltHandleMediumEnumerationFinish();
