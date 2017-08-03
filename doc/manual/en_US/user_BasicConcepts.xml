@@ -253,6 +253,36 @@
     </sect2>
   </sect1>
 
+  <sect1 id="basic-unattended">
+    <title>Unattended guest installation</title>
+    <para>VirtualBox is able to automatically install a guest by providing
+    the installation medium as well as a few parameters like the name of
+    the default user.</para>
+    <para>To perform an unattended guest installation, a VM has to be
+    prepared. A VM can be created using the GUI as described in <xref
+    linkend="gui-createvm" /> or by using VBoxManage as described in
+    <xref linkend="vboxmanage-createvm" />. In general it's sufficient to
+    chose the type of the guest operating system and to use the proposed
+    defaults for that operating system. See the following sections on how
+    to change the VM settings for certain needs.</para>
+    <para>After the VM was created, the VM has to be prepared for unattended
+    guest execution use VBoxManage, see <xref
+    linkend="vboxmanage-unattended" />. During this step VirtualBox scans
+    the installation medium and changes certain parameters for a seamless
+    installation as a guest running on VirtualBox.</para>
+    <para>Once the preparation phase was successfully finished, the VM can
+    be started either from the GUI or from VBoxManage, see <xref
+    linkend="vboxmanage-startvm" />. The VM will now perform the automatic
+    installation. Please note that the boot order was changed during the
+    preparation phase by giving the virtual hard disk the highest priority.
+    As the disk is normally empty before an automatic installation is started,
+    the VM will boot from the virtual DVD drive as next available boot medium
+    and the installation will start. If, for some reason, the virtual hard
+    disk contains a bootable operating system then the installation will not
+    start unless the boot order was manually changed by pressing F12 during
+    the BIOS splash screen.</para>
+  </sect1>
+
   <sect1>
     <title>Emulated hardware</title>
 

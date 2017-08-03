@@ -16,7 +16,8 @@
       </listitem>
 
       <listitem>
-        <para>Unattended guest installation (bug #5810)</para>
+        <para>Unattended guest installation (bug #5810; see <xref
+         linkend="basic-unattended" />)</para>
       </listitem>
 
       <listitem>
