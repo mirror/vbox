@@ -835,7 +835,6 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
     if (SUCCEEDED(hr))
     {
-        dsoundPlayClearSamples(pThis, pStreamDS);
         pStreamDS->Out.fEnabled = false;
     }
     else
