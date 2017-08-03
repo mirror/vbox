@@ -231,10 +231,10 @@ ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
   VBOX_RELEASE_EXACT_MATCH=1
 endif
 ifneq ($(VBOX_RELEASE_EXACT_MATCH),)
- export VBOX_ADDITIONS_SH_MODE     = release
- export VBOX_DOCUMENTATION_SH_MODE = release
- export VBOX_EFI_SH_MODE           = release
- export VBOX_EXTPACKS_SH_MODE      = release
+# export VBOX_ADDITIONS_SH_MODE     = release
+# export VBOX_DOCUMENTATION_SH_MODE = release
+# export VBOX_EFI_SH_MODE           = release
+# export VBOX_EXTPACKS_SH_MODE      = release
 endif
 
 # Some info on the vendor
