@@ -242,3 +242,53 @@ VBOXDISPMPLOGGER_DECL(void) VBoxDispMpLoggerDumpD3DCAPS9(struct _D3DCAPS9 *pCaps
 {
     vboxDispMpLoggerDumpBuf(pCaps, sizeof (*pCaps), VBOXDISPIFESCAPE_DBGDUMPBUF_TYPE_D3DCAPS9);
 }
+
+/*
+ * Prefix the output string with module name and pid/tid.
+ */
+static const char *vboxUmLogGetModuleName(void)
+{
+    static int s_fModuleNameInited = 0;
+    static char s_szModuleName[MAX_PATH];
+
+    if (!s_fModuleNameInited)
+    {
+        const DWORD cchName = GetModuleFileNameA(NULL, s_szModuleName, RT_ELEMENTS(s_szModuleName));
+        if (cchName == 0)
+        {
+            return "<no module>";
+        }
+        s_fModuleNameInited = 1;
+    }
+    return &s_szModuleName[0];
+}
+
+DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString)
+{
+    char szBuffer[4096];
+    const int cbBuffer = sizeof(szBuffer);
+    char *pszBuffer = &szBuffer[0];
+
+    int cbWritten = _snprintf(pszBuffer, cbBuffer, "['%s' 0x%x.0x%x]: ",
+                              vboxUmLogGetModuleName(), GetCurrentProcessId(), GetCurrentThreadId());
+    if (cbWritten < 0 || cbWritten >= cbBuffer)
+    {
+        AssertFailed();
+        pszBuffer[0] = 0;
+        cbWritten = 0;
+    }
+
+    const size_t cbLeft = cbBuffer - cbWritten;
+    const size_t cbString = strlen(pszString) + 1;
+    if (cbString <= cbLeft)
+    {
+        memcpy(pszBuffer + cbWritten, pszString, cbString);
+    }
+    else
+    {
+        memcpy(pszBuffer + cbWritten, pszString, cbLeft - 1);
+        pszBuffer[cbWritten + cbLeft - 1] = 0;
+    }
+
+    VBoxDispMpLoggerLog(szBuffer);
+}
