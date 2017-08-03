@@ -813,9 +813,9 @@ void UIMediumManagerWidget::retranslateUi()
     }
     if (m_pActionDetails)
     {
-        m_pActionDetails->setText(UIMediumManager::tr("&Details..."));
-        m_pActionDetails->setToolTip(tr("Open Disk Image File Details (%1)").arg(m_pActionDetails->shortcut().toString()));
-        m_pActionDetails->setStatusTip(UIMediumManager::tr("Open pane with selected disk image file details"));
+        m_pActionDetails->setText(UIMediumManager::tr("&Properties..."));
+        m_pActionDetails->setToolTip(tr("Open Disk Image File Properties (%1)").arg(m_pActionDetails->shortcut().toString()));
+        m_pActionDetails->setStatusTip(UIMediumManager::tr("Open pane with selected disk image file properties"));
     }
     if (m_pActionRefresh)
     {

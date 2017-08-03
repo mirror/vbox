@@ -519,7 +519,7 @@ void UISnapshotPane::retranslateUi()
     m_pActionTakeSnapshot->setText(tr("&Take..."));
     m_pActionDeleteSnapshot->setText(tr("&Delete"));
     m_pActionRestoreSnapshot->setText(tr("&Restore"));
-    m_pActionShowSnapshotDetails->setText(tr("D&etails..."));
+    m_pActionShowSnapshotDetails->setText(tr("&Properties..."));
     m_pActionCloneSnapshot->setText(tr("&Clone..."));
     /* Translate actions tool-tips: */
     m_pActionTakeSnapshot->setToolTip(tr("Take Snapshot (%1)")
@@ -528,7 +528,7 @@ void UISnapshotPane::retranslateUi()
                                         .arg(m_pActionDeleteSnapshot->shortcut().toString()));
     m_pActionRestoreSnapshot->setToolTip(tr("Restore Snapshot (%1)")
                                          .arg(m_pActionRestoreSnapshot->shortcut().toString()));
-    m_pActionShowSnapshotDetails->setToolTip(tr("Open Snapshot Details (%1)")
+    m_pActionShowSnapshotDetails->setToolTip(tr("Open Snapshot Properties (%1)")
                                              .arg(m_pActionShowSnapshotDetails->shortcut().toString()));
     m_pActionCloneSnapshot->setToolTip(tr("Clone Virtual Machine (%1)")
                                        .arg(m_pActionCloneSnapshot->shortcut().toString()));
@@ -536,7 +536,7 @@ void UISnapshotPane::retranslateUi()
     m_pActionTakeSnapshot->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
     m_pActionDeleteSnapshot->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
     m_pActionRestoreSnapshot->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
-    m_pActionShowSnapshotDetails->setStatusTip(tr("Open pane with the selected snapshot details"));
+    m_pActionShowSnapshotDetails->setStatusTip(tr("Open pane with the selected snapshot properties"));
     m_pActionCloneSnapshot->setStatusTip(tr("Clone selected virtual machine"));
 
     /* Translate toolbar: */
