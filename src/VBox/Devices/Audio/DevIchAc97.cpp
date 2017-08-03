@@ -694,7 +694,7 @@ static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnab
         ichac97TimerMaybeStart(pThis);
 #endif
 
-    LogFunc(("[SD%RU8] cStreamsActive=%RU8, rc=%Rrc\n", pStream->u8SD, pThis->cStreamsActive, rc));
+    LogFunc(("[SD%RU8] cStreamsActive=%RU8, fEnable=%RTbool, rc=%Rrc\n", pStream->u8SD, pThis->cStreamsActive, fEnable, rc));
     return rc;
 }
 
@@ -713,8 +713,6 @@ static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
     ichac97StreamLock(pStream);
 
     LogFunc(("[SD%RU8]\n", pStream->u8SD));
-
-    AudioMixerSinkReset(ichac97IndexToSink(pThis, pStream->u8SD));
 
     if (pStream->State.pCircBuf)
         RTCircBufReset(pStream->State.pCircBuf);
@@ -3189,7 +3187,7 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
 {
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
-    LogFlowFuncEnter();
+    LogRel(("AC97: Reset\n"));
 
     /*
      * Reset the mixer too. The Windows XP driver seems to rely on
@@ -3210,7 +3208,12 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
     ichac97StreamEnable(pThis, &pThis->StreamOut, false /* Disable */);
     ichac97StreamReset(pThis, &pThis->StreamOut);
 
-    LogRel(("AC97: Reset\n"));
+    /*
+     * Reset mixer sinks.
+     */
+    AudioMixerSinkReset(pThis->pSinkLineIn);
+    AudioMixerSinkReset(pThis->pSinkMicIn);
+    AudioMixerSinkReset(pThis->pSinkOut);
 }
 
 
