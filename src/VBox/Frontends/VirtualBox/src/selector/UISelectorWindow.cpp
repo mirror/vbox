@@ -167,18 +167,6 @@ void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
 }
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
-void UISelectorWindow::sltHandleShowTabBarMachine()
-{
-    m_pActionTabBarGlobal->setVisible(false);
-    m_pActionTabBarMachine->setVisible(true);
-}
-
-void UISelectorWindow::sltHandleShowTabBarGlobal()
-{
-    m_pActionTabBarMachine->setVisible(false);
-    m_pActionTabBarGlobal->setVisible(true);
-}
-
 void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
 {
     /* Populate toolbar/statusbar acctions: */
@@ -1107,6 +1095,18 @@ void UISelectorWindow::sltHandleToolsTypeSwitch()
 
     /* Update action visibility: */
     updateActionsVisibility();
+}
+
+void UISelectorWindow::sltHandleShowTabBarMachine()
+{
+    m_pActionTabBarGlobal->setVisible(false);
+    m_pActionTabBarMachine->setVisible(true);
+}
+
+void UISelectorWindow::sltHandleShowTabBarGlobal()
+{
+    m_pActionTabBarMachine->setVisible(false);
+    m_pActionTabBarGlobal->setVisible(true);
 }
 
 void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)

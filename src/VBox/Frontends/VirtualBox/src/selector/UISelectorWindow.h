@@ -86,11 +86,6 @@ private slots:
     void QT_VERSION_NOT_DEFINED
 #endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
-    /** Handles request to show Machine tab-bar. */
-    void sltHandleShowTabBarMachine();
-    /** Handles request to show Global tab-bar. */
-    void sltHandleShowTabBarGlobal();
-
     /** Handles selector-window context-menu call for passed @a position. */
     void sltShowSelectorWindowContextMenu(const QPoint &position);
 
@@ -193,14 +188,16 @@ private slots:
         void sltMachineCloseMenuAboutToShow();
     /** @} */
 
-    /** @name Tools-toolbar stuff.
+    /** @name Tools stuff.
       * @{ */
         /** Handles tools type switch. */
         void sltHandleToolsTypeSwitch();
-    /** @} */
 
-    /** @name Tools-pane stuff.
-      * @{ */
+        /** Handles request to show Machine tab-bar. */
+        void sltHandleShowTabBarMachine();
+        /** Handles request to show Global tab-bar. */
+        void sltHandleShowTabBarGlobal();
+
         /** Handles rquest to open Machine tool of passed @a enmType. */
         void sltHandleToolOpenedMachine(ToolTypeMachine enmType);
         /** Handles rquest to open Global tool of passed @a enmType. */
