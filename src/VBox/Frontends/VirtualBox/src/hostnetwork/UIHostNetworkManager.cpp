@@ -197,6 +197,7 @@ UIHostNetworkManagerWidget::UIHostNetworkManagerWidget(EmbedTo enmEmbedding, QWi
     , m_pActionAdd(0)
     , m_pActionRemove(0)
     , m_pActionDetails(0)
+    , m_pActionRefresh(0)
     , m_pTreeWidget(0)
     , m_pDetailsWidget(0)
 {
@@ -228,6 +229,12 @@ void UIHostNetworkManagerWidget::retranslateUi()
         m_pActionDetails->setText(UIHostNetworkManager::tr("&Properties..."));
         m_pActionDetails->setToolTip(UIHostNetworkManager::tr("Open Host-only Network Properties (%1)").arg(m_pActionDetails->shortcut().toString()));
         m_pActionDetails->setStatusTip(UIHostNetworkManager::tr("Open pane with selected host-only network properties"));
+    }
+    if (m_pActionRefresh)
+    {
+        m_pActionRefresh->setText(UIHostNetworkManager::tr("&Refresh..."));
+        m_pActionRefresh->setToolTip(UIHostNetworkManager::tr("Refresh Host-only Networks (%1)").arg(m_pActionRefresh->shortcut().toString()));
+        m_pActionRefresh->setStatusTip(UIHostNetworkManager::tr("Refresh the list of host-only networks"));
     }
 
     /* Adjust toolbar: */
@@ -536,6 +543,12 @@ void UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility(bool fVis
     emit sigHostNetworkDetailsVisibilityChanged(fVisible);
 }
 
+void UIHostNetworkManagerWidget::sltRefreshHostNetworks()
+{
+    // Not implemented.
+    AssertMsgFailed(("Not implemented!"));
+}
+
 void UIHostNetworkManagerWidget::sltAdjustTreeWidget()
 {
     /* Get the tree-widget abstract interface: */
@@ -748,6 +761,20 @@ void UIHostNetworkManagerWidget::prepareActions()
         connect(m_pActionDetails, &QAction::toggled, this, &UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
     }
 
+    /* Create 'Refresh' action: */
+    m_pActionRefresh = new QAction(this);
+    AssertPtrReturnVoid(m_pActionRefresh);
+    {
+        /* Configure 'Details' action: */
+        m_pActionRefresh->setCheckable(true);
+        m_pActionRefresh->setShortcut(QKeySequence(QKeySequence::Refresh));
+        m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_22px.png",
+                                                          ":/refresh_16px.png",
+                                                          ":/refresh_disabled_22px.png",
+                                                          ":/refresh_disabled_16px.png"));
+        connect(m_pActionRefresh, &QAction::toggled, this, &UIHostNetworkManagerWidget::sltRefreshHostNetworks);
+    }
+
     /* Prepare menu: */
     prepareMenu();
 }
@@ -765,6 +792,8 @@ void UIHostNetworkManagerWidget::prepareMenu()
             m_pMenu->addAction(m_pActionRemove);
         if (m_pActionDetails)
             m_pMenu->addAction(m_pActionDetails);
+//        if (m_pActionRefresh)
+//            m_pMenu->addAction(m_pActionRefresh);
     }
 }
 
@@ -810,6 +839,10 @@ void UIHostNetworkManagerWidget::prepareToolBar()
             m_pToolBar->addSeparator();
         if (m_pActionDetails)
             m_pToolBar->addAction(m_pActionDetails);
+//        if (m_pActionDetails && m_pActionRefresh)
+//            m_pToolBar->addSeparator();
+//        if (m_pActionRefresh)
+//            m_pToolBar->addAction(m_pActionRefresh);
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
         if (m_enmEmbedding == EmbedTo_Stack)
