@@ -726,9 +726,12 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     }
     else if (enmSinkCmd == AUDMIXSINKCMD_DISABLE)
     {
-        /* Set the sink in a pending disable state first.
-         * The final status (disabled) will be set in the sink's iteration. */
-        pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
+        if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+        {
+            /* Set the sink in a pending disable state first.
+             * The final status (disabled) will be set in the sink's iteration. */
+            pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
+        }
     }
 
 #ifdef LOG_ENABLED
@@ -1030,9 +1033,12 @@ bool AudioMixerSinkIsActive(PAUDMIXSINK pSink)
 
     int rc2 = RTCritSectEnter(&pSink->CritSect);
     if (RT_FAILURE(rc2))
-        return 0;
+        return false;
 
-    bool fIsActive = (pSink->fStatus & AUDMIXSINK_STS_RUNNING);
+    bool fIsActive = pSink->fStatus & AUDMIXSINK_STS_RUNNING;
+    /* Note: AUDMIXSINK_STS_PENDING_DISABLE implies AUDMIXSINK_STS_RUNNING. */
+
+    Log3Func(("[%s] fActive=%RTbool\n", pSink->pszName, fIsActive));
 
     rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1314,6 +1320,8 @@ void AudioMixerSinkReset(PAUDMIXSINK pSink)
 
     int rc2 = RTCritSectEnter(&pSink->CritSect);
     AssertRC(rc2);
+
+    LogFlowFunc(("[%s]\n", pSink->pszName));
 
     audioMixerSinkReset(pSink);
 
