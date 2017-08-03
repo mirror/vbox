@@ -27,6 +27,7 @@
 # include "UIActionPoolSelector.h"
 # include "UIDesktopPane.h"
 # include "UIGDetails.h"
+# include "UIIconPool.h"
 # include "UISnapshotPane.h"
 # include "UIToolsPaneMachine.h"
 
@@ -200,7 +201,8 @@ void UIToolsPaneMachine::setMachine(const CMachine &comMachine)
 void UIToolsPaneMachine::retranslateUi()
 {
     /* Translate Machine Tools welcome screen: */
-    setDetailsText(
+    m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_200px.png"));
+    m_pPaneDesktop->setToolsPaneText(
         tr("<h3>Welcome to VirtualBox!</h3>"
            "<p>The left part of this window is a list of all virtual "
            "machines and virtual machine groups on your computer.</p>"

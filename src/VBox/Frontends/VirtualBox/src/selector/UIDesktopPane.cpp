@@ -35,7 +35,6 @@
 # include "QILabel.h"
 # include "QIWithRetranslateUI.h"
 # include "UIDesktopPane.h"
-# include "UIIconPool.h"
 # include "VBoxUtils.h"
 
 /* Other VBox includes: */
@@ -140,6 +139,8 @@ public:
 
     /** Defines a tools pane welcome @a strText. */
     void setToolsPaneText(const QString &strText);
+    /** Defines a tools pane welcome @a icon. */
+    void setToolsPaneIcon(const QIcon &icon);
     /** Add a tool element.
       * @param  pAction         Brings tool action reference.
       * @param  strDescription  Brings the tool description. */
@@ -182,6 +183,8 @@ private:
     QVBoxLayout *m_pLayoutWidget;
     /** Holds the tools pane text label instance. */
     QILabel     *m_pLabelToolsPaneText;
+    /** Holds the tools pane icon label instance. */
+    QLabel      *m_pLabelToolsPaneIcon;
 };
 
 
@@ -466,7 +469,7 @@ UIDesktopPanePrivate::UIDesktopPanePrivate(QWidget *pParent, QAction *pRefreshAc
     , m_pText(0)
     , m_pErrBox(0), m_pErrLabel(0), m_pErrText(0)
     , m_pRefreshButton(0), m_pRefreshAction(pRefreshAction)
-    , m_pToolsPane(0), m_pLayoutWidget(0), m_pLabelToolsPaneText(0)
+    , m_pToolsPane(0), m_pLayoutWidget(0), m_pLabelToolsPaneText(0), m_pLabelToolsPaneIcon(0)
 {
     /* Translate finally: */
     retranslateUi();
@@ -503,6 +506,18 @@ void UIDesktopPanePrivate::setToolsPaneText(const QString &strText)
 
     /* Assign corresponding text: */
     m_pLabelToolsPaneText->setText(strText);
+
+    /* Raise corresponding widget: */
+    setCurrentWidget(m_pToolsPane);
+}
+
+void UIDesktopPanePrivate::setToolsPaneIcon(const QIcon &icon)
+{
+    /* Prepare tools pane if necessary: */
+    prepareToolsPane();
+
+    /* Assign corresponding icon: */
+    m_pLabelToolsPaneIcon->setPixmap(icon.pixmap(QSize(200, 200)));
 
     /* Raise corresponding widget: */
     setCurrentWidget(m_pToolsPane);
@@ -674,18 +689,16 @@ void UIDesktopPanePrivate::prepareToolsPane()
                     pLayoutWelcome->addWidget(m_pLabelToolsPaneText);
                 }
 
-                /* Create picture label: */
-                QLabel *pLabelPicture = new QLabel;
-                AssertPtrReturnVoid(pLabelPicture);
+                /* Create welcome picture label: */
+                m_pLabelToolsPaneIcon = new QLabel;
+                AssertPtrReturnVoid(m_pLabelToolsPaneIcon);
                 {
                     /* Configure label: */
-                    const QIcon icon = UIIconPool::iconSet(":/tools_200px.png");
-                    pLabelPicture->setPixmap(icon.pixmap(QSize(200, 200)));
-                    pLabelPicture->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+                    m_pLabelToolsPaneIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
                     /* Add into layout: */
-                    pLayoutWelcome->addWidget(pLabelPicture);
-                    pLayoutWelcome->setAlignment(pLabelPicture, Qt::AlignHCenter | Qt::AlignTop);
+                    pLayoutWelcome->addWidget(m_pLabelToolsPaneIcon);
+                    pLayoutWelcome->setAlignment(m_pLabelToolsPaneIcon, Qt::AlignHCenter | Qt::AlignTop);
                 }
 
                 /* Add into layout: */
@@ -741,6 +754,11 @@ void UIDesktopPane::updateDetailsError(const QString &strError)
 void UIDesktopPane::setToolsPaneText(const QString &strText)
 {
     m_pDesktopPrivate->setToolsPaneText(strText);
+}
+
+void UIDesktopPane::setToolsPaneIcon(const QIcon &icon)
+{
+    m_pDesktopPrivate->setToolsPaneIcon(icon);
 }
 
 void UIDesktopPane::addToolDescription(QAction *pAction, const QString &strDescription)

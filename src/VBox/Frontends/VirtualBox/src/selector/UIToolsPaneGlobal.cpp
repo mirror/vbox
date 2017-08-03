@@ -26,8 +26,9 @@
 /* GUI includes */
 # include "UIActionPoolSelector.h"
 # include "UIDesktopPane.h"
-# include "UIMediumManager.h"
 # include "UIHostNetworkManager.h"
+# include "UIIconPool.h"
+# include "UIMediumManager.h"
 # include "UIToolsPaneGlobal.h"
 
 /* Other VBox includes: */
@@ -182,7 +183,8 @@ void UIToolsPaneGlobal::setDetailsError(const QString &strError)
 void UIToolsPaneGlobal::retranslateUi()
 {
     /* Translate Global Tools welcome screen: */
-    setDetailsText(
+    m_pPaneDesktop->setToolsPaneIcon(UIIconPool::iconSet(":/tools_200px.png"));
+    m_pPaneDesktop->setToolsPaneText(
         tr("<h3>Welcome to VirtualBox!</h3>"
            "<p>This window represents a set of global tools "
            "which are currently opened (or can be opened). "

@@ -23,6 +23,8 @@
 
 /* Forward declarations: */
 class QAction;
+class QIcon;
+class QString;
 class UIDesktopPanePrivate;
 
 
@@ -47,6 +49,8 @@ public:
 
     /** Defines a tools pane welcome @a strText. */
     void setToolsPaneText(const QString &strText);
+    /** Defines a tools pane welcome @a icon. */
+    void setToolsPaneIcon(const QIcon &icon);
     /** Add a tool element.
       * @param  pAction         Brings tool action reference.
       * @param  strDescription  Brings the tool description. */
