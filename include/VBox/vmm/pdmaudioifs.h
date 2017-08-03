@@ -788,29 +788,29 @@ typedef struct PDMAUDIOFILE
 } PDMAUDIOFILE, *PPDMAUDIOFILE;
 
 /** Stream status flag. To be used with PDMAUDIOSTRMSTS_FLAG_ flags. */
-typedef uint32_t PDMAUDIOSTRMSTS;
+typedef uint32_t PDMAUDIOSTREAMSTS;
 
 /** No flags being set. */
-#define PDMAUDIOSTRMSTS_FLAG_NONE            0
+#define PDMAUDIOSTREAMSTS_FLAG_NONE            0
 /** Whether this stream has been initialized by the
  *  backend or not. */
-#define PDMAUDIOSTRMSTS_FLAG_INITIALIZED     RT_BIT_32(0)
+#define PDMAUDIOSTREAMSTS_FLAG_INITIALIZED     RT_BIT_32(0)
 /** Whether this stream is enabled or disabled. */
-#define PDMAUDIOSTRMSTS_FLAG_ENABLED         RT_BIT_32(1)
+#define PDMAUDIOSTREAMSTS_FLAG_ENABLED         RT_BIT_32(1)
 /** Whether this stream has been paused or not. This also implies
  *  that this is an enabled stream! */
-#define PDMAUDIOSTRMSTS_FLAG_PAUSED          RT_BIT_32(2)
+#define PDMAUDIOSTREAMSTS_FLAG_PAUSED          RT_BIT_32(2)
 /** Whether this stream was marked as being disabled
  *  but there are still associated guest output streams
  *  which rely on its data. */
-#define PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE RT_BIT_32(3)
+#define PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE RT_BIT_32(3)
 /** Whether this stream is in re-initialization phase.
  *  All other bits remain untouched to be able to restore
  *  the stream's state after the re-initialization bas been
  *  finished. */
-#define PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT  RT_BIT_32(4)
+#define PDMAUDIOSTREAMSTS_FLAG_PENDING_REINIT  RT_BIT_32(4)
 /** Validation mask. */
-#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000001F)
+#define PDMAUDIOSTREAMSTS_VALID_MASK           UINT32_C(0x0000001F)
 
 /**
  * Enumeration presenting a backend's current status.
@@ -899,7 +899,7 @@ typedef struct PDMAUDIOSTREAM
     /** The stream's audio configuration. */
     PDMAUDIOSTREAMCFG      Cfg;
     /** Stream status flag. */
-    PDMAUDIOSTRMSTS        fStatus;
+    PDMAUDIOSTREAMSTS        fStatus;
     /** This stream's mixing buffer. */
     PDMAUDIOMIXBUF         MixBuf;
     /** Audio direction of this stream. */
@@ -1133,7 +1133,7 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(PDMAUDIOSTREAMSTS, pfnStreamGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Sets the audio volume of a specific audio stream.
@@ -1315,7 +1315,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+    DECLR3CALLBACKMEMBER(PDMAUDIOSTREAMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Gives the host backend the chance to do some (necessary) iteration work.

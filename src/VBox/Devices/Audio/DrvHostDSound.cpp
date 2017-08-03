@@ -2261,7 +2261,7 @@ static DECLCALLBACK(int) drvHostDSoundStreamControl(PPDMIHOSTAUDIO pInterface,
 static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, PDMAUDIOSTRMSTS_FLAG_NONE);
+    AssertPtrReturn(pStream, PDMAUDIOSTREAMSTS_FLAG_NONE);
 
     PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
 
@@ -2279,8 +2279,8 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetWritable(PPDMIHOSTAUDIO pInt
 {
     RT_NOREF(pInterface, pStream);
 
-    AssertPtrReturn(pInterface, PDMAUDIOSTRMSTS_FLAG_NONE);
-    AssertPtrReturn(pStream,    PDMAUDIOSTRMSTS_FLAG_NONE);
+    AssertPtrReturn(pInterface, PDMAUDIOSTREAMSTS_FLAG_NONE);
+    AssertPtrReturn(pStream,    PDMAUDIOSTREAMSTS_FLAG_NONE);
 
     PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
@@ -2304,26 +2304,26 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetWritable(PPDMIHOSTAUDIO pInt
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
-    AssertPtrReturn(pStream, PDMAUDIOSTRMSTS_FLAG_NONE);
+    AssertPtrReturn(pStream, PDMAUDIOSTREAMSTS_FLAG_NONE);
 
     PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
 
     if (!pStreamDS->pCfg) /* Not (yet) configured? Skip. */
-        return PDMAUDIOSTRMSTS_FLAG_NONE;
+        return PDMAUDIOSTREAMSTS_FLAG_NONE;
 
-    PDMAUDIOSTRMSTS strmSts = PDMAUDIOSTRMSTS_FLAG_INITIALIZED;
+    PDMAUDIOSTREAMSTS strmSts = PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
     if (pStreamDS->pCfg->enmDir == PDMAUDIODIR_IN)
     {
         if (pStreamDS->In.fEnabled)
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_ENABLED;
+            strmSts |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
     }
     else
     {
         if (pStreamDS->Out.fEnabled)
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_ENABLED;
+            strmSts |= PDMAUDIOSTREAMSTS_FLAG_ENABLED;
     }
 
     return strmSts;

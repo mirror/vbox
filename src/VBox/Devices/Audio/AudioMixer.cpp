@@ -839,7 +839,7 @@ uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
-        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
         {
             Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
             continue;
@@ -890,7 +890,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
         PAUDMIXSTREAM pMixStream;
         RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
         {
-            if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+            if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
             {
                 Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
                 continue;
@@ -1095,7 +1095,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
-        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
         {
             Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
             continue;
@@ -1492,11 +1492,11 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
                 continue;
             }
 
-            PDMAUDIOSTRMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
+            PDMAUDIOSTREAMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
 
             /* Is the stream not enabled and also is not in a pending disable state anymore? */
-            if (   !(strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
-                && !(strmSts & PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE))
+            if (   !(strmSts & PDMAUDIOSTREAMSTS_FLAG_ENABLED)
+                && !(strmSts & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE))
             {
                 cStreamsDisabled++;
             }
@@ -1621,7 +1621,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
-        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+        if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
         {
             Log3Func(("\t%s: Stream '%s' disabled, skipping ...\n", pMixStream->pszName, pMixStream->pszName));
             continue;
@@ -1814,7 +1814,7 @@ bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
 
     if (   pMixStream->pConn
         && pMixStream->pStream
-        && RT_BOOL(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
+        && RT_BOOL(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_ENABLED))
     {
         fIsActive = true;
     }
@@ -1846,7 +1846,7 @@ bool AudioMixerStreamIsValid(PAUDMIXSTREAM pMixStream)
 
     if (   pMixStream->pConn
         && pMixStream->pStream
-        && RT_BOOL(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_INITIALIZED))
+        && RT_BOOL(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTREAMSTS_FLAG_INITIALIZED))
     {
         fIsValid = true;
     }

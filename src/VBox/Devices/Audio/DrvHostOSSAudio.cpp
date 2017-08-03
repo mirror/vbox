@@ -1072,12 +1072,12 @@ static DECLCALLBACK(uint32_t) drvHostOSSAudioStreamGetWritable(PPDMIHOSTAUDIO pI
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostOSSAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(PDMAUDIOSTREAMSTS) drvHostOSSAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface, pStream);
 
-    PDMAUDIOSTRMSTS strmSts =   PDMAUDIOSTRMSTS_FLAG_INITIALIZED
-                              | PDMAUDIOSTRMSTS_FLAG_ENABLED;
+    PDMAUDIOSTREAMSTS strmSts =   PDMAUDIOSTREAMSTS_FLAG_INITIALIZED
+                              | PDMAUDIOSTREAMSTS_FLAG_ENABLED;
     return strmSts;
 }
 
