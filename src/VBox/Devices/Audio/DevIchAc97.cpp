@@ -3210,6 +3210,9 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
 
     /*
      * Reset mixer sinks.
+     *
+     * Do the reset here instead of in ichac97StreamReset();
+     * the mixer sink(s) might still have data to be processed when an audio stream gets reset.
      */
     AudioMixerSinkReset(pThis->pSinkLineIn);
     AudioMixerSinkReset(pThis->pSinkMicIn);
