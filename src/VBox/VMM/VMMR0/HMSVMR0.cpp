@@ -4222,21 +4222,81 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
+    /*
+     * For all the #VMEXITs here we primarily figure out if the #VMEXIT is expected
+     * by the nested-guest. If it isn't, it should be handled by the (outer) guest.
+     */
     PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
     PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     switch (pSvmTransient->u64ExitCode)
     {
-        //case SVM_EXIT_NPF:
+#if 0
+        case SVM_EXIT_NPF:
         {
             /** @todo. */
             break;
+        }
+#endif
+
+        case SVM_EXIT_CPUID:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_CPUID)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_RDTSC:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitRdtsc(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_RDTSCP:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_MSR:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_MSR_PROT)
+            {
+                uint32_t const idMsr = pCtx->ecx;
+                uint16_t offMsrpm;
+                uint32_t uMsrpmBit;
+                int rc = HMSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+                if (RT_SUCCESS(rc))
+                {
+                    void const *pvMsrBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
+                    bool const fInterceptRd = ASMBitTest(pvMsrBitmap, (offMsrpm << 3) + uMsrpmBit);
+                    bool const fInterceptWr = ASMBitTest(pvMsrBitmap, (offMsrpm << 3) + uMsrpmBit + 1);
+
+                    if (   (pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_WRITE && fInterceptWr)
+                        || (pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_READ  && fInterceptRd))
+                    {
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
+                    }
+                }
+                else
+                {
+                    /*
+                     * MSRs not covered by the MSRPM automatically cause an #VMEXIT.
+                     * See AMD-V spec. "15.11 MSR Intercepts".
+                     */
+                    Assert(rc == VERR_OUT_OF_RANGE);
+                    return hmR0SvmExecVmexit(pVCpu, pCtx);
+                }
+            }
+            return hmR0SvmExitMsr(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_IOIO:
         {
             /*
-             * Figure out if the IO port access is intercepted by the nested-guest. If not,
-             * we pass it to the outer guest.
+             * Figure out if the IO port access is intercepted by the nested-guest.
              */
             if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_IOIO_PROT)
             {
@@ -4250,17 +4310,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return hmR0SvmExitIOInstr(pVCpu, pCtx, pSvmTransient);
         }
 
-        case SVM_EXIT_RDTSC:
-        {
-            return hmR0SvmExitRdtsc(pVCpu, pCtx, pSvmTransient);
-        }
-
-        case SVM_EXIT_RDTSCP:
-            return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
-
-        case SVM_EXIT_CPUID:
-            return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
-
+        /** @todo Exceptions. */
         case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
             return hmR0SvmExitXcptPF(pVCpu, pCtx, pSvmTransient);
 
@@ -4316,9 +4366,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_NMI:
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_MSR:
-            return hmR0SvmExitMsr(pVCpu, pCtx, pSvmTransient);
-
         case SVM_EXIT_INVLPG:
             return hmR0SvmExitInvlpg(pVCpu, pCtx, pSvmTransient);
 
@@ -4366,7 +4413,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                      * We don't intercept NMIs. As for INIT signals, it really shouldn't ever happen here. If it ever does,
                      * we want to know about it so log the exit code and bail.
                      */
-                    AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
+                    AssertMsgFailed(("hmR0SvmHandleExitNested: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
                     pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
                     return VERR_SVM_UNEXPECTED_EXIT;
                 }
@@ -4451,7 +4498,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                             break;
 
                         default:
-                            AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
+                            AssertMsgFailed(("hmR0SvmHandleExitNested: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
                             pVCpu->hm.s.u32HMError = Event.n.u8Vector;
                             return VERR_SVM_UNEXPECTED_XCPT_EXIT;
                     }
@@ -4464,7 +4511,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
                 default:
                 {
-                    AssertMsgFailed(("hmR0SvmHandleExit: Unknown exit code %#x\n", pSvmTransient->u64ExitCode));
+                    AssertMsgFailed(("hmR0SvmHandleExitNested: Unknown exit code %#x\n", pSvmTransient->u64ExitCode));
                     pVCpu->hm.s.u32HMError = pSvmTransient->u64ExitCode;
                     return VERR_SVM_UNKNOWN_EXIT;
                 }
