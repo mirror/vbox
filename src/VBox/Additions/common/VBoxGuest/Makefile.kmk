@@ -199,12 +199,6 @@ ifeq ($(KBUILD_TARGET),linux)
  vboxguest-src_INST     = $(INST_ADDITIONS)src/vboxguest/
  vboxguest-src_MODE     = a+r,u+w
  vboxguest-src_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
- # The sed directive is because indent seems to have trouble with a macro
- # invocation in assembly at the end of memuserkernel-r0drv-linux.c.
- vboxguest-src_INSTALLER = $(RM_EXT) -f -- "$2" && \
-    $(if $(filter %.c %.h,$2),indent -linux -o "$2" "$1",$(CP_EXT) "$1" "$2") && \
-    $(SED) -i "s/_ASM_EXTABLE(1 b, 3 b)/_ASM_EXTABLE(1b, 3b)/g" "$2" && \
-    $(CHMOD_EXT) "$(if $(mode),$(mode),0644)" "$2"
 
  INSTALLS += vboxguest-scripts
  vboxguest-scripts_INST    = $(INST_ADDITIONS)src/
