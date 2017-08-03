@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QEvent>
 #include <QHBoxLayout>
 
 /* GUI includes: */
@@ -74,6 +75,29 @@ void UISlidingWidget::setWidgets(QWidget *pWidget1, QWidget *pWidget2)
     m_pWidget->setGeometry(m_fStateIsFinal ? m_finalWidgetGeometry : m_startWidgetGeometry);
 }
 
+bool UISlidingWidget::event(QEvent *pEvent)
+{
+    /* Process desired events: */
+    switch (pEvent->type())
+    {
+        case QEvent::LayoutRequest:
+        {
+            // WORKAROUND:
+            // Since we are not connected to
+            // our children LayoutRequest,
+            // we should update geometry
+            // ourselves.
+            updateGeometry();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base class: */
+    return QWidget::event(pEvent);
+}
+
 void UISlidingWidget::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
@@ -83,10 +107,6 @@ void UISlidingWidget::resizeEvent(QResizeEvent *pEvent)
     updateAnimation();
     /* Update widget geometry: */
     m_pWidget->setGeometry(m_fStateIsFinal ? m_finalWidgetGeometry : m_startWidgetGeometry);
-
-    // TODO: Make this properly, dirty hack.
-    /* A bit expensive but.. */
-    updateGeometry();
 }
 
 void UISlidingWidget::prepare()

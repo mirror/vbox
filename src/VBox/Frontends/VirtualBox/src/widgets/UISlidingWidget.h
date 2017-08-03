@@ -62,6 +62,9 @@ public:
 
 protected:
 
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
     /** Handles resize @a pEvent. */
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
