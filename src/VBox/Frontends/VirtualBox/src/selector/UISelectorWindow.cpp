@@ -271,6 +271,9 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
     /* Update action appearance: */
     updateActionsAppearance();
 
+    /* Update Tools-pane: */
+    m_pPaneToolsMachine->setCurrentItem(pItem);
+
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
     {
@@ -305,25 +308,6 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = 
         {
             /* The VM is inaccessible: */
             m_pPaneToolsMachine->setDetailsError(UIMessageCenter::formatErrorInfo(pItem->accessError()));
-        }
-        else
-        {
-            /* Default HTML support in Qt is terrible so just try to get something really simple: */
-            m_pPaneToolsMachine->setDetailsText(
-                tr("<h3>Welcome to VirtualBox!</h3>"
-                   "<p>The left part of this window is  "
-                   "a list of all virtual machines on your computer. "
-                   "The list is empty now because you haven't created any virtual "
-                   "machines yet."
-                   "<img src=:/welcome.png align=right/></p>"
-                   "<p>In order to create a new virtual machine, press the "
-                   "<b>New</b> button in the main tool bar located "
-                   "at the top of the window.</p>"
-                   "<p>You can press the <b>%1</b> key to get instant help, "
-                   "or visit "
-                   "<a href=https://www.virtualbox.org>www.virtualbox.org</a> "
-                   "for the latest information and news.</p>")
-                   .arg(QKeySequence(QKeySequence::HelpContents).toString(QKeySequence::NativeText)));
         }
 
         /* Update Details-pane (in any case): */

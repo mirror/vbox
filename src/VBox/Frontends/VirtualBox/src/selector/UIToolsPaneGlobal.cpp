@@ -166,13 +166,6 @@ void UIToolsPaneGlobal::closeTool(ToolTypeGlobal enmType)
     }
 }
 
-void UIToolsPaneGlobal::setDetailsText(const QString &strText)
-{
-    /* Update desktop pane: */
-    AssertPtrReturnVoid(m_pPaneDesktop);
-    m_pPaneDesktop->setToolsPaneText(strText);
-}
-
 void UIToolsPaneGlobal::setDetailsError(const QString &strError)
 {
     /* Update desktop pane: */

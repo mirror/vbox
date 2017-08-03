@@ -81,10 +81,11 @@ public:
     /** Closes tool of passed @a enmType, deletes one if exists. */
     void closeTool(ToolTypeMachine enmType);
 
-    /** Defines @a strText and switches to text details pane. */
-    void setDetailsText(const QString &strText);
     /** Defines @a strError and switches to error details pane. */
     void setDetailsError(const QString &strError);
+
+    /** Defines current machine @a pItem. */
+    void setCurrentItem(UIVMItem *pItem);
 
     /** Defines the machine @a items. */
     void setItems(const QList<UIVMItem*> &items);
@@ -108,6 +109,9 @@ private:
 
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
+
+    /** Holds current machine item reference. */
+    UIVMItem *m_pItem;
 
     /** Holds the stacked-layout instance. */
     QStackedLayout *m_pLayout;

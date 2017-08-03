@@ -70,8 +70,6 @@ public:
     /** Closes tool of passed @a enmType, deletes one if exists. */
     void closeTool(ToolTypeGlobal enmType);
 
-    /** Defines @a strText and switches to text details pane. */
-    void setDetailsText(const QString &strText);
     /** Defines @a strError and switches to error details pane. */
     void setDetailsError(const QString &strError);
 

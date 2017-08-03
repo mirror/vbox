@@ -293,5 +293,6 @@
         <file alias="web_camera_disabled_16px_hidpi.png">images/hidpi/web_camera_disabled_16px_hidpi.png</file>
         <file alias="web_camera_unavailable_16px_hidpi.png">images/hidpi/web_camera_unavailable_16px_hidpi.png</file>
         <file alias="web_camera_unavailable_disabled_16px_hidpi.png">images/hidpi/web_camera_unavailable_disabled_16px_hidpi.png</file>
+        <file alias="welcome_200px_hidpi.png">images/hidpi/welcome_200px_hidpi.png</file>
     </qresource>
 </RCC>

@@ -299,6 +299,6 @@
         <file alias="web_camera_disabled_16px.png">images/web_camera_disabled_16px.png</file>
         <file alias="web_camera_unavailable_16px.png">images/web_camera_unavailable_16px.png</file>
         <file alias="web_camera_unavailable_disabled_16px.png">images/web_camera_unavailable_disabled_16px.png</file>
-        <file alias="welcome.png">images/welcome.png</file>
+        <file alias="welcome_200px.png">images/welcome_200px.png</file>
     </qresource>
 </RCC>
