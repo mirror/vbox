@@ -59,7 +59,7 @@ ifeq ($(shell if grep -q '^%disttag' /usr/lib/rpm/macros.d/mandriva 2>/dev/null;
 $(error Fix /usr/lib/rpm/macros.d/mandriva)
 endif
 
-verpkg   := VirtualBox-5.1
+verpkg   := VirtualBox-5.2
 current  := $(shell pwd)
 vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))

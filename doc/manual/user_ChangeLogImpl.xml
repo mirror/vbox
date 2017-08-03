@@ -4,7 +4,7 @@
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
-    <title>Version 5.2.0 (2017-xx-xx)</title>
+    <title>Version 5.2.0 Beta 1 (2017-08-03)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -21,8 +21,8 @@
       </listitem>
 
       <listitem>
-        <para>Overhauled VM selector GUI (better tools layout,
-          new icons</para>
+        <para>Overhauled VM selector GUI (improved tools VM / global
+          tools handling, new icons)</para>
       </listitem>
 
     </itemizedlist>
@@ -47,11 +47,15 @@
 
       <listitem>
         <para>Audio: HDA emulation now uses asynchronous data processing in 
-          own threads</para>
+          separate threads</para>
       </listitem>
 
       <listitem>
         <para>EFI: better video mode handling</para>
+      </listitem>
+
+      <listitem>
+        <para>many unlisted fixes and improvements</para>
       </listitem>
 
     </itemizedlist>

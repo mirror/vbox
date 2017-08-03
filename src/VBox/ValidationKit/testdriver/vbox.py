@@ -1294,7 +1294,9 @@ class TestDriver(base.TestDriver):                                              
                 reporter.logXcpt('Failed to get VirtualBox version, assuming 4.0.0');
                 sVer = "4.0.0";
             reporter.log("sVer=%s" % (sVer,));          # Temporary - debugging hang somewhere after 'sys.path' log line above.
-            if sVer.startswith("5.1"):
+            if sVer.startswith("5.2"):
+                self.fpApiVer = 5.2;
+            elif sVer.startswith("5.1"):
                 self.fpApiVer = 5.1;
             elif sVer.startswith("5.0") or (sVer.startswith("4.3.5") and len(sVer) == 6):
                 self.fpApiVer = 5.0;
