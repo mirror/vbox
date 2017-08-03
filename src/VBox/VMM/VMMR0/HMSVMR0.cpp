@@ -6339,7 +6339,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     /* We should -not- get this #VMEXIT if the guest's debug registers were active. */
     if (pSvmTransient->fWasGuestDebugStateActive)
     {
-        AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
+        AssertMsgFailed(("hmR0SvmExitReadDRx: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
         pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
         return VERR_SVM_UNEXPECTED_EXIT;
     }
