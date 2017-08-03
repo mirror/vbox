@@ -75,6 +75,9 @@ protected:
 
 private slots:
 
+    /** Handles polishing in the async way. */
+    void sltHandlePolishEvent();
+
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
     /** Handles host-screen available-area change. */
     void sltHandleHostScreenAvailableAreaChange();

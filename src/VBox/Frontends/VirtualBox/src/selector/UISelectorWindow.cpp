@@ -144,6 +144,16 @@ bool UISelectorWindow::shouldBeMaximized() const
     return gEDataManager->selectorWindowShouldBeMaximized();
 }
 
+void UISelectorWindow::sltHandlePolishEvent()
+{
+    // WORKAROUND:
+    // By some reason some of X11 DEs unable to update()
+    // tab-bars on startup.  Let's try to _create_ them instead.
+    /* Make sure 'Details' and 'Snapshots' Machine tools ares opened at startup for now: */
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
+    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
+}
+
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 void UISelectorWindow::sltHandleHostScreenAvailableAreaChange()
 {
@@ -1261,11 +1271,8 @@ void UISelectorWindow::polishEvent(QShowEvent*)
      * even if enumeration had finished before selector window shown: */
     QTimer::singleShot(0, this, SLOT(sltHandleMediumEnumerationFinish()));
 
-    // WORKAROUND:
-    // By some reason some of X11 DEs unable to update
-    // tab-bars on startup.  Let's try to do it ourselves.
-    m_pTabBarMachine->update();
-    m_pTabBarGlobal->update();
+    /* Call for async polishing: */
+    QMetaObject::invokeMethod(this, "sltHandlePolishEvent", Qt::QueuedConnection);
 }
 
 #ifdef VBOX_WS_MAC
@@ -1316,10 +1323,6 @@ void UISelectorWindow::prepare()
     prepareToolbar();
     prepareWidgets();
     prepareConnections();
-
-    /* Make sure 'Details' and 'Snapshots' Machine tools ares opened at startup for now: */
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
-    actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
 
     /* Load settings: */
     loadSettings();
