@@ -2692,6 +2692,8 @@ class TestDriver(base.TestDriver):                                              
                                      ('cpumguestinstr', 'symbol all'),
                                      ('pic', ''),
                                      ('apic', ''),
+                                     ('apiclvt', ''),
+                                     ('apictimer', ''),
                                      ('ioapic', ''),
                                      ('pit', ''),
                                      ('phys', ''),
