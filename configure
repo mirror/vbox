@@ -412,18 +412,18 @@ check_gcc()
 {
   test_header gcc
   if check_avail "$CC" CC really; then
-    cc_ver=`$CC -dumpfullversion` 2>/dev/null
+    cc_ver=`$CC -dumpfullversion 2>/dev/null`
     if [ $? -ne 0 ]; then
-      cc_ver=`$CC -dumpversion` 2>/dev/null
+      cc_ver=`$CC -dumpversion 2>/dev/null`
     fi
     if [ $? -ne 0 ]; then
       log_failure "cannot execute '$CC -dumpversion'"
       fail really
     fi
     if check_avail "$CXX" CXX really; then
-      cxx_ver=`$CXX -dumpfullversion` 2>/dev/null
+      cxx_ver=`$CXX -dumpfullversion 2>/dev/null`
       if [ $? -ne 0 ]; then
-        cxx_ver=`$CXX -dumpversion` 2>/dev/null
+        cxx_ver=`$CXX -dumpversion 2>/dev/null`
       fi
       if [ $? -ne 0 ]; then
         log_failure "cannot execute '$CXX -dumpversion'"
