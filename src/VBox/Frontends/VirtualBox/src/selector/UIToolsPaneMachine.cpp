@@ -182,8 +182,8 @@ void UIToolsPaneMachine::setDetailsError(const QString &strError)
 void UIToolsPaneMachine::setCurrentItem(UIVMItem *pItem)
 {
     /* Do we need translation after that? */
-    const bool fTranslationRequired =  !pItem && m_pItem
-                                    || pItem && !m_pItem;
+    const bool fTranslationRequired =  (!pItem &&  m_pItem)
+                                    || ( pItem && !m_pItem);
 
     /* Remember new item: */
     m_pItem = pItem;
