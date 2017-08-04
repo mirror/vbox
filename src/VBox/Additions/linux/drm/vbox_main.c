@@ -164,7 +164,7 @@ static const struct drm_framebuffer_funcs vbox_fb_funcs = {
 
 int vbox_framebuffer_init(struct drm_device *dev,
 			  struct vbox_framebuffer *vbox_fb,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_7)
 			  const
 #endif
 			  struct DRM_MODE_FB_CMD *mode_cmd,
@@ -190,7 +190,7 @@ int vbox_framebuffer_init(struct drm_device *dev,
 static struct drm_framebuffer *vbox_user_framebuffer_create(
 		struct drm_device *dev,
 		struct drm_file *filp,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0) || defined(RHEL_7)
 		const struct drm_mode_fb_cmd2 *mode_cmd)
 #else
 		struct drm_mode_fb_cmd2 *mode_cmd)
@@ -241,7 +241,7 @@ static void vbox_accel_fini(struct vbox_private *vbox)
 	}
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0) && !defined(RHEL_7)
 #define pci_iomap_range(dev, bar, offset, maxlen) \
 	ioremap(pci_resource_start(dev, bar) + (offset), maxlen)
 #endif
@@ -439,7 +439,7 @@ void vbox_driver_lastclose(struct drm_device *dev)
 {
 	struct vbox_private *vbox = dev->dev_private;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) || defined(RHEL_7)
 	if (vbox->fbdev)
 		drm_fb_helper_restore_fbdev_mode_unlocked(&vbox->fbdev->helper);
 #else
@@ -498,7 +498,7 @@ int vbox_dumb_create(struct drm_file *file,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_7)
 int vbox_dumb_destroy(struct drm_file *file,
 		      struct drm_device *dev, u32 handle)
 {
@@ -528,7 +528,7 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
 
 static inline u64 vbox_bo_mmap_offset(struct vbox_bo *bo)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_7)
 	return bo->bo.addr_space_offset;
 #else
 	return drm_vma_node_offset_addr(&bo->bo.vma_node);

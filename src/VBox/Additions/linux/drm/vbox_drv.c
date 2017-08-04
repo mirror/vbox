@@ -204,7 +204,7 @@ static const struct file_operations vbox_fops = {
 #endif
 	.mmap = vbox_mmap,
 	.poll = drm_poll,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_7)
 	.fasync = drm_fasync,
 #endif
 #ifdef CONFIG_COMPAT
@@ -271,7 +271,7 @@ static struct drm_driver driver = {
 	.lastclose = vbox_driver_lastclose,
 	.master_set = vbox_master_set,
 	.master_drop = vbox_master_drop,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_7)
 	.set_busid = drm_pci_set_busid,
 #endif
 
@@ -287,7 +287,7 @@ static struct drm_driver driver = {
 	.gem_free_object = vbox_gem_free_object,
 	.dumb_create = vbox_dumb_create,
 	.dumb_map_offset = vbox_dumb_mmap_offset,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_7)
 	.dumb_destroy = vbox_dumb_destroy,
 #else
 	.dumb_destroy = drm_gem_dumb_destroy,
