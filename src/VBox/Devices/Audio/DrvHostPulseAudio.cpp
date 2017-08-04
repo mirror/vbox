@@ -431,7 +431,8 @@ static void paStreamCbUnderflow(pa_stream *pStream, void *pvContext)
         && pStrm->curLatencyUs < 2000000 /* 2s */)
     {
         pStrm->curLatencyUs = (pStrm->curLatencyUs * 3) / 2;
-        LogFunc(("Latency increased to %RU64ms\n", pStrm->curLatencyUs / 1000));
+
+        LogRel2(("PulseAudio: Output latency increased to %RU64ms\n", pStrm->curLatencyUs / 1000 /* ms */));
 
         pStrm->BufAttr.maxlength = pa_usec_to_bytes(pStrm->curLatencyUs, &pStrm->SampleSpec);
         pStrm->BufAttr.tlength   = pa_usec_to_bytes(pStrm->curLatencyUs, &pStrm->SampleSpec);
@@ -537,9 +538,6 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
 #endif
         /* For using pa_stream_get_latency() and pa_stream_get_time(). */
         flags |= PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
-
-        /* No input/output right away after the stream was started. */
-        flags |= PA_STREAM_START_CORKED;
 
         if (fIn)
         {
@@ -744,6 +742,8 @@ static int paCreateStreamOut(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStream
     pStreamPA->SampleSpec.channels = pCfgReq->Props.cChannels;
 
     pStreamPA->curLatencyUs        = 100 * 1000; /** 100ms latency by default. @todo Make this configurable. */
+
+    LogRel2(("PulseAudio: Initial output latency is %RU64ms\n", pStreamPA->curLatencyUs / 1000 /* ms */));
 
     const uint32_t mixsize = pa_usec_to_bytes(pStreamPA->curLatencyUs, &pStreamPA->SampleSpec);
 
