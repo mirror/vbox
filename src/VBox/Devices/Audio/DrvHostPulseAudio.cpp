@@ -539,6 +539,9 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, PPULSEAUDIOSTREAM pStreamPA, b
         /* For using pa_stream_get_latency() and pa_stream_get_time(). */
         flags |= PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
 
+        /* No input/output right away after the stream was started. */
+        flags |= PA_STREAM_START_CORKED;
+
         if (fIn)
         {
             LogFunc(("Input stream attributes: maxlength=%d fragsize=%d\n",
