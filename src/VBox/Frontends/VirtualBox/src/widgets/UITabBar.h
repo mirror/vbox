@@ -25,8 +25,13 @@
 #include <QWidget>
 
 /* Forward declarations: */
+class QDragEnterEvent;
+class QDragLeaveEvent;
+class QDragMoveEvent;
+class QDropEvent;
 class QHBoxLayout;
 class QIcon;
+class QPaintEvent;
 class QString;
 class QUuid;
 class QWidget;
@@ -61,6 +66,20 @@ public:
     /** Makes tab with passed @a uuid current. */
     bool setCurrent(const QUuid &uuid);
 
+protected:
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+
+    /** Handles drag-enter @a pEvent. */
+    virtual void dragEnterEvent(QDragEnterEvent *pEvent) /* override */;
+    /** Handles drag-move @a pEvent. */
+    virtual void dragMoveEvent(QDragMoveEvent *pEvent) /* override */;
+    /** Handles drag-leave @a pEvent. */
+    virtual void dragLeaveEvent(QDragLeaveEvent *pEvent) /* override */;
+    /** Handles drop @a pEvent. */
+    virtual void dropEvent(QDropEvent *pEvent) /* override */;
+
 private slots:
 
     /** Handles request to make @a pItem current. */
@@ -68,6 +87,9 @@ private slots:
 
     /** Handles request to close @a pItem. */
     void sltHandleChildClose(UITabBarItem *pItem);
+
+    /** Handles drag object destruction. */
+    void sltHandleDragObjectDestroy();
 
 private:
 
@@ -86,6 +108,15 @@ private:
 
         /** Holds the array of items instances. */
         QList<UITabBarItem*> m_aItems;
+    /** @} */
+
+    /** @name Contents: Order
+      * @{ */
+        /** Holds the token-item to drop dragged-item nearby. */
+        UITabBarItem *m_pItemToken;
+
+        /** Holds whether the dragged-item should be dropped <b>after</b> the token-item. */
+        bool  m_fDropAfterTokenItem;
     /** @} */
 };
 
