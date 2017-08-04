@@ -24,6 +24,7 @@
 # include <QEvent>
 # include <QHBoxLayout>
 # include <QLabel>
+# include <QMouseEvent>
 # include <QPainter>
 # ifdef VBOX_WS_MAC
 #  include <QStackedLayout>
@@ -44,6 +45,7 @@ class QApplication;
 class QEvent;
 class QHBoxLayout;
 class QLabel;
+class QMouseEvent;
 #ifdef VBOX_WS_MAC
 class QStackedLayout;
 #endif
@@ -81,11 +83,15 @@ public:
 
 protected:
 
-    /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
-
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+
+    /** Handles mouse-release @a pEvent. */
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
+    /** Handles mouse-enter @a pEvent. */
+    virtual void enterEvent(QEvent *pEvent) /* override */;
+    /** Handles mouse-leave @a pEvent. */
+    virtual void leaveEvent(QEvent *pEvent) /* override */;
 
 private slots:
 
@@ -153,44 +159,6 @@ void UITabBarItem::setCurrent(bool fCurrent)
     m_fCurrent = fCurrent;
     /* And call for repaint: */
     update();
-}
-
-bool UITabBarItem::event(QEvent *pEvent)
-{
-    /* Handle known event types: */
-    switch (pEvent->type())
-    {
-        /* Update the hovered state on/off: */
-        case QEvent::Enter:
-        {
-#ifdef VBOX_WS_MAC
-            m_pLayoutStacked->setCurrentWidget(m_pButtonClose);
-#endif
-            m_fHovered = true;
-            update();
-            break;
-        }
-        case QEvent::Leave:
-        {
-#ifdef VBOX_WS_MAC
-            m_pLayoutStacked->setCurrentWidget(m_pLabelIcon);
-#endif
-            m_fHovered = false;
-            update();
-            break;
-        }
-
-        /* Notify listeners about the item was clicked: */
-        case QEvent::MouseButtonRelease:
-        {
-            emit sigClicked(this);
-            break;
-        }
-
-        default: break;
-    }
-    /* Call to base-class: */
-    return QWidget::event(pEvent);
 }
 
 void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
@@ -276,6 +244,46 @@ void UITabBarItem::paintEvent(QPaintEvent * /* pEvent */)
     painter.fillRect(QRect(iMetric,           height() - iMetric, width() - iMetric * 2, iMetric),                grad6);
     painter.fillRect(QRect(0,                 iMetric,            iMetric,               height() - iMetric * 2), grad7);
     painter.fillRect(QRect(width() - iMetric, iMetric,            iMetric,               height() - iMetric * 2), grad8);
+}
+
+void UITabBarItem::mouseReleaseEvent(QMouseEvent *pEvent)
+{
+    /* We are interested in left button only: */
+    if (pEvent->button() != Qt::LeftButton)
+        return QWidget::mouseReleaseEvent(pEvent);
+
+    /* Notify listeners about the item was clicked: */
+    emit sigClicked(this);
+}
+
+void UITabBarItem::enterEvent(QEvent *pEvent)
+{
+    /* Make sure button isn't hovered: */
+    if (m_fHovered)
+        return QWidget::enterEvent(pEvent);
+
+    /* Invert hovered state: */
+#ifdef VBOX_WS_MAC
+    m_pLayoutStacked->setCurrentWidget(m_pButtonClose);
+#endif
+    m_fHovered = true;
+    /* And call for repaint: */
+    update();
+}
+
+void UITabBarItem::leaveEvent(QEvent *pEvent)
+{
+    /* Make sure button is hovered: */
+    if (!m_fHovered)
+        return QWidget::enterEvent(pEvent);
+
+    /* Invert hovered state: */
+#ifdef VBOX_WS_MAC
+    m_pLayoutStacked->setCurrentWidget(m_pLabelIcon);
+#endif
+    m_fHovered = false;
+    /* And call for repaint: */
+    update();
 }
 
 void UITabBarItem::prepare()
