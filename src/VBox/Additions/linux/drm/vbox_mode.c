@@ -42,7 +42,7 @@
 
 #include <linux/export.h>
 #include <drm/drm_crtc_helper.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) && defined(RHEL_7)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_7)
 #include <drm/drm_plane_helper.h>
 #endif
 
