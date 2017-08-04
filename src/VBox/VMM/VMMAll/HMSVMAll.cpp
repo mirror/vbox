@@ -329,6 +329,7 @@ VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, 
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
  * in IEM).
@@ -363,4 +364,5 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
     }
     pNstGstVmcbCache->fVmrunEmulatedInR0 = false;
 }
+#endif
 

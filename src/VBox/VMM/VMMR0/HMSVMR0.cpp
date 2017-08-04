@@ -294,9 +294,17 @@ static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
 RTR0MEMOBJ                  g_hMemObjIOBitmap = NIL_RTR0MEMOBJ;
 /** Physical address of the IO bitmap. */
 RTHCPHYS                    g_HCPhysIOBitmap  = 0;
-/** Virtual address of the IO bitmap. */
+/** Pointer to the IO bitmap. */
 R0PTRTYPE(void *)           g_pvIOBitmap      = NULL;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/** Ring-0 memory object for the nested-guest MSRPM bitmap. */
+RTR0MEMOBJ                  g_hMemObjNstGstMsrBitmap = NIL_RTR0MEMOBJ;
+/** Physical address of the nested-guest MSRPM bitmap. */
+RTHCPHYS                    g_HCPhysNstGstMsrBitmap  = 0;
+/** Pointer to the  nested-guest MSRPM bitmap. */
+R0PTRTYPE(void *)           g_pvNstGstMsrBitmap      = NULL;
+#endif
 
 /**
  * Sets up and activates AMD-V on the current CPU.
@@ -425,6 +433,23 @@ VMMR0DECL(int) SVMR0GlobalInit(void)
 
     /* Set all bits to intercept all IO accesses. */
     ASMMemFill32(g_pvIOBitmap, SVM_IOPM_PAGES << X86_PAGE_4K_SHIFT, UINT32_C(0xffffffff));
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /*
+     * Allocate 8 KB for the MSR permission bitmap for the nested-guest.
+     */
+    Assert(g_hMemObjNstGstMsrBitmap == NIL_RTR0MEMOBJ);
+    rc = RTR0MemObjAllocCont(&g_hMemObjNstGstMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT, false /* fExecutable */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    g_pvNstGstMsrBitmap     = RTR0MemObjAddress(g_hMemObjNstGstMsrBitmap);
+    g_HCPhysNstGstMsrBitmap = RTR0MemObjGetPagePhysAddr(g_hMemObjNstGstMsrBitmap, 0 /* iPage */);
+
+    /* Set all bits to intercept all MSR accesses. */
+    ASMMemFill32(g_pvNstGstMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT, UINT32_C(0xffffffff));
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -441,6 +466,16 @@ VMMR0DECL(void) SVMR0GlobalTerm(void)
         g_HCPhysIOBitmap  = 0;
         g_hMemObjIOBitmap = NIL_RTR0MEMOBJ;
     }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    if (g_hMemObjNstGstMsrBitmap != NIL_RTR0MEMOBJ)
+    {
+        RTR0MemObjFree(g_hMemObjNstGstMsrBitmap, true /* fFreeMappings */);
+        g_pvNstGstMsrBitmap      = NULL;
+        g_HCPhysNstGstMsrBitmap  = 0;
+        g_hMemObjNstGstMsrBitmap = NIL_RTR0MEMOBJ;
+    }
+#endif
 }
 
 
@@ -1920,10 +1955,10 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                           | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
                           | HM_CHANGED_GUEST_SYSENTER_ESP_MSR
                           | HM_CHANGED_GUEST_LAZY_MSRS            /* Unused. */
+                          | HM_CHANGED_SVM_NESTED_GUEST
                           | HM_CHANGED_SVM_RESERVED1              /* Reserved. */
                           | HM_CHANGED_SVM_RESERVED2
-                          | HM_CHANGED_SVM_RESERVED3
-                          | HM_CHANGED_SVM_RESERVED4);
+                          | HM_CHANGED_SVM_RESERVED3);
 
     /* All the guest state bits should be loaded except maybe the host context and/or shared host/guest bits. */
     AssertMsg(   !HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_ALL_GUEST)
@@ -1937,6 +1972,75 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Caches the nested-guest VMCB fields before we modify them for executing the
+ * nested-guest under SVM R0.
+ *
+ * @param   pCtx            Pointer to the guest-CPU context.
+ *
+ * @sa      HMSvmNstGstVmExitNotify.
+ */
+static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+    PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+
+    pNstGstVmcbCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
+    pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrCRx;
+    pNstGstVmcbCache->u16InterceptRdDRx = pVmcbNstGstCtrl->u16InterceptRdDRx;
+    pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
+    pNstGstVmcbCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
+    pNstGstVmcbCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
+    pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
+    pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
+    pNstGstVmcbCache->u64VmcbCleanBits  = pVmcbNstGstCtrl->u64VmcbCleanBits;
+    pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
+    pNstGstVmcbCache->fValid            = true;
+}
+
+
+/**
+ * Sets up the nested-guest for hardware-assisted SVM execution.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ */
+static void hmR0SvmLoadGuestVmcbNested(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_SVM_NESTED_GUEST))
+    {
+        /*
+         * Cache the nested-guest VMCB fields before we start modifying them below.
+         */
+        hmR0SvmVmRunCacheVmcb(pVCpu, pCtx);
+
+        /*
+         * The IOPM of the nested-guest can be ignored because the the guest always
+         * intercepts all IO port accesses. Thus, we'll swap to the guest IOPM rather
+         * into the nested-guest one and swap it back on the #VMEXIT.
+         */
+        PSVMVMCB     pVmcbNstGst     = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+        PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+        pVmcbNstGstCtrl->u64IOPMPhysAddr  = g_HCPhysIOBitmap;
+
+        /*
+         * Load the host-physical address into the MSRPM rather than the nested-guest
+         * physical address.
+         */
+        pVmcbNstGstCtrl->u64MSRPMPhysAddr = g_HCPhysNstGstMsrBitmap;
+
+        /*
+         * Merge the guest exception intercepts in to the nested-guest ones.
+         */
+        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+        hmR0SvmMergeIntercepts(pVCpu, pVmcb, pVmcbNstGst);
+
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_SVM_NESTED_GUEST);
+    }
+}
+
+
 /**
  * Loads the nested-guest state into the VMCB.
  *
@@ -1958,6 +2062,7 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (!pVCpu->hm.s.svm.NstGstVmcbCache.fVmrunEmulatedInR0)
     {
+        hmR0SvmLoadGuestVmcbNested(pVCpu, pCtx);
         hmR0SvmLoadGuestControlRegsNested(pVCpu, pVmcbNstGst, pCtx);
         hmR0SvmLoadGuestSegmentRegs(pVCpu, pVmcbNstGst, pCtx);
         hmR0SvmLoadGuestMsrs(pVCpu, pVmcbNstGst, pCtx);
@@ -1984,8 +2089,7 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
                           | HM_CHANGED_GUEST_LAZY_MSRS            /* Unused. */
                           | HM_CHANGED_SVM_RESERVED1              /* Reserved. */
                           | HM_CHANGED_SVM_RESERVED2
-                          | HM_CHANGED_SVM_RESERVED3
-                          | HM_CHANGED_SVM_RESERVED4);
+                          | HM_CHANGED_SVM_RESERVED3);
 
     /* All the guest state bits should be loaded except maybe the host context and/or shared host/guest bits. */
     AssertMsg(   !HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_ALL_GUEST)
@@ -4270,12 +4374,12 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 int rc = HMSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
                 if (RT_SUCCESS(rc))
                 {
-                    void const *pvMsrBitmap = pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
-                    bool const fInterceptRd = ASMBitTest(pvMsrBitmap, (offMsrpm << 3) + uMsrpmBit);
-                    bool const fInterceptWr = ASMBitTest(pvMsrBitmap, (offMsrpm << 3) + uMsrpmBit + 1);
+                    void const *pvMsrBitmap    = pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
+                    bool const fInterceptRead  = ASMBitTest(pvMsrBitmap, (offMsrpm << 3) + uMsrpmBit);
+                    bool const fInterceptWrite = ASMBitTest(pvMsrBitmap, (offMsrpm << 3) + uMsrpmBit + 1);
 
-                    if (   (pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_WRITE && fInterceptWr)
-                        || (pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_READ  && fInterceptRd))
+                    if (   (fInterceptWrite && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
+                        || (fInterceptRead  && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_READ))
                     {
                         return hmR0SvmExecVmexit(pVCpu, pCtx);
                     }
@@ -5442,35 +5546,6 @@ DECLINLINE(void) hmR0SvmAdvanceRipDumb(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
 
 #if defined(VBOX_WITH_NESTED_HWVIRT) && !defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM)
 /**
- * Merges the guest MSR permission bitmap into the nested-guest MSR permission
- * bitmap.
- *
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   pvMsrBitmap         Pointer to the guest MSRPM bitmap.
- * @param   pvNstGstMsrBitmap   Pointer to the nested-guest MSRPM bitmap.
- */
-static void hmR0SvmMergeMsrpmBitmap(PVMCPU pVCpu, const void *pvMsrBitmap, void *pvNstGstMsrBitmap)
-{
-    RT_NOREF(pVCpu);
-    uint64_t const *puChunk       = (uint64_t *)pvMsrBitmap;
-    uint64_t       *puNstGstChunk = (uint64_t *)pvNstGstMsrBitmap;
-    uint32_t const cbChunks       = SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT;
-    uint32_t const cChunks        = cbChunks / sizeof(*puChunk);
-    Assert(cbChunks % sizeof(*puChunk) == 0);
-
-    for (uint32_t idxChunk = 0, offChunk = 0;
-          idxChunk < cChunks;
-          idxChunk++, offChunk += sizeof(*puChunk))
-    {
-        /* Leave reserved offsets (1800h+) untouched (as all bits set, see SVMR0InitVM). */
-        if (offChunk >= 0x1800)
-            break;
-        puNstGstChunk[idxChunk] |= puChunk[idxChunk];
-    }
-}
-
-
-/**
  * Performs an SVM world-switch (VMRUN, \#VMEXIT) updating PGM and HM internals.
  *
  * @returns VBox status code.
@@ -5494,7 +5569,8 @@ static int hmR0SvmNstGstWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Performs a \#VMEXIT that happens during VMRUN emulation in hmR0SvmExecVmrun.
+ * Performs a \#VMEXIT when the VMRUN was emulating using hmR0SvmExecVmrun and
+ * optionally then through SVM R0 execution.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -5542,6 +5618,12 @@ static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
     memset(pVmcbNstGstCtrl, 0, sizeof(*pVmcbNstGstCtrl));
     Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
+    /*
+     * Make sure if VMRUN happens outside this SVM R0 code, we  don't skip setting
+     * things up that are required for executing the nested-guest using hardware-assisted SVM.
+     */
+    pVCpu->hm.s.svm.NstGstVmcbCache.fVmrunEmulatedInR0 = false;
+
     if (RT_SUCCESS(rc))
     {
         rc = hmR0SvmNstGstWorldSwitch(pVCpu, pCtx);
@@ -5551,32 +5633,6 @@ static int hmR0SvmExecVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     Log(("hmR0SvmExecVmexit: Failed to write guest-VMCB at %#RGp\n", GCPhysVmcb));
     return rc;
-}
-
-
-/**
- * Caches the nested-guest VMCB fields before we modify them for executing the
- * nested-guest under SVM R0.
- *
- * @param   pCtx            Pointer to the guest-CPU context.
- */
-static void hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
-    PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-
-    pNstGstVmcbCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
-    pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrCRx;
-    pNstGstVmcbCache->u16InterceptRdDRx = pVmcbNstGstCtrl->u16InterceptRdDRx;
-    pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
-    pNstGstVmcbCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
-    pNstGstVmcbCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
-    pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
-    pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
-    pNstGstVmcbCache->u64VmcbCleanBits  = pVmcbNstGstCtrl->u64VmcbCleanBits;
-    pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
-    pNstGstVmcbCache->fValid            = true;
 }
 
 
@@ -5705,39 +5761,9 @@ static int hmR0SvmExecVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb, ui
             uValidEfer |= MSR_K6_EFER_LMA;
 
         /*
-         * Cache the nested-guest VMCB fields before we start modifying them below.
+         * Set up the nested-guest for executing it using hardware-assisted SVM.
          */
-        hmR0SvmVmRunCacheVmcb(pVCpu, pCtx);
-
-        /*
-         * The IOPM of the nested-guest can be ignored because the the guest always
-         * intercepts all IO port accesses. Thus, we'll swap to the guest IOPM rather
-         * into the nested-guest one and swap it back on the #VMEXIT.
-         */
-        pVmcbNstGstCtrl->u64IOPMPhysAddr  = g_HCPhysIOBitmap;
-
-        /*
-         * Load the host-physical address into the MSRPM rather than the nested-guest
-         * physical address.
-         */
-        pVmcbNstGstCtrl->u64MSRPMPhysAddr = HCPhysNstGstMsrpm;
-
-        /*
-         * Merge the guest MSR permission bitmap in to the nested-guest one.
-         *
-         * Note the assumption here is that our MSRPM is set up only once in SVMR0SetupVM
-         * In hmR0SvmPreRunGuestCommittedNested we directly update the nested-guest one.
-         * Hence it can be done once here during VMRUN.
-         */
-        hmR0SvmMergeMsrpmBitmap(pVCpu, pVCpu->hm.s.svm.pvMsrBitmap, pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap));
-
-        /*
-         * Merge the guest exception intercepts in to the nested-guest ones.
-         */
-        {
-            PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-            hmR0SvmMergeIntercepts(pVCpu, pVmcb, pVmcbNstGst);
-        }
+        hmR0SvmLoadGuestVmcbNested(pVCpu, pCtx);
 
         /*
          * Check for pending virtual interrupts.

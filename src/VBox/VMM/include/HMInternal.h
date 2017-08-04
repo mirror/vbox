@@ -185,7 +185,7 @@ RT_C_DECLS_BEGIN
 #define HM_CHANGED_SVM_RESERVED1                 RT_BIT(20)
 #define HM_CHANGED_SVM_RESERVED2                 RT_BIT(21)
 #define HM_CHANGED_SVM_RESERVED3                 RT_BIT(22)
-#define HM_CHANGED_SVM_RESERVED4                 RT_BIT(23)
+#define HM_CHANGED_SVM_NESTED_GUEST              RT_BIT(23)
 
 #define HM_CHANGED_ALL_GUEST                     (  HM_CHANGED_GUEST_CR0                \
                                                   | HM_CHANGED_GUEST_CR3                \
