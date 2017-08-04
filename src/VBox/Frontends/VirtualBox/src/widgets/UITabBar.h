@@ -66,6 +66,9 @@ public:
     /** Makes tab with passed @a uuid current. */
     bool setCurrent(const QUuid &uuid);
 
+    /** Return tab-bar order ID list. */
+    QList<QUuid> tabOrder() const;
+
 protected:
 
     /** Handles paint @a pEvent. */

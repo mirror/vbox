@@ -71,6 +71,11 @@ public:
     /** Defines toolbar tool button @a enmStyle. */
     void setToolButtonStyle(Qt::ToolButtonStyle enmStyle);
 
+    /** Returns Machine tab-bar order. */
+    QList<ToolTypeMachine> tabOrderMachine() const;
+    /** Returns Global tab-bar order. */
+    QList<ToolTypeGlobal> tabOrderGlobal() const;
+
 private slots:
 
     /** Handles request to open Machine tool. */

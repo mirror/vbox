@@ -355,6 +355,11 @@ private:
     /** Holds the Tools-toolbar instance. */
     UIToolsToolbar *m_pToolbarTools;
 
+    /** Holds the Machine Tools order. */
+    QList<ToolTypeMachine> m_orderMachine;
+    /** Holds the Global Tools order. */
+    QList<ToolTypeGlobal> m_orderGlobal;
+
     /** Holds the Chooser-pane instance. */
     UIGChooser         *m_pPaneChooser;
     /** Holds the Machine Tools-pane instance. */

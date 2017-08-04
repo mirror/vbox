@@ -75,6 +75,22 @@ void UIToolsToolbar::setToolButtonStyle(Qt::ToolButtonStyle enmStyle)
     m_pToolBar->setToolButtonStyle(enmStyle);
 }
 
+QList<ToolTypeMachine> UIToolsToolbar::tabOrderMachine() const
+{
+    QList<ToolTypeMachine> list;
+    foreach (const QUuid &uuid, m_pTabBarMachine->tabOrder())
+        list << m_mapTabIdsMachine.key(uuid);
+    return list;
+}
+
+QList<ToolTypeGlobal> UIToolsToolbar::tabOrderGlobal() const
+{
+    QList<ToolTypeGlobal> list;
+    foreach (const QUuid &uuid, m_pTabBarGlobal->tabOrder())
+        list << m_mapTabIdsGlobal.key(uuid);
+    return list;
+}
+
 void UIToolsToolbar::sltHandleOpenToolMachine()
 {
     /* Acquire sender action: */

@@ -1947,7 +1947,9 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
-           << GUI_Toolbar << GUI_Toolbar_Text << GUI_Statusbar
+           << GUI_Toolbar << GUI_Toolbar_Text
+           << GUI_Toolbar_MachineTools_Order << GUI_Toolbar_GlobalTools_Order
+           << GUI_Statusbar
            << GUI_GroupDefinitions << GUI_LastItemSelected
            << GUI_DetailsPageBoxes << GUI_PreviewUpdate
            << GUI_HideDescriptionForWizards
@@ -2684,6 +2686,58 @@ void UIExtraDataManager::setSelectorWindowToolBarTextVisible(bool fVisible)
 {
     /* 'False' if feature restricted, null-string otherwise: */
     setExtraDataString(GUI_Toolbar_Text, toFeatureRestricted(!fVisible));
+}
+
+QList<ToolTypeMachine> UIExtraDataManager::selectorWindowToolsOrderMachine()
+{
+    /* Prepare result: */
+    QList<ToolTypeMachine> result;
+    /* Get machine tools order: */
+    foreach (const QString &strValue, extraDataStringList(GUI_Toolbar_MachineTools_Order))
+    {
+        const ToolTypeMachine enmValue = gpConverter->fromInternalString<ToolTypeMachine>(strValue);
+        if (enmValue != ToolTypeMachine_Invalid && !result.contains(enmValue))
+            result << enmValue;
+    }
+    /* Return result: */
+    return result;
+}
+
+void UIExtraDataManager::setSelectorWindowToolsOrderMachine(const QList<ToolTypeMachine> &aOrder)
+{
+    /* Parse passed list: */
+    QStringList aSerializedOrder;
+    foreach (const ToolTypeMachine &enmToolType, aOrder)
+        aSerializedOrder << gpConverter->toInternalString(enmToolType);
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_Toolbar_MachineTools_Order, aSerializedOrder);
+}
+
+QList<ToolTypeGlobal> UIExtraDataManager::selectorWindowToolsOrderGlobal()
+{
+    /* Prepare result: */
+    QList<ToolTypeGlobal> result;
+    /* Get global tools order: */
+    foreach (const QString &strValue, extraDataStringList(GUI_Toolbar_GlobalTools_Order))
+    {
+        const ToolTypeGlobal enmValue = gpConverter->fromInternalString<ToolTypeGlobal>(strValue);
+        if (enmValue != ToolTypeGlobal_Invalid && !result.contains(enmValue))
+            result << enmValue;
+    }
+    /* Return result: */
+    return result;
+}
+
+void UIExtraDataManager::setSelectorWindowToolsOrderGlobal(const QList<ToolTypeGlobal> &aOrder)
+{
+    /* Parse passed list: */
+    QStringList aSerializedOrder;
+    foreach (const ToolTypeGlobal &enmToolType, aOrder)
+        aSerializedOrder << gpConverter->toInternalString(enmToolType);
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_Toolbar_GlobalTools_Order, aSerializedOrder);
 }
 
 bool UIExtraDataManager::selectorWindowStatusBarVisible()

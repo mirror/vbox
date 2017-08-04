@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class QHBoxLayout;
@@ -34,19 +35,6 @@ class UIGDetails;
 class UISnapshotPane;
 class UIVMItem;
 class CMachine;
-
-
-/** Machine tool types. */
-enum ToolTypeMachine
-{
-    ToolTypeMachine_Invalid,
-    ToolTypeMachine_Desktop,
-    ToolTypeMachine_Details,
-    ToolTypeMachine_Snapshots,
-};
-
-/* Make sure QVariant can eat ToolTypeMachine: */
-Q_DECLARE_METATYPE(ToolTypeMachine);
 
 
 /** QWidget subclass representing container for tool panes. */

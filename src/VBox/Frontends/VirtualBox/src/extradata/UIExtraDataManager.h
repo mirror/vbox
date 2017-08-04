@@ -301,6 +301,16 @@ public:
         /** Defines whether selector-window tool-bar text @a fVisible. */
         void setSelectorWindowToolBarTextVisible(bool fVisible);
 
+        /** Returns selector-window machine tools order. */
+        QList<ToolTypeMachine> selectorWindowToolsOrderMachine();
+        /** Defines selector-window machine tools @a aOrder. */
+        void setSelectorWindowToolsOrderMachine(const QList<ToolTypeMachine> &aOrder);
+
+        /** Returns selector-window global tools order. */
+        QList<ToolTypeGlobal> selectorWindowToolsOrderGlobal();
+        /** Defines selector-window global tools @a aOrder. */
+        void setSelectorWindowToolsOrderGlobal(const QList<ToolTypeGlobal> &aOrder);
+
         /** Returns whether selector-window status-bar visible. */
         bool selectorWindowStatusBarVisible();
         /** Defines whether selector-window status-bar @a fVisible. */

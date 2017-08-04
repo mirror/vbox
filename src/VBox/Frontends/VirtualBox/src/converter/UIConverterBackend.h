@@ -84,6 +84,8 @@ template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>()
 #ifdef VBOX_WS_MAC
 template<> bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>();
 #endif /* VBOX_WS_MAC */
+template<> bool canConvert<ToolTypeMachine>();
+template<> bool canConvert<ToolTypeGlobal>();
 template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
 template<> bool canConvert<PreviewUpdateIntervalType>();
@@ -156,6 +158,10 @@ template<> UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType fromInternalString
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuWindowActionType &menuWindowActionType);
 template<> UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraDataMetaDefs::MenuWindowActionType>(const QString &strMenuWindowActionType);
 #endif /* VBOX_WS_MAC */
+template<> QString toInternalString(const ToolTypeMachine &enmToolTypeMachine);
+template<> ToolTypeMachine fromInternalString<ToolTypeMachine>(const QString &strToolTypeMachine);
+template<> QString toInternalString(const ToolTypeGlobal &enmToolTypeGlobal);
+template<> ToolTypeGlobal fromInternalString<ToolTypeGlobal>(const QString &strToolTypeGlobal);
 template<> QString toInternalString(const UIVisualStateType &visualStateType);
 template<> UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType);
 template<> QString toString(const DetailsElementType &detailsElementType);

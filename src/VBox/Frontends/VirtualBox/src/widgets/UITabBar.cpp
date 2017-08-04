@@ -542,6 +542,14 @@ bool UITabBar::setCurrent(const QUuid &uuid)
     return fSuccess;
 }
 
+QList<QUuid> UITabBar::tabOrder() const
+{
+    QList<QUuid> list;
+    foreach (UITabBarItem *pItem, m_aItems)
+        list << pItem->uuid();
+    return list;
+}
+
 void UITabBar::paintEvent(QPaintEvent *pEvent)
 {
     /* Call to base-class: */

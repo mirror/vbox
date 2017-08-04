@@ -153,11 +153,16 @@ void UISelectorWindow::sltHandlePolishEvent()
     if (pItem && pItem->accessible())
     {
         // WORKAROUND:
-        // By some reason some of X11 DEs unable to update()
-        // tab-bars on startup.  Let's try to _create_ them instead.
-        /* Make sure 'Details' and 'Snapshots' Machine tools ares opened at startup for now: */
-        actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots)->trigger();
-        actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details)->trigger();
+        // By some reason some of X11 DEs unable to update() tab-bars on startup.
+        // Let's just _create_ them later, asynchronously after the showEvent().
+        /* Restore previously opened Machine tools at startup: */
+        QMap<ToolTypeMachine, QAction*> mapActionsMachine;
+        mapActionsMachine[ToolTypeMachine_Details] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Details);
+        mapActionsMachine[ToolTypeMachine_Snapshots] = actionPool()->action(UIActionIndexST_M_Tools_M_Machine_Snapshots);
+        for (int i = m_orderMachine.size() - 1; i >= 0; --i)
+            mapActionsMachine.value(m_orderMachine.at(i))->trigger();
+        /* Make sure further action triggering cause tool type switch as well: */
+        actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setProperty("watch_child_activation", true);
     }
 }
 
@@ -1105,7 +1110,8 @@ void UISelectorWindow::sltHandleShowTabBarGlobal()
 void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
 {
     /* First, make sure corresponding tool set opened: */
-    if (!actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked())
+    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->isChecked()
+        && actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->property("watch_child_activation").toBool())
         actionPool()->action(UIActionIndexST_M_Tools_T_Machine)->setChecked(true);
 
     /* Open corresponding tool: */
@@ -1126,7 +1132,8 @@ void UISelectorWindow::sltHandleToolOpenedMachine(ToolTypeMachine enmType)
 void UISelectorWindow::sltHandleToolOpenedGlobal(ToolTypeGlobal enmType)
 {
     /* First, make sure corresponding tool set opened: */
-    if (!actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked())
+    if (   !actionPool()->action(UIActionIndexST_M_Tools_T_Global)->isChecked()
+        && actionPool()->action(UIActionIndexST_M_Tools_T_Global)->property("watch_child_activation").toBool())
         actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setChecked(true);
 
     /* Open corresponding tool: */
@@ -2114,10 +2121,34 @@ void UISelectorWindow::loadSettings()
                                             ? Qt::ToolButtonTextUnderIcon : Qt::ToolButtonIconOnly);
         statusBar()->setHidden(!gEDataManager->selectorWindowStatusBarVisible());
     }
+
+    /* Restore toolbar Machine/Global tools orders:  */
+    {
+        m_orderMachine = gEDataManager->selectorWindowToolsOrderMachine();
+        m_orderGlobal = gEDataManager->selectorWindowToolsOrderGlobal();
+
+        /* We can restore previously opened Global tools right here: */
+        QMap<ToolTypeGlobal, QAction*> mapActionsGlobal;
+        mapActionsGlobal[ToolTypeGlobal_VirtualMedia] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_VirtualMediaManager);
+        mapActionsGlobal[ToolTypeGlobal_HostNetwork] = actionPool()->action(UIActionIndexST_M_Tools_M_Global_HostNetworkManager);
+        for (int i = m_orderGlobal.size() - 1; i >= 0; --i)
+            mapActionsGlobal.value(m_orderGlobal.at(i))->trigger();
+        /* Make sure further action triggering cause tool type switch as well: */
+        actionPool()->action(UIActionIndexST_M_Tools_T_Global)->setProperty("watch_child_activation", true);
+
+        /* But we can't restore previously opened Machine tools here,
+         * see the reason in corresponding async sltHandlePolishEvent slot. */
+    }
 }
 
 void UISelectorWindow::saveSettings()
 {
+    /* Save toolbar Machine/Global tools orders: */
+    {
+        gEDataManager->setSelectorWindowToolsOrderMachine(m_pToolbarTools->tabOrderMachine());
+        gEDataManager->setSelectorWindowToolsOrderGlobal(m_pToolbarTools->tabOrderGlobal());
+    }
+
     /* Save toolbar and statusbar visibility: */
     {
 #ifdef VBOX_WS_MAC
