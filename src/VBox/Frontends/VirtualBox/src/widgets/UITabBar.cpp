@@ -305,6 +305,9 @@ void UITabBarItem::mouseMoveEvent(QMouseEvent *pEvent)
         return QWidget::mouseMoveEvent(pEvent);
 
     /* Revoke hovered state: */
+#ifdef VBOX_WS_MAC
+    m_pLayoutStacked->setCurrentWidget(m_pLabelIcon);
+#endif
     m_fHovered = false;
     /* And call for repaint: */
     update();
