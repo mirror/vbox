@@ -373,7 +373,8 @@ void UITabBarItem::prepare()
 
 UITabBar::UITabBar(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
-    , m_pLayout(0)
+    , m_pLayoutMain(0)
+    , m_pLayoutTab(0)
     , m_pCurrentItem(0)
 {
     /* Prepare: */
@@ -392,8 +393,8 @@ QUuid UITabBar::addTab(const QIcon &icon /* = QIcon() */, const QString &strName
         connect(pItem, &UITabBarItem::sigClicked,      this, &UITabBar::sltHandleMakeChildCurrent);
         connect(pItem, &UITabBarItem::sigCloseClicked, this, &UITabBar::sltHandleChildClose);
         /* Add item into layout and list: */
-        m_pLayout->insertWidget(1, pItem);
-        m_aItems << pItem;
+        m_pLayoutTab->insertWidget(0, pItem);
+        m_aItems.prepend(pItem);
         /* Return unique ID: */
         return uuid;
     }
@@ -494,17 +495,25 @@ void UITabBar::sltHandleChildClose(UITabBarItem *pItem)
 void UITabBar::prepare()
 {
     /* Create main layout: */
-    m_pLayout = new QHBoxLayout(this);
-    if (m_pLayout)
+    m_pLayoutMain = new QHBoxLayout(this);
+    AssertPtrReturnVoid(m_pLayoutMain);
     {
         /* Configure layout: */
-        m_pLayout->setSpacing(0);
-        m_pLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayoutMain->setSpacing(0);
+        m_pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
         // TODO: Workout stretch at the and as well,
         //       depending on which alignment is set.
         /* Add strech into beginning: */
-        m_pLayout->addStretch();
+        m_pLayoutMain->addStretch();
+
+        /* Create tab layout: */
+        m_pLayoutTab = new QHBoxLayout;
+        AssertPtrReturnVoid(m_pLayoutTab);
+        {
+            /* Add into layout: */
+            m_pLayoutMain->addLayout(m_pLayoutTab);
+        }
     }
 }
 

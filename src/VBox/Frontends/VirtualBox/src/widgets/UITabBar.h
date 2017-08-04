@@ -74,14 +74,19 @@ private:
     /** Prepares all. */
     void prepare();
 
-    /** Holds the main layout instance. */
-    QHBoxLayout *m_pLayout;
+    /** @name Contents: Widgets
+      * @{ */
+        /** Holds the main layout instance. */
+        QHBoxLayout *m_pLayoutMain;
+        /** Holds the tab layout instance. */
+        QHBoxLayout *m_pLayoutTab;
 
-    /** Holds the current item reference. */
-    UITabBarItem *m_pCurrentItem;
+        /** Holds the current item reference. */
+        UITabBarItem *m_pCurrentItem;
 
-    /** Holds the array of items instances. */
-    QList<UITabBarItem*> m_aItems;
+        /** Holds the array of items instances. */
+        QList<UITabBarItem*> m_aItems;
+    /** @} */
 };
 
 #endif /* !___UITabBar_h___ */
