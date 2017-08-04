@@ -4326,6 +4326,14 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
+#define HM_SVM_HANDLE_XCPT_EXIT_NESTED(a_uXcpt, a_XcptExitFn) \
+    do \
+    { \
+        if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(a_uXcpt)) \
+            return hmR0SvmExecVmexit(pVCpu, pCtx); \
+        return a_XcptExitFn(pVCpu, pCtx, pSvmTransient); \
+    } while (0) \
+
     /*
      * For all the #VMEXITs here we primarily figure out if the #VMEXIT is expected
      * by the nested-guest. If it isn't, it should be handled by the (outer) guest.
@@ -4362,6 +4370,28 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP)
                 return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
+        }
+
+
+        case SVM_EXIT_MONITOR:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_MONITOR)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_MWAIT:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_MWAIT)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitMwait(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_HLT:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_HLT)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitHlt(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_MSR:
@@ -4414,47 +4444,48 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return hmR0SvmExitIOInstr(pVCpu, pCtx, pSvmTransient);
         }
 
-        /** @todo Exceptions. */
         case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
-            return hmR0SvmExitXcptPF(pVCpu, pCtx, pSvmTransient);
+        {
+            Assert(!pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging);
+            return hmR0SvmExecVmexit(pVCpu, pCtx);
+        }
 
         case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
-            return hmR0SvmExitXcptNM(pVCpu, pCtx, pSvmTransient);
+            HM_SVM_HANDLE_XCPT_EXIT_NESTED(X86_XCPT_NM, hmR0SvmExitXcptNM);
 
         case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
-            return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
+            HM_SVM_HANDLE_XCPT_EXIT_NESTED(X86_XCPT_UD, hmR0SvmExitXcptUD);
 
         case SVM_EXIT_EXCEPTION_16:  /* X86_XCPT_MF */
-            return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
+            HM_SVM_HANDLE_XCPT_EXIT_NESTED(X86_XCPT_MF, hmR0SvmExitXcptMF);
 
         case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
-            return hmR0SvmExitXcptDB(pVCpu, pCtx, pSvmTransient);
+            HM_SVM_HANDLE_XCPT_EXIT_NESTED(X86_XCPT_DB, hmR0SvmExitXcptDB);
 
         case SVM_EXIT_EXCEPTION_17:  /* X86_XCPT_AC */
-            return hmR0SvmExitXcptAC(pVCpu, pCtx, pSvmTransient);
+            HM_SVM_HANDLE_XCPT_EXIT_NESTED(X86_XCPT_AC, hmR0SvmExitXcptAC);
 
         case SVM_EXIT_EXCEPTION_3:   /* X86_XCPT_BP */
-            return hmR0SvmExitXcptBP(pVCpu, pCtx, pSvmTransient);
-
-        case SVM_EXIT_MONITOR:
-            return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
-
-        case SVM_EXIT_MWAIT:
-            return hmR0SvmExitMwait(pVCpu, pCtx, pSvmTransient);
-
-        case SVM_EXIT_HLT:
-            return hmR0SvmExitHlt(pVCpu, pCtx, pSvmTransient);
+            HM_SVM_HANDLE_XCPT_EXIT_NESTED(X86_XCPT_BP, hmR0SvmExitXcptBP);
 
         case SVM_EXIT_READ_CR0:
         case SVM_EXIT_READ_CR3:
         case SVM_EXIT_READ_CR4:
+        {
+            if (pVmcbNstGstCache->u16InterceptRdCRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0)))
+                hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_WRITE_CR0:
         case SVM_EXIT_WRITE_CR3:
         case SVM_EXIT_WRITE_CR4:
         case SVM_EXIT_WRITE_CR8:
+        {
+            if (pVmcbNstGstCache->u16InterceptWrCRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0)))
+                hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_PAUSE:
             return hmR0SvmExitPause(pVCpu, pCtx, pSvmTransient);
@@ -4623,6 +4654,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         }
     }
     /* not reached */
+
+#undef HM_SVM_HANDLE_XCPT_EXIT_NESTED
 }
 #endif
 
