@@ -34,14 +34,14 @@ ifneq ($(KERN_VERSION),24)
 
 MOD_NAME   = vboxvideo
 
-MOD_OBJS   = HGSMIBase.o \
-             Modesetting.o vbox_drv.o vbox_fb.o vbox_irq.o vbox_main.o \
-             vbox_mode.o vbox_ttm.o VBVABase.o vbox_prime.o vbox_hgsmi.o
+MOD_OBJS   = hgsmi_base.o \
+             modesetting.o vbox_drv.o vbox_fb.o vbox_irq.o vbox_main.o \
+             vbox_mode.o vbox_ttm.o vbva_base.o vbox_prime.o vbox_hgsmi.o
 
 MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -fno-pie
 MOD_INCL   = $(addprefix -I$(KBUILD_EXTMOD),/ /include)
 # What on earth is this?
-MOD_INCL  += $(addprefix -I$(KBUILD_EXTMOD)/vboxvideo,/ /include)
+# MOD_INCL  += $(addprefix -I$(KBUILD_EXTMOD)/vboxvideo,/ /include)
 MOD_INCL  += -Iinclude/drm
 MOD_DEFS  := -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 \
 	     -DIN_SUP_R0 -DVBOX -DVBOX_WITH_HGCM -DLOG_TO_BACKDOOR -DIN_MODULE \
