@@ -654,6 +654,7 @@ int vbmsSolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
                 flushq(RD(pWriteQueue), FLUSHDATA);
 
             /* We have no one below us to pass the message on to. */
+            freemsg(pMBlk);
             return 0;
         /* M_IOCDATA is additional data attached to (at least) transparent
          * IOCtls.  We handle the two together here and separate them further
@@ -1195,10 +1196,7 @@ static int vbmsSolHandleIOCtlData(PVBMSSTATE pState, mblk_t *pMBlk,
                  (int)(uintptr_t)pCopyResp->cp_rval,
                  (void *)pCopyResp->cp_private));
     if (pCopyResp->cp_rval)  /* cp_rval is a pointer used as a boolean. */
-    {
-        freemsg(pMBlk);
         return EAGAIN;
-    }
     if ((pCopyResp->cp_private && enmDirection == BOTH) || enmDirection == IN)
     {
         size_t cbData = 0;
@@ -1207,18 +1205,20 @@ static int vbmsSolHandleIOCtlData(PVBMSSTATE pState, mblk_t *pMBlk,
 
         if (!pMBlk->b_cont)
             return EINVAL;
-        if (enmDirection == BOTH && !pCopyResp->cp_private)
-            return EINVAL;
         pvData = pMBlk->b_cont->b_rptr;
         err = pfnHandler(pState, iCmd, pvData, cbCmd, &cbData, NULL);
         if (!err && enmDirection == BOTH)
             mcopyout(pMBlk, NULL, cbData, pCopyResp->cp_private, NULL);
         else if (!err && enmDirection == IN)
             vbmsSolAcknowledgeIOCtl(pMBlk, 0, 0);
+        if ((err || enmDirection == IN) && pCopyResp->cp_private)
+            freemsg(pCopyResp->cp_private);
         return err;
     }
     else
     {
+        if (pCopyResp->cp_private)
+            freemsg(pCopyResp->cp_private);
         AssertReturn(enmDirection == OUT || enmDirection == BOTH, EINVAL);
         vbmsSolAcknowledgeIOCtl(pMBlk, 0, 0);
         return 0;
