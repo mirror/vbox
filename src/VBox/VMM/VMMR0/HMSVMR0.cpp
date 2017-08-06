@@ -96,13 +96,47 @@
                                                         ("Illegal migration! Entered on CPU %u Current %u\n", \
                                                         pVCpu->hm.s.idEnteredCpu, RTMpCpuId()));
 
-/** Exception bitmap mask for all contributory exceptions.
+/**
+ * Exception bitmap mask for all contributory exceptions.
  *
  * Page fault is deliberately excluded here as it's conditional as to whether
  * it's contributory or benign. Page faults are handled separately.
  */
 #define HMSVM_CONTRIBUTORY_XCPT_MASK  (  RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
                                        | RT_BIT(X86_XCPT_DE))
+
+/**
+ *  Mandatory/unconditional guest control intercepts.
+ */
+#define HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS           (  SVM_CTRL_INTERCEPT_INTR        \
+                                                         | SVM_CTRL_INTERCEPT_NMI         \
+                                                         | SVM_CTRL_INTERCEPT_INIT        \
+                                                         | SVM_CTRL_INTERCEPT_RDPMC       \
+                                                         | SVM_CTRL_INTERCEPT_CPUID       \
+                                                         | SVM_CTRL_INTERCEPT_RSM         \
+                                                         | SVM_CTRL_INTERCEPT_HLT         \
+                                                         | SVM_CTRL_INTERCEPT_IOIO_PROT   \
+                                                         | SVM_CTRL_INTERCEPT_MSR_PROT    \
+                                                         | SVM_CTRL_INTERCEPT_INVLPGA     \
+                                                         | SVM_CTRL_INTERCEPT_SHUTDOWN    \
+                                                         | SVM_CTRL_INTERCEPT_FERR_FREEZE \
+                                                         | SVM_CTRL_INTERCEPT_VMRUN       \
+                                                         | SVM_CTRL_INTERCEPT_VMMCALL     \
+                                                         | SVM_CTRL_INTERCEPT_VMLOAD      \
+                                                         | SVM_CTRL_INTERCEPT_VMSAVE      \
+                                                         | SVM_CTRL_INTERCEPT_STGI        \
+                                                         | SVM_CTRL_INTERCEPT_CLGI        \
+                                                         | SVM_CTRL_INTERCEPT_SKINIT      \
+                                                         | SVM_CTRL_INTERCEPT_WBINVD      \
+                                                         | SVM_CTRL_INTERCEPT_MONITOR     \
+                                                         | SVM_CTRL_INTERCEPT_MWAIT       \
+                                                         | SVM_CTRL_INTERCEPT_XSETBV)
+
+/**
+ *  Mandatory/unconditional nested-guest control intercepts.
+ */
+#define HMSVM_MANDATORY_NESTED_GUEST_CTRL_INTERCEPTS    (  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS \
+                                                         | SVM_CTRL_INTERCEPT_SMI)
 
 /** @name VMCB Clean Bits.
  *
@@ -250,6 +284,7 @@ static FNSVMEXITHANDLER hmR0SvmExitHlt;
 static FNSVMEXITHANDLER hmR0SvmExitMonitor;
 static FNSVMEXITHANDLER hmR0SvmExitMwait;
 static FNSVMEXITHANDLER hmR0SvmExitShutdown;
+static FNSVMEXITHANDLER hmR0SvmExitUnexpected;
 static FNSVMEXITHANDLER hmR0SvmExitReadCRx;
 static FNSVMEXITHANDLER hmR0SvmExitWriteCRx;
 static FNSVMEXITHANDLER hmR0SvmExitSetPendingXcptUD;
@@ -704,29 +739,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 #endif
 
         /* Set up unconditional intercepts and conditions. */
-        pVmcb->ctrl.u64InterceptCtrl = SVM_CTRL_INTERCEPT_INTR         /* External interrupt causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_NMI          /* Non-maskable interrupts causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_INIT         /* INIT signal causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_RDPMC        /* RDPMC causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_CPUID        /* CPUID causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_RSM          /* RSM causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_HLT          /* HLT causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_IOIO_PROT    /* Use the IOPM to cause IOIO #VMEXITs. */
-                                     | SVM_CTRL_INTERCEPT_MSR_PROT     /* MSR access not covered by MSRPM causes a #VMEXIT.*/
-                                     | SVM_CTRL_INTERCEPT_INVLPGA      /* INVLPGA causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_SHUTDOWN     /* Shutdown events causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_FERR_FREEZE  /* Intercept "freezing" during legacy FPU handling. */
-                                     | SVM_CTRL_INTERCEPT_VMRUN        /* VMRUN causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_VMMCALL      /* VMMCALL causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_VMLOAD       /* VMLOAD causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_VMSAVE       /* VMSAVE causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_STGI         /* STGI causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_CLGI         /* CLGI causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_SKINIT       /* SKINIT causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_WBINVD       /* WBINVD causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_MONITOR      /* MONITOR causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_MWAIT        /* MWAIT causes a #VMEXIT. */
-                                     | SVM_CTRL_INTERCEPT_XSETBV;      /* XSETBV causes a #VMEXIT. */
+        pVmcb->ctrl.u64InterceptCtrl = HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
         /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
         pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
@@ -1743,21 +1756,24 @@ static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb)
  * guest intercepts an exception we need to intercept it in the nested-guest as
  * well and handle it accordingly.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcb           Pointer to the VM control block.
  * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
  */
-static void hmR0SvmMergeIntercepts(PVMCPU pVCpu, PCSVMVMCB pVmcb, PSVMVMCB pVmcbNstGst)
+static void hmR0SvmMergeIntercepts(PCSVMVMCB pVmcb, PSVMVMCB pVmcbNstGst)
 {
-    RT_NOREF(pVCpu);
-#if 0
     pVmcbNstGst->ctrl.u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
     pVmcbNstGst->ctrl.u16InterceptWrCRx |= pVmcb->ctrl.u16InterceptWrCRx;
-    pVmcbNstGst->ctrl.u16InterceptRdDRx |= pVmcb->ctrl.u16InterceptRdDRx;
-    pVmcbNstGst->ctrl.u16InterceptWrDRx |= pVmcb->ctrl.u16InterceptWrDRx;
-#endif
+
+    /** @todo Figure out debugging with nested-guests, till then just intercept
+     *        all DR[0-15] accesses. */
+    pVmcbNstGst->ctrl.u16InterceptRdDRx |= 0xffff;
+    pVmcbNstGst->ctrl.u16InterceptWrDRx |= 0xffff;
+
     pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
-    pVmcbNstGst->ctrl.u64InterceptCtrl  |= pVmcb->ctrl.u64InterceptCtrl;
+    pVmcbNstGst->ctrl.u64InterceptCtrl  |= pVmcb->ctrl.u64InterceptCtrl
+                                        |  HMSVM_MANDATORY_NESTED_GUEST_CTRL_INTERCEPTS;
+
+    Assert((pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS) == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
 }
 #endif
 
@@ -2034,7 +2050,7 @@ static void hmR0SvmLoadGuestVmcbNested(PVMCPU pVCpu, PCPUMCTX pCtx)
          * Merge the guest exception intercepts in to the nested-guest ones.
          */
         PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-        hmR0SvmMergeIntercepts(pVCpu, pVmcb, pVmcbNstGst);
+        hmR0SvmMergeIntercepts(pVmcb, pVmcbNstGst);
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_SVM_NESTED_GUEST);
     }
@@ -2614,6 +2630,120 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
 
     Log4(("hmR0SvmSetPendingEvent: u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u,
           pEvent->n.u8Vector, (uint8_t)pEvent->n.u3Type, !!pEvent->n.u1ErrorCodeValid, pEvent->n.u32ErrorCode));
+}
+
+
+/**
+ * Sets an invalid-opcode (\#UD) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptUD(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_UD;
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets a debug (\#DB) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptDB(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_DB;
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets a page fault (\#PF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   u32ErrCode      The error-code for the page-fault.
+ * @param   uFaultAddress   The page fault address (CR2).
+ *
+ * @remarks This updates the guest CR2 with @a uFaultAddress!
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t u32ErrCode, RTGCUINTPTR uFaultAddress)
+{
+    SVMEVENT Event;
+    Event.u                  = 0;
+    Event.n.u1Valid          = 1;
+    Event.n.u3Type           = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector         = X86_XCPT_PF;
+    Event.n.u1ErrorCodeValid = 1;
+    Event.n.u32ErrorCode     = u32ErrCode;
+
+    /* Update CR2 of the guest. */
+    if (pCtx->cr2 != uFaultAddress)
+    {
+        pCtx->cr2 = uFaultAddress;
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR2);
+    }
+
+    hmR0SvmSetPendingEvent(pVCpu, &Event, uFaultAddress);
+}
+
+
+/**
+ * Sets a device-not-available (\#NM) exception as pending-for-injection into
+ * the VM.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptNM(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_NM;
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets a math-fault (\#MF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptMF(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_MF;
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets a double fault (\#DF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u                  = 0;
+    Event.n.u1Valid          = 1;
+    Event.n.u3Type           = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector         = X86_XCPT_DF;
+    Event.n.u1ErrorCodeValid = 1;
+    Event.n.u32ErrorCode     = 0;
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -4343,14 +4473,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     switch (pSvmTransient->u64ExitCode)
     {
-#if 0
-        case SVM_EXIT_NPF:
-        {
-            /** @todo. */
-            break;
-        }
-#endif
-
         case SVM_EXIT_CPUID:
         {
             if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_CPUID)
@@ -4447,7 +4569,14 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
         {
             Assert(!pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging);
-            return hmR0SvmExecVmexit(pVCpu, pCtx);
+            if (pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(X86_XCPT_PF))
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+
+            /* If the nested-guest isn't for intercepting #PFs, simply forward the #PF to the guest. */
+            uint32_t    const u32ErrCode    = pVmcbNstGstCtrl->u64ExitInfo1;
+            RTGCUINTPTR const uFaultAddress = pVmcbNstGstCtrl->u64ExitInfo2;
+            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
+            return VINF_SUCCESS;
         }
 
         case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
@@ -4473,7 +4602,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_READ_CR4:
         {
             if (pVmcbNstGstCache->u16InterceptRdCRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0)))
-                hmR0SvmExecVmexit(pVCpu, pCtx);
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
         }
 
@@ -4483,35 +4612,72 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         case SVM_EXIT_WRITE_CR8:
         {
             if (pVmcbNstGstCache->u16InterceptWrCRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0)))
-                hmR0SvmExecVmexit(pVCpu, pCtx);
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_PAUSE:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_PAUSE)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitPause(pVCpu, pCtx, pSvmTransient);
-
-        case SVM_EXIT_VMMCALL:
-            return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_VINTR:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitVIntr(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_INTR:
-        case SVM_EXIT_FERR_FREEZE:
-        case SVM_EXIT_NMI:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INTR)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_FERR_FREEZE:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_FERR_FREEZE)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+        }
+
+        case SVM_EXIT_NMI:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_NMI)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
+            return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_INVLPG:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INVLPG)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitInvlpg(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_WBINVD:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_WBINVD)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitWbinvd(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_INVD:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INVD)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitInvd(pVCpu, pCtx, pSvmTransient);
+        }
 
         case SVM_EXIT_RDPMC:
+        {
+            if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDPMC)
+                return hmR0SvmExecVmexit(pVCpu, pCtx);
             return hmR0SvmExitRdpmc(pVCpu, pCtx, pSvmTransient);
+        }
 
         default:
         {
@@ -4521,128 +4687,152 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 case SVM_EXIT_READ_DR6:     case SVM_EXIT_READ_DR7:     case SVM_EXIT_READ_DR8:     case SVM_EXIT_READ_DR9:
                 case SVM_EXIT_READ_DR10:    case SVM_EXIT_READ_DR11:    case SVM_EXIT_READ_DR12:    case SVM_EXIT_READ_DR13:
                 case SVM_EXIT_READ_DR14:    case SVM_EXIT_READ_DR15:
+                {
+                    if (pVmcbNstGstCache->u16InterceptRdDRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_READ_DR0)))
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
                     return hmR0SvmExitReadDRx(pVCpu, pCtx, pSvmTransient);
+                }
 
                 case SVM_EXIT_WRITE_DR0:    case SVM_EXIT_WRITE_DR1:    case SVM_EXIT_WRITE_DR2:    case SVM_EXIT_WRITE_DR3:
                 case SVM_EXIT_WRITE_DR6:    case SVM_EXIT_WRITE_DR7:    case SVM_EXIT_WRITE_DR8:    case SVM_EXIT_WRITE_DR9:
                 case SVM_EXIT_WRITE_DR10:   case SVM_EXIT_WRITE_DR11:   case SVM_EXIT_WRITE_DR12:   case SVM_EXIT_WRITE_DR13:
                 case SVM_EXIT_WRITE_DR14:   case SVM_EXIT_WRITE_DR15:
+                {
+                    if (pVmcbNstGstCache->u16InterceptWrDRx & (1U << (uint16_t)(pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_DR0)))
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
                     return hmR0SvmExitWriteDRx(pVCpu, pCtx, pSvmTransient);
+                }
+
+                /* The exceptions not handled here are already handled individually above (as they occur more frequently). */
+                case SVM_EXIT_EXCEPTION_0:     /*case SVM_EXIT_EXCEPTION_1:*/   case SVM_EXIT_EXCEPTION_2:
+                /*case SVM_EXIT_EXCEPTION_3:*/   case SVM_EXIT_EXCEPTION_4:     case SVM_EXIT_EXCEPTION_5:
+                /*case SVM_EXIT_EXCEPTION_6:*/ /*case SVM_EXIT_EXCEPTION_7:*/   case SVM_EXIT_EXCEPTION_8:
+                case SVM_EXIT_EXCEPTION_9:       case SVM_EXIT_EXCEPTION_10:    case SVM_EXIT_EXCEPTION_11:
+                case SVM_EXIT_EXCEPTION_12:      case SVM_EXIT_EXCEPTION_13:  /*case SVM_EXIT_EXCEPTION_14:*/
+                case SVM_EXIT_EXCEPTION_15:      case SVM_EXIT_EXCEPTION_16:  /*case SVM_EXIT_EXCEPTION_17:*/
+                case SVM_EXIT_EXCEPTION_18:      case SVM_EXIT_EXCEPTION_19:    case SVM_EXIT_EXCEPTION_20:
+                case SVM_EXIT_EXCEPTION_21:      case SVM_EXIT_EXCEPTION_22:    case SVM_EXIT_EXCEPTION_23:
+                case SVM_EXIT_EXCEPTION_24:      case SVM_EXIT_EXCEPTION_25:    case SVM_EXIT_EXCEPTION_26:
+                case SVM_EXIT_EXCEPTION_27:      case SVM_EXIT_EXCEPTION_28:    case SVM_EXIT_EXCEPTION_29:
+                case SVM_EXIT_EXCEPTION_30:      case SVM_EXIT_EXCEPTION_31:
+                {
+                    if (pVmcbNstGstCache->u32InterceptXcpt & (1U << (uint32_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0)))
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
+                    /** @todo Write hmR0SvmExitXcptGeneric! */
+                    return VERR_NOT_IMPLEMENTED;
+                }
 
                 case SVM_EXIT_XSETBV:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_XSETBV)
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
                     return hmR0SvmExitXsetbv(pVCpu, pCtx, pSvmTransient);
+                }
 
                 case SVM_EXIT_TASK_SWITCH:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_TASK_SWITCH)
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
                     return hmR0SvmExitTaskSwitch(pVCpu, pCtx, pSvmTransient);
+                }
 
                 case SVM_EXIT_IRET:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_IRET)
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
                     return hmR0SvmExitIret(pVCpu, pCtx, pSvmTransient);
+                }
 
                 case SVM_EXIT_SHUTDOWN:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_SHUTDOWN)
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
                     return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
+                }
 
                 case SVM_EXIT_SMI:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_SMI)
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
+                }
+
                 case SVM_EXIT_INIT:
                 {
-                    /*
-                     * We don't intercept NMIs. As for INIT signals, it really shouldn't ever happen here. If it ever does,
-                     * we want to know about it so log the exit code and bail.
-                     */
-                    AssertMsgFailed(("hmR0SvmHandleExitNested: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
-                    pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
-                    return VERR_SVM_UNEXPECTED_EXIT;
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INIT)
+                        return hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
-                case SVM_EXIT_CLGI:     return hmR0SvmExitClgi(pVCpu, pCtx, pSvmTransient);
-                case SVM_EXIT_STGI:     return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
-                case SVM_EXIT_VMLOAD:   return hmR0SvmExitVmload(pVCpu, pCtx, pSvmTransient);
-                case SVM_EXIT_VMSAVE:   return hmR0SvmExitVmsave(pVCpu, pCtx, pSvmTransient);
-                case SVM_EXIT_INVLPGA:  return hmR0SvmExitInvlpga(pVCpu, pCtx, pSvmTransient);
-                case SVM_EXIT_VMRUN:    return hmR0SvmExitVmrun(pVCpu, pCtx, pSvmTransient);
-#else
-                case SVM_EXIT_CLGI:
-                case SVM_EXIT_STGI:
-                case SVM_EXIT_VMLOAD:
-                case SVM_EXIT_VMSAVE:
-                case SVM_EXIT_INVLPGA:
-                case SVM_EXIT_VMRUN:
-#endif
-                case SVM_EXIT_RSM:
-                case SVM_EXIT_SKINIT:
-                    return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
-
-#ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-                case SVM_EXIT_EXCEPTION_0:             /* X86_XCPT_DE */
-                /*   SVM_EXIT_EXCEPTION_1: */          /* X86_XCPT_DB - Handled above. */
-                case SVM_EXIT_EXCEPTION_2:             /* X86_XCPT_NMI */
-                /*   SVM_EXIT_EXCEPTION_3: */          /* X86_XCPT_BP - Handled above. */
-                case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
-                case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
-                /*   SVM_EXIT_EXCEPTION_6: */          /* X86_XCPT_UD - Handled above. */
-                /*   SVM_EXIT_EXCEPTION_7: */          /* X86_XCPT_NM - Handled above. */
-                case SVM_EXIT_EXCEPTION_8:             /* X86_XCPT_DF */
-                case SVM_EXIT_EXCEPTION_9:             /* X86_XCPT_CO_SEG_OVERRUN */
-                case SVM_EXIT_EXCEPTION_10:            /* X86_XCPT_TS */
-                case SVM_EXIT_EXCEPTION_11:            /* X86_XCPT_NP */
-                case SVM_EXIT_EXCEPTION_12:            /* X86_XCPT_SS */
-                case SVM_EXIT_EXCEPTION_13:            /* X86_XCPT_GP */
-                /*   SVM_EXIT_EXCEPTION_14: */         /* X86_XCPT_PF - Handled above. */
-                case SVM_EXIT_EXCEPTION_15:            /* Reserved. */
-                /*   SVM_EXIT_EXCEPTION_16: */         /* X86_XCPT_MF - Handled above. */
-                /*   SVM_EXIT_EXCEPTION_17: */         /* X86_XCPT_AC - Handled above. */
-                case SVM_EXIT_EXCEPTION_18:            /* X86_XCPT_MC */
-                case SVM_EXIT_EXCEPTION_19:            /* X86_XCPT_XF */
-                case SVM_EXIT_EXCEPTION_20: case SVM_EXIT_EXCEPTION_21: case SVM_EXIT_EXCEPTION_22:
-                case SVM_EXIT_EXCEPTION_23: case SVM_EXIT_EXCEPTION_24: case SVM_EXIT_EXCEPTION_25:
-                case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27: case SVM_EXIT_EXCEPTION_28:
-                case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
+                case SVM_EXIT_VMMCALL:
                 {
-                    /** @todo r=ramshankar; We should be doing
-                     *        HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY here! */
-
-                    PSVMVMCB pVmcb   = pVCpu->hm.s.svm.pVmcb;
-                    SVMEVENT Event;
-                    Event.u          = 0;
-                    Event.n.u1Valid  = 1;
-                    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-                    Event.n.u8Vector = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
-
-                    switch (Event.n.u8Vector)
-                    {
-                        case X86_XCPT_DE:
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
-                            break;
-
-                        case X86_XCPT_NP:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);
-                            break;
-
-                        case X86_XCPT_SS:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
-                            break;
-
-                        case X86_XCPT_GP:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
-                            break;
-
-                        default:
-                            AssertMsgFailed(("hmR0SvmHandleExitNested: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
-                            pVCpu->hm.s.u32HMError = Event.n.u8Vector;
-                            return VERR_SVM_UNEXPECTED_XCPT_EXIT;
-                    }
-
-                    Log4(("#Xcpt: Vector=%#x at CS:RIP=%04x:%RGv\n", Event.n.u8Vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
-                    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-                    return VINF_SUCCESS;
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMMCALL)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
                 }
-#endif  /* HMSVM_ALWAYS_TRAP_ALL_XCPTS */
+
+                case SVM_EXIT_CLGI:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_CLGI)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                     return hmR0SvmExitClgi(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_STGI:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_STGI)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                     return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_VMLOAD:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMLOAD)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitVmload(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_VMSAVE:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMSAVE)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitVmsave(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_INVLPGA:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INVLPGA)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitInvlpga(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_VMRUN:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitVmrun(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_RSM:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RSM)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_SKINIT:
+                {
+                    if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_SKINIT)
+                        hmR0SvmExecVmexit(pVCpu, pCtx);
+                    return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
+                }
+
+                case SVM_EXIT_NPF:
+                {
+                    /* We don't yet support nested-paging for nested-guests, so this should never really happen. */
+                    Assert(!pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging);
+                    return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
+                }
 
                 default:
                 {
@@ -4797,12 +4987,10 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
                 case SVM_EXIT_INIT:
                 {
                     /*
-                     * We don't intercept NMIs. As for INIT signals, it really shouldn't ever happen here. If it ever does,
-                     * we want to know about it so log the exit code and bail.
+                     * We don't intercept SMIs. As for INIT signals, it really shouldn't ever happen here.
+                     * If it ever does, we want to know about it so log the exit code and bail.
                      */
-                    AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
-                    pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
-                    return VERR_SVM_UNEXPECTED_EXIT;
+                    return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
@@ -5011,119 +5199,6 @@ static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return VERR_EM_INTERPRETER;
 }
 
-
-/**
- * Sets an invalid-opcode (\#UD) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0SvmSetPendingXcptUD(PVMCPU pVCpu)
-{
-    SVMEVENT Event;
-    Event.u          = 0;
-    Event.n.u1Valid  = 1;
-    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector = X86_XCPT_UD;
-    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-}
-
-
-/**
- * Sets a debug (\#DB) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0SvmSetPendingXcptDB(PVMCPU pVCpu)
-{
-    SVMEVENT Event;
-    Event.u          = 0;
-    Event.n.u1Valid  = 1;
-    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector = X86_XCPT_DB;
-    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-}
-
-
-/**
- * Sets a page fault (\#PF) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCtx            Pointer to the guest-CPU context.
- * @param   u32ErrCode      The error-code for the page-fault.
- * @param   uFaultAddress   The page fault address (CR2).
- *
- * @remarks This updates the guest CR2 with @a uFaultAddress!
- */
-DECLINLINE(void) hmR0SvmSetPendingXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t u32ErrCode, RTGCUINTPTR uFaultAddress)
-{
-    SVMEVENT Event;
-    Event.u                  = 0;
-    Event.n.u1Valid          = 1;
-    Event.n.u3Type           = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector         = X86_XCPT_PF;
-    Event.n.u1ErrorCodeValid = 1;
-    Event.n.u32ErrorCode     = u32ErrCode;
-
-    /* Update CR2 of the guest. */
-    if (pCtx->cr2 != uFaultAddress)
-    {
-        pCtx->cr2 = uFaultAddress;
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR2);
-    }
-
-    hmR0SvmSetPendingEvent(pVCpu, &Event, uFaultAddress);
-}
-
-
-/**
- * Sets a device-not-available (\#NM) exception as pending-for-injection into
- * the VM.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0SvmSetPendingXcptNM(PVMCPU pVCpu)
-{
-    SVMEVENT Event;
-    Event.u          = 0;
-    Event.n.u1Valid  = 1;
-    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector = X86_XCPT_NM;
-    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-}
-
-
-/**
- * Sets a math-fault (\#MF) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0SvmSetPendingXcptMF(PVMCPU pVCpu)
-{
-    SVMEVENT Event;
-    Event.u          = 0;
-    Event.n.u1Valid  = 1;
-    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector = X86_XCPT_MF;
-    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-}
-
-
-/**
- * Sets a double fault (\#DF) exception as pending-for-injection into the VM.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
-{
-    SVMEVENT Event;
-    Event.u                  = 0;
-    Event.n.u1Valid          = 1;
-    Event.n.u3Type           = SVM_EVENT_EXCEPTION;
-    Event.n.u8Vector         = X86_XCPT_DF;
-    Event.n.u1ErrorCodeValid = 1;
-    Event.n.u32ErrorCode     = 0;
-    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-}
 
 #ifdef HMSVM_USE_IEM_EVENT_REFLECTION
 /**
@@ -6155,6 +6230,18 @@ HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     return VINF_EM_RESET;
+}
+
+
+/**
+ * \#VMEXIT handler for unexpected exits. Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitUnexpected(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    RT_NOREF(pCtx);
+    AssertMsgFailed(("hmR0SvmExitUnexpected: ExitCode=%#RX64\n", pSvmTransient->u64ExitCode));
+    pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
+    return VERR_SVM_UNEXPECTED_EXIT;
 }
 
 
