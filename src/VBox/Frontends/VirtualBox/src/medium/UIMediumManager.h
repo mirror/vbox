@@ -63,8 +63,10 @@ signals:
 
     /** Notifies listeners about medium details-widget @a fVisible. */
     void sigMediumDetailsVisibilityChanged(bool fVisible);
-    /** Notifies listeners about medium details data @a fDiffers. */
-    void sigMediumDetailsDataChanged(bool fDiffers);
+    /** Notifies listeners about accept is @a fAllowed. */
+    void sigAcceptAllowed(bool fAllowed);
+    /** Notifies listeners about reject is @a fAllowed. */
+    void sigRejectAllowed(bool fAllowed);
 
 public:
 

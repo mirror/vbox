@@ -57,6 +57,7 @@ UIMediumDetailsWidget::UIMediumDetailsWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pLabelDescription(0), m_pEditorDescription(0), m_pErrorPaneDescription(0)
     , m_pLabelSize(0), m_pEditorSize(0), m_pErrorPaneSize(0)
     , m_pButtonBox(0)
+    , m_fValid(true)
     , m_pLayoutDetails(0)
 {
     /* Prepare: */
@@ -637,30 +638,41 @@ void UIMediumDetailsWidget::loadDataForDetails()
 
 void UIMediumDetailsWidget::revalidate(QWidget *pWidget /* = 0 */)
 {
+    /* Reset the result: */
+    m_fValid = true;
+
     /* Validate 'Options' tab content: */
     if (!pWidget || pWidget == m_pErrorPaneType)
     {
         /* Always valid for now: */
         const bool fError = false;
         m_pErrorPaneType->setVisible(fError);
+        if (fError)
+            m_fValid = false;
     }
     if (!pWidget || pWidget == m_pErrorPaneLocation)
     {
         /* Always valid for now: */
         const bool fError = false;
         m_pErrorPaneLocation->setVisible(fError);
+        if (fError)
+            m_fValid = false;
     }
     if (!pWidget || pWidget == m_pErrorPaneDescription)
     {
         /* Always valid for now: */
         const bool fError = false;
         m_pErrorPaneDescription->setVisible(fError);
+        if (fError)
+            m_fValid = false;
     }
     if (!pWidget || pWidget == m_pErrorPaneSize)
     {
         /* Always valid for now: */
         const bool fError = false;
         m_pErrorPaneSize->setVisible(fError);
+        if (fError)
+            m_fValid = false;
     }
 
     /* Retranslate validation: */
@@ -705,11 +717,12 @@ void UIMediumDetailsWidget::updateButtonStates()
     if (m_pButtonBox)
     {
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled((m_oldData != m_newData) && m_fValid);
     }
 
     /* Notify listeners as well: */
-    emit sigDataChanged(m_oldData != m_newData);
+    emit sigRejectAllowed(m_oldData != m_newData);
+    emit sigAcceptAllowed((m_oldData != m_newData) && m_fValid);
 }
 
 QWidget *UIMediumDetailsWidget::infoContainer(UIMediumType enmType) const
