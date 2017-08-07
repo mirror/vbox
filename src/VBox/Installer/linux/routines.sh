@@ -270,7 +270,7 @@ get_chkconfig_info()
             return 1; }
 }
 
-## Add a service to a runlevel
+## Add a service to its default runlevels (annotated inside the script, see get_chkconfig_info).
 addrunlevel()
 {
     self="addrunlevel"
