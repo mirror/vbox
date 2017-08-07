@@ -443,7 +443,7 @@ void UISelectorWindow::sltOpenVirtualMediumManagerWindow()
     /* First check if instance of widget opened embedded: */
     if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_VirtualMedia))
     {
-        m_pPaneToolsGlobal->openTool(ToolTypeGlobal_VirtualMedia);
+        sltHandleToolOpenedGlobal(ToolTypeGlobal_VirtualMedia);
         return;
     }
 
@@ -476,7 +476,7 @@ void UISelectorWindow::sltOpenHostNetworkManagerWindow()
     /* First check if instance of widget opened embedded: */
     if (m_pPaneToolsGlobal->isToolOpened(ToolTypeGlobal_HostNetwork))
     {
-        m_pPaneToolsGlobal->openTool(ToolTypeGlobal_HostNetwork);
+        sltHandleToolOpenedGlobal(ToolTypeGlobal_HostNetwork);
         return;
     }
 
