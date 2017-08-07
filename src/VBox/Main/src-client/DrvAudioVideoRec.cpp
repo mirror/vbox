@@ -66,7 +66,7 @@ typedef enum AVRECCONTAINERTYPE
     AVRECCONTAINERTYPE_UNKNOWN      = 0,
     /** Recorded data goes to Main / Console. */
     AVRECCONTAINERTYPE_MAIN_CONSOLE = 1,
-    /** Recorded data will be written a .webm file. */
+    /** Recorded data will be written to a .webm file. */
     AVRECCONTAINERTYPE_WEBM         = 2
 } AVRECCONTAINERTYPE;
 
